@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
-// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
+// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "PxgCudaSolverCore.h"
 #include "PxgCommonDefines.h"
@@ -1288,17 +1265,19 @@ void PxgCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandC
 
 		const PxReal articulationBiasCoefficient = context.mBiasCoefficients.articulation;
 		const PxReal rigidContactBiasCoefficient = context.mBiasCoefficients.rigidContact;
-		const PxReal particleBiasCoefficient = context.mBiasCoefficients.particle;
-		const PxReal deformableRigidAttachmentBiasCoefficient = context.mBiasCoefficients.deformableRigidAttachment;
 
 		for (PxI32 b = 0; b < context.mNumPositionIterations; ++b)
 		{
 			bool doFriction = mFrictionEveryIteration ? true : (context.mNumPositionIterations - b) <= 3;
+			const bool isVelocityIteration = false;
+			const bool isFirstIteration = (b == 0);
+			const PxReal particleBiasCoefficient = context.mBiasCoefficients.particle;
+			const PxReal deformableRigidAttachmentBiasCoefficient = context.mBiasCoefficients.deformableRigidAttachment;
 
 			if(solveArticulationContactLast)
 			{
 				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-					dt, invDt, false, 0.f, 
+					dt, invDt, isVelocityIteration, 0.f,
 					articulationBiasCoefficient, rigidContactBiasCoefficient,
 					firstPassArticulationConstraintProcessingConfig,
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
@@ -1309,7 +1288,7 @@ void PxgCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandC
 								anyArticulationConstraints);
 
 				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-					dt, invDt, false, 0.f, 
+					dt, invDt, isVelocityIteration, 0.f,
 					articulationBiasCoefficient, rigidContactBiasCoefficient,
 					secondPassArticulationConstraintProcessingConfig,
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
@@ -1322,7 +1301,7 @@ void PxgCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandC
 								anyArticulationConstraints);
 
 				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-					dt, invDt, false, 0.f, 
+					dt, invDt, isVelocityIteration, 0.f,
 					articulationBiasCoefficient, rigidContactBiasCoefficient,
 					singlePassArticulationConstraintProcessingConfig,
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
@@ -1339,27 +1318,26 @@ void PxgCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandC
 			{
 				//KS - computeAverageVelocities kernel produces the deltaVelocity buffer we require from the rigid body solver
 				//for the particle system to consume
-				particleSystemCores[i]->solve(mPrePrepDescd, mSolverCoreDescd, artiDescd, dt, mStream, particleBiasCoefficient);
+				particleSystemCores[i]->solve(mPrePrepDescd, mSolverCoreDescd, artiDescd, particleBiasCoefficient, dt, /*totalInvDt*/ 0.0f, isFirstIteration, isVelocityIteration, mStream);
 				//Particle system has updated the deltaVelocity buffer, so now we propagate these changes back to the rigid body
 				//solver
 			}
 
 			if (femClothCore)
 			{
-				femClothCore->solve(mPrePrepDescd, mSolverCoreDescd, artiDescd, dt, mStream, b,
-									context.mNumPositionIterations, false, gravity,
-									deformableRigidAttachmentBiasCoefficient);
+				femClothCore->solve(mPrePrepDescd, mSolverCoreDescd, artiDescd, deformableRigidAttachmentBiasCoefficient, gravity,
+									dt, b, context.mNumPositionIterations, isVelocityIteration, mStream);
 			}
 
 			if (softbodyCore)
 			{
-				softbodyCore->solve(mPrePrepDescd, mPrepareDescd, mSolverCoreDescd, artiDescd,
-					dt, mStream, deformableRigidAttachmentBiasCoefficient, b == 0);
+				softbodyCore->solve(mPrePrepDescd, mSolverCoreDescd, artiDescd, deformableRigidAttachmentBiasCoefficient, gravity,
+					dt, isFirstIteration, isVelocityIteration, mStream);
 			}
 
 			for (PxU32 i = 0; i < numParticleSystemCores; ++i)
 			{
-				particleSystemCores[i]->updateParticles(dt);
+				particleSystemCores[i]->updateParticles(dt, isVelocityIteration);
 			}
 
 			{
@@ -1462,10 +1440,15 @@ void PxgCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandC
 
 		for(PxI32 b = 0; b < context.mNumVelocityIterations; ++b)
 		{
+			const bool isVelocityIteration = true;
+			const bool isFirstIteration = (b == 0);
+			const PxReal particleBiasCoefficient = 0.0f;
+			const PxReal deformableRigidAttachmentBiasCoefficient = 0.0f;
+
 			if(solveArticulationContactLast)
 			{
 				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-					dt, invDt, true, 0.f, 
+					dt, invDt, isVelocityIteration, 0.f,
 					articulationBiasCoefficient, rigidContactBiasCoefficient,
 					firstPassArticulationConstraintProcessingConfig,
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
@@ -1476,7 +1459,7 @@ void PxgCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandC
 								anyArticulationConstraints);
 
 				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-					dt, invDt, true, 0.f, 
+					dt, invDt, isVelocityIteration, 0.f, 
 					articulationBiasCoefficient, rigidContactBiasCoefficient,
 					secondPassArticulationConstraintProcessingConfig,
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
@@ -1489,7 +1472,7 @@ void PxgCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandC
 								anyArticulationConstraints);
 
 				mGpuContext->getArticulationCore()->propagateRigidBodyImpulsesAndSolveInternalConstraints(
-					dt, invDt, true, 0.f, 
+					dt, invDt, isVelocityIteration, 0.f, 
 					articulationBiasCoefficient, rigidContactBiasCoefficient,
 					singlePassArticulationConstraintProcessingConfig,
 					reinterpret_cast<PxU32*>(mArtiOrderedStaticContacts.getDevicePtr()),
@@ -1506,19 +1489,23 @@ void PxgCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* islandC
 			{
 				//KS - computeAverageVelocities kernel produces the deltaVelocity buffer we require from the rigid body solver
 				//for the particle system to consume
-				particleSystemCores[i]->solve(mPrePrepDescd, mSolverCoreDescd, artiDescd, dt, mStream, particleBiasCoefficient);
+				particleSystemCores[i]->solve(mPrePrepDescd, mSolverCoreDescd, artiDescd, particleBiasCoefficient, dt, /*totalInvDt*/ 0.0f, isFirstIteration, isVelocityIteration, mStream);
 			}
 
-			//! no velocity iteration support for FEM cloth
+			if (femClothCore)
+			{
+				femClothCore->solve(mPrePrepDescd, mSolverCoreDescd, artiDescd, deformableRigidAttachmentBiasCoefficient, gravity,
+									dt, b, context.mNumVelocityIterations, isVelocityIteration, mStream);
+			}
 
 			if (softbodyCore)
 			{
-				softbodyCore->solve(mPrePrepDescd, mPrepareDescd, mSolverCoreDescd, artiDescd, dt, mStream, deformableRigidAttachmentBiasCoefficient, false);
+				softbodyCore->solve(mPrePrepDescd, mSolverCoreDescd, artiDescd, deformableRigidAttachmentBiasCoefficient, gravity, dt, isFirstIteration, isVelocityIteration, mStream);
 			}
 
 			for (PxU32 i = 0; i < numParticleSystemCores; ++i)
 			{
-				particleSystemCores[i]->updateParticles(dt);
+				particleSystemCores[i]->updateParticles(dt, isVelocityIteration);
 			}
 
 			{

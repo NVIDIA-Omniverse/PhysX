@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 # --- Plugin headers (private) ---
 set(COOKING_PLUGIN_HEADERS
@@ -72,12 +72,9 @@ source_group(plugins\\ujitso FILES ${COOKING_UJITSO_HEADERS} ${COOKING_UJITSO_SO
 # Check if ujitso SDK headers are available
 set(_HAS_UJITSO FALSE)
 
-# Ujitso headers may come from carb_sdk_plugins, kit_sdk_<config>, or ovruntime_deps.
-# Priority order: CARB_SDK_DIR (explicit override) > OVRUNTIME_KIT_SDK_DIR (kit SDK
-# bundled with this build) > OVRUNTIME_DEPS_DIR (fallback dep tree).
+# Ujitso headers come from carb_sdk_plugins or ovruntime_deps.
+# Priority order: CARB_SDK_DIR (explicit override) > OVRUNTIME_DEPS_DIR (dep tree).
 if(DEFINED CARB_SDK_DIR AND EXISTS "${CARB_SDK_DIR}/include/carb/ujitso")
-    set(_HAS_UJITSO TRUE)
-elseif(DEFINED OVRUNTIME_KIT_SDK_DIR AND EXISTS "${OVRUNTIME_KIT_SDK_DIR}/dev/include/carb/ujitso")
     set(_HAS_UJITSO TRUE)
 elseif(DEFINED OVRUNTIME_DEPS_DIR AND EXISTS "${OVRUNTIME_DEPS_DIR}/include/carb/ujitso")
     set(_HAS_UJITSO TRUE)
@@ -115,13 +112,12 @@ target_include_directories(OvruntimePhysXCooking
         ${CMAKE_CURRENT_SOURCE_DIR}/plugins          # internal headers
         ${OVRUNTIME_ROOT_DIR}/include                 # <omni/physx/IPhysxCookingService.h> etc.
         ${OVRUNTIME_ROOT_DIR}/include/private         # <private/omni/physx/...>
-        ${OVRUNTIME_ROOT_DIR}/source/pch              # UsdPCH.h
         ${OVRUNTIME_ROOT_DIR}/source/common/include   # <common/utilities/...>
         ${OVRUNTIME_ROOT_DIR}/source/omni.physx.foundation/plugins # foundation static service
 )
 
 # External dependencies — SYSTEM includes to suppress third-party warnings
-ovruntime_add_external_system_includes(OvruntimePhysXCooking)
+ovruntime_add_external_system_includes(OvruntimePhysXCooking NO_USD)
 
 # Compile definitions
 target_compile_definitions(OvruntimePhysXCooking PRIVATE
@@ -144,13 +140,15 @@ if(DEFINED CARB_SDK_DIR)
     target_link_libraries(OvruntimePhysXCooking PRIVATE carb)
 endif()
 
-# USD, TBB, Python libraries (matching premake extension_usd_deps)
-ovruntime_link_usd_deps(OvruntimePhysXCooking)
-
 # PhysX static libraries
 ovruntime_link_physx_static_libs(OvruntimePhysXCooking FULL)
 
-# Precompiled header
-target_precompile_headers(OvruntimePhysXCooking PRIVATE
-    "$<$<COMPILE_LANGUAGE:CXX>:${OVRUNTIME_ROOT_DIR}/source/pch/UsdPCH.h>"
+# CI grep gate: verify no USD includes leak into the cooking library's own plugins/ tree
+# (production sources only -- tests/ links USD deliberately and is not scanned).
+add_custom_target(cooking_usd_free_check ALL
+    COMMAND ${CMAKE_COMMAND} -E echo "Checking omni.physx.cooking plugins/ for USD includes..."
+    COMMAND ${CMAKE_COMMAND}
+        -DCOOKING_PLUGINS_DIR=${CMAKE_CURRENT_SOURCE_DIR}/plugins
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/cooking_usd_free_check.cmake
+    VERBATIM
 )

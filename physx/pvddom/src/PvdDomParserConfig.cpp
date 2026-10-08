@@ -1,35 +1,8 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
-// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
+// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
-
-// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-//
 
 #include "PvdDomParserConfig.h"
 #include "PvdDomUtils.h"
@@ -85,7 +58,7 @@ void initClassConfigMap(std::unordered_map<std::string, OmniPvdPhysXClassEnum> &
     classConfigMap["PxTetrahedronMesh"] = OmniPvdPhysXClassEnum::ePxTetrahedronMesh;
     classConfigMap["PxDeformableVolumeMesh"] = OmniPvdPhysXClassEnum::ePxDeformableVolumeMesh;
 
-    classConfigMap["PxPhysics"] = OmniPvdPhysXClassEnum::ePxUndefined;
+    classConfigMap["PxPhysics"] = OmniPvdPhysXClassEnum::ePxPhysics;
     classConfigMap["PxAggregate"] = OmniPvdPhysXClassEnum::ePxUndefined;
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -242,6 +215,12 @@ void initPvdDomState(OmniPvdDOMState &domState)
 
     domState.mMinFrame = 10000000;
     domState.mMaxFrame = 0;
+    domState.mLatestStartedFrame = 0;
+    domState.mCurrentRecordingSegmentId = 0;
+    domState.mRecordingSegmentMaxFrames.clear();
+    domState.mRecordingSegmentMaxFrames.push_back(0);
+    domState.mSawRecordingSegmentMetadata = false;
+    domState.mSupersedeSnapshotObjects.clear();
 
     domState.mSceneRootClass = createInternalClass("Scenes", OmniPvdPhysXClassEnum::ePxInternalOmnniPvd);
 
@@ -308,11 +287,12 @@ void initPvdDomState(OmniPvdDOMState &domState)
     // Create the scene layer root nodes, top node with Prim path "/scenes" is visible
     ////////////////////////////////////////////////////////////////////////////////
     domState.mSceneRoot = createInternalNode(domState.mObjectCreations, 0, domState.mSceneRootClass, 0, 0, 1);
+    domState.mLastPhysics = nullptr;
 
     initClassConfigMap(domState.mClassConfigMap);
     initAttributeConfigMap(domState.mAttributeConfigMap);
 
-    domState.mActorTypeEnumRigidDynamic = 0;
+    domState.mActorTypeEnumRigidDynamic = UINT32_MAX;
     domState.mActorTypeEnumRigidStatic = UINT32_MAX;
     domState.mActorTypeEnumParticleSystem = UINT32_MAX;
     domState.mActorTypeEnumDeformableVolume = UINT32_MAX;
@@ -320,13 +300,14 @@ void initPvdDomState(OmniPvdDOMState &domState)
 
     domState.mOvdIntegVersionWasChecked = false;
     domState.mOvdIntegVersionPassed = false;
+    domState.mFirstStreamObject = nullptr;
+    domState.mNbStreamObjectCreations = 0;
 
-    domState.mOvdIntegrationVersionMajor = PX_PHYSICS_OVD_INTEGRATION_VERSION_MAJOR;
+    domState.mOvdIntegrationVersionMajor = PVDDOM_ACCEPTED_OVD_INTEG_VERSION_MAJOR;
 
     domState.mStreamOvdIntegVersionMajor = 0;
     domState.mStreamOvdIntegVersionMinor = 0;
 
-    domState.mPxSceneClass = nullptr;
     domState.mPxArticulationReducedCoordinateClass = nullptr;
     domState.mPxArticulationLinkClass = nullptr;
 }

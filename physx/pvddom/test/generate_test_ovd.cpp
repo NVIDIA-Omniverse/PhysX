@@ -1,35 +1,8 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
-// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
+// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
-
-// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-//
 // Generate a sample .ovd file for testing PVD3 and pvddom.
 // Simulates a simple PhysX-like scene: 1 scene, 2 rigid dynamic boxes falling,
 // 1 static ground plane, with transforms updating over 10 frames.
@@ -40,14 +13,8 @@
 
 #include "OmniPvdWriter.h"
 #include "OmniPvdFileWriteStream.h"
+#include "OmniPvdLibraryFunctions.h"
 #include "OmniPvdDefines.h"
-
-extern "C" {
-    OmniPvdWriter* OMNI_PVD_CALL createOmniPvdWriter();
-    void OMNI_PVD_CALL destroyOmniPvdWriter(OmniPvdWriter& writer);
-    OmniPvdFileWriteStream* OMNI_PVD_CALL createOmniPvdFileWriteStream();
-    void OMNI_PVD_CALL destroyOmniPvdFileWriteStream(OmniPvdFileWriteStream& stream);
-}
 
 struct Vec3 { float x, y, z; };
 struct Quat { float x, y, z, w; };
@@ -69,11 +36,11 @@ int main(int argc, char** argv)
     }
 
     fileStream->setFileName(const_cast<char*>(outputPath));
-    if (!fileStream->openFile())
+    if (!fileStream->openStream())
     {
         printf("Failed to open %s for writing\n", outputPath);
-        destroyOmniPvdFileWriteStream(*fileStream);
         destroyOmniPvdWriter(*writer);
+        destroyOmniPvdFileWriteStream(*fileStream);
         return 1;
     }
 
@@ -265,10 +232,15 @@ int main(int argc, char** argv)
     }
 
     // ---- Cleanup ----
-    fileStream->closeFile();
-    destroyOmniPvdFileWriteStream(*fileStream);
     destroyOmniPvdWriter(*writer);
+    const bool streamClosed = fileStream->closeStream();
+    destroyOmniPvdFileWriteStream(*fileStream);
 
+    if (!streamClosed)
+    {
+        fprintf(stderr, "Failed to finalize %s\n", outputPath);
+        return 1;
+    }
     printf("Generated %s successfully\n", outputPath);
     return 0;
 }

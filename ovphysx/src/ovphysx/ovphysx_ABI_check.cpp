@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #include <stddef.h>
 #include "ovphysx_ABI_check.h"
@@ -49,6 +49,30 @@ size_t ovphysx_internal_config_entry_offset(int field)
     case OVPHYSX_CE_KEY_TYPE: return offsetof(ovphysx_config_entry_t, key_type);
     case OVPHYSX_CE_KEY: return offsetof(ovphysx_config_entry_t, key);
     case OVPHYSX_CE_VALUE: return offsetof(ovphysx_config_entry_t, value);
+    default: return (size_t)~0ULL;
+    }
+}
+
+// ovphysx_omnipvd_destination_t
+size_t ovphysx_internal_omnipvd_destination_sizeof()
+{
+    return sizeof(ovphysx_omnipvd_destination_t);
+}
+
+size_t ovphysx_internal_omnipvd_destination_alignof()
+{
+    return alignof(ovphysx_omnipvd_destination_t);
+}
+
+size_t ovphysx_internal_omnipvd_destination_offset(int field)
+{
+    switch (field)
+    {
+    case OVPHYSX_OD_TRANSPORT: return offsetof(ovphysx_omnipvd_destination_t, transport);
+    case OVPHYSX_OD_FILE_PATH: return offsetof(ovphysx_omnipvd_destination_t, file_path);
+    case OVPHYSX_OD_TCP_ADDRESS: return offsetof(ovphysx_omnipvd_destination_t, tcp_address);
+    case OVPHYSX_OD_TCP_PORT: return offsetof(ovphysx_omnipvd_destination_t, tcp_port);
+    case OVPHYSX_OD_TCP_TIMEOUT_MS: return offsetof(ovphysx_omnipvd_destination_t, tcp_timeout_ms);
     default: return (size_t)~0ULL;
     }
 }
@@ -138,7 +162,7 @@ size_t ovphysx_internal_contact_event_header_offset(int field)
     switch (field)
     {
     case OVPHYSX_CEH_TYPE: return offsetof(ovphysx_contact_event_header_t, type);
-    case OVPHYSX_CEH_STAGE_ID: return offsetof(ovphysx_contact_event_header_t, stageId);
+    case OVPHYSX_CEH_ATTACH_HANDLE: return offsetof(ovphysx_contact_event_header_t, attachHandle);
     case OVPHYSX_CEH_ACTOR0: return offsetof(ovphysx_contact_event_header_t, actor0);
     case OVPHYSX_CEH_ACTOR1: return offsetof(ovphysx_contact_event_header_t, actor1);
     case OVPHYSX_CEH_COLLIDER0: return offsetof(ovphysx_contact_event_header_t, collider0);

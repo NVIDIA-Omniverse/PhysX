@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
@@ -19,10 +19,10 @@ namespace usdparser
 //
 // See ADR-0006 and REQ-PARSE-COLGROUP-002.
 void appendCollisionGroupFromPath(AttachedStage& attachedStage,
-                                  const PXR_NS::SdfPath& collisionGroupPath,
+                                  omni::physics::parse::ObjectKey collisionGroupKey,
                                   CollisionGroupsMap& collisionGroupsMap);
 
-ObjectId getCollisionGroup(AttachedStage& attachedStage, const PXR_NS::SdfPath& colliderPath);
+ObjectId getCollisionGroup(AttachedStage& attachedStage, omni::physics::parse::ObjectKey colliderKey);
 
 } // namespace usdparser
 } // namespace physx

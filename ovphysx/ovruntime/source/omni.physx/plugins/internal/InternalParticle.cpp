@@ -1,14 +1,15 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
-
-#include <common/utilities/PrimUtilities.h>
+// PhysXParticlePost.h defines PostProcessCallback, which mCallback below needs as a
+// complete type for SAFE_DELETE_SINGLE to route through Allocateable::operator delete --
+// deleting it as an incomplete type silently calls plain global operator delete on the
+// raw pointer instead (skipping the allocator's own header offset), corrupting the heap
+// on free. The header is itself pxr-free (ParticlePostprocess authors through the write sink).
+#include "particles/PhysXParticlePost.h"
 #include <common/utilities/MemoryMacros.h>
 
 #include "InternalParticle.h"
-#include "InternalTools.h"
-#include "particles/PhysXParticlePost.h"
 
 #include <PhysXTools.h>
 #include <PhysXSettings.h>
@@ -20,6 +21,7 @@
 #include <omni/physics/parse/ParseApi.h>
 #include <omni/physics/parse/ParseContext.h>
 #include <omni/physics/parse/IPhysicsSource.h>
+#include <omni/physics/parse/IPhysicsDataWrite.h>
 
 
 #if USE_PHYSX_GPU
@@ -29,24 +31,29 @@
 using namespace omni::physx;
 using namespace omni::physx::internal;
 using namespace omni::physx::usdparser;
-using namespace PXR_NS;
 using namespace carb;
 using namespace ::physx;
 
-extern ObjectId getObjectId(const PXR_NS::SdfPath& path, PhysXType type);
+extern ObjectId getObjectId(omni::physics::parse::ObjectKey key, PhysXType type);
 
-InternalDiffuseParticles::~InternalDiffuseParticles()
+namespace
 {
-    if (mGeo)
-    {
-        // Derive the stage from the geometry prim itself: this runs during teardown (the
-        // InternalPhysXDatabase is destroyed in releasePhysXScenes, after UsdLoad::detach has
-        // already deleted the AttachedStage), so there is no attached-stage singleton to query.
-        UsdStageWeakPtr stage = mGeo.GetPrim().GetStage();
-        ScopedLayerEdit scopedSessionLayerEdit(stage, stage->GetSessionLayer());
-        stage->RemovePrim(mGeo.GetPath());
-    }
+// The one place this TU resolves the live AttachedStage/write-sink pair from, mirroring
+// particles/PhysXParticlePost.cpp's activeAttachedStage(): no active stage, or no write
+// sink, both collapse to a no-op in setDiffuseParticleRenderingEnabledInSink below.
+usdparser::AttachedStage* activeAttachedStage()
+{
+    return UsdLoad::getUsdLoad()->getActiveAttachedStage();
 }
+
+void setDiffuseParticleRenderingEnabledInSink(omni::physics::parse::ObjectKey particleSystemKey, bool enabled)
+{
+    usdparser::AttachedStage* as = activeAttachedStage();
+    omni::physics::parse::IPhysicsDataWrite* dw = as ? as->getDataWrite() : nullptr;
+    if (dw)
+        dw->setDiffuseParticleRenderingEnabled(particleSystemKey, enabled);
+}
+} // namespace
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -133,7 +140,7 @@ InternalParticleSet::~InternalParticleSet()
     InternalPBDParticleMaterial* internalMaterial = getInternalPtr<InternalPBDParticleMaterial>(ePTPBDMaterial, mMaterialId);
     if (internalMaterial)
     {
-        usdparser::ObjectId id = getObjectId(UsdLoad::getUsdLoad()->getActiveAttachedStage()->pathFor(mKey), ePTParticleSet);
+        usdparser::ObjectId id = getObjectId(mKey, ePTParticleSet);
         internalMaterial->removeParticleId(id);
     }
 }
@@ -170,80 +177,27 @@ void InternalParticleSet::createSharedDiffuseParticles()
     if (!mParentParticleSystem)
         return; // TODO should this spit out a warning?
 
-    // creates a diffuse particle instance
-    if (!mParentParticleSystem->mDiffuseParticleInstance)
+    if (!mParentParticleSystem->mDiffuseParticleRenderingEnabled)
     {
-        UsdStageWeakPtr stage = UsdLoad::getUsdLoad()->getActiveStage();
-        ScopedLayerEdit scopedSessionLayerEdit(stage, stage->GetSessionLayer());
-
-        mParentParticleSystem->mDiffuseParticleInstance = ICE_NEW(InternalDiffuseParticles);
-        InternalDiffuseParticles* internalDiffuseParticles = mParentParticleSystem->mDiffuseParticleInstance;
-
-        std::string geomPath = mParentParticleSystem->getPath().GetString() + "/DiffuseParticles";
-        PXR_NS::UsdPrim geoPrim = stage->DefinePrim(SdfPath(geomPath), PXR_NS::TfToken("Points"));
-
-        internalDiffuseParticles->mGeo = PXR_NS::UsdGeomPoints(geoPrim);
-
-        primutils::setNoDelete(internalDiffuseParticles->mGeo.GetPrim(), true);
-        primutils::setHideInStageWindow(internalDiffuseParticles->mGeo.GetPrim(), true);
-
-        internalDiffuseParticles->mGeo.CreatePointsAttr();
-        internalDiffuseParticles->mGeo.GetPointsAttr().Clear();
-
-        internalDiffuseParticles->mGeo.CreateDisplayColorPrimvar();
-        internalDiffuseParticles->mGeo.GetDisplayColorPrimvar().GetAttr().Clear();
-
-        internalDiffuseParticles->mPrim = geoPrim;
-
-        internalDiffuseParticles->mGeo.MakeInvisible();
-
-        //Connect a flow emitter
-        bool success = false;
-        UsdPrim psPrim = stage->GetPrimAtPath(mParentParticleSystem->getPath());
-        for (auto c : psPrim.GetChildren()) //Search in particle system's children for a flow emitter
-        {
-            if (c.GetTypeName() == TfToken("FlowEmitterPoint"))
-            {
-                const TfToken pointsPrimRel("pointsPrim");
-                SdfPathVector target;
-                target.push_back(SdfPath(geomPath));
-                c.CreateRelationship(pointsPrimRel, true).SetTargets(target);
-                success = true;
-                break;
-            }
-        }
-        if (!success)
-        {
-            for (auto c : psPrim.GetParent().GetChildren()) //Search in children of particle system's parent for a flow emitter
-            {
-                if (c.GetTypeName() == TfToken("FlowEmitterPoint"))
-                {
-                    const TfToken pointsPrimRel("pointsPrim");
-                    SdfPathVector target;
-                    target.push_back(SdfPath(geomPath));
-                    c.CreateRelationship(pointsPrimRel, true).SetTargets(target);
-                    success = true;
-                    break;
-                }
-            }
-        }
+        setDiffuseParticleRenderingEnabledInSink(mParentParticleSystem->mKey, true);
+        mParentParticleSystem->mDiffuseParticleRenderingEnabled = true;
     }
 
-    if (!mSharedDiffuseParticles)
+    if (!mHasSharedDiffuseParticles)
     {
         mParentParticleSystem->mDiffuseParticleInstanceRefCount++;
-        mSharedDiffuseParticles = mParentParticleSystem->mDiffuseParticleInstance;
+        mHasSharedDiffuseParticles = true;
     }
 }
 
 void InternalParticleSet::releaseSharedDiffuseParticles()
 {
-    if (mSharedDiffuseParticles && mParentParticleSystem)
+    if (mHasSharedDiffuseParticles && mParentParticleSystem)
     {
         if (mParentParticleSystem->mDiffuseParticleInstanceRefCount == 1)
         {
-            // release shared InternalDiffuseParticles (geometry)
-            SAFE_DELETE_SINGLE(mParentParticleSystem->mDiffuseParticleInstance);
+            setDiffuseParticleRenderingEnabledInSink(mParentParticleSystem->mKey, false);
+            mParentParticleSystem->mDiffuseParticleRenderingEnabled = false;
         }
         mParentParticleSystem->mDiffuseParticleInstanceRefCount--;
     }
@@ -403,13 +357,15 @@ void InternalParticleSet::resize(uint32_t newNumParticles)
     if (mEnabled && mParentParticleSystem && mParentParticleSystem->mEnabled)
         mParentParticleSystem->mPS->addParticleBuffer(mParticleBuffer);
 
-    particles::notifyParticleSystemResize(mParentParticleSystem->getPath());
+    // Postprocess-generator cache invalidation only; particles::notifyParticleSystemResize is
+    // ObjectKey-keyed (a no-op here: the postprocess registry it queries is always empty).
+    particles::notifyParticleSystemResize(mParentParticleSystem->mKey);
 
     // need to udpate the Physx pointer for the particle set.
     {
         OmniPhysX& omniPhysX = OmniPhysX::getInstance();
         internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
-        usdparser::ObjectId id = getObjectId(UsdLoad::getUsdLoad()->getActiveAttachedStage()->pathFor(mKey), ePTParticleSet);
+        usdparser::ObjectId id = getObjectId(mKey, ePTParticleSet);
         InternalDatabase::Record* objectRecord = db.getFullTypedRecord(ePTParticleSet, id);
         if (objectRecord)
         {
@@ -453,7 +409,7 @@ void InternalParticleSet::uploadParticles(CUstream stream)
             internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
 
             PhysXType internalType = ePTRemoved;
-            usdparser::ObjectId id = getObjectId(UsdLoad::getUsdLoad()->getActiveAttachedStage()->pathFor(mKey), ePTParticleSet);
+            usdparser::ObjectId id = getObjectId(mKey, ePTParticleSet);
             InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, id);
             if (objectRecord)
             {
@@ -576,12 +532,6 @@ void InternalParticleSet::fetchParticles(CUstream stream, bool hasIsosurface, bo
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-PXR_NS::SdfPath InternalPbdParticleSystem::getPath() const
-{
-    AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage();
-    return as ? as->pathFor(mKey) : PXR_NS::SdfPath();
-}
-
 InternalPbdParticleSystem::~InternalPbdParticleSystem()
 {
     // InternalParticleSet instances need to be removed from PhysX DB
@@ -598,20 +548,34 @@ InternalPbdParticleSystem::~InternalPbdParticleSystem()
 
     setPost(ParticlePostFlag::eNone);
 
-    SAFE_DELETE_SINGLE(mDiffuseParticleInstance);
-
-#if USE_PHYSX_GPU
-    SAFE_DELETE_SINGLE(mCallback);
-#endif
+    if (mDiffuseParticleRenderingEnabled)
+    {
+        setDiffuseParticleRenderingEnabledInSink(mKey, false);
+        mDiffuseParticleRenderingEnabled = false;
+    }
 
     if (mPS)
     {
+        // Detach the actor (and its callback registration) from the scene, and
+        // explicitly clear the callback pointer, before mCallback is freed below --
+        // defensive ordering so the actor can't invoke/hold a reference to mCallback
+        // after it is deleted. (The heap-corruption crash once seen here traced to a
+        // separate bug -- an incomplete PostProcessCallback type at the delete site, see
+        // the #include note at the top of this file -- so this reordering alone did not
+        // fix it, but is kept as good practice.)
         if (mPS->getScene())
         {
             mPS->getScene()->removeActor(*mPS, false);
         }
+#if USE_PHYSX_GPU
+        mPS->setParticleSystemCallback(nullptr);
+#endif
         SAFE_RELEASE(mPS);
     }
+
+#if USE_PHYSX_GPU
+    SAFE_DELETE_SINGLE(mCallback);
+#endif
 }
 
 void InternalPbdParticleSystem::enableParticleSystem(bool enable)
@@ -653,8 +617,7 @@ void InternalPbdParticleSystem::removeParticleObjectsFromDB()
 
     for (uint32_t i = 0; i < mParticleSets.size(); i++)
     {
-        usdparser::ObjectId id = getObjectId(
-            UsdLoad::getUsdLoad()->getActiveAttachedStage()->pathFor(mParticleSets[i]->mKey), ePTParticleSet);
+        usdparser::ObjectId id = getObjectId(mParticleSets[i]->mKey, ePTParticleSet);
         InternalDatabase::Record* objectRecord = db.getFullTypedRecord(ePTParticleSet, id);
         if (objectRecord)
         {
@@ -686,7 +649,10 @@ void InternalPbdParticleSystem::fetchParticles(CUstream stream)
     if (!mParticleDataAvailable || !mEnabled || mPhysXScene->isReadbackSuppressed())
         return;
 
-    uint32_t postFlags = particles::getPostprocessStages(getPath());
+    // particles::getPostprocessStages is ObjectKey-keyed: the postprocess registry it
+    // queries is always empty in OvruntimePhysX (see setPost() below), so postprocessing
+    // is always disabled.
+    uint32_t postFlags = particles::getPostprocessStages(mKey);
     bool hasIsosurface = postFlags & ParticlePostFlag::eIsosurface;
     bool hasSmoothing = postFlags & ParticlePostFlag::eSmoothing;
     bool hasAnisotropy = postFlags & ParticlePostFlag::eAnisotropy;
@@ -706,28 +672,33 @@ void InternalPbdParticleSystem::fetchParticles(CUstream stream)
 
 void InternalPbdParticleSystem::setPost(const uint32_t postFlags)
 {
+    // The particles:: postprocess subsystem (isosurface/smoothing/anisotropy Hydra rendering,
+    // GPU generator setup aside) publishes through the write sink and no-ops there with none
+    // (no attached stage, or an ovstage attach with no write sink), so this bookkeeping is
+    // harmless either way (mHasPost still tracks it consistently, just never against a live
+    // postprocess when createPostprocess found no attached stage to register against).
     if (postFlags == ParticlePostFlag::eNone)
     {
         if (mHasPost)
         {
-            particles::releasePostprocess(getPath(), this);
+            particles::releasePostprocess(mKey, this);
             mHasPost = false;
         }
     }
     else if (mHasPost)
     {
-        particles::setPostprocessStages(getPath(), postFlags);
+        particles::setPostprocessStages(mKey, postFlags);
     }
     else
     {
-        particles::createPostprocess(getPath(), postFlags, this);
+        particles::createPostprocess(mKey, postFlags, this);
         mHasPost = true;
     }
 }
 
 void InternalPbdParticleSystem::enablePost(omni::physx::ParticlePostFlag::Enum flag, const bool enable)
 {
-    uint32_t currentPostFlags = particles::getPostprocessStages(getPath());
+    uint32_t currentPostFlags = particles::getPostprocessStages(mKey);
     uint32_t newPostFlags = enable ? (currentPostFlags | flag) : (currentPostFlags & ~flag);
     setPost(newPostFlags);
 }

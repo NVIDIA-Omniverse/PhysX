@@ -1,5 +1,5 @@
 <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
-<!-- SPDX-License-Identifier: BSD-3-Clause -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
 # C API Reference
 
@@ -12,8 +12,8 @@ The full C API is defined in these headers:
 C++ convenience wrappers (experimental, C++17):
 
 - [`include/ovphysx/experimental/ovphysx.hpp`](../include/ovphysx/experimental/ovphysx.hpp) -- RAII instance wrapper
-- [`include/ovphysx/experimental/Helpers.hpp`](../include/ovphysx/experimental/Helpers.hpp) -- RAII helpers (WaitResult, etc.)
-- [`include/ovphysx/experimental/TensorBinding.hpp`](../include/ovphysx/experimental/TensorBinding.hpp) -- RAII tensor binding wrapper
+- [`include/ovphysx/experimental/Helpers.hpp`](../include/ovphysx/experimental/Helpers.hpp) -- RAII helpers, including `WaitResult`
+- [`include/ovphysx/experimental/TensorBinding.hpp`](../include/ovphysx/experimental/TensorBinding.hpp) -- RAII tensor binding wrapper (**deprecated**; use `ovphysx_read` / `ovphysx_write`)
 
 For rendered documentation with full descriptions, refer to the
 [built HTML docs](https://nvidia-omniverse.github.io/PhysX/ovphysx/latest/api.html).

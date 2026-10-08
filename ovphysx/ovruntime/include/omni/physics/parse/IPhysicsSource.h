@@ -1,15 +1,27 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-CORE-001
  * @covers AC-1 AC-2
  *
  * @implements REQ-PARSE-CORE-003
- * @covers AC-1 AC-2 AC-3 AC-4 AC-6
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-6 AC-7 AC-13
  *
  * @implements REQ-PARSE-SHAPE-001
  * @covers AC-1
+ *
+ * @implements REQ-PARSE-SHAPE-005
+ * @covers AC-1
+ *
+ * @implements REQ-PARSE-COL-004
+ * @covers AC-3
+ *
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-40
+ *
+ * @implements REQ-LOAD-TOKENS-001
+ * @covers AC-5
  */
 
 #pragma once
@@ -18,6 +30,7 @@
 #include "IChangeFeed.h"
 #include "Math.h"
 
+#include <cfloat>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -31,6 +44,8 @@
 namespace omni::physics::parse
 {
 
+struct KnownTokens;
+
 enum class UpAxis
 {
     eY,
@@ -42,6 +57,12 @@ struct SourceUnits
     float metersPerUnit = 1.0f;
     float kilogramsPerUnit = 1.0f;
     UpAxis upAxis = UpAxis::eZ;
+    /// Time codes per second of the source's time base, used to turn simulation
+    /// seconds into the time code passed to the time-aware reads. A source with
+    /// no time-code notion of its own (ADR-0017: on such backends time is the
+    /// producer's job and ReadTime is inert) leaves the default, which is USD's
+    /// own fallback so the resulting time base is unchanged.
+    double timeCodesPerSecond = 24.0;
 };
 
 // ---------------------------------------------------------------------------
@@ -249,7 +270,7 @@ public:
     ///       parent's children identically. Backends that carry an authoring
     ///       order publish it (the USD backend enumerates in namespace /
     ///       declaration order). Backends whose storage exposes no authoring
-    ///       signal must impose one of their own -- the OVStage backend sorts
+    ///       signal must impose one of their own — the OVStage backend sorts
     ///       each parent's children by path, because its native row order is
     ///       bucketed by prim type / attribute set and the bucket order varies
     ///       with process history rather than with the stage
@@ -257,9 +278,9 @@ public:
     ///
     ///       Consequence for consumers: enumeration order is stable and
     ///       reproducible **per backend**, but is NOT comparable *across*
-    ///       backends. Order-sensitive consumers -- e.g. `PhysXAttachment`
+    ///       backends. Order-sensitive consumers — e.g. `PhysXAttachment`
     ///       selecting the first matching attachment child, or pairing filter
-    ///       children with colliders positionally -- are therefore
+    ///       children with colliders positionally — are therefore
     ///       deterministic under either backend, but may select a different
     ///       child under OVStage than under USD when several children match.
     ///       Consumers that need cross-backend identity must key on something
@@ -390,6 +411,26 @@ public:
         return false;
     }
 
+    /// @brief Batched `exists` across many keys in one call.
+    /// @param keys Keys to check, in any order (duplicates allowed).
+    /// @param outExists Filled with one bool per entry of `keys`, same order and
+    ///        size; cleared first.
+    /// @note Default implementation loops calling `exists()` once per key — correct
+    ///       for every backend, and the only behavior static/procedural sources need.
+    ///       A backend whose single-key `exists()` pays a per-call round trip for a
+    ///       cold key (ovstage: a literal path that was never enumerated) overrides
+    ///       this to answer the whole batch in one round trip instead. Callers that
+    ///       gate a large literal-path candidate set (e.g. pattern matching over a
+    ///       list of thousands of literal paths) should call this once for the whole
+    ///       set rather than `exists()` per candidate.
+    virtual void existsBatch(const std::vector<ObjectKey>& keys, std::vector<bool>& outExists) const
+    {
+        outExists.clear();
+        outExists.reserve(keys.size());
+        for (const ObjectKey key : keys)
+            outExists.push_back(exists(key));
+    }
+
     /// @brief True iff `key` is an instancing prototype root (USD:
     /// `UsdPrim::IsPrototype()` — the synthetic `/__Prototype_*` root that
     /// backs instanceable prims).
@@ -420,6 +461,19 @@ public:
     /// @note Default returns `false` — backends without instancing have none; USD
     ///       overrides it.
     virtual bool isInstance(ObjectKey key) const
+    {
+        (void)key;
+        return false;
+    }
+
+    /// @brief True iff `key` lives inside a prototype's own namespace (USD:
+    /// `UsdPrim::IsInPrototype()` — the prototype root itself or any of its
+    /// descendants). Such a key has no live instance context: its parent chain
+    /// terminates inside the synthetic prototype, not at any real instance, so
+    /// its world transform is meaningless outside of parsing/dedup use.
+    /// @note Default returns `false` — backends without instancing have none; USD
+    ///       overrides it.
+    virtual bool isInPrototype(ObjectKey key) const
     {
         (void)key;
         return false;
@@ -591,13 +645,15 @@ public:
     ///        on `key`.
     virtual void getRelationshipTargets(ObjectKey key, TokenId rel, std::vector<ObjectKey>& out) const = 0;
 
-    /// @brief True iff the named relationship is defined on `key`.
+    /// @brief True iff the named relationship on `key` has authored targets.
     /// @param key Object to inspect.
     /// @param rel Token for the relationship name.
-    /// @return Whether the relationship exists, independent of whether it has
-    ///         any targets — `getRelationshipTargets` reports empty for both an
-    ///         absent relationship and a defined-but-empty one, so callers that
-    ///         must distinguish the two use this.
+    /// @return Whether the relationship was actually authored (has targets) —
+    ///         `getRelationshipTargets` reports empty for both an absent
+    ///         relationship and a defined-but-empty one, so callers that must
+    ///         distinguish the two use this. Not just schema-level property
+    ///         existence: an applied API schema always declares its
+    ///         relationships, so that alone would answer true unconditionally.
     /// @note Default returns `false` (sources that do not model relationship
     ///       existence); backends with relationships (USD) override.
     virtual bool hasRelationship(ObjectKey key, TokenId rel) const
@@ -609,10 +665,24 @@ public:
     /// @brief Indices of point-instancer instances that are inactive (not
     /// simulated/expanded), in the order the backend stores them.
     /// @param key Point-instancer object.
-    /// @param out Filled with the inactive instance indices; cleared first.
+    /// @param out Filled with the inactive instance *positions* — indices into
+    ///        `protoIndices` — cleared first. Callers still range-check them
+    ///        against the instance count; the values originate in backend data.
     /// @note Expresses intent ("which instances are off"), not a USD
     ///       mechanism — USD reads the `inactiveIds` list-op metadata; other
     ///       backends map their own activation state. Default: none inactive.
+    /// @note A backend that names instances by an id rather than by position
+    ///       (USD's optional `ids` attribute) translates to positions here, so
+    ///       every consumer sees one meaning. See UsdSource for the USD rule.
+    /// @note An id array that is authored but *empty* is treated the same as an
+    ///       absent one: the id is the instance position. USD's own
+    ///       `ComputeMaskAtTime` instead names nothing in that case, but the
+    ///       ovstage backend cannot tell an empty array column from a missing
+    ///       one, so both backends take the absent reading rather than diverge
+    ///       on ill-formed input (`ids` is meant to match `protoIndices` in
+    ///       length). An id array that is merely *short* is not affected — the
+    ///       trailing instances are unnamed, and so not deactivatable, on both
+    ///       backends, which does match USD.
     virtual void getInactiveInstanceIds(ObjectKey key, std::vector<int64_t>& out) const
     {
         (void)key;
@@ -716,9 +786,11 @@ public:
     /// + flags: points, indices, face counts, hole indices, plus
     /// `doubleSided` / `leftHanded`.
     /// @param key Mesh-typed object key.
+    /// @param includeFaceMaterials When false, skip the per-face physics-material indices
+    ///        (`MeshGeometry::faceMaterials`); only multi-material triangle/SDF cooking needs them.
     /// @return A populated `MeshGeometry`. All-invalid handles when
     ///         `key` is not mesh-typed or carries no geometry.
-    virtual MeshGeometry getMeshAttributes(ObjectKey key) const = 0;
+    virtual MeshGeometry getMeshAttributes(ObjectKey key, bool includeFaceMaterials = true) const = 0;
 
     /// @brief Read an array-valued attribute as a buffer, evaluated at `time`.
     ///
@@ -754,6 +826,24 @@ public:
     ///         — every scene parsed from this Source shares the same
     ///         values.
     virtual SourceUnits getSourceUnits() const = 0;
+
+    /// @brief The locally resident USD stage-cache id backing this source, or 0.
+    /// @return The `UsdUtilsStageCache` id of the stage this source reads (USD
+    ///         backend) or mirrors (an external backend with a resident backing
+    ///         stage). 0 when there is no backing USD stage — a plain integer, so
+    ///         the USD-free invariant holds. Consumers use it only where a real
+    ///         `UsdStage` must be resolved (the cooking service's prim-id path).
+    ///
+    /// The id is a property of what the source reads, so the source owns it:
+    /// there is no second copy on the consumer side that could drift from it, and
+    /// a backend that has no backing stage answers 0 without the consumer having
+    /// to know which backend is active. Backends snapshot the id when the source
+    /// is built, so it is stable for the source's lifetime even if the stage is
+    /// later erased from the cache.
+    virtual uint64_t residentUsdStageId() const
+    {
+        return 0;
+    }
 
     /// @}
 
@@ -791,6 +881,46 @@ public:
     /// (`ProceduralSource`, tests) — the runtime dispatcher then no-ops.
     /// @return An owned `IChangeFeed`, or `nullptr` when the source is static.
     virtual std::unique_ptr<IChangeFeed> createChangeFeed() { return nullptr; }
+
+    /// @}
+
+    /// @name Key minting (appended: this header is installed SDK surface, so new
+    /// virtuals go after the existing ones to keep earlier vtable slots stable)
+    /// @{
+
+    /// @brief Existence-independent key for a source-native path string.
+    /// @details Mints a stable key even when `path` names no live object yet
+    ///          (e.g. a runtime clone target that authored no prim). This is the
+    ///          inverse of `sourceKeyToString` and the contract behind
+    ///          `AttachedStage::keyFor(std::string_view)` (see
+    ///          TestObjectKeyMinting.cpp). Default: `findByPath`, correct for
+    ///          sources whose `findByPath` already interns unconditionally
+    ///          (ovstage). USD overrides this: its `findByPath` is
+    ///          existence-dependent, so the default would return the invalid
+    ///          sentinel for a not-yet-authored path.
+    virtual ObjectKey mintKeyForPath(std::string_view path) const
+    {
+        return findByPath(path);
+    }
+
+    /// @}
+
+    /// @name Well-known token cache (appended, see the vtable note above)
+    /// @{
+
+    /// @brief The Source's cached well-known token batch, or `nullptr`.
+    /// @details A Source that returns non-null owns exactly one `KnownTokens`
+    ///          interned once against itself; the pointer is stable and valid for
+    ///          the Source's lifetime, because `TokenId`s are stable and the token
+    ///          table only grows, so nothing ever invalidates the batch. Consumers
+    ///          (`ParseContext::knownTokens()`, the attach-scoped cache) reference
+    ///          it instead of interning their own copy (REQ-LOAD-TOKENS-001 AC-5).
+    ///          `nullptr` means the Source caches none and callers intern their own.
+    /// @return Source-owned batch, or `nullptr`.
+    virtual const KnownTokens* knownTokens() const
+    {
+        return nullptr;
+    }
 
     /// @}
 };
@@ -873,6 +1003,39 @@ inline bool IPhysicsSource::getAttribute(ObjectKey key, TokenId attr, BufferHand
     AttrValue v = getAttribute(key, attr);
     if (v.kind == AttrValue::Kind::eBuffer) { out = v.buffer; return true; }
     return false;
+}
+
+/// @brief Does PhysX have an opinion on a `maxJointVelocity` attribute?
+///
+/// `attr` is either the joint-level `physxJoint:maxJointVelocity` or a per-axis
+/// `physxJointAxis:<instance>:maxJointVelocity`. Both carry the same "unlimited"
+/// sentinel, which is what separates an authored value from the unauthored one.
+///
+/// This deliberately does NOT ask `hasAuthoredAttribute`: a resolved-value backend
+/// answers that `true` for everything it publishes (ADR-0020), so on ovstage the
+/// Newton `newton:velocityLimit` fallback saw PhysX as always-authored — silently
+/// overriding the Newton value at load and dropping every runtime edit. This is the
+/// same shape as `isPhysxOffsetAuthored` for the PhysxCollisionAPI offsets.
+///
+/// Reading the sentinel answers identically on both backends: USD resolves the
+/// schema fallback `inf` (schemas/physx schema.usda), ovstage's population publishes
+/// the descriptor default `FLT_MAX` for the unauthored case, and `>= FLT_MAX` covers
+/// both. A source that publishes no value at all is likewise "no opinion".
+inline bool isPhysxMaxJointVelocityAuthored(const IPhysicsSource& src, ObjectKey key, TokenId attr)
+{
+    float v;
+    if (!src.getAttribute(key, attr, v))
+        return false;
+
+    // ---- Newton-vs-PhysX tie-break: THE single decision point ----
+    // The unlimited sentinel counts as "no PhysX opinion", so an authored
+    // `newton:velocityLimit` wins over it. The cost is that an *explicitly* authored
+    // `maxJointVelocity = inf` is indistinguishable from an unauthored one, so Newton
+    // wins there too — uniformly on both backends (ADR-0010). To flip that to "an
+    // explicitly authored inf beats Newton" this comparison is the one line to change;
+    // note it can only be done exactly with a real per-attribute authored bit, which
+    // ADR-0020 does not give us on ovstage.
+    return v < FLT_MAX;
 }
 
 } // namespace omni::physics::parse

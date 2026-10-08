@@ -1,10 +1,13 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-// This include must come first
-// clang-format off
-#include "UsdPCH.h"
-// clang-format on
+/**
+ * @implements REQ-PARSE-SHAPE-003
+ * @covers AC-1 AC-2
+ *
+ * @implements REQ-LOAD-OBJECTDB-001
+ * @covers AC-1 AC-2 AC-3
+ */
 
 #include "LoadTools.h"
 #include "PhysXTools.h"
@@ -12,6 +15,9 @@
 #include <private/omni/physics/CollisionShapeTransform.h>
 
 #include <carb/logging/Log.h>
+
+#include <algorithm>
+#include <vector>
 
 using namespace carb;
 
@@ -25,77 +31,91 @@ namespace usdparser
 void getCollisionShapeLocalTransform(const AttachedStage& attachedStage,
                                      omni::physics::parse::ObjectKey collisionKey,
                                      omni::physics::parse::ObjectKey bodyKey,
-                                     PXR_NS::GfVec3f& localPosOut,
-                                     PXR_NS::GfQuatf& localRotOut,
-                                     PXR_NS::GfVec3f& localScaleOut)
+                                     carb::Float3& localPosOut,
+                                     carb::Float4& localRotOut,
+                                     carb::Float3& localScaleOut)
 {
     // World transforms via the physics source. The replaced load-time xform
     // cache was pinned to EarliestTime, so use the time-independent
     // (EarliestTime, cached) overload to match it exactly.
-    const PXR_NS::GfMatrix4d bodyWorld =
-        internal::getWorldTransform(attachedStage, bodyKey);
-    PXR_NS::GfMatrix4d shapeToBody(1.0);
+    const ::physx::PxMat44d bodyWorld = internal::getWorldTransform(attachedStage, bodyKey);
+    ::physx::PxMat44d shapeToBody(::physx::PxIdentity);
     if (collisionKey != bodyKey)
     {
-        const PXR_NS::GfMatrix4d collWorld =
-            internal::getWorldTransform(attachedStage, collisionKey);
-        // Collision prim's transform relative to the body (collWorld * bodyWorld^-1).
-        shapeToBody = collWorld * bodyWorld.GetInverse();
+        const ::physx::PxMat44d collWorld = internal::getWorldTransform(attachedStage, collisionKey);
+        // Collision prim's transform relative to the body: collWorld * bodyWorld^-1
+        // in the USD row-vector convention, which is the reversed product here.
+        shapeToBody = affineInverse(bodyWorld) * collWorld;
     }
 
-    // Matrix sourcing remains specific to this legacy path.
-    omni::physics::decomposeCollisionShapeLocalTransform(
-        shapeToBody, bodyWorld, localPosOut, localRotOut, localScaleOut);
+    // Matrix sourcing remains specific to this legacy path; the descriptor math
+    // is the shared helper so this stays numerically consistent with the
+    // scanStage walkers on sheared shapeToBody/bodyWorld input (see
+    // CollisionShapeTransform.h).
+    omni::physics::decomposeCollisionShapeLocalTransform(shapeToBody, bodyWorld, localPosOut, localRotOut, localScaleOut);
 }
 
 //// ObjectDb methods ////
 
-bool ObjectDb::removeEntries(const PXR_NS::SdfPath& path)
-{
-    const omni::physics::parse::ObjectKey key = resolveKey(path);
-    Map::iterator fit = mPathMap.find(path);
-    if (fit != mPathMap.end())
-    {
-        ObjectIdMap& entries = fit->second;
-        entries.clear();
+// Fully ObjectKey/std::string keyed; the SdfPath-taking legacy overloads were removed with
+// their last callers (see the ObjectDb top comment in LoadTools.h).
 
-        mPathMap.erase(fit);
-    }
-    if (key.valid())
-    {
-        KeyMap::iterator kit = mKeyMap.find(key);
-        if (kit != mKeyMap.end())
-            mKeyMap.erase(kit);
-    }
-    return true;
+void ObjectDb::dropHierarchyRow(omni::physics::parse::ObjectKey key)
+{
+    const KeyPathMap::iterator it = mKeyPathText.find(key);
+    if (it == mKeyPathText.end())
+        return;
+
+    // Only a childless row is this object's alone: addPrim also materializes ancestor rows,
+    // so a row that still has children is a live ancestor of some other registered object and
+    // removePrim would take that whole subtree down with it. Such a row is left to the
+    // subtree-level cleanup (PrimUpdateMap::removePrim's removeIteration).
+    const PrimHierarchyStorage::StorageMap& rows = mPrimHierarchyStorage.getStorageMap();
+    const PrimHierarchyStorage::StorageMap::const_iterator rowIt = rows.find(it->second);
+    if (rowIt != rows.end() && rowIt->second.children.empty())
+        mPrimHierarchyStorage.removePrim(it->second);
+
+    mKeyPathText.erase(it);
 }
 
-void ObjectDb::removeEntry(const PXR_NS::SdfPath& path, ObjectCategory category, ObjectId entryId)
+bool ObjectDb::removeEntries(omni::physics::parse::ObjectKey key)
 {
-    const omni::physics::parse::ObjectKey key = resolveKey(path);
-    Map::iterator fit = mPathMap.find(path);
-    if (fit != mPathMap.end())
+    // Real subtree clear, unlike the SdfPath overload above (which only ever
+    // removes the single given path -- its callers loop over
+    // PrimHierarchyStorage::Iterator's descendants themselves). Walks mKeyMap
+    // via isAncestorOrSelf instead of PrimHierarchyStorage, mirroring
+    // AttachedStage.h's clearGeneratedDeformableAttachmentDataUnderPath /
+    // clearCookedGeometryUnderPath (ADR-0019 decision 2).
+    std::vector<omni::physics::parse::ObjectKey> removedKeys;
+    for (KeyMap::iterator it = mKeyMap.begin(); it != mKeyMap.end();)
     {
-        ObjectIdMap& entries = fit->second;
-
-        std::pair<ObjectIdMap::iterator, ObjectIdMap::iterator> pairIter = entries.equal_range(category);
-        ObjectIdMap::iterator it = pairIter.first;
-        while (it != pairIter.second)
+        if (isAncestorOrSelf(key, it->first))
         {
-            if (it->second == entryId)
-            {
-                entries.erase(it);
-                break;
-            }
-
-            it++;
+            removedKeys.push_back(it->first);
+            it = mKeyMap.erase(it);
         }
-
-        if (entries.size() == 0)
-            mPathMap.erase(fit);
+        else
+        {
+            ++it;
+        }
     }
-    if (key.valid())
-        removeEntry(key, category, entryId);
+
+    // Deepest path first, so a row is childless by the time its own key is processed:
+    // dropHierarchyRow declines to take a row that still has children, and a descendant's
+    // path is always the longer string. mKeyMap iterates in hash order, so without this the
+    // outcome would depend on it.
+    const auto pathLength = [this](omni::physics::parse::ObjectKey k)
+    {
+        const KeyPathMap::const_iterator it = mKeyPathText.find(k);
+        return it == mKeyPathText.end() ? size_t(0) : it->second.size();
+    };
+    std::sort(removedKeys.begin(), removedKeys.end(),
+              [&pathLength](omni::physics::parse::ObjectKey a, omni::physics::parse::ObjectKey b)
+              { return pathLength(a) > pathLength(b); });
+    for (const omni::physics::parse::ObjectKey removedKey : removedKeys)
+        dropHierarchyRow(removedKey);
+
+    return !removedKeys.empty();
 }
 
 void ObjectDb::removeEntry(omni::physics::parse::ObjectKey key, ObjectCategory category, ObjectId entryId)
@@ -119,70 +139,17 @@ void ObjectDb::removeEntry(omni::physics::parse::ObjectKey key, ObjectCategory c
         }
 
         if (entries.size() == 0)
-            mKeyMap.erase(fit);
-    }
-}
-
-
-// Resolves ref to a string path
-std::string GetBody(PXR_NS::UsdRelationship const ref, const PXR_NS::UsdPrim& jointPrim)
-{
-    PXR_NS::SdfPathVector targets;
-    ref.GetTargets(&targets);
-
-    if (targets.size() == 0)
-    {
-        return "";
-    }
-    if (targets.size() > 1)
-    {
-        return "";
-    }
-
-    // TODO: we could add more error checking like in GetLocalFrame
-
-    return targets.at(0).GetString();
-}
-
-bool ExtractTriangulatedFaces(std::vector<uint32_t>& triangles, PXR_NS::UsdGeomMesh const& usdMesh)
-{
-    // indices and faces converted to triangles
-    PXR_NS::VtArray<int> indices;
-    usdMesh.GetFaceVertexIndicesAttr().Get(&indices);
-
-    PXR_NS::VtArray<int> faces;
-    usdMesh.GetFaceVertexCountsAttr().Get(&faces);
-
-    if (indices.empty() || faces.empty())
-        return false;
-
-    triangles.reserve(faces.size() * 3);
-
-    uint32_t indicesOffset = 0;
-
-    uint32_t numIndices = uint32_t(indices.size());
-    uint32_t numFaces = uint32_t(faces.size());
-    bool valid = true;
-    for (uint32_t i = 0; i < numFaces; i++)
-    {
-        const uint32_t faceCount = faces[i];
-        valid &= faceCount >= 3 && indicesOffset + faceCount - 1 < numIndices;
-        if (valid)
         {
-            const uint32_t v0 = indices[indicesOffset];
-            for (uint32_t faceIndex = 0; faceIndex < faceCount - 2; faceIndex++)
-            {
-                const uint32_t v1 = indices[indicesOffset + faceIndex + 1];
-                const uint32_t v2 = indices[indicesOffset + faceIndex + 2];
-                triangles.push_back(v0);
-                triangles.push_back(v1);
-                triangles.push_back(v2);
-            }
+            mKeyMap.erase(fit);
+            // Last entry at this key: the path-keyed row creation added is now stale, and a
+            // stale row still answers path lookups (the tensor wildcard matcher's literal
+            // fast path in BaseSimulationView.cpp resolves a hit straight back to an
+            // ObjectKey) for an object that has been released.
+            dropHierarchyRow(key);
         }
-        indicesOffset += faceCount;
     }
-    return valid;
 }
+
 
 } // namespace usdparser
 } // namespace physx

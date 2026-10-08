@@ -1,10 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
 #include <private/omni/physx/PhysxUsd.h>
-#include <omni/physics/usd/PrimIterator.h>
 
 #include "AttachedStage.h"
 #include "LoadTools.h"
@@ -17,8 +16,8 @@ namespace usdparser
 {
 
 void collectFilteredPairs(AttachedStage& attachedStage,
-                          const PXR_NS::SdfPath& primKey,
-                          const PXR_NS::SdfPathVector& filterPairPaths,
+                          omni::physics::parse::ObjectKey primKey,
+                          const std::vector<omni::physics::parse::ObjectKey>& filterPairKeys,
                           ObjectIdPairVector& pairVector);
 
 } // namespace usdparser

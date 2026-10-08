@@ -1,0 +1,20 @@
+<project toolsVersion="5.0">
+  <!-- cxxopts/doctest from carb_sdk_plugins (pulled first via
+       carb-sdk-deps.packman.xml). Needs the platform_target token.
+       doctest stays an explicit dependency element: the open-source copy
+       (ovphysx tools/copy_to_opensource.py) rewrites it to a public package. -->
+  <!-- Python pinned here, not taken from Carbonite's own python.packman.xml. -->
+  <dependency name="python" linkPath="../_build/target-deps/python">
+    <package name="python" version="3.12.13+nv3-${platform_target_abi}" />
+  </dependency>
+  <import path="../_build/target-deps/carb_sdk_plugins/deps/target-deps.packman.xml">
+    <filter include="cxxopts" />
+    <filter include="doctest" />
+  </import>
+
+  <dependency name="cxxopts" linkPath="../_build/target-deps/cxxopts" />
+  <!-- override doctest version; the internal Carbonite SDK one is not yet publicly available -->
+  <dependency name="doctest" linkPath="../_build/target-deps/doctest">
+    <package name="doctest" version="2.4.5+nv1-3" />
+  </dependency>
+</project>

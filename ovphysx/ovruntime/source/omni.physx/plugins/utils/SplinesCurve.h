@@ -1,18 +1,54 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-SPLINE-CURVE-001
+ * @covers AC-1 AC-5 AC-6 AC-7
+ */
 #pragma once
 
 #include "carb/Defines.h"
+#include "carb/Types.h"
+#include <string>
+#include <vector>
 #include <PxPhysicsAPI.h>
 #include <utils/OmniRenderBuffer.h>
 #include <omni/physics/parse/Handles.h>
+#include <common/foundation/CarbPhysXCast.h>
 
 enum class eBasisCurveWrap
 {
     Periodic = 0,
     NonPeriodic = 1,
     Pinned = 2
+};
+
+// USD's basis token has three values (bezier/catmullRom/bspline, the last being the
+// default for anything else); ovstage carries the same vocabulary as TokenId. This
+// enum is the source-neutral form both backends resolve down to before reaching
+// SplineCurve.
+enum class eCurveBasisType
+{
+    Bezier = 0,
+    CatmullRom = 1,
+    BSpline = 2
+};
+
+// USD's `type` token: `linear` curves are polylines through their control points and
+// ignore `basis`; `cubic` (the default) curves are evaluated with the basis above.
+enum class eCurveType
+{
+    Linear = 0,
+    Cubic = 1
+};
+
+// Linear segment p0 + u * (p1 - p0): weights (1 - u, u, 0, 0) in the same row-major layout as the
+// cubic tables, so a linear segment goes through the same evaluation path with p2/p3 unused.
+static constexpr float s_linearFloats[4][4] = {
+    { 1.0f, -1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f }
+};
+static constexpr float s_linearTangentFloats[4][4] = {
+    { -1.0f, 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f }
 };
 
 static constexpr float s_bezierFloats[4][4] = {
@@ -38,56 +74,80 @@ static constexpr float s_bsplineTangentFloats[4][4] = {
     { -0.5f, 1.0f, -0.5f, 0.0f }, { 0.0f, -2.0f, 1.5f, 0.0f }, { 0.5f, 1.0f, -1.5f, 0.0f }, { 0.0f, 0.0f, 0.5f, 0.0f }
 };
 
+/// Builds a PxMat44 whose element (row, column) is values[row][column], i.e. it reads the literal
+/// tables above with the row-major convention they are written in. PxMat44 stores columns, so
+/// column i is gathered from values[0..3][i]. The resulting matrix is used with
+/// PxMat44::transform() (column-vector convention), which yields sum_i values[row][i] * v[i].
+inline ::physx::PxMat44 basisTableToPxMat44(const float values[4][4])
+{
+    return ::physx::PxMat44(
+        ::physx::PxVec4(values[0][0], values[1][0], values[2][0], values[3][0]),
+        ::physx::PxVec4(values[0][1], values[1][1], values[2][1], values[3][1]),
+        ::physx::PxVec4(values[0][2], values[1][2], values[2][2], values[3][2]),
+        ::physx::PxVec4(values[0][3], values[1][3], values[2][3], values[3][3]));
+}
+
 
 class SplineCurve
 {
 public:
     // NOTE: Bezier curves don't need any special handling for pinned ends,
     //       since each segment is completely independent, hence the skipping by 3, instead of 1.
-    SplineCurve(const eBasisCurveWrap& wrapMode, const PXR_NS::TfToken& type)
-        : mWrapMode((type == PXR_NS::UsdGeomTokens->bezier && wrapMode == eBasisCurveWrap::Pinned) ?
+    // Linear curves have no pinned form either: every control point is on the curve already.
+    SplineCurve(const eBasisCurveWrap& wrapMode, eCurveBasisType type, eCurveType curveType = eCurveType::Cubic)
+        : mWrapMode(((type == eCurveBasisType::Bezier || curveType == eCurveType::Linear) &&
+                     wrapMode == eBasisCurveWrap::Pinned) ?
                         eBasisCurveWrap::NonPeriodic :
                         wrapMode),
-          mVstep((type == PXR_NS::UsdGeomTokens->bezier) ? 3 : 1)
+          mVstep((type == eCurveBasisType::Bezier && curveType == eCurveType::Cubic) ? 3 : 1),
+          mLinear(curveType == eCurveType::Linear)
     {
-        mBasis = getBasis(type);
-        mBasis = mBasis.GetTranspose();
-        mTangentBasis = getTangentBasis(type);
-        mTangentBasis = mTangentBasis.GetTranspose();
+        // NOTE: the bases used to be transposed here and then applied with the row-vector product
+        //       `v * mBasis`. PxMat44::transform() is the column-vector product, so the transpose
+        //       and the operand flip cancel out and both are dropped; the numeric result is the same.
+        mBasis = mLinear ? basisTableToPxMat44(s_linearFloats) : getBasis(type);
+        mTangentBasis = mLinear ? basisTableToPxMat44(s_linearTangentFloats) : getTangentBasis(type);
     }
 
-    PXR_NS::GfMatrix4f getBasis(const PXR_NS::TfToken& type)
+    ::physx::PxMat44 getBasis(eCurveBasisType type)
     {
-        if (type == PXR_NS::UsdGeomTokens->bezier)
+        if (type == eCurveBasisType::Bezier)
         {
-            return PXR_NS::GfMatrix4f(s_bezierFloats);
+            return basisTableToPxMat44(s_bezierFloats);
         }
-        else if (type == PXR_NS::UsdGeomTokens->catmullRom)
+        else if (type == eCurveBasisType::CatmullRom)
         {
-            return PXR_NS::GfMatrix4f(s_catmullRomFloats);
+            return basisTableToPxMat44(s_catmullRomFloats);
         }
         else
         {
-            return PXR_NS::GfMatrix4f(s_bsplineFloats);
+            return basisTableToPxMat44(s_bsplineFloats);
         }
     }
 
-    PXR_NS::GfMatrix4f getTangentBasis(const PXR_NS::TfToken& type)
+    ::physx::PxMat44 getTangentBasis(eCurveBasisType type)
     {
-        if (type == PXR_NS::UsdGeomTokens->bezier)
+        if (type == eCurveBasisType::Bezier)
         {
-            return PXR_NS::GfMatrix4f(s_bezierTangentFloats);
+            return basisTableToPxMat44(s_bezierTangentFloats);
         }
-        else if (type == PXR_NS::UsdGeomTokens->catmullRom)
+        else if (type == eCurveBasisType::CatmullRom)
         {
-            return PXR_NS::GfMatrix4f(s_catmullRomTangentFloats);
+            return basisTableToPxMat44(s_catmullRomTangentFloats);
         }
         else
         {
-            return PXR_NS::GfMatrix4f(s_bsplineTangentFloats);
+            return basisTableToPxMat44(s_bsplineTangentFloats);
         }
     }
 
+
+    // A periodic curve closes back to its first point, except that two control points are
+    // always one open segment: there is no loop to close, only the same edge twice.
+    bool closesLoop(const size_t controlPointCount) const
+    {
+        return mWrapMode == eBasisCurveWrap::Periodic && controlPointCount > 2;
+    }
 
     size_t getSegmentCount(const size_t controlPointCount) const
     {
@@ -98,6 +158,11 @@ public:
         if (controlPointCount == 2)
         {
             return 1;
+        }
+        if (mLinear)
+        {
+            // One segment per consecutive point pair; periodic adds the closing segment.
+            return closesLoop(controlPointCount) ? controlPointCount : controlPointCount - 1;
         }
 
         size_t segmentCount = 0;
@@ -116,9 +181,17 @@ public:
             }
             break;
         case eBasisCurveWrap::NonPeriodic:
+            if (controlPointCount < 4)
+            {
+                return 0;
+            }
             segmentCount = (controlPointCount - 4) / mVstep + 1;
             break;
         case eBasisCurveWrap::Pinned:
+            if (controlPointCount < 4)
+            {
+                return 0;
+            }
             // 2 more than non-periodic for pinned segments
             segmentCount = (controlPointCount - 4) / mVstep + 3;
             break;
@@ -130,6 +203,14 @@ public:
                                                    const size_t stepsPerSegment,
                                                    bool includeSegmentFinalSamples = false) const
     {
+        if (mLinear && controlPointCount >= 2)
+        {
+            const size_t segmentCount = getSegmentCount(controlPointCount);
+            size_t pointCount = segmentCount * (stepsPerSegment + size_t(includeSegmentFinalSamples));
+            if (!includeSegmentFinalSamples && !closesLoop(controlPointCount))
+                ++pointCount;
+            return pointCount;
+        }
         if (controlPointCount < 3)
         {
             if (controlPointCount <= 1)
@@ -177,12 +258,12 @@ public:
     /// \param tessellatedTangents
     ///         If a pointer is provided, tangents corresponding to the
     ///         tessellated points will be appended to this collection    
-    void tessellate(const PXR_NS::GfVec3f* controlPoints,
+    void tessellate(const ::physx::PxVec3* controlPoints,
                     const size_t controlPointCount,
-                    std::vector<PXR_NS::GfVec3f>& tessellatedPoints,
+                    std::vector<::physx::PxVec3>& tessellatedPoints,
                     const size_t stepsPerSegment,
                     bool includeSegmentFinalSamples = false,
-                    std::vector<PXR_NS::GfVec3f>* tessellatedTangents = nullptr) const
+                    std::vector<::physx::PxVec3>* tessellatedTangents = nullptr) const
     {
         size_t tessellatedPointCount =
             getTessellationPointCount(controlPointCount, stepsPerSegment, includeSegmentFinalSamples);
@@ -193,26 +274,45 @@ public:
                    includeSegmentFinalSamples, tessellatedTangents ? tessellatedTangents->data() : nullptr);
     }
     
-    void tessellate(const PXR_NS::GfVec3f* controlPoints,
+    void tessellate(const ::physx::PxVec3* controlPoints,
                     const size_t controlPointCount,
-                    PXR_NS::GfVec3f* tessellatedPoints,
+                    ::physx::PxVec3* tessellatedPoints,
                     const size_t stepsPerSegment,
                     bool includeSegmentFinalSamples = false,
-                    PXR_NS::GfVec3f* tessellatedTangents = nullptr) const
+                    ::physx::PxVec3* tessellatedTangents = nullptr) const
     {
+        if (mLinear && controlPointCount >= 2)
+        {
+            // Polyline: every control point is a vertex, segment i runs cp[i] -> cp[i + 1]
+            // (wrapping to cp[0] for the closing segment of a periodic curve).
+            const size_t outputPointsPerSegment = stepsPerSegment + size_t(includeSegmentFinalSamples);
+            const size_t segmentCount = getSegmentCount(controlPointCount);
+            const bool periodic = closesLoop(controlPointCount);
+            for (size_t i = 0; i < segmentCount; ++i)
+            {
+                const bool includeFinalSample = includeSegmentFinalSamples || (!periodic && i == segmentCount - 1);
+                tessellateSegment(controlPoints, controlPointCount, tessellatedPoints, tessellatedTangents, i,
+                                  stepsPerSegment, includeFinalSample);
+                tessellatedPoints += outputPointsPerSegment;
+                if (tessellatedTangents)
+                    tessellatedTangents += outputPointsPerSegment;
+            }
+            return;
+        }
+
         // Small edge cases
         if (controlPointCount < 3)
         {
             if (controlPointCount == 0)
                 return;
-            PXR_NS::GfVec3f p0 = controlPoints[0];
+            ::physx::PxVec3 p0 = controlPoints[0];
             tessellatedPoints[0] = p0;
             if (controlPointCount == 2)
             {
                 // Straight line
                 // TODO: Should this subsample?
-                PXR_NS::GfVec3f p1 = controlPoints[1];
-                PXR_NS::GfVec3f t = p1 - p0;
+                ::physx::PxVec3 p1 = controlPoints[1];
+                ::physx::PxVec3 t = p1 - p0;
                 tessellatedPoints[1] = p1;
                 if (tessellatedTangents != nullptr)
                 {
@@ -225,7 +325,7 @@ public:
                 if (tessellatedTangents != nullptr)
                 {
                     // Single point, so arbitrarily pick zero tangent
-                    tessellatedTangents[0] = PXR_NS::GfVec3f(0.0f);
+                    tessellatedTangents[0] = ::physx::PxVec3(0.0f);
                 }
             }
             return;
@@ -299,10 +399,10 @@ public:
         }
     }
 
-    void tessellateSegment(const PXR_NS::GfVec3f* controlPoints,
+    void tessellateSegment(const ::physx::PxVec3* controlPoints,
                            const size_t controlPointCount,
-                           PXR_NS::GfVec3f* tessellatedPoints,
-                           PXR_NS::GfVec3f* tessellatedTangents,
+                           ::physx::PxVec3* tessellatedPoints,
+                           ::physx::PxVec3* tessellatedTangents,
                            size_t index,
                            const size_t stepsPerSegment,
                            bool includeFinalSample,
@@ -318,12 +418,12 @@ public:
                           tessellatedPoints, tessellatedTangents, stepsPerSegment, includeFinalSample, startT, endT);
     }
 
-    PXR_NS::GfVec3f evaluateSegment(const PXR_NS::GfVec3f* controlPoints,
+    ::physx::PxVec3 evaluateSegment(const ::physx::PxVec3* controlPoints,
                             const size_t controlPointCount,
                             const size_t index,
                             float u,
                             int order = 0,
-                            PXR_NS::GfVec3f* tangent = nullptr) const
+                            ::physx::PxVec3* tangent = nullptr) const
     {
         // NOTE that index is the starting control point index, *not* the segment index.
 
@@ -336,12 +436,12 @@ public:
                                controlPoints[index3], u, order, tangent);
     }
 
-    void tessellateSegment(const PXR_NS::GfVec3f& p0,
-                           const PXR_NS::GfVec3f& p1,
-                           const PXR_NS::GfVec3f& p2,
-                           const PXR_NS::GfVec3f& p3,
-                           PXR_NS::GfVec3f* tessellatedPoints,
-                           PXR_NS::GfVec3f* tessellatedTangents,
+    void tessellateSegment(const ::physx::PxVec3& p0,
+                           const ::physx::PxVec3& p1,
+                           const ::physx::PxVec3& p2,
+                           const ::physx::PxVec3& p3,
+                           ::physx::PxVec3* tessellatedPoints,
+                           ::physx::PxVec3* tessellatedTangents,
                            const size_t stepsPerSegment,
                            bool includeFinalSample,
                            const float startT = 0.f,
@@ -353,73 +453,69 @@ public:
             // From 0 to 1 along the segment
             const float u = startT + float(sample) / float(stepsPerSegment) * (endT - startT);
             const float u2 = u * u;
-            const PXR_NS::GfVec4f v(1.0f, u, u2, u * u2);
-            //const PXR_NS::GfVec4f coeffs = mBasis * v;
-            const PXR_NS::GfVec4f coeffs = v * mBasis;
+            const ::physx::PxVec4 v(1.0f, u, u2, u * u2);
+            const ::physx::PxVec4 coeffs = mBasis.transform(v);
             tessellatedPoints[sample] = (p0 * coeffs[0] + p1 * coeffs[1] + p2 * coeffs[2] + p3 * coeffs[3]);
             if (tessellatedTangents != nullptr)
             {
-                //const PXR_NS::GfVec4f tangentCoeffs = mTangentBasis * v;
-                const PXR_NS::GfVec4f tangentCoeffs = v * mTangentBasis;
+                const ::physx::PxVec4 tangentCoeffs = mTangentBasis.transform(v);
                 tessellatedTangents[sample] =
                     (p0 * tangentCoeffs[0] + p1 * tangentCoeffs[1] + p2 * tangentCoeffs[2] + p3 * tangentCoeffs[3]);
             }
         }
     }
 
-    PXR_NS::GfVec3f evaluateSegment(const PXR_NS::GfVec3f& p0,
-                                 const PXR_NS::GfVec3f& p1,
-                                 const PXR_NS::GfVec3f& p2,
-                                 const PXR_NS::GfVec3f& p3,
+    ::physx::PxVec3 evaluateSegment(const ::physx::PxVec3& p0,
+                                 const ::physx::PxVec3& p1,
+                                 const ::physx::PxVec3& p2,
+                                 const ::physx::PxVec3& p3,
                                  float u,
                                  int order = 0,
-                                 PXR_NS::GfVec3f* tangent = nullptr) const
+                                 ::physx::PxVec3* tangent = nullptr) const
     {
         const float u2 = u * u;
         const float u3 = u * u2;
-        const PXR_NS::GfVec4f v = (order == 0 ? PXR_NS::GfVec4f(1, u, u2, u3) :
-                                order == 1 ? PXR_NS::GfVec4f(0, 1, 2 * u, 3 * u2) :
-                                order == 2 ? PXR_NS::GfVec4f(0, 0, 2, 6 * u) :
-                                order == 3 ? PXR_NS::GfVec4f(0, 0, 0, 6) :
-                                             PXR_NS::GfVec4f(0, 0, 0, 0));
-        //const PXR_NS::GfVec4f coeffs = mBasis * v;
-        const PXR_NS::GfVec4f coeffs = v * mBasis;
+        const ::physx::PxVec4 v = (order == 0 ? ::physx::PxVec4(1.0f, u, u2, u3) :
+                                order == 1 ? ::physx::PxVec4(0.0f, 1.0f, 2 * u, 3 * u2) :
+                                order == 2 ? ::physx::PxVec4(0.0f, 0.0f, 2.0f, 6 * u) :
+                                order == 3 ? ::physx::PxVec4(0.0f, 0.0f, 0.0f, 6.0f) :
+                                             ::physx::PxVec4(0.0f));
+        const ::physx::PxVec4 coeffs = mBasis.transform(v);
 
         if (tangent != nullptr)
         {
-            //const PXR_NS::GfVec4f tangentCoeffs = mTangentBasis * v;
-            const PXR_NS::GfVec4f tangentCoeffs = v * mTangentBasis;
+            const ::physx::PxVec4 tangentCoeffs = mTangentBasis.transform(v);
             *tangent = (p0 * tangentCoeffs[0] + p1 * tangentCoeffs[1] + p2 * tangentCoeffs[2] + p3 * tangentCoeffs[3]);
         }
 
         return (p0 * coeffs[0] + p1 * coeffs[1] + p2 * coeffs[2] + p3 * coeffs[3]);
     }
 
-    void tessellateEndSegment(const PXR_NS::GfVec3f* controlPoints,
+    void tessellateEndSegment(const ::physx::PxVec3* controlPoints,
                               const size_t /*controlPointCount*/,
-                              PXR_NS::GfVec3f* tessellatedPoints,
-                              PXR_NS::GfVec3f* tessellatedTangents,
+                              ::physx::PxVec3* tessellatedPoints,
+                              ::physx::PxVec3* tessellatedTangents,
                               size_t index,
                               const size_t stepsPerSegment,
                               bool includeFinalSample) const
     {
-        PXR_NS::GfVec3f p0;
-        PXR_NS::GfVec3f p1;
-        PXR_NS::GfVec3f p2;
-        PXR_NS::GfVec3f p3;
+        ::physx::PxVec3 p0;
+        ::physx::PxVec3 p1;
+        ::physx::PxVec3 p2;
+        ::physx::PxVec3 p3;
         if (index == 0)
         {
             p1 = controlPoints[index];
             p2 = controlPoints[index + 1];
             p3 = controlPoints[index + 2];
-            p0 = 2 * p1 - p2;
+            p0 = p1 * 2.0f - p2;
         }
         else
         {
             p0 = controlPoints[index - 3];
             p1 = controlPoints[index - 2];
             p2 = controlPoints[index - 1];
-            p3 = 2 * p2 - p1;
+            p3 = p2 * 2.0f - p1;
         }
 
         tessellateSegment(p0, p1, p2, p3, tessellatedPoints, tessellatedTangents, stepsPerSegment, includeFinalSample);
@@ -428,23 +524,23 @@ public:
 public:
     eBasisCurveWrap mWrapMode;
     int mVstep;
+    bool mLinear;
 
-    PXR_NS::GfMatrix4f mBasis;
-    PXR_NS::GfMatrix4f mTangentBasis;
+    ::physx::PxMat44 mBasis;
+    ::physx::PxMat44 mTangentBasis;
 };
 
 class SplinesCurve
 {
 public:
-    SplinesCurve(const PXR_NS::UsdGeomBasisCurves& curvePrim);
     SplinesCurve(const omni::physx::usdparser::AttachedStage& attachedStage,
                  omni::physics::parse::ObjectKey curveKey);
     ~SplinesCurve();
 
-    bool getClosestPoint(const PXR_NS::GfVec3f& point,
-                         PXR_NS::GfVec3f& pointOnCurveOut,
-                         PXR_NS::GfVec3f& tangentOut,                         
-                         PXR_NS::GfVec3f& curvaturePointOut);
+    bool getClosestPoint(const ::physx::PxVec3& point,
+                         ::physx::PxVec3& pointOnCurveOut,
+                         ::physx::PxVec3& tangentOut,
+                         ::physx::PxVec3& curvaturePointOut);
 
     bool isInitialized() const
     {
@@ -454,19 +550,23 @@ public:
     void draw(omni::physx::OmniRenderBuffer& renderBuffer, const ::physx::PxTransform& tr) const;
 
 private:
-    void initialize(const PXR_NS::SdfPath& curvePrimPath,
-                    const PXR_NS::VtArray<PXR_NS::GfVec3f>& pointsIn,
-                    const PXR_NS::VtArray<int>& curveVertexCounts,
-                    const PXR_NS::TfToken& basisToken,
-                    const PXR_NS::TfToken& wrapToken);
+    void initialize(const std::string& curvePrimPath,
+                    const std::vector<carb::Float3>& pointsIn,
+                    const std::vector<int32_t>& curveVertexCounts,
+                    eCurveBasisType basisType,
+                    eBasisCurveWrap wrapType,
+                    eCurveType curveType);
 
     bool mInitialized;
-    PXR_NS::SdfPath mCurvePrimPath;
+    // Prim-level `type == linear`: closest-point queries report the hit edge's own direction
+    // instead of blending the tangent samples across a corner.
+    bool mLinear = false;
+    std::string mCurvePrimPath;
 
-    std::vector<PXR_NS::GfVec3f> mPoints;
-    std::vector<PXR_NS::GfVec3f> mTangents;
+    std::vector<::physx::PxVec3> mPoints;
+    std::vector<::physx::PxVec3> mTangents;
     std::vector<int> mCurveVertexCounts;
-    std::vector<PXR_NS::GfVec3f> mCurvaturePoints;
+    std::vector<::physx::PxVec3> mCurvaturePoints;
 #ifdef __AVX__
     std::vector<float> mXPoints;
     std::vector<float> mYPoints;

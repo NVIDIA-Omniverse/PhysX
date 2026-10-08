@@ -4,8 +4,10 @@ _builtpackages/
 _install/
 _dist/
 _repo/
-config.toml
 tests/python_tests/detailed_log.txt
+
+# Generated Doxygen-to-RST output
+docs/api/
 
 # IDE
 .vscode/

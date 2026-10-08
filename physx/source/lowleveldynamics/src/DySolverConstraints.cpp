@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "foundation/PxPreprocessor.h"
 #include "foundation/PxVecMath.h"
@@ -169,10 +146,10 @@ static void solve1D(const PxSolverConstraintDesc& desc)
 		angState1 = V3ScaleAdd(cangVel1, FMul(deltaF, invInertiaScale1), angState1);
 	}
 
-	V3StoreA(linVel0, b0.linearVelocity);
-	V3StoreA(angState0, b0.angularState);
-	V3StoreA(linVel1, b1.linearVelocity);
-	V3StoreA(angState1, b1.angularState);
+	V4StoreA(Vec4V_From_Vec3V(linVel0), &b0.linearVelocity.x);
+	V4StoreA(Vec4V_From_Vec3V(angState0), &b0.angularState.x);
+	V4StoreA(Vec4V_From_Vec3V(linVel1), &b1.linearVelocity.x);
+	V4StoreA(Vec4V_From_Vec3V(angState1), &b1.angularState.x);
 	
 	PX_ASSERT(b0.linearVelocity.isFinite());
 	PX_ASSERT(b0.angularState.isFinite());
@@ -328,7 +305,8 @@ static void solveContact(const PxSolverConstraintDesc& desc, SolverContext& cach
 
 				f.setAppliedForce(newAppliedForce);
 			}
-			Store_From_BoolV(broken, &hdr->broken);
+			if(cache.writeBackIteration)
+				Store_From_BoolV(broken, &hdr->broken);
 		}
 	}
 
@@ -338,10 +316,10 @@ static void solveContact(const PxSolverConstraintDesc& desc, SolverContext& cach
 	PX_ASSERT(b1.angularState.isFinite());
 
 	// Write back
-	V3StoreU(linVel0, b0.linearVelocity);
-	V3StoreU(linVel1, b1.linearVelocity);
-	V3StoreU(angState0, b0.angularState);
-	V3StoreU(angState1, b1.angularState);
+	V4StoreA(Vec4V_From_Vec3V(linVel0), &b0.linearVelocity.x);
+	V4StoreA(Vec4V_From_Vec3V(linVel1), &b1.linearVelocity.x);
+	V4StoreA(Vec4V_From_Vec3V(angState0), &b0.angularState.x);
+	V4StoreA(Vec4V_From_Vec3V(angState1), &b1.angularState.x);
 
 	PX_ASSERT(b0.linearVelocity.isFinite());
 	PX_ASSERT(b0.angularState.isFinite());
@@ -460,7 +438,8 @@ static void solveContact_BStatic(const PxSolverConstraintDesc& desc, SolverConte
 
 				f.setAppliedForce(newAppliedForce);
 			}
-			Store_From_BoolV(broken, &hdr->broken);
+			if(cache.writeBackIteration)
+				Store_From_BoolV(broken, &hdr->broken);
 		}
 	}
 
@@ -468,8 +447,8 @@ static void solveContact_BStatic(const PxSolverConstraintDesc& desc, SolverConte
 	PX_ASSERT(b0.angularState.isFinite());
 
 	// Write back
-	V3StoreA(linVel0, b0.linearVelocity);
-	V3StoreA(angState0, b0.angularState);
+	V4StoreA(Vec4V_From_Vec3V(linVel0), &b0.linearVelocity.x);
+	V4StoreA(Vec4V_From_Vec3V(angState0), &b0.angularState.x);
 
 	PX_ASSERT(b0.linearVelocity.isFinite());
 	PX_ASSERT(b0.angularState.isFinite());
@@ -926,8 +905,8 @@ void solveExt1D(const PxSolverConstraintDesc& desc)
 	{
 		if (desc.linkIndexA == PxSolverConstraintDesc::RIGID_BODY)
 		{
-			V3StoreA(linVel0, desc.bodyA->linearVelocity);
-			V3StoreA(angVel0, desc.bodyA->angularState);
+			V4StoreA(Vec4V_From_Vec3V(linVel0), &desc.bodyA->linearVelocity.x);
+			V4StoreA(Vec4V_From_Vec3V(angVel0), &desc.bodyA->angularState.x);
 		}
 		else
 		{
@@ -936,8 +915,8 @@ void solveExt1D(const PxSolverConstraintDesc& desc)
 
 		if (desc.linkIndexB == PxSolverConstraintDesc::RIGID_BODY)
 		{
-			V3StoreA(linVel1, desc.bodyB->linearVelocity);
-			V3StoreA(angVel1, desc.bodyB->angularState);
+			V4StoreA(Vec4V_From_Vec3V(linVel1), &desc.bodyB->linearVelocity.x);
+			V4StoreA(Vec4V_From_Vec3V(angVel1), &desc.bodyB->angularState.x);
 		}
 		else
 		{
@@ -1202,24 +1181,22 @@ static void solveExtContact(const PxSolverConstraintDesc& desc, SolverContext& c
 	{
 		if (desc.linkIndexA == PxSolverConstraintDesc::RIGID_BODY)
 		{
-			V3StoreA(linVel0, desc.bodyA->linearVelocity);
-			V3StoreA(angVel0, desc.bodyA->angularState);
+			V4StoreA(Vec4V_From_Vec3V(linVel0), &desc.bodyA->linearVelocity.x);
+			V4StoreA(Vec4V_From_Vec3V(angVel0), &desc.bodyA->angularState.x);
 		}
 		else
 		{
-			getArticulationA(desc)->pxcFsApplyImpulse(desc.linkIndexA,
-				linImpulse0, angImpulse0);
+			getArticulationA(desc)->pxcFsApplyImpulse(desc.linkIndexA, linImpulse0, angImpulse0);
 		}
 
 		if (desc.linkIndexB == PxSolverConstraintDesc::RIGID_BODY)
 		{
-			V3StoreA(linVel1, desc.bodyB->linearVelocity);
-			V3StoreA(angVel1, desc.bodyB->angularState);
+			V4StoreA(Vec4V_From_Vec3V(linVel1), &desc.bodyB->linearVelocity.x);
+			V4StoreA(Vec4V_From_Vec3V(angVel1), &desc.bodyB->angularState.x);
 		}
 		else
 		{
-			getArticulationB(desc)->pxcFsApplyImpulse(desc.linkIndexB,
-				linImpulse1, angImpulse1);
+			getArticulationB(desc)->pxcFsApplyImpulse(desc.linkIndexB, linImpulse1, angImpulse1);
 		}
 	}
 }

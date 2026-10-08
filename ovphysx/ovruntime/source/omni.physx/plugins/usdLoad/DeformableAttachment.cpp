@@ -1,52 +1,23 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-// This include must come first
-// clang-format off
-#include "UsdPCH.h"
-// clang-format on
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-27 AC-29
+ */
 
 #include <carb/Types.h>
 #include <carb/logging/Log.h>
 #include <common/foundation/Allocator.h>
 
 #include "LoadTools.h"
+#include "AttachedStage.h"
 #include "DeformableAttachment.h"
 
-#include <attachment/PhysXAttachment.h>
-#include <attachment/PhysXPointFinder.h>
-
 #include <omni/physics/parse/Descriptors.h>
-#include <omni/physics/usd/StageScan.h>
+#include <omni/physics/parse/ScannedStage.h>
 
-using namespace PXR_NS;
 using namespace carb;
-
-static const TfToken physxAttachmentDistanceAxesToken{ "physxAttachment:distanceAxes" };
-
-namespace
-{
-    void convert(std::vector<carb::Float3>& out, VtArray<PXR_NS::GfVec3f> const& in)
-    {
-        out.resize(in.size());
-        for (size_t i = 0; i < out.size(); i++)
-        {
-            out[i].x = in[i][0];
-            out[i].y = in[i][1];
-            out[i].z = in[i][2];
-        }
-    }
-
-    template<typename T>
-    void convert(std::vector<T>& out, VtArray<T> const& in)
-    {
-        out.resize(in.size());
-        for (size_t i = 0; i < out.size(); i++)
-        {
-            out[i] = in[i];
-        }
-    }
-}
 
 namespace omni
 {
@@ -54,10 +25,28 @@ namespace physx
 {
 namespace usdparser
 {
+    // `scanned` takes the source-agnostic base type (omni::physics::parse::ScannedStage,
+    // pxr-free -- omni::physics::usd::ScannedStage publicly derives from it and callers
+    // still pass that derived object; the reference upcasts implicitly), so this file
+    // needs no pxr and both functions are unconditional. Uses
+    // scanned.source().sourceKeyToString() instead of the USD-only pathFor()/keyFor(SdfPath)
+    // (same rekey idiom as LoadStage.cpp's invertCollisionGroupMembers).
     PhysxDeformableAttachmentDesc* parseDeformableAttachment(
-        const omni::physics::usd::ScannedStage& scanned,
-        const omni::physics::parse::PhysxDeformableAttachmentDesc& inDesc)
+        const omni::physics::parse::ScannedStage& scanned,
+        const omni::physics::parse::PhysxDeformableAttachmentDesc& inDesc,
+        const AttachedStage& attachedStage)
     {
+        // inDesc's ObjectKeys are minted by `scanned`'s own throwaway,
+        // parse-time source (ADR-0004 key-space invariant); re-key into
+        // `attachedStage`'s persistent namespace via a source-key-string
+        // round trip, since every consumer of the returned desc resolves
+        // through `attachedStage` (mirrors the `rekey` pattern in LoadStage.cpp).
+        auto rekey = [&](omni::physics::parse::ObjectKey k) -> omni::physics::parse::ObjectKey
+        {
+            return k.valid() ? attachedStage.keyFor(scanned.source().sourceKeyToString(k)) :
+                                omni::physics::parse::ObjectKey{};
+        };
+
         ObjectType outType = ObjectType::eUndefined;
         switch (inDesc.type)
         {
@@ -87,9 +76,10 @@ namespace usdparser
         if (outDesc)
         {
             outDesc->type = outType;
+            outDesc->primKey = rekey(inDesc.primKey);
             outDesc->enabled = inDesc.enabled;
-            outDesc->src0 = scanned.pathFor(inDesc.src0);
-            outDesc->src1 = scanned.pathFor(inDesc.src1);
+            outDesc->src0 = rekey(inDesc.src0);
+            outDesc->src1 = rekey(inDesc.src1);
             outDesc->stiffness = inDesc.stiffness;
             outDesc->damping = inDesc.damping;
         }
@@ -97,14 +87,22 @@ namespace usdparser
     }
 
     PhysxDeformableCollisionFilterDesc* parseDeformableCollisionFilter(
-        const omni::physics::usd::ScannedStage& scanned,
-        const omni::physics::parse::PhysxDeformableCollisionFilterDesc& inDesc)
+        const omni::physics::parse::ScannedStage& scanned,
+        const omni::physics::parse::PhysxDeformableCollisionFilterDesc& inDesc,
+        const AttachedStage& attachedStage)
     {
+        auto rekey = [&](omni::physics::parse::ObjectKey k) -> omni::physics::parse::ObjectKey
+        {
+            return k.valid() ? attachedStage.keyFor(scanned.source().sourceKeyToString(k)) :
+                                omni::physics::parse::ObjectKey{};
+        };
+
         PhysxDeformableCollisionFilterDesc* outDesc = ICE_PLACEMENT_NEW(PhysxDeformableCollisionFilterDesc)();
 
+        outDesc->primKey = rekey(inDesc.primKey);
         outDesc->enabled = inDesc.enabled;
-        outDesc->src0 = scanned.pathFor(inDesc.src0);
-        outDesc->src1 = scanned.pathFor(inDesc.src1);
+        outDesc->src0 = rekey(inDesc.src0);
+        outDesc->src1 = rekey(inDesc.src1);
 
         return outDesc;
     }

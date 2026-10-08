@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef OMNI_PVD_READER_H
 #define OMNI_PVD_READER_H
@@ -42,6 +19,9 @@
  * Using the getNextCommand function in a while loop for example one can traverse the stream one command after another. Given the command, different functions below will be available.
  *
  * Using the OmniPvdCommand::Enum one can determine the type of command and like that use the appropriate get functions to extract the payload from the command.
+ *
+ * The reader borrows its read stream. It never closes or destroys the stream, which must remain
+ * alive while it is bound and can be accessed by the reader.
  */
 
 class OmniPvdReader
@@ -59,18 +39,33 @@ public:
 	virtual void OMNI_PVD_CALL setLogFunction(OmniPvdLogFunction logFunction) = 0;
 	
 	/**
-	 * \brief Sets the read stream that contains the OmniPVD API command stream
+	 * \brief Binds the read stream that contains the OmniPVD API command stream
 	 *
-	 * \param stream The OmniPvdReadStream that holds the stream of API calls/notifications
+	 * Binding is non-owning and performs no I/O: it does not open, read, close, or destroy the
+	 * stream, and therefore does not block on transport activation. Binding does not reset the
+	 * reader's parsing state. Use a fresh reader for a new self-contained recording.
+	 *
+	 * \param stream The borrowed OmniPvdReadStream. It must remain alive while bound and in use.
 	 */
 	virtual void OMNI_PVD_CALL setReadStream(OmniPvdReadStream& stream) = 0;	
 
 	/**
-	 * \brief Extracts the versions from the binary file to read and tests if the file is older or equal to that of the reader.
+	 * \brief Opens the bound stream and starts reading its OmniPVD command stream.
 	 *
-	 * \param majorVersion The major versions of the stream
-	 * \param minorVersion The minor versions of the stream
-	 * \param patch The patch number of the stream
+	 * Opening occurs on the calling thread and may block for transports such as a TCP server.
+	 * On first activation, this function requires all three version fields and accepts only a
+	 * version older than or equal to the reader version. getNextCommand() invokes this function
+	 * implicitly on first use. The version output parameters are written only when a version
+	 * header is consumed.
+	 *
+	 * An open failure consumes no payload and can be retried directly. A truncated or incompatible
+	 * header may consume payload; retry only after restoring a rewindable stream to its beginning,
+	 * or use a fresh reader and stream session. The reader does not close the borrowed stream on
+	 * failure or destruction.
+	 *
+	 * \param majorVersion Receives the major version when a version header is consumed
+	 * \param minorVersion Receives the minor version when a version header is consumed
+	 * \param patch Receives the patch version when a version header is consumed
 	 * \return If the reading was possible to start or not
 	 */
 	virtual bool OMNI_PVD_CALL startReading(OmniPvdVersionType& majorVersion, OmniPvdVersionType& minorVersion, OmniPvdVersionType& patch) = 0;

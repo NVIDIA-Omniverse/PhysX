@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #include <gtest/gtest.h>
 #include "ovphysx/ovphysx.h"
@@ -76,17 +76,20 @@ TEST_F(OutputReadTest, RigidBodyPositionAndOrientation)
         EXPECT_NE(g.prims.list, 0u);                // interned prim-list handle
         ASSERT_GE(g.data.tensor_count, 1u);
         ASSERT_NE(g.data.tensors, nullptr);
-        const DLTensor& t = g.data.tensors[0];
+        const DLTensor t = g.data.tensors[0];
         ASSERT_NE(t.shape, nullptr);
         ASSERT_GE(t.ndim, 1);
-        // Faithful: a fixed column stacks all prims along shape[0]; tuple width is
-        // carried in dtype.lanes (vec3 / quat), NOT a trailing shape dim.
+        const int64_t rowsBeforeGroupRelease = t.shape[0];
+        // A fixed column stacks all prims along shape[0]. The tuple width is
+        // carried in dtype.lanes (vec3 / quat), not in a trailing shape dim.
         if (t.dtype.lanes == 3)
             posRows = t.shape[0]; // position
         else if (t.dtype.lanes == 4)
             oriRows = t.shape[0]; // orientation (quat)
-        // Group storage is stable until released by id.
+        // Releasing the group retires its struct/path metadata. Numeric descriptor,
+        // shape, and data storage remain owned by the read session until release_read.
         EXPECT_EQ(ovphysx_release_group(m_handle, read, g.read_group_id).status, OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(t.shape[0], rowsBeforeGroupRelease);
     }
 
     EXPECT_GE(groups, 2);                                  // at least a position + an orientation group
@@ -125,7 +128,7 @@ TEST_F(OutputReadTest, ArgumentValidation)
 
     EXPECT_EQ(ovphysx_fetch_read_next(m_handle, read, nullptr).status, OVPHYSX_API_INVALID_ARGUMENT);
 
-    // release_group is idempotent for an unknown id; release_read/query idempotent.
+    // release_group accepts an unknown id. release_read and release_query are idempotent.
     EXPECT_EQ(ovphysx_release_group(m_handle, read, 123456789ull).status, OVPHYSX_API_SUCCESS);
     EXPECT_EQ(ovphysx_release_read(m_handle, read).status, OVPHYSX_API_SUCCESS);
     EXPECT_EQ(ovphysx_release_read(m_handle, read).status, OVPHYSX_API_SUCCESS);

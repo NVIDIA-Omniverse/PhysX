@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef PXG_SOFTBODY_H
 #define PXG_SOFTBODY_H
@@ -101,7 +78,12 @@ namespace physx
 		const float4*			mSimKinematicTarget;
 		bool*					mVertsAreDeformed;
 		bool*					mVertsCanNotDeform;
-		float4*					mSimDeltaPos; //sizeof mNumVertsGM, store the deltaPos change for the grid model verts
+
+		// Accumulated position delta of the sim verts since step start (integration plus
+		// constraint corrections), sizeof mNumVertsGM. Advances in position iterations
+		// only and stays frozen through velocity iterations. The contact solves read it
+		// for computing the separation.
+		float4*					mSimDeltaPos;
 		PxgMat33Block*			mSimTetraRestPoses;
 		PxgMat33Block*			mOrigQinv;
 		
@@ -127,9 +109,11 @@ namespace physx
 
 		PxgSpatialVectorBlock*	mSimTetraMultipliers;
 
-		// .xyz: position-delta accumulator. .w: per-vertex refCount (populated by
-		// the count+prep kernels, read for deformable-side mass-splitting).
-		// Zeroed at the start of each iter by the apply-delta kernel.
+		// Per-iteration solve scratch. The solves scatter their deltas into .xyz and
+		// the count+prep kernels put the mass-splitting refCount into .w. Every
+		// iteration sb_gm_applyExternalDeltasLaunch consumes and zeroes it, updating
+		// mSimVelocity_InvMass always and mSimPosition_InvMass plus mSimDeltaPos in
+		// position iterations only.
 		float4*					mSimDelta;
 
 		PxBounds3*				mPackedNodeBounds;
@@ -171,7 +155,7 @@ namespace physx
 		PxU32					mNumTetsPerElement;
 		PxU32					mNumJacobiVertices;
 
-		PxReal					mRestDistance;
+		PxReal					mRestOffset;
 		PxReal					mOriginalContactOffset;
 		PxReal					mJacobiScale;
 		

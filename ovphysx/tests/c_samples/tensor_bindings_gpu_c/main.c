@@ -1,7 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+// DEPRECATED (tensor-binding-deprecation): this sample uses the deprecated tensor-binding API
+// and is removed together with it.
 
 #include "ovphysx/ovphysx.h"
+#include "ovphysx/ovphysx_config.h"
 #include "ovstage_sample.h"
 
 #include <stdio.h>
@@ -54,6 +58,25 @@ static int wait_op(ovphysx_handle_t handle, ovphysx_op_index_t op_index, const c
     return 1;
 }
 
+static int query_cuda_binding_device(
+    ovphysx_handle_t handle,
+    ovphysx_tensor_binding_handle_t binding,
+    const char* name,
+    int32_t* out_device_id)
+{
+    DLDevice native_device = { 0 };
+    ovphysx_result_t result = ovphysx_get_tensor_binding_native_device(handle, binding, &native_device);
+    if (!check_result(result, name))
+        return 0;
+    if (native_device.device_type != kDLCUDA)
+    {
+        fprintf(stderr, "%s is not native CUDA (device type=%d)\n", name, (int)native_device.device_type);
+        return 0;
+    }
+    *out_device_id = native_device.device_id;
+    return 1;
+}
+
 static int destroy_instance_and_shutdown(ovphysx_handle_t handle)
 {
     ovphysx_sample_destroy_stage(handle, &g_stage_attachment);
@@ -71,12 +94,12 @@ static int run(void)
 #else
     printf("=== Tensor Binding API Sample ===\n\n");
 
-    const int32_t device_id = 0;
-    cudaError_t cuda_result = cudaSetDevice(device_id);
+    const int32_t requested_device_id = 0;
+    cudaError_t cuda_result = cudaSetDevice(requested_device_id);
     if (cuda_result != cudaSuccess)
     {
         fprintf(stderr, "Failed to select CUDA device %d: %s\n",
-                device_id, cudaGetErrorString(cuda_result));
+                requested_device_id, cudaGetErrorString(cuda_result));
         return 1;
     }
 
@@ -84,16 +107,22 @@ static int run(void)
     if (!check_result(result, "initialize"))
         return 1;
 
-    // 1. Create instance with GPU mode (default)
-    // GPU mode runs PhysX with eENABLE_GPU_DYNAMICS + eGPU broadphase and lets
-    // TensorBinding work directly with kDLCUDA tensors. It does NOT auto-enable
-    // DirectGPU (eENABLE_DIRECT_GPU_API); DirectGPU is an opt-in optimization
-    // gated by the Carbonite setting /physics/suppressReadback=true and is
-    // incompatible with contact-modify callbacks (e.g. PhysxSurfaceVelocityAPI).
+    // 1. Create an instance in GPU mode and opt into DirectGPU.
+    // GPU mode runs PhysX with eENABLE_GPU_DYNAMICS and the GPU broadphase. DirectGPU
+    // is enabled separately so these bindings have a native kDLCUDA path without
+    // staging. It is incompatible with contact-modify callbacks such as
+    // PhysxSurfaceVelocityAPI.
     ovphysx_handle_t handle = 0;
     ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
+    ovphysx_config_entry_t config_entries[] = {
+        ovphysx_config_entry_carbonite(
+            OVPHYSX_LITERAL("/physics/suppressReadback"),
+            OVPHYSX_LITERAL("true")),
+    };
+    args.config_entries = config_entries;
+    args.config_entry_count = sizeof(config_entries) / sizeof(config_entries[0]);
     char device_ordinal[16];
-    snprintf(device_ordinal, sizeof(device_ordinal), "%d", device_id);
+    snprintf(device_ordinal, sizeof(device_ordinal), "%d", requested_device_id);
     args.active_cuda_gpus = ovphysx_cstr(device_ordinal);
 
     result = ovphysx_create_instance(&args, &handle);
@@ -115,13 +144,10 @@ static int run(void)
 
     printf("USD scene loaded.\n");
 
-    // 3. Create tensor bindings
-    //    - Rigid body poses for articulation links
-    //    - Articulation DOF positions (read actual state)
-    //    - Articulation DOF position targets (write control targets)
-    //    - Articulation DOF velocities (read actual velocities)
+    // 3. Create tensor bindings: link poses and DOF positions and velocities to
+    //    read the simulated state, and DOF position targets to write control.
 
-    // 3a. Rigid body pose binding for link transforms
+    // 3a. Rigid body pose binding for the link transforms.
     ovphysx_tensor_binding_handle_t rb_binding = 0;
     ovphysx_tensor_binding_desc_t rb_desc = {
         .pattern = OVPHYSX_LITERAL("/World/articulation/articulationLink*"),
@@ -134,7 +160,7 @@ static int run(void)
         return destroy_instance_and_shutdown(handle);
     }
 
-    // 3b. DOF position binding (read joint positions)
+    // 3b. DOF position binding, used to read the joint positions.
     ovphysx_tensor_binding_handle_t dof_pos_binding = 0;
     ovphysx_tensor_binding_desc_t dof_pos_desc = {
         .pattern = OVPHYSX_LITERAL("/World/articulation"),
@@ -147,7 +173,7 @@ static int run(void)
         return destroy_instance_and_shutdown(handle);
     }
 
-    // 3c. DOF position target binding (write control targets)
+    // 3c. DOF position target binding, used to write the control targets.
     ovphysx_tensor_binding_handle_t dof_target_binding = 0;
     ovphysx_tensor_binding_desc_t dof_target_desc = {
         .pattern = OVPHYSX_LITERAL("/World/articulation"),
@@ -160,7 +186,7 @@ static int run(void)
         return destroy_instance_and_shutdown(handle);
     }
 
-    // 3d. DOF velocity binding (read joint velocities)
+    // 3d. DOF velocity binding, used to read the joint velocities.
     ovphysx_tensor_binding_handle_t dof_vel_binding = 0;
     ovphysx_tensor_binding_desc_t dof_vel_desc = {
         .pattern = OVPHYSX_LITERAL("/World/articulation"),
@@ -175,7 +201,44 @@ static int run(void)
 
     printf("Tensor bindings created.\n");
 
-    // 4. Query binding specs and allocate GPU tensors
+    const ovphysx_tensor_binding_handle_t bindings[] = {
+        rb_binding,
+        dof_pos_binding,
+        dof_target_binding,
+        dof_vel_binding,
+    };
+    const char* binding_names[] = {
+        "get_tensor_binding_native_device (rb)",
+        "get_tensor_binding_native_device (dof position)",
+        "get_tensor_binding_native_device (dof target)",
+        "get_tensor_binding_native_device (dof velocity)",
+    };
+    int32_t device_id = -1;
+    for (size_t i = 0; i < sizeof(bindings) / sizeof(bindings[0]); ++i)
+    {
+        int32_t binding_device_id = -1;
+        if (!query_cuda_binding_device(handle, bindings[i], binding_names[i], &binding_device_id))
+            return destroy_instance_and_shutdown(handle);
+        if (i == 0)
+        {
+            device_id = binding_device_id;
+        }
+        else if (binding_device_id != device_id)
+        {
+            fprintf(stderr, "Tensor bindings resolved to different CUDA devices (%d and %d)\n",
+                    device_id, binding_device_id);
+            return destroy_instance_and_shutdown(handle);
+        }
+    }
+    cuda_result = cudaSetDevice(device_id);
+    if (cuda_result != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to select binding CUDA device %d: %s\n",
+                device_id, cudaGetErrorString(cuda_result));
+        return destroy_instance_and_shutdown(handle);
+    }
+
+    // 4. Query the binding specs and allocate GPU tensors on the native device.
     ovphysx_tensor_spec_t rb_spec, dof_spec;
     
     result = ovphysx_get_tensor_binding_spec(handle, rb_binding, &rb_spec);
@@ -216,8 +279,8 @@ static int run(void)
         return destroy_instance_and_shutdown(handle);
     }
 
-    // Reuse the explicit PhysX CUDA ordinal in every DLTensor so the allocation
-    // and DLPack metadata identify the same device as the simulation.
+    // Use the binding's reported native CUDA ordinal in every DLTensor so the
+    // allocation and DLPack metadata take the no-staging path.
     int64_t rb_shape[2] = { (int64_t)rb_count, (int64_t)rb_components };
     int64_t dof_shape[2] = { (int64_t)dof_count, (int64_t)dof_components };
 
@@ -263,19 +326,19 @@ static int run(void)
 
     printf("GPU tensors allocated.\n");
 
-    // 5. OPTIONAL: Explicit GPU warmup
-    // GPU tensor reads trigger automatic warmup on first access. However, you can
-    // call ovphysx_warmup_gpu() explicitly to control when the warmup latency occurs.
-    // This is useful if you want to avoid a latency spike on the first tensor read.
-    printf("\nPerforming explicit GPU warmup (optional - happens automatically on first read)...\n");
-    
-    result = ovphysx_warmup_gpu(handle);
-    if (!check_result(result, "GPU warmup"))
+    // 5. Optional explicit warmup.
+    // Tensor reads trigger an automatic warmup on first access. Calling
+    // ovphysx_warmup() explicitly controls when that latency occurs and avoids a
+    // spike on the first tensor read.
+    printf("\nPerforming explicit warmup (optional - happens automatically on first read)...\n");
+
+    result = ovphysx_warmup(handle);
+    if (!check_result(result, "warmup"))
     {
         return destroy_instance_and_shutdown(handle);
     }
 
-    // 6. Read initial state
+    // 6. Read the initial state.
     printf("\n=== Initial State ===\n");
 
     result = ovphysx_read_tensor_binding(handle, rb_binding, &rb_tensor);
@@ -313,12 +376,12 @@ static int run(void)
     if (dof_components > 8) printf("...");
     printf("\n");
 
-    // 7. Set DOF targets and simulate
+    // 7. Set the DOF targets and simulate.
     printf("\n=== Setting DOF position targets to 0.3 rad ===\n");
 
     float* host_targets = malloc(dof_count * dof_components * sizeof(float));
     for (size_t i = 0; i < dof_count * dof_components; i++)
-        host_targets[i] = 0.3f;  // Set all targets to 0.3 radians
+        host_targets[i] = 0.3f;  // radians
     
     cudaMemcpy(dof_target_device, host_targets, dof_count * dof_components * sizeof(float), cudaMemcpyHostToDevice);
 
@@ -328,7 +391,7 @@ static int run(void)
         return destroy_instance_and_shutdown(handle);
     }
 
-    // 8. Simulation loop
+    // 8. Simulation loop.
     printf("Running 120 simulation steps...\n");
     for (int i = 0; i < 120; i++)
     {
@@ -349,7 +412,7 @@ static int run(void)
         }
     }
 
-    // 9. Read final state
+    // 9. Read the final state.
     printf("\n=== Final State (after 120 steps) ===\n");
 
     result = ovphysx_read_tensor_binding(handle, rb_binding, &rb_tensor);

@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-ART-001
@@ -60,8 +60,7 @@ void setToDefault(ArticulationFields& fields, const SourceUnits& units)
 void parseArticulation(ParseContext& ctx, ObjectKey key, ArticulationFields& fields)
 {
     IPhysicsSource& src = ctx.source();
-    KnownTokens tok;
-    tok.intern(src);
+    const KnownTokens& tok = ctx.knownTokens();
 
     // Whether the API is applied dictates whether overrides happen at all.
     const bool hasPhysxApi = src.hasSchema(key, tok.physxArticulationAPI);

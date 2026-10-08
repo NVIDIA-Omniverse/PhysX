@@ -1,8 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
-
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-27
+ */
 
 #include "InternalPhysXDatabase.h"
 #include "PhysXUpdate.h"
@@ -13,13 +15,13 @@
 
 #include <usdLoad/LoadUsd.h>
 #include <usdLoad/Mass.h>
-#include <UsdPhysicsDataWrite.h>
+#include <omni/physics/parse/IPhysicsDataWrite.h>
+#include <omni/physics/parse/KnownTokens.h>
 #include <common/utilities/MemoryMacros.h>
 
 
 using namespace omni::physx::internal;
 using namespace omni::physx::usdparser;
-using namespace PXR_NS;
 using namespace carb;
 using namespace ::physx;
 
@@ -167,13 +169,6 @@ void InternalPhysXDatabase::release()
         }
         break;
 
-        case ePTInfiniteVoxelMap:
-        {
-            InternalInfiniteVoxelMap* internalVoxelMap = (InternalInfiniteVoxelMap*)rec.mInternalPtr;
-            SAFE_DELETE_ALLOCABLE_SINGLE(internalVoxelMap);
-        }
-        break;
-
         case ePTDeformableVolumeMaterial:
         case ePTDeformableSurfaceMaterial:
         {
@@ -224,16 +219,17 @@ SplinesCurve* InternalPhysXDatabase::addSplinesCurve(const AttachedStage& attach
 }
 
 omni::physx::usdparser::ObjectId InternalPhysXDatabase::createTireFrictionTable(
-        const omni::physx::usdparser::TireFrictionTableDesc& tireFrictionTableDesc,
-        const PXR_NS::UsdPrim& usdPrim)
+        const omni::physx::usdparser::TireFrictionTableDesc& tireFrictionTableDesc)
 {
     InternalTireFrictionTable* tireFrictionTable = InternalTireFrictionTable::create(tireFrictionTableDesc, *this);
     // No attached stage means there are no records to register against, so skip the add.
     const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getActiveAttachedStage();
     if (tireFrictionTable && attachedStage)
     {
+        // Keyed from the descriptor's own key, not a UsdPrim path: identity that resolves
+        // with no backing stage.
         ObjectId objectId = addRecord(ePTVehicleTireFrictionTable, tireFrictionTable->getMaterialFrictionTable(),
-            tireFrictionTable, attachedStage->keyFor(usdPrim.GetPrimPath()));
+            tireFrictionTable, tireFrictionTableDesc.key);
         return objectId;
     }
     else
@@ -388,114 +384,96 @@ void InternalPhysXDatabase::resetStartProperties(bool useUsdUpdate, bool useVelo
     if (!mInitialTransformsStored)
         return;
 
+    // Actor-initial-data velocity/angularVelocity restore, and point-instancer and joint-state
+    // initial-value restore, through the source-agnostic write sink -- same
+    // tok.physicsVelocity/physicsAngularVelocity tokens as InternalActor.cpp's capture site,
+    // tok.positions/orientations/scales/velocities/angularVelocities tokens as
+    // InternalScene.cpp's flushInstancerArrays, and the same "state:<axis>:physics:position/
+    // velocity" tokens as InternalScene::updateJointState. Unconditional: a no-op when there is
+    // no live write sink (a stageless/ovstage-without-sink attach), matching every
+    // other write-sink call site in this codebase.
+    if (AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage())
     {
-        PXR_NS::SdfChangeBlock changeBlock;
-        const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getActiveAttachedStage();
-        UsdStageWeakPtr stage = UsdLoad::getUsdLoad()->getActiveStage();
-
-        for (ActorInitialDataMap::const_reference ref : mInitialActorDataMap)
+        if (omni::physics::parse::IPhysicsDataWrite* dw = as->getDataWrite())
         {
-            const SdfPath primKey = attachedStage->pathFor(ref.first);
-            UsdPrim prim = stage->GetPrimAtPath(primKey);
-            if (prim)
+            using omni::physics::parse::DataWriteView;
+            using omni::physics::parse::DataType;
+
+            if (omni::physics::parse::IPhysicsSource* source = as->getSource())
             {
-                const ActorInitialData& initialData = ref.second;
+                omni::physics::parse::KnownTokens tok;
+                tok.intern(*source);
+
+                dw->beginWrite();
+
+                // Restore each actor's pre-simulation xform-op stack, snapshotted by
+                // InternalActor::initializeDynamicActor's storeXformOpReset call.
+                for (ActorInitialDataMap::const_reference ref : mInitialActorDataMap)
+                    dw->restoreXformOpReset(ref.first, true);
+
+                for (TransformsInstanceMap::const_reference ref : mInitialPointInstancerTransforms)
                 {
-                    UsdGeomXformable xform(prim);
-                    initialData.xformOpStorage.restore(xform, true);
+                    const InitialInstancerData& data = ref.second;
+                    if (!data.positions.empty())
+                        dw->writeArray(ref.first, tok.positions,
+                                      DataWriteView{ data.positions.data(), data.positions.size(), 0, -1, DataType::e32Bit });
+                    if (!data.orientations.empty())
+                        dw->writeArray(ref.first, tok.orientations,
+                                      DataWriteView{ data.orientations.data(), data.orientations.size(), 0, -1, DataType::e32Bit });
+                    if (!data.scales.empty())
+                        dw->writeArray(ref.first, tok.scales,
+                                      DataWriteView{ data.scales.data(), data.scales.size(), 0, -1, DataType::e32Bit });
+                    if (!data.velocities.empty())
+                        dw->writeArray(ref.first, tok.velocities,
+                                      DataWriteView{ data.velocities.data(), data.velocities.size(), 0, -1, DataType::e32Bit });
+                    if (!data.angularVelocities.empty())
+                        dw->writeArray(ref.first, tok.angularVelocities,
+                                      DataWriteView{ data.angularVelocities.data(), data.angularVelocities.size(), 0, -1, DataType::e32Bit });
                 }
 
                 if (useVelocitiesUSDUpdate)
                 {
-                    if (initialData.velocityWritten)
+                    for (ActorInitialDataMap::const_reference ref : mInitialActorDataMap)
                     {
-                        UsdAttribute velAttr = prim.GetAttribute(PXR_NS::UsdPhysicsTokens.Get()->physicsVelocity);
-                        if (velAttr)
+                        const ActorInitialData& initialData = ref.second;
+                        if (initialData.velocityWritten)
+                            dw->writeData(&ref.first, 1, tok.physicsVelocity,
+                                         DataWriteView{ &initialData.velocity, 1, 0, -1, DataType::e32Bit });
+                        else
+                            dw->removeAttribute(ref.first, "physics:velocity");
+
+                        if (initialData.angularVelocityWritten)
+                            dw->writeData(&ref.first, 1, tok.physicsAngularVelocity,
+                                         DataWriteView{ &initialData.angularVelocity, 1, 0, -1, DataType::e32Bit });
+                        else
+                            dw->removeAttribute(ref.first, "physics:angularVelocity");
+                    }
+                }
+
+                for (size_t idx = 0; idx < getRecords().size(); idx++)
+                {
+                    const InternalDatabase::Record& record = getRecords()[idx];
+                    if (record.mType == ePTLinkJoint)
+                    {
+                        InternalJoint* intJoint = (InternalJoint*)record.mInternalPtr;
+                        for (size_t axisIdx = 0; axisIdx < 6; ++axisIdx)
                         {
-                            velAttr.Set(initialData.velocity);
+                            InternalJoint::InternalJointState& intJointState = intJoint->mJointStates[axisIdx];
+                            if (!intJointState.enabled)
+                                continue;
+
+                            const std::string axisName = jointStateAxisName(intJoint->mJointType, intJointState.physxAxis);
+                            const omni::physics::parse::TokenId posAttr = source->internToken("state:" + axisName + ":physics:position");
+                            dw->writeData(&record.mKey, 1, posAttr,
+                                         DataWriteView{ &intJointState.initialState.position, 1, 0, -1, DataType::e32Bit });
+                            const omni::physics::parse::TokenId velAttr = source->internToken("state:" + axisName + ":physics:velocity");
+                            dw->writeData(&record.mKey, 1, velAttr,
+                                         DataWriteView{ &intJointState.initialState.velocity, 1, 0, -1, DataType::e32Bit });
                         }
                     }
-                    else
-                    {
-                        prim.RemoveProperty(PXR_NS::UsdPhysicsTokens.Get()->physicsVelocity);
-                    }
+                }
 
-                    if (initialData.angularVelocityWritten)
-                    {
-                        UsdAttribute angVelAttr = prim.GetAttribute(PXR_NS::UsdPhysicsTokens.Get()->physicsAngularVelocity);
-                        if (angVelAttr)
-                        {
-                            angVelAttr.Set(initialData.angularVelocity);
-                        }
-                    }
-                    else
-                    {
-                        prim.RemoveProperty(PXR_NS::UsdPhysicsTokens.Get()->physicsAngularVelocity);
-                    }
-                }
-            }
-        }
-
-        for (TransformsInstanceMap::const_reference ref : mInitialPointInstancerTransforms)
-        {
-            const SdfPath instancerPath = attachedStage->pathFor(ref.first);
-            UsdPrim instancerPrim = stage->GetPrimAtPath(instancerPath);
-            if (instancerPrim && instancerPrim.IsA<UsdGeomPointInstancer>())
-            {
-                UsdGeomPointInstancer instancer(instancerPrim);
-                const InitialInstancerData& data = ref.second;
-
-                if (data.positions.size())
-                {
-                    if (instancer.GetPositionsAttr())
-                        instancer.GetPositionsAttr().Set(data.positions);
-                }
-                if (data.orientations.size())
-                {
-                    if (instancer.GetOrientationsAttr())
-                        instancer.GetOrientationsAttr().Set(data.orientations);
-                }
-                if (data.scales.size())
-                {
-                    if (instancer.GetScalesAttr())
-                        instancer.GetScalesAttr().Set(data.scales);
-                }
-                if (data.velocities.size())
-                {
-                    if (instancer.GetVelocitiesAttr())
-                        instancer.GetVelocitiesAttr().Set(data.velocities);
-                }
-                if (data.angularVelocities.size())
-                {
-                    if (instancer.GetAngularVelocitiesAttr())
-                        instancer.GetAngularVelocitiesAttr().Set(data.angularVelocities);
-                }
-            }
-        }
-
-        const omni::physics::usd::UsdPhysicsDataWrite* usdDataWrite =
-            omni::physics::usd::asUsdDataWrite(attachedStage->getDataWrite());
-        if (!usdDataWrite)
-            return;
-
-        for (size_t idx = 0; idx < getRecords().size(); idx++)
-        {
-            const InternalDatabase::Record& record = getRecords()[idx];
-            if (record.mType == ePTLinkJoint)
-            {
-                InternalJoint* intJoint = (InternalJoint*)record.mInternalPtr;
-                PXR_NS::UsdPrim jointPrim = usdDataWrite->usdPrimForWrite(record.mKey);
-                for (size_t idx = 0; idx < 6; ++idx)
-                {
-                    InternalJoint::InternalJointState& intJointState = intJoint->mJointStates[idx];
-                    if (!intJointState.enabled)
-                        continue;
-                    PXR_NS::PhysxSchemaJointStateAPI cachedJointStateAPI =
-                        intJointState.getCachedJointStateAPI(jointPrim, intJoint->mJointType);
-
-                    cachedJointStateAPI.GetPositionAttr().Set(intJointState.initialState.position);
-                    cachedJointStateAPI.GetVelocityAttr().Set(intJointState.initialState.velocity);
-                }
+                dw->endWrite();
             }
         }
     }

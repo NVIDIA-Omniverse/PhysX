@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 // Trivial smoke benchmark used to validate the harness loop, output and
-// golden compare. Does no real work -- it just spends a fixed amount of CPU
+// golden compare. It does no real work and only spends a fixed amount of
 // time so the result has a stable, non-zero mean.
 
 #include "framework/UsdPCH.h"
@@ -34,7 +34,7 @@ public:
 protected:
     void step() override
     {
-        // ~1 ms of sleep gives us a stable, non-zero baseline that does not
+        // ~1 ms of sleep gives a stable, non-zero baseline that does not
         // exercise any real ovphysx code.
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }

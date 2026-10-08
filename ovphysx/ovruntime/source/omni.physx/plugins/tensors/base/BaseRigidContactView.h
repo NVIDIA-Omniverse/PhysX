@@ -1,5 +1,13 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-TENSOR-PATH-001
+ * @covers AC-7
+ *
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-40
+ */
 
 #pragma once
 
@@ -25,7 +33,7 @@ class BaseRigidContactView : public omni::physics::tensors::IRigidContactView
 {
 public:
     BaseRigidContactView(BaseSimulationView* sim,
-                         const std::vector<RigidContactSensorEntry>& entries,
+                         std::vector<RigidContactSensorEntry>&& entries,
                          uint32_t numFilters,
                          uint32_t maxContactDataCount);
 
@@ -65,6 +73,16 @@ protected:
 
     // Cache for uint64 path ID to string path conversion
     mutable std::unordered_map<uint64_t, std::string> mPathCache;
+
+    // Per-(sensorIdx, filterIdx) backing storage for getFilterUsdPrimName()'s
+    // returned const char* -- a leaf-name substring can't be returned directly
+    // since a temporary's .c_str() would dangle. Keyed rather than a single
+    // shared scratch string so a second call (e.g. filling an array of hit
+    // records across a sensor/filter loop) doesn't invalidate a pointer the
+    // caller already returned for a prior entry; node-based unordered_map
+    // gives pointer/reference stability across further insertions, matching
+    // the mPathCache pattern above.
+    mutable std::unordered_map<uint64_t, std::string> mFilterNameCache;
 };
 
 } // namespace tensors

@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 
-// Test that loads an articulation scene and uses the tensor binding API to:
-// - Write DOF velocity targets using ovphysx_write_tensor_binding()
-// - Read DOF positions and velocities using ovphysx_read_tensor_binding()
+// Test that loads an articulation scene and uses the session read/write API to:
+// - Write joint velocity targets via ovphysx_write / fetch_write_next / commit_group
+// - Read joint velocities via ovphysx_read / fetch_read_next
 // - Step the simulation and verify the articulation moves as expected
 
 #include <gtest/gtest.h>
@@ -16,129 +16,144 @@
 
 using namespace test_utils;
 
-TEST_F(PhysXTestFixture, JointDataMovement_ArticulationDofTensorBinding) {
+TEST_F(PhysXTestFixture, JointDataMovement_ArticulationDofSessionRW) {
     const char* usd_path = OVPHYSX_SOURCE_DIR "/tests/data/links_chain_sample.usda";
     ASSERT_TRUE(attach_usd_with_ovstage(m_handle, usd_path));
 
-    // 1. DOF position binding (to read joint positions)
-    ovphysx_tensor_binding_handle_t dof_pos_binding = 0;
-    ovphysx_tensor_binding_desc_t dof_pos_desc{};
-    dof_pos_desc.pattern = make_ovx_string("/World/articulation");
-    dof_pos_desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_DOF_POSITION_F32;
-
-    ovphysx_result_t result = ovphysx_create_tensor_binding(m_handle, &dof_pos_desc, &dof_pos_binding);
-    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
-
-    // 2. DOF velocity binding (to read joint velocities)
-    ovphysx_tensor_binding_handle_t dof_vel_binding = 0;
-    ovphysx_tensor_binding_desc_t dof_vel_desc{};
-    dof_vel_desc.pattern = make_ovx_string("/World/articulation");
-    dof_vel_desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_DOF_VELOCITY_F32;
-
-    result = ovphysx_create_tensor_binding(m_handle, &dof_vel_desc, &dof_vel_binding);
-    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
-
-    // 3. DOF velocity target binding (to write control targets)
-    ovphysx_tensor_binding_handle_t dof_vel_target_binding = 0;
-    ovphysx_tensor_binding_desc_t dof_vel_target_desc{};
-    dof_vel_target_desc.pattern = make_ovx_string("/World/articulation");
-    dof_vel_target_desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_DOF_VELOCITY_TARGET_F32;
-
-    result = ovphysx_create_tensor_binding(m_handle, &dof_vel_target_desc, &dof_vel_target_binding);
-    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
-
-    // Query tensor specs to determine dimensions
-    ovphysx_tensor_spec_t dof_spec;
-    result = ovphysx_get_tensor_binding_spec(m_handle, dof_pos_binding, &dof_spec);
-    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
-
-    ASSERT_EQ(dof_spec.ndim, 2);
-    ASSERT_GT(dof_spec.shape[0], 0);  // At least one articulation
-    ASSERT_GT(dof_spec.shape[1], 0);  // At least one DOF
-
-    size_t num_articulations = static_cast<size_t>(dof_spec.shape[0]);
-    size_t num_dofs = static_cast<size_t>(dof_spec.shape[1]);
-    size_t total_elements = num_articulations * num_dofs;
-
-    std::vector<float> dof_positions(total_elements, 0.0f);
-    std::vector<float> dof_velocities(total_elements, 0.0f);
-    std::vector<float> dof_vel_targets(total_elements, 0.0f);
-
-    // Create DLTensor wrappers for CPU memory
-    int64_t shape[2] = {static_cast<int64_t>(num_articulations), static_cast<int64_t>(num_dofs)};
-
-    DLTensor pos_tensor{};
-    pos_tensor.data = dof_positions.data();
-    pos_tensor.device = {kDLCPU, 0};
-    pos_tensor.ndim = 2;
-    pos_tensor.dtype = {kDLFloat, 32, 1};
-    pos_tensor.shape = shape;
-    pos_tensor.strides = nullptr;
-    pos_tensor.byte_offset = 0;
-
-    DLTensor vel_tensor{};
-    vel_tensor.data = dof_velocities.data();
-    vel_tensor.device = {kDLCPU, 0};
-    vel_tensor.ndim = 2;
-    vel_tensor.dtype = {kDLFloat, 32, 1};
-    vel_tensor.shape = shape;
-    vel_tensor.strides = nullptr;
-    vel_tensor.byte_offset = 0;
-
-    DLTensor vel_target_tensor{};
-    vel_target_tensor.data = dof_vel_targets.data();
-    vel_target_tensor.device = {kDLCPU, 0};
-    vel_target_tensor.ndim = 2;
-    vel_target_tensor.dtype = {kDLFloat, 32, 1};
-    vel_target_tensor.shape = shape;
-    vel_target_tensor.strides = nullptr;
-    vel_target_tensor.byte_offset = 0;
+    // Session-API attributes: write joint velocity TARGETS (app->physics), read joint
+    // velocities back (physics->app). ARTICULATION_JOINT groups carry per-axis columns.
+    const ovx_string_or_token_t velTargetAttr = {
+        0, { OVPHYSX_ATTR_JOINT_VELOCITY_TARGET, sizeof(OVPHYSX_ATTR_JOINT_VELOCITY_TARGET) - 1 }
+    };
+    const ovx_string_or_token_t velAttr = { 0, { OVPHYSX_ATTR_JOINT_VELOCITY, sizeof(OVPHYSX_ATTR_JOINT_VELOCITY) - 1 } };
 
     for (int i = 0; i < 100; ++i)
     {
-        if(i % 5 == 0) {
-            // write oscillating target velocity
-            for (size_t j = 0; j < total_elements; ++j) {
-                dof_vel_targets[j] = 2.0f * 3.14159f * std::sin(i * 2.0f * 3.14159f / 60.0f);
-            }
-            result = ovphysx_write_tensor_binding(m_handle, dof_vel_target_binding, &vel_target_tensor, nullptr);
-            ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
-        }
-
-        ovphysx_enqueue_result_t step_result = ovphysx_step(m_handle, 1.0f/60.0f);
+        // Step first: DirectGPU (and the tensor backend's scene view) refuse a read or write session
+        // before the first step. A velocity target written after a step drives the following one.
+        ovphysx_enqueue_result_t step_result = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step_result.status, OVPHYSX_API_SUCCESS);
         ASSERT_TRUE(waitForOperationSuccess(m_handle, step_result.op_index));
 
-        // Read DOF positions and velocities periodically (tensor API is synchronous)
-        if (i % 10 == 0)
+        if (i % 5 == 0)
         {
-            result = ovphysx_read_tensor_binding(m_handle, dof_pos_binding, &pos_tensor);
-            ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
+            // Write an oscillating velocity target onto every joint axis via the write session. The
+            // joint group emits one tensor per joint, so fill each, not just the first.
+            // jointVelocityTarget is in the session API's angular units (deg/s). The amplitude of
+            // 360 deg/s equals 2*pi rad/s.
+            const float target = 360.0f * std::sin(i * 2.0f * 3.14159f / 60.0f);
+            ovphysx_query_handle_t writeQuery = 0;
+            ASSERT_EQ(ovphysx_query(m_handle, OVPHYSX_OBJECT_ARTICULATION_JOINT, OVPHYSX_SCOPE_ALL, &writeQuery).status,
+                      OVPHYSX_API_SUCCESS);
+            ovphysx_write_handle_t writeSession = 0;
+            ASSERT_EQ(ovphysx_write(m_handle, writeQuery, &velTargetAttr, &writeSession).status, OVPHYSX_API_SUCCESS);
 
-            result = ovphysx_read_tensor_binding(m_handle, dof_vel_binding, &vel_tensor);
-            ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
-
-            // Optional: Verify data is changing (basic sanity check)
-            // After some steps, velocities should be non-zero due to target velocity drive
-            if (i > 0) {
-                bool has_nonzero_velocity = false;
-                for (size_t j = 0; j < total_elements; ++j) {
-                    if (std::abs(dof_velocities[j]) > 0.01f) {
-                        has_nonzero_velocity = true;
-                        break;
-                    }
+            const ovstage_map_group_t* group = nullptr;
+            int groups_written = 0;
+            for (ovphysx_result_t fw;
+                 (fw = ovphysx_fetch_write_next(m_handle, writeSession, &group)).status != OVPHYSX_API_END_OF_ITERATION;)
+            {
+                // Any status other than END_OF_ITERATION is a real error, not exhaustion.
+                ASSERT_EQ(fw.status, OVPHYSX_API_SUCCESS);
+                for (uint32_t ti = 0; group->data.tensors && ti < group->data.tensor_count; ++ti)
+                {
+                    const DLTensor& t = group->data.tensors[ti];
+                    // Commit publishes every entry, so every tensor must be filled before the
+                    // group is committed. This is a CPU write session.
+                    ASSERT_TRUE(t.data && t.device.device_type == kDLCPU);
+                    const size_t lanes = t.dtype.lanes ? t.dtype.lanes : 1;
+                    const size_t count = static_cast<size_t>(t.shape[0]) * lanes;
+                    float* dst = static_cast<float*>(t.data);
+                    for (size_t j = 0; j < count; ++j)
+                        dst[j] = target;
                 }
-                EXPECT_TRUE(has_nonzero_velocity) << "Expected non-zero velocities after " << i << " steps";
+                ASSERT_EQ(ovphysx_commit_group(m_handle, writeSession, group, ovstage_cuda_sync_t{}).status,
+                          OVPHYSX_API_SUCCESS);
+                ++groups_written;
             }
+            ASSERT_GT(groups_written, 0) << "write session produced no groups";
+            ovphysx_release_write(m_handle, writeSession);
+            ovphysx_release_query(m_handle, writeQuery);
+        }
+
+        // Read joint velocities back through the read session and verify the drive took.
+        if (i % 10 == 0 && i > 0)
+        {
+            ovphysx_query_handle_t readQuery = 0;
+            ASSERT_EQ(ovphysx_query(m_handle, OVPHYSX_OBJECT_ARTICULATION_JOINT, OVPHYSX_SCOPE_ALL, &readQuery).status,
+                      OVPHYSX_API_SUCCESS);
+            ovphysx_read_handle_t readSession = 0;
+            ASSERT_EQ(ovphysx_read(m_handle, readQuery, &velAttr, 1, &readSession).status, OVPHYSX_API_SUCCESS);
+
+            bool has_nonzero_velocity = false;
+            const ovstage_read_group_t* group = nullptr;
+            for (;;)
+            {
+                const ovphysx_result_t fr = ovphysx_fetch_read_next(m_handle, readSession, &group);
+                if (fr.status == OVPHYSX_API_END_OF_ITERATION)
+                    break;
+                ASSERT_EQ(fr.status, OVPHYSX_API_SUCCESS);
+                for (uint32_t ti = 0; !group->is_delete && group->data.tensors && ti < group->data.tensor_count; ++ti)
+                {
+                    const DLTensor& t = group->data.tensors[ti];
+                    if (!t.data || t.device.device_type != kDLCPU)
+                        continue;
+                    const size_t lanes = t.dtype.lanes ? t.dtype.lanes : 1;
+                    const size_t count = static_cast<size_t>(t.shape[0]) * lanes;
+                    const float* d = static_cast<const float*>(t.data);
+                    for (size_t j = 0; j < count; ++j)
+                        // jointVelocity is deg/s (session units). The threshold is 0.01 rad/s
+                        // expressed in deg/s. A threshold of 0.01 deg/s would be ~57x weaker and
+                        // latch on solver jitter.
+                        if (std::abs(d[j]) > 0.573f)
+                            has_nonzero_velocity = true;
+                }
+                ovphysx_release_group(m_handle, readSession, group->read_group_id);
+            }
+            ovphysx_release_read(m_handle, readSession);
+            ovphysx_release_query(m_handle, readQuery);
+            EXPECT_TRUE(has_nonzero_velocity) << "Expected non-zero velocities after " << i << " steps";
         }
     }
 
-    // Cleanup tensor bindings
-    ovphysx_destroy_tensor_binding(m_handle, dof_pos_binding);
-    ovphysx_destroy_tensor_binding(m_handle, dof_vel_binding);
-    ovphysx_destroy_tensor_binding(m_handle, dof_vel_target_binding);
+    // After 100 driven steps the chain's joints have displaced toward their +/-5.625 deg limits, so
+    // a jointPosition read must show non-trivial angles.
+    {
+        const ovx_string_or_token_t posAttr = { 0, { OVPHYSX_ATTR_JOINT_POSITION, sizeof(OVPHYSX_ATTR_JOINT_POSITION) - 1 } };
+        ovphysx_query_handle_t posQuery = 0;
+        ASSERT_EQ(ovphysx_query(m_handle, OVPHYSX_OBJECT_ARTICULATION_JOINT, OVPHYSX_SCOPE_ALL, &posQuery).status,
+                  OVPHYSX_API_SUCCESS);
+        ovphysx_read_handle_t posSession = 0;
+        ASSERT_EQ(ovphysx_read(m_handle, posQuery, &posAttr, 1, &posSession).status, OVPHYSX_API_SUCCESS);
+        float max_abs_pos = 0.0f;
+        const ovstage_read_group_t* group = nullptr;
+        for (;;)
+        {
+            const ovphysx_result_t fr = ovphysx_fetch_read_next(m_handle, posSession, &group);
+            if (fr.status == OVPHYSX_API_END_OF_ITERATION)
+                break;
+            ASSERT_EQ(fr.status, OVPHYSX_API_SUCCESS);
+            for (uint32_t ti = 0; !group->is_delete && group->data.tensors && ti < group->data.tensor_count; ++ti)
+            {
+                const DLTensor& t = group->data.tensors[ti];
+                if (!t.data || t.device.device_type != kDLCPU)
+                    continue;
+                const size_t lanes = t.dtype.lanes ? t.dtype.lanes : 1;
+                const size_t count = static_cast<size_t>(t.shape[0]) * lanes;
+                const float* d = static_cast<const float*>(t.data);
+                for (size_t j = 0; j < count; ++j)
+                    if (std::abs(d[j]) > max_abs_pos)
+                        max_abs_pos = std::abs(d[j]);
+            }
+            ovphysx_release_group(m_handle, posSession, group->read_group_id);
+        }
+        ovphysx_release_read(m_handle, posSession);
+        ovphysx_release_query(m_handle, posQuery);
+        EXPECT_GT(max_abs_pos, 0.5f)
+            << "jointPosition read back ~0 (max " << max_abs_pos << " deg); the driven joints should have displaced";
+    }
 
-    // Cleanup - reset to clear USD
+    // Reset to clear the USD stage.
     ovphysx_enqueue_result_t reset_result = ovphysx_reset_stage(m_handle);
     ASSERT_EQ(reset_result.status, OVPHYSX_API_SUCCESS);
     ASSERT_TRUE(waitForOperationSuccess(m_handle, reset_result.op_index));

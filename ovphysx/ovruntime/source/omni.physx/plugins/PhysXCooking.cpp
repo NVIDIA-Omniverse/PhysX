@@ -1,16 +1,24 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-UNIFY-001
+ * @covers AC-1
+ *
+ * @implements REQ-COOK-SOURCE-001
+ * @covers AC-6
+ *
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-15 AC-16
+ *
+ * @implements REQ-PUBLICAPI-002
  * @covers AC-10
  */
 
-#include "UsdPCH.h"
-
 #include <carb/logging/Log.h>
 
-#include <internal/InternalTools.h>
+#include <omni/physics/parse/KnownTokens.h>
+
 #include "PhysXCooking.h"
 #include "MeshCache.h"
 #include "CookingDataAsync.h"
@@ -22,11 +30,11 @@
 #include "OmniPhysX.h"
 #include "Setup.h"
 #include "ObjectDataQuery.h"
+#include <omni/physx/PhysXRuntime.h>
 #include <private/omni/physx/PhysXCompoundShape.h>
 #include <private/omni/physx/IPhysxCookingPrivate.h>
 
 #include <private/omni/physx/IPhysxCookingServicePrivate.h>
-#include <omni/physics/usd/PrimIterator.h>
 
 #include <PxPhysicsAPI.h>
 #include <extensions/PxTetMakerExt.h>
@@ -38,7 +46,6 @@ using namespace ::physx;
 using namespace omni::physx;
 using namespace omni::physx::usdparser;
 using namespace omni::physx::internal;
-using namespace PXR_NS;
 using namespace carb;
 using namespace cookingdataasync;
 
@@ -115,13 +122,13 @@ namespace physx
     }
 
     /// Add Prim to cooking refresh set
-    void addPrimToCookingRefreshSet(const PXR_NS::SdfPath& path)
+    void addPrimToCookingRefreshSetForAttach(omni::physics::parse::ObjectKey key, omni::physics::AttachHandle attachHandle)
     {
         CookingDataAsync* cookingDataAsync = OmniPhysX::getInstance().getPhysXSetup().getCookingDataAsync();
 
         if (cookingDataAsync != nullptr)
         {
-            cookingDataAsync->addPrimRefreshSet(path);
+            cookingDataAsync->addPrimRefreshSet(key, attachHandle);
         }
     }
 
@@ -130,7 +137,7 @@ namespace physx
         omni::physx::getMeshCache()->release();
     }
 
-    uint32_t getNbConvexMeshData(const PXR_NS::SdfPath& path)
+    uint32_t getNbConvexMeshData(omni::physics::parse::ObjectKey key)
     {
         const internal::InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
 
@@ -139,7 +146,7 @@ namespace physx
             return 0;
 
         uint32_t numMeshes = 0;
-        void* physxPtr = (void*)(getObjectDataOrID<ObjectDataQueryType::ePHYSX_PTR>(path, ePTShape, db, *attachedStage));
+        void* physxPtr = (void*)(getObjectDataOrID<ObjectDataQueryType::ePHYSX_PTR>(key, ePTShape, db, *attachedStage));
         if (physxPtr)
         {
             PxShape* shape = (PxShape*)physxPtr;
@@ -148,7 +155,7 @@ namespace physx
         }
         else
         {
-            physxPtr = (void*)(getObjectDataOrID<ObjectDataQueryType::ePHYSX_PTR>(path, ePTCompoundShape, db, *attachedStage));
+            physxPtr = (void*)(getObjectDataOrID<ObjectDataQueryType::ePHYSX_PTR>(key, ePTCompoundShape, db, *attachedStage));
             if (physxPtr)
             {
                 PhysXCompoundShape* compoundShape = (PhysXCompoundShape*)physxPtr;
@@ -163,7 +170,7 @@ namespace physx
         return numMeshes;
     }
 
-    void getConvexMeshData(const PXR_NS::SdfPath& path, uint32_t convexIndex, ConvexMeshData& meshData)
+    void getConvexMeshData(omni::physics::parse::ObjectKey key, uint32_t convexIndex, ConvexMeshData& meshData)
     {
         uint32_t numMeshes = 0;
         const internal::InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
@@ -174,7 +181,7 @@ namespace physx
         if (!attachedStage)
             return;
 
-        void* physxPtr = (void*)(getObjectDataOrID<ObjectDataQueryType::ePHYSX_PTR>(path, ePTShape, db, *attachedStage));
+        void* physxPtr = (void*)(getObjectDataOrID<ObjectDataQueryType::ePHYSX_PTR>(key, ePTShape, db, *attachedStage));
         if (physxPtr)
         {
             PxShape* shape = (PxShape*)physxPtr;
@@ -187,7 +194,7 @@ namespace physx
         }
         else
         {
-            physxPtr = (void*)(getObjectDataOrID<ObjectDataQueryType::ePHYSX_PTR>(path, ePTCompoundShape, db, *attachedStage));
+            physxPtr = (void*)(getObjectDataOrID<ObjectDataQueryType::ePHYSX_PTR>(key, ePTCompoundShape, db, *attachedStage));
             if (physxPtr)
             {
                 PhysXCompoundShape* compoundShape = (PhysXCompoundShape*)physxPtr;
@@ -222,20 +229,23 @@ namespace physx
         }
     }
 
-    bool createConvexMesh(const PXR_NS::SdfPath& path, uint32_t vertexLimit, ConvexMeshData& meshData)
+    bool createConvexMesh(omni::physics::parse::ObjectKey key, uint32_t vertexLimit, ConvexMeshData& meshData)
     {
         usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
         CookingDataAsync* cookingDataAsync = OmniPhysX::getInstance().getPhysXSetup().getCookingDataAsync();
         bool retVal = false;
         if (cookingDataAsync && attachedStage)
         {
-            const omni::physics::parse::ObjectKey meshKey = attachedStage->keyFor(path);
             const omni::physics::parse::IPhysicsSource* source = attachedStage->getSource();
-            if (source && source->exists(meshKey) && internal::isAType<UsdGeomMesh>(*source, meshKey))
+            // "Mesh" is the registered USD schema-type name for UsdGeomMesh; isA(key,
+            // internToken("Mesh")) is the same pxr-free pattern used elsewhere (e.g.
+            // TestOvstageWalker.cpp, ParseParticleSystem.cpp) for this exact check, so this
+            // needs no pxr type at all -- isAType<T>'s compile-time template is unnecessary here.
+            if (source && source->exists(key) && source->isA(key, source->internToken("Mesh")))
             {
                 ConvexMeshPhysxShapeDesc convexMeshDesc;
 
-                if (usdparser::fillConvexMeshDesc(attachedStage, meshKey, convexMeshDesc, ConvexMeshCookingParams()))
+                if (usdparser::fillConvexMeshDesc(attachedStage, key, convexMeshDesc, ConvexMeshCookingParams()))
                 {
                     Float3 scale = { 1.0f, 1.0f, 1.0f };
                     convexMeshDesc.meshScale = scale;
@@ -243,7 +253,7 @@ namespace physx
                     convexMeshDesc.crc.setMaxHullVertices(vertexLimit);
                     convexMeshDesc.convexCookingParams.maxHullVertices = vertexLimit;
 
-                    PxConvexMesh* convexMesh = cookingDataAsync->getConvexMesh(convexMeshDesc, meshKey, *attachedStage, false);
+                    PxConvexMesh* convexMesh = cookingDataAsync->getConvexMesh(convexMeshDesc, key, *attachedStage, false);
                     if (convexMesh)
                     {
                         const ConvexMeshDataMap& meshMap = getMeshCache()->getConvexMeshDataMap();
@@ -272,8 +282,12 @@ namespace physx
         return retVal;
     }
 
-    bool cookAutoDeformableBody(const PXR_NS::SdfPath& deformableBodyPath)
+    bool cookAutoDeformableBody(omni::physics::parse::ObjectKey deformableBodyKey)
     {
+        // Resolved once for the diagnostics below; objectKeyToPath already returns ""
+        // for an unresolvable key or no active attach (ADR-0019 boundary function).
+        const char* deformableBodyPathStr = omni::physx::runtime::getPhysxInterface().objectKeyToPath(deformableBodyKey);
+
         //workaround to re-initialize cooking data async when it get's released in some circumstances
         //(memory stage tests), when scene parsing releases physics.
         OmniPhysX::getInstance().getPhysXSetup().getPhysics();
@@ -281,7 +295,7 @@ namespace physx
         if (!cookingDataAsync)
         {
             CARB_LOG_ERROR("cookAutoDeformableBody: couldn't access cooking for %s",
-                deformableBodyPath.GetText());
+                deformableBodyPathStr);
             return false;
         }
 
@@ -291,28 +305,28 @@ namespace physx
         if (!attachedStage)
         {
             CARB_LOG_ERROR("cookAutoDeformableBody: no attached stage for %s",
-                           deformableBodyPath.GetText());
+                           deformableBodyPathStr);
             return success;
         }
 
-        const omni::physics::parse::ObjectKey bodyKey = attachedStage->keyFor(deformableBodyPath);
         const omni::physics::parse::IPhysicsSource* source = attachedStage->getSource();
-        if (!source || !source->exists(bodyKey) ||
-            !internal::hasAppliedSchema(*source, bodyKey, PXR_NS::OmniUsdPhysicsDeformableSchemaTokens->OmniPhysicsDeformableBodyAPI))
+        const omni::physics::parse::KnownTokens& tok = attachedStage->getKnownTokens();
+        if (!source || !source->exists(deformableBodyKey) ||
+            !source->hasSchema(deformableBodyKey, tok.omniphysicsDeformableBodyAPI))
         {
             CARB_LOG_ERROR("cookAutoDeformableBody: prim requires UsdPhysicsDeformableBodyAPI, %s",
-                           deformableBodyPath.GetText());
+                           deformableBodyPathStr);
             return success;
         }
 
-        if (!internal::hasAppliedSchema(*source, bodyKey, PhysxSchemaTokens->PhysxAutoDeformableBodyAPI))
+        if (!source->hasSchema(deformableBodyKey, tok.PhysxAutoDeformableBodyAPI))
         {
             CARB_LOG_ERROR("cookAutoDeformableBody: prim requires PhysxSchemaPhysxAutoDeformableBodyAPI, %s",
-                           deformableBodyPath.GetText());
+                           deformableBodyPathStr);
             return success;
         }
 
-        omni::physx::usdparser::PhysxDeformableBodyDesc* deformableDesc = cookingDataAsync->parseDeformableBody(bodyKey, *attachedStage);
+        omni::physx::usdparser::PhysxDeformableBodyDesc* deformableDesc = cookingDataAsync->parseDeformableBody(deformableBodyKey, *attachedStage);
         if (deformableDesc)
         {
             if (deformableDesc->type == ObjectType::eVolumeDeformableBody)
@@ -322,13 +336,19 @@ namespace physx
 
                 if (volumeDesc->hasAutoAPI)
                 {
-                    cookingDataAsync->cookVolumeDeformableBody(*volumeDesc, bodyKey, *attachedStage, false);
-                    success = true;
+                    // The cook reports whether it could actually publish cooked data; reporting
+                    // success regardless would hand the caller a body that was never generated.
+                    success = cookingDataAsync->cookVolumeDeformableBody(*volumeDesc, deformableBodyKey, *attachedStage, false);
+                    if (!success)
+                    {
+                        CARB_LOG_ERROR("cookAutoDeformableBody: auto cook produced no volume deformable data for %s",
+                            deformableBodyPathStr);
+                    }
                 }
                 else
                 {
                     CARB_LOG_ERROR("cookAutoDeformableBody: expected auto configuration for %s",
-                        deformableBodyPath.GetText());
+                        deformableBodyPathStr);
                 }
             }
             else if (deformableDesc->type == ObjectType::eSurfaceDeformableBody)
@@ -338,13 +358,17 @@ namespace physx
 
                 if (surfaceDesc->hasAutoAPI)
                 {
-                    cookingDataAsync->cookSurfaceDeformableBody(*surfaceDesc, bodyKey, *attachedStage, false);
-                    success = true;
+                    success = cookingDataAsync->cookSurfaceDeformableBody(*surfaceDesc, deformableBodyKey, *attachedStage, false);
+                    if (!success)
+                    {
+                        CARB_LOG_ERROR("cookAutoDeformableBody: auto cook produced no surface deformable data for %s",
+                            deformableBodyPathStr);
+                    }
                 }
                 else
                 {
                     CARB_LOG_ERROR("cookAutoDeformableBody: expected auto configuration for %s",
-                        deformableBodyPath.GetText());
+                        deformableBodyPathStr);
                 }
             }
             ICE_FREE(deformableDesc);
@@ -362,15 +386,13 @@ namespace physx
         return {};
     }
 
-    bool precookMesh(uint64_t stageId, uint64_t path, const CookingParams& cookingParams, IPhysxCookingCallback* cb)
+    bool precookMesh(AttachHandle attachHandle, omni::physics::parse::ObjectKey meshKey, const CookingParams& cookingParams, IPhysxCookingCallback* cb)
     {
         if (cookingParams.type == CookingParamsType::eUNDEFINED)
         {
             CARB_LOG_ERROR("IPhysxCooking::precookMesh undefined cooking params!");
             return false;
         }
-
-        const SdfPath meshPrimPath = intToPath(path);
 
         OmniPhysX& omniPhysX = OmniPhysX::getInstance();
         PhysXSetup& physxSetup = omniPhysX.getPhysXSetup();
@@ -382,27 +404,26 @@ namespace physx
         }
 
         usdparser::UsdLoad* usdLoad = usdparser::UsdLoad::getUsdLoad();
-        usdparser::AttachedStage* attachedStage = usdLoad->getAttachedStage(stageId);
+        // The handle names the attach directly (ADR-0016 Decision 6), so the stageless special case
+        // that used to sit here is gone: it existed only because a stageless attach registers in
+        // mAttachedStages under key 0, so a caller holding the raw (nonzero) stage id missed and had
+        // to be rescued by "if the lone active attach is itself stageless, use it". A handle is
+        // nonzero for every live attach, stageless or not, and kActiveAttach expresses "the lone
+        // active attach" explicitly -- both halves of that workaround are now spelled by the
+        // parameter itself.
+        usdparser::AttachedStage* attachedStage = usdLoad->resolveAttach(attachHandle);
         if (!attachedStage)
         {
-            // A stageless / ovstage key-0 attach is registered under stage id 0 even when
-            // the caller holds the raw (nonzero) stage id, so resolve it through the sole
-            // active attach -- but only when that active attach is itself stageless
-            // (getStageId() == 0), so a concrete second stage is never cooked under the
-            // wrong key.
-            usdparser::AttachedStage* active = usdLoad->getActiveAttachedStage();
-            if (active && active->getStageId() == 0)
-                attachedStage = active;
-        }
-        if (!attachedStage)
-        {
-            CARB_LOG_ERROR("IPhysxCooking::precookMesh stage not attached!");
+            CARB_LOG_ERROR("IPhysxCooking::precookMesh could not resolve attach handle %llu: it is either kNoAttach, "
+                           "or a handle whose attach has since been detached (a handle is minted per attach and "
+                           "never reused). Pass IPhysxSimulation::getAttachHandle(), or kActiveAttach for the lone "
+                           "active attach.",
+                           static_cast<unsigned long long>(attachHandle));
             return false;
         }
 
-        const omni::physics::parse::ObjectKey meshKey = attachedStage->keyFor(meshPrimPath);
         const omni::physics::parse::IPhysicsSource* source = attachedStage->getSource();
-        if (!source || !source->exists(meshKey) || !internal::isAType<UsdGeomMesh>(*source, meshKey))
+        if (!source || !source->exists(meshKey) || !source->isA(meshKey, source->internToken("Mesh")))
         {
             CARB_LOG_ERROR("IPhysxCooking::precookMesh prim not found or not UsdGeomMesh!");
             return false;
@@ -518,6 +539,6 @@ void fillInterface(omni::physx::IPhysxCooking& iface)
 void fillInterface(omni::physx::IPhysxCookingPrivate& iface)
 {
     iface.getCookingStatistics = getCookingStatistics;
-    iface.addPrimToCookingRefreshSet = addPrimToCookingRefreshSet;
+    iface.addPrimToCookingRefreshSetForAttach = addPrimToCookingRefreshSetForAttach;
     iface.releaseRuntimeMeshCache = releaseRuntimeMeshCache;
 }

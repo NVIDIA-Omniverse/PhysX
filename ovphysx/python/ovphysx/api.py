@@ -1,5 +1,20 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# @implements REQ-CAPI-LOG-001
+# @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7
+# @implements REQ-PYTHON-KEYWORD-001
+# @covers AC-1 AC-2
+# @implements REQ-PYTHON-OMNIPVD-LATE-001
+# @covers AC-3 AC-4 AC-5 AC-6 AC-7 AC-8
+# @implements REQ-CAPI-WRITE-001
+# @covers AC-9 AC-11 AC-12
+# @implements REQ-PYTHON-READPOOL-001
+# @covers AC-3
+# @implements REQ-PYTHON-BINDING-DEVICE-001
+# @covers AC-1 AC-2 AC-3 AC-4
+# @implements REQ-PYTHON-CLONE-001
+# @covers AC-2
 
 """High-level Python API for the ovphysx library.
 
@@ -13,26 +28,23 @@ order as if on a single queue. This provides sequential consistency:
 - You don't need explicit synchronization between dependent operations
 - Independent operations may execute concurrently internally for performance
 
-Example (no explicit ovphysx waits needed between dependent operations):
+Example (no explicit waits needed between dependent operations):
 
 .. code-block:: python
    :caption: Stream-ordered operation sequence
 
-    from ovphysx import TensorType
+    from ovphysx.types import ObjectScope, SimObjectType
 
-    def step_and_read(
-        physx, stage, output, initial_ordinal, from_ordinal, to_ordinal, dt
-    ):
-        stage.advance_write_floor(ordinal=initial_ordinal).wait()
+    def step_and_read(physx, stage, initial_ordinal, from_ordinal, to_ordinal, dt):
         physx.attach_ovstage(stage, read_ordinal=initial_ordinal)
         # After the application authors later ovstage edits:
-        stage.advance_write_floor(ordinal=to_ordinal).wait()
         physx.update_from_ovstage(from_ordinal, to_ordinal)
         physx.step(dt)  # Sees the drained stage edits
-        with physx.create_tensor_binding(
-            "/World/Cube", tensor_type=TensorType.RIGID_BODY_POSE
-        ) as binding:
-            binding.read(output)  # Reads current state
+        with physx.read(
+            SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL
+        ) as result:  # Reads current state
+            for group in result.groups:
+                ...  # use group.tensors (native CPU/CUDA columns)
 
 Use wait_op() when:
 
@@ -44,41 +56,49 @@ Thread Safety
 -------------
 - PhysX instances share the underlying omni.physx runtime. Serialize simulation,
   stage mutation, and binding creation across instances.
+- Only one instance may own a live ovstage attach in a process. A peer attach
+  attempt raises ``RuntimeError`` and leaves the owner's stage and bindings
+  unchanged. Detach the owner before attaching another instance.
 - A single instance is NOT thread-safe. Use external synchronization if calling
   from multiple threads.
 - ctypes releases the GIL during native calls, so concurrent ``step()`` and
-  ``TensorBinding.read()`` / ``write()`` from different threads is a data race.
+  ``PhysX.read()`` / ``PhysX.write()`` from different threads is a data race.
   See the developer guide threading section for the recommended pattern.
 
 """
 
+# @implements REQ-PYTHON-LIFECYCLE-001
+# @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7 AC-8
+# @implements REQ-CAPI-CACHE-001
+# @covers AC-5
+# @implements REQ-PYTHON-READ-001
+# @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6
+
+import atexit
 import ctypes
+import gc
 import math
 import operator
-import os
-import sys
 import threading
 import warnings
+import weakref
 from ctypes import (
     POINTER,
     byref,
     c_char_p,
     c_float,
     c_int32,
-    c_int64,
-    c_uint8,
     c_uint32,
     c_uint64,
     c_void_p,
     cast,
 )
-from pathlib import Path
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 from packaging.version import Version
 
 if TYPE_CHECKING:
-    from .config import PhysXConfig
+    from .config import OmniPvdDestination, PhysXConfig
 
 from ._bindings import (
     OP_INDEX_ALL,
@@ -91,13 +111,16 @@ from ._bindings import (
     _lib,
     ovphysx_articulation_metadata_t,
     ovphysx_create_args,
-    ovphysx_log_fn,
+    ovphysx_log_callback_t,
+    ovphysx_omnipvd_destination_t,
     ovphysx_op_wait_result_t,
     ovphysx_string_t,
     ovphysx_tensor_binding_desc_t,
     ovphysx_tensor_spec_t,
     ovphysx_config_entry_t,
     ovstage_read_group_t,
+    ovstage_map_group_t,
+    ovstage_cuda_sync_t,
     ovstage_query_result_t,
     ovstage_ordinal_range_t,
     ovx_string_or_token_t,
@@ -109,6 +132,7 @@ from . import __version__ as _python_version
 from .types import (
     ApiStatus,
     LogLevel,
+    ObjectType,
     SimObjectType,
     ObjectScope,
     SceneQueryGeometryType,
@@ -121,32 +145,188 @@ from .types import (
 _ARTICULATION_TENSOR_TYPES: frozenset[int] = frozenset(t for t in TensorType if t.name.startswith("ARTICULATION_"))
 
 
+class WriteGroup(NamedTuple):
+    """One WRITABLE group from :meth:`PhysX.write`, the mirror of :class:`ReadGroup`.
+
+    Every tensor is a ``warp.array`` on the native CPU or CUDA device. Non-empty tensors
+    are MUTABLE VIEWS onto storage the runtime owns, not copies: fill them in place, then
+    hand the group to :meth:`WriteSession.commit`. Empty tensors are Warp-owned empty
+    arrays. Using a non-empty tensor after its group is committed or its session closes
+    is undefined. The mapped storage is no longer caller-owned.
+
+    Two fields ReadGroup has are absent, and their absence is the contract:
+
+    * no ``attribute``: a session carries exactly one, named when it is opened, because
+      the native group has nowhere to record it.
+    * no group id: a committed group is identified by the native pointer it came from,
+      which is why :meth:`WriteSession.commit` takes the group itself.
+    """
+
+    prim_list: int
+    prim_offset: int
+    prim_count: int
+    tensors: "list"
+
+
+class _WriteRelease:
+    """Deferred, owning-thread teardown for a write session (ADR-0012).
+
+    A WriteSession's group tensors are mutable aliases valid only inside the ``with`` block, so,
+    unlike a read, nothing borrows the session past close and there is no refcount to keep. The
+    one hazard this guards is the thread: ``WriteSession.__del__`` can fire on whatever thread the
+    collector is on, and a single ovphysx instance is NOT thread-safe. So the native
+    ``ovphysx_release_write`` / ``ovphysx_release_query`` is never issued from ``__del__``. It only
+    enqueues, and the owning thread performs the release on its next SDK-call drain
+    (``PhysX._drain_pending_write_releases``). ``_free_native`` is idempotent, so an owning-thread
+    ``close()`` and a later drained ``__del__`` cannot double-free.
+    """
+
+    def __init__(self, sdk, query: int, write: int):
+        self._sdk = sdk
+        self._query = int(query)
+        self._write = int(write)
+        self._native_freed = False
+        self._lock = threading.Lock()
+
+    def _free_native(self) -> None:
+        # MUST run on the owning thread (serialized with other ovphysx calls on this instance).
+        # Invoked only by WriteSession.close (owner) and PhysX._drain_pending_write_releases.
+        with self._lock:
+            if self._native_freed:
+                return
+            self._native_freed = True
+        lib = getattr(getattr(self._sdk, "_omni_physx_sdk_handle", None), "value", None)
+        if lib is None:
+            return  # parent SDK already destroyed, and the instance's handles went with it
+        if self._write:
+            self._sdk._lib.ovphysx_release_write(lib, self._write)
+        if self._query:
+            self._sdk._lib.ovphysx_release_query(lib, self._query)
+
+
+class WriteSession:
+    """A context-managed app -> physics write session (ADR-0012).
+
+    The return direction of :class:`ReadResult`, and deliberately its mirror: the groups
+    cover the same prims in the same order. Each tensor exposes the native residency of
+    the write path. This can differ from the corresponding read when a write uses host
+    staging on a GPU scene. Inspect ``tensor.device`` instead of inferring placement from
+    the scene or read result.
+
+    Anything not committed when the block exits is DISCARDED, so abandoning a fill midway
+    publishes nothing rather than leaking a half-filled column into the solver::
+
+        import warp as wp
+
+        row = 0
+        with physx.write(SimObjectType.RIGID_BODY, "position") as w:
+            for g in w.groups:
+                tensor = g.tensors[0]
+                tensor.assign(new_positions[row : row + g.prim_count])
+                if tensor.device.is_cuda:
+                    stream = wp.get_stream(tensor.device)
+                    w.commit(g, cuda_stream=int(stream.cuda_stream or 1))
+                else:
+                    w.commit(g)
+                row += g.prim_count
+    """
+
+    def __init__(self, sdk, query: int, write: int, groups: "list[WriteGroup]", native: "list"):
+        self._sdk = sdk
+        self._query = int(query)
+        self._write = int(write)
+        self.groups = groups
+        # The native pointers, parallel to `groups`. commit() looks a group up here because the
+        # ADDRESS is the commit identity. A copy of the struct would be a pointer the runtime
+        # cannot recognise.
+        self._native = native
+        self._closed = False
+        self._release = _WriteRelease(sdk, self._query, self._write)
+
+    def commit(self, group: "WriteGroup", cuda_stream: int = 0, cuda_wait_event: int = 0) -> None:
+        """Publish one filled group to the simulation.
+
+        Commits exactly once per group. A second commit of the same group raises, because
+        commit IS the mutation and reporting success twice would tell the caller state was
+        published when it was not.
+
+        ``cuda_stream`` / ``cuda_wait_event`` hand over a GPU fill still in flight: the
+        runtime orders the scatter behind them before reading the column. For
+        ``cuda_stream``, ``0`` means no synchronization and ``1`` means CUDA's default
+        stream.
+        """
+        if self._closed:
+            raise RuntimeError("write session is closed")
+        try:
+            i = self.groups.index(group)
+        except ValueError:
+            raise ValueError("group does not belong to this write session") from None
+        sync = ovstage_cuda_sync_t()
+        sync.stream = int(cuda_stream)
+        sync.wait_event = int(cuda_wait_event)
+        result = self._sdk._lib.ovphysx_commit_group(
+            self._sdk._omni_physx_sdk_handle.value, self._write, self._native[i], sync
+        )
+        if result.status != ApiStatus.SUCCESS:
+            raise RuntimeError(f"commit failed: {self._sdk._get_last_error()}")
+
+    def close(self) -> None:
+        """Release the write session and its query. OWNING THREAD ONLY.
+
+        Issues native ``ovphysx_release_*``, so it must run on the thread that owns the ovphysx
+        instance. A single instance is not thread-safe. ``__del__`` never calls this. It only
+        queues the teardown for the owning thread to drain. Group tensors are invalid once this
+        returns: the runtime storage they aliased is gone.
+        """
+        if self._closed:
+            return
+        self._closed = True
+        self._release._free_native()
+
+    def __enter__(self) -> "WriteSession":
+        return self
+
+    def __exit__(self, *exc) -> None:
+        self.close()
+
+    def __del__(self):
+        # May run on a GC thread, so never issue the native release here. A single ovphysx
+        # instance is not thread-safe. Queue it for the owning thread's next drain (mirrors
+        # ReadResult.__del__, which likewise only hands the teardown off).
+        try:
+            if not self._closed:
+                self._closed = True
+                self._sdk._enqueue_write_release(self._release)
+        except Exception:
+            pass
+
+
 class ReadGroup(NamedTuple):
     """One physics-output column group returned by :meth:`PhysX.read`.
 
     A flattened view of the native ``ovstage_read_group_t`` the read returns (its
     ``prims`` / ``data`` / ``meta`` sub-structs unpacked into these fields). The
     interned identifiers (``attribute`` token and ``prim_list`` handle) resolve
-    through the *same* process-shared ovstage path dictionary the attached Stage uses
-    — so an ``ovstage.PathDictionary(stage)`` resolves them, and ``prim_list`` feeds
+    through the *same* process-shared ovstage path dictionary the attached Stage uses,
+    so an ``ovstage.PathDictionary(stage)`` resolves them, and ``prim_list`` feeds
     straight into ``stage.query_from_path_list`` for a no-repack write-back.
     ``object_type`` is NOT part of the native group (the read is opened over one
-    type); it is stamped here from the ``object_type`` passed to :meth:`PhysX.read`.
+    type). It is stamped here from the ``object_type`` passed to :meth:`PhysX.read`.
 
     Constant on the physics-output path (so callers can rely on them): ``is_delete``
-    is always ``False`` (this read never emits tombstones); ``prim_offset`` is ``0``
-    and ``prim_index_map`` is ``None`` (each group carries its own full ``prim_list``);
+    is always ``False`` (this read never emits tombstones). ``prim_offset`` is ``0``
+    and ``prim_index_map`` is ``None`` (each group carries its own full ``prim_list``).
     ``ordinal`` is ``0`` (groups are not ordinal-stamped here).
 
     Attributes:
         attribute: Interned EMITTED attribute token (resolve via the path
-            dictionary). May differ from the requested name — a "position" request on
-            a point-instancer is emitted as "positions" (instancer-local); write back
+            dictionary). May differ from the requested name: a "position" request on
+            a point-instancer is emitted as "positions" (instancer-local). Write back
             using this token, not the requested string.
         object_type: The queried :class:`SimObjectType` (stamped from the read call,
             not carried by the native ovstage group).
         ordinal: The data ordinal of this group (``0`` on this path).
-        is_array: Follows the SOURCE attribute kind — ``True`` for a ragged / USD-array
+        is_array: Follows the SOURCE attribute kind: ``True`` for a ragged / USD-array
             / byte-string column (e.g. a point-instancer's positions, a deformable
             mesh's points), ``False`` for a fixed scalar column. It is NOT decided by
             whether the per-element dims happen to be uniform: a fixed-width array
@@ -157,20 +337,37 @@ class ReadGroup(NamedTuple):
         prim_list: Interned prim-path-list handle covering this group's prims.
         prim_offset: Start index within ``prim_list`` (``0`` on this path).
         prim_count: Number of prims in this group.
-        prim_index_map: ``uint32`` NumPy array of sparse indices into ``prim_list``,
+        prim_index_map: CPU ``warp.array`` of ``uint32`` sparse indices into ``prim_list``,
             or ``None`` for a contiguous range (always ``None`` on this path).
-        index_map: ``uint32`` NumPy array — gather/scatter over the OUTER element axis
-            — or ``None``. ``None`` for point-instancer rigid-body output, which always
+        index_map: CPU ``warp.array`` of ``uint32`` values (gather/scatter over the OUTER element axis),
+            or ``None``. ``None`` for point-instancer rigid-body output, which always
             emits the instancer's full instance array (by-index) so it forwards into
-            the ovstage write path verbatim.
-        layout_generation: Reserved metadata field; the current output producer
+            the ovstage write path verbatim. Slots without a live body are zero-filled
+            in every array; an all-zero ``orientations`` quaternion is the absent-slot
+            marker because live orientations are normalized and never all zero.
+        layout_generation: Reserved metadata field. The current output producer
             always returns ``0``. Do not use it for structural invalidation.
-        write_floor_ordinal: Reserved metadata field; the current output producer
+        write_floor_ordinal: Reserved metadata field. The current output producer
             always returns ``0``. The application owns ovstage write-floor advancement.
-        tensors: ``list`` of NumPy copies, one per native tensor (1 for a fixed
-            column; per-prim for an array group). Tuple width is the trailing dim
-            (e.g. a vec3 column is shape ``[N, 3]``). Copied within the borrow
-            window so the value is safe to keep.
+        tensors: One ``warp.array`` per native tensor (1 for a fixed column;
+            per-prim for an array group). A tuple width above 1 is the trailing dim
+            (a vec3 column is shape ``[N, 3]``); a single-lane column stays ``[N]``.
+            Non-empty arrays alias the read session's snapshot storage and keep it
+            alive, so CPU and CUDA arrays are both safe to keep after the
+            :class:`ReadResult` closes.
+        cuda_stream: Producer stream for a device column, or ``0``. The read emits
+            ``0``: it does not ask a consumer to drain a stream, which is what a
+            non-zero value means to ovstage.
+        cuda_wait_event: CUDA event (as an integer handle) that a device column's
+            producer work signals, or ``0`` for a host column. **A device column is
+            handed over before its work has necessarily completed**. The read does
+            not block on the consumer's behalf.
+
+            The Python binding enqueues a wait on this event for the Warp stream
+            current during ``read()``. It does not block the host, and no other
+            stream is ordered, so the caller must establish its own Warp stream
+            dependency before using the array elsewhere. The handle stays valid
+            until the read session is released. Do not destroy it.
     """
 
     attribute: int
@@ -182,22 +379,276 @@ class ReadGroup(NamedTuple):
     prim_list: int
     prim_offset: int
     prim_count: int
-    prim_index_map: "object"  # numpy.ndarray | None
-    index_map: "object"  # numpy.ndarray | None
+    prim_index_map: "object"  # warp.array | None
+    index_map: "object"  # warp.array | None
     layout_generation: int
     write_floor_ordinal: int
-    tensors: "list"  # list[numpy.ndarray]
+    tensors: "list"  # list[warp.array]
+    cuda_stream: int = 0
+    cuda_wait_event: int = 0
+
+
+# dtype.code is typed as DLDataTypeCode (a ctypes.c_uint8 *subclass*), so the field yields a ctypes
+# instance, and int() on it would parse its raw byte through the buffer protocol (ValueError on
+# b'\x02'). Read .value instead. The plain-int fields normalize through the same path harmlessly.
+def _dl_int(v) -> int:
+    return int(getattr(v, "value", v))
+
+
+_CPU_MODE_WARP_BUILD_CHECKED = False
+
+
+def _warp_build_has_cuda(wp) -> "bool | None":
+    """Whether this Warp build was compiled with CUDA, asked WITHOUT loading the driver.
+
+    `Runtime.__init__` reads the same flag off the native library, but only as part of an
+    initialization that goes on to open the driver. Loading `warp.so` on its own does not:
+    the symbol is a compile-time constant in that library, so it can be read before Warp has
+    a runtime and before `libcuda` is ever mapped. Measured on Warp 1.11, `libcuda` is still
+    unmapped after `CDLL(warp.so)` and after the call.
+
+    None when the answer cannot be established, which is treated as "do not warn": a wrong
+    warning about the CUDA driver is worse than none.
+    """
+    import ctypes
+    import os
+    import sys
+
+    # Warp's own per-platform names (warp/_src/context.py). A hardcoded warp.so would return
+    # None on Windows and macOS and leave the check silent there.
+    name = "warp.dll" if sys.platform == "win32" else "libwarp.dylib" if sys.platform == "darwin" else "warp.so"
+    try:
+        lib = ctypes.CDLL(os.path.join(os.path.dirname(wp.__file__), "bin", name))
+        fn = getattr(lib, "wp_is_cuda_enabled", None)
+        if fn is None:
+            return None
+        fn.restype = ctypes.c_int
+        fn.argtypes = None
+        return bool(fn())
+    except Exception:
+        return None
+
+
+def _warn_if_warp_build_breaks_cpu_mode(wp) -> None:
+    """Warn once when CPU-only mode is on and the installed Warp will load the CUDA driver.
+
+    `ovphysx_set_cpu_mode(True)` keeps ovphysx's own code from loading the CUDA driver,
+    but `read()` and `write()` expose `warp.array`, and building one initializes the Warp
+    runtime, which opens the driver on a CUDA-enabled Warp build. A CPU-only Warp keeps
+    these frontend conversions driverless. Other dependencies, including ovstage, are
+    outside this check and may already have opened the driver.
+
+    A warning and not an exception: this is reached from an already-open read or write, and
+    a process that has been silently doing this is not made better off by having array
+    conversion start throwing.
+    """
+    global _CPU_MODE_WARP_BUILD_CHECKED
+    if _CPU_MODE_WARP_BUILD_CHECKED:
+        return
+
+    try:
+        cpu_only = PhysX.get_cpu_mode()
+    except Exception:
+        return  # cannot ask, so stay silent and leave the check armed for the next conversion
+
+    # Latched only once the question was actually answered, so a conversion that could not ask
+    # does not consume the process's one warning.
+    _CPU_MODE_WARP_BUILD_CHECKED = True
+    if not cpu_only:
+        return
+
+    if _warp_build_has_cuda(wp) is not True:
+        return  # CPU-only build (or undeterminable): Warp array construction is driverless
+
+    warnings.warn(
+        "ovphysx is in CPU-only mode, but the installed Warp was built with CUDA. Building the "
+        "warp.array that read() or write() exposes initializes the Warp runtime, which opens the CUDA "
+        "driver. Install a CPU-only Warp to keep these Python paths driverless: "
+        '`conda install -c conda-forge "warp-lang=*=*cpu*"`, or build Warp from source with no CUDA '
+        "toolkit configured. "
+        "ovphysx's own code touches no CUDA driver either way.",
+        RuntimeWarning,
+        stacklevel=2,
+    )
+
+
+def _warp_device(dl_device) -> str:
+    """Warp device string for a DLTensor device, or TypeError for one Warp cannot hold."""
+    device_type = _dl_int(dl_device.device_type)
+    if device_type == DLDeviceType.kDLCPU:
+        return "cpu"
+    if device_type == DLDeviceType.kDLCUDA:
+        return f"cuda:{_dl_int(dl_device.device_id)}"
+    raise TypeError(
+        f"ovphysx column has unsupported DLPack device type {device_type}; "
+        "the Python frontend supports CPU and CUDA"
+    )
+
+
+class _ReadRelease:
+    """Refcounted, thread-safe deferred teardown for a read session so borrowed columns can't dangle.
+
+    Read columns are borrowed ``warp.array`` aliases over native buffers owned by the read session,
+    so the session is torn down only once the ReadResult is closed **and** every handed-out borrow
+    (the array, a Warp slice, or a framework view imported from it) has had its Warp deleter fire.
+
+    A Warp deleter runs on whatever thread garbage-collects the borrow, which may not be the thread
+    that owns the ovphysx instance. So:
+
+    * The refcount is mutated under a lock. A bare ``+=`` / ``-=`` is not atomic even under the GIL,
+      so two concurrent drops could lose a decrement and leak the session.
+    * The native teardown (``ovphysx_release_*``) is **never** called from the deleter's thread. A
+      single ovphysx instance is not thread-safe. Hitting zero only enqueues the teardown. The owning
+      thread performs it on its next read/step drain (``PhysX._drain_pending_read_releases``).
+    """
+
+    def __init__(self, sdk, query: int, read: int):
+        self._sdk = sdk
+        self._query = int(query)
+        self._read = int(read)
+        self._group_ids: "list[int]" = []
+        self._refs = 1  # the owning ReadResult's ref, plus one per outstanding Warp array
+        # Outstanding array borrows, counted apart from _refs: closing the ReadResult and dropping a
+        # tensor both decrement _refs, so one live borrow leaves _refs == 1, indistinguishable from
+        # an open ReadResult with none.
+        self._borrows = 0
+        self._groups_released = False
+        self._freed = False
+        self._native_freed = False
+        self._lock = threading.Lock()
+
+    def add_group(self, gid: int) -> None:
+        self._group_ids.append(int(gid))  # only called during the single-threaded read() build
+
+    @property
+    def has_live_borrows(self) -> bool:
+        with self._lock:
+            return not self._freed and self._borrows > 0
+
+    def retain(self) -> None:
+        with self._lock:
+            self._refs += 1
+            self._borrows += 1
+        # One process-lifecycle reference per borrow, so ovphysx_shutdown(), which reclaims the
+        # CUDA context the borrowed buffer lives in, cannot run while an array still points at it.
+        # Taken outside self._lock: _acquire_process_lifecycle takes its own, and holding both would
+        # fix a lock order that release_borrow (running on an arbitrary GC thread) cannot honour.
+        _acquire_process_lifecycle()
+
+    def release_borrow(self, *_ignored) -> None:
+        """Drop one array borrow. May run on ANY thread (a Warp deleter on a GC thread).
+
+        BOOKKEEPING ONLY. Nothing here may enter a native lifecycle transition, because the caller
+        is whatever thread the collector happened to be on. If this borrow holds the last process
+        reference, which it does whenever an array outlives its PhysX instance, a case
+        ``_free_native`` deliberately supports, releasing it inline runs the whole of
+        ``ovphysx_shutdown()`` on that GC thread, during a ``__del__``, possibly while the
+        interpreter is finalizing. The reference is queued instead and retired by the next thread
+        that reaches a lifecycle entry point, or by the interpreter-exit drain.
+        """
+        with self._lock:
+            if not self._freed:
+                self._borrows -= 1
+        try:
+            # The session reference FIRST, so the read teardown is queued before the process
+            # reference is handed back. Releasing the process reference first can complete final
+            # shutdown before this line runs, queueing the read holder against an SDK whose native
+            # handle is already gone.
+            self.release()
+        finally:
+            # Pairs the acquire in retain(): every borrow must return its process reference or the
+            # process can never shut down. A counter increment under a lock cannot raise, so it
+            # cannot strand the reference the way an inline release could.
+            _defer_process_lifecycle_release()
+
+    def release_groups(self) -> None:
+        """Free the session's stage-derived prim lists. OWNING THREAD ONLY, stage still attached.
+
+        Split from the refcounted teardown because these handles belong to the ovstage path
+        dictionary, not to the read session: a borrowed array defers ``_free_native`` past
+        detach/reset/release, and destroying a prim list through a dictionary whose Stage is gone is
+        a use-after-free. Idempotent, because the native side clears each list it frees.
+
+        Gated on ``_native_freed`` rather than ``_freed``, so a holder queued for teardown that has
+        not run yet still retires its prim lists while the Stage is alive.
+        """
+        with self._lock:
+            if self._groups_released or self._native_freed:
+                return
+            self._groups_released = True
+            group_ids = list(self._group_ids)
+        lib = getattr(getattr(self._sdk, "_omni_physx_sdk_handle", None), "value", None)
+        if lib is None or not self._read:
+            return
+        for gid in group_ids:
+            self._sdk._lib.ovphysx_release_group(lib, c_uint64(self._read), c_uint64(gid))
+
+    def release(self, *_ignored) -> None:
+        # May run on ANY thread (ReadResult.close on the owner, a Warp deleter on a GC thread).
+        # Thread-safe bookkeeping only. The native teardown is deferred to the owning thread.
+        with self._lock:
+            if self._freed:
+                return
+            self._refs -= 1
+            if self._refs > 0:
+                return
+            self._freed = True
+        self._sdk._enqueue_read_release(self)
+
+    def _free(self) -> None:
+        # Force immediate teardown on the OWNING thread, bypassing the refcount. Used only by the
+        # read-build error path, which must drop every array it built FIRST, because anything
+        # still holding a borrow is left aliasing freed storage. Marking _freed makes any Warp
+        # deleter that fires later a no-op in release() (no enqueue, no double free).
+        with self._lock:
+            if self._freed:
+                return
+            self._freed = True
+        self._free_native()
+
+    def _free_native(self) -> None:
+        # MUST run on the owning thread (serialized with other ovphysx calls on this instance).
+        # Invoked only by PhysX._drain_pending_read_releases and _free above.
+        with self._lock:
+            if self._native_freed:
+                return
+            self._native_freed = True
+            groups_released = self._groups_released
+            self._groups_released = True
+        lib = getattr(getattr(self._sdk, "_omni_physx_sdk_handle", None), "value", None)
+        if lib is None:
+            # Parent SDK already released. The read session is freed by its read id, not via the
+            # instance, but with no owning thread left and a possible live borrow it cannot be freed
+            # safely here. Its buffers stay allocated until ovphysx_shutdown reclaims the CUDA
+            # context, which every borrow holds off (see retain()), so a caller's array stays readable.
+            return
+        if self._read:
+            if not groups_released:
+                # Fallback for sessions freed without ever closing their ReadResult. close() and
+                # stage teardown normally retire the groups first.
+                for gid in self._group_ids:
+                    self._sdk._lib.ovphysx_release_group(lib, c_uint64(self._read), c_uint64(gid))
+            self._sdk._lib.ovphysx_release_read(lib, c_uint64(self._read))
+        if self._query:
+            self._sdk._lib.ovphysx_release_query(lib, c_uint64(self._query))
 
 
 class ReadResult:
     """Context-managed result of :meth:`PhysX.read` (ADR-0007).
 
     Holds the query + read session open so each group's interned ``prim_list`` /
-    ``attribute`` handles stay valid for the lifetime of the ``with`` block — feed
+    ``attribute`` handles stay valid for the lifetime of the ``with`` block. Feed
     them straight back into the ovstage write path (``stage.query_from_path_list(
-    group.prim_list)``) for a no-repack write-back. Each group's ``tensors`` are
-    NumPy copies, safe to keep past the block. Exiting releases every group, the
-    read session, and the query.
+    group.prim_list)``) for a no-repack write-back. Exiting releases every group's
+    stage-derived path metadata and drops the result's owner reference. The read
+    session and query are released immediately when no array aliases their numeric
+    storage, or after the last alias is dropped and an owning-thread SDK call drains
+    deferred cleanup.
+
+    CPU and CUDA columns are borrowed ``warp.array`` snapshots. Each keeps its
+    native read-session buffer alive for as long as the array, a Warp view, or a
+    downstream framework view imported from it is referenced. Arrays are safe to
+    keep past the ``with`` block. The buffer is freed after the last reference drops.
 
     Usage::
 
@@ -206,13 +657,21 @@ class ReadResult:
                 print(g.prim_list, g.attribute)
     """
 
-    def __init__(self, sdk, query: int, read: int, groups: "list[ReadGroup]", group_ids: "list[int]"):
+    def __init__(self, sdk, query: int, read: int, groups: "list[ReadGroup]", group_ids: "list[int]",
+                 release=None):
         self._sdk = sdk
         self._query = int(query)
         self._read = int(read)
         self._group_ids = list(group_ids)
         self.groups = groups
         self._closed = False
+        # _iterate_read_groups builds the holder up front so aliased Warp arrays can retain it.
+        # Callers with nothing to alias pass none, so synthesize one that owns the group ids.
+        if release is None:
+            release = _ReadRelease(sdk, query, read)
+            for gid in group_ids:
+                release.add_group(gid)
+        self._release = release
 
     @property
     def dictionary(self) -> int:
@@ -220,18 +679,19 @@ class ReadResult:
         return self._sdk.query_shared_dictionary(self._query) if self._query else 0
 
     def close(self) -> None:
+        """Release the result's groups and drop its session reference. OWNING THREAD ONLY.
+
+        Unlike dropping a returned array, this issues native calls (the stage-derived prim lists
+        have to be retired while the Stage is attached), so it must run on the thread that owns the
+        ovphysx instance. ``__del__`` only drops the reference, never calls this. Aliased Warp arrays
+        retain the session-owned numeric storage independently and stay valid after this returns.
+        """
         if self._closed:
             return
         self._closed = True
-        lib = getattr(getattr(self._sdk, "_omni_physx_sdk_handle", None), "value", None)
-        if lib is None:
-            return  # parent released; native session already gone
-        if self._read:
-            for gid in self._group_ids:
-                self._sdk._lib.ovphysx_release_group(lib, c_uint64(self._read), c_uint64(gid))
-            self._sdk._lib.ovphysx_release_read(lib, c_uint64(self._read))
-        if self._query:
-            self._sdk._lib.ovphysx_release_query(lib, c_uint64(self._query))
+        self._release.release_groups()
+        self._release.release()
+        self._sdk._drain_pending_read_releases()
 
     def __enter__(self) -> "ReadResult":
         return self
@@ -240,14 +700,19 @@ class ReadResult:
         self.close()
 
     def __del__(self):
+        # May run on a GC thread, so only drop the result ref. Group/native teardown is drained by
+        # the next owning-thread SDK call or by the SDK's destroy path.
         try:
-            self.close()
+            if not self._closed:
+                self._closed = True
+                self._release.release()
         except Exception:
             pass
 from .dlpack import (
     DLDataType,
     DLDataTypeCode,
     DLDevice,
+    DLDeviceType,
     DLTensor,
 )
 
@@ -260,7 +725,7 @@ def _check_version_match() -> None:
     logger = logging.getLogger(__name__)
     native_version = _bindings.get_native_version_string()
     if not native_version:
-        # Native library didn't report a version - warn but don't fail
+        # No native version reported. Warn but do not fail.
         logger.warning(
             "ovphysx native library did not report a version string. "
             "Version compatibility check skipped. This may indicate an old or "
@@ -312,7 +777,12 @@ def _copy_dl_data_type(dtype: DLDataType | None = None) -> DLDataType:
 
 
 class TensorBindingSpec(NamedTuple):
-    """Python-owned tensor binding metadata returned by :attr:`TensorBinding.spec`."""
+    """Python-owned tensor binding metadata returned by :attr:`TensorBinding.spec`.
+
+    .. deprecated:: 0.6.0
+        The tensor-binding API is deprecated. Use :meth:`PhysX.read` for reads
+        and :meth:`PhysX.write` for writes.
+    """
 
     dtype: DLDataType
     ndim: int
@@ -330,8 +800,8 @@ def _warn_unclosed_resource(resource_name: str, source: object) -> None:
 
 def _detect_data_ptr(tensor):
     """The cache checks ``tensor is cached_tensor`` (Python object identity),
-    but a numpy array can be resized in place -- ``buf.resize((bigger,),
-    refcheck=False)`` -- which reallocates the underlying memory while
+    but a numpy array can be resized in place (``buf.resize((bigger,),
+    refcheck=False)``), which reallocates the underlying memory while
     ``id(buf)`` stays the same.  Without this guard the cache would pass the
     old DLTensor (pointing to freed memory) to the C layer.
 
@@ -395,7 +865,7 @@ def _contact_header_to_dict(h: "ContactEventHeader") -> dict:
     """
     return {
         "type": int(h.type),
-        "stageId": int(h.stageId),
+        "attachHandle": int(h.attachHandle),
         "actor0": int(h.actor0),
         "actor1": int(h.actor1),
         "collider0": int(h.collider0),
@@ -434,19 +904,31 @@ def _friction_anchor_to_dict(a: "FrictionAnchor") -> dict:
 class TensorBinding:
     """Tensor binding for bulk physics data access via DLPack.
 
+    .. deprecated:: 0.6.0
+        The tensor-binding API is deprecated. Use :meth:`PhysX.read` for reads
+        and :meth:`PhysX.write` for writes.
+
     A tensor binding connects a physics-object path pattern to a tensor type,
     enabling efficient bulk read/write for authored USD objects and runtime-only
     clones (poses, velocities, joint positions, etc.).
     The :attr:`shape`, :attr:`ndim`, and :attr:`dtype` metadata come from
     ``ovphysx_get_tensor_binding_spec()``. Use them to allocate compatible
-    buffers instead of assuming every tensor type is ``float32``.
+    buffers instead of assuming every tensor type is ``float32``. Use
+    :attr:`native_device` to choose the no-staging CPU or CUDA device.
+
+    CPU-only property bindings cover standalone rigid-body mass/inertia/COM
+    values, articulation DOF/body properties, rigid-body/articulation shape
+    properties, deformable-material properties, and disable-simulation/gravity
+    flags. Fixed and spatial tendon property bindings are not CPU-only. CPU-only
+    property bindings require host-resident tensor, index, and mask buffers,
+    including when the simulation runs on GPU.
 
     This is a synchronous API - operations complete before returning.
     Bindings are tied to the currently realized physics objects. Reuse them
     across simulation steps, but do not keep them across reset_stage(), removing USD
     data that contains bound objects, or replacing/reparsing the stage so bound
     objects are destroyed and recreated. Destroy cached bindings before those
-    lifecycle operations when practical; if a stale binding survives, only
+    lifecycle operations when practical. If a stale binding survives, only
     destroy it. Create replacement bindings after the operation completes.
 
     Usage patterns:
@@ -481,8 +963,29 @@ class TensorBinding:
             return poses
     """
 
-    def __init__(self, sdk, handle: int, tensor_type: int, ndim: int, shape: tuple, dtype: DLDataType | None = None):
+    def __init__(
+        self,
+        sdk,
+        handle: int,
+        tensor_type: int,
+        ndim: int,
+        shape: tuple,
+        dtype: DLDataType | None = None,
+        *,
+        _from_factory: bool = False,
+    ):
         """Initialize tensor binding (created by PhysX.create_tensor_binding)."""
+        # Warn on construction so direct use of this documented constructor is diagnosed too, not
+        # only the factory. create_tensor_binding passes _from_factory=True because it already emits
+        # its own caller-precise warning. Skipping the duplicate here needs no process-global warning
+        # filter state, which would not be thread-safe.
+        if not _from_factory:
+            warnings.warn(
+                "ovphysx tensor bindings are deprecated and will be removed in a future "
+                "release; use PhysX.read for reads and PhysX.write for writes.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self._sdk = sdk
         self._handle = handle
         self._tensor_type = tensor_type
@@ -546,6 +1049,38 @@ class TensorBinding:
         return str(self._dtype)
 
     @property
+    def native_device(self) -> DLDevice:
+        """Get the binding's native DLPack device.
+
+        .. deprecated:: 0.6.0
+            The tensor-binding API is deprecated. Use :meth:`PhysX.read` for reads
+            and :meth:`PhysX.write` for writes.
+
+        CPU-only property tensors report ``DLDevice(kDLCPU, 0)`` even when
+        the scene uses GPU dynamics. Other bindings follow their native
+        TensorAPI view and report ``DLDevice(kDLCUDA, ordinal)`` in DirectGPU
+        mode or ``DLDevice(kDLCPU, 0)`` otherwise. This property identifies the
+        no-staging device and does not change existing read/write behavior. A CUDA
+        ``device_id`` is the process-visible runtime ordinal used by a framework device such as
+        ``cuda:N``, not a physical PCI bus index. Compare ``device_type.value``
+        with a constant such as ``DLDeviceType.kDLCUDA``. This is a live query,
+        not cached metadata: it may wait for pending operations and rejects an
+        invalidated simulation view.
+        """
+        with self._lock:
+            if self._destroyed:
+                raise RuntimeError("TensorBinding has been destroyed")
+            self._check_sdk_valid()
+            native_device = DLDevice()
+            result = self._sdk._lib.ovphysx_get_tensor_binding_native_device(
+                self._sdk._omni_physx_sdk_handle.value, self._handle, byref(native_device)
+            )
+            if result.status != ApiStatus.SUCCESS:
+                error_msg = self._sdk._get_last_error()
+                raise RuntimeError(f"Failed to get tensor binding native device: {error_msg}")
+            return native_device
+
+    @property
     def spec(self) -> TensorBindingSpec:
         """Get a Python-owned tensor spec snapshot for this binding."""
         return TensorBindingSpec(dtype=self.dtype, ndim=self._ndim, shape=self._shape)
@@ -558,7 +1093,7 @@ class TensorBinding:
     def _check_sdk_valid(self) -> None:
         """Ensure the parent PhysX instance is still alive."""
         if self._sdk._omni_physx_sdk_handle is None:
-            raise RuntimeError("Cannot use TensorBinding: parent PhysX instance has been released.")
+            raise RuntimeError("Cannot use TensorBinding: parent PhysX instance has been destroyed.")
 
     @property
     def prim_paths(self) -> list[str]:
@@ -588,9 +1123,9 @@ class TensorBinding:
                 error_msg = self._sdk._get_last_error()
                 raise RuntimeError(f"Failed to get tensor binding prim paths: {error_msg}")
             if out_count.value > count:
-                # Native layer wrote past the buffer we sized to `count` -- this
-                # is a real bug in the C library, not an expected truncation.
-                # The min() below keeps us from indexing past the buffer.
+                # The native layer wrote past the buffer sized to `count`. This is
+                # a bug in the C library, not an expected truncation. The min()
+                # below avoids indexing past the buffer.
                 import logging as _logging
                 _logging.getLogger(__name__).warning(
                     "ovphysx_tensor_binding_get_prim_paths: native out_count=%d > buffer size=%d; truncating",
@@ -710,9 +1245,12 @@ class TensorBinding:
 
         Args:
             tensor: DLPack-compatible tensor with pre-allocated storage matching self.shape.
-                   Must use ``self.dtype``. CPU/CUDA device mismatches are staged when
-                   CUDA is available; cross-GPU mismatches and CUDA tensors in
-                   process-wide CPU-only mode are rejected.
+                   Must use ``self.dtype``. When CUDA is available, CPU/CUDA device
+                   mismatches are staged for binding types whose storage follows the
+                   simulation device. CPU-only property bindings require a host-resident
+                   tensor (``kDLCPU`` or ``kDLCUDAHost``), including on GPU simulations;
+                   CUDA and CUDA-managed tensors are rejected rather than staged. Cross-GPU
+                   mismatches and CUDA tensors in process-wide CPU-only mode are rejected.
 
         Preconditions:
             - This binding is not destroyed.
@@ -739,10 +1277,10 @@ class TensorBinding:
             if cached is not None and cached.tensor is tensor:
                 if cached.ptr_getter is not None and cached.ptr_getter(tensor) != cached.data_ptr:
                     self._read_cache = None
-                    # Backing storage changed (e.g. numpy resize) -- fall through to slow path.
+                    # Backing storage changed (e.g. numpy resize). Fall through to the slow path.
                 else:
                     if self._sdk._omni_physx_sdk_handle is None:
-                        raise RuntimeError("Cannot use TensorBinding: parent PhysX instance has been released.")
+                        raise RuntimeError("Cannot use TensorBinding: parent PhysX instance has been destroyed.")
                     if hasattr(tensor, "flags") and not getattr(tensor.flags, "writeable", True):
                         raise ValueError(
                             "Array passed to binding.read() must be writeable. "
@@ -800,14 +1338,18 @@ class TensorBinding:
         indices/mask, an internal cache skips DLPack acquisition and attribute
         chain lookups, giving near-raw-C-call overhead. Callers that want this
         fast path should reuse the same tensor object with unchanged backing
-        storage across calls; see :meth:`read` for the supported providers and
+        storage across calls. See :meth:`read` for the supported providers and
         full contract.
 
         Args:
             tensor: DLPack-compatible tensor with data to write, shape matching self.shape.
-                   Must use ``self.dtype``. CPU/CUDA device mismatches are staged when
-                   CUDA is available; cross-GPU mismatches and CUDA tensors in
-                   process-wide CPU-only mode are rejected.
+                   Must use ``self.dtype``. When CUDA is available, CPU/CUDA device
+                   mismatches are staged for binding types whose storage follows the
+                   simulation device. For CPU-only property bindings, this tensor and optional
+                   ``indices`` or ``mask`` must be host-resident (``kDLCPU`` or
+                   ``kDLCUDAHost``), including on GPU simulations; CUDA and CUDA-managed
+                   tensors are rejected rather than staged. Cross-GPU mismatches and CUDA
+                   tensors in process-wide CPU-only mode are rejected.
             indices: Optional int32 tensor of indices for partial update. If provided,
                     only the rows at the given indices are written. The tensor argument
                     must still be full shape [N, ...] matching the binding spec; only the
@@ -818,7 +1360,7 @@ class TensorBinding:
                  full shape [N, ...]. If both mask and indices are provided, mask
                  takes precedence and indices are ignored (with a warning).
 
-                 Note: there is no corresponding ``read(..., mask=...)``; reads always
+                 Note: there is no corresponding ``read(..., mask=...)``. Reads always
                  return the full [N,...] tensor and callers can index the result themselves.
                  This write-only mask design matches other RL physics APIs such as Newton's
                  selectionAPI, where masks selectively apply actions but observations are
@@ -848,10 +1390,10 @@ class TensorBinding:
                 if cached is not None and cached.tensor is tensor:
                     if cached.ptr_getter is not None and cached.ptr_getter(tensor) != cached.data_ptr:
                         self._write_cache = None
-                        # Backing storage changed -- fall through to slow path.
+                        # Backing storage changed. Fall through to the slow path.
                     else:
                         if self._sdk._omni_physx_sdk_handle is None:
-                            raise RuntimeError("Cannot use TensorBinding: parent PhysX instance has been released.")
+                            raise RuntimeError("Cannot use TensorBinding: parent PhysX instance has been destroyed.")
                         result = cached.c_func(cached.sdk_handle, cached.bind_handle, cached.dl_ptr, None)
                         if result.status != ApiStatus.SUCCESS:
                             self._write_cache = None
@@ -1037,7 +1579,7 @@ class TensorBinding:
             self._check_sdk_valid()
 
             result = self._sdk._lib.ovphysx_destroy_tensor_binding(self._sdk._omni_physx_sdk_handle.value, self._handle)
-            # Mark destroyed after the native destroy attempt so __del__ does not retry after SDK release.
+            # Mark destroyed after the native destroy attempt so __del__ does not retry after SDK destruction.
             self._destroyed = True
             self._read_cache = None
             self._write_cache = None
@@ -1067,8 +1609,9 @@ class TensorBinding:
     def __del__(self):
         """Destructor - ensures cleanup on garbage collection.
 
-        Note: During interpreter shutdown, calling C functions may fail.
-        We check sys.is_finalizing() to avoid spurious errors.
+        The process atexit callback normally handles still-live instances
+        before interpreter finalization. If this destructor runs later, calling
+        C functions may fail, so it checks ``sys.is_finalizing()`` and returns.
         """
         try:
             import sys
@@ -1100,7 +1643,7 @@ class SdfView:
 
     SdfView handles are tied to the attached USD stage. After
     :meth:`PhysX.reset_stage` or :meth:`PhysX.detach_ovstage`, existing views
-    are invalid; destroy them and create replacements after re-attaching a stage.
+    are invalid. Destroy them and create replacements after re-attaching a stage.
 
     Example::
 
@@ -1138,14 +1681,14 @@ class SdfView:
 
         Args:
             query_points: DLPack-compatible tensor with shape [N, Q, 3], float32.
-                N must equal count; Q must equal max_query_points.
+                N must equal count and Q must equal max_query_points.
             out_distances_and_gradients: Pre-allocated DLPack-compatible tensor
                 with shape [N, Q, 4], float32. Component layout per point:
                 (grad.x, grad.y, grad.z, distance).
 
         Preconditions:
             - This view is not destroyed.
-            - Tensors are float32 on the GPU (kDLCUDA); requires a GPU instance.
+            - Tensors are float32 on the GPU (kDLCUDA). Requires a GPU instance.
         """
         from ._dlpack_utils import acquire_dltensor
 
@@ -1175,7 +1718,7 @@ class SdfView:
             if self._destroyed:
                 return
             # Guard against the SDK being torn down before an explicit destroy()
-            # (GC may collect self._sdk's handle first); mirrors ContactBinding.destroy.
+            # (GC may collect self._sdk's handle first). Mirrors ContactBinding.destroy.
             sdk_handle = self._sdk._omni_physx_sdk_handle
             if sdk_handle is None:
                 self._destroyed = True
@@ -1230,7 +1773,7 @@ class ContactBinding:
 
     def _check_sdk_valid(self) -> None:
         if self._sdk._omni_physx_sdk_handle is None:
-            raise RuntimeError("Cannot use ContactBinding: parent PhysX instance has been released.")
+            raise RuntimeError("Cannot use ContactBinding: parent PhysX instance has been destroyed.")
 
     @property
     def sensor_count(self) -> int:
@@ -1244,7 +1787,7 @@ class ContactBinding:
 
     @property
     def max_contact_data_count(self) -> int:
-        """Flat-buffer capacity for raw and detailed contact/friction reads."""
+        """Flat-buffer capacity for detailed contact and friction reads."""
         return self._max_contact_data_count
 
     @property
@@ -1273,7 +1816,7 @@ class ContactBinding:
             if result.status != ApiStatus.SUCCESS:
                 raise RuntimeError(f"Failed to get contact sensor paths: {self._sdk._get_last_error()}")
             if out_count.value > self._sensor_count:
-                # Same defensive log as TensorBinding.prim_paths -- a native
+                # Same defensive log as TensorBinding.prim_paths. A native
                 # out_count exceeding the buffer size is a C-library bug.
                 import logging as _logging
                 _logging.getLogger(__name__).warning(
@@ -1367,19 +1910,11 @@ class ContactBinding:
         Expected shapes are ``[C, 1]`` for ``contact_forces`` and ``separations``,
         ``[C, 3]`` for ``positions`` and ``normals``, and ``[sensor_count,
         filter_count]`` for ``counts`` and ``start_indices``. ``C`` is
-        :attr:`max_contact_data_count`; both ``C`` and ``filter_count`` must
+        :attr:`max_contact_data_count`. Both ``C`` and ``filter_count`` must
         be positive. Count and start-index tensors may be int32 or uint32.
         Contact force magnitudes use the timestep from the last successful
         :meth:`PhysX.step`, :meth:`PhysX.step_sync`, or
         :meth:`PhysX.step_n_sync` call.
-
-        Raises:
-            RuntimeError: If ``C`` is too small. The payload arrays must not
-                be used; ``counts`` and ``start_indices`` contain the full
-                required layout. Set ``max_contact_data_count`` to the maximum
-                element of ``start_indices + counts`` when recreating the
-                binding for subsequent simulation steps. Recreating a binding
-                does not recover the overflowing step's payload.
         """
         with self._lock:
             if self._destroyed:
@@ -1424,37 +1959,44 @@ class ContactBinding:
         positions,
         normals,
         separations,
-        counts,
-        start_indices,
-        other_actor_ids,
+        sensor_layout,
+        actor_ids,
     ) -> None:
         """Read raw (unfiltered) contact data into flat buffers.
 
-        Filter-less variant of :meth:`read_contact_data` — returns every
+        Filter-less variant of :meth:`read_contact_data`. Returns every
         contact involving each sensor regardless of which other actor it
-        collided with, plus a per-contact ``other_actor_ids`` lookup for
-        identifying the contacting body via
+        collided with, plus per-contact actor-identity tensors for identifying
+        both the sensor and the contacting body via
         :meth:`get_other_actor_paths_from_ids`.
 
         Expected shapes are ``[C, 1]`` for ``contact_forces`` and
         ``separations``, ``[C, 3]`` for ``positions`` and ``normals``,
-        ``[sensor_count]`` for ``counts`` and ``start_indices``, and
-        ``[C]`` for ``other_actor_ids``. ``C`` is
-        :attr:`max_contact_data_count` and must be positive; no filter
-        dimension is required. Count and start-index tensors may be
-        int32 or uint32; ``other_actor_ids`` must be int64 or uint64.
-        Contact force magnitudes use the timestep from the last successful
+        ``[sensor_count, 2]`` for ``sensor_layout`` (column 0 count, column 1
+        start index), and ``[C, 2]`` for ``actor_ids`` (column 0 the reporting
+        sensor's actor, column 1 the actor it contacted). ``C`` is
+        :attr:`max_contact_data_count` and must be positive. No filter
+        dimension is required. ``sensor_layout`` may be int32 or uint32.
+        ``actor_ids`` must be int64 or uint64. Slicing the columns out as
+        views costs no copy. Contact force
+        magnitudes use the timestep from the last successful
         :meth:`PhysX.step`, :meth:`PhysX.step_sync`, or
         :meth:`PhysX.step_n_sync` call.
 
-        Raises:
-            RuntimeError: If ``C`` is too small. The payload arrays, including
-                ``other_actor_ids``, must not be used; ``counts`` and
-                ``start_indices`` contain the full required layout. Set
-                ``max_contact_data_count`` to the maximum element of
-                ``start_indices + counts`` when recreating the binding for
-                subsequent simulation steps. Recreating a binding does not
-                recover the overflowing step's payload.
+        **Truncation**: when the total contact count for a step exceeds
+        ``max_contact_data_count``, the runtime fills the buffers with as many
+        contacts as fit and emits a logged warning. A sensor's count reports
+        only the contacts actually written, and its start index is clamped to
+        ``max_contact_data_count``, so ``[start, start + count)`` is always an
+        in-range (possibly empty) slice. Increase
+        ``max_contact_data_count`` at binding creation if truncation occurs.
+
+        **Token lifetime**: tokens in ``actor_ids`` are opaque actor handles,
+        not encoded paths, and are
+        stable while the corresponding actor is alive on the attached stage.
+        After an actor is removed, its token is stale and
+        :meth:`get_other_actor_paths_from_ids` reports it as an empty path
+        rather than as the path it used to name.
         """
         with self._lock:
             if self._destroyed:
@@ -1471,9 +2013,8 @@ class ContactBinding:
             pos_dl, pos_keepalive = acquire_dltensor(positions)
             normal_dl, normal_keepalive = acquire_dltensor(normals)
             sep_dl, sep_keepalive = acquire_dltensor(separations)
-            count_dl, count_keepalive = acquire_dltensor(counts)
-            start_dl, start_keepalive = acquire_dltensor(start_indices)
-            ids_dl, ids_keepalive = acquire_dltensor(other_actor_ids)
+            layout_dl, layout_keepalive = acquire_dltensor(sensor_layout)
+            ids_dl, ids_keepalive = acquire_dltensor(actor_ids)
 
             result = _lib.ovphysx_read_raw_contact_data(
                 self._sdk._omni_physx_sdk_handle.value,
@@ -1482,12 +2023,11 @@ class ContactBinding:
                 ctypes.byref(pos_dl),
                 ctypes.byref(normal_dl),
                 ctypes.byref(sep_dl),
-                ctypes.byref(count_dl),
-                ctypes.byref(start_dl),
+                ctypes.byref(layout_dl),
                 ctypes.byref(ids_dl),
             )
             _ = (force_keepalive, pos_keepalive, normal_keepalive, sep_keepalive,
-                 count_keepalive, start_keepalive, ids_keepalive)
+                 layout_keepalive, ids_keepalive)
             if result.status != ApiStatus.SUCCESS:
                 raise RuntimeError(f"Failed to read raw contact data: {self._sdk._get_last_error()}")
 
@@ -1495,9 +2035,19 @@ class ContactBinding:
         """Resolve actor IDs from :meth:`read_raw_contact_data` to physics-object paths.
 
         ``ids_array`` is a 1D int64/uint64 array (numpy / warp / torch with
-        DLPack support) holding actor IDs. IDs that cannot be resolved
-        yield empty strings. Path strings are copied into Python -- the
-        caller can keep them across subsequent ovphysx calls.
+        DLPack support) holding actor IDs, from either column of the
+        ``actor_ids`` tensor. Both use the same namespace. A column is a
+        strided view and this boundary requires C-contiguous input, so wrap a
+        column slice in ``np.ascontiguousarray()`` before passing it. Path
+        strings are copied into Python, so the caller can keep them across
+        subsequent ovphysx calls.
+
+        Every non-zero ID is checked against the attached stage first, so an ID
+        whose actor has been removed yields an empty path rather than the path it
+        used to name. Since the caller holds the IDs, that makes the failure
+        explicit: a non-zero ID with an empty path is stale, while ID ``0`` simply
+        means no actor. The check is as precise as the backend's notion of
+        existence. On a USD stage a merely *deactivated* prim still resolves.
 
         Returns:
             list[str]: Physics-object paths in the same order as the input IDs.
@@ -1535,13 +2085,12 @@ class ContactBinding:
                 raise RuntimeError(
                     f"Failed to resolve actor IDs to paths: {self._sdk._get_last_error()}"
                 )
-            # Clamp to the buffer we provided; the engine should never write
+            # Clamp to the provided buffer. The engine should never write
             # more than `n`, but never index past `buf` if it does.
             written = min(int(count.value), n)
-            # ovphysx_string_t is not guaranteed NUL-terminated (see header
-            # docstring); rely on the struct's __str__, which uses
-            # ctypes.string_at(ptr, length) to read exactly `length` bytes.
-            # Direct c_char_p slicing would auto-truncate at the first NUL.
+            # Decode by explicit length even though returned strings guarantee
+            # ptr[length] == NUL. This preserves the view contract, and direct
+            # c_char_p slicing would truncate at the first NUL.
             return [str(buf[i]) for i in range(written)]
 
     def read_friction_data(self, friction_forces, friction_points, counts, start_indices) -> None:
@@ -1550,21 +2099,13 @@ class ContactBinding:
         Expected shapes are ``[C, 3]`` for ``friction_forces`` and
         ``friction_points``, and ``[sensor_count, filter_count]`` for ``counts``
         and ``start_indices``. ``C`` is :attr:`max_contact_data_count` and must
-        be positive; ``filter_count`` must also be positive. Count and
+        be positive, and ``filter_count`` must also be positive. Count and
         start-index tensors may be int32 or uint32.
-        Friction entries are per-anchor; sum each flat slice to build a
+        Friction entries are per-anchor. Sum each flat slice to build a
         pair-level ``[sensor_count, filter_count, 3]`` force tensor.
         Friction forces use the timestep from the last successful
         :meth:`PhysX.step`, :meth:`PhysX.step_sync`, or
         :meth:`PhysX.step_n_sync` call.
-
-        Raises:
-            RuntimeError: If ``C`` is too small. The payload arrays must not
-                be used; ``counts`` and ``start_indices`` contain the full
-                required layout. Set ``max_contact_data_count`` to the maximum
-                element of ``start_indices + counts`` when recreating the
-                binding for subsequent simulation steps. Recreating a binding
-                does not recover the overflowing step's payload.
         """
         with self._lock:
             if self._destroyed:
@@ -1650,28 +2191,36 @@ class ContactBinding:
 
 
 def set_log_level(level: int) -> None:
-    """Set the global log level threshold.
+    """Set the process-scoped libovphysx source log level threshold.
 
-    Messages below this level are suppressed for all outputs (console and
-    registered callbacks). Callable at any time, including before instance
-    creation.
+    Messages emitted under the named Carbonite sources ``omni_physx_sdk``,
+    ``omni.physx``, and ``ovphysx_internal`` below this level are suppressed for
+    console and callback delivery. Every other process source and channel,
+    including any unnamed source, remains unchanged and is subject only to the
+    callback's severity and channel filter. Callable at any time, including
+    before instance creation. ``LogLevel.NONE`` mutes only the three named
+    sources. It is not a whole-runtime or process mute.
 
     Args:
-        level: Log level threshold (LogLevel.VERBOSE through LogLevel.NONE).
-               Default: LogLevel.WARNING.
+        level: Log level threshold (LogLevel.DEFAULT through LogLevel.NONE).
+               LogLevel.DEFAULT restores LogLevel.WARNING.
 
     Raises:
         ValueError: If level is out of range. No state change is applied.
+        RuntimeError: If the native API rejects the call for another reason,
+            including callback-time reconfiguration.
     """
     result = _lib.ovphysx_set_log_level(level)
     if result.status != ApiStatus.SUCCESS:
         err = _lib.ovphysx_get_last_error()
         err_msg = str(err) if err and err.ptr else ""
-        raise ValueError(err_msg or f"Invalid log level: {level}")
+        if result.status == ApiStatus.INVALID_ARGUMENT:
+            raise ValueError(err_msg or f"Invalid log level: {level}")
+        raise RuntimeError(err_msg or "Failed to set log level")
 
 
 def get_log_level() -> int:
-    """Get the current global log level threshold.
+    """Get the current process-scoped libovphysx source log level threshold.
 
     Returns:
         The current log level (int matching ovphysx_log_level_t constants).
@@ -1682,18 +2231,25 @@ def get_log_level() -> int:
 def enable_default_log_output(enable: bool = True) -> None:
     """Enable or disable Carbonite's built-in console log output.
 
-    By default, Carbonite logs to the console. When custom callbacks are
-    registered (or :func:`enable_python_logging` is active), both the
-    built-in console output and the callbacks receive messages, which may
+    By default, Carbonite logs to the console. When a custom callback is set
+    (or :func:`enable_python_logging` is active), both the built-in console
+    output and the callback receive messages, which may
     cause duplicate output.
 
     Call with ``False`` to suppress the built-in console output while
-    keeping callbacks active. Call with ``True`` to re-enable it.
+    keeping the callback active. Call with ``True`` to re-enable it.
 
-    This is independent of callback registration and the global log level.
+    This is independent of callback registration and the libovphysx source log
+    level. It controls Carbonite's process-global built-in console logger and
+    therefore affects every Carbonite tenant in the process. Multi-tenant hosts
+    should normally own this policy and leave the logger enabled.
 
     Args:
         enable: ``True`` to enable (default), ``False`` to disable.
+
+    Raises:
+        RuntimeError: If the native API rejects the call, including when it is
+            made from the active native log callback.
     """
     result = _lib.ovphysx_enable_default_log_output(enable)
     if result.status != ApiStatus.SUCCESS:
@@ -1705,26 +2261,61 @@ def enable_default_log_output(enable: bool = True) -> None:
 # Internal state for Python logging bridge
 _python_log_callback = None  # prevent GC of the ctypes callback
 _python_log_logger_name = None
+# A native callback transition can publish before Python observes its return
+# status (for example, if KeyboardInterrupt arrives at the ctypes boundary).
+# Retain every callback from an ambiguous transition until a later successful
+# replace, disable, or shutdown proves that the native slot has been drained.
+_python_log_retained_callbacks = ()
+_python_log_callback_lock = threading.Lock()
+_python_log_callback_condition = threading.Condition(_python_log_callback_lock)
+_python_log_callback_context = threading.local()
+_python_log_callback_transition = False
 
 
-def enable_python_logging(logger_name: str = "ovphysx") -> None:
+def enable_python_logging(
+    logger_name: str = "ovphysx",
+    *,
+    min_severity: int = LogLevel.VERBOSE,
+    channel_filter: str | None = None,
+) -> None:
     """Route native log messages to Python's logging module.
 
-    Registers a C-level callback that forwards every message (at or above
-    the global log level) to ``logging.getLogger(logger_name)`` at the
-    corresponding Python log level.
+    Sets the sole C-level callback slot and forwards matching native messages
+    to ``logging.getLogger(logger_name)``. Calling this function again replaces
+    any existing native callback, including one installed outside Python.
+    Successful shutdown of the Python process-lifecycle scope, normally when
+    the final :class:`PhysX` instance is destroyed, also disables this bridge.
+    Enable it again after creating an instance in a new lifecycle scope.
+    Each forwarded ``LogRecord`` includes ``ovphysx_channel`` and
+    ``ovphysx_timestamp`` attributes for the native source and Unix-epoch
+    timestamp seconds.
 
     Call :func:`disable_python_logging` to stop forwarding.
 
     Args:
         logger_name: Name of the Python logger to route to (default: "ovphysx").
+        min_severity: Minimum severity for records observed from the process
+            log stream (default: LogLevel.VERBOSE). Records from libovphysx's
+            ``omni_physx_sdk``, ``omni.physx``, and ``ovphysx_internal`` sources
+            are also subject to :func:`set_log_level`.
+        channel_filter: Optional comma-separated ``channel=level`` rules. The
+            native API copies this string, compares levels case-insensitively,
+            and uses raw channel-prefix matching. The longest matching prefix
+            wins. A later rule wins ties of equal length.
+
+    Raises:
+        RuntimeError: If called from a native log callback, another Python
+            logging transition is in progress, or the native API rejects the
+            severity, filter, or callback configuration.
     """
     import logging as _logging
 
     global _python_log_callback, _python_log_logger_name
+    global _python_log_retained_callbacks
+    global _python_log_callback_transition
 
-    if _python_log_callback is not None:
-        disable_python_logging()
+    if getattr(_python_log_callback_context, "active", False):
+        raise RuntimeError("Cannot configure Python logging from a native log callback")
 
     py_logger = _logging.getLogger(logger_name)
 
@@ -1736,50 +2327,271 @@ def enable_python_logging(logger_name: str = "ovphysx") -> None:
         LogLevel.VERBOSE: _logging.DEBUG,
     }
 
-    @ovphysx_log_fn
-    def _callback(level, message, user_data):
+    @ovphysx_log_callback_t
+    def _callback(level, message, channel, timestamp, user_data):
+        previous_active = getattr(_python_log_callback_context, "active", False)
+        _python_log_callback_context.active = True
         py_level = level_map.get(level, _logging.DEBUG)
         try:
-            text = message.decode("utf-8") if isinstance(message, bytes) else str(message)
-        except Exception:
-            text = str(message)
-        py_logger.log(py_level, "%s", text)
+            try:
+                text = ctypes.string_at(message.ptr, message.length).decode("utf-8", errors="replace")
+            except Exception:
+                text = str(message)
+            try:
+                channel_text = ctypes.string_at(channel.ptr, channel.length).decode("utf-8", errors="replace")
+            except Exception:
+                channel_text = ""
+            py_logger.log(
+                py_level,
+                "%s",
+                text,
+                extra={"ovphysx_channel": channel_text, "ovphysx_timestamp": timestamp},
+            )
+        finally:
+            _python_log_callback_context.active = previous_active
 
-    _python_log_callback = _callback
-    _python_log_logger_name = logger_name
+    filter_value = ovphysx_string_t(channel_filter) if channel_filter is not None else None
+    filter_pointer = ctypes.byref(filter_value) if filter_value is not None else None
+    retained_before_candidate = ()
+    transition_owned = False
+    try:
+        with _python_log_callback_condition:
+            if _python_log_callback_transition:
+                raise RuntimeError("Another Python logging transition is in progress")
+            # The native call may publish the candidate before Python can
+            # observe its status. Retain it before crossing the FFI boundary.
+            retained_before_candidate = _python_log_retained_callbacks
+            _python_log_retained_callbacks = (*_python_log_retained_callbacks, _callback)
+            transition_owned = True
+            _python_log_callback_transition = True
 
-    result = _lib.ovphysx_register_log_callback(_python_log_callback, None)
-    if result.status != ApiStatus.SUCCESS:
-        _python_log_callback = None
-        _python_log_logger_name = None
-        err = _lib.ovphysx_get_last_error()
-        err_msg = str(err) if err and err.ptr else ""
-        raise RuntimeError(f"Failed to enable Python logging: {err_msg}")
+        result = _lib.ovphysx_set_log_callback(
+            min_severity, filter_pointer, ctypes.cast(_callback, c_void_p), None
+        )
+        if result.status != ApiStatus.SUCCESS:
+            err = _lib.ovphysx_get_last_error()
+            err_msg = str(err) if err and err.ptr else ""
+            if result.status == ApiStatus.INVALID_ARGUMENT:
+                # Native validation precedes publication. Drop only this
+                # rejected candidate. Older ambiguous owners may still back
+                # the active native slot and must remain alive.
+                with _python_log_callback_condition:
+                    _python_log_retained_callbacks = retained_before_candidate
+            raise RuntimeError(f"Failed to enable Python logging: {err_msg}")
+
+        with _python_log_callback_condition:
+            # Publish the known-active owner before dropping callbacks retained
+            # from this or any earlier ambiguous transition.
+            _python_log_callback = _callback
+            _python_log_logger_name = logger_name
+            _python_log_retained_callbacks = ()
+    finally:
+        if transition_owned:
+            with _python_log_callback_condition:
+                _python_log_callback_transition = False
+                _python_log_callback_condition.notify_all()
 
 
 def disable_python_logging() -> None:
     """Stop routing native log messages to Python's logging module.
 
     If :func:`enable_python_logging` was not called, this is a no-op.
+
+    Raises:
+        RuntimeError: If called from a native log callback or while another
+            Python logging transition is in progress.
     """
     global _python_log_callback, _python_log_logger_name
+    global _python_log_retained_callbacks
+    global _python_log_callback_transition
 
-    if _python_log_callback is None:
-        return
+    if getattr(_python_log_callback_context, "active", False):
+        raise RuntimeError("Cannot configure Python logging from a native log callback")
 
-    result = _lib.ovphysx_unregister_log_callback(_python_log_callback, None)
-    if result.status != 0:
-        import logging as _logging
-        err = _lib.ovphysx_get_last_error()
-        err_msg = str(err) if err and err.ptr else "unknown error"
-        _logging.getLogger(__name__).warning("Failed to unregister Python log callback: %s", err_msg)
+    transition_owned = False
+    disable_succeeded = False
+    callback_owners = ()
+    try:
+        with _python_log_callback_condition:
+            if _python_log_callback_transition:
+                raise RuntimeError("Another Python logging transition is in progress")
+            if _python_log_callback is None and not _python_log_retained_callbacks:
+                return
+            transition_owned = True
+            _python_log_callback_transition = True
+            callback_owners = (
+                _python_log_callback,
+                *_python_log_retained_callbacks,
+            )
 
-    _python_log_callback = None
-    _python_log_logger_name = None
+        result = _lib.ovphysx_set_log_callback(LogLevel.DEFAULT, None, None, None)
+        if result.status != ApiStatus.SUCCESS:
+            import logging as _logging
+            err = _lib.ovphysx_get_last_error()
+            err_msg = str(err) if err and err.ptr else "unknown error"
+            _logging.getLogger(__name__).warning("Failed to unregister Python log callback: %s", err_msg)
+            return
+        disable_succeeded = True
+    finally:
+        if transition_owned:
+            with _python_log_callback_condition:
+                if disable_succeeded:
+                    _python_log_callback = None
+                    _python_log_logger_name = None
+                    _python_log_retained_callbacks = ()
+                _python_log_callback_transition = False
+                _python_log_callback_condition.notify_all()
+        # Keep every possibly published CFUNCTYPE alive until the native
+        # disable has returned and drained the active registration.
+        del callback_owners
+
+
+def flush_log(timeout_ns: int = (1 << 64) - 1) -> None:
+    """Wait for callback delivery already accepted before this call.
+
+    The barrier covers records already handed to ovphysx by Carbonite. If the
+    host enabled Carbonite asynchronous logging, records still buffered
+    upstream are outside this barrier. Successful native shutdown flushes the
+    upstream buffer before disabling and draining the callback.
+
+    Args:
+        timeout_ns: Maximum wait in nanoseconds. Zero polls; ``2**64 - 1``
+            waits indefinitely.
+
+    Raises:
+        ValueError: If ``timeout_ns`` is outside the unsigned 64-bit range.
+        TimeoutError: If the timeout expires.
+        RuntimeError: If native log delivery cannot be flushed.
+    """
+    if timeout_ns < 0 or timeout_ns > (1 << 64) - 1:
+        raise ValueError("timeout_ns must be in range 0 through 2**64 - 1")
+    result = _lib.ovphysx_flush_log(timeout_ns)
+    if result.status == ApiStatus.TIMEOUT:
+        raise TimeoutError("Timed out waiting for native log delivery")
+    if result.status != ApiStatus.SUCCESS:
+        raise RuntimeError(_get_last_error_from_lib())
 
 
 _PROCESS_LIFECYCLE_LOCK = threading.Lock()
+_PROCESS_LIFECYCLE_CONDITION = threading.Condition(_PROCESS_LIFECYCLE_LOCK)
 _PROCESS_LIFECYCLE_REFCOUNT = 0
+# These mutually exclusive states are protected by the process condition.
+# Native calls run without its lock. Concurrent constructors wait for
+# initialization, while final-shutdown races fail before callback draining.
+_PROCESS_LIFECYCLE_INITIALIZING = False
+_PROCESS_LIFECYCLE_SHUTTING_DOWN = False
+# Lifecycle references a Warp deleter could not release because a transition was in flight.
+# Guarded by _PROCESS_LIFECYCLE_CONDITION. Drained at both lifecycle entry points.
+_PROCESS_LIFECYCLE_DEFERRED_RELEASES = 0
+# Reentrant: operations under this lock allocate, so CPython's cyclic collector
+# can run on the same thread and finalize an unreachable PhysX whose __del__
+# reaches destroy() -> _untrack_process_instance() and re-enters this lock.
+# A plain Lock would self-deadlock there.
+_PROCESS_LIFECYCLE_INSTANCES_LOCK = threading.RLock()
+# Identity-keyed: WeakSet hashes the PhysX object, so an __eq__-only subclass
+# is unhashable (TypeError after native construction) and two hashable
+# instances that compare equal collapse to one tracked referent.
+_PROCESS_LIFECYCLE_INSTANCES: dict[int, weakref.ref] = {}
+_PROCESS_LIFECYCLE_ATEXIT_REGISTERED = False
+
+
+def _destroy_process_instances_at_exit() -> None:
+    """Destroy live Python instances before interpreter finalization."""
+    with _PROCESS_LIFECYCLE_INSTANCES_LOCK:
+        # The lock makes the reentrancy described above safe, but not the
+        # snapshot itself: walking the dict while a cyclic-collector __del__
+        # lands in _untrack_process_instance() would change its size and
+        # abandon remaining instances. Pause collection for the snapshot
+        # only. The loop below runs with it back on.
+        gc_was_enabled = gc.isenabled()
+        gc.disable()
+        try:
+            instances = []
+            for tracked in list(_PROCESS_LIFECYCLE_INSTANCES.values()):
+                instance = tracked()
+                if instance is not None:
+                    instances.append(instance)
+        finally:
+            if gc_was_enabled:
+                gc.enable()
+    for instance in instances:
+        # _finalize_unreleased() is the non-throwing finalizer policy, but at this
+        # exit boundary no caller is left to recover. Isolate each instance so one
+        # failure cannot strand the remaining lifecycle tokens or skip the
+        # last-loader cache removal.
+        try:
+            instance._finalize_unreleased()
+        except BaseException as exc:
+            try:
+                warnings.warn(
+                    f"PhysX process-exit cleanup failed for one instance: {exc}",
+                    RuntimeWarning,
+                    stacklevel=1,
+                )
+            except BaseException:
+                import sys
+
+                sys.stderr.write(
+                    f"PhysX process-exit cleanup failed for one instance: {exc}\n"
+                )
+    _shutdown_remaining_process_lifecycle_at_exit()
+
+
+def _shutdown_remaining_process_lifecycle_at_exit() -> None:
+    """Run native shutdown even if a read() array still holds a borrow token.
+
+    Each Warp array from read() owns an independent process-lifecycle token so
+    ovphysx_shutdown() cannot reclaim the CUDA context while the array aliases
+    it. At interpreter exit those arrays can remain globally reachable: instance
+    cleanup leaves the refcount at 1, the deferred-release drain sees an empty
+    queue, and the array deleter runs only during later teardown, after atexit
+    drainers are gone. ovphysx.cpp documents that skipping ovphysx_shutdown()
+    then destroys the direct runtime from C++ statics, which can emit UJITSO
+    "Leaked processor" errors and a Windows access violation. The arrays are
+    about to die with the interpreter, so collapse leftover tokens and shut
+    down while ctypes is still valid.
+    """
+    global _PROCESS_LIFECYCLE_REFCOUNT
+    try:
+        _drain_deferred_lifecycle_releases()
+    except BaseException:
+        pass
+    with _PROCESS_LIFECYCLE_CONDITION:
+        if _PROCESS_LIFECYCLE_REFCOUNT <= 0:
+            return
+        if _PROCESS_LIFECYCLE_REFCOUNT > 1:
+            _PROCESS_LIFECYCLE_REFCOUNT = 1
+    try:
+        _release_process_lifecycle()
+    except BaseException:
+        pass
+
+
+def _track_process_instance(instance: Any) -> None:
+    """Track an instance and install process-exit cleanup after native bootstrap."""
+    global _PROCESS_LIFECYCLE_ATEXIT_REGISTERED
+    key = id(instance)
+
+    def _forget(_ref: weakref.ref, tracked_key: int = key) -> None:
+        with _PROCESS_LIFECYCLE_INSTANCES_LOCK:
+            _PROCESS_LIFECYCLE_INSTANCES.pop(tracked_key, None)
+
+    with _PROCESS_LIFECYCLE_INSTANCES_LOCK:
+        _PROCESS_LIFECYCLE_INSTANCES[key] = weakref.ref(instance, _forget)
+        if not _PROCESS_LIFECYCLE_ATEXIT_REGISTERED:
+            # Registered from a fully bootstrapped instance so the callback only
+            # ever sees instances with usable native handles. Carbonite's own
+            # cache-removal backstop is a C `std::atexit` thunk, which the C
+            # runtime drains after Py_FinalizeEx. This Python callback therefore
+            # always runs first, while ctypes and the handles are still usable.
+            atexit.register(_destroy_process_instances_at_exit)
+            _PROCESS_LIFECYCLE_ATEXIT_REGISTERED = True
+
+
+def _untrack_process_instance(instance: Any) -> None:
+    """Stop tracking after native instance destruction becomes terminal."""
+    with _PROCESS_LIFECYCLE_INSTANCES_LOCK:
+        _PROCESS_LIFECYCLE_INSTANCES.pop(id(instance), None)
 
 
 def _get_last_error_from_lib() -> str:
@@ -1792,26 +2604,352 @@ def _get_last_error_from_lib() -> str:
     return "Unknown error"
 
 
-def _acquire_process_lifecycle() -> None:
-    global _PROCESS_LIFECYCLE_REFCOUNT
-    with _PROCESS_LIFECYCLE_LOCK:
-        if _PROCESS_LIFECYCLE_REFCOUNT == 0:
-            result = _lib.ovphysx_initialize()
+def _acquire_process_lifecycle(owner=None) -> None:
+    global _PROCESS_LIFECYCLE_REFCOUNT, _PROCESS_LIFECYCLE_INITIALIZING
+    global _PROCESS_LIFECYCLE_SHUTTING_DOWN
+    if getattr(_python_log_callback_context, "active", False):
+        # Native lifecycle transitions may synchronously deliver callbacks. A
+        # callback must not recursively enter lifecycle work itself.
+        raise RuntimeError(
+            "PhysX() cannot be called from within a native log callback; " "retry after the callback returns"
+        )
+
+    _drain_deferred_lifecycle_releases()
+
+    transition_owned = False
+    initialize_may_have_run = False
+    initialize_known_failure = False
+    shared_token_published = False
+    token_published = False
+    try:
+        with _PROCESS_LIFECYCLE_CONDITION:
+            _PROCESS_LIFECYCLE_CONDITION.wait_for(lambda: not _PROCESS_LIFECYCLE_INITIALIZING)
+            if _PROCESS_LIFECYCLE_SHUTTING_DOWN:
+                raise RuntimeError("ovphysx process shutdown is in progress; retry PhysX() after it returns")
+            if _PROCESS_LIFECYCLE_REFCOUNT > 0:
+                previous_refcount = _PROCESS_LIFECYCLE_REFCOUNT
+                try:
+                    if owner is not None:
+                        owner._lifecycle_acquired = True
+                    _PROCESS_LIFECYCLE_REFCOUNT = previous_refcount + 1
+                    shared_token_published = True
+                except BaseException:
+                    _PROCESS_LIFECYCLE_REFCOUNT = previous_refcount
+                    shared_token_published = False
+                    if owner is not None:
+                        owner._lifecycle_acquired = False
+                    raise
+            else:
+                transition_owned = True
+                _PROCESS_LIFECYCLE_INITIALIZING = True
+
+        if shared_token_published:
+            return
+
+        initialize_may_have_run = True
+        result = _lib.ovphysx_initialize()
+        initialize_status = result.status
+        if initialize_status != ApiStatus.SUCCESS:
+            initialize_known_failure = True
+            raise RuntimeError(f"ovphysx_initialize() failed: {_get_last_error_from_lib()}")
+
+        with _PROCESS_LIFECYCLE_CONDITION:
+            try:
+                _PROCESS_LIFECYCLE_REFCOUNT = 1
+                token_published = True
+                _PROCESS_LIFECYCLE_INITIALIZING = False
+            finally:
+                _PROCESS_LIFECYCLE_CONDITION.notify_all()
+        if owner is not None:
+            owner._lifecycle_acquired = True
+    except BaseException:
+        if shared_token_published:
+            if owner is not None and owner._lifecycle_acquired:
+                raise
+            try:
+                _release_process_lifecycle()
+            except BaseException:
+                pass
+            raise
+        if not transition_owned:
+            raise
+        if not initialize_may_have_run:
+            with _PROCESS_LIFECYCLE_CONDITION:
+                try:
+                    _PROCESS_LIFECYCLE_INITIALIZING = False
+                finally:
+                    _PROCESS_LIFECYCLE_CONDITION.notify_all()
+            raise
+        if initialize_known_failure:
+            with _PROCESS_LIFECYCLE_CONDITION:
+                try:
+                    _PROCESS_LIFECYCLE_INITIALIZING = False
+                finally:
+                    _PROCESS_LIFECYCLE_CONDITION.notify_all()
+            raise
+
+        # The native call may have committed before an asynchronous Python
+        # exception became visible at the ctypes boundary. A published token
+        # uses the normal release path so any concurrent token survives. An
+        # unpublished outcome hands the transition directly to shutdown. No
+        # waiter may acquire the ambiguous token in between.
+        if token_published:
+            with _PROCESS_LIFECYCLE_CONDITION:
+                if _PROCESS_LIFECYCLE_INITIALIZING:
+                    try:
+                        _PROCESS_LIFECYCLE_INITIALIZING = False
+                    finally:
+                        _PROCESS_LIFECYCLE_CONDITION.notify_all()
+            if owner is not None and owner._lifecycle_acquired:
+                raise
+            try:
+                _release_process_lifecycle()
+            except BaseException:
+                pass
+            raise
+
+        # Cleanup must survive a second asynchronous exception while the
+        # ambiguous initialize result is handed to shutdown. Re-publishing
+        # this idempotent state is safe and prevents SHUTTING_DOWN from being
+        # stranded before the native rollback runs.
+        handoff_published = False
+        while not handoff_published:
+            try:
+                with _PROCESS_LIFECYCLE_CONDITION:
+                    try:
+                        # Publish SHUTTING_DOWN before releasing INITIALIZING so
+                        # no waiter can acquire an ambiguous native outcome.
+                        _PROCESS_LIFECYCLE_SHUTTING_DOWN = True
+                        _PROCESS_LIFECYCLE_REFCOUNT = 0
+                        _PROCESS_LIFECYCLE_INITIALIZING = False
+                    finally:
+                        _PROCESS_LIFECYCLE_CONDITION.notify_all()
+                handoff_published = True
+            except BaseException:
+                pass
+        try:
+            _finish_process_shutdown_transition()
+        except BaseException:
+            pass
+        raise
+
+
+def _finish_process_shutdown_transition() -> None:
+    global _python_log_callback, _python_log_logger_name
+    global _python_log_retained_callbacks
+    global _python_log_callback_transition
+    global _PROCESS_LIFECYCLE_SHUTTING_DOWN
+
+    pending_transition_error = None
+    operation_error = None
+    clear_transition_error = None
+    transition_owned = False
+    shutdown_succeeded = False
+    callback_owners = ()
+    try:
+        try:
+            while not transition_owned:
+                try:
+                    with _python_log_callback_condition:
+                        while _python_log_callback_transition:
+                            _python_log_callback_condition.wait()
+                        # Set the local owner first so an interruption at the
+                        # following assignment is recoverable.
+                        transition_owned = True
+                        _python_log_callback_transition = True
+                        callback_owners = (
+                            _python_log_callback,
+                            *_python_log_retained_callbacks,
+                        )
+                except BaseException as error:
+                    if pending_transition_error is None:
+                        pending_transition_error = error
+                    if transition_owned:
+                        # The condition lock serialized the ownership decision.
+                        # Reassert the flag if interruption landed between the
+                        # local and global assignments.
+                        with _python_log_callback_condition:
+                            _python_log_callback_transition = True
+                            callback_owners = (
+                                _python_log_callback,
+                                *_python_log_retained_callbacks,
+                            )
+
+            result = _lib.ovphysx_shutdown()
             if result.status != ApiStatus.SUCCESS:
-                raise RuntimeError(f"ovphysx_initialize() failed: {_get_last_error_from_lib()}")
-        _PROCESS_LIFECYCLE_REFCOUNT += 1
+                raise RuntimeError(f"ovphysx_shutdown() failed: {_get_last_error_from_lib()}")
+            shutdown_succeeded = True
+        finally:
+            if transition_owned:
+                with _python_log_callback_condition:
+                    if shutdown_succeeded:
+                        # Native shutdown disabled and drained the sole slot.
+                        _python_log_callback = None
+                        _python_log_logger_name = None
+                        _python_log_retained_callbacks = ()
+                    _python_log_callback_transition = False
+                    _python_log_callback_condition.notify_all()
+            # Keep every possibly published CFUNCTYPE alive until native
+            # shutdown has returned and drained the callback slot.
+            del callback_owners
+    except BaseException as error:
+        operation_error = error
+    finally:
+        # Once final shutdown owns the process transition, no interruption may
+        # leave future constructors permanently observing SHUTTING_DOWN. Retry
+        # the idempotent publication until both the state change and condition
+        # notification complete, then propagate the first deferred error.
+        transition_cleared = False
+        while not transition_cleared:
+            try:
+                with _PROCESS_LIFECYCLE_CONDITION:
+                    try:
+                        _PROCESS_LIFECYCLE_SHUTTING_DOWN = False
+                    finally:
+                        _PROCESS_LIFECYCLE_CONDITION.notify_all()
+                transition_cleared = True
+            except BaseException as error:
+                if clear_transition_error is None:
+                    clear_transition_error = error
+
+    if operation_error is not None:
+        raise operation_error
+    if pending_transition_error is not None:
+        raise pending_transition_error
+    if clear_transition_error is not None:
+        raise clear_transition_error
+
+
+def _defer_process_lifecycle_release() -> None:
+    """Return one process reference from a Warp array deleter. Safe on ANY thread.
+
+    Goes through :func:`_release_process_lifecycle` rather than touching the refcount, so there is
+    one implementation of what a release means. What it adds is a thread-local veto on the FINAL
+    release: a non-final release is a decrement under a lock and is safe wherever the collector
+    happens to be, but the final one is ``ovphysx_shutdown()``, a long native teardown reclaiming
+    the CUDA context, which must not run on a GC thread inside a ``__del__``, possibly while the
+    interpreter is finalizing. Vetoed, it is queued and retired later by
+    :func:`_drain_deferred_lifecycle_releases`.
+
+    The veto is read under the process lock, so the decision cannot race a refcount change.
+
+    Cannot raise: a deleter has nowhere to report an exception, and a lost reference would strand
+    the process reference for good.
+    """
+    global _PROCESS_LIFECYCLE_DEFERRED_RELEASES
+    _LIFECYCLE_DELETER_CONTEXT.veto_final = True
+    try:
+        _release_process_lifecycle()
+    except BaseException:
+        with _PROCESS_LIFECYCLE_CONDITION:
+            _PROCESS_LIFECYCLE_DEFERRED_RELEASES += 1
+    finally:
+        _LIFECYCLE_DELETER_CONTEXT.veto_final = False
+
+
+@atexit.register
+def _drain_lifecycle_releases_at_exit() -> None:
+    """Retire queued lifecycle references at interpreter exit.
+
+    Without this, deferring in the deleter would trade "shutdown on a GC thread" for "shutdown never
+    runs": the queue is otherwise only drained by a later lifecycle entry point, and a program whose
+    last act is dropping an array reaches none. atexit runs on the main thread before finalization,
+    which is a thread native shutdown may legitimately run on.
+
+    Live read() arrays that remain reachable through exit are handled by
+    :func:`_shutdown_remaining_process_lifecycle_at_exit`, which is registered later
+    and therefore runs first (LIFO). This drain then sees an empty queue.
+    """
+    try:
+        _drain_deferred_lifecycle_releases()
+    except BaseException:
+        pass
+
+
+# Set only for the duration of a Warp deleter's release. Thread-local because it describes the
+# CALLER, not the process: another thread may legitimately be completing final shutdown at the same
+# moment.
+_LIFECYCLE_DELETER_CONTEXT = threading.local()
+
+
+def _drain_deferred_lifecycle_releases() -> None:
+    """Retire lifecycle references a deleter could not release when it ran.
+
+    Cannot recurse: the counter is decremented under the lock before the release is attempted,
+    so a nested call sees zero. A release that fails again is put back and the drain stops.
+    The next entry point retries it.
+    """
+    global _PROCESS_LIFECYCLE_DEFERRED_RELEASES
+    while True:
+        with _PROCESS_LIFECYCLE_CONDITION:
+            if _PROCESS_LIFECYCLE_DEFERRED_RELEASES == 0:
+                return
+            if _PROCESS_LIFECYCLE_INITIALIZING or _PROCESS_LIFECYCLE_SHUTTING_DOWN:
+                return
+            _PROCESS_LIFECYCLE_DEFERRED_RELEASES -= 1
+        try:
+            _release_process_lifecycle()
+        except BaseException:
+            with _PROCESS_LIFECYCLE_CONDITION:
+                _PROCESS_LIFECYCLE_DEFERRED_RELEASES += 1
+            return
 
 
 def _release_process_lifecycle() -> None:
     global _PROCESS_LIFECYCLE_REFCOUNT
-    with _PROCESS_LIFECYCLE_LOCK:
-        if _PROCESS_LIFECYCLE_REFCOUNT == 0:
-            return
-        _PROCESS_LIFECYCLE_REFCOUNT -= 1
-        if _PROCESS_LIFECYCLE_REFCOUNT == 0:
-            result = _lib.ovphysx_shutdown()
-            if result.status != ApiStatus.SUCCESS:
-                raise RuntimeError(f"ovphysx_shutdown() failed: {_get_last_error_from_lib()}")
+    global _PROCESS_LIFECYCLE_SHUTTING_DOWN
+    global _PROCESS_LIFECYCLE_DEFERRED_RELEASES
+
+    if getattr(_python_log_callback_context, "active", False):
+        # Check before taking the process lock: final shutdown may be draining
+        # this callback and must never wait for it to acquire the same lock.
+        raise RuntimeError("ovphysx_shutdown cannot be called from within a log callback")
+
+    pending_transition_error = None
+    transition_owned = False
+    try:
+        with _PROCESS_LIFECYCLE_CONDITION:
+            if _PROCESS_LIFECYCLE_INITIALIZING:
+                raise RuntimeError("ovphysx process initialization is already in progress")
+            if _PROCESS_LIFECYCLE_SHUTTING_DOWN:
+                raise RuntimeError("ovphysx process shutdown is already in progress")
+            if _PROCESS_LIFECYCLE_REFCOUNT == 0:
+                return
+            if _PROCESS_LIFECYCLE_REFCOUNT > 1:
+                _PROCESS_LIFECYCLE_REFCOUNT -= 1
+                return
+
+            # Everything below is FINAL shutdown. A Warp array deleter must not run it: it lands on
+            # whatever thread the collector is on, inside a __del__, and ovphysx_shutdown() is a long
+            # native teardown that reclaims the CUDA context. Queue it instead. The next lifecycle
+            # entry point, or the interpreter-exit drain, retires it on a thread that can take it.
+            #
+            # Checked HERE rather than in the deleter so the decision is made under this lock, where
+            # "would this be the final release?" cannot race another thread's acquire or release.
+            if getattr(_LIFECYCLE_DELETER_CONTEXT, "veto_final", False):
+                _PROCESS_LIFECYCLE_DEFERRED_RELEASES += 1
+                return
+
+            # Complete the final-shutdown publication while still holding the
+            # condition lock. SHUTTING_DOWN is published before the refcount is
+            # cleared, so an interrupted intermediate state remains fail-fast.
+            while not transition_owned:
+                try:
+                    _PROCESS_LIFECYCLE_SHUTTING_DOWN = True
+                    _PROCESS_LIFECYCLE_REFCOUNT = 0
+                    transition_owned = True
+                except BaseException as error:
+                    if pending_transition_error is None:
+                        pending_transition_error = error
+    except BaseException as error:
+        if not transition_owned:
+            raise
+        if pending_transition_error is None:
+            pending_transition_error = error
+
+    _finish_process_shutdown_transition()
+    if pending_transition_error is not None:
+        raise pending_transition_error
 
 
 class PhysX:
@@ -1819,6 +2957,7 @@ class PhysX:
 
     def __init__(
         self,
+        *,
         config: "PhysXConfig | None" = None,
         ignore_version_mismatch: bool = False,
         active_cuda_gpus: str | None = None,
@@ -1829,24 +2968,35 @@ class PhysX:
             config: Typed config dataclass. Only non-None fields are applied.
             ignore_version_mismatch: Skip Python/native version match check.
             active_cuda_gpus: Comma-separated CUDA device ordinals
-                (default: None = PhysX automatic CUDA selection).
+                (default: None = no ovphysx ordinal override).
                 Restricts which GPU ordinal(s) are used.
-                Supported: None/"" (automatic), "0" (GPU 0), "N" (GPU N),
+                Supported: None/"" (preserve current PhysX process selection;
+                a fresh/default process selects automatically), "0" (GPU 0), "N" (GPU N),
                 "-1" (PhysX automatic selection),
                 "0,1,...,N-1" (all GPUs round-robin), "1,2,...,N-1" (skip first).
-                Any non-empty value overrides config.scene_multi_gpu_mode; a single
+                Lists are normalized into ascending ordinal order. Input order
+                does not control scene rotation.
+                Any non-empty value overrides config.scene_multi_gpu_mode. A single
                 ordinal disables multi-GPU scene distribution.
+                A different deterministic ordinal after the first GPU scene requires
+                a new process.
 
         To force process-wide CPU-only mode, call PhysX.set_cpu_mode(True) before
         creating any PhysX instances.
+
+        Raises:
+            RuntimeError: If construction is attempted from a native log
+                callback or while final shutdown is draining callbacks.
+                Concurrent construction during initialization waits, then
+                shares success or retries a known failure. Construction rejects
+                during ambiguous rollback or final shutdown.
         """
         self._lib = _lib
         self._lifecycle_acquired = False
-        # Keepalive for an attached ovstage Stage. ovphysx captures the raw
-        # ovstage_instance_t* and dereferences it until detach, so the Python
-        # wrapper must hold a reference to keep the Stage (and its native
-        # instance) alive for the duration of the attachment. Set in
-        # attach_ovstage(), cleared in detach_ovstage()/release().
+        # Keepalive for an attached ovstage Stage. ovphysx dereferences the raw
+        # ovstage_instance_t* until detach, so this reference keeps the Stage and
+        # its native instance alive for the duration of the attachment. Set in
+        # attach_ovstage(), cleared in detach_ovstage()/destroy().
         self._attached_ovstage = None
 
         if not ignore_version_mismatch:
@@ -1874,10 +3024,28 @@ class PhysX:
             args.config_entry_count = 0
 
         self._omni_physx_sdk_handle = c_uint64(_INVALID_HANDLE)
+        # Read sessions whose refcount hit zero on a non-owning (GC) thread. Their native teardown
+        # is deferred and drained here on the owning thread (see _drain_pending_read_releases), so a
+        # Warp deleter never calls ovphysx_release_* off-thread against this not-thread-safe instance.
+        self._pending_read_releases: "list[_ReadRelease]" = []
+        self._pending_read_lock = threading.Lock()
+        # Write sessions abandoned without close() and finalized on a GC thread. Same hazard, same
+        # remedy as the read queue: __del__ enqueues, the owning thread drains (folded into
+        # _drain_pending_read_releases so every owning-thread entry point retires both).
+        self._pending_write_releases: "list[_WriteRelease]" = []
+        self._pending_write_lock = threading.Lock()
+        # Weakly-held set of live read holders, so stage teardown can release path metadata and
+        # destroy() can warn when an aliased CPU or CUDA array still owns native storage.
+        self._live_read_holders: "weakref.WeakSet[_ReadRelease]" = weakref.WeakSet()
         try:
-            _acquire_process_lifecycle()
-            self._lifecycle_acquired = True
+            _acquire_process_lifecycle(self)
+        except BaseException:
+            if self._lifecycle_acquired:
+                self._lifecycle_acquired = False
+                _release_process_lifecycle()
+            raise
 
+        try:
             result = self._lib.ovphysx_create_instance(byref(args), byref(self._omni_physx_sdk_handle))
             if result.status != ApiStatus.SUCCESS:
                 error_msg = self._get_last_error()
@@ -1891,13 +3059,14 @@ class PhysX:
                 _release_process_lifecycle()
             raise
 
-        # Track explicit-release state for the ResourceWarning finalizer.
+        # Track explicit-destruction state for the ResourceWarning finalizer.
         self._released = False
+        _track_process_instance(self)
 
     def _check_valid(self) -> None:
         if self._omni_physx_sdk_handle is None:
             raise RuntimeError(
-                "PhysX instance has been released. Create a new PhysX() instance."
+                "PhysX instance has been destroyed. Create a new PhysX() instance."
             )
 
     @property
@@ -1908,7 +3077,7 @@ class PhysX:
         ovphysx C API directly.
 
         Raises:
-            RuntimeError: If the instance has been released.
+            RuntimeError: If the instance has been destroyed.
         """
         self._check_valid()
         return self._omni_physx_sdk_handle.value
@@ -1917,12 +3086,18 @@ class PhysX:
     def set_cpu_mode(cpu_only: bool) -> None:
         """Force process-wide CPU-only mode.
 
-        Call before the first PhysX instance is ever created to guarantee that
-        CUDA is never touched. The call requires no active instances. Once set
-        to True successfully, the mode cannot be reversed for this process.
+        Call before the first PhysX instance is ever created to keep ovphysx's
+        own code from touching CUDA. The call requires no active instances. Once
+        set to True successfully, the mode cannot be reversed for this process.
 
-        When True: no CUDA driver is touched; all PhysX scenes use CPU dynamics
-        regardless of their USD physxScene:enableGPUDynamics settings.
+        When called before the first instance, True prevents CUDA driver use by
+        ovphysx and makes all PhysX scenes use CPU dynamics regardless of their
+        USD physxScene:enableGPUDynamics settings. Other libraries in the process
+        may still open the driver. A call after an earlier instance was destroyed
+        may succeed, but cannot provide ovphysx's no-CUDA-touch guarantee or
+        retarget an already-bootstrapped runtime.
+        For CPU-only deployments, setting OVPHYSX_DISABLE_GPU before ovphysx
+        initialization provides the equivalent process-wide policy.
 
         Raises:
             RuntimeError: If any PhysX instances are currently active, or if
@@ -1935,6 +3110,28 @@ class PhysX:
                 f"set_cpu_mode failed ({ApiStatus(result.status).name}): "
                 f"{_get_last_error_from_lib()}"
             )
+
+    @staticmethod
+    def get_cpu_mode() -> bool:
+        """Return whether process-wide hard CPU-only mode is in effect.
+
+        True when ``PhysX.set_cpu_mode(True)`` has succeeded, or when
+        ``OVPHYSX_DISABLE_GPU`` is active. The environment variable is read
+        live before ``ovphysx_initialize`` (and again after shutdown until the
+        next initialize). Initialize latches it for that interval. This is not
+        a query of per-scene USD ``physxScene:enableGPUDynamics``, a CUDA
+        ordinal (``active_cuda_gpus``), or attach-time resolved dynamics.
+
+        Callable at any time. No PhysX instance is required.
+        """
+        out = ctypes.c_bool(False)
+        result = _lib.ovphysx_get_cpu_mode(ctypes.byref(out))
+        if result.status != 0:
+            raise RuntimeError(
+                f"get_cpu_mode failed ({ApiStatus(result.status).name}): "
+                f"{_get_last_error_from_lib()}"
+            )
+        return bool(out.value)
 
     @staticmethod
     def _ovx_to_str(s: ovphysx_string_t) -> str:
@@ -1977,7 +3174,7 @@ class PhysX:
         Ownership/Lifetime:
             - All TensorBinding, ContactBinding, and SdfView objects for the previous
               stage become invalid. Destroy cached bindings and SDF views before reset
-              when practical; if a stale handle survives, only destroy it. Create
+              when practical. If a stale handle survives, only destroy it. Create
               replacement bindings and SDF views after the reset completes.
         Threading:
             - Do not call concurrently on the same instance without external sync.
@@ -1985,19 +3182,24 @@ class PhysX:
             - Raises RuntimeError on failure.
         """
         self._check_valid()
+        # reset_stage detaches internally and invalidates read sessions. Free any pending teardown
+        # first, plus the stage-derived handles of sessions still borrowed by a live Warp array
+        # (those are not pending and would otherwise be freed after the Stage is gone).
+        self._drain_pending_read_releases()
+        self._release_stage_bound_read_handles()
         result = self._lib.ovphysx_reset_stage(self._omni_physx_sdk_handle.value)
 
         if result.status != ApiStatus.SUCCESS:
             error_msg = self._get_last_error()
             raise RuntimeError(f"Failed to reset_stage: {error_msg}")
 
-        # reset_stage detaches any attached ovstage in the C runtime; drop the
+        # reset_stage detaches any attached ovstage in the C runtime. Drop the
         # Python keepalive to match (see attach_ovstage / detach_ovstage).
         self._attached_ovstage = None
         return result.op_index
 
     def clone(self, source_path: str, target_paths: list[str],
-              parent_transforms: list[tuple[float, float, float, float, float, float, float]] | None = None,
+              anchor_transforms: list[tuple[float, float, float, float, float, float, float]] | None = None,
               env_ids: list[int] | None = None) -> int:
         """Clone a prim hierarchy to create multiple runtime physics copies.
 
@@ -2017,35 +3219,42 @@ class PhysX:
         GPU dynamics + GPU broadphase, each cloned environment gets a distinct environment id so
         copies in different environments do not collide. The source environment is included: its
         bodies are created holding environment id 0 (assigned as the attach parses them; clones
-        get 1..N), so co-located clones (``parent_transforms=None``) are collision-isolated from
-        the source as well. Like all carbonite settings it is **per-process** (shared by every
-        ovphysx instance in the process), so set it consistently before attaching.
+        get 1..N), so co-located clones (``anchor_transforms=None``) are collision-isolated from
+        the source as well. Environment ids do not provide collision isolation in CPU mode.
+        Give CPU clones spatially disjoint ``anchor_transforms``. Otherwise all copies share one
+        collision space. The runtime logs a warning when env ids are requested but GPU dynamics
+        or GPU broadphase is unavailable. Call :func:`ovphysx.enable_python_logging` to receive it
+        on the ``ovphysx`` Python logger. Like all carbonite settings, ``useEnvIds`` is
+        **per-process** (shared by every ovphysx instance in the process), so set it consistently
+        before attaching.
 
         When one logical environment is assembled from SEVERAL clone calls (e.g. an IsaacLab
         ClonePlan cloning one source row at a time: first ``/env0/Robot`` to every environment,
         then ``/env0/Object``), pass ``env_ids`` so objects that share an environment share an
-        environment id -- with ``env_ids=None`` each call numbers its copies afresh, so
+        environment id. With ``env_ids=None`` each call numbers its copies afresh, so
         ``/env1/Robot`` and ``/env1/Object`` cloned by different calls would land on different
         ids and never collide with each other::
 
             env_ids = [0, 1]  # same ids in every call -> same logical environments
-            physx.clone("/env0/Robot",  ["/env1/Robot",  "/env2/Robot"],  transforms_r, env_ids)
-            physx.clone("/env0/Object", ["/env1/Object", "/env2/Object"], transforms_o, env_ids)
+            physx.clone("/env0/Robot", ["/env1/Robot", "/env2/Robot"], env_ids=env_ids)
+            physx.clone("/env0/Object", ["/env1/Object", "/env2/Object"], env_ids=env_ids)
 
         Args:
             source_path: USD path of the source prim hierarchy to clone (e.g., "/World/env0")
             target_paths: Runtime physics-object paths for the cloned hierarchies
                 (e.g., ["/World/env1", "/World/env2"])
-            parent_transforms: Optional list of (px, py, pz, qx, qy, qz, qw) transforms
-                giving the world pose of each copy's parent.  Position followed by
-                quaternion rotation (imaginary-first, matching tensor API convention).
-                Identity rotation = (0, 0, 0, 1).  Must have the same length as
-                target_paths.  Each cloned body keeps its pose relative to the source's
-                parent, so a copy's world pose is transform * inverse(source_parent) *
-                source_body -- for a source authored at the origin this places each body
-                exactly at the transform.  Pass None to co-locate every copy on the source.
+            anchor_transforms: Optional list of (px, py, pz, qx, qy, qz, qw) transforms
+                giving the absolute world pose of each target subtree root. Entry i anchors
+                the exact subtree at target_paths[i]. Position is followed by quaternion
+                rotation (imaginary-first, matching tensor API convention). Identity
+                rotation = (0, 0, 0, 1). Must have the same length as target_paths.
+                Descendants keep their poses relative to the source subtree root:
+                target_object_world = anchor_transforms[i] * inverse(source_root_world) *
+                source_object_world. Pass None to co-locate every copy on the source. Co-location
+                is collision-isolated only under GPU dynamics + GPU broadphase. In CPU mode,
+                provide spatially disjoint transforms to avoid cross-environment collisions.
             env_ids: Optional logical environment id per target (list of int, same length
-                as target_paths, each 0 <= id < 0x00FFFFFF -- PhysX supports at most
+                as target_paths, each 0 <= id < 0x00FFFFFF, because PhysX supports at most
                 1<<24 environments and the runtime id is env_ids[i] + 1).  Stable across calls: the
                 same id always maps to the same runtime environment, so clones from
                 different calls that share an id collide with each other and stay
@@ -2058,25 +3267,22 @@ class PhysX:
             op_index (can be used with wait_op() for explicit synchronization)
 
         Raises:
-            ValueError: If source_path is empty, target_paths is empty, or any target path matches source path
-            RuntimeError: If cloning fails, if no ovstage is attached,
-                if target_paths contains duplicate or overlapping entries, or if
-                clone() is called after the first :meth:`step`, :meth:`step_sync`,
-                or :meth:`step_n_sync`. The after-step rejection applies in CPU
-                and GPU mode. GPU warmup is also rejected; hard CPU mode treats
-                :meth:`warmup_gpu` as a no-op.
+            ValueError: If paths are invalid, ``anchor_transforms`` has the wrong
+                length or contains an invalid pose, or ``env_ids`` has the wrong
+                length or contains an invalid id.
+            RuntimeError: If clone fails to queue, if no USD scene is loaded,
+                or if clone() is called after :meth:`warmup` or the first
+                :meth:`step` / :meth:`step_sync`. Cloning after warmup
+                corrupts simulation state on GPU and is rejected in all modes
+                for API consistency. To recover, call :meth:`reset_stage`, wait
+                for it to complete, then reload the source scene or reattach
+                its ovstage before cloning again.
 
         Preconditions:
-            - An ovstage source is attached and source_path exists.
-            - target_paths are unique, disjoint, and do not already contain physics.
-            - No :meth:`step` / :meth:`step_sync` / :meth:`step_n_sync` has run
-              since the last :meth:`reset_stage` or :meth:`attach_ovstage` call,
-              in either CPU or GPU mode -- violating this raises
-              ``RuntimeError``. (Note: :meth:`update_from_ovstage` does *not*
-              reset this -- only a fresh :meth:`attach_ovstage` or
-              :meth:`reset_stage` does.)
-            - :meth:`warmup_gpu` has not been called since the same reset
-              points, but this precondition is currently GPU-only -- see above.
+            - A USD stage is loaded and source_path exists.
+            - target_paths are unique and do not already exist.
+            - :meth:`warmup` has not been called and no :meth:`step` /
+              :meth:`step_sync` has run since the current stage was attached.
         Side effects:
             - Creates live PhysX objects keyed by the target paths. No USD or runtime-stage
               prims are authored.
@@ -2102,30 +3308,30 @@ class PhysX:
         for i, path in enumerate(target_paths):
             target_array[i] = ovphysx_string_t(path)
 
-        # Pack optional parent transforms into a flat float array [N*7].
-        if parent_transforms is not None:
-            if len(parent_transforms) != num_targets:
+        # Pack the target-root world transforms into a flat float array [N*7].
+        if anchor_transforms is not None:
+            if len(anchor_transforms) != num_targets:
                 raise ValueError(
-                    f"parent_transforms length ({len(parent_transforms)}) "
+                    f"anchor_transforms length ({len(anchor_transforms)}) "
                     f"must match target_paths length ({num_targets})"
                 )
             # Each entry must be exactly 7 finite numeric values (px,py,pz,qx,qy,qz,qw): the native
             # path reads 7 per target, so a short entry would read past this buffer and a long one
             # would shift every later target's pose. Validate before allocating the ctypes array.
             xform_flat = []
-            for i, entry in enumerate(parent_transforms):
+            for i, entry in enumerate(anchor_transforms):
                 vals = list(entry)
                 if len(vals) != 7:
                     raise ValueError(
-                        f"parent_transforms[{i}] must have exactly 7 values "
+                        f"anchor_transforms[{i}] must have exactly 7 values "
                         f"(px,py,pz,qx,qy,qz,qw), got {len(vals)}"
                     )
                 try:
                     fvals = [float(v) for v in vals]
                 except (TypeError, ValueError) as exc:
-                    raise ValueError(f"parent_transforms[{i}] must contain numeric values") from exc
+                    raise ValueError(f"anchor_transforms[{i}] must contain numeric values") from exc
                 if not all(math.isfinite(fv) for fv in fvals):
-                    raise ValueError(f"parent_transforms[{i}] values must be finite")
+                    raise ValueError(f"anchor_transforms[{i}] values must be finite")
                 xform_flat.extend(fvals)
             xform_array = (c_float * len(xform_flat))(*xform_flat)
             xform_ptr = ctypes.cast(xform_array, POINTER(c_float))
@@ -2164,18 +3370,24 @@ class PhysX:
 
         return result.op_index
 
-    def get_object_type(self, prim_path: str) -> int:
+    def get_object_type(self, prim_path: str) -> ObjectType:
         """Classify an authored USD prim by TensorAPI object type.
 
-        Unresolved paths return INVALID. Raises RuntimeError for invalid input
-        (empty path, embedded NUL byte) or if no stage is attached.
+        See :class:`ObjectType` for the taxonomy. Paths with no classified
+        simulation object return ``ObjectType.INVALID`` with success -- the call
+        did not fail, the path just isn't a known simulation object. Live
+        standalone, custom, and articulation joints at their authored prim paths
+        must not return ``ObjectType.INVALID``.
+
+        Raises ``RuntimeError`` for invalid input (empty path, embedded NUL
+        byte) or if no stage is attached.
 
         Returns:
             ObjectType: One of RIGID_BODY, ARTICULATION, ARTICULATION_LINK,
-            ARTICULATION_ROOT_LINK, ARTICULATION_JOINT, or INVALID.
+            ARTICULATION_ROOT_LINK, ARTICULATION_JOINT, JOINT, CUSTOM_JOINT, or
+            INVALID.
         """
         self._check_valid()
-        from .types import ObjectType
         out = c_uint32(0)
         result = _lib.ovphysx_get_object_type(
             self._omni_physx_sdk_handle.value,
@@ -2186,10 +3398,76 @@ class PhysX:
             raise RuntimeError(f"get_object_type failed: {self._get_last_error()}")
         return ObjectType(out.value)
 
+    def start_recording(self, destination: "OmniPvdDestination") -> None:
+        """Start a late OmniPVD recording session.
+
+        The shared runtime must have recording capability selected before the
+        first instance is created, either explicitly with
+        ``PhysXConfig(omnipvd_recording_capable=True)`` or implicitly with
+        ``omnipvd_output_enabled=True``. Once an inactive capable runtime is
+        established, an unconfigured peer may start a late session. A runtime
+        created without capability deliberately rejects late start with
+        ``INVALID_STATE`` and an error naming ``omnipvd_recording_capable``.
+        Unsupported platforms retain ``NOT_IMPLEMENTED``.
+
+        A failed validation or destination-open attempt may be retried. A start
+        while recording is active is invalid and does not replace its
+        destination. After stop, another FILE or TCP session may be started.
+        """
+        from .config import OmniPvdDestination
+
+        self._check_valid()
+        if not isinstance(destination, OmniPvdDestination):
+            raise TypeError("destination must be an OmniPvdDestination")
+
+        file_path = ovphysx_string_t(destination.file_path)
+        tcp_address = ovphysx_string_t(destination.tcp_address)
+        c_destination = ovphysx_omnipvd_destination_t(
+            0 if destination.transport == "file" else 1,
+            file_path,
+            tcp_address,
+            destination.tcp_port,
+            destination.tcp_timeout_ms,
+        )
+        result = self._lib.ovphysx_start_recording(
+            self._omni_physx_sdk_handle.value, byref(c_destination)
+        )
+        if result.status != ApiStatus.SUCCESS:
+            status_name = ApiStatus(result.status).name
+            raise RuntimeError(f"start_recording failed ({status_name}): {self._get_last_error()}")
+
+    def stop_recording(self) -> None:
+        """Stop and finalize the OmniPVD recording owned by this instance.
+
+        This also stops a startup session owned by the instance that created
+        the shared runtime. Peer instances cannot stop that owner's session.
+        """
+        self._check_valid()
+        result = self._lib.ovphysx_stop_recording(self._omni_physx_sdk_handle.value)
+        if result.status != ApiStatus.SUCCESS:
+            status_name = ApiStatus(result.status).name
+            raise RuntimeError(f"stop_recording failed ({status_name}): {self._get_last_error()}")
+
+    def is_recording(self) -> bool:
+        """Return ``True`` only while this instance owns active sampling.
+
+        A peer reports ``False`` while another instance owns a startup or late
+        session.
+        """
+        self._check_valid()
+        recording = ctypes.c_bool(False)
+        result = self._lib.ovphysx_is_recording(
+            self._omni_physx_sdk_handle.value, byref(recording)
+        )
+        if result.status != ApiStatus.SUCCESS:
+            status_name = ApiStatus(result.status).name
+            raise RuntimeError(f"is_recording failed ({status_name}): {self._get_last_error()}")
+        return bool(recording.value)
+
     def step(self, dt: float) -> int:
         """Initiate physics step (async, returns op_index).
 
-        Simulation time is tracked internally; each step advances it by ``dt``.
+        Simulation time is tracked internally. Each step advances it by ``dt``.
 
         Args:
             dt: Delta time for this step [s].
@@ -2218,6 +3496,7 @@ class PhysX:
             - Raises RuntimeError on failure to enqueue.
         """
         self._check_valid()
+        self._drain_pending_read_releases()  # owning-thread drain of any deferred read teardown
         result = self._lib.ovphysx_step(self._omni_physx_sdk_handle.value, c_float(dt))
 
         if result.status != ApiStatus.SUCCESS:
@@ -2240,6 +3519,7 @@ class PhysX:
             RuntimeError: If the step or wait fails.
         """
         self._check_valid()
+        self._drain_pending_read_releases()
         result = self._lib.ovphysx_step_sync(self._omni_physx_sdk_handle.value, c_float(dt))
         if result.status != ApiStatus.SUCCESS:
             error_msg = self._get_last_error()
@@ -2260,6 +3540,7 @@ class PhysX:
             RuntimeError: If any step fails.
         """
         self._check_valid()
+        self._drain_pending_read_releases()
         result = self._lib.ovphysx_step_n_sync(
             self._omni_physx_sdk_handle.value, c_int32(n), c_float(dt)
         )
@@ -2290,12 +3571,16 @@ class PhysX:
             error_msg = self._get_last_error()
             raise RuntimeError(f"update_articulations_kinematic failed: {error_msg}")
 
-    def wait_op(self, op_index: int, timeout_ns: int | None = None) -> None:
+    def wait_op(self, op_index: int, *, timeout_ns: int | None = None) -> None:
         """Wait for operation(s) to complete.
 
         Args:
             op_index: Operation index to wait for, or OP_INDEX_ALL for all ops
-            timeout_ns: Timeout in nanoseconds (None = infinite, 0 = poll)
+            timeout_ns: Readiness timeout in nanoseconds. None waits
+                indefinitely, and 0 performs one non-blocking readiness poll.
+                A positive value bounds only the wait for readiness; once an
+                operation is ready, synchronous result finalization may make
+                the total call duration exceed this timeout.
 
         Raises:
             RuntimeError: If an operation failed or op_index is invalid or already consumed.
@@ -2318,14 +3603,17 @@ class PhysX:
 
         Examples::
 
-            # Blocking wait (default)
-            physx.wait_op(op_index)
+            def wait_for_operation(physx, op_index):
+                # Blocking wait (default)
+                physx.wait_op(op_index)
 
-            # Non-blocking poll
-            try:
-                physx.wait_op(op_index, timeout_ns=0)
-            except TimeoutError:
-                pass  # operation not yet complete
+            def poll_operation(physx, op_index):
+                # Non-blocking poll
+                try:
+                    physx.wait_op(op_index, timeout_ns=0)
+                except TimeoutError:
+                    return False
+                return True
         """
         self._check_valid()
         if timeout_ns is None:
@@ -2335,7 +3623,6 @@ class PhysX:
         result = self._lib.ovphysx_wait_op(self._omni_physx_sdk_handle.value, op_index, timeout_ns, byref(wait_result))
 
         try:
-            # Check for errors
             if wait_result.num_errors > 0:
                 errors = []
                 for i in range(wait_result.num_errors):
@@ -2346,7 +3633,6 @@ class PhysX:
 
                 raise RuntimeError("Operation(s) failed:\n  " + "\n  ".join(errors))
 
-            # Check for timeout
             if result.status == ApiStatus.TIMEOUT:
                 raise TimeoutError(f"Operation {op_index} timed out")
 
@@ -2356,11 +3642,12 @@ class PhysX:
         finally:
             self._lib.ovphysx_destroy_wait_result(byref(wait_result))
 
-    def wait_all(self, timeout_ns: int | None = None) -> None:
+    def wait_all(self, *, timeout_ns: int | None = None) -> None:
         """Wait for all pending operations (convenience wrapper for wait_op(ALL)).
 
         Args:
-            timeout_ns: Timeout in nanoseconds (None = infinite, 0 = poll)
+            timeout_ns: Readiness timeout in nanoseconds, with the same
+                semantics as :meth:`wait_op`.
 
         Preconditions:
             - Instance must be valid.
@@ -2376,7 +3663,7 @@ class PhysX:
         # _check_valid() is called inside wait_op()
         self.wait_op(OP_INDEX_ALL, timeout_ns=timeout_ns)
 
-    def attach_ovstage(self, stage, read_ordinal: int = 1) -> None:
+    def attach_ovstage(self, stage, *, read_ordinal: int = 1) -> None:
         """Attach an ovstage Stage as the orchestration data surface.
 
         Attach performs the initial scene parse at ``read_ordinal``. After the
@@ -2386,36 +3673,49 @@ class PhysX:
 
         Args:
             stage: An ``ovstage.Stage`` or a raw ``ovstage_instance_t*`` handle.
-            read_ordinal: Caller-owned sealed ovstage ordinal the initial scene
-                parse reads at. The application owns ordinal advancement; defaults
-                to 1 (read from the first sealed ordinal).
+            read_ordinal: Caller-owned ovstage ordinal at which selected physics
+                data is sealed. Must be non-zero. 0 is reserved as the runtime
+                skip-cursor sentinel. The application owns ordinal advancement.
+                Defaults to 1. ``open_usd()`` / population does not seal data,
+                so call ``advance_write_floor()`` first. Attachment fails if the
+                initial articulation/joint schema scan cannot read that ordinal.
 
         Preconditions:
             - Instance must be valid.
             - Not already attached to a Stage.
-            - ``read_ordinal`` is sealed by a completed write-floor advance
-              covering it. The population API never opens or commits an ordinal
-              of its own, so waiting on ``ovstage.population.open_usd()`` only
-              completes population; call
-              ``stage.advance_write_floor(ordinal=read_ordinal).wait()`` first.
-              Reads target sealed data, so attaching at an unsealed ordinal
-              yields a partial parse: rigid bodies may still load while
-              articulations and joints can be dropped.
+            - No other instance owns the process-wide live ovstage attach.
+            - Selected physics data must be sealed at ``read_ordinal``.
+            - ``read_ordinal`` must be non-zero.
+            - The application registered ovphysx's codeless PhysX schemas with
+              ovstage before the first population in the process
+              (``ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])``).
+              Population drops every Physx* API it cannot resolve, so an
+              unregistered stage carries none of the asset's PhysX settings.
+              This call verifies the registration and raises ``RuntimeError``
+              naming the missing call when population ran without it (for the
+              rest of the process; the Carbonite setting
+              ``/ovphysx/schemas/requireRegistration = false`` downgrades this
+              to a warning).
 
         Lifetime:
             - ``stage`` must outlive the attachment because ovphysx captures and
               dereferences its native pointer until detach. This wrapper holds a
               reference to ``stage`` for the duration of the attachment, so a
               Stage created inline (``attach_ovstage(ovstage.Stage(...))``) stays
-              alive; the reference is dropped by :meth:`detach_ovstage` and
-              :meth:`release`.
+              alive. The reference is dropped by :meth:`detach_ovstage` and
+              :meth:`destroy`.
 
         Errors:
-            - Raises ``RuntimeError`` if already attached, ``stage`` is null,
-              or the runtime attach fails. Instance remains unattached on
-              failure.
+            - Raises ``ValueError`` if ``read_ordinal`` is 0.
+            - Raises ``RuntimeError`` if already attached, another instance owns
+              the live process-wide attach, ``stage`` is null, or the runtime
+              attach fails. Instance remains unattached on failure.
         """
         self._check_valid()
+        # Drain sessions that no longer have an owner before attaching. Stage switching must go
+        # through detach_ovstage(), which releases stage-derived handles while the old Stage is
+        # still valid. A failed attach attempt must not invalidate metadata from the current Stage.
+        self._drain_pending_read_releases()
         if stage is None:
             raise RuntimeError("attach_ovstage: stage is None")
         if hasattr(stage, "handle"):
@@ -2426,14 +3726,17 @@ class PhysX:
             ptr = int(stage)
         if not ptr:
             raise RuntimeError("attach_ovstage: stage handle is null")
+        if int(read_ordinal) == 0:
+            raise ValueError(
+                "attach_ovstage: read_ordinal must be a caller-owned sealed ordinal; 0 is reserved")
         result = self._lib.ovphysx_attach_ovstage(
             self._omni_physx_sdk_handle.value, ctypes.c_void_p(ptr), c_uint64(read_ordinal))
         if result.status != ApiStatus.SUCCESS:
             raise RuntimeError(f"Failed to attach ovstage: {self._get_last_error()}")
         # Keep the Stage alive for the duration of the attachment: ovphysx retains
         # its raw native pointer until detach. Without this, a caller that does not
-        # retain their own reference would have the Stage GC'd (its __del__ destroys
-        # the native instance) → use-after-free on later stage-dependent calls.
+        # retain its own reference would have the Stage GC'd (its __del__ destroys
+        # the native instance), and later stage-dependent calls would use freed memory.
         self._attached_ovstage = stage
 
     def update_from_ovstage(self, from_ordinal: int, to_ordinal: int) -> None:
@@ -2447,9 +3750,11 @@ class PhysX:
         runtime ovstage change feed and applies the resulting deltas to the
         simulation.
 
-        The initial ``read_ordinal`` was already parsed by :meth:`attach_ovstage`.
-        Normal incremental updates pass only later ordinals; including the initial
-        ordinal replays the initial scene changes rather than only the new delta.
+        Ordinals at or below the latest successfully consumed ordinal are skipped.
+        A fully consumed range succeeds as a no-op. An overlapping range applies
+        only its unread suffix. :meth:`attach_ovstage` consumes its initial
+        ``read_ordinal``, so replaying it does not repeat initial population
+        events. Later authored and sealed population changes are applied normally.
         """
         self._check_valid()
         # The closed range must be ordered. Validate Python-side and raise ValueError
@@ -2461,7 +3766,7 @@ class PhysX:
                 f"update_from_ovstage requires from_ordinal <= to_ordinal, got "
                 f"from_ordinal={from_ordinal}, to_ordinal={to_ordinal}"
             )
-        # Build ovstage's range type. has_start_ordinal=True ⇒ closed [from, to].
+        # Build ovstage's range type. has_start_ordinal=True selects the closed range [from, to].
         rng = ovstage_ordinal_range_t(
             start_ordinal=int(from_ordinal),
             end_ordinal=int(to_ordinal),
@@ -2475,30 +3780,119 @@ class PhysX:
     def detach_ovstage(self) -> None:
         """Detach the currently-attached ovstage Stage.
 
-        Idempotent — calling on an unattached instance is a no-op success.
+        Idempotent: calling on an unattached instance is a no-op success.
         Clears registered interests and output-buffer registrations, so a
         subsequent :meth:`attach_ovstage` to a different Stage starts clean.
         After detach, stage-dependent calls such as :meth:`update_from_ovstage`
         and :meth:`step` fail until a Stage is attached again. Detach invalidates
         the stage's tensor, contact, and SDF views. Do not read, write, or
-        evaluate existing bindings or SDF views; destroy them and create
+        evaluate existing bindings or SDF views. Destroy them and create
         replacements after calling :meth:`attach_ovstage` and realizing a stage
-        again.
+        again. If this instance owns an active OmniPVD recording, detach stops
+        and finalizes it. On reattach, capability-only recording is dormant and
+        can start immediately. Configured startup output instead starts a new
+        startup session owned by the reattaching instance. Stop it before
+        starting a late destination.
 
         Errors:
             - Raises ``RuntimeError`` on internal failures.
         """
         self._check_valid()
+        # Free any read session pending teardown before detaching: detach invalidates a session's
+        # stage-derived data, so draining a stale handle afterward would crash. Sessions still
+        # borrowed by a live Warp array are not pending, so drop their stage-derived handles
+        # explicitly as well. Their numeric buffers stay valid for the borrow.
+        self._drain_pending_read_releases()
+        self._release_stage_bound_read_handles()
         result = self._lib.ovphysx_detach_ovstage(self._omni_physx_sdk_handle.value)
         if result.status != ApiStatus.SUCCESS:
             raise RuntimeError(f"Failed to detach ovstage: {self._get_last_error()}")
-        # Native no longer references the Stage — drop the keepalive.
+        # Native no longer references the Stage. Drop the keepalive.
         self._attached_ovstage = None
+
+    def _release_stage_bound_read_handles(self) -> None:
+        """Free every live read session's prim lists before the Stage they belong to goes away.
+
+        A Warp array may legally outlive its ``ReadResult``, keeping its session alive past detach /
+        reset / release. That session still holds prim lists interned in the Stage's path dictionary,
+        so freeing it later, after the Stage is gone, would destroy them through a dangling
+        dictionary. Releasing the groups here (owning thread, Stage still attached) leaves the late
+        teardown with only session-owned numeric buffers to free, which stay valid for the borrow.
+        """
+        for holder in list(self._live_read_holders):
+            try:
+                holder.release_groups()
+            except Exception:
+                pass
+
+    def _enqueue_read_release(self, holder: "_ReadRelease") -> None:
+        """Queue a read session whose refcount hit zero (may be called from any thread / GC)."""
+        with self._pending_read_lock:
+            self._pending_read_releases.append(holder)
+
+    def _drain_pending_read_releases(self) -> None:
+        """Perform any deferred read-session teardown on the CURRENT thread.
+
+        Call only from the owning (serialized) thread: the read/step entry points and ReadResult
+        ``__exit__``. This is where the actual ``ovphysx_release_*`` for a session freed on a GC
+        thread happens, serialized with the owner's other ovphysx calls.
+        """
+        with self._pending_read_lock:
+            pending = self._pending_read_releases
+            self._pending_read_releases = []
+        for holder in pending:
+            holder._free_native()
+        # Write sessions defer to the same owning thread, so retire them on the same drain. Every
+        # entry point that drains reads then also retires any GC-orphaned write session.
+        self._drain_pending_write_releases()
+
+    def _enqueue_write_release(self, holder: "_WriteRelease") -> None:
+        """Queue a write session abandoned without close() (may be called from any thread / GC)."""
+        with self._pending_write_lock:
+            self._pending_write_releases.append(holder)
+
+    def _drain_pending_write_releases(self) -> None:
+        """Perform any deferred write-session teardown on the CURRENT (owning) thread.
+
+        The write mirror of :meth:`_drain_pending_read_releases`: where the native
+        ``ovphysx_release_write`` / ``ovphysx_release_query`` for a session finalized on a GC thread
+        actually happens, serialized with the owner's other ovphysx calls.
+        """
+        with self._pending_write_lock:
+            pending = self._pending_write_releases
+            self._pending_write_releases = []
+        for holder in pending:
+            holder._free_native()
+
+    def get_attach_handle(self) -> int:
+        """Return the handle identifying this instance's current attach.
+
+        An attach handle is an attach *identity*, not a USD stage id: it is
+        nonzero for every live attach (including an ovstage attach whose source
+        has no backing USD stage), and a fresh handle is minted per attach. A
+        caller that stores it when it binds can tell "still the attach I bound
+        to" apart from "detached" and from "a different attach that happens to
+        reuse the same stage id". See ADR-0016.
+
+        Returns:
+            The current attach handle, or ``0`` when nothing is attached.
+
+        Errors:
+            - Raises ``RuntimeError`` if the instance is invalid.
+        """
+        self._check_valid()
+        out_handle = c_uint64(0)
+        result = self._lib.ovphysx_get_attach_handle(
+            self._omni_physx_sdk_handle.value, byref(out_handle))
+        if result.status != ApiStatus.SUCCESS:
+            raise RuntimeError(f"Failed to get attach handle: {self._get_last_error()}")
+        return int(out_handle.value)
 
     def read(
         self,
         object_type: SimObjectType,
         attribute_names: "list[str]",
+        *,
         scope: ObjectScope = ObjectScope.ALL,
     ) -> "ReadResult":
         """Read physics output (ADR-0007) for one simulated type as column groups.
@@ -2507,18 +3901,32 @@ class PhysX:
         ``scope``, read the named ``attribute_names`` (e.g. ``["position",
         "orientation"]``), and return a context-managed :class:`ReadResult` whose
         ``groups`` is one :class:`ReadGroup` per typed column. The read is
-        ovstage-native — attach an ovstage Stage first.
+        ovstage-native. Attach an ovstage Stage first.
 
         Use it as a context manager: the query + read session stay open for the
         ``with`` block so each group's interned ``prim_list`` / ``attribute``
-        handles are valid — feed them straight into the ovstage write path
+        handles are valid. Feed them straight into the ovstage write path
         (``stage.query_from_path_list(group.prim_list)``) for a no-repack
-        write-back. Group ``tensors`` are NumPy copies, safe to keep past the block.
+        write-back. Group ``tensors`` are ``warp.array`` snapshots on the native
+        CPU or CUDA device. They keep their read-session storage alive until the
+        array, its Warp views, and any downstream framework views are dropped, so
+        they are safe to keep past the block.
 
-        This is the *physics → app* direction. To avoid physics consuming its own
+        This is the *physics -> app* direction. To avoid physics consuming its own
         output, write the data back into ovstage at ordinals that are never passed
         to :meth:`update_from_ovstage`. See the ovstage Integration guide for the
         ordinal-coupling principle.
+
+        **Step at least once before reading on DirectGPU.** On a DirectGPU scene, simulated state
+        columns for ``RIGID_BODY``, ``ARTICULATION_LINK``, ``ARTICULATION``, and
+        ``ARTICULATION_JOINT`` come from PhysX's direct-GPU API, which sizes its
+        structures during the first simulation step and refuses reads until that step
+        has run. Whole-articulation shape/material columns remain on the CPU, so one
+        result can mix devices. Reading before the first step returns **no groups** for
+        those types even though the objects exist and a query reports them. Step once,
+        then read. CPU scenes can report authored initial state once buffered scene
+        insertion is complete; a still-pending articulation root or joint partition is
+        omitted normally rather than reported as an error.
 
         Args:
             object_type: Simulated type to read (:class:`SimObjectType`).
@@ -2527,16 +3935,19 @@ class PhysX:
 
         Returns:
             A :class:`ReadResult` context manager. ``result.groups`` is empty if no
-            objects matched.
+            objects matched, and, on a DirectGPU scene before the first step, for the
+            direct-GPU-sourced types described above. Readiness is evaluated per scene,
+            so a multi-scene result can contain ready partitions while omitting an
+            unready DirectGPU scene's partition.
 
         Raises:
             RuntimeError: on a native error (e.g. no ovstage attached).
-            TypeError: if a returned column carries a DLPack dtype this reader does
-                not support, instead of silently decoding it as float32.
+            TypeError: if a returned column carries a device or DLPack dtype this
+                Warp frontend does not support.
         """
-        import numpy as np
-
         self._check_valid()
+        # Owning-thread drain: free any read session whose last borrow was dropped on a GC thread.
+        self._drain_pending_read_releases()
         handle = self._omni_physx_sdk_handle.value
 
         query = c_uint64(0)
@@ -2546,7 +3957,7 @@ class PhysX:
             raise RuntimeError(f"read query failed: {self._get_last_error()}")
         if query.value == 0:
             # Defensive: ovphysx_query reports a nonzero handle on success (an empty
-            # match included) and surfaces 0 as an error above; treat a stray 0 as
+            # match included) and surfaces 0 as an error above. Treat a stray 0 as
             # an empty result rather than dereferencing it.
             return ReadResult(self, 0, 0, [], [])
 
@@ -2564,14 +3975,16 @@ class PhysX:
         self,
         object_type: SimObjectType,
         attribute_tokens: "list[int]",
+        *,
         scope: ObjectScope = ObjectScope.ALL,
     ) -> "ReadResult":
         """Token form of :meth:`read`.
 
         Identical to :meth:`read` but the attributes are given as interned attribute
-        tokens (e.g. those from :meth:`fetch_query_result`) instead of strings, so a
-        token can be fed straight back in with no token→string→name round-trip.
-        Both forms build the same ``ovx_string_or_token_t`` array under the hood.
+        tokens (e.g. an emitted :attr:`ReadGroup.attribute`, or a token obtained
+        through the C query API) instead of strings, so a token can be fed straight
+        back in with no token-to-string-to-name round-trip. Both forms build the same
+        ``ovx_string_or_token_t`` array under the hood.
 
         Args:
             object_type: Simulated type to read (:class:`SimObjectType`).
@@ -2583,10 +3996,11 @@ class PhysX:
 
         Raises:
             RuntimeError: on a native error (e.g. no ovstage attached).
-            TypeError: if a returned column carries a DLPack dtype this reader does
-                not support, instead of silently decoding it as float32.
+            TypeError: if a returned column carries a device or DLPack dtype this
+                Warp frontend does not support.
         """
         self._check_valid()
+        self._drain_pending_read_releases()  # owning-thread drain of any deferred read teardown
         handle = self._omni_physx_sdk_handle.value
 
         query = c_uint64(0)
@@ -2617,14 +4031,17 @@ class PhysX:
     def _iterate_read_groups(self, handle, query, read, object_type) -> "ReadResult":
         """Drain an open read session into a :class:`ReadResult` (shared by read / read_tokens).
 
-        The native group is ovstage's ``ovstage_read_group_t`` (no ovphysx mirror); the
+        The native group is ovstage's ``ovstage_read_group_t`` (no ovphysx mirror). The
         queried ``object_type`` is stamped on each :class:`ReadGroup` from the caller's
         request, since the native group does not carry it.
         """
-        import numpy as np
-
         groups: list[ReadGroup] = []
         group_ids: list[int] = []
+        # Refcount holder: every non-empty Warp array retains the native read session so its
+        # aliased CPU or CUDA buffer outlives ReadResult.close() until every borrow is dropped.
+        release = _ReadRelease(self, int(query.value), int(read.value))
+        self._live_read_holders.add(release)  # tracked for stage teardown and destroy() preconditions
+        wp = None
         try:
             while True:
                 # Producer-owned group: fetch hands back a borrowed ovstage_read_group_t*
@@ -2638,13 +4055,34 @@ class PhysX:
                 if not gp:
                     break
                 g = gp.contents
+                read_group_id = int(g.read_group_id)
+                # Track the group before any fallible metadata conversion so the error path can
+                # release this fetched group as well as the enclosing read and query handles.
+                group_ids.append(read_group_id)
+                release.add_group(read_group_id)
 
+                tensor_count = int(g.data.tensor_count)
+                # Imported here rather than before the loop: building the first array initializes
+                # the Warp runtime, and a CUDA-enabled Warp build loads the CUDA driver there,
+                # outside set_cpu_mode's ovphysx-only guarantee. Importing Warp is itself
+                # driverless. CONSTRUCTING the first array is the boundary.
+                #
+                # Deferred, not moved out of the try: a missing or broken Warp installation must
+                # still release the already-open read and query rather than leak both handles.
+                if wp is None:
+                    import warp as wp
+                    _warn_if_warp_build_breaks_cpu_mode(wp)
+
+                # One event per group covers every column it produced, and wrapping a pointer
+                # carries no readiness, so order Warp's current stream against it once here,
+                # before any of the group's arrays reaches the caller.
+                self._order_warp_stream_after_group(g, wp)
                 tensors = [
-                    self._dltensor_to_numpy(g.data.tensors[i], np)
-                    for i in range(int(g.data.tensor_count))
+                    self._dltensor_to_warp_array(g.data.tensors[i], wp, release)
+                    for i in range(tensor_count)
                 ] if g.data.tensors else []
-                index_map = self._u32_array(g.data.index_map, int(g.data.count), np)
-                prim_index_map = self._u32_array(g.prims.index_map, int(g.prims.count), np)
+                index_map = self._u32_warp_array(g.data.index_map, int(g.data.count), wp, release)
+                prim_index_map = self._u32_warp_array(g.prims.index_map, int(g.prims.count), wp, release)
                 groups.append(
                     ReadGroup(
                         attribute=int(g.attribute),
@@ -2661,19 +4099,123 @@ class PhysX:
                         layout_generation=int(g.meta.layout_generation),
                         write_floor_ordinal=int(g.meta.attribute_write_floor_ordinal),
                         tensors=tensors,
+                        cuda_stream=int(g.data.cuda_sync.stream),
+                        cuda_wait_event=int(g.data.cuda_sync.wait_event),
                     )
                 )
-                # Keep each group alive (its prim_list / attribute handles stay
-                # valid) until the ReadResult is closed.
-                group_ids.append(int(g.read_group_id))
         except Exception:
-            for gid in group_ids:
-                self._lib.ovphysx_release_group(handle, read, c_uint64(gid))
-            self._lib.ovphysx_release_read(handle, read)
+            # Drop every array this call already built BEFORE the native teardown. `_free()`
+            # bypasses the refcount, and `groups` holds fully-built warp.arrays from earlier
+            # iterations that alias storage this session owns. `tensors`/`index_map`/
+            # `prim_index_map` may still be bound to the previous iteration's arrays when the
+            # failure lands before this iteration reassigns them, so they are cleared as well.
+            # The Warp deleter is `release_borrow`, which drops a borrow without triggering
+            # teardown, so `_free()` below still performs the immediate native release.
+            groups.clear()
+            tensors = index_map = prim_index_map = None  # noqa: F841 -- drop borrows, not values
+            release._free()
+            raise
+
+        return ReadResult(self, int(query.value), int(read.value), groups, group_ids, release=release)
+
+    def write(
+        self,
+        object_type: SimObjectType,
+        attribute_name: str,
+        *,
+        scope: ObjectScope = ObjectScope.ALL,
+    ) -> "WriteSession":
+        """Open an app -> physics write session for ONE attribute (ADR-0012).
+
+        The return direction of :meth:`read`, and its mirror: the groups cover the same
+        prims in the same order. Each tensor exposes the native residency of the write
+        path. This can differ from the corresponding read when a write uses host staging
+        on a GPU scene. Inspect ``tensor.device`` instead of inferring placement from the
+        scene or read result.
+
+        One attribute per session, unlike :meth:`read`'s list: the native group carries
+        no attribute field, so a session that mixed attributes could not label its
+        groups. Writing position and orientation is two sessions.
+
+        Every group tensor is a ``warp.array`` on its native CPU or CUDA device.
+        Non-empty tensors are MUTABLE VIEWS onto runtime-owned storage. Empty tensors are
+        Warp-owned empty arrays. Fill a non-empty tensor, then
+        :meth:`WriteSession.commit` its group. Anything left uncommitted when the block
+        exits is discarded rather than published.
+
+        An attribute the type does not accept raises here rather than silently writing
+        nothing.
+
+        Raises RuntimeError if no ovstage Stage is attached, or if the attribute is not
+        writable for ``object_type``.
+        """
+        self._check_valid()
+        self._drain_pending_read_releases()  # owning-thread drain of any deferred read teardown
+        handle = self._omni_physx_sdk_handle.value
+
+        query = c_uint64(0)
+        result = self._lib.ovphysx_query(handle, int(object_type), int(scope), ctypes.byref(query))
+        if result.status != ApiStatus.SUCCESS:
+            raise RuntimeError(f"write query failed: {self._get_last_error()}")
+
+        name = attribute_name.encode("utf-8")
+        attr = ovx_string_or_token_t()
+        attr.token = 0
+        attr.string = ovx_string_t(name, len(name))
+
+        write = c_uint64(0)
+        result = self._lib.ovphysx_write(handle, query, ctypes.byref(attr), ctypes.byref(write))
+        if result.status != ApiStatus.SUCCESS:
+            self._lib.ovphysx_release_query(handle, query)
+            raise RuntimeError(f"write session open failed: {self._get_last_error()}")
+
+        groups: list[WriteGroup] = []
+        native: list = []
+        wp = None
+        try:
+            while True:
+                gp = ctypes.POINTER(ovstage_map_group_t)()
+                result = self._lib.ovphysx_fetch_write_next(handle, write, ctypes.byref(gp))
+                if result.status == ApiStatus.END_OF_ITERATION:
+                    break
+                if result.status != ApiStatus.SUCCESS:
+                    raise RuntimeError(f"write fetch failed: {self._get_last_error()}")
+                if not gp:
+                    break
+                g = gp.contents
+                # Deferred exactly as the read defers it: importing Warp is driverless, but
+                # CONSTRUCTING the first array opens the CUDA driver on a CUDA-enabled build,
+                # outside set_cpu_mode's ovphysx-only guarantee. Kept inside the try so a
+                # missing or broken Warp still releases the open write and query.
+                if wp is None:
+                    import warp as wp
+                    _warn_if_warp_build_breaks_cpu_mode(wp)
+                tensors = [
+                    self._dltensor_to_warp_array(g.data.tensors[i], wp, None)
+                    for i in range(int(g.data.tensor_count))
+                ] if g.data.tensors else []
+                groups.append(
+                    WriteGroup(
+                        prim_list=int(g.prims.list),
+                        prim_offset=int(g.prims.offset),
+                        prim_count=int(g.prims.count),
+                        tensors=tensors,
+                    )
+                )
+                # The POINTER, not a copy of the struct: the address is the commit identity.
+                native.append(gp)
+        except Exception:
+            # Drop every array and native group pointer before releasing their backing
+            # session. A later-group conversion failure can leave successful earlier
+            # groups reachable through both `groups` and the previous `tensors` local.
+            groups.clear()
+            native.clear()
+            tensors = gp = g = None  # noqa: F841 -- drop aliases before native teardown
+            self._lib.ovphysx_release_write(handle, write)
             self._lib.ovphysx_release_query(handle, query)
             raise
 
-        return ReadResult(self, int(query.value), int(read.value), groups, group_ids)
+        return WriteSession(self, int(query.value), int(write.value), groups, native)
 
     def query_shared_dictionary(self, query: int) -> int:
         """Return the opaque pointer to the shared ovstage path dictionary backing a query.
@@ -2692,73 +4234,131 @@ class PhysX:
             raise RuntimeError(f"query_shared_dictionary failed: {self._get_last_error()}")
         return int(out.value or 0)
 
-    # DLPack dtype.code/bits -> (ctypes element type, numpy dtype). The output read
-    # produces float32 columns today; ints/uints are mapped for forward safety.
-    # (6, 8) is kDLBool (bits=8): a supported encoding the native decoder emits (e.g.
-    # OvstagePopulator.setBool writes {kDLBool, 8, 1}); it must decode, not raise.
-    _DL_READ_CTYPE = {
-        (2, 32): (ctypes.c_float, "float32"),
-        (2, 64): (ctypes.c_double, "float64"),
-        (0, 64): (ctypes.c_int64, "int64"),
-        (0, 32): (ctypes.c_int32, "int32"),
-        (0, 8): (ctypes.c_int8, "int8"),
-        (1, 64): (ctypes.c_uint64, "uint64"),
-        (1, 32): (ctypes.c_uint32, "uint32"),
-        (1, 8): (ctypes.c_uint8, "uint8"),
-        (6, 8): (ctypes.c_uint8, "bool"),
+    # DLPack dtype.code/bits -> Warp scalar dtype name shared by read and write.
+    # (6, 8) is kDLBool, an encoding the native decoder emits (OvstagePopulator.setBool
+    # writes {kDLBool, 8, 1}), so it must decode rather than raise.
+    _DL_WARP_DTYPE = {
+        (2, 32): "float32",
+        (2, 64): "float64",
+        (0, 64): "int64",
+        (0, 32): "int32",
+        (0, 8): "int8",
+        (1, 64): "uint64",
+        (1, 32): "uint32",
+        (1, 8): "uint8",
+        (6, 8): "bool",
     }
 
     @staticmethod
-    def _u32_array(ptr, n, np) -> "object":
-        """Copy a borrowed uint32 array (index_map / prim_index_map) into NumPy, or None."""
-        if not ptr or n <= 0:
-            return None
-        buf = (ctypes.c_uint32 * n).from_address(ctypes.cast(ptr, ctypes.c_void_p).value)
-        return np.ctypeslib.as_array(buf).copy()
+    def _retain_warp_array(
+        wp, *, ptr: int, dtype, shape, device: str, on_release
+    ) -> "object":
+        """Wrap one non-empty native allocation and tie it to a read-session borrow.
+
+        Warp calls the deleter exactly once, from ``array.__del__``, on whatever thread collects
+        the array. ``release_borrow`` is written for that.
+        """
+        on_release.retain()
+        try:
+            return wp.array(
+                ptr=ptr,
+                dtype=dtype,
+                shape=shape,
+                device=device,
+                deleter=on_release.release_borrow,
+            )
+        except Exception:
+            on_release.release_borrow()
+            raise
 
     @classmethod
-    def _dltensor_to_numpy(cls, t, np) -> "object":
-        """Copy a borrowed read-column DLTensor into a NumPy array (lanes preserved).
+    def _u32_warp_array(cls, ptr, n, wp, on_release) -> "object":
+        """Wrap a borrowed uint32 index map as a CPU Warp array, or return None."""
+        if not ptr or n <= 0:
+            return None
+        address = ctypes.cast(ptr, ctypes.c_void_p).value
+        return cls._retain_warp_array(
+            wp,
+            ptr=int(address),
+            dtype=wp.uint32,
+            shape=(n,),
+            device="cpu",
+            on_release=on_release,
+        )
 
-        ovstage columns carry tuple width in ``dtype.lanes`` of a flat
-        ``shape=[N]`` column; a lanes>1 column becomes a trailing NumPy dim
-        (e.g. a vec3 column -> ``[N, 3]``). The copy is safe past the borrow window.
+    def _order_warp_stream_after_group(self, g, wp) -> None:
+        """Make Warp's current stream wait on a CUDA group's producer completion event.
+
+        A group hands over its device columns before the producing work has necessarily
+        finished, and a raw pointer carries no readiness, so the wait has to be issued here.
+        No-op for a host group or a group with no event.
         """
-        # dtype.code is typed as DLDataTypeCode (a ctypes.c_uint8 *subclass*), so
-        # reading the field yields a ctypes instance rather than a plain int; int()
-        # on it would parse its raw byte through the buffer protocol (ValueError on
-        # b'\x02'). Read .value to get the integer. bits/lanes are plain c_uint8/
-        # c_uint16 and already come back as ints, but normalize them the same way.
-        def _ival(v):
-            return int(getattr(v, "value", v))
+        cuda_wait_event = int(g.data.cuda_sync.wait_event)
+        if not cuda_wait_event or not g.data.tensor_count or not g.data.tensors:
+            return
+        # Tensor zero speaks for the whole group: a group is device-uniform by construction on the
+        # native side (one GroupStore carries a single device ordinal and CUDA context for all of
+        # its tensors). Re-checking every tensor here would cost O(tensor_count) per read on array
+        # groups, one tensor per prim, to verify something the producer guarantees structurally.
+        device = g.data.tensors[0].device
+        if _dl_int(device.device_type) != DLDeviceType.kDLCUDA:
+            return
+        # ScopedDevice pushes the device context: ovphysx_cuda_stream_wait_event issues the wait
+        # in whatever CUDA context is current on the calling thread. get_stream is asked for that
+        # device explicitly, so a caller's wp.ScopedStream override is the stream that is ordered.
+        warp_device = _warp_device(device)
+        with wp.ScopedDevice(warp_device):
+            # Warp's null stream is the CUDA default stream and reports cuda_stream as None.
+            # This bridge takes CUDA driver handles (0 = default), unlike ovstage_cuda_sync_t
+            # on write commit (1 = default).
+            cuda_stream = wp.get_stream(warp_device).cuda_stream
+            stream_handle = 0 if cuda_stream is None else int(cuda_stream)
+            result = self._lib.ovphysx_cuda_stream_wait_event(
+                ctypes.c_void_p(stream_handle), ctypes.c_void_p(cuda_wait_event)
+            )
+            if result.status != ApiStatus.SUCCESS:
+                raise RuntimeError(
+                    f"ovphysx read could not order Warp stream {stream_handle} after the "
+                    f"producer completion event: {self._get_last_error()}"
+                )
 
-        code, bits, lanes = _ival(t.dtype.code), _ival(t.dtype.bits), _ival(t.dtype.lanes) or 1
-        mapped = cls._DL_READ_CTYPE.get((code, bits))
-        if mapped is None:
+    def _dltensor_to_warp_array(self, t, wp, on_release) -> "object":
+        """Wrap a DLTensor as a CPU or CUDA Warp array for read or write.
+
+        Tuple width in ``dtype.lanes`` becomes a trailing scalar dimension, so a
+        flat native vec3 column becomes shape ``[N, 3]``. A non-empty read array
+        retains its session through a Warp deleter. A write array has no deleter
+        or lease because its mapped storage remains session-owned.
+        """
+        code, bits, lanes = _dl_int(t.dtype.code), _dl_int(t.dtype.bits), _dl_int(t.dtype.lanes) or 1
+        dtype_name = self._DL_WARP_DTYPE.get((code, bits))
+        if dtype_name is None:
             # Never silently reinterpret an unmapped dtype as float32: that returns wrong
             # values (and only half the buffer for 64-bit elements) with no error. Fail
             # loudly so a native dtype-encoding change is caught instead of corrupting data.
             raise TypeError(
-                f"ovphysx read column has unsupported DLPack dtype "
-                f"(code={code}, bits={bits}, lanes={lanes}); cannot decode to NumPy"
+                f"ovphysx column has unsupported DLPack dtype "
+                f"(code={code}, bits={bits}, lanes={lanes}); cannot expose it as a Warp array"
             )
-        ctype, npdt = mapped
+        warp_dtype = getattr(wp, dtype_name)
         ndim = int(t.ndim)
         shape = [int(t.shape[i]) for i in range(ndim)]
-        elems = 1
-        for d in shape:
-            elems *= d
-        total = elems * lanes
-        out_shape = shape + ([lanes] if lanes > 1 else [])
+        total = math.prod(shape) * lanes
+        out_shape = tuple(shape + ([lanes] if lanes > 1 else []))
+
+        device = _warp_device(t.device)
+
         if total == 0 or not t.data:
-            return np.empty(out_shape, dtype=npdt)
-        addr = ctypes.cast(t.data, ctypes.c_void_p).value + int(t.byte_offset)
-        buf = (ctype * total).from_address(addr)
-        # astype(npdt) rather than copy() so the returned dtype matches the empty path:
-        # a kDLBool column (ctype c_uint8) becomes numpy bool, not uint8. copy=True keeps
-        # the result safe past the borrowed-buffer window. For non-bool types npdt already
-        # equals the ctype's natural dtype, so this is a plain copy.
-        return np.ctypeslib.as_array(buf).reshape(out_shape).astype(npdt, copy=True)
+            return wp.empty(shape=out_shape, dtype=warp_dtype, device=device)
+        # byte_offset is part of the address, not of the shape: a column that starts
+        # partway into its allocation would otherwise alias from the wrong element.
+        address = _dltensor_data_ptr(t)
+
+        if on_release is None:
+            return wp.array(ptr=address, dtype=warp_dtype, shape=out_shape, device=device)
+        return self._retain_warp_array(
+            wp, ptr=address, dtype=warp_dtype, shape=out_shape, device=device, on_release=on_release
+        )
 
     def set_config(self, entry: ovphysx_config_entry_t) -> None:
         """Set a typed global config entry at runtime (process-global).
@@ -2890,38 +4490,121 @@ class PhysX:
             return None
         return str(value_out)
 
-    def release(self) -> None:
-        """Release PhysX instance.
+    def destroy(self) -> None:
+        """Destroy this PhysX instance.
 
         Preconditions:
-            - Instance is valid and not in use by other threads.
+            - No other thread is using this instance. Calling ``destroy()``
+              again after terminal destruction is a valid no-op.
         Side effects:
             - Releases native resources and unregisters the instance.
         Ownership/Lifetime:
             - All tensor bindings and contact bindings created by this instance are
               automatically released.
-            - The instance becomes unusable after release.
+            - Drop every output-read Warp array and downstream view before destruction.
+              Destroying with live aliases warns and leaves their read-session resources
+              allocated so their pointers do not dangle.
+            - The instance becomes unusable after destruction.
         Threading:
             - Do not call concurrently with other operations on this instance.
         Errors:
-            - Errors during cleanup are suppressed for robustness.
+            - Raises ``RuntimeError`` without changing the instance if called
+              from a native log callback. Retry after the callback returns.
+            - Raises ``RuntimeError`` if native destruction reports a failure or
+              process shutdown fails. The instance is already destroyed when
+              either failure is reported, so a later call is an idempotent no-op.
+              If both fail, the process-shutdown error is reported with the
+              native status included.
+            - A Python or ctypes exception raised while invoking native destruction
+              leaves ownership intact so the call can be retried.
+            - Because this is a checked operation, a cleanup failure raised from
+              a ``finally`` block becomes the active exception. Python preserves
+              any in-flight exception as chained context; applications that need
+              different precedence must catch and log cleanup failures explicitly.
         """
-        if hasattr(self, "_omni_physx_sdk_handle") and self._omni_physx_sdk_handle is not None:
+        handle = getattr(self, "_omni_physx_sdk_handle", None)
+        owns_native_lifecycle = (handle is not None and handle.value != _INVALID_HANDLE) or getattr(
+            self, "_lifecycle_acquired", False
+        )
+        if owns_native_lifecycle and getattr(_python_log_callback_context, "active", False):
+            raise RuntimeError(
+                "ovphysx_shutdown cannot be called from within a log callback; "
+                "retry PhysX.destroy() after the callback returns"
+            )
+
+        destroy_status = ApiStatus.SUCCESS
+        if handle is not None and handle.value != _INVALID_HANDLE:
+            # An aliased Warp array cannot be freed here without dangling the user's pointer, so
+            # warn and keep the read session pinned until the alias is dropped. Borrows are counted
+            # explicitly rather than inferred from _refs, which sits at 1 in the case being warned
+            # about (closing the ReadResult and dropping an array both decrement it).
             try:
-                result = self._lib.ovphysx_destroy_instance(self._omni_physx_sdk_handle.value)
+                borrowed = sum(1 for holder in list(self._live_read_holders) if holder.has_live_borrows)
+                if borrowed:
+                    warnings.warn(
+                        f"{borrowed} output-read session(s) still have aliased Warp arrays or "
+                        "downstream views at PhysX.destroy(); their native buffers stay allocated "
+                        "and the process-wide CUDA context is held open until every alias is "
+                        "dropped. Drop all read arrays (and any views of them) first.",
+                        ResourceWarning,
+                        stacklevel=2,
+                    )
             except Exception:
                 pass
-            self._omni_physx_sdk_handle = None
-        # The native instance (which detaches any attached ovstage on destroy) is
-        # gone, so drop the Stage keepalive.
+
+            # Drain sessions already ready for teardown and release stage-derived handles while
+            # the attached Stage is still valid. Borrowed numeric buffers remain session-owned.
+            try:
+                self._release_stage_bound_read_handles()
+                self._drain_pending_read_releases()
+            except Exception:
+                pass
+            # Do not catch Python/ctypes exceptions here. If the call did not
+            # return a native status, ownership may still be live and a retry is
+            # required. If it completed before raising, the retry converges on
+            # the terminal already-absent status handled below.
+            result = self._lib.ovphysx_destroy_instance(handle.value)
+            destroy_status = result.status
+
+        # omni_sdk_physx_destroy() reports failure only when the handle is
+        # already absent from the native instance registry. All paths for a live
+        # handle erase it and return success. Commit the terminal state for both
+        # statuses so a stale handle cannot leak the process-lifecycle token.
+        # The native instance also detaches any attached ovstage on destroy.
+        self._omni_physx_sdk_handle = None
         self._attached_ovstage = None
+        self._released = True
+        _untrack_process_instance(self)
+
+        destroy_error = None
+        if destroy_status != ApiStatus.SUCCESS:
+            status_value = int(destroy_status)
+            try:
+                status_name = ApiStatus(status_value).name
+            except ValueError:
+                status_name = "UNKNOWN"
+            destroy_error = (
+                f"ovphysx_destroy_instance() failed with status {status_name} "
+                f"({status_value}). The instance is no longer registered and "
+                "has been marked destroyed. This call does not provide an "
+                "error string; consult the ovphysx log."
+            )
+
         if getattr(self, "_lifecycle_acquired", False):
+            # Clear ownership before the potentially-raising shutdown. Native
+            # instance destruction has already completed, so retrying this
+            # process-lifecycle release would double-decrement the refcount.
+            self._lifecycle_acquired = False
             try:
                 _release_process_lifecycle()
-            except Exception:
-                pass
-            self._lifecycle_acquired = False
-        self._released = True
+            except Exception as exc:
+                message = f"PhysX instance was destroyed, but process shutdown failed: {exc}"
+                if destroy_error is not None:
+                    message += f" Native destruction also reported: {destroy_error}"
+                raise RuntimeError(message) from exc
+
+        if destroy_error is not None:
+            raise RuntimeError(destroy_error)
 
     # -------------------------------------------------------------------------
     # Tensor Binding API - efficient bulk access to physics simulation data
@@ -2937,19 +4620,26 @@ class PhysX:
     ) -> TensorBinding:
         """Create tensor binding for bulk physics data access (synchronous).
 
+        .. deprecated:: 0.6.0
+            The tensor-binding API is deprecated. Use :meth:`PhysX.read` for
+            reads and :meth:`PhysX.write` for writes.
+
         A tensor binding connects physics objects (by path pattern or explicit
         paths) to a tensor type, including authored USD objects and runtime-only
         clones.
 
         :param pattern: Physics-object path glob pattern
-            (e.g., "/World/robot*", "/World/env[N]/robot").
-            Mutually exclusive with ``prim_paths``.
+            (e.g., "/World/robot*", "/World/env[N]/robot"). A single path
+            component (the text between two slashes; a parenthesized group
+            counts as one component even if it contains a slash) may be at
+            most 4096 characters long; a longer component is rejected with
+            ``RuntimeError``. Mutually exclusive with ``prim_paths``.
         :param prim_paths: Explicit list of physics-object paths. Mutually
             exclusive with ``pattern``.
         :param tensor_type: Tensor type enum value (``TensorType.*``).
         :param raise_if_empty: If ``True``, raise ``ValueError`` when the
-            binding matches zero physics objects. The default keeps empty bindings valid;
-            prefer it for optional or broad queries and check ``binding.count``.
+            binding matches zero physics objects. The default keeps empty bindings valid.
+            Prefer it for optional or broad queries and check ``binding.count``.
         :returns: TensorBinding object for reading/writing tensor data.
         :raises ValueError: If neither ``pattern`` nor ``prim_paths`` is provided, both are,
             or ``raise_if_empty`` is true and no physics objects match.
@@ -2989,13 +4679,14 @@ class PhysX:
         Ownership/Lifetime:
             - Returned TensorBinding owns native resources until ``destroy()``.
             - Use ``binding.shape`` and ``binding.dtype`` (or ``binding.spec``)
-              to allocate compatible buffers; most tensor types are float32,
-              but some types such as ``RIGID_BODY_DISABLE_SIMULATION`` are not.
+              for layout and ``binding.native_device`` for no-staging placement.
+              Most tensor types are float32, but some types such as
+              ``RIGID_BODY_DISABLE_SIMULATION`` are not.
             - The binding is tied to the current stage topology. Reuse it across
               steps, but do not keep it across ``reset_stage()``, removing USD data
               that contains bound objects, or replacing/reparsing the stage so
               bound objects are destroyed and recreated. Destroy cached bindings
-              before those lifecycle operations when practical; if a stale
+              before those lifecycle operations when practical. If a stale
               binding survives, only destroy it. Create replacements after the
               operation completes.
         Diagnostics:
@@ -3012,6 +4703,12 @@ class PhysX:
             - Raises ``ValueError`` for invalid arguments.
             - Raises ``RuntimeError`` on creation failure.
         """
+        warnings.warn(
+            "ovphysx tensor bindings are deprecated and will be removed in a future "
+            "release; use PhysX.read for reads and PhysX.write for writes.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self._check_valid()
         if pattern is None and prim_paths is None:
             raise ValueError("Either 'pattern' or 'prim_paths' must be provided")
@@ -3081,46 +4778,45 @@ class PhysX:
                 "and check binding.count before reading."
             )
 
-        return TensorBinding(self, handle.value, tensor_type, ndim, shape, spec.dtype)
+        # The factory already emitted the caller-precise deprecation warning above. _from_factory
+        # skips the constructor's duplicate so the caller sees exactly one, without touching the
+        # process-global warnings filter.
+        return TensorBinding(self, handle.value, tensor_type, ndim, shape, spec.dtype, _from_factory=True)
 
-    def warmup_gpu(self) -> None:
-        """Explicitly initialize GPU buffers (synchronous).
+    def warmup(self) -> None:
+        """Explicitly run the warmup step (synchronous).
 
-        In GPU mode, PhysX DirectGPU buffers need one simulation step to initialize.
-        This is normally done automatically on the first tensor read (auto-warmup).
+        On first call, runs a minimal simulation step (~1ns) to initialize PhysX
+        structures. Works in both CPU and GPU mode (in GPU mode this also populates
+        DirectGPU buffers).
 
-        Call this function explicitly if you want to:
-        - Control exactly when the warmup latency occurs
-        - Avoid a latency spike on the first tensor read
-        - Verify GPU initialization succeeded before starting your main loop
+        Normally done automatically on the first tensor read, but calling it
+        explicitly lets you control when the latency occurs.
 
-        This function is idempotent - calling it multiple times has no effect after
-        the first successful call. In CPU mode, this is a no-op.
+        This function is idempotent. Calling it multiple times has no effect after
+        the first successful call. Warmup state resets after reset_stage() or
+        attaching a new USD stage.
 
         Raises:
-            RuntimeError: If GPU warmup fails.
+            RuntimeError: If warmup fails.
 
-        Preconditions:
-            - Instance is configured for GPU mode.
         Side effects:
             - Advances simulation by a minimal timestep on first call.
-        Ownership/Lifetime:
-            - No ownership changes; affects current stage state.
         Threading:
             - Do not call concurrently with other operations on this instance.
         """
         self._check_valid()
-        result = self._lib.ovphysx_warmup_gpu(self._omni_physx_sdk_handle.value)
+        result = self._lib.ovphysx_warmup(self._omni_physx_sdk_handle.value)
 
         if result.status != ApiStatus.SUCCESS:
             error_msg = self._get_last_error()
-            raise RuntimeError(f"Failed to warmup GPU: {error_msg}")
+            raise RuntimeError(f"Failed to warmup: {error_msg}")
 
     # ------------------------------------------------------------------
     # Contact report
     # ------------------------------------------------------------------
 
-    def get_contact_report(self, include_friction_anchors: bool = False, copy: bool = False) -> dict:
+    def get_contact_report(self, *, include_friction_anchors: bool = False, copy: bool = False) -> dict:
         """Get per-contact-point event data for the current simulation step.
 
         Use this for custom contact sensors, collision debugging, or per-point
@@ -3133,7 +4829,7 @@ class PhysX:
             ``points``, and ``anchors`` are zero-copy ctypes views into
             internal C buffers that are valid **only until the next**
             :meth:`step` or :meth:`step_sync` call. After the next step the
-            buffers may be reallocated or reused; accessing the views is
+            buffers may be reallocated or reused. Accessing the views is
             undefined behavior (silent data corruption or segfault). Python
             cannot detect this dangling state.
 
@@ -3172,7 +4868,7 @@ class PhysX:
         Example (safe across steps, ``copy=True``)::
 
             report = physx.get_contact_report(copy=True)
-            physx.step_sync(dt)  # next step — report still valid
+            physx.step_sync(dt)  # next step, report still valid
             for h in report["headers"]:
                 print(h["actor0"], h["numContactData"])
             for p in report["points"]:
@@ -3415,7 +5111,7 @@ class PhysX:
         """Test geometry overlap against objects in the scene.
 
         For overlap queries, location fields (normal, position, distance,
-        face_index, material) are zeroed -- only object identity is populated.
+        face_index, material) are zeroed. Only object identity is populated.
 
         Args:
             geometry_type: :class:`~ovphysx.SceneQueryGeometryType`.
@@ -3446,6 +5142,40 @@ class PhysX:
             raise RuntimeError(
                 f"Overlap failed: {self._get_last_error()}")
         return self._parse_scene_query_hits(hits_ptr, count.value)
+
+    def get_scene_query_paths_from_ids(self, ids: "tuple | list") -> list[str]:
+        """Resolve scene-query hit identity fields to physics-object paths.
+
+        ``ids`` holds opaque identity handles taken directly from the
+        ``collision``, ``rigid_body``, or ``material`` entries of hit dicts
+        returned by :meth:`raycast`, :meth:`sweep`, or :meth:`overlap`. IDs
+        that cannot be resolved (a zero id, an id from an object removed
+        since the query, or no active attach) yield empty strings.
+
+        Args:
+            ids: Sequence of ``int`` identity handles.
+
+        Returns:
+            list[str]: Physics-object paths in the same order as ``ids``.
+        """
+        n = len(ids)
+        if n == 0:
+            return []
+        ids_buf = (ctypes.c_uint64 * n)(*ids)
+        paths_buf = (ovphysx_string_t * n)()
+        count = ctypes.c_uint32(0)
+        result = _lib.ovphysx_scene_query_get_paths_from_ids(
+            self._omni_physx_sdk_handle.value,
+            ids_buf,
+            ctypes.c_uint32(n),
+            paths_buf,
+            ctypes.c_uint32(n),
+            ctypes.byref(count))
+        if result.status != ApiStatus.SUCCESS:
+            raise RuntimeError(
+                f"Failed to resolve scene-query IDs to paths: {self._get_last_error()}")
+        written = min(int(count.value), n)
+        return [str(paths_buf[i]) for i in range(written)]
 
     # ------------------------------------------------------------------
     # Contact bindings
@@ -3516,17 +5246,17 @@ class PhysX:
                     return forces
 
         Args:
-            sensor_patterns: Physics-object path patterns for sensor bodies.
+            sensor_patterns: Physics-object path patterns for sensor bodies. A single
+                path component may be at most 4096 characters long; a longer one
+                raises ``RuntimeError`` (also for ``filter_patterns``).
             filter_patterns: Flat list of physics-object path patterns for filters.
                 Total length must equal ``len(sensor_patterns) * filters_per_sensor``.
                 Pass ``None`` with ``filters_per_sensor=0`` to get contacts with all bodies.
             filters_per_sensor: Number of filter patterns per sensor (same for all sensors).
-            max_contact_data_count: Maximum contact-data entries that the raw
-                and detailed contact/friction flat-buffer reads can hold.
+            max_contact_data_count: Max raw contact pairs to track in the native
+                backend. Also caps the detailed contact/friction flat-buffer reads.
                 Detailed reads require this value and ``filters_per_sensor`` to
-                be positive. If it is too small, raw and detailed reads raise
-                ``RuntimeError`` and report the required layout through their
-                count and start-index arrays.
+                be positive.
         """
         self._check_valid()
         n_sensors = len(sensor_patterns)
@@ -3592,11 +5322,12 @@ class PhysX:
     def create_sdf_view(self, pattern: str, max_query_points: int) -> SdfView:
         """Create an SDF shape view for evaluating signed distance fields.
 
-        Requires a GPU instance; CPU SDF evaluation is not yet implemented.
+        Requires a GPU instance. CPU SDF evaluation is not implemented.
 
         Args:
             pattern: USD-style object-path glob matching SDF collision shapes,
-                including runtime-only clones.
+                including runtime-only clones. A single path component may be at
+                most 4096 characters long; a longer one raises ``RuntimeError``.
             max_query_points: Number of query points per shape per call. Query
                 tensors passed to ``SdfView.evaluate`` must have Q equal to this.
 
@@ -3625,37 +5356,71 @@ class PhysX:
             raise RuntimeError(f"create_sdf_view failed querying shape count: {self._get_last_error()}")
         return SdfView(self, out_handle.value, count_out.value, max_query_points)
 
-    def __enter__(self) -> "PhysX":
-        """Enter context manager.
+    def _finalize_unreleased(self) -> None:
+        """Run the finalizer's non-throwing destroy/retry policy."""
+        # No caller remains to perform destroy()'s documented retry after a
+        # pre-status invocation exception, so make one immediate best-effort
+        # attempt. Returned-status and shutdown failures already discharged
+        # ownership inside destroy() and are terminal, so they are not retried.
+        for _ in range(2):
+            try:
+                self.destroy()
+                return
+            except Exception:
+                if not getattr(self, "_lifecycle_acquired", False):
+                    return
 
-        Preconditions:
-            - Instance is valid.
-        """
-        return self
-
-    def __exit__(self, exc_type, exc, tb) -> None:
-        """Exit context manager - releases the instance."""
-        self.release()
+        # Both invocations raised before a status was returned. Native liveness
+        # is unknowable, and this object is about to be freed. Retaining the
+        # token would pin it to a dead object and prevent Python from ever
+        # calling process shutdown. Abandon the handle and emit a default-visible
+        # warning because a native instance may remain registered.
+        try:
+            warnings.warn(
+                "PhysX cleanup failed twice before native destruction returned "
+                "a status. The native instance may still be registered and "
+                "cannot be reached again; releasing the process-lifecycle "
+                "token. Consult the ovphysx log.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+        except Exception:
+            pass
+        self._omni_physx_sdk_handle = None
+        self._attached_ovstage = None
+        self._released = True
+        self._lifecycle_acquired = False
+        _untrack_process_instance(self)
+        try:
+            _release_process_lifecycle()
+        except Exception:
+            pass
 
     def __del__(self) -> None:
         """Destructor - ensures cleanup on garbage collection.
 
         Emits a :class:`ResourceWarning` when the instance is garbage-collected
-        without an explicit :meth:`release` or context-manager exit. Mirrors
-        Python file-object semantics. The warning is silent by default
+        without an explicit :meth:`destroy`. Mirrors Python file-object
+        semantics. The warning is silent by default
         (filtered out unless ``python -W default::ResourceWarning`` or a test
-        suite captures it), so existing code is not surprised — but a missing
-        release is surfaced to anyone looking for resource hygiene issues.
+        suite captures it), so existing code is not surprised, but a missing
+        destroy is surfaced to anyone looking for resource hygiene issues. A
+        native invocation exception gets one immediate best-effort retry.
+        Persistent cleanup errors are suppressed. If both invocations fail,
+        native state is unknowable, so the finalizer abandons the Python handle
+        with a default-visible ``RuntimeWarning`` and discharges process-lifecycle
+        ownership rather than letting an unreachable object prevent Python from
+        calling process shutdown.
 
         Note: During interpreter shutdown, calling C functions may fail.
-        We check sys.is_finalizing() to avoid spurious errors.
+        The destructor checks sys.is_finalizing() to avoid spurious errors.
         """
         try:
             import sys as _sys  # local re-bind: module-level sys may be None at shutdown
 
             if _sys.is_finalizing():
-                # Don't attempt cleanup during interpreter shutdown - the native
-                # library may already be unloaded or in an inconsistent state.
+                # Skip cleanup during interpreter shutdown. The native library
+                # may already be unloaded or in an inconsistent state.
                 return
         except Exception:
             # During interpreter shutdown, importing sys itself can fail with
@@ -3668,17 +5433,44 @@ class PhysX:
 
                 _warnings.warn(
                     "PhysX instance garbage-collected without explicit "
-                    "release(). Use `with PhysX() as physx:` or call "
-                    "physx.release() to ensure deterministic cleanup. "
-                    "Implicit cleanup at interpreter shutdown is "
-                    "non-deterministic and may crash or hang if the "
-                    "Carbonite plugin runtime is torn down first.",
+                    "destroy(). Call physx.destroy() in a finally block to "
+                    "ensure deterministic cleanup. "
+                    "Process-exit cleanup is best-effort and cannot run "
+                    "after abrupt termination.",
                     ResourceWarning,
                     stacklevel=2,
                 )
             except Exception:
                 pass
-        try:
-            self.release()
-        except Exception:
-            pass
+
+        owns_native_lifecycle = getattr(self, "_lifecycle_acquired", False)
+        handle = getattr(self, "_omni_physx_sdk_handle", None)
+        owns_native_lifecycle = owns_native_lifecycle or (
+            handle is not None and handle.value != _INVALID_HANDLE
+        )
+        if owns_native_lifecycle and getattr(_python_log_callback_context, "active", False):
+            # Explicit destroy remains fail-fast in callback context. A GC
+            # finalizer has no caller that can retry, so retain self through a
+            # daemon worker and let native shutdown drain this callback after
+            # it returns. Never join the worker from the callback thread.
+            try:
+                threading.Thread(
+                    target=self._finalize_unreleased,
+                    name="ovphysx-finalizer",
+                    daemon=True,
+                ).start()
+                return
+            except Exception:
+                try:
+                    warnings.warn(
+                        "PhysX finalizer could not defer cleanup outside the "
+                        "native log callback. The native instance and its "
+                        "process-lifecycle token may remain registered.",
+                        RuntimeWarning,
+                        stacklevel=2,
+                    )
+                except Exception:
+                    pass
+                return
+
+        self._finalize_unreleased()

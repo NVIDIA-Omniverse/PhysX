@@ -1,15 +1,19 @@
 // SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-PUBLICAPI-002
+ * @covers AC-5
+ */
 #pragma once
 #include <carb/Defines.h>
 #include <carb/Types.h>
 #include <omni/Span.h>
 #include <omni/Function.h>
+#include <omni/physics/AttachHandle.h>
 
 #include "PhysxCookingParams.h"
 #include "MeshKey.h"
-#include "pxr/usd/sdf/path.h"
 namespace omni
 {
 namespace physx
@@ -126,31 +130,33 @@ struct PhysxCookedDataSpan
 /// Cooking Request
 struct PhysxCookingComputeRequest
 {
-    // Mesh data is read from USD (prim id) or supplied directly as a mesh view; see DataInputMode.
-    // The caller is responsible for ensuring that mesh data is available for read for entire duration of request* calls
-    enum DataInputMode : uint32_t //!< Controls if data comes from prim id or a mesh view
-    {
-        eINPUT_MODE_FROM_PRIM_ID = 0, //!< Input mesh is inferred from primId, primStageId and primTimeCode (from USD)
-        eINPUT_MODE_FROM_PRIM_MESH_VIEW = 1 //!< Input mesh is inferred from primMeshView, primMeshMetersPerUnit and
-                                            //!< primMeshText
-    };
-    DataInputMode dataInputMode = eINPUT_MODE_FROM_PRIM_ID;
+    // Mesh data is always supplied directly as a mesh view (primMeshView / volumeMeshView /
+    // volumeDeformableBodyView / surfaceDeformableBodyView). The caller reads it through
+    // omni::physics::parse::IPhysicsSource before submitting -- the cooking service itself no
+    // longer resolves a USD stage and reads a prim (removed with eINPUT_MODE_FROM_PRIM_ID; see
+    // REQ-COOK-SOURCE-001). The caller is responsible for ensuring that mesh data is available for
+    // read for entire duration of request* calls.
 
-    // eINPUT_MODE_FROM_PRIM_ID
-    uint64_t primStageId = 0; //!< Id of the stage holding the data to cook (used if dataInputMode ==
-                              //!< eINPUT_MODE_FROM_PRIM_ID)
-    uint64_t primId = 0; //!< Id of the mesh prim to cook (used if dataInputMode == eINPUT_MODE_FROM_PRIM_ID)
-    double primTimeCode = 0.0; //!< UsdTimeCode to sample the mesh (used if dataInputMode == eINPUT_MODE_FROM_PRIM_ID)
+    // primStageId and attachHandle answer two different questions and neither replaces the other
+    // (ADR-0016 Decision 8). attachHandle is *which attach to notify when the request completes* --
+    // the runtime side resolves the attach and echoes the handle to PhysxCookingFinishedCallback. A
+    // request driven by a stageless attach has an attachHandle and no primStageId.
+    AttachHandle attachHandle = kNoAttach; //!< Attach to resolve and notify on completion, from @ref
+                                           //!< IPhysxSimulation::getAttachHandle() or kActiveAttach;
+                                           //!< kNoAttach when the request is not tied to an attach
 
-    // eINPUT_MODE_FROM_PRIM_MESH_VIEW
-    PhysxCookingMeshView primMeshView; //!< Input mesh (used if dataInputMode == eINPUT_MODE_FROM_PRIM_MESH_VIEW)
-    PhysxCookingDeformableVolumeMeshView volumeMeshView;      //!< Input deformable volume mesh  (used if dataInputMode == eINPUT_MODE_FROM_PRIM_MESH_VIEW)
-    PhysxCookingDeformableBodyView volumeDeformableBodyView;  //!< Input volume deformable body  (used if dataInputMode == eINPUT_MODE_FROM_PRIM_MESH_VIEW)
-    PhysxCookingDeformableBodyView surfaceDeformableBodyView; //!< Input surface deformable body (used if dataInputMode == eINPUT_MODE_FROM_PRIM_MESH_VIEW)
+    // Correlation keys only (REQ-COOK-SOURCE-001 AC-1) -- the onFinished continuation and debug
+    // logging use these to identify which prim a completed cook was for. Not an input source.
+    uint64_t primStageId = 0; //!< USD stage id the request's prim belongs to, if any. Never an attach handle.
+    uint64_t primId = 0; //!< Id of the mesh prim the request cooks, for correlation/logging.
+
+    PhysxCookingMeshView primMeshView; //!< Input mesh
+    PhysxCookingDeformableVolumeMeshView volumeMeshView;      //!< Input deformable volume mesh
+    PhysxCookingDeformableBodyView volumeDeformableBodyView;  //!< Input volume deformable body
+    PhysxCookingDeformableBodyView surfaceDeformableBodyView; //!< Input surface deformable body
     PhysxDeformablePathInfo deformablePathInfo;
-    double primMeshMetersPerUnit = 1.0; //!< Meters per unit (used if dataInputMode == eINPUT_MODE_FROM_PRIM_MESH_VIEW)
-    omni::span<const char> primMeshText; //!< Prim Path used in debug messages (used if dataInputMode ==
-                                         //!< eINPUT_MODE_FROM_PRIM_MESH_VIEW)
+    double primMeshMetersPerUnit = 1.0; //!< Meters per unit
+    omni::span<const char> primMeshText; //!< Prim path used in debug messages
 
     omni::physx::usdparser::MeshKey meshKey; //!< OPTIONAL but if provided, it will skip hash recomputation for
                                              //!< vertices, triangles etc.

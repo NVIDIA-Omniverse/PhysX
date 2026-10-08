@@ -1,7 +1,16 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# @implements REQ-CAPI-BENCHMARK-002
+# @covers AC-4
+# @implements REQ-PACKAGING-CLOSURE-001
+# @covers AC-2
 
 cmake_minimum_required(VERSION 3.16)
+
+# Checked first so an old Windows CMake fails here, not downstream.
+include("${CMAKE_CURRENT_LIST_DIR}/cmake/RequireCMakeVersion.cmake")
+ovphysx_require_cmake_version()
 
 if(POLICY CMP0091)
     cmake_policy(SET CMP0091 NEW)
@@ -27,7 +36,7 @@ project(ovphysx
     LANGUAGES C CXX)
 
 # Detect whether ovphysx is the top-level project or included via add_subdirectory().
-# CMake 3.21+ provides PROJECT_IS_TOP_LEVEL; this is compatible with 3.16+.
+# CMake 3.21+ provides PROJECT_IS_TOP_LEVEL. This form works with 3.16+.
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     set(OVPHYSX_IS_TOP_LEVEL TRUE)
 else()
@@ -44,11 +53,9 @@ endif()
 include("${CMAKE_CURRENT_SOURCE_DIR}/scripts/crossplatform_helpers.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/CarbPlatform.cmake")
 
-# Enable -Werror in CI builds (which have the baseline compiler where all
-# warnings are clean). On a plain host build with a potentially newer compiler,
-# warnings stay visible but non-fatal.
-# CI is detected via the provider-agnostic CI env var (GitLab CI, GitHub
-# Actions, Jenkins, etc.) or the OMNI_REPO_BUILD_NO_DOCKER flag.
+# -Werror is on in CI builds, which use the baseline compiler where all warnings
+# are clean. A host build with a newer compiler keeps warnings visible but non-fatal.
+# CI is detected via the provider-agnostic CI env var or the OMNI_REPO_BUILD_NO_DOCKER flag.
 if(DEFINED ENV{CI} OR DEFINED ENV{OMNI_REPO_BUILD_NO_DOCKER})
     option(OVPHYSX_WARNINGS_AS_ERRORS "Treat warnings as errors" ON)
 else()
@@ -62,8 +69,8 @@ endif()
 
 # NOTE: CompilerDefaults is NOT included at the top level because
 # add_compile_options() is directory-scoped and would leak into ovruntime.
-# ovruntime includes CompilerDefaults itself. Instead we provide
-# ovphysx_apply_compiler_defaults() which applies the same flags per-target.
+# ovruntime includes CompilerDefaults itself. ovphysx_apply_compiler_defaults()
+# below applies the same flags per-target.
 
 # NOTE: Compile definitions matching ovruntime (required by USD/TBB headers and
 # ABI compat) are applied per-target after add_library() to avoid leaking into
@@ -111,10 +118,10 @@ function(ovphysx_apply_compiler_defaults _target)
                 $<$<COMPILE_LANGUAGE:C,CXX>:-Werror>)
         endif()
     elseif(MSVC)
-        # Suppressions aligned with ovruntime/source/pch/UsdPCH.h pragma block.
+        # Suppressions aligned with the ovruntime/source/pch/UsdPCH.h pragma block.
         # ovruntime scopes these via #pragma warning(push/pop) around USD/PhysX
-        # includes in its precompiled header. ovphysx doesn't use PCH, so we
-        # apply them per-target instead.
+        # includes in its precompiled header. ovphysx has no PCH, so they are
+        # applied per-target instead.
         target_compile_options(${_target} PRIVATE
             $<$<COMPILE_LANGUAGE:C,CXX>:/W4>
             # From UsdPCH.h (third-party USD/PhysX header warnings)
@@ -125,7 +132,7 @@ function(ovphysx_apply_compiler_defaults _target)
             $<$<COMPILE_LANGUAGE:C,CXX>:/wd4305>   # argument truncation from double to float
             $<$<COMPILE_LANGUAGE:C,CXX>:/wd4800>   # int to bool
             $<$<COMPILE_LANGUAGE:C,CXX>:/wd4996>   # call to std::copy with unsafe params
-            # Additional third-party header warnings (Kit SDK, Fabric, omni_physics)
+            # Additional third-party header warnings (Carbonite, Fabric, omni_physics)
             $<$<COMPILE_LANGUAGE:C,CXX>:/wd4099>   # class/struct mismatch
             $<$<COMPILE_LANGUAGE:C,CXX>:/wd4127>   # conditional expression is constant
             $<$<COMPILE_LANGUAGE:C,CXX>:/wd4201>   # nameless struct/union
@@ -140,23 +147,6 @@ function(ovphysx_apply_compiler_defaults _target)
             target_compile_options(${_target} PRIVATE
                 $<$<COMPILE_LANGUAGE:C,CXX>:/WX>)
         endif()
-        # Match ovruntime's explicit TBB linking model. Suppress oneTBB's MSVC
-        # auto-link pragmas so the import library selected below follows the
-        # staged USD package config instead of compiler-header defaults.
-        target_compile_definitions(${_target} PRIVATE __TBB_NO_IMPLICIT_LINKAGE=1)
-    endif()
-endfunction()
-
-# oneTBB's Windows debug-mode autodetection can resolve _DEBUG to an empty
-# macro under our packaged MSVC configuration, which breaks its preprocessor
-# checks in debug headers.
-function(ovphysx_apply_windows_tbb_config _target)
-    if(WIN32)
-        if(OVPHYSX_RUNTIME_DEPS_CONFIG STREQUAL "debug")
-            target_compile_definitions(${_target} PRIVATE TBB_USE_DEBUG=1 TBB_USE_ASSERT=1)
-        else()
-            target_compile_definitions(${_target} PRIVATE TBB_USE_DEBUG=0 TBB_USE_ASSERT=0)
-        endif()
     endif()
 endfunction()
 
@@ -166,7 +156,7 @@ if(NOT DEFINED LOCAL_TARGET_DEPS)
     set(LOCAL_TARGET_DEPS "${CMAKE_CURRENT_SOURCE_DIR}/_build/target-deps")
 endif()
 if(EXISTS "${LOCAL_TARGET_DEPS}/python")
-    # Set Python3_ROOT_DIR so any USD-triggered find_package(Python3) finds our packaged Python.
+    # Set Python3_ROOT_DIR so any USD-triggered find_package(Python3) finds the packaged Python.
     # Only force these when top-level to avoid overriding a parent project's Python config.
     if(OVPHYSX_IS_TOP_LEVEL)
         set(Python3_ROOT_DIR "${LOCAL_TARGET_DEPS}/python" CACHE PATH "Python root directory" FORCE)
@@ -187,18 +177,16 @@ if(EXISTS "${LOCAL_TARGET_DEPS}/python")
 endif()
 
 # Standardized output directory structure: _build/<platform>/<config>
-# Previously we blindly appended "<platform>/<config>" to CMAKE_BINARY_DIR which
-# caused duplicated segments when the user already configured the build inside
-# "_build/<platform>/<config>".  Normalize the binary directory first so we only
-# append when necessary.
+# The binary directory is normalized first so "<platform>/<config>" is not
+# appended again when the user already configured the build inside it.
 
 if(CMAKE_CONFIGURATION_TYPES)
     # Multi-config generators manage the per-config subdirectories internally.
     set(PLATFORM_BUILD_DIR "${CMAKE_BINARY_DIR}/${PLATFORM_NAME}")
     set(OUTPUT_DIR "${PLATFORM_BUILD_DIR}/$<LOWER_CASE:$<CONFIG>>")
     # BUILD_TYPE_LOWER is needed at configure time to locate packman dependencies
-    # (kit_sdk_<config>, usd/<config>, etc.). build.cmake passes CMAKE_BUILD_TYPE
-    # even for multi-config generators so we know which packman config was fetched.
+    # (carb_sdk_static, usd/<config>, etc.). build.cmake passes CMAKE_BUILD_TYPE
+    # even for multi-config generators to identify the fetched packman config.
     if(CMAKE_BUILD_TYPE)
         string(TOLOWER "${CMAKE_BUILD_TYPE}" BUILD_TYPE_LOWER)
     else()
@@ -321,35 +309,6 @@ if(WIN32)
     )
 endif()
 
-# Resolve the packman-provided USD package identifier so config.toml can record
-# the exact USD build ovphysx was linked against. At runtime this lets
-# UsdVersionCheck distinguish "same major.minor" from "same build" -- a 25.11
-# kit.1 vs kit.2 mismatch is indistinguishable from version_spec alone but can
-# still be ABI-incompatible.
-set(OVPHYSX_USD_BUILD_PACKAGE "")
-set(_ovphysx_usd_linkdir "${CMAKE_CURRENT_SOURCE_DIR}/_build/target-deps/usd/${OVPHYSX_RUNTIME_DEPS_CONFIG}")
-if(EXISTS "${_ovphysx_usd_linkdir}")
-    file(REAL_PATH "${_ovphysx_usd_linkdir}" _ovphysx_usd_realpath)
-    # Packman cache layout: .../packman/chk/<package-name>/<version>/
-    # Grab the last path component as the version identifier.
-    get_filename_component(_ovphysx_usd_pkg_id "${_ovphysx_usd_realpath}" NAME)
-    if(_ovphysx_usd_pkg_id MATCHES "^[0-9]+\\.[0-9]+")
-        set(OVPHYSX_USD_BUILD_PACKAGE "${_ovphysx_usd_pkg_id}")
-        message(STATUS "USD build package: ${OVPHYSX_USD_BUILD_PACKAGE} (from ${_ovphysx_usd_realpath})")
-    else()
-        message(STATUS "USD build package: unable to infer from ${_ovphysx_usd_realpath}")
-    endif()
-else()
-    message(STATUS "USD build package: ${_ovphysx_usd_linkdir} not present; build_package left blank")
-endif()
-
-# Generate config.toml with synced library version (into build tree, not source root).
-configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/config.toml.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/config.toml"
-    @ONLY
-)
-
 # ============================================================================
 # ovruntime as CMake subproject
 # ============================================================================
@@ -358,8 +317,8 @@ option(OVPHYSX_DEV_SCHEMA "Use locally-built physics schema (passed to ovruntime
 
 set(OVRUNTIME_DIR "${CMAKE_CURRENT_SOURCE_DIR}/ovruntime")
 
-# Ant.usda lives in omni.physx test data. Pull it in at configure time rather
-# than checking in a duplicate; the generated copy (gitignored) is what the
+# Ant.usda lives in omni.physx test data and is copied at configure time rather
+# than checked in twice. The generated copy (gitignored) is what the
 # c_unittests load and what install/build_wheel ship into samples/data.
 configure_file(
     "${OVRUNTIME_DIR}/source/omni.physx/tests/test.unit/physics/data/Ant.usda"
@@ -373,6 +332,13 @@ get_property(_has_ovr_tests CACHE OVRUNTIME_ENABLE_TESTS PROPERTY VALUE SET)
 if(NOT _has_ovr_tests)
     set(OVRUNTIME_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
 endif()
+# @implements REQ-PACKAGING-USDFREE-001
+# @covers AC-1
+# OvruntimePhysX is USD-free in its only configuration (ADR-0027): ovphysx's USD-scene
+# loading goes through ovstage population (docs/developer_guide.md#remote-usd-loading)
+# and libovphysx has no USD link-time dependency. USD is still needed to BUILD and RUN
+# the tests and samples. The product payload resolves its USD from the application's
+# ovstage runtime (see scripts/package_deps.py).
 # DEV_PHYSX/DEV_SCHEMA must stay in sync with the OVPHYSX_ options on every
 # reconfigure when top-level, but respect parent overrides when subdirectory.
 get_property(_has_ovr_devphysx CACHE OVRUNTIME_DEV_PHYSX PROPERTY VALUE SET)
@@ -392,7 +358,6 @@ option(OVPHYSX_FETCH_DEPS "Automatically fetch dependencies via packman" ON)
 
 if(OVPHYSX_FETCH_DEPS)
     set(_ovphysx_required_target_deps
-        "${LOCAL_TARGET_DEPS}/kit_sdk_${OVPHYSX_RUNTIME_DEPS_CONFIG}"
         "${LOCAL_TARGET_DEPS}/carb_sdk_static"
         "${LOCAL_TARGET_DEPS}/python")
     set(_ovphysx_fetch_target_deps OFF)
@@ -413,7 +378,7 @@ if(OVPHYSX_FETCH_DEPS)
         endif()
     endif()
     set(_ovphysx_required_ovruntime_deps
-        "${OVRUNTIME_DIR}/_build/target-deps/usd/${OVPHYSX_RUNTIME_DEPS_CONFIG}/lib")
+        "${OVRUNTIME_DIR}/_build/target-deps/physx/include")
     set(_ovphysx_fetch_ovruntime_deps OFF)
     foreach(_ovphysx_required_ovruntime_dep IN LISTS _ovphysx_required_ovruntime_deps)
         if(NOT EXISTS "${_ovphysx_required_ovruntime_dep}")
@@ -459,14 +424,138 @@ if(OVPHYSX_IS_TOP_LEVEL AND NOT CMAKE_CONFIGURATION_TYPES)
     set(CMAKE_MODULE_LINKER_FLAGS_CHECKED "${CMAKE_MODULE_LINKER_FLAGS_RELEASE}" CACHE STRING "" FORCE)
 endif()
 
+# Configure benchmark CUDA in the common parent scope. FindCUDAToolkit imported
+# targets are directory-scoped: discovery inside the ovruntime child does not
+# make CUDA::cudart_static visible to the sibling tests/benchmarks directory.
+option(OVPHYSX_BUILD_BENCHMARKS "Build the ovphysx benchmark suite (opt-in)" OFF)
+option(OVPHYSX_REQUIRE_BENCHMARK_CUDA
+    "Fail configuration when the benchmark suite cannot use native CUDA tensors" OFF)
+if(OVPHYSX_REQUIRE_BENCHMARK_CUDA AND NOT OVPHYSX_BUILD_BENCHMARKS)
+    message(FATAL_ERROR
+        "OVPHYSX_REQUIRE_BENCHMARK_CUDA=ON requires OVPHYSX_BUILD_BENCHMARKS=ON.")
+endif()
+if(OVPHYSX_BUILD_BENCHMARKS)
+    if(DEFINED CUDAToolkit_ROOT AND NOT "${CUDAToolkit_ROOT}" STREQUAL "")
+        get_filename_component(_OVPHYSX_BENCHMARK_CUDA_ROOT
+            "${CUDAToolkit_ROOT}" ABSOLUTE)
+    elseif(DEFINED CUDA_DIR AND NOT "${CUDA_DIR}" STREQUAL "")
+        get_filename_component(_OVPHYSX_BENCHMARK_CUDA_ROOT "${CUDA_DIR}" ABSOLUTE)
+    else()
+        get_filename_component(_OVPHYSX_BENCHMARK_CUDA_ROOT
+            "${OVRUNTIME_DIR}/_build/target-deps/cuda" ABSOLUTE)
+    endif()
+
+    # Pin toolkit discovery before validating the tree. Otherwise an incomplete
+    # staged package can silently fall through to a host CUDA installation.
+    set(CUDAToolkit_ROOT "${_OVPHYSX_BENCHMARK_CUDA_ROOT}" CACHE PATH
+        "CUDA toolkit used by ovphysx benchmarks" FORCE)
+    set(_OVPHYSX_BENCHMARK_CUDA_HEADER
+        "${_OVPHYSX_BENCHMARK_CUDA_ROOT}/include/cuda_runtime_api.h")
+    if(WIN32)
+        set(_OVPHYSX_BENCHMARK_CUDA_NVCC
+            "${_OVPHYSX_BENCHMARK_CUDA_ROOT}/bin/nvcc.exe")
+        set(_OVPHYSX_BENCHMARK_CUDA_STATIC_RT
+            "${_OVPHYSX_BENCHMARK_CUDA_ROOT}/lib/x64/cudart_static.lib")
+    else()
+        set(_OVPHYSX_BENCHMARK_CUDA_NVCC
+            "${_OVPHYSX_BENCHMARK_CUDA_ROOT}/bin/nvcc")
+        set(_OVPHYSX_BENCHMARK_CUDA_STATIC_RT
+            "${_OVPHYSX_BENCHMARK_CUDA_ROOT}/lib64/libcudart_static.a")
+    endif()
+    set(_OVPHYSX_BENCHMARK_CUDA_STAGED_OK FALSE)
+    if(EXISTS "${_OVPHYSX_BENCHMARK_CUDA_NVCC}" AND
+       EXISTS "${_OVPHYSX_BENCHMARK_CUDA_HEADER}" AND
+       EXISTS "${_OVPHYSX_BENCHMARK_CUDA_STATIC_RT}")
+        set(_OVPHYSX_BENCHMARK_CUDA_STAGED_OK TRUE)
+    elseif(OVPHYSX_REQUIRE_BENCHMARK_CUDA)
+        message(FATAL_ERROR
+            "OVPHYSX_REQUIRE_BENCHMARK_CUDA=ON requires one coherent CUDA "
+            "toolkit at ${_OVPHYSX_BENCHMARK_CUDA_ROOT} containing:\n"
+            "  ${_OVPHYSX_BENCHMARK_CUDA_NVCC}\n"
+            "  ${_OVPHYSX_BENCHMARK_CUDA_HEADER}\n"
+            "  ${_OVPHYSX_BENCHMARK_CUDA_STATIC_RT}\n"
+            "Refusing to fall back to a host CUDA installation.")
+    endif()
+
+    # Match ovruntime's dev-PhysX discovery sequence on Linux. Enabling the
+    # language gives FindCUDAToolkit the packaged nvcc/toolkit metadata it needs.
+    # Windows benchmarks only need the imported runtime target; avoiding
+    # enable_language(CUDA) also keeps the Visual Studio path independent of a
+    # machine-installed CUDA integration.
+    set(_OVPHYSX_BENCHMARK_CUDA_DISCOVERY_OK ${_OVPHYSX_BENCHMARK_CUDA_STAGED_OK})
+    if(NOT WIN32 AND _OVPHYSX_BENCHMARK_CUDA_STAGED_OK)
+        include(CheckLanguage)
+        get_property(_OVPHYSX_ENABLED_LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
+        if(NOT "CUDA" IN_LIST _OVPHYSX_ENABLED_LANGUAGES)
+            # CUDACXX selects the exact staged compiler while leaving
+            # CMAKE_CUDA_COMPILER undefined so check_language performs its real
+            # compiler probe. Setting CMAKE_CUDA_COMPILER first would make the
+            # probe a no-op and let enable_language fail even in optional mode.
+            set(_OVPHYSX_HAD_CUDACXX FALSE)
+            if(DEFINED ENV{CUDACXX})
+                set(_OVPHYSX_HAD_CUDACXX TRUE)
+                set(_OVPHYSX_SAVED_CUDACXX "$ENV{CUDACXX}")
+            endif()
+            set(ENV{CUDACXX} "${_OVPHYSX_BENCHMARK_CUDA_NVCC}")
+            unset(CMAKE_CUDA_COMPILER CACHE)
+            unset(CMAKE_CUDA_COMPILER)
+            check_language(CUDA)
+            if(_OVPHYSX_HAD_CUDACXX)
+                set(ENV{CUDACXX} "${_OVPHYSX_SAVED_CUDACXX}")
+            else()
+                unset(ENV{CUDACXX})
+            endif()
+        endif()
+        get_filename_component(_OVPHYSX_BENCHMARK_CUDA_NVCC_REAL
+            "${_OVPHYSX_BENCHMARK_CUDA_NVCC}" REALPATH)
+        if(CMAKE_CUDA_COMPILER)
+            get_filename_component(_OVPHYSX_BENCHMARK_CUDA_COMPILER_REAL
+                "${CMAKE_CUDA_COMPILER}" REALPATH)
+        else()
+            set(_OVPHYSX_BENCHMARK_CUDA_COMPILER_REAL "")
+        endif()
+        if("${_OVPHYSX_BENCHMARK_CUDA_COMPILER_REAL}" STREQUAL
+           "${_OVPHYSX_BENCHMARK_CUDA_NVCC_REAL}")
+            if(NOT "CUDA" IN_LIST _OVPHYSX_ENABLED_LANGUAGES)
+                enable_language(CUDA)
+            endif()
+        else()
+            set(_OVPHYSX_BENCHMARK_CUDA_DISCOVERY_OK FALSE)
+            if(OVPHYSX_REQUIRE_BENCHMARK_CUDA)
+                message(FATAL_ERROR
+                    "Required benchmark CUDA compiler resolved to "
+                    "'${CMAKE_CUDA_COMPILER}', not staged nvcc "
+                    "'${_OVPHYSX_BENCHMARK_CUDA_NVCC}'. Refusing host fallback.")
+            endif()
+        endif()
+    endif()
+
+    if(_OVPHYSX_BENCHMARK_CUDA_DISCOVERY_OK)
+        find_package(CUDAToolkit QUIET)
+    endif()
+    if(TARGET CUDA::cudart_static)
+        add_library(ovphysx_benchmark_cuda INTERFACE)
+        target_link_libraries(ovphysx_benchmark_cuda INTERFACE CUDA::cudart_static)
+        message(STATUS
+            "ovphysx benchmark CUDA: native tensors enabled "
+            "(${CUDAToolkit_VERSION} at ${CUDAToolkit_ROOT})")
+    elseif(OVPHYSX_REQUIRE_BENCHMARK_CUDA)
+        message(FATAL_ERROR
+            "OVPHYSX_REQUIRE_BENCHMARK_CUDA=ON, but CUDA::cudart_static was not "
+            "created from ${_OVPHYSX_BENCHMARK_CUDA_ROOT}. Ensure the packaged "
+            "CUDA toolkit contains nvcc, headers, and static runtime libraries.")
+    else()
+        message(STATUS
+            "ovphysx benchmark CUDA: unavailable; building explicit CPU-only suite")
+    endif()
+endif()
+
 # Include ovruntime. EXCLUDE_FROM_ALL: only explicitly depended-on targets build.
 #
-# RPATH note: ovruntime sets CMAKE_INSTALL_RPATH=$ORIGIN (correct for cmake --install),
-# but ovphysx packaging copies .so files directly from the build tree via package_deps.py.
-# Build-tree binaries use CMAKE_BUILD_RPATH which defaults to absolute target-deps paths.
-# We prepend $ORIGIN so that build-tree .so files can also discover siblings in the same
-# directory — this is critical for the packaged SDK where all plugins are flattened into
-# a single _install/plugins/ directory and loaded via dlopen on a different machine.
+# RPATH note: ovphysx packaging copies .so files directly from the build tree via
+# package_deps.py, so the build-tree RPATH is what ships. $ORIGIN is prepended to
+# CMAKE_BUILD_RPATH so those files find siblings in the flattened _install/plugins/
+# directory when loaded via dlopen on a different machine.
 set(_SAVED_BUILD_RPATH "${CMAKE_BUILD_RPATH}")
 set(CMAKE_BUILD_RPATH "$ORIGIN;${CMAKE_BUILD_RPATH}")
 add_subdirectory("${OVRUNTIME_DIR}" "${CMAKE_BINARY_DIR}/ovruntime" EXCLUDE_FROM_ALL)
@@ -478,32 +567,50 @@ set(CMAKE_BUILD_RPATH "${_SAVED_BUILD_RPATH}")
 if(NOT DEFINED OVRUNTIME_TARGET_DEPS)
     set(OVRUNTIME_TARGET_DEPS "${OVRUNTIME_DIR}/_build/target-deps")
 endif()
+
+# Select PhysX headers from the exact SDK configured by ovruntime. The ovphysx
+# library needs them for its internal test bridge. Top-level tests and install
+# rules reuse the same verified path below.
+if(DEFINED PHYSX_SDK_DIR)
+    set(_OVPHYSX_PHYSX_INCLUDE_SOURCE "${PHYSX_SDK_DIR}/include")
+    set(_OVPHYSX_PHYSX_INCLUDE_SOURCE_KIND "PHYSX_SDK_DIR")
+elseif(NOT OVRUNTIME_DEV_PHYSX AND DEFINED OVRUNTIME_TARGET_DEPS)
+    set(_OVPHYSX_PHYSX_INCLUDE_SOURCE "${OVRUNTIME_TARGET_DEPS}/physx/include")
+    set(_OVPHYSX_PHYSX_INCLUDE_SOURCE_KIND "OVRUNTIME_TARGET_DEPS")
+else()
+    message(FATAL_ERROR
+        "Cannot select PhysX SDK headers for ovphysx: neither PHYSX_SDK_DIR "
+        "nor the normal-build OVRUNTIME_TARGET_DEPS root is available.")
+endif()
+if(NOT EXISTS "${_OVPHYSX_PHYSX_INCLUDE_SOURCE}/PxScene.h")
+    message(FATAL_ERROR
+        "PhysX SDK headers selected from ${_OVPHYSX_PHYSX_INCLUDE_SOURCE_KIND} "
+        "do not contain PxScene.h at ${_OVPHYSX_PHYSX_INCLUDE_SOURCE}.")
+endif()
+message(STATUS
+    "ovphysx PhysX headers (${_OVPHYSX_PHYSX_INCLUDE_SOURCE_KIND}): "
+    "${_OVPHYSX_PHYSX_INCLUDE_SOURCE}")
+
 include("${OVRUNTIME_DIR}/cmake/OvstageDependency.cmake")
 
 if(WIN32)
     set(_OVPHYSX_OVSTAGE_RUNTIME_LIBRARY_NAME "ovstage.dll")
-    set(_OVPHYSX_OVSTAGE_CLIENT_LIBRARY_NAME "omniclient.dll")
-    set(_OVPHYSX_OVSTAGE_CONNECTION_LIBRARY_NAME "omniverse_connection.dll")
     set(_OVPHYSX_OVSTAGE_RESOLVER_LIBRARY_NAME "omni_usd_resolver.dll")
 else()
     set(_OVPHYSX_OVSTAGE_RUNTIME_LIBRARY_NAME "libovstage.so")
-    set(_OVPHYSX_OVSTAGE_CLIENT_LIBRARY_NAME "libomniclient.so")
-    set(_OVPHYSX_OVSTAGE_CONNECTION_LIBRARY_NAME "libomniverse_connection.so")
     set(_OVPHYSX_OVSTAGE_RESOLVER_LIBRARY_NAME "libomni_usd_resolver.so")
 endif()
 
 # Select the runtime tree only from the exact OVStage root resolved above. In
 # particular, do not fall back to another target-deps directory: doing so could
-# compile/link against one OVStage package while installing another package's
-# resolver and OmniClient payload.
+# compile/link against one OVStage package while validating another package's
+# resolver payload.
 set(_OVPHYSX_OVSTAGE_PYTHON_RUNTIME_DIR "")
 foreach(_OVPHYSX_OVSTAGE_RUNTIME_CANDIDATE
     "${OVSTAGE_LIBRARY_DIR}"
     "${OVSTAGE_DIR}/bin"
     "${OVSTAGE_DIR}/ovstage/bin")
     if(EXISTS "${_OVPHYSX_OVSTAGE_RUNTIME_CANDIDATE}/${_OVPHYSX_OVSTAGE_RUNTIME_LIBRARY_NAME}" AND
-       EXISTS "${_OVPHYSX_OVSTAGE_RUNTIME_CANDIDATE}/plugins/omni.client.lib/${_OVPHYSX_OVSTAGE_CLIENT_LIBRARY_NAME}" AND
-       EXISTS "${_OVPHYSX_OVSTAGE_RUNTIME_CANDIDATE}/plugins/omni.client.lib/${_OVPHYSX_OVSTAGE_CONNECTION_LIBRARY_NAME}" AND
        EXISTS "${_OVPHYSX_OVSTAGE_RUNTIME_CANDIDATE}/plugins/omni.usd_resolver/${_OVPHYSX_OVSTAGE_RESOLVER_LIBRARY_NAME}" AND
        EXISTS "${_OVPHYSX_OVSTAGE_RUNTIME_CANDIDATE}/plugins/omni.usd_resolver/usd/omni_usd_resolver/resources/plugInfo.json")
         set(_OVPHYSX_OVSTAGE_PYTHON_RUNTIME_DIR "${_OVPHYSX_OVSTAGE_RUNTIME_CANDIDATE}")
@@ -513,8 +620,8 @@ endforeach()
 if(NOT _OVPHYSX_OVSTAGE_PYTHON_RUNTIME_DIR)
     message(FATAL_ERROR
         "The selected OVStage root '${OVSTAGE_DIR}' does not contain a complete "
-        "Release runtime with ovstage, omni.client.lib, omni.usd_resolver, "
-        "omniverse_connection, and the resolver plugInfo registry. The runtime "
+        "Release runtime with ovstage, omni.usd_resolver, and the resolver "
+        "plugInfo registry. The runtime "
         "must come from the same exact OVStage provider used for headers/linking.")
 endif()
 
@@ -549,7 +656,7 @@ if(NOT TARGET ovphysx::ovstage)
 endif()
 
 # Build exactly the ovruntime targets needed at runtime.
-# Only add to ALL when top-level; as a subdirectory the dependency chain suffices.
+# Only add to ALL when top-level. As a subdirectory the dependency chain suffices.
 set(_OVR_RUNTIME_ALL "")
 if(OVPHYSX_IS_TOP_LEVEL)
     set(_OVR_RUNTIME_ALL ALL)
@@ -567,6 +674,7 @@ add_library(ovphysx SHARED
     src/ovphysx/ovphysx_ABI_check.cpp
     src/ovphysx/CpuFeatureCheck.cpp
     src/ovphysx/LogManager.cpp
+    src/ovphysx/Nvtx.cpp
     src/ovphysx/ovphysx.cpp
     src/ovphysx/ovphysxTensorBinding.cpp
     src/ovphysx/ovphysxContactBinding.cpp
@@ -578,12 +686,9 @@ add_library(ovphysx SHARED
     src/ovphysx/ovphysxContactReport.cpp
     src/ovphysx/ovphysxSceneQuery.cpp
     src/ovphysx/ovphysxSidecarLoader.cpp
-    src/ovphysx/ovphysxStage.cpp
-    src/ovphysx/ovphysxInit.cpp
     src/ovphysx/ovphysxTestHelpers.cpp
     src/ovphysx/version.cpp
     src/UsdSchemaPaths/UsdSchemaPaths.cpp
-    src/UsdVersionCheck/UsdVersionCheck.cpp
     # Windows version resource (embeds version info visible in VS Modules window)
     $<$<PLATFORM_ID:Windows>:${OVPHYSX_GENERATED_RC}>
 )
@@ -593,9 +698,9 @@ add_library(ovphysx SHARED
 add_library(ovphysx::ovphysx ALIAS ovphysx)
 
 # Ensure ovruntime runtime pieces are built whenever ovphysx is built.
-# In top-level builds the ALL target handles this; for add_subdirectory()
-# consumers we need the explicit dependency so that building just `ovphysx`
-# also produces the static runtime and remaining Carbonite plugins it uses.
+# In top-level builds the ALL target handles this. add_subdirectory() consumers
+# need the explicit dependency so that building just `ovphysx` also produces
+# the static runtime and remaining Carbonite plugins it uses.
 add_dependencies(ovphysx ovruntime_runtime_libs)
 
 # Shared library versioning (SONAME on Linux)
@@ -624,51 +729,11 @@ if(NOT WIN32)
 endif()
 
 # Use local target-deps downloaded via packman
-set(KIT_SDK_DIR "${LOCAL_TARGET_DEPS}/kit_sdk_${OVPHYSX_RUNTIME_DEPS_CONFIG}")
 set(OMNI_PHYSICS_DIR "${LOCAL_TARGET_DEPS}/omni_physics")
 
-# Carbonite SDK headers come from kit-kernel. ovphysx always links Carbonite
-# statically from carb_sdk_static below; ovphysx ships no separate libcarb runtime.
-set(CARB_SDK_DIR "${KIT_SDK_DIR}")
-set(CARB_SDK_INCLUDE_DIR "${CARB_SDK_DIR}/dev/include")
-
-# Fallback: when linkPath wasn't created (e.g., inside clean CI containers),
-# use the packman cache location.
-if(NOT EXISTS "${CARB_SDK_INCLUDE_DIR}")
-    # Platform-specific packman cache location for kit-kernel (headers/Fabric)
-    if(WIN32)
-        set(_PM_KIT_ROOT "$ENV{USERPROFILE}/.cache/packman/chk/kit-kernel")
-    else()
-        set(_PM_KIT_ROOT "$ENV{HOME}/.cache/packman/chk/kit-kernel")
-    endif()
-    
-    file(GLOB _PM_KIT_VERSIONS "${_PM_KIT_ROOT}/*")
-    if(_PM_KIT_VERSIONS)
-        list(SORT _PM_KIT_VERSIONS)
-        list(REVERSE _PM_KIT_VERSIONS)
-        list(GET _PM_KIT_VERSIONS 0 _PM_KIT_DIR)
-        message(STATUS "Using kit-kernel from packman cache: ${_PM_KIT_DIR}")
-        set(KIT_SDK_DIR "${_PM_KIT_DIR}")
-        set(CARB_SDK_DIR "${KIT_SDK_DIR}")
-        set(CARB_SDK_INCLUDE_DIR "${KIT_SDK_DIR}/dev/include")
-    else()
-        message(WARNING "kit-kernel headers not found at ${CARB_SDK_INCLUDE_DIR} and no packman cache discovered at ${_PM_KIT_ROOT}")
-    endif()
-endif()
-
-# USD libs: prefer ovruntime's USD (namespaced monolithic) over ovphysx's own
-# kit-sdk-imported USD (per-module, pxr namespace). This ensures ovphysx and
-# ovruntime link against the same USD build and namespace.
-set(OVRUNTIME_USD_DIR "${OVRUNTIME_DIR}/_build/target-deps/usd/${OVPHYSX_RUNTIME_DEPS_CONFIG}")
-if(EXISTS "${OVRUNTIME_USD_DIR}/lib")
-    set(USD_TDEP_LIB_DIR "${OVRUNTIME_USD_DIR}/lib")
-    set(USD_TDEP_INCLUDE_DIR "${OVRUNTIME_USD_DIR}/include")
-    message(STATUS "USD libs (from ovruntime): ${USD_TDEP_LIB_DIR}")
-else()
-    set(USD_TDEP_LIB_DIR "${LOCAL_TARGET_DEPS}/usd/${OVPHYSX_RUNTIME_DEPS_CONFIG}/lib")
-    set(USD_TDEP_INCLUDE_DIR "${LOCAL_TARGET_DEPS}/usd/${OVPHYSX_RUNTIME_DEPS_CONFIG}/include")
-    message(STATUS "USD libs (local target-deps): ${USD_TDEP_LIB_DIR}")
-endif()
+# Carbonite headers and static libs both come from carb_sdk_static; ovphysx ships no
+# separate libcarb runtime.
+set(CARB_SDK_INCLUDE_DIR "${LOCAL_TARGET_DEPS}/carb_sdk_static/include")
 
 target_include_directories(ovphysx
     PUBLIC
@@ -679,24 +744,54 @@ target_include_directories(ovphysx
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${OVRUNTIME_DIR}/include
 )
-# The public ovphysx headers now #include ovstage/ovx types directly (read group,
-# query result, ordinal range, Stage pointer). Expose the ovstage include dirs on the
-# PUBLIC build interface so ovphysx's own TUs and downstream consumers (c_unittests,
-# SDK samples) resolve <ovstage/...> / <ovx/...> at build time. The matching install
-# interface is the shared include/ root, where these headers are installed below.
+# The public ovphysx headers #include ovstage/ovx types directly, so the ovstage
+# include dirs go on the PUBLIC build interface for ovphysx's own TUs and downstream
+# consumers (c_unittests, SDK samples). The matching install interface is the shared
+# include/ root, where these headers are installed below.
 foreach(_OVPHYSX_OVSTAGE_INC IN LISTS OVSTAGE_INCLUDE_DIRS)
     target_include_directories(ovphysx SYSTEM PUBLIC $<BUILD_INTERFACE:${_OVPHYSX_OVSTAGE_INC}>)
 endforeach()
-# Third-party headers as SYSTEM to suppress warnings we don't control.
+# Third-party headers as SYSTEM to suppress their warnings.
 target_include_directories(ovphysx SYSTEM PRIVATE
+    ${_OVPHYSX_PHYSX_INCLUDE_SOURCE}
     ${OMNI_PHYSICS_DIR}/include
     ${CARB_SDK_INCLUDE_DIR}
-    ${USD_TDEP_INCLUDE_DIR}
-    ${PYTHON_INCLUDE_DIRS}
-    ${KIT_SDK_DIR}/dev/include
     ${LOCAL_TARGET_DEPS}/gsl/include
 )
-# Single install interface — generated headers (version.h) are installed
+
+# NVTX range instrumentation for Nsight Systems. NVTX 3 is header-only and ships
+# inside the CUDA package ovruntime already pulls, so nothing is linked or
+# redistributed. Ranges are emitted only when enabled at runtime, so this stays
+# compiled in for release builds and shipped wheels.
+#
+# Missing headers are a hard error, unlike in ovruntime: ovphysx links the CUDA
+# stubs unconditionally below, so a missing header set means a broken environment
+# rather than a reduced-capability build. -DOVPHYSX_ENABLE_NVTX=OFF drops only the
+# ovphysx domain. The PhysX domain follows ovruntime's own detection.
+option(OVPHYSX_ENABLE_NVTX "Compile in NVTX range instrumentation for Nsight Systems" ON)
+if(OVPHYSX_ENABLE_NVTX)
+    # Honour an explicit -DCUDA_DIR= the way ovruntime does, falling back to the
+    # staged dependency. Probing only the staged path would fail a build that
+    # points CUDA elsewhere, even though the headers are present there.
+    if(DEFINED CUDA_DIR)
+        set(OVPHYSX_NVTX_INCLUDE_DIR "${CUDA_DIR}/include")
+    else()
+        set(OVPHYSX_NVTX_INCLUDE_DIR "${OVRUNTIME_TARGET_DEPS}/cuda/include")
+    endif()
+    if(NOT EXISTS "${OVPHYSX_NVTX_INCLUDE_DIR}/nvtx3/nvToolsExt.h")
+        message(FATAL_ERROR
+            "NVTX 3 headers not found at ${OVPHYSX_NVTX_INCLUDE_DIR}/nvtx3. They come from the "
+            "CUDA target dependency: run ovruntime/pull_dependencies.bat (or .sh) first, or point "
+            "-DCUDA_DIR= at a toolkit that provides them. "
+            "To build without profiling support, pass -DOVPHYSX_ENABLE_NVTX=OFF.")
+    endif()
+    target_include_directories(ovphysx SYSTEM PRIVATE ${OVPHYSX_NVTX_INCLUDE_DIR})
+    target_compile_definitions(ovphysx PRIVATE OVPHYSX_NVTX_ENABLED=1)
+    message(STATUS "NVTX instrumentation: enabled (headers: ${OVPHYSX_NVTX_INCLUDE_DIR}/nvtx3)")
+else()
+    message(STATUS "NVTX instrumentation: disabled (OVPHYSX_ENABLE_NVTX=OFF)")
+endif()
+# Single install interface. Generated headers (version.h) are installed
 # to the same include/ directory, so one entry suffices.
 set_property(TARGET ovphysx APPEND PROPERTY
     INTERFACE_INCLUDE_DIRECTORIES "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
@@ -704,8 +799,8 @@ set_property(TARGET ovphysx APPEND PROPERTY
 
 # Carbonite linking: static-only for the SDK path.
 
-# Similarly, ovrtx with static-carb links the static Carbonite libraries from the
-# matching build config. Keep ovphysx the same so Windows Debug links Debug Carbonite
+# ovrtx with static-carb links the static Carbonite libraries from the matching
+# build config. ovphysx does the same so Windows Debug links Debug Carbonite
 # objects instead of forcing the release CRT/iterator ABI.
 set(CARB_STATIC_LIB_DIR "${LOCAL_TARGET_DEPS}/carb_sdk_static/_build/${PLATFORM_NAME}/${BUILD_TYPE_LOWER}")
 set(CARB_STATIC_PLUGIN_NAMES
@@ -797,85 +892,18 @@ endif()
 # CMake users.
 set_property(TARGET ovphysx PROPERTY INTERFACE_LINK_LIBRARIES "")
 
-# USD library configuration for headers and plugin
-# Main library includes USD headers (for PhysX interface types) but doesn't link USD
-# Only the internal sidecar links USD to avoid runtime dependency
-set(USD_LINK_DIR "${USD_TDEP_LIB_DIR}")
-
-# Detect monolithic USD (namespaced builds ship a single *usd_ms lib)
-if(WIN32)
-    file(GLOB _ovphysx_usd_ms_libs "${USD_TDEP_LIB_DIR}/*usd_ms.lib")
-else()
-    file(GLOB _ovphysx_usd_ms_libs "${USD_TDEP_LIB_DIR}/lib*usd_ms.so")
-endif()
-
-if(NOT _ovphysx_usd_ms_libs)
-    message(FATAL_ERROR
-        "ovphysx source builds require namespaced monolithic *usd_ms libraries in ${USD_TDEP_LIB_DIR}, "
-        "but none were found. Clean both ovphysx/_build/target-deps and ovruntime/_build/target-deps, "
-        "then rebuild.")
-endif()
-list(GET _ovphysx_usd_ms_libs 0 _usd_ms_path)
-get_filename_component(_usd_ms_name "${_usd_ms_path}" NAME)
-if(WIN32)
-    string(REGEX REPLACE "\\.lib$" "" _usd_ms_name "${_usd_ms_name}")
-else()
-    string(REGEX REPLACE "\\.so$" "" _usd_ms_name "${_usd_ms_name}")
-    string(REGEX REPLACE "^lib" "" _usd_ms_name "${_usd_ms_name}")
-endif()
-set(OVPHYSX_USD_MS_LIB "${_usd_ms_name}")
-message(STATUS "Internal sidecar will link against monolithic USD: ${OVPHYSX_USD_MS_LIB}")
-
-# Main library needs USD library directory in search path for TBB (USD header dependency)
-# but does NOT link USD directly (avoids runtime dependency until plugin loads)
-target_link_directories(ovphysx PRIVATE ${USD_LINK_DIR})
-# On Windows, USD headers require TBB to be linked (DLL import library requirement)
-if(WIN32)
-    if(OVPHYSX_RUNTIME_DEPS_CONFIG STREQUAL "debug")
-        set(_OVPHYSX_TBB_CANDIDATES tbb_debug tbb12_debug)
-    else()
-        set(_OVPHYSX_TBB_CANDIDATES tbb tbb12)
-    endif()
-
-    # Clear cached result so reconfigures with a different BUILD_TYPE pick the right library.
-    # Mark as INTERNAL to avoid polluting the parent project's cache.
-    unset(OVPHYSX_TBB_LIBRARY CACHE)
-    find_library(OVPHYSX_TBB_LIBRARY
-        NAMES ${_OVPHYSX_TBB_CANDIDATES}
-        PATHS ${USD_TDEP_LIB_DIR}
-        NO_DEFAULT_PATH
-    )
-    set(OVPHYSX_TBB_LIBRARY "${OVPHYSX_TBB_LIBRARY}" CACHE INTERNAL "")
-    if(NOT OVPHYSX_TBB_LIBRARY)
-        message(FATAL_ERROR
-            "Could not find a Windows TBB import library in ${USD_TDEP_LIB_DIR}. "
-            "Tried: ${_OVPHYSX_TBB_CANDIDATES}"
-        )
-    endif()
-
-    target_link_libraries(ovphysx PRIVATE "${OVPHYSX_TBB_LIBRARY}")
-    message(STATUS "Using Windows TBB import library: ${OVPHYSX_TBB_LIBRARY}")
-endif()
-
 # ============================================================================
-# Internal Sidecar (Separate USD-dependent functionality)
+# Internal Sidecar (omni.physx-dependent functionality)
 # ============================================================================
-# Build the USD-dependent functionality (stage close, object-change plumbing)
-# as a separate plugin to isolate USD dependencies.
-# Main library does NOT link USD - only the plugin does.
-# This allows the main library to load without USD, download extensions,
-# then load the plugin with matching USD version (avoids symbol conflicts).
-if(NOT EXISTS "${LOCAL_TARGET_DEPS}/python")
-    message(FATAL_ERROR "Internal sidecar requires Python in target-deps: ${LOCAL_TARGET_DEPS}/python\n"
-                        "Run build.bat/build.sh to fetch dependencies first.")
-endif()
+# The sidecar is a peer DSO loaded on demand by the main library. Neither
+# library links OpenUSD; ovphysx consumes scenes through ovstage only.
 add_subdirectory(src/ovphysxInternal)
 
-# Compile definitions matching ovruntime (required by USD/TBB headers and ABI compat).
+# Compile definitions matching ovruntime (ABI compatibility).
 # Applied per-target to avoid leaking into parent projects via add_subdirectory().
 if(NOT WIN32)
-    target_compile_definitions(ovphysx PRIVATE _FILE_OFFSET_BITS=64 _GLIBCXX_USE_CXX11_ABI=1 TBB_SUPPRESS_DEPRECATED_MESSAGES)
-    target_compile_definitions(ovphysx_internal PRIVATE _FILE_OFFSET_BITS=64 _GLIBCXX_USE_CXX11_ABI=1 TBB_SUPPRESS_DEPRECATED_MESSAGES)
+    target_compile_definitions(ovphysx PRIVATE _FILE_OFFSET_BITS=64 _GLIBCXX_USE_CXX11_ABI=1)
+    target_compile_definitions(ovphysx_internal PRIVATE _FILE_OFFSET_BITS=64 _GLIBCXX_USE_CXX11_ABI=1)
 endif()
 
 # Optionally help the runtime loader find Carbonite/Kit and PhysX plugins during development
@@ -883,15 +911,12 @@ if(OVPHYSX_BIN_DIR)
     message(STATUS "OVPHYSX_BIN_DIR set to: ${OVPHYSX_BIN_DIR}")
 endif()
 
-# Store USD library path for later use in test executable RPATH
-set(USD_RUNTIME_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/_build/target-deps/usd/${OVPHYSX_RUNTIME_DEPS_CONFIG}/lib")
-
 # Platform-specific runtime path handling
 if(NOT WIN32)
     # Linux: Use RPATH for relocatable installations
     # $ORIGIN = directory containing the library at runtime
     set(ORIGIN_VAR "$ORIGIN")
-    set(_OVPHYSX_BUILD_RPATH_DIRS "${ORIGIN_VAR}" "${USD_LINK_DIR}")
+    set(_OVPHYSX_BUILD_RPATH_DIRS "${ORIGIN_VAR}")
     if(OVPHYSX_BIN_DIR)
         list(APPEND _OVPHYSX_BUILD_RPATH_DIRS "${OVPHYSX_BIN_DIR}")
     endif()
@@ -900,10 +925,10 @@ if(NOT WIN32)
     # The INSTALL_RPATH stays relocatable. BUILD_RPATH keeps the build tree
     # runnable without adding the packman Python runtime to the shipped package.
     set_target_properties(ovphysx PROPERTIES
-        INSTALL_RPATH "${ORIGIN_VAR}:${ORIGIN_VAR}/../plugins:${ORIGIN_VAR}/../plugins/gpu"
+        INSTALL_RPATH "${ORIGIN_VAR}:${ORIGIN_VAR}/../plugins"
         # For BUILD tree: $ORIGIN for internal sidecar (same dir), plus dep dirs
         BUILD_RPATH "${_OVPHYSX_BUILD_RPATH}"
-        # Don't add link-time library paths to RPATH (we want explicit control)
+        # Link-time library paths are kept out of RPATH. The list above is explicit.
         INSTALL_RPATH_USE_LINK_PATH FALSE
         # Force RPATH instead of RUNPATH
         LINK_FLAGS "-Wl,--disable-new-dtags"
@@ -918,15 +943,6 @@ else()
     # This is handled by install rules and runtime environment setup
 endif()
 
-# Copy config.toml alongside the built library (runtime loads it from the same directory).
-# In top-level builds this is handled by the install step; for add_subdirectory() consumers
-# the POST_BUILD copy ensures the file is present in the build tree.
-add_custom_command(TARGET ovphysx POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_BINARY_DIR}/config.toml"
-        "$<TARGET_FILE_DIR:ovphysx>/config.toml"
-)
-
 # Group headers for IDEs (optional)
 source_group(TREE ${OVPHYSX_PUBLIC_INCLUDE_DIR} FILES
     ${OVPHYSX_PUBLIC_INCLUDE_DIR}/ovphysx/ovphysx.h
@@ -937,7 +953,7 @@ source_group(TREE ${OVPHYSX_PUBLIC_INCLUDE_DIR} FILES
 )
 
 # Copy include folder to build directory.
-# Only add to ALL when top-level; as a subdirectory the ovphysx dependency suffices.
+# Only add to ALL when top-level. As a subdirectory the ovphysx dependency suffices.
 set(_COPY_HEADERS_ALL "")
 if(OVPHYSX_IS_TOP_LEVEL)
     set(_COPY_HEADERS_ALL ALL)
@@ -964,10 +980,19 @@ add_subdirectory(tests/c_unittests)
 # Opt-in benchmark suite. OFF by default: benchmarks are excluded from the
 # standard build/validate flow so noise never reaches `validate_all`.
 # Enable with `cmake -DOVPHYSX_BUILD_BENCHMARKS=ON ...` before configure.
-option(OVPHYSX_BUILD_BENCHMARKS "Build the ovphysx benchmark suite (opt-in)" OFF)
 if(OVPHYSX_BUILD_BENCHMARKS)
     message(STATUS "Benchmarks: ENABLED (will build ovphysx_benchmarks)")
     add_subdirectory(tests/benchmarks)
+
+    # Regenerate the BENCHMARK_SUMMARY.md catalogue once per build (into _build/generated). A
+    # custom target with no OUTPUT/BYPRODUCTS is always out of date, so it runs exactly once per
+    # build. It derives from the .cpp sources, not compiled artifacts, so it never gates the build.
+    add_custom_target(generate_benchmark_summary ALL
+        COMMAND ${CMAKE_COMMAND} -P "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_benchmark_summary.cmake"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        COMMENT "Generating C++ benchmark catalogue (BENCHMARK_SUMMARY.md)"
+        VERBATIM
+    )
 else()
     message(STATUS "Benchmarks: disabled (pass -DOVPHYSX_BUILD_BENCHMARKS=ON to enable)")
 endif()
@@ -1018,58 +1043,24 @@ install(DIRECTORY ${OVPHYSX_PUBLIC_INCLUDE_DIR}/
 
 # ovstage is not installed: no headers, library, runtime, or Python package.
 # It remains a required external dependency. Native SDK consumers provide the
-# matching OVStage native package; ovphysxConfig.cmake resolves it through
+# matching OVStage native package, which ovphysxConfig.cmake resolves through
 # find_dependency(ovstage).
 #
-# The notices stay: the package still redistributes the OmniClient and
-# omni.usd_resolver runtime staged from the ovstage package (see package_deps.py).
+# The notice stays because OVStage is the required application-supplied scene
+# population dependency represented by the installed companion target.
 set(_OVPHYSX_OVSTAGE_NOTICES "${OVSTAGE_DIR}/THIRD-PARTY-NOTICES.txt")
 install(FILES "${_OVPHYSX_OVSTAGE_NOTICES}"
     DESTINATION .
     RENAME ovstage-THIRD-PARTY-NOTICES.txt
 )
 
-# Install PhysX SDK headers (needed for physx pointer interop; BSD-3-Clause).
-# Match the PhysX source selected by the build: --devphysx installs the local
-# source-tree headers, while normal builds install the pulled Packman SDK headers.
-# In --devphysx the only acceptable source is the local source tree — silently
-# falling back to a Packman SDK copy would risk shipping headers that don't
-# match the libraries built from source.
-set(_OVPHYSX_PHYSX_INCLUDE_SOURCE "")
-if(OVRUNTIME_DEV_PHYSX)
-    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../physx/include")
-        set(_OVPHYSX_PHYSX_INCLUDE_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/../physx/include")
-    endif()
-elseif(DEFINED PHYSX_SDK_DIR AND EXISTS "${PHYSX_SDK_DIR}/include")
-    set(_OVPHYSX_PHYSX_INCLUDE_SOURCE "${PHYSX_SDK_DIR}/include")
-elseif(EXISTS "${OVRUNTIME_DIR}/_build/target-deps/physx/include")
-    set(_OVPHYSX_PHYSX_INCLUDE_SOURCE "${OVRUNTIME_DIR}/_build/target-deps/physx/include")
-endif()
-if(_OVPHYSX_PHYSX_INCLUDE_SOURCE)
-    install(DIRECTORY "${_OVPHYSX_PHYSX_INCLUDE_SOURCE}/"
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/physx
-        FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp" PATTERN "*.inl"
-    )
-elseif(OVRUNTIME_DEV_PHYSX)
-    message(FATAL_ERROR
-        "PhysX SDK headers not found for --devphysx install. "
-        "Expected ../physx/include from the selected local PhysX source tree.")
-else()
-    message(FATAL_ERROR
-        "PhysX SDK headers not found for non-devphysx install. "
-        "Expected PHYSX_SDK_DIR/include from the pulled Packman PhysX SDK.")
-endif()
-
-# Install config.toml (USD version requirements and schema dependencies)
-if(WIN32)
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/config.toml"
-        DESTINATION ${CMAKE_INSTALL_BINDIR}
-    )
-else()
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/config.toml"
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}
+# Install the same PhysX SDK headers selected above for pointer interop
+# (Apache-2.0). The selection is shared with c_unittests so neither validation
+# nor packaging can silently use headers from a different PhysX dependency.
+install(DIRECTORY "${_OVPHYSX_PHYSX_INCLUDE_SOURCE}/"
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/physx
+    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp" PATTERN "*.inl"
 )
-endif()
 
 # Install generated version.h (overwrites the .in template if present)
 install(FILES "${OVPHYSX_GENERATED_INCLUDE_DIR}/ovphysx/version.h"
@@ -1156,6 +1147,14 @@ else()
 endif()
 set(_SCRIPT_RUNTIME_DEPS_ARG "-DOVPHYSX_USE_RELEASE_RUNTIME_DEPS=${OVPHYSX_USE_RELEASE_RUNTIME_DEPS}")
 
+# The source-link sample runs a nested configure from CTest/custom-target
+# processes that may not inherit the Packman compiler environment. Serialize
+# the effective outer generator/toolchain once and pass only the generated file
+# path through the harness command line.
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/SourceLinkContext.cmake")
+set(_SOURCE_LINK_CONTEXT_FILE "${CMAKE_CURRENT_BINARY_DIR}/source_link_context.cmake")
+ovphysx_write_source_link_context("${_SOURCE_LINK_CONTEXT_FILE}")
+
 # --- install_sdk: assemble _install/ ---
 add_custom_target(install_sdk
     COMMAND ${CMAKE_COMMAND} ${_SCRIPT_BUILD_TYPE_ARG} ${_SCRIPT_RUNTIME_DEPS_ARG}
@@ -1208,10 +1207,13 @@ add_dependencies(test_cpp_samples install_sdk)
 
 add_custom_target(test_source_link
     COMMAND ${CMAKE_COMMAND} ${_SCRIPT_BUILD_TYPE_ARG}
+        "-DOVPHYSX_DEV_PHYSX=${OVRUNTIME_DEV_PHYSX}"
+        "-DSOURCE_LINK_CONTEXT_FILE=${_SOURCE_LINK_CONTEXT_FILE}"
         -P "${CMAKE_CURRENT_SOURCE_DIR}/scripts/test_source_link.cmake"
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     COMMENT "Building and running source-link sample (add_subdirectory workflow)"
     USES_TERMINAL
+    VERBATIM
 )
 # install_sdk provides the flattened plugins/ directory needed at runtime.
 add_dependencies(test_source_link install_sdk)
@@ -1270,6 +1272,22 @@ add_custom_target(test_benchmarks_python
 )
 add_dependencies(test_benchmarks_python install_sdk)
 
+# Producer contract for the hidden L1B (Authoring/WriteScaling) benchmark
+# inventory: checks that the executable's registered row set matches
+# tests/benchmarks/tests/producer_inventory.json exactly. See
+# scripts/test_benchmark_contract.cmake.
+add_custom_target(test_benchmark_contract
+    COMMAND ${CMAKE_COMMAND} ${_SCRIPT_BUILD_TYPE_ARG}
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/scripts/test_benchmark_contract.cmake"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    COMMENT "Running L1B benchmark inventory contract"
+    USES_TERMINAL
+)
+add_dependencies(test_benchmark_contract install_sdk)
+if(OVPHYSX_BUILD_BENCHMARKS)
+    add_dependencies(test_benchmark_contract ovphysx_benchmarks)
+endif()
+
 # --- CTest registration ---
 # Each test invokes the corresponding cmake -P script so that CTest can
 # discover and run them via labels (ctest -L runtime, ctest -L wheel).
@@ -1294,6 +1312,8 @@ set_tests_properties(cpp-samples PROPERTIES
 
 add_test(NAME source-link
     COMMAND ${CMAKE_COMMAND} ${_SCRIPT_BUILD_TYPE_ARG}
+        "-DOVPHYSX_DEV_PHYSX=${OVRUNTIME_DEV_PHYSX}"
+        "-DSOURCE_LINK_CONTEXT_FILE=${_SOURCE_LINK_CONTEXT_FILE}"
         -P "${CMAKE_CURRENT_SOURCE_DIR}/scripts/test_source_link.cmake"
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 )
@@ -1329,10 +1349,8 @@ set_tests_properties(python-samples PROPERTIES
     LABELS "python-samples;wheel"
 )
 
-# Benchmarks: registered with the `benchmarks` label only.
-# `validate_all` runs ctest with no label filter, so benchmark tests must
-# either be opt-in via label or skipped here entirely. We use opt-in:
-# `ctest -L benchmarks` runs them; default ctest does not.
+# Benchmarks: registered with the `benchmarks` label only, so `ctest -L benchmarks`
+# runs them and `validate_all` excludes them via `-LE benchmarks`.
 add_test(NAME benchmarks-cpp
     COMMAND ${CMAKE_COMMAND} ${_SCRIPT_BUILD_TYPE_ARG}
         -P "${CMAKE_CURRENT_SOURCE_DIR}/scripts/test_benchmarks_cpp.cmake"
@@ -1349,6 +1367,15 @@ add_test(NAME benchmarks-python
 )
 set_tests_properties(benchmarks-python PROPERTIES
     LABELS "benchmarks-python;benchmarks"
+)
+
+add_test(NAME benchmark-contract
+    COMMAND ${CMAKE_COMMAND} ${_SCRIPT_BUILD_TYPE_ARG}
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/scripts/test_benchmark_contract.cmake"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+set_tests_properties(benchmark-contract PROPERTIES
+    LABELS "benchmark-contract;benchmarks"
 )
 
 # --- Meta-targets ---
@@ -1402,7 +1429,6 @@ endif() # OVPHYSX_IS_TOP_LEVEL
 # Export paths via CACHE INTERNAL for the function below (child scope is not
 # visible to the parent project that calls the function).
 set(_OVPHYSX_OUTPUT_DIR "${OUTPUT_DIR}" CACHE INTERNAL "")
-set(_OVPHYSX_USD_LINK_DIR "${USD_LINK_DIR}" CACHE INTERNAL "")
 get_filename_component(_OVPHYSX_CONFIGURED_OVSTAGE_DIR
     "${OVSTAGE_DIR}" REALPATH BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 get_filename_component(_OVPHYSX_CONFIGURED_OVSTAGE_RUNTIME_DIR
@@ -1420,19 +1446,18 @@ unset(_OVPHYSX_CONFIGURED_OVSTAGE_RUNTIME_DIR)
 
 function(ovphysx_setup_source_link_runtime target)
     # Set up runtime library discovery for executables using ovphysx via
-    # add_subdirectory(). On Linux this adds RPATH entries; on Windows it
+    # add_subdirectory(). On Linux this adds RPATH entries. On Windows it
     # copies core DLLs next to the executable.
     #
-    # NOTE: This handles library *loading* (dlopen of libovphysx, internal sidecar,
-    # USD). Runtime config/schema/plugin *discovery* is derived from the
-    # ovphysx library directory, or from OVPHYSX_LIB when set. For source-link
-    # runs that need the installed SDK runtime layout, set OVPHYSX_LIB to the
-    # installed ovphysx library. See docs/local_development.md.
+    # NOTE: This handles library *loading* (dlopen of libovphysx, the internal
+    # sidecar, and ovstage). Runtime schema/plugin *discovery* is derived from
+    # the ovphysx library directory, or from OVPHYSX_LIB when set. For
+    # source-link runs that need the installed SDK runtime layout, set
+    # OVPHYSX_LIB to the installed ovphysx library. See docs/local_development.md.
 
     if(UNIX AND NOT APPLE)
         set_property(TARGET ${target} APPEND PROPERTY BUILD_RPATH
             "${_OVPHYSX_OUTPUT_DIR}"
-            "${_OVPHYSX_USD_LINK_DIR}"
             "${_OVPHYSX_OVSTAGE_LIBRARY_DIR}")
     elseif(WIN32)
         foreach(_rt_target ovphysx ovphysx_internal)

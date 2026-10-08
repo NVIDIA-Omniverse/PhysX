@@ -1,5 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-SIM-ACTIVEACTOR-001
+ * @covers AC-1 AC-3
+ */
 
 #pragma once
 
@@ -7,11 +12,8 @@
 #    define __forceinline __attribute__((always_inline))
 #endif
 
-#include "UsdPCH.h"
-
 #include "Internal.h"
 #include "InternalVehicle.h"
-#include "InternalVoxelMap.h"
 #include "InternalActor.h"
 
 #include <MeshCache.h>
@@ -33,6 +35,8 @@
 #include <common/utilities/Utilities.h>
 
 
+#include <string>
+#include <unordered_set>
 #include <vector>
 
 namespace omni
@@ -40,6 +44,11 @@ namespace omni
 namespace physx
 {
 class PhysXScene;
+
+namespace usdparser
+{
+class AttachedStage;
+}
 
 namespace deformables
 {
@@ -51,7 +60,7 @@ namespace internal
 {
 
 const uint32_t kInvalidUint32_t = 0xFFFFFFFF;
-using CctMap = std::unordered_map<PXR_NS::SdfPath, InternalCct*, PXR_NS::SdfPath::Hash>;
+using CctMap = std::unordered_map<omni::physics::parse::ObjectKey, InternalCct*, omni::physics::parse::ObjectKey::Hash>;
 
 class InternalMimicJoint;
 
@@ -143,6 +152,23 @@ public:
     PhysXScene* mPhysxScene;
 };
 
+// Axis instance-name text for PhysxJointStateAPI's multi-apply "state:<axis>:..."
+// properties. Shared so InternalScene.cpp's per-step updateJointState and
+// InternalPhysXDatabase.cpp's initial-state restore agree on one definition.
+const char* jointStateAxisName(usdparser::ObjectType jointType, ::physx::PxArticulationAxis::Enum physxAxis);
+
+// InternalJoint::InternalJointState's usdToken member type. Pinned to std::string: this header
+// is included directly by OvruntimeUnitTests, so the layout must match in every TU.
+using JointUsdTokenHandle = std::string;
+static_assert(sizeof(JointUsdTokenHandle) == sizeof(std::string),
+              "JointUsdTokenHandle must stay ABI-identical to std::string");
+
+// InternalTendonAxis/InternalTendonAttachment's instanceName, pinned to a single type for
+// the same cross-target layout reason as JointUsdTokenHandle above.
+using TendonInstanceNameHandle = std::string;
+static_assert(sizeof(TendonInstanceNameHandle) == sizeof(std::string),
+              "TendonInstanceNameHandle must stay ABI-identical to std::string");
+
 class InternalJoint : public Allocateable
 {
 public:
@@ -177,16 +203,19 @@ public:
 
     struct InternalJointState
     {
-        PXR_NS::TfToken usdToken;
+        // usdToken is only ever written by createArticulationJoint; it stores a plain
+        // axis-name literal ("angular"/"linear"/"rotX"/...). Nothing reads it currently,
+        // but the member must stay declared unconditionally -- see JointUsdTokenHandle's
+        // own comment for the cross-target layout reason.
+        JointUsdTokenHandle usdToken;
         bool enabled = false;
         bool convertToDegrees = false;
         ::physx::PxArticulationAxis::Enum physxAxis = ::physx::PxArticulationAxis::eTWIST;
         InternalJointInitialState initialState;
 
-        PXR_NS::PhysxSchemaJointStateAPI getCachedJointStateAPI(PXR_NS::UsdPrim jointPrim, usdparser::ObjectType jointType);
-
-    private:
-        PXR_NS::PhysxSchemaJointStateAPI cachedJointStateAPI;
+        // Position/Velocity initial-state restore goes through IPhysicsDataWrite::writeData
+        // rather than a cached PhysxSchemaJointStateAPI, so this struct needs no non-trivial
+        // copy/assign/dtor and no per-instance cache member.
     };
     InternalJointState mJointStates[6];
 
@@ -222,10 +251,12 @@ public:
     void updateArticulationJointLimitHigh(::physx::PxArticulationJointReducedCoordinate* joint,
                                           ::physx::PxArticulationAxis::Enum axis,
                                           float usdHighLimit) const;
+    // jointKey is diagnostic-logging-only: resolved to text via the active AttachedStage
+    // (never null, empty string on miss/no attach -- AttachedStage::textFor's contract).
     void setArticulationDrivePositionTarget(::physx::PxArticulationJointReducedCoordinate* joint,
                                             ::physx::PxArticulationAxis::Enum axis,
                                             float positionTarget,
-                                            const PXR_NS::SdfPath jointKey = PXR_NS::SdfPath()) const;
+                                            omni::physics::parse::ObjectKey jointKey = omni::physics::parse::ObjectKey{}) const;
     void setArticulationDriveVelocityTarget(::physx::PxArticulationJointReducedCoordinate* joint,
                                             ::physx::PxArticulationAxis::Enum axis,
                                             float velocityTarget) const;
@@ -241,45 +272,35 @@ public:
                                        ::physx::PxArticulationAxis::Enum axis) const;
 };
 
+// instanceName is unconditionally TendonInstanceNameHandle (std::string) for the same
+// cross-TU layout reason as InternalJointState::usdToken above.
 class InternalTendonAxis : public Allocateable
 {
 public:
-    InternalTendonAxis() : instanceName()
-    {
-    }
-
+    InternalTendonAxis() = default;
     ~InternalTendonAxis() = default;
 
-    PXR_NS::TfToken instanceName;
+    TendonInstanceNameHandle instanceName;
 };
 
 class InternalTendonAttachment : public Allocateable
 {
 public:
     InternalTendonAttachment()
-        : instanceName(),
-          globalPos(0.f),
+        : globalPos(0.f),
           initLength(-FLT_MAX)
     {
     }
 
     ~InternalTendonAttachment() = default;
 
-    PXR_NS::TfToken instanceName;
+    TendonInstanceNameHandle instanceName;
     ::physx::PxVec3 globalPos;
     float initLength;
 };
 
-struct InternalInfiniteVoxelMap : public Allocateable
-{
-    InternalInfiniteVoxelMap(::physx::PxScene* scene,
-                             ::PXR_NS::UsdStageRefPtr stage,
-                             const usdparser::InfiniteVoxelMapDesc& desc)
-        : mInfiniteVoxelMap(scene, stage, desc){};
-
-    virtual ~InternalInfiniteVoxelMap() = default;
-    InfiniteVoxelMap mInfiniteVoxelMap;
-};
+// The Mineways voxel map (InfiniteVoxelMapAPI) is unsupported in the USD-free runtime;
+// there is no internal record type for it.
 
 class InternalScene : public Allocateable
 {
@@ -307,6 +328,27 @@ public:
     ::physx::PxScene* getScene() const
     {
         return mScene;
+    }
+
+    void trackReleasedActiveActor(const ::physx::PxActor* actor)
+    {
+        if (actor)
+            mReleasedActiveActors.insert(actor);
+    }
+
+    bool hasReleasedActiveActors() const
+    {
+        return !mReleasedActiveActors.empty();
+    }
+
+    bool isReleasedActiveActor(const ::physx::PxActor* actor) const
+    {
+        return mReleasedActiveActors.find(actor) != mReleasedActiveActors.end();
+    }
+
+    void clearReleasedActiveActors()
+    {
+        mReleasedActiveActors.clear();
     }
 
     uint32_t clampPosIterationCount(uint32_t inCount) const
@@ -361,7 +403,8 @@ public:
         return mVehicleContext;
     }
 
-    usdparser::ObjectId addVehicle(InternalVehicle&, const uint32_t wheelCount, const PXR_NS::UsdPrim&, const bool enabled);
+    usdparser::ObjectId addVehicle(InternalVehicle&, const uint32_t wheelCount,
+                                   omni::physics::parse::ObjectKey vehicleKey, const bool enabled);
     void removeVehicle(InternalVehicle&);
     void setVehicleEnabledState(InternalVehicle&, const bool enabled);
     __forceinline bool isVehicleEnabled(const InternalVehicle& internalVehicle) const
@@ -384,6 +427,16 @@ public:
     CUstream getDeformableCopyStream();
     void syncDeformableCopyStream(::physx::PxCudaContextManager* cudaContextManager);
 
+    // actors
+    // mActors owns the InternalActor entries of this scene. Membership has to stay in sync with
+    // InternalActor::mPhysXScene: the removal paths locate an actor through mPhysXScene, so an entry
+    // left behind in another scene's list becomes a dangling pointer once the actor is deleted
+    // (NVBugs 6504495).
+    void addActor(InternalActor& actor);
+
+    // Removes the actor from mActors. Returns false if it was not registered with this scene.
+    bool removeActor(const InternalActor& actor);
+
     // mimic joints
     void addMimicJoint(InternalMimicJoint&);
     void removeMimicJoint(InternalMimicJoint&);
@@ -396,7 +449,11 @@ private:
     void setVehicleAtPosition(const uint32_t index, InternalVehicle&);
     void moveVehicleToBack(const uint32_t sourceIndex);
     void moveVehicleToPosition(const uint32_t sourceIndex, const uint32_t targetIndex);
-    void updateJointState(PXR_NS::UsdStageWeakPtr stage, const InternalDatabase::Record& record, bool updateVelocitiesToUsd);
+    // Publishes InternalJointState's per-axis PhysxJointStateAPI Position/Velocity values
+    // through IPhysicsDataWrite::writeData (attribute names built as literal
+    // "state:<axis>:physics:position"/"...:velocity" strings, matching the schema's
+    // propertyNamespacePrefix). A no-op when there is no write sink.
+    void updateJointState(usdparser::AttachedStage* attachedStage, const InternalDatabase::Record& record, bool updateVelocitiesToUsd);
     void addMimicJointMapEntries(InternalMimicJoint&);
     void removeMimicJointMapEntries(InternalMimicJoint&);
     void removeMimicJointMapEntry(const ::physx::PxArticulationJointReducedCoordinate*, InternalMimicJoint*);
@@ -427,6 +484,12 @@ public:
 
     uint32_t mEnabledVehicleCount;
 
+    // Bumped whenever what is enumerable from mVehicles changes: membership, order, or any vehicle's
+    // set of live wheel attachments. None of those touches the object database, so the object-lifetime
+    // epoch that validates every other such cache does not move for them, and a consumer caching rows
+    // derived from this array has no other way to learn its rows were retired.
+    uint64_t mVehicleSetEpoch;
+
     ::physx::PxVec3 mGravityDirection;
     float mGravityMagnitude;
 
@@ -437,6 +500,7 @@ public:
 private:
     InternalVehicleContext mVehicleContext;
     ::physx::PxScene* mScene;
+    std::unordered_set<const ::physx::PxActor*> mReleasedActiveActors;
 
     typedef std::unordered_set<InternalMimicJoint*> MimicJointSet;
     MimicJointSet mMimicJointSet;

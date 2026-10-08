@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #include <gtest/gtest.h>
 
@@ -13,7 +13,7 @@ TEST(CpuFeatures, GlobalInitializeSucceededOnAvxHost)
 {
     // PhysXShutdownEnvironment already called ovphysx_initialize(). If AVX were
     // missing, the process would have exited in that global setup. Do not call
-    // ovphysx_shutdown() here; that would break later tests in the full suite.
+    // ovphysx_shutdown() here. That would break later tests in the full suite.
     EXPECT_EQ(ovphysx_initialize().status, OVPHYSX_API_ERROR);
     ovphysx_string_t err = ovphysx_get_last_error();
     ASSERT_NE(err.ptr, nullptr);

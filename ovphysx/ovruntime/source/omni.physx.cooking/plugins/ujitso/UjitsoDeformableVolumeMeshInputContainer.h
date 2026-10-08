@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
@@ -15,12 +15,12 @@ namespace physx
 // It is not guaranteed to be valid until fill() is called
 struct PhysicsDeformableVolumeMeshBuildData
 {
-    PXR_NS::VtArray<carb::Float3> simPoints;
-    PXR_NS::VtArray<carb::Float3> simBindPoints;
-    PXR_NS::VtArray<carb::Int4> simIndices;
-    PXR_NS::VtArray<carb::Float3> collBindPointsInSim;
-    PXR_NS::VtArray<carb::Int4> collIndices;
-    PXR_NS::VtArray<carb::Int3> collSurfaceIndices;
+    UninitVector<carb::Float3> simPoints;
+    UninitVector<carb::Float3> simBindPoints;
+    UninitVector<carb::Int4> simIndices;
+    UninitVector<carb::Float3> collBindPointsInSim;
+    UninitVector<carb::Int4> collIndices;
+    UninitVector<carb::Int3> collSurfaceIndices;
 };
 
 // Container class for use with ujitso distribution
@@ -45,6 +45,10 @@ public:
 
 private:
     void copyOrComputeHash();
+
+    // Copy the request's volume mesh view into m_buildData. Called either from fill() or, for an
+    // asynchronous mesh-view request, from the constructor -- see shouldSnapshotInputNow().
+    void copyInputViews();
 
     template <bool readOnly, typename SerializerT>
     void serialize(SerializerT& serializer);

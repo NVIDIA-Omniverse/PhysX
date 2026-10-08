@@ -1,17 +1,18 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+// DEPRECATED (tensor-binding-deprecation): the tensor_read/write ops measure the binding. They retire with it.
 
 // IsaacLab-style Anymal benchmarks. Quadruped articulation per env, cloned
 // via clone() into N envs. Four ops per size: step / reset / tensor_read /
 // tensor_write. All GPU.
 //
-// Asset state (OMPE-94463): the real Anymal asset is not currently
-// published to packman. Until it is, these benches skip cleanly via
-// isValid() returning false when the asset directory is absent. The
-// expected layout when the asset lands is:
+// Asset state (OMPE-94463): the Anymal asset is not published to packman and
+// is fetched separately. These benches skip via isValid() returning false when
+// the asset directory is absent. The expected layout is
 //     tests/benchmarks/data/anymal/anymal.usd
-// with the articulation rooted at /World/envs/env0/anymal — see
-// docs/internal/benchmark_suite_notes.md item 14 for follow-up details.
+// with the articulation rooted at /World/envs/env0/anymal. See
+// docs/internal/benchmark_suite_notes.md item 14.
 
 #include "framework/UsdPCH.h"
 
@@ -45,8 +46,8 @@ inline bool anymalAssetPresent()
 {
     // Gate on BOTH the root articulation USD and the meshes it references.
     // Without instanceable_meshes.usd, PhysX falls back to bounding-sphere
-    // collision and bench numbers are skewed — skip cleanly on partial
-    // fetch instead of running with the wrong measurement.
+    // collision and the numbers are skewed, so a partial fetch skips instead
+    // of running with the wrong measurement.
     const std::string base =
         BmGlobals::getInstance().getDataFolder() + "/../benchmarks/data/anymal";
     const std::string root = base + "/anymal.usd";
@@ -120,9 +121,9 @@ public:
 
     uint32_t getNbSteps() const override
     {
-        // Anymal is much heavier per env than cartpole — smaller budgets.
-        // Reset/Clone re-load+re-clone per timed step (see preStep) so
-        // fewer steps at large N to bound wall-time.
+        // Anymal is much heavier per env than cartpole, so the budgets are
+        // smaller. Reset/Clone re-load and re-clone per timed step (see
+        // preStep), so large N gets fewer steps to bound wall-time.
         if (mOp == Op::Step) return mEnvCount >= 8192 ? 5 : 10;
         if (mOp == Op::Reset || mOp == Op::Clone) return mEnvCount >= 8192 ? 2 : 5;
         return 30;
@@ -131,23 +132,23 @@ public:
 
     void startRun() override
     {
-        // Cache PhysX* + tensor view once so step() doesn't pay for a
+        // Cache PhysX* and the tensor view once so step() does not pay for a
         // global lookup or rebuild per measured iteration.
         mPhysX = BmGlobals::getInstance().getPhysX();
         if (!mPhysX) return;
 
-        // Build the target paths + grid transforms once per run for any
-        // bench that calls clone() — these depend only on mEnvCount (const
-        // for the bench instance) and at N=8192 allocating them inside the
-        // timed Op::Clone step() would dwarf the actual clone() cost.
+        // Build the target paths and grid transforms once per run for any
+        // bench that calls clone(). They depend only on mEnvCount, and at
+        // N=8192 allocating them inside the timed Op::Clone step() would
+        // dwarf the clone() cost.
         buildCloneInputs();
 
-        // For Op::Reset / Op::Clone, load+clone is done per-step in
+        // For Op::Reset / Op::Clone, load and clone happen per step in
         // preStep() so each timed iteration acts on a fresh scene.
         if (mOp == Op::Reset) return;
         if (mOp == Op::Clone)
         {
-            // Clone bench: load the wrapper once; clone happens per-step.
+            // Clone bench: load the wrapper once. The clone happens per step.
             loadOnly();
             return;
         }
@@ -248,7 +249,7 @@ private:
 
     void buildCloneInputs()
     {
-        // Deterministic for fixed mEnvCount — built once per run, reused by
+        // Deterministic for fixed mEnvCount. Built once per run, reused by
         // every cloneOnly() call inside the timed step() loop.
         if (mTargets.size() == mEnvCount) return;
         mTargets.clear();
@@ -272,8 +273,8 @@ private:
 
     void cloneOnly()
     {
-        // Hot path for Op::Clone — mTargets / mTransforms were built once
-        // in startRun() via buildCloneInputs(), so this is just the timed
+        // Hot path for Op::Clone. mTargets / mTransforms were built once in
+        // startRun() via buildCloneInputs(), so this is only the timed
         // clone() call plus its waitAll.
         ovphysx_api_status_t st = mPhysX->clone("/World/envs/template",
                                                 mTargets, mTransforms.data());
@@ -289,10 +290,10 @@ private:
         ovphysx::PhysX* physx = mPhysX;
         if (!physx) return;
 
-        // Load the wrapper USDA (committed) which references the downloaded
+        // Load the committed wrapper USDA, which references the downloaded
         // anymal.usd under /World/envs/template/anymal. The wrapper exists
-        // so we can clone /World/envs/template into env1..envN and have the
-        // binding pattern /World/envs/env*/anymal/* match exactly N envs.
+        // so that /World/envs/template can be cloned into env1..envN and the
+        // binding pattern /World/envs/env*/anymal/* matches exactly N envs.
         const std::string path =
             BmGlobals::getInstance().getDataFolder() + "/../benchmarks/data/anymal/anymal_envs.usda";
         if (!benchmarkLoadUsdWithOvstage(physx, path, mStageAttachment))
@@ -301,10 +302,10 @@ private:
             return;
         }
 
-        // Reuse the cached targets/transforms built once in startRun().
-        // Wrapper places the source under /World/envs/template/anymal so the
+        // Reuse the cached targets/transforms built once in startRun(). The
+        // wrapper places the source under /World/envs/template/anymal so the
         // binding pattern /World/envs/env*/anymal/* matches the N clones
-        // (env1..envN), not the source — exactly N envs, not N+1.
+        // (env1..envN) and not the source: exactly N envs, not N+1.
         buildCloneInputs();
         ovphysx_api_status_t st = physx->clone("/World/envs/template", mTargets, mTransforms.data());
         if (st != OVPHYSX_API_SUCCESS)
@@ -347,8 +348,8 @@ DEFINE_LAB_ANYMAL(tensor_read,  Op::TensorRead,  1024)
 DEFINE_LAB_ANYMAL(tensor_read,  Op::TensorRead,  8192)
 DEFINE_LAB_ANYMAL(tensor_write, Op::TensorWrite, 1024)
 DEFINE_LAB_ANYMAL(tensor_write, Op::TensorWrite, 8192)
-// Clone benchmark -- measures cost of clone() itself. Cloning is on the hot
-// path for IsaacLab-style RL setup, worth measuring directly.
+// Clone benchmark: the cost of clone() itself. Cloning is on the hot path for
+// IsaacLab-style RL setup.
 DEFINE_LAB_ANYMAL(clone,        Op::Clone,       1024)
 DEFINE_LAB_ANYMAL(clone,        Op::Clone,       8192)
 

@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
 
 #include "UjitsoSurfaceDeformableBodyInputContainer.h"
 
@@ -19,6 +18,12 @@ PhysicsSurfaceDeformableBodyInputContainer::PhysicsSurfaceDeformableBodyInputCon
     CARB_PROFILE_ZONE(0, "PhysicsSurfaceDeformableBodyInputContainer::PhysicsSurfaceDeformableBodyInputContainer");
 
     copyOrComputeHash();
+
+    if (shouldSnapshotInputNow())
+    {
+        copyInputViews();
+        m_inputSnapshotted = true;
+    }
 }
 
 // This is only called if ujitso decides that the derived data needs to be rebuilt
@@ -26,30 +31,23 @@ void PhysicsSurfaceDeformableBodyInputContainer::fill()
 {
     CARB_PROFILE_ZONE(0, "PhysicsSurfaceDeformableBodyInputContainer::fill");
 
-    // we may have to reload the prim data here based on the dataInputMode
-    CookingStageAndPrim stageAndPrim;
-    switch (m_request.dataInputMode)
-    {
-    case PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_MESH_VIEW:
-        // the data is already loaded, nothing needs to be done in this case
-        break;
+    if (m_inputSnapshotted)
+        return; // the constructor already copied the views, while the caller's memory was alive
 
-    case PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_ID:
-        // the data needs to be reloaded from the prim
-        if (!(ICookingComputeService::getStageAndPrim(m_result, m_request, stageAndPrim) &&
-              ICookingComputeService::fillMeshView(m_result, m_request, stageAndPrim)))
-        {
-            return;
-        }
-        break;
-
-    default:
-        CARB_LOG_ERROR("Unexpected data input mode: %u", m_request.dataInputMode);
-        return;
-    }
+    // Every request is mesh-view mode now (eINPUT_MODE_FROM_PRIM_ID removed, REQ-COOK-SOURCE-001).
+    // This only runs for a synchronous cook (an async one already snapshotted above and returned
+    // at the m_inputSnapshotted check), so the caller's buffers are still alive here -- the data
+    // is already loaded, nothing to reload.
 
     // data should be loaded at this point, copy it over to the buildData output
-    copyVtArrayData(m_buildData.srcPointsInSim, m_request.surfaceDeformableBodyView.srcPointsInSim);
+    copyInputViews();
+}
+
+void PhysicsSurfaceDeformableBodyInputContainer::copyInputViews()
+{
+    CARB_PROFILE_ZONE(0, "PhysicsSurfaceDeformableBodyInputContainer::copyInputViews");
+
+    copyVectorData(m_buildData.srcPointsInSim, m_request.surfaceDeformableBodyView.srcPointsInSim);
 }
 
 // For now, we simply serialize bytes over the wire, but there's potential for compression here
@@ -64,7 +62,7 @@ void PhysicsSurfaceDeformableBodyInputContainer::serialize(SerializerT& serializ
     serializer.serialize(readOnly, version);
 
     // serialize the heavy array data
-    serializeVtArray<readOnly>(m_buildData.srcPointsInSim, serializer);
+    serializeVector<readOnly>(m_buildData.srcPointsInSim, serializer);
 }
 
 void PhysicsSurfaceDeformableBodyInputContainer::read(carb::ujitso::IReader& reader)

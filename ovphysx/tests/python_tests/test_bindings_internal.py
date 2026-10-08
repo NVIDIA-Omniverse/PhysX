@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """Tests for internal _bindings module.
 
@@ -23,6 +23,8 @@ def _make_fake_ovstage_runtime(tmp_path, monkeypatch, bindings):
     plugins_dir.mkdir(parents=True)
     package_file = package_dir / "__init__.py"
     package_file.write_text("", encoding="utf-8")
+    # ovstage's own dependency closure (its namespaced USD monolith, TBB, ...)
+    # lives beside it. ovphysx must not preload any of it, only libovstage.
     usd_path = plugins_dir / "libov_25.11usd_ms.so"
     ovstage_path = package_dir / "bin" / "libovstage.so"
     usd_path.write_bytes(b"fake usd runtime")
@@ -35,46 +37,34 @@ def _make_fake_ovstage_runtime(tmp_path, monkeypatch, bindings):
 
 
 @pytest.mark.skipif(sys.platform != "linux", reason="RTLD_NOLOAD regression is Linux-only")
-def test_preload_ovstage_runtime_reuses_already_loaded_dependencies(monkeypatch, tmp_path):
+def test_preload_ovstage_runtime_reuses_already_loaded_library(monkeypatch, tmp_path):
     from ovphysx import _bindings
 
-    usd_path, ovstage_path = _make_fake_ovstage_runtime(tmp_path, monkeypatch, _bindings)
-    usd_handle = object()
+    _usd_path, ovstage_path = _make_fake_ovstage_runtime(tmp_path, monkeypatch, _bindings)
     ovstage_handle = object()
-    handles_by_name = {
-        usd_path.name: usd_handle,
-        ovstage_path.name: ovstage_handle,
-    }
     calls = []
 
     def fake_cdll(path, mode):
         path = os.fspath(path)
         calls.append((path, mode))
-        return handles_by_name[os.path.basename(path)]
+        assert os.path.basename(path) == ovstage_path.name, f"ovphysx must only preload libovstage, got {path}"
+        return ovstage_handle
 
     monkeypatch.setattr(_bindings.ctypes, "CDLL", fake_cdll)
 
     _bindings._preload_ovstage_runtime_deps()
 
     probe_mode = os.RTLD_NOW | os.RTLD_NOLOAD | os.RTLD_GLOBAL
-    assert calls == [
-        (usd_path.name, probe_mode),
-        (ovstage_path.name, probe_mode),
-    ]
-    assert _bindings._runtime_library_handles == [usd_handle, ovstage_handle]
+    assert calls == [(ovstage_path.name, probe_mode)]
+    assert _bindings._runtime_library_handles == [ovstage_handle]
 
 
 @pytest.mark.skipif(sys.platform != "linux", reason="RTLD_NOLOAD regression is Linux-only")
 def test_preload_ovstage_runtime_falls_back_after_soname_probe(monkeypatch, tmp_path):
     from ovphysx import _bindings
 
-    usd_path, ovstage_path = _make_fake_ovstage_runtime(tmp_path, monkeypatch, _bindings)
-    usd_handle = object()
+    _usd_path, ovstage_path = _make_fake_ovstage_runtime(tmp_path, monkeypatch, _bindings)
     ovstage_handle = object()
-    handles_by_path = {
-        str(usd_path): usd_handle,
-        str(ovstage_path): ovstage_handle,
-    }
     calls = []
 
     def fake_cdll(path, mode):
@@ -82,7 +72,8 @@ def test_preload_ovstage_runtime_falls_back_after_soname_probe(monkeypatch, tmp_
         calls.append((path, mode))
         if not os.path.isabs(path):
             raise OSError(f"{path} is not loaded")
-        return handles_by_path[path]
+        assert path == str(ovstage_path), f"ovphysx must only preload libovstage, got {path}"
+        return ovstage_handle
 
     monkeypatch.setattr(_bindings.ctypes, "CDLL", fake_cdll)
 
@@ -90,12 +81,10 @@ def test_preload_ovstage_runtime_falls_back_after_soname_probe(monkeypatch, tmp_
 
     probe_mode = os.RTLD_NOW | os.RTLD_NOLOAD | os.RTLD_GLOBAL
     assert calls == [
-        (usd_path.name, probe_mode),
-        (str(usd_path), os.RTLD_GLOBAL),
         (ovstage_path.name, probe_mode),
         (str(ovstage_path), os.RTLD_GLOBAL),
     ]
-    assert _bindings._runtime_library_handles == [usd_handle, ovstage_handle]
+    assert _bindings._runtime_library_handles == [ovstage_handle]
 
 
 def test_platform_lib_names():

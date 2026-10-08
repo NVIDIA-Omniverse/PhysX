@@ -1,28 +1,27 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-// End-to-end debug-render EMISSION tests: load a real dynamics scene, step the simulation,
+// End-to-end debug-render emission tests: load a real dynamics scene, step the simulation,
 // and verify that each drawable PhysX visualization parameter exports render-buffer
-// primitives. This complements test_debug_render.cpp (which covers the C-API contract on a
-// bare, stage-less instance -- validation, cached getters, no-stage errors). Here we attach
-// a stage and step, so we exercise the full pipeline: set_parameter -> eVISUALIZATION flags
-// -> NpScene::visualize() -> getRenderBuffer -> the ovphysx get_points/lines/triangles.
+// primitives. test_debug_render.cpp covers the C-API contract on a bare, stage-less
+// instance. Here a stage is attached and stepped, so the full pipeline runs from
+// set_parameter through the eVISUALIZATION flags, NpScene::visualize() and
+// getRenderBuffer to the ovphysx get_points/lines/triangles.
 //
-// There is no viewport in the test process, so the omni.physx fix that clamps an unset
-// viewport gizmo scale to 1.0 is what makes eSCALE non-zero and lets viz emit at all.
+// There is no viewport in the test process, so omni.physx clamps an unset viewport gizmo
+// scale to 1.0. That is what makes eSCALE non-zero and lets viz emit at all.
 //
-// NOT every one of the 27 parameters can export in a single stock CPU scene: some need
+// Not every one of the 27 parameters can export in a single stock CPU scene. Some need
 // scene features the falling-boxes scene lacks (joints/articulations, SDF colliders, an MBP
-// broadphase, a set culling box). The DebugRenderE2E suite asserts the strong baseline that
-// MUST export for a dynamic rigid-body scene plus dedicated scenes per feature, and prints
-// per-parameter matrices so any regression is caught and any conditional non-emitter is
-// visible rather than silently skipped.
+// broadphase, a set culling box). The DebugRenderE2E suite asserts the baseline that must
+// export for a dynamic rigid-body scene plus dedicated scenes per feature, and prints
+// per-parameter matrices so a conditional non-emitter is visible rather than silently skipped.
 //
 // Two parameters cannot emit at all and are deliberately not asserted:
 //  - MBP_REGIONS: implemented in the SDK (NpDebugViz), but MBP broadphase regions cannot be
 //    authored through ovphysx or USD physics, so there is never a region to draw (see the
 //    skip in MBPRegionsExportPrimitives).
-//  - SIMULATION_MESH: dead parameter in this PhysX generation -- nothing in the SDK reads
+//  - SIMULATION_MESH: nothing in this PhysX generation reads
 //    PxVisualizationParameter::eSIMULATION_MESH (deformable visualization is an open TODO in
 //    NpDebugViz.cpp), so no scene, CPU or GPU, can make it export.
 
@@ -96,46 +95,11 @@ uint32_t e2e_total_prims(ovphysx_handle_t h)
     return np + nl + nt;
 }
 
-// One body's world position through a per-path tensor binding (the
-// test_clone.cpp idiom). Returns false on any API failure.
-bool e2e_read_position(ovphysx_handle_t h, const char* prim_path, float* out_pos)
-{
-    ovphysx_tensor_binding_desc_t desc{};
-    desc.pattern = test_utils::make_ovx_string(prim_path);
-    desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_POSE_F32;
-    ovphysx_tensor_binding_handle_t binding = 0;
-    if (ovphysx_create_tensor_binding(h, &desc, &binding).status != OVPHYSX_API_SUCCESS)
-        return false;
-    float pose[7] = {};
-    int64_t shape[] = { 1, 7 };
-    DLTensor tensor{};
-    tensor.data = pose;
-    tensor.ndim = 2;
-    tensor.shape = shape;
-    tensor.strides = nullptr;
-    tensor.dtype = { kDLFloat, 32, 1 };
-    tensor.device = { kDLCPU, 0 };
-    const ovphysx_result_t r = ovphysx_read_tensor_binding(h, binding, &tensor);
-    ovphysx_destroy_tensor_binding(h, binding);
-    if (r.status != OVPHYSX_API_SUCCESS)
-        return false;
-    out_pos[0] = pose[0];
-    out_pos[1] = pose[1];
-    out_pos[2] = pose[2];
-    return true;
-}
-
-float e2e_dist3(const float* a, const float* b)
-{
-    const float dx = a[0] - b[0], dy = a[1] - b[1], dz = a[2] - b[2];
-    return std::sqrt(dx * dx + dy * dy + dz * dz);
-}
-
 struct DebugRenderE2E : public PhysXTestFixture
 {
     // The viz mask, scope and scale are process-global. Reset them here so a
-    // mid-test ASSERT_ cannot leak state into the next test; the trailing
-    // per-test cleanups remain as harmless documentation of what each test set.
+    // mid-test ASSERT_ cannot leak state into the next test. The trailing
+    // per-test cleanups remain as documentation of what each test set.
     void TearDown() override
     {
         ovphysx_debug_render_set_scope_tokens(m_handle, nullptr, 0u);
@@ -154,13 +118,13 @@ TEST_F(DebugRenderE2E, DrawableParamsExportPrimitives)
 
     ASSERT_EQ(ovphysx_debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
 
-    // A few steps so the boxes are falling -> linear-velocity arrows have length.
+    // A few steps so the boxes are falling and the linear-velocity arrows have length.
     for (int i = 0; i < 3; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "warm-up step failed";
 
-    // Sweep every drawable parameter EXCLUSIVELY (one at a time) and record whether it
-    // exports primitives. Early params observe falling bodies (velocity); later params
-    // observe landing/settling (contacts) as the sweep advances the sim.
+    // Sweep every drawable parameter one at a time and record whether it exports
+    // primitives. Early params observe falling bodies (velocity). Later params
+    // observe landing and settling (contacts) as the sweep advances the sim.
     const int N = OVPHYSX_DEBUG_RENDER_PARAM_COUNT;
     std::vector<uint32_t> total(N, 0u);
     for (int p = OVPHYSX_DEBUG_RENDER_PARAM_WORLD_AXES; p < N; ++p)
@@ -187,8 +151,8 @@ TEST_F(DebugRenderE2E, DrawableParamsExportPrimitives)
         std::printf("  %2d %-22s : %-8s (%u prims)\n", p, kNames[p],
                     total[p] > 0u ? "EXPORTS" : "none", total[p]);
 
-    // Baseline: parameters that MUST export for a dynamic rigid-body scene regardless of
-    // solver/broadphase. A regression that stops any of these exporting fails here.
+    // Baseline: parameters that must export for a dynamic rigid-body scene regardless of
+    // solver/broadphase.
     EXPECT_GT(total[OVPHYSX_DEBUG_RENDER_PARAM_WORLD_AXES], 0u) << "World axes";
     EXPECT_GT(total[OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES], 0u) << "Body axes";
     EXPECT_GT(total[OVPHYSX_DEBUG_RENDER_PARAM_BODY_MASS_AXES], 0u) << "Body mass axes";
@@ -197,9 +161,9 @@ TEST_F(DebugRenderE2E, DrawableParamsExportPrimitives)
     EXPECT_GT(total[OVPHYSX_DEBUG_RENDER_PARAM_COLLISION_SHAPES], 0u) << "Collision shapes";
     EXPECT_GT(total[OVPHYSX_DEBUG_RENDER_PARAM_BODY_LINEAR_VELOCITY], 0u)
         << "Body linear velocity (boxes are falling, so speed > 0)";
-    // These four emit structurally for any dynamic rigid-body scene too (the arrow/axis
+    // These four emit structurally for any dynamic rigid-body scene too. The arrow/axis
     // primitives are drawn per body/shape whenever the parameter is on, regardless of
-    // magnitudes), so assert them as regression baseline as well.
+    // magnitudes.
     EXPECT_GT(total[OVPHYSX_DEBUG_RENDER_PARAM_BODY_ANGULAR_VELOCITY], 0u) << "Body angular velocity";
     EXPECT_GT(total[OVPHYSX_DEBUG_RENDER_PARAM_COLLISION_AXES], 0u) << "Collision (shape) axes";
     EXPECT_GT(total[OVPHYSX_DEBUG_RENDER_PARAM_COLLISION_STATIC_PRUNER], 0u) << "Static pruner structure";
@@ -218,7 +182,6 @@ TEST_F(DebugRenderE2E, JointParamsExportPrimitives)
     for (int i = 0; i < 3; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "warm-up step failed";
 
-    // Test JOINT_LOCAL_FRAMES parameter (22).
     ASSERT_EQ(ovphysx_debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
     ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_JOINT_LOCAL_FRAMES, 1.0f);
     for (int i = 0; i < 2; ++i)
@@ -226,7 +189,6 @@ TEST_F(DebugRenderE2E, JointParamsExportPrimitives)
     uint32_t joint_local_frames_prims = e2e_total_prims(m_handle);
     ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_JOINT_LOCAL_FRAMES, 0.0f);
 
-    // Test JOINT_LIMITS parameter (23).
     ASSERT_EQ(ovphysx_debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
     ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_JOINT_LIMITS, 1.0f);
     for (int i = 0; i < 2; ++i)
@@ -240,8 +202,8 @@ TEST_F(DebugRenderE2E, JointParamsExportPrimitives)
     std::printf("  %2d %-22s : %-8s (%u prims)\n", OVPHYSX_DEBUG_RENDER_PARAM_JOINT_LIMITS,
                 "JointLimits", joint_limits_prims > 0u ? "EXPORTS" : "none", joint_limits_prims);
 
-    // Assertions: Ant.usda has multiple revolute joints with lowerLimit defined,
-    // so both parameters should export visualization primitives.
+    // Ant.usda has multiple revolute joints with lowerLimit defined, so both
+    // parameters export visualization primitives.
     EXPECT_GT(joint_local_frames_prims, 0u)
         << "Joint local frames (Ant has multiple articulated joints with local frames)";
     EXPECT_GT(joint_limits_prims, 0u)
@@ -258,11 +220,10 @@ TEST_F(DebugRenderE2E, TriangleMeshCollisionsExportPrimitives)
 
     ASSERT_EQ(ovphysx_debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
 
-    // A few steps so the box collides with the trimesh ground -> collision normals/edges are visible.
+    // A few steps so the box collides with the trimesh ground and collision normals/edges are visible.
     for (int i = 0; i < 5; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "warm-up step failed";
 
-    // Test COLLISION_FACE_NORMALS (param 18)
     ASSERT_EQ(ovphysx_debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
     ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_COLLISION_FACE_NORMALS, 1.0f);
     ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "face normals step failed";
@@ -271,7 +232,6 @@ TEST_F(DebugRenderE2E, TriangleMeshCollisionsExportPrimitives)
     EXPECT_GT(face_normals_total, 0u)
         << "COLLISION_FACE_NORMALS should export primitives for triangle-mesh collider";
 
-    // Test COLLISION_EDGES (param 19)
     ASSERT_EQ(ovphysx_debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
     ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_COLLISION_EDGES, 1.0f);
     ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "edges step failed";
@@ -311,11 +271,10 @@ TEST_F(DebugRenderE2E, CompoundShapesExportPrimitives)
     std::printf("[DebugRenderE2E] Compound shapes COLLISION_COMPOUNDS test: %u prims exported\n",
                 total);
 
-    // Verify that compound shapes visualization exports primitives
     EXPECT_GT(total, 0u) << "Collision compounds (compound AABBs) should export primitives";
 
     // The parameter mask is process-global (ovphysx cache + omni.physx visMask) and
-    // survives the fixture's reset_stage: disable what this test enabled so later
+    // survives the fixture's reset_stage. Disable what this test enabled so later
     // tests' enable(true) does not re-apply a leaked bit to their fresh scene.
     ovphysx_debug_render_set_parameter(
         m_handle, OVPHYSX_DEBUG_RENDER_PARAM_COLLISION_COMPOUNDS, 0.0f);
@@ -347,8 +306,8 @@ TEST_F(DebugRenderE2E, MBPRegionsExportPrimitives)
     // MBP_REGIONS visualizes the broadphase's registered regions. MBP regions must be
     // defined explicitly, but ovphysx exposes no broadphase-region API and USD physics has
     // no schema to declare them, so with broadphaseType="MBP" alone there are no regions to
-    // draw. This is a coverage limitation (would need a new region API), not a viz defect --
-    // skip when none are produced, and assert export if a build ever does register regions.
+    // draw. This is a coverage limitation (a new region API would be needed), not a viz
+    // defect. Skip when none are produced, and assert export if a build ever does register regions.
     if (total == 0u)
         GTEST_SKIP() << "MBP_REGIONS has no regions to draw: ovphysx exposes no broadphase-"
                         "region API and USD cannot declare MBP regions (coverage limitation).";
@@ -381,7 +340,6 @@ TEST_F(DebugRenderE2E, CullBoxExportsWhenSet)
     // Step the simulation so visualization captures the culling box.
     ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "step failed";
 
-    // Verify that CULL_BOX exports render primitives.
     uint32_t total_prims = e2e_total_prims(m_handle);
     EXPECT_GT(total_prims, 0u) << "CULL_BOX should export primitives when a culling box is set";
 
@@ -398,7 +356,7 @@ TEST_F(DebugRenderE2E, ContactAndFrictionParamsExport)
 
     ASSERT_EQ(ovphysx_debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
 
-    // Settle the boxes onto the ground so there is SUSTAINED contact -- contact/friction
+    // Settle the boxes onto the ground so there is sustained contact. Contact/friction
     // visualization only emits while bodies are actually touching.
     for (int i = 0; i < 120; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "settle step failed";
@@ -420,10 +378,10 @@ TEST_F(DebugRenderE2E, ContactAndFrictionParamsExport)
     };
     // On the CPU pipeline (this suite runs in the cpu pass, OVPHYSX_DISABLE_GPU=1) the
     // contact/friction viz is drawn by ShapeInteraction::visualize from the host streams
-    // and each parameter emits for settled resting boxes (the draw is gated on the
-    // PARAMETER, not on the physical magnitude, so even ~0 rest impulses draw their
-    // segments). Assert each parameter individually: a regression that silently kills
-    // any one of them must fail here, not skip.
+    // and each parameter emits for settled resting boxes. The draw is gated on the
+    // parameter, not on the physical magnitude, so even near-zero rest impulses draw
+    // their segments. Each parameter is asserted individually so a regression that
+    // silently kills one of them fails here rather than skipping.
     for (const ContactVizParam& pp : params)
     {
         ovphysx_debug_render_set_parameter(m_handle, pp.param, 1.0f);
@@ -437,10 +395,10 @@ TEST_F(DebugRenderE2E, ContactAndFrictionParamsExport)
 }
 
 
-// Per-parameter float VALUES: each PhysX visualization parameter is a magnitude
-// multiplied by eSCALE (the bool setter maps to 1.0/0.0); the value entry point
-// lets hosts scale semantic groups of gizmos independently. Pin the contract on
-// the CPU pass: contact-normal segment length tracks the parameter value.
+// Per-parameter float values: each PhysX visualization parameter is a magnitude
+// multiplied by eSCALE (the bool setter maps to 1.0/0.0). The value entry point
+// lets hosts scale semantic groups of gizmos independently. This pins the contract
+// on the CPU pass: contact-normal segment length tracks the parameter value.
 TEST_F(DebugRenderE2E, ParameterValueScalesMagnitude)
 {
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/boxes_falling_on_groundplane.usda"))
@@ -547,10 +505,10 @@ TEST_F(DebugRenderE2E, ScopeRestrictsContactViz)
     GTEST_SKIP() << "prebuilt PhysX SDK predates the contact-viz scope gate "
                     "(Sc::ShapeInteraction::visualize either-side rule); asserted on source builds";
 #endif
-    // Contact primitives are PAIR products emitted by ShapeInteraction::visualize,
-    // not per-actor draws, so they need their own scope gate (either-side rule: the
-    // pair draws while at least one side keeps its actor+shape eVISUALIZATION
-    // flags). Pinned with CONTACT_POINT/NORMAL on resting boxes: scoped to one cube
+    // Contact primitives are pair products emitted by ShapeInteraction::visualize,
+    // not per-actor draws, so they need their own scope gate. Under the either-side
+    // rule the pair draws while at least one side keeps its actor+shape eVISUALIZATION
+    // flags. Pinned with CONTACT_POINT/NORMAL on resting boxes: scoped to one cube
     // its ground contacts survive, an out-of-scope path silences everything, and
     // clearing restores emission.
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/boxes_falling_on_groundplane.usda"))
@@ -571,7 +529,7 @@ TEST_F(DebugRenderE2E, ScopeRestrictsContactViz)
                         "the scope gate is asserted where contacts emit";
 
     // One cube in scope: its pair with the (out-of-scope) ground keeps drawing
-    // via the either-side rule, everything else goes quiet.
+    // via the either-side rule. Everything else goes quiet.
     ovx_primpath_t one_cube_token{};
     ASSERT_TRUE(e2e_intern_path(m_handle, "/World/Cube1", &one_cube_token));
     ASSERT_EQ(ovphysx_debug_render_set_scope_tokens(m_handle, &one_cube_token, 1u).status,
@@ -656,17 +614,17 @@ TEST_F(DebugRenderE2E, ScopeClearsAcrossStageReplacement)
 // -------------------------------------------------------------------------
 // GPU pass: SDF collider debug-viz emission.
 //
-// SDF cooking wants a CUDA context. In the cpu pass (OVPHYSX_DISABLE_GPU=1,
+// SDF cooking requires a CUDA context. In the cpu pass (OVPHYSX_DISABLE_GPU=1,
 // GPU plugin dir off PATH on Windows) the CI runners fail PxCudaContextManager
 // creation during the ovstage re-ingest and the cook task dies with
 // bad_function_call, hanging ovphysx_update_from_ovstage until the pass
-// timeout (observed on windows AND linux CI; not reproducible locally, where
-// the CUDA-less cook falls back to CPU cleanly). This suite is named *GpuTest*
-// so scripts/test_cpp.cmake routes it to the gpu pass: own process, GPU
-// plugins on PATH, OVPHYSX_TEST_REQUIRE_CUDA=1 runners -- the environment
-// where the cook path is known-good. Single long-lived instance per suite
-// (Carbonite/Python cannot re-init in-process; same as TensorBindingGpuTest).
-// Each attach phase prints before it runs so a CI hang names its exact site.
+// timeout. This does not reproduce locally, where the CUDA-less cook falls
+// back to CPU cleanly. The suite is named *GpuTest* so scripts/test_cpp.cmake
+// routes it to the gpu pass (own process, GPU plugins on PATH,
+// OVPHYSX_TEST_REQUIRE_CUDA=1 runners), where the cook path is known-good.
+// One long-lived instance per suite, because Carbonite/Python cannot re-init
+// in-process (same as TensorBindingGpuTest). Each attach phase prints before
+// it runs so a CI hang names its exact site.
 // -------------------------------------------------------------------------
 class SdfDebugRenderGpuTest : public ::testing::Test
 {
@@ -740,7 +698,7 @@ TEST_F(SdfDebugRenderGpuTest, SDFExportsGeometry)
     std::fflush(stdout);
     ASSERT_EQ(ovphysx_debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
 
-    // A couple of steps so the SDF-collider body settles; gives PhysX time to finalize
+    // A couple of steps so the SDF-collider body settles and PhysX finalizes
     // SDF cooking and any collision detection.
     for (int i = 0; i < 2; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "warm-up step failed";
@@ -756,9 +714,7 @@ TEST_F(SdfDebugRenderGpuTest, SDFExportsGeometry)
     uint32_t total = e2e_total_prims(m_handle);
     std::printf("[SdfDebugRenderGpuTest] SDF parameter: %u prims\n", total);
 
-    // SDF should emit a dense point cloud sampling the cooked field around the
-    // SdfGeom cube. This is a strong assertion: if SDF cooking or eSDF visualization
-    // regresses, this test will catch it.
+    // SDF emits a dense point cloud sampling the cooked field around the SdfGeom cube.
     EXPECT_GT(total, 0u) << "SDF param should emit dense sample points when a cooked SDF collider is present";
 }
 // -------------------------------------------------------------------------
@@ -870,7 +826,7 @@ TEST_F(DirectGpuVizGpuTest, FrictionParamsExportPrimitives)
 
     ASSERT_EQ(ovphysx_debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
 
-    // Settle the boxes into SUSTAINED ground contact: friction anchors only exist for
+    // Settle the boxes into sustained ground contact. Friction anchors only exist for
     // pairs the solver keeps active friction patches for.
     std::printf("[DirectGpuVizGpuTest] phase: settle steps\n");
     std::fflush(stdout);
@@ -904,11 +860,11 @@ TEST_F(DirectGpuVizGpuTest, FrictionParamsExportPrimitives)
         ovphysx_debug_render_set_parameter(m_handle, f.param, 0.0f);
     }
 
-    // Triage probe (prints always): contact-point viz shares the NP-end capture
+    // Triage probe, always printed. Contact-point viz shares the NP-end capture
     // infrastructure (drawNewStreamContacts) while friction anchors draw at
     // fetchResults from the solver's friction patches. Contacts > 0 with
     // friction == 0 means the NP-end pair outputs are healthy and the
-    // fetch-time friction path is the suspect; contacts == 0 means the pairs
+    // fetch-time friction path is the suspect. Contacts == 0 means the pairs
     // produced no narrowphase output at all at measure time.
     ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_POINT, 1.0f);
     for (int i = 0; i < 2; ++i)
@@ -927,11 +883,10 @@ TEST_F(DirectGpuVizGpuTest, FrictionParamsExportPrimitives)
     EXPECT_GT(grand, 0u) << "friction params should export primitives for settled boxes "
                             "in sustained ground contact under the direct-GPU API";
 #else
-    // The friction-anchor emission lives in the PhysXGpu module and ships with THIS
-    // MR: a prebuilt physxsdk package (what CI links; compiling the SDK's CUDA from
-    // source is a multi-hour build the test jobs do not do) only gains it after the
-    // MR merges and the package pin rolls. Until then the prebuilt module silently
-    // no-ops the draw hook, so emission cannot be asserted here -- it IS asserted on
+    // The friction-anchor emission lives in the PhysXGpu module. A prebuilt physxsdk
+    // package (what CI links, since compiling the SDK's CUDA from source is a
+    // multi-hour build the test jobs do not do) may predate it and silently no-op
+    // the draw hook, so emission cannot be asserted here. It is asserted on
     // source-built (devphysx + CUDA) configurations via the branch above.
     if (grand == 0u)
         GTEST_SKIP() << "prebuilt PhysXGpu predates the DirectGPU friction-anchor emission "
@@ -943,7 +898,7 @@ TEST_F(DirectGpuVizGpuTest, FrictionParamsExportPrimitives)
 // gen runs in the GPU buckets (convexMeshMidphase writes the same compressed streams),
 // so drawNewStreamContacts should emit their contact points/normals like convex-convex.
 // This pins that empirically. Known remaining gap (documented in drawNewStreamContacts):
-// pairs that FALL BACK to CPU contact gen under DirectGPU are drawn by neither path.
+// pairs that fall back to CPU contact gen under DirectGPU are drawn by neither path.
 TEST_F(DirectGpuVizGpuTest, TrimeshContactParamsExport)
 {
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/trimesh_ground_collisions.usda"))
@@ -951,7 +906,7 @@ TEST_F(DirectGpuVizGpuTest, TrimeshContactParamsExport)
 
     ASSERT_EQ(ovphysx_debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
 
-    // Let the box land on the triangle-mesh ground -> sustained convex-trimesh contact.
+    // Let the box land on the triangle-mesh ground for sustained convex-trimesh contact.
     for (int i = 0; i < 120; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "settle step failed";
 
@@ -988,15 +943,14 @@ TEST_F(DirectGpuVizGpuTest, ScopeRestrictsContactViz)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "settle step failed";
     const uint32_t full = e2e_total_prims(m_handle);
 #ifndef OVPHYSX_TEST_PHYSXGPU_DEBUG_VIZ
-    // The DirectGPU contact SCOPE GATE (isPairShapeVisualized at the NP-end capture)
-    // ships in the PhysXGpu module with THIS MR. A prebuilt physxsdk package (what CI
-    // links) already carries the contact emission (so full > 0) but NOT
-    // this MR's scope gate, so scoping cannot shrink the capture until the package pin
-    // rolls. Assert the scope behavior only where OVPHYSX_TEST_PHYSXGPU_DEBUG_VIZ is
-    // defined (source-built devphysx + CUDA, or a package passing the marker probe);
-    // the friction DirectGPU test gates the same way. Without it the
-    // runtime full==0 check below cannot tell the scope-gate sub-feature apart from
-    // the contact emission it already has.
+    // The DirectGPU contact scope gate (isPairShapeVisualized at the NP-end capture)
+    // lives in the PhysXGpu module. A prebuilt physxsdk package (what CI links) may
+    // carry the contact emission from !7400 (so full > 0) but not the scope gate, so
+    // scoping cannot shrink the capture. The scope behavior is asserted only where
+    // OVPHYSX_TEST_PHYSXGPU_DEBUG_VIZ is defined (source-built devphysx + CUDA, or a
+    // package passing the marker probe). The friction DirectGPU test gates the same
+    // way. Without the marker the runtime full==0 check below cannot tell the
+    // scope-gate sub-feature apart from the contact emission.
     GTEST_SKIP() << "prebuilt PhysXGpu predates the DirectGPU contact scope gate "
                     "(asserted on source-built configurations)";
 #endif

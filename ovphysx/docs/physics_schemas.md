@@ -1,13 +1,14 @@
 <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
-<!-- SPDX-License-Identifier: BSD-3-Clause -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
 # Physics Schemas
 
 Physics behavior in a USD scene is described by **schemas**: typed sets of
-attributes and relationships applied to prims. ovphysx loads and simulates scenes
-authored with these schemas. This page explains the schema layers ovphysx
-understands and how to make the PhysX-specific ones available when you author
-with a stock `usd-core`.
+attributes and relationships applied to prims. ovstage populates scenes authored
+with these schemas into an `ovstage.Stage`; ovphysx attaches that stage and
+simulates it. This page explains the schema layers ovphysx understands and how
+to make the PhysX-specific ones available, both to ovstage when it populates a
+scene and to a stock `usd-core` when you author or validate offline.
 
 ## Schema Layers
 
@@ -39,11 +40,32 @@ drift.
 
 ## How ovphysx Ships the PhysX Schemas
 
-ovphysx exposes the PhysX USD schemas as **codeless** artifacts: a
-`plugInfo.json` (`Type: resource`) plus a `generatedSchema.usda` per module, with
-no compiled library. Codeless schemas carry no typed helper class — there is no
+ovphysx exposes the PhysX USD schemas (`PhysxSchema` and
+`OmniUsdPhysicsDeformableSchema`) as **codeless** artifacts: a root
+`plugInfo.json` (with `Includes: ["*/resources/"]`) plus, per module, a
+`<Module>/resources/` directory holding a `plugInfo.json` (`Type: resource`) and
+a `generatedSchema.usda`, with no compiled library. They live under
+`schemas/physx/` in the SDK and under `ovphysx/schemas/physx/` in the wheel.
+Codeless schemas carry no typed helper class — there is no
 `PhysxSchema.PhysxRigidBodyAPI` binding. You apply them by identifier and author
 their attributes generically.
+
+ovphysx never modifies the environment (`PXR_PLUGINPATH_NAME` or any other
+plugin-path variable) and leaves registration to the application; it verifies at
+`attach_ovstage` that the registration happened before the first population and
+refuses the attach otherwise. It tells the application where the schemas are:
+
+- **C**: `ovphysx_get_codeless_schema_root(ovphysx_string_t* out_root)` returns
+  the schema root directory. The string is NUL-terminated, owned by ovphysx, and
+  valid until the calling thread calls the function again. It returns
+  `OVPHYSX_API_INVALID_ARGUMENT` for a NULL argument and `OVPHYSX_API_ERROR`
+  (details in `ovphysx_get_last_error()`) when the schema tree is missing. It
+  does not initialize ovphysx, load USD, acquire Carbonite, or modify the
+  environment, and is safe to call before `ovphysx_create_instance()`.
+- **Python**: `ovphysx.codeless_schema_root()` returns the same root as a
+  `pathlib.Path`, and `ovphysx.codeless_schema_paths()` returns the per-module
+  `resources` directories. Both are pure Python and never trigger native
+  loading.
 
 Because they are codeless, the core `UsdPhysics` typed APIs (rigid body,
 collider, mass, scene) work out of the box with stock `usd-core`, while
@@ -51,21 +73,85 @@ collider, mass, scene) work out of the box with stock `usd-core`, while
 
 ## Making Schemas Available
 
-There are two registration paths, depending on which USD runtime is in play.
+The application owns the USD runtime(s) in its process and registers the
+codeless schemas with each of them. There are two registration paths, depending
+on which USD runtime is in play.
 
-### ovphysx's bundled USD runtime
+### Registering with ovstage
 
-When you run the simulator, ovphysx uses its bundled OV namespaced USD runtime.
-Importing `ovphysx` automatically calls `register_schema_paths()`, which appends
-ovphysx's schema plugin path to `OV_PXR_PLUGINPATH_2511` before the first USD
-stage open. In a process that mixes ovphysx with another USD-aware subsystem
-(for example ovrtx), call `register_schema_paths()` (and the peer subsystem's
-equivalent) explicitly before the first stage open so USD's schema registry sees
-every plugin root. This ordering is not advisory: USD's schema registry is built
-once, on first access, and a late call cannot repair it. Refer to the USD
-coexistence notes in the [Overview](ovphysx_overview.md).
+ovstage ingests USD scenes through its own internal namespaced OpenUSD runtime,
+and that runtime knows nothing about the PhysX schemas until the application
+registers them. Register them once per process, before the first population call
+(`open_usd`, `apply_usd_changes`, or an export), by passing the schema root to
+`ovstage.population.register_usd_schemas()`:
+
+```python
+import ovphysx
+import ovstage
+
+ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+stage = ovstage.Stage("scene")
+```
+
+In C, obtain the root with `ovphysx_get_codeless_schema_root()` and pass it to
+`ovstage_population_register_usd_schemas()`:
+
+```c
+#include <ovphysx/ovphysx.h>
+#include <ovstage/ovstage.h>
+#include <ovstage/ovstage_population.h>
+
+static int register_physx_schemas(void)
+{
+    ovphysx_string_t root;
+    if (ovphysx_get_codeless_schema_root(&root).status != OVPHYSX_API_SUCCESS)
+    {
+        return 0;
+    }
+    ovx_string_t path;
+    path.ptr = root.ptr;
+    path.length = root.length;
+    return ovstage_population_register_usd_schemas(&path, 1) == OVSTAGE_OK;
+}
+```
+
+The bundled samples do exactly this: the Python samples call
+`register_usd_schemas()` in their `attach_scene` helper right before creating
+the `ovstage.Stage`, and the C samples call
+`ovphysx_sample_register_physx_schemas()` from
+`tests/c_samples/common/ovstage_sample.h`.
+
+The ordering is not advisory. USD assembles its schema registry once, on first
+read, and ignores plugins registered afterwards; a registration that arrives
+after ovstage's first schema read registers cleanly but contributes nothing,
+and ovstage reports it as an error (`OVSTAGE_ERROR_OP_FAILED`, an
+`ovstage.OvstageError` in Python). A registration that arrives after some other
+USD consumer in the process read the schemas cannot be detected and fails
+silently. No re-registration can repair the registry for the rest of the
+process. Without the registration, population resolves only the properties
+authored in the file rather than each prim's full schema-declared property set.
+Registration is process-scoped and irreversible; registering the same root
+twice is a no-op.
 
 ### Authoring with a stock `usd-core`
+
+For a standalone Python authoring or validation tool, install the optional
+stock USD package in that tool's environment before running an example that
+imports `pxr`:
+
+```bash
+python -m pip install usd-core
+```
+
+`usd-core` is owned by the authoring tool. It is not an ovphysx package
+dependency or the simulator's USD runtime, and ovphysx does not accept the
+authoring tool's USD runtime directly. The public ingestion path is authored
+USD -> ovstage population into an `ovstage.Stage` -> ovphysx attachment and
+simulation.
+
+PyPI currently provides neither a Linux aarch64 `usd-core` wheel nor a source
+distribution. On Linux aarch64, hand-author `.usda`, author on a supported
+host, or supply a compatible OpenUSD Python build.
 
 The codeless PhysX USD schemas shipped in ovphysx can be registered with any USD
 runtime — including stock `usd-core` from PyPI — without starting the simulator.
@@ -100,11 +186,29 @@ After registration, apply the PhysX APIs by identifier and set attributes with
 USD's generic attribute API:
 
 ```python
-from pxr import Sdf
+import ovphysx
+from pxr import Plug, Sdf, Usd, UsdPhysics
 
-prim.ApplyAPI("PhysxRigidBodyAPI")
-prim.CreateAttribute("physxRigidBody:disableGravity", Sdf.ValueTypeNames.Bool).Set(True)
+Plug.Registry().RegisterPlugins(
+    [str(path) for path in ovphysx.codeless_schema_paths()]
+)
+stage = Usd.Stage.CreateInMemory()
+prim = stage.DefinePrim("/World/Box", "Cube")
+UsdPhysics.RigidBodyAPI.Apply(prim)
+UsdPhysics.CollisionAPI.Apply(prim)
+if not prim.ApplyAPI("PhysxRigidBodyAPI"):
+    raise RuntimeError("Failed to apply PhysxRigidBodyAPI")
+attribute = prim.CreateAttribute(
+    "physxRigidBody:disableGravity", Sdf.ValueTypeNames.Bool
+)
+if not attribute.Set(True):
+    raise RuntimeError("Failed to set physxRigidBody:disableGravity")
+if not stage.GetRootLayer().Export("physx_rigid_body.usda"):
+    raise RuntimeError("Failed to export physx_rigid_body.usda")
 ```
+
+This writes `physx_rigid_body.usda`, ready for ovstage to populate for ovphysx
+simulation.
 
 `codeless_schema_paths()` returns the per-module `resources` directories, and
 `codeless_schema_root()` returns the directory that holds them. Both are
@@ -155,20 +259,22 @@ Setting `PXR_PLUGINPATH_NAME` from *inside* an already-running host has no
 effect — by then the registry exists.
 
 `PXR_PLUGINPATH_NAME` is stock USD's own plugin-path variable, read by the
-host's USD runtime. It is unrelated to `OV_PXR_PLUGINPATH_2511`, which applies
-only to ovphysx's bundled namespaced runtime (refer to the "ovphysx's bundled
-USD runtime" section above).
+host's USD runtime; ovphysx never sets it. It is not how the schemas reach
+ovstage: register them with ovstage through `register_usd_schemas()` as
+described in [Registering with ovstage](#registering-with-ovstage).
 
 ## Authoring Routes
 
 The same physics content can be authored two ways; both produce a `.usda`/`.usd`
-file that ovphysx loads identically.
+file that ovstage can populate for ovphysx simulation.
 
 - **Hand-authored `.usda` text.** Apply schemas through the `apiSchemas`
   metadata list and set attributes directly. No Python or schema registration
   needed to write the file:
 
   ```usda
+  #usda 1.0
+
   def Cube "box" (
       prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsCollisionAPI"]
   )
@@ -180,10 +286,9 @@ file that ovphysx loads identically.
 - **Python with a USD runtime.** Use typed `UsdPhysics` bindings for core
   schemas and the codeless `ApplyAPI` pattern above for `Physx*` schemas.
 
-> **Common pitfall.** Using a typed `PhysxSchema.*` class instead of the codeless
-> `prim.ApplyAPI("Physx...")` pattern silently no-ops with stock `usd-core` —
-> there is no compiled `PhysxSchema` module. Register the codeless schemas and
-> apply by identifier.
+> **Common pitfall.** `PhysxSchema.PhysxRigidBodyAPI` is unavailable with stock
+> `usd-core`; there is no compiled `PhysxSchema` module. Register the codeless
+> schemas, then apply `prim.ApplyAPI("PhysxRigidBodyAPI")` by identifier.
 
 For a hands-on authoring walkthrough (scene, ground, rigid body, colliders), refer to
 the bundled `ovphysx-usd-authoring` skill and the per-topic pages under

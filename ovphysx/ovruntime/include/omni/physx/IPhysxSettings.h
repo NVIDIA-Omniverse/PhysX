@@ -1,8 +1,20 @@
 // SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-OMNIPVD-TRANSPORT-001
+ * @covers AC-1
+ *
+ * @implements REQ-OMNIPVD-LATE-001
+ * @covers AC-1 AC-2
+ */
 
 #pragma once
 #include <omni/physics/IUsdPhysicsSettings.h>
+
+#include <cstddef>
+#include <cstdint>
+#include <string>
 
 #define DEFINE_PHYSX_SETTING(name, path)                                                                               \
     static constexpr char name[] = PHYSICS_SETTINGS_PREFIX path;                                                         \
@@ -73,6 +85,9 @@ DEFINE_PHYSX_SETTING(kSettingPhysxDispatcher, "/physxDispatcher");
     (bool) See :ref:`Expose PhysX SDK Profiler Data<Expose PhysX SDK Profiler Data>`. Changeable through :ref:`Physics Preferences`.
     @endrst */
 DEFINE_PHYSX_SETTING(kSettingExposeProfilerData, "/exposeProfilerData");
+/// (bool) Emit the PhysX SDK profile zones as NVTX ranges, for capture with Nsight Systems.
+/// Independent of kSettingExposeProfilerData: either, both, or neither sink can be active.
+DEFINE_PHYSX_SETTING(kSettingNvtxEnabled, "/nvtxEnabled");
 /// (bool) Expose the prim path names in PhysX SDK name, this will set the string name for the PhysX SDK objects.
 DEFINE_PHYSX_SETTING(kSettingExposePrimPathNames, "/exposePrimPathNames");
 /// @private
@@ -183,6 +198,17 @@ DEFINE_PHYSX_SETTING(kSettingMousePickingForce, "/pickingForce");
 DEFINE_PHYSX_SETTING(kSettingPhysicsDevelopmentMode, "/developmentMode");
 /// \ingroup private
 DEFINE_PHYSX_SETTING(kSettingSuppressReadback, "/suppressReadback");
+/// (int) Total memory, in mebibytes, that the DirectGPU ovstage-read buffer pool may RETAIN per CUDA
+/// context for reuse across reads. A read allocates the columns it needs either way; the pool normally
+/// hands them back on the next read instead of freeing them -- a large win for the columns read every
+/// step -- but retaining them costs device memory. Once a context's pooled buffers reach this budget,
+/// further released buffers are freed at release rather than kept, which is no worse than before the
+/// pool existed. The default (256) comfortably holds the state working set of a large articulation
+/// scene -- 8192 environments of 60 DOFs is tens of MB of joint/link/root columns, plus a mass matrix --
+/// while a one-off multi-hundred-MB Jacobian falls outside it. Raise it for a scene that reads such
+/// heavy inverse dynamics columns every step and has the memory; lower it to bound the footprint; 0 or a
+/// negative value disables the pool (nothing is retained).
+DEFINE_PHYSX_SETTING(kSettingOvstageReadPoolMaxMB, "/ovstageReadPoolMaxMB");
 /// (bool) Assign replicator environment ids at body creation during stage attach/parse (GPU
 /// dynamics + GPU broadphase scenes only): bodies get the scene-partition primvar id, or 0. Set
 /// before attach by clone-driving consumers (ovphysx) so a later cloneEnvironments() finds the
@@ -438,14 +464,104 @@ DEFINE_PERSISTENT_PHYSX_SETTING(kSettingPVDEnabled, "/pvdEnabled");
 
 // OmniPvd
 
+enum class OmniPvdTransport : uint8_t
+{
+    eFile,
+    eTcp,
+};
+
+struct OmniPvdDestination
+{
+    OmniPvdTransport transport{ OmniPvdTransport::eFile };
+    std::string fileTarget;
+    std::string tcpAddress;
+    uint16_t tcpPort{ 0 };
+    uint32_t tcpTimeoutMs{ 0 };
+};
+
+inline bool copyOmniPvdConfigString(const char* value, size_t length, std::string& result)
+{
+    if ((!value && length != 0) || (value && std::string(value, length).find('\0') != std::string::npos))
+        return false;
+    result.assign(value ? value : "", length);
+    return true;
+}
+
+inline bool normalizeOmniPvdDestination(
+    const char* transport,
+    size_t transportLength,
+    const char* fileTarget,
+    size_t fileTargetLength,
+    const char* tcpAddress,
+    size_t tcpAddressLength,
+    int64_t tcpPort,
+    int64_t tcpTimeoutMs,
+    OmniPvdDestination& destination,
+    const char*& errorMessage)
+{
+    std::string transportValue;
+    destination = {};
+    errorMessage = nullptr;
+    if (!copyOmniPvdConfigString(transport, transportLength, transportValue) || transportValue.empty())
+    {
+        errorMessage = "OmniPVD transport must be 'file' or 'tcp'";
+        return false;
+    }
+    if (!copyOmniPvdConfigString(fileTarget, fileTargetLength, destination.fileTarget) ||
+        !copyOmniPvdConfigString(tcpAddress, tcpAddressLength, destination.tcpAddress))
+    {
+        errorMessage = "OmniPVD destination strings must not contain embedded NUL bytes";
+        return false;
+    }
+    if (transportValue == "file")
+    {
+        destination.transport = OmniPvdTransport::eFile;
+        return true;
+    }
+    if (transportValue != "tcp")
+    {
+        errorMessage = "OmniPVD transport must be 'file' or 'tcp'";
+        return false;
+    }
+    if (destination.tcpAddress.empty())
+    {
+        errorMessage = "OmniPVD TCP address must be non-empty";
+        return false;
+    }
+    if (tcpPort < 1 || tcpPort > 65535)
+    {
+        errorMessage = "OmniPVD TCP port must be in 1..65535";
+        return false;
+    }
+    if (tcpTimeoutMs < 0 || tcpTimeoutMs > INT32_MAX)
+    {
+        errorMessage = "OmniPVD TCP timeout must be in 0..INT32_MAX milliseconds";
+        return false;
+    }
+    destination.transport = OmniPvdTransport::eTcp;
+    destination.tcpPort = static_cast<uint16_t>(tcpPort);
+    destination.tcpTimeoutMs = static_cast<uint32_t>(tcpTimeoutMs);
+    return true;
+}
+
 /** @rst
     (string) Sets the directory for OmniPVD output files.
     @endrst */
 DEFINE_PERSISTENT_PHYSX_SETTING(kOmniPvdOvdRecordingDirectory, "/omniPvdOvdRecordingDirectory");
+/** OmniPVD startup destination transport: "file" or "tcp". */
+DEFINE_PHYSX_SETTING(kOmniPvdTransport, "/omniPvdTransport");
+/** OmniPVD TCP peer address. */
+DEFINE_PHYSX_SETTING(kOmniPvdTcpAddress, "/omniPvdTcpAddress");
+/** OmniPVD TCP peer port. */
+DEFINE_PHYSX_SETTING(kOmniPvdTcpPort, "/omniPvdTcpPort");
+/** OmniPVD TCP send timeout in milliseconds. */
+DEFINE_PHYSX_SETTING(kOmniPvdTcpTimeoutMs, "/omniPvdTcpTimeoutMs");
 /** @rst
     (bool) Toggles collection of OmniPVD telemetry. Only if this setting is true, do the other OmniPVD settings matter.
     @endrst */
 DEFINE_PHYSX_SETTING(kOmniPvdOutputEnabled, "/omniPvdOutputEnabled");
+/** (bool) Declares whether OmniPVD recording is available in this process. */
+DEFINE_PHYSX_SETTING(kOmniPvdRecordingCapable, "/omniPvdRecordingCapable");
 /** @rst
     (bool) Toggles if the Stage is an OmniPVD stage or not. Only non-OmniPVD stages get recorded into OVD files.
     @endrst */

@@ -1,5 +1,5 @@
 <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
-<!-- SPDX-License-Identifier: BSD-3-Clause -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
 # Joints
 
@@ -15,8 +15,16 @@ concepts (frames, drives, limits) shared by both.
 
 Joint types and drive/limit APIs (`UsdPhysics.Joint`, `DriveAPI`, `LimitAPI`) are
 core `UsdPhysics` and work with stock `usd-core`. PhysX-specific extensions
-(`PhysxLimitAPI`, gear/rack-and-pinion, mimic, tendons) are codeless — see
+(`PhysxLimitAPI`, gear/rack-and-pinion, mimic, tendons) are codeless. Refer to
 [Physics Schemas](../physics_schemas.md).
+
+The Python examples on this page are fragments, not complete files. Each one
+extends a script that already created a `stage` and registered the codeless PhysX
+schemas, as shown in
+[Setting Up a USD Stage and a Physics Scene](physics_scene.md#setting-up-a-usd-stage-and-a-physics-scene);
+before using a fragment that refers to `joint_prim` or to the rigid bodies at
+`/World/rigidBody0` and `/World/rigidBody1`, define those prims in the
+surrounding script.
 
 ## Joint Frames
 
@@ -51,8 +59,8 @@ joint.CreateLocalRot1Attr().Set(Gf.Quatf(1.0))
 
 ## Joint Drive
 
-A joint drive applies a force to reach a target position and/or velocity,
-following a PD-controller spring model:
+A joint drive applies a force to reach a target position, a target velocity, or
+both, following a PD-controller spring model:
 
 \[ driveForce = stiffness \cdot (position - targetPosition) + damping \cdot (velocity - targetVelocity) \]
 
@@ -81,7 +89,7 @@ drive.CreateTargetPositionAttr(0.0)
 
 For articulations, drive targets, stiffness, damping, and the drive model are
 read and written in bulk at runtime through the `ARTICULATION_DOF_*` tensor types
-— refer to the [Tensor Bindings](../tutorials/tensor_bindings.md) reference.
+— refer to the [Tensor Bindings (deprecated)](../tutorials/tensor_bindings.md) reference.
 
 ## Joint Limits
 
@@ -103,7 +111,7 @@ joint_prim.CreateAttribute("physxLimit:transY:restitution", Sdf.ValueTypeNames.F
 ## Disabling Joints
 
 Remove the joint prim from the stage, or set a **break force** so the joint is
-permanently disabled once it exerts more than a threshold force
+permanently disabled after it exerts more than a threshold force
 (`physics:breakForce` / `physics:breakTorque` on `UsdPhysics.Joint`).
 
 > Break force is **ignored** for articulation joints, and articulation joints
@@ -112,14 +120,22 @@ permanently disabled once it exerts more than a threshold force
 
 ## Joint Types
 
-| Type | Description | Regular (cpu/gpu) | Articulation (cpu/gpu) |
-|------|-------------|-------------------|------------------------|
-| D6 | Configurable free/limited/locked per axis (up to 3 translational + 3 rotational) | yes/yes | yes/yes (linear axes must be locked) |
-| Distance | Limits distance between the two bodies | yes/no | no/no |
-| Fixed | No relative motion | yes/yes | yes/yes |
-| Prismatic | Linear motion along one axis | yes/yes | yes/yes |
-| Revolute | Rotation about one axis | yes/yes | yes/yes |
-| Spherical | Rotation about three axes (ball-and-socket) | yes/yes | yes/yes |
+**Table 1. Joint type support as a regular joint and as an articulation joint**
+
+The following table lists each joint type and whether it is supported on the CPU
+and on the GPU in each role:
+
+| Type | Description | Regular, CPU | Regular, GPU | Articulation, CPU | Articulation, GPU |
+|------|-------------|--------------|--------------|-------------------|-------------------|
+| D6 | Configurable free/limited/locked per axis (up to 3 translational + 3 rotational) | Yes | Yes | Yes, linear axes must be locked | Yes, linear axes must be locked |
+| Distance | Limits distance between the two bodies | Yes | No | No | No |
+| Fixed | No relative motion | Yes | Yes | Yes | Yes |
+| Prismatic | Linear motion along one axis | Yes | Yes | Yes | Yes |
+| Revolute | Rotation about one axis | Yes | Yes | Yes | Yes |
+| Spherical | Rotation about three axes (ball-and-socket) | Yes | Yes | Yes | Yes |
+
+The following figures show a revolute joint and a prismatic joint, with the
+allowed rotation and the allowed translation marked on each:
 
 ![Revolute joint](images/joints_revolute.png)
 ![Prismatic joint](images/joints_prismatic.png)
@@ -149,9 +165,9 @@ Type-specific notes:
 - **D6** — lock/limit/free each axis through `LimitAPI` per axis token
   (`transX`/`rotX`/...). Angular limits form a pyramid, not a cone. For angular
   drives, use the same stiffness/damping for the `rotY` and `rotZ` axes (mixing
-  differs is undefined); `rotX` may differ. Supports a `distance` limit (upper
-  bound only).
-- **Distance** — set `minDistance` and/or `maxDistance`; either alone is valid.
+  different values is undefined); `rotX` can differ. Supports a `distance` limit
+  (upper bound only).
+- **Distance** — set `minDistance`, `maxDistance`, or both; either alone is valid.
   A soft-constraint spring is available through `PhysxPhysicsDistanceJointAPI`.
 - **Prismatic / Revolute** — single-axis linear / angular motion; both support
   drives and `lowerLimit`/`upperLimit`.
@@ -197,6 +213,6 @@ articulation** and are covered in
 
 `PhysxPhysicsJointInstancer` (codeless) is the counterpart to rigid-body point
 instancing: it instances joints between point-instanced bodies. Instanced joints
-may reference only point-instanced bodies, scenegraph instancing is not supported
+can reference only point-instanced bodies, scenegraph instancing is not supported
 for joints, and joint instancing is not supported for articulation joints. Refer to
 [Rigid Body instancing](rigid_bodies.md#instancing).

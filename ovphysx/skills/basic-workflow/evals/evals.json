@@ -1,0 +1,52 @@
+{
+  "skill_name": "basic-workflow",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Write the smallest Python program that loads scene.usda with ovphysx, takes one simulation step, and cleans up every resource.",
+      "expected_output": "A Python lifecycle that creates PhysX and an ovstage Stage, populates and seals ordinal 1, attaches, uses step_sync, then detaches/destroys/releases in a finally block.",
+      "files": [],
+      "expectations": [
+        "Selects basic-workflow rather than tensor-bindings or clone-environments",
+        "Uses PhysX(), ovstage.Stage, open_usd with domains=PHYSICS, advance_write_floor(ordinal=1).wait(), and attach_ovstage(stage, read_ordinal=1)",
+        "Registers the codeless PhysX schemas with ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())]) before the first population call",
+        "Uses step_sync for the single step rather than bare async step without waiting",
+        "Teardown calls detach_ovstage, stage.destroy, and physx.release on all paths"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "In C, show the public ovphysx + ovstage ordering to create an instance, attach a populated stage, step once, and destroy everything.",
+      "expected_output": "A C sequence that creates the instance, populates/seals the ovstage ordinal, attaches, steps (sync or wait), then destroys wait results and native handles on success and error paths.",
+      "files": [],
+      "expectations": [
+        "Points at the C hello_world sample or mirrors its create/populate/attach/step/destroy order",
+        "Registers ovphysx_get_codeless_schema_root() through ovstage_population_register_usd_schemas() before the first population call",
+        "Seals the write floor before attach_ovstage",
+        "Does not skip cleanup of ovphysx or ovstage resources"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "After attach, my test adds a new rigid body to the USD population. How do I drain that change into ovphysx before creating tensor bindings?",
+      "expected_output": "Uses apply_usd_changes, advance_write_floor, and update_from_ovstage for the new ordinal; does not re-drain the initial attach ordinal; refreshes bindings after the update.",
+      "files": [],
+      "expectations": [
+        "Uses the later-ovstage-edits handoff from basic-workflow",
+        "Calls apply_usd_changes then advance_write_floor then update_from_ovstage",
+        "Does not treat apply_usd_changes alone as sealing the ordinal",
+        "Destroys or replaces pre-update tensor bindings rather than trusting their membership"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Clone one environment into 512 RL copies and bind articulation DOF targets on the clones.",
+      "expected_output": "Routes to clone-environments (and tensor bindings after clone), not basic-workflow alone.",
+      "files": [],
+      "expectations": [
+        "Does not treat basic-workflow as sufficient for batched clone + binding work",
+        "Selects clone-environments for replication and tensor-bindings-cpu or tensor-bindings-gpu for bulk I/O"
+      ]
+    }
+  ]
+}

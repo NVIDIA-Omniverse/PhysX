@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Verify that a physics schema tree is a valid codeless schema package.
 
@@ -9,20 +10,19 @@ What problem this solves
 ovphysx depends on a "physics schema" package (`usd_ext_physics`). The schema
 is codeless: it ships USD plugin data (`plugInfo.json` as `Type=resource` plus
 `generatedSchema.usda`) and Python, but NO native library. Because the schema
-carries no compiled code, it is platform- and USD-ABI-independent -- there is
+carries no compiled code, it is platform- and USD-ABI-independent. There is
 nothing to link and no per-library USD ABI to get wrong.
 
-This check guards against a regression to the old codefull layout (any native
-artifact sneaking back in, or a `plugInfo.json` still declaring `Type=library`
-with a `LibraryPath`), which would silently reintroduce the ABI hazard the
-codeless migration removed.
+This check guards against a regression to a codefull layout (any native
+artifact in the tree, or a `plugInfo.json` declaring `Type=library` with a
+`LibraryPath`), which would silently reintroduce the ABI hazard.
 
 What this script does
 ---------------------
 Given a path to an unpacked schema package tree, it:
 
   1. Fails if any native binary artifact exists anywhere in the tree
-     (.so/.so.*, .dll, .pyd, .dylib, .a, .lib) -- the package is
+     (.so/.so.*, .dll, .pyd, .dylib, .a, .lib). The package is
      platform-independent and must ship no compiled code.
   2. Finds the schema plugInfo.json files under <dir>/share/usd/plugins,
      parsing each with only the generated `#` header tolerated ('//' is not,
@@ -35,10 +35,10 @@ Given a path to an unpacked schema package tree, it:
 
 Where this is called from
 -------------------------
-  - scripts/build.cmake -- right after the schema package is fetched from
+  - scripts/build.cmake, right after the schema package is fetched from
     packman (and after a local --devschema build), so a bad package fails the
     build before a single source file is compiled.
-  - scripts/package_deps.py -- right before the schema data is staged into
+  - scripts/package_deps.py, right before the schema data is staged into
     _install/ or the wheel, so a direct install/wheel invocation (which may
     skip build.cmake) still refuses bad input.
 

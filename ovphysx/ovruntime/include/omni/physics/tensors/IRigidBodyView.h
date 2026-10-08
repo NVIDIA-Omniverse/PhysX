@@ -1,7 +1,14 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
+
+/**
+ * @implements REQ-TENSOR-PATH-001
+ * @covers AC-1
+ * @implements REQ-TENSOR-CPU-ONLY-001
+ * @covers AC-4
+ */
 
 #include "TensorDesc.h"
 
@@ -20,6 +27,7 @@ public:
     virtual uint32_t getCount() const = 0;
     virtual uint32_t getMaxShapes() const = 0;
 
+    // Returns nullptr for an out-of-range index.
     virtual const char* getUsdPrimPath(uint32_t rbIdx) const = 0;
 
     virtual bool getTransforms(const TensorDesc* dstTensor) const = 0;

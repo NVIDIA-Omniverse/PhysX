@@ -1,7 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-// NOTE: This file is included verbatim in documentation via literalinclude.
+/**
+ * @implements REQ-PYTHON-CLONE-001
+ * @covers AC-1
+ */
+
+// NOTE: This file is included verbatim in the documentation via literalinclude.
 
 #include <ovphysx/ovphysx.h>
 #include <ovphysx/ovphysx_types.h>
@@ -16,12 +21,15 @@
 #define sleep_ms(ms) usleep((ms) * 1000)
 #endif
 
-// Compile-time check: fail compilation if C++ compiler is used
+// The sample exercises the plain C API, so a C++ compiler is rejected.
 #ifdef __cplusplus
 #error "This file must be compiled as C, not C++"
 #endif
 
-static int wait_op_success(ovphysx_handle_t handle, ovphysx_enqueue_result_t res, uint64_t timeout_ns) {
+static int wait_op_success(
+    ovphysx_handle_t handle,
+    ovphysx_enqueue_result_t res,
+    ovphysx_timeout_t timeout_ns) {
   if (res.status != OVPHYSX_API_SUCCESS) {
     return 0;
   }
@@ -42,10 +50,8 @@ static int run(void)
     return 1;
   }
 
-  // Initialize create args with defaults
   ovphysx_create_args create_args = OVPHYSX_CREATE_ARGS_DEFAULT;
 
-  // Create PhysX instance
   printf("Creating PhysX instance...\n");
   ovphysx_handle_t handle = 0;
   ovphysx_result_t create_res = ovphysx_create_instance(&create_args, &handle);
@@ -56,7 +62,7 @@ static int run(void)
   }
   printf("  [OK] PhysX instance created\n\n");
 
-  // Populate ovstage from USD and attach it to ovphysx
+  // Populate an ovstage instance from the USD file and attach it to ovphysx.
   printf("Loading USD scene...\n");
   ovphysx_sample_stage_attachment_t stage_attachment = {0};
   if (!ovphysx_sample_attach_usd_with_ovstage(
@@ -68,7 +74,7 @@ static int run(void)
   }
   printf("  [OK] USD scene loaded\n\n");
 
-  // Clone the environment (source: env0, targets: env1, env2, env3)
+  // Clone env0 into three new environments.
   printf("Cloning /World/envs/env0 to create env1, env2, env3...\n");
   const char* clone_targets[] = {
     "/World/envs/env1",
@@ -82,13 +88,21 @@ static int run(void)
     target_strings[i] = ovphysx_cstr(clone_targets[i]);
   }
 
+  // CPU mode has no environment-id collision filtering, so place each
+  // environment in a spatially disjoint lane.
+  const float anchor_transforms[NUM_TARGETS * 7] = {
+      4.0f,  0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+      8.0f,  0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+      12.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f
+  };
+
   ovphysx_enqueue_result_t clone_res = ovphysx_clone(
       handle,
       ovphysx_cstr("/World/envs/env0"),
       target_strings,
       NUM_TARGETS,
-      NULL,   /* parent_transforms: co-locate on the source */
-      NULL);  /* env_ids: automatic per-call numbering */
+      anchor_transforms,
+      NULL);  /* env_ids: NULL selects automatic per-call numbering. */
   if (!wait_op_success(handle, clone_res, 10ULL * 1000 * 1000 * 1000)) {
     fprintf(stderr, "Clone operation failed or timed out\n");
     ovphysx_sample_destroy_stage(handle, &stage_attachment);
@@ -98,7 +112,7 @@ static int run(void)
   }
   printf("  [OK] Created 3 clones successfully\n\n");
 
-  // Run a few simulation steps to verify clones work correctly
+  // A few simulation steps confirm the clones simulate.
   printf("Running simulation with clones (10 steps)...\n");
   for (int i = 0; i < 10; i++) {
     ovphysx_enqueue_result_t step_res = ovphysx_step(handle, 1.0f/60.0f);
@@ -115,7 +129,7 @@ static int run(void)
   printf("=== Clone Example Completed Successfully ===\n");
 
   ovphysx_sample_destroy_stage(handle, &stage_attachment);
-  ovphysx_result_t destroy_res = ovphysx_destroy_instance(handle);
+  ovphysx_destroy_instance(handle);
   ovphysx_shutdown();
   printf("Cleanup complete\n");
 

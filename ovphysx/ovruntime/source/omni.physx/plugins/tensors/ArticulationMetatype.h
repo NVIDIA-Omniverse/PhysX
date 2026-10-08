@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
@@ -74,6 +74,10 @@ public:
     void addLink(const std::string& name);
     void addJoint(const JointDesc& desc);
     bool isDofBody0Parent(uint32_t DofIdx) const;
+    bool hasReversedDofBodyOrder() const
+    {
+        return mHasReversedDofBodyOrder;
+    }
     void setFixedBase(bool fixedBase);
     void setLinkParentIndex(uint32_t linkIdx, uint32_t parentIdx);
     void print() const;
@@ -97,6 +101,10 @@ private:
     std::map<std::string, uint32_t> mDofMap;
 
     bool mFixedBase = false;
+
+    // True when any DOF has body1 as its articulation parent. CPU and GPU inverse dynamics gathers use
+    // this immutable metatype fact to skip authored-basis transforms for parent-first articulations.
+    bool mHasReversedDofBodyOrder = false;
 
     friend struct ArticulationMetatypeLT;
 };

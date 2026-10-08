@@ -1,18 +1,30 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
-"""Discovery of ovphysx's codeless PhysX USD schemas for external USD tooling.
+# @implements REQ-CAPI-OVSTAGE-SCHEMA-001
+# @covers AC-1
 
-ovphysx exposes the PhysX USD schemas as *codeless* schema artifacts -- a
-``plugInfo.json`` (``Type: resource``) and ``generatedSchema.usda`` per schema
-module, with no compiled library. They are intended for external authoring and
-validation pipelines that drive a stock ``usd-core`` from PyPI.
+"""Discovery of the codeless PhysX USD schemas that ovphysx ships.
+
+ovphysx ships the PhysX USD schemas as *codeless* schema artifacts: a root
+``plugInfo.json`` plus a ``plugInfo.json`` (``Type: resource``) and
+``generatedSchema.usda`` per schema module, with no compiled library. ovphysx
+does not load or register them and ships no USD runtime: the application owns
+its USD runtime(s) and registers the schemas explicitly.
 
 The codeless schemas ship in the wheel and SDK under a stable convention::
 
+    <ovphysx>/schemas/physx/plugInfo.json
     <ovphysx>/schemas/physx/<module>/resources/{plugInfo.json,generatedSchema.usda}
 
-Register them with a stock USD runtime via :func:`codeless_schema_paths`::
+Register them with ovstage before the first population call in the process::
+
+    import ovphysx
+    import ovstage
+    ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+
+Register them with a stock ``usd-core`` runtime via :func:`codeless_schema_root`
+or :func:`codeless_schema_paths`::
 
     import ovphysx
     from pxr import Plug
@@ -24,10 +36,11 @@ no compiled C++/Python helper classes (no ``PhysxSchema.PhysxRigidBodyAPI``
 binding); use USD's generic schema API.
 
 These helpers are pure-Python: importing or calling them never triggers
-ovphysx native loading, so they are safe to use in a process that only wants to
-author/validate USD with a stock ``usd-core`` and never starts the simulator.
+ovphysx native loading, so they are safe to use in a process that only authors
+or validates USD with a stock ``usd-core`` and never starts the simulator.
 """
 
+import os
 from pathlib import Path
 
 __all__ = ["codeless_schema_root", "codeless_schema_paths"]
@@ -39,6 +52,15 @@ _SCHEMA_SUBDIR = ("schemas", "physx")
 
 def _candidate_roots():
     """Yield candidate ``schemas/physx`` roots, most specific first."""
+    # 0. OVPHYSX_LIB selects the native library the bindings load. The matching
+    #    schemas are next to that library (copied runtime) or one level up
+    #    (SDK layout), probed in the same order the native helper uses.
+    override = os.environ.get("OVPHYSX_LIB")
+    if override:
+        override_path = Path(override).resolve()
+        lib_dir = override_path if override_path.is_dir() else override_path.parent
+        yield lib_dir.joinpath(*_SCHEMA_SUBDIR)
+        yield lib_dir.parent.joinpath(*_SCHEMA_SUBDIR)
     pkg = Path(__file__).parent
     # 1. Installed wheel: the schemas tree is bundled next to this package.
     yield pkg.joinpath(*_SCHEMA_SUBDIR)
@@ -63,7 +85,7 @@ def codeless_schema_root() -> Path:
             the schemas.
     """
     for root in _candidate_roots():
-        if root.is_dir():
+        if (root / "plugInfo.json").is_file():
             return root
     searched = ", ".join(str(root) for root in _candidate_roots())
     raise FileNotFoundError(
@@ -87,7 +109,9 @@ def codeless_schema_paths() -> list[Path]:
     """
     root = codeless_schema_root()
     paths = sorted(
-        path for path in root.glob("*/resources") if (path / "plugInfo.json").is_file()
+        path
+        for path in root.glob("*/resources")
+        if (path / "plugInfo.json").is_file() and (path / "generatedSchema.usda").is_file()
     )
     if not paths:
         raise FileNotFoundError(

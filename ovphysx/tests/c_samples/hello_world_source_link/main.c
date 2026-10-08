@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-// Minimal source-link example: builds against the ovphysx source tree via
+// Minimal source-link example. It builds against the ovphysx source tree via
 // add_subdirectory() instead of find_package(). The simulation logic is
-// identical to hello_world_c — create, load USD, step, destroy.
+// identical to hello_world_c: create, load USD, step, destroy.
 
 #ifdef __cplusplus
 #error "This file should be compiled as C, not C++"
@@ -45,7 +45,8 @@ static int run(void)
     }
 
     ovphysx_op_wait_result_t step_wait_result = {0};
-    ovphysx_result_t step_wait_status = ovphysx_wait_op(handle, step_result.op_index, UINT64_MAX, &step_wait_result);
+    ovphysx_result_t step_wait_status = ovphysx_wait_op(
+        handle, step_result.op_index, OVPHYSX_TIMEOUT_INFINITE, &step_wait_result);
     int step_ok = (step_wait_status.status == OVPHYSX_API_SUCCESS && step_wait_result.num_errors == 0);
     ovphysx_destroy_wait_result(&step_wait_result);
     if (!step_ok) {

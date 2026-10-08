@@ -1,5 +1,5 @@
 <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
-<!-- SPDX-License-Identifier: BSD-3-Clause -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
 # Physics Scene and Simulation Configuration
 
@@ -10,34 +10,63 @@ iteration counts, GPU buffers, sleeping, stabilization) for scenes that ovphysx
 loads and steps.
 
 This is the foundation the other Simulation Setup pages build on
-([Collision](collision.md), [Rigid Bodies](rigid_bodies.md),
+([Colliders](collision.md), [Rigid Bodies](rigid_bodies.md),
 [Joints](joints.md), [Articulations](articulations.md),
 [Deformables](deformables.md), [Particles](particles.md)).
+
+The code examples on this page are fragments, not complete files. Each USDA
+example shows the prims to author inside the stage's `defaultPrim` hierarchy;
+where a later example repeats the `physicsScene` prim, it replaces the earlier
+definition instead of adding a second scene. Each Python example after
+[Setting Up a USD Stage and a Physics Scene](#setting-up-a-usd-stage-and-a-physics-scene)
+extends that section's script and reuses its `stage` and `scene` variables. For a
+complete, CI-tested file, refer to the `simple_physics_scene.usda` reference used
+by [Hello World](../tutorials/hello_world.md).
 
 ## How ovphysx Simulates a Scene
 
 ovphysx consumes **pre-authored USD** owned by the application through ovstage.
-Once a stage is attached, a step proceeds roughly as follows:
 
-1. After population, seal the ordinal with `advance_write_floor()`, then call
-   [`attach_ovstage()`](../ovphysx_overview.md). Attach parses the sealed ordinal
-   and creates PhysX objects for the prims that carry physics schemas.
-2. Colliders that need cooking (convex hull, convex decomposition, SDF, triangle
+Before you step a simulation, confirm the following:
+
+- An ovphysx instance exists, created with `ovphysx.PhysX()` in Python or
+  `ovphysx_create_instance()` in C.
+- The application has populated its scene into ovstage, and that scene contains
+  at least one `PhysicsScene` prim.
+- The bundled codeless schemas are registered if the stage uses any `Physx*` or
+  `OmniPhysics*` schema or API, as described in
+  [Physics Schemas](../physics_schemas.md).
+
+A step then proceeds as follows:
+
+1. Seal the populated ordinal with `advance_write_floor()`.
+2. Call [`attach_ovstage()`](../ovphysx_overview.md) with the sealed ordinal.
+   Attach parses that ordinal and creates PhysX objects for the prims that carry
+   physics schemas.
+3. Colliders that need cooking (convex hull, convex decomposition, SDF, triangle
    mesh) are cooked. Results are cached on disk so recomputation is usually
    avoided — refer to the cooked-collider cache (UJITSO) in the
    [Developer Guide](../developer_guide.md).
-3. `step(dt)` advances the simulation by `dt`. **`step()` is asynchronous**: it
-   enqueues the step and returns an `op_index` immediately. Subsequent in-stream
-   ovphysx calls (such as tensor `read()` / `write()`) automatically wait for it,
-   but to consume results **outside** the ovphysx stream you must synchronize —
-   `wait_op()` on the returned index (or `wait_all()`). `step_sync(dt)` is a
-   convenience that steps and waits in one call (the typical choice for RL and
-   control loops). Refer to the [Execution Model](../developer_guide.md#execution-model).
-4. Results are read back explicitly by the application — either with
-   [tensor bindings](../tutorials/tensor_bindings.md) or with the ovstage
-   [output read](../ovstage_integration.md) API. Unlike Omni PhysX in Kit,
+4. Call `step(dt)` to advance the simulation by `dt`. **`step()` is
+   asynchronous**: it enqueues the step and returns an `op_index` immediately.
+   Subsequent in-stream ovphysx calls (such as tensor `read()` / `write()`)
+   automatically wait for it, but to consume results **outside** the ovphysx
+   stream you must synchronize — `wait_op()` on the returned index (or
+   `wait_all()`). `step_sync(dt)` is a convenience that steps and waits in one
+   call (the typical choice for RL and control loops). Refer to the
+   [Execution Model](../developer_guide.md#execution-model).
+5. Read results back explicitly — either with the ovstage
+   [output read](../ovstage_integration.md) API (the session read,
+   `ovphysx_read` / `PhysX.read`) or the deprecated
+   [tensor bindings](../tutorials/tensor_bindings.md). Unlike Omni PhysX in Kit,
    **ovphysx does not write simulation output back to the attached USD stage**;
    the application owns writing state back to ovstage.
+
+The pipeline is working when `attach_ovstage()` succeeds, `step(dt)` reports no
+error through `wait_op()` or `wait_all()`, and a read of the simulated state
+changes between steps. The clearest observable check is a dynamic body released
+above a static ground: its position along the gravity axis decreases over
+successive steps and then stops changing after the body rests on the ground.
 
 The rest of this page is about authoring the `PhysicsScene` prim and the
 attributes that configure this pipeline.
@@ -49,7 +78,16 @@ scene is authored with the core `UsdPhysics` schema (part of stock `usd-core`).
 PhysX-specific solver settings live on the codeless `PhysxSceneAPI` schema (refer to
 [Physics Schemas](../physics_schemas.md)).
 
-### `.usda`
+Before you author the scene, install `usd-core` and confirm that
+`ovphysx.codeless_schema_paths()` resolves, because the PhysX schemas must be
+registered before the first stage is created. The scene is authored correctly
+when the stage opens without a schema warning, `UsdPhysics.Scene.Get()` returns a
+valid prim at the authored path, and the gravity attributes read back the values
+you set.
+
+### USDA
+
+The following example defines a minimal stage and scene in a `.usda` file:
 
 ```usda
 #usda 1.0
@@ -72,6 +110,9 @@ def Xform "World"
 
 ### Python
 
+The following script builds the same stage and scene, and sets the units and up
+axis described in [Units and Up Axis](#units-and-up-axis):
+
 ```python
 import ovphysx
 from pxr import Plug, Usd, UsdGeom, UsdPhysics, Gf
@@ -83,7 +124,7 @@ Plug.Registry().RegisterPlugins([str(p) for p in ovphysx.codeless_schema_paths()
 
 stage = Usd.Stage.CreateNew("scene.usda")
 
-# Units and up axis (see below).
+# Units and up axis.
 UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.z)
 UsdGeom.SetStageMetersPerUnit(stage, 1.0)
 UsdPhysics.SetStageKilogramsPerUnit(stage, 1.0)
@@ -124,7 +165,7 @@ results, the units and up axis of your stage must match your content.
 
 ## Multiple Physics Scenes
 
-A stage may contain multiple `PhysicsScene` prims. `PhysicsRigidBodyAPI` and
+A stage can contain multiple `PhysicsScene` prims. `PhysicsRigidBodyAPI` and
 `PhysicsCollisionAPI` have a `physics:simulationOwner` relationship that assigns
 a body or collider to a specific scene. If it is not set, the first
 `PhysicsScene` found during traversal is used. Objects in separate physics
@@ -143,7 +184,7 @@ def Cube "cube0" (
     prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI"]
 )
 {
-    rel physics:simulationOwner = </physicsScene0>
+    rel physics:simulationOwner = </World/physicsScene0>
 }
 ```
 
@@ -166,11 +207,14 @@ strategies are available, selected on `PhysxSceneAPI`:
 - **PGS** (Projected Gauss-Seidel): converges more slowly but is less prone to
   overshooting.
 
-Iteration counts control accuracy vs. cost. Position iterations keep bodies from
+Iteration counts trade accuracy against cost. Position iterations keep bodies from
 overlapping; velocity iterations prevent bodies from picking up artificial
 velocity on interaction. Both are clamped per-scene with min/max attributes.
 
-### `.usda`
+### USDA
+
+The following example extends the `physicsScene` prim authored earlier with
+`PhysxSceneAPI` and explicit solver settings:
 
 ```usda
 def PhysicsScene "physicsScene" (
@@ -187,12 +231,13 @@ def PhysicsScene "physicsScene" (
 }
 ```
 
-### Python (codeless PhysX schema)
+### Python for the Codeless PhysX Schema
 
 PhysX-specific attributes live on codeless schemas that have no typed Python
-class. Apply them by identifier and author the attributes generically. This
-continues the script above, whose registration call already ran before the
-stage was created:
+class. Apply them by identifier and author the attributes generically. The
+following example extends the script in
+[Setting Up a USD Stage and a Physics Scene](#setting-up-a-usd-stage-and-a-physics-scene),
+whose registration call already ran before the stage was created:
 
 ```python
 from pxr import Sdf
@@ -223,7 +268,7 @@ def PhysicsScene "physicsScene" (
 }
 ```
 
-## CPU vs GPU Simulation
+## CPU and GPU Simulation
 
 GPU dynamics are enabled per scene in USD with `physxScene:enableGPUDynamics`
 (and a GPU broadphase through `physxScene:broadphaseType = "GPU"`):
@@ -263,9 +308,9 @@ by another object colliding with it.
 
 Each dynamic object type exposes sleep-related properties: for rigid bodies,
 `physxRigidBody:sleepThreshold` sets the mass-normalized kinetic-energy threshold
-below which the body may sleep (set it to `0` to keep a body always awake).
+below which the body can sleep (set it to `0` to keep a body always awake).
 
-From the runtime, rigid-body tensor bindings expose explicit
+From the runtime, rigid-body tensor bindings (deprecated) expose explicit
 [`wake_up()` / `sleep()`](../tutorials/tensor_bindings.md) controls.
 
 > **Sleeping and effective iteration counts (GPU).** In a GPU simulation it is
@@ -309,7 +354,7 @@ def Cube "box" (
 ovphysx does not write results back to the attached stage. To observe simulated
 state, read it explicitly:
 
-- [Tensor bindings](../tutorials/tensor_bindings.md) — bulk, DLPack-friendly
+- [ovstage output read](../ovstage_integration.md) — the session read
+  (`ovphysx_read` / `PhysX.read`) of positions, orientations, velocities, and joint state.
+- [Tensor bindings (deprecated)](../tutorials/tensor_bindings.md) — bulk, DLPack-friendly
   read/write of poses, velocities, joint state, and more.
-- [ovstage output read](../ovstage_integration.md) — ovstage-native read of
-  positions, orientations, velocities, and joint state.

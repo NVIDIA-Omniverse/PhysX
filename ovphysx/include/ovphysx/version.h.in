@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 // Compile-time version macros.  Auto-generated from version.h.in by CMake.
 // For runtime version queries, use ovphysx_get_version() / ovphysx_get_version_string()
@@ -20,5 +20,3 @@
 #define OVPHYSX_VERSION_STRING "@OVPHYSX_VERSION@"
 
 #endif // OVPHYSX_VERSION_H
-
-

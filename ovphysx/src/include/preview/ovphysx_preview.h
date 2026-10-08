@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
@@ -13,9 +13,9 @@ extern "C" {
 /**
  * Preview prim query APIs.
  *
- * These functions are not yet implemented and currently return
- * OVPHYSX_API_NOT_IMPLEMENTED. They remain available here for internal
- * experimentation and may change without notice.
+ * These functions are not implemented and return OVPHYSX_API_NOT_IMPLEMENTED.
+ * They remain available here for internal experimentation and may change
+ * without notice.
  */
 
 /*

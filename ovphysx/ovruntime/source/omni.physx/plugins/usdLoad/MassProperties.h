@@ -1,9 +1,19 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-PARSE-MASS-002
+ * @covers AC-1 AC-2
+ */
 
 #pragma once
 
 #include <carb/Types.h>
+
+#include <foundation/PxMat33.h>
+#include <foundation/PxQuat.h>
+#include <foundation/PxTransform.h>
+#include <foundation/PxVec3.h>
 
 namespace omni
 {
@@ -11,11 +21,11 @@ namespace physx
 {
 namespace usdparser
 {
-PXR_NS::GfQuatf indexedRotation(uint32_t axis, float s, float c)
+::physx::PxQuat indexedRotation(uint32_t axis, float s, float c)
 {
     float v[3] = { 0, 0, 0 };
     v[axis] = s;
-    return PXR_NS::GfQuatf(c, v[0], v[1], v[2]);
+    return ::physx::PxQuat(v[0], v[1], v[2], c);
 }
 
 uint32_t getNextIndex3(uint32_t i)
@@ -24,20 +34,25 @@ uint32_t getNextIndex3(uint32_t i)
 }
 
 
-PXR_NS::GfVec3f diagonalize(const PXR_NS::GfMatrix3f& m, PXR_NS::GfQuatf& massFrame)
+::physx::PxVec3 diagonalize(const ::physx::PxMat33& m, ::physx::PxQuat& massFrame)
 {
     // jacobi rotation using quaternions (from an idea of Stan Melax, with fix for precision issues)
 
     const uint32_t MAX_ITERS = 24;
 
-    PXR_NS::GfQuatf q = PXR_NS::GfQuatf(1.0);
+    ::physx::PxQuat q = ::physx::PxQuat(::physx::PxIdentity);
 
-    PXR_NS::GfMatrix3f d;
+    ::physx::PxMat33 d(::physx::PxZero);
     for (uint32_t i = 0; i < MAX_ITERS; i++)
     {
-        PXR_NS::GfMatrix3f axes(q);
-        d = axes * m * axes.GetTranspose();
+        // PxMat33(q) uses the column-vector convention, i.e. it is the transpose of the
+        // matrix GfMatrix3f(q) used to produce, but PhysX multiplies column-vector
+        // style, so the conjugation transposes swap sides to match.
+        const ::physx::PxMat33 axes(q);
+        d = axes.getTranspose() * m * axes;
 
+        // d holds the same nine floats the Gf version did, so the operator[]
+        // indexing below reads the same elements regardless of symmetry.
         float d0 = fabs(d[1][2]), d1 = fabs(d[0][2]), d2 = fabs(d[0][1]);
         uint32_t a = uint32_t(d0 > d1 && d0 > d2 ? 0 :
                               d1 > d2            ? 1 :
@@ -50,7 +65,7 @@ PXR_NS::GfVec3f diagonalize(const PXR_NS::GfMatrix3f& m, PXR_NS::GfQuatf& massFr
         float w = (d[a1][a1] - d[a2][a2]) / (2.0f * d[a1][a2]); // cot(2 * phi), where phi is the rotation angle
         float absw = fabs(w);
 
-        PXR_NS::GfQuatf r;
+        ::physx::PxQuat r;
         if (absw > 1000)
             r = indexedRotation(a, 1 / (4 * w), 1.0f); // h will be very close to 1, so use small angle approx instead
         else
@@ -61,27 +76,24 @@ PXR_NS::GfVec3f diagonalize(const PXR_NS::GfMatrix3f& m, PXR_NS::GfQuatf& massFr
             r = indexedRotation(a, sqrt((1 - h) / 2) * ((w >= 0.0f) ? 1.0f : -1.0f), sqrt((1 + h) / 2));
         }
 
-        q = (q * r).GetNormalized();
+        q = (q * r).getNormalized();
     }
 
     massFrame = q;
-    return PXR_NS::GfVec3f(d.GetColumn(0)[0], d.GetColumn(1)[1], d.GetColumn(2)[2]);
+    return ::physx::PxVec3(d[0][0], d[1][1], d[2][2]);
 }
 
 class MassProperties
 {
 public:
-    MassProperties() : inertiaTensor(0.0f), centerOfMass(0.0f), mass(1.0f)
+    MassProperties() : inertiaTensor(::physx::PxIdentity), centerOfMass(0.0f), mass(1.0f)
     {
-        inertiaTensor[0][0] = 1.0;
-        inertiaTensor[1][1] = 1.0;
-        inertiaTensor[2][2] = 1.0;
     }
 
     /**
     \brief Construct from individual elements.
     */
-    MassProperties(const float m, const PXR_NS::GfMatrix3f& inertiaT, const PXR_NS::GfVec3f& com)
+    MassProperties(const float m, const ::physx::PxMat33& inertiaT, const ::physx::PxVec3& com)
         : inertiaTensor(inertiaT), centerOfMass(com), mass(m)
     {
     }
@@ -102,7 +114,7 @@ public:
 
     \param[in] t The translation vector for the center of mass.
     */
-    void translate(const PXR_NS::GfVec3f& t)
+    void translate(const ::physx::PxVec3& t)
     {
         inertiaTensor = translateInertia(inertiaTensor, mass, t);
         centerOfMass += t;
@@ -115,10 +127,10 @@ public:
     \param[out] massFrame The frame the diagonalized tensor refers to.
     \return The entries of the diagonalized inertia tensor.
     */
-    static PXR_NS::GfVec3f getMassSpaceInertia(const PXR_NS::GfMatrix3f& inertia, PXR_NS::GfQuatf& massFrame)
+    static ::physx::PxVec3 getMassSpaceInertia(const ::physx::PxMat33& inertia, ::physx::PxQuat& massFrame)
     {
 
-        PXR_NS::GfVec3f diagT = diagonalize(inertia, massFrame);
+        ::physx::PxVec3 diagT = diagonalize(inertia, massFrame);
         return diagT;
     }
 
@@ -130,14 +142,12 @@ public:
     \param[in] t The relative frame to translate the inertia tensor to.
     \return The translated inertia tensor.
     */
-    static PXR_NS::GfMatrix3f translateInertia(const PXR_NS::GfMatrix3f& inertia, const float mass, const PXR_NS::GfVec3f& t)
+    static ::physx::PxMat33 translateInertia(const ::physx::PxMat33& inertia, const float mass, const ::physx::PxVec3& t)
     {
-        PXR_NS::GfMatrix3f s;
-        s.SetColumn(0, PXR_NS::GfVec3f(0, t[2], -t[1]));
-        s.SetColumn(1, PXR_NS::GfVec3f(-t[2], 0, t[0]));
-        s.SetColumn(2, PXR_NS::GfVec3f(t[1], -t[0], 0));
+        const ::physx::PxMat33 s(::physx::PxVec3(0, t[2], -t[1]), ::physx::PxVec3(-t[2], 0, t[0]),
+                                 ::physx::PxVec3(t[1], -t[0], 0));
 
-        PXR_NS::GfMatrix3f translatedIT = s * s.GetTranspose() * mass + inertia;
+        ::physx::PxMat33 translatedIT = s * s.getTranspose() * mass + inertia;
         return translatedIT;
     }
 
@@ -148,10 +158,12 @@ public:
     \param[in] q The rotation to apply to the inertia tensor.
     \return The rotated inertia tensor.
     */
-    static PXR_NS::GfMatrix3f rotateInertia(const PXR_NS::GfMatrix3f& inertia, const PXR_NS::GfQuatf& q)
+    static ::physx::PxMat33 rotateInertia(const ::physx::PxMat33& inertia, const ::physx::PxQuat& q)
     {
-        PXR_NS::GfMatrix3f m(q);
-        PXR_NS::GfMatrix3f rotatedIT = m.GetTranspose() * inertia * m;
+        // PxMat33(q) holds the same floats as GfMatrix3f(q), but PhysX multiplies
+        // column-vector style, so the operands and transposes swap places.
+        const ::physx::PxMat33 m(q);
+        ::physx::PxMat33 rotatedIT = m * inertia * m.getTranspose();
         return rotatedIT;
     }
 
@@ -163,16 +175,16 @@ public:
     \param[in] count The number of mass properties to sum up.
     \return The summed up mass properties.
     */
-    static MassProperties sum(const MassProperties* props, const PXR_NS::GfMatrix4f* transforms, const uint32_t count)
+    static MassProperties sum(const MassProperties* props, const ::physx::PxTransform* transforms, const uint32_t count)
     {
         float combinedMass = 0.0f;
-        PXR_NS::GfVec3f combinedCoM(0.0f);
-        PXR_NS::GfMatrix3f combinedInertiaT = PXR_NS::GfMatrix3f(0.0f);
+        ::physx::PxVec3 combinedCoM(0.0f);
+        ::physx::PxMat33 combinedInertiaT = ::physx::PxMat33(::physx::PxZero);
 
         for (uint32_t i = 0; i < count; i++)
         {
             combinedMass += props[i].mass;
-            const PXR_NS::GfVec3f comTm = transforms[i].Transform(props[i].centerOfMass);
+            const ::physx::PxVec3 comTm = transforms[i].transform(props[i].centerOfMass);
             combinedCoM += comTm * props[i].mass;
         }
 
@@ -181,18 +193,17 @@ public:
 
         for (uint32_t i = 0; i < count; i++)
         {
-            const PXR_NS::GfVec3f comTm = transforms[i].Transform(props[i].centerOfMass);
-            combinedInertiaT += translateInertia(
-                rotateInertia(props[i].inertiaTensor, PXR_NS::GfQuatf(transforms[i].ExtractRotation().GetQuat())),
-                props[i].mass, combinedCoM - comTm);
+            const ::physx::PxVec3 comTm = transforms[i].transform(props[i].centerOfMass);
+            combinedInertiaT += translateInertia(rotateInertia(props[i].inertiaTensor, transforms[i].q), props[i].mass,
+                                                 combinedCoM - comTm);
         }
 
         return MassProperties(combinedMass, combinedInertiaT, combinedCoM);
     }
 
 
-    PXR_NS::GfMatrix3f inertiaTensor; //!< The inertia tensor of the object.
-    PXR_NS::GfVec3f centerOfMass; //!< The center of mass of the object.
+    ::physx::PxMat33 inertiaTensor; //!< The inertia tensor of the object.
+    ::physx::PxVec3 centerOfMass; //!< The center of mass of the object.
     float mass; //!< The mass of the object.
 };
 

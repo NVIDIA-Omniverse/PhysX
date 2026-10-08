@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
-// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
+// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "PxgGeometryManager.h"
 
@@ -73,7 +50,8 @@ PxgGeometryManager::PxgGeometryManager(PxgAllocatorDesc& allocDesc):
 	mHostMemoryMapped(NULL),
 	mHostMemoryRequirements(0),
 	mFreeGeometryIndices(mGeometryData),
-	mBoxHullIdx(0xFFffFFff)
+	mBoxHullIdx(0xFFffFFff),
+	mAllocFailed(false)
 {
 }
 
@@ -91,12 +69,29 @@ PxgGeometryManager::~PxgGeometryManager()
 
 PxU32 PxgGeometryManager::addGeometryInternal(PxU64 byteSize, const void* geomPtr, UploadGeometryType::Enum type, PxU32 numPolyVertices /*= 0*/)
 {
-	byteSize = (byteSize + 255) & ~255;
+	//PT: once an allocation has failed this manager is out of the game: the device pointers it would hand out
+	//are NULL and the copies it would schedule have no valid destination. Fail every subsequent request rather
+	//than registering geometries that cannot be uploaded.
+	if(mAllocFailed)
+		return PX_INVALID_U32;
 
-	mHostMemoryRequirements += byteSize;
+	byteSize = (byteSize + 255) & ~255;
 
 	PxU32 idx = mFreeGeometryIndices.getFreeIndex();
 	void* devicePtr = mDeviceAlloc.allocate(byteSize, PxsHeapStats::eNARROWPHASE, PX_FL);
+	if(!devicePtr)
+	{
+		//PT: the device heap returns NULL on failure. Storing that in mGeometryData would hand a null device
+		//pointer to the kernels, schedule a copy to device address 0, and make every failed geometry collide on
+		//the NULL key in mMeshToTextureMap. Give the index back and fail the request instead.
+		//Note we do not report here: the underlying device allocator already emitted the out-of-memory error
+		//(see PxgCudaDeviceMemoryAllocate), and a second message for the same failure would be noise.
+		mFreeGeometryIndices.setFreeIndex(idx);
+		mAllocFailed = true;
+		return PX_INVALID_U32;
+	}
+
+	mHostMemoryRequirements += byteSize;
 
 	PxU32 copyIndex = mScheduledCopies.size();
 
@@ -116,6 +111,7 @@ PxU32 PxgGeometryManager::addGeometryInternal(PxU64 byteSize, const void* geomPt
 	HullOrMeshData newHullOrMesh;
 	newHullOrMesh.mDeviceMemPointer = devicePtr;
 	newHullOrMesh.mCopyDescIndex = copyIndex;
+	newHullOrMesh.mIsAllocated = true;
 
 	PX_ASSERT(idx < mGeometryData.size());
 	mGeometryData[idx] = newHullOrMesh;
@@ -143,13 +139,42 @@ PxU32 PxgGeometryManager::addHull(const ConvexHullData& hull)
 
 void PxgGeometryManager::removeGeometry(PxU32 idx)
 {
-	PX_ASSERT(idx < mGeometryData.size());
+	//PT: a geometry whose allocation failed was never registered and carries PX_INVALID_U32 (see
+	//addGeometryInternal), so there is nothing to remove and indexing with it would run past the array.
+	PX_ASSERT(idx < mGeometryData.size() || idx == PX_INVALID_U32);
+	if(idx >= mGeometryData.size())
+		return;
+
 	HullOrMeshData geometryToRemove = mGeometryData[idx];
+
+	// ### DEFENSIVE OMPE-103056
+	// Already released: the CUarray and allocation are gone and idx may have been reused, so a
+	// repeat teardown would free a live geometry's resources. Only detectable while idx is still
+	// on the free list; the caller that removes twice is the real defect.
+	if (!geometryToRemove.mIsAllocated)
+	{
+		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
+			"PxgGeometryManager::removeGeometry: geometry index was already released. Skipping.\n");
+		PX_ALWAYS_ASSERT();
+		return;
+	}
 
 	PxU32 scheduledCopyIndex = geometryToRemove.mCopyDescIndex;
 
-	if (scheduledCopyIndex != HullOrMeshData::INVALID_COPY_DESC_INDEX)
+	//PT: mCopyDescIndex is a back-reference into mScheduledCopies, which is dropped wholesale when
+	//scheduleCopyHtoD() bails out. Treat an out-of-range value as "no pending copy" instead of indexing with
+	//it: back() below is assert-only, so on an empty array it would return mData[0xffffffff] in release
+	//builds (OMPE-103245).
+	if (scheduledCopyIndex != HullOrMeshData::INVALID_COPY_DESC_INDEX && scheduledCopyIndex < mScheduledCopies.size())
 	{
+		//PT: the pending copy is about to go away, so its share of the staging buffer goes with it. Otherwise
+		//mHostMemoryRequirements keeps over-stating what scheduleCopyHtoD() has to allocate: add a large mesh
+		//and remove it within the same step, and it would request a full-size pinned buffer for no copies at
+		//all. mCopyDesc.bytes is the same 256-aligned size addGeometryInternal() added. Read it before the
+		//entry below is overwritten.
+		PX_ASSERT(mHostMemoryRequirements >= mScheduledCopies[scheduledCopyIndex].mCopyDesc.bytes);
+		mHostMemoryRequirements -= mScheduledCopies[scheduledCopyIndex].mCopyDesc.bytes;
+
 		PxU32 lastScheduledCopyHullOrTrimeshIndex = mScheduledCopies.back().mHullOrTrimeshIdx;
 
 		if (lastScheduledCopyHullOrTrimeshIndex != idx)
@@ -181,12 +206,28 @@ void PxgGeometryManager::removeGeometry(PxU32 idx)
 		mMeshToTextureMap.erase(geometryToRemove.mDeviceMemPointer);
 	}
 
+	// Invalidate before the index returns to the free list, so a second removal is caught above.
+	mGeometryData[idx].mIsAllocated = false;
+	mGeometryData[idx].mDeviceMemPointer = NULL;
+	mGeometryData[idx].mCopyDescIndex = HullOrMeshData::INVALID_COPY_DESC_INDEX;
+
 	mDeviceAlloc.deallocate(geometryToRemove.mDeviceMemPointer);
 	mFreeGeometryIndices.setFreeIndex(idx);
 }
 
 void PxgGeometryManager::scheduleCopyHtoD(PxgCopyManager& copyMan, PxCudaContext& cudaContext, CUstream stream)
 {
+	// PT: an allocation failed earlier, so nothing this manager owns can be uploaded and no geometry it was
+	// asked for since then exists on the device. Re-assert abort mode for as long as that holds: an
+	// application is free to clear it through PxCudaContext::setAbortMode(), and simulating on with geometry
+	// that has no device memory behind it gives wrong results rather than a stopped scene. PxgShapeManager,
+	// the material managers and PxgCopyManager all re-assert their own latch here in the same way.
+	if(mAllocFailed)
+	{
+		cudaContext.setAbortMode(true);
+		return;
+	}
+
 	// allocate the proper amount of pinned memory
 	if(mHostMemoryRequirements > 0)
 	{
@@ -194,7 +235,21 @@ void PxgGeometryManager::scheduleCopyHtoD(PxgCopyManager& copyMan, PxCudaContext
 		if(!mHostMemoryMapped)
 		{
 			PxGetFoundation().error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "PxgGeometryManager: failed to allocate pinned host mHostMemoryMapped");
+
+			//PT: the scheduled geometries still point back here through mGeometryData[i].mCopyDescIndex. Clear
+			//those back-references before dropping the array, the same way the regular path below does, or they
+			//dangle into an empty mScheduledCopies and the next removeGeometry() indexes it (OMPE-103245).
+			for(PxU32 i=0; i<mScheduledCopies.size(); i++)
+			{
+				const PxU32 geometryIndex = mScheduledCopies[i].mHullOrTrimeshIdx;
+				PX_ASSERT(geometryIndex < mGeometryData.size());
+				if(geometryIndex < mGeometryData.size())
+					mGeometryData[geometryIndex].mCopyDescIndex = HullOrMeshData::INVALID_COPY_DESC_INDEX;
+			}
+
 			mScheduledCopies.forceSize_Unsafe(0);
+			mHostMemoryRequirements = 0;
+			mAllocFailed = true;
 			cudaContext.setAbortMode(true);
 			return;
 		}
@@ -267,15 +322,20 @@ void PxgGeometryManager::resetAfterMemcpyCompleted()
 
 CUdeviceptr PxgGeometryManager::getGeometryDevPtrByIndex(PxU32 idx) const
 {
-	PX_ASSERT(idx < mGeometryData.size());
+	//PT: callers pass the index returned by add*() straight through, which is PX_INVALID_U32 when the
+	//allocation failed. Return a null device pointer for it rather than indexing out of bounds.
+	PX_ASSERT(idx < mGeometryData.size() || idx == PX_INVALID_U32);
+	if(idx >= mGeometryData.size())
+		return 0;
 
 	return reinterpret_cast<CUdeviceptr>(mGeometryData[idx].mDeviceMemPointer);
 }
 
 CUdeviceptr PxgGeometryManager::getBoxHullDevPtr() const
 {
-	PX_ASSERT(mBoxHullIdx != 0xFFffFFff);
-	PX_ASSERT(mBoxHullIdx < mGeometryData.size());
+	PX_ASSERT(mBoxHullIdx < mGeometryData.size() || mBoxHullIdx == PX_INVALID_U32);
+	if(mBoxHullIdx >= mGeometryData.size())	//PT: addBoxHull() failed to allocate.
+		return 0;
 
 	return reinterpret_cast<CUdeviceptr>(mGeometryData[mBoxHullIdx].mDeviceMemPointer);
 }
@@ -778,5 +838,13 @@ static void createTextureObject(CUarray_format format, CUtexObject*& texture, CU
 	texDesc.filterMode = CU_TR_FILTER_MODE_LINEAR;
 	
 	r = cuTexObjectCreate(texture, &resDesc, &texDesc, NULL);
+	PX_ASSERT(r == CUDA_SUCCESS);
+
+	// The SDF texels live in pageable mesh memory, so the driver stages them through its own
+	// bounce buffer and the DMA into the array can still be in flight when cuMemcpy3DAsync
+	// returns. cuTexObjectCreate does not wait on that stream and does not sample the array,
+	// so it can run on the CPU while the copy finishes. Consumers of the array later are not
+	// all ordered against this stream, so wait before returning.
+	r = cuStreamSynchronize(stream);
 	PX_ASSERT(r == CUDA_SUCCESS);
 }

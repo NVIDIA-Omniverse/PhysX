@@ -1,0 +1,6 @@
+<project toolsVersion="5.0">
+  <!-- 3.12 matches ovruntime; the py312 test USD links libpython3.12. -->
+  <dependency name="python" linkPath="../_build/target-deps/python">
+    <package name="python" version="3.12.13+nv3-${platform_target_abi}" />
+  </dependency>
+</project>

@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "common/PxProfileZone.h"
 #include "foundation/PxIntrinsics.h"
@@ -422,6 +399,16 @@ void AABBPruner::commit()
 				if(treeNodeIndex!=INVALID_NODE_ID)
 					mAABBTree->markNodeForRefit(treeNodeIndex);
 
+				// PT: also mark the relocated object's node for refit. This is not strictly needed as long as the new tree's
+				// bounds were valid when the object was relocated (which is the case today: the full refit never runs with
+				// pending fixups anymore, see BUILD_FULL_REFIT stage). But it makes this replay self-sufficient - the leaf
+				// bounds get recomputed no matter what state the (invisible) new tree was in. See GitHub issue #400.
+				{
+					const TreeNodeIndex treeNodeIndex2 = mTreeMap[r->relocatedLastIndex];
+					if(treeNodeIndex2!=INVALID_NODE_ID)
+						mAABBTree->markNodeForRefit(treeNodeIndex2);
+				}
+
 				mTreeMap.invalidate(r->removedIndex, r->relocatedLastIndex, *mAABBTree);
 			}
 			mNewTreeFixups.clear(); // clear out the fixups since we just applied them all
@@ -572,6 +559,29 @@ bool AABBPruner::buildStep(bool synchronousCall)
 		{
 			mNbCalls++;
 			mProgress = BUILD_LAST_FRAME;
+
+			{
+				// PT: objects may have been removed in-between the BUILD_NEW_MAPPING and BUILD_FULL_REFIT stages. These removals
+				// were not applied to the new tree by the BUILD_NEW_MAPPING code, so we need to do it now, before the full refit.
+				// Otherwise the refit code fetches bounds using stale primitive indices, whose pool entries may have been reused
+				// by objects added after the removals - i.e. the refit leaves would get bounds from entirely different objects.
+				// The tree switch code (in commit()) does not re-refit the leaves whose indices it fixes up, so these leaves
+				// would keep their incorrect bounds, and queries would then miss the corresponding objects. See GitHub issue #400.
+				PX_PROFILE_ZONE("SceneQuery.prunerNewTreeMapping", mPool.mContextID);
+
+				if(mNewTreeFixups.size())
+				{
+					mNewTreeMap.initMap(PxMax(mPool.getNbActiveObjects(), mNbCachedBoxes), *mNewTree);
+
+					for(NewTreeFixup* r = mNewTreeFixups.begin(); r < mNewTreeFixups.end(); r++)
+						mNewTreeMap.invalidate(r->removedIndex, r->relocatedLastIndex, *mNewTree);
+
+					mNewTreeFixups.clear();
+#if PX_DEBUG
+					mNewTree->validate();
+#endif
+				}
+			}
 
 			{
 				PX_PROFILE_ZONE("SceneQuery.prunerNewTreeFullRefit", mPool.mContextID);

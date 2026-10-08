@@ -1,4 +1,7 @@
 #!/bin/bash
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 set -e
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -12,8 +15,18 @@ esac
 # Fetch release deps (schema is codeless; artifacts are platform- and config-independent).
 PACKMAN="$SCRIPT_DIR/tools/packman/packman"
 "$PACKMAN" pull "$SCRIPT_DIR/deps/host-deps.packman.xml" -p "$PACKMAN_PLATFORM"
-"$PACKMAN" pull "$SCRIPT_DIR/deps/kit-kernel-deps.packman.xml" -p "$PACKMAN_PLATFORM" -t "config=release" -t "platform_target_abi=$PACKMAN_PLATFORM"
-"$PACKMAN" pull "$SCRIPT_DIR/deps/usd-deps.packman.xml" -p "$PACKMAN_PLATFORM" -t "config=release" -t "platform_target_abi=$PACKMAN_PLATFORM"
+
+# USD version comes from ovruntime's USD pin (stock variant here, py-less
+# there), keeping schema aligned with ovruntime and ovphysx.
+USD_VER=$(sed -n 's/.*name="usd\.nopy[^"]*"[[:space:]]*version="\([^"]*\)".*/\1/p' \
+    "$SCRIPT_DIR/../../ovphysx/ovruntime/deps/usd-deps.packman.xml" | head -1)
+if [ -z "$USD_VER" ]; then
+    echo "ERROR: could not read the USD version from ovruntime's USD pin." >&2
+    exit 1
+fi
+echo "USD version (from ovruntime): $USD_VER"
+
+"$PACKMAN" pull "$SCRIPT_DIR/deps/usd-deps.packman.xml" -p "$PACKMAN_PLATFORM" -t "config=release" -t "platform_target_abi=$PACKMAN_PLATFORM" -t "usd_ver=$USD_VER"
 
 CMAKE="$SCRIPT_DIR/_build/host-deps/cmake/bin/cmake"
 if [ ! -x "$CMAKE" ]; then

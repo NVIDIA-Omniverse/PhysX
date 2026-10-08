@@ -1,9 +1,7 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
-
-#include "UsdPCH.h"
 
 #include "PhysXTools.h"
 
@@ -35,18 +33,22 @@ struct ContactPoint
 
 struct CompoundShapeReportData
 {
-    PXR_NS::SdfPath mActor0Path;
-    PXR_NS::SdfPath mShape0Path;
-    PXR_NS::SdfPath mActor1Path;
-    PXR_NS::SdfPath mShape1Path;
+    omni::physics::parse::ObjectKey mActor0Path;
+    omni::physics::parse::ObjectKey mShape0Path;
+    omni::physics::parse::ObjectKey mActor1Path;
+    omni::physics::parse::ObjectKey mShape1Path;
     SimulationEvent mEvent;
     std::vector<ContactPoint> mContactPoints;
 };
 
-using UnresolvedContactPairsMap = std::unordered_multimap<const ::physx::PxRigidActor*, std::pair<PXR_NS::SdfPath, float>>;
+// Internal bookkeeping only, not the wire format (ContactEventHeader is already
+// asInt-encoded and backend-agnostic): keyed/valued by ObjectKey rather than
+// SdfPath so this state works under any IPhysicsSource.
+using UnresolvedContactPairsMap =
+    std::unordered_multimap<const ::physx::PxRigidActor*, std::pair<omni::physics::parse::ObjectKey, float>>;
 using ContactPairsMap =
     std::unordered_multimap<const ::physx::PxRigidActor*, std::pair<const ::physx::PxRigidActor*, float>>;
-using ReleasedObjectsMap = std::unordered_map<const ::physx::PxBase*, PXR_NS::SdfPath>;
+using ReleasedObjectsMap = std::unordered_map<const ::physx::PxBase*, omni::physics::parse::ObjectKey>;
 using CompoundShapeBufferedData = std::map<Pair<void*>, CompoundShapeReportData>;
 using DeletedEventsSet = std::unordered_set<Pair<uint64_t>, PairHash>;
 using ContactHeadersVector = std::vector<omni::physx::ContactEventHeader>;
@@ -89,12 +91,12 @@ public:
         return mContactPairsMap.empty();
     }
 
-    void addActorPair(::physx::PxRigidActor* body, const PXR_NS::SdfPath& path, float forceThreshold)
+    void addActorPair(::physx::PxRigidActor* body, omni::physics::parse::ObjectKey key, float forceThreshold)
     {
-        mUnresolvedContactPairsMap.insert(std::make_pair(body, std::make_pair(path, forceThreshold)));
+        mUnresolvedContactPairsMap.insert(std::make_pair(body, std::make_pair(key, forceThreshold)));
     }
 
-    void removeActor(::physx::PxRigidActor* actor, const PXR_NS::SdfPath& path)
+    void removeActor(::physx::PxRigidActor* actor, omni::physics::parse::ObjectKey key)
     {
         ContactPairsMap::iterator it = mContactPairsMap.begin();
         while (it != mContactPairsMap.end())
@@ -114,12 +116,12 @@ public:
         // freed actor.
         mUnresolvedContactPairsMap.erase(actor);
 
-        mReleaseActorsMap[actor] = path;
+        mReleaseActorsMap[actor] = key;
     }
 
-    void removeShape(::physx::PxShape* shape, const PXR_NS::SdfPath& path)
+    void removeShape(::physx::PxShape* shape, omni::physics::parse::ObjectKey key)
     {
-        mReleaseShapesMap[shape] = path;
+        mReleaseShapesMap[shape] = key;
     }
 
     void swapActor(::physx::PxRigidActor* oldActor, ::physx::PxRigidActor* newActor)
@@ -146,7 +148,7 @@ public:
         // Remap retained unresolved entries to the new source pointer. Collect
         // first: inserting into an unordered_multimap while iterating its
         // equal_range can rehash and invalidate the iterators.
-        std::vector<std::pair<PXR_NS::SdfPath, float>> pending;
+        std::vector<std::pair<omni::physics::parse::ObjectKey, float>> pending;
         UnresolvedContactPairsMap::iterator uit = mUnresolvedContactPairsMap.find(oldActor);
         if (uit != mUnresolvedContactPairsMap.end())
         {
@@ -294,14 +296,18 @@ private:
     }
 };
 
+// Registers every link of `art` for contact reporting from the PhysxContactReportAPI
+// on `key`. The API and its properties are read through the parse source, so this
+// works under any backend; a no-op when the API is not applied there.
 void setupContactReportToArticulation(PhysXScene* ps,
-                                      const PXR_NS::PhysxSchemaPhysxContactReportAPI& contactReportAPI,
+                                      const usdparser::AttachedStage& attachedStage,
+                                      omni::physics::parse::ObjectKey key,
                                       ::physx::PxArticulationReducedCoordinate& art);
 void setupContactReport(PhysXScene* ps,
                         usdparser::AttachedStage& attachedStage,
                         ::physx::PxRigidActor& rigidActor,
-                        const PXR_NS::SdfPath& usdPrimPath);
-void changeContactReport(usdparser::AttachedStage& attachedStage, const PXR_NS::SdfPath& path, bool removed);
+                        omni::physics::parse::ObjectKey key);
+void changeContactReport(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, bool removed);
 
 } // namespace physx
 } // namespace omni

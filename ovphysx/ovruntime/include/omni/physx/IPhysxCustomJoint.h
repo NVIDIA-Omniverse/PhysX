@@ -1,10 +1,18 @@
 // SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-9 AC-11
+ */
 
 #pragma once
 
 #include <carb/Defines.h>
 #include <carb/Types.h>
+
+#include <omni/physics/AttachHandle.h>
+#include <omni/physics/parse/Handles.h> // ObjectKey
 
 // Note requires PhysX SDK includes before including this file
 
@@ -25,16 +33,17 @@ struct CustomJointFlag
 
 /// Create custom joint function
 ///
-/// \param[in] sdfPath SdfPath of the joint prim.
-/// \param[in] stageId USD stageId.
+/// \param[in] key ObjectKey of the joint prim.
+/// \param[in] attachHandle Attach the joint belongs to (matches @ref
+/// IPhysxSimulation::getAttachHandle()).
 /// \param[in] actor0 PxRigidActor for the joint.
 /// \param[in] localFrame0 Transformation for local frame 0 for the joint.
 /// \param[in] actor1 PxRigidActor for the joint.
 /// \param[in] localFrame1 Transformation for local frame 1 for the joint.
 /// \param[in] constraintFlags Constraint flag for the constrain creation.
 /// \param[in] userData User data passed to ICustomJointCallback struct
-typedef bool (*CreateJointFn)(PXR_NS::SdfPath sdfPath,
-                              long stageId,
+typedef bool (*CreateJointFn)(omni::physics::parse::ObjectKey key,
+                              AttachHandle attachHandle,
                               ::physx::PxRigidActor* actor0,
                               const ::physx::PxTransform& localFrame0,
                               ::physx::PxRigidActor* actor1,
@@ -44,19 +53,19 @@ typedef bool (*CreateJointFn)(PXR_NS::SdfPath sdfPath,
 
 /// Release custom joint function
 ///
-/// \param[in] sdfPath SdfPath of the joint prim.
+/// \param[in] key ObjectKey of the joint prim.
 /// \param[in] userData User data passed to ICustomJointCallback struct
-typedef void (*ReleaseJointFn)(PXR_NS::SdfPath sdfPath, void* userData);
+typedef void (*ReleaseJointFn)(omni::physics::parse::ObjectKey key, void* userData);
 
 /// Prepare joint data function
 ///
 /// When the constraint is marked dirty, this function is called at the start of the simulation
 /// step for the SDK to copy the constraint data block.
 ///
-/// \param[in] sdfPath SdfPath of the joint prim.
+/// \param[in] key ObjectKey of the joint prim.
 /// \param[in] userData User data passed to ICustomJointCallback struct
 /// \return Return the joint data
-typedef void* (*PrepareJointDataFn)(PXR_NS::SdfPath sdfPath, void* userData);
+typedef void* (*PrepareJointDataFn)(omni::physics::parse::ObjectKey key, void* userData);
 
 /// On CoM Shift function
 ///
@@ -65,9 +74,9 @@ typedef void* (*PrepareJointDataFn)(PXR_NS::SdfPath sdfPath, void* userData);
 /// are supplied with coordinates relative to bodies, some synchronization is usually required
 /// when the application moves an object's center of mass.
 ///
-/// \param[in] sdfPath SdfPath of the joint prim.
+/// \param[in] key ObjectKey of the joint prim.
 /// \param[in] userData User data passed to ICustomJointCallback struct
-typedef void (*OnComShiftFn)(PXR_NS::SdfPath sdfPath, uint32_t actor, void* userData);
+typedef void (*OnComShiftFn)(omni::physics::parse::ObjectKey key, uint32_t actor, void* userData);
 
 /// On Origin Shift function
 ///
@@ -77,19 +86,19 @@ typedef void (*OnComShiftFn)(PXR_NS::SdfPath sdfPath, uint32_t actor, void* user
 /// \note If the adjustments affect constraint shader data, it is necessary to call PxConstraint::markDirty()
 /// to make sure that the data gets synced at the beginning of the next simulation step.
 ///
-/// \param[in] sdfPath SdfPath of the joint prim.
+/// \param[in] key ObjectKey of the joint prim.
 /// \param[in] shift Translation vector the origin is shifted by.
 /// \param[in] userData User data passed to ICustomJointCallback struct
-typedef void (*OnOriginShift)(PXR_NS::SdfPath sdfPath, const ::physx::PxVec3& shift, void* userData);
+typedef void (*OnOriginShift)(omni::physics::parse::ObjectKey key, const ::physx::PxVec3& shift, void* userData);
 
 /// Constant block data get function
 ///
 /// Obtain the pointer to the constraint's constant data
 ///
-/// \param[in] sdfPath SdfPath of the joint prim.
+/// \param[in] key ObjectKey of the joint prim.
 /// \param[in] userData User data passed to ICustomJointCallback struct
 /// \return Return the constraint data pointer
-typedef const void* (*GetConstantBlockFn)(PXR_NS::SdfPath sdfPath, void* userData);
+typedef const void* (*GetConstantBlockFn)(omni::physics::parse::ObjectKey key, void* userData);
 
 /// Custom joint strcuture holding function pointers for callbacks
 struct ICustomJointCallback
@@ -116,7 +125,7 @@ struct IPhysxCustomJoint
     /// \param jointSolverPrepFn Joint solver prep function.
     /// \param jointDataSize Joint data size that are provided for the constraint solver prep code.
     /// \return Registration id, used for unregister, return kInvalidCustomJointRegId when failed.
-    size_t(CARB_ABI* registerCustomJoint)(const PXR_NS::TfToken& jointPrimType,
+    size_t(CARB_ABI* registerCustomJoint)(const char* jointPrimType,
                                           ICustomJointCallback& jointCallback,
                                           ::physx::PxConstraintSolverPrep jointSolverPrepFn,
                                           size_t jointDataSize);
@@ -130,24 +139,24 @@ struct IPhysxCustomJoint
     ///
     /// Notify the scene that the constraint shader data has been updated by the application
     ///
-    /// \param primpath Path of the joint to mark dirty
-    void(CARB_ABI* markJointDirty)(const PXR_NS::SdfPath& primPath);
+    /// \param key ObjectKey of the joint to mark dirty
+    void(CARB_ABI* markJointDirty)(omni::physics::parse::ObjectKey key);
 
     /// Set joint flags
     ///
     /// Change the joint constaint flags.
     ///
-    /// \param primpath Path of the joint to mark dirty
+    /// \param key ObjectKey of the joint to mark dirty
     /// \param flags New joint flags
-    void(CARB_ABI* setJointFlags)(const PXR_NS::SdfPath& primPath, CustomJointFlag::Enum flags);
+    void(CARB_ABI* setJointFlags)(omni::physics::parse::ObjectKey key, CustomJointFlag::Enum flags);
 
     /// Get joint flags
     ///
     /// Get the joint constaint flags.
     ///
-    /// \param primpath Path of the joint to mark dirty
+    /// \param key ObjectKey of the joint to mark dirty
     /// \return Current joint flags
-    CustomJointFlag::Enum(CARB_ABI* getJointFlags)(const PXR_NS::SdfPath& primPath);
+    CustomJointFlag::Enum(CARB_ABI* getJointFlags)(omni::physics::parse::ObjectKey key);
 };
 
 } // namespace physx

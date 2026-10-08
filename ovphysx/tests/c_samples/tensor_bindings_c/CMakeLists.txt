@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 cmake_minimum_required(VERSION 3.16)
 project(TensorBindingsC C)
 
@@ -8,14 +11,14 @@ find_package(ovphysx REQUIRED)
 
 add_executable(tensor_bindings_c main.c)
 
-# Explicitly set the language to C (not C++)
+# Force the C language so the sample never compiles as C++.
 set_source_files_properties(main.c PROPERTIES LANGUAGE C)
 set_target_properties(tensor_bindings_c PROPERTIES
     C_STANDARD 11
     C_STANDARD_REQUIRED ON
 )
 
-# Add compiler-specific flags to enforce strict C compilation
+# Compiler-specific flags that enforce strict C compilation.
 if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(tensor_bindings_c PRIVATE
         -Werror=implicit-function-declaration

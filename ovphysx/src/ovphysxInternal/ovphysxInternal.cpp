@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-// Sidecar lifecycle entry points. Currently just the version probe used by
-// the SDK loader as a handshake after dlopen/LoadLibrary.
+// Sidecar lifecycle entry points: the version probe the SDK loader uses as a
+// handshake after dlopen/LoadLibrary, and the injected PhysX runtime accessors.
 
 #include "internal/sidecar/ovphysxInternal.h"
 #include "ovphysxInternalPhysXAccess.hpp"

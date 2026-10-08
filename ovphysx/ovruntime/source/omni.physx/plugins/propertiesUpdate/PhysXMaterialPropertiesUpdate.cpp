@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-
-#include "UsdPCH.h"
+// SPDX-License-Identifier: Apache-2.0
 
 #include "PhysXPropertiesUpdate.h"
+
+#include <omni/physics/parse/KnownTokens.h>
 
 #include <PhysXTools.h>
 #include <Setup.h>
@@ -16,14 +16,13 @@
 
 using namespace ::physx;
 using namespace carb;
-using namespace PXR_NS;
 using namespace omni::physx;
 using namespace omni::physx::usdparser;
 using namespace omni::physx::internal;
 
 // physx material
 bool omni::physx::updateMaterialFrictionCombineMode(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -35,25 +34,32 @@ bool omni::physx::updateMaterialFrictionCombineMode(AttachedStage& attachedStage
 
     if (internalType == ePTMaterial)
     {
-        TfToken data;
-        if (!getValue<TfToken>(attachedStage, objectRecord->mKey, property, timeCode, data))
+        const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+        if (!source)
             return true;
 
+        omni::physics::parse::TokenId data;
+        if (!source->getAttribute(objectRecord->mKey, property, data))
+            return true;
+
+        omni::physics::parse::KnownTokens tok;
+        tok.intern(*source);
+
         PxMaterial* material = (PxMaterial*)objectRecord->mPtr;
-        if (PhysxSchemaTokens.Get()->average == data)
+        if (tok.average == data)
             material->setFrictionCombineMode(PxCombineMode::eAVERAGE);
-        else if (PhysxSchemaTokens.Get()->min == data)
+        else if (tok.min == data)
             material->setFrictionCombineMode(PxCombineMode::eMIN);
-        else if (PhysxSchemaTokens.Get()->max == data)
+        else if (tok.max == data)
             material->setFrictionCombineMode(PxCombineMode::eMAX);
-        else if (PhysxSchemaTokens.Get()->multiply == data)
+        else if (tok.multiply == data)
             material->setFrictionCombineMode(PxCombineMode::eMULTIPLY);
     }
     return true;
 }
 
 bool omni::physx::updateMaterialRestitutionCombineMode(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -65,25 +71,32 @@ bool omni::physx::updateMaterialRestitutionCombineMode(AttachedStage& attachedSt
 
     if (internalType == ePTMaterial)
     {
-        TfToken data;
-        if (!getValue<TfToken>(attachedStage, objectRecord->mKey, property, timeCode, data))
+        const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+        if (!source)
             return true;
 
+        omni::physics::parse::TokenId data;
+        if (!source->getAttribute(objectRecord->mKey, property, data))
+            return true;
+
+        omni::physics::parse::KnownTokens tok;
+        tok.intern(*source);
+
         PxMaterial* material = (PxMaterial*)objectRecord->mPtr;
-        if (PhysxSchemaTokens.Get()->average == data)
+        if (tok.average == data)
             material->setRestitutionCombineMode(PxCombineMode::eAVERAGE);
-        else if (PhysxSchemaTokens.Get()->min == data)
+        else if (tok.min == data)
             material->setRestitutionCombineMode(PxCombineMode::eMIN);
-        else if (PhysxSchemaTokens.Get()->max == data)
+        else if (tok.max == data)
             material->setRestitutionCombineMode(PxCombineMode::eMAX);
-        else if (PhysxSchemaTokens.Get()->multiply == data)
+        else if (tok.multiply == data)
             material->setRestitutionCombineMode(PxCombineMode::eMULTIPLY);
     }
     return true;
 }
 
 bool omni::physx::updateMaterialDampingCombineMode(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -95,26 +108,33 @@ bool omni::physx::updateMaterialDampingCombineMode(AttachedStage& attachedStage,
 
     if (internalType == ePTMaterial)
     {
-        TfToken data;
-        if (!getValue<TfToken>(attachedStage, objectRecord->mKey, property, timeCode, data))
+        const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+        if (!source)
             return true;
 
+        omni::physics::parse::TokenId data;
+        if (!source->getAttribute(objectRecord->mKey, property, data))
+            return true;
+
+        omni::physics::parse::KnownTokens tok;
+        tok.intern(*source);
+
         PxMaterial* material = (PxMaterial*)objectRecord->mPtr;
-        if (PhysxSchemaTokens.Get()->average == data)
+        if (tok.average == data)
             material->setDampingCombineMode(PxCombineMode::eAVERAGE);
-        else if (PhysxSchemaTokens.Get()->min == data)
+        else if (tok.min == data)
             material->setDampingCombineMode(PxCombineMode::eMIN);
-        else if (PhysxSchemaTokens.Get()->max == data)
+        else if (tok.max == data)
             material->setDampingCombineMode(PxCombineMode::eMAX);
-        else if (PhysxSchemaTokens.Get()->multiply == data)
+        else if (tok.multiply == data)
             material->setDampingCombineMode(PxCombineMode::eMULTIPLY);
     }
     return true;
 }
 
 bool omni::physx::updateCompliantMaterial(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-                                          const PXR_NS::TfToken& property,
-                                          const PXR_NS::UsdTimeCode& timeCode)
+                                          omni::physics::parse::TokenId property,
+                                          omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -129,7 +149,12 @@ bool omni::physx::updateCompliantMaterial(AttachedStage& attachedStage, omni::ph
         PxMaterial* material = reinterpret_cast<PxMaterial*>(objectRecord->mPtr);
         if (material)
         {
-            if (property == PhysxSchemaTokens.Get()->physxMaterialCompliantContactStiffness)
+            const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+            omni::physics::parse::KnownTokens tok;
+            if (source)
+                tok.intern(*source);
+
+            if (property == tok.compliantContactStiffness)
             {
                 float data;
                 if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
@@ -143,12 +168,11 @@ bool omni::physx::updateCompliantMaterial(AttachedStage& attachedStage, omni::ph
                 {
                     // disable compliance and restore restitution from USD:
                     float restitution = 0.0f;
-                    getValue<float>(attachedStage, objectRecord->mKey, UsdPhysicsTokens.Get()->physicsRestitution,
-                                    timeCode, restitution);
+                    getValue<float>(attachedStage, objectRecord->mKey, tok.restitution, timeCode, restitution);
                     material->setRestitution(restitution);
                 }
             }
-            else if (property == PhysxSchemaTokens.Get()->physxMaterialCompliantContactDamping)
+            else if (property == tok.compliantContactDamping)
             {
                 float data;
                 if (!getValue<float>(attachedStage, objectRecord->mKey, property, timeCode, data))
@@ -163,7 +187,7 @@ bool omni::physx::updateCompliantMaterial(AttachedStage& attachedStage, omni::ph
                 }
                 material->setDamping(data);
             }
-            else if (property == PhysxSchemaTokens.Get()->physxMaterialCompliantContactAccelerationSpring)
+            else if (property == tok.compliantContactAccelerationSpring)
             {
                 bool data;
                 if (!getValue<bool>(attachedStage, objectRecord->mKey, property, timeCode, data))

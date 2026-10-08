@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
@@ -15,7 +15,7 @@ namespace physx
 // It is not guaranteed to be valid until fill() is called
 struct PhysicsVolumeDeformableBodyBuildData
 {
-    PXR_NS::VtArray<carb::Float3> srcPointsInSim;
+    UninitVector<carb::Float3> srcPointsInSim;
 };
 
 // Container class for use with ujitso distribution
@@ -40,6 +40,10 @@ public:
 
 private:
     void copyOrComputeHash();
+
+    // Copy the request's deformable body view into m_buildData. Called either from fill() or, for
+    // an asynchronous mesh-view request, from the constructor -- see shouldSnapshotInputNow().
+    void copyInputViews();
 
     template <bool readOnly, typename SerializerT>
     void serialize(SerializerT& serializer);

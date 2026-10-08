@@ -1,56 +1,81 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-
-/**
- * @implements REQ-REPLICATE-001
- * @covers AC-7
- */
-
-#include "UsdPCH.h"
+// SPDX-License-Identifier: Apache-2.0
 
 #include "PrimHierarchyStorage.h"
 
-using namespace PXR_NS;
+namespace
+{
+// Lexical prim-path parent, mirroring PXR_NS::SdfPath::GetParentPath() for the
+// plain "/A/B/C"-shaped identity paths this storage indexes: the absolute root
+// path ("/") and the empty path have no parent (empty string); a root prim
+// path ("/A") parents to "/"; anything deeper drops its last "/"-delimited
+// component. A single-component relative path ("relative") also has no
+// parent, matching SdfPath's own behavior for that shape.
+std::string getParentPath(const std::string& path)
+{
+    if (path.empty() || path == "/")
+        return std::string();
+
+    const size_t lastSlash = path.find_last_of('/');
+    if (lastSlash == std::string::npos)
+        return std::string();
+    if (lastSlash == 0)
+        return std::string("/");
+
+    return path.substr(0, lastSlash);
+}
+
+// Mirrors PXR_NS::SdfPath::IsRootPrimPath(): absolute, and exactly one path
+// element -- a single leading "/" and no further "/" after it.
+bool isRootPrimPath(const std::string& path)
+{
+    return !path.empty() && path.front() == '/' && path.size() > 1 && path.find('/', 1) == std::string::npos;
+}
+
+// Mirrors PXR_NS::SdfPath::IsAbsolutePath().
+bool isAbsolutePath(const std::string& path)
+{
+    return !path.empty() && path.front() == '/';
+}
+} // namespace
 
 PrimHierarchyStorage::PrimHierarchyStorage()
-    : mStage(nullptr)
 {
 }
 
 PrimHierarchyStorage::~PrimHierarchyStorage()
 {
-    mStage = nullptr;
 }
 
-void PrimHierarchyStorage::init(PXR_NS::UsdStageRefPtr stage)
+void PrimHierarchyStorage::init(ExistsFn exists)
 {
-    mStage = stage;
+    mExists = std::move(exists);
 }
 
 void PrimHierarchyStorage::clear()
 {
     mStorageMap.clear();
-    mStage = nullptr;
+    mExists = nullptr;
 }
 
-void PrimHierarchyStorage::addPrimSubtree(const PXR_NS::SdfPath& primPath, const PXR_NS::SdfPath& topPrim)
+void PrimHierarchyStorage::addPrimSubtree(const std::string& primPath, const std::string& topPrim)
 {
-    const SdfPath stopPath = topPrim;
+    const std::string stopPath = topPrim;
     if (primPath != topPrim)
     {
-        PXR_NS::SdfPath parentPath = primPath.GetParentPath();
+        std::string parentPath = getParentPath(primPath);
         if (parentPath == stopPath)
         {
             mStorageMap[primPath].parent = stopPath;
-            if (parentPath != SdfPath() && primPath != topPrim)
+            if (!parentPath.empty() && primPath != topPrim)
             {
                 mStorageMap[parentPath].children.insert(primPath);
             }
             return;
         }
         Item* childItem = &mStorageMap[primPath];
-        PXR_NS::SdfPath childPath = primPath;
-        while (parentPath != topPrim && !parentPath.IsRootPrimPath())
+        std::string childPath = primPath;
+        while (parentPath != topPrim && !isRootPrimPath(parentPath))
         {
             childItem->parent = parentPath;
 
@@ -59,49 +84,48 @@ void PrimHierarchyStorage::addPrimSubtree(const PXR_NS::SdfPath& primPath, const
 
             childItem = storageItem;
             childPath = parentPath;
-            parentPath = parentPath.GetParentPath();
+            parentPath = getParentPath(parentPath);
         }
-        if (parentPath != SdfPath() && !parentPath.IsRootPrimPath())
+        if (!parentPath.empty() && !isRootPrimPath(parentPath))
         {
             mStorageMap[parentPath].children.insert(childPath);
             mStorageMap[childPath].parent = parentPath;
         }
         else
-            childItem->parent = SdfPath();
+            childItem->parent.clear();
     }
 }
 
-void PrimHierarchyStorage::mergeHierarchyStorage(const PXR_NS::SdfPath& topPath, const PrimHierarchyStorage& storage)
+void PrimHierarchyStorage::mergeHierarchyStorage(const std::string& topPath, const PrimHierarchyStorage& storage)
 {
     mStorageMap.insert(storage.getStorageMap().begin(), storage.getStorageMap().end());
-    if (topPath.IsEmpty())
+    if (topPath.empty())
         return;
 
-    PXR_NS::SdfPath parentPath = topPath.GetParentPath();
-    if (parentPath.IsAbsolutePath() && !parentPath.IsAbsoluteRootPath())
+    std::string parentPath = getParentPath(topPath);
+    if (isAbsolutePath(parentPath) && parentPath != "/")
     {
         // Materialize and repair every lexical link up to the root prim.
-        PXR_NS::SdfPath childPath = topPath;
-        while (parentPath.IsAbsolutePath() && !parentPath.IsAbsoluteRootPath())
+        std::string childPath = topPath;
+        while (isAbsolutePath(parentPath) && parentPath != "/")
         {
             mStorageMap[childPath].parent = parentPath;
             mStorageMap[parentPath].children.insert(childPath);
             childPath = parentPath;
-            parentPath = parentPath.GetParentPath();
+            parentPath = getParentPath(parentPath);
         }
     }
-    else if (parentPath.IsAbsoluteRootPath())
+    else if (parentPath == "/")
     {
         // Top-level target (parent is the absolute root "/"): consumers select roots by
-        // parent.IsEmpty(), so linking under "/" would orphan the subtree instead. addPrimSubtree()
+        // parent.empty(), so linking under "/" would orphan the subtree instead. addPrimSubtree()
         // never creates a root-prim topPath, so materialize it explicitly here and re-home its
         // immediate children (left detached with an empty parent by addPrimSubtree) beneath it.
         Item& topItem = mStorageMap[topPath];
-        topItem.parent = SdfPath();
+        topItem.parent.clear();
         for (StorageMap::const_reference& entry : storage.getStorageMap())
         {
-            if (entry.first != topPath && entry.second.parent.IsEmpty() &&
-                entry.first.GetParentPath() == topPath)
+            if (entry.first != topPath && entry.second.parent.empty() && getParentPath(entry.first) == topPath)
             {
                 mStorageMap[entry.first].parent = topPath;
                 topItem.children.insert(entry.first);
@@ -110,83 +134,57 @@ void PrimHierarchyStorage::mergeHierarchyStorage(const PXR_NS::SdfPath& topPath,
     }
 }
 
-void PrimHierarchyStorage::addPrim(const PXR_NS::SdfPath& primPath)
+void PrimHierarchyStorage::addPrim(const std::string& primPath)
 {
-    if (primPath.IsEmpty())
+    if (primPath.empty())
         return;
 
-    if (!mStage)
-    {
-        // Ovstage-only attachments have no UsdStage to walk. Rebuild the same
-        // parent/child links lexically so subtree removal remains valid without
-        // dereferencing a null stage.
-        Item* childItem = &mStorageMap[primPath];
-        PXR_NS::SdfPath childPath = primPath;
-        PXR_NS::SdfPath parentPath = primPath.GetParentPath();
-        while (!parentPath.IsEmpty() && parentPath != SdfPath::AbsoluteRootPath())
-        {
-            childItem->parent = parentPath;
-
-            Item* parentItem = &mStorageMap[parentPath];
-            parentItem->children.insert(childPath);
-
-            childItem = parentItem;
-            childPath = parentPath;
-            parentPath = parentPath.GetParentPath();
-        }
-        childItem->parent = SdfPath();
+    // A path the scene does not resolve to a live object gets no row at all, so
+    // subtree queries never report prims that are not there.
+    if (mExists && !mExists(primPath))
         return;
-    }
 
-    PXR_NS::UsdPrim prim = mStage->GetPrimAtPath(primPath);
-    if (prim)
+    // Ancestors of a live object are live, so the links are pure path arithmetic:
+    // every step is the object at the parent path, up to (excluding) the root.
+    Item* childItem = &mStorageMap[primPath];
+    std::string childPath = primPath;
+    std::string parentPath = getParentPath(primPath);
+    while (!parentPath.empty() && parentPath != "/")
     {
-        PXR_NS::UsdPrim parent = prim.GetParent();
-        if (!parent)
-        {
-            mStorageMap[primPath].parent = SdfPath();
-            return;
-        }
-        Item* childItem = &mStorageMap[primPath];
-        PXR_NS::SdfPath childPath = primPath;
-        while (parent && parent != mStage->GetPseudoRoot())
-        {
-            const PXR_NS::SdfPath parentPath = parent.GetPrimPath();
-            childItem->parent = parentPath;
+        childItem->parent = parentPath;
 
-            Item* storageItem = &mStorageMap[parentPath];
-            storageItem->children.insert(childPath);
+        Item* parentItem = &mStorageMap[parentPath];
+        parentItem->children.insert(childPath);
 
-            childItem = storageItem;
-            childPath = parentPath;
-            parent = parent.GetParent();
-        }
-        childItem->parent = SdfPath();
+        childItem = parentItem;
+        childPath = parentPath;
+        parentPath = getParentPath(parentPath);
     }
+    childItem->parent.clear();
 }
 
-void PrimHierarchyStorage::removePrim(const PXR_NS::SdfPath& primPath)
-{    
+void PrimHierarchyStorage::removePrim(const std::string& primPath)
+{
     const Item& primItem = mStorageMap[primPath];
 
-    if (primItem.parent != SdfPath())
+    if (!primItem.parent.empty())
     {
         Item& parentItem = mStorageMap[primItem.parent];
         parentItem.children.erase(primPath);
     }
 
-    for (SdfPathMap::const_reference& ref : primItem.children)
+    for (StringPathSet::const_reference& ref : primItem.children)
     {
         removePrimInternal(ref);
     }
     mStorageMap.erase(primPath);
 }
 
-void PrimHierarchyStorage::removePrimInternal(const PXR_NS::SdfPath& primPath)
+void PrimHierarchyStorage::removePrimInternal(const std::string& primPath)
 {
     const Item& primItem = mStorageMap[primPath];
 
-    for (SdfPathMap::const_reference& ref : primItem.children)
+    for (StringPathSet::const_reference& ref : primItem.children)
     {
         removePrimInternal(ref);
     }
@@ -195,39 +193,39 @@ void PrimHierarchyStorage::removePrimInternal(const PXR_NS::SdfPath& primPath)
 
 void PrimHierarchyStorage::removeIteration(Iterator& it)
 {
-    const SdfPathVector& childs = it.getDescendentsPaths();
-    const SdfPath& primPath = it.getPrimPath();
+    const std::vector<std::string>& childs = it.getDescendentsPaths();
+    const std::string& primPath = it.getPrimPath();
 
     const Item& primItem = mStorageMap[primPath];
 
-    if (primItem.parent != SdfPath())
+    if (!primItem.parent.empty())
     {
         Item& parentItem = mStorageMap[primItem.parent];
         parentItem.children.erase(primPath);
     }
 
-    for (SdfPathVector::const_reference& ref : childs)
+    for (std::vector<std::string>::const_reference& ref : childs)
     {
         mStorageMap.erase(ref);
     }
     mStorageMap.erase(primPath);
 }
 
-void PrimHierarchyStorage::Iterator::gatherChilds(const PrimHierarchyStorage& storage, const PXR_NS::SdfPath& primPath)
+void PrimHierarchyStorage::Iterator::gatherChilds(const PrimHierarchyStorage& storage, const std::string& primPath)
 {
     StorageMap::const_iterator it = storage.mStorageMap.find(primPath);
     if (it != storage.mStorageMap.end())
     {
         mIteratorPaths.push_back(primPath);
 
-        for (SdfPathMap::const_reference& ref : it->second.children)
+        for (StringPathSet::const_reference& ref : it->second.children)
         {
             gatherChilds(storage, ref);
         }
     }
 }
 
-PrimHierarchyStorage::Iterator::Iterator(const PrimHierarchyStorage& storage, const PXR_NS::SdfPath& primPath)
+PrimHierarchyStorage::Iterator::Iterator(const PrimHierarchyStorage& storage, const std::string& primPath)
     : mPrimPath(primPath)
 {
     StorageMap::const_iterator it = storage.mStorageMap.find(primPath);

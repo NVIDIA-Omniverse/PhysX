@@ -1,5 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-18 AC-19 AC-44
+ */
 
 #pragma once
 
@@ -29,23 +34,34 @@ namespace physx
 ///
 struct InstancedData
 {
-    uint64_t instancerPath; //!< SdfPath to the point instancer
+    // 2026-08-29 (ADR-0018, breaking change): instancerPath is now an
+    // `omni::physics::parse::ObjectKey::handle` value, not the legacy asInt(SdfPath)-bit
+    // encoding -- mirrors InternalDeformableBodyData's ObjectKey fields above. A consumer that
+    // needs a path resolves it on its own side (IPhysx::objectKeyToPath). A handle is only
+    // valid against the Source instance that minted it (ADR-0021): one read across a
+    // detach/reattach of the owning attach will not resolve to the same object.
+    uint64_t instancerPath; //!< ObjectKey::handle of the point instancer (0 if none)
     uint32_t instanceIndex; //!< Instance index of the object
 };
 
 
 struct InternalDeformableBodyData
 {
-    // Mesh prims are exposed as SdfPaths, not UsdPrims: omni.physx stores
-    // source-agnostic ObjectKeys internally and resolves pathFor at this
-    // boundary; consumers resolve path->prim on their side
-    // (they hold the stage). skinMeshPaths is owned by-value (lives in the
-    // consumer's data object) rather than a span into omni.physx storage.
-    PXR_NS::SdfPath bodyPath;
-    PXR_NS::SdfPath simMeshPath;
-    PXR_NS::GfMatrix4f worldToSimMesh;
-    std::vector<PXR_NS::SdfPath> skinMeshPaths;
-    omni::span<PXR_NS::GfMatrix4f> worldToSkinMeshTransforms;
+    // Mesh prims are named by ObjectKey, the ADR-0019 opaque object-identity
+    // handle: omni.physx stores source-agnostic ObjectKeys internally, and this
+    // ABI boundary hands them out directly rather than resolving to a path.
+    // Consumers that need a path/prim resolve it on their own side (via
+    // IPhysx::objectKeyToPath, or their own AttachedStage if they have one).
+    // skinMeshKeys is owned by-value (lives in the consumer's data object)
+    // rather than a span into omni.physx storage.
+    omni::physics::parse::ObjectKey bodyKey;
+    omni::physics::parse::ObjectKey simMeshKey;
+    // World-to-mesh-local inverses, double precision (mirrors
+    // InternalDeformableBody). ABI note: these were GfMatrix4f; a consumer that
+    // needs a float Gf matrix must convert explicitly now.
+    ::physx::PxMat44d worldToSimMesh;
+    std::vector<omni::physics::parse::ObjectKey> skinMeshKeys;
+    omni::span<::physx::PxMat44d> worldToSkinMeshTransforms;
     omni::span<carb::Uint2> skinMeshRanges;
     uint32_t numSkinMeshVertices; // all skin mesh vertices
     uint32_t numSimMeshVertices; // physx sim mesh
@@ -62,8 +78,8 @@ struct InternalSurfaceDeformableBodyData : InternalDeformableBodyData
 
 struct InternalVolumeDeformableBodyData : InternalDeformableBodyData
 {
-    PXR_NS::SdfPath collMeshPath;
-    PXR_NS::GfMatrix4f worldToCollMesh;
+    omni::physics::parse::ObjectKey collMeshKey;
+    ::physx::PxMat44d worldToCollMesh;
     uint32_t numCollMeshVertices; // physx coll mesh!
 
     ::physx::PxVec4* collMeshPositionInvMassH; // physx coll mesh, pinned host memory
@@ -107,14 +123,14 @@ struct IPhysxPrivate
     /// Get the instanced PhysX pointers
     ///
     /// This retrieves the pointers of all the physics objects created for a point instance proto.
-    /// \param path Usd path where the physics objects were created
+    /// \param key ObjectKey where the physics objects were created
     /// \param data The output buffer of the instanced pointers
     /// \param dataSize The size of the output buffer
-    /// \param type Physics type, note that there can be more than one object per path, so a type is required to return
+    /// \param type Physics type, note that there can be more than one object per key, so a type is required to return
     /// correct result
     ///
     /// \returns The number of the instanced pointers
-    uint32_t(CARB_ABI* getPhysXPtrInstanced)(const PXR_NS::SdfPath& path, void** data, uint32_t dataSize, PhysXType type);
+    uint32_t(CARB_ABI* getPhysXPtrInstanced)(omni::physics::parse::ObjectKey key, void** data, uint32_t dataSize, PhysXType type);
 
     // Get the internal surface deformable body data for the given object id
     ///

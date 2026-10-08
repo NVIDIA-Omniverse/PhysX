@@ -1,7 +1,31 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-CAPI-STRING-001
+ * @covers AC-3
+ *
+ * @implements REQ-CAPI-PATTERN-001
+ * @covers AC-1 AC-3
+ *
+ * @implements REQ-CAPI-BINDING-STALE-001
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6
+ *
+ * @implements REQ-CAPI-BINDING-DEVICE-001
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5
+ *
+ * @implements REQ-CAPI-CUDA-003
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5
+ *
+ * @implements REQ-CAPI-NVTX-001
+ * @covers AC-5
+ *
+ * @implements REQ-CAPI-OBJECTTYPE-001
+ * @covers AC-2 AC-3 AC-4
+ */
 
 #include "ovphysx/ovphysx.h"
+#include "internal/Nvtx.h"
 #include "internal/sdk/ovphysxSDK.hpp"
 #include "internal/sdk/DLPackConvert.h"
 #include "internal/sidecar/ovphysxInternalInterop.h"
@@ -31,6 +55,7 @@ using ovphysx::internal::getTensorApi;
 #include <limits>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <sstream>
 #include <vector>
 #include <string>
@@ -83,7 +108,7 @@ public:
         }
         if (current == ctx)
         {
-            // Already in the right context -- nothing to push/pop.
+            // Already in the right context, nothing to push or pop.
             mOk = true;
             mStatus = 0;
             mPushed = false;
@@ -161,9 +186,8 @@ struct WrenchSoaDescs
     omni::physics::tensors::TensorDesc position;
 };
 
-// GPU AoS-to-SoA wrench conversion helper.
-// Sets up CUDA context and performs the strided 2D copies into a caller-provided SoA buffer.
-// Returns an error result on failure; on success returns status==OVPHYSX_API_SUCCESS.
+// GPU AoS-to-SoA wrench conversion. Activates the PhysX CUDA context and performs
+// the strided 2D copies into a caller-provided SoA buffer.
 static ovphysx_result_t convertWrenchAoSToSoaGpu(
     omni::physx::IOptionalCuda* cuda,
     uintptr_t dstSoaDev,
@@ -195,9 +219,9 @@ static ovphysx_result_t convertWrenchAoSToSoaGpu(
 
     int cuStatus = 0;
 
-    // Convert AoS [totalRows, 9] -> SoA: three contiguous [totalRows, 3] arrays.
-    // Each row has 9 floats = 3 components x 3 floats. We extract component `comp`
-    // (offset comp*3 floats into each row) into a contiguous [totalRows, 3] block.
+    // Convert AoS [totalRows, 9] to SoA, three contiguous [totalRows, 3] arrays.
+    // Each row holds 3 components of 3 floats, and component `comp` starts
+    // comp*3 floats into the row.
     for (int comp = 0; comp < 3; ++comp)
     {
         const uintptr_t srcComp = srcAosDev + static_cast<size_t>(comp) * 3 * sizeof(float);
@@ -284,9 +308,6 @@ inline WrenchSoaDescs buildWrenchSoaDescs(
     return { makeDesc(0), makeDesc(1), makeDesc(2) };
 }
 
-// dlToTensorDesc, DLConvertError, dlConvertErrorMessage, getTensorApi
-// are defined in internal/sdk/DLPackConvert.h and imported via using-declarations above.
-
 void destroyBindingResources(TensorBindingState& b)
 {
     // Free scratch GPU buffer (wrench AoS->SoA conversion) before releasing the simulation view.
@@ -303,7 +324,7 @@ void destroyBindingResources(TensorBindingState& b)
             }
         }
     }
-    // Unconditional reset: even if simView was null or context push failed, avoid dangling pointers.
+    // Reset unconditionally so a null simView or a failed context push does not leave a dangling pointer.
     b.wrenchSoaScratchDev = 0;
     b.wrenchSoaScratchBytes = 0;
 
@@ -522,10 +543,9 @@ bool isWriteOnlyTensor(ovphysx_tensor_type_t type)
     }
 }
 
-// Write a single fixed tendon property via read-back + batch setter.
-// The underlying IArticulationView only exposes a batch setter (setFixedTendonProperties)
-// that requires all 6 property tensors at once. This helper reads back the other 5
-// properties, overlays the property being written, and calls the batch setter.
+// IArticulationView exposes only the batch setter setFixedTendonProperties, which
+// takes all 6 property tensors at once. The other 5 are read back, the written
+// property is overlaid, and the batch setter is called.
 static bool writeFixedTendonProperty(
     const TensorBindingState& binding,
     const omni::physics::tensors::TensorDesc& src,
@@ -659,10 +679,9 @@ static bool writeFixedTendonProperty(
     }
 }
 
-// Write a single spatial tendon property via read-back + batch setter.
-// Spatial tendons have 4 properties (vs 6 for fixed): stiffness, damping,
-// limit_stiffness, offset. The batch setter setSpatialTendonProperties()
-// requires all 4 at once, so we read back the other 3 and overlay.
+// Same scheme as writeFixedTendonProperty for the 4 spatial tendon properties
+// (stiffness, damping, limit_stiffness, offset). setSpatialTendonProperties takes
+// all 4 at once, so the other 3 are read back and the written one is overlaid.
 static bool writeSpatialTendonProperty(
     const TensorBindingState& binding,
     const omni::physics::tensors::TensorDesc& src,
@@ -838,7 +857,7 @@ bool getBindingSpec(const TensorBindingState& binding, int32_t& ndim, int64_t sh
             shape[2] = binding.artiView ? (binding.artiView->getMaxDofs() + 7) : 0;
             return true;
 
-        // Articulation link tensors [N, L, C] - 3D!
+        // Articulation link tensors [N, L, C]
         case OVPHYSX_TENSOR_ARTICULATION_LINK_POSE_F32:
             ndim = 3;
             shape[0] = binding.artiView ? binding.artiView->getCount() : 0;
@@ -914,8 +933,8 @@ bool getBindingSpec(const TensorBindingState& binding, int32_t& ndim, int64_t sh
             return true;
 
         // DOF property triples [N, D, 3]:
-        //   FRICTION_PROPERTIES -- (static, dynamic, viscous)
-        //   DRIVE_MODEL         -- (speedEffortGradient, maxActuatorVelocity, velocityDependentResistance)
+        //   FRICTION_PROPERTIES: (static, dynamic, viscous)
+        //   DRIVE_MODEL:         (speedEffortGradient, maxActuatorVelocity, velocityDependentResistance)
         case OVPHYSX_TENSOR_ARTICULATION_DOF_DRIVE_MODEL_F32:
         case OVPHYSX_TENSOR_ARTICULATION_DOF_FRICTION_PROPERTIES_F32:
             ndim = 3;
@@ -1237,13 +1256,9 @@ bool getBindingSpec(const TensorBindingState& binding, int32_t& ndim, int64_t sh
     }
 }
 
-// True when any binding shape dim is zero, i.e. the binding describes a tensor
-// with no elements to read or write. Examples that hit this path:
-//   - bindingShape = (0, ...)           : zero matched prims
-//   - bindingShape = (N, 0)             : N articulations, but max_dofs == 0
-//                                          (D6-with-LimitAPI articulation config etc.)
-//   - bindingShape = (N, M, 0)          : N x M with zero inner length
-// All three should be treated as no-op success rather than rejected downstream.
+// True when any binding shape dim is zero, so the binding has no elements to read
+// or write. This covers zero matched prims as well as N articulations with
+// max_dofs == 0, and both are a no-op success rather than an error downstream.
 static bool bindingHasZeroElements(int32_t ndim, const int64_t shape[4])
 {
     for (int32_t i = 0; i < ndim; ++i)
@@ -1254,8 +1269,8 @@ static bool bindingHasZeroElements(int32_t ndim, const int64_t shape[4])
     return false;
 }
 
-// Returns the expected DLDataType for a tensor binding type. Most bindings
-// are float32; uint8/bool disable flags use kDLUInt/8 (see isUint8TensorType).
+// Expected DLPack dtype code and bits for a tensor binding type. Most bindings
+// are float32 and the uint8/bool disable flags use kDLUInt/8 (see isUint8TensorType).
 static void getExpectedDtype(ovphysx_tensor_type_t type, uint8_t& code, uint8_t& bits)
 {
     if (isUint8TensorType(type))
@@ -1280,7 +1295,6 @@ ovphysx_result_t validateTensorShape(const DLTensor* tensor, const TensorBinding
     if (!getBindingSpec(binding, expectedNdim, expectedShape))
         return set_error(OVPHYSX_API_ERROR, "unsupported tensor type");
 
-    // Validate dtype
     const DLDataType expectedDtype = getBindingDtype(binding.tensorType);
     if (!dtypeMatches(tensor->dtype, expectedDtype))
     {
@@ -1289,7 +1303,6 @@ ovphysx_result_t validateTensorShape(const DLTensor* tensor, const TensorBinding
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, oss.str());
     }
 
-    // Validate ndim
     if (tensor->ndim != expectedNdim)
     {
         std::ostringstream oss;
@@ -1297,7 +1310,6 @@ ovphysx_result_t validateTensorShape(const DLTensor* tensor, const TensorBinding
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, oss.str());
     }
 
-    // Validate shape
     for (int i = 0; i < expectedNdim; i++)
     {
         if (tensor->shape[i] != expectedShape[i])
@@ -1314,7 +1326,7 @@ ovphysx_result_t validateTensorShape(const DLTensor* tensor, const TensorBinding
 // PhysX TensorAPI stores DOF/body/shape *property* tensors on the host (CPU) even
 // when the simulation runs on GPU. The underlying BaseArticulationView and
 // BaseRigidBodyView getters/setters hardcode checkTensorDevice(tensor, -1, ...)
-// for these types. State tensors, dynamics queries, wrenches, and tendons live
+// for these types. State tensors, inverse dynamics queries, wrenches, and tendons live
 // on the simulation device.
 static bool isCpuOnlyTensorType(ovphysx_tensor_type_t t)
 {
@@ -1349,11 +1361,11 @@ static bool isCpuOnlyTensorType(ovphysx_tensor_type_t t)
         case OVPHYSX_TENSOR_ARTICULATION_SHAPE_FRICTION_AND_RESTITUTION_F32:
         case OVPHYSX_TENSOR_ARTICULATION_CONTACT_OFFSET_F32:
         case OVPHYSX_TENSOR_ARTICULATION_REST_OFFSET_F32:
-        // Disable-gravity flags (PxActorFlag toggled via CPU-only PhysX API; the
-        // DirectGPU body-sim refresh is a separate wakeUp in the GPU view, not a
-        // buffer transfer). Callers pass CPU buffers; no hidden host<->device copy.
+        // Disable flags (PxActorFlag toggled via the CPU-only PhysX API).
+        // Callers pass CPU buffers, so there is no hidden host<->device copy (OMPE-103213).
         case OVPHYSX_TENSOR_RIGID_BODY_DISABLE_GRAVITY_BOOL:
         case OVPHYSX_TENSOR_ARTICULATION_BODY_DISABLE_GRAVITY_BOOL:
+        case OVPHYSX_TENSOR_RIGID_BODY_DISABLE_SIMULATION_BOOL:
         // Deformable material properties (Base class, always CPU)
         case OVPHYSX_TENSOR_DEFORMABLE_MATERIAL_DYNAMIC_FRICTION_F32:
         case OVPHYSX_TENSOR_DEFORMABLE_MATERIAL_YOUNGS_MODULUS_F32:
@@ -1368,24 +1380,24 @@ static bool isCpuOnlyTensorType(ovphysx_tensor_type_t t)
     }
 }
 
-// Validate that tensor device matches binding's expected device.
-// For CPU-only property types the expected device is always CPU (-1),
-// regardless of simulation device. For all other types the expected
-// device comes from the simulation view.
+// Device used by the native TensorAPI path for this binding. CPU-only property
+// tensors stay on the host even for a GPU-backed simulation view, and all other
+// tensors follow the view's device. Read/write device validation uses the same
+// classification so the getter never advertises a device that those calls reject.
+static int getBindingNativeDeviceOrdinal(const TensorBindingState& binding)
+{
+    if (isCpuOnlyTensorType(binding.tensorType) || !binding.simView)
+        return -1;
+    return binding.simView->getDeviceOrdinal();
+}
+
+// The expected device is the binding's native device, see getBindingNativeDeviceOrdinal.
 ovphysx_result_t validateTensorDevice(const DLTensor* tensor, const TensorBindingState& binding, const char* op)
 {
     if (!tensor)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "tensor is NULL");
 
-    int expectedDevice = -1;  // Default to CPU
-    if (isCpuOnlyTensorType(binding.tensorType))
-    {
-        expectedDevice = -1;
-    }
-    else if (binding.simView)
-    {
-        expectedDevice = binding.simView->getDeviceOrdinal();
-    }
+    const int expectedDevice = getBindingNativeDeviceOrdinal(binding);
     
     // Map DLPack device type to TensorAPI convention (-1 = CPU, >=0 = GPU ordinal)
     int tensorDevice;
@@ -1407,7 +1419,6 @@ ovphysx_result_t validateTensorDevice(const DLTensor* tensor, const TensorBindin
             }
     }
     
-    // Check device match
     if (tensorDevice != expectedDevice)
     {
         std::ostringstream oss;
@@ -1422,35 +1433,27 @@ ovphysx_result_t validateTensorDevice(const DLTensor* tensor, const TensorBindin
     return success();
 }
 
-// Cross-device staging buffer used by both ovphysx_read_tensor_binding and
-// ovphysx_write_tensor_binding so callers can pass GPU tensors against CPU
-// bindings (or vice versa) without doing the host<->device copy themselves.
-//
-// On same-device input, no staging is allocated; the caller's buffer is
-// consumed directly.
-//
-// On (binding GPU[X], tensor CPU): GPU staging on the binding's device.
-// On (binding CPU, tensor GPU[X]): CPU staging on host.
-// On (binding GPU[X], tensor GPU[Y], X != Y): rejected as DEVICE_MISMATCH;
-// cross-GPU P2P is out of scope.
-//
-// TensorStagingInfo owns any allocated staging memory; cleanup happens in
-// its destructor (RAII), so callers don't need to free explicitly on
-// early-return paths or in switch cases that return directly.
+// Cross-device staging shared by ovphysx_read_tensor_binding and
+// ovphysx_write_tensor_binding, so a GPU tensor can be used with a CPU binding
+// and vice versa. Staging lives on the binding's device for a CPU tensor and on
+// the host for a GPU tensor, two different GPU ordinals are rejected as
+// DEVICE_MISMATCH (no cross-GPU P2P), and the destructor frees the staging memory.
 struct TensorStagingInfo
 {
     uintptr_t devicePtr = 0;          // GPU staging (0 if none)
     std::vector<uint8_t> hostBuf;     // CPU staging (empty if none)
     omni::physx::IOptionalCuda* cuda = nullptr;
+    uintptr_t cudaCtx = 0;            // PhysX CUDA context owning devicePtr (0 if none)
 
     TensorStagingInfo() = default;
     TensorStagingInfo(const TensorStagingInfo&) = delete;
     TensorStagingInfo& operator=(const TensorStagingInfo&) = delete;
     TensorStagingInfo(TensorStagingInfo&& o) noexcept
-        : devicePtr(o.devicePtr), hostBuf(std::move(o.hostBuf)), cuda(o.cuda)
+        : devicePtr(o.devicePtr), hostBuf(std::move(o.hostBuf)), cuda(o.cuda), cudaCtx(o.cudaCtx)
     {
         o.devicePtr = 0;
         o.cuda = nullptr;
+        o.cudaCtx = 0;
     }
     TensorStagingInfo& operator=(TensorStagingInfo&& o) noexcept
     {
@@ -1460,8 +1463,10 @@ struct TensorStagingInfo
             devicePtr = o.devicePtr;
             hostBuf = std::move(o.hostBuf);
             cuda = o.cuda;
+            cudaCtx = o.cudaCtx;
             o.devicePtr = 0;
             o.cuda = nullptr;
+            o.cudaCtx = 0;
         }
         return *this;
     }
@@ -1470,14 +1475,32 @@ struct TensorStagingInfo
     void release()
     {
         if (devicePtr && cuda)
-            cuda->memFree(devicePtr, nullptr);
+        {
+            // Free in the context the buffer was allocated in.
+            ScopedCudaContextPush ctxPush(cuda, cudaCtx);
+            if (ctxPush.ok())
+            {
+                cuda->memFree(devicePtr, nullptr);
+            }
+            else
+            {
+                // Runs from the destructor: there is no error channel and the pointer is
+                // about to be dropped, so the log is the only record of the leak.
+                CARB_LOG_ERROR("[TensorBindings] Failed to activate PhysX CUDA context 0x%llx to free staging "
+                               "buffer 0x%llx; the buffer is abandoned (cuCtxPushCurrent error %d)",
+                               static_cast<unsigned long long>(cudaCtx),
+                               static_cast<unsigned long long>(devicePtr), ctxPush.status());
+            }
+        }
         devicePtr = 0;
+        cudaCtx = 0;
     }
 };
 
 static ovphysx_result_t stageTensorForWrite(
     const DLTensor* tensor,
     int bindingDeviceOrdinal,
+    uintptr_t bindingCudaCtx,
     omni::physics::tensors::TensorDesc& desc,
     TensorStagingInfo& outStaging,
     const char* op)
@@ -1531,15 +1554,32 @@ static ovphysx_result_t stageTensorForWrite(
     }
     outStaging.cuda = cuda;
 
-    // Source pointer for the staging copy: read from the byte-offset-adjusted
-    // caller pointer (desc.data has already been computed by dlToTensorDesc as
-    // tensor->data + tensor->byte_offset). Using tensor->data here would silently
-    // copy from the start of the caller's allocation and skip any offset on a
-    // sliced view, corrupting the staging buffer.
+    // Copy from desc.data, which dlToTensorDesc has already offset by
+    // tensor->byte_offset. Copying from tensor->data would skip the offset of a
+    // sliced view and corrupt the staging buffer.
     void* const callerSrc = desc.data;
     if (bindingDeviceOrdinal >= 0)
     {
-        // Binding GPU, tensor CPU → allocate GPU staging, memcpyHtoD caller's data.
+        // Binding GPU, tensor CPU: allocate GPU staging and memcpyHtoD the caller's data.
+        // The driver calls take no device argument, so they run under the binding's context.
+        if (!bindingCudaCtx)
+        {
+            return set_error(OVPHYSX_API_ERROR,
+                             std::string(op) + ": missing PhysX CUDA context for GPU staging");
+        }
+        // The push covers only the allocation and the host-to-device copy. The DirectGPU
+        // scatter needs no context held here because the GPU tensor views acquire the
+        // scene's context themselves.
+        ScopedCudaContextPush ctxPush(cuda, bindingCudaCtx);
+        if (!ctxPush.ok())
+        {
+            std::ostringstream oss;
+            oss << op << ": failed to activate PhysX CUDA context for GPU staging"
+                   " (cuCtxPushCurrent error " << ctxPush.status() << ")";
+            return set_error(OVPHYSX_API_ERROR, oss.str());
+        }
+        outStaging.cudaCtx = bindingCudaCtx;
+
         int cudaStatus = 0;
         if (!cuda->memAlloc(&outStaging.devicePtr, byteCount, &cudaStatus))
         {
@@ -1560,7 +1600,7 @@ static ovphysx_result_t stageTensorForWrite(
     }
     else
     {
-        // Binding CPU, tensor GPU → allocate CPU staging, memcpyDtoH caller's data.
+        // Binding CPU, tensor GPU: allocate CPU staging and memcpyDtoH the caller's data.
         outStaging.hostBuf.resize(byteCount);
         int cudaStatus = 0;
         if (!cuda->memcpyDtoH(outStaging.hostBuf.data(),
@@ -1598,10 +1638,11 @@ OVPHYSX_API ovphysx_result_t ovphysx_create_tensor_binding(
     const ovphysx_tensor_binding_desc_t* desc,
     ovphysx_tensor_binding_handle_t* out_binding_handle)
 {
+    OVPHYSX_NVTX_ZONE("ovphysx_create_tensor_binding");
     if (!desc || !out_binding_handle)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "invalid parameters");
 
-    // Build list of patterns/paths - prim_paths takes precedence over pattern
+    // Build the pattern list. prim_paths takes precedence over pattern.
     std::vector<std::string> patterns;
     bool usingExplicitPaths = (desc->prim_paths != nullptr && desc->prim_paths_count > 0);
     
@@ -1614,6 +1655,8 @@ OVPHYSX_API ovphysx_result_t ovphysx_create_tensor_binding(
             if (hasEmbeddedNul(desc->prim_paths[i]))
                 return set_error(OVPHYSX_API_INVALID_ARGUMENT,
                                  "prim_paths contains an embedded NUL byte");
+            if (hasOversizedPathComponent(desc->prim_paths[i]))
+                return set_error(OVPHYSX_API_INVALID_ARGUMENT, oversizedPathComponentMessage("prim_paths"));
             patterns.push_back(toStdString(desc->prim_paths[i]));
         }
     }
@@ -1622,6 +1665,8 @@ OVPHYSX_API ovphysx_result_t ovphysx_create_tensor_binding(
         if (hasEmbeddedNul(desc->pattern))
             return set_error(OVPHYSX_API_INVALID_ARGUMENT,
                              "pattern contains an embedded NUL byte");
+        if (hasOversizedPathComponent(desc->pattern))
+            return set_error(OVPHYSX_API_INVALID_ARGUMENT, oversizedPathComponentMessage("pattern"));
         patterns.push_back(toStdString(desc->pattern));
     }
     else
@@ -1641,8 +1686,8 @@ OVPHYSX_API ovphysx_result_t ovphysx_create_tensor_binding(
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
-    if (!instance || instance->attachedStageId == 0)
-        return set_error(OVPHYSX_API_ERROR, "no USD stage loaded");
+    if (!instance || !instance->ovstage_attached)
+        return set_error(OVPHYSX_API_ERROR, "no physics stage attached");
 
     auto* tensorApi = getTensorApi();
     if (!tensorApi)
@@ -1660,28 +1705,27 @@ OVPHYSX_API ovphysx_result_t ovphysx_create_tensor_binding(
         void disarm() { active = false; }
     } guard{&binding};
 
-    binding.stageId = instance->attachedStageId;
+    binding.attachHandle = instance->attachHandle;
     binding.tensorType = desc->tensor_type;
     // Store descriptive pattern string for debugging
     binding.pattern = usingExplicitPaths
         ? ("explicit_paths[" + std::to_string(desc->prim_paths_count) + "]")
         : patterns[0];
 
-    binding.simView = tensorApi->createSimulationView(instance->attachedStageId);
+    binding.simView = tensorApi->createSimulationView(instance->attachHandle);
     if (!binding.simView || !binding.simView->getValid())
     {
         return set_error(OVPHYSX_API_ERROR, "failed to create simulation view");
     }
 
-    // Create appropriate view based on tensor type using vector overload.
-    // TensorAPI may return nullptr if no prims match the pattern; ovphysx
-    // treats that as a valid empty binding for optional pattern queries.
+    // Create the view for the tensor type. TensorAPI returns nullptr when no prims
+    // match the pattern, which ovphysx treats as a valid empty binding.
     {
         ScopedTensorNoMatchLogQuiet quietNoMatchLogs(binding.simView, !usingExplicitPaths);
         if (requiresRigidBodyView(desc->tensor_type))
         {
             binding.rbView = binding.simView->createRigidBodyView(patterns);
-            // Null view is OK - means 0 prims matched. getCount() will return 0.
+            // A null view means 0 prims matched and getCount() returns 0.
             if (binding.rbView)
             {
                 CARB_LOG_INFO("Created rigid body binding with %u prims for pattern '%s'",
@@ -1696,17 +1740,14 @@ OVPHYSX_API ovphysx_result_t ovphysx_create_tensor_binding(
         else if (requiresArticulationView(desc->tensor_type))
         {
             binding.artiView = binding.simView->createArticulationView(patterns);
-            // Null view is OK - means 0 prims matched. getCount() will return 0.
+            // A null view means 0 prims matched and getCount() returns 0.
             if (binding.artiView)
             {
-                // Centroidal momentum is only defined for floating-base articulations
-                // (PhysX errors out on fixed-base). Reject up front so callers detect the
-                // unsupported configuration at binding creation instead of at read time.
-                // Check every matched articulation rather than the shared metatype: a pattern
-                // may resolve to a heterogeneous mix of fixed- and floating-base articulations
-                // (distinct metatypes, so getSharedMetatype() is null), and a single fixed-base
-                // entry already makes the read undefined. Empty views (getCount()==0) stay valid.
-                // The BindingGuard tears down the view on the early return.
+                // Centroidal momentum is only defined for floating-base articulations, so a
+                // fixed-base match is rejected at creation instead of at read time. Every
+                // matched articulation is checked rather than the shared metatype, because a
+                // pattern can resolve to a mix of fixed- and floating-base articulations and
+                // one fixed-base entry already makes the read undefined. Empty views stay valid.
                 if (desc->tensor_type == OVPHYSX_TENSOR_ARTICULATION_CENTROIDAL_MOMENTUM_F32)
                 {
                     const uint32_t artiCount = binding.artiView->getCount();
@@ -1829,6 +1870,13 @@ OVPHYSX_API ovphysx_result_t ovphysx_get_tensor_binding_spec(
         if (it == instance->tensor_bindings.end())
             return set_error(OVPHYSX_API_NOT_FOUND, "binding not found");
         const TensorBindingState& binding = it->second;
+        if (instance->attachHandle != binding.attachHandle)
+        {
+            return set_error(OVPHYSX_API_NOT_FOUND,
+                    "binding invalidated (attach changed): binding.attachHandle=" + std::to_string(binding.attachHandle) +
+                               " current.attachHandle=" + std::to_string(instance->attachHandle) +
+                               "; recreate binding");
+        }
         if (!getBindingSpec(binding, ndim, shape))
             return set_error(OVPHYSX_API_ERROR, "unsupported tensor type");
         dtype = getBindingDtype(binding.tensorType);
@@ -1842,61 +1890,96 @@ OVPHYSX_API ovphysx_result_t ovphysx_get_tensor_binding_spec(
     return success();
 }
 
+OVPHYSX_API ovphysx_result_t ovphysx_get_tensor_binding_native_device(
+    ovphysx_handle_t handle,
+    ovphysx_tensor_binding_handle_t binding_handle,
+    DLDevice* out_device)
+{
+    if (!out_device)
+        return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_device is NULL");
+
+    omni_sdk_physx_wait_all_pending_internal(handle);
+
+    std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
+    InstanceData* instance = get_instance_ptr(handle);
+    if (!instance)
+        return set_error(OVPHYSX_API_ERROR, "invalid handle");
+
+    int deviceOrdinal = -1;
+    {
+        std::lock_guard<std::mutex> lock(instance->tensor_binding_mutex);
+        std::unordered_map<ovphysx_tensor_binding_handle_t, TensorBindingState>::iterator it =
+            instance->tensor_bindings.find(binding_handle);
+        if (it == instance->tensor_bindings.end())
+            return set_error(OVPHYSX_API_NOT_FOUND, "binding not found");
+        const TensorBindingState& binding = it->second;
+        if (instance->attachHandle != binding.attachHandle)
+        {
+            return set_error(OVPHYSX_API_NOT_FOUND,
+                    "binding invalidated (attach changed): binding.attachHandle=" + std::to_string(binding.attachHandle) +
+                               " current.attachHandle=" + std::to_string(instance->attachHandle) +
+                               "; recreate binding");
+        }
+        if (!binding.simView || !binding.simView->getValid())
+        {
+            return set_error(OVPHYSX_API_NOT_FOUND,
+                             "binding invalidated (simulation view mapping stale); recreate binding");
+        }
+        deviceOrdinal = getBindingNativeDeviceOrdinal(binding);
+    }
+
+    out_device->device_type = deviceOrdinal < 0 ? kDLCPU : kDLCUDA;
+    out_device->device_id = deviceOrdinal < 0 ? 0 : deviceOrdinal;
+    return success();
+}
+
 } // extern "C" (temporarily close for internal C++ helper)
 
-ovphysx_result_t ovphysx_gpu_warmup_if_needed(ovphysx_handle_t handle, bool is_explicit_call)
+ovphysx_result_t ovphysx_warmup_if_needed(ovphysx_handle_t handle, bool is_explicit_call)
 {
     std::shared_lock<std::shared_mutex> check_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
     if (!instance)
         return set_error(OVPHYSX_API_ERROR, "invalid handle");
-    
-    // Check if warmup is needed
-    const int64_t stageId = instance->attachedStageId;
-    if (instance->gpu_warmup_done.load(std::memory_order_acquire) &&
-        instance->gpu_warmup_stage_id.load(std::memory_order_acquire) == stageId)
+
+    // Keyed on the attach, not the stage: a stage id of 0 cannot tell a stageless
+    // attach from no attach at all, so a fresh attach would inherit the previous
+    // one's warmup flag.
+    const omni::physics::tensors::AttachHandle attachHandle = instance->attachHandle;
+    if (instance->warmup_done.load(std::memory_order_acquire) &&
+        instance->warmup_attach_handle.load(std::memory_order_acquire) == attachHandle)
         return success();  // Already done
-    
-    // GPU-disabled process: skip warmup (no CUDA resources to initialize). Covers both
-    // OVPHYSX_DISABLE_GPU and ovphysx_set_cpu_mode(true); the latter is the primary
-    // CPU-only path used by the CPU test suite. Skipping here avoids running a needless
-    // warmup step in CPU-only mode.
-    if (isProcessGpuDisabled())
+
+
+    // Nothing attached yet
+    if (attachHandle == omni::physics::tensors::kNoAttach)
         return success();
-    
-    // No stage attached yet
-    if (stageId == 0)
-        return success();
-    
+
     // Release shared lock before warmup (simulate may need locks)
     check_lock.unlock();
-    
+
     if (is_explicit_call) {
-        CARB_LOG_INFO("[ovphysx] Explicit GPU warmup: performing initial simulation step to populate GPU buffers.");
+        CARB_LOG_INFO("[ovphysx] Explicit warmup: performing initial simulation step.");
     } else {
-        CARB_LOG_WARN("[ovphysx] Auto-warmup: performing initial simulation step to populate GPU buffers. "
-                      "Call ovphysx_warmup_gpu() explicitly to control when this happens.");
+        CARB_LOG_WARN("[ovphysx] Auto-warmup: performing initial simulation step. "
+                      "Call ovphysx_warmup() explicitly to control when this happens.");
     }
     
-    // Perform warmup step - we use a minimal elapsed time to minimize state change.
-    // Note: PhysX requires elapsedSecs > 0 to actually dispatch simulation,
-    // so we use an extremely small timestep. The physics state change is negligible.
+    // PhysX requires elapsedSecs > 0 to dispatch a simulation step, so the warmup
+    // uses a timestep small enough that the state change is negligible.
     constexpr float kWarmupDt = 1.0e-9f;  // 1 nanosecond - effectively zero
-    // IMPORTANT: DirectGPU requires a complete simulate()+fetchResults() warm
-    // start before tensor bindings read or write GPU simulation buffers.
-    //
-    // Keep this synchronous and independent of op_index / async plumbing.
+    // DirectGPU requires a complete simulate()+fetchResults() warm start before
+    // tensor bindings read or write GPU simulation buffers. This stays synchronous
+    // and independent of the op_index/async plumbing.
     const ovphysx_api_status_t simulate_status = omni_sdk_physx_simulate_instance(handle, kWarmupDt, 0.0f);
     if (simulate_status != OVPHYSX_API_SUCCESS)
     {
         return set_error(OVPHYSX_API_ERROR, "GPU warmup simulate() failed");
     }
-    // Complete the warmup step by calling fetchResults().
-    // NOTE: This logic mirrors the former omni_sdk_physx_sync() implementation in ovphysx.cpp.
-    // Keep in sync if that internal helper is refactored.
-    // This mirrors the simulation wait path in ovphysx_wait_op() for simulation events:
-    // - fetchResults() must only be called when a stage is attached (it can hang otherwise)
-    // - complete + cleanup the internal event and clear pending state
+    // Complete the warmup step with fetchResults(). fetchResults() is only called
+    // while a stage is attached (it can hang otherwise), and the internal event is
+    // completed and cleaned up so no pending state remains.
+    // NOTE: Keep in sync with the simulation wait path in ovphysx_wait_op().
     try
     {
         std::shared_ptr<InstanceData> instanceShared = get_instance(handle);
@@ -1907,7 +1990,7 @@ ovphysx_result_t ovphysx_gpu_warmup_if_needed(ovphysx_handle_t handle, bool is_e
 
         auto physxSim = instanceShared->carbonite ? instanceShared->carbonite->getPhysxSimulation() : nullptr;
 
-        if (physxSim && instanceShared->attachedStageId != 0)
+        if (physxSim && instanceShared->attachHandle != omni::physics::tensors::kNoAttach)
         {
             physxSim->fetchResults();
         }
@@ -1959,9 +2042,9 @@ ovphysx_result_t ovphysx_gpu_warmup_if_needed(ovphysx_handle_t handle, bool is_e
     instance = get_instance_ptr(handle);
     if (instance)
     {
-        instance->gpu_warmup_done.store(true, std::memory_order_release);
-        instance->gpu_warmup_stage_id.store(instance->attachedStageId, std::memory_order_release);
-        CARB_LOG_INFO("[ovphysx] GPU warmup complete (TensorBindingsAPI mode).");
+        instance->warmup_done.store(true, std::memory_order_release);
+        instance->warmup_attach_handle.store(instance->attachHandle, std::memory_order_release);
+        CARB_LOG_INFO("[ovphysx] Warmup complete.");
     }
     
     return success();
@@ -1969,10 +2052,10 @@ ovphysx_result_t ovphysx_gpu_warmup_if_needed(ovphysx_handle_t handle, bool is_e
 
 extern "C" {
 
-OVPHYSX_API ovphysx_result_t ovphysx_warmup_gpu(ovphysx_handle_t handle)
+OVPHYSX_API ovphysx_result_t ovphysx_warmup(ovphysx_handle_t handle)
 {
     omni_sdk_physx_wait_all_pending_internal(handle);
-    return ovphysx_gpu_warmup_if_needed(handle, /*is_explicit_call=*/true);
+    return ovphysx_warmup_if_needed(handle, /*is_explicit_call=*/true);
 }
 
 OVPHYSX_API ovphysx_result_t ovphysx_update_articulations_kinematic(ovphysx_handle_t handle)
@@ -1988,21 +2071,21 @@ OVPHYSX_API ovphysx_result_t ovphysx_update_articulations_kinematic(ovphysx_hand
     auto instance = get_instance(handle);
     if (!instance)
         return set_error(OVPHYSX_API_ERROR, "invalid handle");
-    if (instance->attachedStageId == 0)
-        return set_error(OVPHYSX_API_ERROR, "no USD stage loaded");
+    if (!instance->ovstage_attached)
+        return set_error(OVPHYSX_API_ERROR, "no physics stage attached");
 
     auto* tensorApi = getTensorApi();
     if (!tensorApi)
         return set_error(OVPHYSX_API_ERROR, "TensorApi unavailable (plugins not loaded?)");
 
-    // DirectGPU articulation data must be initialized before TensorAPI FK refresh.
+    // Warmup ensures physics data is initialized before TensorAPI FK refresh.
     {
-        ovphysx_result_t warmup_result = ovphysx_gpu_warmup_if_needed(handle, /*is_explicit_call=*/false);
+        ovphysx_result_t warmup_result = ovphysx_warmup_if_needed(handle, /*is_explicit_call=*/false);
         if (warmup_result.status != OVPHYSX_API_SUCCESS)
             return warmup_result;
     }
 
-    omni::physics::tensors::ISimulationView* simView = tensorApi->createSimulationView(instance->attachedStageId);
+    omni::physics::tensors::ISimulationView* simView = tensorApi->createSimulationView(instance->attachHandle);
     if (!simView)
         return set_error(OVPHYSX_API_ERROR, "failed to create simulation view");
 
@@ -2028,6 +2111,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_tensor_binding(
     ovphysx_tensor_binding_handle_t binding_handle,
     DLTensor* dst_tensor)
 {
+    OVPHYSX_NVTX_ZONE("ovphysx_read_tensor_binding");
     if (!dst_tensor)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "dst_tensor is NULL");
     if (!dst_tensor->shape)
@@ -2039,9 +2123,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_tensor_binding(
 
     omni_sdk_physx_wait_all_pending_internal(handle);
 
-    // Auto-warmup if needed (GPU mode requires one simulation step to populate buffers)
+    // Auto-warmup if needed (requires one simulation step before tensor reads)
     {
-        ovphysx_result_t warmup_result = ovphysx_gpu_warmup_if_needed(handle, /*is_explicit_call=*/false);
+        ovphysx_result_t warmup_result = ovphysx_warmup_if_needed(handle, /*is_explicit_call=*/false);
         if (warmup_result.status != OVPHYSX_API_SUCCESS)
             return warmup_result;
     }
@@ -2051,8 +2135,8 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_tensor_binding(
     if (!instance)
         return set_error(OVPHYSX_API_ERROR, "invalid handle");
 
-    // CRITICAL: Hold lock during entire operation to prevent use-after-free if binding
-    // is destroyed by another thread. TensorAPI views are NOT ref-counted.
+    // The lock is held for the entire operation because TensorAPI views are not
+    // ref-counted and another thread could destroy the binding.
     // TODO: If profiling shows contention, consider per-binding locks or ref-counting.
     std::lock_guard<std::mutex> lock(instance->tensor_binding_mutex);
     
@@ -2062,15 +2146,23 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_tensor_binding(
     
     TensorBindingState& binding = it->second;
 
-    if (instance->attachedStageId != binding.stageId)
+    if (instance->attachHandle != binding.attachHandle)
     {
         return set_error(OVPHYSX_API_NOT_FOUND,
-                "binding invalidated (stage changed): binding.stageId=" + std::to_string(binding.stageId) +
-                           " current.attachedStageId=" + std::to_string(instance->attachedStageId) +
+                "binding invalidated (attach changed): binding.attachHandle=" + std::to_string(binding.attachHandle) +
+                           " current.attachHandle=" + std::to_string(instance->attachHandle) +
                            "; recreate binding");
     }
 
-    // Check for write-only tensor types (force/wrench are control inputs, not readable)
+    if (!binding.simView || !binding.simView->getValid())
+    {
+        return set_error(OVPHYSX_API_NOT_FOUND,
+                         "binding invalidated (simulation view mapping stale — e.g. "
+                         "eDISABLE_SIMULATION removed a DirectGPU row); recreate binding "
+                         "for the enabled set");
+    }
+
+    // Force and wrench tensors are control inputs and cannot be read.
     if (isWriteOnlyTensor(binding.tensorType))
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "cannot read write-only tensor type (force/wrench)");
 
@@ -2078,9 +2170,8 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_tensor_binding(
     if (validation.status != OVPHYSX_API_SUCCESS)
         return validation;
 
-    // If the binding describes zero elements (zero matched prims OR any inner
-    // dim is zero), there's nothing to read; succeed as a no-op. Skips
-    // downstream TensorAPI calls that may not handle zero-size buffers.
+    // A binding with zero elements is a no-op success. This skips downstream
+    // TensorAPI calls that may not handle zero-size buffers.
     {
         int32_t bindingNdim = 0;
         int64_t bindingShape[4];
@@ -2090,22 +2181,13 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_tensor_binding(
             return success();
     }
 
-    // Determine binding/dst devices to decide whether we need cross-device staging.
-    // The binding's simView writes into a TensorDesc whose device must match its own
-    // (PhysX's tensor API rejects cross-device targets). When the caller's dst lives
-    // on a different memory space than the binding, we allocate a staging buffer
-    // matching the binding's device, run the read into staging, then copy into the
-    // caller's buffer.
-    //
-    //   (binding CPU,    dst CPU)  → existing path, no staging
-    //   (binding GPU[X], dst GPU[X]) → existing path, no staging
-    //   (binding GPU[X], dst CPU)  → GPU staging + memcpyDtoH after read
-    //   (binding CPU,    dst GPU)  → CPU staging + memcpyHtoD after read
-    //   (binding GPU[X], dst GPU[Y], X!=Y) → rejected by validateTensorDevice
-    //                                        (cross-GPU P2P out of scope)
-    int bindingDeviceOrdinal = -1;
-    if (!isCpuOnlyTensorType(binding.tensorType) && binding.simView)
-        bindingDeviceOrdinal = binding.simView->getDeviceOrdinal();
+    // The binding's simView requires a TensorDesc on its own device, so a dst on a
+    // different memory space is read into a staging buffer on the binding's device
+    // and then copied into the caller's buffer. Same-device reads use no staging,
+    // a GPU binding with a CPU dst stages on the GPU (memcpyDtoH after the read),
+    // a CPU binding with a GPU dst stages on the host (memcpyHtoD after the read),
+    // and two different GPU ordinals are rejected by validateTensorDevice.
+    const int bindingDeviceOrdinal = getBindingNativeDeviceOrdinal(binding);
 
     int dstLogicalDevice = -1;
     switch (dst_tensor->device.device_type)
@@ -2119,16 +2201,24 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_tensor_binding(
             dstLogicalDevice = dst_tensor->device.device_id;
             break;
         default:
-            // Leave as -1; validateTensorDevice will surface the unsupported-type error.
+            // Left at -1. validateTensorDevice reports the unsupported device type.
             break;
     }
 
     const bool needGpuStaging = (bindingDeviceOrdinal >= 0 && dstLogicalDevice == -1);
+    // CPU-only property reads require a host destination and never stage HtoD into
+    // a GPU dst (OMPE-103213). validateTensorDevice applies the same rule as the write paths.
+    if (isCpuOnlyTensorType(binding.tensorType))
+    {
+        ovphysx_result_t deviceValidation = validateTensorDevice(dst_tensor, binding, "read_tensor_binding");
+        if (deviceValidation.status != OVPHYSX_API_SUCCESS)
+            return deviceValidation;
+    }
     const bool needCpuStaging = (bindingDeviceOrdinal == -1 && dstLogicalDevice >= 0);
 
-    if (!needGpuStaging && !needCpuStaging)
+    if (!isCpuOnlyTensorType(binding.tensorType) && !needGpuStaging && !needCpuStaging)
     {
-        // Same-device path: existing strict device check.
+        // Same-device path with the strict device check.
         ovphysx_result_t deviceValidation = validateTensorDevice(dst_tensor, binding, "read_tensor_binding");
         if (deviceValidation.status != OVPHYSX_API_SUCCESS)
             return deviceValidation;
@@ -2151,18 +2241,16 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_tensor_binding(
     if (convertErr != DLConvertError::Success)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, dlConvertErrorMessage(convertErr));
 
-    // Hold the byte-offset-adjusted user destination pointer so we can write
-    // the staged result back into the correct slice. dlToTensorDesc applied
-    // dst_tensor->byte_offset to dst.data, but the cross-device staging path
-    // overwrites dst.data with the staging buffer; without a saved copy we'd
-    // memcpy back to dst_tensor->data (i.e. base allocation, ignoring
-    // byte_offset) and corrupt unrelated rows of a sliced view.
+    // dlToTensorDesc applied dst_tensor->byte_offset to dst.data, and the staging
+    // path overwrites dst.data. The offset pointer is saved so the staged result
+    // is copied back into the correct slice rather than the base allocation.
     void* const userDstData = dst.data;
 
-    // Allocate staging when we need to bridge a cross-device read.
-    // GPU staging when (binding GPU, dst CPU); CPU staging when (binding CPU, dst GPU).
-    // Lifetime is tied to readStaging's destructor (RAII); any switch case that
-    // returns directly will release the GPU buffer automatically.
+    // Staging for a cross-device read: GPU staging for (binding GPU, dst CPU) and
+    // host staging for (binding CPU, dst GPU). readStaging is declared after
+    // bindingCtxPush so the buffer is freed before the context it was allocated
+    // in is popped.
+    std::optional<ScopedCudaContextPush> bindingCtxPush;
     TensorStagingInfo readStaging;
     size_t stagingByteCount = 0;
     if (needGpuStaging || needCpuStaging)
@@ -2187,6 +2275,26 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_tensor_binding(
 
         if (needGpuStaging)
         {
+            // The allocation, the view read and the device-to-host copy all run under
+            // the binding's context. The DirectGPU gather cannot access staging on a
+            // different device.
+            const uintptr_t bindingCudaCtx =
+                reinterpret_cast<uintptr_t>(binding.simView->getCudaContext());
+            if (!bindingCudaCtx)
+            {
+                return set_error(OVPHYSX_API_ERROR,
+                                 "read_tensor_binding: missing PhysX CUDA context for GPU staging");
+            }
+            bindingCtxPush.emplace(cuda, bindingCudaCtx);
+            if (!bindingCtxPush->ok())
+            {
+                std::ostringstream oss;
+                oss << "read_tensor_binding: failed to activate PhysX CUDA context for GPU staging"
+                       " (cuCtxPushCurrent error " << bindingCtxPush->status() << ")";
+                return set_error(OVPHYSX_API_ERROR, oss.str());
+            }
+            readStaging.cudaCtx = bindingCudaCtx;
+
             int cudaStatus = 0;
             if (!cuda->memAlloc(&readStaging.devicePtr, stagingByteCount, &cudaStatus))
             {
@@ -2195,16 +2303,16 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_tensor_binding(
                     << cudaStatus << ", bytes=" << stagingByteCount << ")";
                 return set_error(OVPHYSX_API_ERROR, oss.str());
             }
-            // Redirect the simView read into the GPU staging buffer; memcpyDtoH happens
-            // after the switch.
+            // Redirect the simView read into the GPU staging buffer. memcpyDtoH follows
+            // the switch.
             dst.data   = reinterpret_cast<void*>(readStaging.devicePtr);
             dst.device = bindingDeviceOrdinal;
         }
         else  // needCpuStaging
         {
             readStaging.hostBuf.resize(stagingByteCount);
-            // Redirect the simView read into the host staging buffer; memcpyHtoD happens
-            // after the switch to copy into the user's GPU dst.
+            // Redirect the simView read into the host staging buffer. memcpyHtoD into
+            // the caller's GPU dst follows the switch.
             dst.data   = readStaging.hostBuf.data();
             dst.device = -1;  // CPU
         }
@@ -2316,7 +2424,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_tensor_binding(
             ok = binding.artiView && binding.artiView->getDisableGravities(&dst);
             break;
 
-        // Dynamics queries (read-only)
+        // Inverse dynamics queries (read-only)
         case OVPHYSX_TENSOR_ARTICULATION_JACOBIAN_F32:
             ok = binding.artiView && binding.artiView->getJacobians(&dst);
             break;
@@ -2482,20 +2590,19 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_tensor_binding(
             break;
 
         default:
-            // readStaging's destructor releases any GPU staging buffer when we return.
+            // readStaging's destructor releases any GPU staging buffer on return.
             return set_error(OVPHYSX_API_INVALID_ARGUMENT, "unsupported tensor type");
     }
 
     if (!ok)
     {
-        // readStaging's destructor releases any GPU staging buffer when we return.
+        // readStaging's destructor releases any GPU staging buffer on return.
         return set_error(OVPHYSX_API_ERROR, "TensorAPI read failed");
     }
 
-    // Cross-device staging copy: shuttle the staged read into the caller's buffer.
-    // readStaging owns the buffers; we let its destructor release them at end of
-    // function rather than freeing eagerly, which keeps the success/failure paths
-    // symmetric.
+    // Copy the staged read into the caller's buffer. readStaging's destructor
+    // releases the buffers at the end of the function, keeping the success and
+    // failure paths symmetric.
     if (needGpuStaging)
     {
         int cudaStatus = 0;
@@ -2527,8 +2634,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_tensor_binding(
     return success();
 }
 
-// Internal helper: caller must already hold instance->tensor_binding_mutex.
-// Performs the actual indexed/non-indexed write dispatch without re-acquiring the mutex.
+// The caller must hold instance->tensor_binding_mutex.
 static ovphysx_result_t write_tensor_binding_locked(
     InstanceData* instance,
     ovphysx_tensor_binding_handle_t binding_handle,
@@ -2541,12 +2647,20 @@ static ovphysx_result_t write_tensor_binding_locked(
     
     TensorBindingState& binding = it->second;
 
-    if (instance->attachedStageId != binding.stageId)
+    if (instance->attachHandle != binding.attachHandle)
     {
         return set_error(OVPHYSX_API_NOT_FOUND,
-                "binding invalidated (stage changed): binding.stageId=" + std::to_string(binding.stageId) +
-                           " current.attachedStageId=" + std::to_string(instance->attachedStageId) +
+                "binding invalidated (attach changed): binding.attachHandle=" + std::to_string(binding.attachHandle) +
+                           " current.attachHandle=" + std::to_string(instance->attachHandle) +
                            "; recreate binding");
+    }
+
+    if (!binding.simView || !binding.simView->getValid())
+    {
+        return set_error(OVPHYSX_API_NOT_FOUND,
+                         "binding invalidated (simulation view mapping stale — e.g. "
+                         "eDISABLE_SIMULATION removed a DirectGPU row); recreate binding "
+                         "for the enabled set");
     }
 
     int32_t bindingNdim = 0;
@@ -2554,7 +2668,7 @@ static ovphysx_result_t write_tensor_binding_locked(
     if (!getBindingSpec(binding, bindingNdim, bindingShape))
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "unsupported tensor type");
 
-    // Validate src_tensor shape: always require full [N,...] regardless of indexing
+    // src_tensor always has the full [N, ...] shape, even for an indexed write.
     {
         ovphysx_result_t validation = validateTensorShape(src_tensor, binding, "write_tensor_binding");
         if (validation.status != OVPHYSX_API_SUCCESS)
@@ -2577,15 +2691,13 @@ static ovphysx_result_t write_tensor_binding_locked(
             return set_error(OVPHYSX_API_INVALID_ARGUMENT, "index_tensor length exceeds binding element count");
     }
 
-    // If the binding describes zero elements (zero matched prims OR any inner
-    // dim is zero, e.g. (count, max_dofs=0)), treat writes as a no-op success.
+    // A binding with zero elements is a no-op success.
     if (bindingHasZeroElements(bindingNdim, bindingShape))
         return success();
 
-    // Stage int64 index tensors down to int32. The underlying TensorAPI only
-    // accepts int32 indices; callers such as the IsaacSim umbrella adapter may
-    // supply int64. CPU-only: reading a GPU pointer from the host would crash,
-    // so GPU int64 indices are rejected with a clear error.
+    // TensorAPI accepts only int32 indices, so int64 index tensors are staged down
+    // to int32 on the host. A GPU int64 tensor is rejected because reading a GPU
+    // pointer from the host would crash.
     std::vector<int32_t> int64StagingBuf;
     DLTensor int64StagedTensor{};
     int64_t int64StagedShape = 0;
@@ -2645,29 +2757,43 @@ static ovphysx_result_t write_tensor_binding_locked(
         }
     }
 
-    // Cross-device staging: allow callers to pass a tensor on a different
-    // device than the binding (e.g. GPU tensor against a CPU-only property
-    // binding). On same-device input no staging is allocated; on cross-
-    // device input, allocates a buffer on the binding's device, copies the
-    // caller's data into it, and redirects the TensorDesc to the staging
-    // buffer. Cleanup is automatic via TensorStagingInfo's destructor.
-    int bindingDeviceOrdinal = -1;
-    if (!isCpuOnlyTensorType(binding.tensorType) && binding.simView)
-        bindingDeviceOrdinal = binding.simView->getDeviceOrdinal();
+    // Cross-device staging applies to DirectGPU bindings only. CPU-only property
+    // APIs require host tensors, so a GPU tensor is refused rather than staged
+    // DtoH (OMPE-103213).
+    const bool cpuOnly = isCpuOnlyTensorType(binding.tensorType);
+    const int bindingDeviceOrdinal = getBindingNativeDeviceOrdinal(binding);
+
+    if (cpuOnly)
+    {
+        ovphysx_result_t deviceValidation = validateTensorDevice(src_tensor, binding, "write_tensor_binding");
+        if (deviceValidation.status != OVPHYSX_API_SUCCESS)
+            return deviceValidation;
+        if (effective_index_tensor)
+        {
+            ovphysx_result_t indexValidation =
+                validateTensorDevice(effective_index_tensor, binding, "write_tensor_binding (index)");
+            if (indexValidation.status != OVPHYSX_API_SUCCESS)
+                return indexValidation;
+        }
+    }
+
+    const uintptr_t bindingCudaCtx = reinterpret_cast<uintptr_t>(binding.simView->getCudaContext());
 
     TensorStagingInfo srcStaging;
+    if (!cpuOnly)
     {
         ovphysx_result_t r = stageTensorForWrite(
-            src_tensor, bindingDeviceOrdinal, src, srcStaging, "write_tensor_binding");
+            src_tensor, bindingDeviceOrdinal, bindingCudaCtx, src, srcStaging, "write_tensor_binding");
         if (r.status != OVPHYSX_API_SUCCESS)
             return r;
     }
 
     TensorStagingInfo idxStaging;
-    if (effective_index_tensor)
+    if (effective_index_tensor && !cpuOnly)
     {
         ovphysx_result_t r = stageTensorForWrite(
-            effective_index_tensor, bindingDeviceOrdinal, idx, idxStaging, "write_tensor_binding (index)");
+            effective_index_tensor, bindingDeviceOrdinal, bindingCudaCtx, idx, idxStaging,
+            "write_tensor_binding (index)");
         if (r.status != OVPHYSX_API_SUCCESS)
             return r;
     }
@@ -2781,7 +2907,7 @@ static ovphysx_result_t write_tensor_binding_locked(
             ok = binding.rbView && binding.rbView->setDisableGravities(&src, idxPtr);
             break;
 
-        // Fixed tendon properties (indexed write via batch setter -- reads back other properties)
+        // Fixed tendon properties (indexed write via the batch setter, which reads back the other properties)
         case OVPHYSX_TENSOR_ARTICULATION_FIXED_TENDON_STIFFNESS_F32:
         case OVPHYSX_TENSOR_ARTICULATION_FIXED_TENDON_DAMPING_F32:
         case OVPHYSX_TENSOR_ARTICULATION_FIXED_TENDON_LIMIT_STIFFNESS_F32:
@@ -2796,7 +2922,7 @@ static ovphysx_result_t write_tensor_binding_locked(
             break;
         }
 
-        // Spatial tendon properties (indexed write via batch setter -- reads back other properties)
+        // Spatial tendon properties (indexed write via the batch setter, which reads back the other properties)
         case OVPHYSX_TENSOR_ARTICULATION_SPATIAL_TENDON_STIFFNESS_F32:
         case OVPHYSX_TENSOR_ARTICULATION_SPATIAL_TENDON_DAMPING_F32:
         case OVPHYSX_TENSOR_ARTICULATION_SPATIAL_TENDON_LIMIT_STIFFNESS_F32:
@@ -3034,6 +3160,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_write_tensor_binding(
     const DLTensor* src_tensor,
     const DLTensor* index_tensor)
 {
+    OVPHYSX_NVTX_ZONE("ovphysx_write_tensor_binding");
     if (!src_tensor)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "src_tensor is NULL");
     if (!src_tensor->shape)
@@ -3048,9 +3175,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_write_tensor_binding(
 
     omni_sdk_physx_wait_all_pending_internal(handle);
 
-    // Auto-warmup if needed (GPU mode requires one simulation step to populate buffers)
+    // Auto-warmup if needed (requires one simulation step before tensor reads)
     {
-        ovphysx_result_t warmup_result = ovphysx_gpu_warmup_if_needed(handle, /*is_explicit_call=*/false);
+        ovphysx_result_t warmup_result = ovphysx_warmup_if_needed(handle, /*is_explicit_call=*/false);
         if (warmup_result.status != OVPHYSX_API_SUCCESS)
             return warmup_result;
     }
@@ -3070,6 +3197,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_write_tensor_binding_masked(
     const DLTensor* src_tensor,
     const DLTensor* mask_tensor)
 {
+    OVPHYSX_NVTX_ZONE("ovphysx_write_tensor_binding_masked");
     if (!src_tensor)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "src_tensor is NULL");
     if (!src_tensor->shape)
@@ -3086,21 +3214,19 @@ OVPHYSX_API ovphysx_result_t ovphysx_write_tensor_binding_masked(
     if (processValidation.status != OVPHYSX_API_SUCCESS)
         return processValidation;
 
-    // Validate mask dtype: must be bool (kDLBool, bits=8) or uint8 (kDLUInt, bits=8)
     const bool isBoolMask = (mask_tensor->dtype.code == kDLBool && mask_tensor->dtype.bits == 8 && mask_tensor->dtype.lanes == 1);
     const bool isUint8Mask = (mask_tensor->dtype.code == kDLUInt && mask_tensor->dtype.bits == 8 && mask_tensor->dtype.lanes == 1);
     if (!isBoolMask && !isUint8Mask)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "mask_tensor must be bool (kDLBool, bits=8) or uint8 (kDLUInt, bits=8)");
 
-    // Validate mask is 1D
     if (mask_tensor->ndim != 1)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "mask_tensor must be 1D");
 
     omni_sdk_physx_wait_all_pending_internal(handle);
 
-    // Auto-warmup if needed (GPU mode requires one simulation step to populate buffers)
+    // Auto-warmup if needed (requires one simulation step before tensor reads)
     {
-        ovphysx_result_t warmup_result = ovphysx_gpu_warmup_if_needed(handle, /*is_explicit_call=*/false);
+        ovphysx_result_t warmup_result = ovphysx_warmup_if_needed(handle, /*is_explicit_call=*/false);
         if (warmup_result.status != OVPHYSX_API_SUCCESS)
             return warmup_result;
     }
@@ -3110,8 +3236,8 @@ OVPHYSX_API ovphysx_result_t ovphysx_write_tensor_binding_masked(
     if (!instance)
         return set_error(OVPHYSX_API_ERROR, "invalid handle");
 
-    // CRITICAL: Hold lock during entire operation to prevent use-after-free if binding
-    // is destroyed by another thread. TensorAPI views are NOT ref-counted.
+    // The lock is held for the entire operation because TensorAPI views are not
+    // ref-counted and another thread could destroy the binding.
     std::lock_guard<std::mutex> lock(instance->tensor_binding_mutex);
 
     auto it = instance->tensor_bindings.find(binding_handle);
@@ -3120,12 +3246,20 @@ OVPHYSX_API ovphysx_result_t ovphysx_write_tensor_binding_masked(
 
     TensorBindingState& binding = it->second;
 
-    if (instance->attachedStageId != binding.stageId)
+    if (instance->attachHandle != binding.attachHandle)
     {
         return set_error(OVPHYSX_API_NOT_FOUND,
-                "binding invalidated (stage changed): binding.stageId=" + std::to_string(binding.stageId) +
-                           " current.attachedStageId=" + std::to_string(instance->attachedStageId) +
+                "binding invalidated (attach changed): binding.attachHandle=" + std::to_string(binding.attachHandle) +
+                           " current.attachHandle=" + std::to_string(instance->attachHandle) +
                            "; recreate binding");
+    }
+
+    if (!binding.simView || !binding.simView->getValid())
+    {
+        return set_error(OVPHYSX_API_NOT_FOUND,
+                         "binding invalidated (simulation view mapping stale — e.g. "
+                         "eDISABLE_SIMULATION removed a DirectGPU row); recreate binding "
+                         "for the enabled set");
     }
 
     int32_t bindingNdim = 0;
@@ -3133,17 +3267,15 @@ OVPHYSX_API ovphysx_result_t ovphysx_write_tensor_binding_masked(
     if (!getBindingSpec(binding, bindingNdim, bindingShape))
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "unsupported tensor type");
 
-    // Validate src_tensor: full shape [N,...] matching spec exactly
+    // src_tensor has the full [N, ...] shape of the spec.
     ovphysx_result_t validation = validateTensorShape(src_tensor, binding, "write_tensor_binding_masked");
     if (validation.status != OVPHYSX_API_SUCCESS)
         return validation;
 
-    // Validate mask shape[0] == binding's first dimension N
     if (mask_tensor->shape[0] != bindingShape[0])
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "mask_tensor.shape[0] must match binding element count N");
 
-    // If the binding describes zero elements (zero matched prims OR any inner
-    // dim is zero), treat writes as a no-op success. See bindingHasZeroElements.
+    // A binding with zero elements is a no-op success, see bindingHasZeroElements.
     if (bindingHasZeroElements(bindingNdim, bindingShape))
         return success();
 
@@ -3158,39 +3290,46 @@ OVPHYSX_API ovphysx_result_t ovphysx_write_tensor_binding_masked(
     if (maskErr != DLConvertError::Success)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, dlConvertErrorMessage(maskErr));
 
-    // Cross-device staging for both src and mask (mirrors write_tensor_binding).
-    // After staging, src.data / mask.data point at the binding's device — for
-    // CPU-only property types that means CPU, so the mask scan below operates
-    // on a CPU-resident buffer regardless of the caller's original mask device.
-    int bindingDeviceOrdinal = -1;
-    if (!isCpuOnlyTensorType(binding.tensorType) && binding.simView)
-        bindingDeviceOrdinal = binding.simView->getDeviceOrdinal();
+    // Cross-device staging applies to DirectGPU bindings only. CPU-only property
+    // types require host src and mask tensors, so they are never staged (OMPE-103213).
+    const bool cpuOnly = isCpuOnlyTensorType(binding.tensorType);
+    const int bindingDeviceOrdinal = getBindingNativeDeviceOrdinal(binding);
+
+    if (cpuOnly)
+    {
+        ovphysx_result_t srcDev = validateTensorDevice(src_tensor, binding, "write_tensor_binding_masked");
+        if (srcDev.status != OVPHYSX_API_SUCCESS)
+            return srcDev;
+        ovphysx_result_t maskDev = validateTensorDevice(mask_tensor, binding, "write_tensor_binding_masked (mask)");
+        if (maskDev.status != OVPHYSX_API_SUCCESS)
+            return maskDev;
+    }
+
+    const uintptr_t bindingCudaCtx = reinterpret_cast<uintptr_t>(binding.simView->getCudaContext());
 
     TensorStagingInfo srcStaging;
+    if (!cpuOnly)
     {
         ovphysx_result_t r = stageTensorForWrite(
-            src_tensor, bindingDeviceOrdinal, src, srcStaging, "write_tensor_binding_masked");
+            src_tensor, bindingDeviceOrdinal, bindingCudaCtx, src, srcStaging,
+            "write_tensor_binding_masked");
         if (r.status != OVPHYSX_API_SUCCESS)
             return r;
     }
 
     TensorStagingInfo maskStaging;
+    if (!cpuOnly)
     {
         ovphysx_result_t r = stageTensorForWrite(
-            mask_tensor, bindingDeviceOrdinal, mask, maskStaging, "write_tensor_binding_masked (mask)");
+            mask_tensor, bindingDeviceOrdinal, bindingCudaCtx, mask, maskStaging,
+            "write_tensor_binding_masked (mask)");
         if (r.status != OVPHYSX_API_SUCCESS)
             return r;
     }
 
-    // CPU-only property types (DOF stiffness/damping/limits, body mass/COM/inertia):
-    // the GPU view's masked setters expect GPU masks (they run a device-side compaction
-    // kernel). Stage above made mask CPU-resident regardless of caller's original
-    // device, so we can convert mask → CPU index array and forward to the indexed
-    // write path. The forwarded call passes the original src_tensor; if it was on
-    // the wrong device, write_tensor_binding_locked will re-stage it (the wasted
-    // copy is acceptable for this corner case — CPU-only property + GPU mask is
-    // unusual).
-    if (isCpuOnlyTensorType(binding.tensorType))
+    // CPU-only property types: compact a host mask to host indices and forward
+    // to the indexed write path.
+    if (cpuOnly)
     {
         const uint8_t* maskData = static_cast<const uint8_t*>(mask.data);
         const int64_t N = mask_tensor->shape[0];
@@ -3205,10 +3344,10 @@ OVPHYSX_API ovphysx_result_t ovphysx_write_tensor_binding_masked(
         if (K == N)
             return write_tensor_binding_locked(instance, binding_handle, src_tensor, nullptr);
 
-        std::vector<int32_t> cpuIndices(K);
+        std::vector<int32_t> cpuIndices(static_cast<size_t>(K));
         int64_t j = 0;
         for (int64_t i = 0; i < N; ++i)
-            if (maskData[i]) cpuIndices[j++] = static_cast<int32_t>(i);
+            if (maskData[i]) cpuIndices[static_cast<size_t>(j++)] = static_cast<int32_t>(i);
 
         int64_t idxShape[1] = {K};
         DLTensor idx_dl{};
@@ -3450,12 +3589,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_write_tensor_binding_masked(
             break;
 
         // External wrenches - rigid body [N, 9]
-        // User provides a combined wrench per body: each row is [fx,fy,fz,tx,ty,tz,px,py,pz].
-        // This matches the convention used by other physics APIs (e.g. Newton uses a combined
-        // spatial_vector [fx,fy,fz,tx,ty,tz] per body). However, PhysX's DirectGPU API
-        // (applyForcesAndTorquesAtPosition) takes three separate [N,3] tensors (force, torque,
-        // position), so we need to convert from AoS to SoA here. Newton avoids this because
-        // Warp natively consumes spatial vectors; we pay the conversion cost for PhysX.
+        // Each row is a combined wrench [fx,fy,fz,tx,ty,tz,px,py,pz], the convention shared
+        // with other physics APIs. PhysX applyForcesAndTorquesAtPosition takes three
+        // separate [N,3] tensors, so the AoS input is converted to SoA here.
         case OVPHYSX_TENSOR_RIGID_BODY_WRENCH_F32:
         {
             if (!binding.rbView)
@@ -3513,8 +3649,8 @@ OVPHYSX_API ovphysx_result_t ovphysx_write_tensor_binding_masked(
         }
 
         // External wrenches - articulation links [N, L, 9]
-        // User provides standard row-major layout: each element is [fx,fy,fz,tx,ty,tz,px,py,pz]
-        // We convert internally to three separate [N,L,3] tensors for TensorAPI
+        // Each element is [fx,fy,fz,tx,ty,tz,px,py,pz], converted to three separate
+        // [N,L,3] tensors for TensorAPI.
         case OVPHYSX_TENSOR_ARTICULATION_LINK_WRENCH_F32:
         {
             if (!binding.artiView)
@@ -3590,15 +3726,8 @@ OVPHYSX_API ovphysx_result_t ovphysx_write_tensor_binding_masked(
 // Articulation metadata queries
 // ---------------------------------------------------------------------------
 
-// OMPE-94459 (#13): classify a prim by high-level TensorAPI object type.
-// Creates a transient simulation view (no binding needed) and queries
-// ISimulationView::getObjectType. Unresolved paths yield INVALID with a
-// SUCCESS status -- "this isn't a known sim object" is not an error.
-// OMPE-94459 (_KINEMATIC_UPDATE_NOOP fix): explicitly propagate root + DOF
-// state into the link buffer for every articulation in the binding by calling
-// PhysX SDK's PxArticulationReducedCoordinate::updateKinematic. The umbrella's
-// OvPhysxSimulationView.update_articulations_kinematic now routes through
-// here instead of being a no-op.
+// Propagates root and DOF state into the link buffer for every articulation in
+// the binding via PxArticulationReducedCoordinate::updateKinematic (OMPE-94459).
 OVPHYSX_API ovphysx_result_t ovphysx_articulation_update_kinematic(
     ovphysx_handle_t handle,
     ovphysx_tensor_binding_handle_t binding_handle,
@@ -3617,10 +3746,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_articulation_update_kinematic(
         return set_error(OVPHYSX_API_NOT_FOUND, "binding not found");
 
     TensorBindingState& binding = it->second;
-    // Stale-binding check: same pattern as the other binding ops in this
-    // file. A binding created against a previous stage attach must not run
-    // sidecar calls against the new stage's articulations.
-    if (instance->attachedStageId != binding.stageId)
+    // A binding created against a previous attach must not run sidecar calls
+    // against the new stage's articulations.
+    if (instance->attachHandle != binding.attachHandle)
         return set_error(OVPHYSX_API_NOT_FOUND,
                          "binding invalidated (stage changed); recreate binding");
     if (!binding.artiView)
@@ -3631,27 +3759,23 @@ OVPHYSX_API ovphysx_result_t ovphysx_articulation_update_kinematic(
     if (!sidecarFn)
         return set_error(OVPHYSX_API_ERROR, "internal sidecar update_kinematic not loaded");
 
-    // Build the sidecar-side flag mask. Bit assignments match the values in
-    // ovphysx_articulation_kinematic_flag_t (POSITION=0x1, VELOCITY=0x2);
-    // the sidecar re-maps them to PxArticulationKinematicFlag.
+    // Bit assignments match ovphysx_articulation_kinematic_flag_t (POSITION=0x1,
+    // VELOCITY=0x2). The sidecar re-maps them to PxArticulationKinematicFlag.
     const uint32_t sidecarFlags = flags & (OVPHYSX_ARTICULATION_KINEMATIC_POSITION |
                                            OVPHYSX_ARTICULATION_KINEMATIC_VELOCITY);
     if (!sidecarFlags)
         return success();
 
-    // Surface per-articulation sidecar failures: the sidecar returns false
-    // for unresolvable / disposed articulations and silently swallowing that
-    // would hide stale-state bugs that the stale-binding check above cannot
-    // catch (e.g. an articulation removed from the live stage but the
-    // binding is otherwise current).
+    // The sidecar returns false for unresolvable or disposed articulations.
+    // Swallowing that would hide stale-state bugs the attach check above cannot
+    // catch, such as an articulation removed from the live stage.
     const uint32_t count = binding.artiView->getCount();
     bool allOk = true;
     for (uint32_t i = 0; i < count; ++i)
     {
         const char* path = binding.artiView->getUsdPrimPath(i);
-        // A null/empty path is an unresolvable articulation -- exactly the
-        // stale/disposed case this is meant to surface, so flag it instead of
-        // silently skipping.
+        // A null or empty path is an unresolvable articulation, the stale or
+        // disposed case this is meant to surface.
         if (!path || !*path)
         {
             allOk = false;
@@ -3666,12 +3790,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_articulation_update_kinematic(
                              "update_kinematic failed for one or more articulations in the binding");
 }
 
-// Wake rigid bodies in a binding (optionally a subset via indices).
-// Mirrors PhysX SDK PxRigidDynamic::wakeUp. Bodies with eDISABLE_SIMULATION
-// set are silently skipped (the engine refuses to wake disabled actors).
-// Pair with a RIGID_BODY_DISABLE_SIMULATION clear write: clearing the flag
-// re-adds the actor to the simulation in a sleep state, and this call brings
-// it back active before the next simulate.
+// Mirrors PxRigidDynamic::wakeUp. Bodies with eDISABLE_SIMULATION set are skipped
+// because the engine refuses to wake disabled actors. Clearing that flag re-adds
+// the actor asleep, and this call brings it back active before the next simulate.
 OVPHYSX_API ovphysx_result_t ovphysx_rigid_body_view_wake_up(
     ovphysx_handle_t handle,
     ovphysx_tensor_binding_handle_t binding_handle,
@@ -3690,27 +3811,19 @@ OVPHYSX_API ovphysx_result_t ovphysx_rigid_body_view_wake_up(
         return set_error(OVPHYSX_API_NOT_FOUND, "binding not found");
 
     TensorBindingState& binding = it->second;
-    // Stale-binding check: same pattern as other binding ops in this file.
-    if (instance->attachedStageId != binding.stageId)
+    if (instance->attachHandle != binding.attachHandle)
         return set_error(OVPHYSX_API_NOT_FOUND,
                          "binding invalidated (stage changed); recreate binding");
     if (!binding.rbView)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT,
                          "wake_up requires a rigid-body tensor binding");
 
-    // The engine accepts a null index tensor to wake every body in the view.
+    // A null index tensor wakes every body in the view. wakeUp is a CPU-only PhysX
+    // path, so GPU index tensors are refused rather than staged to the host (OMPE-103213).
     omni::physics::tensors::TensorDesc idxDesc{};
     const omni::physics::tensors::TensorDesc* idxPtr = nullptr;
-    std::vector<int32_t> idxHostBuf; // backs staged GPU indices; must outlive idxPtr
     if (indices && indices->data)
     {
-        // BaseRigidBodyView::wakeUp dereferences the index tensor as a host
-        // pointer. GpuRigidBodyView stages GPU index tensors to host
-        // internally, but a CPU-simulation binding forwards straight to
-        // BaseRigidBodyView and would read a GPU pointer as host memory.
-        // Validate the layout, then stage GPU indices DtoH here so every
-        // backend is safe (a redundant stage for GPU-sim + GPU indices is a
-        // no-op there). int32 matches the engine's PxU32 index reads.
         if (!indices->shape || indices->ndim != 1 || indices->dtype.code != kDLInt ||
             indices->dtype.bits != 32 || indices->dtype.lanes != 1)
             return set_error(OVPHYSX_API_INVALID_ARGUMENT, "wake_up: indices must be a 1D int32 tensor");
@@ -3723,24 +3836,8 @@ OVPHYSX_API ovphysx_result_t ovphysx_rigid_body_view_wake_up(
                              "wake_up: failed to convert indices DLTensor");
 
         if (idxDesc.device >= 0)
-        {
-            omni::physx::IOptionalCuda* cuda = getOptionalCuda();
-            if (!cuda || !cuda->cudaAvailable())
-                return set_error(OVPHYSX_API_GPU_NOT_AVAILABLE,
-                                 "wake_up: GPU index tensor requires CUDA for host staging");
-            const size_t byteCount = static_cast<size_t>(indices->shape[0]) * sizeof(int32_t);
-            idxHostBuf.resize(static_cast<size_t>(indices->shape[0]));
-            int cudaStatus = 0;
-            if (!cuda->memcpyDtoH(idxHostBuf.data(), reinterpret_cast<uintptr_t>(idxDesc.data), byteCount,
-                                  &cudaStatus))
-            {
-                std::ostringstream oss;
-                oss << "wake_up: memcpyDtoH failed staging GPU indices (cuda_status=" << cudaStatus << ")";
-                return set_error(OVPHYSX_API_ERROR, oss.str());
-            }
-            idxDesc.data = idxHostBuf.data();
-            idxDesc.device = -1;
-        }
+            return set_error(OVPHYSX_API_INVALID_ARGUMENT,
+                             "wake_up: indices tensor must be on host (CPU); GPU tensors not supported");
         idxPtr = &idxDesc;
     }
     const bool ok = binding.rbView->wakeUp(idxPtr);
@@ -3768,7 +3865,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_rigid_body_view_sleep(
         return set_error(OVPHYSX_API_NOT_FOUND, "binding not found");
 
     TensorBindingState& binding = it->second;
-    if (instance->attachedStageId != binding.stageId)
+    if (instance->attachHandle != binding.attachHandle)
         return set_error(OVPHYSX_API_NOT_FOUND,
                          "binding invalidated (stage changed); recreate binding");
     if (!binding.rbView)
@@ -3777,7 +3874,6 @@ OVPHYSX_API ovphysx_result_t ovphysx_rigid_body_view_sleep(
 
     omni::physics::tensors::TensorDesc idxDesc{};
     const omni::physics::tensors::TensorDesc* idxPtr = nullptr;
-    std::vector<int32_t> idxHostBuf;
     if (indices && indices->data)
     {
         if (!indices->shape || indices->ndim != 1 || indices->dtype.code != kDLInt ||
@@ -3792,24 +3888,8 @@ OVPHYSX_API ovphysx_result_t ovphysx_rigid_body_view_sleep(
                              "sleep: failed to convert indices DLTensor");
 
         if (idxDesc.device >= 0)
-        {
-            omni::physx::IOptionalCuda* cuda = getOptionalCuda();
-            if (!cuda || !cuda->cudaAvailable())
-                return set_error(OVPHYSX_API_GPU_NOT_AVAILABLE,
-                                 "sleep: GPU index tensor requires CUDA for host staging");
-            const size_t byteCount = static_cast<size_t>(indices->shape[0]) * sizeof(int32_t);
-            idxHostBuf.resize(static_cast<size_t>(indices->shape[0]));
-            int cudaStatus = 0;
-            if (!cuda->memcpyDtoH(idxHostBuf.data(), reinterpret_cast<uintptr_t>(idxDesc.data), byteCount,
-                                  &cudaStatus))
-            {
-                std::ostringstream oss;
-                oss << "sleep: memcpyDtoH failed staging GPU indices (cuda_status=" << cudaStatus << ")";
-                return set_error(OVPHYSX_API_ERROR, oss.str());
-            }
-            idxDesc.data = idxHostBuf.data();
-            idxDesc.device = -1;
-        }
+            return set_error(OVPHYSX_API_INVALID_ARGUMENT,
+                             "sleep: indices tensor must be on host (CPU); GPU tensors not supported");
         idxPtr = &idxDesc;
     }
     const bool ok = binding.rbView->putToSleep(idxPtr);
@@ -3817,6 +3897,11 @@ OVPHYSX_API ovphysx_result_t ovphysx_rigid_body_view_sleep(
               : set_error(OVPHYSX_API_ERROR, "sleep failed for one or more bodies");
 }
 
+// OMPE-94459 (#13) / NVBugs 6560084: classify a prim by high-level TensorAPI
+// object type. Creates a transient simulation view (no binding needed) and
+// queries ISimulationView::getObjectType, mapping ObjectType onto
+// ovphysx_object_type_t. Unmatched paths yield INVALID with SUCCESS -- the call
+// succeeded, but nothing in the TensorAPI taxonomy matches that path.
 OVPHYSX_API ovphysx_result_t ovphysx_get_object_type(
     ovphysx_handle_t handle,
     ovphysx_string_t prim_path,
@@ -3834,14 +3919,10 @@ OVPHYSX_API ovphysx_result_t ovphysx_get_object_type(
 
     omni_sdk_physx_wait_all_pending_internal(handle);
 
-    // TensorAPI's createSimulationView needs the initial scene parse to
-    // have happened (physxSim->simulate(0,0) + fetchResults), otherwise it
-    // returns an invalid view and we report "failed to create simulation
-    // view". Callers reaching this from on_start (before any explicit
-    // step) hit that path. The other tensor-binding entry points
-    // (create_tensor_binding, update_articulations_kinematic) call this
-    // helper for the same reason; mirror the pattern here so callers
-    // don't have to step first to classify a prim.
+    // createSimulationView returns an invalid view until the initial scene parse
+    // has run, which callers reaching this from on_start would otherwise hit.
+    // Attaching here mirrors create_tensor_binding so a prim can be classified
+    // before the first step.
     {
         ovphysx_api_status_t attach_status = ovphysx_ensure_physics_attached(handle);
         if (attach_status != OVPHYSX_API_SUCCESS)
@@ -3850,15 +3931,15 @@ OVPHYSX_API ovphysx_result_t ovphysx_get_object_type(
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
-    if (!instance || instance->attachedStageId == 0)
-        return set_error(OVPHYSX_API_ERROR, "no USD stage attached");
+    if (!instance || !instance->ovstage_attached)
+        return set_error(OVPHYSX_API_ERROR, "no physics stage attached");
 
     auto* tensorApi = getTensorApi();
     if (!tensorApi)
         return set_error(OVPHYSX_API_ERROR, "TensorAPI unavailable");
 
     omni::physics::tensors::ISimulationView* simView =
-        tensorApi->createSimulationView(instance->attachedStageId);
+        tensorApi->createSimulationView(instance->attachHandle);
     if (!simView || !simView->getValid())
     {
         if (simView) simView->release(false);
@@ -3880,6 +3961,10 @@ OVPHYSX_API ovphysx_result_t ovphysx_get_object_type(
             *out_type = OVPHYSX_OBJECT_TYPE_ARTICULATION_ROOT_LINK; break;
         case omni::physics::tensors::ObjectType::eArticulationJoint:
             *out_type = OVPHYSX_OBJECT_TYPE_ARTICULATION_JOINT; break;
+        case omni::physics::tensors::ObjectType::eJoint:
+            *out_type = OVPHYSX_OBJECT_TYPE_JOINT; break;
+        case omni::physics::tensors::ObjectType::eCustomJoint:
+            *out_type = OVPHYSX_OBJECT_TYPE_CUSTOM_JOINT; break;
         default:
             *out_type = OVPHYSX_OBJECT_TYPE_INVALID; break;
     }
@@ -3907,6 +3992,13 @@ OVPHYSX_API ovphysx_result_t ovphysx_get_articulation_metadata(
         return set_error(OVPHYSX_API_NOT_FOUND, "binding not found");
 
     const TensorBindingState& binding = it->second;
+    if (instance->attachHandle != binding.attachHandle)
+    {
+        return set_error(OVPHYSX_API_NOT_FOUND,
+                "binding invalidated (attach changed): binding.attachHandle=" + std::to_string(binding.attachHandle) +
+                           " current.attachHandle=" + std::to_string(instance->attachHandle) +
+                           "; recreate binding");
+    }
     if (!binding.artiView)
         return set_error(OVPHYSX_API_ERROR, "binding is not an articulation binding");
 
@@ -3947,6 +4039,13 @@ OVPHYSX_API ovphysx_result_t ovphysx_articulation_get_dof_names(
         return set_error(OVPHYSX_API_NOT_FOUND, "binding not found");
 
     const TensorBindingState& binding = it->second;
+    if (instance->attachHandle != binding.attachHandle)
+    {
+        return set_error(OVPHYSX_API_NOT_FOUND,
+                "binding invalidated (attach changed): binding.attachHandle=" + std::to_string(binding.attachHandle) +
+                           " current.attachHandle=" + std::to_string(instance->attachHandle) +
+                           "; recreate binding");
+    }
     if (!binding.artiView)
         return set_error(OVPHYSX_API_ERROR, "binding is not an articulation binding");
 
@@ -3988,6 +4087,13 @@ OVPHYSX_API ovphysx_result_t ovphysx_articulation_get_body_names(
         return set_error(OVPHYSX_API_NOT_FOUND, "binding not found");
 
     const TensorBindingState& binding = it->second;
+    if (instance->attachHandle != binding.attachHandle)
+    {
+        return set_error(OVPHYSX_API_NOT_FOUND,
+                "binding invalidated (attach changed): binding.attachHandle=" + std::to_string(binding.attachHandle) +
+                           " current.attachHandle=" + std::to_string(instance->attachHandle) +
+                           "; recreate binding");
+    }
     if (!binding.artiView)
         return set_error(OVPHYSX_API_ERROR, "binding is not an articulation binding");
 
@@ -4029,6 +4135,13 @@ OVPHYSX_API ovphysx_result_t ovphysx_articulation_get_joint_names(
         return set_error(OVPHYSX_API_NOT_FOUND, "binding not found");
 
     const TensorBindingState& binding = it->second;
+    if (instance->attachHandle != binding.attachHandle)
+    {
+        return set_error(OVPHYSX_API_NOT_FOUND,
+                "binding invalidated (attach changed): binding.attachHandle=" + std::to_string(binding.attachHandle) +
+                           " current.attachHandle=" + std::to_string(instance->attachHandle) +
+                           "; recreate binding");
+    }
     if (!binding.artiView)
         return set_error(OVPHYSX_API_ERROR, "binding is not an articulation binding");
 
@@ -4083,7 +4196,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_tensor_binding_get_prim_paths(
         return set_error(OVPHYSX_API_ERROR, "binding does not expose prim path metadata");
     }
 
-    if (instance->attachedStageId != binding.stageId)
+    if (instance->attachHandle != binding.attachHandle)
         return set_error(OVPHYSX_API_NOT_FOUND, "binding invalidated (stage changed); recreate binding");
 
     std::vector<std::string>* cache = nullptr;

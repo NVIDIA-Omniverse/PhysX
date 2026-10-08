@@ -1,7 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
+
+#include <omni/physics/tensors/TensorApi.h>
 
 #include "tensors/PhysicsTypes.h"
 
@@ -96,7 +98,7 @@ private:
 
 struct CpuSimulationData
 {
-    CpuSimulationData(SimulationBackend& backend, long stageId);
+    CpuSimulationData(SimulationBackend& backend, omni::physics::tensors::AttachHandle attachHandle);
     ~CpuSimulationData();
 
     // needed so that body forces can be cleared even after the views get deleted
@@ -122,7 +124,8 @@ struct CpuSimulationData
 private:
     SimulationBackend& mBackend;
 
-    long mStageId = -1;
+    // Attach handle (ADR-0013), not a USD stage id.
+    omni::physics::tensors::AttachHandle mAttachHandle = omni::physics::tensors::kNoAttach;
 
     // we need to keep these trackers so that dirty forces can be cleared even if the RigidBodyView gets released
     std::list<CpuRigidBodyDirtyForceTrackerPtr> mRigidBodyDirtyForceTrackers;

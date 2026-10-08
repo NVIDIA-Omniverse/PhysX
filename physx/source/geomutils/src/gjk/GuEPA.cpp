@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
-// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
+// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "GuEPA.h"
 #include "GuEPAFacet.h"
@@ -58,19 +35,19 @@ namespace Gu
 	{
 	public:
 		EPA(){}
-		GjkStatus PenetrationDepth(const GjkConvex& a, const GjkConvex& b, const aos::Vec3V* PX_RESTRICT A, const aos::Vec3V* PX_RESTRICT B, const PxU8 size, const bool takeCoreShape, 
+		GjkStatus PenetrationDepth(const GjkConvex& a, const GjkConvex& b, const Vec3V* PX_RESTRICT A, const Vec3V* PX_RESTRICT B, const PxU8 size, const bool takeCoreShape, 
 			const FloatV tolerenceLength, GjkOutput& output);
 		bool expandPoint(const GjkConvex& a, const GjkConvex& b, PxI32& numVerts, const FloatVArg upperBound);
 		bool expandSegment(const GjkConvex& a, const GjkConvex& b, PxI32& numVerts, const FloatVArg upperBound);
 		bool expandTriangle(PxI32& numVerts, const FloatVArg upperBound);
 
-		Facet* addFacet(const PxU32 i0, const PxU32 i1, const PxU32 i2, const aos::FloatVArg upper);
+		Facet* addFacet(const PxU32 i0, const PxU32 i1, const PxU32 i2, const FloatVArg upper);
 	
-		bool originInTetrahedron(const aos::Vec3VArg p1, const aos::Vec3VArg p2, const aos::Vec3VArg p3, const aos::Vec3VArg p4);
+		bool originInTetrahedron(const Vec3VArg p1, const Vec3VArg p2, const Vec3VArg p3, const Vec3VArg p4);
 
 		Cm::InlinePriorityQueue<Facet*, MaxFacets, FacetDistanceComparator> heap;
-		aos::Vec3V aBuf[MaxSupportPoints];
-		aos::Vec3V bBuf[MaxSupportPoints];
+		Vec3V aBuf[MaxSupportPoints];
+		Vec3V bBuf[MaxSupportPoints];
 		Facet facetBuf[MaxFacets];
 		EdgeBuffer edgeBuffer;
 		EPAFacetManager facetManager;
@@ -82,13 +59,12 @@ namespace Gu
      #pragma warning(pop) 
 #endif
 
-	PX_FORCE_INLINE bool EPA::originInTetrahedron(const aos::Vec3VArg p1, const aos::Vec3VArg p2, const aos::Vec3VArg p3, const aos::Vec3VArg p4)
+	PX_FORCE_INLINE bool EPA::originInTetrahedron(const Vec3VArg p1, const Vec3VArg p2, const Vec3VArg p3, const Vec3VArg p4)
 	{
-		using namespace aos;
 		return BAllEqFFFF(PointOutsideOfPlane4(p1, p2, p3, p4)) == 1;
 	}
 
-	static PX_FORCE_INLINE void doSupport(const GjkConvex& a, const GjkConvex& b, const aos::Vec3VArg dir, aos::Vec3V& supportA, aos::Vec3V& supportB, aos::Vec3V& support)
+	static PX_FORCE_INLINE void doSupport(const GjkConvex& a, const GjkConvex& b, const Vec3VArg dir, Vec3V& supportA, Vec3V& supportB, Vec3V& support)
 	{
 		const Vec3V tSupportA = a.support(V3Neg(dir));
 		const Vec3V tSupportB = b.support(dir);
@@ -119,7 +95,7 @@ namespace Gu
 		return epa.PenetrationDepth(a, b, A, B, size, takeCoreShape, tolerenceLength, output);
 	}
 
-	GjkStatus epaPenetration(const GjkConvex& a, const GjkConvex& b, const aos::Vec3V* PX_RESTRICT aPnt, const aos::Vec3V* PX_RESTRICT bPnt, const PxU8 size,
+	GjkStatus epaPenetration(const GjkConvex& a, const GjkConvex& b, const Vec3V* PX_RESTRICT aPnt, const Vec3V* PX_RESTRICT bPnt, const PxU8 size,
 		const bool takeCoreShape, const FloatV tolerenceLength, GjkOutput& output)
 	{
 
@@ -134,7 +110,7 @@ namespace Gu
 	}
 
 	//ML: this function returns the signed distance of a point to a plane
-	PX_FORCE_INLINE aos::FloatV Facet::getPlaneDist(const aos::Vec3VArg p, const aos::Vec3V* PX_RESTRICT aBuf, const aos::Vec3V* PX_RESTRICT bBuf) const
+	PX_FORCE_INLINE FloatV Facet::getPlaneDist(const Vec3VArg p, const Vec3V* PX_RESTRICT aBuf, const Vec3V* PX_RESTRICT bBuf) const
 	{
 		const Vec3V pa0(aBuf[m_indices[0]]);
 		const Vec3V pb0(bBuf[m_indices[0]]);
@@ -147,10 +123,9 @@ namespace Gu
 	// (1)calculates the distance from orign((0, 0, 0)) to a triangle plane 
 	// (2) rejects triangle if the triangle is degenerate (two points are identical)
 	// (3) rejects triangle to be added into the heap if the plane distance is large than upper
-	aos::BoolV Facet::isValid2(const PxU32 i0, const PxU32 i1, const PxU32 i2, const aos::Vec3V* PX_RESTRICT aBuf, const aos::Vec3V* PX_RESTRICT bBuf, 
-		const aos::FloatVArg upper)
+	BoolV Facet::isValid2(const PxU32 i0, const PxU32 i1, const PxU32 i2, const Vec3V* PX_RESTRICT aBuf, const Vec3V* PX_RESTRICT bBuf, 
+		const FloatVArg upper)
 	{
-		using namespace aos;
 		const FloatV eps = FEps();
 
 		const Vec3V pa0(aBuf[i0]);
@@ -185,9 +160,8 @@ namespace Gu
 
 	//ML: if the triangle is valid(not degenerate and within lower and upper bound), we need to add it into the heap. Otherwise, we just return
 	//the triangle so that the facet can be linked to other facets in the expanded polytope.
-	Facet* EPA::addFacet(const PxU32 i0, const PxU32 i1, const PxU32 i2, const aos::FloatVArg upper)
+	Facet* EPA::addFacet(const PxU32 i0, const PxU32 i1, const PxU32 i2, const FloatVArg upper)
 	{
-		using namespace aos;
 		PX_ASSERT(i0 != i1 && i0 != i2 && i1 != i2);
 		//ML: we move the control in the calling code so we don't need to check weather we will run out of facets or not
 		PX_ASSERT(facetManager.getNumUsedID() < MaxFacets);
@@ -213,9 +187,8 @@ namespace Gu
 	}
 
 	//ML: this function performs a flood fill over the boundary of the current polytope. 
-	void Facet::silhouette(const PxU32 _index, const aos::Vec3VArg w, const aos::Vec3V* PX_RESTRICT aBuf, const aos::Vec3V* PX_RESTRICT bBuf, EdgeBuffer& edgeBuffer, EPAFacetManager& manager) 
+	void Facet::silhouette(const PxU32 _index, const Vec3VArg w, const Vec3V* PX_RESTRICT aBuf, const Vec3V* PX_RESTRICT bBuf, EdgeBuffer& edgeBuffer, EPAFacetManager& manager) 
 	{
-		using namespace aos;
 		const FloatV zero = FZero();
 		Edge stack[MaxFacets];
 		stack[0] = Edge(this, _index);
@@ -260,7 +233,7 @@ namespace Gu
 	}
 
 	//ML: this function perform flood fill for the adjancent facet and store the boundary facet into the edgeBuffer
-	void Facet::silhouette(const aos::Vec3VArg w, const aos::Vec3V* PX_RESTRICT aBuf, const aos::Vec3V* PX_RESTRICT bBuf, EdgeBuffer& edgeBuffer, EPAFacetManager& manager)
+	void Facet::silhouette(const Vec3VArg w, const Vec3V* PX_RESTRICT aBuf, const Vec3V* PX_RESTRICT bBuf, EdgeBuffer& edgeBuffer, EPAFacetManager& manager)
 	{
 		m_obsolete = true;
 		for(PxU32 a = 0; a < 3; ++a)
@@ -331,7 +304,7 @@ namespace Gu
 	//For example, we treat sphere/capsule as a point/segment in the support function for GJK/EPA, so that the core shape for sphere/capsule is a point/segment. For PCM, we need 
 	//to take the point from the core shape because this will allows us recycle the contacts more stably. For SQ sweeps, we need to take the point on the surface of the sphere/capsule 
 	//when we calculate MTD because this is what will be reported to the user. Therefore, the takeCoreShape flag will be set to be false in SQ.
-	static void calculateContactInformation(const aos::Vec3V* PX_RESTRICT aBuf, const aos::Vec3V* PX_RESTRICT bBuf, Facet* facet, const GjkConvex& a, const GjkConvex& b, const bool takeCoreShape, GjkOutput& output)
+	static void calculateContactInformation(const Vec3V* PX_RESTRICT aBuf, const Vec3V* PX_RESTRICT bBuf, Facet* facet, const GjkConvex& a, const GjkConvex& b, const bool takeCoreShape, GjkOutput& output)
 	{
 		const FloatV zero = FZero();
 		Vec3V _pa, _pb;
@@ -369,12 +342,9 @@ namespace Gu
 	//(1)EPA_FAIL:	the algorithm failed to create a valid polytope(the origin wasn't inside the polytope) from the input simplex
 	//(2)EPA_CONTACT : the algorithm found the MTD and converged successfully.
 	//(3)EPA_DEGENERATE: the algorithm cannot make further progress and the result is unknown.
-	GjkStatus EPA::PenetrationDepth(const GjkConvex& a, const GjkConvex& b, const aos::Vec3V* PX_RESTRICT A, const aos::Vec3V* PX_RESTRICT B, const PxU8 size, const bool takeCoreShape, 
+	GjkStatus EPA::PenetrationDepth(const GjkConvex& a, const GjkConvex& b, const Vec3V* PX_RESTRICT A, const Vec3V* PX_RESTRICT B, const PxU8 size, const bool takeCoreShape, 
 		const FloatV tolerenceLength, GjkOutput& output)
 	{
-	
-		using namespace aos; 
-
 		PX_UNUSED(tolerenceLength);
 
 		PxPrefetchLine(&facetBuf[0]);

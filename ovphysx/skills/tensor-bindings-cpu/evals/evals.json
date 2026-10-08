@@ -1,0 +1,59 @@
+{
+  "skill_name": "tensor-bindings-cpu",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I'm maintaining an existing Python CPU tool built on create_tensor_binding (it writes articulation DOF velocity targets and reads link poses into NumPy). Add a rigid-body-pose read to it, staying on the tensor-binding API -- I'm not migrating this tool to the session API right now.",
+      "expected_output": "Extends the existing binding code: adds a RIGID_BODY_POSE state binding read alongside the current ones, reuses the attach/step/destroy flow, and stays on create_tensor_binding rather than rewriting onto the session API for this maintenance task.",
+      "files": [],
+      "expectations": [
+        "Selects tensor-bindings-cpu to maintain/extend the existing binding code",
+        "Adds the read through create_tensor_binding (a state binding), not by rewriting onto PhysX.read / PhysX.write",
+        "Reads simulated results from a state binding, not a control-target binding",
+        "Uses step_sync (or step + wait) before the read",
+        "Destroys bindings and releases PhysX/ovstage resources",
+        "Registers the codeless PhysX schemas with ovstage.population.register_usd_schemas([str(codeless_schema_root())]) before the first population call"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "After writing velocity targets on a CPU binding, I read that same binding and expected to see simulated joint velocities. Why are the values unchanged?",
+      "expected_output": "Explains target bindings read back control inputs, not physics outcomes; use a state binding for simulated results.",
+      "files": [],
+      "expectations": [
+        "Explains velocity-target bindings return written controls, not simulated velocities",
+        "Points the caller at a state tensor type (pose/position/velocity state) for outcomes"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I'm maintaining existing GPU-to-GPU DLPack code that reads rigid-body poses into a preallocated PyTorch CUDA tensor with no CPU staging.",
+      "expected_output": "Routes to tensor-bindings-gpu, not tensor-bindings-cpu.",
+      "files": [],
+      "expectations": [
+        "Does not select tensor-bindings-cpu for CUDA device tensors",
+        "Selects tensor-bindings-gpu"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "For new code on CPU, write articulation DOF velocity targets, step, then read link poses back into host arrays.",
+      "expected_output": "Routes new-code bulk I/O to the session read/write skills -- ovphysx-session-write for the write, ovphysx-output-read for the read -- not the deprecated tensor-binding API.",
+      "files": [],
+      "expectations": [
+        "Does not select tensor-bindings-cpu for new code",
+        "Selects ovphysx-session-write for the write path (and ovphysx-output-read for the read)"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "For new code, read rigid-body poses keeping ovstage prim identity and attribute tokens for a closed-loop write-back.",
+      "expected_output": "Routes to ovphysx-output-read rather than the deprecated tensor-binding API.",
+      "files": [],
+      "expectations": [
+        "Does not select tensor-bindings-cpu for new code or when ovstage-native identity is required",
+        "Selects ovphysx-output-read"
+      ]
+    }
+  ]
+}

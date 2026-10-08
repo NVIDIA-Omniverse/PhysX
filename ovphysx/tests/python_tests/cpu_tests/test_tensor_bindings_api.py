@@ -1,9 +1,14 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# @implements REQ-PYTHON-BINDING-DEVICE-001
+# @covers AC-1 AC-2 AC-4
+# @maps_to TEST-PYTHON-BINDING-DEVICE-001
+# PARTIALLY DEPRECATED (tensor-binding-deprecation): the tensor-binding tests here retire with the binding. The ContactBinding tests stay.
 
 """Comprehensive tests for TensorBindingsAPI features.
 
-Tests tensor types, metadata queries, contact binding, and dynamics tensors.
+Tests tensor types, metadata queries, contact binding, and inverse dynamics tensors.
 
 Scene used for articulation tests: two_articulations.usda
   - 2 articulations at /World/articulation and /World/articulation2
@@ -12,14 +17,20 @@ Scene used for articulation tests: two_articulations.usda
   - Expected: N=2, L=3, D=2, is_fixed_base=True
 
 Scene used for contact tests: boxes_falling_on_groundplane.usda
-  - Multiple Cube rigid bodies falling onto a GroundPlane
+  - Multiple Cube rigid bodies falling toward a GroundPlane
+  - Cube1 lands on BigBase (static collider), not the ground plane at z=0.
+    A Cube1 vs CollisionPlane force matrix is therefore zeros after settling.
+  - GroundPlane has two children: CollisionMesh (a plain visual Mesh, no physics
+    schema at all) and CollisionPlane (a Plane with PhysicsCollisionAPI applied,
+    the actual physics collider). Contact-filter patterns must reference
+    CollisionPlane. CollisionMesh matches no physics object.
 """
 
 import os
 
 import numpy as np
 import pytest
-from ovphysx.dlpack import DLDataTypeCode
+from ovphysx.dlpack import DLDataTypeCode, DLDeviceType
 from ovphysx.types import TensorType
 from test_utils import load_usd_with_ovstage
 
@@ -55,12 +66,12 @@ def _load_and_step(sdk, n_steps=5, dt=1.0 / 60.0):
 
 
 # ---------------------------------------------------------------------------
-# DOF property tensors (35-41) -- read / write round-trip
+# DOF property tensors (35-41): read / write round-trip
 # ---------------------------------------------------------------------------
 
 
 class TestDofProperties:
-    """Tests for new DOF property tensor types: stiffness, damping, limits, max_vel,
+    """Tests for DOF property tensor types: stiffness, damping, limits, max_vel,
     max_force, armature, friction_properties.  Each test verifies:
       1. Binding creation succeeds and shape matches [N, D] or [N, D, C].
       2. A full read succeeds and produces finite values.
@@ -244,8 +255,8 @@ class TestDofProperties:
 
 
 class TestBodyProperties:
-    """Tests for new body (link) property tensor types: mass, COM, inertia.
-    Also tests the new read-only link acceleration tensor (enum 22).
+    """Tests for body (link) property tensor types: mass, COM, inertia.
+    Also tests the read-only link acceleration tensor (enum 22).
     """
 
     def _make_binding(self, sdk, tensor_type):
@@ -356,7 +367,7 @@ class TestBodyProperties:
         np.testing.assert_allclose(result, scaled, rtol=1e-5)
         b.destroy()
 
-    # -- link acceleration [N, L, 6] -- enum 22, READ-ONLY --
+    # -- link acceleration [N, L, 6], enum 22, READ-ONLY --
 
     def test_link_acceleration_enum_value(self):
         assert (
@@ -410,7 +421,7 @@ class TestBodyProperties:
 
 
 class TestEnumValues:
-    """Verify that all new enum values match the specification."""
+    """Verify that the enum values match the specification."""
 
     def test_link_acceleration_enum(self):
         assert TensorType.ARTICULATION_LINK_ACCELERATION == 22
@@ -429,7 +440,7 @@ class TestEnumValues:
         assert TensorType.ARTICULATION_BODY_COM_POSE == 61
         assert TensorType.ARTICULATION_BODY_INERTIA == 62
 
-    def test_dynamics_enums(self):
+    def test_inverse_dynamics_enums(self):
         assert TensorType.ARTICULATION_JACOBIAN == 70
         assert TensorType.ARTICULATION_MASS_MATRIX == 71
         assert TensorType.ARTICULATION_CORIOLIS_AND_CENTRIFUGAL_FORCE == 72
@@ -539,14 +550,24 @@ class TestTensorBindingSpec:
         assert spec.shape == b.shape
         b.destroy()
 
+    def test_rigid_body_pose_native_device_is_cpu(self, physx_sdk_cpu):
+        b = self._make_rigid_body_binding(physx_sdk_cpu, TensorType.RIGID_BODY_POSE)
+        assert b.native_device.device_type.value == DLDeviceType.kDLCPU
+        assert b.native_device.device_id == 0
+        b.destroy()
+
     def test_tensor_binding_metadata_is_python_owned(self, physx_sdk_cpu):
         b = self._make_rigid_body_binding(physx_sdk_cpu, TensorType.RIGID_BODY_POSE)
         dtype = b.dtype
         spec = b.spec
+        native_device = b.native_device
         dtype.bits = 99
         spec.dtype.bits = 77
+        native_device.device_id = 99
         assert b.dtype.bits == 32
         assert b.spec.dtype.bits == 32
+        assert b.native_device.device_type.value == DLDeviceType.kDLCPU
+        assert b.native_device.device_id == 0
         b.destroy()
         assert dtype.code == DLDataTypeCode.kDLFloat
         assert dtype.bits == 99
@@ -556,6 +577,23 @@ class TestTensorBindingSpec:
         assert spec.dtype.lanes == 1
         assert spec.ndim == 2
         assert spec.shape == (1, 7)
+        assert native_device.device_type.value == DLDeviceType.kDLCPU
+        assert native_device.device_id == 99
+
+    def test_native_device_rejects_destroyed_binding_after_prior_query(self, physx_sdk_cpu):
+        b = self._make_rigid_body_binding(physx_sdk_cpu, TensorType.RIGID_BODY_POSE)
+        assert b.native_device.device_type.value == DLDeviceType.kDLCPU
+        b.destroy()
+        with pytest.raises(RuntimeError, match="TensorBinding has been destroyed"):
+            _ = b.native_device
+
+    def test_native_device_rejects_reset_stale_binding_after_prior_query(self, physx_sdk_cpu):
+        b = self._make_rigid_body_binding(physx_sdk_cpu, TensorType.RIGID_BODY_POSE)
+        assert b.native_device.device_type.value == DLDeviceType.kDLCPU
+        physx_sdk_cpu.reset_stage()
+        with pytest.raises(RuntimeError, match="(?i)invalidat|stale|recreate"):
+            _ = b.native_device
+        b.destroy()
 
 
 class TestArticulationMetadata:
@@ -748,7 +786,7 @@ class TestContactBinding:
         physx_sdk_cpu.wait_all()
         cb = physx_sdk_cpu.create_contact_binding(
             sensor_patterns=["/World/Cube1"],
-            filter_patterns=["/World/GroundPlane/CollisionMesh"],
+            filter_patterns=["/World/GroundPlane/CollisionPlane"],
             filters_per_sensor=1,
             max_contact_data_count=256,
         )
@@ -756,8 +794,81 @@ class TestContactBinding:
         assert cb.filter_count == 1, "1 filter pattern per sensor => filter_count must be 1"
         assert cb.max_contact_data_count == 256
         assert cb.sensor_paths == ["/World/Cube1"]
-        assert cb.filter_paths == [["/World/GroundPlane/CollisionMesh"]]
+        assert cb.filter_paths == [["/World/GroundPlane/CollisionPlane"]]
         cb.destroy()
+
+    def test_read_raw_contact_data_with_actor_ids(self, physx_sdk_cpu):
+        cb = self._make_cube_pair_contact_binding(physx_sdk_cpu)
+
+        max_c = cb.max_contact_data_count
+        forces = np.zeros((max_c, 1), dtype=np.float32)
+        positions = np.zeros((max_c, 3), dtype=np.float32)
+        normals = np.zeros((max_c, 3), dtype=np.float32)
+        separations = np.zeros((max_c, 1), dtype=np.float32)
+        # (S, 2): column 0 count, column 1 start index.
+        sensor_layout = np.zeros((cb.sensor_count, 2), dtype=np.int32)
+        # (C, 2): column 0 sensor actor, column 1 other actor.
+        actor_ids = np.zeros((max_c, 2), dtype=np.uint64)
+
+        cb.read_raw_contact_data(
+            forces, positions, normals, separations, sensor_layout, actor_ids,
+        )
+
+        # Column views, the way a caller would slice them, with no copy.
+        counts = sensor_layout[:, 0]
+        start_indices = sensor_layout[:, 1]
+        sensor_actor_ids = actor_ids[:, 0]
+        other_actor_ids = actor_ids[:, 1]
+
+        total = int(counts.sum())
+        assert total > 0, "expected at least one contact between Cube1 and Cube2"
+
+        start = int(start_indices[0])
+        count = int(counts[0])
+        assert count > 0
+        assert sensor_actor_ids[start] != 0
+        assert other_actor_ids[start] != 0
+
+        # Resolve other-actor IDs to USD prim paths. A column of the (C, 2) tensor is a
+        # strided view, and the DLPack path requires C-contiguous input, so the slice
+        # has to be made contiguous before it crosses the boundary.
+        other_paths = cb.get_other_actor_paths_from_ids(
+            np.ascontiguousarray(other_actor_ids[start:start + count])
+        )
+        assert len(other_paths) == count, f"expected {count} path entries, got {len(other_paths)}"
+        assert all("Cube2" in p for p in other_paths)
+
+        # Sensor IDs resolve through the same namespace.
+        sensor_paths = cb.get_other_actor_paths_from_ids(
+            np.ascontiguousarray(sensor_actor_ids[start:start + count])
+        )
+        assert len(sensor_paths) == count
+        assert all("Cube1" in p for p in sensor_paths)
+
+        cb.destroy()
+
+    def test_contact_binding_filter_pattern_matching_non_physics_prim_fails(self, physx_sdk_cpu):
+        """A filter pattern naming a prim with no physics registration matches nothing.
+
+        Contact filter patterns resolve through the physics ObjectKey registry
+        (BaseSimulationView::findMatchingPaths), not raw USD traversal, so a
+        pattern naming an arbitrary non-physics prim (here CollisionMesh, the
+        plain visual Mesh sibling of the real collider CollisionPlane, see the
+        module docstring) matches zero objects. With a single sensor and a
+        filter pattern that resolves to zero rather than one entry, filter
+        expansion fails outright (BaseSimulationView.cpp's "did not match the
+        correct number of entries" path), so contact-view creation itself fails
+        rather than silently producing an unfiltered binding.
+        """
+        load_usd_with_ovstage(physx_sdk_cpu, data_path("boxes_falling_on_groundplane.usda"))
+        physx_sdk_cpu.wait_all()
+        with pytest.raises(RuntimeError, match="no sensor entries were produced"):
+            physx_sdk_cpu.create_contact_binding(
+                sensor_patterns=["/World/Cube1"],
+                filter_patterns=["/World/GroundPlane/CollisionMesh"],
+                filters_per_sensor=1,
+                max_contact_data_count=256,
+            )
 
     def test_contact_binding_multiple_sensors(self, physx_sdk_cpu):
         load_usd_with_ovstage(physx_sdk_cpu, data_path("boxes_falling_on_groundplane.usda"))
@@ -774,9 +885,10 @@ class TestContactBinding:
         """Check contact binding sees cloned bodies and their contact events.
 
         Applications like IsaacLab write one source body to USD and ask ovphysx
-        to make runtime clones for the other environments. The bug was that
-        contact binding only saw the USD source body; this test expects the
-        source and every runtime clone to report contacts with the ground plane.
+        to make runtime clones for the other environments. Contact binding must
+        see the runtime clones and not only the USD source body, so this test
+        expects the source and every runtime clone to report contacts with the
+        ground plane.
         """
         load_usd_with_ovstage(physx_sdk_cpu, data_path("boxes_falling_on_groundplane.usda"))
         physx_sdk_cpu.wait_all()
@@ -822,10 +934,10 @@ class TestContactBinding:
 
         # Clones inherit physxRigidBody:sleepThreshold=0 from Cube1, so they
         # never fully settle and a single-frame contact read can catch a
-        # clone mid-bounce with zero force. Sample over a short window after
-        # landing and take the max upward force per clone — any clone that
-        # has touched the ground will register a positive Z force in at
-        # least one of those frames.
+        # clone mid-bounce with zero force. Sample a short window after
+        # landing and take the max upward force per clone. Any clone that
+        # has touched the ground registers a positive Z force in at least
+        # one of those frames.
         clone_indices = [cb.sensor_paths.index(path) for path in targets]
         sample_frames = 30
         net_forces = np.zeros((cb.sensor_count, 3), dtype=np.float32)
@@ -931,13 +1043,14 @@ class TestContactBinding:
         physx_sdk_cpu.wait_all()
 
         cb = physx_sdk_cpu.create_contact_binding(
-            sensor_patterns=["/World/Cube1"], filter_patterns=["/World/GroundPlane/CollisionMesh"], filters_per_sensor=1
+            sensor_patterns=["/World/Cube1"], filter_patterns=["/World/BigBase"], filters_per_sensor=1
         )
         sensor_count = cb.sensor_count
         filter_count = cb.filter_count
         assert filter_count == 1
+        assert cb.filter_paths == [["/World/BigBase"]]
 
-        for _ in range(30):
+        for _ in range(120):
             physx_sdk_cpu.step(1.0 / 60.0)
         physx_sdk_cpu.wait_all()
 
@@ -949,6 +1062,10 @@ class TestContactBinding:
             3,
         ), f"Expected ({sensor_count}, {filter_count}, 3), got {out.shape}"
         assert np.all(np.isfinite(out)), "force matrix must be finite"
+        assert np.linalg.norm(out) > 1.0, (
+            "Cube1 rests on BigBase; force matrix must be a real contact force, "
+            f"got {out}"
+        )
         cb.destroy()
 
     def test_contact_data_flat_buffers(self, physx_sdk_cpu):
@@ -987,7 +1104,7 @@ class TestContactBinding:
         physx_sdk_cpu.wait_all()
 
         cb = physx_sdk_cpu.create_contact_binding(
-            sensor_patterns=["/World/Cube1"], filter_patterns=["/World/GroundPlane/CollisionMesh"], filters_per_sensor=1
+            sensor_patterns=["/World/Cube1"], filter_patterns=["/World/GroundPlane/CollisionPlane"], filters_per_sensor=1
         )
 
         contact_forces = np.zeros((0, 1), dtype=np.float32)
@@ -1071,12 +1188,12 @@ class TestContactBinding:
 
 
 # ---------------------------------------------------------------------------
-# Dynamics tensors (70-74) -- Jacobians, mass matrix, etc.
+# Inverse dynamics tensors (70-74): Jacobians, mass matrix, and related
 # ---------------------------------------------------------------------------
 
 
-class TestDynamicsTensors:
-    """Tests for dynamics query tensors: Jacobian, mass matrix, Coriolis+centrifugal,
+class TestInverseDynamicsTensors:
+    """Tests for inverse dynamics query tensors: Jacobian, mass matrix, Coriolis+centrifugal,
     gravity compensation, and link incoming joint force.
 
     IMPORTANT: All tests step the simulation before creating bindings because
@@ -1272,7 +1389,7 @@ def _load_boxes(sdk, n_steps=5, dt=1.0 / 60.0):
     """Load boxes_falling_on_groundplane.usda and step to populate data."""
     load_usd_with_ovstage(sdk, data_path("boxes_falling_on_groundplane.usda"))
     sdk.wait_all()
-    sdk.warmup_gpu()
+    sdk.warmup()
     for _ in range(n_steps):
         sdk.step(dt)
     sdk.wait_all()
@@ -1456,7 +1573,7 @@ class TestRigidBodyProperties:
 
 
 # ---------------------------------------------------------------------------
-# Fixed tendon property tensors (types 80-85) -- T=0 scenario
+# Fixed tendon property tensors (types 80-85): T=0 scenario
 # ---------------------------------------------------------------------------
 
 
@@ -1526,7 +1643,7 @@ class TestFixedTendon:
 
 
 # ---------------------------------------------------------------------------
-# DOF projected joint force (type 75) -- read-only
+# DOF projected joint force (type 75): read-only
 # ---------------------------------------------------------------------------
 
 
@@ -1565,7 +1682,7 @@ class TestProjectedJointForce:
 
 
 # ---------------------------------------------------------------------------
-# Spatial tendon (types 90-93) -- read / write
+# Spatial tendon (types 90-93): read / write
 # ---------------------------------------------------------------------------
 
 
@@ -1622,14 +1739,14 @@ class TestSpatialTendon:
 
 
 # ---------------------------------------------------------------------------
-# Link wrench (type 52) -- write-only
+# Link wrench (type 52): write-only
 # ---------------------------------------------------------------------------
 
 
 class TestLinkWrench:
     """Tests for TensorType.ARTICULATION_LINK_WRENCH.
 
-    Shape [N, L, 9] -- write-only tensor for applying external wrenches
+    Shape [N, L, 9], a write-only tensor for applying external wrenches
     to articulation links. Each row is [fx,fy,fz,tx,ty,tz,px,py,pz]
     in world frame.
     """
@@ -1652,7 +1769,7 @@ class TestLinkWrench:
         b.destroy()
 
     def test_read_raises(self, physx_sdk_cpu):
-        """Link wrench is write-only; read must fail."""
+        """Link wrench is write-only, so read must fail."""
         b = self._make_binding(physx_sdk_cpu)
         buf = np.zeros(b.shape, dtype=np.float32)
         with pytest.raises(RuntimeError, match="(?i)write.only"):
@@ -1677,7 +1794,7 @@ class TestLinkWrench:
 class TestContactReport:
     """Tests for the pull-based contact report API (get_contact_report).
 
-    Uses boxes_falling_on_groundplane.usda - boxes drop onto a ground plane,
+    Uses boxes_falling_on_groundplane.usda: boxes drop onto a ground plane,
     generating contact events after enough simulation steps.
     """
 
@@ -1804,16 +1921,16 @@ class TestContactReport:
         """copy=True data must survive subsequent step() calls unchanged.
 
         Regression test for NVBug 6172700: zero-copy ctypes views silently
-        corrupt after the next step; copy=True must return Python-owned data
+        corrupt after the next step. copy=True must return Python-owned data
         that does not depend on the internal C buffer's lifetime. Covers all
         three buffers (headers, points, anchors) since the hazard is
         symmetric across them.
 
-        Snapshot via ``[dict(h) for h in ...]`` rather than ``list(...)``: we
-        need *independent* dict objects so that if a future change ever lets
-        the returned dicts alias C memory (lazy field reads, etc.) the
-        assertion catches it. ``list()`` would just hold the same dict refs
-        and pass trivially.
+        Snapshot via ``[dict(h) for h in ...]`` rather than ``list(...)``: the
+        snapshot needs *independent* dict objects so that if a future change
+        ever lets the returned dicts alias C memory (lazy field reads, etc.)
+        the assertion catches it. ``list()`` would just hold the same dict
+        refs and pass trivially.
         """
         load_usd_with_ovstage(physx_sdk_cpu, data_path("boxes_falling_on_groundplane.usda"))
         physx_sdk_cpu.wait_all()
@@ -1826,13 +1943,11 @@ class TestContactReport:
         snapshot_headers = [dict(h) for h in report["headers"]]
         snapshot_points = [dict(p) for p in report["points"]]
         snapshot_anchors = [dict(a) for a in report["anchors"]]
-        # Advance simulation - this would reallocate / overwrite the internal
-        # C buffers backing a zero-copy view.
+        # Stepping reallocates or overwrites the internal C buffers backing a zero-copy view.
         for _ in range(10):
             physx_sdk_cpu.step(1.0 / 60.0)
         physx_sdk_cpu.wait_all()
-        # Independent snapshots must remain bit-identical to what we captured.
-        # If the dicts ever start aliasing the C buffer this fails loudly.
+        # The snapshots must remain identical. If the dicts ever alias the C buffer, this fails.
         assert report["headers"] == snapshot_headers
         assert report["points"] == snapshot_points
         assert report["anchors"] == snapshot_anchors
@@ -1845,6 +1960,5 @@ class TestContactReport:
         physx_sdk_cpu.wait_all()
         report = physx_sdk_cpu.get_contact_report()
         # ctypes arrays expose typed-struct attribute access, not __getitem__-of-dict.
-        # Use the existing field check pattern.
         assert not isinstance(report["headers"], list)
         assert not isinstance(report["points"], list)

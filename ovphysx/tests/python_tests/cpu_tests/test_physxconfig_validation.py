@@ -1,9 +1,15 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# @implements REQ-PYTHON-OMNIPVD-001
+# @covers AC-1 AC-2
 
 """Pure-Python validation tests for PhysXConfig.__post_init__.
 
-No PhysX SDK instance is needed — these tests only exercise the dataclass
+@implements REQ-CAPI-NVTX-001
+@covers AC-6
+
+No PhysX SDK instance is needed. These tests only exercise the dataclass
 field type checks and carbonite_overrides conflict detection in config.py.
 """
 
@@ -24,9 +30,15 @@ def test_all_none_fields_valid():
     assert cfg.collision_cone_custom_geometry is None
     assert cfg.collision_cylinder_custom_geometry is None
     assert cfg.omnipvd_output_enabled is None
+    assert cfg.nvtx_enabled is None
     assert cfg.num_threads is None
     assert cfg.scene_multi_gpu_mode is None
     assert cfg.omnipvd_ovd_recording_directory is None
+    assert cfg.omnipvd_transport is None
+    assert cfg.omnipvd_tcp_address is None
+    assert cfg.omnipvd_tcp_port is None
+    assert cfg.omnipvd_tcp_timeout_ms is None
+    assert cfg.ovstage_read_pool_max_mb is None
     assert cfg.carbonite_overrides is None
 
 
@@ -39,6 +51,7 @@ _BOOL_FIELDS = [
     "collision_cone_custom_geometry",
     "collision_cylinder_custom_geometry",
     "omnipvd_output_enabled",
+    "nvtx_enabled",
 ]
 
 
@@ -62,7 +75,7 @@ def test_bool_field_wrong_type_raises(field, bad_value):
 # Int fields
 # ---------------------------------------------------------------------------
 
-_INT_FIELDS = ["num_threads", "scene_multi_gpu_mode"]
+_INT_FIELDS = ["num_threads", "scene_multi_gpu_mode", "omnipvd_tcp_port", "omnipvd_tcp_timeout_ms", "ovstage_read_pool_max_mb"]
 
 
 @pytest.mark.parametrize(
@@ -74,6 +87,13 @@ _INT_FIELDS = ["num_threads", "scene_multi_gpu_mode"]
         ("scene_multi_gpu_mode", 0),
         ("scene_multi_gpu_mode", 1),
         ("scene_multi_gpu_mode", 2),
+        ("ovstage_read_pool_max_mb", 0),
+        ("ovstage_read_pool_max_mb", 256),
+        # The pool budget accepts the full int32 range: <= 0 disables the pool and INT32_MAX is the
+        # largest retention budget. Values outside int32 are not asserted here because the field has
+        # no range guard and the C ABI's int32 wraps them silently.
+        ("ovstage_read_pool_max_mb", -1),
+        ("ovstage_read_pool_max_mb", 2**31 - 1),
     ],
 )
 def test_int_field_accepts_int(field, value):
@@ -123,6 +143,63 @@ def test_str_field_rejects_non_str(bad_value):
         PhysXConfig(omnipvd_ovd_recording_directory=bad_value)
 
 
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"omnipvd_transport": 1},
+        {"omnipvd_tcp_address": 1},
+        {"omnipvd_tcp_port": True},
+        {"omnipvd_tcp_timeout_ms": 1.5},
+    ],
+)
+def test_omnipvd_tcp_config_rejects_wrong_types(kwargs):
+    with pytest.raises(TypeError):
+        PhysXConfig(**kwargs)
+
+
+@pytest.mark.parametrize("transport", ["", "TCP", "unknown"])
+def test_omnipvd_tcp_config_rejects_noncanonical_transport(transport):
+    with pytest.raises(ValueError, match="omnipvd_transport"):
+        PhysXConfig(omnipvd_transport=transport)
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"omnipvd_transport": "tcp", "omnipvd_tcp_port": 5425},
+        {"omnipvd_transport": "tcp", "omnipvd_tcp_address": "127.0.0.1"},
+        {"omnipvd_transport": "tcp", "omnipvd_tcp_address": "", "omnipvd_tcp_port": 5425},
+        {"omnipvd_transport": "tcp", "omnipvd_tcp_address": "127.0.0.1", "omnipvd_tcp_port": 0},
+        {"omnipvd_transport": "tcp", "omnipvd_tcp_address": "127.0.0.1", "omnipvd_tcp_port": 65536},
+        {
+            "omnipvd_transport": "tcp",
+            "omnipvd_tcp_address": "127.0.0.1",
+            "omnipvd_tcp_port": 5425,
+            "omnipvd_tcp_timeout_ms": -1,
+        },
+        {
+            "omnipvd_transport": "tcp",
+            "omnipvd_tcp_address": "127.0.0.1",
+            "omnipvd_tcp_port": 5425,
+            "omnipvd_tcp_timeout_ms": 2**31,
+        },
+    ],
+)
+def test_omnipvd_tcp_config_validation(kwargs):
+    with pytest.raises(ValueError):
+        PhysXConfig(**kwargs)
+
+
+def test_omnipvd_tcp_config_accepts_complete_tuple():
+    cfg = PhysXConfig(
+        omnipvd_transport="tcp",
+        omnipvd_tcp_address="127.0.0.1",
+        omnipvd_tcp_port=5425,
+        omnipvd_tcp_timeout_ms=0,
+    )
+    assert len(_to_c_config(cfg)) == 4
+
+
 # ---------------------------------------------------------------------------
 # carbonite_overrides
 # ---------------------------------------------------------------------------
@@ -147,8 +224,8 @@ def test_carbonite_overrides_rejects_non_dict(bad_value):
         PhysXConfig(carbonite_overrides=bad_value)
 
 
-# Known Carbonite paths that are mapped to typed fields — duplicating them
-# in carbonite_overrides must raise ValueError at _to_c_config time.
+# Carbonite paths mapped to typed fields. Duplicating them in
+# carbonite_overrides must raise ValueError at _to_c_config time.
 _CONFLICTING_CARBONITE_PATHS = [
     "/physics/disableContactProcessing",
     "/physics/collisionConeCustomGeometry",
@@ -156,7 +233,13 @@ _CONFLICTING_CARBONITE_PATHS = [
     "/physics/numThreads",
     "/physics/sceneMultiGPUMode",
     "/physics/omniPvdOutputEnabled",
+    "/physics/nvtxEnabled",
     "/persistent/physics/omniPvdOvdRecordingDirectory",
+    "/physics/omniPvdTransport",
+    "/physics/omniPvdTcpAddress",
+    "/physics/omniPvdTcpPort",
+    "/physics/omniPvdTcpTimeoutMs",
+    "/physics/ovstageReadPoolMaxMB",
 ]
 
 
@@ -169,7 +252,7 @@ def test_carbonite_overrides_conflicts_typed_path(path):
 
 
 def test_carbonite_overrides_value_coercion():
-    """carbonite_overrides values are coerced: bool→'true'/'false', int→str."""
+    """carbonite_overrides values are coerced: bool to 'true'/'false', int to str."""
     cfg = PhysXConfig(
         carbonite_overrides={
             "/custom/bool_key": True,
@@ -180,7 +263,7 @@ def test_carbonite_overrides_value_coercion():
     )
     entries = _to_c_config(cfg)
     assert len(entries) == 4
-    # No exception means coercion worked
+    # No exception means the coercion succeeded.
 
 
 def test_combined_typed_and_overrides():

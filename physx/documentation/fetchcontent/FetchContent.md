@@ -244,5 +244,6 @@ set(FETCHCONTENT_SOURCE_DIR_PHYSX_LIB "/home/dev/physics-repo") # Linux
 2. **Subproject CUDA handling** — Uses `enable_language(CUDA)` instead of declaring it in `project()` to avoid conflicts with parent project languages
 3. **`physx_lib` INTERFACE target** — Single aggregator with curated include paths; does not propagate individual target includes to avoid exposing internal source tree paths
 4. **`PX_ENABLE_INSTALL`** — TRUE for top-level, FALSE for subprojects, gating all install rules
-5. **Snippets and PVD forced OFF** — Snippets require OpenGL/GLUT and add ~8 min build time
-6. **RPATH for shared libraries** — `$ORIGIN`-based RPATH so shared libs find each other at runtime
+5. **Snippets forced OFF** — Snippets require OpenGL/GLUT and add ~8 min build time
+6. **`PX_BUILDPVDRUNTIME` opt-in** — Default `OFF` (the standard presets enable it); when set, builds the static OmniPVD runtime linked into every OmniPVD owner
+7. **RPATH for shared libraries** — `$ORIGIN`-based RPATH so shared libs find each other at runtime

@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]
@@ -12,7 +12,17 @@ requires-python = ">=3.10"
 dependencies = [
   "pytest>=7",
   "numpy>=1.20",  # Required for tensor binding tests
-  "warp-lang>=1.0",  # warp-array DLPack interop smoke tests (test_tensor_warp_smoke*)
+  "warp-lang>=1.16,<1.17",  # public read frontend plus DLPack interop smoke tests
+  # Stock OpenUSD from PyPI is the only python-USD source for the test run
+  # (REQ-PACKAGING-PYTESTUSD-001). The main session's only pxr user,
+  # test_documentation_contracts.py, opens a .usda in a clean subprocess, and the
+  # pure-pxr utils_tests/ suite runs in its own pytest process -- no ovstage monolith
+  # is resident next to usd-core either way. No internal USD monolith is ever fetched.
+  # usd-core has no linux-aarch64 wheel on PyPI, so exclude that platform; the
+  # doc-contracts test skips itself there and test_python_runtime.cmake does not launch
+  # utils_tests/ there. Wheels exist for linux x86_64 and Windows (the two
+  # required-environments below that can pip-install it).
+  "usd-core; platform_machine != 'aarch64'",
   # Depend on the local Python package name; source mapping below
   # The ovphysx wheel includes the SDK plus TensorBindingsAPI support.
   "ovphysx",
@@ -26,9 +36,33 @@ py-modules = []
 [tool.pytest.ini_options]
 addopts = "--ignore=cpu_tests -v -s"
 testpaths = ["."]
+filterwarnings = [
+    # The tensor-binding API is intentionally deprecated (REQ-CAPI-WRITE-001 AC-11) but stays
+    # supported for the deprecation period. Turn its DeprecationWarning into an ERROR so a NEW test
+    # that reaches for the deprecated API fails loudly instead of being hidden by a suite-wide
+    # ignore. The known compat callers are allow-listed in conftest.py
+    # (_TENSOR_BINDING_COMPAT_FILES), where a per-item `ignore` filterwarnings marker takes
+    # precedence over this ini filter; that allowlist is the inventory of callers still to migrate.
+    # test_tensor_binding_deprecation.py still asserts the warning via pytest.warns, which records
+    # it regardless of the filter.
+    "error:ovphysx tensor bindings are deprecated:DeprecationWarning",
+]
+markers = [
+  "cuda: requires a CUDA-capable Warp runtime",
+]
 
 [tool.uv]
 index-url = "https://pypi.org/simple"
+# Resolve ovstage from build-staged wheels (same as CI UV_FIND_LINKS) so bare
+# `uv run` does not rewrite uv.lock to PyPI URLs for the same version pin.
+find-links = ["../../_build/target-deps/ovstage_wheel"]
+# Keep ovstage wheel resolution aligned with python/pyproject.toml so aarch64 CI
+# can install the locked manylinux_2_35_aarch64 wheel from target-deps.
+required-environments = [
+  "sys_platform == 'linux' and platform_machine == 'x86_64'",
+  "sys_platform == 'linux' and platform_machine == 'aarch64'",
+  "sys_platform == 'win32' and platform_machine == 'AMD64'",
+]
 
 [tool.uv.sources]
 "ovphysx" = { path = "../../python", editable = true }

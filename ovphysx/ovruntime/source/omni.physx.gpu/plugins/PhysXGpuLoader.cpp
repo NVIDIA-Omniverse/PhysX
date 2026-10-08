@@ -1,5 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-FABRIC-RETIRE-001
+ * @covers AC-7
+ */
 
 #include "PhysXGpuLoader.h"
 
@@ -47,10 +52,9 @@ PhysXGpuLoader::~PhysXGpuLoader()
 bool PhysXGpuLoader::load()
 {
     const std::string directory = getLoaderLibraryDirectory();
-    const std::array<std::string, 3> directories = {
+    const std::array<std::string, 2> directories = {
         directory,
         directory + "/../plugins",
-        directory + "/../plugins/gpu",
     };
     for (const std::string& candidate : directories)
     {
@@ -59,8 +63,8 @@ bool PhysXGpuLoader::load()
             return true;
         }
     }
-    CARB_LOG_ERROR("omni.physx.gpu: failed to load PhysXGpu_64 from '%s', '%s', or '%s'", directories[0].c_str(),
-                   directories[1].c_str(), directories[2].c_str());
+    CARB_LOG_ERROR("omni.physx.gpu: failed to load PhysXGpu_64 from '%s' or '%s'", directories[0].c_str(),
+                   directories[1].c_str());
     return false;
 }
 

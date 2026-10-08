@@ -1,8 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-
-#include "UsdPCH.h"
-#include <common/utilities/SdfPathEncoding.h>
+// SPDX-License-Identifier: Apache-2.0
 
 #include "PhysXUpdate.h"
 #include "OmniPhysX.h"
@@ -32,13 +29,14 @@
 
 #include "utils/Profile.h"
 
+#include <optional>
+
 
 using namespace ::physx;
 using namespace carb;
 using namespace omni::physx::usdparser;
 using namespace omni::physx::internal;
 using namespace cookingdataasync;
-using namespace PXR_NS;
 
 
 namespace omni
@@ -46,12 +44,20 @@ namespace omni
 namespace physx
 {
 
-// Returns true if a scene must be skipped from a simulation update. If the default (empty)
-// SdfPath is passed, a simulation scene is only skipped if marked 'Disabled', otherwise
-// if a specific scene was requested (i.e. SdfPath is not empty), we will only process that specific one.
-static inline bool checkSkipScene(const PXR_NS::SdfPath& scenePath, const PhysXScene* sc)
+// A scene filter for the *Scene-suffixed entry points: nullopt means "no specific scene was
+// requested" (the original empty-SdfPath sentinel); a present-but-possibly-invalid ObjectKey
+// means "a specific scene was requested" (the original non-empty SdfPath), which must be kept
+// distinct from "no filter" even when that key fails to resolve to any known object -- an
+// unresolvable requested scene must skip every scene, not silently fall back to updating all of
+// them.
+using SceneFilter = std::optional<omni::physics::parse::ObjectKey>;
+
+// Returns true if a scene must be skipped from a simulation update. If no scene filter is
+// present, a simulation scene is only skipped if marked 'Disabled', otherwise if a specific
+// scene was requested, we will only process that specific one.
+static inline bool checkSkipScene(SceneFilter sceneFilter, const PhysXScene* sc)
 {
-    if (scenePath.IsEmpty())
+    if (!sceneFilter.has_value())
     {
         // update all scenes in the simulation if not specifically disabled
         if (sc->getUpdateType() == eDisabled)
@@ -60,10 +66,21 @@ static inline bool checkSkipScene(const PXR_NS::SdfPath& scenePath, const PhysXS
     else
     {
         // update only the scene that was specifically requested
-        if (sc->getSceneSdfPath() != scenePath)
+        if (sc->getSceneSdfPath() != *sceneFilter)
             return true;
     }
     return false;
+}
+
+// Resolves a public-ABI `uint64_t scenePath` (see IPhysx.h: "Scene USD path encoded as
+// uint64_t") into the SceneFilter the rest of this file operates on. `scenePath` IS the
+// scene's `ObjectKey::handle` directly (ADR-0018, a breaking change) -- no SdfPath-bit
+// decode, no attach lookup. 0 stays the "no specific scene" sentinel.
+static SceneFilter resolveSceneKey(uint64_t scenePath)
+{
+    if (scenePath == 0)
+        return std::nullopt;
+    return omni::physics::parse::ObjectKey{ scenePath };
 }
 
 void waitForSimulationCompletion(bool doPostWork)
@@ -76,14 +93,14 @@ void waitForSimulationCompletion(bool doPostWork)
     }
 }
 
-static bool physxCheckResultsInternal(const PXR_NS::SdfPath& scenePath)
+static bool physxCheckResultsInternal(SceneFilter sceneFilter)
 {
     const PhysXScenesMap& physxScenes = OmniPhysX::getInstance().getPhysXSetup().getPhysXScenes();
     bool allScenesAreCompletedOrSkipped = true;
     for (PhysXScenesMap::const_reference ref : physxScenes)
     {
         const PhysXScene* sc = ref.second;
-        if (checkSkipScene(scenePath, sc))
+        if (checkSkipScene(sceneFilter, sc))
             continue;
 
         if (!sc->isComplete())
@@ -97,18 +114,18 @@ static bool physxCheckResultsInternal(const PXR_NS::SdfPath& scenePath)
 
 bool physxCheckResults()
 {
-    return physxCheckResultsInternal(PXR_NS::SdfPath());
+    return physxCheckResultsInternal(std::nullopt);
 }
 
 bool physxCheckResultsScene(uint64_t scenePath)
 {
-    return physxCheckResultsInternal(omni::physx::intToSdfPath(scenePath));
+    return physxCheckResultsInternal(resolveSceneKey(scenePath));
 }
 
-// Updates a specific physX simulation scene or, if scenePath is empty, all the scenes in the simulation.
+// Updates a specific physX simulation scene or, if sceneFilter is invalid, all the scenes in the simulation.
 // Note: if a specific physX simulation scene is specified, it will be updated *even if disabled* (disabled only applies
 // to the omniphysx update loop, not if the user wants to step a specific scene singularly).
-static void physXUpdateNonRenderInternal(const PXR_NS::SdfPath& scenePath, float elapsedSecs, float currentTime, bool forceAsync)
+static void physXUpdateNonRenderInternal(SceneFilter sceneFilter, float elapsedSecs, float currentTime, bool forceAsync)
 {
     CARB_PROFILE_ZONE(0, "PhysXUpdateNonRender");
 
@@ -122,7 +139,7 @@ static void physXUpdateNonRenderInternal(const PXR_NS::SdfPath& scenePath, float
     {
         PhysXScene* sc = ref.second;
 
-        if (checkSkipScene(scenePath, sc))
+        if (checkSkipScene(sceneFilter, sc))
             continue;
 
         const bool asyncSimRender = forceAsync || sc->getUpdateType() == eAsynchronous;
@@ -188,7 +205,7 @@ static void physXUpdateNonRenderInternal(const PXR_NS::SdfPath& scenePath, float
     {
         PhysXScene* sc = ref.second;
 
-        if (checkSkipScene(scenePath, sc))
+        if (checkSkipScene(sceneFilter, sc))
             continue;
 
         {
@@ -246,7 +263,7 @@ static void physXUpdateNonRenderInternal(const PXR_NS::SdfPath& scenePath, float
             }
         }
 
-        if (!scenePath.IsEmpty())
+        if (sceneFilter.has_value())
             break; // We already updated the scene simulation we were interested in
     }
 
@@ -275,7 +292,7 @@ static void physXUpdateNonRenderInternal(const PXR_NS::SdfPath& scenePath, float
         {
             PhysXScene* sc = ref.second;
 
-            if (!checkSkipScene(scenePath, sc) && sc->getCurrentStep())
+            if (!checkSkipScene(sceneFilter, sc) && sc->getCurrentStep())
             {
                 currentTimeStep = sc->getCurrentTimeStep();
                 sendStepUpdate = true;
@@ -296,7 +313,7 @@ static void physXUpdateNonRenderInternal(const PXR_NS::SdfPath& scenePath, float
         {
             PhysXScene* sc = ref.second;
 
-            if (checkSkipScene(scenePath, sc))
+            if (checkSkipScene(sceneFilter, sc))
                 continue;
 
             if (sc->getCurrentStep())
@@ -313,7 +330,7 @@ static void physXUpdateNonRenderInternal(const PXR_NS::SdfPath& scenePath, float
                 simulationHappened = true;
             }
 
-            if (!scenePath.IsEmpty())
+            if (sceneFilter.has_value())
                 break; // We already updated the scene simulation we were interested in
         }
 
@@ -325,7 +342,7 @@ static void physXUpdateNonRenderInternal(const PXR_NS::SdfPath& scenePath, float
             {
                 PhysXScene* sc = ref.second;
 
-                if (checkSkipScene(scenePath, sc))
+                if (checkSkipScene(sceneFilter, sc))
                     continue;
 
                 if (sc->getCurrentStep())
@@ -333,7 +350,7 @@ static void physXUpdateNonRenderInternal(const PXR_NS::SdfPath& scenePath, float
                     sc->waitForCompletion();
                 }
 
-                if (!scenePath.IsEmpty())
+                if (sceneFilter.has_value())
                     break; // We already updated the scene simulation we were interested in
             }
 
@@ -343,7 +360,7 @@ static void physXUpdateNonRenderInternal(const PXR_NS::SdfPath& scenePath, float
             {
                 PhysXScene* sc = ref.second;
 
-                if (checkSkipScene(scenePath, sc))
+                if (checkSkipScene(sceneFilter, sc))
                     continue;
 
                 if (sc->getCurrentStep())
@@ -360,7 +377,7 @@ static void physXUpdateNonRenderInternal(const PXR_NS::SdfPath& scenePath, float
                     sc->decreaseCurrentStep();
                 }
 
-                if (!scenePath.IsEmpty())
+                if (sceneFilter.has_value())
                     break; // We already updated the scene simulation we were interested in
             }
 
@@ -395,12 +412,12 @@ static void physXUpdateNonRenderInternal(const PXR_NS::SdfPath& scenePath, float
 
 void physXUpdateNonRender(float elapsedSecs, float currentTime)
 {
-    physXUpdateNonRenderInternal(PXR_NS::SdfPath(), elapsedSecs, currentTime, false);
+    physXUpdateNonRenderInternal(std::nullopt, elapsedSecs, currentTime, false);
 }
 
 void physXUpdateSceneNonRender(uint64_t scenePath, float elapsedSecs, float currentTime)
 {
-    physXUpdateNonRenderInternal(omni::physx::intToSdfPath(scenePath), elapsedSecs, currentTime, false);
+    physXUpdateNonRenderInternal(resolveSceneKey(scenePath), elapsedSecs, currentTime, false);
 }
 
 void physXUpdateUsd()
@@ -416,19 +433,19 @@ void physXUpdateUsd()
     }
 }
 
-static void physxSimulateSceneInternal(const PXR_NS::SdfPath& scenePath, float elapsedSecs, float currentTime)
+static void physxSimulateSceneInternal(SceneFilter sceneFilter, float elapsedSecs, float currentTime)
 {
     // sync USD changes
     // update raycast etc
     PHYSICS_CROSS_THREAD_PROFILE_START("PhysX Update");
-    physXUpdateNonRenderInternal(scenePath, elapsedSecs, currentTime, true);
+    physXUpdateNonRenderInternal(sceneFilter, elapsedSecs, currentTime, true);
 
     // dispatch the async work, no stepping
     const PhysXScenesMap& physxScenes = OmniPhysX::getInstance().getPhysXSetup().getPhysXScenes();
     for (PhysXScenesMap::const_reference ref : physxScenes)
     {
         PhysXScene* sc = ref.second;
-        if (checkSkipScene(scenePath, sc))
+        if (checkSkipScene(sceneFilter, sc))
             continue;
 
         physXUpdateNonRenderDispatch(sc, elapsedSecs, currentTime, true, true);
@@ -437,15 +454,15 @@ static void physxSimulateSceneInternal(const PXR_NS::SdfPath& scenePath, float e
 
 void physxSimulate(float elapsedSecs, float currentTime)
 {
-    physxSimulateSceneInternal(PXR_NS::SdfPath(), elapsedSecs, currentTime);
+    physxSimulateSceneInternal(std::nullopt, elapsedSecs, currentTime);
 }
 
 void physxSimulateScene(uint64_t scenePath, float elapsedSecs, float currentTime)
 {
-    physxSimulateSceneInternal(omni::physx::intToSdfPath(scenePath), elapsedSecs, currentTime);
+    physxSimulateSceneInternal(resolveSceneKey(scenePath), elapsedSecs, currentTime);
 }
 
-static void physxFetchResultsInternal(const PXR_NS::SdfPath& scenePath)
+static void physxFetchResultsInternal(SceneFilter sceneFilter)
 {
     {
         CARB_PROFILE_ZONE(0, "fetchResults::waitForCompletion");
@@ -469,7 +486,7 @@ static void physxFetchResultsInternal(const PXR_NS::SdfPath& scenePath)
         {
             const PhysXScene* sc = ref.second;
 
-            if (checkSkipScene(scenePath, sc))
+            if (checkSkipScene(sceneFilter, sc))
                 continue;
 
             if (!sc->isReadbackSuppressed())
@@ -497,12 +514,12 @@ static void physxFetchResultsInternal(const PXR_NS::SdfPath& scenePath)
 
 void physxFetchResultsScene(uint64_t scenePath)
 {
-    physxFetchResultsInternal(omni::physx::intToSdfPath(scenePath));
+    physxFetchResultsInternal(resolveSceneKey(scenePath));
 }
 
 void physxFetchResults()
 {
-    physxFetchResultsInternal(PXR_NS::SdfPath());
+    physxFetchResultsInternal(std::nullopt);
 }
 
 void physXUpdateNonRenderDispatch(PhysXScene* sc, float elapsedSecs, float currentTime, bool forceAsync, bool noStepping)

@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 # --- Plugin headers (private) ---
 set(CONVEXDECOMP_PLUGIN_HEADERS
@@ -18,7 +18,6 @@ set(CONVEXDECOMP_PLUGIN_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/ShrinkWrap.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/SimpleMesh.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/SphereApprox.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/TriangulateUsdMeshPrim.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/Vector.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/Voxel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/VoxelFillMode.h
@@ -40,7 +39,6 @@ set(CONVEXDECOMP_PLUGIN_SOURCE
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/QuickHull.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/RaycastMesh.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/ShrinkWrap.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/TriangulateUsdMeshPrim.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/Volume.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/VoxelTriMesh.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/aabb.cpp
@@ -75,12 +73,11 @@ target_include_directories(OvruntimeConvexDecomposition
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/plugins          # internal headers
         ${OVRUNTIME_ROOT_DIR}/include                 # <omni/convexdecomposition/...>
-        ${OVRUNTIME_ROOT_DIR}/source/pch              # UsdPCH.h
         ${OVRUNTIME_ROOT_DIR}/source/common/include   # <common/utilities/...>
 )
 
 # External dependencies — SYSTEM includes to suppress third-party warnings
-ovruntime_add_external_system_includes(OvruntimeConvexDecomposition)
+ovruntime_add_external_system_includes(OvruntimeConvexDecomposition NO_USD)
 
 # Compile definitions
 target_compile_definitions(OvruntimeConvexDecomposition PRIVATE
@@ -100,21 +97,15 @@ if(DEFINED CARB_SDK_DIR)
     target_link_libraries(OvruntimeConvexDecomposition PRIVATE carb)
 endif()
 
-# USD, TBB, Python libraries (matching premake extension_usd_deps)
-ovruntime_link_usd_deps(OvruntimeConvexDecomposition)
-
-# Platform-specific: suppress -Wstrict-aliasing for FM.cpp on Linux
+# Platform-specific: suppress -Wstrict-aliasing and -Warray-bounds for FM.cpp on Linux.
+# -Warray-bounds is a false positive in vcd::VERTEX_INDEX::KdTreeNode::search's inlined
+# single-element KdTreeFindNode found[1] scratch buffer (vendored, unmodified upstream code).
 if(NOT WIN32)
     set_source_files_properties(
         ${CMAKE_CURRENT_SOURCE_DIR}/plugins/FM.cpp
-        PROPERTIES COMPILE_OPTIONS "-Wno-strict-aliasing"
+        PROPERTIES COMPILE_OPTIONS "-Wno-strict-aliasing;-Wno-array-bounds"
     )
 endif()
-
-# Precompiled header
-target_precompile_headers(OvruntimeConvexDecomposition PRIVATE
-    "$<$<COMPILE_LANGUAGE:CXX>:${OVRUNTIME_ROOT_DIR}/source/pch/UsdPCH.h>"
-)
 
 # Install rules
 install(FILES

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """Generate a C++ header with PXR TfToken definitions from a Newton USD schema.
 
@@ -20,10 +20,10 @@ import re
 import sys
 from typing import List, Tuple
 
-
 # ---------------------------------------------------------------------------
 # USDA parsing
 # ---------------------------------------------------------------------------
+
 
 def _attr_name_to_identifier(attr_name: str) -> str:
     """Convert a USD attribute name to a C++ identifier.
@@ -62,8 +62,9 @@ def parse_schema(usda_path: str) -> Tuple[List[Tuple[str, str]], List[Tuple[str,
     # Extract attribute names: TYPE newton:some:attr = DEFAULT (
     # Also handles: rel newton:relName (
     for m in re.finditer(
-        r'^\s+(?:uniform\s+)?(?:bool|int|float|double|token|string|rel|asset|color3f|point3f|vector3f|normal3f|matrix4d)\s+(newton:\S+)',
-        text, re.MULTILINE
+        r"^\s+(?:uniform\s+)?(?:bool|int|float|double|token|string|rel|asset|color3f|point3f|vector3f|normal3f|matrix4d)\s+(newton:\S+)",
+        text,
+        re.MULTILINE,
     ):
         attr = m.group(1)
         # Strip trailing = or ( if captured
@@ -74,7 +75,7 @@ def parse_schema(usda_path: str) -> Tuple[List[Tuple[str, str]], List[Tuple[str,
             seen.add(attr)
 
     # Extract allowed token values: allowedTokens = ["tok1", "tok2", ...]
-    for m in re.finditer(r'allowedTokens\s*=\s*\[([^\]]+)\]', text):
+    for m in re.finditer(r"allowedTokens\s*=\s*\[([^\]]+)\]", text):
         tokens_str = m.group(1)
         for tok_m in re.finditer(r'"([^"]+)"', tokens_str):
             tok = tok_m.group(1)
@@ -165,6 +166,7 @@ def generate_header(
 # CLI
 # ---------------------------------------------------------------------------
 
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Generate PXR token header from Newton USD schema.")
     parser.add_argument("schema", help="Path to generatedSchema.usda")
@@ -194,7 +196,9 @@ def main() -> int:
         f.write(header)
 
     count = len(attributes) + len(classes) + len(allowed_tokens)
-    print(f"Generated {args.output} ({count} tokens: {len(classes)} classes, {len(attributes)} attributes, {len(allowed_tokens)} allowed values)")
+    print(
+        f"Generated {args.output} ({count} tokens: {len(classes)} classes, {len(attributes)} attributes, {len(allowed_tokens)} allowed values)"
+    )
     return 0
 
 

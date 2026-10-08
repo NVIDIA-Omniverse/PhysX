@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """Generate articulation_pileup.usda: a benchmark fixture with a row of
 free-falling articulations of increasing link count, landing on an assorted
@@ -25,7 +25,7 @@ import random
 
 # ---------------- Articulation configuration ----------------
 NUM_ARTICULATIONS = 16
-MIN_LINKS = 3  # articulation i has (MIN_LINKS + i) links; longest is 18
+MIN_LINKS = 3  # articulation i has (MIN_LINKS + i) links, the longest has 18
 
 CAPSULE_RADIUS = 0.10
 CAPSULE_HEIGHT = 0.30
@@ -259,10 +259,10 @@ def main():
         y = y_start + i * ARTICULATION_Y_SPACING
         out.append(emit_articulation(i, num_links, y, ARTICULATION_Z))
 
-    # Pre-decide each obstacle's size and visual props so we can use the
-    # actual per-body bounding-circle radius when placing it: this is what
-    # guarantees no plan-view overlap with any already-placed body, instead
-    # of relying on a single global SCATTER_MIN_DIST.
+    # Pre-decide each obstacle's size and visual props so placement can use the
+    # actual per-body bounding-circle radius. That guarantees no plan-view
+    # overlap with any already-placed body, instead of relying on a single
+    # global SCATTER_MIN_DIST.
     rng = random.Random(SEED)
     GAP = 0.05  # small extra clearance between bodies
     specs = []
@@ -304,7 +304,7 @@ def main():
             )
         )
 
-    # Place the largest bodies first; harder constraints win less random retries.
+    # Place the largest bodies first. The harder constraints then need fewer random retries.
     specs.sort(key=lambda s: -s[2])
 
     placed = []  # (x, y, radius)

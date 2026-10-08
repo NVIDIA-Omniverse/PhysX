@@ -1,11 +1,15 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
+/**
+ * @implements REQ-READ-CORE-001
+ * @covers AC-7
+ */
+
 #include <common/foundation/Allocator.h>
 
-#include "UsdPCH.h"
 #include <omni/physx/IPhysx.h>
 #include <private/omni/physx/PhysxUsd.h>
 
@@ -19,6 +23,13 @@ namespace physx
 {
 namespace internal
 {
+
+// Monotonic count of PhysX object creations and removals: anything derived from the database (a body
+// set, a row list, a scene topology) stays valid only while this is unchanged, so a consumer can
+// revalidate a cached snapshot with one integer compare. Process-wide rather than per-database, so
+// the count never restarts and can never match a snapshot describing objects that no longer exist.
+uint64_t recordLifetimeEpoch();
+void bumpRecordLifetimeEpoch();
 
 class InternalDatabase : public Allocateable
 {
@@ -43,6 +54,7 @@ public:
             mPtr = nullptr;
             mInternalPtr = nullptr;
             mType = ePTRemoved;
+            bumpRecordLifetimeEpoch(); // the only path by which an object stops existing
         }
     };
 

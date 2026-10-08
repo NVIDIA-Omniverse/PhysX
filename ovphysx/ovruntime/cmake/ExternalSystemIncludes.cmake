@@ -1,13 +1,18 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 # Adds all external (third-party) dependency include directories to the given
 # target as SYSTEM includes.  This suppresses compiler warnings originating in
-# headers we cannot modify (Carbonite SDK, PhysX SDK, USD, CUDA, Kit SDK, etc.)
+# headers we cannot modify (Carbonite SDK, PhysX SDK, USD, CUDA, etc.)
 #
-# Usage:  ovruntime_add_external_system_includes(<target>)
+# Usage:  ovruntime_add_external_system_includes(<target> [NO_USD])
+#
+# NO_USD skips the USD and physics-schema (physxSchema/usdPhysics) header
+# dirs. Pass it for a target audited USD-free (ADR-0018) so a stray pxr
+# include fails to find headers instead of silently compiling.
 
 function(ovruntime_add_external_system_includes _target)
+    cmake_parse_arguments(_ARGS "NO_USD" "" "" ${ARGN})
     set(_SYSTEM_DIRS "")
 
     # Carbonite SDK
@@ -38,7 +43,7 @@ function(ovruntime_add_external_system_includes _target)
     # USD headers — config-dependent (debug/release have separate include trees).
     # Library paths (debug/lib vs release/lib) are handled separately by
     # UsdLinkDependencies.cmake with generator expressions.
-    if(DEFINED USD_DIR)
+    if(NOT _ARGS_NO_USD AND DEFINED USD_DIR)
         if(DEFINED OVRUNTIME_RUNTIME_DEPS_CONFIG AND NOT OVRUNTIME_RUNTIME_DEPS_CONFIG STREQUAL "per-config")
             set(_usd_cfg "${OVRUNTIME_RUNTIME_DEPS_CONFIG}")
             list(APPEND _SYSTEM_DIRS "${USD_DIR}/${_usd_cfg}/include")
@@ -78,8 +83,8 @@ function(ovruntime_add_external_system_includes _target)
         list(APPEND _SYSTEM_DIRS "${CUDA_DIR}/include")
     endif()
 
-    # Physics schema (physxSchema)
-    if(DEFINED USD_EXT_PHYSICS_DIR AND EXISTS "${USD_EXT_PHYSICS_DIR}/include")
+    # Physics schema (physxSchema) — generated pxr schema headers, USD-typed like USD_DIR above.
+    if(NOT _ARGS_NO_USD AND DEFINED USD_EXT_PHYSICS_DIR AND EXISTS "${USD_EXT_PHYSICS_DIR}/include")
         list(APPEND _SYSTEM_DIRS "${USD_EXT_PHYSICS_DIR}/include")
     endif()
 
@@ -100,16 +105,6 @@ function(ovruntime_add_external_system_includes _target)
         list(APPEND _SYSTEM_DIRS "${OVRUNTIME_DEPS_DIR}/include")
     endif()
 
-    # Kit-kernel dev headers (omni/kit, omni/ext, omni/log, etc.)
-    if(DEFINED OVRUNTIME_KIT_SDK_DIR AND EXISTS "${OVRUNTIME_KIT_SDK_DIR}/dev/include")
-        list(APPEND _SYSTEM_DIRS "${OVRUNTIME_KIT_SDK_DIR}/dev/include")
-    endif()
-
-    # Fabric headers (omni/utils/HashTypes.h, omni/utils/OperationResult.h, etc.)
-    if(DEFINED OVRUNTIME_KIT_SDK_DIR AND EXISTS "${OVRUNTIME_KIT_SDK_DIR}/dev/fabric/include")
-        list(APPEND _SYSTEM_DIRS "${OVRUNTIME_KIT_SDK_DIR}/dev/fabric/include")
-    endif()
-
     # ImGui
     if(EXISTS "${OVRUNTIME_TARGET_DEPS}/imgui")
         list(APPEND _SYSTEM_DIRS "${OVRUNTIME_TARGET_DEPS}/imgui")
@@ -118,11 +113,6 @@ function(ovruntime_add_external_system_includes _target)
     # GSL
     if(EXISTS "${OVRUNTIME_TARGET_DEPS}/gsl/include")
         list(APPEND _SYSTEM_DIRS "${OVRUNTIME_TARGET_DEPS}/gsl/include")
-    endif()
-
-    # Boost preprocessor
-    if(EXISTS "${OVRUNTIME_TARGET_DEPS}/boost_preprocessor")
-        list(APPEND _SYSTEM_DIRS "${OVRUNTIME_TARGET_DEPS}/boost_preprocessor")
     endif()
 
     # doctest

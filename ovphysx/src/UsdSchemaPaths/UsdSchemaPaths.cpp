@@ -1,18 +1,20 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-// This file provides helper functions for resolving ovphysx runtime library and
-// USD plugin paths, and for publishing the namespaced USD schema path to
-// OV_PXR_PLUGINPATH_2511.
+/**
+ * @implements REQ-CAPI-OVSTAGE-SCHEMA-001
+ * @covers AC-1 AC-2
+ */
+
+// Filesystem discovery for the ovphysx runtime layout: the library directory,
+// the Carbonite plugin directory, and the codeless PhysX USD schema root. No
+// OpenUSD code is involved and nothing here modifies the process environment.
 
 #include "UsdSchemaPaths/UsdSchemaPaths.h"
 
 #include <cstdlib>
 #include <filesystem>
-#include <mutex>
-#include <sstream>
 #include <string>
-#include <vector>
 
 #ifdef _WIN32
     #ifndef NOMINMAX
@@ -28,16 +30,6 @@ namespace sdk {
 namespace usd_schema_paths {
 
 namespace {
-
-#ifdef _WIN32
-static constexpr char kEnvPathSeparator = ';';
-#else
-static constexpr char kEnvPathSeparator = ':';
-#endif
-
-std::mutex g_registrationMutex;
-std::mutex g_envMutex;
-bool g_registrationDone = false;
 
 std::string normalizeDirectoryPath(std::filesystem::path path)
 {
@@ -58,11 +50,6 @@ std::string normalizeDirectoryPath(std::filesystem::path path)
     path = path.lexically_normal();
     path.make_preferred();
     return path.string();
-}
-
-std::string normalizePathForCompare(const std::string& path)
-{
-    return normalizeDirectoryPath(std::filesystem::path(path));
 }
 
 std::string getLibraryDirectoryFromEnvOverride()
@@ -125,75 +112,36 @@ std::string getLoadedOvphysxDirectory()
 #endif
 }
 
-std::vector<std::string> splitEnvPaths(const std::string& value)
+bool isDirectory(const std::filesystem::path& path)
 {
-    std::vector<std::string> paths;
-    size_t start = 0;
-    while (start <= value.size())
-    {
-        size_t end = value.find(kEnvPathSeparator, start);
-        if (end == std::string::npos)
-        {
-            end = value.size();
-        }
-
-        if (end > start)
-        {
-            paths.push_back(value.substr(start, end - start));
-        }
-
-        if (end == value.size())
-        {
-            break;
-        }
-        start = end + 1;
-    }
-    return paths;
+    std::error_code ec;
+    return std::filesystem::is_directory(path, ec) && !ec;
 }
 
-bool pathAlreadyPresent(const std::vector<std::string>& paths, const std::string& candidate)
+bool isRegularFile(const std::filesystem::path& path)
 {
-    const std::string normalizedCandidate = normalizePathForCompare(candidate);
-    for (const std::string& path : paths)
-    {
-        if (normalizePathForCompare(path) == normalizedCandidate)
-        {
-            return true;
-        }
-    }
-    return false;
+    std::error_code ec;
+    return std::filesystem::is_regular_file(path, ec) && !ec;
 }
 
-bool setEnvironmentVariable(const char* name, const std::string& value)
+// A plugins/ directory is recognized by a Carbonite plugin that every ovphysx
+// layout ships, so an unrelated plugins/ directory one level above a copied
+// runtime cannot shadow the real one.
+bool looksLikeOvphysxPluginsDirectory(const std::filesystem::path& plugins)
 {
 #ifdef _WIN32
-    return _putenv_s(name, value.c_str()) == 0;
+    return isRegularFile(plugins / "carb.datastore.plugin.dll");
 #else
-    return setenv(name, value.c_str(), 1) == 0;
+    return isRegularFile(plugins / "libcarb.datastore.plugin.so");
 #endif
-}
-
-std::string makeMissingRootError(const std::string& candidate)
-{
-    std::ostringstream ss;
-    ss << "Failed to register ovphysx USD schema/plugin paths: expected an existing directory at ";
-    if (candidate.empty())
-    {
-        ss << "<empty path>";
-    }
-    else
-    {
-        ss << candidate;
-    }
-    ss << ". Set OVPHYSX_LIB to the ovphysx shared library path or install the ovphysx SDK/wheel layout with plugins/usd present.";
-    return ss.str();
 }
 
 } // namespace
 
 std::string getLibraryDirectory()
 {
-    if (std::string envOverrideDir = getLibraryDirectoryFromEnvOverride(); !envOverrideDir.empty())
+    std::string envOverrideDir = getLibraryDirectoryFromEnvOverride();
+    if (!envOverrideDir.empty())
     {
         return envOverrideDir;
     }
@@ -202,136 +150,98 @@ std::string getLibraryDirectory()
 
 std::string getPluginsDirectory()
 {
-    std::string libDir = getLibraryDirectory();
+    const std::string libDir = getLibraryDirectory();
     if (libDir.empty())
     {
         return "";
     }
 
     const std::filesystem::path libraryDirPath(libDir);
-
     const std::filesystem::path sdkLayoutPluginsPath = libraryDirPath.parent_path() / "plugins";
-    std::error_code ec;
-    auto hasUsdRegistry = [](const std::filesystem::path& pluginsPath) {
-        std::error_code usdEc;
-        return std::filesystem::is_directory(pluginsPath / "usd", usdEc) && !usdEc;
-    };
-
     const std::filesystem::path copiedRuntimePluginsPath = libraryDirPath / "plugins";
-    if (hasUsdRegistry(sdkLayoutPluginsPath))
+
+    // Next to the library first (copied runtime), then one level up (SDK
+    // layout, whose lib/ holds no plugins/). A recognized ovphysx plugin
+    // directory wins over a bare directory of the same name.
+    if (looksLikeOvphysxPluginsDirectory(copiedRuntimePluginsPath))
+    {
+        return normalizeDirectoryPath(copiedRuntimePluginsPath);
+    }
+    if (looksLikeOvphysxPluginsDirectory(sdkLayoutPluginsPath))
     {
         return normalizeDirectoryPath(sdkLayoutPluginsPath);
     }
-    if (hasUsdRegistry(copiedRuntimePluginsPath))
+    if (isDirectory(copiedRuntimePluginsPath))
     {
         return normalizeDirectoryPath(copiedRuntimePluginsPath);
     }
-    if (std::filesystem::is_directory(sdkLayoutPluginsPath, ec) && !ec)
+    if (isDirectory(sdkLayoutPluginsPath))
     {
         return normalizeDirectoryPath(sdkLayoutPluginsPath);
-    }
-    ec.clear();
-    if (std::filesystem::is_directory(copiedRuntimePluginsPath, ec) && !ec)
-    {
-        return normalizeDirectoryPath(copiedRuntimePluginsPath);
     }
 
     return normalizeDirectoryPath(sdkLayoutPluginsPath);
 }
 
-std::string getUsdPluginsDirectory()
+std::string getCodelessSchemaRoot(std::string* out_error)
 {
-    std::string pluginsDir = getPluginsDirectory();
-    if (pluginsDir.empty())
-    {
-        return "";
-    }
-
-    return normalizeDirectoryPath(std::filesystem::path(pluginsDir) / "usd");
-}
-
-bool registerSchemaPaths(std::string* out_error)
-{
-    std::lock_guard<std::mutex> lock(g_envMutex);
-
-    const std::string usdPluginPath = getUsdPluginsDirectory();
-    std::error_code ec;
-    if (usdPluginPath.empty() || !std::filesystem::is_directory(usdPluginPath, ec) || ec)
+    const std::string libDir = getLibraryDirectory();
+    if (libDir.empty())
     {
         if (out_error)
         {
-            *out_error = makeMissingRootError(usdPluginPath);
+            *out_error = "Failed to locate the ovphysx codeless schemas: the ovphysx library directory "
+                         "could not be determined. Set OVPHYSX_LIB to the ovphysx shared library path.";
         }
-        return false;
+        return "";
     }
 
-    const char* existing = std::getenv(kNamespacedUsdPluginPathEnvVar);
-    std::string envValue = existing ? existing : "";
-    std::vector<std::string> paths = splitEnvPaths(envValue);
-    const std::string normalizedUsdPluginPath = normalizeDirectoryPath(usdPluginPath);
-
-    if (!pathAlreadyPresent(paths, normalizedUsdPluginPath))
+    const std::filesystem::path libraryDirPath(libDir);
+    // Next to the library first (a runtime copied beside an application), then
+    // one level up (the SDK and wheel layouts, whose lib/ holds no schemas/).
+    // An unrelated schemas/ tree above a copied runtime therefore never wins.
+    const std::filesystem::path candidates[] = {
+        libraryDirPath / "schemas" / "physx",
+        libraryDirPath.parent_path() / "schemas" / "physx",
+    };
+    for (const std::filesystem::path& candidate : candidates)
     {
-        if (!envValue.empty() && envValue.back() != kEnvPathSeparator)
-        {
-            envValue.push_back(kEnvPathSeparator);
-        }
-        envValue += normalizedUsdPluginPath;
-        if (!setEnvironmentVariable(kNamespacedUsdPluginPathEnvVar, envValue))
+        if (isRegularFile(candidate / "plugInfo.json"))
         {
             if (out_error)
             {
-                *out_error = "Failed to update OV_PXR_PLUGINPATH_2511 for ovphysx USD schema/plugin paths";
+                out_error->clear();
             }
-            return false;
+            return normalizeDirectoryPath(candidate);
         }
     }
 
     if (out_error)
     {
-        out_error->clear();
+        *out_error = "Failed to locate the ovphysx codeless schemas: no schemas/physx/plugInfo.json found "
+                     "next to the ovphysx library (checked " + candidates[0].string() + " and " +
+                     candidates[1].string() + "). Set OVPHYSX_LIB to the ovphysx shared library path or "
+                     "reinstall the ovphysx SDK/wheel.";
     }
-    return true;
+    return "";
 }
 
-bool registerSchemaPathsOnce(std::string* out_error, bool* out_registered)
+#ifdef _WIN32
+std::string getLoadedLibraryDirectory(const std::string& libraryName)
 {
-    std::lock_guard<std::mutex> lock(g_registrationMutex);
-    if (g_registrationDone)
+    HMODULE hModule = GetModuleHandleA(libraryName.c_str());
+    if (hModule == NULL)
     {
-        if (out_error)
-        {
-            out_error->clear();
-        }
-        if (out_registered)
-        {
-            *out_registered = false;
-        }
-        return true;
+        return "";
     }
-
-    if (!registerSchemaPaths(out_error))
+    char path[MAX_PATH];
+    if (GetModuleFileNameA(hModule, path, MAX_PATH) == 0)
     {
-        if (out_registered)
-        {
-            *out_registered = false;
-        }
-        return false;
+        return "";
     }
-
-    g_registrationDone = true;
-    if (out_registered)
-    {
-        *out_registered = true;
-    }
-    return true;
+    return normalizeDirectoryPath(std::filesystem::path(path).parent_path());
 }
-
-void resetSchemaPathRegistrationForTests()
-{
-    std::lock_guard<std::mutex> lock(g_registrationMutex);
-    g_registrationDone = false;
-}
+#endif
 
 } // namespace usd_schema_paths
 } // namespace sdk

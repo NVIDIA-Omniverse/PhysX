@@ -1,5 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-27
+ */
 
 /**
  * @implements REQ-PARSE-BODY-001
@@ -9,26 +14,14 @@
  * @covers AC-2
  */
 
-// This include must come first
-// clang-format off
-#include "UsdPCH.h"
-// clang-format on
-
 #include <carb/Types.h>
 #include <common/foundation/Allocator.h>
-#include <common/utilities/PrimUtilities.h>
-
 #include <omni/physx/IPhysxSettings.h>
-
-#include <physxSchema/tokens.h>
-#include <omniUsdPhysicsDeformableSchema/tokens.h>
-
 
 #include <propertiesUpdate/PhysXPropertiesUpdate.h>
 #include <PhysXTools.h>
 #include <OmniPhysX.h>
 #include <ChangeRegister.h>
-#include <CookingDataAsync.h>
 
 #include "LoadTools.h"
 #include "LoadUsd.h"
@@ -37,14 +30,10 @@
 #include "CollisionGroup.h"
 #include "AttributeHelpers.h"
 
+#include <omni/physics/parse/KnownTokens.h>
 #include <omni/physics/parse/ParseApi.h>
 #include <omni/physics/parse/ParseContext.h>
-#include "UsdSource.h"
 
-#include <pxr/usd/usdPhysics/tokens.h>
-
-
-using namespace PXR_NS;
 using namespace carb;
 
 namespace omni
@@ -74,54 +63,65 @@ PhysxForceDesc* parsePhysxForce(AttachedStage& attachedStage, omni::physics::par
     // Fully source-routed (by ObjectKey): applied-API gate, attribute reads,
     // world transform, and the ancestor xform-op time-sample scan — no UsdPrim.
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
-    if (src && internal::hasAppliedSchema<PhysxSchemaPhysxForceAPI>(*src, key))
+    const omni::physics::parse::KnownTokens& tok = attachedStage.getKnownTokens();
+    if (src && src->hasSchema(key, tok.physxForceAPI))
     {
-        getAttribute(attachedStage, desc->enabled, key, PhysxSchemaTokens->physxForceForceEnabled, updatePhysxForceEnabled);
-        getAttribute(attachedStage, desc->worldFrame, key, PhysxSchemaTokens->physxForceWorldFrameEnabled, updatePhysxForceWorldFrameEnabled);
+        const omni::physics::parse::ReadTime readTime = omni::physics::parse::ReadTime::defaultTime();
+        getAttribute(attachedStage, desc->enabled, key, tok.physxForceForceEnabled, readTime, updatePhysxForceEnabled);
+        getAttribute(attachedStage, desc->worldFrame, key, tok.physxForceWorldFrameEnabled, readTime, updatePhysxForceWorldFrameEnabled);
 
-        GfVec3f val{ 0.f };
-        getAttribute(attachedStage, val, key, PhysxSchemaTokens->physxForceForce, updatePhysxForce);
-        GfVec3ToFloat3(val, desc->force);
+        carb::Float3 val{ 0.f, 0.f, 0.f };
+        getAttribute(attachedStage, val, key, tok.physxForceForce, readTime, updatePhysxForce);
+        desc->force = val;
 
-        getAttribute(attachedStage, val, key, PhysxSchemaTokens->physxForceTorque, updatePhysxTorque);
-        GfVec3ToFloat3(val, desc->torque);
+        // `val` is deliberately NOT reset between the two reads: the Gf form
+        // this replaced reused the same variable, so a failed torque read
+        // carries the force value into desc->torque. Preserved verbatim.
+        getAttribute(attachedStage, val, key, tok.physxForceTorque, readTime, updatePhysxTorque);
+        desc->torque = val;
 
-        TfToken mode;
-        getAttribute(attachedStage, mode, key, PhysxSchemaTokens->physxForceMode, updatePhysxForceMode);
-        desc->accelerationMode = (mode == PhysxSchemaTokens->acceleration);
+        // TokenId-typed read (ADR-0018): the mode enum's string value is compared as a
+        // TokenId rather than round-tripping through TfToken/tfTokenFor.
+        omni::physics::parse::TokenId modeTok{};
+        getAttribute(attachedStage, modeTok, key, tok.physxForceMode, readTime, updatePhysxForceMode);
+        desc->accelerationMode = (modeTok == tok.acceleration);
 
         // EarliestTime() matches the legacy load-time xform cache
         // (UsdGeomXformCache(UsdTimeCode::EarliestTime())): for a force whose
         // xform op carries time samples but no authored default, this reads the
-        // first keyframe rather than the op default/identity.
-        const GfMatrix4d pose = internal::getWorldTransform(attachedStage, key, UsdTimeCode::EarliestTime());
-        GfVec3ToFloat3(pose.ExtractTranslation(), desc->worldPos);
+        // first keyframe rather than the op default/identity. The 2-arg
+        // getWorldTransform overload is the source's cached EarliestTime read
+        // (PhysXTools.h) -- pxr-free and the same load-time result.
+        const ::physx::PxMat44d pose = internal::getWorldTransform(attachedStage, key);
+        const ::physx::PxVec3d worldPos = pose.getPosition();
+        desc->worldPos = { float(worldPos.x), float(worldPos.y), float(worldPos.z) };
 
         if (src->mightWorldTransformBeTimeVarying(key))
         {
-            attachedStage.getAnimatedKinematicBodies()[attachedStage.pathFor(key)] = key;
+            attachedStage.getAnimatedKinematicBodies().insert(key);
         }
     }
 
     return desc;
 }
 
-SdfPath getRigidBodySimulationOwner(AttachedStage& attachedStage, const SdfPath& bodyPath)
+omni::physics::parse::ObjectKey getRigidBodySimulationOwner(AttachedStage& attachedStage, omni::physics::parse::ObjectKey bodyKey)
 {
-    if (bodyPath == SdfPath())
-        return SdfPath();
+    if (!bodyKey.valid())
+        return {};
 
     // physics:simulationOwner is the same relationship whether declared by
     // UsdPhysicsRigidBodyAPI or UsdPhysicsCollisionAPI, so a single source read
     // of the relationship covers both branches of the former API-gated logic.
-    SdfPathVector owners;
-    omni::physx::internal::getRelationshipValue(
-        attachedStage, attachedStage.keyFor(bodyPath), UsdPhysicsTokens->physicsSimulationOwner, owners);
+    const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
+    const omni::physics::parse::KnownTokens& tok = attachedStage.getKnownTokens();
+    std::vector<omni::physics::parse::ObjectKey> owners;
+    omni::physx::internal::getRelationshipValue(attachedStage, bodyKey, tok.physicsSimulationOwner, owners);
     if (!owners.empty())
     {
         return owners[0];
     }
-    return SdfPath();
+    return {};
 }
 
 void finalizePhysxForce(AttachedStage& attachedStage, omni::physics::parse::ObjectKey forceKey, PhysxForceDesc& desc)
@@ -137,14 +137,13 @@ void finalizePhysxForce(AttachedStage& attachedStage, omni::physics::parse::Obje
     omni::physics::parse::ObjectKey parent = forceKey;
     while (parent.valid() && parent != root)
     {
-        const SdfPath parentPath = attachedStage.pathFor(parent);
-        bodyId = attachedStage.getObjectDatabase()->findEntry(parentPath, eBody);
+        bodyId = attachedStage.getObjectDatabase()->findEntry(parent, eBody);
         if (bodyId != kInvalidObjectId)
         {
             break;
         }
 
-        bodyId = attachedStage.getObjectDatabase()->findEntry(parentPath, eArticulationLink);
+        bodyId = attachedStage.getObjectDatabase()->findEntry(parent, eArticulationLink);
         if (bodyId != kInvalidObjectId)
         {
             break;
@@ -155,11 +154,11 @@ void finalizePhysxForce(AttachedStage& attachedStage, omni::physics::parse::Obje
     if (bodyId != kInvalidObjectId)
     {
         desc.body = bodyId;
-        if (internal::hasAppliedSchema<UsdPhysicsRigidBodyAPI>(*src, parent))
+        const omni::physics::parse::KnownTokens& tok = attachedStage.getKnownTokens();
+        if (src->hasSchema(parent, tok.physicsRigidBodyAPI))
         {
-            SdfPathVector owners;
-            omni::physx::internal::getRelationshipValue(
-                attachedStage, parent, UsdPhysicsTokens->physicsSimulationOwner, owners);
+            std::vector<omni::physics::parse::ObjectKey> owners;
+            omni::physx::internal::getRelationshipValue(attachedStage, parent, tok.physicsSimulationOwner, owners);
             if (!owners.empty())
             {
                 const ObjectId entry = attachedStage.getObjectDatabase()->findEntry(owners[0], eScene);
@@ -170,23 +169,23 @@ void finalizePhysxForce(AttachedStage& attachedStage, omni::physics::parse::Obje
             // composed from the two source-routed world transforms
             // (rel = childWorld * parentWorld^-1); only the rotation is used.
             // EarliestTime() matches the legacy load-time xform cache (see
-            // parsePhysxForce); caching can be reintroduced source-side.
-            const GfMatrix4d childWorld =
-                internal::getWorldTransform(attachedStage, forceKey, UsdTimeCode::EarliestTime());
-            const GfMatrix4d parentWorld =
-                internal::getWorldTransform(attachedStage, parent, UsdTimeCode::EarliestTime());
-            const GfMatrix4d rel = childWorld * parentWorld.GetInverse();
-            const GfTransform tr(rel);
-            const GfQuatf localRot = GfQuatf(tr.GetRotation().GetQuat());
-            GfQuatToFloat4(localRot, desc.localRot);
+            // parsePhysxForce); caching can be reintroduced source-side. The
+            // 2-arg getWorldTransform overload is the source's cached
+            // EarliestTime read (PhysXTools.h) -- pxr-free, same result.
+            const ::physx::PxMat44d childWorld = internal::getWorldTransform(attachedStage, forceKey);
+            const ::physx::PxMat44d parentWorld = internal::getWorldTransform(attachedStage, parent);
+            // childWorld * parentWorld^-1 in the USD row-vector convention is the
+            // reversed product under PhysX's column-vector convention.
+            const ::physx::PxMat44d rel = affineInverse(parentWorld) * childWorld;
+            desc.localRot = toFloat4(toTransform(rel).q.getNormalized());
         }
     }
 }
 
-ObjectId getRigidBody(AttachedStage& attachedStage, const SdfPath& shapeKey, PhysxShapeDesc& shapeDesc)
+ObjectId getRigidBody(AttachedStage& attachedStage, omni::physics::parse::ObjectKey shapeKey, PhysxShapeDesc& shapeDesc)
 {
     if (shapeDesc.rigidBody.valid())
-        return attachedStage.getObjectDatabase()->findEntry(attachedStage.pathFor(shapeDesc.rigidBody), eBody);
+        return attachedStage.getObjectDatabase()->findEntry(shapeDesc.rigidBody, eBody);
     else
     {
         // Walk ancestors through the source (no UsdPrim) looking for the nearest
@@ -195,17 +194,16 @@ ObjectId getRigidBody(AttachedStage& attachedStage, const SdfPath& shapeKey, Phy
         if (!src)
             return kInvalidObjectId;
         const omni::physics::parse::ObjectKey root = src->getRootKey();
-        omni::physics::parse::ObjectKey parent = attachedStage.keyFor(shapeKey);
+        omni::physics::parse::ObjectKey parent = shapeKey;
         while (parent.valid() && parent != root)
         {
-            const SdfPath parentPath = attachedStage.pathFor(parent);
-            ObjectId bodyId = attachedStage.getObjectDatabase()->findEntry(parentPath, eBody);
+            ObjectId bodyId = attachedStage.getObjectDatabase()->findEntry(parent, eBody);
             if (bodyId != kInvalidObjectId)
             {
                 shapeDesc.rigidBody = parent;
                 return bodyId;
             }
-            bodyId = attachedStage.getObjectDatabase()->findEntry(parentPath, eArticulationLink);
+            bodyId = attachedStage.getObjectDatabase()->findEntry(parent, eArticulationLink);
             if (bodyId != kInvalidObjectId)
             {
                 shapeDesc.rigidBody = parent;
@@ -228,11 +226,11 @@ PhysxRigidBodyDesc* createStaticBody()
 
 void finalizeRigidBody(AttachedStage& attachedStage, BodyDescAndColliders& bodyAndColliders)
 {
-    for (const SdfPath& collisionPath : bodyAndColliders.collisions)
+    for (const omni::physics::parse::ObjectKey collisionKey : bodyAndColliders.collisions)
     {
-        if (collisionPath != SdfPath())
+        if (collisionKey.valid())
         {
-            const ObjectIdMap* entries = attachedStage.getObjectDatabase()->getEntries(collisionPath);
+            const ObjectIdMap* entries = attachedStage.getObjectDatabase()->getEntries(collisionKey);
             if (entries && !entries->empty())
             {
                 auto it = entries->begin();
@@ -261,7 +259,7 @@ void setToDefault(const omni::physics::parse::SourceUnits& units, PhysxDeformabl
 
     desc.sceneId = kInvalidObjectId;
     desc.simMeshMaterial = kInvalidObjectId;
-    desc.transform = GfMatrix4d(1.0f);
+    desc.transform = omni::physics::parse::Matrix4d{}; // identity (Matrix4d's in-class default)
     desc.bodyEnabled = false;
     desc.kinematicBody = false;
     desc.startsAsleep = false;
@@ -297,29 +295,20 @@ void setToDefault(const omni::physics::parse::SourceUnits& units, PhysxVolumeDef
     desc.autoHexahedralResolution = 0;
 }
 
-void setToDefault(const omni::physics::parse::SourceUnits& units, PhysxSurfaceDeformableBodyDesc& desc)
+void setToDefault(const omni::physics::parse::SourceUnits& units,
+                  const omni::physics::parse::IPhysicsSource& source,
+                  PhysxSurfaceDeformableBodyDesc& desc)
 {
     setToDefault(units, static_cast<PhysxDeformableBodyDesc&>(desc));
 
-    desc.restBendAnglesDefault = OmniUsdPhysicsDeformableSchemaTokens->flatDefault;
+    omni::physics::parse::KnownTokens tok;
+    tok.intern(source);
+    desc.restBendAnglesDefault = tok.flatDefault;
     desc.collisionPairUpdateFrequency = 1;
     desc.collisionIterationMultiplier = 1;
 }
 
-const SdfPath* findFirstNonEmptyPath(const SdfPathVector& paths)
-{
-    auto it = std::find_if(paths.begin(), paths.end(), [](const SdfPath path) { return !path.IsEmpty(); });
-    return (it != paths.end()) ? &(*it) : nullptr;
-}
-
-const TfToken* findFirstNonEmptyToken(const TfTokenVector& tokens)
-{
-    auto it = std::find_if(tokens.begin(), tokens.end(), [](const TfToken token) { return !token.IsEmpty(); });
-    return (it != tokens.end()) ? &(*it) : nullptr;
-}
-
-
-void finalizeDeformableBody(AttachedStage& attachedStage, PhysxDeformableBodyDesc* desc, const SdfPath simMeshMaterial)
+void finalizeDeformableBody(AttachedStage& attachedStage, PhysxDeformableBodyDesc* desc, omni::physics::parse::ObjectKey simMeshMaterial)
 {
     ObjectCategory type;
     if (desc->type == eVolumeDeformableBody)
@@ -337,11 +326,18 @@ void finalizeDeformableBody(AttachedStage& attachedStage, PhysxDeformableBodyDes
 
     desc->simMeshMaterial = getMaterial(attachedStage, simMeshMaterial, type);
 
-    registerDeformablePoseChangeParams(attachedStage, desc->simMeshBindPoseToken);
-    registerDeformablePoseChangeParams(attachedStage, desc->collisionMeshBindPoseToken);
-    for (const TfToken instanceToken : desc->skinGeomBindPoseTokens)
+    // simMeshBindPoseToken/collisionMeshBindPoseToken/skinGeomBindPoseTokens
+    // are TokenIds (ADR-0019 increment 7); registerDeformablePoseChangeParams
+    // takes a plain instance-name string, so bridge via the source.
+    const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
+    if (src)
     {
-        registerDeformablePoseChangeParams(attachedStage, instanceToken);
+        registerDeformablePoseChangeParams(attachedStage, std::string(src->tokenToString(desc->simMeshBindPoseToken)));
+        registerDeformablePoseChangeParams(attachedStage, std::string(src->tokenToString(desc->collisionMeshBindPoseToken)));
+        for (const omni::physics::parse::TokenId instanceToken : desc->skinGeomBindPoseTokens)
+        {
+            registerDeformablePoseChangeParams(attachedStage, std::string(src->tokenToString(instanceToken)));
+        }
     }
 }
 

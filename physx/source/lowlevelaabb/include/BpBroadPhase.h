@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef BP_BROADPHASE_H
 #define BP_BROADPHASE_H
@@ -37,6 +14,11 @@ namespace physx
 {
 	class PxcScratchAllocator;
 	class PxBaseTask;
+
+namespace Cm
+{
+	class FlushPool;
+}
 
 namespace Bp
 {
@@ -127,14 +109,14 @@ public:
 	/**
 	\brief Updates the broadphase and computes the lists of created/deleted pairs.
 
+	\param[in] numCpuTasks - number of CPU tasks to use (for multithreaded CPU implementations)
+	\param[in] flushPool - flush pool (for multithreaded CPU implementations)
 	\param[in] scratchAllocator - a PxcScratchAllocator instance used for temporary memory allocations.
 	This must be non-null.
-
 	\param[in] updateData a description of changes to the collection of aabbs since the last broadphase update.
 	The changes detail the indices of the bounds that have been added/updated/removed as well as an array of all
 	bound coordinates and an array of group ids used to filter pairs with the same id.
 	\see BroadPhaseUpdateData
-
 	\param[in] continuation the task that is in the queue to be executed immediately after the broadphase has completed its update. NULL is not supported.
 
 	\note In PX_CHECKED and PX_DEBUG build configurations illegal input data (that does not conform to the BroadPhaseUpdateData specifications) triggers 
@@ -142,7 +124,7 @@ public:
 	correctness/consistency of broadphase behavior with illegal input data in PX_RELEASE and PX_PROFILE configs because validity checks are not active 
 	in these builds.
 	*/
-	virtual	void	update(PxcScratchAllocator* scratchAllocator, const BroadPhaseUpdateData& updateData, physx::PxBaseTask* continuation) = 0;
+	virtual	void	update(PxU32 numCpuTasks, Cm::FlushPool* flushPool, PxcScratchAllocator* scratchAllocator, const BroadPhaseUpdateData& updateData, physx::PxBaseTask* continuation) = 0;
 
 	/**
 	\brief prepare broad phase data.

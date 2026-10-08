@@ -1,10 +1,20 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-PUBLICAPI-002
+ * @covers AC-6 AC-7
+ *
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-43
+ */
 #pragma once
 
 #include <carb/Defines.h>
 #include <carb/Types.h>
+
+#include <omni/physics/AttachHandle.h>
+#include <omni/physics/parse/Handles.h>
 
 #include "EventSubscriptionRegistry.h"
 
@@ -32,17 +42,20 @@ struct TriggerEventData
 {
     TriggerEventType::Enum eventType; //!< Type of event(enter / leave)
     uint64_t subscriptionId; //!< The subscription id returned when registering the callback
-    uint64_t stageId; //!< The stage where trigger event happend
-    uint64_t triggerColliderPrimId; //!< The collider prim source of trigger event
-    uint64_t otherColliderPrimId; //!< The collider prim entering or leaving the trigger volume
-    uint64_t triggerBodyPrimId; //!< The body containing the collider that is source of trigger event
-    uint64_t otherBodyPrimId; //!< The body containing the collider that is entering or leaving the trigger volume
+    AttachHandle attachHandle; //!< The attach where the trigger event happened. Equal to the handle
+                               //!< passed to IPhysxSimulation::subscribePhysicsTriggerReportEvents,
+                               //!< resolved: a subscription made with kActiveAttach reports the
+                               //!< concrete handle it resolved to.
+    omni::physics::parse::ObjectKey triggerColliderPrimKey; //!< The collider prim source of trigger event
+    omni::physics::parse::ObjectKey otherColliderPrimKey; //!< The collider prim entering or leaving the trigger volume
+    omni::physics::parse::ObjectKey triggerBodyPrimKey; //!< The body containing the collider that is source of trigger event
+    omni::physics::parse::ObjectKey otherBodyPrimKey; //!< The body containing the collider that is entering or leaving the trigger volume
 };
 
 /**
 \brief Trigger report event function
 
-\param triggerData Trigger data event containing stage, trigger and other prim and the event type (enter / leave)
+\param triggerData Trigger data event containing the attach, trigger and other prim and the event type (enter / leave)
 \param userData User data that were registered during subscribe
 */
 typedef void (*OnTriggerEventReportEventFn)(const TriggerEventData* triggerData, void* userData);

@@ -1,0 +1,44 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    doc = "Ground + empty DynamicBoxes scope: the runtime-create target used by the population and spawn-batch benches."
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def PhysicsScene "PhysicsScene"
+    {
+        vector3f physics:gravityDirection = (0, -1, 0)
+        float physics:gravityMagnitude = 9.81
+    }
+
+    def Xform "Ground" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI"]
+    )
+    {
+        bool physics:kinematicEnabled = true
+
+        double3 xformOp:translate = (0, 0, 0)
+        quatd xformOp:orient = (1, 0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+
+        def Cube "GroundCollider" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            float3[] extent = [(-50, -0.05, -50), (50, 0.05, 50)]
+            double size = 1
+            double3 xformOp:scale = (100, 0.1, 100)
+            double3 xformOp:translate = (0, 0, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+    }
+
+    # Runtime UPSERT-create target. Intentionally empty: bodies are added at
+    # run time via the population layer.
+    def Scope "DynamicBoxes"
+    {
+    }
+}

@@ -1,5 +1,5 @@
 <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
-<!-- SPDX-License-Identifier: BSD-3-Clause -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
 # Colliders
 
@@ -13,6 +13,14 @@ This page covers authoring colliders for scenes that ovphysx loads. For the base
 authoring pattern (core `UsdPhysics` typed APIs plus codeless PhysX schemas), refer to
 [Physics Schemas](../physics_schemas.md); for the physics scene and ground, refer to
 [Physics Scene](physics_scene.md).
+
+The code examples on this page are fragments, not complete files. Each USDA
+example shows a prim to add inside the stage's `defaultPrim` hierarchy. Each
+Python example extends a script that already created a `stage` and registered the
+codeless PhysX schemas, as shown in
+[Setting Up a USD Stage and a Physics Scene](physics_scene.md#setting-up-a-usd-stage-and-a-physics-scene);
+before using a fragment that refers to `prim`, `cylinder_prim`, `sdf_mesh_prim`,
+or `box_a_prim`, define that geometry prim in the surrounding script.
 
 ## Static Colliders
 
@@ -41,7 +49,8 @@ UsdPhysics.CollisionAPI.Apply(cube.GetPrim())
 The following `UsdGeom` primitives are supported with `PhysicsCollisionAPI`, and
 the resulting collision shape maps to the geometry exactly: `Sphere`, `Cube`,
 `Capsule`, `Cylinder`, `Cone`. Primitives are the cheapest and most stable
-choice — prefer them whenever they approximate the object well.
+choice — prefer them whenever they approximate the object well. The following
+figure shows the five supported primitive shapes:
 
 ![Primitive colliders: cylinder, sphere, box, capsule, cone](images/collision_primitives.png)
 
@@ -97,6 +106,9 @@ Mesh colliders (`UsdGeom.Mesh` with `PhysicsCollisionAPI`) require an
 - `sdf` — a signed distance field, for dynamic bodies needing high-detail
   non-convex contact (refer to [SDF Colliders](#sdf-colliders)).
 
+The following figure compares the convex and bounding approximations of one
+source mesh:
+
 ![Convex approximation options: convex hull, convex decomposition, bounding sphere, bounding cube](images/collision_approximation.png)
 
 > **A dynamic rigid body cannot use a plain triangle mesh** (`none` /
@@ -151,6 +163,9 @@ Notes:
   surface, saving memory at similar fidelity. Enable them with a nonzero
   `physxSDFMeshCollision:sdfSubgridResolution`.
 
+The following figure shows how a sparse SDF combines a coarse background grid
+with high-resolution subgrids near the surface:
+
 ![A sparse SDF: a background SDF plus high-resolution subgrids near surfaces](images/sdf_subgrids.png)
 
 For high-throughput, on-GPU access to SDF samples and gradients at runtime, use
@@ -182,9 +197,12 @@ applied to a collider prim.
   [Rigid Bodies](rigid_bodies.md#continuous-collision-detection)). Larger offsets
   can cost performance because more contacts are generated.
 - **Rest offset** — a small distance from the surface at which the effective
-  contact takes place. It may be positive, zero, or negative. A negative rest
+  contact takes place. It can be positive, zero, or negative. A negative rest
   offset is useful when the collision geometry is slightly larger than the render
   mesh, so contact occurs at the visually correct distance.
+
+The following figure shows where each offset sits relative to the collider
+surface:
 
 ![The effects of rest and collision offsets](images/collision_rest_offset.png)
 
@@ -198,7 +216,7 @@ prim.CreateAttribute("physxCollision:restOffset", Sdf.ValueTypeNames.Float).Set(
 
 Contact and rest offsets can also be read/written at runtime in bulk through the
 `RIGID_BODY_CONTACT_OFFSET` / `RIGID_BODY_REST_OFFSET` tensor types — refer to the
-[Tensor Bindings](../tutorials/tensor_bindings.md) reference.
+[Tensor Bindings (deprecated)](../tutorials/tensor_bindings.md) reference.
 
 ## Collision Filtering
 
@@ -242,8 +260,8 @@ filtered.CreateFilteredPairsRel().AddTarget("/World/boxC")
   stable.
 - **Convex meshes** (convex hull / decomposition) are next. For GPU
   compatibility, a convex mesh's largest dimension should not exceed ~100x its
-  insphere radius; otherwise cooking may produce a CPU-only convex that will not
-  interact with GPU-only features (deformables, particles) and may be slower.
+  insphere radius; otherwise cooking can produce a CPU-only convex that does not
+  interact with GPU-only features (deformables, particles) and can be slower.
 - **Cylinders and cones** model wheels and similar shapes with smooth surfaces;
   approximate them with convex meshes if precise rolling is not required.
 - **Triangle meshes** suit large static or kinematic geometry; keep triangles
@@ -255,7 +273,7 @@ For deeper contact-quality tuning (GPU contact limits, mass ratios,
 depenetration, friction, timestep), refer to the
 [Collision Tuning](../guides/collision_tuning.md) guide.
 
-## CPU / GPU Collider Compatibility
+## CPU and GPU Collider Compatibility
 
 Not every collider pair is supported in both CPU and GPU simulation. In general,
 CPU collision geometry generates contacts on the CPU and GPU geometry on the GPU;
@@ -265,4 +283,46 @@ example an oblong convex hull, or a multi-material triangle mesh) still works wi
 GPU simulation by generating contacts on the CPU, which can carry a performance
 penalty in large GPU scenes such as RL environments.
 
+The following figure is the full pair matrix:
+
 ![Rigid body collider compatibility table](images/collider_compatibility.png)
+
+The figure is a symmetric matrix of collider pairs. Its dynamic geometry rows and
+columns are Sphere, Capsule, Cube, Convex CPU, Convex GPU, SDF Mesh CPU, SDF Mesh
+GPU, Particles GPU, Deformable Body GPU, and Convex Core Geometry cylinder or
+cone; its static geometry rows are Plane, Mesh CPU, and Mesh GPU. Every pair in
+the matrix is supported except the pairs in Table 1. The pairs in Table 2 are
+supported but generate their contacts on the CPU even in a GPU simulation.
+Sphere, Capsule, Cube, Convex Core Geometry cylinder or cone, and static Plane
+are compatible with every other entry in the matrix.
+
+**Table 1. Unsupported collider pairs**
+
+The following pairs are marked unsupported and generate no contacts:
+
+| Geometry | Paired Geometry |
+|----------|-----------------|
+| Convex CPU (dynamic) | Particles GPU |
+| Convex CPU (dynamic) | Deformable Body GPU |
+| SDF Mesh CPU (dynamic) | SDF Mesh GPU |
+| SDF Mesh CPU (dynamic) | Particles GPU |
+| SDF Mesh CPU (dynamic) | Deformable Body GPU |
+| Mesh CPU (static) | SDF Mesh GPU |
+| Mesh CPU (static) | Particles GPU |
+| Mesh CPU (static) | Deformable Body GPU |
+
+**Table 2. Pairs that fall back to CPU contact generation**
+
+The following pairs are supported, but the figure marks them "CPU" because
+contacts are generated on the CPU even in a GPU simulation:
+
+| Geometry | Paired Geometry |
+|----------|-----------------|
+| Convex CPU (dynamic) | Convex GPU (dynamic) |
+| Convex CPU (dynamic) | SDF Mesh GPU (dynamic) |
+| Mesh CPU (static) | Convex GPU (dynamic) |
+| Mesh GPU (static) | Convex CPU (dynamic) |
+
+The figure also marks the particle-to-particle cell with a footnote. Particles
+collide only with particles in the same particle system; particles in different
+systems do not collide, as described in [Particles](particles.md).

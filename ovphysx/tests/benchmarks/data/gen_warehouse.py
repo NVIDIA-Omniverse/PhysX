@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """Generate a synthetic warehouse-style USDA fixture for ovphysx benchmarks.
 
@@ -11,8 +11,8 @@ ground plane.
 
 Default sizing targets ~2.4k dynamic rigid bodies + ~400 static colliders,
 about 1.4x heavier than the Kapla fixture (1728 bodies). Sizing
-constrained by the remote repo's 1 MiB per-file limit on text files —
-the ovphysx subtree intentionally stores .usda as text (not LFS) per
+constrained by the remote repo's 1 MiB per-file limit on text files.
+The ovphysx subtree intentionally stores .usda as text (not LFS) per
 ovphysx/.gitattributes. Tune ROWS / COLS / LEVELS / ITEMS_PER_SHELF
 below to scale.
 
@@ -23,7 +23,7 @@ Usage:
 
 import sys
 
-# Sizing — defaults give 10 * 10 * 3 * 8 = 2400 dynamic items + 400 static.
+# Sizing. The defaults give 10 * 10 * 3 * 8 = 2400 dynamic items + 400 static.
 ROWS = 10
 COLS = 10
 LEVELS = 3
@@ -31,14 +31,14 @@ ITEMS_PER_SHELF = 8
 
 # Geometry (meters)
 RACK_SPACING = 8.0     # distance between adjacent racks in X and Z
-RACK_HALF = 2.5        # half-width of a rack (posts at +/- RACK_HALF in X and Z);
+RACK_HALF = 2.5        # half-width of a rack (posts at +/- RACK_HALF in X and Z),
                        # sized to avoid initial item overlap/penetration, which
                        # would bias step-time results.
 RACK_HEIGHT = 1.8      # vertical spacing between shelf levels
 POST_SIZE = 0.2        # cross-section of each post
-ITEM_SIZE = 0.4        # cube edge of each pallet item — with RACK_HALF=2.5
-                       # the per-shelf spacing is 4.0/7 ≈ 0.571m, leaving
-                       # ~0.171m gap between adjacent items (no initial
+ITEM_SIZE = 0.4        # cube edge of each pallet item. With RACK_HALF=2.5
+                       # the per-shelf spacing is 4.0/7 = ~0.571m, leaving
+                       # a ~0.171m gap between adjacent items (no initial
                        # penetration).
 GROUND_HALF = (max(ROWS, COLS) * RACK_SPACING) / 2.0 + 10.0
 

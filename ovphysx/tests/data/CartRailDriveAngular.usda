@@ -1,0 +1,70 @@
+#usda 1.0
+(
+    defaultPrim = "cartpole"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def PhysicsScene "physicsScene"
+{
+    float3 physics:gravityDirection = (0, 0, -1)
+    float physics:gravityMagnitude = 0.0
+}
+
+# Revolute counterpart of CartRailDriveLinear: a single-DOF articulation whose one
+# joint is angular, so its DOF drain exercises the deg->rad fold that a prismatic
+# joint (invAngScale = 1) leaves invisible. drive:angular:physics:targetPosition is
+# authored in degrees; the write setter folds it to radians and the read folds it back.
+def Xform "cartpole" (
+    prepend apiSchemas = ["PhysicsArticulationRootAPI", "PhysxArticulationAPI"]
+)
+{
+    bool physxArticulation:enabledSelfCollisions = 0
+    int physxArticulation:solverPositionIterationCount = 4
+    int physxArticulation:solverVelocityIterationCount = 0
+
+    def Cube "rail" (
+        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysxRigidBodyAPI"]
+    )
+    {
+        double size = 1
+        float3 xformOp:scale = (0.02, 6, 0.02)
+        uniform token[] xformOpOrder = ["xformOp:scale"]
+        float physxRigidBody:angularDamping = 0.0
+        float physxRigidBody:linearDamping = 0.0
+    }
+
+    def Cube "pole" (
+        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]
+    )
+    {
+        double size = 1
+        float3 xformOp:translate = (0, 0, 0)
+        float3 xformOp:scale = (0.2, 0.25, 0.2)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        float physxRigidBody:angularDamping = 0.0
+        float physxRigidBody:linearDamping = 0.0
+    }
+
+    def PhysicsFixedJoint "rootJoint"
+    {
+        rel physics:body1 = </cartpole/rail>
+    }
+
+    def PhysicsRevoluteJoint "poleJoint" (
+        prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+    )
+    {
+        rel physics:body0 = </cartpole/rail>
+        rel physics:body1 = </cartpole/pole>
+        uniform token physics:axis = "X"
+        float physics:lowerLimit = -180
+        float physics:upperLimit = 180
+
+        # Angular drive PD parameters. targetPosition is authored in degrees.
+        float drive:angular:physics:damping = 250
+        float drive:angular:physics:maxForce = 4000
+        float drive:angular:physics:stiffness = 2000
+        float drive:angular:physics:targetPosition = 0
+    }
+}

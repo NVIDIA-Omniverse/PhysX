@@ -1,10 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+// DEPRECATED (tensor-binding-deprecation): tensor-binding test, removed with the binding.
 
 
-// Comprehensive Tensor Binding integration tests
-// Tests the complete Tensor Binding API workflow including binding creation,
-// write/read operations, and error handling
+// Tensor Binding integration tests: binding creation, write/read operations and
+// error handling.
 
 #include <gtest/gtest.h>
 #include "ovphysx/ovphysx.h"
@@ -16,8 +17,7 @@
 
 using namespace test_utils;
 
-// Test fixture for integration tests
-// Creates a per-test PhysX instance for proper test isolation
+// Attaches minimal_scene.usda to the shared CPU instance for every test.
 class TensorBindingIntegrationTest : public PhysXTestFixture {
 
     void SetUp() override {
@@ -135,7 +135,6 @@ TEST_F(TensorBindingIntegrationTest, WriteReadRigidBodyVelocity) {
     EXPECT_EQ(spec.shape[1], 6); // velocity is [linear(3) + angular(3)]
 
     std::vector<float> write_data(spec.shape[0] * spec.shape[1]);
-    // Set linear velocity to (1, 2, 3) and angular to (0.1, 0.2, 0.3) for each body
     for (int i = 0; i < spec.shape[0]; ++i) {
         write_data[i * 6 + 0] = 1.0f;  // linear x
         write_data[i * 6 + 1] = 2.0f;  // linear y

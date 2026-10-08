@@ -1,35 +1,11 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "NpScene.h"
 #include "NpRigidStatic.h"
 #include "NpRigidDynamic.h"
-#include "NpArticulationLink.h"
 #include "NpArticulationReducedCoordinate.h"
 #include "NpArticulationTendon.h"
 #include "NpAggregate.h"
@@ -191,53 +167,9 @@ void NpScene::fetchResultsPostContactCallbacks()
 	mCollisionDone.reset();
 }
 
-bool NpScene::fetchResults(bool block, PxU32* errorState)
-{
-	NP_CHECK_CORRUPTION_AND_RETURN_VAL(true)
-
-	if(getSimulationStage() != Sc::SimulationStage::eADVANCE)
-		return outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::fetchResults: fetchResults() called illegally! It must be called after advance() or simulate()");
-
-	if(!checkResultsInternal(block)) // this should wait on the mPhysicsDone event, which is set in the SceneCompletion task
-		return false;
-
-
-#if PX_SUPPORT_GPU_PHYSX
-	if (!checkSceneStateAndCudaErrors())
-		return true;
-#endif
-
-	PX_SIMD_GUARD
-
-	{
-		// take write check *after* simulation has finished, otherwise 
-		// we will block simulation callbacks from using the API
-		// disallow re-entry to detect callbacks making write calls
-		NP_WRITE_CHECK_NOREENTRY(this);
-
-		// we use cross thread profile here, to show the event in cross thread view
-		// PT: TODO: why do we want to show it in the cross thread view?
-		PX_PROFILE_START_CROSSTHREAD("Basic.fetchResults", getContextId());
-		PX_PROFILE_ZONE("Sim.fetchResults", getContextId());
-
-		fetchResultsPreContactCallbacks();
-
-		{
-			// PT: TODO: why a cross-thread event here?
-			PX_PROFILE_START_CROSSTHREAD("Basic.processCallbacks", getContextId());
-			mScene.fireQueuedContactCallbacks();
-			PX_PROFILE_STOP_CROSSTHREAD("Basic.processCallbacks", getContextId());
-		}
-
-		fetchResultsPostContactCallbacks();
-	
-		PX_PROFILE_STOP_CROSSTHREAD("Basic.fetchResults", getContextId());
-		PX_PROFILE_STOP_CROSSTHREAD("Basic.simulate", getContextId());
-
-		if(errorState)
-			*errorState = 0;
-
 #if PX_SUPPORT_OMNI_PVD
+void NpScene::fetchResultsOmniPvd()
+{
 		OmniPvdPxSampler* omniPvdSampler = NpPhysics::getInstance().mOmniPvdSampler;
 		if (omniPvdSampler && omniPvdSampler->isSampling())
 		{
@@ -546,6 +478,57 @@ bool NpScene::fetchResults(bool block, PxU32* errorState)
 			ovdClient.incrementFrame(*pvdWriter, true);
 			OMNI_PVD_WRITE_SCOPE_END
 		}
+}
+#endif
+
+bool NpScene::fetchResults(bool block, PxU32* errorState)
+{
+	NP_CHECK_CORRUPTION_AND_RETURN_VAL(true)
+
+	if(getSimulationStage() != Sc::SimulationStage::eADVANCE)
+		return outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::fetchResults: fetchResults() called illegally! It must be called after advance() or simulate()");
+
+	if(!checkResultsInternal(block)) // this should wait on the mPhysicsDone event, which is set in the SceneCompletion task
+		return false;
+
+
+#if PX_SUPPORT_GPU_PHYSX
+	if (!checkSceneStateAndCudaErrors())
+		return true;
+#endif
+
+	PX_SIMD_GUARD
+
+	{
+		// take write check *after* simulation has finished, otherwise
+		// we will block simulation callbacks from using the API
+		// disallow re-entry to detect callbacks making write calls
+		NP_WRITE_CHECK_NOREENTRY(this);
+
+		// we use cross thread profile here, to show the event in cross thread view
+		// PT: TODO: why do we want to show it in the cross thread view?
+		PX_PROFILE_START_CROSSTHREAD("Basic.fetchResults", getContextId());
+		PX_PROFILE_ZONE("Sim.fetchResults", getContextId());
+
+		fetchResultsPreContactCallbacks();
+
+		{
+			// PT: TODO: why a cross-thread event here?
+			PX_PROFILE_START_CROSSTHREAD("Basic.processCallbacks", getContextId());
+			mScene.fireQueuedContactCallbacks();
+			PX_PROFILE_STOP_CROSSTHREAD("Basic.processCallbacks", getContextId());
+		}
+
+		fetchResultsPostContactCallbacks();
+
+		PX_PROFILE_STOP_CROSSTHREAD("Basic.fetchResults", getContextId());
+		PX_PROFILE_STOP_CROSSTHREAD("Basic.simulate", getContextId());
+
+		if(errorState)
+			*errorState = 0;
+
+#if PX_SUPPORT_OMNI_PVD
+		fetchResultsOmniPvd();
 #endif
 	}
 
@@ -655,7 +638,9 @@ void NpScene::fetchResultsFinish(PxU32* errorState)
 {
 	NP_CHECK_CORRUPTION_AND_RETURN
 
-	// AD: we already checked the cuda error state in fetchResultsStart, there is no GPU work going on in-between.
+	// fetchResultsStart() sets this only after CUDA validation and pre-contact processing succeed.
+	if (!mBetweenFetchResults)
+		return;
 
 	{
 		PX_SIMD_GUARD
@@ -673,17 +658,7 @@ void NpScene::fetchResultsFinish(PxU32* errorState)
 		PX_PROFILE_STOP_CROSSTHREAD("Basic.fetchResults", getContextId());
 		PX_PROFILE_STOP_CROSSTHREAD("Basic.simulate", getContextId());
 #if PX_SUPPORT_OMNI_PVD
-		OmniPvdPxSampler* omniPvdSampler = NpPhysics::getInstance().mOmniPvdSampler;
-		if (omniPvdSampler && omniPvdSampler->isSampling())
-		{
-			OMNI_PVD_GET_WRITER(pvdWriter)
-			if (pvdWriter)
-			{
-				NpOmniPvdSceneClient& ovdClient = getSceneOvdClientInternal();
-				ovdClient.resetForces();
-				ovdClient.incrementFrame(*pvdWriter, true);
-			}
-		}
+		fetchResultsOmniPvd();
 #endif
 	}
 

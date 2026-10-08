@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
@@ -20,9 +20,10 @@ extern "C" {
 // Defined here (rather than including ovphysx_types.h) so the sidecar stays
 // self-contained and the C ABI surface remains thin.
 //
-// prim_path_ptr / prim_path_len: UTF-8 prim path (NOT null-terminated; use len).
-//                                Storage owned by the sidecar, valid only for
-//                                the callback duration.
+// prim_path_ptr / prim_path_len: UTF-8 prim path with
+//                                prim_path_ptr[prim_path_len] == '\0'. Use len
+//                                for content. Storage is owned by the sidecar
+//                                and valid only for the callback duration.
 // physx_type:                    omni::physx::PhysXType integer value.
 // user_data:                     opaque caller pointer passed through unchanged.
 typedef void (*ovphysx_internal_object_created_fn)(
@@ -35,14 +36,14 @@ typedef void (*ovphysx_internal_all_objects_destroyed_fn)(void* user_data);
 
 // Subscribe to omni::physx object change notifications.
 //
-// Any of the function-pointer parameters may be NULL; the sidecar skips NULL
+// Any of the function-pointer parameters may be NULL. The sidecar skips NULL
 // callbacks rather than invoking them. At least one of the three must be
-// non-NULL (caller-side check; the sidecar itself does not validate).
+// non-NULL, which the caller checks. The sidecar itself does not validate.
 //
-// Returns the omni::physx SubscriptionId on success, or UINT64_MAX on failure
-// (matching OVPHYSX_INVALID_SUBSCRIPTION_ID in the public ABI; intentionally
+// Returns the omni::physx SubscriptionId on success, or UINT64_MAX on failure,
+// matching OVPHYSX_INVALID_SUBSCRIPTION_ID in the public ABI. This is intentionally
 // not the omni::physx kInvalidSubscriptionId value, which is only 40 bits and
-// would otherwise be a valid IPhysx ID on the ovphysx side). Pair with
+// would otherwise be a valid IPhysx ID on the ovphysx side. Pair with
 // ovphysx_internal_unsubscribe_object_changes().
 OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_subscribe_object_changes(
     ovphysx_internal_object_created_fn on_created,

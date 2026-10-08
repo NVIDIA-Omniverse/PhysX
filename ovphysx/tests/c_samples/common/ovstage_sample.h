@@ -1,5 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-CAPI-OVSTAGE-SCHEMA-001
+ * @covers AC-4
+ */
 
 #ifndef OVPHYSX_SAMPLE_OVSTAGE_SAMPLE_H
 #define OVPHYSX_SAMPLE_OVSTAGE_SAMPLE_H
@@ -45,6 +50,44 @@ static inline int ovphysx_sample_destroy_stage(
     return 1;
 }
 
+/* ovphysx ships its PhysX USD schemas as codeless resources and does not
+ * register them itself, because the application owns the USD runtime.
+ * Register them with ovstage once, before the first population call in the
+ * process. USD assembles its schema registry once, so a late registration
+ * cannot be recovered. */
+static inline int ovphysx_sample_register_physx_schemas(void)
+{
+    static int s_registered = 0;
+    if (s_registered)
+    {
+        return 1;
+    }
+
+    ovphysx_string_t schema_root;
+    const ovphysx_result_t root_result = ovphysx_get_codeless_schema_root(&schema_root);
+    if (root_result.status != OVPHYSX_API_SUCCESS)
+    {
+        const ovphysx_string_t err = ovphysx_get_last_error();
+        fprintf(stderr, "ERROR: ovphysx_get_codeless_schema_root failed: %d %.*s\n",
+                (int)root_result.status, (int)err.length, err.ptr ? err.ptr : "");
+        return 0;
+    }
+
+    ovx_string_t schema_path;
+    schema_path.ptr = schema_root.ptr;
+    schema_path.length = schema_root.length;
+    const ovstage_api_status_t status = ovstage_population_register_usd_schemas(&schema_path, 1);
+    if (status != OVSTAGE_OK)
+    {
+        const ovx_string_t err = ovstage_population_get_last_error();
+        fprintf(stderr, "ERROR: ovstage_population_register_usd_schemas failed: %d %.*s\n",
+                (int)status, (int)err.length, err.ptr ? err.ptr : "");
+        return 0;
+    }
+    s_registered = 1;
+    return 1;
+}
+
 static inline int ovphysx_sample_attach_usd_with_ovstage(
     ovphysx_handle_t handle,
     const char* usd_path,
@@ -59,6 +102,11 @@ static inline int ovphysx_sample_attach_usd_with_ovstage(
     attachment->stage = NULL;
     attachment->ordinal = 1;
 
+    if (!ovphysx_sample_register_physx_schemas())
+    {
+        return 0;
+    }
+
     ovstage_instance_desc_t desc;
     memset(&desc, 0, sizeof(desc));
     desc.name = "ovphysx-sample-stage";
@@ -72,7 +120,7 @@ static inline int ovphysx_sample_attach_usd_with_ovstage(
 
     ovx_string_t path;
     path.ptr = usd_path;
-    /* bounded length: usd_path is a filesystem path (PATH_MAX ceiling) */
+    /* usd_path is a filesystem path, so PATH_MAX bounds the scan. */
     path.length = strnlen(usd_path, 4096);
 
     ovstage_population_enqueue_result_t enqueue = ovstage_population_open_usd_from_file(
@@ -106,39 +154,25 @@ static inline int ovphysx_sample_attach_usd_with_ovstage(
         return 0;
     }
 
-    /* Population never opens or commits an ordinal of its own -- the caller owns
-       ordinal lifecycle. Waiting on the population op only completes population, so
-       seal the ordinal before attaching: ovphysx_attach_ovstage() reads at a sealed
-       ordinal. Canonical sequence (ovstage_population.h): open_usd_* -> wait_op ->
-       advance_write_floor -> consumer attach/update. */
-    ovstage_write_floor_desc_t write_floor;
-    memset(&write_floor, 0, sizeof(write_floor));
-    write_floor.ordinal = attachment->ordinal;
-    write_floor.scope = OVSTAGE_SCOPE_ALL;
+    ovstage_write_floor_desc_t floor_desc;
+    memset(&floor_desc, 0, sizeof(floor_desc));
+    floor_desc.ordinal = attachment->ordinal;
+    floor_desc.scope = OVSTAGE_SCOPE_ALL;
 
-    ovstage_enqueue_result_t floor_enqueue = ovstage_advance_write_floor(attachment->stage, &write_floor);
-    if (floor_enqueue.status != OVSTAGE_OK)
+    ovstage_enqueue_result_t floor = ovstage_advance_write_floor(attachment->stage, &floor_desc);
+    ovstage_op_wait_result_t floor_wait;
+    memset(&floor_wait, 0, sizeof(floor_wait));
+    if (floor.status != OVSTAGE_OK ||
+        ovstage_wait_op(attachment->stage, floor.op_index, OVSTAGE_TIMEOUT_INFINITE, &floor_wait) != OVSTAGE_OK ||
+        floor_wait.error_op_id_count != 0)
     {
-        ovx_string_t err = ovstage_get_last_error();
-        fprintf(stderr, "ERROR: ovstage_advance_write_floor failed: %d %.*s\n",
-                (int)floor_enqueue.status, (int)err.length, err.ptr ? err.ptr : "");
+        fprintf(stderr, "ERROR: ovstage write-floor advance failed\n");
         ovphysx_sample_destroy_stage(handle, attachment);
         return 0;
     }
-
-    ovstage_op_wait_result_t floor_wait;
-    memset(&floor_wait, 0, sizeof(floor_wait));
-    ovstage_api_status_t floor_status = ovstage_wait_op(
-        attachment->stage,
-        floor_enqueue.op_index,
-        OVSTAGE_TIMEOUT_INFINITE,
-        &floor_wait);
-    ovstage_release_op(attachment->stage, floor_enqueue.op_index);
-    if (floor_status != OVSTAGE_OK)
+    if (ovstage_release_op(attachment->stage, floor.op_index) != OVSTAGE_OK)
     {
-        ovx_string_t err = ovstage_get_last_error();
-        fprintf(stderr, "ERROR: ovstage write-floor wait failed: %d %.*s\n",
-                (int)floor_status, (int)err.length, err.ptr ? err.ptr : "");
+        fprintf(stderr, "ERROR: ovstage floor operation release failed\n");
         ovphysx_sample_destroy_stage(handle, attachment);
         return 0;
     }

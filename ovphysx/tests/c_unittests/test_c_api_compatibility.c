@@ -1,5 +1,19 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+// PARTIALLY DEPRECATED (tensor-binding-deprecation): Test 7 (TensorBinding API types) retires with the binding. The other C-API ABI checks stay.
+
+/*
+ * @implements REQ-CAPI-OMNIPVD-LATE-001
+ * @covers AC-1
+ * @implements REQ-CAPI-BINDING-DEVICE-001
+ * @covers AC-1
+ */
+
+/**
+ * @implements REQ-CAPI-ASYNC-001
+ * @covers AC-1 AC-2
+ */
 
 /*
  * C API Compatibility Test
@@ -14,9 +28,137 @@
  */
 
 #include <ovphysx/ovphysx.h>
+#include <ovphysx/ovphysx_config.h>
 #include "AsyncEventManager/AsyncEventManager.h"
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+_Static_assert(OVPHYSX_LOG_DEFAULT == 0, "DEFAULT ABI value");
+_Static_assert(OVPHYSX_LOG_VERBOSE == 1, "VERBOSE ABI value");
+_Static_assert(OVPHYSX_LOG_INFO == 2, "INFO ABI value");
+_Static_assert(OVPHYSX_LOG_WARNING == 3, "WARNING ABI value");
+_Static_assert(OVPHYSX_LOG_ERROR == 4, "ERROR ABI value");
+_Static_assert(OVPHYSX_LOG_NONE == 5, "NONE ABI value");
+_Static_assert(sizeof(ovphysx_timeout_t) == sizeof(uint64_t), "timeout ABI size");
+_Static_assert(_Alignof(ovphysx_timeout_t) == _Alignof(uint64_t), "timeout ABI alignment");
+_Static_assert(OVPHYSX_TIMEOUT_POLL == 0, "poll timeout value");
+_Static_assert(OVPHYSX_TIMEOUT_INFINITE == UINT64_MAX, "infinite timeout value");
+_Static_assert(OVPHYSX_API_INVALID_STATE == 10, "invalid-state ABI value");
+_Static_assert(OVPHYSX_CONFIG_NVTX_ENABLED == 4, "NVTX bool config ABI value");
+_Static_assert(OVPHYSX_CONFIG_OMNIPVD_RECORDING_CAPABLE == 5,
+               "OmniPVD recording-capable bool config ABI value");
+_Static_assert(OVPHYSX_OMNIPVD_TRANSPORT_FILE == 0, "OmniPVD FILE transport ABI value");
+_Static_assert(OVPHYSX_OMNIPVD_TRANSPORT_TCP == 1, "OmniPVD TCP transport ABI value");
+_Static_assert(
+    _Generic(
+        &ovphysx_start_recording,
+        ovphysx_result_t (*)(
+            ovphysx_handle_t,
+            const ovphysx_omnipvd_destination_t*): 1,
+        default: 0),
+    "start_recording C ABI shape");
+_Static_assert(
+    _Generic(
+        &ovphysx_stop_recording,
+        ovphysx_result_t (*)(ovphysx_handle_t): 1,
+        default: 0),
+    "stop_recording C ABI shape");
+_Static_assert(
+    _Generic(
+        &ovphysx_is_recording,
+        ovphysx_result_t (*)(ovphysx_handle_t, bool*): 1,
+        default: 0),
+    "is_recording C ABI shape");
+_Static_assert(
+    _Generic(
+        &ovphysx_wait_op,
+        ovphysx_result_t (*)(
+            ovphysx_handle_t,
+            ovphysx_op_index_t,
+            ovphysx_timeout_t,
+            ovphysx_op_wait_result_t*): 1,
+        default: 0),
+    "wait_op C ABI shape");
+_Static_assert(
+    _Generic(
+        &ovphysx_get_tensor_binding_native_device,
+        ovphysx_result_t (*)(ovphysx_handle_t, ovphysx_tensor_binding_handle_t, DLDevice*): 1,
+        default: 0),
+    "get_tensor_binding_native_device C ABI shape");
+_Static_assert(
+    _Generic(
+        &ovphysx_set_log_callback,
+        ovphysx_result_t (*)(
+            ovphysx_log_level_t,
+            const ovphysx_string_t*,
+            ovphysx_log_callback_t,
+            void*): 1,
+        default: 0),
+    "set_log_callback C ABI shape");
+_Static_assert(
+    _Generic(
+        &ovphysx_flush_log,
+        ovphysx_result_t (*)(ovphysx_timeout_t): 1,
+        default: 0),
+    "flush_log C ABI shape");
+
+static void test_log_callback(
+    ovphysx_log_level_t severity,
+    ovphysx_string_t message,
+    ovphysx_string_t channel,
+    double timestamp,
+    void* user_data)
+{
+    (void)severity;
+    (void)message;
+    (void)channel;
+    (void)timestamp;
+    (void)user_data;
+}
+
+static void test_logging_api_shape(void)
+{
+    ovphysx_log_callback_t callback = test_log_callback;
+    ovphysx_string_t filter = OVPHYSX_LITERAL("omni.physx=warning");
+    (void)callback;
+    (void)filter;
+}
+/* ovphysx_cuda_stream_wait_event C ABI shape.
+ *
+ * The DLPack bridge binds this by name through ctypes (argtypes [c_void_p, c_void_p],
+ * restype ovphysx_result_t), so changing the parameter types or their order breaks no build.
+ * It silently feeds the wrong values to cuStreamWaitEvent, and a garbage CUevent segfaults
+ * inside the driver rather than returning an error.
+ */
+_Static_assert(
+    _Generic(
+        &ovphysx_cuda_stream_wait_event,
+        ovphysx_result_t (*)(uintptr_t, uintptr_t): 1,
+        default: 0),
+    "cuda_stream_wait_event C ABI shape");
+
+/* Both handles cross the ABI as uintptr_t and are declared c_void_p on the Python side.
+ * That mapping holds only while the two are the same width. */
+_Static_assert(sizeof(uintptr_t) == sizeof(void*),
+               "cuda_stream_wait_event passes CUDA handles as uintptr_t, bound as c_void_p");
+
+static void test_omnipvd_destination_type(void)
+{
+    ovphysx_omnipvd_destination_t destination = { 0 };
+    destination.transport = OVPHYSX_OMNIPVD_TRANSPORT_FILE;
+    destination.file_path = OVPHYSX_LITERAL("capture.ovd");
+    destination.tcp_address = OVPHYSX_LITERAL("");
+    destination.tcp_port = 0;
+    destination.tcp_timeout_ms = 0;
+    (void)destination;
+}
+
+static void test_omnipvd_recording_capability_config(void)
+{
+    ovphysx_config_entry_t entry = ovphysx_config_entry_omnipvd_recording_capable(true);
+    (void)entry;
+}
 
 /* Test 1: Struct typedefs allow usage without "struct" keyword */
 static void test_typedefs(void)
@@ -114,7 +256,6 @@ static void test_tensor_binding_types(void)
     (void)tensor_binding;
 }
 
-/* Main test entry point */
 int main(void)
 {
     printf("Running C API compatibility tests...\n");
@@ -126,6 +267,9 @@ int main(void)
     test_status_and_handles();
     test_binding_types();
     test_tensor_binding_types();
+    test_logging_api_shape();
+    test_omnipvd_destination_type();
+    test_omnipvd_recording_capability_config();
     
     printf("SUCCESS: All C API compatibility tests passed!\n");
     printf("  - Headers compile with C compiler (not C++)\n");

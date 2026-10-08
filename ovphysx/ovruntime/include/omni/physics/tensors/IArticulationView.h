@@ -1,7 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
+
+/**
+ * @implements REQ-TENSOR-PATH-001
+ * @covers AC-1
+ */
 
 #include "IArticulationMetatype.h"
 #include "TensorDesc.h"
@@ -109,6 +114,13 @@ public:
     virtual bool getDofPositionTargets(const TensorDesc* dstTensor) const = 0;
     virtual bool getDofVelocityTargets(const TensorDesc* dstTensor) const = 0;
 
+    // Generalized joint coordinates in the inverse dynamics queries below follow the authored USD body
+    // relationship: +1 when body0 is the articulation parent and -1 when body1 is the parent. If
+    // S_dof contains those signs and T is S_dof for a fixed base or diag(I6,S_dof) for a floating
+    // base, the returned quantities satisfy J=J_physx*T, M=T*M_physx*T, c=T*c_physx, and
+    // g=T*g_physx. getArticulationCentroidalMomentum() similarly returns [A_physx*T|b_physx]. The
+    // six floating-root coordinates and centroidal bias are unchanged. Angular generalized-coordinate
+    // dimensions use radians and receive no degree conversion; linear dimensions retain their units.
     virtual bool getJacobianShape(uint32_t* numRows, uint32_t* numCols) const = 0;
     virtual bool getJacobians(const TensorDesc* dstTensor) const = 0;
 

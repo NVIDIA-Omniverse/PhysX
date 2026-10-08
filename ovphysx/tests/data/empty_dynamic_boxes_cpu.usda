@@ -1,0 +1,19 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    doc = "empty_dynamic_boxes with an explicit CPU solver/broadphase configuration. The PhysicsScene authoring selects the CPU pipeline; ovphysx_set_cpu_mode(true) is not required. A PhysicsScene without PhysxSceneAPI defaults to GPU dynamics + GPU broadphase, which PhysX then downgrades to ePABP when no CUDA context exists."
+    subLayers = [
+        @./empty_dynamic_boxes.usda@
+    ]
+)
+
+over "World"
+{
+    over "PhysicsScene" (
+        prepend apiSchemas = ["PhysxSceneAPI"]
+    )
+    {
+        bool physxScene:enableGPUDynamics = false
+        uniform token physxScene:broadphaseType = "MBP"
+    }
+}

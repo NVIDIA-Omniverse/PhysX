@@ -1,11 +1,11 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """GPU SDF view lifecycle tests (NVBug 6473872).
 
 Regression guards for undisposed or stale SdfView handles across reset_stage()
 and detach_ovstage(). The stale-evaluate and live-view teardown tests are the
-red/green evidence; destroy-before-detach is a smoke test only.
+regression evidence. Destroy-before-detach is a smoke test only.
 """
 
 import numpy as np
@@ -19,7 +19,7 @@ _MAX_QUERY_POINTS = 2
 def _load_sdf_cube(sdk):
     load_usd_with_ovstage(sdk, data_path("sdf_cube.usda"))
     sdk.wait_all()
-    sdk.warmup_gpu()
+    sdk.warmup()
 
 
 def _make_sdf_query_buffers(max_q=_MAX_QUERY_POINTS):
@@ -73,7 +73,7 @@ def test_sdf_view_stale_evaluate_after_reset_stage_raises(physx_sdk):
 
     load_usd_with_ovstage(physx_sdk, data_path("sdf_cube.usda"))
     physx_sdk.wait_all()
-    physx_sdk.warmup_gpu()
+    physx_sdk.warmup()
 
     with pytest.raises(RuntimeError, match="SDF view|stage changed|not found"):
         _evaluate_sdf_view(sdf_view, in_gpu, out_gpu)
@@ -97,7 +97,12 @@ def test_sdf_view_reset_stage_with_live_view_does_not_crash(physx_sdk):
 
 
 def test_sdf_view_detach_with_live_view_does_not_crash(physx_sdk):
-    """detach_ovstage with an undisposed SdfView must not SIGSEGV the process."""
+    """detach_ovstage with an undisposed SdfView must not SIGSEGV the process.
+
+    The stale evaluate() after the detach is the point of the test: without it
+    the faulting path is never entered and the test passes even when the detach
+    half of the invalidation is broken (NVBug 6533106).
+    """
     _load_sdf_cube(physx_sdk)
 
     sdf_view = physx_sdk.create_sdf_view(
@@ -107,6 +112,9 @@ def test_sdf_view_detach_with_live_view_does_not_crash(physx_sdk):
     _evaluate_sdf_view(sdf_view, in_gpu, out_gpu)
 
     physx_sdk.detach_ovstage()
+
+    with pytest.raises(RuntimeError, match="SDF view|stage changed|not found"):
+        _evaluate_sdf_view(sdf_view, in_gpu, out_gpu)
 
 
 def test_sdf_view_destroy_after_reset_stage_is_idempotent(physx_sdk):

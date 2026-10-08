@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
@@ -18,9 +18,11 @@ namespace usdparser
 class AttachedStage;
 }
 
+// Reads PhysxCharacterControllerAPI through the parse source, so it resolves with
+// no backing USD stage (it used to build the schema object on the stage, which is a
+// null deref there rather than a silent miss).
 ::physx::PxCapsuleControllerDesc parsePhysXCharacterControllerDesc(omni::physx::usdparser::AttachedStage& attachedStage,
-                                                                   const PXR_NS::UsdStageRefPtr stage,
-                                                                   const PXR_NS::UsdPrim& usdPrim,
+                                                                   omni::physics::parse::ObjectKey key,
                                                                    float radius,
                                                                    float height);
 

@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-MASS-001
@@ -46,8 +46,7 @@ inline bool quatNonZero(const carb::Float4& q)
 MassApiData parseMassApi(ParseContext& ctx, ObjectKey key)
 {
     IPhysicsSource& src = ctx.source();
-    KnownTokens tok;
-    tok.intern(src);
+    const KnownTokens& tok = ctx.knownTokens();
 
     MassApiData out;
 

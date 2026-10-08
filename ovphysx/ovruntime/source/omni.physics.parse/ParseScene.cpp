@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-SCENE-001
@@ -7,6 +7,9 @@
  *
  * @implements REQ-PARSE-UNIFY-001
  * @covers AC-1 AC-2
+ *
+ * @implements REQ-PARSE-CORE-003
+ * @covers AC-2
  */
 
 // Scene extension parser. Reads PhysxSceneAPI / PhysxSceneQuasistaticAPI
@@ -129,8 +132,7 @@ DescPtr<PhysxSceneDesc> makeDefaultSceneDesc(IDescriptorAllocator& allocator, co
 void parseScene(ParseContext& ctx, ObjectKey key, const SceneInfo& info, PhysxSceneDesc& desc)
 {
     IPhysicsSource& src = ctx.source();
-    KnownTokens tok;
-    tok.intern(src);
+    const KnownTokens& tok = ctx.knownTokens();
 
     // Gravity from info (already up-axis-resolved by the schema parser).
     desc.gravityDirection = info.gravityDirection;
@@ -256,8 +258,12 @@ void parseScene(ParseContext& ctx, ObjectKey key, const SceneInfo& info, PhysxSc
     //     values clamp to [1u, UINT_MAX] in either direction.
     //
     //   newton:gravityEnabled — when authored AND false, zero the
-    //     gravityMagnitude. Unconditional (no PhysX equivalent). Per-body
-    //     PhysX disableGravity flags still work when this is true.
+    //     gravityMagnitude. Unconditional (no PhysX equivalent): this is an
+    //     on/off toggle rather than a fallback spelling of a PhysX attribute,
+    //     so an authored physics:gravityMagnitude does NOT suppress it — the
+    //     magnitude says how strong gravity is, this says whether it applies.
+    //     The runtime-change handler (updateNewtonGravityEnabled) matches.
+    //     Per-body PhysX disableGravity flags still work when this is true.
     if (!physxTimeStepsAuthored)
     {
         if (src.hasAuthoredAttribute(key, tok.newtonTimeStepsPerSecond))

@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-CORE-001
@@ -76,7 +76,7 @@ public:
     void getRelationshipTargets(ObjectKey key, TokenId rel, std::vector<ObjectKey>& out) const override;
 
     const void* resolveBuffer(BufferHandle handle, size_t& byteCount) const override;
-    MeshGeometry getMeshAttributes(ObjectKey key) const override;
+    MeshGeometry getMeshAttributes(ObjectKey key, bool includeFaceMaterials = true) const override;
     SourceUnits getSourceUnits() const override;
     void resolveCollection(ObjectKey primKey,
                            TokenId collectionName,

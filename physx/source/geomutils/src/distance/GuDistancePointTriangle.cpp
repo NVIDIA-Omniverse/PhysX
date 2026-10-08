@@ -1,35 +1,13 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "foundation/PxVec3.h"
 #include "GuDistancePointTriangle.h"
 
 using namespace physx;
+using namespace aos;
 
 // Based on Christer Ericson's book
 PxVec3 Gu::closestPtPointTriangle(const PxVec3& p, const PxVec3& a, const PxVec3& b, const PxVec3& c, float& s, float& t)
@@ -108,16 +86,14 @@ PxVec3 Gu::closestPtPointTriangle(const PxVec3& p, const PxVec3& a, const PxVec3
 	return a + ab*v + ac*w;
 }
 
-//aos::FloatV Gu::distancePointTriangleSquared(	const aos::Vec3VArg p, 
-//													const aos::Vec3VArg a, 
-//													const aos::Vec3VArg b, 
-//													const aos::Vec3VArg c,
-//													aos::FloatV& u,
-//													aos::FloatV& v,
-//													aos::Vec3V& closestP)
+//FloatV Gu::distancePointTriangleSquared(	const Vec3VArg p, 
+//											const Vec3VArg a, 
+//											const Vec3VArg b, 
+//											const Vec3VArg c,
+//											FloatV& u,
+//											FloatV& v,
+//											Vec3V& closestP)
 //{
-//	using namespace aos;
-//
 //	const FloatV zero = FZero();
 //	const FloatV one = FOne();
 //	//const Vec3V zero = V3Zero();
@@ -212,17 +188,15 @@ PxVec3 Gu::closestPtPointTriangle(const PxVec3& p, const PxVec3& a, const PxVec3
 //	return V3Dot(vv, vv);
 //}
 
-PX_PHYSX_COMMON_API aos::FloatV Gu::distancePointTriangleSquared2UnitBox(
-	const aos::Vec3VArg queryPoint,
-	const aos::Vec3VArg triA,
-	const aos::Vec3VArg triB,
-	const aos::Vec3VArg triC,
-	aos::FloatV& u,
-	aos::FloatV& v,
-	aos::Vec3V& closestP)
+PX_PHYSX_COMMON_API FloatV Gu::distancePointTriangleSquared2UnitBox(
+	const Vec3VArg queryPoint,
+	const Vec3VArg triA,
+	const Vec3VArg triB,
+	const Vec3VArg triC,
+	FloatV& u,
+	FloatV& v,
+	Vec3V& closestP)
 {
-	using namespace aos;
-
 	const Vec3V min = V3Min(V3Min(triA, triB), V3Min(triC, queryPoint));
 	const Vec3V max = V3Max(V3Max(triA, triB), V3Max(triC, queryPoint));
 	const Vec3V size = V3Sub(max, min);
@@ -244,16 +218,14 @@ PX_PHYSX_COMMON_API aos::FloatV Gu::distancePointTriangleSquared2UnitBox(
 	return FMul(result, FMul(invScaling, invScaling));
 }
 
-aos::FloatV Gu::distancePointTriangleSquared(	const aos::Vec3VArg p, 
-													const aos::Vec3VArg a, 
-													const aos::Vec3VArg b, 
-													const aos::Vec3VArg c,
-													aos::FloatV& u,
-													aos::FloatV& v,
-													aos::Vec3V& closestP)
+FloatV Gu::distancePointTriangleSquared(const Vec3VArg p, 
+										const Vec3VArg a, 
+										const Vec3VArg b, 
+										const Vec3VArg c,
+										FloatV& u,
+										FloatV& v,
+										Vec3V& closestP)
 {
-	using namespace aos;
-
 	const FloatV zero = FZero();
 	const FloatV one = FOne();
 	//const Vec3V zero = V3Zero();

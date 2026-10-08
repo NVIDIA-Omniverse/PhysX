@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef BENCHMARK_UTILS_H
 #define BENCHMARK_UTILS_H
@@ -20,10 +20,14 @@
 
 static const size_t MAX_PRINTFORMATTED_LENGTH = 1024;
 
+// Flushed after every line. stdout is fully buffered when a run is redirected to a file or a
+// pipe, so a process that does not exit cleanly would otherwise lose the setup and failure
+// lines a reader needs to judge whether a reported timing is valid.
 #if CARB_PLATFORM_WINDOWS
 inline void printString(const char* str)
 {
     puts(str); // do not use printf here, since str can contain multiple % signs that will not be printed
+    fflush(stdout);
     OutputDebugStringA(str);
     OutputDebugStringA("\n");
 }
@@ -31,6 +35,7 @@ inline void printString(const char* str)
 inline void printString(const char* str)
 {
     puts(str);
+    fflush(stdout);
 }
 #endif
 

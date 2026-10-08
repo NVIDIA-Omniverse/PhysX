@@ -1,7 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-
-#include "UsdPCH.h"
+// SPDX-License-Identifier: Apache-2.0
 
 #include "PhysXPropertiesUpdate.h"
 
@@ -11,12 +9,13 @@
 
 #include <carb/logging/Log.h>
 
+#include <common/foundation/MatrixTools.h>
+
 #include <PxPhysicsAPI.h>
 
 
 using namespace ::physx;
 using namespace carb;
-using namespace PXR_NS;
 using namespace omni::physx;
 using namespace omni::physx::usdparser;
 using namespace omni::physx::internal;
@@ -25,15 +24,47 @@ using namespace omni::physx::internal;
 // length of physxTendon: attribute namespace plus colon:
 static size_t g_PhysxTendonLength = 12u;
 
-static bool isCorrectInstance(const std::string& instanceName, const std::string& propertyName, const size_t first, const size_t last)
+// InternalTendonAxis/InternalTendonAttachment::instanceName is unconditionally std::string
+// now (TendonInstanceNameHandle, InternalScene.h); this pass-through is kept only to avoid
+// touching every one of its call sites below.
+static const std::string& tendonInstanceName(const std::string& name)
 {
+    return name;
+}
+
+// pxr-free: resolves `property`'s name through the source's interned token table
+// rather than a materialized TfToken, since the caller only ever had a TokenId
+// to begin with once the dispatch typedef retyped away from TfToken.
+static bool isCorrectInstance(const std::string& instanceName, const usdparser::AttachedStage& attachedStage,
+                              omni::physics::parse::TokenId property, const size_t first, const size_t last)
+{
+    const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+    if (!source)
+        return false;
+    const std::string_view propertyName = source->tokenToString(property);
     return instanceName == propertyName.substr(first, propertyName.length() - last - first - 1);
+}
+
+// PhysXTools.h has no TokenId+ReadTime sibling of getFloatBounded; this is that sibling,
+// built on the pxr-free getValue<float> overload, mirroring the header's logic.
+static bool getFloatBounded(const usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key,
+                            omni::physics::parse::TokenId attributeName, omni::physics::parse::ReadTime timeCode,
+                            float& outFloat, const float lowBound, const float upBound)
+{
+    float data = 0.0f;
+    const bool result = getValue<float>(attachedStage, key, attributeName, timeCode, data);
+    if (data > upBound)
+        data = upBound;
+    else if (data < lowBound)
+        data = lowBound;
+    outFloat = data;
+    return result;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 // update spatial tendons
 bool omni::physx::updateSpatialTendonStiffness(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -44,12 +75,13 @@ bool omni::physx::updateSpatialTendonStiffness(AttachedStage& attachedStage, omn
 
     PxArticulationAttachment* pxAttachment = static_cast<PxArticulationAttachment*>(objectRecord->mPtr);
     InternalTendonAttachment* intAttachment = static_cast<InternalTendonAttachment*>(objectRecord->mInternalPtr);
-    if (pxAttachment && intAttachment && isCorrectInstance(intAttachment->instanceName.GetString(), property, g_PhysxTendonLength, 9u))
+    if (pxAttachment && intAttachment && isCorrectInstance(tendonInstanceName(intAttachment->instanceName), attachedStage, property, g_PhysxTendonLength, 9u))
     {
-        const PXR_NS::SdfPath basePath = attachedStage.pathFor(objectRecord->mKey);
-        const std::string enabledString = "physxTendon:" + intAttachment->instanceName.GetString() + ":tendonEnabled";
+        const std::string enabledString = "physxTendon:" + tendonInstanceName(intAttachment->instanceName) + ":tendonEnabled";
+        const omni::physics::parse::IPhysicsSource* enabledSource = attachedStage.getSource();
         bool isEnabled;
-        if (!getValue<bool>(attachedStage, objectRecord->mKey, TfToken(enabledString), timeCode, isEnabled))
+        if (!enabledSource ||
+            !getValue<bool>(attachedStage, objectRecord->mKey, enabledSource->internToken(enabledString), timeCode, isEnabled))
             return true;
 
         if (isEnabled)
@@ -69,7 +101,7 @@ bool omni::physx::updateSpatialTendonStiffness(AttachedStage& attachedStage, omn
 }
 
 bool omni::physx::updateSpatialTendonDamping(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -80,12 +112,13 @@ bool omni::physx::updateSpatialTendonDamping(AttachedStage& attachedStage, omni:
 
     PxArticulationAttachment* pxAttachment = static_cast<PxArticulationAttachment*>(objectRecord->mPtr);
     InternalTendonAttachment* intAttachment = static_cast<InternalTendonAttachment*>(objectRecord->mInternalPtr);
-    if (pxAttachment && intAttachment && isCorrectInstance(intAttachment->instanceName.GetString(), property, g_PhysxTendonLength, 7u))
+    if (pxAttachment && intAttachment && isCorrectInstance(tendonInstanceName(intAttachment->instanceName), attachedStage, property, g_PhysxTendonLength, 7u))
     {
-        const PXR_NS::SdfPath basePath = attachedStage.pathFor(objectRecord->mKey);
-        const std::string enabledString = "physxTendon:" + intAttachment->instanceName.GetString() + ":tendonEnabled";
+        const std::string enabledString = "physxTendon:" + tendonInstanceName(intAttachment->instanceName) + ":tendonEnabled";
+        const omni::physics::parse::IPhysicsSource* enabledSource = attachedStage.getSource();
         bool isEnabled;
-        if (!getValue<bool>(attachedStage, objectRecord->mKey, TfToken(enabledString), timeCode, isEnabled))
+        if (!enabledSource ||
+            !getValue<bool>(attachedStage, objectRecord->mKey, enabledSource->internToken(enabledString), timeCode, isEnabled))
             return true;
 
         if (isEnabled)
@@ -105,7 +138,7 @@ bool omni::physx::updateSpatialTendonDamping(AttachedStage& attachedStage, omni:
 }
 
 bool omni::physx::updateSpatialTendonLimitStiffness(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -116,12 +149,13 @@ bool omni::physx::updateSpatialTendonLimitStiffness(AttachedStage& attachedStage
 
     PxArticulationAttachment* pxAttachment = static_cast<PxArticulationAttachment*>(objectRecord->mPtr);
     InternalTendonAttachment* intAttachment = static_cast<InternalTendonAttachment*>(objectRecord->mInternalPtr);
-    if (pxAttachment && intAttachment && isCorrectInstance(intAttachment->instanceName.GetString(), property, g_PhysxTendonLength, 14u))
+    if (pxAttachment && intAttachment && isCorrectInstance(tendonInstanceName(intAttachment->instanceName), attachedStage, property, g_PhysxTendonLength, 14u))
     {
-        const PXR_NS::SdfPath basePath = attachedStage.pathFor(objectRecord->mKey);
-        const std::string enabledString = "physxTendon:" + intAttachment->instanceName.GetString() + ":tendonEnabled";
+        const std::string enabledString = "physxTendon:" + tendonInstanceName(intAttachment->instanceName) + ":tendonEnabled";
+        const omni::physics::parse::IPhysicsSource* enabledSource = attachedStage.getSource();
         bool isEnabled;
-        if (!getValue<bool>(attachedStage, objectRecord->mKey, TfToken(enabledString), timeCode, isEnabled))
+        if (!enabledSource ||
+            !getValue<bool>(attachedStage, objectRecord->mKey, enabledSource->internToken(enabledString), timeCode, isEnabled))
             return true;
 
         if (isEnabled)
@@ -141,7 +175,7 @@ bool omni::physx::updateSpatialTendonLimitStiffness(AttachedStage& attachedStage
 }
 
 bool omni::physx::updateSpatialTendonOffset(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -152,7 +186,7 @@ bool omni::physx::updateSpatialTendonOffset(AttachedStage& attachedStage, omni::
 
     PxArticulationAttachment* pxAttachment = static_cast<PxArticulationAttachment*>(objectRecord->mPtr);
     InternalTendonAttachment* intAttachment = static_cast<InternalTendonAttachment*>(objectRecord->mInternalPtr);
-    if (pxAttachment && intAttachment && isCorrectInstance(intAttachment->instanceName.GetString(), property, g_PhysxTendonLength, 6u))
+    if (pxAttachment && intAttachment && isCorrectInstance(tendonInstanceName(intAttachment->instanceName), attachedStage, property, g_PhysxTendonLength, 6u))
     {
         float data;
         if (getFloatBounded(attachedStage, objectRecord->mKey, property, timeCode, data, -FLT_MAX, FLT_MAX))
@@ -168,7 +202,7 @@ bool omni::physx::updateSpatialTendonOffset(AttachedStage& attachedStage, omni::
 }
 
 bool omni::physx::updateSpatialTendonEnabled(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -179,7 +213,7 @@ bool omni::physx::updateSpatialTendonEnabled(AttachedStage& attachedStage, omni:
 
     PxArticulationAttachment* pxAttachment = static_cast<PxArticulationAttachment*>(objectRecord->mPtr);
     InternalTendonAttachment* intAttachment = static_cast<InternalTendonAttachment*>(objectRecord->mInternalPtr);
-    if (pxAttachment && intAttachment && isCorrectInstance(intAttachment->instanceName.GetString(), property, g_PhysxTendonLength, 13u))
+    if (pxAttachment && intAttachment && isCorrectInstance(tendonInstanceName(intAttachment->instanceName), attachedStage, property, g_PhysxTendonLength, 13u))
     {
         bool isEnabled;
         if (!getValue<bool>(attachedStage, objectRecord->mKey, property, timeCode, isEnabled))
@@ -188,19 +222,19 @@ bool omni::physx::updateSpatialTendonEnabled(AttachedStage& attachedStage, omni:
         PxArticulationSpatialTendon* const tendon = pxAttachment->getTendon();
         if (isEnabled)
         {
-            const PXR_NS::SdfPath basePath = attachedStage.pathFor(objectRecord->mKey);
-            const std::string stiffnessString = "physxTendon:" + intAttachment->instanceName.GetString() + ":stiffness";
-            const std::string limitStiffnessString = "physxTendon:" + intAttachment->instanceName.GetString() + ":limitStiffness";
-            const std::string dampingString = "physxTendon:" + intAttachment->instanceName.GetString() + ":damping";
+            const std::string stiffnessString = "physxTendon:" + tendonInstanceName(intAttachment->instanceName) + ":stiffness";
+            const std::string limitStiffnessString = "physxTendon:" + tendonInstanceName(intAttachment->instanceName) + ":limitStiffness";
+            const std::string dampingString = "physxTendon:" + tendonInstanceName(intAttachment->instanceName) + ":damping";
 
+            const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
             float stiffness, limitStiffness, damping;
-            if (getFloatBounded(attachedStage, objectRecord->mKey, TfToken(stiffnessString), timeCode, stiffness, 0.f, FLT_MAX))
+            if (source && getFloatBounded(attachedStage, objectRecord->mKey, source->internToken(stiffnessString), timeCode, stiffness, 0.f, FLT_MAX))
                 tendon->setStiffness(stiffness);
 
-            if (getFloatBounded(attachedStage, objectRecord->mKey, TfToken(limitStiffnessString), timeCode, limitStiffness, 0.f, FLT_MAX))
+            if (source && getFloatBounded(attachedStage, objectRecord->mKey, source->internToken(limitStiffnessString), timeCode, limitStiffness, 0.f, FLT_MAX))
                 tendon->setLimitStiffness(limitStiffness);
 
-            if (getFloatBounded(attachedStage, objectRecord->mKey, TfToken(dampingString), timeCode, damping, 0.f, FLT_MAX))
+            if (source && getFloatBounded(attachedStage, objectRecord->mKey, source->internToken(dampingString), timeCode, damping, 0.f, FLT_MAX))
                 tendon->setDamping(damping);
         }
         else
@@ -217,7 +251,7 @@ bool omni::physx::updateSpatialTendonEnabled(AttachedStage& attachedStage, omni:
 }
 
 bool omni::physx::updateTendonAttachmentGearing(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -228,7 +262,7 @@ bool omni::physx::updateTendonAttachmentGearing(AttachedStage& attachedStage, om
 
     PxArticulationAttachment* pxAttachment = static_cast<PxArticulationAttachment*>(objectRecord->mPtr);
     InternalTendonAttachment* intAttachment = static_cast<InternalTendonAttachment*>(objectRecord->mInternalPtr);
-    if (pxAttachment && intAttachment && isCorrectInstance(intAttachment->instanceName.GetString(), property, g_PhysxTendonLength, 7u))
+    if (pxAttachment && intAttachment && isCorrectInstance(tendonInstanceName(intAttachment->instanceName), attachedStage, property, g_PhysxTendonLength, 7u))
     {
         float data;
         if (getFloatBounded(attachedStage, objectRecord->mKey, property, timeCode, data, -FLT_MAX, FLT_MAX))
@@ -243,7 +277,7 @@ bool omni::physx::updateTendonAttachmentGearing(AttachedStage& attachedStage, om
 }
 
 bool omni::physx::updateTendonAttachmentLocalPos(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -254,17 +288,16 @@ bool omni::physx::updateTendonAttachmentLocalPos(AttachedStage& attachedStage, o
 
     PxArticulationAttachment* pxAttachment = static_cast<PxArticulationAttachment*>(objectRecord->mPtr);
     InternalTendonAttachment* intAttachment = static_cast<InternalTendonAttachment*>(objectRecord->mInternalPtr);
-    if (pxAttachment && intAttachment && isCorrectInstance(intAttachment->instanceName.GetString(), property, g_PhysxTendonLength, 8u))
+    if (pxAttachment && intAttachment && isCorrectInstance(tendonInstanceName(intAttachment->instanceName), attachedStage, property, g_PhysxTendonLength, 8u))
     {
-        PXR_NS::GfVec3f vec;
+        carb::Float3 vec;
         if (getValue(attachedStage, objectRecord->mKey, property, timeCode, vec))
         {
             // get link scale: attachment local pos is in scaled link-local
             // coordinates, so unscale for PhysX.
-            const PXR_NS::GfTransform attachmentTrans(
-                getWorldTransform(attachedStage, objectRecord->mKey, UsdTimeCode::Default()));
-            const PXR_NS::GfVec3f scale(attachmentTrans.GetScale());
-            pxAttachment->setRelativeOffset(PxVec3(vec[0] * scale[0], vec[1] * scale[1], vec[2] * scale[2]));
+            const PxVec3 scale =
+                omni::physx::getScale(getWorldTransform(attachedStage, objectRecord->mKey, omni::physics::parse::ReadTime::defaultTime()));
+            pxAttachment->setRelativeOffset(toPhysX(vec).multiply(scale));
 
             // wake up articulation. Todo preist: Remove after SDK update where wake up is fixed.
             pxAttachment->getTendon()->getArticulation()->wakeUp();
@@ -275,7 +308,7 @@ bool omni::physx::updateTendonAttachmentLocalPos(AttachedStage& attachedStage, o
 }
 
 bool omni::physx::updateTendonAttachmentLeafRestLength(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -286,7 +319,7 @@ bool omni::physx::updateTendonAttachmentLeafRestLength(AttachedStage& attachedSt
 
     PxArticulationAttachment* pxAttachment = static_cast<PxArticulationAttachment*>(objectRecord->mPtr);
     InternalTendonAttachment* intAttachment = static_cast<InternalTendonAttachment*>(objectRecord->mInternalPtr);
-    if (pxAttachment && pxAttachment->isLeaf() && intAttachment && isCorrectInstance(intAttachment->instanceName.GetString(), property, g_PhysxTendonLength, 10u))
+    if (pxAttachment && pxAttachment->isLeaf() && intAttachment && isCorrectInstance(tendonInstanceName(intAttachment->instanceName), attachedStage, property, g_PhysxTendonLength, 10u))
     {
         float data;
         if (getFloatBounded(attachedStage, objectRecord->mKey, property, timeCode, data, -FLT_MAX, FLT_MAX))
@@ -309,7 +342,7 @@ bool omni::physx::updateTendonAttachmentLeafRestLength(AttachedStage& attachedSt
 }
 
 bool omni::physx::updateTendonAttachmentLeafLowLimit(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -320,7 +353,7 @@ bool omni::physx::updateTendonAttachmentLeafLowLimit(AttachedStage& attachedStag
 
     PxArticulationAttachment* pxAttachment = static_cast<PxArticulationAttachment*>(objectRecord->mPtr);
     InternalTendonAttachment* intAttachment = static_cast<InternalTendonAttachment*>(objectRecord->mInternalPtr);
-    if (pxAttachment && pxAttachment->isLeaf() && intAttachment && isCorrectInstance(intAttachment->instanceName.GetString(), property, g_PhysxTendonLength, 10u))
+    if (pxAttachment && pxAttachment->isLeaf() && intAttachment && isCorrectInstance(tendonInstanceName(intAttachment->instanceName), attachedStage, property, g_PhysxTendonLength, 10u))
     {
         float data;
         if (getFloatBounded(attachedStage, objectRecord->mKey, property, timeCode, data, -FLT_MAX, FLT_MAX))
@@ -344,7 +377,7 @@ bool omni::physx::updateTendonAttachmentLeafLowLimit(AttachedStage& attachedStag
 }
 
 bool omni::physx::updateTendonAttachmentLeafHighLimit(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -355,7 +388,7 @@ bool omni::physx::updateTendonAttachmentLeafHighLimit(AttachedStage& attachedSta
 
     PxArticulationAttachment* pxAttachment = static_cast<PxArticulationAttachment*>(objectRecord->mPtr);
     InternalTendonAttachment* intAttachment = static_cast<InternalTendonAttachment*>(objectRecord->mInternalPtr);
-    if (pxAttachment && pxAttachment->isLeaf() && intAttachment && isCorrectInstance(intAttachment->instanceName.GetString(), property, g_PhysxTendonLength, 10u))
+    if (pxAttachment && pxAttachment->isLeaf() && intAttachment && isCorrectInstance(tendonInstanceName(intAttachment->instanceName), attachedStage, property, g_PhysxTendonLength, 10u))
     {
         float data;
         if (getFloatBounded(attachedStage, objectRecord->mKey, property, timeCode, data, -FLT_MAX, FLT_MAX))
@@ -380,7 +413,7 @@ bool omni::physx::updateTendonAttachmentLeafHighLimit(AttachedStage& attachedSta
 
 // update fixed tendons
 bool omni::physx::updateFixedTendonStiffness(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -391,12 +424,13 @@ bool omni::physx::updateFixedTendonStiffness(AttachedStage& attachedStage, omni:
 
     InternalTendonAxis* intAxis = static_cast<InternalTendonAxis*>(objectRecord->mInternalPtr);
     PxArticulationTendonJoint* pxAxis = static_cast<PxArticulationTendonJoint*>(objectRecord->mPtr);
-    if (intAxis && pxAxis && isCorrectInstance(intAxis->instanceName.GetString(), property, g_PhysxTendonLength, 9u))
+    if (intAxis && pxAxis && isCorrectInstance(tendonInstanceName(intAxis->instanceName), attachedStage, property, g_PhysxTendonLength, 9u))
     {
-        const PXR_NS::SdfPath basePath = attachedStage.pathFor(objectRecord->mKey);
-        const std::string enabledString = "physxTendon:" + intAxis->instanceName.GetString() + ":tendonEnabled";
+        const std::string enabledString = "physxTendon:" + tendonInstanceName(intAxis->instanceName) + ":tendonEnabled";
+        const omni::physics::parse::IPhysicsSource* enabledSource = attachedStage.getSource();
         bool isEnabled;
-        if (!getValue<bool>(attachedStage, objectRecord->mKey, TfToken(enabledString), timeCode, isEnabled))
+        if (!enabledSource ||
+            !getValue<bool>(attachedStage, objectRecord->mKey, enabledSource->internToken(enabledString), timeCode, isEnabled))
             return true;
 
         if (isEnabled)
@@ -416,7 +450,7 @@ bool omni::physx::updateFixedTendonStiffness(AttachedStage& attachedStage, omni:
 }
 
 bool omni::physx::updateFixedTendonLimitStiffness(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -427,12 +461,13 @@ bool omni::physx::updateFixedTendonLimitStiffness(AttachedStage& attachedStage, 
 
     InternalTendonAxis* intAxis = static_cast<InternalTendonAxis*>(objectRecord->mInternalPtr);
     PxArticulationTendonJoint* pxAxis = static_cast<PxArticulationTendonJoint*>(objectRecord->mPtr);
-    if (intAxis && pxAxis && isCorrectInstance(intAxis->instanceName.GetString(), property, g_PhysxTendonLength, 14u))
+    if (intAxis && pxAxis && isCorrectInstance(tendonInstanceName(intAxis->instanceName), attachedStage, property, g_PhysxTendonLength, 14u))
     {
-        const PXR_NS::SdfPath basePath = attachedStage.pathFor(objectRecord->mKey);
-        const std::string enabledString = "physxTendon:" + intAxis->instanceName.GetString() + ":tendonEnabled";
+        const std::string enabledString = "physxTendon:" + tendonInstanceName(intAxis->instanceName) + ":tendonEnabled";
+        const omni::physics::parse::IPhysicsSource* enabledSource = attachedStage.getSource();
         bool isEnabled;
-        if (!getValue<bool>(attachedStage, objectRecord->mKey, TfToken(enabledString), timeCode, isEnabled))
+        if (!enabledSource ||
+            !getValue<bool>(attachedStage, objectRecord->mKey, enabledSource->internToken(enabledString), timeCode, isEnabled))
             return true;
 
         if (isEnabled)
@@ -452,7 +487,7 @@ bool omni::physx::updateFixedTendonLimitStiffness(AttachedStage& attachedStage, 
 }
 
 bool omni::physx::updateFixedTendonDamping(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -463,12 +498,13 @@ bool omni::physx::updateFixedTendonDamping(AttachedStage& attachedStage, omni::p
 
     InternalTendonAxis* intAxis = static_cast<InternalTendonAxis*>(objectRecord->mInternalPtr);
     PxArticulationTendonJoint* pxAxis = static_cast<PxArticulationTendonJoint*>(objectRecord->mPtr);
-    if (intAxis && pxAxis && isCorrectInstance(intAxis->instanceName.GetString(), property, g_PhysxTendonLength, 7u))
+    if (intAxis && pxAxis && isCorrectInstance(tendonInstanceName(intAxis->instanceName), attachedStage, property, g_PhysxTendonLength, 7u))
     {
-        const PXR_NS::SdfPath basePath = attachedStage.pathFor(objectRecord->mKey);
-        const std::string enabledString = "physxTendon:" + intAxis->instanceName.GetString() + ":tendonEnabled";
+        const std::string enabledString = "physxTendon:" + tendonInstanceName(intAxis->instanceName) + ":tendonEnabled";
+        const omni::physics::parse::IPhysicsSource* enabledSource = attachedStage.getSource();
         bool isEnabled;
-        if (!getValue<bool>(attachedStage, objectRecord->mKey, TfToken(enabledString), timeCode, isEnabled))
+        if (!enabledSource ||
+            !getValue<bool>(attachedStage, objectRecord->mKey, enabledSource->internToken(enabledString), timeCode, isEnabled))
             return true;
 
         if (isEnabled)
@@ -488,7 +524,7 @@ bool omni::physx::updateFixedTendonDamping(AttachedStage& attachedStage, omni::p
 }
 
 bool omni::physx::updateFixedTendonOffset(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -499,7 +535,7 @@ bool omni::physx::updateFixedTendonOffset(AttachedStage& attachedStage, omni::ph
 
     InternalTendonAxis* intAxis = static_cast<InternalTendonAxis*>(objectRecord->mInternalPtr);
     PxArticulationTendonJoint* pxAxis = static_cast<PxArticulationTendonJoint*>(objectRecord->mPtr);
-    if (intAxis && pxAxis && isCorrectInstance(intAxis->instanceName.GetString(), property, g_PhysxTendonLength, 6u))
+    if (intAxis && pxAxis && isCorrectInstance(tendonInstanceName(intAxis->instanceName), attachedStage, property, g_PhysxTendonLength, 6u))
     {
         float data;
         if (getFloatBounded(attachedStage, objectRecord->mKey, property, timeCode, data, -FLT_MAX, FLT_MAX))
@@ -515,7 +551,7 @@ bool omni::physx::updateFixedTendonOffset(AttachedStage& attachedStage, omni::ph
 }
 
 bool omni::physx::updateFixedTendonRestLength(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -526,7 +562,7 @@ bool omni::physx::updateFixedTendonRestLength(AttachedStage& attachedStage, omni
 
     InternalTendonAxis* intAxis = static_cast<InternalTendonAxis*>(objectRecord->mInternalPtr);
     PxArticulationTendonJoint* pxAxis = static_cast<PxArticulationTendonJoint*>(objectRecord->mPtr);
-    if (intAxis && pxAxis && isCorrectInstance(intAxis->instanceName.GetString(), property, g_PhysxTendonLength, 10u))
+    if (intAxis && pxAxis && isCorrectInstance(tendonInstanceName(intAxis->instanceName), attachedStage, property, g_PhysxTendonLength, 10u))
     {
         float data;
         if (getFloatBounded(attachedStage, objectRecord->mKey, property, timeCode, data, -FLT_MAX, FLT_MAX))
@@ -542,7 +578,7 @@ bool omni::physx::updateFixedTendonRestLength(AttachedStage& attachedStage, omni
 }
 
 bool omni::physx::updateFixedTendonLowLimit(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -553,7 +589,7 @@ bool omni::physx::updateFixedTendonLowLimit(AttachedStage& attachedStage, omni::
 
     InternalTendonAxis* intAxis = static_cast<InternalTendonAxis*>(objectRecord->mInternalPtr);
     PxArticulationTendonJoint* pxAxis = static_cast<PxArticulationTendonJoint*>(objectRecord->mPtr);
-    if (intAxis && pxAxis && isCorrectInstance(intAxis->instanceName.GetString(), property, g_PhysxTendonLength, 10u))
+    if (intAxis && pxAxis && isCorrectInstance(tendonInstanceName(intAxis->instanceName), attachedStage, property, g_PhysxTendonLength, 10u))
     {
         float data;
         if (getFloatBounded(attachedStage, objectRecord->mKey, property, timeCode, data, -FLT_MAX, FLT_MAX))
@@ -578,7 +614,7 @@ bool omni::physx::updateFixedTendonLowLimit(AttachedStage& attachedStage, omni::
 }
 
 bool omni::physx::updateFixedTendonHighLimit(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -589,7 +625,7 @@ bool omni::physx::updateFixedTendonHighLimit(AttachedStage& attachedStage, omni:
 
     InternalTendonAxis* intAxis = static_cast<InternalTendonAxis*>(objectRecord->mInternalPtr);
     PxArticulationTendonJoint* pxAxis = static_cast<PxArticulationTendonJoint*>(objectRecord->mPtr);
-    if (intAxis && pxAxis && isCorrectInstance(intAxis->instanceName.GetString(), property, g_PhysxTendonLength, 10u))
+    if (intAxis && pxAxis && isCorrectInstance(tendonInstanceName(intAxis->instanceName), attachedStage, property, g_PhysxTendonLength, 10u))
     {
         float data;
         if (getFloatBounded(attachedStage, objectRecord->mKey, property, timeCode, data, -FLT_MAX, FLT_MAX))
@@ -614,7 +650,7 @@ bool omni::physx::updateFixedTendonHighLimit(AttachedStage& attachedStage, omni:
 }
 
 bool omni::physx::updateFixedTendonEnabled(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -625,7 +661,7 @@ bool omni::physx::updateFixedTendonEnabled(AttachedStage& attachedStage, omni::p
 
     InternalTendonAxis* intAxis = static_cast<InternalTendonAxis*>(objectRecord->mInternalPtr);
     PxArticulationTendonJoint* pxAxis = static_cast<PxArticulationTendonJoint*>(objectRecord->mPtr);
-    if (intAxis && pxAxis && isCorrectInstance(intAxis->instanceName.GetString(), property, g_PhysxTendonLength, 13u))
+    if (intAxis && pxAxis && isCorrectInstance(tendonInstanceName(intAxis->instanceName), attachedStage, property, g_PhysxTendonLength, 13u))
     {
         bool isEnabled;
         if (!getValue<bool>(attachedStage, objectRecord->mKey, property, timeCode, isEnabled))
@@ -634,19 +670,19 @@ bool omni::physx::updateFixedTendonEnabled(AttachedStage& attachedStage, omni::p
         PxArticulationFixedTendon* const tendon = pxAxis->getTendon();
         if (isEnabled)
         {
-            const PXR_NS::SdfPath basePath = attachedStage.pathFor(objectRecord->mKey);
-            const std::string stiffnessString = "physxTendon:" + intAxis->instanceName.GetString() + ":stiffness";
-            const std::string limitStiffnessString = "physxTendon:" + intAxis->instanceName.GetString() + ":limitStiffness";
-            const std::string dampingString = "physxTendon:" + intAxis->instanceName.GetString() + ":damping";
+            const std::string stiffnessString = "physxTendon:" + tendonInstanceName(intAxis->instanceName) + ":stiffness";
+            const std::string limitStiffnessString = "physxTendon:" + tendonInstanceName(intAxis->instanceName) + ":limitStiffness";
+            const std::string dampingString = "physxTendon:" + tendonInstanceName(intAxis->instanceName) + ":damping";
 
+            const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
             float stiffness, limitStiffness, damping;
-            if (getFloatBounded(attachedStage, objectRecord->mKey, TfToken(stiffnessString), timeCode, stiffness, 0.f, FLT_MAX))
+            if (source && getFloatBounded(attachedStage, objectRecord->mKey, source->internToken(stiffnessString), timeCode, stiffness, 0.f, FLT_MAX))
                 tendon->setStiffness(stiffness);
 
-            if (getFloatBounded(attachedStage, objectRecord->mKey, TfToken(limitStiffnessString), timeCode, limitStiffness, 0.f, FLT_MAX))
+            if (source && getFloatBounded(attachedStage, objectRecord->mKey, source->internToken(limitStiffnessString), timeCode, limitStiffness, 0.f, FLT_MAX))
                 tendon->setLimitStiffness(limitStiffness);
 
-            if (getFloatBounded(attachedStage, objectRecord->mKey, TfToken(dampingString), timeCode, damping, 0.f, FLT_MAX))
+            if (source && getFloatBounded(attachedStage, objectRecord->mKey, source->internToken(dampingString), timeCode, damping, 0.f, FLT_MAX))
                 tendon->setDamping(damping);
         }
         else
@@ -664,7 +700,7 @@ bool omni::physx::updateFixedTendonEnabled(AttachedStage& attachedStage, omni::p
 
 // WARNING: only works for joints with a single DOF (a.k.a revolute and prismatic joints)
 bool omni::physx::updateTendonAxisSingleGearing(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -675,13 +711,13 @@ bool omni::physx::updateTendonAxisSingleGearing(AttachedStage& attachedStage, om
 
     PxArticulationTendonJoint* pxAxis = static_cast<PxArticulationTendonJoint*>(objectRecord->mPtr);
     InternalTendonAxis* intAxis = static_cast<InternalTendonAxis*>(objectRecord->mInternalPtr);
-    if (pxAxis && intAxis && isCorrectInstance(intAxis->instanceName.GetString(), property, g_PhysxTendonLength, 7u))
+    if (pxAxis && intAxis && isCorrectInstance(tendonInstanceName(intAxis->instanceName), attachedStage, property, g_PhysxTendonLength, 7u))
     {
-        VtFloatArray temp;
+        std::vector<float> temp;
         if (!getArrayValue(attachedStage, objectRecord->mKey, property, timeCode, temp) || temp.empty())
             return true;
 
-        float setValue = temp.cdata()[0];
+        float setValue = temp[0];
 
         PxArticulationJointReducedCoordinate* joint = static_cast<PxArticulationJointReducedCoordinate*>
             (pxAxis->getLink()->getInboundJoint());
@@ -693,11 +729,11 @@ bool omni::physx::updateTendonAxisSingleGearing(AttachedStage& attachedStage, om
 
             if (jointType == PxArticulationJointType::eREVOLUTE || jointType == PxArticulationJointType::eREVOLUTE_UNWRAPPED)
             {
-                if (setValue > static_cast<float>(GfDegreesToRadians(FLT_MAX)))
+                if (setValue > degToRad(FLT_MAX))
                 {
                     setValue = FLT_MAX;
                 }
-                else if (setValue < static_cast<float>(GfDegreesToRadians(-FLT_MAX)))
+                else if (setValue < degToRad(-FLT_MAX))
                 {
                     setValue = -FLT_MAX;
                 }
@@ -706,7 +742,7 @@ bool omni::physx::updateTendonAxisSingleGearing(AttachedStage& attachedStage, om
                     // user sets coefficent to map from deg to tendon length.
                     // Therefore, in order to get the same tendon length when the joint angle is in radians, multiply by
                     // rad2deg
-                    setValue = static_cast<float>(GfRadiansToDegrees(setValue));
+                    setValue = radToDeg(setValue);
                 }
             }
         }
@@ -724,7 +760,7 @@ bool omni::physx::updateTendonAxisSingleGearing(AttachedStage& attachedStage, om
 
 // WARNING: only works for joints with a single DOF (a.k.a revolute and prismatic joints)
 bool omni::physx::updateTendonAxisSingleForceCoefficient(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-                                                         const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+                                                         omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -735,13 +771,13 @@ bool omni::physx::updateTendonAxisSingleForceCoefficient(AttachedStage& attached
 
     PxArticulationTendonJoint* pxAxis = static_cast<PxArticulationTendonJoint*>(objectRecord->mPtr);
     InternalTendonAxis* intAxis = static_cast<InternalTendonAxis*>(objectRecord->mInternalPtr);
-    if (pxAxis && intAxis && isCorrectInstance(intAxis->instanceName.GetString(), property, g_PhysxTendonLength, 16u))
+    if (pxAxis && intAxis && isCorrectInstance(tendonInstanceName(intAxis->instanceName), attachedStage, property, g_PhysxTendonLength, 16u))
     {
-        VtFloatArray temp;
+        std::vector<float> temp;
         if (!getArrayValue(attachedStage, objectRecord->mKey, property, timeCode, temp) || temp.empty())
             return true;
 
-        float setValue = temp.cdata()[0];
+        float setValue = temp[0];
         float gearing = 0.0f;
         float forceCoefficient = 0.0f;
         PxArticulationAxis::Enum axis = PxArticulationAxis::eTWIST;

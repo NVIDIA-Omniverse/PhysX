@@ -1,12 +1,14 @@
 <project toolsVersion="5.6">
-  <!-- Reuse kit-kernel's stock py312 USD (with pxr bindings) instead of pulling a
-       separate ov-full-monolithic USD package: the schema is codeless, so it only
-       needs pxr Python + usdGenSchema, and this keeps USD matched to kit's Python. -->
-  <import path="../_build/target-deps/kit_sdk_${config}/dev/all-deps.packman.xml">
-    <filter include="python" />
-    <filter include="usd-${config}" linkPath="../_build/target-deps/usd/${config}" />
-  </import>
-  <dependency name="python" linkPath="../_build/target-deps/python" />
+  <!-- Stock py312 USD: the codeless schema needs only pxr Python and usdGenSchema.
+       The build/docs scripts read usd_ver from ovruntime's USD pin
+       (ovphysx/ovruntime/deps/usd-deps.packman.xml), keeping schema on the same
+       USD version as ovruntime and ovphysx. -->
+  <dependency name="usd-${config}" linkPath="../_build/target-deps/usd/${config}">
+    <package name="usd.py312.${platform_target_abi}.stock.${config}" version="0.25.11.kit.5-gl.21175" />
+  </dependency>
+  <dependency name="python" linkPath="../_build/target-deps/python">
+    <package name="python" version="3.12.13+nv3-${platform_target_abi}" />
+  </dependency>
   <dependency name="doxygen" linkPath="../_build/host-deps/doxygen">
     <package name="doxygen" version="1.8.5-windows-x86_64" platforms="windows-x86_64" />
     <package name="doxygen" version="1.8.18-linux-x86_64-f7584a5b" platforms="linux-x86_64 manylinux_x86_64 manylinux_2_35_x86_64" />

@@ -1,16 +1,24 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-// This include must come first
-// clang-format off
-#include "UsdPCH.h"
-// clang-format on
+/**
+ * @implements REQ-SIM-DEFAULT-001
+ * @covers AC-2
+ *
+ * @implements REQ-PARSE-BACKEND-001
+ * @covers AC-6 AC-11
+ *
+ * @implements REQ-PUBLICAPI-002
+ * @covers AC-2 AC-8
+ *
+ * @implements REQ-SIM-OVSTAGE-ATTACH-001
+ * @covers AC-1 AC-2 AC-3
+ */
 
 #include <carb/settings/ISettings.h>
 #include <omni/physx/IPhysxSettings.h>
 #include <omni/physx/PhysxTokens.h>
 #include <common/foundation/Allocator.h>
-#include <common/utilities/PrimUtilities.h>
 #include <common/utilities/OmniPhysXUtilities.h>
 #include <carb/profiler/Profile.h>
 
@@ -18,6 +26,7 @@
 #include "LoadTools.h"
 #include "PrimUpdate.h"
 #include "LoadStage.h"
+#include "usdInterface/UsdInterface.h"
 #include "Mass.h"
 #include "Joint.h"
 #include "Articulation.h"
@@ -26,9 +35,11 @@
 #include "Collision.h"
 #include "CollisionGroup.h"
 
-#include <omni/physics/usd/StageScan.h>
-#include <omni/physics/usd/UsdParseBackend.h>   // makeUsdParseBackend (detach restore)
+// The USD-reaching pieces (stage-cache-backed attach(), backend install/restore, the
+// stage-id-taking single-prim parse helpers) live in the pxr-free usdBridge/StageBridge.cpp.
+#include "usdBridge/StageBridge.h"
 #include <omni/physics/parse/ScanBackend.h>      // setScanBackend
+#include <omni/physics/parse/ScannedStage.h>     // parse::ScannedStage (base)
 #include <omni/physics/ovstage/OvstageParseBackend.h> // makeOvstageParseBackend (Option 1)
 #include <omni/physics/ovstage/OvstageScan.h>          // makeOvstageScanBackend
 #include "IceDescriptorAllocator.h"
@@ -50,7 +61,6 @@
 #    pragma warning(disable : 4996)
 #endif
 
-using namespace PXR_NS;
 using namespace carb;
 using namespace omni::physics::schema;
 
@@ -62,6 +72,10 @@ namespace usdparser
 {
 
 static UsdLoad* gUsdLoad = nullptr;
+
+// Process-lifetime, not UsdLoad-instance-lifetime: see the member declaration
+// in LoadUsd.h for why this must survive getUsdLoad()/releaseUsdLoad() rebuilds.
+std::atomic<uint64_t> UsdLoad::mNextAttachHandle{ UsdLoad::kAttachHandleBase };
 
 UsdLoad* UsdLoad::getUsdLoad()
 {
@@ -77,6 +91,23 @@ void UsdLoad::releaseUsdLoad()
     gUsdLoad = nullptr;
 }
 
+AttachedStage* UsdLoad::resolveAttach(uint64_t attachHandle) const
+{
+    // ADR-0016 Decision 3: the one resolution prologue for every public entry
+    // point that names an attach. kActiveAttach is the migration path for the
+    // callers that used to pass stage id 0 and lean on getAttachedStage()'s
+    // lone-attach fallback -- getAttachedStageByHandle() deliberately has no
+    // such fallback, so the convenience has to be spelled out here.
+    if (attachHandle == omni::physx::kActiveAttach)
+    {
+        return getActiveAttachedStage();
+    }
+
+    // kNoAttach and any stale handle fall through to the handle lookup, which
+    // returns null for both.
+    return getAttachedStageByHandle(attachHandle);
+}
+
 UsdLoad::UsdLoad()
     : mBlockUsdUpdate({0}), mAsyncUpdate(false)
 {
@@ -88,13 +119,18 @@ UsdLoad::~UsdLoad()
 {
 }
 
-void UsdLoad::loadAttachedStage(AttachedStage* attachedStage, uint64_t key, bool loadPhysics)
+bool UsdLoad::loadAttachedStage(AttachedStage* attachedStage, uint64_t key, bool loadPhysics)
 {
     // The single source-agnostic load core shared by attach() (USD) and
     // attachOvstage() (ovstage); they differ only in how the AttachedStage is
     // constructed. loadFromStage() routes through the active scan/parse
     // backend (ADR-0002 M2c), so this stays backend-agnostic.
     mAttachedStages[key] = attachedStage;
+
+    // Mint the attach handle here, the one point every attach route passes
+    // through (ADR-0013). Monotonic and never reused, so a handle held across a
+    // detach resolves to null rather than to the next attach.
+    attachedStage->setAttachHandle(mNextAttachHandle++);
 
     if (loadPhysics)
     {
@@ -107,7 +143,8 @@ void UsdLoad::loadAttachedStage(AttachedStage* attachedStage, uint64_t key, bool
 
             // load the scene by traversing from the root prim (USD) or the whole
             // ovstage instance (ovstage scan backend reads from the pseudo-root)
-            loadFromStage(*attachedStage);
+            if (!loadFromStage(*attachedStage))
+                return false;
         }
 
         attachedStage->getPhysXPhysicsInterface()->enableObjectChangeNotifications(true);
@@ -119,34 +156,20 @@ void UsdLoad::loadAttachedStage(AttachedStage* attachedStage, uint64_t key, bool
     }
     else
         attachedStage->getPrimUpdateMap().setEmptyScene(true);
-}
 
-bool UsdLoad::attach(bool loadPhysics, uint64_t stageId, PhysXUsdPhysicsInterface* usdPhysicsInt)
-{
-    if (mAttachedStages.find(stageId) != mAttachedStages.end())
-    {
-        CARB_LOG_ERROR("Stage already attached!");
-        return false;
-    }
-
-    UsdStageWeakPtr stage = UsdUtilsStageCache::Get().Find(UsdStageCache::Id::FromLongInt(long(stageId)));
-    if (!stageId || !stage)
-    {
-        CARB_LOG_ERROR("PhysicsUsdLoad - could not find USD stage");
-        return false;
-    }
-
-    AttachedStage* attachedStage = new AttachedStage(stage, usdPhysicsInt);
-    loadAttachedStage(attachedStage, stageId, loadPhysics);
     return true;
 }
 
-bool UsdLoad::attachOvstage(const void* ovstageAttachPayload,
-                            uint64_t readOrdinal,
-                            PXR_NS::UsdStageWeakPtr backingStage,
-                            uint64_t effectiveBackingStageId,
-                            PhysXUsdPhysicsInterface* usdPhysicsInt,
-                            bool loadPhysics)
+// UsdLoad::attach() (plain, stage-cache-backed) is defined in usdBridge/StageBridge.cpp -- it
+// resolves the stage id through the parse::usdReparse() seam.
+
+// Shared core for attachOvstage()'s two public overloads below.
+bool UsdLoad::attachOvstageCore(const void* ovstageAttachPayload,
+                                uint64_t readOrdinal,
+                                AttachedStageUsdHandle backingStage,
+                                uint64_t effectiveBackingStageId,
+                                PhysXUsdPhysicsInterface* usdPhysicsInt,
+                                bool loadPhysics)
 {
     if (!ovstageAttachPayload)
     {
@@ -166,9 +189,7 @@ bool UsdLoad::attachOvstage(const void* ovstageAttachPayload,
         return false;
     }
 
-    const uint64_t backingStageId = backingStage ?
-        static_cast<uint64_t>(UsdUtilsStageCache::Get().GetId(backingStage).ToLongInt()) : 0;
-    if (backingStageId != effectiveBackingStageId)
+    if (bridgeBackingStageCacheId(backingStage) != effectiveBackingStageId)
     {
         CARB_LOG_ERROR("PhysicsUsdLoad - attachOvstage received inconsistent backing stage and effective id");
         return false;
@@ -184,33 +205,41 @@ bool UsdLoad::attachOvstage(const void* ovstageAttachPayload,
 
     try
     {
-        // Allocate every backend before replacing either process-global slot.
-        // In particular, prebuild the USD backend now: constructing it during
-        // rollback or detach could throw after mutation and leave the registry
-        // on the ovstage backend.
-        defaultParseBackend = omni::physics::usd::makeUsdParseBackend();
+        // Allocate the ovstage backends before touching either process-global slot: their
+        // constructors can throw, and doing so before any capture or swap leaves the registry
+        // untouched on failure. The scan backend is bound to this attach's payload, so a target
+        // that did not come from this attach is reported rather than reinterpreted.
         ovstageParseBackend = omni::physics::ovstage::makeOvstageParseBackend();
-        ovstageScanBackend = omni::physics::ovstage::makeOvstageScanBackend();
+        ovstageScanBackend = omni::physics::ovstage::makeOvstageScanBackend(ovstageAttachPayload);
 
         // Option 1 (ADR-0002): only this plugin owns its parse/scan registry
-        // slots. Detach restores the USD defaults after the AttachedStage is gone.
+        // slots. Detach restores the previous defaults after the AttachedStage is gone.
+        // Capturing the previous defaults by ownership (parse via the bridge sliver's
+        // takeParseBackend, scan directly) and installing ovstage are all plain unique_ptr
+        // moves that cannot throw, so they run only after backendMutationStarted is set -- any
+        // later failure is undone by the rollback block below, which reinstalls both captures.
+        // defaultParseBackend/mRestoreScanBackend are null in a USD-free process, which degrades
+        // the restore to "no backend installed".
         backendMutationStarted = true;
+        defaultParseBackend = bridgeMakeDefaultParseBackend();
         omni::physics::parse::setParseBackend(std::move(ovstageParseBackend));
+        mRestoreScanBackend = omni::physics::parse::takeScanBackend();
         omni::physics::parse::setScanBackend(std::move(ovstageScanBackend));
         mRestoreParseBackend = std::move(defaultParseBackend);
         mExternalBackendInstalled = true;
 
-        // Construct stageless so the ctor cannot build a USD source under the
-        // ovstage backend, then retain only the already-classified resident stage.
-        attachedStage = std::make_unique<AttachedStage>(PXR_NS::UsdStageWeakPtr{}, usdPhysicsInt);
-        attachedStage->setOvstageSource(ovstageAttachPayload, backingStage, readOrdinal);
+        // Construct stageless so the ctor cannot build a USD source under the ovstage
+        // backend, then retain only the already-classified resident stage.
+        attachedStage = std::make_unique<AttachedStage>(AttachedStageUsdHandle{}, usdPhysicsInt);
+        attachedStage->setOvstageSource(ovstageAttachPayload, backingStage, readOrdinal, effectiveBackingStageId);
         attachedStageId = static_cast<uint64_t>(attachedStage->getStageId());
         if (attachedStageId != effectiveBackingStageId)
             throw std::runtime_error("classified ovstage backing stage changed before registration");
 
         // The AttachedStage's normalized id is authoritative. Never register
         // under the raw candidate reported by another USD runtime.
-        loadAttachedStage(attachedStage.get(), attachedStageId, loadPhysics);
+        if (!loadAttachedStage(attachedStage.get(), attachedStageId, loadPhysics))
+            throw std::runtime_error("physics source scan failed");
         attachedStage.release();
         return true;
     }
@@ -253,14 +282,15 @@ bool UsdLoad::attachOvstage(const void* ovstageAttachPayload,
                 omni::physics::parse::setParseBackend(std::move(mRestoreParseBackend));
             else
                 omni::physics::parse::setParseBackend(std::move(defaultParseBackend));
-            omni::physics::parse::setScanBackend(nullptr);
+            omni::physics::parse::setScanBackend(std::move(mRestoreScanBackend));
         }
         catch (...)
         {
-            CARB_LOG_ERROR("PhysicsUsdLoad - attachOvstage failed while restoring USD backends");
+            CARB_LOG_ERROR("PhysicsUsdLoad - attachOvstage failed while restoring backends");
         }
         mExternalBackendInstalled = false;
         mRestoreParseBackend.reset();
+        mRestoreScanBackend.reset();
     }
 
     if (partialPhysicsObjectsReleased)
@@ -269,11 +299,29 @@ bool UsdLoad::attachOvstage(const void* ovstageAttachPayload,
     return false;
 }
 
-bool UsdLoad::attachReplicator(uint64_t stageId, PhysXUsdPhysicsInterface* usdPhysicsInt, const PathSet& excludePaths, bool attachStage)
+bool UsdLoad::attachOvstage(const void* ovstageAttachPayload,
+                            uint64_t readOrdinal,
+                            uint64_t effectiveBackingStageId,
+                            PhysXUsdPhysicsInterface* usdPhysicsInt,
+                            bool loadPhysics,
+                            AttachedStageUsdHandle backingStage)
+{
+    return attachOvstageCore(
+        ovstageAttachPayload, readOrdinal, backingStage, effectiveBackingStageId, usdPhysicsInt, loadPhysics);
+}
+
+// First half of the replicator attach, so PhysXReplicator::attach() can create the
+// AttachedStage/Source before its replicationAttachFn callback fires.
+bool UsdLoad::attachReplicatorCreateSource(uint64_t stageId, PhysXUsdPhysicsInterface* usdPhysicsInt, bool attachStage)
 {
     if (attachStage && !attach(false, stageId, usdPhysicsInt))
         return false;
+    return true;
+}
 
+// Second half; assumes attachReplicatorCreateSource() above already succeeded for this stageId.
+bool UsdLoad::attachReplicatorFinish(uint64_t stageId, const PathSet& excludePaths, bool attachStage)
+{
     AttachedStage* attachedStage = getAttachedStage(stageId);
     attachedStage->setReplicatorStage(true);
     {
@@ -281,13 +329,32 @@ bool UsdLoad::attachReplicator(uint64_t stageId, PhysXUsdPhysicsInterface* usdPh
         attachedStage->getPrimUpdateMap().clearMap();
         attachedStage->getPrimChangeMap().clearMap();
 
+        bool loaded = false;
         {
             // Suppress initial-population notifications; the scope restores both
             // gates even if loadFromStage() throws (transactional attach rollback).
             InitialStagePopulationScope populationScope(*attachedStage->getPhysXPhysicsInterface());
 
             // load the scene by traversing from the root prim
-            loadFromStage(*attachedStage, &excludePaths);
+            loaded = loadFromStage(*attachedStage, &excludePaths);
+        }
+        if (!loaded)
+        {
+            if (attachStage)
+            {
+                detach(stageId);
+            }
+            else
+            {
+                // Deferred-scan path (attachStage == false, e.g. the ovstage replicator flow):
+                // this AttachedStage survives the failed load -- nothing above tore it down --
+                // so the true set above at entry must be undone. Otherwise a caller's later
+                // physXDetach() rollback sees isReplicatorStage() still true for an attach that
+                // never actually got a replicator, and purges a still-pending kActiveAttach
+                // registration meant for the caller's next, real attach attempt.
+                attachedStage->setReplicatorStage(false);
+            }
+            return false;
         }
 
         attachedStage->getPhysXPhysicsInterface()->enableObjectChangeNotifications(true);
@@ -334,29 +401,6 @@ void UsdLoad::releasePhysicsObjects(uint64_t stageId,
         sendPhysicsObjectsReleasedEvent();
 }
 
-void UsdLoad::requestRigidBodyMassUpdate(const UsdPrim& prim)
-{
-    const uint64_t stageId = UsdUtilsStageCache::Get().GetId(prim.GetStage()).ToLongInt();
-    AttachedStageMap::const_iterator fit = mAttachedStages.find(stageId);
-    if (fit != mAttachedStages.end())
-    {
-        RequestRigidBodyMassUpdate(*fit->second, fit->second->keyFor(prim.GetPrimPath()));
-    }
-}
-
-void UsdLoad::requestParticleMassUpdate(const UsdPrim& prim)
-{
-    if (!prim)
-        return;
-
-    const uint64_t stageId = UsdUtilsStageCache::Get().GetId(prim.GetStage()).ToLongInt();
-    AttachedStageMap::const_iterator fit = mAttachedStages.find(stageId);
-    if (fit != mAttachedStages.end())
-    {
-        RequestParticleMassUpdate(*fit->second, fit->second->keyFor(prim.GetPrimPath()));
-    }
-}
-
 void UsdLoad::detach(uint64_t stageId)
 {
     AttachedStageMap::iterator fit = mAttachedStages.find(stageId);
@@ -373,23 +417,33 @@ void UsdLoad::detach(uint64_t stageId)
         mAttachedStages.erase(fit);
 
         // If attachOvstage() switched the process backends to ovstage, restore the
-        // USD defaults now that the stage is gone (mirrors carbOnPluginStartup).
+        // previous default now that the stage is gone (mirrors carbOnPluginStartup).
         // Safe here: detach means nothing is attached, satisfying the registry's
         // "only while no stage is attached" contract.
         if (mExternalBackendInstalled)
         {
-            if (!mRestoreParseBackend)
-            {
-                CARB_LOG_ERROR("PhysicsUsdLoad - no preallocated USD backend available during ovstage detach");
-                omni::physics::parse::setParseBackend(omni::physics::usd::makeUsdParseBackend());
-            }
-            else
-            {
-                omni::physics::parse::setParseBackend(std::move(mRestoreParseBackend));
-            }
-            omni::physics::parse::setScanBackend(nullptr);
+            bridgeRestoreDefaultParseBackend(std::move(mRestoreParseBackend));
+            // Reinstall the previous default scan backend captured at attach, rather than
+            // nulling the slot: a USD-loaded process must keep the startup-installed USD scan
+            // backend across an ovstage attach/detach (the collapsed install slivers are no-ops,
+            // so a plain USD attach never re-registers one). null in a USD-free process.
+            omni::physics::parse::setScanBackend(std::move(mRestoreScanBackend));
             mExternalBackendInstalled = false;
             mRestoreParseBackend.reset();
+            mRestoreScanBackend.reset();
+        }
+        else if (mPlainScanBackendRefCount > 0)
+        {
+            // A plain attach holding the native-USD scan backend registration attach()
+            // installs above. Mutually exclusive with the branch above: attach() rejects a
+            // plain attach while mExternalBackendInstalled is true. On the last one going away,
+            // restore the scan slot captured before the 0->1 re-assert so a completed plain
+            // attach/detach leaves the backends exactly as it found them.
+            if (--mPlainScanBackendRefCount == 0)
+            {
+                bridgeRemoveDefaultScanBackend();
+                omni::physics::parse::setScanBackend(std::move(mRestorePlainScanBackend));
+            }
         }
     }
     else
@@ -425,7 +479,7 @@ void UsdLoad::flushChanges()
 
 void UsdLoad::changeDefaultSimulator(const std::string& defaultSim)
 {
-    const bool defSim = omni::physx::isPhysXDefaultSimulator();
+    const bool defSim = defaultSim == "PhysX";
     for (AttachedStageMap::reference ref : mAttachedStages)
     {
         ref.second->setIsPhysXDefaultSimulator(defSim);
@@ -433,8 +487,8 @@ void UsdLoad::changeDefaultSimulator(const std::string& defaultSim)
 }
 
 
-namespace
-{
+// translateScannedShape/selectScannedCollision have external linkage (declared in
+// usdBridge/StageBridge.h) so the USD arm's SdfPath-taking sibling can reuse them.
 
 // Per-shape consumer-side bridge: cooking dispatch, ObjectKey
 // re-keying across the scanStage / attachedStage source namespaces,
@@ -443,15 +497,16 @@ namespace
 // shape with simulationOwners-but-no-resolvable-scene is kept rather
 // than dropped.
 void translateScannedShape(AttachedStage& attachedStage,
-                           const omni::physics::usd::ScannedStage& scanned,
+                           const omni::physics::parse::ScannedStage& scanned,
                            PhysxShapeDesc* desc,
-                           const SdfPath& shapeKey)
+                           omni::physics::parse::ObjectKey shapeKey)
 {
     scan::dispatchScannedShapeCooking(attachedStage, scanned, desc);
+    const omni::physics::parse::IPhysicsSource& scanSource = scanned.source();
     if (desc->rigidBody.valid())
-        desc->rigidBody = attachedStage.keyFor(scanned.pathFor(desc->rigidBody));
+        desc->rigidBody = attachedStage.keyFor(scanSource.sourceKeyToString(desc->rigidBody));
     if (desc->sourceGprim.valid())
-        desc->sourceGprim = attachedStage.keyFor(scanned.pathFor(desc->sourceGprim));
+        desc->sourceGprim = attachedStage.keyFor(scanSource.sourceKeyToString(desc->sourceGprim));
     // Mesh-cooking subclasses each carry a `meshPrimKey` ObjectKey the
     // runtime uses to locate the source mesh prim.  The field is
     // name-shadowed across the MergeMesh hierarchy, so cast to the
@@ -460,7 +515,7 @@ void translateScannedShape(AttachedStage& attachedStage,
     {
         auto* d = static_cast<ConvexMeshPhysxShapeDesc*>(desc);
         if (d->meshPrimKey.valid())
-            d->meshPrimKey = attachedStage.keyFor(scanned.pathFor(d->meshPrimKey));
+            d->meshPrimKey = attachedStage.keyFor(scanSource.sourceKeyToString(d->meshPrimKey));
     }
     else if (desc->type == eTriangleMeshShape ||
              desc->type == eConvexMeshDecompositionShape ||
@@ -468,164 +523,32 @@ void translateScannedShape(AttachedStage& attachedStage,
     {
         auto* d = static_cast<TriangleMeshPhysxShapeDesc*>(desc);
         if (d->meshPrimKey.valid())
-            d->meshPrimKey = attachedStage.keyFor(scanned.pathFor(d->meshPrimKey));
+            d->meshPrimKey = attachedStage.keyFor(scanSource.sourceKeyToString(d->meshPrimKey));
     }
 
-    SdfPathVector materials;
+    std::vector<omni::physics::parse::ObjectKey> materials;
     CollisionPairVector filteredPairs;
     (void)scan::resolveConsumerSideShapeState(attachedStage, scanned, desc,
                                               materials, filteredPairs);
     desc->collisionGroup = getCollisionGroup(attachedStage, shapeKey);
 }
 
-} // anonymous
-
-// Single-prim rigid-body parse for callers outside the stage-attach
-// pipeline.  Body + attached shapes come straight out of scanStage;
-// translateScannedShape (shared with PointInstancer.cpp) handles
-// cooking dispatch, re-keying, and consumer state translation.
-// Returns the body desc plus a `collision` vector of (shapeKey,
-// PhysxShapeDesc*) pairs filtered by the body's own collision set.
-//
-// Time-sampled callback registration is intentionally skipped — all
-// known callers (PhysXPropertyQuery, attachment helpers, cooking
-// previews) are one-shot queries.
-//
-// @implements REQ-PARSE-CONSUMER-001
-// @covers AC-8
-PhysxRigidBodyDesc* parseRigidBody(uint64_t stageId,
-                                   const SdfPath& path,
-                                   std::vector<std::pair<SdfPath, PhysxShapeDesc*>>& collision)
-{
-    UsdStageWeakPtr stage = UsdUtilsStageCache::Get().Find(UsdStageCache::Id::FromLongInt(static_cast<long int>(stageId)));
-    if (!stage)
-        return nullptr;
-
-    UsdLoad* usdLoad = UsdLoad::getUsdLoad();
-    std::lock_guard<carb::tasking::MutexWrapper> lock(usdLoad->mParsingMutex);
-
-    AttachedStage attachedStage;
-    attachedStage.setStage(stage);
-    const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
-    const omni::physics::parse::ObjectKey rootKey = attachedStage.keyFor(path);
-    if (!src || !src->exists(rootKey))
-        return nullptr;
-
-    const std::vector<SdfPath> scanRoots{ path };
-    static const std::unordered_set<SdfPath, SdfPath::Hash> kNoExclude;
-    // Scan the backing USD stage natively rather than via the active scan backend:
-    // this isolated single-body re-parse always works off a real UsdStage (found by
-    // id above), and the AttachTarget overload would dispatch to the globally-active
-    // backend (e.g. ovstage), which misreads the USD-stage target as its own payload
-    // and crashes. The backing USD stage is authoritative (ovstage mirrors it), so
-    // the USD-native walk yields the correct rigid-body desc for either backend.
-    omni::physics::usd::ScannedStage scanned = omni::physics::usd::scanStage(
-        stage, scanRoots, kNoExclude,
-        omni::physx::usdparser::iceDescriptorAllocator());
-
-    // Find the body matching `path` (typically the range root; explicit
-    // match keeps us robust to nested-body subtrees).  Keep a raw view
-    // into the scanStage-owned desc; we mutate it in place, then clone
-    // into ICE memory at the end so the consumer-side `ICE_FREE`
-    // matches the allocator (parse-lib uses `std::make_unique` =
-    // system heap; ICE_FREE expects the custom allocator's prefix).
-    PhysxRigidBodyDesc* rbDesc = nullptr;
-    for (auto& bodyUPtr : scanned.bodies)
-    {
-        if (scanned.pathFor(bodyUPtr->primKey) == path)
-        {
-            rbDesc = bodyUPtr.get();
-            break;
-        }
-    }
-    if (!rbDesc)
-        return nullptr;
-
-    // sceneIds — sourceSimulationOwners ObjectKeys → eScene ObjectIds.
-    // Empty ObjectDatabase (fresh AttachedStage) yields empty sceneIds.
-    rbDesc->sceneIds.clear();
-    for (const auto& sk : rbDesc->sourceSimulationOwners)
-    {
-        const SdfPath sp = scanned.pathFor(sk);
-        if (sp.IsEmpty())
-            continue;
-        const ObjectId entry = attachedStage.getObjectDatabase()->findEntry(sp, eScene);
-        if (entry != kInvalidObjectId)
-            rbDesc->sceneIds.push_back(entry);
-    }
-
-    // Build a path-set of the body's collisions; we filter the
-    // scanStage shape vector against it to mirror the legacy listener's
-    // `bodyAndCollider.collisions` → `rigidBodyShapesMap` resolution
-    // (which used `schema::RigidBodyDesc::collisions`, the same
-    // depth-first list scanStage's emitter populates as
-    // `sourceCollisions`).
-    std::unordered_set<SdfPath, SdfPath::Hash> bodyCollisionPaths;
-    bodyCollisionPaths.reserve(rbDesc->sourceCollisions.size());
-    for (const auto& ck : rbDesc->sourceCollisions)
-    {
-        const SdfPath sp = scanned.pathFor(ck);
-        if (!sp.IsEmpty())
-            bodyCollisionPaths.insert(sp);
-    }
-
-    // Shape pass — depth-first iteration matches legacy
-    // `loadFromRange` dispatch order, so output `collision` ordering
-    // is identical.  Each scanStage-owned desc is translated in place,
-    // then deep-cloned into ICE memory for the caller; the original
-    // unique_ptr stays in `scanned` and frees on scope exit.
-    for (auto& shapeUPtr : scanned.shapes)
-    {
-        PhysxShapeDesc* desc = shapeUPtr.get();
-        const SdfPath shapeKey = scanned.pathFor(desc->primKey);
-        if (bodyCollisionPaths.find(shapeKey) == bodyCollisionPaths.end())
-            continue;
-
-        translateScannedShape(attachedStage, scanned, desc, shapeKey);
-        if (PhysxShapeDesc* released = shapeUPtr.release())
-            collision.push_back(std::make_pair(shapeKey, released));
-    }
-
-    // Find and release the body's DescPtr from scanned.bodies.  `rbDesc`
-    // is an observer captured earlier; ownership lives in the matching
-    // DescPtr entry, which we transfer out by `.release()`.  All other
-    // unreleased entries are freed by `scanned`'s destructor (ICE_FREE,
-    // matched to the allocator passed to `scanStage`).
-    for (auto& bodyUPtr : scanned.bodies)
-    {
-        if (bodyUPtr.get() == rbDesc)
-            return bodyUPtr.release();
-    }
-    return nullptr;
-}
-
-// Single-prim collision parse for callers outside the stage-attach
-// pipeline.  Routes through translateScannedShape; matches gprim by
-// `sourceGprim == gprimPath || primKey == gprimPath` (latter for
+// Matches the gprim by `sourceGprim == gPrimKey || primKey == gPrimKey` (the latter for
 // shapes where the gprim IS the collider).
-//
-// @implements REQ-PARSE-CONSUMER-001
-// @covers AC-8
-PhysxShapeDesc* parseCollision(AttachedStage& attachedStage, const SdfPath& colPath, const SdfPath& gprimPath)
+PhysxShapeDesc* selectScannedCollision(AttachedStage& attachedStage,
+                                       omni::physics::parse::ScannedStage& scanned,
+                                       omni::physics::parse::ObjectKey gPrimKey)
 {
-    CARB_PROFILE_ZONE(0, "physx::usdparser::parseCollision");
-    const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
-    const omni::physics::parse::ObjectKey rootKey = attachedStage.keyFor(colPath);
-    if (!src || !src->exists(rootKey))
-        return nullptr;
-
-    const std::vector<SdfPath> scanRoots{ colPath };
-    static const std::unordered_set<SdfPath, SdfPath::Hash> kNoExclude;
-    omni::physics::usd::ScannedStage scanned = omni::physics::usd::scanStage(
-        attachedStage.attachTarget(), scanRoots, kNoExclude,
-        omni::physx::usdparser::iceDescriptorAllocator());
-
+    const omni::physics::parse::IPhysicsSource& scanSource = scanned.source();
     for (auto& shapeUPtr : scanned.shapes)
     {
         PhysxShapeDesc* desc = shapeUPtr.get();
-        const SdfPath shapeKey = scanned.pathFor(desc->primKey);
-        const SdfPath sourceGprimPath = desc->sourceGprim.valid() ? scanned.pathFor(desc->sourceGprim) : SdfPath();
-        if (sourceGprimPath != gprimPath && shapeKey != gprimPath)
+        const omni::physics::parse::ObjectKey shapeKey =
+            attachedStage.keyFor(scanSource.sourceKeyToString(desc->primKey));
+        const omni::physics::parse::ObjectKey sourceGprimKey =
+            desc->sourceGprim.valid() ? attachedStage.keyFor(scanSource.sourceKeyToString(desc->sourceGprim))
+                                       : omni::physics::parse::ObjectKey();
+        if (sourceGprimKey != gPrimKey && shapeKey != gPrimKey)
             continue;
 
         translateScannedShape(attachedStage, scanned, desc, shapeKey);
@@ -639,18 +562,22 @@ PhysxShapeDesc* parseCollision(AttachedStage& attachedStage, const SdfPath& colP
     return nullptr;
 }
 
-PhysxShapeDesc* parseCollision(uint64_t stageId, const SdfPath& colPath, const SdfPath& gprimPath)
+// ObjectKey-keyed single-prim collision parse (ADR-0019). The scan dispatches through the
+// registered scan backend (bridgeScanCollisionRoot); a plain USD attach holds the USD scan
+// backend from the reparse seam for its lifetime, so no native-walk fallback is needed.
+//
+// @implements REQ-PARSE-CONSUMER-001
+// @covers AC-8
+PhysxShapeDesc* parseCollision(AttachedStage& attachedStage,
+                               omni::physics::parse::ObjectKey collisionKey,
+                               omni::physics::parse::ObjectKey gPrimKey)
 {
-    UsdStageWeakPtr stage = UsdUtilsStageCache::Get().Find(UsdStageCache::Id::FromLongInt(long(stageId)));
-    if (!stage)
+    CARB_PROFILE_ZONE(0, "physx::usdparser::parseCollision");
+    const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
+    if (!src || !src->exists(collisionKey))
         return nullptr;
 
-    UsdLoad* usdLoad = UsdLoad::getUsdLoad();
-    std::lock_guard<carb::tasking::MutexWrapper> lock(usdLoad->mParsingMutex);
-
-    AttachedStage attachedStage;
-    attachedStage.setStage(stage);
-    return parseCollision(attachedStage, colPath, gprimPath);
+    return bridgeScanCollisionRoot(attachedStage, collisionKey, gPrimKey);
 }
 
 void releaseDesc(usdparser::PhysxObjectDesc* desc)

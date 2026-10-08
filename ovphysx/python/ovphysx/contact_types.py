@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """Contact report ctypes structures.
 
@@ -9,12 +9,12 @@ in Python without copying. Field layouts must stay in sync with the C definition
 in ``ovphysx/include/ovphysx/ovphysx_types.h``.
 
 The module has no native-library dependencies and is safe to import in any
-Python process; the structures are populated by ctypes against pointers returned
+Python process. The structures are populated by ctypes against pointers returned
 from the C API.
 """
 
 import ctypes
-from ctypes import c_float, c_int32, c_int64, c_uint32, c_uint64
+from ctypes import c_float, c_int32, c_uint32, c_uint64
 
 __all__ = [
     "ContactEventHeader",
@@ -28,7 +28,7 @@ class ContactEventHeader(ctypes.Structure):
 
     _fields_ = [
         ("type", c_int32),
-        ("stageId", c_int64),
+        ("attachHandle", c_uint64),
         ("actor0", c_uint64),
         ("actor1", c_uint64),
         ("collider0", c_uint64),

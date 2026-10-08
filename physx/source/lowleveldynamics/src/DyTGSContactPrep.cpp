@@ -1,52 +1,49 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
-#include "foundation/PxPreprocessor.h"
-#include "foundation/PxVecMath.h"
-#include "PxcNpWorkUnit.h"
 #include "DyThreadContext.h"
-#include "PxcNpContactPrepShared.h"
 #include "DyFeatherstoneArticulation.h"
-#include "DyCpuGpu1dConstraint.h"
-#include "DyCpuGpuArticulation.h"
 #include "DyAllocator.h"
-
-using namespace physx;
-
-#include "PxsMaterialManager.h"
 #include "DyContactPrepShared.h"
 #include "DyConstraintPrep.h"
-
-#include "DySolverContext.h"
 #include "DySolverConstraint1DStep.h"
 #include "DyTGS.h"
 
+using namespace physx;
 using namespace aos;
+
+// PT: PxTGSSolverBodyVel packs partitioning data into the padding of its two PxVec3s:
+// maxDynamicPartition/nbStaticInteractions after linearVelocity, partitionMask after angularVelocity.
+// Unlike PGS - where those slots are dead once partitioning is done, so the velocity can just be
+// written with a plain 16-byte store - partitionMask is a LIVE volatile cross-thread progress counter
+// during the TGS solve (see waitForBodyProgress/incrementBodyProgress in DyTGSDynamics.cpp), and
+// nbStaticInteractions is read every iteration. So the 4th lane has to round-trip.
+//
+// This is exactly what the 4-wide path gets for free: its load/store PX_TRANSPOSE_44 pair carries each
+// body's W lane through untouched (see DyTGSContactPrepBlock.cpp).
+static PX_FORCE_INLINE void storeVelocityPreservingW(const Vec3V v, PxVec3& dst)
+{
+	// PT: this is the original code. It leaves W untouched but stores 16 bytes to a stack temp and
+	// then copies 3 floats back out. We keep using this for now, but still wraps this into this dedicated
+	// function to explain that preserving W in TGS was not an accident, it is mandatory.
+	V3StoreA(v, dst);
+
+	// PT: the following versions have been considered, which read W and write it back immediately.
+	// ORDERING: this store must happen before incrementBodyProgress() for the same body, otherwise it
+	// would write back the pre-increment value and hang whoever is spinning in WAIT_FOR_PROGRESS.
+
+	// PT: this version works but generates more code than the original:
+	//const Vec4V orig = V4LoadA(&dst.x);
+	//V4StoreA(V4SetW(Vec4V_From_Vec3V(v), V4GetW(orig)), &dst.x);
+
+	//PT: this version works & generates less code than the original.
+	// However it briefly leaves W zeroed before restoring it, and it is unclear if this is safe to do.
+	//const PxF32 w = dst[3];
+	//V4StoreA(Vec4V_From_Vec3V(v), dst);
+	//dst[3] = w;
+}
 
 namespace physx
 {
@@ -229,7 +226,7 @@ namespace Dy
 		return Cm::SpatialVector(linear, angular);
 	}
 
-	Cm::SpatialVectorV createImpulseResponseVector(const aos::Vec3V& linear, const aos::Vec3V& angular, const SolverExtBodyStep& body)
+	Cm::SpatialVectorV createImpulseResponseVector(const Vec3V& linear, const Vec3V& angular, const SolverExtBodyStep& body)
 	{
 		// See comment in non-SIMD version above
 		if (body.isRigidDynamic())
@@ -1848,10 +1845,10 @@ namespace Dy
 		PX_ASSERT(b1.angularVelocity.isFinite());
 
 		// Write back
-		V3StoreA(linVel0, b0.linearVelocity);
-		V3StoreA(linVel1, b1.linearVelocity);
-		V3StoreA(angState0, b0.angularVelocity);
-		V3StoreA(angState1, b1.angularVelocity);
+		storeVelocityPreservingW(linVel0, b0.linearVelocity);
+		storeVelocityPreservingW(linVel1, b1.linearVelocity);
+		storeVelocityPreservingW(angState0, b0.angularVelocity);
+		storeVelocityPreservingW(angState1, b1.angularVelocity);
 
 		PX_ASSERT(b0.linearVelocity.isFinite());
 		PX_ASSERT(b0.angularVelocity.isFinite());
@@ -1861,23 +1858,18 @@ namespace Dy
 		PX_ASSERT(currPtr == last);
 	}
 
-	void writeBackContact(const PxSolverConstraintDesc& desc, SolverContext* /*cache*/)
+	void writeBackContact(const PxSolverConstraintDesc& desc)
 	{
-		// PxReal normalForce = 0;
-
 		PxU8* PX_RESTRICT cPtr = desc.constraint;
 		PxReal* PX_RESTRICT vForceWriteback = reinterpret_cast<PxReal*>(desc.writeBack);
 		PxVec3* PX_RESTRICT vFrictionWriteback = reinterpret_cast<PxVec3*>(desc.writeBackFriction);
 		PxU8* PX_RESTRICT last = desc.constraint + desc.constraintLengthOver16 * 16;
-
-		bool forceThreshold = false;
 
 		while (cPtr < last)
 		{
 			const SolverContactHeaderStep* PX_RESTRICT hdr = reinterpret_cast<const SolverContactHeaderStep*>(cPtr);
 			cPtr += sizeof(SolverContactHeaderStep);
 
-			forceThreshold = hdr->flags & SolverContactHeaderStep::eHAS_FORCE_THRESHOLDS;
 			const PxU32 numNormalConstr = hdr->numNormalConstr;
 			const PxU32	numFrictionConstr = hdr->numFrictionConstr;
 
@@ -1898,7 +1890,6 @@ namespace Dy
 				{
 					PxReal appliedForce = forceBuffer[i];
 					*vForceWriteback++ = appliedForce;
-					// normalForce += appliedForce;
 				}
 			}
 
@@ -1917,24 +1908,14 @@ namespace Dy
 		}
 		PX_ASSERT(cPtr == last);
 
-		PX_UNUSED(forceThreshold);
 
-#if 0
-		if (cache && forceThreshold && desc.linkIndexA == PxSolverConstraintDesc::NO_LINK && desc.linkIndexB == PxSolverConstraintDesc::NO_LINK &&
-		normalForce != 0 && (desc.bodyA->reportThreshold < PX_MAX_REAL || desc.bodyB->reportThreshold < PX_MAX_REAL))
-		{
-			ThresholdStreamElement elt;
-			elt.normalForce = normalForce;
-			elt.threshold = PxMin<float>(desc.bodyA->reportThreshold, desc.bodyB->reportThreshold);
-			elt.nodeIndexA = desc.bodyA->nodeIndex;
-			elt.nodeIndexB = desc.bodyB->nodeIndex;
-			elt.shapeInteraction = reinterpret_cast<const SolverContactHeader*>(desc.constraint)->shapeInteraction;
-			PxOrder(elt.nodeIndexA, elt.nodeIndexB);
-			PX_ASSERT(elt.nodeIndexA < elt.nodeIndexB);
-			PX_ASSERT(cache->mThresholdStreamIndex<cache->mThresholdStreamLength);
-			cache->mThresholdStream[cache->mThresholdStreamIndex++] = elt;
-		}
-#endif
+		// PT: contact force threshold reports (PxPairFlag::eNOTIFY_THRESHOLD_FORCE_*) are documented as
+		// PGS-only and CPU-only. This function used to carry a half-finished implementation of them: a
+		// forceThreshold flag, a normalForce accumulator, and an #if 0'd emission block that had stopped
+		// compiling (it referenced reportThreshold, which lives on PxSolverBodyData - never passed in here -
+		// and PxSolverConstraintDesc::NO_LINK). All of it fed a PX_UNUSED. Removed, so that the documented
+		// restriction is visible from the code rather than something you have to reconstruct.
+		// The live implementation is the PGS one: writeBackContact() in DySolverConstraints.cpp.
 	}
 
 PxU32 setupSolverConstraintStep(
@@ -2335,8 +2316,8 @@ void solveExt1DStep(const PxSolverConstraintDesc& desc, const PxReal elapsedTime
 		linMotion1 = motionV1.linear;
 		angMotion1 = motionV1.angular;
 
-		rotA = aos::QuatVLoadU(&artA->getDeltaQ(desc.linkIndexA).x);
-		rotB = aos::QuatVLoadU(&artB->getDeltaQ(desc.linkIndexB).x);
+		rotA = QuatVLoadU(&artA->getDeltaQ(desc.linkIndexA).x);
+		rotB = QuatVLoadU(&artB->getDeltaQ(desc.linkIndexB).x);
 	}
 	else
 	{
@@ -2346,12 +2327,12 @@ void solveExt1DStep(const PxSolverConstraintDesc& desc, const PxReal elapsedTime
 			angVel0 = V3LoadA(desc.tgsBodyA->angularVelocity);
 			linMotion0 = V3LoadA(desc.tgsBodyA->deltaLinDt);
 			angMotion0 = V3LoadA(desc.tgsBodyA->deltaAngDt);
-			rotA = aos::QuatVLoadA(&txInertias[desc.bodyADataIndex].deltaBody2WorldQ.x);
+			rotA = QuatVLoadA(&txInertias[desc.bodyADataIndex].deltaBody2WorldQ.x);
 		}
 		else
 		{
 			const Cm::SpatialVectorV v = artA->pxcFsGetVelocity(desc.linkIndexA);
-			rotA = aos::QuatVLoadU(&artA->getDeltaQ(desc.linkIndexA).x);
+			rotA = QuatVLoadU(&artA->getDeltaQ(desc.linkIndexA).x);
 			const Cm::SpatialVectorV motionV = artA->getLinkMotionVector(desc.linkIndexA);//PxcFsGetMotionVector(*artA, desc.linkIndexA);
 			linVel0 = v.linear;
 			angVel0 = v.angular;
@@ -2366,12 +2347,12 @@ void solveExt1DStep(const PxSolverConstraintDesc& desc, const PxReal elapsedTime
 			angVel1 = V3LoadA(desc.tgsBodyB->angularVelocity);
 			linMotion1 = V3LoadA(desc.tgsBodyB->deltaLinDt);
 			angMotion1 = V3LoadA(desc.tgsBodyB->deltaAngDt);
-			rotB = aos::QuatVLoadA(&txInertias[desc.bodyBDataIndex].deltaBody2WorldQ.x);
+			rotB = QuatVLoadA(&txInertias[desc.bodyBDataIndex].deltaBody2WorldQ.x);
 		}
 		else
 		{
 			Cm::SpatialVectorV v = artB->pxcFsGetVelocity(desc.linkIndexB);
-			rotB = aos::QuatVLoadU(&artB->getDeltaQ(desc.linkIndexB).x);
+			rotB = QuatVLoadU(&artB->getDeltaQ(desc.linkIndexB).x);
 			Cm::SpatialVectorV motionV = artB->getLinkMotionVector(desc.linkIndexB);// PxcFsGetMotionVector(*artB, desc.linkIndexB);
 			linVel1 = v.linear;
 			angVel1 = v.angular;
@@ -2395,8 +2376,8 @@ void solveExt1DStep(const PxSolverConstraintDesc& desc, const PxReal elapsedTime
 	{
 		if (desc.linkIndexA == PxSolverConstraintDesc::RIGID_BODY)
 		{
-			V3StoreA(linVel0, desc.tgsBodyA->linearVelocity);
-			V3StoreA(angVel0, desc.tgsBodyA->angularVelocity);
+			storeVelocityPreservingW(linVel0, desc.tgsBodyA->linearVelocity);
+			storeVelocityPreservingW(angVel0, desc.tgsBodyA->angularVelocity);
 		}
 		else
 		{
@@ -2405,8 +2386,8 @@ void solveExt1DStep(const PxSolverConstraintDesc& desc, const PxReal elapsedTime
 
 		if (desc.linkIndexB == PxSolverConstraintDesc::RIGID_BODY)
 		{
-			V3StoreA(linVel1, desc.tgsBodyB->linearVelocity);
-			V3StoreA(angVel1, desc.tgsBodyB->angularVelocity);
+			storeVelocityPreservingW(linVel1, desc.tgsBodyB->linearVelocity);
+			storeVelocityPreservingW(angVel1, desc.tgsBodyB->angularVelocity);
 		}
 		else
 		{
@@ -2468,8 +2449,8 @@ void solve1DStep(const PxSolverConstraintDesc& desc, const PxTGSSolverBodyTxIner
 		//deltaBody2WorldQ is the accumulated delta to the quaternion of the body at the time of the current TGS step.
 		//deltaRotA is the accumulated delta quat for bodyA
 		//deltaRotB is the accumulated delta quat for bodyB
-		const QuatV deltaRotA = aos::QuatVLoadA(&txI0.deltaBody2WorldQ.x);
-		const QuatV deltaRotB = aos::QuatVLoadA(&txI1.deltaBody2WorldQ.x);
+		const QuatV deltaRotA = QuatVLoadA(&txI0.deltaBody2WorldQ.x);
+		const QuatV deltaRotB = QuatVLoadA(&txI1.deltaBody2WorldQ.x);
 
 		//raPrev is the vector from body a to the joint anchor of body a in the world frame.
 		//rbPrev is the vector from body b to the joint anchor of body b in the world frame.
@@ -2730,10 +2711,10 @@ void solve1DStep(const PxSolverConstraintDesc& desc, const PxTGSSolverBodyTxIner
 		angState1 = V3ScaleAdd(rbXnI, FMul(deltaF, invInertiaScale1), angState1);
 	}
 
-	V3StoreA(linVel0, b0.linearVelocity);
-	V3StoreA(angState0, b0.angularVelocity);
-	V3StoreA(linVel1, b1.linearVelocity);
-	V3StoreA(angState1, b1.angularVelocity);
+	storeVelocityPreservingW(linVel0, b0.linearVelocity);
+	storeVelocityPreservingW(angState0, b0.angularVelocity);
+	storeVelocityPreservingW(linVel1, b1.linearVelocity);
+	storeVelocityPreservingW(angState1, b1.angularVelocity);
 
 	PX_ASSERT(b0.linearVelocity.isFinite());
 	PX_ASSERT(b0.angularVelocity.isFinite());
@@ -3261,8 +3242,8 @@ static void solveExtContactStep(const PxSolverConstraintDesc& desc, bool doFrict
 	{
 		if (desc.linkIndexA == PxSolverConstraintDesc::RIGID_BODY)
 		{
-			V3StoreA(linVel0, desc.tgsBodyA->linearVelocity);
-			V3StoreA(angVel0, desc.tgsBodyA->angularVelocity);
+			storeVelocityPreservingW(linVel0, desc.tgsBodyA->linearVelocity);
+			storeVelocityPreservingW(angVel0, desc.tgsBodyA->angularVelocity);
 		}
 		else
 		{
@@ -3271,8 +3252,8 @@ static void solveExtContactStep(const PxSolverConstraintDesc& desc, bool doFrict
 
 		if (desc.linkIndexB == PxSolverConstraintDesc::RIGID_BODY)
 		{
-			V3StoreA(linVel1, desc.tgsBodyB->linearVelocity);
-			V3StoreA(angVel1, desc.tgsBodyB->angularVelocity);
+			storeVelocityPreservingW(linVel1, desc.tgsBodyB->linearVelocity);
+			storeVelocityPreservingW(angVel1, desc.tgsBodyB->angularVelocity);
 		}
 		else
 		{
@@ -3284,7 +3265,6 @@ static void solveExtContactStep(const PxSolverConstraintDesc& desc, bool doFrict
 void solveContactBlock(DY_TGS_SOLVE_METHOD_PARAMS)
 {
 	PX_UNUSED(txInertias);
-	PX_UNUSED(cache);
 
 	for (PxU32 i = hdr.startIndex, endIdx = hdr.startIndex + hdr.stride; i < endIdx; ++i)
 		solveContact(desc[i], true, minPenetration, elapsedTime);
@@ -3293,7 +3273,6 @@ void solveContactBlock(DY_TGS_SOLVE_METHOD_PARAMS)
 void solve1DBlock(DY_TGS_SOLVE_METHOD_PARAMS)
 {
 	PX_UNUSED(minPenetration);
-	PX_UNUSED(cache);
 
 	for (PxU32 i = hdr.startIndex, endIdx = hdr.startIndex + hdr.stride; i < endIdx; ++i)
 		solve1DStep(desc[i], txInertias, elapsedTime);
@@ -3302,7 +3281,6 @@ void solve1DBlock(DY_TGS_SOLVE_METHOD_PARAMS)
 void solveExtContactBlock(DY_TGS_SOLVE_METHOD_PARAMS)
 {
 	PX_UNUSED(txInertias);
-	PX_UNUSED(cache);
 
 	for (PxU32 i = hdr.startIndex, endIdx = hdr.startIndex + hdr.stride; i < endIdx; ++i)
 		solveExtContactStep(desc[i], true, minPenetration, elapsedTime);
@@ -3311,7 +3289,6 @@ void solveExtContactBlock(DY_TGS_SOLVE_METHOD_PARAMS)
 void solveExt1DBlock(DY_TGS_SOLVE_METHOD_PARAMS)
 {
 	PX_UNUSED(minPenetration);
-	PX_UNUSED(cache);
 
 	for (PxU32 i = hdr.startIndex, endIdx = hdr.startIndex + hdr.stride; i < endIdx; ++i)
 		solveExt1DStep(desc[i], elapsedTime, txInertias);
@@ -3320,21 +3297,17 @@ void solveExt1DBlock(DY_TGS_SOLVE_METHOD_PARAMS)
 void writeBackContact(DY_TGS_WRITEBACK_METHOD_PARAMS)
 {
 	for (PxU32 i = hdr.startIndex, endIdx = hdr.startIndex + hdr.stride; i < endIdx; ++i)
-		writeBackContact(desc[i], cache);
+		writeBackContact(desc[i]);
 }
 
 void writeBack1D(DY_TGS_WRITEBACK_METHOD_PARAMS)
 {
-	PX_UNUSED(cache);
-
 	for (PxU32 i = hdr.startIndex, endIdx = hdr.startIndex + hdr.stride; i < endIdx; ++i)
 		writeBack1DStep(desc[i]);
 }
 
 void solveConclude1DBlock(DY_TGS_CONCLUDE_METHOD_PARAMS)
 {
-	PX_UNUSED(cache);
-
 	for (PxU32 i = hdr.startIndex, endIdx = hdr.startIndex + hdr.stride; i < endIdx; ++i)
 	{
 		solve1DStep(desc[i], txInertias, elapsedTime);
@@ -3344,8 +3317,6 @@ void solveConclude1DBlock(DY_TGS_CONCLUDE_METHOD_PARAMS)
 
 void solveConclude1DBlockExt(DY_TGS_CONCLUDE_METHOD_PARAMS)
 {
-	PX_UNUSED(cache);
-
 	for (PxU32 i = hdr.startIndex, endIdx = hdr.startIndex + hdr.stride; i < endIdx; ++i)
 	{
 		solveExt1DStep(desc[i], elapsedTime, txInertias);
@@ -3356,7 +3327,6 @@ void solveConclude1DBlockExt(DY_TGS_CONCLUDE_METHOD_PARAMS)
 void solveConcludeContactBlock(DY_TGS_CONCLUDE_METHOD_PARAMS)
 {
 	PX_UNUSED(txInertias);
-	PX_UNUSED(cache);
 
 	for (PxU32 i = hdr.startIndex, endIdx = hdr.startIndex + hdr.stride; i < endIdx; ++i)
 	{
@@ -3368,7 +3338,6 @@ void solveConcludeContactBlock(DY_TGS_CONCLUDE_METHOD_PARAMS)
 void solveConcludeContactExtBlock(DY_TGS_CONCLUDE_METHOD_PARAMS)
 {
 	PX_UNUSED(txInertias);
-	PX_UNUSED(cache);
 
 	for (PxU32 i = hdr.startIndex, endIdx = hdr.startIndex + hdr.stride; i < endIdx; ++i)
 	{

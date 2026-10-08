@@ -1,31 +1,45 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
+/**
+ * @implements REQ-SPLINE-CURVE-001
+ * @covers AC-2 AC-3 AC-4 AC-6 AC-7 AC-8
+ */
 
 #include <carb/logging/Log.h>
 #include "SplinesCurve.h"
 
 #include <PhysXTools.h>
 #include <usdLoad/AttachedStage.h>
+#include <omni/physics/parse/KnownTokens.h>
 
-#include <common/foundation/TypeCast.h>
+#include <common/foundation/CarbPhysXCast.h>
 
-using namespace PXR_NS;
+// getClosestPoint's AVX path below needs __m256/_mm256_* directly; this used to arrive
+// transitively via a pxr header pulled in through PhysXTools.h/AttachedStage.h; both are
+// pxr-free now, so this is a real, direct dependency that was previously masked. immintrin.h
+// is x86-only (absent on aarch64 toolchains); guard it the same way the AVX code paths below
+// already are, since an unguarded #include fails at header-resolution time regardless of
+// whether __AVX__ ends up defined.
+#ifdef __AVX__
+#include <immintrin.h>
+#endif
+
+using ::physx::PxVec3;
 
 static const size_t samplesPerSegment = 96;
 
 std::vector<float> approximateDistanceAlongCurve(const SplineCurve& curve,
-                                                   const std::vector<GfVec3f>& controlPoints,
+                                                   const std::vector<PxVec3>& controlPoints,
                                                    const bool normalizeLengths,
                                                    size_t stepsPerSegment = 20,
-                                                   std::vector<GfVec3f>* pointsOut = nullptr,
-                                                   std::vector<GfVec3f>* tangentsOut = nullptr)
+                                                   std::vector<PxVec3>* pointsOut = nullptr,
+                                                   std::vector<PxVec3>* tangentsOut = nullptr)
 {
     const bool includeSegmentFinalSamples = false;
 
     // do a tessellation with some relatively high resolution to approximate curve length
-    std::vector<GfVec3f> tessellatedPoints;
+    std::vector<PxVec3> tessellatedPoints;
     curve.tessellate(controlPoints.data(), controlPoints.size(), tessellatedPoints, stepsPerSegment,
                      includeSegmentFinalSamples, tangentsOut);
 
@@ -37,14 +51,17 @@ std::vector<float> approximateDistanceAlongCurve(const SplineCurve& curve,
     for (size_t i = 0; i < tessellatedPoints.size(); i++)
     {
         if (i != 0)
-            length += (tessellatedPoints[i] - tessellatedPoints[i - 1]).GetLength();
+            length += (tessellatedPoints[i] - tessellatedPoints[i - 1]).magnitude();
         distanceAlongCurve[i] = length;
     }
 
     if (isPeriodic)
     {
-        length += (tessellatedPoints[0] - tessellatedPoints.back()).GetLength();
+        length += (tessellatedPoints[0] - tessellatedPoints.back()).magnitude();
         distanceAlongCurve.back() = length;
+        // Store the closing edge explicitly by repeating the first sample: closest-point search
+        // then sees the last -> first edge like any other and never has to wrap an index.
+        tessellatedPoints.push_back(tessellatedPoints[0]);
         if (tangentsOut != nullptr)
         {
             tangentsOut->push_back((*tangentsOut)[0]);
@@ -68,100 +85,120 @@ std::vector<float> approximateDistanceAlongCurve(const SplineCurve& curve,
 }
 
 
-SplinesCurve::SplinesCurve(const PXR_NS::UsdGeomBasisCurves& curvePrim)
-{
-    mInitialized = false;
-    const SdfPath curvePrimPath = curvePrim.GetPrim().GetPrimPath();
-
-    VtArray<GfVec3f> pointsIn;
-    curvePrim.GetPointsAttr().Get(&pointsIn);
-
-    VtArray<int> curveVertexCounts;
-    curvePrim.GetCurveVertexCountsAttr().Get(&curveVertexCounts);
-
-    TfToken basisToken;
-    curvePrim.GetBasisAttr().Get(&basisToken);
-
-    TfToken wrapToken;
-    curvePrim.GetWrapAttr().Get(&wrapToken);
-
-    initialize(curvePrimPath, pointsIn, curveVertexCounts, basisToken, wrapToken);
-}
-
 SplinesCurve::SplinesCurve(const omni::physx::usdparser::AttachedStage& attachedStage,
                            omni::physics::parse::ObjectKey curveKey)
 {
     mInitialized = false;
-    const SdfPath curvePrimPath = attachedStage.pathFor(curveKey);
+    const std::string curvePrimPath = attachedStage.textFor(curveKey);
 
-    VtArray<GfVec3f> pointsIn;
-    omni::physx::internal::getArrayValue(attachedStage, curveKey, UsdGeomTokens->points, UsdTimeCode::Default(), pointsIn);
+    const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+    omni::physics::parse::KnownTokens tok;
+    if (source)
+        tok.intern(*source);
 
-    VtArray<int> curveVertexCounts;
-    omni::physx::internal::getArrayValue(attachedStage, curveKey, UsdGeomTokens->curveVertexCounts,
-                                         UsdTimeCode::Default(), curveVertexCounts);
+    std::vector<carb::Float3> pointsIn;
+    omni::physx::internal::getArrayValue(
+        attachedStage, curveKey, tok.points, omni::physics::parse::ReadTime::defaultTime(), pointsIn);
 
-    TfToken basisToken;
-    omni::physx::internal::getValue(attachedStage, curveKey, UsdGeomTokens->basis, UsdTimeCode::Default(), basisToken);
+    std::vector<int32_t> curveVertexCounts;
+    omni::physx::internal::getArrayValue(
+        attachedStage, curveKey, tok.curveVertexCounts, omni::physics::parse::ReadTime::defaultTime(), curveVertexCounts);
 
-    TfToken wrapToken;
-    omni::physx::internal::getValue(attachedStage, curveKey, UsdGeomTokens->wrap, UsdTimeCode::Default(), wrapToken);
+    // basis/wrap are token-valued attributes; resolve them straight to the source-neutral
+    // enums SplineCurve/SplinesCurve::initialize take, via the TokenId comparison against
+    // KnownTokens -- no TfToken materialization needed.
+    eCurveBasisType basisType = eCurveBasisType::BSpline;
+    omni::physics::parse::TokenId basisTokenId;
+    if (source && omni::physx::internal::getValue(attachedStage, curveKey, tok.basis,
+                                                   omni::physics::parse::ReadTime::defaultTime(), basisTokenId))
+    {
+        if (basisTokenId == tok.bezier)
+            basisType = eCurveBasisType::Bezier;
+        else if (basisTokenId == tok.catmullRom)
+            basisType = eCurveBasisType::CatmullRom;
+    }
 
-    initialize(curvePrimPath, pointsIn, curveVertexCounts, basisToken, wrapToken);
+    eBasisCurveWrap wrapType = eBasisCurveWrap::NonPeriodic;
+    omni::physics::parse::TokenId wrapTokenId;
+    if (source && omni::physx::internal::getValue(attachedStage, curveKey, tok.wrap,
+                                                   omni::physics::parse::ReadTime::defaultTime(), wrapTokenId))
+    {
+        if (wrapTokenId == tok.nonperiodic)
+            wrapType = eBasisCurveWrap::NonPeriodic;
+        else if (wrapTokenId == tok.periodic)
+            wrapType = eBasisCurveWrap::Periodic;
+        else if (wrapTokenId == tok.pinned)
+            wrapType = eBasisCurveWrap::Pinned;
+    }
+
+    // `type` (linear | cubic) decides whether the control points are the polyline itself or the
+    // CVs of a cubic basis; a linear curve authored as a conveyor path must not be smoothed.
+    eCurveType curveType = eCurveType::Cubic;
+    omni::physics::parse::TokenId typeTokenId;
+    if (source && omni::physx::internal::getValue(attachedStage, curveKey, tok.type,
+                                                   omni::physics::parse::ReadTime::defaultTime(), typeTokenId))
+    {
+        if (typeTokenId == tok.linear)
+            curveType = eCurveType::Linear;
+    }
+
+    initialize(curvePrimPath, pointsIn, curveVertexCounts, basisType, wrapType, curveType);
 }
 
-void SplinesCurve::initialize(const SdfPath& curvePrimPath,
-                              const VtArray<GfVec3f>& pointsIn,
-                              const VtArray<int>& curveVertexCounts,
-                              const TfToken& basisToken,
-                              const TfToken& wrapToken)
+void SplinesCurve::initialize(const std::string& curvePrimPath,
+                              const std::vector<carb::Float3>& pointsIn,
+                              const std::vector<int32_t>& curveVertexCounts,
+                              eCurveBasisType basisType,
+                              eBasisCurveWrap wrapType,
+                              eCurveType curveType)
 {
     mCurvePrimPath = curvePrimPath;
     if (pointsIn.empty())
     {
-        CARB_LOG_WARN("No points defined for the BasisCurves prim %s.", mCurvePrimPath.GetText());
+        CARB_LOG_WARN("No points defined for the BasisCurves prim %s.", mCurvePrimPath.c_str());
         return;
     }
 
     const size_t pointsInCount = pointsIn.size();
     const size_t curveCount = curveVertexCounts.size();
 
-    eBasisCurveWrap curveWrapType = eBasisCurveWrap::NonPeriodic;
-    if (wrapToken == UsdGeomTokens->nonperiodic)
-    {
-        curveWrapType = eBasisCurveWrap::NonPeriodic;
-    }
-    else if (wrapToken == UsdGeomTokens->periodic)
-    {
-        curveWrapType = eBasisCurveWrap::Periodic;
-    }
-    else if (wrapToken == UsdGeomTokens->pinned)
-    {
-        curveWrapType = eBasisCurveWrap::Pinned;
-    }
-
-    std::vector<GfVec3f> positions, tangents;
+    // Internal storage is PhysX math; the source-neutral points come straight off the array read
+    // above and are converted here, at the boundary.
+    std::vector<PxVec3> positions, tangents;
     std::vector<int> vertexCountsPerCurve(curveCount == 0 ? 1 : curveCount);
     std::vector<int> segmentCountsPerCurve(curveCount == 0 ? 1 : curveCount);
+    std::vector<bool> linearPerCurve(curveCount == 0 ? 1 : curveCount, false);
 
     for (size_t curveIndex = 0, startIndex = 0; curveIndex < (curveCount == 0 ? 1 : curveCount); curveIndex++)
     {
         const size_t count = (curveCount == 0 ? pointsInCount : curveVertexCounts[curveIndex]);
 
-        std::vector<GfVec3f> controlPoints;
+        std::vector<PxVec3> controlPoints;
         for (size_t i = startIndex; i < startIndex + count; i++)
         {
-            controlPoints.push_back(pointsIn[i]);
+            controlPoints.push_back(omni::physx::toPhysX(pointsIn[i]));
         }
         startIndex += count;
 
-        SplineCurve curve(curveWrapType, basisToken);
+        // Two control points are a straight line whatever the basis or wrap: tessellate them as one
+        // open linear segment so they get the same samplesPerSegment sampling the distance table
+        // below indexes, and never as a "loop" that would only retrace the same edge.
+        const bool twoPoints = (controlPoints.size() == 2);
+        const eCurveType effectiveType = twoPoints ? eCurveType::Linear : curveType;
+        SplineCurve curve(twoPoints ? eBasisCurveWrap::NonPeriodic : wrapType, basisType, effectiveType);
+        linearPerCurve[curveIndex] = (effectiveType == eCurveType::Linear);
+        const size_t segmentCount = curve.getSegmentCount(controlPoints.size());
+        if (segmentCount == 0)
+        {
+            CARB_LOG_WARN("BasisCurves prim %s does not define enough control points for its basis and wrap mode.",
+                          mCurvePrimPath.c_str());
+            return;
+        }
 
-        std::vector<GfVec3f> tessellatedPositions, tessellatedTangents;
+        std::vector<PxVec3> tessellatedPositions, tessellatedTangents;
         const bool normalizeLengths = true;
         const std::vector<float> curveDistances = approximateDistanceAlongCurve(
             curve, controlPoints, normalizeLengths, samplesPerSegment, &tessellatedPositions, &tessellatedTangents);
-        const size_t segmentCount = curve.getSegmentCount(controlPoints.size());
         std::vector<float> curveSegmentDistances(segmentCount);
         for (size_t i = 0; i < segmentCount; i++)
         {
@@ -182,62 +219,75 @@ void SplinesCurve::initialize(const SdfPath& curvePrimPath,
         segmentCountsPerCurve[curveIndex] = (int)curveSegmentDistances.size();
     }
 
+    // Samples that carry no curvature point: the first and last sample of EACH curve in the prim
+    // (an osculating circle fitted across two curves' boundary is not a belt radius), and every
+    // sample of a linear curve (its vertices are corners; the circle through three samples around
+    // a corner is tiny and would blow up the contact modifier's radius scaling).
+    std::vector<bool> noCurvature(positions.size(), false);
+    for (size_t curveIndex = 0, start = 0; curveIndex < vertexCountsPerCurve.size(); ++curveIndex)
+    {
+        const size_t count = size_t(vertexCountsPerCurve[curveIndex]);
+        for (size_t i = start; i < start + count; ++i)
+            noCurvature[i] = linearPerCurve[curveIndex] || i == start || i == start + count - 1;
+        start += count;
+    }
+
     mCurvaturePoints.resize(positions.size());
     for (size_t i = 0; i < positions.size(); i++)
     {
-        if (i == 0 || i == positions.size() - 1)
+        if (noCurvature[i])
         {
-            mCurvaturePoints[i] = GfVec3f(FLT_MAX);
+            mCurvaturePoints[i] = PxVec3(FLT_MAX);
         }
         else
         {
-            const GfVec3f& previousPoint = positions[i - 1];
-            const GfVec3f& currentPoint = positions[i];
-            const GfVec3f& nextPoint = positions[i + 1];
-            
+            const PxVec3 previousPoint = positions[i - 1];
+            const PxVec3 currentPoint = positions[i];
+            const PxVec3 nextPoint = positions[i + 1];
+
             // Check if the three points are collinear (forming a straight line)
-            GfVec3f v1 = currentPoint - previousPoint;
-            GfVec3f v2 = nextPoint - currentPoint;
-            
+            PxVec3 v1 = currentPoint - previousPoint;
+            PxVec3 v2 = nextPoint - currentPoint;
+
             // Verify vectors have non-zero length before normalizing to prevent NaNs/asserts
-            const float v1LengthSq = v1.GetLengthSq();
-            const float v2LengthSq = v2.GetLengthSq();
+            const float v1LengthSq = v1.magnitudeSquared();
+            const float v2LengthSq = v2.magnitudeSquared();
             const float lengthEpsilonSq = 1e-10f;  // Squared epsilon for length check
             if (v1LengthSq < lengthEpsilonSq || v2LengthSq < lengthEpsilonSq)
             {
                 // Degenerate case: coincident or nearly coincident points
-                mCurvaturePoints[i] = GfVec3f(FLT_MAX);
+                mCurvaturePoints[i] = PxVec3(FLT_MAX);
                 continue;
             }
-            
-            v1.Normalize();
-            v2.Normalize();
-            const GfVec3f crossProduct = GfCross(v1, v2);
-            const float crossProductMagnitude = crossProduct.GetLength();
-            
+
+            v1.normalize();
+            v2.normalize();
+            const PxVec3 crossProduct = v1.cross(v2);
+            const float crossProductMagnitude = crossProduct.magnitude();
+
             const float collinearityTolerance = 1e-4f;
             const bool areCollinear = (crossProductMagnitude < collinearityTolerance);
-            
+
             if (areCollinear)
             {
                 // Points form a straight line - no curvature
-                mCurvaturePoints[i] = GfVec3f(FLT_MAX);
+                mCurvaturePoints[i] = PxVec3(FLT_MAX);
             }
             else
             {
                 // Compute the center of the osculating circle/sphere
                 // This is the circumcenter of the three points
-                const GfVec3f a = currentPoint - previousPoint;
-                const GfVec3f b = nextPoint - previousPoint;
-                const GfVec3f axb = GfCross(a, b);
-                const float axbLengthSq = axb.GetLengthSq();
-                
+                const PxVec3 a = currentPoint - previousPoint;
+                const PxVec3 b = nextPoint - previousPoint;
+                const PxVec3 axb = a.cross(b);
+                const float axbLengthSq = axb.magnitudeSquared();
+
                 // Circumcenter formula: C = P1 + [(|b|² * a - |a|² * b) × (a × b)] / (2 * |a × b|²)
-                const float aLengthSq = a.GetLengthSq();
-                const float bLengthSq = b.GetLengthSq();
-                const GfVec3f numerator = -GfCross((bLengthSq * a - aLengthSq * b), axb);
-                const GfVec3f circumcenter = previousPoint + numerator / (2.0f * axbLengthSq);
-                
+                const float aLengthSq = a.magnitudeSquared();
+                const float bLengthSq = b.magnitudeSquared();
+                const PxVec3 numerator = -(bLengthSq * a - aLengthSq * b).cross(axb);
+                const PxVec3 circumcenter = previousPoint + numerator / (2.0f * axbLengthSq);
+
                 mCurvaturePoints[i] = circumcenter;
             }
         }
@@ -246,7 +296,8 @@ void SplinesCurve::initialize(const SdfPath& curvePrimPath,
     mPoints = positions;
     mTangents = tangents;
     mCurveVertexCounts = vertexCountsPerCurve;
-    
+    mLinear = (curveType == eCurveType::Linear);
+
 #ifdef __AVX__
     const size_t numPoints = mPoints.size();
     mXPoints.resize(numPoints);
@@ -275,36 +326,33 @@ void SplinesCurve::draw(omni::physx::OmniRenderBuffer& renderBuffer, const ::phy
     {
         for (size_t i = 0; i < numLines; i++)
         {
-            renderBuffer.addLine(::physx::PxDebugLine(tr.transform(omni::physx::toPhysX(mPoints[i])),
-                                                      tr.transform(omni::physx::toPhysX(mPoints[i + 1])),
+            renderBuffer.addLine(::physx::PxDebugLine(tr.transform(mPoints[i]), tr.transform(mPoints[i + 1]),
                                                       ::physx::PxDebugColor::eARGB_BLUE));
 
             if (mCurvaturePoints[i][0] != FLT_MAX)
             {
-                renderBuffer.addLine(::physx::PxDebugLine(tr.transform(omni::physx::toPhysX(mPoints[i])),
-                                                          tr.transform(omni::physx::toPhysX(mCurvaturePoints[i])),
+                renderBuffer.addLine(::physx::PxDebugLine(tr.transform(mPoints[i]), tr.transform(mCurvaturePoints[i]),
                                                           ::physx::PxDebugColor::eARGB_GREEN));
             }
         }
     }
 }
 
-bool SplinesCurve::getClosestPoint(const PXR_NS::GfVec3f& point, PXR_NS::GfVec3f& pointOnCurveOut, PXR_NS::GfVec3f& tangentOut, PXR_NS::GfVec3f& curvaturePointOut)
+bool SplinesCurve::getClosestPoint(const PxVec3& point, PxVec3& pointOnCurveOut, PxVec3& tangentOut, PxVec3& curvaturePointOut)
 {
-    bool foundCurve = false;
-    GfVec3f pointOnCurve(0), tangentAtPoint(0);
+    PxVec3 pointOnCurve(0.0f), tangentAtPoint(0.0f);
     float closestDistanceSq = std::numeric_limits<float>::max();
     const float smallNumber = 1.e-6f;
 
     if (!mInitialized)
         return false;
 
-    const GfVec3f* const points = mPoints.data();
-    const GfVec3f* const tangents = mTangents.data();
-    const GfVec3f* const curvaturePoints = mCurvaturePoints.data();
+    const PxVec3* const points = mPoints.data();
+    const PxVec3* const tangents = mTangents.data();
+    const PxVec3* const curvaturePoints = mCurvaturePoints.data();
     const int* curveVertexCounts = mCurveVertexCounts.data();
 
-    GfVec3f curvaturePoint(FLT_MAX);
+    PxVec3 curvaturePoint(FLT_MAX);
 
     if (points == nullptr || tangents == nullptr || curveVertexCounts == nullptr || curvaturePoints == nullptr)
     {
@@ -316,19 +364,29 @@ bool SplinesCurve::getClosestPoint(const PXR_NS::GfVec3f& point, PXR_NS::GfVec3f
     for (size_t curveIndex = 0, pointsStart = 0, segmentsStart = 0; curveIndex < curveCount;
             curveIndex++)
     {
-        const GfVec3f* curvePoints = points + pointsStart;
-        const GfVec3f* curveTangents = tangents + pointsStart;
+        const PxVec3* curvePoints = points + pointsStart;
+        const PxVec3* curveTangents = tangents + pointsStart;
+        // mCurvaturePoints is prim-global like mPoints; index it per curve too.
+        const PxVec3* curveCurvaturePoints = curvaturePoints + pointsStart;
 
-        const size_t vertexCount = curveVertexCounts[curveIndex];        
+        const size_t vertexCount = curveVertexCounts[curveIndex];
+        if (vertexCount < 2)
+        {
+            pointsStart += vertexCount;
+            continue;
+        }
 
 #ifdef __AVX__
         const float* curveXPoints = mXPoints.data() + pointsStart;
         const float* curveYPoints = mYPoints.data() + pointsStart;
         const float* curveZPoints = mZPoints.data() + pointsStart;
 
-        // Process 8 segments at a time using AVX
-        const size_t numAVXVertices = vertexCount / 8;
-        const size_t remainingVertices = vertexCount % 8;
+        // Process 8 edges at a time using AVX. A curve of V samples has V - 1 edges, and a batch
+        // starting at baseIdx loads samples baseIdx .. baseIdx + 8, so batch only whole groups of
+        // eight EDGES: (V - 1) / 8 batches keeps the last load at index <= V - 1. (V / 8 batches
+        // read sample V, one past the end, whenever V is a multiple of eight -- every periodic
+        // curve before the closing sample was stored.)
+        const size_t numAVXVertices = (vertexCount - 1) / 8;
 
         // Load point into AVX register (replicate for all lanes)
         __m256 pointX = _mm256_set1_ps(point[0]);
@@ -438,21 +496,21 @@ bool SplinesCurve::getClosestPoint(const PXR_NS::GfVec3f& point, PXR_NS::GfVec3f
         // Process remaining segments
         for (size_t i = (numAVXVertices * 8) + 1; i < vertexCount; i++)
         {
-            const GfVec3f& a = curvePoints[i - 1];
-            const GfVec3f& b = curvePoints[i];
+            const PxVec3& a = curvePoints[i - 1];
+            const PxVec3& b = curvePoints[i];
 
-            const GfVec3f ab = b - a;
-            const float abLengthSq = ab.GetLengthSq();
+            const PxVec3 ab = b - a;
+            const float abLengthSq = ab.magnitudeSquared();
 
             float t = 0.f;
             if (abLengthSq > smallNumber)
             {
-                t = GfDot(ab, (point - a)) / abLengthSq;
+                t = ab.dot(point - a) / abLengthSq;
                 t = std::max(0.f, std::min(1.f, t));
             }
 
-            const GfVec3f pointOnSegment = a + t * ab;
-            const float pointDistSq = (point - pointOnSegment).GetLengthSq();
+            const PxVec3 pointOnSegment = a + t * ab;
+            const float pointDistSq = (point - pointOnSegment).magnitudeSquared();
             
             if (pointDistSq < minDistSq)
             {
@@ -465,44 +523,46 @@ bool SplinesCurve::getClosestPoint(const PXR_NS::GfVec3f& point, PXR_NS::GfVec3f
         if (minDistSq < closestDistanceSq)
         {
             closestDistanceSq = minDistSq;
-            const GfVec3f& a = curvePoints[closestIndex];
-            const GfVec3f& b = curvePoints[closestIndex + 1];
+            const PxVec3& a = curvePoints[closestIndex];
+            const PxVec3& b = curvePoints[closestIndex + 1];
             pointOnCurve = a + closestT * (b - a);
 
-            const GfVec3f& ta = curveTangents[closestIndex];
-            const GfVec3f& tb = curveTangents[closestIndex + 1];
-            tangentAtPoint = ta + closestT * (tb - ta);
-            curvaturePoint = (closestT < 0.5f) ? curvaturePoints[closestIndex] : curvaturePoints[closestIndex+1];
+            // A polyline's tangent is the hit edge itself; blending the samples' tangents would
+            // smear a corner's direction change over the last edge before it.
+            const PxVec3& ta = curveTangents[closestIndex];
+            const PxVec3& tb = curveTangents[closestIndex + 1];
+            tangentAtPoint = mLinear ? (b - a) : ta + closestT * (tb - ta);
+            curvaturePoint = (closestT < 0.5f) ? curveCurvaturePoints[closestIndex] : curveCurvaturePoints[closestIndex + 1];
         }
 #else
         // Original non-AVX implementation
         for (size_t i = 1; i < vertexCount; i++)
         {
-            const GfVec3f& a = curvePoints[i - 1];
-            const GfVec3f& b = curvePoints[i];
+            const PxVec3& a = curvePoints[i - 1];
+            const PxVec3& b = curvePoints[i];
 
-            const GfVec3f ab = b - a;
-            const float abLengthSq = ab.GetLengthSq();
+            const PxVec3 ab = b - a;
+            const float abLengthSq = ab.magnitudeSquared();
 
             float t = 0.f;
             if (abLengthSq > smallNumber)
             {
-                t = GfDot(ab, (point - a)) / abLengthSq;
+                t = ab.dot(point - a) / abLengthSq;
                 t = std::max(0.f, std::min(1.f, t));
             }
 
-            const GfVec3f pointOnSegment = a + t * ab;
-            const float pointDistSq = (point - pointOnSegment).GetLengthSq();
+            const PxVec3 pointOnSegment = a + t * ab;
+            const float pointDistSq = (point - pointOnSegment).magnitudeSquared();
             if (pointDistSq < closestDistanceSq)
             {
                 closestDistanceSq = pointDistSq;
                 pointOnCurve = pointOnSegment;
 
-                const GfVec3f& ta = curveTangents[i - 1];
-                const GfVec3f& tb = curveTangents[i];
-                tangentAtPoint = ta + t * (tb - ta);
+                const PxVec3& ta = curveTangents[i - 1];
+                const PxVec3& tb = curveTangents[i];
+                tangentAtPoint = mLinear ? ab : ta + t * (tb - ta);
 
-                curvaturePoint = (t < 0.5f) ? curvaturePoints[i - 1] : curvaturePoints[i];
+                curvaturePoint = (t < 0.5f) ? curveCurvaturePoints[i - 1] : curveCurvaturePoints[i];
             }
         }
 #endif
@@ -511,7 +571,7 @@ bool SplinesCurve::getClosestPoint(const PXR_NS::GfVec3f& point, PXR_NS::GfVec3f
 
     curvaturePointOut = curvaturePoint;
     pointOnCurveOut = pointOnCurve;
-    tangentAtPoint.Normalize();
+    tangentAtPoint.normalize();
     tangentOut = tangentAtPoint;
     return true;
 }

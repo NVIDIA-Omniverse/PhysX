@@ -1,0 +1,122 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    doc = "Kinematic support examples: target motion, surface velocity, and both together"
+    metersPerUnit = 1
+    upAxis = "Y"
+    kilogramsPerUnit = 1
+)
+
+def Xform "World"
+{
+    def PhysicsScene "PhysicsScene"
+    {
+        vector3f physics:gravityDirection = (0, -1, 0)
+        float physics:gravityMagnitude = 9.81
+    }
+
+    def Material "HighFriction" (
+        prepend apiSchemas = ["PhysicsMaterialAPI"]
+    )
+    {
+        float physics:staticFriction = 1.0
+        float physics:dynamicFriction = 1.0
+        float physics:restitution = 0.0
+    }
+
+    def Cube "TargetPlatform" (
+        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+    )
+    {
+        rel material:binding:physics = </World/HighFriction> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        bool physics:kinematicEnabled = true
+        float physics:mass = 10.0
+        double size = 1
+        double3 xformOp:scale = (6, 1, 6)
+        double3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "TargetRider" (
+        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI", "MaterialBindingAPI"]
+    )
+    {
+        rel material:binding:physics = </World/HighFriction> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        float physics:mass = 1.0
+        float physxRigidBody:sleepThreshold = 0.0
+        float physxRigidBody:stabilizationThreshold = 0.0
+        double size = 1
+        double3 xformOp:translate = (0, 1, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Cube "ConveyorPlatform" (
+        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxSurfaceVelocityAPI", "MaterialBindingAPI"]
+    )
+    {
+        rel material:binding:physics = </World/HighFriction> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        bool physics:kinematicEnabled = true
+        float physics:mass = 10.0
+        bool physxSurfaceVelocity:surfaceVelocityEnabled = true
+        vector3f physxSurfaceVelocity:surfaceVelocity = (1, 0, 0)
+        bool physxSurfaceVelocity:surfaceVelocityLocalSpace = false
+        double size = 1
+        double3 xformOp:scale = (6, 1, 6)
+        double3 xformOp:translate = (0, 0, 8)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "ConveyorRider" (
+        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI", "MaterialBindingAPI"]
+    )
+    {
+        rel material:binding:physics = </World/HighFriction> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        float physics:mass = 1.0
+        float physxRigidBody:sleepThreshold = 0.0
+        float physxRigidBody:stabilizationThreshold = 0.0
+        double size = 1
+        double3 xformOp:translate = (0, 1, 8)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Cube "CombinedPlatform" (
+        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxSurfaceVelocityAPI", "MaterialBindingAPI"]
+    )
+    {
+        rel material:binding:physics = </World/HighFriction> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        bool physics:kinematicEnabled = true
+        float physics:mass = 10.0
+        bool physxSurfaceVelocity:surfaceVelocityEnabled = true
+        vector3f physxSurfaceVelocity:surfaceVelocity = (1, 0, 0)
+        bool physxSurfaceVelocity:surfaceVelocityLocalSpace = false
+        double size = 1
+        double3 xformOp:scale = (6, 1, 6)
+        double3 xformOp:translate = (0, 0, 16)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "CombinedRider" (
+        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI", "MaterialBindingAPI"]
+    )
+    {
+        rel material:binding:physics = </World/HighFriction> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        float physics:mass = 1.0
+        float physxRigidBody:sleepThreshold = 0.0
+        float physxRigidBody:stabilizationThreshold = 0.0
+        double size = 1
+        double3 xformOp:translate = (0, 1, 16)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+}

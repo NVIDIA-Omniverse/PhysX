@@ -1,4 +1,7 @@
-# hello_world_source_link — demonstrates building against the ovphysx source tree
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# hello_world_source_link demonstrates building against the ovphysx source tree
 # using add_subdirectory() instead of find_package().
 #
 # Usage (from the repo root):
@@ -17,7 +20,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# Point at the ovphysx source tree. Default assumes monorepo layout.
+# Point at the ovphysx source tree. The default assumes the monorepo layout.
 if(NOT DEFINED OVPHYSX_SOURCE_DIR)
     get_filename_component(OVPHYSX_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
 endif()
@@ -28,13 +31,13 @@ if(NOT EXISTS "${OVPHYSX_SOURCE_DIR}/CMakeLists.txt")
         "Pass -DOVPHYSX_SOURCE_DIR=<path> to point at your ovphysx checkout.")
 endif()
 
-# Include ovphysx as a subdirectory. Dependencies are auto-fetched by default
-# (OVPHYSX_FETCH_DEPS=ON). Pass -DOVPHYSX_FETCH_DEPS=OFF to skip.
+# Include ovphysx as a subdirectory. Dependencies are fetched by default
+# (OVPHYSX_FETCH_DEPS=ON). Pass -DOVPHYSX_FETCH_DEPS=OFF to skip the fetch.
 add_subdirectory("${OVPHYSX_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/ovphysx")
 
 add_executable(hello_world_source_link main.c)
 
-# Strict C compilation flags (same as hello_world_c)
+# Strict C compilation flags, the same as in hello_world_c.
 if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(hello_world_source_link PRIVATE
         -Werror=implicit-function-declaration
@@ -54,5 +57,5 @@ target_compile_definitions(hello_world_source_link PRIVATE
     OVPHYSX_TEST_DATA="${OVPHYSX_TEST_DATA_DIR}"
 )
 
-# Set up runtime library paths so the executable finds ovphysx and its deps.
+# Set up runtime library paths so the executable finds ovphysx and its dependencies.
 ovphysx_setup_source_link_runtime(hello_world_source_link)

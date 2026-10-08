@@ -1,3 +1,129 @@
+# v5.11.0
+
+## Supported Platforms
+
+### Runtime
+
+* Linux (tested on Ubuntu LTS versions 22.04, and 24.04 using their respective default GCC and Clang compilers).
+* Microsoft Windows 10 or later (64 bit)
+* GPU acceleration: display driver supporting CUDA toolkit 12.8 and Volta GPU or above
+
+### Development
+
+* [Linux Platform Readme](documentation/platformreadme/linux/README_LINUX.md)
+* [Windows Platform Readme](documentation/platformreadme/windows/README_WINDOWS.md)
+
+## General
+
+### Added
+
+* Direct-GPU API: friction anchors (eFRICTION_POINT / eFRICTION_NORMAL / eFRICTION_IMPULSE) are now visualized under PxSceneFlag::eENABLE_DIRECT_GPU_API, drawn at fetchResults from the GPU solver's friction patches.
+* `PxCudaContextManager::acquireReference()` increments the reference count of a context manager, pairing with the existing `release()`. An object that has to outlive the application's own reference can take one for as long as it needs it.
+
+### Fixed
+
+* Fixed a use-after-free of `PxCudaContextManager`: `PxScene`, `PxBroadPhase` using `PxBroadPhaseType::eGPU`, `PxParticleBuffer`, and `PxDeformableSurface` / `PxDeformableVolume` once a shape is attached, now hold a counted reference on it, so the application can release its own reference before or after them. The context manager and its CUDA context stay alive until the last of those references is dropped. The objects returned by `PxPhysicsGpu` (isosurface extractors, anisotropy and smoothed-position generators, neighborhood provider, array converter, SDF builder, deformable skinning) are not covered and must still be released before the context manager.
+* `PxBitMapBase::PxCircularIterator` ignored its start index: it derived the start word with a `<< 5` where a `>> 5` was intended, so for any non-trivial start index it silently began at word 0 and behaved like the regular iterator. It now starts at the word containing the requested bit.
+* `PxgShapeManager::scheduleCopyHtoD()` cached the dirty-shape bitmap words before a loop that can grow the bitmap, and then scanned through the stale pointer if the growth reallocated it.
+* Fixed a crash when releasing a `PxScene` that uses GPU simulation, if a block returned to the GPU heap was not a live allocation of that heap. This is now reported through the error callback as `PxErrorCode::eINTERNAL_ERROR` and ignored instead of crashing.
+* Fixed GPU broad-phase memory failing to be released when a custom `PxDeviceAllocatorCallback` returns blocks aligned to less than 128 bytes. Allocations from the default CUDA allocator are sufficiently aligned and were not affected.
+* OmniPVD socket write stream: `openStream()` now bounds the socket connect by the configured send timeout, so a connection to an unreachable or non-listening host fails within that timeout instead of stalling on the OS connect timeout.
+* PvdDom: fixed object lifespans across repeated sampling segments and scene membership changes.
+* PvdDom: restored integration-version validation and per-scene frame tracking.
+* `Cm::FanoutTask` called `PxCpuDispatcher::submitTask()` while holding its own mutex. A dispatcher that migrates a running task between OS threads can leave that mutex locked by a stale thread id, which aborts the process inside glibc on the next lock attempt on Linux. The task is now submitted after the lock is released.
+* Fixed `PxScene::fetchResultsFinish()` to safely return without post-processing when it is not paired with a successful `fetchResultsStart()`, including when the start encounters a non-abort CUDA error.
+* Fixed PxCudaContextManager releasing an uninitialized thread-local storage key when creation fails, which could destroy a TLS slot owned by another part of the application. Using the context on a manager that failed to initialize is now rejected and reported.
+* Fixed an out-of-bounds read in the GPU heap memory allocator that could crash while creating a `PxScene`.
+* Fixed memory corruption, a crash, and a double free of device memory in scenes using GPU simulation, in the case where the GPU heap handed out a block that was already in use. Two owners shared the buffer, and releasing the first freed memory the second was still using. This is now reported through the error callback as `PxErrorCode::eINTERNAL_ERROR` and the allocation is refused. The scene stops simulating at that point: the next `PxScene::simulate()` returns false with `PxErrorCode::eABORT`, as it does for a GPU out-of-memory condition.
+* Fixed `PxRigidActor::detachShape()` corrupting memory or detaching a different shape than the one passed in, when the shape's internal bookkeeping had become inconsistent. Such a call is now either completed correctly or rejected and reported through the error callback.
+* Fixed a GPU out-of-memory condition while adding collision geometry being silently ignored, leaving the geometry with no device memory behind it and producing undefined behaviour during simulation. The failure is now reported and the geometry is rejected.
+* Fixed a crash when releasing a `PxScene` that uses GPU simulation, following an earlier out-of-memory condition that had prevented collision geometry from being uploaded to the GPU.
+* Fixed crashes when refreshing or unregistering a contact manager whose recorded narrowphase index does not name a live pair - for example after a shape property changed on a pair that is not currently registered with the narrowphase, or when tearing down such a pair. The index was used unchecked, reading and writing far past the end of the narrowphase pair arrays; where those arrays were empty, the accompanying size decrement also underflowed. The index is now validated against the live pair count before use on both paths, and an operation that fails the check is reported through the error callback as `PxErrorCode::eINTERNAL_ERROR` and skipped rather than performed. A pair whose refresh was skipped keeps its recorded index, so a subsequent teardown of that pair is reported once more and skipped. Applies to both the CPU and GPU narrowphase.
+
+### Changed
+
+* PhysX SDK public source code is now licensed under the Apache License 2.0.
+* Contact and friction visualization now honors the per-object visualization flags consistently on the CPU/readback and DirectGPU paths. A pair is drawn while either side is visible. An exclusive-shape side requires both PxActorFlag::eVISUALIZATION and PxShapeFlag::eVISUALIZATION; a shared-shape side requires PxActorFlag::eVISUALIZATION because the shape flag cannot represent per-actor visibility.
+
+### Removed
+
+## Rigid Body
+
+### Fixed
+
+* Contact reports could return wrong triangle indices for mesh and heightfield contacts in scenes created with `PxSceneFlag::eENABLE_AVERAGE_POINT`. The per-contact face index array was written at an offset that did not account for the inserted average points, so `PxContactStreamIterator::getFaceIndex1()` (and therefore `PxContactPairPoint::internalFaceIndex0`/`internalFaceIndex1`) returned indices shifted by the number of average points, with the trailing contacts of each pair reporting a zeroed or stale index. The average point itself also picked up its face index from an out of bounds read.
+* GPU mesh and heightfield contact pairs reserved and counted one average point per manifold when `PxSceneFlag::eENABLE_AVERAGE_POINT` was set, but never actually wrote one. `PxContactPair::contactCount` was therefore larger than the number of contacts described by the contact patches, and the surplus entries exposed uninitialized contact points and impulses to contact reports. Note that average points are still not generated for mesh and heightfield contacts on GPU: they are only produced by the CPU codepath and by GPU convex vs. convex collisions.
+* Fixed SDF cooking for triangle meshes with inverted or inconsistent winding, which caused incorrect collision with the resulting collider, both against other SDF meshes and against convex and primitive shapes. Watertight, single-component meshes cooked with a `PxSDFDesc` now have their triangle winding normalized to a consistent, outward orientation, with a warning when a correction is made. `PxMeshFlag::eFLIPNORMALS` is ignored for these meshes. Previously cooked SDF meshes need to be re-cooked to pick up the fix.
+* Cooking no longer modifies the caller's `PxSDFDesc`, so the same descriptor can be reused for more than one cook. Reusing it previously produced a corrupt signed distance field.
+* Removing a GPU geometry left its slot holding the released device pointer while returning the index to the free list, so a second removal of the same index could destroy a CUDA array and device allocation already reused by a live geometry.
+* PCM contact generation for convex and box shapes against triangle meshes could build a degenerate manifold or crash. When duplicate contacts were dropped from the patches chained behind a root patch, the root's total contact count was not decremented, so it could claim more contacts than the patch list still held. That count is what decides whether a patch list needs contact reduction, so a list that had shrunk to fewer contacts than the manifold cache size was still sent through the reduction path. It then padded the manifold with duplicated contacts, and when two or fewer contacts were left it ran out of candidates, kept an invalid selection index and wrote out of bounds.
+* Fixed a race condition that could crash during CCD, or corrupt the heap, in scenes that contain both CCD-enabled articulation links and CCD-enabled rigid bodies.
+* Fixed an out of bounds read that crashed when a `PxConvexCoreGeometry` shape touched a multi-material triangle mesh or heightfield. Such contacts now also carry the index of the triangle they came from, so they resolve to the material of the triangle actually touched instead of to an arbitrary one.
+* `PxRigidBody::setMaxContactImpulse()` is now enforced for contact pairs that the CPU solvers batch onto their 4-wide SIMD codepath. Previously the body-level limit only took effect on the scalar codepath (or when a contact modification callback set a per-point limit), so whether the cap applied depended on how pairs happened to be batched.
+* Custom constraints whose rows declare an impulse range that excludes zero (`Px1DConstraint::minImpulse > 0` or `maxImpulse < 0`) could apply the last row's impulse bound again for every padding row — up to the row-count difference within the batch in extra applications, each also counted in the reported constraint force — when the CPU PGS solver batched them onto its 4-wide SIMD codepath together with constraints that have more rows.
+
+### Changed
+
+* Some false sharing has been fixed in the solvers.
+
+## Scene Queries
+
+### Fixed
+
+* Scene queries could (very rarely) ignore an object. (https://github.com/NVIDIA-Omniverse/PhysX/issues/400)
+
+### Changed
+
+* Box-sweeps against triangle meshes have been slightly optimized.
+
+## Deformables
+
+### Fixed
+
+* PxDeformableBody::setSolverIterationCounts now takes effect when lowering the count. Previously, in a scene with no rigid-body solver-state change, a reduced count was ignored and the solver kept running the previous (higher) count.
+* PxPBDParticleSystem contacts with PxDeformableVolume and PxDeformableSurface were solved using a rest distance which incorporated the deformable rest offset twice.
+* PxCreateTetrahedronMesh() and PxCookTetrahedronMesh() never copied the descriptor's vertices and tetrahedra into the mesh, so the result held uninitialized memory and its local bounds were derived from it.
+
+### Changed
+
+* In the solver's velocity iterations, deformable bodies are now solved only for velocity, not position errors; previously these iterations were ignored for deformable surfaces and applied only position corrections for deformable volumes.
+  * Velocity iterations are applied to all contact and attachment interaction types (PGS and TGS); internal constraints are ignored.
+  * The velocity-iteration count is `minVelocityIters`, the second argument to `PxDeformableBody::setSolverIterationCounts` (default 1); its accepted range is [0, 255].
+
+## Particles
+
+### Fixed
+
+* PxPBDParticleSystem::setSolverIterationCounts now takes effect when lowering the count. Previously, in a scene with no rigid-body solver-state change, a reduced count was ignored and the solver kept running the previous (higher) count.
+* PxPBDParticleSystem contacts with PxDeformableVolume and PxDeformableSurface were solved using a rest distance which incorporated the deformable rest offset twice.
+
+### Changed
+
+* In the solver's velocity iterations, particles are now solved only for velocity, not position errors; previously these iterations applied only position corrections.
+  * Velocity iterations are applied to all contact interaction types (PGS and TGS); internal constraints are ignored.
+  * The velocity-iteration count is `minVelocityIters`, the second argument to `PxPBDParticleSystem::setSolverIterationCounts` (default 1); its accepted range is [0, 255].
+
+## PVD / OVD
+
+### Fixed
+
+* Vehicle OmniPVD producers can re-register into a newly bound writer session, and reject material-friction writes beyond the object-handle capacity created for that session.
+* PvdDom: fixed cached attribute lookups returning an unrelated attribute when a cache was reused across objects with different class hierarchies.
+* Fixed OmniPVD post-simulation state recording when using the split `PxScene::fetchResultsStart()` / `PxScene::fetchResultsFinish()` sequence.
+* OmniPVD now records successful CPU `PxRigidDynamic` and `PxArticulationLink` `addForce()`, `addTorque()`, and `setForceAndTorque()` input vectors unchanged; `clearForce()` and `clearTorque()` record zero for the selected property.
+* Using OmniPVD with a simulation that had PxSceneFlag::eENABLE_DIRECT_GPU_API set, could corrupt simulation data, for example, clear forces that were scheduled to be applied.
+
+### Changed
+
+* Existing unit-test, benchmark, and visual-test OmniPVD producers can select FILE or TCP; FILE remains the default.
+* File, memory, TCP socket, and user-defined streams now share the same `openStream()` / `closeStream()` lifecycle. Readers and writers borrow their bound streams; callers keep each stream alive until its borrower is destroyed or rebound, then destroy built-in streams with the matching direct `destroyOmniPvd*` function from the module that created them.
+* The standalone OmniPVD runtime is now a static library: `PVDRuntime_64.dll` and `libPVDRuntime_64.so` are no longer shipped; link `PVDRuntime_static_64.lib` on Windows or `libPVDRuntime_static_64.a` on Linux instead. Raw static-library consumers on Windows must also link `Ws2_32`. `PX_SUPPORT_OMNI_PVD` now also requires the `PX_BUILDPVDRUNTIME` CMake option. See the 5.11 migration guide.
+
+### Removed
+
+* Removed `OmniPvdLoader.h`, the `createOmniPvd*Fp` / `destroyOmniPvd*Fp` function-pointer typedefs, and `OMNI_PVD_EXPORT` (replaced by `OMNI_PVD_API`). Include `OmniPvdLibraryFunctions.h` and call each `createOmniPvd*` factory function and its matching `destroyOmniPvd*` function directly, from the same module that statically linked the runtime.
+* Removed `PxOmniPvd::getFileWriteStream()`, `PxOmniPvd::createSocketWriteStream()`, and `PxOmniPvd::releaseSocketWriteStream()`, plus the file-specific `openFile()` / `closeFile()` APIs. Use `createOmniPvdFileWriteStream()` / `destroyOmniPvdFileWriteStream()` for file streams and `createOmniPvdSocketWriteStream()` / `destroyOmniPvdSocketWriteStream()` for socket streams instead.
+
 # v5.10.0
 
 ## Supported Platforms
@@ -17,8 +143,6 @@
 
 ### Added
 
-* Direct-GPU API: friction anchors (eFRICTION_POINT / eFRICTION_NORMAL / eFRICTION_IMPULSE) are now visualized under PxSceneFlag::eENABLE_DIRECT_GPU_API, drawn at fetchResults from the GPU solver's friction patches.
-
 ### Fixed
 
 * Fixed out-of-bounds reads when parsing truncated XML document type declarations.
@@ -27,7 +151,6 @@
 ### Changed
 
 * Debug builds now compile CUDA device code with `-lineinfo` instead of `-G`, making debug GPU tests several times faster while still firing all host and device assertions. Set the new `PX_CUDA_DEVICE_DEBUG=ON` CMake option to restore `-G` for single-line GPU device debugging (cuda-gdb on Linux, Nsight on Windows).
-* Contact and friction visualization now honors the per-object visualization flags consistently on the CPU/readback and DirectGPU paths. A pair is drawn while either side is visible. An exclusive-shape side requires both PxActorFlag::eVISUALIZATION and PxShapeFlag::eVISUALIZATION; a shared-shape side requires PxActorFlag::eVISUALIZATION because the shape flag cannot represent per-actor visibility.
 
 ### Removed
 
@@ -52,7 +175,7 @@
 ### Fixed
 
 * Extended mass-splitting to PxPBDParticleSystem contacts: deformable bodies and rigid bodies for more accurate momentum conservation.
-* PxPBDParticleSystem::setMaxDepenetrationVelocity now limits the depenetration velocity of particle contacts (previously it had no effect); its default is now unbounded (1e32), matching PxDeformableBody.
+* PxPBDParticleSystem::setMaxDepenetrationVelocity now limits the depenetration velocity of particle contacts. Previously it had no effect. Its default is unbounded (1e32), matching the convention used for PxDeformableBody and PxRigidBody. Where the other body in a contact (PxRigidBody or PxDeformableBody) also sets a value, the smaller of the two applies.
 
 ## PVD / OVD
 
@@ -76,6 +199,8 @@
 
 * PvdDom: parser no longer dedupes consecutive identical samples; every `setAttribute` produces its own keyframe at exactly `mTimeStamp`, and `mEndTimeStamp == mTimeStamp` always (the field is retained only for source compatibility with readers that consumed the legacy `[mTimeStamp, mEndTimeStamp]` extending-range semantics). Consumers asking "is data recorded at this frame?" do a strict timestamp match on the sample list. Distinct from the half-open `[mFrameStart, mFrameStop)` object-lifespan range under "Fixed" above — `mTimeStamp`/`mEndTimeStamp` are per-sample timestamps, not object lifetime bounds.
 * PxOmniPvd::startSampling() / stopSampling() can now be called at any point and repeatedly (each start paired with a stop), not only once at PhysX creation, so a recording can begin after objects and scenes already exist, for example to attach a viewer to a running simulation. See the OmniPVD documentation for details.
+
+### Removed
 
 # v5.9.0-110.1
 

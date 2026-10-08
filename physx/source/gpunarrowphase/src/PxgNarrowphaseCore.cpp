@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
-// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
+// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "PxNodeIndex.h"
 #include "PxsContactManagerState.h"
@@ -3673,7 +3650,6 @@ void PxgGpuNarrowphaseCore::testSDKParticleSoftbody(PxgGpuContactManagers& gpuMa
 	PxgShape* gpuShapes = reinterpret_cast<PxgShape*>(mGpuShapesManager.mGpuShapesBuffer.getDevicePtr());
 	PxsCachedTransform* transformCached = reinterpret_cast<PxsCachedTransform*>(mGpuTransformCache.getDevicePtr());
 	PxReal*	contactDistanced = reinterpret_cast<PxReal*>(mGpuContactDistance.getDevicePtr());
-	const PxReal* restDistanced = reinterpret_cast<PxReal*>(gpuManagers.mRestDistances.getDevicePtr());
 	PX_ASSERT(transformCached);	
 
 	PxgSimulationCore* simulationCore = mNphaseImplContext->getSimulationCore();
@@ -3771,7 +3747,6 @@ void PxgGpuNarrowphaseCore::testSDKParticleSoftbody(PxgGpuContactManagers& gpuMa
 			PX_CUDA_KERNEL_PARAM(cmInputs),
 			PX_CUDA_KERNEL_PARAM(transformCached),
 			PX_CUDA_KERNEL_PARAM(contactDistanced),
-			PX_CUDA_KERNEL_PARAM(restDistanced),
 			PX_CUDA_KERNEL_PARAM(gpuShapes),
 			PX_CUDA_KERNEL_PARAM(particleSystemsd),
 			PX_CUDA_KERNEL_PARAM(softBodiesd),
@@ -3876,7 +3851,6 @@ void PxgGpuNarrowphaseCore::testSDKParticleFemCloth(PxgGpuContactManagers& gpuMa
 	PxgShape* gpuShapes = reinterpret_cast<PxgShape*>(mGpuShapesManager.mGpuShapesBuffer.getDevicePtr());
 	PxsCachedTransform* transformCached = reinterpret_cast<PxsCachedTransform*>(mGpuTransformCache.getDevicePtr());
 	PxReal*	contactDistanced = reinterpret_cast<PxReal*>(mGpuContactDistance.getDevicePtr());
-	const PxReal* restDistanced = reinterpret_cast<PxReal*>(gpuManagers.mRestDistances.getDevicePtr());
 
 	PX_ASSERT(transformCached);
 
@@ -3974,7 +3948,6 @@ void PxgGpuNarrowphaseCore::testSDKParticleFemCloth(PxgGpuContactManagers& gpuMa
 			PX_CUDA_KERNEL_PARAM(cmInputs),
 			PX_CUDA_KERNEL_PARAM(transformCached),
 			PX_CUDA_KERNEL_PARAM(contactDistanced),
-			PX_CUDA_KERNEL_PARAM(restDistanced),
 			PX_CUDA_KERNEL_PARAM(gpuShapes),
 			PX_CUDA_KERNEL_PARAM(particleSystemsd),
 			PX_CUDA_KERNEL_PARAM(clothesd),
@@ -7953,6 +7926,30 @@ PxU32 PxgGpuNarrowphaseCore::getShapeIndex(const PxsShapeCore& shapeCore)
 	}
 }
 
+// ### DEFENSIVE OMPE-103056
+// operator[] would insert on a miss, underflowing refCnt to 0xFFFFFFFF; a later registerShape()
+// would then find that record and bind the shape to geometry index 0 - the box hull.
+void PxgGpuNarrowphaseCore::releaseGeometryReference(size_t geometryKey)
+{
+	const RefcountedRecordsMap::Entry* entry = mGeometriesMap->find(geometryKey);
+	if (!entry)
+	{
+		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
+			"PxgGpuNarrowphaseCore::releaseGeometryReference: geometry is not registered. Skipping.\n");
+		PX_ALWAYS_ASSERT();
+		return;
+	}
+
+	RefcountedRecord& hrec = const_cast<RefcountedRecord&>(entry->second);
+	hrec.refCnt -= 1;
+
+	if (!(hrec.refCnt))
+	{
+		removeGeometry(hrec.idx);
+		mGeometriesMap->erase(geometryKey);
+	}
+}
+
 void PxgGpuNarrowphaseCore::unregisterShape(const PxsShapeCore& shapeCore, const PxU32 transformCacheID, const bool isFemCloth)
 {
 	const PxGeometryType::Enum type = shapeCore.mGeometry.getType();
@@ -7965,17 +7962,8 @@ void PxgGpuNarrowphaseCore::unregisterShape(const PxsShapeCore& shapeCore, const
 	{
 		const PxConvexMeshGeometryLL& convexGeom = shapeCore.mGeometry.get<const PxConvexMeshGeometryLL>();
 		const ConvexHullData* hull = _getHullData(convexGeom);
-		
-		PX_ASSERT(mGeometriesMap->find((size_t) hull));	
 
-		RefcountedRecord& hrec = (*mGeometriesMap)[(size_t) hull];
-		hrec.refCnt -= 1;
-
-		if (!(hrec.refCnt))
-		{
-			removeGeometry(hrec.idx);
-			mGeometriesMap->erase((size_t) hull);
-		}
+		releaseGeometryReference((size_t) hull);
 	}
 	else if(isCompatibleMesh)
 	{
@@ -7985,34 +7973,16 @@ void PxgGpuNarrowphaseCore::unregisterShape(const PxsShapeCore& shapeCore, const
 
 			const TriangleMesh* triMesh = _getMeshData(triMeshGeom);
 
-			PX_ASSERT(mGeometriesMap->find((size_t)triMesh));
-
-			RefcountedRecord& hrec = (*mGeometriesMap)[(size_t)triMesh];
-			hrec.refCnt -= 1;
-
-			if (!(hrec.refCnt))
-			{
-				removeGeometry(hrec.idx);
-				mGeometriesMap->erase((size_t)triMesh);
-			}
+			releaseGeometryReference((size_t) triMesh);
 		}
 	}
 	else if (isCompatibleHF)
 	{
 		const PxHeightFieldGeometryLL& triMeshGeom = shapeCore.mGeometry.get<const PxHeightFieldGeometryLL>();
-		
+
 		const HeightFieldData* hf = _getHFData(triMeshGeom);
-		
-		PX_ASSERT(mGeometriesMap->find((size_t) hf));
 
-		RefcountedRecord& hrec = (*mGeometriesMap)[(size_t) hf];
-		hrec.refCnt -= 1;
-
-		if (!(hrec.refCnt))
-		{
-			removeGeometry(hrec.idx);
-			mGeometriesMap->erase((size_t) hf);
-		}
+		releaseGeometryReference((size_t) hf);
 	}
 
 	const RefcountedRecordsMap::Entry* pair = mShapesMap->find((size_t)&shapeCore);
@@ -8256,23 +8226,67 @@ void PxgGpuNarrowphaseCore::registerContactManagerInternal(PxsContactManager* cm
 		workUnit.mStatusFlags |= PxcNpWorkUnitStatusFlag::eREFRESHED_WITH_TOUCH;
 }
 
-void PxgGpuNarrowphaseCore::unregisterContactManagerInternal(PxsContactManager* cm, PinnableArray<PxU32>& removedIndices, PxgNewContactManagers& newContactManagers)
+void PxgGpuNarrowphaseCore::unregisterContactManagerInternal(PxsContactManager* cm, PxU32 nbShapeInteractions, PinnableArray<PxU32>& removedIndices, PxgNewContactManagers& newContactManagers)
 {
 	PxcNpWorkUnit& unit = cm->getWorkUnit();
 	PxU32 index = unit.mNpIndex;
-	PX_ASSERT(index != 0xFFffFFff);
-	
+
+	//The contact manager is not currently registered with the narrowphase, so there is nothing to unregister.
+	//Note this is not reachable by a plain double-unregister: PxgNphaseImplementationContext clears the bucket
+	//bit after the first one and dispatches on that bit, and the main branch below leaves mNpIndex unchanged
+	//anyway. The guard is here because the sentinel can still arrive from the bail-outs further down, and
+	//because a release build has nothing else standing between a bad index and the replaceWithLast calls.
+	// ### DEFENSIVE (NvBug 6163965)
+	if(index == 0xFFffFFff)
+	{
+		PX_ASSERT(0);
+		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
+			"PxgGpuNarrowphaseCore::unregisterContactManagerInternal: contact manager %p is not currently "
+			"registered with the narrowphase (see NvBug 6163965); skipping the unregister.", cm);
+		return;
+	}
+
 	//Stage 1: we buffer all the removals in the removed array so we can batch remove on the GPU
 	if (!(index & PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK))
 	{
 		index = PxgContactManagers::computeIndexFromId(index);
+
+		//The decoded id names no live pair, so queuing it would make removeLostPairsInternal evict an unrelated
+		//slot. Drop the removal and reset the index instead - the caller clears the bucket bit and the pair
+		//count regardless, so the dispatch-side bookkeeping stays consistent.
+		// ### DEFENSIVE (NvBug 6163965)
+		if(index >= nbShapeInteractions)
+		{
+			PX_ASSERT(0);
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
+				"PxgGpuNarrowphaseCore::unregisterContactManagerInternal: contact manager %p decodes to pair index "
+				"%u, outside the %u live entries (see NvBug 6163965); skipping the unregister.",
+				cm, index, nbShapeInteractions);
+			unit.mNpIndex = 0xFFffFFff;
+			return;
+		}
+
 		removedIndices.pushBack(index);
 	}
 	else
 	{
 		index &= ~PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK;
 		index = PxgContactManagers::computeIndexFromId(index);
-			
+
+		//This is where the NvBug 6163965 family faults: with an empty new list, replaceWithLast() below
+		//decrements a zero size to 0xFFFFFFFF and reads 64GB past the base.
+		// ### DEFENSIVE (NvBug 6163965)
+		if(index >= newContactManagers.mGpuOutputContactManagers.size())
+		{
+			PX_ASSERT(0);
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
+				"PxgGpuNarrowphaseCore::unregisterContactManagerInternal: contact manager %p decodes to new-pair "
+				"index %u, outside the %u live entries (see NvBug 6163965); skipping the unregister.",
+				cm, index, newContactManagers.mGpuOutputContactManagers.size());
+			unit.mNpIndex = 0xFFffFFff;
+			return;
+		}
+
 		PinnableArray<PxgContactManagerInput>& itInputs = newContactManagers.mGpuInputContactManagers;
 		PinnableArray<PxsContactManagerOutput>& itOutputs = newContactManagers.mGpuOutputContactManagers;
 		PinnableArray<PxsContactManager*>& itCms = newContactManagers.mCpuContactManagerMapping;
@@ -8303,13 +8317,44 @@ void PxgGpuNarrowphaseCore::unregisterContactManagerInternal(PxsContactManager* 
 }
 
 
-void PxgGpuNarrowphaseCore::refreshContactManagerInternal(PxsContactManager* cm, PxsContactManagerOutput* cmOutputs, const Sc::ShapeInteraction** shapeInteractions, PxgContactManagerInput& input, PxgNewContactManagers& newContactManagers, 
+void PxgGpuNarrowphaseCore::refreshContactManagerInternal(PxsContactManager* cm, PxsContactManagerOutput* cmOutputs, const Sc::ShapeInteraction** shapeInteractions, PxU32 nbShapeInteractions, PxgContactManagerInput& input, PxgNewContactManagers& newContactManagers,
 	PinnableArray<PxU32>& removedIndices)
 {
 	PxcNpWorkUnit& unit = cm->getWorkUnit();
 	PxU32 index = unit.mNpIndex;
-	PX_ASSERT(index != 0xFFffFFff);
-	
+
+	//The contact manager is not currently registered with the narrowphase, so it has no cached narrowphase
+	//state to refresh. Note this does not mean "never registered": PxgNphaseImplementationContext only
+	//dispatches here when a bucket bit is set, and those bits are set after registration has assigned
+	//mNpIndex. So the sentinel got here by being reset again afterwards - the new-list branch below writes it,
+	//and an unregister restores it - which means the caller's view of the pair is out of step with the
+	//narrowphase's.
+	//The sentinel survives the mask-and-shift below (0xFFFFFFFF -> 0x00FFFFFF), so the bounds checks in both
+	//branches would catch it too. It is tested separately, and first, purely so that the error names the
+	//sentinel case specifically instead of reporting it as an out-of-range index.
+	//Note what the bounds checks do NOT catch: they are range checks, so a stale index that decodes below the
+	//live count passes them and the refresh then operates on another live pair's slot. The containers'
+	//invariant is mapping[decoded] == cm; checking that is a follow-up.
+	//
+	//A rejected refresh deliberately leaves mNpIndex alone. It cannot write the sentinel: unlike the
+	//unregister guards below - where destroyManager() destroys the manager immediately afterwards - a refusal
+	//here returns without touching the ShapeInteraction, so mManager, the island contact edge and the bucket
+	//bit all stay live. Readers outside the narrowphase decode mNpIndex with no sentinel check
+	//(PxsContactManagerOutputIterator resolves bucket 0xFFFFFFFF & 127 = 127, an uninitialised mOffsets slot,
+	//plus index 0x1FFFFFF; PxgConstraintPartition retypes an edge carrying the sentinel as eCONSTRAINT), so
+	//writing it would turn the pair this guard just saved into a fault in the solver at the next simulate().
+	//The pair keeps its stale index and stays broken until it is destroyed - which the unregister guards below
+	//then handle safely. Restoring it properly means re-registering the pair, which is a follow-up.
+	// ### DEFENSIVE (NvBug 6282005)
+	if(index == 0xFFffFFff)
+	{
+		PX_ASSERT(0);
+		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
+			"PxgGpuNarrowphaseCore::refreshContactManagerInternal: contact manager %p is not currently registered with "
+			"the narrowphase (see NvBug 6282005); skipping the refresh.", cm);
+		return;
+	}
+
 	PxScopedCudaLock lock(*mCudaContextManager);
 
 	PxsContactManagerOutput output;
@@ -8318,6 +8363,18 @@ void PxgGpuNarrowphaseCore::refreshContactManagerInternal(PxsContactManager* cm,
 	if (!(index & PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK))
 	{
 		index = PxgContactManagers::computeIndexFromId(index);
+
+		//The decoded id does not name a live pair, so every use of it below would be out of bounds.
+		// ### DEFENSIVE (NvBug 6163965)
+		if(index >= nbShapeInteractions)
+		{
+			PX_ASSERT(0);
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
+				"PxgGpuNarrowphaseCore::refreshContactManagerInternal: contact manager %p decodes to pair index %u, "
+				"outside the %u live entries (see NvBug 6163965); skipping the refresh.", cm, index, nbShapeInteractions);
+			return;
+		}
+
 		output = cmOutputs[index];
 		shapeInteraction = shapeInteractions[index];
 		removedIndices.pushBack(index);
@@ -8326,13 +8383,26 @@ void PxgGpuNarrowphaseCore::refreshContactManagerInternal(PxsContactManager* cm,
 	{
 		index &= ~PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK;
 		index = PxgContactManagers::computeIndexFromId(index);
-			
+
 		PinnableArray<PxgContactManagerInput>& itInputs = newContactManagers.mGpuInputContactManagers;
 		PinnableArray<PxsContactManagerOutput>& itOutputs = newContactManagers.mGpuOutputContactManagers;
 		PinnableArray<PxsContactManager*>& itCms = newContactManagers.mCpuContactManagerMapping;
 		PinnableArray<const Sc::ShapeInteraction*>& itSI = newContactManagers.mShapeInteractions;
 		PinnableArray<PxReal>& itR = newContactManagers.mRestDistances;
 		PinnableArray<PxsTorsionalFrictionData>& itTor = newContactManagers.mTorsionalProperties;
+
+		//Same check against the new-contact-manager arrays. This also covers them being empty, in which case
+		//the replaceWithLast() calls below would decrement a zero size to 0xFFFFFFFF and index 64GB past the
+		//base - the actual fault observed in NvBug 6163965.
+		// ### DEFENSIVE (NvBug 6163965)
+		if(index >= itOutputs.size())
+		{
+			PX_ASSERT(0);
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
+				"PxgGpuNarrowphaseCore::refreshContactManagerInternal: contact manager %p decodes to new-pair index "
+				"%u, outside the %u live entries (see NvBug 6163965); skipping the refresh.", cm, index, itOutputs.size());
+			return;
+		}
 
 		output = itOutputs[index];
 
@@ -8363,12 +8433,12 @@ void PxgGpuNarrowphaseCore::registerContactManager(PxsContactManager* cm, const 
 
 void PxgGpuNarrowphaseCore::unregisterContactManager(PxsContactManager* cm, const PxU32 bucketId)
 {
-	unregisterContactManagerInternal(cm, *mRemovedIndices[bucketId], mContactManagers[bucketId]->mNewContactManagers);
+	unregisterContactManagerInternal(cm, mContactManagers[bucketId]->mContactManagers.mShapeInteractions.size(), *mRemovedIndices[bucketId], mContactManagers[bucketId]->mNewContactManagers);
 }
 
 void PxgGpuNarrowphaseCore::refreshContactManager(PxsContactManager* cm, PxsContactManagerOutput* cmOutputs, PxgContactManagerInput& input, const PxU32 bucketId)
 {
-	refreshContactManagerInternal(cm, cmOutputs, mContactManagers[bucketId]->mContactManagers.mShapeInteractions.begin(), input, mContactManagers[bucketId]->mNewContactManagers, *mRemovedIndices[bucketId]);
+	refreshContactManagerInternal(cm, cmOutputs, mContactManagers[bucketId]->mContactManagers.mShapeInteractions.begin(), mContactManagers[bucketId]->mContactManagers.mShapeInteractions.size(), input, mContactManagers[bucketId]->mNewContactManagers, *mRemovedIndices[bucketId]);
 }
 
 void PxgGpuNarrowphaseCore::createGpuStreamsAndEvents()

@@ -1,17 +1,17 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-BACKEND-001
- * @covers AC-1 AC-2 AC-5
+ * @covers AC-1 AC-2 AC-5 AC-12
  */
 #pragma once
 
 // Parse backend registry (ADR-0005). A backend is the single provider of the
-// per-attachment source trio (read source + write sink + change feed). Exactly
-// one backend is active per process; the USD backend is installed as the
-// default by the runtime at startup, and may be replaced on demand (e.g. tests
-// switching to an ovstage-backed source). Switching is only valid while no
+// per-attachment source trio (read source + write sink + change feed). At most
+// one backend is active per process; the registry starts empty. An ovstage attach
+// installs its own backend, and test executables install the USD backend through
+// omniPhysicsUsdInstallBackends() (ADR-0027). Switching is only valid while no
 // stage is attached.
 //
 // This header is part of the USD-free core parse library: it names only
@@ -41,17 +41,27 @@ namespace parse
 // Backend-opaque handle to the scene being attached. Each backend interprets
 // `nativeStage` for its own source type: the USD backend reads it as a pointer
 // to the live USD stage handle (UsdStageWeakPtr); an ovstage backend reads it
-// as a pointer to its backend-specific attach payload. `stageId` is the native
-// USD target id; external targets keep it at 0 as their source-kind sentinel.
+// as a pointer to its backend-specific attach payload.
 // `residentBackingStageId` is the optional locally resident USD stage-cache id
-// an external backend may use for compatibility fallbacks. `readOrdinal` is
-// optional backend snapshot state; 0 means "use the backend payload default".
+// an external backend may use for compatibility fallbacks; the USD backend
+// leaves it at 0 and derives the id from `nativeStage` instead, so a target is
+// never the authority on an id the source it produces already owns
+// (`IPhysicsSource::residentUsdStageId`). `readOrdinal` is optional backend
+// snapshot state; 0 means "use the backend payload default".
+//
+// There is deliberately no field naming the *kind* of source: consumers that
+// need to branch on USD-vs-external ask their attach (AttachedStage::
+// hasExternalSource), because a target that merely happens to carry no stage id
+// is indistinguishable from a stage-backed one whose id is 0.
 struct AttachTarget
 {
     const void* nativeStage = nullptr;
-    long stageId = 0;
     uint64_t readOrdinal = 0;
     uint64_t residentBackingStageId = 0;
+    // The consumer's live source for this attach, if any. A scan backend may read
+    // through it (its caches stay warm across drains) instead of building a fresh
+    // one; the parse backend ignores it. Not owned; null for a standalone scan.
+    IPhysicsSource* attachedSource = nullptr;
 };
 
 // The per-attachment objects a backend produces for one scene. Any of the
@@ -84,6 +94,13 @@ void setParseBackend(std::unique_ptr<IParseBackend> backend);
 
 // The active backend, or null if none has been installed yet.
 IParseBackend* parseBackend();
+
+// Move the active parse backend out of the registry, transferring ownership to
+// the caller and leaving the registry empty. An ovstage attach stashes the
+// previous default this way so detach reinstalls the exact same instance instead
+// of a freshly built one (the collapsed pxr-free bridge cannot rebuild the USD
+// backend, so its bridgeMakeDefaultParseBackend() captures the live one).
+std::unique_ptr<IParseBackend> takeParseBackend();
 
 } // namespace parse
 } // namespace physics

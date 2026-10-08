@@ -1,0 +1,59 @@
+{
+  "skill_name": "ovphysx-session-write",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "In Python, drive articulation DOF velocity targets, step, then read the joint velocities back.",
+      "expected_output": "Warms up or steps first, opens a PhysX.write session on jointVelocityTarget, fills every tensor of every group and commits, steps, then reads jointVelocity (a state attribute) back; does not use tensor bindings.",
+      "files": [],
+      "expectations": [
+        "Selects ovphysx-session-write",
+        "Uses PhysX.write (session write), not create_tensor_binding",
+        "Warms up or steps before opening the write session",
+        "Fills every tensor of every group before commit, and asserts at least one group committed",
+        "Reads the outcome from a state attribute (jointVelocity), not the target it wrote"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "My PhysX.write() call right after loading the stage commits but nothing moves. Why?",
+      "expected_output": "Explains the session write is refused before the first step and does not auto-warm; call warmup() or step_sync() before the write.",
+      "files": [],
+      "expectations": [
+        "Explains a pre-step write is refused / not applied, and the write never auto-warms",
+        "Tells the caller to warmup() or step first, then write"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I want to apply a force at a specific world point on a rigid body with the write API, not at its center of mass.",
+      "expected_output": "Uses the wrench attribute (force, torque, world application point), not force (which is COM-only); notes it is write-only so the effect is observed as motion, not read back.",
+      "files": [],
+      "expectations": [
+        "Uses wrench with the [fx,fy,fz, tx,ty,tz, px,py,pz] layout, not force",
+        "Explains force is applied at the center of mass while wrench carries the application point",
+        "Notes force/wrench are write-only: assert the consequence, do not read the load back"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Read rigid-body poses back while keeping ovstage prim identity and attribute tokens for a closed-loop write-back.",
+      "expected_output": "Routes to ovphysx-output-read for the read side rather than the write skill.",
+      "files": [],
+      "expectations": [
+        "Does not select ovphysx-session-write for reading output back",
+        "Selects ovphysx-output-read"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "I have legacy code that reads and writes simulation state as caller-owned NumPy arrays through create_tensor_binding. What is the non-deprecated replacement for the write side?",
+      "expected_output": "Points at the session write API (PhysX.write / ovphysx_write) covered by ovphysx-session-write as the successor to the deprecated tensor-binding write.",
+      "files": [],
+      "expectations": [
+        "Identifies the tensor-binding API as deprecated",
+        "Selects ovphysx-session-write as the successor for the write side"
+      ]
+    }
+  ]
+}

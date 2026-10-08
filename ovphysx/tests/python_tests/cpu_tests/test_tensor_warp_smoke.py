@@ -1,5 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# DEPRECATED (tensor-binding-deprecation): a deprecated tensor-binding test. Removed with the binding.
 
 """Smoke tests: ovphysx tensor Python API with warp (``wp.array``) buffers, CPU mode.
 
@@ -20,7 +22,7 @@ wp.init()
 
 _DEVICE = "cpu"
 
-# data/ sits at tests/data -- three levels up from this file (cpu_tests/).
+# data/ is tests/data, three levels up from this file (cpu_tests/).
 _TEST_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
@@ -43,7 +45,7 @@ def _load_articulations(sdk):
 
 
 # ---------------------------------------------------------------------------
-# Plain float32, 2D -- read / full write / indexed write / masked write
+# Plain float32, 2D: read, full write, indexed write, masked write
 # ---------------------------------------------------------------------------
 
 
@@ -78,8 +80,8 @@ class TestWarpRigidBodyPose:
         b.destroy()
 
     def test_indexed_write_int32(self, physx_sdk_cpu):
-        """Indexed write driven by a warp int32 index array -- verifies selectivity:
-        only the indexed row is written, every other row is left untouched."""
+        """Indexed write driven by a warp int32 index array. Only the indexed row is
+        written, every other row is left untouched."""
         b = self._binding(physx_sdk_cpu)
         n = b.shape[0]
         assert n >= 2, "need >=2 bodies to verify indexed-write selectivity"
@@ -94,16 +96,15 @@ class TestWarpRigidBodyPose:
         result = wp.zeros(b.shape, dtype=wp.float32, device=_DEVICE)
         b.read(result)
         res_np = result.numpy()
-        # the indexed row got the new value...
         assert np.isclose(res_np[idx, 0], modified_np[idx, 0], atol=1e-4)
-        # ...and every non-indexed row is unchanged (would fail if the write ignored indices)
+        # Every non-indexed row is unchanged. This fails if the write ignored the indices.
         others = [r for r in range(n) if r != idx]
         assert np.allclose(res_np[others, 0], orig_np[others, 0], atol=1e-4)
         b.destroy()
 
     def test_masked_write_uint8(self, physx_sdk_cpu):
-        """Masked write driven by a warp uint8 mask array -- verifies selectivity:
-        only the masked row is written, every other row is left untouched."""
+        """Masked write driven by a warp uint8 mask array. Only the masked row is
+        written, every other row is left untouched."""
         b = self._binding(physx_sdk_cpu)
         n = b.shape[0]
         assert n >= 2, "need >=2 bodies to verify masked-write selectivity"
@@ -121,9 +122,8 @@ class TestWarpRigidBodyPose:
         result = wp.zeros(b.shape, dtype=wp.float32, device=_DEVICE)
         b.read(result)
         res_np = result.numpy()
-        # the masked row got the new value...
         assert np.isclose(res_np[0, 0], modified_np[0, 0], atol=1e-4)
-        # ...and every unmasked row is unchanged (would fail if the write ignored the mask)
+        # Every unmasked row is unchanged. This fails if the write ignored the mask.
         assert np.allclose(res_np[1:, 0], orig_np[1:, 0], atol=1e-4)
         b.destroy()
 
@@ -223,11 +223,11 @@ class TestWarpShapeProperties3D:
 class TestWarpStructuredTypes:
     """Warp vector/matrix dtypes a user is likely to reach for. Their DLPack
     export expands the inner dimension, so they line up with the matching
-    binding shape -- except wp.mat33 (see the inertia contract test)."""
+    binding shape, except wp.mat33 (see the inertia contract test)."""
 
     def test_wp_transform_pose(self, physx_sdk_cpu):
         """wp.transform <-> RIGID_BODY_POSE [N, 7]: verifies the COMPONENT MAPPING,
-        not just the shape -- a wp.transform's (translation, quaternion) must land in
+        not just the shape. A wp.transform's (translation, quaternion) must land in
         the pose's (px,py,pz, qx,qy,qz,qw) slots. Writes a known transform and reads
         it back as both plain float32 and wp.transform, checking the exact values."""
         _load_boxes(physx_sdk_cpu)
@@ -236,17 +236,16 @@ class TestWarpStructuredTypes:
         )
         n = b.shape[0]
         assert tuple(b.shape) == (n, 7)
-        # known pose: translation (1,2,3); 90deg about +z -> quat (x,y,z,w) = (0,0,s,s)
+        # Known pose: translation (1,2,3) and 90deg about +z, so quat (x,y,z,w) = (0,0,s,s).
         s = 2.0 ** -0.5
         expected = np.tile(np.array([1.0, 2.0, 3.0, 0.0, 0.0, s, s], dtype=np.float32), (n, 1))
-        # WRITE through a wp.transform-typed buffer (translation + quaternion)...
         b.write(wp.array(expected.copy(), dtype=wp.transform, device=_DEVICE))
-        # ...READ back as plain float32 [N, 7] -- components must match the pose layout
+        # Read back as plain float32 [N, 7]. Components must match the pose layout.
         out_f32 = wp.zeros((n, 7), dtype=wp.float32, device=_DEVICE)
         b.read(out_f32)
         assert np.allclose(out_f32.numpy(), expected, atol=1e-4), \
             "wp.transform did not map to pose (px,py,pz, qx,qy,qz,qw)"
-        # ...and READ back into a wp.transform buffer yields the same data
+        # Reading back into a wp.transform buffer yields the same data.
         out_tf = wp.zeros(n, dtype=wp.transform, device=_DEVICE)
         b.read(out_tf)
         assert np.allclose(out_tf.numpy().reshape(n, 7), expected, atol=1e-4)
@@ -257,8 +256,8 @@ class TestWarpStructuredTypes:
         STORAGE ORDER. Writes a known velocity in the binding's (linear, angular) layout
         and confirms a wp.spatial_vector reads back the same flat [1,2,3,4,5,6].
 
-        NOTE: warp's spatial_vector is semantically (angular, linear) -- the opposite
-        halves -- so DLPack only preserves the raw [N, 6] storage; a caller must NOT
+        NOTE: warp's spatial_vector is semantically (angular, linear), the opposite
+        halves, so DLPack only preserves the raw [N, 6] storage. A caller must NOT
         assume wp.spatial_top() corresponds to the binding's angular part.
         """
         _load_boxes(physx_sdk_cpu)
@@ -268,13 +267,12 @@ class TestWarpStructuredTypes:
         n = b.shape[0]
         # binding layout: (linear xyz, angular xyz)
         expected = np.tile(np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0], dtype=np.float32), (n, 1))
-        # WRITE through a wp.spatial_vector-typed buffer...
         b.write(wp.array(expected.copy(), dtype=wp.spatial_vector, device=_DEVICE))
-        # ...READ back as plain float32 [N, 6] -- storage order preserved 1:1
+        # Read back as plain float32 [N, 6]. Storage order is preserved 1:1.
         out_f32 = wp.zeros((n, 6), dtype=wp.float32, device=_DEVICE)
         b.read(out_f32)
         assert np.allclose(out_f32.numpy(), expected, atol=1e-4)
-        # ...and into a wp.spatial_vector buffer -- same flat data
+        # A wp.spatial_vector buffer reads back the same flat data.
         out_sv = wp.zeros(n, dtype=wp.spatial_vector, device=_DEVICE)
         b.read(out_sv)
         assert np.allclose(out_sv.numpy().reshape(n, 6), expected, atol=1e-4)
@@ -297,7 +295,7 @@ class TestWarpStructuredTypes:
 
     def test_wp_mat33_inertia_contract(self, physx_sdk_cpu):
         """Documents the contract: RIGID_BODY_INERTIA is flat [N, 9], so a
-        wp.mat33 array (which exports [N, 3, 3]) does NOT line up -- the binding
+        wp.mat33 array (which exports [N, 3, 3]) does NOT line up. The binding
         rejects the rank-3 buffer. A user must pass a flat [N, 9] float32 array
         (or reshape their mat33 buffer) instead."""
         _load_boxes(physx_sdk_cpu)
@@ -310,7 +308,7 @@ class TestWarpStructuredTypes:
         assert mat.numpy().shape == (n, 3, 3)  # [N,3,3] != binding's [N,9]
         with pytest.raises(RuntimeError, match=r"expected 2D tensor, got 3D"):
             b.read(mat)
-        # The supported form: a flat [N, 9] float32 warp array -- and it round-trips.
+        # The supported form is a flat [N, 9] float32 warp array, and it round-trips.
         flat = wp.zeros(b.shape, dtype=wp.float32, device=_DEVICE)
         b.read(flat)
         assert flat.numpy().shape == (n, 9)

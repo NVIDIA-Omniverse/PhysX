@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-DEF-001
@@ -72,8 +72,7 @@ DeformableBodyParse parseDeformableBody(ParseContext& ctx, ObjectKey key)
 {
     DeformableBodyParse out;
 
-    KnownTokens tok;
-    tok.intern(ctx.source());
+    const KnownTokens& tok = ctx.knownTokens();
 
     IPhysicsSource& src = ctx.source();
 

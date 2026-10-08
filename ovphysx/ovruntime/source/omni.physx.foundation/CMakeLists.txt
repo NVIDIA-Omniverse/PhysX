@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 # --- Internal CUDA driver shim source ---
 set(PHYSX_CUDA_SHIM_SOURCE
@@ -29,7 +29,7 @@ target_include_directories(OvruntimePhysXCudaShim
         ${OVRUNTIME_ROOT_DIR}/include                    # <omni/physx/IOptionalCuda.h>
 )
 
-ovruntime_add_external_system_includes(OvruntimePhysXCudaShim)
+ovruntime_add_external_system_includes(OvruntimePhysXCudaShim NO_USD)
 
 if(DEFINED CUDA_DIR)
     target_include_directories(OvruntimePhysXCudaShim SYSTEM PUBLIC ${CUDA_DIR}/include)
@@ -75,7 +75,7 @@ target_include_directories(OvruntimePhysXFoundation
 )
 
 # External dependencies — SYSTEM includes to suppress third-party warnings
-ovruntime_add_external_system_includes(OvruntimePhysXFoundation)
+ovruntime_add_external_system_includes(OvruntimePhysXFoundation NO_USD)
 
 # Compile definitions
 target_compile_definitions(OvruntimePhysXFoundation PRIVATE

@@ -1,5 +1,14 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# @implements REQ-PYTHON-BINDING-DEVICE-001
+# @covers AC-1
+
+# @implements REQ-PYTHON-OMNIPVD-LATE-001
+# @covers AC-4
+
+# @implements REQ-PACKAGING-CLOSURE-001
+# @covers AC-2
 
 """Low-level ctypes bindings for the ovphysx library.
 
@@ -7,7 +16,6 @@ This module handles library loading and defines C structures and function protot
 """
 
 import ctypes
-import glob
 import importlib
 import importlib.util
 import logging
@@ -58,7 +66,7 @@ def _add_dll_directory(path: str) -> None:
 
 
 def _ovstage_bin_dir(pkg_dir: str) -> str:
-    """ovstage runtime dir; find_spec locates the package without importing it."""
+    """ovstage runtime dir. find_spec locates the package without importing it."""
     hint = os.environ.get("OVSTAGE_LIBRARY_PATH_HINT")
     if hint and os.path.isdir(hint):
         return hint
@@ -99,16 +107,17 @@ def _reuse_loaded_runtime_dependency(path: str) -> bool:
 
 
 def _preload_ovstage_runtime_deps() -> None:
-    """Preload the ovstage-provided USD runtime so libovphysx's cross-wheel deps resolve.
+    """Preload libovstage so libovphysx's cross-wheel dependency resolves.
 
-    In the two-wheel split the slim ovphysx wheel does not bundle the USD monolith
-    or libovstage; libovphysx.so links them (NEEDED libovstage.so + libov_*usd_ms.so)
-    and they ship in the separately-installed ovstage wheel under
-    ``site-packages/ovstage/bin[/plugins]``. On Linux the ELF loader resolves NEEDED
-    entries via libovphysx's RPATH ($ORIGIN), which cannot reach a sibling Python
-    package, so ``import ovphysx`` would fail with "libovstage.so / libov_*usd_ms.so
-    not found". Preload them here (RTLD_GLOBAL) so the loader binds libovphysx's
-    NEEDED entries to these already-mapped objects by soname.
+    In the two-wheel split the slim ovphysx wheel does not bundle libovstage.
+    libovphysx.so links it (NEEDED libovstage.so) and it ships in the
+    separately-installed ovstage wheel under ``site-packages/ovstage/bin``. On
+    Linux the ELF loader resolves NEEDED entries via libovphysx's RPATH ($ORIGIN),
+    which cannot reach a sibling Python package, so ``import ovphysx`` would fail
+    with "libovstage.so not found". Preload it here (RTLD_GLOBAL) so the loader
+    binds libovphysx's NEEDED entry to the already-mapped object by soname.
+    libovstage's own dependency closure (its namespaced USD runtime, TBB, ...)
+    resolves through libovstage's RUNPATH. ovphysx knows nothing about it.
 
     Best-effort and Linux-only: Windows uses os.add_dll_directory in _load_library,
     and external SDK/dev overrides resolve these via the install tree's own RPATH.
@@ -124,18 +133,13 @@ def _preload_ovstage_runtime_deps() -> None:
     if not os.path.isdir(ov_bin):
         return
     _prefer_ovstage_runtime_dir(ov_bin)
-    # Monolith first (libovstage depends on it), then libovstage.
-    candidates = sorted(glob.glob(os.path.join(ov_bin, "plugins", "libov_*usd_ms.so")))
-    candidates.append(os.path.join(ov_bin, "libovstage.so"))
-    for dep in candidates:
-        if os.path.exists(dep):
-            if _reuse_loaded_runtime_dependency(dep):
-                continue
-            try:
-                _runtime_library_handles.append(ctypes.CDLL(dep, mode=os.RTLD_GLOBAL))
-                _logger.debug("Preloaded ovstage runtime dependency: %s", dep)
-            except OSError as exc:
-                _logger.debug("Could not preload ovstage runtime dependency %s: %s", dep, exc)
+    dep = os.path.join(ov_bin, "libovstage.so")
+    if os.path.exists(dep) and not _reuse_loaded_runtime_dependency(dep):
+        try:
+            _runtime_library_handles.append(ctypes.CDLL(dep, mode=os.RTLD_GLOBAL))
+            _logger.debug("Preloaded ovstage runtime dependency: %s", dep)
+        except OSError as exc:
+            _logger.debug("Could not preload ovstage runtime dependency %s: %s", dep, exc)
 
 
 from .dlpack import (
@@ -181,19 +185,19 @@ def _bundled_lib_path() -> str | None:
     # Fallbacks for development/editable installs
     base_dir = os.path.dirname(__file__)
 
-    # Try lib/ subdirectory (wheel structure)
+    # lib/ subdirectory (wheel structure)
     for name in candidates:
         p = os.path.join(base_dir, "lib", name)
         if os.path.exists(p):
             return p
 
-    # Try deps/ subdirectory (legacy)
+    # deps/ subdirectory (legacy)
     for name in candidates:
         p = os.path.join(base_dir, "deps", name)
         if os.path.exists(p):
             return p
 
-    # Try root directory (development mode)
+    # Root directory (development mode)
     for name in candidates:
         p = os.path.join(base_dir, name)
         if os.path.exists(p):
@@ -227,12 +231,10 @@ def _load_library() -> ctypes.CDLL:
     - Packaged/bundled binary inside this wheel (platform-specific name)
     - Default linker paths: platform name
     """
-    # On Windows, add dependency directories to the DLL search path so that
-    # ovphysx.dll's transitive runtime dependencies in lib/ and plugins/ are
-    # discoverable.  This makes _bindings.py self-sufficient - it doesn't
-    # rely on __init__.py's bootstrap having run first.
-    # On Linux, rpath=$ORIGIN covers this wheel's own plugins; the cross-wheel
-    # ovstage deps (libovstage + USD monolith) are preloaded by
+    # On Windows, register the dependency directories so that ovphysx.dll's
+    # transitive runtime dependencies in lib/ and plugins/ resolve without
+    # __init__.py's bootstrap having run first. On Linux, rpath=$ORIGIN covers
+    # this wheel's own plugins. The cross-wheel ovstage library is preloaded by
     # _preload_ovstage_runtime_deps() below.
     lib_env = os.environ.get("OVPHYSX_LIB")
     bundled = _bundled_lib_path()
@@ -256,21 +258,14 @@ def _load_library() -> ctypes.CDLL:
                 sdk_root = os.path.dirname(os.path.dirname(lib_env))
                 _add_dll_directory(os.path.join(sdk_root, "bin"))
                 _add_dll_directory(os.path.join(sdk_root, "plugins"))
-                _add_dll_directory(os.path.join(sdk_root, "plugins", "gpu"))
                 _add_dll_directory(os.path.join(sdk_root, "plugins", "bin", "deps"))
-
-                for _cfg in ("debug", "release", "checked"):
-                    kit_sdk_dir = os.path.join(sdk_root, "target-deps", f"kit_sdk_{_cfg}")
-                    if os.path.exists(kit_sdk_dir):
-                        _add_dll_directory(kit_sdk_dir)
-                        _logger.info("Adding kit SDK DLL directory from OVPHYSX_LIB: %s", kit_sdk_dir)
             else:
                 _add_dll_directory(os.path.join(pkg_dir, "lib"))
                 _add_dll_directory(os.path.join(pkg_dir, "plugins"))
 
             # Neither the SDK nor this wheel ships ovstage, and ovphysx.dll imports
-            # it. os.add_dll_directory() does not search subdirectories, so the
-            # USD/TBB closure under plugins/ needs its own entry.
+            # it. os.add_dll_directory() does not search subdirectories, so
+            # ovstage's own dependency closure under plugins/ needs its own entry.
             _add_dll_directory(ovstage_bin_dir)
             _add_dll_directory(os.path.join(ovstage_bin_dir, "plugins"))
             _prefer_ovstage_runtime_dir(ovstage_bin_dir)
@@ -295,7 +290,7 @@ def _load_library() -> ctypes.CDLL:
     if bundled:
         try:
             # Keep ctypes' secure Windows defaults. They include the absolute
-            # DLL's directory and the os.add_dll_directory() paths above;
+            # DLL's directory and the os.add_dll_directory() paths above.
             # winmode=0 would bypass those registered dependency directories.
             return ctypes.CDLL(bundled)
         except OSError as e:
@@ -340,7 +335,8 @@ class ovphysx_string_t(ctypes.Structure):
         self.length = len(encoded)
 
     def __str__(self):
-        # Use explicit length; C side does not guarantee null termination.
+        # Decode by length so input views and embedded bytes remain unambiguous.
+        # Output strings also guarantee ptr[length] == NUL.
         if not self.ptr or not self.length:
             return ""
         return ctypes.string_at(self.ptr, self.length).decode("utf-8")
@@ -351,6 +347,18 @@ class ovphysx_string_t(ctypes.Structure):
     def __len__(self) -> int:
         """Return byte length (excluding null terminator)."""
         return int(self.length)
+
+
+class ovphysx_omnipvd_destination_t(ctypes.Structure):
+    """Late OmniPVD destination (matches ovphysx_omnipvd_destination_t)."""
+
+    _fields_ = [
+        ("transport", c_int),
+        ("file_path", ovphysx_string_t),
+        ("tcp_address", ovphysx_string_t),
+        ("tcp_port", c_uint32),
+        ("tcp_timeout_ms", c_int32),
+    ]
 
 
 # Config key type discriminator (matches ovphysx_config_key_type_t)
@@ -392,7 +400,7 @@ class ovphysx_config_entry_t(ctypes.Structure):
     ]
 
 
-# ovphysx_create_args - matches ovphysx_create_args in C API
+# Matches ovphysx_create_args in the C API.
 class ovphysx_create_args(ctypes.Structure):
     """Configuration for creating an ovphysx instance."""
 
@@ -432,7 +440,6 @@ class ovphysx_op_wait_result_t(ctypes.Structure):
     ]
 
 
-# CUDA sync structure
 class ovphysx_cuda_sync_t(ctypes.Structure):
     """CUDA synchronization for GPU operations."""
 
@@ -443,7 +450,6 @@ class ovphysx_cuda_sync_t(ctypes.Structure):
     ]
 
 
-# Tensor binding descriptor
 class ovphysx_tensor_binding_desc_t(ctypes.Structure):
     """Descriptor for creating a tensor binding.
 
@@ -465,12 +471,12 @@ class ovphysx_tensor_binding_desc_t(ctypes.Structure):
     ]
 
 
-# Tensor specification returned by ovphysx_get_tensor_binding_spec
 class ovphysx_tensor_spec_t(ctypes.Structure):
-    """Complete tensor specification for DLTensor construction.
+    """Tensor dtype, rank, and shape for DLTensor construction.
 
     Use ovphysx_get_tensor_binding_spec() to get the exact dtype, rank, and shape
-    needed to allocate a compatible tensor.
+    needed to allocate a layout-compatible tensor. Use
+    ovphysx_get_tensor_binding_native_device() to query native memory residency.
 
     Tensor specifications by type:
       - Rigid body pose:     ndim=2, shape=[N, 7]
@@ -504,8 +510,8 @@ class ovphysx_articulation_metadata_t(ctypes.Structure):
 
 # --- ovstage / ovx native types (the read surface uses these directly) ---------
 # These ctypes structs mirror the C ABI layout of ovstage's own types from
-# <ovstage/ovstage_api/ovstage_api_types.h> and <ovx/string_types.h>; field
-# order/types/padding must match those headers exactly.
+# <ovstage/ovstage_api/ovstage_api_types.h> and <ovx/string_types.h>. Field
+# order, types and padding must match those headers exactly.
 
 
 class ovx_string_t(ctypes.Structure):
@@ -530,10 +536,10 @@ class ovx_string_or_token_t(ctypes.Structure):
 
 
 class ovstage_ordinal_range_t(ctypes.Structure):
-    """ovstage_ordinal_range_t — range for update_from_ovstage.
+    """ovstage_ordinal_range_t: range for update_from_ovstage.
 
-    ``has_start_ordinal`` True ⇒ closed range [start_ordinal, end_ordinal];
-    False ⇒ the single end_ordinal.
+    ``has_start_ordinal`` True selects the closed range [start_ordinal, end_ordinal].
+    False selects the single end_ordinal.
     """
 
     _fields_ = [
@@ -544,7 +550,7 @@ class ovstage_ordinal_range_t(ctypes.Structure):
 
 
 class ovstage_prim_group_t(ctypes.Structure):
-    """ovstage_prim_group_t — which prims a group covers."""
+    """ovstage_prim_group_t: which prims a group covers."""
 
     _fields_ = [
         ("list", c_uint64),                # ovx_primpath_list_t
@@ -564,7 +570,7 @@ class ovstage_cuda_sync_t(ctypes.Structure):
 
 
 class ovstage_data_t(ctypes.Structure):
-    """ovstage_data_t — borrowed tensor(s) plus sparsity / GPU-sync metadata."""
+    """ovstage_data_t: borrowed tensor(s) plus sparsity / GPU-sync metadata."""
 
     _fields_ = [
         ("tensors", POINTER(DLTensor)),
@@ -577,7 +583,7 @@ class ovstage_data_t(ctypes.Structure):
 
 
 class ovstage_attribute_meta_t(ctypes.Structure):
-    """ovstage_attribute_meta_t — write floor + layout generation."""
+    """ovstage_attribute_meta_t: write floor + layout generation."""
 
     _fields_ = [
         ("attribute_write_floor_ordinal", c_uint64),
@@ -586,14 +592,15 @@ class ovstage_attribute_meta_t(ctypes.Structure):
 
 
 class ovstage_read_group_t(ctypes.Structure):
-    """ovstage_read_group_t — one physics-output column group (ovstage's own type).
+    """ovstage_read_group_t: one physics-output column group (ovstage's own type).
 
     The ovphysx output read returns these verbatim (producer-owned borrowed pointer
     from :func:`ovphysx_fetch_read_next`). ``attribute`` and ``prims.list`` are
-    interned handles (resolve via :meth:`PhysX.query_shared_dictionary`); ``data.tensors``
+    interned handles (resolve via :meth:`PhysX.query_shared_dictionary`). ``data.tensors``
     is a borrowed array of ``data.tensor_count`` DLTensors with tuple width in each
-    tensor's ``dtype.lanes``. Borrowed fields stay valid until the group's
-    ``read_group_id`` is released via :meth:`PhysX.release_group`. Field
+    tensor's ``dtype.lanes``. The group struct and ``prims.list`` stay valid until
+    ``read_group_id`` is released. Numeric tensor, prim-index-map, data-index-map,
+    mask, and event storage stays valid until the enclosing read session is released. Field
     order/types/padding must match ovstage_api_types.h exactly.
     """
 
@@ -610,8 +617,29 @@ class ovstage_read_group_t(ctypes.Structure):
     ]
 
 
+class ovstage_map_group_t(ctypes.Structure):
+    """ovstage_map_group_t: one WRITABLE group from the app -> physics write (ADR-0012).
+
+    The mirror of :class:`ovstage_read_group_t`, minus the fields a write cannot carry: no
+    ``read_group_id`` (a committed group is identified by its ADDRESS, which is why the
+    pointer from :func:`ovphysx_fetch_write_next` must be passed back to
+    :func:`ovphysx_commit_group` unchanged), and no ``attribute`` (a session carries exactly
+    one, named when it is opened).
+
+    ``data.tensors`` is a borrowed array of ``data.tensor_count`` DLTensors pointing at
+    storage the CALLER fills. Valid until the write session is released. Field
+    order/types/padding must match ovstage_api_types.h exactly.
+    """
+
+    _fields_ = [
+        ("prims", ovstage_prim_group_t),
+        ("data", ovstage_data_t),
+        ("meta", ovstage_attribute_meta_t),
+    ]
+
+
 class ovstage_query_result_t(ctypes.Structure):
-    """ovstage_query_result_t — query discovery summary (ovstage's own type).
+    """ovstage_query_result_t: query discovery summary (ovstage's own type).
 
     ``attributes`` is a borrowed array of ``attribute_count`` interned attribute
     tokens, valid until the query is released. ``total_prim_count == 0`` is the
@@ -640,8 +668,20 @@ _lib.ovphysx_create_instance.argtypes = [POINTER(ovphysx_create_args), POINTER(c
 _lib.ovphysx_set_cpu_mode.restype = ovphysx_result_t
 _lib.ovphysx_set_cpu_mode.argtypes = [ctypes.c_bool]
 
+_lib.ovphysx_get_cpu_mode.restype = ovphysx_result_t
+_lib.ovphysx_get_cpu_mode.argtypes = [POINTER(ctypes.c_bool)]
+
 _lib.ovphysx_destroy_instance.restype = ovphysx_result_t
 _lib.ovphysx_destroy_instance.argtypes = [c_uint64]
+
+_lib.ovphysx_start_recording.restype = ovphysx_result_t
+_lib.ovphysx_start_recording.argtypes = [c_uint64, POINTER(ovphysx_omnipvd_destination_t)]
+
+_lib.ovphysx_stop_recording.restype = ovphysx_result_t
+_lib.ovphysx_stop_recording.argtypes = [c_uint64]
+
+_lib.ovphysx_is_recording.restype = ovphysx_result_t
+_lib.ovphysx_is_recording.argtypes = [c_uint64, POINTER(ctypes.c_bool)]
 
 _lib.ovphysx_reset_stage.restype = ovphysx_enqueue_result_t
 _lib.ovphysx_reset_stage.argtypes = [c_uint64]
@@ -659,13 +699,13 @@ _lib.ovphysx_update_articulations_kinematic.restype = ovphysx_result_t
 _lib.ovphysx_update_articulations_kinematic.argtypes = [c_uint64]
 
 _lib.ovphysx_attach_ovstage.restype = ovphysx_result_t
-# stage is an ovstage_instance_t* (opaque pointer); pass as c_void_p.
+# stage is an opaque ovstage_instance_t*, passed as c_void_p.
 _lib.ovphysx_attach_ovstage.argtypes = [c_uint64, ctypes.c_void_p, c_uint64]
 
 _lib.ovphysx_update_from_ovstage.restype = ovphysx_result_t
 _lib.ovphysx_update_from_ovstage.argtypes = [c_uint64, ovstage_ordinal_range_t]
 
-# Physics output read (ADR-0007) — ovstage-native types.
+# Physics output read (ADR-0007), using ovstage-native types.
 _lib.ovphysx_query.restype = ovphysx_result_t
 _lib.ovphysx_query.argtypes = [c_uint64, c_int32, c_int32, POINTER(c_uint64)]
 
@@ -683,6 +723,26 @@ _lib.ovphysx_read.argtypes = [c_uint64, c_uint64, POINTER(ovx_string_or_token_t)
 _lib.ovphysx_fetch_read_next.restype = ovphysx_result_t
 _lib.ovphysx_fetch_read_next.argtypes = [c_uint64, c_uint64, POINTER(POINTER(ovstage_read_group_t))]
 
+# App -> physics write (ADR-0012). One attribute per session, so `attribute` is a single
+# ovx_string_or_token_t rather than an array + count.
+_lib.ovphysx_write.restype = ovphysx_result_t
+_lib.ovphysx_write.argtypes = [c_uint64, c_uint64, POINTER(ovx_string_or_token_t), POINTER(c_uint64)]
+
+# Producer-owned group, and the pointer IS the commit identity: hand it back verbatim.
+_lib.ovphysx_fetch_write_next.restype = ovphysx_result_t
+_lib.ovphysx_fetch_write_next.argtypes = [c_uint64, c_uint64, POINTER(POINTER(ovstage_map_group_t))]
+
+_lib.ovphysx_commit_group.restype = ovphysx_result_t
+_lib.ovphysx_commit_group.argtypes = [c_uint64, c_uint64, POINTER(ovstage_map_group_t), ovstage_cuda_sync_t]
+
+_lib.ovphysx_release_write.restype = ovphysx_result_t
+_lib.ovphysx_release_write.argtypes = [c_uint64, c_uint64]
+
+# (object type, attribute) writability classification (REQ-INPUT-COVERAGE-001 AC-2). Global, not
+# per-instance: writability is a property of the write API, not of any live scene.
+_lib.ovphysx_writability.restype = ovphysx_result_t
+_lib.ovphysx_writability.argtypes = [c_int32, POINTER(ovx_string_or_token_t), POINTER(c_int32)]
+
 _lib.ovphysx_release_group.restype = ovphysx_result_t
 _lib.ovphysx_release_group.argtypes = [c_uint64, c_uint64, c_uint64]
 
@@ -692,8 +752,17 @@ _lib.ovphysx_release_read.argtypes = [c_uint64, c_uint64]
 _lib.ovphysx_release_query.restype = ovphysx_result_t
 _lib.ovphysx_release_query.argtypes = [c_uint64, c_uint64]
 
+# Stream and event are CUDA driver handles passed as uintptr_t. c_void_p is the ctypes
+# type that is pointer-width on every platform (c_ulong is 32-bit on Windows).
+_lib.ovphysx_cuda_stream_wait_event.restype = ovphysx_result_t
+_lib.ovphysx_cuda_stream_wait_event.argtypes = [c_void_p, c_void_p]
+
 _lib.ovphysx_detach_ovstage.restype = ovphysx_result_t
 _lib.ovphysx_detach_ovstage.argtypes = [c_uint64]
+
+# Attach identity (ADR-0016): out param is the attach handle, 0 = no attach.
+_lib.ovphysx_get_attach_handle.restype = ovphysx_result_t
+_lib.ovphysx_get_attach_handle.argtypes = [c_uint64, POINTER(c_uint64)]
 
 _lib.ovphysx_clone.restype = ovphysx_enqueue_result_t
 _lib.ovphysx_clone.argtypes = [
@@ -734,8 +803,11 @@ _lib.ovphysx_get_version_string.restype = c_char_p
 _lib.ovphysx_get_version_string.argtypes = []
 
 # Logging configuration API
-# ovphysx_log_fn: void (*)(uint32_t level, const char* message, void* user_data)
-ovphysx_log_fn = ctypes.CFUNCTYPE(None, c_uint32, c_char_p, c_void_p)
+# ovphysx_log_callback_t:
+# void (*)(level, message, channel, timestamp_seconds_since_epoch, user_data)
+ovphysx_log_callback_t = ctypes.CFUNCTYPE(
+    None, c_int, ovphysx_string_t, ovphysx_string_t, ctypes.c_double, c_void_p
+)
 
 _lib.ovphysx_set_log_level.restype = ovphysx_result_t
 _lib.ovphysx_set_log_level.argtypes = [c_uint32]
@@ -746,15 +818,24 @@ _lib.ovphysx_get_log_level.argtypes = []
 _lib.ovphysx_enable_default_log_output.restype = ovphysx_result_t
 _lib.ovphysx_enable_default_log_output.argtypes = [ctypes.c_bool]
 
-_lib.ovphysx_register_log_callback.restype = ovphysx_result_t
-_lib.ovphysx_register_log_callback.argtypes = [ovphysx_log_fn, c_void_p]
+_lib.ovphysx_set_log_callback.restype = ovphysx_result_t
+_lib.ovphysx_set_log_callback.argtypes = [
+    c_int,
+    POINTER(ovphysx_string_t),
+    c_void_p,
+    c_void_p,
+]
 
-_lib.ovphysx_unregister_log_callback.restype = ovphysx_result_t
-_lib.ovphysx_unregister_log_callback.argtypes = [ovphysx_log_fn, c_void_p]
+_lib.ovphysx_flush_log.restype = ovphysx_result_t
+_lib.ovphysx_flush_log.argtypes = [c_uint64]
 
 # Log diagnostics (for testing)
 _lib.ovphysx_log_emit_test_messages.restype = None
 _lib.ovphysx_log_emit_test_messages.argtypes = []
+_lib.ovphysx_log_set_global_enabled_for_test.restype = None
+_lib.ovphysx_log_set_global_enabled_for_test.argtypes = [ctypes.c_bool]
+_lib.ovphysx_log_get_global_enabled_for_test.restype = ctypes.c_bool
+_lib.ovphysx_log_get_global_enabled_for_test.argtypes = []
 
 # Tensor Binding API - bulk data access for physics simulation
 _lib.ovphysx_create_tensor_binding.restype = ovphysx_result_t
@@ -772,6 +853,13 @@ _lib.ovphysx_get_tensor_binding_spec.argtypes = [
     c_uint64,  # handle
     c_uint64,  # binding_handle
     POINTER(ovphysx_tensor_spec_t),  # out_spec
+]
+
+_lib.ovphysx_get_tensor_binding_native_device.restype = ovphysx_result_t
+_lib.ovphysx_get_tensor_binding_native_device.argtypes = [
+    c_uint64,  # handle
+    c_uint64,  # binding_handle
+    POINTER(DLDevice),  # out_device
 ]
 
 _lib.ovphysx_read_tensor_binding.restype = ovphysx_result_t
@@ -797,8 +885,8 @@ _lib.ovphysx_write_tensor_binding_masked.argtypes = [
     POINTER(DLTensor),  # mask_tensor
 ]
 
-_lib.ovphysx_warmup_gpu.restype = ovphysx_result_t
-_lib.ovphysx_warmup_gpu.argtypes = [c_uint64]  # handle
+_lib.ovphysx_warmup.restype = ovphysx_result_t
+_lib.ovphysx_warmup.argtypes = [c_uint64]  # handle
 
 _lib.ovphysx_rigid_body_view_wake_up.restype = ovphysx_result_t
 _lib.ovphysx_rigid_body_view_wake_up.argtypes = [
@@ -946,9 +1034,8 @@ _lib.ovphysx_read_raw_contact_data.argtypes = [
     POINTER(DLTensor),  # contact_point_tensor       [C, 3]
     POINTER(DLTensor),  # contact_normal_tensor      [C, 3]
     POINTER(DLTensor),  # contact_separation_tensor  [C, 1]
-    POINTER(DLTensor),  # contact_count_tensor       [S]
-    POINTER(DLTensor),  # contact_start_indices      [S]
-    POINTER(DLTensor),  # other_actor_ids_tensor     [C] uint64
+    POINTER(DLTensor),  # sensor_layout_tensor       [S, 2] count, start
+    POINTER(DLTensor),  # actor_ids_tensor           [C, 2] uint64 sensor, other
 ]
 
 _lib.ovphysx_contact_binding_get_other_actor_paths_from_ids.restype = ovphysx_result_t
@@ -1054,6 +1141,16 @@ _lib.ovphysx_overlap.argtypes = [
     POINTER(c_uint32),                                     # out_count
 ]
 
+_lib.ovphysx_scene_query_get_paths_from_ids.restype = ovphysx_result_t
+_lib.ovphysx_scene_query_get_paths_from_ids.argtypes = [
+    c_uint64,                    # handle
+    POINTER(c_uint64),           # ids
+    c_uint32,                    # id_count
+    POINTER(ovphysx_string_t),   # out_paths
+    c_uint32,                    # max_paths
+    POINTER(c_uint32),           # out_count
+]
+
 
 # ---------------------------------------------------------------------------
 # SDF view
@@ -1083,6 +1180,30 @@ _lib.ovphysx_evaluate_sdf.argtypes = [
 
 _lib.ovphysx_destroy_sdf_view.restype = ovphysx_result_t
 _lib.ovphysx_destroy_sdf_view.argtypes = [c_uint64, c_uint64]
+
+
+def writability(object_type: int, attribute: str) -> int:
+    """Classification of writing `attribute` on `object_type`, as `ovphysx_writability_t`.
+
+    @implements REQ-INPUT-COVERAGE-001
+    @covers AC-2
+
+    Keyed on the same (object type, attribute) `ovphysx_write` takes and derived from the same
+    write/read tables, so a caller and the implementation cannot disagree. An attribute the object
+    type does not accept comes back UNCLASSIFIED (0), which is a valid answer, not an error.
+    """
+    encoded = attribute.encode("utf-8")  # kept alive across the call: attr.string.ptr borrows it
+    attr = ovx_string_or_token_t()
+    attr.token = 0
+    attr.string = ovx_string_t(encoded, len(encoded))
+    out = c_int32(0)
+    result = _lib.ovphysx_writability(c_int32(int(object_type)), ctypes.byref(attr), ctypes.byref(out))
+    if result.status != 0:  # OVPHYSX_API_SUCCESS
+        err = _lib.ovphysx_get_last_error()
+        msg = (ctypes.string_at(err.ptr, err.length).decode("utf-8", "replace")
+               if err and err.ptr else "unknown error")
+        raise ValueError(f"ovphysx_writability({int(object_type)}, {attribute!r}) failed: {msg}")
+    return int(out.value)
 
 
 def get_native_version_string() -> str:

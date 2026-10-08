@@ -1,35 +1,8 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
-// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
+// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
-
-// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-//
 
 #pragma once
 
@@ -46,7 +19,11 @@ uint64_t getInternalHandle(OmniPvdObjectHandle externalHandle,
                            std::unordered_map<OmniPvdObjectHandle, OmniPvdObjectHandle>& external2InternalMap);
 OmniPvdClass* createInternalClass(const char* className, OmniPvdPhysXClassEnum physXClass);
 OmniPvdObject* createInternalObject(OmniPvdClass* internalCass, uint64_t objectHandle);
+OmniPvdObject* createInternalObject(OmniPvdClass* internalCass, uint64_t objectHandle,
+                                    uint64_t recordingSegmentId);
 OmniPvdObject* createNamedObject(OmniPvdClass* internalCass, const std::string& objectName);
+OmniPvdObject* createNamedObject(OmniPvdClass* internalCass, const std::string& objectName,
+                                 uint64_t recordingSegmentId);
 OmniPvdObject* createInternalNode(std::list<OmniPvdObject*>& objectCreations,
                                   OmniPvdObject* ancestor,
                                   OmniPvdClass* internalCass,
@@ -112,6 +89,12 @@ void getAttribIndex(int32_t& attribIndex, int32_t& classIndex, const char* attri
 
 uint64_t getFrameIdFromScene(OmniPvdObject* object, OmniPvdDOMState* domState);
 uint64_t getLastFrameIdFromScene(OmniPvdDOMState* domState);
+// Returns the scene frame, or 0 without a scene.
+uint64_t getLifespanOpenFrameId(OmniPvdObject* object, OmniPvdDOMState* domState);
+// Returns the scene frame, or the latest stream frame without a scene.
+uint64_t getLifespanCloseFrameId(OmniPvdObject* object, OmniPvdDOMState* domState);
+// Returns one past the scene frame or maximum stream frame.
+uint64_t getSupersedeCloseFrameId(OmniPvdObject* object, OmniPvdDOMState* domState);
 
 bool isSameString(const char* str, const char* str1);
 void getSanitizedName(std::string& sanitizedName, const char* objectName);

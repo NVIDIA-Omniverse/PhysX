@@ -1,15 +1,27 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
 #include "ObjectTypes.h"
+
+#include <cstddef>
+
 namespace omni
 {
 namespace physics
 {
 namespace tensors
 {
+
+// Longest component of a path pattern the view factories will match: the text between
+// '/' separators, where a parenthesized group counts as one component even if it
+// contains a '/'. Each component is compiled to a regular expression whose stack cost
+// grows with the component length, so a longer component is refused: it never
+// matches and an error is logged. Callers are expected to reject such input before
+// it reaches a view factory; ovphysx does so at its public boundary.
+constexpr std::size_t kMaxPathPatternComponentLength = 4096;
+
 class IArticulationView;
 class IRigidBodyView;
 class IDeformableBodyView;
@@ -66,6 +78,7 @@ public:
     virtual IDeformableMaterialView* createDeformableMaterialView(const char* pattern) = 0;
     virtual IDeformableMaterialView* createDeformableMaterialView(const std::vector<std::string>& patterns) = 0;
 
+    /** Classify a prim path by TensorAPI object type; see @ref ObjectType. */
     virtual ObjectType getObjectType(const char* path) = 0;
 
     virtual void clearForces() = 0;

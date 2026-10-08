@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-CCT-001
@@ -35,8 +35,7 @@ DescPtr<CapsuleCctDesc> parseCct(ParseContext& ctx, ObjectKey key, const CctInfo
     desc->sourceSimulationOwner = ObjectKey{};
 
     IPhysicsSource& src = ctx.source();
-    KnownTokens tok;
-    tok.intern(src);
+    const KnownTokens& tok = ctx.knownTokens();
 
     src.getAttribute(key, tok.physxCharacterControllerSlopeLimit, desc->slopeLimit);
 

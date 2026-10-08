@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 # Dependency Manifest for ovphysx SDK
 # This file controls native dependencies staged into _install/plugins/ by
@@ -8,6 +8,9 @@
 #
 # Pattern syntax:
 #   - Patterns use fnmatch-style matching (*, ?, [seq])
+#
+# @implements REQ-PACKAGING-CLOSURE-001
+# @covers AC-1
 
 [carbonite_plugins]
 # Carbonite bootstrap plugin shims. Sourced from
@@ -35,8 +38,7 @@ include = [
     # transitively requires gRPC/protobuf/upb runtime libs (libgpr.so.42,
     # libupb_*.so.42, libaddress_sorting.so.42, etc.) that aren't shipped
     # in the current static shim payload. Adding it back later means also
-    # pulling those libs from a separate dep (e.g. ovruntime_deps's
-    # carb.grpcdatastore subdir, or kit-kernel 111.x).
+    # sourcing them as a shared closure from a dep that actually exposes one.
     "omni.platforminfo.plugin",
     "omni.structuredlog.plugin",
 
@@ -72,6 +74,10 @@ skip_shared_libs = [
     # re-enter the package -- deleting the producer does not scrub prior build outputs.
     "libomni.physx.fabric.plugin.so",
     "omni.physx.fabric.plugin.dll",
+    # Fabric-era GPU infrastructure is not used by ovphysx. PhysX owns its
+    # CUDA context directly, so keep stale incremental artifacts out too.
+    "*omni.cubric.plugin*",
+    "*omni.gpucompute-cuda.plugin*",
     "libomni.physics.tensors.plugin.so",
     "omni.physics.tensors.plugin.dll",
     "libomni.physx.tensors.plugin.so",
@@ -95,8 +101,8 @@ skip_shared_libs = [
     "*carb.blockcompression*",
     "*omni.streamingstatus*",
     # gpu.foundation support libs not needed by ovphysx
-    # (gpu.foundation.plugin is the RTX graphics host — distinct from
-    #  omni.gpucompute-cuda.plugin which ovphysx uses for CUDA compute)
+    # (gpu.foundation.plugin is the RTX graphics host; ovphysx uses the
+    # PhysX SDK's CUDA path directly)
     # Patterns are listed in pairs: lib* for Linux, bare name for Windows.
     "*gpu.foundation.plugin*",
     #

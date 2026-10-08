@@ -1,0 +1,60 @@
+{
+  "skill_name": "tensor-bindings-gpu",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I'm maintaining existing C code that reads and writes an ovphysx tensor binding using CUDA device memory wrapped as a DLPack DLTensor. Fix a lifetime bug where the shape storage is freed before the synchronous call returns -- keep it on the tensor-binding C API, not migrating to the session API right now.",
+      "expected_output": "Keeps the code on the tensor-binding C API and keeps caller-owned shape storage valid for the read/write lifetime; uses the binding's kDLCUDA native device; checks status.",
+      "files": [],
+      "expectations": [
+        "Selects tensor-bindings-gpu to maintain the existing binding code",
+        "Keeps shape_storage valid for the synchronous read/write lifetime",
+        "Uses the binding native device's kDLCUDA device_id in the DLTensor",
+        "Checks OVPHYSX_API_SUCCESS on read and write status",
+        "Stays on the tensor-binding C API rather than rewriting onto the session API for this fix"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "In my existing GPU tensor-binding RL pipeline, should I enable DirectGPU suppressReadback for the fastest tensor path? I also need contact modification callbacks.",
+      "expected_output": "Explains DirectGPU is separate from GPU mode: enable for fastest tensor pipelines, disable when contact modification is required.",
+      "files": [],
+      "expectations": [
+        "Distinguishes GPU-mode PhysX from DirectGPU (/physics/suppressReadback)",
+        "Recommends DirectGPU on for fastest tensor-pipeline workloads",
+        "Recommends DirectGPU off when contact modification is needed"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I'm maintaining existing CPU-only NumPy tensor-binding code that exchanges articulation DOF targets and link poses.",
+      "expected_output": "Routes to tensor-bindings-cpu, not tensor-bindings-gpu.",
+      "files": [],
+      "expectations": [
+        "Does not select tensor-bindings-gpu for CPU NumPy-only I/O",
+        "Selects tensor-bindings-cpu"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "For new code, read and write rigid-body state on GPU with CUDA tensors.",
+      "expected_output": "Routes new-code bulk GPU I/O to the session read/write skills -- ovphysx-session-write for writes, ovphysx-output-read for reads -- not the deprecated tensor-binding API.",
+      "files": [],
+      "expectations": [
+        "Does not select tensor-bindings-gpu for new code",
+        "Selects ovphysx-session-write (writes) / ovphysx-output-read (reads) for the session path"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Clone one USD env into many runtime copies before the first step, then in existing GPU tensor-binding code bind CUDA tensors on the clones.",
+      "expected_output": "Uses clone-environments for replication first, then tensor-bindings-gpu for the existing CUDA tensor I/O after wait.",
+      "files": [],
+      "expectations": [
+        "Selects clone-environments for the clone ordering and wait",
+        "Selects tensor-bindings-gpu for the existing CUDA binding path after clones exist",
+        "Does not claim clone alone performs GPU tensor reads"
+      ]
+    }
+  ]
+}

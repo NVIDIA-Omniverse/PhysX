@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """Advanced scene query tests: both_sides, overlap CLOSEST rejection, hit field types,
 proto_index, result lifetime across queries, and missing kwargs errors.
@@ -10,7 +10,7 @@ enum value sync).
 
 Scene: simple_physics_scene.usda
   - Ground plane (flat box) at Y=0
-  - Dynamic Cube1 at (0, 5, 0) — falls under gravity
+  - Dynamic Cube1 at (0, 5, 0), falls under gravity
 """
 
 import os
@@ -41,7 +41,7 @@ def _load_and_step(sdk, n_steps=10, dt=1.0 / 60.0):
 def test_raycast_both_sides_false_kwarg_is_accepted(physx_sdk):
     """raycast() with both_sides=False is accepted and returns a list.
 
-    The scene's ground is a flattened Cube — and backface behaviour for cube
+    The scene's ground is a flattened Cube, and backface behaviour for cube
     geometry under the both_sides=False flag is implementation-defined, so this
     test only verifies that the kwarg is honoured at the API surface (no raise,
     returns a list). See test_raycast_both_sides_true_hits_backface for the
@@ -144,7 +144,7 @@ def test_hit_dict_field_types(physx_sdk):
     assert isinstance(h["collision"], int), f"collision must be int, got {type(h['collision'])}"
     assert isinstance(h["rigid_body"], int), f"rigid_body must be int, got {type(h['rigid_body'])}"
     assert isinstance(h["proto_index"], int), f"proto_index must be int, got {type(h['proto_index'])}"
-    # The API returns 3-element sequences; accept both list and tuple.
+    # The API returns 3-element sequences. Both list and tuple are accepted.
     assert isinstance(h["normal"], (list, tuple)), f"normal must be list or tuple, got {type(h['normal'])}"
     assert len(h["normal"]) == 3
     assert isinstance(h["position"], (list, tuple)), f"position must be list or tuple, got {type(h['position'])}"
@@ -175,7 +175,7 @@ def test_overlap_location_fields_are_zeroed(physx_sdk):
     assert len(hits) >= 1
     _zero3 = (0.0, 0.0, 0.0)
     for h in hits:
-        # API returns tuples for vector fields; compare element-wise.
+        # The API returns tuples for vector fields. Compare element-wise.
         assert tuple(h["normal"]) == _zero3, f"normal should be zeroed, got {h['normal']}"
         assert tuple(h["position"]) == _zero3, f"position should be zeroed, got {h['position']}"
         assert h["distance"] == 0.0, f"distance should be 0, got {h['distance']}"

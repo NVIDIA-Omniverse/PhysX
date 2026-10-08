@@ -1,0 +1,608 @@
+{
+  "tests/benchmarks/benchmarks/AuthoringDrain.cpp": {
+    "cases": {
+      "Authoring.drain_ovstage_cpu": {
+        "heavy": false,
+        "note": "physics:velocity via OVStage, sealed+drained, then step"
+      },
+      "Authoring.drain_step_only_cpu": {
+        "heavy": false,
+        "note": "floor: step only, no control write"
+      },
+      "Authoring.drain_tensor_cpu": {
+        "heavy": false,
+        "note": "same velocity change via tensor write, no drain"
+      }
+    },
+    "category": "Authoring",
+    "description": "L1B Authoring diagnostics for existing-body control-plane writes on a loaded scene (ported from the ovphysx c_samples; see tests/benchmarks/README.md#l1b-authoring-and-writescaling-rows). `drain_ovstage_cpu` writes `physics:velocity` through the OVStage control plane, sealed and drained, then steps. `drain_tensor_cpu` makes the same linear-velocity change through a persistent tensor write and steps, with no OVStage drain. `drain_step_only_cpu` is the floor: step only, no control write. All three are hidden diagnostics, not primary KPIs.",
+    "tags": [
+      "Authoring",
+      "Property Updates"
+    ]
+  },
+  "tests/benchmarks/benchmarks/AuthoringPopulationAdd.cpp": {
+    "cases": {
+      "Authoring.population_add_drip_cpu": {
+        "heavy": false,
+        "note": "Primary KPI (CPU): 80 bodies, one add/apply/seal/drain/step cycle each"
+      },
+      "Authoring.population_add_drip_gpu": {
+        "heavy": false,
+        "note": "Diagnostic GPU counterpart of the drip_cpu KPI"
+      },
+      "Authoring.population_add_packed_cpu": {
+        "heavy": false,
+        "note": "Diagnostic: same 80 bodies in five 16-body cycles"
+      },
+      "Authoring.population_add_packed_gpu": {
+        "heavy": false,
+        "note": "Diagnostic GPU counterpart of packed_cpu"
+      }
+    },
+    "category": "Authoring",
+    "description": "L1B Authoring rows for growing a scene body-by-body. `population_add_drip_cpu` is the **primary CPU KPI**: 80 bodies, one population reference and one add/apply/seal/drain/step cycle per body, deliberately past the historical ~63-cycle wedge. `population_add_packed_cpu` is a diagnostic: the same 80 bodies added in five 16-body population-reference cycles instead of one-by-one. The `_gpu` rows are diagnostic GPU counterparts; only the CPU rows are baselined.",
+    "tags": [
+      "Authoring",
+      "Loading & Attach"
+    ]
+  },
+  "tests/benchmarks/benchmarks/AuthoringPopulationChurn.cpp": {
+    "cases": {
+      "Authoring.population_churn_cpu": {
+        "heavy": false,
+        "note": ""
+      },
+      "Authoring.population_churn_gpu": {
+        "heavy": false,
+        "note": ""
+      }
+    },
+    "category": "Authoring",
+    "description": "Diagnostic. Same-frame population-reference create, drain, remove, attribute delete, drain, and step. Never uses `OVSTAGE_PRIM_MODE_UPSERT` -- despite the name this measures churn (create+remove), not an upsert lifecycle.",
+    "tags": [
+      "Authoring",
+      "Loading & Attach"
+    ]
+  },
+  "tests/benchmarks/benchmarks/AuthoringPopulationScale.cpp": {
+    "cases": {
+      "Authoring.population_scale_cpu": {
+        "heavy": true,
+        "note": "spawn 1 body/step into an accumulating scene; fits cost(k)=a+b*k, prints drift vs 0.50 budget (NVBugs 6664721)"
+      }
+    },
+    "category": "Authoring",
+    "description": "Diagnostic (hidden). Incremental spawn SCALING for NVBugs 6664721: one body is authored, sealed, drained and stepped per measured step into an ACCUMULATING attached scene (never reset), so step k is the cost of adding the (k+1)-th body to a scene already holding k. The same single-body author/drain sequence as `Authoring.population_add_drip_cpu` (AuthoringCommon.h), which reloads a fresh scene per step and therefore cannot see growth. endRun() fits cost(k)=a+b*k over 150 spawns (first 3 excluded as warm-up) and prints the ticket's drift metric slope*n/median(Q1) against the 0.50 budget plus quartile medians, so trunk-vs-optimized scaling is directly comparable.",
+    "tags": [
+      "Authoring",
+      "Loading & Attach"
+    ]
+  },
+  "tests/benchmarks/benchmarks/AuthoringRuntimeWriteSpawn.cpp": {
+    "cases": {
+      "Authoring.runtime_write_spawn_cpu": {
+        "heavy": false,
+        "note": ""
+      },
+      "Authoring.runtime_write_spawn_gpu": {
+        "heavy": false,
+        "note": ""
+      },
+      "RuntimeSpawnScaling.collider_heavy_1280_cpu": {
+        "heavy": true,
+        "note": "Diagnostic: seal/drain + one step of one spawned body into 1,280 existing static colliders; outside the L1B Authoring.* selection"
+      }
+    },
+    "category": "Authoring",
+    "description": "Diagnostic. The same 80 bodies as AuthoringPopulationAdd, authored directly through 13 OVStage columns per body in five drained and stepped batches, with no population references. `RuntimeSpawnScaling.collider_heavy_1280_cpu` reuses the same column writes to author one body into a generated scene that already holds 1,280 static colliders; the writes are outside the timer and the timed sample is the seal, the structural drain, and one synchronous step, gated on the realized rigid body at the exact authored path (REQ-CAPI-BENCHMARK-005).",
+    "tags": [
+      "Authoring",
+      "Loading & Attach"
+    ]
+  },
+  "tests/benchmarks/benchmarks/AuthoringTeleport.cpp": {
+    "cases": {
+      "Authoring.teleport_ovstage_cpu": {
+        "heavy": false,
+        "note": "omni:xform write, seal/drain, then step"
+      },
+      "Authoring.teleport_ovstage_gpu": {
+        "heavy": false,
+        "note": "GPU counterpart"
+      },
+      "Authoring.teleport_tensor_cpu": {
+        "heavy": false,
+        "note": "pose tensor write + step, no drain"
+      },
+      "Authoring.teleport_tensor_gpu": {
+        "heavy": false,
+        "note": "GPU counterpart"
+      }
+    },
+    "category": "Authoring",
+    "description": "Diagnostic. Existing-body pose change on a loaded scene. `teleport_tensor_*` writes the pose tensor directly plus step, with no OVStage drain. `teleport_ovstage_*` writes the `omni:xform` attribute, seals/drains, then steps.",
+    "tags": [
+      "Authoring",
+      "Property Updates"
+    ]
+  },
+  "tests/benchmarks/benchmarks/Clone.cpp": {
+    "cases": {
+      "Clone.envs_1024": {
+        "heavy": false,
+        "note": ""
+      },
+      "Clone.envs_256": {
+        "heavy": false,
+        "note": ""
+      },
+      "Clone.envs_64": {
+        "heavy": false,
+        "note": ""
+      }
+    },
+    "category": "Cloning",
+    "description": "env0 -> envN GridCloner-style replication at N=64/256/1024.",
+    "tags": [
+      "Cloning",
+      "Loading & Attach"
+    ]
+  },
+  "tests/benchmarks/benchmarks/ContactReport.cpp": {
+    "cases": {
+      "ContactReport.persistent_pairs_512_step_read_cpu": {
+        "heavy": true,
+        "note": "one 1/60s step plus the public raw contact-report pull, CPU dynamics"
+      },
+      "ContactReport.persistent_pairs_512_step_read_gpu": {
+        "heavy": true,
+        "note": "requires --forceGpu; conventional GPU dynamics, DirectGPU refused"
+      }
+    },
+    "category": "Contact Report",
+    "description": "One 1/60-second step plus the public raw contact-report pull for 512 persistent isolated reporter/static pairs. A contact is one place where two collision shapes touch; after each physics step the contact report is the list of touching pairs plus the point, normal, separation, and impulse data generated for those touches. The fixture intentionally expects no friction anchors. The `_gpu` row requires conventional GPU dynamics (`--forceGpu`) and explicitly rejects `--directGpu`, which disables the host simulation-state readback path the public raw getter reads from -- the row fails instead of publishing a misleading zero or fallback measurement. Both rows are hidden and run in separate fresh processes.",
+    "tags": [
+      "Contact Report"
+    ]
+  },
+  "tests/benchmarks/benchmarks/InstancingAttach.cpp": {
+    "cases": {
+      "InstancingAttach.all_flat_n0500_cpu": {
+        "heavy": false,
+        "note": "non-instanced control for the n0500 all row"
+      },
+      "InstancingAttach.all_n0100_cpu": {
+        "heavy": false,
+        "note": ""
+      },
+      "InstancingAttach.all_n0250_cpu": {
+        "heavy": false,
+        "note": ""
+      },
+      "InstancingAttach.all_n0500_cpu": {
+        "heavy": false,
+        "note": ""
+      },
+      "InstancingAttach.physics_flat_n0500_cpu": {
+        "heavy": false,
+        "note": "non-instanced control for the n0500 physics row"
+      },
+      "InstancingAttach.physics_n0100_cpu": {
+        "heavy": false,
+        "note": ""
+      },
+      "InstancingAttach.physics_n0250_cpu": {
+        "heavy": false,
+        "note": ""
+      },
+      "InstancingAttach.physics_n0500_cpu": {
+        "heavy": false,
+        "note": ""
+      }
+    },
+    "category": "Loading & Attach",
+    "description": "Isolates initial ovphysx attach scaling as unrelated render-only scene-graph prototypes grow (captures NVBug 6532970). Every case has exactly five non-instanceable leaf Mesh prims with PhysicsRigidBodyAPI + PhysicsCollisionAPI; population and sealing are outside the timer. `physics_n{0100,0250,0500}_cpu` vary only the render-only prototype/instance-pair count; `all_n{...}_cpu` includes the render-only prims in the timed set too; `*_flat_n0500_cpu` is the non-instanced control (instanceable=false) at the largest N, isolating instancing-specific cost from cost that scales purely with populated prim count.",
+    "tags": [
+      "Loading & Attach",
+      "Property Query"
+    ]
+  },
+  "tests/benchmarks/benchmarks/LabAnymal.cpp": {
+    "cases": {
+      "Lab.anymal_1024_clone": {
+        "heavy": false,
+        "note": "clone() call itself, template -> N targets"
+      },
+      "Lab.anymal_1024_reset": {
+        "heavy": false,
+        "note": ""
+      },
+      "Lab.anymal_1024_step": {
+        "heavy": false,
+        "note": ""
+      },
+      "Lab.anymal_1024_tensor_read": {
+        "heavy": false,
+        "note": ""
+      },
+      "Lab.anymal_1024_tensor_write": {
+        "heavy": false,
+        "note": ""
+      },
+      "Lab.anymal_8192_clone": {
+        "heavy": false,
+        "note": "clone() call itself, template -> N targets"
+      },
+      "Lab.anymal_8192_reset": {
+        "heavy": false,
+        "note": ""
+      },
+      "Lab.anymal_8192_step": {
+        "heavy": false,
+        "note": ""
+      },
+      "Lab.anymal_8192_tensor_read": {
+        "heavy": false,
+        "note": ""
+      },
+      "Lab.anymal_8192_tensor_write": {
+        "heavy": false,
+        "note": ""
+      }
+    },
+    "category": "Lab Probes",
+    "description": "Per-step throughput, reset, DLPack pose read/write, and clone() cost for the ANYmal-C IsaacLab asset at N=1024/8192 envs. Requires `scripts/fetch_anymal_asset.py` to have fetched the binary asset once; skips cleanly with a hint if it hasn't been. `clone` measures the clone() call itself from `/World/envs/template` into N targets -- on the hot path for IsaacLab-style RL setup.",
+    "tags": [
+      "Lab Probes",
+      "Tensor I/O",
+      "Cloning"
+    ]
+  },
+  "tests/benchmarks/benchmarks/LabCartpole.cpp": {
+    "cases": {
+      "Probe.cartpole_4096_control_step": {
+        "heavy": false,
+        "note": "two 1/120s substeps, CUDA effort/target write + DOF read"
+      },
+      "Probe.cartpole_4096_tensor_binding_create": {
+        "heavy": false,
+        "note": "create+spec for five [4096,2] control/state bindings"
+      }
+    },
+    "category": "Lab Probes",
+    "description": "DirectGPU control-loop probes over 4096 Cartpole articulations. `control_step` times one stable backend-shaped policy step: two 1/120s substeps with CUDA effort/target writes and final DOF state reads. `tensor_binding_create` times creation and specification lookup for the five [4096,2] Cartpole control/state tensor bindings. Both require `--forceGpu --directGpu`, must run in a dedicated process with `--hidden` and the exact `--filter` (DirectGPU changes scene behavior for other GPU benchmarks), and are synthetic in-process producer-path proxies -- not an end-to-end customer reproduction.",
+    "tags": [
+      "Lab Probes",
+      "Tensor I/O",
+      "Articulations"
+    ]
+  },
+  "tests/benchmarks/benchmarks/LowLoad.cpp": {
+    "cases": {
+      "LowLoad.empty_step": {
+        "heavy": false,
+        "note": "per-call dispatch floor, no scene loaded"
+      },
+      "LowLoad.first_step_after_reload": {
+        "heavy": false,
+        "note": ""
+      },
+      "LowLoad.noop_ovstage_attach": {
+        "heavy": false,
+        "note": "1-prim scene, per-call attach cost"
+      },
+      "LowLoad.reset": {
+        "heavy": false,
+        "note": "RL-style episode reset"
+      }
+    },
+    "category": "Low Load",
+    "description": "Per-call floor costs, not throughput. `first_step_after_reload` times one step() after reloading the scene (not true cold-start). `empty_step` is per-step dispatch cost with no scene loaded -- the per-call floor. `noop_ovstage_attach` is per-call cost of ovstage population + attach/update on a 1-prim scene. `reset` is per-call cost of ovphysx_reset on a loaded scene (the RL-style episode-reset path).",
+    "tags": [
+      "Low Load"
+    ]
+  },
+  "tests/benchmarks/benchmarks/OutputRead.cpp": {
+    "cases": {
+      "OutputRead.queryread_rb_1024_cpu": {
+        "heavy": false,
+        "note": ""
+      },
+      "OutputRead.queryread_rb_8192_cpu": {
+        "heavy": false,
+        "note": ""
+      },
+      "OutputRead.queryread_rb_1024_gpu": {
+        "heavy": false,
+        "note": "requires --forceGpu --directGpu; host-backed output read even on a DirectGPU scene -- only the tensorbinding rows below move to device memory"
+      },
+      "OutputRead.queryread_rb_8192_gpu": {
+        "heavy": false,
+        "note": "requires --forceGpu --directGpu; host-backed output read even on a DirectGPU scene"
+      },
+      "OutputRead.readonly_rb_8192_cpu": {
+        "heavy": false,
+        "note": "query held open across steps, isolates per-frame query cost against queryread_rb"
+      },
+      "OutputRead.readonly_rb_8192_gpu": {
+        "heavy": false,
+        "note": "requires --forceGpu --directGpu; host-backed output read even on a DirectGPU scene"
+      },
+      "OutputRead.tensorbinding_rb_8192_cpu": {
+        "heavy": false,
+        "note": "read via persistent tensor binding"
+      },
+      "OutputRead.tensorbinding_rb_8192_gpu": {
+        "heavy": false,
+        "note": "requires --forceGpu --directGpu; the binding destination is device-resident on DirectGPU (kDLCUDA)"
+      },
+      "OutputRead.tensorcreate_rb_8192_cpu": {
+        "heavy": false,
+        "note": "tensor-binding create+spec+destroy setup cost the binding amortises"
+      },
+      "OutputRead.tensorcreate_rb_8192_gpu": {
+        "heavy": false,
+        "note": "requires --forceGpu --directGpu"
+      },
+      "OutputRead.readonly_arti_link_8192_cpu": {
+        "heavy": false,
+        "note": "held-query articulation-link pose plus velocity on the cartpole fixture"
+      },
+      "OutputRead.readonly_arti_link_8192_gpu": {
+        "heavy": false,
+        "note": "requires --forceGpu --directGpu; host-backed output read even on a DirectGPU scene"
+      },
+      "OutputRead.tensorbinding_arti_link_8192_cpu": {
+        "heavy": false,
+        "note": "binding denominator for the articulation-link lane"
+      },
+      "OutputRead.tensorbinding_arti_link_8192_gpu": {
+        "heavy": false,
+        "note": "requires --forceGpu --directGpu; the binding destination is device-resident on DirectGPU (kDLCUDA)"
+      },
+      "OutputRead.readonly_arti_dof_8192_cpu": {
+        "heavy": false,
+        "note": "held-query articulation-DOF pose plus velocity on the cartpole fixture"
+      },
+      "OutputRead.readonly_arti_dof_8192_gpu": {
+        "heavy": false,
+        "note": "requires --forceGpu --directGpu; host-backed output read even on a DirectGPU scene"
+      },
+      "OutputRead.tensorbinding_arti_dof_8192_cpu": {
+        "heavy": false,
+        "note": "binding denominator for the articulation-DOF lane"
+      },
+      "OutputRead.tensorbinding_arti_dof_8192_gpu": {
+        "heavy": false,
+        "note": "requires --forceGpu --directGpu; the binding destination is device-resident on DirectGPU (kDLCUDA)"
+      },
+      "OutputRead.readonly_arti_root_8192_cpu": {
+        "heavy": false,
+        "note": "held-query whole-articulation root pose plus velocity"
+      },
+      "OutputRead.readonly_arti_root_8192_gpu": {
+        "heavy": false,
+        "note": "requires --forceGpu --directGpu; host-backed output read even on a DirectGPU scene"
+      },
+      "OutputRead.tensorbinding_arti_root_8192_cpu": {
+        "heavy": false,
+        "note": "matching root pose plus velocity control over the same cartpole fixture"
+      },
+      "OutputRead.tensorbinding_arti_root_8192_gpu": {
+        "heavy": false,
+        "note": "requires --forceGpu --directGpu; the binding destination is device-resident on DirectGPU (kDLCUDA)"
+      },
+      "OutputRead.readonly_arti_inverse_dynamics_8192_cpu": {
+        "heavy": false,
+        "note": "held-query whole-articulation inverse dynamics (jacobian + massMatrix), one homogeneous cohort"
+      },
+      "OutputRead.readonly_arti_inverse_dynamics_8192_gpu": {
+        "heavy": false,
+        "note": "requires --forceGpu --directGpu; host-backed output read even on a DirectGPU scene"
+      },
+      "OutputRead.tensorbinding_arti_inverse_dynamics_8192_cpu": {
+        "heavy": false,
+        "note": "matching control; the binding refuses a non-homogeneous view so only the single-cohort fixture has one"
+      },
+      "OutputRead.tensorbinding_arti_inverse_dynamics_8192_gpu": {
+        "heavy": false,
+        "note": "requires --forceGpu --directGpu; the binding destination is device-resident on DirectGPU (kDLCUDA)"
+      },
+      "OutputRead.readonly_arti_inverse_dynamics_mixed_16_cpu": {
+        "heavy": false,
+        "note": "cohort-partitioning cost, not a size sweep -- 16 is the asset's own articulation count, every articulation is its own topology; no tensorbinding twin"
+      },
+      "OutputRead.readonly_arti_inverse_dynamics_mixed_16_gpu": {
+        "heavy": false,
+        "note": "requires --forceGpu --directGpu; host-backed output read even on a DirectGPU scene"
+      },
+      "OutputRead.readonly_vehicle_wheel_1024_cpu": {
+        "heavy": false,
+        "note": "held-query vehicle-wheel position plus orientation; CPU-only and un-cloned -- a vehicle cannot attach to a DirectGPU scene and ovphysx_clone has no vehicle case, so the asset authors all 1024 up front; no tensorbinding twin (tensor API has no vehicle view)"
+      },
+      "OutputRead.readonly_particles_128_gpu": {
+        "heavy": false,
+        "note": "requires --forceGpu --directGpu; held-query particle points plus velocities, host-backed output read; GPU-only and 128 sets -- a particle set requires a CUDA context and a 512-set scene exhausts a 16 GB card; no tensorbinding twin (binding serves no particle tensors)"
+      },
+      "OutputRead.readonly_deformable_vol_128_gpu": {
+        "heavy": false,
+        "note": "requires --forceGpu --directGpu; held-query volume-deformable points plus velocities, host-backed output read; GPU-only -- the read refuses a deformable without a CUDA context"
+      },
+      "OutputRead.readonly_deformable_surf_128_gpu": {
+        "heavy": false,
+        "note": "requires --forceGpu --directGpu; same pair on surface deformables, separate family from the volume lane (different PhysX buffer names, only volume has a collision mesh)"
+      },
+      "OutputRead.tensorbinding_deformable_vol_128_gpu": {
+        "heavy": false,
+        "note": "requires --forceGpu --directGpu; matching control -- sim-mesh positions/velocities into preallocated tensors, device-resident (kDLCUDA), no prim identity/groups/completion event"
+      },
+      "OutputRead.tensorbinding_deformable_surf_128_gpu": {
+        "heavy": false,
+        "note": "requires --forceGpu --directGpu; surface counterpart of the volume binding control"
+      }
+    },
+    "category": "Output Read",
+    "description": "Physics-output read vs. tensor-binding read across N bodies/links/DOFs/articulations (cubes20 or cartpole cloned to N envs, or an authored asset for vehicle/particle/deformable families). `queryread_rb` opens, drains, and releases a query every call; `readonly_*` holds the query open across steps, isolating per-frame query cost against `queryread_rb`; `tensorbinding_*` reads the same payload through a persistent tensor binding; `tensorcreate_rb` measures the tensor-binding create+spec+destroy setup the binding amortises. `_gpu` rows require DirectGPU (`--forceGpu --directGpu`) and are hidden. **Residency note:** the output read (`ovphysx_read()` / `ovphysx_fetch_read_next()`) is host-backed even on a DirectGPU scene -- only the tensor-binding destination moves to device memory there (`kDLCUDA`, ADR-0008). The `readonly_*`/`queryread_rb`/`tensorcreate_rb` GPU rows and their `tensorbinding_*` counterparts are therefore NOT like-for-like on residency; read each row's own CPU/GPU delta rather than comparing read vs. binding as a residency ratio.",
+    "tags": [
+      "Output Read",
+      "Tensor I/O"
+    ]
+  },
+  "tests/benchmarks/benchmarks/Smoke.cpp": {
+    "cases": {
+      "Smoke.no_op": {
+        "heavy": false,
+        "note": ""
+      }
+    },
+    "category": "Smoke",
+    "description": "Sleep-based smoke test for the harness loop itself, not a physics measurement.",
+    "tags": [
+      "Smoke"
+    ]
+  },
+  "tests/benchmarks/benchmarks/StepCpu.cpp": {
+    "cases": {
+      "Step.articulation_pileup_cpu": {
+        "heavy": false,
+        "note": "16 articulations over 100 obstacles"
+      },
+      "Step.basic_simulation_cpu": {
+        "heavy": false,
+        "note": ""
+      },
+      "Step.cubes20_cpu": {
+        "heavy": false,
+        "note": "also driven with --threads=1 for the single-threaded baseline"
+      },
+      "Step.warehouse_cpu": {
+        "heavy": false,
+        "note": "~2.4k-body warehouse"
+      }
+    },
+    "category": "Simulation",
+    "description": "Steady-state per-step CPU throughput across four fixtures: a tiny scene at a 240Hz-authored timestep (`basic_simulation`), 16 falling articulations (link counts 3..18) over 100 dynamic obstacles (`articulation_pileup`), a ~2.4k-body warehouse (`warehouse`), and 20 falling cubes (`cubes20`, also reused with `--threads=1` for the single-threaded baseline pass driven by the cmake test runner).",
+    "tags": [
+      "Simulation"
+    ]
+  },
+  "tests/benchmarks/benchmarks/StepGpu.cpp": {
+    "cases": {
+      "Step.articulation_pileup_gpu": {
+        "heavy": false,
+        "note": ""
+      },
+      "Step.cubes20_gpu": {
+        "heavy": false,
+        "note": ""
+      },
+      "Step.two_articulations_gpu": {
+        "heavy": false,
+        "note": ""
+      },
+      "Step.warehouse_gpu": {
+        "heavy": false,
+        "note": ""
+      }
+    },
+    "category": "Simulation",
+    "description": "GPU counterparts of the CPU step fixtures (articulation_pileup, warehouse, cubes20), plus a dedicated short `two_articulations` GPU-tagged fixture.",
+    "tags": [
+      "Simulation"
+    ]
+  },
+  "tests/benchmarks/benchmarks/TensorBindings.cpp": {
+    "cases": {
+      "TensorIo.pose_create_1024_cpu": {
+        "heavy": false,
+        "note": ""
+      },
+      "TensorIo.pose_create_8192_cpu": {
+        "heavy": false,
+        "note": ""
+      },
+      "TensorIo.pose_read_1024_cpu": {
+        "heavy": false,
+        "note": ""
+      },
+      "TensorIo.pose_read_8192_cpu": {
+        "heavy": false,
+        "note": ""
+      },
+      "TensorIo.pose_write_1024_cpu": {
+        "heavy": false,
+        "note": ""
+      },
+      "TensorIo.pose_write_8192_cpu": {
+        "heavy": false,
+        "note": ""
+      }
+    },
+    "category": "Tensor I/O",
+    "description": "DLPack CPU-tensor pose-binding lifecycle on cubes20 cloned to N envs: create+spec+destroy cycle (`create`), persistent-binding read (`read`), and persistent-binding write (`write`), at N=1024/8192.",
+    "tags": [
+      "Tensor I/O"
+    ]
+  },
+  "tests/benchmarks/benchmarks/UsdLoad.cpp": {
+    "cases": {
+      "UsdLoad.articulation_pileup": {
+        "heavy": false,
+        "note": ""
+      },
+      "UsdLoad.basic_simulation": {
+        "heavy": false,
+        "note": ""
+      },
+      "UsdLoad.cubes20": {
+        "heavy": false,
+        "note": ""
+      },
+      "UsdLoad.warehouse": {
+        "heavy": false,
+        "note": ""
+      }
+    },
+    "category": "Loading & Attach",
+    "description": "ovstage population + attach/update cost for the same four fixtures StepCpu/StepGpu simulate: a tiny scene (`basic_simulation`), the 16-articulation pileup (`articulation_pileup`), the ~2.4k-body warehouse (`warehouse`), and 20 falling cubes (`cubes20`).",
+    "tags": [
+      "Loading & Attach"
+    ]
+  },
+  "tests/benchmarks/benchmarks/WriteScaling.cpp": {
+    "cases": {
+      "WriteScaling.velocity_ovstage_4096_cpu": {
+        "heavy": false,
+        "note": "Primary KPI: 4096-body OVStage velocity write + step"
+      },
+      "WriteScaling.velocity_tensor_4096_cpu": {
+        "heavy": false,
+        "note": "Comparator: persistent [4096,6] tensor write + step"
+      },
+      "WriteScalingHighN.velocity_ovstage_8192_cpu": {
+        "heavy": true,
+        "note": "Diagnostic: the OVStage lane at 8192 bodies; outside the L1B WriteScaling.* selection"
+      },
+      "WriteScalingHighN.velocity_tensor_8192_cpu": {
+        "heavy": true,
+        "note": "Diagnostic: the tensor lane at 8192 bodies"
+      },
+      "WriteScalingHighN.velocity_ovstage_16384_cpu": {
+        "heavy": true,
+        "note": "Diagnostic: the OVStage lane at 16384 bodies; several-megabyte generated scene"
+      },
+      "WriteScalingHighN.velocity_tensor_16384_cpu": {
+        "heavy": true,
+        "note": "Diagnostic: the tensor lane at 16384 bodies"
+      }
+    },
+    "category": "Authoring",
+    "description": "`velocity_ovstage_4096_cpu` is the **primary KPI**: a 4,096-body linear-velocity write through OVStage, write completion, query release, velocity-scoped floor, update, and a 1/60s step. `velocity_tensor_4096_cpu` is the comparator: the same step shape but writing a persistent [4096,6] tensor instead. The two use different wait/seal boundaries than the Authoring.* rows above (single-seal-wait vs. separate waits) -- not directly comparable across files; see README's Comparability boundary section. The four hidden `WriteScalingHighN.*` rows are the same fixture at 8,192 and 16,384 bodies with nothing else changed; they carry a separate family prefix so the frozen L1B `WriteScaling.*` selection still returns exactly the two 4,096-body rows, and they are non-paging diagnostics (REQ-CAPI-BENCHMARK-005).",
+    "tags": [
+      "Authoring",
+      "Property Updates",
+      "Tensor I/O"
+    ]
+  }
+}

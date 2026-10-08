@@ -1,11 +1,17 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-BODY-001
- * @covers AC-1 AC-2 AC-3 AC-4
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-6
  *
  * @implements REQ-PARSE-BODY-002
+ * @covers AC-1
+ *
+ * @implements REQ-PARSE-CORE-003
+ * @covers AC-8
+ *
+ * @implements REQ-SPLINE-TARGET-001
  * @covers AC-1
  */
 
@@ -120,8 +126,7 @@ void setToDefault(DynamicPhysxRigidBodyDesc& desc, const SourceUnits& units)
 DescPtr<DynamicPhysxRigidBodyDesc> parseDynamicBody(ParseContext& ctx, ObjectKey key)
 {
     IPhysicsSource& src = ctx.source();
-    KnownTokens tok;
-    tok.intern(src);
+    const KnownTokens& tok = ctx.knownTokens();
 
     DescPtr<DynamicPhysxRigidBodyDesc> desc =
         allocateDesc<DynamicPhysxRigidBodyDesc>(ctx.descriptorAllocator());
@@ -208,6 +213,7 @@ DescPtr<DynamicPhysxRigidBodyDesc> parseDynamicBody(ParseContext& ctx, ObjectKey
         desc->surfaceVelocityEnabled       = true;
         desc->surfaceVelocityLocalSpace    = false;
         desc->surfaceLinearVelocity        = desc->linearVelocity;
+        desc->surfaceLinearVelocityAuthored = desc->linearVelocity;
         desc->surfaceAngularVelocity       = desc->angularVelocity;
     }
 
@@ -219,6 +225,11 @@ DescPtr<DynamicPhysxRigidBodyDesc> parseDynamicBody(ParseContext& ctx, ObjectKey
         // surfaceAngularVelocity is authored in deg/s; convert to rad/s.
         desc->surfaceAngularVelocity    = degToRad(
             readFloat3(src, key, tok.physxSurfaceAngularVelocity, { 0.0f, 0.0f, 0.0f }));
+
+        // Keep the authored value: the scale fold below is not invertible (a zero scale
+        // component loses the axis), and the runtime needs the pre-fold quantity to
+        // re-derive the effective velocity when surfaceVelocityLocalSpace changes alone.
+        desc->surfaceLinearVelocityAuthored = desc->surfaceLinearVelocity;
 
         // Apply the prim's per-axis scale to surfaceLinearVelocity (no
         // rotation) when surfaceVelocityLocalSpace is true.
@@ -257,7 +268,15 @@ DescPtr<DynamicPhysxRigidBodyDesc> parseDynamicBody(ParseContext& ctx, ObjectKey
                 // Legacy validations (PhysicsBody.cpp::parseRigidBody):
                 //   1. Curve target must be a UsdGeomBasisCurves prim.
                 //   2. Curve must be a descendant of the body in the hierarchy.
-                bool isCurve = src.hasSchema(curve, tok.basisCurvesType);
+                // BasisCurves is a CONCRETE PRIM TYPE, so this is an isA question,
+                // not a hasSchema one -- hasSchema answers "is this applied API
+                // present on the prim". UsdSource happens to resolve type names
+                // through hasSchema too, which hid the mistake; OvstageSource
+                // correctly reports false for a name that is not an applied API,
+                // and spline surface velocity then disabled itself silently on
+                // every non-USD source. LoadStage's validation of this same
+                // relationship already uses isA, so this also makes the two agree.
+                bool isCurve = src.isA(curve, tok.basisCurvesType);
                 bool isDescendant = false;
                 if (isCurve)
                 {

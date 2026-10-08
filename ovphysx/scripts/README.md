@@ -1,5 +1,5 @@
 <!-- SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
-<!-- SPDX-License-Identifier: BSD-3-Clause -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
 # ovphysx Scripts
 
@@ -44,12 +44,16 @@ ovruntime) but does **not** install into `_install/` or run any tests. Use it
 use `validate_all.cmake` (or `install.cmake` plus individual test scripts) for install and
 test workflows.
 
-Source builds use namespaced monolithic USD. There is no classic USD build
-switch.
+Source builds still fetch a namespaced monolithic OpenUSD package as a build-time
+dependency (the ovruntime subproject's own USD dependency). The Python tests get
+their python USD from stock pip `usd-core` on platforms with a PyPI
+wheel (linux x86_64 and Windows; linux aarch64 has none, so the `pxr`-dependent
+checks skip there). No internal USD monolith is fetched. The ovphysx libraries
+link no USD and the SDK and wheel ship none. There is no classic USD build switch.
 
 ### `install.cmake`
 Assembles the SDK into `_install/`: libraries, headers, CMake config, plugins,
-licenses, docs, samples. Strips debug symbols on Linux. Verifies packaging lock and
+codeless PhysX USD schemas (`schemas/physx/`), licenses, docs, samples. Strips debug symbols on Linux. Verifies packaging lock and
 glibc baseline.
 
 Required before any test suite (C++ or Python runtime tests need `_install/`).
@@ -94,6 +98,6 @@ Runs Python sample applications against the installed wheel across Python versio
 
 ## Prerequisites
 
-- CMake 3.16+ on Linux, CMake 4.1+ on Windows
+- CMake 3.22+ on Linux, CMake 4.1+ on Windows
 - [uv](https://docs.astral.sh/uv/) for Python test/wheel management
 - Dependencies auto-download during build via packman

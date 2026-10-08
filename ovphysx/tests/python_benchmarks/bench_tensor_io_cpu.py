@@ -1,5 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# DEPRECATED (tensor-binding-deprecation): a deprecated tensor-binding test. It is removed with the binding.
 
 """CPU-side tensor binding read/write throughput via DLPack <-> numpy."""
 
@@ -50,10 +52,10 @@ def test_pose_read_cpu(benchmark, pose_binding):
 
 def test_pose_write_cpu(benchmark, pose_binding):
     # Prime the buffer with the binding's current state. Without this, the
-    # write benchmark pushes (0,0,0,0) quaternions every iteration; PhysX
+    # write benchmark pushes (0,0,0,0) quaternions every iteration, which PhysX
     # rejects with "PxRigidDynamic::setGlobalPose: pose is not valid",
     # biasing the benchmark toward rejection-path cost and spamming logs.
-    # See TensorBindings.cpp:131-138 for the C++ equivalent priming step.
+    # TensorBindings.cpp performs the same priming step for the C++ benchmark.
     arr = np.zeros(pose_binding.shape, dtype=np.float32)
     pose_binding.read(arr)
 

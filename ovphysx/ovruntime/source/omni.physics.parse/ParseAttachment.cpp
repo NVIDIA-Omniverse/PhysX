@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-ATTACH-001
@@ -55,8 +55,7 @@ float readFloatAttr(const IPhysicsSource& src, ObjectKey key, TokenId attr, floa
 
 DescPtr<PhysxDeformableAttachmentDesc> parseAttachment(ParseContext& ctx, ObjectKey key, ObjectType type)
 {
-    KnownTokens tok;
-    tok.intern(ctx.source());
+    const KnownTokens& tok = ctx.knownTokens();
 
     DescPtr<PhysxDeformableAttachmentDesc> desc =
         allocateDesc<PhysxDeformableAttachmentDesc>(ctx.descriptorAllocator());
@@ -74,8 +73,7 @@ DescPtr<PhysxDeformableAttachmentDesc> parseAttachment(ParseContext& ctx, Object
 
 DescPtr<PhysxDeformableCollisionFilterDesc> parseElementCollisionFilter(ParseContext& ctx, ObjectKey key)
 {
-    KnownTokens tok;
-    tok.intern(ctx.source());
+    const KnownTokens& tok = ctx.knownTokens();
 
     DescPtr<PhysxDeformableCollisionFilterDesc> desc =
         allocateDesc<PhysxDeformableCollisionFilterDesc>(ctx.descriptorAllocator());

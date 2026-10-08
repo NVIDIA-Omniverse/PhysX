@@ -1,0 +1,62 @@
+{
+  "skill_name": "clone-environments",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "In Python, load a USD scene and clone /World/envs/env0 into env1..env3 for batched simulation. Wait so bindings can see the clones.",
+      "expected_output": "A Python flow that attaches a populated ovstage, calls PhysX.clone with the source and target paths before warmup or the first step, then wait_all before creating bindings.",
+      "files": [],
+      "expectations": [
+        "Selects clone-environments",
+        "Clones before warmup() or the first simulation step",
+        "Calls physx.clone(source, targets) then wait_all (or equivalent wait)",
+        "Does not claim clone authors new USD prims for the targets",
+        "Registers the codeless PhysX schemas with ovstage.population.register_usd_schemas([str(codeless_schema_root())]) before the first population call",
+        "If the example selects CPU mode, gives each clone a spatially disjoint anchor_transforms pose"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Clone /env0/Robot to /env1/Robot and /env2/Robot with explicit world poses for each target root.",
+      "expected_output": "Uses anchor_transforms with one (px,py,pz,qx,qy,qz,qw) pose per target, matching targets length.",
+      "files": [],
+      "expectations": [
+        "Uses anchor_transforms (not a deprecated name)",
+        "Provides one 7-float transform per target with len(anchor_transforms) == len(targets)",
+        "Explains the pose anchors the exact target subtree root world pose"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I already stepped the sim once. Can I call clone now to add more environments?",
+      "expected_output": "Rejects post-step cloning for this workflow; clone must happen before warmup or the first step.",
+      "files": [],
+      "expectations": [
+        "States clone must run before warmup() or the first simulation step",
+        "Does not present post-step cloning as supported in this skill"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Author a .usda falling-box scene for ovphysx from scratch.",
+      "expected_output": "Routes to ovphysx-usd-authoring, not clone-environments.",
+      "files": [],
+      "expectations": [
+        "Does not select clone-environments for USD authoring",
+        "Selects ovphysx-usd-authoring"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "I run ovphysx in CPU-only mode. Can I omit anchor_transforms and rely on env_ids to collision-isolate co-located cloned environments?",
+      "expected_output": "Explains that PhysX environment ids isolate clones only under GPU dynamics and GPU broadphase. Recommends spatially disjoint anchor_transforms for CPU clones and names the log channel that reports the unavailable isolation.",
+      "files": [],
+      "expectations": [
+        "States that env_ids do not provide cross-environment collision isolation in CPU mode",
+        "Recommends spatially disjoint anchor_transforms for CPU clones",
+        "Does not recommend co-locating CPU clones",
+        "Names enable_python_logging() or ovphysx_set_log_callback() as the way to observe the runtime's EnvIds warning, and does not claim clone() raises or emits a Python warning"
+      ]
+    }
+  ]
+}

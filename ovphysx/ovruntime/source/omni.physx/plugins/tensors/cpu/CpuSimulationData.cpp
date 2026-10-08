@@ -1,9 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-
-// clang-format off
-#include <UsdPCH.h>
-// clang-format on
+// SPDX-License-Identifier: Apache-2.0
 
 #include "tensors/cpu/CpuSimulationData.h"
 #include "tensors/GlobalsAreBad.h"
@@ -22,9 +18,9 @@ namespace physx
 namespace tensors
 {
 
-CpuSimulationData::CpuSimulationData(SimulationBackend& backend, long stageId)
+CpuSimulationData::CpuSimulationData(SimulationBackend& backend, omni::physics::tensors::AttachHandle attachHandle)
     : mBackend(backend)
-    , mStageId(stageId)
+    , mAttachHandle(attachHandle)
 {
 }
 

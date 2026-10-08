@@ -1,5 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-PARSE-PARTICLE-001
+ * @covers AC-1
+ */
 
 #include <omni/physics/parse/IPhysicsSource.h>
 #include <omni/physics/parse/ParseApi.h>
@@ -123,11 +128,18 @@ DescPtr<ParticleSystemDesc> parseParticleSystem(ParseContext& ctx, ObjectKey key
     if (src.hasSchema(key, src.internToken("PhysxParticleIsosurfaceAPI")))
         src.getAttribute(key, src.internToken("physxParticleIsosurface:isosurfaceEnabled"), d->enableIsosurface);
 
-    // Scene owner (first simulationOwner target), as a source key.
+    // Scene owner (first simulationOwner target), as a source key. PhysxParticleSystem
+    // authors its OWN "simulationOwner" relationship (PhysxSchemaTokens::simulationOwner,
+    // physxParticleSystem.h's CreateSimulationOwnerRel) -- a bare, un-namespaced property
+    // distinct from UsdPhysicsRigidBodyAPI/CollisionAPI's "physics:simulationOwner". Reading
+    // the latter here always misses (a particle system carries no RigidBodyAPI/CollisionAPI),
+    // so an explicit non-default simulationOwner silently fell through to the caller's
+    // ObjectKey{} default and landed in the default scene -- see TestParticles.cpp "Particle
+    // System Scene Ownership Resolves Second Scene" (issue #30 note 65087537).
     d->sceneKey = ObjectKey{};
     {
         std::vector<ObjectKey> owners;
-        src.getRelationshipTargets(key, src.internToken("physics:simulationOwner"), owners);
+        src.getRelationshipTargets(key, src.internToken("simulationOwner"), owners);
         if (!owners.empty())
             d->sceneKey = owners.front();
     }
@@ -187,7 +199,7 @@ DescPtr<ParticleSmoothingDesc> parseParticleSmoothing(ParseContext& ctx, ObjectK
     d->systemKey = key;
     src.getAttribute(key, src.internToken("physxParticleSmoothing:particleSmoothingEnabled"), d->enableSmoothing);
     const float strength = readFloat(src, key, src.internToken("physxParticleSmoothing:strength"), 0.0f);
-    d->strength = std::min(1.0f, std::max(0.0f, strength)); // GfClamp(strength, 0, 1)
+    d->strength = std::min(1.0f, std::max(0.0f, strength)); // clamped to [0, 1]
     return d;
 }
 
@@ -229,8 +241,9 @@ int readInt(const IPhysicsSource& src, ObjectKey key, TokenId attr, int defaultV
     return static_cast<int>(v);
 }
 
-// Read a Vec3f array attribute into a carb::Float3 vector (GfVec3f and
-// carb::Float3 share the 3-float layout). Empty on absent/empty attribute.
+// Read a Vec3f array attribute into a carb::Float3 vector (an eVec3 buffer is 3
+// packed floats per element, layout-compatible with carb::Float3). Empty on
+// absent/empty attribute.
 void readVec3Array(const IPhysicsSource& src, ObjectKey key, TokenId attr, std::vector<carb::Float3>& out)
 {
     out.clear();

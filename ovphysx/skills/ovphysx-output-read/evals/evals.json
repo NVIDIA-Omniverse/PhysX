@@ -4,14 +4,14 @@
     {
       "id": 1,
       "prompt": "In Python, after each ovphysx step, read only the active rigid-body positions and orientations while preserving each group's ovstage prim identity. Keep the numeric columns for later analysis.",
-      "expected_output": "A Python output-read implementation that waits for the step, uses a context-managed ACTIVE read, consumes ovstage identity only while the result is live, and retains the copied numeric columns.",
+      "expected_output": "A Python output-read implementation that waits for the step, uses a context-managed ACTIVE read, consumes ovstage identity only while the result is live, and safely retains the Warp numeric columns or explicit host copies.",
       "files": [],
       "expectations": [
         "Reads the bundled references/python.md without depending on an ovphysx source checkout",
         "Selects ovphysx-output-read because the task requires ovstage-native identity rather than caller-owned tensor buffers",
         "Keeps an ovstage Stage attached and waits for the intended simulation step before reading",
-        "Uses PhysX.read(SimObjectType.RIGID_BODY, [\"position\", \"orientation\"], ObjectScope.ACTIVE) as a context manager",
-        "Uses group.tensors as NumPy copies that may outlive the context while keeping prim_list, attribute, and dictionary use inside it",
+        "Uses PhysX.read(SimObjectType.RIGID_BODY, [\"position\", \"orientation\"], scope=ObjectScope.ACTIVE) as a context manager",
+        "Treats every non-empty group tensor as a borrowed warp.array on its native CPU or CUDA device, while keeping prim_list, attribute, and dictionary use inside the context",
         "Reopens the ACTIVE read on each frame"
       ]
     },
@@ -21,7 +21,7 @@
       "expected_output": "A C lifecycle that queries, reads, forwards borrowed ovstage groups before release, keeps control/output ordinals disjoint, and releases every native resource on all paths.",
       "files": [],
       "expectations": [
-        "Reads the bundled references/c.md and references/closed_loop.md without depending on repository-relative files",
+        "Reads the bundled references/c_api.md and references/closed_loop.md without depending on repository-relative files",
         "Uses ovphysx_query, optional discovery/shared-dictionary access, ovphysx_read, and ovphysx_fetch_read_next",
         "Treats OVPHYSX_API_END_OF_ITERATION as normal completion and other non-success statuses as errors",
         "Forwards prims.list, the emitted attribute token, semantic, is_array, and tensors while the borrowed group is live",
@@ -43,7 +43,7 @@
     {
       "id": 4,
       "prompt": "Read only active articulation-joint positions in Python. I also want to preallocate from the query's discovery count and keep the cached prim order until layout_generation changes.",
-      "expected_output": "Rejects this ACTIVE/caching plan for the ovphysx 0.5.2 baseline, uses ALL for articulation joints, and rebuilds cached layout after known structural edits instead of waiting for layout_generation.",
+      "expected_output": "Rejects this ACTIVE/caching plan for the ovphysx 0.6.0 baseline, uses ALL for articulation joints, and rebuilds cached layout after known structural edits instead of waiting for layout_generation.",
       "files": [],
       "expectations": [
         "Reads references/python.md and references/scope_and_layout.md",

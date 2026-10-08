@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 # Include guard — safe to include from multiple CMakeLists files.
 if(DEFINED _OVRUNTIME_CUDA_UTILS_INCLUDED)
@@ -90,12 +90,6 @@ function(ovruntime_target_add_cuda_sources _target)
         endif()
         if(DEFINED OVRUNTIME_DEPS_DIR AND EXISTS "${OVRUNTIME_DEPS_DIR}/include")
             list(APPEND _std_incs "${OVRUNTIME_DEPS_DIR}/include")
-        endif()
-        if(DEFINED OVRUNTIME_KIT_SDK_DIR AND EXISTS "${OVRUNTIME_KIT_SDK_DIR}/dev/include")
-            list(APPEND _std_incs "${OVRUNTIME_KIT_SDK_DIR}/dev/include")
-        endif()
-        if(DEFINED OVRUNTIME_KIT_SDK_DIR AND EXISTS "${OVRUNTIME_KIT_SDK_DIR}/dev/fabric/include")
-            list(APPEND _std_incs "${OVRUNTIME_KIT_SDK_DIR}/dev/fabric/include")
         endif()
 
         set(_inc_flags "")

@@ -1,11 +1,17 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-OMNIPVD-LATE-001
+ * @covers AC-10
+ */
 
 #pragma once
 
 #include "OmniPvdWriter.h"
 #include "PxPhysicsAPI.h"
 
+#include <carb/Types.h>
 #include <carb/logging/Log.h>
 
 #include "internal/Internal.h"
@@ -101,6 +107,7 @@ private:
 protected:
     PhysXVehicleBase()
         : mPvdObjectHandles(nullptr),
+          mPvdMaxNbMaterialFrictionEntries(0),
           mSubstepGroupId(::physx::PxVehicleComponentSequence::eINVALID_SUBSTEP_GROUP)
     {
     }
@@ -392,7 +399,10 @@ protected:
         }
     }
 
-    static void setSuspensionComplianceAngle(const PXR_NS::GfVec2f* angleEntries,
+    // (jounce, angle) pairs. The angle is already in radians -- the schema authors it
+    // that way and the load path (VehicleGenerator.cpp, carb::Float2 wheelCamberAngleList)
+    // feeds addPair() unconverted -- so there is no degree/radian step here.
+    static void setSuspensionComplianceAngle(const carb::Float2* angleEntries,
                                              const uint32_t entryCount,
                                              ::physx::PxVehicleFixedSizeLookupTable<::physx::PxReal, 3>& table)
     {
@@ -402,12 +412,13 @@ protected:
 
         for (uint32_t i = 0; i < entryCount; i++)
         {
-            const PXR_NS::GfVec2f& entry = angleEntries[i];
-            table.addPair(entry[0], entry[1]);
+            const carb::Float2& entry = angleEntries[i];
+            table.addPair(entry.x, entry.y);
         }
     }
 
-    static void setSuspensionCompliancePoints(const PXR_NS::GfVec4f* pointEntries,
+    // (jounce, point) entries: lane 0 is the normalized jounce, lanes 1..3 the point.
+    static void setSuspensionCompliancePoints(const carb::Float4* pointEntries,
                                               const uint32_t entryCount,
                                               const ::physx::PxVec3& scale,
                                               ::physx::PxVehicleFixedSizeLookupTable<::physx::PxVec3, 3>& table)
@@ -418,8 +429,8 @@ protected:
 
         for (uint32_t i = 0; i < entryCount; i++)
         {
-            const PXR_NS::GfVec4f& entry = pointEntries[i];
-            table.addPair(entry[0], ::physx::PxVec3(entry[1] * scale.x, entry[2] * scale.y, entry[3] * scale.z));
+            const carb::Float4& entry = pointEntries[i];
+            table.addPair(entry.x, ::physx::PxVec3(entry.y * scale.x, entry.z * scale.y, entry.w * scale.z));
         }
     }
 
@@ -447,16 +458,22 @@ protected:
                                     const bool updateRestLoad,
                                     const bool updateLatStiffY);
 
-    void releasePvdObjectHandles(OmniPvdWriter&, ::physx::PxAllocatorCallback&);
-
 public:
+    // A non-null writer requires the caller to hold PxOmniPvd exclusive writer access.
     virtual void release(OmniPvdWriter*, ::physx::PxAllocatorCallback*);
 
-    void createPvdObjectHandles(::physx::PxAllocatorCallback&, const uint32_t maxNbMaterialFrictionEntries);
+    void createPvdObjectHandles(::physx::PxAllocatorCallback&);
+    // The caller must hold PxOmniPvd exclusive writer access.
+    void releasePvdObjectHandles(OmniPvdWriter&, ::physx::PxAllocatorCallback&);
 
     const ::physx::PxVehiclePvdObjectHandles* getPvdObjectHandles() const
     {
         return mPvdObjectHandles;
+    }
+
+    uint32_t getPvdMaxNbMaterialFrictionEntries() const
+    {
+        return mPvdMaxNbMaterialFrictionEntries;
     }
 
     virtual PhysXVehicleType::Enum getType() const = 0;
@@ -675,7 +692,7 @@ public:
     }
 
     inline void setSuspensionComplianceWheelCamberAngle(const uint32_t wheelIndex,
-                                                        const PXR_NS::GfVec2f* wheelCamberAngleEntries,
+                                                        const carb::Float2* wheelCamberAngleEntries,
                                                         const uint32_t entryCount)
     {
         CARB_ASSERT(wheelIndex < mWheelCapacity);
@@ -708,7 +725,7 @@ public:
     }
 
     inline void setSuspensionComplianceWheelToeAngle(const uint32_t wheelIndex,
-                                                     const PXR_NS::GfVec2f* wheelToeAngleEntries,
+                                                     const carb::Float2* wheelToeAngleEntries,
                                                      const uint32_t entryCount)
     {
         CARB_ASSERT(wheelIndex < mWheelCapacity);
@@ -743,7 +760,7 @@ public:
     }
 
     inline void setSuspensionComplianceSuspensionForceAppPoint(const uint32_t wheelIndex,
-                                                               const PXR_NS::GfVec4f* suspForceAppPointEntries,
+                                                               const carb::Float4* suspForceAppPointEntries,
                                                                const uint32_t entryCount,
                                                                const ::physx::PxVec3& scale)
     {
@@ -814,7 +831,7 @@ public:
     }
 
     inline void setSuspensionComplianceTireForceAppPoint(const uint32_t wheelIndex,
-                                                         const PXR_NS::GfVec4f* tireForceAppPointEntries,
+                                                         const carb::Float4* tireForceAppPointEntries,
                                                          const uint32_t entryCount,
                                                          const ::physx::PxVec3& scale)
     {
@@ -1000,6 +1017,7 @@ protected:
     SuspensionLegacyParams* mSuspensionLegacyParams; // deprecated (remove once maxDroop/maxCompression is gone)
 
     ::physx::PxVehiclePvdObjectHandles* mPvdObjectHandles;
+    uint32_t mPvdMaxNbMaterialFrictionEntries;
 
     float mSubstepThresholdLongitudinalSpeed;
     uint8_t mLowForwardSpeedSubstepCount;
@@ -1236,6 +1254,9 @@ public:
     {
         CARB_ASSERT(wheelIndex < mWheelCapacity);
         mPhysxMaterialFrictionParams[wheelIndex] = materialFrictionTable;
+        if (materialFrictionTable)
+            mPvdMaxNbMaterialFrictionEntries =
+                ::physx::PxMax(mPvdMaxNbMaterialFrictionEntries, materialFrictionTable->nbMaterialFrictions);
     }
 
     inline void setWheelFilterData(const uint32_t wheelIndex, const ::physx::PxFilterData& fd)

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
+# SPDX-License-Identifier: Apache-2.0
+
 """Fetch the IsaacLab ANYmal-C asset from NVIDIA's public S3 bucket into
 tests/benchmarks/data/anymal/ so the Lab.anymal_* benchmarks activate.
 
-Platform-agnostic; uses only stdlib so packman's bundled Python -- or any
-system python3 -- runs it.
+Platform-agnostic. Uses only the stdlib, so packman's bundled Python or any
+system python3 runs it.
 
 Idempotent: each file is checked for expected size and skipped if matched.
 
@@ -24,8 +24,8 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-# IsaacLab 5.1 ANYmal-C — the production asset IsaacLab uses for locomotion
-# environments. Update version/variant here if/when IsaacLab moves.
+# IsaacLab 5.1 ANYmal-C, the production asset IsaacLab uses for locomotion
+# environments. Update version/variant here when IsaacLab moves.
 ISAAC_VERSION = "5.1"
 ANYMAL_VARIANT = "ANYmal-C"
 S3_BASE = (
@@ -36,12 +36,12 @@ S3_BASE = (
 # (source URL suffix, local destination relative to DEST_DIR, expected size in bytes).
 # Expected sizes are checked for idempotency and to catch truncated downloads.
 ASSETS = [
-    # Main articulation USD — renamed locally to anymal.usd so the wrapper
+    # Main articulation USD, renamed locally to anymal.usd so the wrapper
     # (anymal_envs.usda) can reference @./anymal.usd@ regardless of the
-    # upstream IsaacLab variant we pin to.
+    # pinned upstream IsaacLab variant.
     ("anymal_c.usd", "anymal.usd", 33947),
     # Mesh references the main USD pulls in. Without this PhysX falls back
-    # to simplified collision and bench numbers are skewed by a factor.
+    # to simplified collision and the benchmark numbers are skewed.
     ("Props/instanceable_meshes.usd", "Props/instanceable_meshes.usd", 3580312),
 ]
 
@@ -69,12 +69,12 @@ def _fetch_one(src_url: str, dst: Path, expected_size: int) -> None:
     for attempt in range(1, MAX_RETRIES + 1):
         print(f"  [fetch] {src_url} -> {dst} (attempt {attempt}/{MAX_RETRIES})")
         try:
-            # urlopen honors connect timeout via the timeout arg. For total
-            # transfer time we don't have a stdlib knob, so we just rely on
-            # the connect timeout + the fact that the bench package is ~3.5MB.
+            # The timeout arg only bounds the connect. The stdlib has no knob
+            # for total transfer time, so the connect timeout and the small
+            # package size (~3.5MB) are relied on instead.
             req = urllib.request.Request(src_url)
             with urllib.request.urlopen(req, timeout=CONNECT_TIMEOUT_S) as resp:
-                # Stream to disk so we don't buffer 3MB in memory.
+                # Stream to disk rather than buffering 3MB in memory.
                 with dst.open("wb") as out:
                     chunk = resp.read(64 * 1024)
                     while chunk:

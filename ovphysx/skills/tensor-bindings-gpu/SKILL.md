@@ -1,15 +1,23 @@
 ---
 name: tensor-bindings-gpu
-description: Read and write physics simulation data on GPU using CUDA device pointers and DLPack tensors. Use when you need GPU-to-GPU tensor exchange (no CPU staging) for high-throughput RL or robotics workloads.
-compatibility: "ovphysx >=0.5.1 GPU mode with CUDA device memory; C examples require the SDK headers, libraries, CUDA runtime, and an NVIDIA GPU; Python examples require PyTorch with CUDA."
+description: Exchange GPU simulation state as caller-owned CUDA tensors (DLPack, GPU-to-GPU with no CPU staging) through tensor bindings. The tensor-binding CODE API is deprecated in ovphysx 0.6 in favor of the session read/write API (Python PhysX.read / PhysX.write, C ovphysx_read / ovphysx_write); use the ovphysx-session-write skill to write control inputs and state, and the ovphysx-output-read skill (ovstage-native identity-preserving reads and write-back) to read output back. Tensor bindings are kept only for maintaining existing caller-owned bulk-CUDA binding code during the deprecation period.
+license: Apache-2.0
+compatibility: "ovphysx >=0.6.0 GPU mode with CUDA device memory; C examples require the SDK headers, libraries, CUDA runtime, and an NVIDIA GPU; Python examples require PyTorch with CUDA."
 allowed-tools: Read Shell
 metadata:
-  version: "0.1.0"
+  version: "0.1.4"
   author: NVIDIA Omniverse Physics
   tags: "ovphysx, physics, tensor-bindings, gpu, cuda"
 ---
 
 # Tensor Bindings: GPU Read and Write
+
+> **Tensor-binding code API deprecated (ovphysx 0.6).** The tensor-binding CODE API is deprecated in
+> favor of the session read/write API — Python `PhysX.read` / `PhysX.write`, C `ovphysx_read` /
+> `ovphysx_write`. Prefer the session API where it fits (`ovphysx-output-read` covers ovstage-native
+> identity-preserving reads and write-back). For writing control inputs and state, use the
+> `ovphysx-session-write` skill; tensor bindings are kept only for maintaining existing
+> caller-owned bulk-CUDA binding code.
 
 GPU tensor bindings use GPU-mode PhysX with DLPack CUDA tensors.
 DirectGPU (`/physics/suppressReadback`) is a separate setting: keep it enabled for fastest tensor-pipeline workloads and disabled for workflows that need contact modification.
@@ -23,9 +31,10 @@ Use this skill when a caller needs GPU-to-GPU tensor exchange through CUDA devic
 ## Instructions
 
 1. Read the full C or Python sample before adapting this pattern because CUDA memory lifetime, DLPack shape storage, and device ordinal handling matter.
-2. Select an explicit CUDA ordinal with `active_cuda_gpus`, allocate memory on
-   that device before wrapping it in `DLTensor`, and keep shape storage valid
-   until the synchronous read or write returns.
+2. Create the binding, query its native device with `binding.native_device` or
+   `ovphysx_get_tensor_binding_native_device()`, require `kDLCUDA` for a
+   no-staging GPU path, allocate on the returned process-visible ordinal, and
+   keep shape storage valid until the synchronous read or write returns.
 3. Use Shell to compile and run the full sample or a local integration test after adapting the scene path and tensor type.
 
 ## C sample (CUDA)
@@ -53,7 +62,7 @@ static DLTensor make_cuda_tensor_f32_2d(
     int64_t columns,
     // Caller-owned storage; tensor.shape points here until the tensor is consumed.
     int64_t shape_storage[2],
-    // First CUDA ordinal from the active_cuda_gpus create-args string.
+    // Native CUDA ordinal returned for this binding.
     int32_t cuda_device_id)
 {
     shape_storage[0] = rows;
@@ -78,7 +87,7 @@ static int read_and_write_gpu_tensor(
     void* device_buffer,
     int64_t count,
     int64_t components,
-    // Derive from the active_cuda_gpus string used to create the instance.
+    // Native CUDA ordinal returned for this binding.
     int32_t cuda_device_id)
 {
     int64_t shape_storage[2];
@@ -101,12 +110,11 @@ static int read_and_write_gpu_tensor(
 }
 ```
 
-Use the first explicit CUDA ordinal in `active_cuda_gpus` as the
-`cuda_device_id`: `"1"` means GPU 1 and `"0,1"` means primary ordinal 0.
-Empty input leaves device choice to PhysX and therefore does not identify a
-stable device ordinal for caller-allocated tensors. GPU tensor integrations
-should pass an explicit ordinal and use that same value in the DLPack metadata;
-the full C sample shows explicit device selection and reuse.
+After creating each binding, call `ovphysx_get_tensor_binding_native_device()`
+and require `kDLCUDA` before using this GPU-only pattern. Allocate and wrap the
+buffer on the returned `device_id`; the binding query, not configured
+`active_cuda_gpus`, is authoritative for empty or multi-scene device selection.
+The full C sample shows the query before allocation.
 This helper wraps an existing CUDA allocation; it does not allocate memory.
 `device_buffer`, `shape_storage`, and optional `strides` storage must stay valid until the synchronous read or write call returns.
 The snippet uses `strides = NULL` for C-contiguous tensors, matching the ovphysx C samples.
@@ -115,7 +123,7 @@ The snippet uses `strides = NULL` for C-contiguous tensors, matching the ovphysx
 
 ```python
 import torch
-from ovphysx import PhysX, PhysXConfig
+from ovphysx import DLDeviceType, PhysX, PhysXConfig, codeless_schema_root
 from ovphysx.types import TensorType
 import ovstage
 
@@ -126,6 +134,8 @@ physx = PhysX(
         carbonite_overrides={"/physics/suppressReadback": True},
     ),
 )
+# Register the codeless PhysX schemas before the first population call.
+ovstage.population.register_usd_schemas([str(codeless_schema_root())])
 stage = ovstage.Stage("ovphysx-gpu-tensors")
 ovstage.population.open_usd(stage, "scene.usda", ordinal=1, domains=ovstage.PopulationDomain.PHYSICS)
 # attach_ovstage() reads at a sealed ordinal.
@@ -136,6 +146,11 @@ binding = physx.create_tensor_binding(
     pattern="/World/envs/env*/box",
     tensor_type=TensorType.RIGID_BODY_POSE,
 )
+
+native_device = binding.native_device
+if native_device.device_type.value != DLDeviceType.kDLCUDA:
+    raise RuntimeError(f"Expected a native CUDA binding, got {native_device}")
+cuda_device = native_device.device_id
 
 # Write poses from a PyTorch CUDA tensor via DLPack (e.g. an RL env reset).
 # The pose layout is [px, py, pz, qx, qy, qz, qw]; qw = 1 is identity rotation.
@@ -157,15 +172,23 @@ binding.read(output)
 binding.destroy()
 physx.detach_ovstage()
 stage.destroy()
-physx.release()
+physx.destroy()
 ```
+
+The physics-only `domains` mask above is fine for this skill's non-instanced
+sample USD. For arbitrary content prefer `ALL` — see
+[Population domains](../../docs/ovstage_integration.md#population-domains).
 
 ## Important notes
 
-- The physics-only `domains` mask above is fine for this skill's non-instanced sample USD. For arbitrary content prefer `ALL` -- see `docs/ovstage_integration.md` ("Population domains").
-- GPU dynamics are enabled by authoring `physxScene:enableGPUDynamics=true` in the USD stage (PhysX reads this). To prevent any GPU usage in ovphysx, call `PhysX.set_cpu_mode(True)` before creating any `PhysX` instance. Process-wide CPU-only mode rejects CUDA DLPack tensors before accessing CUDA.
+- GPU dynamics are enabled by default (`physxScene:enableGPUDynamics` defaults to `true`); set it to `false` to opt into CPU dynamics (PhysX reads this). To prevent any GPU usage in ovphysx, call `PhysX.set_cpu_mode(True)` before creating any `PhysX` instance. Process-wide CPU-only mode rejects CUDA DLPack tensors before accessing CUDA.
 - DLPack interop works with PyTorch and other objects implementing the `__dlpack__` protocol.
-- Masked writes are supported on GPU as well via `ovphysx_write_tensor_binding_masked()` / `binding.write(tensor, mask=mask)`.
+- `binding.native_device` is the authoritative no-staging placement. A CPU
+  result means this GPU-only pattern does not apply to that binding.
+- Masked writes are supported on GPU via `ovphysx_write_tensor_binding_masked()` /
+  `binding.write(tensor, mask=mask)` for bindings whose storage follows the
+  simulation device. CPU-only property bindings require host-resident source and
+  mask tensors.
 - Create bindings once outside simulation loops and reuse them; binding creation allocates native TensorAPI resources.
 
 ## References

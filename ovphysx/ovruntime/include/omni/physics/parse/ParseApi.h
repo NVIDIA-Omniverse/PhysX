@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * Umbrella header for the parse library entry points. Each parseX function
@@ -39,6 +39,9 @@
  * @covers AC-1 AC-2
  *
  * @implements REQ-PARSE-COL-003
+ * @covers AC-1
+ *
+ * @implements REQ-PARSE-COL-005
  * @covers AC-1
  *
  * @implements REQ-PARSE-SCENE-001
@@ -178,10 +181,10 @@ void setToDefault(PhysxSceneDesc& desc, const SourceUnits& units);
 // Allocates a synthetic default scene descriptor for the case where a source
 // has no authored PhysicsScene. Applies setToDefault(units) and marks the result
 // `synthetic = true` (so the consumer can skip source-existence/ownership gates
-// that assume a real prim). The caller assigns `primKey`. An unscoped OVStage
-// scan uses this when no scene exists. Scoped scans emit no fallback because
-// they cannot prove the whole stage has no scene; `LoadStage` owns the separate
-// scene-less initial-load fallback.
+// that assume a real prim). The caller assigns `primKey`. This is the single,
+// backend-agnostic definition of "a default scene": the ovstage scan injects it
+// when no scene exists, and the USD loader uses it for the no-author /
+// no-write-back path (the USD loader separately authors a real prim when it can).
 // Returns a null DescPtr if allocation fails.
 DescPtr<PhysxSceneDesc> makeDefaultSceneDesc(IDescriptorAllocator& allocator, const SourceUnits& units);
 
@@ -322,10 +325,10 @@ void parseArticulation(ParseContext& ctx, ObjectKey key, ArticulationFields& fie
 // ---------------------------------------------------------------------------
 // Collision extension parsing.
 //
-// Shape geometry, mesh data, cooking, and the contactOffset/restOffset
-// inf-sentinel + time-sample-registration interplay stay in the
-// USD-coupled walker path. This layer reads the simple PhysxCollisionAPI
-// extension fields that have no time-sample dependency.
+// Shape geometry, mesh data, and cooking stay in their consumer-side walker
+// paths. This layer reads the common PhysxCollisionAPI extension fields,
+// contactOffset/restOffset sentinel semantics, Newton offset fallbacks, and
+// trigger schema state.
 // ---------------------------------------------------------------------------
 
 struct CollisionExtFields
@@ -340,11 +343,10 @@ struct CollisionExtFields
     bool isTrigger = false;
     bool isTriggerUsdOutput = false;
 
-    // contactOffset / restOffset reads from PhysxCollisionAPI. Caller
-    // passes the current outDesc values in; the parser applies the
-    // inf-sentinel + range validation and writes back, but only when
-    // the attribute was *authored* (HasAuthoredValue, not just HasValue
-    // — schema fallback `-inf` must NOT trigger the inf-sentinel write).
+    // contactOffset / restOffset resolved-value reads from PhysxCollisionAPI.
+    // Caller passes the current outDesc values in; the parser applies the
+    // inf-sentinel + range validation and writes back when the value is not
+    // the schema's negative-infinity "unset" sentinel.
     //
     // The {contactOffset, restOffset}Authored bits surface to the
     // routing site so the Newton fallback (newton:contactGap /
@@ -357,6 +359,9 @@ struct CollisionExtFields
     float restOffset = 0.0f;
     bool contactOffsetAuthored = false;
     bool restOffsetAuthored = false;
+    // Optional source key used only when an individual attribute is not readable
+    // on the primary key. Schema membership is always resolved on the primary key.
+    ObjectKey attributeFallback;
 };
 
 void parseCollisionExt(ParseContext& ctx, ObjectKey key, CollisionExtFields& fields);
@@ -378,6 +383,9 @@ struct ShapeInfo
     bool collisionEnabled = true;
     ObjectKey rigidBody;
     ObjectKey sourceGprim;
+    // Optional backing source for common collision attributes not readable on
+    // the logical shape key. Descriptor identity and schema membership stay logical.
+    ObjectKey collisionAttributeFallback;
     ObjectId collisionGroup = kInvalidObjectId;
     carb::Float3 localPos     = { 0.0f, 0.0f, 0.0f };
     carb::Float4 localRot     = { 0.0f, 0.0f, 0.0f, 1.0f };

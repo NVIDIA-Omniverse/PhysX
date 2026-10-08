@@ -1,5 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-PARSE-BACKEND-001
+ * @covers AC-12
+ */
 
 #include <omni/physics/parse/ScannedStage.h>
 
@@ -11,14 +16,17 @@ namespace omni::physics::parse
 // free of the storage detail.
 struct ScannedStage::Impl
 {
-    std::unique_ptr<IPhysicsSource> source;
+    // `owned` is null for a borrowed source (the attach owns it and outlives this scan).
+    std::unique_ptr<IPhysicsSource> owned;
+    IPhysicsSource* source = nullptr;
 
     // Owned-storage buffers for mesh-shape `MergeMeshDesc` data.
     // `MergeMeshPhysxShapeDesc::mergedMesh` is a non-owning raw pointer; the
     // scan owns the underlying data here so it lives for the scan's lifetime.
     std::vector<parse::DescPtr<parse::MergeMeshDesc>> mergedMeshes;
 
-    explicit Impl(std::unique_ptr<IPhysicsSource> s) : source(std::move(s)) {}
+    explicit Impl(std::unique_ptr<IPhysicsSource> s) : owned(std::move(s)), source(owned.get()) {}
+    explicit Impl(IPhysicsSource& s) : source(&s) {}
 };
 
 ScannedStage::ScannedStage() = default;
@@ -34,7 +42,7 @@ const parse::IPhysicsSource& ScannedStage::source() const
 
 const parse::IPhysicsSource* ScannedStage::sourcePtr() const
 {
-    return mImpl ? mImpl->source.get() : nullptr;
+    return mImpl ? mImpl->source : nullptr;
 }
 
 void ScannedStage::retainOwnedMesh(parse::DescPtr<parse::MergeMeshDesc> mergedMesh)
@@ -45,6 +53,11 @@ void ScannedStage::retainOwnedMesh(parse::DescPtr<parse::MergeMeshDesc> mergedMe
 ScannedStage makeScannedStageFromSource(std::unique_ptr<IPhysicsSource> source)
 {
     return ScannedStage{ std::make_unique<ScannedStage::Impl>(std::move(source)) };
+}
+
+ScannedStage makeScannedStageBorrowingSource(IPhysicsSource& source)
+{
+    return ScannedStage{ std::make_unique<ScannedStage::Impl>(source) };
 }
 
 } // namespace omni::physics::parse

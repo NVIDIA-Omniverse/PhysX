@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef OVPHYSX_ABI_CHECK_H
 #define OVPHYSX_ABI_CHECK_H
@@ -27,6 +27,16 @@ enum ovphysx_config_entry_field
     OVPHYSX_CE_KEY_TYPE = 0,
     OVPHYSX_CE_KEY = 1,
     OVPHYSX_CE_VALUE = 2
+};
+
+// Field indices for ovphysx_omnipvd_destination_t
+enum ovphysx_omnipvd_destination_field
+{
+    OVPHYSX_OD_TRANSPORT = 0,
+    OVPHYSX_OD_FILE_PATH = 1,
+    OVPHYSX_OD_TCP_ADDRESS = 2,
+    OVPHYSX_OD_TCP_PORT = 3,
+    OVPHYSX_OD_TCP_TIMEOUT_MS = 4
 };
 
 
@@ -62,7 +72,7 @@ enum dl_tensor_field
 enum ovphysx_contact_event_header_field
 {
     OVPHYSX_CEH_TYPE = 0,
-    OVPHYSX_CEH_STAGE_ID = 1,
+    OVPHYSX_CEH_ATTACH_HANDLE = 1,
     OVPHYSX_CEH_ACTOR0 = 2,
     OVPHYSX_CEH_ACTOR1 = 3,
     OVPHYSX_CEH_COLLIDER0 = 4,
@@ -103,6 +113,10 @@ OVPHYSX_API size_t ovphysx_internal_create_args_offset(int field);
 OVPHYSX_API size_t ovphysx_internal_config_entry_sizeof();
 OVPHYSX_API size_t ovphysx_internal_config_entry_alignof();
 OVPHYSX_API size_t ovphysx_internal_config_entry_offset(int field);
+
+OVPHYSX_API size_t ovphysx_internal_omnipvd_destination_sizeof();
+OVPHYSX_API size_t ovphysx_internal_omnipvd_destination_alignof();
+OVPHYSX_API size_t ovphysx_internal_omnipvd_destination_offset(int field);
 
 OVPHYSX_API size_t ovphysx_internal_dl_data_type_sizeof();
 OVPHYSX_API size_t ovphysx_internal_dl_data_type_alignof();

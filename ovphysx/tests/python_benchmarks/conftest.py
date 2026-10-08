@@ -1,11 +1,11 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """Session-scoped PhysX instance for the benchmark suite.
 
 Each benchmark process exercises one device (cpu or gpu). The harness driver
 (``scripts/test_benchmarks_python.cmake``) passes ``--bench-device=cpu|gpu``
-to pytest, which we read via the standard ``pytest_addoption`` hook.
+to pytest, which is read via the standard ``pytest_addoption`` hook.
 
 Tests that target a specific device (e.g. ``bench_tensor_io_gpu``) use
 ``pytest.skip`` when the active device does not match.
@@ -108,23 +108,31 @@ def physx(bench_device):
     sdk = PhysX()
     yield sdk
     try:
-        sdk.release()
+        sdk.destroy()
     except Exception:
         pass
 
 
-def attach_usd_with_ovstage(physx, usd_path: Path, stage_name: str):
-    import ovstage
+_physx_schemas_registered = False
 
+
+def attach_usd_with_ovstage(physx, usd_path: Path, stage_name: str):
+    import ovphysx
+    import ovstage
     if not ovstage.population.available():
         raise RuntimeError("ovstage population bridge is unavailable")
 
+    # ovphysx ships its PhysX USD schemas as codeless resources and does not register
+    # them itself. Register them with ovstage once, before the first population
+    # call in the process.
+    global _physx_schemas_registered
+    if not _physx_schemas_registered:
+        ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+        _physx_schemas_registered = True
     stage = ovstage.Stage(stage_name)
     ordinal = 1
     try:
         ovstage.population.open_usd(stage, str(usd_path), ordinal=ordinal, domains=ovstage.PopulationDomain.PHYSICS)
-        # Population does not seal: the caller owns ordinal lifecycle, and
-        # attach_ovstage() reads at a sealed ordinal.
         stage.advance_write_floor(ordinal=ordinal).wait()
         physx.attach_ovstage(stage, read_ordinal=ordinal)
     except Exception:

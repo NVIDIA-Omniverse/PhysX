@@ -1,12 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-// clang-format off
-#include "UsdPCH.h"
-// clang-format on
+#include <cstring>
 
 #include "TriangulateUsdMeshPrim.h"
-#include <common/utilities/UsdMaterialParsing.h>
 
 namespace triangulateusd
 {
@@ -14,70 +11,6 @@ namespace triangulateusd
 class TriangulateUSDPrimImpl : public TriangulateUSDPrim
 {
 public:
-    TriangulateUSDPrimImpl(const PXR_NS::UsdPrim &usdPrim, uint16_t& maxMaterialIndex)
-    {
-        if (usdPrim.IsA<PXR_NS::UsdGeomMesh>())
-        {
-            const PXR_NS::UsdGeomMesh usdMesh(usdPrim);
-            PXR_NS::UsdTimeCode time = PXR_NS::UsdTimeCode::Default();
-            PXR_NS::VtArray<PXR_NS::GfVec3f> pointsValue;
-            // test if the verts are there or if its time sampled
-            {
-                usdMesh.GetPointsAttr().Get(&pointsValue);
-                if (!pointsValue.size())
-                {
-                    time = PXR_NS::UsdTimeCode::EarliestTime();
-                    usdMesh.GetPointsAttr().Get(&pointsValue, time);
-                }
-            }
-            PXR_NS::VtArray<int> indicesValue;
-            PXR_NS::VtArray<int> facesValue;
-            usdMesh.GetFaceVertexIndicesAttr().Get(&indicesValue, time);
-            usdMesh.GetFaceVertexCountsAttr().Get(&facesValue, time);
-            if ( pointsValue.size() && indicesValue.size() && facesValue.size() )
-            {
-                m_isValid = true;
-
-                m_vertexCount = uint32_t(pointsValue.size());
-                m_vertices = new float[m_vertexCount*3];
-                memcpy(m_vertices,&pointsValue[0],sizeof(float)*3*m_vertexCount);
-
-                m_faceIndicesCount = uint32_t(indicesValue.size());
-                m_faceIndices = new uint32_t[m_faceIndicesCount];
-                memcpy(m_faceIndices,&indicesValue[0],sizeof(uint32_t)*m_faceIndicesCount);
-
-                m_facesCount = uint32_t(facesValue.size());
-                m_faceCounts = new uint32_t[m_facesCount];
-                memcpy(m_faceCounts,&facesValue[0],sizeof(uint32_t)*m_facesCount);
-            }
-
-            PXR_NS::VtArray<int> holesValue;
-            usdMesh.GetHoleIndicesAttr().Get(&holesValue, time);
-            if (!holesValue.empty())
-            {
-                m_holesCount = uint32_t(holesValue.size());
-
-                m_holes = new uint32_t[m_holesCount];
-                memcpy(m_holes, &holesValue[0], sizeof(uint32_t) * m_holesCount);
-            }
-
-            PXR_NS::TfToken windingOrient = PXR_NS::UsdGeomTokens->rightHanded;
-            usdMesh.GetOrientationAttr().Get(&windingOrient);
-            if (windingOrient == PXR_NS::UsdGeomTokens->leftHanded)
-            {
-                m_rightHandedOrientation = false;
-            }
-
-            // gather subsets
-            m_faceMaterials = new uint16_t[m_facesCount];
-            if(!TriangulateUSDPrim::fillFaceMaterials(usdPrim, {m_faceMaterials, m_facesCount}, time, maxMaterialIndex))
-            {
-                delete []m_faceMaterials;
-                m_faceMaterials = nullptr;
-            }
-        }
-    }
-
     TriangulateUSDPrimImpl(const omni::physx::PhysxCookingMeshView& meshView)
     {
         m_isValid = (meshView.points.size() && meshView.indices.size() && meshView.faces.size());
@@ -270,17 +203,6 @@ public:
     uint16_t    *m_faceMaterials{ nullptr };
 };
 
-TriangulateUSDPrim *TriangulateUSDPrim::create(const PXR_NS::UsdPrim &prim, uint16_t& numMaterials)
-{
-    auto ret = new TriangulateUSDPrimImpl(prim, numMaterials);
-    if ( !ret->isValid() )
-    {
-        ret->release();
-        ret = nullptr;
-    }
-    return static_cast< TriangulateUSDPrim *>(ret);
-}
-
 TriangulateUSDPrim *TriangulateUSDPrim::create(const omni::physx::PhysxCookingMeshView& meshView)
 {
     auto ret = new TriangulateUSDPrimImpl(meshView);
@@ -290,73 +212,5 @@ TriangulateUSDPrim *TriangulateUSDPrim::create(const omni::physx::PhysxCookingMe
         ret = nullptr;
     }
     return static_cast< TriangulateUSDPrim *>(ret);
-}
-
-bool TriangulateUSDPrim::TriangulateUSDPrim::fillFaceMaterials(const PXR_NS::UsdPrim& usdPrim,
-                                                               omni::span<uint16_t> faceMaterials,
-                                                               PXR_NS::UsdTimeCode time,
-                                                               uint16_t& maxMaterialIndex)
-{
-    const PXR_NS::UsdGeomMesh usdMesh(usdPrim);
-    const std::vector<PXR_NS::UsdGeomSubset> subsets = PXR_NS::UsdGeomSubset::GetGeomSubsets(usdMesh, PXR_NS::UsdGeomTokens->face);
-    bool materialsFound = false;
-    maxMaterialIndex = 0;
-    if (!subsets.empty())
-    {
-        // gather all materials first
-        PXR_NS::TfHashSet<PXR_NS::SdfPath, PXR_NS::SdfPath::Hash> materials;
-        for (const PXR_NS::UsdGeomSubset& subset : subsets)
-        {
-            const PXR_NS::SdfPath material = usdmaterialutils::getMaterialBinding(subset.GetPrim());
-            if (material != PXR_NS::SdfPath())
-            {
-                const PXR_NS::UsdPrim materialPrim = usdPrim.GetStage()->GetPrimAtPath(material);
-                if (materialPrim && materialPrim.HasAPI<PXR_NS::UsdPhysicsMaterialAPI>())
-                    materials.insert(subset.GetPath());
-            }
-        }
-        uint16_t materialIndex = 0;
-        const size_t facesCount = faceMaterials.size();
-        bool firstRun = true;
-        for (size_t i = 0; i < subsets.size(); i++)
-        {
-            const PXR_NS::UsdGeomSubset& subset = subsets[i];
-
-            if (materials.find(subset.GetPath()) != materials.end())
-            {
-                if (firstRun)
-                {
-                    // By Default we assign default material to all faces in case subsets are not referencing all faces
-                    const uint16_t lastMaterialIndex = (uint16_t)materials.size();
-                    for (uint32_t fIndex = 0; fIndex < facesCount; fIndex++)
-                    {
-                        faceMaterials[fIndex] = lastMaterialIndex;
-                    }
-                    firstRun = false;
-                }
-                materialsFound = true;
-
-                PXR_NS::VtArray<int> facesValue;
-                subset.GetIndicesAttr().Get(&facesValue, time);
-                for (int face : facesValue)
-                {
-                    CARB_ASSERT((uint32_t)face < facesCount);
-                    if ((uint32_t)face < facesCount)
-                        faceMaterials[face] = materialIndex;
-                }
-                materialIndex++;
-            }
-        }
-
-        maxMaterialIndex = 0;
-        for (uint32_t fIndex = 0; fIndex < facesCount; fIndex++)
-        {
-            if (faceMaterials[fIndex] > maxMaterialIndex)
-            {
-                maxMaterialIndex = faceMaterials[fIndex];
-            }
-        }
-    }
-    return materialsFound;
 }
 }

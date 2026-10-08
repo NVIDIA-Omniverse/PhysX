@@ -100,7 +100,7 @@ Authoring mistakes usually load without error and simply misbehave:
 ## Validate
 
 Load the file and step it; the box should fall and settle. The minimal
-load/step/release pattern is in `tests/python_samples/hello_world.py` (installed
+load/step/destroy pattern is in `tests/python_samples/hello_world.py` (installed
 in the wheel only as `samples/python_samples/hello_world.py`; the C/C++ SDK ships
 the C equivalent `samples/c_samples/hello_world_c/main.c`) — see the
 `basic-workflow` skill.

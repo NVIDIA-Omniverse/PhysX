@@ -1,13 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-
-#include "UsdPCH.h"
+// SPDX-License-Identifier: Apache-2.0
 
 #include "MeshCache.h"
 
 #include <common/utilities/MemoryMacros.h>
-
-#include "particles/PhysXParticleSampling.h"
 
 #include <private/omni/physx/IPhysxCookingServicePrivate.h>
 #include <omni/physx/IPhysxVisualization.h>
@@ -32,54 +28,6 @@ MeshCache* omni::physx::getMeshCache()
 void omni::physx::releaseMeshCache()
 {
     SAFE_RELEASE(gMeshCache);
-}
-
-const uint32_t* MeshCache::getRemapTable(const PXR_NS::UsdPrim& usdPrim)
-{
-    if (usdPrim.IsA<PXR_NS::UsdGeomMesh>())
-    {
-        const PXR_NS::UsdGeomMesh& usdMesh = (const PXR_NS::UsdGeomMesh&)(usdPrim);
-        std::vector<PXR_NS::UsdGeomSubset> subsets = PXR_NS::UsdGeomSubset::GetGeomSubsets(usdMesh, PXR_NS::UsdGeomTokens->face);
-        if (subsets.empty())
-            return nullptr;
-        
-        PXR_NS::UsdTimeCode time = PXR_NS::UsdTimeCode::Default();
-        PXR_NS::VtArray<int> facesValue;
-        // test if the verts are there or if its time sampled
-        {
-            usdMesh.GetFaceVertexCountsAttr().Get(&facesValue);
-            if (!facesValue.size())
-            {
-                time = PXR_NS::UsdTimeCode::EarliestTime();
-                usdMesh.GetFaceVertexCountsAttr().Get(&facesValue, time);
-            }
-        }
-        uint32_t faceCount = (uint32_t)facesValue.size();
-        if (faceCount)
-        {
-            // first compute how many triangles will be needed..
-            uint32_t triangleCount = 0;
-            for (uint32_t i = 0; i < faceCount; i++)
-            {
-                uint32_t count = facesValue[i];
-                triangleCount += (count - 2);
-            }
-
-            uint32_t* triangleFaceMapping = new uint32_t[triangleCount];
-            uint32_t* trMapping = triangleFaceMapping;
-            for (uint32_t i = 0; i < faceCount; i++)
-            {
-                const uint32_t faceCount = facesValue[i];
-                for (uint32_t faceIndex = 0; faceIndex < (faceCount - 2); faceIndex++)
-                {
-                    trMapping[0] = i;
-                    trMapping++;
-                }                
-            }
-            return triangleFaceMapping;
-        }
-    }
-    return nullptr;
 }
 
 void MeshCache::release()
@@ -265,7 +213,7 @@ bool MeshCache::createRuntimeTriangleMesh(::physx::PxPhysics& physics,
             {
                 *returnedMesh = triangleMesh;
             }
-            addTriangleMesh(meshCRC, triangleMesh, nullptr, &inputTrianglesFaceMapping, true);
+            addTriangleMesh(meshCRC, triangleMesh, &inputTrianglesFaceMapping, true);
             return true;
         }
     }
@@ -278,7 +226,7 @@ bool MeshCache::createRuntimeTriangleMesh(::physx::PxPhysics& physics,
             {
                 *returnedMesh = triangleMesh;
             }
-            addTriangleMesh(meshCRC, triangleMesh, nullptr, nullptr, false);
+            addTriangleMesh(meshCRC, triangleMesh, nullptr, false);
         }
         return true;
     }

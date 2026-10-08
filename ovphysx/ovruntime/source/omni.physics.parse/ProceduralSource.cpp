@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-CORE-001
@@ -220,7 +220,7 @@ const void* ProceduralSource::resolveBuffer(BufferHandle, size_t& byteCount) con
     return nullptr;
 }
 
-MeshGeometry ProceduralSource::getMeshAttributes(ObjectKey) const
+MeshGeometry ProceduralSource::getMeshAttributes(ObjectKey, bool) const
 {
     // ProceduralSource has no mesh data wired up yet; return empty geometry.
     return {};

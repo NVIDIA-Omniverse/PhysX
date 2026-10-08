@@ -1,13 +1,18 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-UNIFY-001
- * @covers AC-10
+ * @covers AC-1
+ *
+ * @implements REQ-SIM-SCENEQUERY-001
+ * @covers AC-3
+ *
+ * @implements REQ-MATH-001
+ * @covers AC-13
  */
 
-#include "UsdPCH.h"
-#include <common/utilities/SdfPathEncoding.h>
+#include <omni/physics/parse/KnownTokens.h>
 
 #include "PhysXSceneQuery.h"
 #include "internal/InternalScene.h"
@@ -21,14 +26,13 @@
 #include <omni/physx/IPhysx.h>
 #include <omni/physx/PhysxTokens.h>
 
-extern void* getPhysXPtr(const PXR_NS::SdfPath& path, omni::physx::PhysXType type);
+extern void* getPhysXPtr(omni::physics::parse::ObjectKey key, omni::physx::PhysXType type);
 
 using namespace ::physx;
 using namespace omni::physx;
 using namespace omni::physx::internal;
 using namespace omni::physx::usdparser;
 using namespace cookingdataasync;
-using namespace PXR_NS;
 using namespace carb;
 
 namespace omni
@@ -36,125 +40,129 @@ namespace omni
 namespace physx
 {
 
-// Scene-query / overlap hit outputs encode the object's USD path as a uint64
-// (bit-cast SdfPath) for backward compatibility. Resolves the record's
-// ObjectKey to a path via the active AttachedStage before bit-casting;
-// returns 0 if the stage/key is invalid.
-static uint64_t keyToPathInt(omni::physics::parse::ObjectKey key)
-{
-    const usdparser::AttachedStage* attachedStage =
-        usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
-    return asInt(attachedStage->pathFor(key));
-}
-
-static PxBoxGeometry usdToPxBoxGeometry(const AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, const PXR_NS::GfVec3d& scale)
+// `tok` must already be interned by the caller (AttachedStage::getKnownTokens(),
+// cached once per attach) -- these helpers run once per doShapeSceneQuery() call,
+// so re-interning the ~659-field vocabulary here would double the cost of every
+// single query (REQ-SIM-SCENEQUERY-001).
+static PxBoxGeometry usdToPxBoxGeometry(const AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, const PxVec3& scale, const omni::physics::parse::KnownTokens& tok)
 {
     double sizeAttr = 0.0;
-    getValue(attachedStage, key, UsdGeomTokens->size, UsdTimeCode::Default(), sizeAttr);
+    if (attachedStage.getSource())
+    {
+        getValue(attachedStage, key, tok.size, omni::physics::parse::ReadTime::defaultTime(), sizeAttr);
+    }
     sizeAttr = abs(sizeAttr) * 0.5f; // convert cube edge length to half extend
-    return PxBoxGeometry(toPhysX(scale * sizeAttr));
+    return PxBoxGeometry(scale * float(sizeAttr));
 }
 
-static PxSphereGeometry usdToPxSphereGeometry(const AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, const PXR_NS::GfVec3d& scale)
+static PxSphereGeometry usdToPxSphereGeometry(const AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, const PxVec3& scale, const omni::physics::parse::KnownTokens& tok)
 {
     // Scale is unsupported/non-uniform-unsafe here; use the largest component as the radius base.
-    const double tolerance = 1e-4;
-    if (abs(scale[0] - scale[1]) > tolerance || abs(scale[0] - scale[2]) > tolerance || abs(scale[2] - scale[1]) > tolerance)
+    const float tolerance = 1e-4f;
+    if (PxAbs(scale[0] - scale[1]) > tolerance || PxAbs(scale[0] - scale[2]) > tolerance || PxAbs(scale[2] - scale[1]) > tolerance)
     {
-        CARB_LOG_WARN("Non-uniform scale may result in a non matching collision representation on prim: %s", attachedStage.pathFor(key).GetText());
+        CARB_LOG_WARN("Non-uniform scale may result in a non matching collision representation on prim: %s", attachedStage.textFor(key));
     }
 
-    double radius = std::max(std::max(abs(scale[1]), abs(scale[0])), abs(scale[2]));
+    double radius = std::max(std::max(PxAbs(scale[1]), PxAbs(scale[0])), PxAbs(scale[2]));
     double radiusAttr = 0.0;
-    getValue(attachedStage, key, UsdGeomTokens->radius, UsdTimeCode::Default(), radiusAttr);
+    if (attachedStage.getSource())
+    {
+        getValue(attachedStage, key, tok.radius, omni::physics::parse::ReadTime::defaultTime(), radiusAttr);
+    }
     radius *= radiusAttr;
     return PxSphereGeometry((float)radius);
 }
 
-static PxCapsuleGeometry usdToPxCapsuleGeometry(const AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, const PXR_NS::GfVec3d& scale)
+static PxCapsuleGeometry usdToPxCapsuleGeometry(const AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, const PxVec3& scale, const omni::physics::parse::KnownTokens& tok)
 {
     double radius = 0.0;
-    getValue(attachedStage, key, UsdGeomTokens->radius, UsdTimeCode::Default(), radius);
+    getValue(attachedStage, key, tok.radius, omni::physics::parse::ReadTime::defaultTime(), radius);
     double height = 0.0;
-    getValue(attachedStage, key, UsdGeomTokens->height, UsdTimeCode::Default(), height);
+    getValue(attachedStage, key, tok.height, omni::physics::parse::ReadTime::defaultTime(), height);
 
-    TfToken capAxis;
-    getValue(attachedStage, key, UsdGeomTokens->axis, UsdTimeCode::Default(), capAxis);
-    const double tolerance = 1e-4;
+    // capAxis read via the TokenId+ReadTime getValue overload (PhysXTools.h):
+    // it resolves an int-encoded token column (ovstage) correctly for
+    // T=TokenId, so no TfToken/UsdTimeCode is needed here.
+    omni::physics::parse::TokenId capAxis{};
+    getValue(attachedStage, key, tok.axis, omni::physics::parse::ReadTime::defaultTime(), capAxis);
+    const float tolerance = 1e-4f;
     // Scale is unsupported/non-uniform-unsafe here; use the largest component as the radius base.
-    if (capAxis == UsdPhysicsTokens.Get()->x)
+    if (capAxis == tok.x)
     {
         height *= scale[0];
-        radius *= std::max(abs(scale[1]), abs(scale[2]));
-        if (abs(scale[2] - scale[1]) > tolerance)
+        radius *= std::max(PxAbs(scale[1]), PxAbs(scale[2]));
+        if (PxAbs(scale[2] - scale[1]) > tolerance)
         {
-            CARB_LOG_WARN("Non-uniform scale may result in a non matching collision representation on prim: %s", attachedStage.pathFor(key).GetText());
-        }    
+            CARB_LOG_WARN("Non-uniform scale may result in a non matching collision representation on prim: %s", attachedStage.textFor(key));
+        }
     }
-    else if (capAxis == UsdPhysicsTokens.Get()->y)
+    else if (capAxis == tok.y)
     {
         height *= scale[1];
-        radius *= std::max(abs(scale[0]), abs(scale[2]));
-        if (abs(scale[2] - scale[0]) > tolerance)
+        radius *= std::max(PxAbs(scale[0]), PxAbs(scale[2]));
+        if (PxAbs(scale[2] - scale[0]) > tolerance)
         {
-            CARB_LOG_WARN("Non-uniform scale may result in a non matching collision representation on prim: %s", attachedStage.pathFor(key).GetText());
+            CARB_LOG_WARN("Non-uniform scale may result in a non matching collision representation on prim: %s", attachedStage.textFor(key));
         }    
     }
     else
     {
         height *= scale[2];
-        radius *= std::max(abs(scale[1]), abs(scale[0]));
-        if (abs(scale[1] - scale[0]) > tolerance)
+        radius *= std::max(PxAbs(scale[1]), PxAbs(scale[0]));
+        if (PxAbs(scale[1] - scale[0]) > tolerance)
         {
-            CARB_LOG_WARN("Non-uniform scale may result in a non matching collision representation on prim: %s", attachedStage.pathFor(key).GetText());
+            CARB_LOG_WARN("Non-uniform scale may result in a non matching collision representation on prim: %s", attachedStage.textFor(key));
         }
     }
     return PxCapsuleGeometry((float)radius, (float)(height * 0.5));
 }
 
 
-static PxConvexMeshGeometry usdCylinderOrConeToPxConvexMeshGeometry(const AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, bool isCylinder, const PXR_NS::GfVec3d& scale)
+static PxConvexMeshGeometry usdCylinderOrConeToPxConvexMeshGeometry(const AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, bool isCylinder, const PxVec3& scale, const omni::physics::parse::KnownTokens& tok)
 {
     // Cylinder and Cone share the same radius/height/axis attribute names
     // (UsdGeomCylinder and UsdGeomCone both derive from UsdGeomGprim), so the
     // source-routed read is identical for both types.
     double radius = 0.0;
     double height = 0.0;
-    TfToken capAxis;
-    getValue(attachedStage, key, UsdGeomTokens->radius, UsdTimeCode::Default(), radius);
-    getValue(attachedStage, key, UsdGeomTokens->height, UsdTimeCode::Default(), height);
-    getValue(attachedStage, key, UsdGeomTokens->axis, UsdTimeCode::Default(), capAxis);
+    omni::physics::parse::TokenId capAxis{};
+    getValue(attachedStage, key, tok.radius, omni::physics::parse::ReadTime::defaultTime(), radius);
+    getValue(attachedStage, key, tok.height, omni::physics::parse::ReadTime::defaultTime(), height);
+    // capAxis read via the TokenId+ReadTime getValue overload: see the comment
+    // in usdToPxCapsuleGeometry above.
+    getValue(attachedStage, key, tok.axis, omni::physics::parse::ReadTime::defaultTime(), capAxis);
 
     usdparser::Axis axis = eZ;
-    const double tolerance = 1e-4;
+    const float tolerance = 1e-4f;
     // Scale is unsupported/non-uniform-unsafe here; use the largest component as the radius base.
-    if (capAxis == UsdPhysicsTokens.Get()->x)
+    if (capAxis == tok.x)
     {
         height *= scale[0];
-        radius *= std::max(abs(scale[1]), abs(scale[2]));
-        if (abs(scale[2] - scale[1]) > tolerance)
+        radius *= std::max(PxAbs(scale[1]), PxAbs(scale[2]));
+        if (PxAbs(scale[2] - scale[1]) > tolerance)
         {
-            CARB_LOG_WARN("Non-uniform scale may result in a non matching collision representation on prim: %s", attachedStage.pathFor(key).GetText());
+            CARB_LOG_WARN("Non-uniform scale may result in a non matching collision representation on prim: %s", attachedStage.textFor(key));
         }
         axis = eX;
     }
-    else if (capAxis == UsdPhysicsTokens.Get()->y)
+    else if (capAxis == tok.y)
     {
         height *= scale[1];
-        radius *= std::max(abs(scale[0]), abs(scale[2]));
-        if (abs(scale[2] - scale[0]) > tolerance)
+        radius *= std::max(PxAbs(scale[0]), PxAbs(scale[2]));
+        if (PxAbs(scale[2] - scale[0]) > tolerance)
         {
-            CARB_LOG_WARN("Non-uniform scale may result in a non matching collision representation on prim: %s", attachedStage.pathFor(key).GetText());
+            CARB_LOG_WARN("Non-uniform scale may result in a non matching collision representation on prim: %s", attachedStage.textFor(key));
         }
         axis = eY;
     }
     else
     {
         height *= scale[2];
-        radius *= std::max(abs(scale[1]), abs(scale[0]));
-        if (abs(scale[1] - scale[0]) > tolerance)
+        radius *= std::max(PxAbs(scale[1]), PxAbs(scale[0]));
+        if (PxAbs(scale[1] - scale[0]) > tolerance)
         {
-            CARB_LOG_WARN("Non-uniform scale may result in a non matching collision representation on prim: %s", attachedStage.pathFor(key).GetText());
+            CARB_LOG_WARN("Non-uniform scale may result in a non matching collision representation on prim: %s", attachedStage.textFor(key));
         }
     }
 
@@ -172,16 +180,14 @@ static PxConvexMeshGeometry usdCylinderOrConeToPxConvexMeshGeometry(const Attach
     }
 }
 
-static PxConvexMeshGeometry usdToPxConvexMeshGeometry(omni::physics::parse::ObjectKey key, const PXR_NS::GfVec3d& scale)
+static PxConvexMeshGeometry usdToPxConvexMeshGeometry(omni::physics::parse::ObjectKey key, const PxVec3& scale)
 {
     usdparser::ConvexMeshPhysxShapeDesc convexMeshDesc;
     usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
-    const SdfPath primPath = attachedStage ? attachedStage->pathFor(key) : SdfPath();
-    const char* primText = primPath.GetText();
+    const char* primText = attachedStage ? attachedStage->textFor(key) : "";
     if (fillConvexMeshDesc(attachedStage, key, convexMeshDesc, convexMeshDesc.convexCookingParams))
     {
-        Float3 mesh_scale = { 1.0f, 1.0f, 1.0f };
-        GfVec3ToFloat3(scale, mesh_scale);
+        const Float3 mesh_scale = toFloat3(scale);
         convexMeshDesc.meshScale = mesh_scale;
         convexMeshDesc.convexCookingParams.signScale = omni::physx::usdparser::scaleToSignScale(mesh_scale);
         PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
@@ -197,7 +203,7 @@ static PxConvexMeshGeometry usdToPxConvexMeshGeometry(omni::physics::parse::Obje
 
         if (convexMesh)
         {
-            const PxMeshScale meshScale(PxVec3(mesh_scale.x, mesh_scale.y, mesh_scale.z).abs());
+            const PxMeshScale meshScale(scale.abs());
             return PxConvexMeshGeometry(convexMesh, meshScale);
         }
         else
@@ -214,14 +220,36 @@ static PxConvexMeshGeometry usdToPxConvexMeshGeometry(omni::physics::parse::Obje
 }
 
 
-static PXR_NS::GfTransform computeWorldTransform(const AttachedStage& attachedStage, const PXR_NS::SdfPath& primPath)
+// Decomposes the prim's world matrix at the USD boundary and hands back PhysX
+// math only: a rigid PxTransform plus the (possibly non-uniform) scale.
+static void computeWorldTransform(const AttachedStage& attachedStage,
+                                  omni::physics::parse::ObjectKey key,
+                                  PxTransform& transform,
+                                  PxVec3& scale)
 {
-    return PXR_NS::GfTransform(getWorldTransform(attachedStage, attachedStage.keyFor(primPath), PXR_NS::UsdTimeCode::Default()));
+    // NOTE: `scale` stays signed here (a mirrored prim reports negative
+    // components), matching the previous GfTransform::GetScale() behaviour.
+    // usdToPxBoxGeometry() relies on that; the other usdToPx*Geometry helpers
+    // take PxAbs themselves.
+    //
+    // `m` is an arbitrary gprim's local-to-world matrix, so it can carry shear
+    // (a non-uniform ancestor scale above a rotation). decomposeMatrix's polar
+    // factor disagrees with GfTransform on sheared input (see MatrixTools.h),
+    // and the actual collider for the same prim is still built off
+    // GfTransform via UsdSource::getLocalToWorldRotationAndScale, so this must
+    // stay on gfmath::decomposeWithPivot to match it -- same convention as
+    // CollisionShapeTransform.h::decomposeCollisionShapeLocalTransform.
+    const PxMat44d m = getWorldTransform(attachedStage, key, omni::physics::parse::ReadTime::defaultTime());
+    const gfmath::PivotTransform pt = gfmath::decomposeWithPivot(m);
+    const PxQuatd q = gfmath::getQuat(pt.rotation);
+    transform = PxTransform(PxVec3(float(pt.translation.x), float(pt.translation.y), float(pt.translation.z)),
+                            PxQuat(float(q.x), float(q.y), float(q.z), float(q.w)));
+    scale = PxVec3(float(pt.scale.x), float(pt.scale.y), float(pt.scale.z));
 }
 
 using geometrySceneQueryFn = std::function<bool(const PxGeometry& geom, const PxTransform& transform)>;
 
-static bool doShapeSceneQuery(uint64_t rPrimPath, geometrySceneQueryFn queryFn)
+static bool doShapeSceneQuery(omni::physics::parse::ObjectKey key, geometrySceneQueryFn queryFn)
 {
     const PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
     if (physxSetup.getPhysXScenes().empty())
@@ -230,56 +258,63 @@ static bool doShapeSceneQuery(uint64_t rPrimPath, geometrySceneQueryFn queryFn)
         return false;
     }
 
-    const SdfPath primKey = intToPath(rPrimPath);
     const AttachedStage* attachedStagePtr = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
     if (!attachedStagePtr)
         return false;
     const AttachedStage& attachedStage = *attachedStagePtr;
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
-    const omni::physics::parse::ObjectKey key = attachedStage.keyFor(primKey);
     if (!src || !src->exists(key))
     {
-        CARB_LOG_ERROR("omni::physx::doShapeSceneQuery: Provided prim is invalid: %s", primKey.GetText());
+        CARB_LOG_ERROR("omni::physx::doShapeSceneQuery: Provided prim is invalid: %s", attachedStage.textFor(key));
         return false;
     }
-    const bool isMeshMerge = hasAppliedSchema<PhysxSchemaPhysxMeshMergeCollisionAPI>(*src, key);
-    if (!src->isA(key, schemaTypeToken<UsdGeomGprim>(*src)) && !isMeshMerge)
+    // Interned once per attach and cached on AttachedStage (REQ-SIM-SCENEQUERY-001)
+    // -- not re-interned here, and threaded by const reference into every helper
+    // below instead of each one interning its own copy.
+    const omni::physics::parse::KnownTokens& tok = attachedStage.getKnownTokens();
+    const bool isMeshMerge = src->hasSchema(key, tok.physxMeshMergeCollisionAPI);
+    if (!src->isA(key, tok.gprimType) && !isMeshMerge)
     {
-        CARB_LOG_ERROR("omni::physx::doShapeSceneQuery: Provided prim is not a UsdGeomGPrim: %s", primKey.GetText());
+        CARB_LOG_ERROR("omni::physx::doShapeSceneQuery: Provided prim is not a UsdGeomGPrim: %s", attachedStage.textFor(key));
         return false;
     }
 
-    const PXR_NS::GfTransform tr = computeWorldTransform(attachedStage, primKey);
+    PxTransform transform;
+    PxVec3 sc;
+    computeWorldTransform(attachedStage, key, transform, sc);
 
-    const PXR_NS::GfVec3d sc = tr.GetScale();
-    PxTransform transform(toPhysX(tr.GetTranslation()), toPhysX(tr.GetRotation().GetQuat()));
-
-    const bool isCylinder = src->isA(key, schemaTypeToken<UsdGeomCylinder>(*src));
-    const bool isCone = src->isA(key, schemaTypeToken<UsdGeomCone>(*src));
-    if (src->isA(key, schemaTypeToken<UsdGeomCube>(*src)))
+    const bool isCylinder = src->isA(key, tok.cylinderType);
+    const bool isCone = src->isA(key, tok.coneType);
+    if (src->isA(key, tok.cubeType))
     {
-        return queryFn(usdToPxBoxGeometry(attachedStage, key, sc), transform);
+        return queryFn(usdToPxBoxGeometry(attachedStage, key, sc, tok), transform);
     }
-    else if (src->isA(key, schemaTypeToken<UsdGeomSphere>(*src)))
+    else if (src->isA(key, tok.sphereType))
     {
-        return queryFn(usdToPxSphereGeometry(attachedStage, key, sc), transform);
+        return queryFn(usdToPxSphereGeometry(attachedStage, key, sc, tok), transform);
     }
-    else if (src->isA(key, schemaTypeToken<UsdGeomCapsule>(*src)))
+    else if (src->isA(key, tok.capsuleType))
     {
-        TfToken capAxis;
-        getValue(attachedStage, key, UsdGeomTokens->axis, UsdTimeCode::Default(), capAxis);
-        const PxQuat fixupQ = fixupCapsuleQuat(capAxis);
-        PxQuat q = toPhysX(tr.GetRotation().GetQuat());
-        q = q * fixupQ;
-        transform.q = q;
-        return queryFn(usdToPxCapsuleGeometry(attachedStage, key, sc), transform);
+        // capAxis read via the TokenId+ReadTime getValue overload, then bridged to the
+        // pxr-free usdparser::Axis enum so fixupCapsuleQuat's Axis overload (already used
+        // elsewhere in this file) can be used instead of its TfToken overload.
+        omni::physics::parse::TokenId capAxis{};
+        getValue(attachedStage, key, tok.axis, omni::physics::parse::ReadTime::defaultTime(), capAxis);
+        usdparser::Axis axisEnum = usdparser::eX;
+        if (capAxis == tok.z)
+            axisEnum = usdparser::eZ;
+        else if (capAxis == tok.y)
+            axisEnum = usdparser::eY;
+        const PxQuat fixupQ = fixupCapsuleQuat(axisEnum);
+        transform.q = transform.q * fixupQ;
+        return queryFn(usdToPxCapsuleGeometry(attachedStage, key, sc, tok), transform);
     }
     PxConvexMeshGeometry geom;
     if (isCylinder || isCone)
     {
-        geom = usdCylinderOrConeToPxConvexMeshGeometry(attachedStage, key, isCylinder, sc);
+        geom = usdCylinderOrConeToPxConvexMeshGeometry(attachedStage, key, isCylinder, sc, tok);
     }
-    else if (src->isA(key, schemaTypeToken<UsdGeomMesh>(*src)))
+    else if (src->isA(key, tok.meshType))
     {
         // Convex cooking is keyed; the residual cooking-input USD read is
         // encapsulated in fillConvexMeshDesc (tracked separately).
@@ -288,12 +323,12 @@ static bool doShapeSceneQuery(uint64_t rPrimPath, geometrySceneQueryFn queryFn)
     else if (isMeshMerge)
     {
         // for meshmerge the convex must already exist, lets find it
-        PxShape* shapePrim = (PxShape*)(getPhysXPtr(primKey, ePTShape));
+        PxShape* shapePrim = (PxShape*)(getPhysXPtr(key, ePTShape));
         if (!shapePrim || shapePrim->getGeometry().getType() != PxGeometryType::eCONVEXMESH)
         {
             CARB_LOG_WARN(
                 "Mesh merge collision overlap works only with convexHull approximation, please switch the approximation for the prim: %s",
-                primKey.GetText());
+                attachedStage.textFor(key));
             return false;
         }
 
@@ -303,7 +338,7 @@ static bool doShapeSceneQuery(uint64_t rPrimPath, geometrySceneQueryFn queryFn)
     {
         return queryFn(geom, transform);
     }
-    CARB_LOG_ERROR("omni::physx::doShapeSceneQuery: Provided prim is not a valid UsdGeom type (supported types are: box, sphere, capsule, convex): %s", primKey.GetText());
+    CARB_LOG_ERROR("omni::physx::doShapeSceneQuery: Provided prim is not a valid UsdGeom type (supported types are: box, sphere, capsule, convex): %s", attachedStage.textFor(key));
     return false;
 }
 
@@ -323,7 +358,7 @@ static bool doBoxSceneQuery(const carb::Float3& halfExtent, const carb::Float3& 
     return queryFn(boxGeom, transform);
 }
 
-static bool doMeshSceneQuery(uint64_t meshPrimKey, geometrySceneQueryFn queryFn)
+static bool doMeshSceneQuery(omni::physics::parse::ObjectKey key, geometrySceneQueryFn queryFn)
 {
     PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
     if (physxSetup.getPhysXScenes().empty())
@@ -338,22 +373,24 @@ static bool doMeshSceneQuery(uint64_t meshPrimKey, geometrySceneQueryFn queryFn)
         return false;
     }
 
-    const SdfPath primKey = intToPath(meshPrimKey);
     usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
     if (!attachedStage)
     {
         return false;
     }
     const omni::physics::parse::IPhysicsSource* src = attachedStage->getSource();
-    const omni::physics::parse::ObjectKey key = attachedStage->keyFor(primKey);
     if (!src || !src->exists(key))
     {
         return false;
     }
+    // Cached on AttachedStage, interned once per attach -- see doShapeSceneQuery's
+    // comment above (REQ-SIM-SCENEQUERY-001); avoids rebuilding the whole batch on
+    // every mesh-query call.
+    const omni::physics::parse::KnownTokens& tok = attachedStage->getKnownTokens();
     bool meshMergeUsed = false;
-    if (!src->isA(key, schemaTypeToken<UsdGeomMesh>(*src)))
+    if (!src->isA(key, tok.meshType))
     {
-        if (!hasAppliedSchema<PhysxSchemaPhysxMeshMergeCollisionAPI>(*src, key))
+        if (!src->hasSchema(key, tok.physxMeshMergeCollisionAPI))
         {
             return false;
         }
@@ -363,21 +400,21 @@ static bool doMeshSceneQuery(uint64_t meshPrimKey, geometrySceneQueryFn queryFn)
         }
     }
 
-    Float3 scale = { 1.0f, 1.0f, 1.0f };
-    const PXR_NS::GfTransform tr = computeWorldTransform(*attachedStage, primKey);
-    const PXR_NS::GfVec3d sc = tr.GetScale();
-    GfVec3ToFloat3(sc, scale);
+    PxTransform transform;
+    PxVec3 sc;
+    computeWorldTransform(*attachedStage, key, transform, sc);
+    const Float3 scale = toFloat3(sc);
 
     PxConvexMesh* convexMesh = nullptr;
     if (meshMergeUsed)
     {
         // for meshmerge the convex must already exist, lets find it
-        PxShape* shapePrim = (PxShape*)(getPhysXPtr(primKey, ePTShape));
+        PxShape* shapePrim = (PxShape*)(getPhysXPtr(key, ePTShape));
         if (!shapePrim || shapePrim->getGeometry().getType() != PxGeometryType::eCONVEXMESH)
         {
             CARB_LOG_WARN(
                 "Mesh merge collision overlap works only with convexHull approximation, please switch the approximation for the prim: %s",
-                primKey.GetText());
+                attachedStage->textFor(key));
             return false;
         }
 
@@ -405,8 +442,7 @@ static bool doMeshSceneQuery(uint64_t meshPrimKey, geometrySceneQueryFn queryFn)
         return false;
     }
 
-    const PxMeshScale meshScale(PxVec3(scale.x, scale.y, scale.z).abs());
-    const PxTransform transform(toPhysX(tr.GetTranslation()), toPhysX(tr.GetRotation().GetQuat()));
+    const PxMeshScale meshScale(sc.abs());
 
     return queryFn(PxConvexMeshGeometry(convexMesh, meshScale), transform);
 }
@@ -459,11 +495,11 @@ bool raycastClosest(const carb::Float3& origin, const carb::Float3& unitDir, flo
 
         const ObjectId shapeIndex = (ObjectId)hit.shape->userData;
         const ObjectId bodyIndex = (ObjectId)hit.actor->userData;
-        outHit.collision = shapeIndex < db.getRecords().size() ? keyToPathInt(db.getRecords()[shapeIndex].mKey) : 0;
+        outHit.collision = shapeIndex < db.getRecords().size() ? db.getRecords()[shapeIndex].mKey : omni::physics::parse::ObjectKey{};
         if (bodyIndex < db.getRecords().size())
         {
             const InternalDatabase::Record& record = db.getRecords()[bodyIndex];
-            outHit.rigidBody = keyToPathInt(record.mKey);
+            outHit.rigidBody = record.mKey;
             if (record.mType == ePTActor)
             {
                 outHit.protoIndex = ((InternalActor*)record.mInternalPtr)->mInstanceIndex;
@@ -471,7 +507,7 @@ bool raycastClosest(const carb::Float3& origin, const carb::Float3& unitDir, flo
         }
         else
         {
-            outHit.rigidBody = 0;
+            outHit.rigidBody = omni::physics::parse::ObjectKey{};
             outHit.protoIndex = 0xFFFFFFFF;
         }
         PxBaseMaterial* baseMaterial = hit.shape->getMaterialFromInternalFaceIndex(hit.faceIndex);
@@ -480,11 +516,11 @@ bool raycastClosest(const carb::Float3& origin, const carb::Float3& unitDir, flo
         if (material && material->userData)
         {
             const size_t materialIndex = (size_t)material->userData;
-            outHit.material = materialIndex < db.getRecords().size() ? keyToPathInt(db.getRecords()[materialIndex].mKey) : 0;
+            outHit.material = materialIndex < db.getRecords().size() ? db.getRecords()[materialIndex].mKey : omni::physics::parse::ObjectKey{};
         }
         else
         {
-            outHit.material = 0;
+            outHit.material = omni::physics::parse::ObjectKey{};
         }
     }
     return ret;
@@ -530,11 +566,11 @@ bool reportLocationHit(const PxQueryHit& hit, T reportFn, const InternalPhysXDat
     QueryHit queryHit;
     const ObjectId shapeIndex = (ObjectId)hit.shape->userData;
     const ObjectId bodyIndex = (ObjectId)hit.actor->userData;
-    queryHit.collision = shapeIndex < db.getRecords().size() ? keyToPathInt(db.getRecords()[shapeIndex].mKey) : 0;
+    queryHit.collision = shapeIndex < db.getRecords().size() ? db.getRecords()[shapeIndex].mKey : omni::physics::parse::ObjectKey{};
     if (bodyIndex < db.getRecords().size())
     {
         const InternalDatabase::Record& record = db.getRecords()[bodyIndex];
-        queryHit.rigidBody = keyToPathInt(record.mKey);
+        queryHit.rigidBody = record.mKey;
         if (record.mType == ePTActor)
         {
             queryHit.protoIndex = ((InternalActor*)record.mInternalPtr)->mInstanceIndex;
@@ -542,7 +578,7 @@ bool reportLocationHit(const PxQueryHit& hit, T reportFn, const InternalPhysXDat
     }
     else
     {
-        queryHit.rigidBody = 0;
+        queryHit.rigidBody = omni::physics::parse::ObjectKey{};
         queryHit.protoIndex = 0xFFFFFFFF;
     }
 
@@ -560,11 +596,11 @@ bool reportLocationHit(const PxQueryHit& hit, T reportFn, const InternalPhysXDat
     if (material && material->userData)
     {
         const size_t materialIndex = (size_t)material->userData;
-        queryHit.material = materialIndex < db.getRecords().size() ? keyToPathInt(db.getRecords()[materialIndex].mKey) : 0;
+        queryHit.material = materialIndex < db.getRecords().size() ? db.getRecords()[materialIndex].mKey : omni::physics::parse::ObjectKey{};
     }
     else
     {
-        queryHit.material = 0;
+        queryHit.material = omni::physics::parse::ObjectKey{};
     }
 
     return reportFn(queryHit);
@@ -632,10 +668,9 @@ struct SceneQueryFilterCallbackIgnorePrim : PxQueryFilterCallback
 {
     SceneQueryFilterCallbackIgnorePrim() {};
 
-    SceneQueryFilterCallbackIgnorePrim(uint64_t primKey, bool bMultiple=false) : bMultiple(bMultiple)
+    SceneQueryFilterCallbackIgnorePrim(omni::physics::parse::ObjectKey primKey, bool bMultiple=false) : bMultiple(bMultiple)
     {
-        const SdfPath& path = intToPath(primKey);
-        shapePrim = (PxShape *)(getPhysXPtr(path, ePTShape));
+        shapePrim = (PxShape *)(getPhysXPtr(primKey, ePTShape));
     }
 
     virtual ::physx::PxQueryHitType::Enum preFilter(const ::physx::PxFilterData& filterData0,
@@ -664,7 +699,7 @@ struct SceneQueryFilterCallbackIgnorePrim : PxQueryFilterCallback
     bool bMultiple;
 };
 
-static bool sweepInternalClosest(const PxGeometry& geom, const PxTransform& transform, const carb::Float3& unitDir, float distance, SweepHit& outHit, bool bothSides, uint64_t primSelf=0)
+static bool sweepInternalClosest(const PxGeometry& geom, const PxTransform& transform, const carb::Float3& unitDir, float distance, SweepHit& outHit, bool bothSides, omni::physics::parse::ObjectKey primSelf = {})
 {
     const InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
     const PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
@@ -686,7 +721,7 @@ static bool sweepInternalClosest(const PxGeometry& geom, const PxTransform& tran
     bool ret = false;
     SceneQueryFilterCallbackIgnorePrim filter;
     PxSceneQueryFilterData filterData;
-    if(primSelf)
+    if (primSelf.valid())
     {
         filter = SceneQueryFilterCallbackIgnorePrim(primSelf);
         filterData.flags |= PxQueryFlag::ePREFILTER;
@@ -697,7 +732,7 @@ static bool sweepInternalClosest(const PxGeometry& geom, const PxTransform& tran
         const PxScene* scene = ref.second->getScene();
         if (!scene)
             continue;
-        const bool localRet = PxSceneQueryExt::sweepSingle(*scene, geom, transform, dir, distance, hitFlags, localHit, filterData, (primSelf ? &filter : nullptr));
+        const bool localRet = PxSceneQueryExt::sweepSingle(*scene, geom, transform, dir, distance, hitFlags, localHit, filterData, (primSelf.valid() ? &filter : nullptr));
         if (localRet && localHit.distance < hit.distance)
         {
             ret = true;
@@ -713,11 +748,11 @@ static bool sweepInternalClosest(const PxGeometry& geom, const PxTransform& tran
 
         const ObjectId shapeIndex = (ObjectId)hit.shape->userData;
         const ObjectId bodyIndex = (ObjectId)hit.actor->userData;
-        outHit.collision = shapeIndex < db.getRecords().size() ? keyToPathInt(db.getRecords()[shapeIndex].mKey) : 0;
+        outHit.collision = shapeIndex < db.getRecords().size() ? db.getRecords()[shapeIndex].mKey : omni::physics::parse::ObjectKey{};
         if (bodyIndex < db.getRecords().size())
         {
             const InternalDatabase::Record& record = db.getRecords()[bodyIndex];
-            outHit.rigidBody = keyToPathInt(record.mKey);
+            outHit.rigidBody = record.mKey;
             if (record.mType == ePTActor)
             {
                 outHit.protoIndex = ((InternalActor*)record.mInternalPtr)->mInstanceIndex;
@@ -725,7 +760,7 @@ static bool sweepInternalClosest(const PxGeometry& geom, const PxTransform& tran
         }
         else
         {
-            outHit.rigidBody = 0;
+            outHit.rigidBody = omni::physics::parse::ObjectKey{};
             outHit.protoIndex = 0xFFFFFFFF;
         }
 
@@ -740,11 +775,11 @@ static bool sweepInternalClosest(const PxGeometry& geom, const PxTransform& tran
         if (material && material->userData)
         {
             const size_t materialIndex = (size_t)material->userData;
-            outHit.material = materialIndex < db.getRecords().size() ? keyToPathInt(db.getRecords()[materialIndex].mKey) : 0;
+            outHit.material = materialIndex < db.getRecords().size() ? db.getRecords()[materialIndex].mKey : omni::physics::parse::ObjectKey{};
         }
         else
         {
-            outHit.material = 0;
+            outHit.material = omni::physics::parse::ObjectKey{};
         }
 
     }
@@ -769,7 +804,7 @@ bool sweepBoxClosest(const carb::Float3& halfExtent, const carb::Float3& pos, co
     return doBoxSceneQuery(halfExtent, pos, rot, sweepFn);
 }
 
-bool sweepMeshClosest(uint64_t meshPrimKey, const carb::Float3& unitDir, float distance, SweepHit& outHit, bool bothSides)
+bool sweepMeshClosest(omni::physics::parse::ObjectKey meshPrimKey, const carb::Float3& unitDir, float distance, SweepHit& outHit, bool bothSides)
 {
     geometrySceneQueryFn sweepFn = [&](const PxGeometry &geom, const PxTransform &transform) {
         return sweepInternalClosest(geom, transform, unitDir, distance, outHit, bothSides, meshPrimKey);
@@ -778,7 +813,7 @@ bool sweepMeshClosest(uint64_t meshPrimKey, const carb::Float3& unitDir, float d
     return doMeshSceneQuery(meshPrimKey, sweepFn);
 }
 
-bool sweepShapeClosest(uint64_t rPrimPath, const carb::Float3& unitDir, float distance, SweepHit& outHit, bool bothSides)
+bool sweepShapeClosest(omni::physics::parse::ObjectKey rPrimPath, const carb::Float3& unitDir, float distance, SweepHit& outHit, bool bothSides)
 {
     geometrySceneQueryFn sweepFn = [&](const PxGeometry &geom, const PxTransform &transform) {
         return sweepInternalClosest(geom, transform, unitDir, distance, outHit, bothSides, rPrimPath);
@@ -790,7 +825,7 @@ bool sweepShapeClosest(uint64_t rPrimPath, const carb::Float3& unitDir, float di
 static bool sweepAnyInternal(const PxGeometry& geom, const PxTransform& transform,
                         const carb::Float3& unitDir,
                         float distance,
-                        bool bothSides, uint64_t primSelf=0)
+                        bool bothSides, omni::physics::parse::ObjectKey primSelf = {})
 {
     const InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
     const PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
@@ -811,7 +846,7 @@ static bool sweepAnyInternal(const PxGeometry& geom, const PxTransform& transfor
     PxSceneQueryFilterData fdAny;
     fdAny.flags |= PxQueryFlag::eANY_HIT;
     SceneQueryFilterCallbackIgnorePrim filter;
-    if(primSelf)
+    if (primSelf.valid())
     {
         filter = SceneQueryFilterCallbackIgnorePrim(primSelf);
         fdAny.flags |= PxQueryFlag::ePREFILTER;
@@ -822,7 +857,7 @@ static bool sweepAnyInternal(const PxGeometry& geom, const PxTransform& transfor
         const PxScene* scene = ref.second->getScene();
         if (!scene)
             continue;
-        scene->sweep(geom, transform, dir, distance, buf, hitFlags, fdAny, (primSelf ? &filter : nullptr));
+        scene->sweep(geom, transform, dir, distance, buf, hitFlags, fdAny, (primSelf.valid() ? &filter : nullptr));
         if (buf.hasBlock)
         {
             return true;
@@ -853,7 +888,7 @@ bool sweepBoxAny(const carb::Float3& halfExtent, const carb::Float3& pos, const 
     return doBoxSceneQuery(halfExtent, pos, rot, sweepFn);
 }
 
-bool sweepMeshAny(uint64_t meshPrimKey, const carb::Float3& unitDir, float distance, bool bothSides)
+bool sweepMeshAny(omni::physics::parse::ObjectKey meshPrimKey, const carb::Float3& unitDir, float distance, bool bothSides)
 {
     geometrySceneQueryFn sweepFn = [&](const PxGeometry &geom, const PxTransform &transform) {
         return sweepAnyInternal(geom, transform, unitDir, distance, bothSides, meshPrimKey);
@@ -862,7 +897,7 @@ bool sweepMeshAny(uint64_t meshPrimKey, const carb::Float3& unitDir, float dista
     return doMeshSceneQuery(meshPrimKey, sweepFn);
 }
 
-bool sweepShapeAny(uint64_t rPrimPath, const carb::Float3& unitDir, float distance, bool bothSides)
+bool sweepShapeAny(omni::physics::parse::ObjectKey rPrimPath, const carb::Float3& unitDir, float distance, bool bothSides)
 {
     geometrySceneQueryFn sweepFn = [&](const PxGeometry &geom, const PxTransform &transform) {
         return sweepAnyInternal(geom, transform, unitDir, distance, bothSides, rPrimPath);
@@ -898,7 +933,7 @@ struct SweepCallback : PxSweepCallback
 };
 
 
-bool sweepAllInternal(const PxGeometry& geom, const PxTransform& transform, const carb::Float3& unitDir, float distance, SweepHitReportFn reportFn, bool bothSides, uint64_t primSelf=0)
+bool sweepAllInternal(const PxGeometry& geom, const PxTransform& transform, const carb::Float3& unitDir, float distance, SweepHitReportFn reportFn, bool bothSides, omni::physics::parse::ObjectKey primSelf = {})
 {
     const InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
     const PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
@@ -921,7 +956,7 @@ bool sweepAllInternal(const PxGeometry& geom, const PxTransform& transform, cons
     SweepCallback cb(hitBuffer, hitBufferSize, reportFn, db);
     SceneQueryFilterCallbackIgnorePrim filter;
     PxSceneQueryFilterData filterData;
-    if(primSelf)
+    if (primSelf.valid())
     {
         filter = SceneQueryFilterCallbackIgnorePrim(primSelf, true);
         filterData.flags |= PxQueryFlag::ePREFILTER;
@@ -931,7 +966,7 @@ bool sweepAllInternal(const PxGeometry& geom, const PxTransform& transform, cons
         const PxScene* scene = ref.second->getScene();
         if (!scene)
             continue;
-        scene->sweep(geom, transform, dir, distance, cb, hitFlags, filterData, (primSelf? &filter : nullptr));
+        scene->sweep(geom, transform, dir, distance, cb, hitFlags, filterData, (primSelf.valid() ? &filter : nullptr));
     }
     return cb.numHits ? true : false;
 }
@@ -954,7 +989,7 @@ bool sweepBoxAll(const carb::Float3& halfExtent, const carb::Float3& pos, const 
     return doBoxSceneQuery(halfExtent, pos, rot, sweepFn);
 }
 
-bool sweepMeshAll(uint64_t meshPrimKey, const carb::Float3& unitDir, float distance, SweepHitReportFn reportFn, bool bothSides)
+bool sweepMeshAll(omni::physics::parse::ObjectKey meshPrimKey, const carb::Float3& unitDir, float distance, SweepHitReportFn reportFn, bool bothSides)
 {
     geometrySceneQueryFn sweepFn = [&](const PxGeometry &geom, const PxTransform &transform) {
         return sweepAllInternal(geom, transform, unitDir, distance, reportFn, bothSides, meshPrimKey);
@@ -963,7 +998,7 @@ bool sweepMeshAll(uint64_t meshPrimKey, const carb::Float3& unitDir, float dista
     return doMeshSceneQuery(meshPrimKey, sweepFn);
 }
 
-bool sweepShapeAll(uint64_t rPrimPath, const carb::Float3& unitDir, float distance, SweepHitReportFn reportFn, bool bothSides)
+bool sweepShapeAll(omni::physics::parse::ObjectKey rPrimPath, const carb::Float3& unitDir, float distance, SweepHitReportFn reportFn, bool bothSides)
 {
     geometrySceneQueryFn sweepFn = [&](const PxGeometry &geom, const PxTransform &transform) {
         return sweepAllInternal(geom, transform, unitDir, distance, reportFn, bothSides, rPrimPath);
@@ -979,11 +1014,11 @@ static bool reportOverlapHit(const PxOverlapHit& hit, const OverlapHitReportFn& 
     const ObjectId bodyIndex = (ObjectId)hit.actor->userData;
 
     const size_t size = db.getRecords().size();
-    queryHit.collision = shapeIndex < size ? keyToPathInt(db.getRecords()[shapeIndex].mKey) : 0;
+    queryHit.collision = shapeIndex < size ? db.getRecords()[shapeIndex].mKey : omni::physics::parse::ObjectKey{};
     if (bodyIndex < db.getRecords().size())
     {
         const InternalDatabase::Record& record = db.getRecords()[bodyIndex];
-        queryHit.rigidBody = keyToPathInt(record.mKey);
+        queryHit.rigidBody = record.mKey;
         if (record.mType == ePTActor)
         {
             queryHit.protoIndex = ((InternalActor*)record.mInternalPtr)->mInstanceIndex;
@@ -991,7 +1026,7 @@ static bool reportOverlapHit(const PxOverlapHit& hit, const OverlapHitReportFn& 
     }
     else
     {
-        queryHit.rigidBody = 0;
+        queryHit.rigidBody = omni::physics::parse::ObjectKey{};
         queryHit.protoIndex = 0xFFFFFFFF;
     }
     return reportFn(queryHit);
@@ -1113,7 +1148,7 @@ bool overlapBoxAny(const carb::Float3& halfExtent,
     return overlapBox(halfExtent, pos, rot, nullptr, true);
 }
 
-uint32_t overlapMesh(uint64_t meshPrimKey, OverlapHitReportFn reportFn, bool anyHit)
+uint32_t overlapMesh(omni::physics::parse::ObjectKey meshPrimKey, OverlapHitReportFn reportFn, bool anyHit)
 {
     uint32_t result = 0;
     geometrySceneQueryFn overlapFn = [&](const PxGeometry &geom, const PxTransform &transform) {
@@ -1129,12 +1164,12 @@ uint32_t overlapMesh(uint64_t meshPrimKey, OverlapHitReportFn reportFn, bool any
     return result;
 }
 
-bool overlapMeshAny(uint64_t meshPrimKey)
+bool overlapMeshAny(omni::physics::parse::ObjectKey meshPrimKey)
 {
     return overlapMesh(meshPrimKey, nullptr, true);
 }
 
-uint32_t overlapShape(uint64_t rPrimPath, OverlapHitReportFn reportFn, bool anyHit)
+uint32_t overlapShape(omni::physics::parse::ObjectKey rPrimPath, OverlapHitReportFn reportFn, bool anyHit)
 {
     uint32_t result = 0;
     geometrySceneQueryFn overlapFn = [&](const PxGeometry &geom, const PxTransform &transform) {
@@ -1150,12 +1185,12 @@ uint32_t overlapShape(uint64_t rPrimPath, OverlapHitReportFn reportFn, bool anyH
     return result;
 }
 
-bool overlapShapeAny(uint64_t rPrimPath)
+bool overlapShapeAny(omni::physics::parse::ObjectKey rPrimPath)
 {
     return overlapShape(rPrimPath, nullptr, true);
 }
 
-void reportCollisionShape(const SdfPath& path, const PxRigidActor& actor, const PxShape& shape,
+void reportCollisionShape(omni::physics::parse::ObjectKey key, const PxRigidActor& actor, const PxShape& shape,
     ICollisionShapeQueryCallback& reportCallback, const InternalPhysXDatabase& db)
 {
     const PxTransform globalPose = actor.getGlobalPose() * shape.getLocalPose();
@@ -1167,7 +1202,7 @@ void reportCollisionShape(const SdfPath& path, const PxRigidActor& actor, const 
         const PxSphereGeometry& sphereGeom = static_cast<const PxSphereGeometry&>(geom);
         if (reportCallback.sphereShapeReportFn)
         {
-            reportCallback.sphereShapeReportFn(omni::physx::sdfPathToInt(path), fromPhysX(globalPose.p), fromPhysX(globalPose.q), sphereGeom.radius, reportCallback.userData);
+            reportCallback.sphereShapeReportFn(key, fromPhysX(globalPose.p), fromPhysX(globalPose.q), sphereGeom.radius, reportCallback.userData);
         }
     }
     break;
@@ -1176,7 +1211,7 @@ void reportCollisionShape(const SdfPath& path, const PxRigidActor& actor, const 
         const PxBoxGeometry& boxGeom = static_cast<const PxBoxGeometry&>(geom);
         if (reportCallback.boxShapeReportFn)
         {
-            reportCallback.boxShapeReportFn(omni::physx::sdfPathToInt(path), fromPhysX(globalPose.p), fromPhysX(globalPose.q), fromPhysX(boxGeom.halfExtents), reportCallback.userData);
+            reportCallback.boxShapeReportFn(key, fromPhysX(globalPose.p), fromPhysX(globalPose.q), fromPhysX(boxGeom.halfExtents), reportCallback.userData);
         }
     }
     break;
@@ -1199,7 +1234,7 @@ void reportCollisionShape(const SdfPath& path, const PxRigidActor& actor, const 
 
         if (reportCallback.capsuleShapeReportFn)
         {
-            reportCallback.capsuleShapeReportFn(omni::physx::sdfPathToInt(path), fromPhysX(updatedGlobalPose.p), fromPhysX(updatedGlobalPose.q), axis, capsuleGeom.radius, capsuleGeom.halfHeight * 2.0f, reportCallback.userData);
+            reportCallback.capsuleShapeReportFn(key, fromPhysX(updatedGlobalPose.p), fromPhysX(updatedGlobalPose.q), axis, capsuleGeom.radius, capsuleGeom.halfHeight * 2.0f, reportCallback.userData);
         }
     }
     break;
@@ -1208,7 +1243,7 @@ void reportCollisionShape(const SdfPath& path, const PxRigidActor& actor, const 
         const PxTriangleMeshGeometry& triMeshGeom = static_cast<const PxTriangleMeshGeometry&>(geom);
         if (reportCallback.triangleMeshShapeReportFn)
         {
-            reportCallback.triangleMeshShapeReportFn(omni::physx::sdfPathToInt(path), fromPhysX(globalPose.p), fromPhysX(globalPose.q), fromPhysX(triMeshGeom.scale.scale),
+            reportCallback.triangleMeshShapeReportFn(key, fromPhysX(globalPose.p), fromPhysX(globalPose.q), fromPhysX(triMeshGeom.scale.scale),
                 triMeshGeom.triangleMesh->getNbVertices(), (const carb::Float3*)triMeshGeom.triangleMesh->getVertices(),
                 triMeshGeom.triangleMesh->getNbTriangles(), (const uint32_t*)triMeshGeom.triangleMesh->getTriangles(), reportCallback.userData);
         }
@@ -1236,7 +1271,7 @@ void reportCollisionShape(const SdfPath& path, const PxRigidActor& actor, const 
             getConeOrCylinderSize(meshScale, (usdparser::Axis)axis, halfHeight, radius);
             if (reportCallback.cylinderShapeReportFn)
             {
-                reportCallback.cylinderShapeReportFn(omni::physx::sdfPathToInt(path), fromPhysX(globalPose.p), fromPhysX(globalPose.q), axis, radius, halfHeight * 2.0f, reportCallback.userData);
+                reportCallback.cylinderShapeReportFn(key, fromPhysX(globalPose.p), fromPhysX(globalPose.q), axis, radius, halfHeight * 2.0f, reportCallback.userData);
             }
         }
         else if (convexMeshGeom.convexMesh == physxSetup.getConeConvexMesh(Axis::eX) ||
@@ -1256,7 +1291,7 @@ void reportCollisionShape(const SdfPath& path, const PxRigidActor& actor, const 
             getConeOrCylinderSize(meshScale, (usdparser::Axis)axis, halfHeight, radius);
             if (reportCallback.coneShapeReportFn)
             {
-                reportCallback.coneShapeReportFn(omni::physx::sdfPathToInt(path), fromPhysX(globalPose.p), fromPhysX(globalPose.q), axis, radius, halfHeight * 2.0f, reportCallback.userData);
+                reportCallback.coneShapeReportFn(key, fromPhysX(globalPose.p), fromPhysX(globalPose.q), axis, radius, halfHeight * 2.0f, reportCallback.userData);
             }
         }
         else
@@ -1277,7 +1312,7 @@ void reportCollisionShape(const SdfPath& path, const PxRigidActor& actor, const 
                         polygon.plane[j] = pxHull.mPlane[j];
                     }                    
                 }                
-                reportCallback.convexMeshShapeReportFn(omni::physx::sdfPathToInt(path), fromPhysX(globalPose.p), fromPhysX(globalPose.q), fromPhysX(convexMeshGeom.scale.scale),
+                reportCallback.convexMeshShapeReportFn(key, fromPhysX(globalPose.p), fromPhysX(globalPose.q), fromPhysX(convexMeshGeom.scale.scale),
                     convexMeshGeom.convexMesh->getNbVertices(), (const carb::Float3*)convexMeshGeom.convexMesh->getVertices(),
                     convexMeshGeom.convexMesh->getIndexBuffer(), convexMeshGeom.convexMesh->getNbPolygons(), polygons.data(), reportCallback.userData);
             }
@@ -1304,7 +1339,7 @@ void reportCollisionShape(const SdfPath& path, const PxRigidActor& actor, const 
                 updatedGlobalPose = actor.getGlobalPose() * localPose;
             }
 
-            reportCallback.cylinderShapeReportFn(omni::physx::sdfPathToInt(path), fromPhysX(updatedGlobalPose.p),
+            reportCallback.cylinderShapeReportFn(key, fromPhysX(updatedGlobalPose.p),
                 fromPhysX(updatedGlobalPose.q), axis, c.radius + convexGeom.getMargin(),
                 c.height + convexGeom.getMargin() * 2.0f, reportCallback.userData);
         }
@@ -1324,7 +1359,7 @@ void reportCollisionShape(const SdfPath& path, const PxRigidActor& actor, const 
                 updatedGlobalPose = actor.getGlobalPose() * localPose;
             }
 
-            reportCallback.coneShapeReportFn(omni::physx::sdfPathToInt(path), fromPhysX(updatedGlobalPose.p),
+            reportCallback.coneShapeReportFn(key, fromPhysX(updatedGlobalPose.p),
                 fromPhysX(updatedGlobalPose.q), axis, c.radius + convexGeom.getMargin(),
                 c.height + convexGeom.getMargin() * 2.0f, reportCallback.userData);
         }
@@ -1343,7 +1378,6 @@ void reportCollisionShape(const SdfPath& path, const PxRigidActor& actor, const 
 static bool reportSharedShapeActors(const AttachedStage& attachedStage,
                                     const omni::physics::parse::IPhysicsSource& source,
                                     omni::physics::parse::ObjectKey shapeKey,
-                                    const SdfPath& primKey,
                                     const PxShape& shape,
                                     ICollisionShapeQueryCallback& reportCallback,
                                     const InternalPhysXDatabase& db)
@@ -1352,10 +1386,13 @@ static bool reportSharedShapeActors(const AttachedStage& attachedStage,
     for (omni::physics::parse::ObjectKey parentKey = shapeKey; !actorFound && parentKey.valid();
          parentKey = source.getParent(parentKey))
     {
-        const SdfPath parentPath = attachedStage.pathFor(parentKey);
-        if (parentPath.IsAbsoluteRootPath())
+        // ObjectKey-native root check (ADR-0019): getParent() returns getRootKey() for a
+        // top-level object, so the walk needs an explicit stop there -- matches the legacy
+        // SdfPath::IsAbsoluteRootPath() check this replaces (see IPhysicsSource::getParent's
+        // doc: "the invalid sentinel for the root itself").
+        if (parentKey == source.getRootKey())
             break;
-        const usdparser::ObjectIdMap* actorEntries = attachedStage.getObjectIds(parentPath);
+        const usdparser::ObjectIdMap* actorEntries = attachedStage.getObjectIds(parentKey);
         if (actorEntries && !actorEntries->empty())
         {
             for (auto itActor = actorEntries->begin(); itActor != actorEntries->end(); ++itActor)
@@ -1365,7 +1402,7 @@ static bool reportSharedShapeActors(const AttachedStage& attachedStage,
                 if (actor)
                 {
                     actorFound = true;
-                    reportCollisionShape(primKey, *actor, shape, reportCallback, db);
+                    reportCollisionShape(shapeKey, *actor, shape, reportCallback, db);
                 }
             }
         }
@@ -1373,7 +1410,7 @@ static bool reportSharedShapeActors(const AttachedStage& attachedStage,
     return actorFound;
 }
 
-uint32_t reportCollisionShapes(uint64_t path, ICollisionShapeQueryCallback& reportCallback)
+uint32_t reportCollisionShapes(omni::physics::parse::ObjectKey rootKey, ICollisionShapeQueryCallback& reportCallback)
 {
     const InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
     const PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
@@ -1390,10 +1427,8 @@ uint32_t reportCollisionShapes(uint64_t path, ICollisionShapeQueryCallback& repo
     if (!source)
         return numShapes;
 
-    const SdfPath sdfPath = intToPath(path);
-    if (sdfPath.IsEmpty())
+    if (!rootKey.valid())
         return numShapes;
-    const omni::physics::parse::ObjectKey rootKey = attachedStage->keyFor(sdfPath);
     // Do not gate on source->exists(rootKey): the query root is frequently a
     // hierarchy-only prim (e.g. an Xform/scope like "/World") that carries no
     // physics data and is therefore absent from a data-plane source (ovstage),
@@ -1409,11 +1444,14 @@ uint32_t reportCollisionShapes(uint64_t path, ICollisionShapeQueryCallback& repo
 
     for (const omni::physics::parse::ObjectKey primObjKey : descendants)
     {
-        const SdfPath primKey = attachedStage->pathFor(primObjKey);
-        if (primKey.IsEmpty())
+        // ObjectKey-native resolvability check (ADR-0019), replacing the legacy
+        // pathFor(primObjKey).IsEmpty() gate: forEachDescendant only yields keys the source
+        // itself enumerated, but guard against an unresolvable one the same way the SdfPath
+        // form did.
+        if (!primObjKey.valid())
             continue;
 
-        const usdparser::ObjectIdMap* entries = attachedStage->getObjectIds(primKey);
+        const usdparser::ObjectIdMap* entries = attachedStage->getObjectIds(primObjKey);
         if (entries && !entries->empty())
         {
             ObjectIdMap::const_iterator it = entries->begin();
@@ -1426,16 +1464,16 @@ uint32_t reportCollisionShapes(uint64_t path, ICollisionShapeQueryCallback& repo
                     numShapes++;
                     if (shape->getActor())
                     {
-                        reportCollisionShape(primKey, *shape->getActor(), *shape, reportCallback, db);
+                        reportCollisionShape(primObjKey, *shape->getActor(), *shape, reportCallback, db);
                     }
                     else
                     {
                         // shared shape: find the owning actor up the hierarchy.
-                        reportSharedShapeActors(*attachedStage, *source, primObjKey, primKey, *shape, reportCallback, db);
+                        reportSharedShapeActors(*attachedStage, *source, primObjKey, *shape, reportCallback, db);
                     }
                 }
                 else
-                {                    
+                {
                     const PhysXCompoundShape* compoundShape = reinterpret_cast<const PhysXCompoundShape*>(db.getTypedRecord(ePTCompoundShape, objectId));
                     if (compoundShape)
                     {
@@ -1444,13 +1482,13 @@ uint32_t reportCollisionShapes(uint64_t path, ICollisionShapeQueryCallback& repo
                             numShapes++;
                             PxShape* shape = reinterpret_cast<PxShape*>(compoundShape->getShapes()[i]);
                             if (shape->getActor())
-                            {                                
-                                reportCollisionShape(primKey, *shape->getActor(), *shape, reportCallback, db);
+                            {
+                                reportCollisionShape(primObjKey, *shape->getActor(), *shape, reportCallback, db);
                             }
                             else
                             {
                                 // shared shape: find the owning actor up the hierarchy.
-                                reportSharedShapeActors(*attachedStage, *source, primObjKey, primKey, *shape, reportCallback, db);
+                                reportSharedShapeActors(*attachedStage, *source, primObjKey, *shape, reportCallback, db);
                             }
                         }
                     }

@@ -1,5 +1,5 @@
 <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
-<!-- SPDX-License-Identifier: BSD-3-Clause -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
 # Building Against the ovphysx Source Tree
 
@@ -15,7 +15,7 @@ For the installed-SDK approach using `find_package()`, refer to the
 ## Prerequisites
 
 - A local clone of the [PhysX repository](https://github.com/NVIDIA-Omniverse/PhysX)
-- CMake 3.16 or newer on Linux, 4.1 or newer on Windows
+- CMake 3.22 or newer on Linux, 4.1 or newer on Windows
 - A C/C++ compiler (GCC 11+, MSVC 2022, or Clang 14+). On Linux, prefer a version from the tested matrix in the PhysX SDK [Linux platform readme](https://github.com/NVIDIA-Omniverse/PhysX/blob/main/physx/documentation/platformreadme/linux/README_LINUX.md) rather than the newest available.
 
 ## CMakeLists.txt
@@ -35,14 +35,19 @@ Key points:
 
 ## Build and Run
 
+Run these commands from the directory that holds your application's `my_app/`
+source directory, and replace `/path/to/ovphysx` with the `ovphysx` directory in
+your PhysX repository clone:
+
 ```bash
 # Configure (first run fetches dependencies automatically)
-cmake -S my_app -B my_app/_build
+cmake -S my_app -B my_app/_build \
+    -DOVPHYSX_SOURCE_DIR=/path/to/ovphysx
 
 # Build
 cmake --build my_app/_build --parallel 8
 
-# Run (OVPHYSX_LIB anchors runtime config/schema/plugin discovery)
+# Run (OVPHYSX_LIB anchors runtime schema/plugin discovery)
 OVPHYSX_LIB=/path/to/ovphysx/_install/lib/libovphysx.so ./my_app/_build/my_app
 ```
 
@@ -64,12 +69,12 @@ cmake --build my_app/_build --parallel 8
 
 ## Runtime Plugin Discovery
 
-The ovphysx runtime uses an embedded static Carbonite framework and loads PhysX,
-USD, and bootstrap runtime plugins at startup. These plugins are not part of the
+The ovphysx runtime uses an embedded static Carbonite framework and loads PhysX
+and bootstrap runtime plugins at startup. These plugins are not part of the
 `add_subdirectory()` build; they come from the installed SDK's flattened runtime
 layout. Build and install the SDK once, then point `OVPHYSX_LIB` at the installed
-ovphysx library so the runtime can find the matching `config.toml`, plugins, and
-USD schema paths:
+ovphysx library so the runtime can find the matching plugins and the codeless
+schema root (`schemas/physx`):
 
 ```bash
 # One-time setup
@@ -88,15 +93,20 @@ auto-fetch to re-check dependencies.
 
 ## Configuration Reference
 
+**Source-link build variables**
+
+These CMake cache variables and environment variables control the source-link
+build and its runtime discovery:
+
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `OVPHYSX_SOURCE_DIR` | *(monorepo-relative)* | Path to the `ovphysx` directory |
 | `OVPHYSX_FETCH_DEPS` | `ON` | Auto-fetch packman dependencies at configure time |
-| `OVPHYSX_LIB` | *(env var)* | Path to the ovphysx shared library. Python loads this library directly; native/source-link runs use its directory to find `config.toml`, plugins, and USD schema paths. |
+| `OVPHYSX_LIB` | *(env var)* | Path to the ovphysx shared library. Python loads this library directly; native/source-link runs use its directory to find the plugins and the codeless schema root (`schemas/physx`). |
 
 ## Troubleshooting
 
-If configure, build, or the first run fails, see
+If configure, build, or the first run fails, refer to
 [common build failures](../local_development.md#troubleshooting) in the Local
 Development guide.
 

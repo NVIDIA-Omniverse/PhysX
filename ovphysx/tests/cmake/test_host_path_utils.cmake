@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 cmake_minimum_required(VERSION 3.16)
 
@@ -19,7 +19,7 @@ file(MAKE_DIRECTORY "${_spaced_dir}")
 # --- ovphysx_normalize_host_path: backslashes become forward slashes ---
 # Only Windows has a separate native spelling. On POSIX file(TO_NATIVE_PATH)
 # shell-escapes spaces as "\ ", which normalization would then read as
-# separators, so feed the cmake-style path straight through.
+# separators, so the cmake-style path is fed straight through.
 if(CMAKE_HOST_WIN32)
     file(TO_NATIVE_PATH "${_spaced_dir}" _native)
 else()
@@ -43,7 +43,7 @@ if(NOT EXISTS "${_space_free}")
 endif()
 
 # The helper must return the spelling Windows resolves, which is what CMake will
-# emit -- not merely something without spaces. Resolve it independently so that a
+# emit, not merely something without spaces. Resolving it independently means a
 # helper which only normalizes cannot pass by looking like the 8.3-disabled
 # fallback.
 if(CMAKE_HOST_WIN32)

@@ -1,5 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-ALLOC-001
+ * @covers AC-1 AC-2
+ */
 
 #include <carb/logging/Log.h>
 
@@ -8,6 +13,9 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#ifdef _DEBUG
+#    include <mutex>
+#endif
 
 #ifdef _WIN32
 #    include <crtdbg.h>
@@ -78,8 +86,6 @@ public:
                     DefaultAllocator();
     virtual         ~DefaultAllocator() override;
 
-            void    reset();
-
     virtual void*   malloc(size_t size) override;
     virtual void*   mallocDebug(size_t size, const char* filename, int line, const char* className, bool fromNew) override;
     virtual void    free(void* memory, bool fromNew) override;
@@ -87,6 +93,9 @@ public:
             void    Release();
 
 private:
+#ifdef _DEBUG
+    std::mutex  mMutex;
+
     void**      mMemBlockList;
     uint32_t    mMemBlockListSize;
     uint32_t    mFirstFree;
@@ -101,6 +110,7 @@ private:
     int32_t     mPreviousNbAllocs;
     uint32_t    mFrameCount;
     bool        mNoLeak;
+#endif
 };
 
 #define MEMBLOCKSTART 64
@@ -116,13 +126,15 @@ struct DebugBlock
     int         mFromNew;
 };
 
-DefaultAllocator::DefaultAllocator() :
-    mMemBlockList       (nullptr),
+DefaultAllocator::DefaultAllocator()
+#ifdef _DEBUG
+    : mMemBlockList     (nullptr),
     mNbAllocatedBytes   (0),
     mHighWaterMark      (0),
     mTotalNbAllocs      (0),
     mNbAllocs           (0),
     mNbReallocs         (0)
+#endif
 {
 
 #ifdef _DEBUG
@@ -132,12 +144,12 @@ DefaultAllocator::DefaultAllocator() :
     mMemBlockListSize = MEMBLOCKSTART;
     mFirstFree = INVALID_ID;
     mMemBlockUsed = 0;
-#endif
 
     mPreviousTotalNbAllocs = 0;
     mPreviousNbAllocs = 0;
     mFrameCount = 0;
     mNoLeak = true;
+#endif
 }
 
 DefaultAllocator::~DefaultAllocator()
@@ -148,29 +160,51 @@ DefaultAllocator::~DefaultAllocator()
 void DefaultAllocator::Release()
 {
 #ifdef _DEBUG
+    void** memBlockList;
+    uint32_t memBlockUsed;
+    int32_t nbAllocatedBytes;
+    int32_t highWaterMark;
+    int32_t totalNbAllocs;
+    int32_t nbAllocs;
+    int32_t nbReallocs;
+
     {
-        CARB_LOG_INFO("Memory leak detected: %d bytes non released\n", mNbAllocatedBytes);
+        std::lock_guard<std::mutex> lock(mMutex);
+        memBlockList = mMemBlockList;
+        memBlockUsed = mMemBlockUsed;
+        nbAllocatedBytes = mNbAllocatedBytes;
+        highWaterMark = mHighWaterMark;
+        totalNbAllocs = mTotalNbAllocs;
+        nbAllocs = mNbAllocs;
+        nbReallocs = mNbReallocs;
+
+        mMemBlockList = nullptr;
+        mMemBlockListSize = 0;
+        mMemBlockUsed = 0;
+        mFirstFree = INVALID_ID;
     }
-    if (mNbAllocs)
+
+    CARB_LOG_INFO("Memory leak detected: %d bytes non released\n", nbAllocatedBytes);
+    if (nbAllocs)
     {
-        CARB_LOG_WARN("Remaining allocs: %d\n", mNbAllocs);
+        CARB_LOG_WARN("Remaining allocs: %d\n", nbAllocs);
     }
-    CARB_LOG_INFO("Total nb alloc: %d\n", mTotalNbAllocs);
-    CARB_LOG_INFO("Nb realloc: %d\n", mNbReallocs);
-    CARB_LOG_INFO("High water mark: %d Kb\n", mHighWaterMark / 1024);
+    CARB_LOG_INFO("Total nb alloc: %d\n", totalNbAllocs);
+    CARB_LOG_INFO("Nb realloc: %d\n", nbReallocs);
+    CARB_LOG_INFO("High water mark: %d Kb\n", highWaterMark / 1024);
 
     // Scanning for memory leaks
-    if (mMemBlockList && mNbAllocs)
+    if (memBlockList && nbAllocs)
     {
         uint32_t NbLeaks = 0;
         CARB_LOG_WARN("\n\n  ICE Message Memory leaks detected :\n\n");
 
-        for (uint32_t i = 0; i < mMemBlockUsed; i++)
+        for (uint32_t i = 0; i < memBlockUsed; i++)
         {
-            if (size_t(mMemBlockList[i]) & 1)
+            if (size_t(memBlockList[i]) & 1)
                 continue;
 
-            const DebugBlock* DB = (const DebugBlock*)mMemBlockList[i];
+            const DebugBlock* DB = (const DebugBlock*)memBlockList[i];
             CARB_LOG_WARN(" Address 0x%.8" PRIXPTR ", %d bytes (%s), allocated in: %s(%d):\n\n", DB + 1, DB->mSize,
                           DB->mClassName, DB->mFilename, DB->mLine);
 
@@ -179,17 +213,9 @@ void DefaultAllocator::Release()
 
         CARB_LOG_WARN("\n  Dump complete (%d leaks)\n\n", NbLeaks);
     }
-    if (mMemBlockList)
-        LOCAL_FREE(mMemBlockList);
-    mMemBlockList = nullptr;
+    if (memBlockList)
+        LOCAL_FREE(memBlockList);
 #endif
-}
-
-void DefaultAllocator::reset()
-{
-    mNbAllocatedBytes = 0;
-    mHighWaterMark = 0;
-    mNbAllocs = 0;
 }
 
 void* DefaultAllocator::malloc(size_t size)
@@ -205,13 +231,6 @@ void* DefaultAllocator::malloc(size_t size)
 #endif
         return nullptr;
     }
-
-    mTotalNbAllocs++;
-    mNbAllocs++;
-
-    mNbAllocatedBytes += int32_t(size);
-    if (mNbAllocatedBytes > mHighWaterMark)
-        mHighWaterMark = mNbAllocatedBytes;
 
 #ifdef ZERO_OVERHEAD_RELEASE
     return LOCAL_MALLOC(size);
@@ -281,54 +300,58 @@ void* DefaultAllocator::mallocDebug(size_t size, const char* filename, int line,
     DB->mClassName = class_name;
     #endif
 
-    // Update global stats
-    mTotalNbAllocs++;
-    mNbAllocs++;
-    mNbAllocatedBytes += int32_t(size);
-    if (mNbAllocatedBytes > mHighWaterMark)
-        mHighWaterMark = mNbAllocatedBytes;
-
-    // Insert the allocated block in the debug memory block list
-    if (mMemBlockList)
     {
-        if (mFirstFree != INVALID_ID)
-        {
-            // Recycle old location
-    #ifdef _WIN32
-            uint32_t NextFree = uint32_t(mMemBlockList[mFirstFree]);
-    #else
-            // HLL Fixme
-            uintptr_t NextFree = uintptr_t(mMemBlockList[mFirstFree]);
-    #endif
-            if (NextFree != INVALID_ID)
-                NextFree >>= 1;
+        std::lock_guard<std::mutex> lock(mMutex);
 
-            mMemBlockList[mFirstFree] = ptr;
-            DB->mSlotIndex = mFirstFree;
+        // Update global stats
+        mTotalNbAllocs++;
+        mNbAllocs++;
+        mNbAllocatedBytes += int32_t(size);
+        if (mNbAllocatedBytes > mHighWaterMark)
+            mHighWaterMark = mNbAllocatedBytes;
 
-            mFirstFree = NextFree;
-        }
-        else
+        // Insert the allocated block in the debug memory block list
+        if (mMemBlockList)
         {
-            if (mMemBlockUsed == mMemBlockListSize)
+            if (mFirstFree != INVALID_ID)
             {
-                // Allocate a bigger block
-                void** tps = (void**)LOCAL_MALLOC((mMemBlockListSize + MEMBLOCKSTART) * sizeof(void*));
-                // Copy already used part
-                ACopyMemory(tps, mMemBlockList, mMemBlockListSize * sizeof(void*));
-                // Initialize remaining part
-                void* Next = tps + mMemBlockListSize;
-                AZeroMemory(Next, MEMBLOCKSTART * sizeof(void*));
+                // Recycle old location
+    #ifdef _WIN32
+                uint32_t NextFree = uint32_t(mMemBlockList[mFirstFree]);
+    #else
+                // HLL Fixme
+                uintptr_t NextFree = uintptr_t(mMemBlockList[mFirstFree]);
+    #endif
+                if (NextFree != INVALID_ID)
+                    NextFree >>= 1;
 
-                // Free previous memory, setup new pointer
-                LOCAL_FREE(mMemBlockList);
-                mMemBlockList = tps;
-                // Setup new size
-                mMemBlockListSize += MEMBLOCKSTART;
+                mMemBlockList[mFirstFree] = ptr;
+                DB->mSlotIndex = mFirstFree;
+
+                mFirstFree = NextFree;
             }
+            else
+            {
+                if (mMemBlockUsed == mMemBlockListSize)
+                {
+                    // Allocate a bigger block
+                    void** tps = (void**)LOCAL_MALLOC((mMemBlockListSize + MEMBLOCKSTART) * sizeof(void*));
+                    // Copy already used part
+                    ACopyMemory(tps, mMemBlockList, mMemBlockListSize * sizeof(void*));
+                    // Initialize remaining part
+                    void* Next = tps + mMemBlockListSize;
+                    AZeroMemory(Next, MEMBLOCKSTART * sizeof(void*));
 
-            mMemBlockList[mMemBlockUsed] = ptr;
-            DB->mSlotIndex = mMemBlockUsed++;
+                    // Free previous memory, setup new pointer
+                    LOCAL_FREE(mMemBlockList);
+                    mMemBlockList = tps;
+                    // Setup new size
+                    mMemBlockListSize += MEMBLOCKSTART;
+                }
+
+                mMemBlockList[mMemBlockUsed] = ptr;
+                DB->mSlotIndex = mMemBlockUsed++;
+            }
         }
     }
 
@@ -364,25 +387,29 @@ void DefaultAllocator::free(void* memory, bool from_new)
 
     ASSERT(int(from_new) == DB->mFromNew);
 
-    // Update global stats
-    mNbAllocatedBytes -= DB->mSize;
-    mNbAllocs--;
-
-    // Remove the block from the Memory block list
-    if (mMemBlockList)
     {
-        uint32_t FreeSlot = DB->mSlotIndex;
-        ASSERT(mMemBlockList[FreeSlot] == DB);
+        std::lock_guard<std::mutex> lock(mMutex);
 
-        uint32_t NextFree = mFirstFree;
-        if (NextFree != INVALID_ID)
+        // Update global stats
+        mNbAllocatedBytes -= DB->mSize;
+        mNbAllocs--;
+
+        // Remove the block from the Memory block list
+        if (mMemBlockList)
         {
-            NextFree <<= 1;
-            NextFree |= 1;
-        }
+            uint32_t FreeSlot = DB->mSlotIndex;
+            ASSERT(mMemBlockList[FreeSlot] == DB);
 
-        mMemBlockList[FreeSlot] = (void*)(uintptr_t)NextFree;
-        mFirstFree = FreeSlot;
+            uint32_t NextFree = mFirstFree;
+            if (NextFree != INVALID_ID)
+            {
+                NextFree <<= 1;
+                NextFree |= 1;
+            }
+
+            mMemBlockList[FreeSlot] = (void*)(uintptr_t)NextFree;
+            mFirstFree = FreeSlot;
+        }
     }
 
     #ifdef ALLOC_STRINGS
@@ -402,8 +429,6 @@ void DefaultAllocator::free(void* memory, bool from_new)
 #else
 // Release codepath
     #ifdef ZERO_OVERHEAD_RELEASE
-    //	mNbAllocatedBytes -= ptr[1];	// ### use _msize() ?
-    mNbAllocs--;
     LOCAL_FREE(memory);
     #else
         #ifdef SIMD_ALLOC
@@ -418,14 +443,6 @@ void DefaultAllocator::free(void* memory, bool from_new)
         CARB_LOG_WARN("Error: free unknown memory!!\n");
 #endif
     }
-    mNbAllocatedBytes -= ptr[1];
-    if (mNbAllocatedBytes < 0)
-    {
-#ifdef _DEBUG
-        CARB_LOG_WARN(_F("Oops (%d)\n", ptr[1]));
-#endif
-    }
-    mNbAllocs--;
     ptr[0] = DEBUG_DEALLOCATED;
     ptr[1] = 0;
 

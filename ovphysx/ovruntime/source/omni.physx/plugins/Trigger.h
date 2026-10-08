@@ -1,12 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
-#include "UsdPCH.h"
-
 #include <PxPhysicsAPI.h>
 #include <omni/physx/TriggerEvent.h>
+#include <omni/physics/parse/Handles.h>
 
 namespace omni
 {
@@ -25,28 +24,43 @@ struct InvokedTrigger
 };
 
 using InvokedTriggers = std::vector<InvokedTrigger>;
-using TriggerCollisionMap =
-    std::unordered_multimap<PXR_NS::SdfPath, std::pair<const ::physx::PxShape*, size_t>, PXR_NS::SdfPath::Hash>;
+using TriggerCollisionMap = std::unordered_multimap<omni::physics::parse::ObjectKey,
+                                                     std::pair<const ::physx::PxShape*, size_t>,
+                                                     omni::physics::parse::ObjectKey::Hash>;
 
+// Trigger-state write-back bookkeeping (PhysxTriggerStateAPI's triggeredCollisions
+// relationship on a USD backend, authored for viewport/inspector consumption): a
+// real, permanent Kit-authoring boundary, not reachable from ovphysx's own ovstage
+// attach path. The bookkeeping here is
+// backend-agnostic (ObjectKey only); the actual relationship write happens through
+// IPhysicsDataWrite::writeTriggerCollisions/prepareTriggerWrite/releaseTriggerWrite
+// (see Trigger.cpp), which is a real no-op when there is no write sink (no backing
+// stage).
 struct UsdOutput
 {
-    PXR_NS::PhysxSchemaPhysxTriggerStateAPI triggerStateAPI;
+    bool eligible = false; //!< set by prepareTriggerWrite: does the trigger have a write-back destination
     TriggerCollisionMap triggerCollisionmap;
-    PXR_NS::SdfPathVector triggeredCollisions;
-    bool dirty;
+    std::vector<omni::physics::parse::ObjectKey> triggeredCollisions;
+    bool dirty = false;
 };
 
-using TriggerUsdOutputMap = std::unordered_map<PXR_NS::SdfPath, UsdOutput, PXR_NS::SdfPath::Hash>;
+using TriggerUsdOutputMap =
+    std::unordered_map<omni::physics::parse::ObjectKey, UsdOutput, omni::physics::parse::ObjectKey::Hash>;
 
 struct TriggerSubscriptionEntry
 {
-    uint64_t stageId; //!< The stage where trigger event happend
-    uint64_t triggerColliderPrimId; //!< The prim source of trigger event
+    AttachHandle attachHandle; //!< The attach whose trigger events this subscription wants. May be
+                               //!< kActiveAttach, stored unresolved: it is bound late, at fire time,
+                               //!< when the reported handle is compared against this field, not
+                               //!< resolved when the subscription is made (ADR-0016 Decision 6)
+    omni::physics::parse::ObjectKey triggerColliderPrimKey; //!< The prim source of trigger event
     omni::physx::OnTriggerEventReportEventFn reportFn; //!< reporting function
     void* userData; //!< User Data passed to reporting function
 };
 
-using TriggerSubscriptionsMap = std::unordered_multimap<PXR_NS::SdfPath, omni::physx::SubscriptionId, PXR_NS::SdfPath::Hash>;
+using TriggerSubscriptionsMap = std::unordered_multimap<omni::physics::parse::ObjectKey,
+                                                         omni::physx::SubscriptionId,
+                                                         omni::physics::parse::ObjectKey::Hash>;
 using TriggerSubscriptionRegistry = EventSubscriptionRegistry<TriggerSubscriptionEntry>;
 
 class TriggerManager
@@ -68,7 +82,12 @@ public:
                             TriggerEventType::Enum triggerEvent);
     void fireTriggerEvents(const usdparser::AttachedStage& attachedStage);
 
-    void preloadTrigger(const PXR_NS::UsdPrim& triggerPrim, bool usdOutput);
+    // `usdOutput` requests the trigger-state write-back above; when the attach
+    // has no write sink it is a no-op, since there is
+    // nothing to author into (mirrors the "USD-only trigger state write-back;
+    // there is nothing to author without a prim" call-site comment in
+    // UsdInterface.cpp's createShape).
+    void preloadTrigger(const usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey triggerKey, bool usdOutput);
     void clearTriggers();
     
     void clearBufferedShape(const ::physx::PxShape* shape);
@@ -77,18 +96,24 @@ public:
     void unregisterNativeCallback(omni::physx::SubscriptionId subscriptionID);
 
 private:
-    void processTriggerStateApiEnterEvent(const PXR_NS::SdfPath& triggerPath,
-                                          const PXR_NS::SdfPath& otherPath,
+    // Still take attachedStage: it resolves the write sink (IPhysicsDataWrite) the
+    // relationship write eventually goes through, which is a per-attach object, not
+    // something ObjectKey alone can reach. The bookkeeping (mTriggerOutputMap) itself
+    // is pxr-free; it is a real no-op when the attach has no write sink (no backing stage).
+    void processTriggerStateApiEnterEvent(const usdparser::AttachedStage& attachedStage,
+                                          omni::physics::parse::ObjectKey triggerKey,
+                                          omni::physics::parse::ObjectKey otherKey,
                                           const ::physx::PxShape* otherShape);
-    void processTriggerStateApiLeaveEvent(const PXR_NS::SdfPath& triggerPath,
-                                          const PXR_NS::SdfPath& otherPath,
+    void processTriggerStateApiLeaveEvent(const usdparser::AttachedStage& attachedStage,
+                                          omni::physics::parse::ObjectKey triggerKey,
+                                          omni::physics::parse::ObjectKey otherKey,
                                           const ::physx::PxShape* otherShape);
     void processNativeEvent(const usdparser::AttachedStage& attachedStage,
-                            const PXR_NS::SdfPath& triggerColliderPath,
-                            const PXR_NS::SdfPath& otherColliderPath,
+                            omni::physics::parse::ObjectKey triggerColliderKey,
+                            omni::physics::parse::ObjectKey otherColliderKey,
                             TriggerEventType::Enum eventType,
-                            const PXR_NS::SdfPath& triggerBodyPath,
-                            const PXR_NS::SdfPath& otherBodyPath);
+                            omni::physics::parse::ObjectKey triggerBodyKey,
+                            omni::physics::parse::ObjectKey otherBodyKey);
 
 private:
     InvokedTriggers mInvokedTriggers;

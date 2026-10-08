@@ -1,7 +1,29 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-27 AC-28
+ */
+/**
+ * @implements REQ-PARSE-BODY-001
+ * @covers AC-6
+ */
+/**
+ * @implements REQ-BUILD-BRIDGE-001
+ * @covers AC-5
+ */
+/**
+ * @implements REQ-WRITE-CORE-001
+ * @covers AC-10
+ */
+/**
+ * @implements REQ-PARSE-FEED-003
+ * @covers AC-12
+ */
+
+#include <cstring>
+#include <vector>
 
 #include <PxPhysicsAPI.h>
 #include <PhysXTools.h>
@@ -9,31 +31,20 @@
 #include <OmniPhysX.h>
 #include <Setup.h>
 
-#include "InternalTools.h"
 #include "InternalActor.h"
 #include "InternalScene.h"
 
+#include <omni/physics/parse/KnownTokens.h>
+
 #include <usdLoad/LoadUsd.h>
-#include <UsdPhysicsDataWrite.h>
 
 using namespace omni::physx;
 using namespace omni::physx::internal;
 using namespace omni::physx::usdparser;
-using namespace PXR_NS;
 using namespace carb;
 using namespace ::physx;
 
-static GfMatrix4d toGfMatrix4d(const omni::physics::parse::Matrix4d& matrix)
-{
-    return GfMatrix4d(matrix.data[0], matrix.data[1], matrix.data[2], matrix.data[3],
-                      matrix.data[4], matrix.data[5], matrix.data[6], matrix.data[7],
-                      matrix.data[8], matrix.data[9], matrix.data[10], matrix.data[11],
-                      matrix.data[12], matrix.data[13], matrix.data[14], matrix.data[15]);
-}
-
 InternalActor::InternalActor(PhysXScene* ps,
-                             const PXR_NS::SdfPath& primKey,
-                             const UsdPrim& prim,
                              bool dynamicActor,
                              const ObjectInstance* instance,
                              bool localSpaceVelocities,
@@ -57,58 +68,88 @@ InternalActor::InternalActor(PhysXScene* ps,
     {
         // Instanced actors are only created on the (single-threaded) non-replicator
         // path, so minting the instancer key here is safe.
-        const UsdPrim instancerPrim = prim.GetStage()->GetPrimAtPath(instance->instancerPath);
         AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage();
         // A missing AttachedStage here is a fatal setup error, not a case to
         // silently fall back to direct USD for.
         CARB_ASSERT(as);
         if (as)
-            mInstanceKey = as->keyFor(instance->instancerPath);
+            mInstanceKey = instance->instancerKey;
         mInstanceIndex = instance->index;
 
         if (instance->hasProtoTransformInverse)
         {
-            mProtoTransformInverse = toGfMatrix4d(instance->protoTransformInverse);
+            mProtoTransformInverse = toPxMat44d(instance->protoTransformInverse);
         }
         else
         {
-            const omni::physics::parse::ObjectKey protoKey = as ? as->keyFor(instance->protoPath) : omni::physics::parse::ObjectKey{};
+            const omni::physics::parse::ObjectKey protoKey = instance->protoKey;
             if (as && as->getSource() && as->getSource()->exists(protoKey))
             {
                 // World transforms via the source only (per-call at Default; the engine
                 // xform cache will be reintroduced as a source-side cache later).
-                const GfMatrix4d protoWorld = getWorldTransform(*as, protoKey, UsdTimeCode::Default());
-                const GfMatrix4d instancerWorld = getWorldTransform(*as, as->keyFor(instance->instancerPath), UsdTimeCode::Default());
-                mProtoTransformInverse = protoWorld.RemoveScaleShear();
-                GfMatrix4d instancerMatrix = instancerWorld.RemoveScaleShear();
-                mProtoTransformInverse = (mProtoTransformInverse * instancerMatrix.GetInverse()).GetInverse();
+                const PxMat44d protoWorld =
+                    getWorldTransform(*as, protoKey, omni::physics::parse::ReadTime::defaultTime());
+                const PxMat44d instancerWorld = getWorldTransform(
+                    *as, instance->instancerKey, omni::physics::parse::ReadTime::defaultTime());
+                // Bit-exact Gf::RemoveScaleShear() (gfmath::removeScaleShearGf), not
+                // the PhysX-native omni::physx::removeScaleShear: protoWorld and
+                // instancerWorld are world transforms of a PointInstancer prototype
+                // and its instancer, so non-uniform scale meeting rotation anywhere
+                // in either ancestor chain produces sheared input, and the two
+                // decompositions disagree on that input (see MatrixTools.h). This
+                // keeps every instance's placement numerically unchanged from the
+                // pre-port behaviour.
+                const PxMat44d proto = gfmath::removeScaleShearGf(protoWorld);
+                const PxMat44d instancer = gfmath::removeScaleShearGf(instancerWorld);
+                // Was, in Gf (row-vector) order: (proto * instancer^-1)^-1.
+                // Gf A * B is PhysX B * A on the same sixteen doubles, so
+                // proto * instancer^-1  ->  instancer^-1 * proto, and inverting
+                // that gives proto^-1 * instancer.
+                mProtoTransformInverse = affineInverse(proto) * instancer;
             }
             else
             {
-                mProtoTransformInverse = GfMatrix4d(1.0);
+                mProtoTransformInverse = PxMat44d(PxIdentity);
             }
         }
-        // store initial data
-        if (instancerPrim.IsA<UsdGeomPointInstancer>())
+        // Store the instancer's authored initial transforms, so a later reset can
+        // restore them. This is authored input for the write-back
+        // (InternalPhysXDatabase::resetStartProperties).
+        if (as && as->getSource() && as->getSource()->isA(mInstanceKey, as->getKnownTokens().pointInstancerType))
         {
-            UsdGeomPointInstancer instancer(instancerPrim);
+            const omni::physics::parse::KnownTokens& tok = as->getKnownTokens();
             TransformsInstanceMap::const_iterator fit = db.mInitialPointInstancerTransforms.find(mInstanceKey);
             if (fit == db.mInitialPointInstancerTransforms.end())
             {
                 db.mInitialTransformsStored = true;
                 InitialInstancerData& initialData = db.mInitialPointInstancerTransforms[mInstanceKey];
-                if (!instancer.GetPositionsAttr().Get(&initialData.positions))
-                    instancer.GetPositionsAttr().Get(&initialData.positions, UsdTimeCode::EarliestTime());
-                if (!instancer.GetOrientationsAttr().Get(&initialData.orientations))
-                    instancer.GetOrientationsAttr().Get(&initialData.orientations, UsdTimeCode::EarliestTime());
 
-                if (!instancer.GetScalesAttr().Get(&initialData.scales))
-                    instancer.GetScalesAttr().Get(&initialData.scales, UsdTimeCode::EarliestTime());
+                // Promote a purely time-sampled attribute's earliest sample to Default
+                // first: the read below resolves at Default, matching the old
+                // attr.Get()-then-EarliestTime()-fallback behavior without needing a
+                // dedicated earliest-sample read mode.
+                omni::physics::parse::IPhysicsDataWrite* dw = as->getDataWrite();
+                if (dw)
+                {
+                    dw->promoteEarliestSampleToDefault(mInstanceKey, tok.positions);
+                    dw->promoteEarliestSampleToDefault(mInstanceKey, tok.orientations);
+                    dw->promoteEarliestSampleToDefault(mInstanceKey, tok.scales);
+                    dw->promoteEarliestSampleToDefault(mInstanceKey, tok.velocities);
+                    dw->promoteEarliestSampleToDefault(mInstanceKey, tok.angularVelocities);
+                }
 
-                if (!instancer.GetVelocitiesAttr().Get(&initialData.velocities))
-                    instancer.GetVelocitiesAttr().Get(&initialData.velocities, UsdTimeCode::EarliestTime());
-                if (!instancer.GetAngularVelocitiesAttr().Get(&initialData.angularVelocities))
-                    instancer.GetAngularVelocitiesAttr().Get(&initialData.angularVelocities, UsdTimeCode::EarliestTime());
+                // Quaternion arrays already resolve xyzw (PxQuat order) through
+                // getArrayValue's fillArray decode ladder, whatever the backing type.
+                getArrayValue(*as, mInstanceKey, tok.positions,
+                              omni::physics::parse::ReadTime::defaultTime(), initialData.positions);
+                getArrayValue(*as, mInstanceKey, tok.orientations,
+                              omni::physics::parse::ReadTime::defaultTime(), initialData.orientations);
+                getArrayValue(*as, mInstanceKey, tok.scales,
+                              omni::physics::parse::ReadTime::defaultTime(), initialData.scales);
+                getArrayValue(*as, mInstanceKey, tok.velocities,
+                              omni::physics::parse::ReadTime::defaultTime(), initialData.velocities);
+                getArrayValue(*as, mInstanceKey, tok.angularVelocities,
+                              omni::physics::parse::ReadTime::defaultTime(), initialData.angularVelocities);
             }
         }
     }
@@ -116,57 +157,73 @@ InternalActor::InternalActor(PhysXScene* ps,
     {
         mInstanceIndex = kInvalidUint32_t;
 
-        // check if the body is nested
-        if (prim)
+        // Nested-rigid-body detection: is `key` a descendant of another enabled rigid
+        // body, and if so, is it actually composed under that ancestor's transform (no
+        // resetXformStack break in between)? Walks ancestors via IPhysicsSource::getParent.
+        AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+        if (as)
         {
-            bool bodyParentFound = false;
-            UsdPrim bodyParent = prim.GetParent();
-            while (bodyParent != prim.GetStage()->GetPseudoRoot())
+            if (const omni::physics::parse::IPhysicsSource* src = as->getSource())
             {
-                const UsdPhysicsRigidBodyAPI rboAPI(bodyParent);
-                if (rboAPI)
+                // getKnownTokens() is interned once per attach on the serial setup thread, so
+                // it is safe to read from a replicator worker thread. A fresh
+                // KnownTokens::intern(*src) here would instead mutate the source's shared token
+                // tables with no lock, racing sibling workers.
+                const omni::physics::parse::KnownTokens& tok = as->getKnownTokens();
+
+                // The ancestor chain first (getParent is a path operation), then ONE batched
+                // existence query for the whole chain instead of one round trip per level; both
+                // walks below stop at the first ancestor that is not live, as before.
+                std::vector<omni::physics::parse::ObjectKey> chain;
+                for (omni::physics::parse::ObjectKey k = src->getParent(key); k.valid(); k = src->getParent(k))
+                    chain.push_back(k);
+                std::vector<bool> live;
+                src->existsBatch(chain, live);
+                size_t liveDepth = 0;
+                while (liveDepth < chain.size() && live[liveDepth])
+                    ++liveDepth;
+
+                bool bodyParentFound = false;
+                size_t bodyParentDepth = 0;
+                for (size_t depth = 0; depth < liveDepth; ++depth)
                 {
-                    bool bodyEnabled = false;
-                    rboAPI.GetRigidBodyEnabledAttr().Get(&bodyEnabled);
-                    if (bodyEnabled)
+                    const omni::physics::parse::ObjectKey bodyParentKey = chain[depth];
+                    if (src->hasSchema(bodyParentKey, tok.physicsRigidBodyAPI))
                     {
-                        bodyParentFound = true;
-                        break;
+                        // UsdPhysicsRigidBodyAPI's rigidBodyEnabled schema default is true;
+                        // getAttribute leaves a preseeded out-param untouched on a miss (see
+                        // IPhysicsSource.h's "read with default" idiom), matching a real
+                        // UsdAttribute::Get() resolving the schema fallback when unauthored.
+                        bool bodyEnabled = true;
+                        src->getAttribute(bodyParentKey, tok.physicsRigidBodyEnabled, bodyEnabled);
+                        if (bodyEnabled)
+                        {
+                            bodyParentFound = true;
+                            bodyParentDepth = depth;
+                            break;
+                        }
                     }
                 }
-                bodyParent = bodyParent.GetParent();
-            }
 
-
-            if (bodyParentFound)
-            {
-                bool hasResetXformStack = false;
-                UsdPrim parent = prim;
-                while (parent != prim.GetStage()->GetPseudoRoot() && parent != bodyParent)
+                if (bodyParentFound)
                 {
-                    UsdGeomXformable xformable(parent);
-                    if (xformable && xformable.GetResetXformStack())
+                    bool hasResetXformStack = false;
+                    for (size_t depth = 0; depth < bodyParentDepth; ++depth)
                     {
-                        hasResetXformStack = true;
-                        break;
+                        bool resetsXformStack = false;
+                        getLocalTransform(*as, chain[depth], omni::physics::parse::ReadTime::defaultTime(), resetsXformStack);
+                        if (resetsXformStack)
+                        {
+                            hasResetXformStack = true;
+                            break;
+                        }
                     }
-                    parent = parent.GetParent();
-                }
-                if (!hasResetXformStack)
-                {
-                    db.setNestedBodiesUsed(true);
+                    if (!hasResetXformStack)
+                    {
+                        db.setNestedBodiesUsed(true);
+                    }
                 }
             }
-        }
-
-        const uint32_t simulationFlags = SimulationCallbacks::getSimulationCallbacks()->getSimulationFlags(primKey);
-        if (simulationFlags & GlobalSimulationFlag::eNOTIFY_UPDATE)
-        {
-            mFlags |= InternalActorFlag::eNOTIFY_TRANSFORM;
-        }
-        if (simulationFlags & GlobalSimulationFlag::eSKIP_WRITE)
-        {
-            mFlags |= InternalActorFlag::eSKIP_UPDATE_TRANSFORM;
         }
 
         // store initial conditions for reset, and prepare the attributes for write, non instanced, instanced do have own buffers.
@@ -203,10 +260,9 @@ void InternalActor::initializeDynamicActor(bool runtimeInitialization)
     InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
 
     AttachedStage* attachedStage = updateUSD ? UsdLoad::getUsdLoad()->getActiveAttachedStage() : nullptr;
-    omni::physics::usd::UsdPhysicsDataWrite* usdDataWrite =
-        attachedStage ? omni::physics::usd::asUsdDataWrite(attachedStage->getDataWrite()) : nullptr;
+    omni::physics::parse::IPhysicsDataWrite* dw = attachedStage ? attachedStage->getDataWrite() : nullptr;
 
-    if (updateUSD && usdDataWrite)
+    if (updateUSD && dw)
     {
         ActorInitialDataMap::iterator initFit = db.mInitialActorDataMap.find(mKey);
         if (initFit == db.mInitialActorDataMap.end())
@@ -214,30 +270,17 @@ void InternalActor::initializeDynamicActor(bool runtimeInitialization)
             db.mInitialTransformsStored = true;
             ActorInitialData& initialData = db.mInitialActorDataMap[mKey];
 
-            UsdPrim prim = usdDataWrite->usdPrimForWrite(mKey);
-            if (prim)
-            {
-                UsdGeomXformable xformable(prim);
-                if (xformable)
-                    initialData.xformOpStorage.store(xformable);
-            }
+            dw->storeXformOpReset(mKey);
 
             const omni::physics::parse::IPhysicsSource* source = attachedStage->getSource();
             if (source)
             {
-                carb::Float3 velocity;
-                if (source->getAttribute(mKey, source->internToken(UsdPhysicsTokens->physicsVelocity.GetString()),
-                                         velocity))
-                {
-                    initialData.velocity = PXR_NS::GfVec3f(velocity.x, velocity.y, velocity.z);
-                }
-                carb::Float3 angularVelocity;
-                if (source->getAttribute(mKey, source->internToken(UsdPhysicsTokens->physicsAngularVelocity.GetString()),
-                                         angularVelocity))
-                {
-                    initialData.angularVelocity =
-                        PXR_NS::GfVec3f(angularVelocity.x, angularVelocity.y, angularVelocity.z);
-                }
+                // Use the attach's already-interned token cache, not a fresh
+                // KnownTokens::intern(): this can run on a replicator worker thread.
+                const omni::physics::parse::KnownTokens& tok = attachedStage->getKnownTokens();
+
+                source->getAttribute(mKey, tok.physicsVelocity, initialData.velocity);
+                source->getAttribute(mKey, tok.physicsAngularVelocity, initialData.angularVelocity);
             }
             initialData.velocityWritten = false;
             initialData.angularVelocityWritten = false;
@@ -257,13 +300,23 @@ void InternalActor::initializeDynamicActor(bool runtimeInitialization)
         bool prepared = false;
         if (dw)
         {
-            if (usdDataWrite)
-            {
-                usdDataWrite->setUpdateToUsdUsingXformCommonAPI(
-                    OmniPhysX::getInstance().getCachedSettings().updateToUsdUsingXformCommonAPI);
-            }
+            dw->setUpdateToUsdUsingXformCommonAPI(
+                OmniPhysX::getInstance().getCachedSettings().updateToUsdUsingXformCommonAPI);
 
-            dw->prepareTransformWrite(&mKey, 1, &prepared);
+            // The one-time load-time xform-op normalization authors new xformOp
+            // attributes and rewrites xformOpOrder at whatever destination
+            // prepareTransformWrite is given. When a simulation output layer is
+            // active these edits must land on it -- exactly as the per-frame
+            // transform writes do (InternalScene::updateRenderTransforms) -- so
+            // they live in the transient simulation layer and vanish on Stop.
+            // Without this scoping the user's authoring layer is permanently
+            // rewritten for any body with a non-canonical xform stack (issue #8).
+            // rawLayer() is a non-owning peek: OmniPhysX's own reference keeps the
+            // layer alive for this call, and a USD sink's prepareTransformWrite takes
+            // its own ref-counting reference for its edit context. A backend with no
+            // destination-override concept ignores it.
+            const SimulationLayerHandle simLayer = OmniPhysX::getInstance().getSimulationLayer();
+            dw->prepareTransformWrite(&mKey, 1, &prepared, simLayer.rawLayer());
         }
 
         if (prepared)
@@ -311,6 +364,7 @@ void InternalActor::copySurfaceVelocityState(const InternalActor& source,
 {
     (void)cloneActor; // retained in the signature for symmetry with peer copy helpers
     mSurfaceVelocity = source.mSurfaceVelocity;
+    mSurfaceVelocityAuthored = source.mSurfaceVelocityAuthored;
     mSurfaceAngularVelocity = source.mSurfaceAngularVelocity;
     mSurfaceVelocityLocalSpace = source.mSurfaceVelocityLocalSpace;
     mSurfaceAngularVelocityPivot = clonePivotPose;
@@ -345,9 +399,8 @@ void InternalActor::enableSplineSurfaceVelocity(bool enable,
             {
                 // compute the relative pose
                 const PxTransform actorGlobalPose = actor.getGlobalPose();
-                const GfMatrix4d splineGlobalPosePxr =
-                    getWorldTransform(attachedStage, splinesCurveKey, UsdTimeCode::Default());
-                const PxTransform splineGlobalPose = toPhysX(splineGlobalPosePxr);
+                const PxTransform splineGlobalPose = toTransform(getWorldTransform(
+                    attachedStage, splinesCurveKey, omni::physics::parse::ReadTime::defaultTime()));
                 mSplineLocalSpace = actorGlobalPose.getInverse() * splineGlobalPose;
             }
         }

@@ -1,7 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-
-#include "UsdPCH.h"
+// SPDX-License-Identifier: Apache-2.0
 
 #include "InternalFilteredPairs.h"
 #include "InternalPhysXDatabase.h"
@@ -9,11 +7,11 @@
 #include <usdLoad/AttachedStage.h>
 #include <usdLoad/FilteredPairs.h>
 
+#include <omni/physics/parse/KnownTokens.h>
 #include <omni/physx/IPhysx.h>
 
 #include <PxPhysicsAPI.h>
 
-using namespace PXR_NS;
 using namespace carb;
 using namespace ::physx;
 using namespace omni::physx;
@@ -216,14 +214,14 @@ void InternalFilteredPairs::removeFilteredPairs()
     }
 }
 
-void omni::physx::internal::changeFilteredPairs(usdparser::AttachedStage& attachedStage, const PXR_NS::SdfPath& path, bool removed)
+void omni::physx::internal::changeFilteredPairs(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, bool removed)
 {
     OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
 
     if (removed)
     {
-        ObjectIdMap* entries = attachedStage.getObjectDatabase()->getEntries(path);
+        ObjectIdMap* entries = attachedStage.getObjectDatabase()->getEntries(key);
         if (entries && !entries->empty())
         {
             auto it = entries->begin();
@@ -232,30 +230,35 @@ void omni::physx::internal::changeFilteredPairs(usdparser::AttachedStage& attach
                 const InternalDatabase::Record& rec = db.getRecords()[it->second];
                 if (rec.mType == ePTFilteredPair)
                 {
-                    attachedStage.getPhysXPhysicsInterface()->releaseObject(attachedStage, path, it->second);
+                    attachedStage.getPhysXPhysicsInterface()->releaseObject(attachedStage, key, it->second);
                     it = entries->erase(it);
                 }
                 else
                     it++;
             }
         }
-        attachedStage.getObjectDatabase()->removeSchemaAPI(path, SchemaAPIFlag::eFilteredPairsAPI);
+        attachedStage.getObjectDatabase()->removeSchemaAPI(key, SchemaAPIFlag::eFilteredPairsAPI);
     }
     else
     {
-        const omni::physics::parse::ObjectKey key = attachedStage.keyFor(path);
         const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
-        if (source && hasAppliedSchema<UsdPhysicsFilteredPairsAPI>(*source, key))
+        omni::physics::parse::KnownTokens tok;
+        if (source)
+            tok.intern(*source);
+        if (source && source->hasSchema(key, tok.physicsFilteredPairsAPI))
         {
             InternalFilteredPairs* intPairs = ICE_NEW(InternalFilteredPairs);
 
-            SdfPathVector data;
-            getRelationshipValue(attachedStage, key, TfToken("physics:filteredPairs"), data);
-            collectFilteredPairs(attachedStage, path, data, intPairs->mPairs);
+            // Source-routed relationship read (TokenId, no TfToken literal); collectFilteredPairs
+            // (usdLoad/FilteredPairs.h) is ObjectKey-typed (ADR-0019), so the targets pass
+            // through directly with no pathFor round-trip.
+            std::vector<omni::physics::parse::ObjectKey> targetKeys;
+            source->getRelationshipTargets(key, tok.physicsFilteredPairs, targetKeys);
+            collectFilteredPairs(attachedStage, key, targetKeys, intPairs->mPairs);
             intPairs->createFilteredPairs();
             const ObjectId outId = db.addRecord(ePTFilteredPair, nullptr, intPairs, key);
-            attachedStage.getObjectDatabase()->findOrCreateEntry(path, eFilteredPair, outId);
-            attachedStage.getObjectDatabase()->addSchemaAPI(path, SchemaAPIFlag::eFilteredPairsAPI);
+            attachedStage.getObjectDatabase()->findOrCreateEntry(key, attachedStage.textFor(key), eFilteredPair, outId);
+            attachedStage.getObjectDatabase()->addSchemaAPI(key, SchemaAPIFlag::eFilteredPairsAPI);
         }
     }
 }

@@ -1,28 +1,5 @@
-## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions
-## are met:
-##  * Redistributions of source code must retain the above copyright
-##    notice, this list of conditions and the following disclaimer.
-##  * Redistributions in binary form must reproduce the above copyright
-##    notice, this list of conditions and the following disclaimer in the
-##    documentation and/or other materials provided with the distribution.
-##  * Neither the name of NVIDIA CORPORATION nor the names of its
-##    contributors may be used to endorse or promote products derived
-##    from this software without specific prior written permission.
-##
-## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-## EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-## PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-## CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-## EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-## PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-## PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-## OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-##
-## Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+## SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+## SPDX-License-Identifier: Apache-2.0
 
 cmake_minimum_required(VERSION 3.21)
 
@@ -202,7 +179,6 @@ else()
   set(PX_IS_TOP_LEVEL_PROJECT FALSE)
   set(PX_ENABLE_INSTALL FALSE)
   set(PX_BUILDSNIPPETS FALSE)
-  set(PX_BUILDPVDRUNTIME FALSE)
   set(PX_OUTPUT_LIB_DIR "${CMAKE_BINARY_DIR}/physx" CACHE PATH "" FORCE)
   set(PX_OUTPUT_BIN_DIR "${CMAKE_BINARY_DIR}/physx" CACHE PATH "" FORCE)
   set(PX_OUTPUT_DLL_DIR "${CMAKE_BINARY_DIR}/physx" CACHE PATH "" FORCE)
@@ -475,6 +451,11 @@ if(PX_BUILDPVDRUNTIME)
   if(TARGET_BUILD_PLATFORM STREQUAL "windows" OR TARGET_BUILD_PLATFORM STREQUAL "linux")
     message(STATUS "Adding PVD Runtime...")
     add_subdirectory(${PHYSX_ROOT_DIR}/pvdruntime/compiler/cmake ${CMAKE_CURRENT_BINARY_DIR}/pvdruntime_bin)
+    # PhysX statically links the OmniPVD runtime; the PhysX SDK build declares the
+    # dependency here so PVDRuntime.cmake stays free of any PhysX knowledge.
+    if(TARGET PhysX)
+      target_link_libraries(PhysX PRIVATE PVDRuntime)
+    endif()
   endif()
 endif()
 if(PX_BUILDSNIPPETS)
@@ -590,6 +571,11 @@ if(NOT CMAKE_CROSSCOMPILING AND (TARGET_BUILD_PLATFORM STREQUAL "windows" OR TAR
   endif()
 endif()
 
+set(PHYSX_INSTALL_LIBS ${PHYSX_LIBS})
+if(TARGET PVDRuntime)
+  list(APPEND PHYSX_INSTALL_LIBS PVDRuntime)
+endif()
+
 message(STATUS "PhysX CMake configuration complete")
 
 # Only execute installation commands when appropriate
@@ -612,7 +598,7 @@ if(PX_ENABLE_INSTALL)
   endforeach()
 
   # Install PhysX library targets and the physx_lib INTERFACE aggregator
-  install(TARGETS ${PHYSX_LIBS} physx_lib
+  install(TARGETS ${PHYSX_INSTALL_LIBS} physx_lib
       EXPORT PhysXTargets
       ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
       LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

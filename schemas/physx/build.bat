@@ -1,4 +1,7 @@
 @echo off
+REM SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+REM SPDX-License-Identifier: Apache-2.0
+
 setlocal enabledelayedexpansion
 
 pushd %~dp0
@@ -22,9 +25,19 @@ if !DO_CLEAN!==1 (
 :: Fetch release deps (schema is codeless; artifacts are config-independent).
 call "%PACKMAN%" pull "%SCRIPT_DIR%deps\host-deps.packman.xml" -p %PLATFORM%
 if errorlevel 1 exit /b 1
-call "%PACKMAN%" pull "%SCRIPT_DIR%deps\kit-kernel-deps.packman.xml" -p %PLATFORM% -t config=release -t platform_target_abi=%PLATFORM%
-if errorlevel 1 exit /b 1
-call "%PACKMAN%" pull "%SCRIPT_DIR%deps\usd-deps.packman.xml" -p %PLATFORM% -t config=release -t platform_target_abi=%PLATFORM%
+
+:: USD version comes from ovruntime's USD pin (stock variant here, py-less
+:: there), keeping schema aligned with ovruntime and ovphysx.
+set "OVRT_USD_DEPS=%SCRIPT_DIR%..\..\ovphysx\ovruntime\deps\usd-deps.packman.xml"
+set "USD_VER="
+for /f tokens^=4^ delims^=^" %%V in ('findstr /c:"usd.nopy" "%OVRT_USD_DEPS%"') do set "USD_VER=%%V"
+if not defined USD_VER (
+    echo ERROR: could not read the USD version from ovruntime's USD pin.
+    exit /b 1
+)
+echo USD version ^(from ovruntime^): %USD_VER%
+
+call "%PACKMAN%" pull "%SCRIPT_DIR%deps\usd-deps.packman.xml" -p %PLATFORM% -t config=release -t platform_target_abi=%PLATFORM% -t usd_ver=%USD_VER%
 if errorlevel 1 exit /b 1
 
 set "CMAKE=%SCRIPT_DIR%_build\host-deps\cmake\bin\cmake.exe"

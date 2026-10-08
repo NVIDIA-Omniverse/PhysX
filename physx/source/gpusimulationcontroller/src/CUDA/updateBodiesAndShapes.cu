@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "PxDirectGPUAPI.h"
 #include "PxNodeIndex.h"
@@ -130,11 +107,22 @@ extern "C" __global__ void updateBodiesLaunchDirectAPI(const PxgNewBodiesDesc* s
 
 		const PxU32 bodyIndex = __shfl_sync(mask_loop, data.w, PXG_BODY_SIM_BODYSIM_INDEX_IND, 16);
 		const PxU32 internalFlags = __shfl_sync(mask_loop, data.y, PXG_BODY_SIM_FLAGS_IND, 16);
-		// preist: note that we copy this flag to persistent GPU memory on first transfer, but that is no problem
-		// because we only check the update data flag here which will be reset on CPU
+		
 		const bool firstTransfer = internalFlags & PxsRigidBody::eFIRST_BODY_COPY_GPU;
 		const bool copyVel = internalFlags & PxsRigidBody::eVELOCITY_COPY_GPU;
 
+		// clear the data transfer related flags such that they are not stored on the device (other code clears
+		// them on the CPU side too). A potential readback of these flags from GPU to host (for example, sleep
+		// related flags) could potentially trigger undesired transfers from stale host memory to device memory.
+		if (index == PXG_BODY_SIM_FLAGS_IND)
+		{
+			PX_COMPILE_TIME_ASSERT(offsetof(PxgBodySim, internalFlags) == (offsetof(uint4, y) + (PXG_BODY_SIM_FLAGS_IND * sizeof(uint4))));
+			PX_COMPILE_TIME_ASSERT(sizeof(PxgBodySim::internalFlags) == sizeof(uint4::y));
+			// these asserts should cover the important aspects to fail if some layout changed that would make
+			// the operation below break
+
+			data.y &= ~(PxsRigidBody::eFIRST_BODY_COPY_GPU | PxsRigidBody::eVELOCITY_COPY_GPU);
+		}
 
 		// figure out which threads will execute the else below.
 		const PxU32 sync_mask = __ballot_sync(mask_loop, (index < PXG_BODY_SIM_SIZE_WITHOUT_ACCELERATION) && !firstTransfer);

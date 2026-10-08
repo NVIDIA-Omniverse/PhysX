@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-UNIFY-001
@@ -7,6 +7,9 @@
  *
  * @implements REQ-PARSE-SHAPE-002
  * @covers AC-4
+ *
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-10 AC-11 AC-12
  */
 
 #pragma once
@@ -19,6 +22,7 @@
 #include <private/omni/physx/CustomGeometryHash.h>
 
 #include <map>
+#include <string>
 
 namespace omni
 {
@@ -26,7 +30,10 @@ namespace physx
 {
 struct CustomGeometryInfo
 {
-    PXR_NS::TfToken customGeomtryAPIToken;
+    // Registered token spelling, kept as a std::string so `computeCustomGeometryHash`
+    // (the std::string overload -- the sole overload since ADR-0019 dropped the
+    // TfToken one) can be recomputed at unregister time without holding a TfToken.
+    std::string customGeomtryAPIToken;
     ICustomGeometryCallback customGeometryCb;
     ::physx::PxCustomGeometry::Type* typeId;
 };
@@ -35,7 +42,7 @@ struct CustomGeometryInfo
 class CustomPhysXGeometryCallback : public ::physx::PxCustomGeometry::Callbacks, public Allocateable
 {
 public:
-    CustomPhysXGeometryCallback(const PXR_NS::SdfPath& path,
+    CustomPhysXGeometryCallback(omni::physics::parse::ObjectKey key,
                                 const usdparser::CustomPhysxShapeDesc& shapeDesc,
                                 const CustomGeometryInfo& customGeometryInfo,
                                 void* userObject);
@@ -102,17 +109,18 @@ public:
     }
 
 private:
-    PXR_NS::SdfPath mCustomGeometryPath;
+    omni::physics::parse::ObjectKey mCustomGeometryKey;
     CustomGeometryInfo mCustomGeometryInfo;
     void* mUserObject;
 };
 
 using CustomGeometryRegistryMap = std::unordered_map<size_t, CustomGeometryInfo>;
-// Keyed by computeCustomGeometryHash(TfToken's string) so the descriptor
-// side can produce the same key from either a TfToken (legacy) or a parse-
+// Keyed by computeCustomGeometryHash(the registered token string) so the descriptor
+// side can produce the same key from either the registered token (legacy) or a parse-
 // lib TokenId resolved through `tokenToString` (USD-free callers).
 using CustomGeometryTypeMap = std::unordered_map<size_t, CustomGeometryInfo>;
-using CustomGeometryMap = std::unordered_map<PXR_NS::SdfPath, CustomPhysXGeometryCallback*, PXR_NS::SdfPath::Hash>;
+using CustomGeometryMap =
+    std::unordered_map<omni::physics::parse::ObjectKey, CustomPhysXGeometryCallback*, omni::physics::parse::ObjectKey::Hash>;
 
 class PhysXCustomGeometryManager
 {
@@ -120,7 +128,7 @@ public:
     PhysXCustomGeometryManager();
     ~PhysXCustomGeometryManager();
 
-    size_t registerCustomGeometry(const PXR_NS::TfToken& customGeometryAPIToken, ICustomGeometryCallback& geometryCallback);
+    size_t registerCustomGeometry(const char* customGeometryAPIToken, ICustomGeometryCallback& geometryCallback);
     void unregisterCustomGeometry(size_t id);
 
     void clear()
@@ -132,10 +140,10 @@ public:
         mCustomGeometryMap.clear();
     }
 
-    CustomPhysXGeometryCallback* createCustomGeometry(const PXR_NS::SdfPath& primKey,
+    CustomPhysXGeometryCallback* createCustomGeometry(omni::physics::parse::ObjectKey primKey,
                                                       const usdparser::CustomPhysxShapeDesc& customShapeDesc);
 
-    void removeCustomGeometry(const PXR_NS::SdfPath& primKey);
+    void removeCustomGeometry(omni::physics::parse::ObjectKey primKey);
 
     const CustomGeometryTypeMap& getCustomGeometryTypeMap() const
     {

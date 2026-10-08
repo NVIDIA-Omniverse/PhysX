@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-COL-001
@@ -13,13 +13,18 @@
  *
  * @implements REQ-PARSE-SHAPE-002
  * @covers AC-1
+ *
+ * @implements REQ-PARSE-CORE-003
+ * @covers AC-2
+ *
+ * @implements REQ-PARSE-COL-005
+ * @covers AC-1
  */
 
-// Collision extension parser — covers the PhysxCollisionAPI fields that
-// have no time-sample-registration dependency. Full collision parsing
-// (shape geometry, mesh data via BufferHandle, cooking integration,
-// contactOffset/restOffset inf-sentinel logic) lives in the consumer-
-// side walker.
+// Collision extension parser -- covers PhysxCollisionAPI scalar fields,
+// contactOffset/restOffset sentinel logic, and Newton offset fallbacks.
+// Shape geometry, mesh data via BufferHandle, and cooking integration stay
+// in the consumer-side walker.
 
 #include <omni/physics/parse/ParseApi.h>
 #include <omni/physics/parse/KnownTokens.h>
@@ -33,11 +38,27 @@ namespace omni::physics::parse
 namespace
 {
 
-float readClampedFloat(const IPhysicsSource& src, ObjectKey key, TokenId attr,
-                      float defaultVal, float minVal, float maxVal)
+bool readFloatWithFallback(const IPhysicsSource& src,
+                           ObjectKey key,
+                           ObjectKey fallback,
+                           TokenId attr,
+                           float& out)
+{
+    if (src.getAttribute(key, attr, out))
+        return true;
+    return fallback.valid() && fallback != key && src.getAttribute(fallback, attr, out);
+}
+
+float readClampedFloat(const IPhysicsSource& src,
+                       ObjectKey key,
+                       ObjectKey fallback,
+                       TokenId attr,
+                       float defaultVal,
+                       float minVal,
+                       float maxVal)
 {
     float result;
-    if (!src.getAttribute(key, attr, result))
+    if (!readFloatWithFallback(src, key, fallback, attr, result))
         return defaultVal;
     if (result < minVal) result = minVal;
     if (result > maxVal) result = maxVal;
@@ -49,8 +70,7 @@ float readClampedFloat(const IPhysicsSource& src, ObjectKey key, TokenId attr,
 void parseCollisionExt(ParseContext& ctx, ObjectKey key, CollisionExtFields& fields)
 {
     IPhysicsSource& src = ctx.source();
-    KnownTokens tok;
-    tok.intern(src);
+    const KnownTokens& tok = ctx.knownTokens();
 
     // PhysxCollisionAPI extension fields. Skip the per-attribute reads when
     // the API isn't applied, but DON'T early-return — trigger flags below are
@@ -58,10 +78,10 @@ void parseCollisionExt(ParseContext& ctx, ObjectKey key, CollisionExtFields& fie
     if (src.hasSchema(key, tok.physxCollisionAPI))
     {
         fields.torsionalPatchRadius = readClampedFloat(
-            src, key, tok.physxCollisionTorsionalPatchRadius,
+            src, key, fields.attributeFallback, tok.physxCollisionTorsionalPatchRadius,
             fields.torsionalPatchRadius, 0.0f, FLT_MAX);
         fields.minTorsionalPatchRadius = readClampedFloat(
-            src, key, tok.physxCollisionMinTorsionalPatchRadius,
+            src, key, fields.attributeFallback, tok.physxCollisionMinTorsionalPatchRadius,
             fields.minTorsionalPatchRadius, 0.0f, FLT_MAX);
     }
 
@@ -75,14 +95,32 @@ void parseCollisionExt(ParseContext& ctx, ObjectKey key, CollisionExtFields& fie
             fields.isTriggerUsdOutput = true;
     }
 
-    // contactOffset / restOffset (PhysxCollisionAPI). Schema default for
-    // both is `-inf` (an "unset" sentinel), so reads MUST gate on
-    // `hasAuthoredAttribute`, not on `getAttribute(...).valid()` (which
-    // resolves schema fallbacks).
+    // contactOffset / restOffset (PhysxCollisionAPI). The schema default for
+    // both is NEGATIVE inf, an "unset" sentinel, and that sentinel is what
+    // separates an authored value from the schema fallback.
     //
-    // Per-axis sentinel and range:
-    //   contactOffset: inf -> -1.0f; otherwise clamp to [0, FLT_MAX].
-    //   restOffset:    inf ->  0.0f; otherwise clamp to [-FLT_MAX, FLT_MAX].
+    // This used to ask `hasAuthoredAttribute`. A resolved-value backend answers
+    // that `true` for everything it publishes (ADR-0020), so on ovstage BOTH
+    // authored bits were always set and the Newton contactMargin/contactGap
+    // fallbacks below — which gate on them — silently never fired, at load and
+    // at runtime alike. Reading the sentinel out of the resolved value instead
+    // is answerable identically on every backend: ovstage publishes the raw
+    // -inf here (measured), and USD resolves the same schema fallback.
+    //
+    // Sign matters, and is the reason this does not lose the sentinel mapping:
+    //   v < -0.5e38f (-inf or -FLT_MAX) -> UNSET. Leave the caller's value
+    //            alone, authored bit stays false.
+    //   +inf  -> an explicitly authored sentinel; keep the historical mapping
+    //            (contactOffset -> -1.0f, restOffset -> 0.0f) and set authored.
+    //   finite -> authored; clamp to range.
+    // Mirrors readSceneGravity's `< -0.5e38f` test for physics:gravityMagnitude.
+    // The one behaviour this cannot preserve is an explicitly authored value
+    // at or below -0.5e38f, which is by construction indistinguishable from
+    // the schema fallback.
+    //
+    // Per-axis range:
+    //   contactOffset: clamp to [0, FLT_MAX].
+    //   restOffset:    clamp to [-FLT_MAX, FLT_MAX].
     //
     // Cross-validation: only writes the local back to outDesc when
     // `contactOffset >= restOffset` (and the inverse for restOffset), so
@@ -92,30 +130,40 @@ void parseCollisionExt(ParseContext& ctx, ObjectKey key, CollisionExtFields& fie
         float contactOffset = fields.contactOffset;
         float restOffset = fields.restOffset;
 
-        if (src.hasAuthoredAttribute(key, tok.physxCollisionContactOffset))
+        // The schema's "unset" fallback. Threshold, not exact -inf: the
+        // resolved-value sentinel this guards against (like the joint-limit
+        // sentinels -- kJointSentinelLimit, ParseMimicJoint's
+        // kFiniteLimitSentinel, PhysXScenePropertiesUpdate's gravityMagnitude
+        // check) shows up in the wild as both -inf and -FLT_MAX; ovstage's
+        // population already publishes the FLT_MAX spelling for the positive
+        // maxJointVelocity sentinel (see isPhysxMaxJointVelocityAuthored). An
+        // exact isinf() test would miss the -FLT_MAX spelling and mark the
+        // attribute authored, silently disabling the Newton
+        // contactMargin/contactGap fallbacks the authored bit gates.
+        // static: MSVC 14.29 (VS2019, the OSS-build floor) rejects a non-static
+        // constexpr local read inside a captureless lambda with C3493.
+        static constexpr float kFiniteLimitSentinel = 0.5e38f;
+        const auto isUnset = [](float v) { return v < -kFiniteLimitSentinel; };
+
+        float attrVal;
+        if (readFloatWithFallback(src, key, fields.attributeFallback, tok.physxCollisionContactOffset, attrVal) &&
+            !isUnset(attrVal))
         {
             fields.contactOffsetAuthored = true;
-            float attrVal;
-            if (src.getAttribute(key, tok.physxCollisionContactOffset, attrVal))
-            {
-                if (std::isinf(attrVal))
-                    contactOffset = -1.0f;
-                else if (attrVal >= 0.0f && attrVal <= FLT_MAX)
-                    contactOffset = attrVal;
-            }
+            if (std::isinf(attrVal))
+                contactOffset = -1.0f;
+            else if (attrVal >= 0.0f && attrVal <= FLT_MAX)
+                contactOffset = attrVal;
         }
 
-        if (src.hasAuthoredAttribute(key, tok.physxCollisionRestOffset))
+        if (readFloatWithFallback(src, key, fields.attributeFallback, tok.physxCollisionRestOffset, attrVal) &&
+            !isUnset(attrVal))
         {
             fields.restOffsetAuthored = true;
-            float attrVal;
-            if (src.getAttribute(key, tok.physxCollisionRestOffset, attrVal))
-            {
-                if (std::isinf(attrVal))
-                    restOffset = 0.0f;
-                else if (attrVal >= -FLT_MAX && attrVal <= FLT_MAX)
-                    restOffset = attrVal;
-            }
+            if (std::isinf(attrVal))
+                restOffset = 0.0f;
+            else if (attrVal >= -FLT_MAX && attrVal <= FLT_MAX)
+                restOffset = attrVal;
         }
 
         // Cross-validation gates the writeback: each field is only
@@ -141,7 +189,7 @@ void parseCollisionExt(ParseContext& ctx, ObjectKey key, CollisionExtFields& fie
         if (!fields.restOffsetAuthored)
         {
             float m;
-            if (src.getAttribute(key, tok.newtonContactMargin, m) && m >= 0.0f)
+            if (readFloatWithFallback(src, key, fields.attributeFallback, tok.newtonContactMargin, m) && m >= 0.0f)
             {
                 fields.restOffset = m;
                 newtonMargin = m;
@@ -153,7 +201,8 @@ void parseCollisionExt(ParseContext& ctx, ObjectKey key, CollisionExtFields& fie
         {
             float gap;
             // Newton uses -inf as "use default" sentinel; skip it.
-            if (src.getAttribute(key, tok.newtonContactGap, gap) && !std::isinf(gap) && gap >= 0.0f)
+            if (readFloatWithFallback(src, key, fields.attributeFallback, tok.newtonContactGap, gap) &&
+                !std::isinf(gap) && gap >= 0.0f)
             {
                 // Newton gap is on top of margin; PhysX contactOffset is
                 // measured from the surface, so add margin.
@@ -204,8 +253,7 @@ bool readBoolIfAuthored(IPhysicsSource& src, ObjectKey key, TokenId attr, bool& 
 void parseConvexHullCookingExt(ParseContext& ctx, ObjectKey key, ConvexMeshCookingParams& params)
 {
     IPhysicsSource& src = ctx.source();
-    KnownTokens tok;
-    tok.intern(src);
+    const KnownTokens& tok = ctx.knownTokens();
 
     bool hullVertexLimitAuthored = false;
     if (src.hasSchema(key, tok.physxConvexHullCollisionAPI))
@@ -236,8 +284,7 @@ void parseConvexHullCookingExt(ParseContext& ctx, ObjectKey key, ConvexMeshCooki
 void parseConvexDecompositionCookingExt(ParseContext& ctx, ObjectKey key, ConvexDecompositionCookingParams& params)
 {
     IPhysicsSource& src = ctx.source();
-    KnownTokens tok;
-    tok.intern(src);
+    const KnownTokens& tok = ctx.knownTokens();
 
     readFloatIfAuthored(src, key, tok.physxConvexDecompositionCollisionMinThickness, params.minThickness);
     readIntAsUint32IfAuthored(src, key, tok.physxConvexDecompositionCollisionMaxConvexHulls, params.maxConvexHulls);
@@ -262,8 +309,7 @@ void parseConvexDecompositionCookingExt(ParseContext& ctx, ObjectKey key, Convex
 void parseSphereFillCookingExt(ParseContext& ctx, ObjectKey key, SphereFillCookingParams& params)
 {
     IPhysicsSource& src = ctx.source();
-    KnownTokens tok;
-    tok.intern(src);
+    const KnownTokens& tok = ctx.knownTokens();
 
     readIntAsUint32IfAuthored(src, key, tok.physxSphereFillCollisionMaxSpheres, params.maxSpheres);
     readIntAsUint32IfAuthored(src, key, tok.physxSphereFillCollisionSeedCount, params.seedCount);
@@ -300,8 +346,7 @@ void readWeldToleranceWithNanGuard(IPhysicsSource& src, ObjectKey key, TokenId a
 void parseTriangleMeshCookingExt(ParseContext& ctx, ObjectKey key, TriangleMeshCookingParams& params)
 {
     IPhysicsSource& src = ctx.source();
-    KnownTokens tok;
-    tok.intern(src);
+    const KnownTokens& tok = ctx.knownTokens();
     readWeldToleranceWithNanGuard(src, key, tok.physxTriangleMeshCollisionWeldTolerance, params.meshWeldTolerance);
 }
 
@@ -311,8 +356,7 @@ void parseTriangleMeshCookingExt(ParseContext& ctx, ObjectKey key, TriangleMeshC
 void parseTriangleMeshSimplificationCookingExt(ParseContext& ctx, ObjectKey key, TriangleMeshCookingParams& params)
 {
     IPhysicsSource& src = ctx.source();
-    KnownTokens tok;
-    tok.intern(src);
+    const KnownTokens& tok = ctx.knownTokens();
     readFloatIfAuthored(src, key, tok.physxTriangleMeshSimplificationCollisionMetric, params.simplificationMetric);
     readWeldToleranceWithNanGuard(src, key, tok.physxTriangleMeshSimplificationCollisionWeldTolerance, params.meshWeldTolerance);
 }
@@ -325,8 +369,7 @@ void parseTriangleMeshSimplificationCookingExt(ParseContext& ctx, ObjectKey key,
 bool parseSdfMeshCookingExt(ParseContext& ctx, ObjectKey key, SdfMeshCookingParams& params)
 {
     IPhysicsSource& src = ctx.source();
-    KnownTokens tok;
-    tok.intern(src);
+    const KnownTokens& tok = ctx.knownTokens();
 
     if (!src.hasSchema(key, tok.physxSDFMeshCollisionAPI))
         return false;

@@ -1,13 +1,12 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
-# ovphysx Python Sample Tests
+# ovphysx Python sample tests.
 # Runs all Python sample applications against the installed wheel.
 # Usage: cmake -P scripts/test_python_samples.cmake
 #
 # For wheel smoke tests (python -m ovphysx), see test_python_wheel.cmake.
 
-# Set up project paths
 get_filename_component(SCRIPT_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
 get_filename_component(PROJECT_ROOT "${SCRIPT_DIR}/.." ABSOLUTE)
 include("${SCRIPT_DIR}/build_common.cmake")
@@ -15,7 +14,7 @@ include("${SCRIPT_DIR}/build_common.cmake")
 message(STATUS "")
 message(STATUS "=== Python Sample Applications ===")
 
-# Verify uv is available (required for venv creation and dependency management)
+# uv creates the venvs and manages the sample dependencies.
 execute_process(
     COMMAND "${OVPHYSX_UV_COMMAND}" --version
     OUTPUT_VARIABLE UV_VERSION
@@ -43,11 +42,10 @@ set(UV_ENV
     "UV_SKIP_WHEEL_FILENAME_CHECK=1"
 )
 
-# Clean environment - samples should be self-contained with wheel
+# The samples must be self-contained with the wheel, so runtime hints from the environment are dropped.
 unset(ENV{LD_LIBRARY_PATH})
-unset(ENV{VIRTUAL_ENV}) # on windows CI, sometimes a system-wide venv is active
+unset(ENV{VIRTUAL_ENV}) # Windows CI sometimes has a system-wide venv active.
 
-# Check if SDK wheel exists
 file(GLOB WHEEL_FILES "${PROJECT_ROOT}/_dist/ovphysx-*.whl")
 if(NOT WHEEL_FILES)
     message(FATAL_ERROR "SDK wheel not found in ${PROJECT_ROOT}/_dist/. Run build_wheel.cmake first.")
@@ -66,9 +64,9 @@ set(PYTHON_VERSIONS
     "3.11"
     "3.12"
     "3.13"
-    # Python 3.14 is intentionally not in this matrix. It's a bleeding-edge alpha and
-    # third-party wheels (notably NumPy) may not be ABI-compatible yet, which would
-    # prevent meaningful end-to-end validation of the tensor samples on CI.
+    # Python 3.14 is intentionally not in this matrix. Third-party wheels (notably
+    # NumPy) may not be ABI-compatible with it yet, which would prevent meaningful
+    # end-to-end validation of the tensor samples on CI.
 )
 
 # ==============================================================================
@@ -76,7 +74,7 @@ set(PYTHON_VERSIONS
 # ==============================================================================
 
 # setup_sample_venv(<samples_dir> <py_ver>)
-# Creates a fresh venv, syncs pyproject.toml deps, installs the local wheel.
+# Creates a fresh venv, syncs the pyproject.toml deps, and installs the local wheel.
 # Requires UV_PYTHON_PATH to be set by the caller (via ensure_uv_managed_python).
 macro(setup_sample_venv SAMPLES_DIR PY_VER)
     set(_VENV_DIR "${${SAMPLES_DIR}}/.venv")
@@ -159,9 +157,11 @@ message(STATUS "--- Running External Python Samples ---")
 set(BASE_SAMPLES
     "hello_world.py"
     "contact_binding.py"
+    "kinematic_support.py"
     "tensor_bindings.py"
     "clone.py"
     "omnipvd_recording.py"
+    "nvtx_profiling.py"         # runs without Nsight attached, so the ranges are no-ops
     "tensor_bindings_views.py"  # TensorBindingsAPI-only (pure ctypes), cross-minor
     "output_read.py"            # closed-loop ovstage control-in / output-read (ADR-0007)
 )
@@ -183,10 +183,10 @@ foreach(PY_VER ${PYTHON_VERSIONS})
     message(STATUS "")
     message(STATUS "--- Running Python Samples (Python ${PY_VER}) ---")
 
-    # Always use uv-managed Python for repeatable tests
+    # uv-managed Python keeps the tests repeatable across machines.
     ensure_uv_managed_python(${PY_VER} UV_PYTHON_PATH)
 
-    # Resolve Python lib directory for libpython (needed by tensor bindings)
+    # Resolve the Python lib directory for libpython, which the tensor bindings need.
     execute_process(
         COMMAND ${UV_PYTHON_PATH} -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR') or '')"
         OUTPUT_VARIABLE PY_LIBDIR
@@ -261,7 +261,6 @@ if(EXISTS "${EXTRA_SAMPLES_DIR}")
         ensure_uv_managed_python(${EXTRA_PY_VER} UV_PYTHON_PATH)
         setup_sample_venv(_SUBDIR_PATH EXTRA_PY_VER)
 
-        # Discover and run all .py files
         file(GLOB _EXTRA_SCRIPTS "${_SUBDIR_PATH}/*.py")
         set(_EXTRA_VENV "${_SUBDIR_PATH}/.venv")
         foreach(_SCRIPT ${_EXTRA_SCRIPTS})

@@ -1,12 +1,20 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-TENSOR-INDEX-001
+ * @covers AC-3
+ *
+ * @implements REQ-TENSOR-ATTACH-001
+ * @covers AC-1
+ */
 
 // clang-format off
-#include <UsdPCH.h>
 // clang-format on
 
 #include "tensors/base/BaseDeformableMaterialView.h"
 #include "tensors/base/BaseSimulationView.h"
+#include "usdLoad/AttachedStage.h"
 #include <PxPhysicsAPI.h>
 #include <PxDeformableSurfaceMaterial.h>
 #include <carb/logging/Log.h>
@@ -62,9 +70,12 @@ bool BaseDeformableMaterialView::check() const
         return false;
     }
 
+    usdparser::AttachedStage* attachedStage = mSim ? mSim->getAttachedStage() : nullptr;
     for (auto& entry : mEntries)
     {
-        void* ptr = g_physx->getPhysXPtr(entry.path, omni::physx::PhysXType::ePTDeformableVolumeMaterial);
+        const omni::physics::parse::ObjectKey key =
+            attachedStage ? attachedStage->keyFor(entry.path) : omni::physics::parse::ObjectKey{};
+        void* ptr = BaseSimulationView::resolvePhysXPtr(attachedStage, key, omni::physx::PhysXType::ePTDeformableVolumeMaterial);
         if (ptr != entry.material)
         {
             result = false;
@@ -136,7 +147,8 @@ bool BaseDeformableMaterialView::setProperty(const TensorDesc* srcTensor,
     if (indexTensor && indexTensor->data)
     {
         if (!checkTensorDevice(*indexTensor, -1, "index", callerFunctionName) ||
-            !checkTensorInt32(*indexTensor, "index", callerFunctionName))
+            !checkTensorInt32(*indexTensor, "index", callerFunctionName) ||
+            !checkIndexTensorSize(*indexTensor, getCount(), callerFunctionName))
         {
             return false;
         }
@@ -361,7 +373,8 @@ bool BaseDeformableMaterialView::setSurfaceProperty(const TensorDesc* srcTensor,
     if (indexTensor && indexTensor->data)
     {
         if (!checkTensorDevice(*indexTensor, -1, "index", callerFunctionName) ||
-            !checkTensorInt32(*indexTensor, "index", callerFunctionName))
+            !checkTensorInt32(*indexTensor, "index", callerFunctionName) ||
+            !checkIndexTensorSize(*indexTensor, getCount(), callerFunctionName))
             return false;
         indices = static_cast<const PxU32*>(indexTensor->data);
         numIndices = PxU32(getTensorTotalSize(*indexTensor));

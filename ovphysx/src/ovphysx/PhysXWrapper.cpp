@@ -1,9 +1,13 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-CAPI-ASYNC-001
+ * @covers AC-2
+ */
 
 
-// Implementation of C++ wrapper for ovphysx C API
-// See: ovphysx/experimental/ovphysx.hpp
+// C++ wrapper over the ovphysx C API, declared in ovphysx/experimental/ovphysx.hpp.
 
 #include "AsyncEventManager/AsyncEventManager.hpp"
 #include "ovphysx/experimental/ovphysx.hpp"
@@ -120,7 +124,7 @@ ovphysx_api_status_t PhysX::addUserTask(const ovphysx_user_task_desc_t& desc,
 // Synchronization
 //------------------------------------------------------------------------------------------------------------
 
-physx::WaitResult PhysX::waitOp(ovphysx_op_index_t op_index, uint64_t timeout_ns) {
+physx::WaitResult PhysX::waitOp(ovphysx_op_index_t op_index, ovphysx_timeout_t timeout_ns) {
     if (!ensureHandle(m_handle, "PhysX::waitOp")) {
         return physx::WaitResult();
     }
@@ -129,7 +133,7 @@ physx::WaitResult PhysX::waitOp(ovphysx_op_index_t op_index, uint64_t timeout_ns
     return w;
 }
 
-physx::WaitResult PhysX::waitAll(uint64_t timeout_ns) {
+physx::WaitResult PhysX::waitAll(ovphysx_timeout_t timeout_ns) {
     if (!ensureHandle(m_handle, "PhysX::waitAll")) {
         return physx::WaitResult();
     }
@@ -155,7 +159,7 @@ CreateArgs::CreateArgs(const CreateArgs& other)
     , m_bundledDepsPath(other.m_bundledDepsPath)
     , m_args(other.m_args)
 {
-    // Fix up pointers to point into our own string copies, not other's.
+    // Point the string views at this object's copies, not other's.
     m_args.active_cuda_gpus = _str_ref(m_activeCudaGpus);
     m_args.bundled_deps_path = _str_ref(m_bundledDepsPath);
 }
@@ -252,6 +256,11 @@ ovphysx_api_status_t PhysX::setCpuMode(bool cpuOnly)
     return ovphysx_set_cpu_mode(cpuOnly).status;
 }
 
+ovphysx_api_status_t PhysX::getCpuMode(bool& outCpuOnly)
+{
+    return ovphysx_get_cpu_mode(&outCpuOnly).status;
+}
+
 //------------------------------------------------------------------------------------------------------------
 // Tensor Bindings
 //------------------------------------------------------------------------------------------------------------
@@ -283,7 +292,7 @@ ovphysx_api_status_t PhysX::createTensorBinding(
 //------------------------------------------------------------------------------------------------------------
 
 ovphysx_api_status_t PhysX::clone(const std::string& sourcePath, const std::vector<std::string>& targetPaths,
-                                  const float* parentTransforms, const uint32_t* envIds,
+                                  const float* anchorTransforms, const uint32_t* envIds,
                                   ovphysx_op_index_t* outOpIndex)
 {
     if (!ensureHandle(m_handle, "PhysX::clone")) return OVPHYSX_API_ERROR;
@@ -316,7 +325,7 @@ ovphysx_api_status_t PhysX::clone(const std::string& sourcePath, const std::vect
         {sourcePath.c_str(), sourcePath.size()},
         targetStrings.data(),
         static_cast<uint32_t>(targetStrings.size()),
-        parentTransforms,
+        anchorTransforms,
         envIds
     );
 

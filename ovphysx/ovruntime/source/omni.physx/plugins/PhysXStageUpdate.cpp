@@ -1,14 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-
-#include "UsdPCH.h"
+// SPDX-License-Identifier: Apache-2.0
 
 #include <carb/logging/Log.h>
 #include <private/omni/physx/IPhysxStageUpdate.h>
 
 #include <optional>
-
-#include <common/utilities/Utilities.h>
+#include <string>
 
 #include <PhysXSettings.h>
 
@@ -18,8 +15,6 @@
 #include "Raycast.h"
 #include "PhysXStageUpdate.h"
 #include "PhysXPropertyQuery.h"
-
-using namespace PXR_NS;
 
 namespace omni
 {
@@ -73,9 +68,13 @@ void physXReset()
         OmniPhysX& omniPhysX = OmniPhysX::getInstance();
         if (omniPhysX.hasTempPhysicsScene())
         {
-            UsdStageWeakPtr stage = usdparser::UsdLoad::getUsdLoad()->getActiveStage();
-            ScopedLayerEdit scopedSessionLayerEdit(stage, stage->GetSessionLayer());
-            stage->RemovePrim(omniPhysX.getTempPhysicsScenePath());
+            // The placeholder prim only exists when there was a destination to author it into
+            // (a USD-free source has none, and removeDefaultPhysicsScenePlaceholder() is a
+            // no-op with nothing to remove). Clear the flag either way: with no placeholder
+            // there is nothing left to do, and leaving it set would make every later reset
+            // retry the same removal.
+            if (usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage())
+                attachedStage->removeDefaultPhysicsScenePlaceholder(omniPhysX.getTempPhysicsSceneKey());
             omniPhysX.setHasTempPhysicsScene(false);
         }
 
@@ -110,10 +109,12 @@ void physXResume(float currentTime)
 
         getPhysXUsdPhysicsInterface().setExposePrimNames(omniPhysX.getISettings()->getAsBool(kSettingExposePrimPathNames));
         omniPhysX.setSimulationStarted(true);
-        if (omniPhysX.getISettings()->getStringBuffer(kSettingForceParseOnlySingleScene) != nullptr)
-            getPhysXUsdPhysicsInterface().setForceParseOnlySingleScene(PXR_NS::SdfPath(omniPhysX.getISettings()->getStringBuffer(kSettingForceParseOnlySingleScene)));
-        else
-            getPhysXUsdPhysicsInterface().setForceParseOnlySingleScene(PXR_NS::SdfPath());
+        // Kit-inspector-only debug filter, unreachable from ovphysx's own ovstage attach path
+        // -- see setForceParseOnlySingleScene's declaration comment in UsdInterface.h.
+        {
+            const char* forceSingleScene = omniPhysX.getISettings()->getStringBuffer(kSettingForceParseOnlySingleScene);
+            getPhysXUsdPhysicsInterface().setForceParseOnlySingleScene(forceSingleScene ? forceSingleScene : std::string());
+        }
         {
             // On the initial attach (simulation was stopped) suppress
             // initial-population notifications; the scope restores both gates

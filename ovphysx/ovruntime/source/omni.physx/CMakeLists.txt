@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 # --- Plugin headers (private) ---
 set(PHYSX_PLUGIN_HEADERS
@@ -12,6 +12,7 @@ set(PHYSX_PLUGIN_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/MeshCache.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/ObjectDataQuery.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/OmniPhysX.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/OvxPhysicsShared.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/PhysXCarbCPUDispatcher.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/PhysXCooking.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/PhysXCustomGeometry.h
@@ -59,8 +60,6 @@ set(PHYSX_PLUGIN_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/internal/InternalScene.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/internal/InternalTools.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/internal/InternalVehicle.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/internal/InternalVoxelMap.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/internal/InternalXformOpResetStorage.h
     # particles
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/particles/PhysXParticlePost.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/particles/PhysXParticleSampling.h
@@ -80,6 +79,7 @@ set(PHYSX_PLUGIN_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/base/BaseSdfShapeView.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/base/BaseSimulationData.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/base/BaseSimulationView.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/base/SupersetRigidEntries.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/base/PathPatternMatcher.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/base/BaseSurfaceDeformableBodyView.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/base/BaseVolumeDeformableBodyView.h
@@ -104,6 +104,10 @@ set(PHYSX_PLUGIN_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/gpu/GpuSurfaceDeformableBodyView.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/gpu/GpuVolumeDeformableBodyView.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/gpu/ThrustUtils.h
+    # usdBridge
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/usdBridge/AttachmentAuthoringBridge.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/usdBridge/RuntimeBridge.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/usdBridge/StageBridge.h
     # usdInterface
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/usdInterface/UsdInterface.h
     # usdLoad
@@ -131,14 +135,16 @@ set(PHYSX_PLUGIN_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/usdLoad/PointInstancer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/usdLoad/PrimUpdate.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/usdLoad/ScannedShapeCookingDispatch.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/usdLoad/ReplicatorRange.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/usdLoad/Scene.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/usdLoad/SpatialTendon.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/usdLoad/Vehicle.h
     # utils
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/utils/Nvtx.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/utils/OmniRenderBuffer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/utils/Pair.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/utils/PrimPathGrammar.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/utils/Profile.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/utils/ProfileZoneBalance.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/utils/SplinesCurve.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/utils/Time.h
 )
@@ -167,8 +173,9 @@ set(PHYSX_PLUGIN_SOURCE
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/PhysxJoint.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/PhysXMirror.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/PhysXPrivate.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/PhysXPropertyQuery.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/OvxPhysicsShared.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/OvxPhysicsRead.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/OvxPhysicsWrite.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/PhysXReplicator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/PhysXScene.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/PhysXSceneQuery.cpp
@@ -203,8 +210,6 @@ set(PHYSX_PLUGIN_SOURCE
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/internal/InternalPhysXDatabase.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/internal/InternalScene.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/internal/InternalVehicle.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/internal/InternalVoxelMap.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/internal/InternalXformOpResetStorage.cpp
     # particles
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/particles/PhysXParticlePost.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/particles/PhysXParticleSampling.cpp
@@ -232,12 +237,16 @@ set(PHYSX_PLUGIN_SOURCE
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/base/BaseRigidBodyView.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/base/BaseRigidContactView.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/base/BaseSdfShapeView.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/base/BasePointInstancerView.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/base/BaseSimulationView.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/base/BaseVehicleView.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/base/PathPatternMatcher.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/base/BaseSurfaceDeformableBodyView.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/base/BaseVolumeDeformableBodyView.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/cpu/CpuArticulationView.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/cpu/CpuDeformableMaterialView.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/base/SupersetRigidEntries.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/cpu/CpuPointInstancerView.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/cpu/CpuRigidBodyView.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/cpu/CpuRigidContactView.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/cpu/CpuSdfShapeView.cpp
@@ -248,6 +257,8 @@ set(PHYSX_PLUGIN_SOURCE
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/gpu/CudaCommon.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/gpu/GpuArticulationView.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/gpu/GpuDeformableMaterialView.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/gpu/GpuPointSetReadView.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/gpu/GpuPointInstancerView.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/gpu/GpuRigidBodyView.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/gpu/GpuRigidContactView.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/gpu/GpuSdfShapeView.cpp
@@ -287,11 +298,25 @@ set(PHYSX_PLUGIN_SOURCE
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/usdLoad/TimeSampledCallbacks.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/usdLoad/SpatialTendon.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/usdLoad/Vehicle.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/usdLoad/NewtonTokens.cpp
     # utils
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/utils/SplinesCurve.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/utils/Time.cpp
 )
+
+# --- pxr-free usdBridge translation units (ADR-0027) ---
+# @implements REQ-BUILD-UNIBUILD-001
+# @covers AC-3
+# One arm per bridge: these TUs name no pxr type and reach USD only through the installed
+# seams (parse/scan registry, usdReparse(), the opaque pxr-handle op tables,
+# usdBackingAuthor(), usdAttachmentAuthor()). OvruntimePhysX links no USD library.
+list(APPEND PHYSX_PLUGIN_SOURCE
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/usdBridge/PropertyQueryBridge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/usdBridge/StageBridge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/usdBridge/AttachedStageBridge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/usdBridge/RuntimeBridge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/usdBridge/AttachmentAuthoringBridge.cpp
+)
+
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/plugins PREFIX "plugins" FILES ${PHYSX_PLUGIN_SOURCE})
 
 # --- Tensor API CUDA sources ---
@@ -374,7 +399,6 @@ target_include_directories(OvruntimePhysX
         ${CMAKE_CURRENT_SOURCE_DIR}/plugins          # internal headers
         ${OVRUNTIME_ROOT_DIR}/include                 # public interfaces
         ${OVRUNTIME_ROOT_DIR}/include/private         # private interfaces
-        ${OVRUNTIME_ROOT_DIR}/source/pch              # UsdPCH.h
         ${OVRUNTIME_ROOT_DIR}/source/common/include   # <common/utilities/...>
         ${OVRUNTIME_ROOT_DIR}/source/omni.physx.foundation/plugins # foundation static service
         ${OVRUNTIME_ROOT_DIR}/source/omni.physx.cooking/plugins # cooking static service
@@ -382,8 +406,10 @@ target_include_directories(OvruntimePhysX
         ${OVRUNTIME_ROOT_DIR}/_build/generated       # NewtonSchemaTokens.h
 )
 
-# External dependencies — SYSTEM includes to suppress third-party warnings
-ovruntime_add_external_system_includes(OvruntimePhysX)
+# External dependencies — SYSTEM includes to suppress third-party warnings.
+# OvruntimePhysX is USD-free in its only configuration (ADR-0027): the USD/physxSchema
+# header dirs are never on its include path, so a stray pxr include is a build error.
+ovruntime_add_external_system_includes(OvruntimePhysX NO_USD)
 
 # Compile definitions
 # carb_eventdispatcher_IEventDispatcher must be CXX-only: it expands to
@@ -398,22 +424,20 @@ target_compile_definitions(OvruntimePhysX PRIVATE
 # ovstage output-read entry points directly rather than through MSVC import thunks.
 target_compile_definitions(OvruntimePhysX PUBLIC "OMNI_PHYSX_OVX_STATIC")
 
+if(OVRUNTIME_NVTX_AVAILABLE)
+    target_compile_definitions(OvruntimePhysX PRIVATE "OMNI_PHYSX_NVTX_ENABLED=1")
+endif()
+
 # Link dependencies
 target_link_libraries(OvruntimePhysX
     PRIVATE OvruntimeCommon
-    PRIVATE OvruntimePhysicsUsd
     PRIVATE OvruntimePhysicsOvstage
     PRIVATE OvruntimePhysXFoundation
     PRIVATE OvruntimePhysXCooking
 )
-# omni.physx selects USD vs ovstage parsing at runtime through the abstract
-# registries (parse backend + omni.physics.usd scan backend, ADR-0002 M2c). The
-# plugin links the ovstage backend so its `attachOvstage` entry point can install
-# those backends itself (ADR-0002 Option 1): the ovstage parsing always exists on
-# this branch, and the per-module registry can only be populated from inside the
-# plugin (the test/consumer lives in a separate module). The dependency is one-way
-# (omni.physx -> ovstage -> usd -> parse); nothing here names a concrete USD type
-# in the ovstage path — selection stays through the registries, no #ifdefs.
+# Parsing is selected at runtime through the ADR-0005 registries. OvruntimePhysicsOvstage
+# is USD-free and installs its own backends from attachOvstage(); the USD backends live in
+# the test-only OvruntimePhysicsUsd, which only test executables link (ADR-0027).
 
 if(DEFINED CARB_SDK_DIR)
     set(_CARB_LIB_DIR "${CARB_SDK_DIR}/_build/${CARB_PLATFORM_DIR}")
@@ -422,9 +446,6 @@ if(DEFINED CARB_SDK_DIR)
     )
     target_link_libraries(OvruntimePhysX PRIVATE carb)
 endif()
-
-# USD, TBB, Python libraries (matching premake extension_usd_deps)
-ovruntime_link_usd_deps(OvruntimePhysX)
 
 # PhysX static libraries
 ovruntime_link_physx_static_libs(OvruntimePhysX FULL)
@@ -472,20 +493,12 @@ if(NOT WIN32)
     set_target_properties(OvruntimePhysX PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS ON)
 endif()
 
-# Precompiled header
-target_precompile_headers(OvruntimePhysX PRIVATE
-    "$<$<COMPILE_LANGUAGE:CXX>:${OVRUNTIME_ROOT_DIR}/source/pch/UsdPCH.h>"
-)
-
-# PhysXGpu, PVDRuntime, and (Windows-only) PhysXDevice64 are loaded by the
-# foundation-owned PhysXGpuLoader at runtime. Keep build-tree copies in the
-# runtime output directory used by the owner binary.
+# PhysXGpu and (Windows-only) PhysXDevice64 are loaded at runtime. Keep
+# build-tree copies in the runtime output directory used by the owner binary.
 if(WIN32)
     set(_PHYSXGPU_LIB_NAME "PhysXGpu_64.dll")
-    set(_PVDRUNTIME_LIB_NAME "PVDRuntime_64.dll")
 else()
     set(_PHYSXGPU_LIB_NAME "libPhysXGpu_64.so")
-    set(_PVDRUNTIME_LIB_NAME "libPVDRuntime_64.so")
 endif()
 
 set(_GPU_BIN_DIR "bin")
@@ -505,20 +518,9 @@ if(OVRUNTIME_PHYSX_FROM_SOURCE)
         install(FILES "$<TARGET_FILE:PhysXGpu>" DESTINATION ${_GPU_BIN_DIR} RENAME "${_PHYSXGPU_LIB_NAME}")
         install(FILES "$<TARGET_FILE:PhysXGpu>" DESTINATION ${_PHYSX_BIN_DIR} RENAME "${_PHYSXGPU_LIB_NAME}")
     endif()
-    if(TARGET PVDRuntime)
-        add_dependencies(OvruntimePhysX PVDRuntime)
-        add_custom_command(TARGET OvruntimePhysX POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "$<TARGET_FILE:PVDRuntime>"
-                "$<TARGET_FILE_DIR:OvruntimePhysX>/${_PVDRUNTIME_LIB_NAME}"
-            COMMENT "Copying ${_PVDRUNTIME_LIB_NAME} next to the PhysX runtime owner"
-        )
-        install(FILES "$<TARGET_FILE:PVDRuntime>" DESTINATION ${_PHYSX_BIN_DIR} RENAME "${_PVDRUNTIME_LIB_NAME}")
-    endif()
 elseif(DEFINED PHYSX_SDK_DIR)
     set(_PHYSXGPU_LIB_DIR "${PHYSX_SDK_DIR}/bin/${PHYSX_PLATFORM_BIN}")
     set(_PHYSXGPU_LIB "${_PHYSXGPU_LIB_DIR}/$<IF:$<CONFIG:Debug>,debug,checked>/${_PHYSXGPU_LIB_NAME}")
-    set(_PVDRUNTIME_LIB "${_PHYSXGPU_LIB_DIR}/$<IF:$<CONFIG:Debug>,debug,checked>/${_PVDRUNTIME_LIB_NAME}")
 
     add_custom_command(TARGET OvruntimePhysX POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -529,13 +531,6 @@ elseif(DEFINED PHYSX_SDK_DIR)
     install(FILES "${_PHYSXGPU_LIB}" DESTINATION ${_GPU_BIN_DIR})
     install(FILES "${_PHYSXGPU_LIB}" DESTINATION ${_PHYSX_BIN_DIR})
 
-    add_custom_command(TARGET OvruntimePhysX POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${_PVDRUNTIME_LIB}"
-            "$<TARGET_FILE_DIR:OvruntimePhysX>/${_PVDRUNTIME_LIB_NAME}"
-        COMMENT "Copying ${_PVDRUNTIME_LIB_NAME} next to the PhysX runtime owner"
-    )
-    install(FILES "${_PVDRUNTIME_LIB}" DESTINATION ${_PHYSX_BIN_DIR})
 endif()
 
 if(WIN32)
@@ -550,6 +545,19 @@ if(WIN32)
         install(FILES "${_PHYSX_DEVICE_DLL}" DESTINATION ${_GPU_BIN_DIR})
     endif()
 endif()
+
+# CI grep gate (REQ-WRITE-LOCALXFORM-001 AC-4): the two TUs whose USD authoring moved behind
+# the omni.physics.usd write sink must not grow Gf spellings back. With the USD header dirs
+# off OvruntimePhysX's include path this is belt-and-braces -- a real Gf use no longer
+# compiles -- but the text check keeps the allowlist as the documented progress measure.
+add_custom_target(physx_gf_free_check ALL
+    COMMAND ${CMAKE_COMMAND} -E echo "Checking the relocated USD authoring for Gf spellings..."
+    COMMAND ${CMAKE_COMMAND}
+        "-DGF_SYMBOL_FREE_FILES=${CMAKE_CURRENT_SOURCE_DIR}/plugins/internal/InternalScene.cpp;${CMAKE_CURRENT_SOURCE_DIR}/plugins/usdLoad/LoadStage.cpp"
+        "-DGF_ALLOWED_SYMBOLS=GfVec3f;GfVec4f;GfQuatf"
+        -P ${OVRUNTIME_ROOT_DIR}/source/common/gf_free_check.cmake
+    VERBATIM
+)
 
 # Install rules
 install(

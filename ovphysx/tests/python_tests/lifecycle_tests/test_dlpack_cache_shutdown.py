@@ -1,7 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
-"""Regression test for foreign DLPack capsules retained past PhysX release."""
+# DEPRECATED (tensor-binding-deprecation): a deprecated tensor-binding test. Removed with the binding.
+
+"""Regression test for foreign DLPack capsules retained past PhysX destruction."""
 
 import ctypes
 import gc
@@ -41,14 +43,14 @@ def test_warp_cache_survives_callback_teardown():
     write_binding.write(write_buffer)
     assert write_binding._write_cache is not None
 
-    physx.release()
+    physx.destroy()
 
     assert warp_dlpack._dlpack_capsule_deleter is not None
     assert warp_dlpack._dlpack_tensor_deleter is not None
     warp_dlpack._dlpack_capsule_deleter = None
     warp_dlpack._dlpack_tensor_deleter = None
-    # Overwrite freed libffi closure storage before collecting the caches;
-    # this makes the old cache behavior fail reliably.
+    # Overwrite freed libffi closure storage before collecting the caches, so a
+    # cache that still calls the foreign deleter fails reliably.
     heap_churn = [bytes(4096) for _ in range(20000)]
     heap_churn.extend((ctypes.c_double * 512)() for _ in range(2000))
 

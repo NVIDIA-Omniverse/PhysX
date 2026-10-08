@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef OMNI_PVD_READ_STREAM_H
 #define OMNI_PVD_READ_STREAM_H
@@ -32,9 +9,24 @@
 #include "OmniPvdDefines.h"
 
 /**
- * \brief Used to abstract a memory read stream
+ * \brief Abstract byte-oriented read endpoint for an OmniPVD transport.
  *
- * Allows to read and skip bytes as well as open/close it.
+ * A read stream starts closed. openStream() and closeStream() are explicit, idempotent
+ * lifecycle operations; a failed open leaves the stream closed and may be retried. Reopening
+ * after a successful close is supported, with cursor/session behavior documented by the
+ * concrete transport.
+ *
+ * readBytes() and skipBytes() never open the stream. Both return zero while it is closed, and
+ * short counts are valid transport results. The interface makes no general thread-safety
+ * guarantee, so lifecycle and data access must be externally serialized unless a concrete
+ * transport documents otherwise.
+ * Production implementations close an open transport from their destructor as a safety net;
+ * explicit close before destruction or the matching release remains the normal lifecycle.
+ *
+ * OmniPvdReader only borrows a bound stream: it never closes or destroys it. Binding performs
+ * no I/O; reader activation calls openStream() and may block for transports such as TCP. The
+ * caller must keep the stream alive until reader access has quiesced or the reader has been
+ * rebound to another live stream, then close and destroy/release it through its owner.
  */
 class OmniPvdReadStream
 {
@@ -44,33 +36,44 @@ public:
 	}
 
 	/**
-	 * \brief Read n bytes from the shared memory buffer
+	 * \brief Reads bytes from the open stream.
 	 *
-	 * \param bytes Reads n bytes into the destination pointer
+	 * This operation does not implicitly open the stream. It returns zero while closed.
+	 *
+	 * \param bytes Destination for the bytes read
 	 * \param nbrBytes The requested number of bytes to read
-	 * \return The actual number of bytes read
+	 * \return The actual number of bytes read, which may be less than nbrBytes
 	 */
 	virtual uint64_t OMNI_PVD_CALL readBytes(uint8_t* bytes, uint64_t nbrBytes) = 0;
 
 	/**
-	 * \brief Skip n bytes from the shared memory buffer
+	 * \brief Skips bytes in the open stream.
+	 *
+	 * This operation does not implicitly open the stream. It returns zero while closed.
 	 *
 	 * \param nbrBytes The requested number of bytes to skip
-	 * \return The actual number of bytes skipped
+	 * \return The actual number of bytes skipped, which may be less than nbrBytes
 	 */
 	virtual uint64_t OMNI_PVD_CALL skipBytes(uint64_t nbrBytes) = 0;
 	
 	/**
-	 * \brief Opens the read stream
+	 * \brief Opens the read stream.
 	 *
-	 * \return True if it succeeded
+	 * Calling this on an already-open stream succeeds without resetting the current session.
+	 * A failed open leaves the stream closed and retryable. Opening may block according to the
+	 * concrete transport.
+	 *
+	 * \return True if the stream is open, false if opening failed
 	 */
 	virtual bool OMNI_PVD_CALL openStream() = 0;
 
 	/**
-	 * \brief Closes the read stream
+	 * \brief Closes the read stream.
 	 *
-	 * \return True if it succeeded
+	 * Calling this on an already-closed stream succeeds. Closing does not destroy the stream;
+	 * cursor/session behavior on a later open is transport-specific.
+	 *
+	 * \return True if the stream is closed
 	 */
 	virtual bool OMNI_PVD_CALL closeStream() = 0;
 };

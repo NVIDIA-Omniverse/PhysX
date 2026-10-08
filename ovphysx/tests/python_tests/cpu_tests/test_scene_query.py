@@ -1,11 +1,11 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """Tests for scene query API: raycast, sweep, and overlap.
 
 Scene: simple_physics_scene.usda
   - Ground plane at Y=0 (Cube collider scaled to 100x1x100)
-  - Dynamic Cube1 at (0, 5, 0) -- falls under gravity
+  - Dynamic Cube1 at (0, 5, 0), falling under gravity
 """
 
 import os
@@ -90,7 +90,7 @@ class TestRaycast:
 class TestSweep:
 
     def test_sweep_sphere_closest(self, physx_sdk_cpu):
-        """Sweep a small sphere downward -- should hit something."""
+        """Sweep a small sphere downward. It should hit something."""
         _load_and_step(physx_sdk_cpu)
         hits = physx_sdk_cpu.sweep(
             geometry_type=SceneQueryGeometryType.SPHERE,
@@ -119,7 +119,7 @@ class TestSweep:
         assert hits[0]["distance"] > 0.0
 
     def test_sweep_sphere_miss(self, physx_sdk_cpu):
-        """Sweep away from scene -- no hits."""
+        """Sweep away from the scene, expecting no hits."""
         _load_and_step(physx_sdk_cpu)
         hits = physx_sdk_cpu.sweep(
             geometry_type=SceneQueryGeometryType.SPHERE,
@@ -239,7 +239,7 @@ class TestSceneQueryEdgeCases:
             )
 
     def test_raycast_zero_distance(self, physx_sdk_cpu):
-        """Zero distance is valid per the API (>= 0) -- should not raise."""
+        """Zero distance is valid per the API (>= 0) and must not raise."""
         _load_and_step(physx_sdk_cpu)
         hits = physx_sdk_cpu.raycast(
             origin=[0.0, 100.0, 0.0],
@@ -266,8 +266,7 @@ class TestShapeGeometry:
             mode=SceneQueryMode.CLOSEST,
             prim_path="/World/Cube1",
         )
-        # Cube1 swept downward should hit the ground plane
-        assert len(hits) >= 0  # validate no crash; hit count depends on scene state
+        assert len(hits) >= 0  # only checks for no crash, the hit count depends on scene state
 
     def test_overlap_shape(self, physx_sdk_cpu):
         """Overlap test using an existing collision shape prim path."""

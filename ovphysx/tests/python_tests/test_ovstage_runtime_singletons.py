@@ -1,12 +1,13 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# @implements REQ-PACKAGING-OMNICLIENT-001
+# @covers AC-2 AC-3
 
 """Process-isolated startup-order coverage for the OVStage runtime provider."""
 
-import importlib.util
 import json
 import os
-import shutil
 import subprocess
 import sys
 import textwrap
@@ -77,79 +78,7 @@ _CHILD_SCRIPT = textwrap.dedent(f"""
 
         raise RuntimeError(f"unsupported singleton mapping platform: {{sys.platform}}")
 
-    order = sys.argv[1]
-    usd_path = sys.argv[2]
-    result_path = sys.argv[3]
-    alternate_usd_path = sys.argv[4] if len(sys.argv) > 4 else None
-    stage = None
-    physx = None
-    preloaded_usd = None
-    try:
-        if order == "ovstage-first":
-            import ovstage
-
-            stage = ovstage.Stage("ovphysx-runtime-provider-ovstage-first")
-            ovstage.population.open_usd(
-                stage,
-                usd_path,
-                ordinal=1,
-                domains=ovstage.PopulationDomain.PHYSICS,
-            )
-            import ovphysx
-
-            ovphysx.PhysX.set_cpu_mode(True)
-            physx = ovphysx.PhysX()
-        elif order == "physx-first":
-            import ovphysx
-
-            ovphysx.PhysX.set_cpu_mode(True)
-            physx = ovphysx.PhysX()
-            import ovstage
-
-            stage = ovstage.Stage("ovphysx-runtime-provider-physx-first")
-            ovstage.population.open_usd(
-                stage,
-                usd_path,
-                ordinal=1,
-                domains=ovstage.PopulationDomain.PHYSICS,
-            )
-        elif order == "alternate-usd-first":
-            import ctypes
-
-            if alternate_usd_path is None:
-                raise RuntimeError("alternate-usd-first requires a copied USD runtime path")
-            preloaded_usd = ctypes.CDLL(
-                alternate_usd_path,
-                mode=os.RTLD_NOW | os.RTLD_GLOBAL,
-            )
-            import ovphysx
-            from ovphysx import _bindings
-
-            # Runtime tests use OVPHYSX_LIB and therefore do not exercise the
-            # bundled-wheel preload automatically. Invoke the same loader path
-            # explicitly before initializing either consumer.
-            _bindings._preload_ovstage_runtime_deps()
-            ovphysx.PhysX.set_cpu_mode(True)
-            physx = ovphysx.PhysX()
-            import ovstage
-
-            stage = ovstage.Stage("ovphysx-runtime-provider-alternate-usd-first")
-            ovstage.population.open_usd(
-                stage,
-                usd_path,
-                ordinal=1,
-                domains=ovstage.PopulationDomain.PHYSICS,
-            )
-        else:
-            raise RuntimeError(f"unknown startup order: {{order}}")
-
-        # Population does not seal: the caller owns ordinal lifecycle, and
-        # attach_ovstage() reads at a sealed ordinal.
-        stage.advance_write_floor(ordinal=1).wait()
-        physx.attach_ovstage(stage, read_ordinal=1)
-        physx.step(1.0 / 60.0)
-        physx.wait_all()
-
+    def collect_runtime_mappings():
         mapped = {{}}
         for path in collect_loaded_runtime_paths():
             name = os.path.basename(path).lower()
@@ -166,8 +95,61 @@ _CHILD_SCRIPT = textwrap.dedent(f"""
                 or (name.startswith("ov_") and name.endswith("usd_ms.dll"))
             ):
                 mapped.setdefault(name, set()).add(path)
+        return {{name: sorted(paths) for name, paths in mapped.items()}}
 
-        serializable = {{name: sorted(paths) for name, paths in mapped.items()}}
+    order = sys.argv[1]
+    usd_path = sys.argv[2]
+    result_path = sys.argv[3]
+    stage = None
+    physx = None
+    snapshots = {{}}
+    try:
+        if order == "ovstage-first":
+            import ovstage
+
+            # Schema discovery is pure Python: it does not load libovphysx, so
+            # the ovstage-first native load order is preserved.
+            import ovphysx
+
+            ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+            stage = ovstage.Stage("ovphysx-runtime-provider-ovstage-first")
+            ovstage.population.open_usd(
+                stage,
+                usd_path,
+                ordinal=1,
+                domains=ovstage.PopulationDomain.PHYSICS,
+            )
+            import ovphysx
+
+            ovphysx.PhysX.set_cpu_mode(True)
+            physx = ovphysx.PhysX()
+            snapshots["after_physx"] = collect_runtime_mappings()
+        elif order == "physx-first":
+            import ovphysx
+
+            snapshots["before_physx"] = collect_runtime_mappings()
+            ovphysx.PhysX.set_cpu_mode(True)
+            physx = ovphysx.PhysX()
+            snapshots["after_physx"] = collect_runtime_mappings()
+            import ovstage
+
+            ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+            stage = ovstage.Stage("ovphysx-runtime-provider-physx-first")
+            ovstage.population.open_usd(
+                stage,
+                usd_path,
+                ordinal=1,
+                domains=ovstage.PopulationDomain.PHYSICS,
+            )
+        else:
+            raise RuntimeError(f"unknown startup order: {{order}}")
+
+        stage.advance_write_floor(ordinal=1).wait()
+        physx.attach_ovstage(stage, read_ordinal=1)
+        physx.step(1.0 / 60.0)
+        physx.wait_all()
+
+        serializable = {{"snapshots": snapshots, "final": collect_runtime_mappings()}}
         # Hand the result over via a file: carb logs to stdout from other
         # threads (e.g. the WinSDK version-check spam when the module was
         # built with a newer SDK than the host runs), and that interleaving
@@ -180,7 +162,7 @@ _CHILD_SCRIPT = textwrap.dedent(f"""
         if stage is not None:
             stage.destroy()
         if physx is not None:
-            physx.release()
+            physx.destroy()
     """)
 
 
@@ -203,79 +185,39 @@ def test_ovstage_runtime_is_singleton_in_both_startup_orders(order, tmp_path):
 
     assert result.returncode == 0, f"child failed\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     assert result_path.is_file(), f"child produced no result file\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
-    mapped = json.loads(result_path.read_text(encoding="utf-8"))
-    print(f"{order} OVStage runtime mappings: {json.dumps(mapped, sort_keys=True)}")
+    result_maps = json.loads(result_path.read_text(encoding="utf-8"))
+    mapped = result_maps["final"]
+    print(f"{order} OVStage runtime mappings: {json.dumps(result_maps, sort_keys=True)}")
 
     if sys.platform == "win32":
+        client_names = {"omniclient.dll", "omniverse_connection.dll"}
         expected_names = {
             "omni_usd_resolver.dll",
-            "omniclient.dll",
-            "omniverse_connection.dll",
+            *client_names,
         }
         usd_monoliths = [name for name in mapped if name.startswith("ov_") and name.endswith("usd_ms.dll")]
     else:
+        client_names = {"libomniclient.so", "libomniverse_connection.so"}
         expected_names = {
             "libovstage.so",
             "libomni_usd_resolver.so",
-            "libomniclient.so",
-            "libomniverse_connection.so",
+            *client_names,
         }
         usd_monoliths = [name for name in mapped if name.startswith("libov_") and name.endswith("usd_ms.so")]
     assert expected_names <= mapped.keys()
     assert len(usd_monoliths) == 1
+
+    if order == "physx-first":
+        before_physx = result_maps["snapshots"]["before_physx"]
+        after_physx = result_maps["snapshots"]["after_physx"]
+        assert {name: before_physx[name] for name in client_names if name in before_physx} == {
+            name: after_physx[name] for name in client_names if name in after_physx
+        }
 
     for name, paths in mapped.items():
         assert len(paths) == 1, f"{name} mapped from more than one runtime file: {paths}"
         normalized_path = paths[0].replace("\\", "/").lower()
         assert "/target-deps/client-library/" not in normalized_path
         assert "/target-deps/omni_usd_resolver/" not in normalized_path
-
-
-@pytest.mark.skipif(sys.platform != "linux", reason="alternate-path USD regression is Linux-only")
-def test_preloaded_usd_monolith_at_alternate_path_is_reused(tmp_path):
-    ovstage_spec = importlib.util.find_spec("ovstage")
-    assert ovstage_spec is not None and ovstage_spec.origin is not None, "installed ovstage package not found"
-    ovstage_bin = Path(ovstage_spec.origin).resolve().parent / "bin"
-    usd_candidates = sorted((ovstage_bin / "plugins").glob("libov_*usd_ms.so"))
-    assert len(usd_candidates) == 1, f"expected one installed OVStage USD monolith, found {usd_candidates}"
-    installed_usd = usd_candidates[0]
-
-    alternate_dir = tmp_path / "alternate-runtime"
-    alternate_dir.mkdir()
-    alternate_usd = Path(shutil.copy2(installed_usd, alternate_dir / installed_usd.name)).resolve()
-
-    child_env = os.environ.copy()
-    runtime_dirs = [str(installed_usd.parent), str(ovstage_bin)]
-    if child_env.get("LD_LIBRARY_PATH"):
-        runtime_dirs.append(child_env["LD_LIBRARY_PATH"])
-    child_env["LD_LIBRARY_PATH"] = os.pathsep.join(runtime_dirs)
-
-    usd_path = Path(__file__).resolve().parents[1] / "data" / "basic_simulation.usda"
-    result_path = tmp_path / "runtime_maps_alternate_usd.json"
-    result = subprocess.run(
-        [
-            sys.executable,
-            "-c",
-            _CHILD_SCRIPT,
-            "alternate-usd-first",
-            str(usd_path),
-            str(result_path),
-            str(alternate_usd),
-        ],
-        check=False,
-        capture_output=True,
-        text=True,
-        env=child_env,
-        timeout=120,
-    )
-
-    assert result.returncode == 0, f"child failed\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
-    assert result_path.is_file(), f"child produced no result file\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
-    mapped = json.loads(result_path.read_text(encoding="utf-8"))
-    usd_name = installed_usd.name.lower()
-    assert usd_name in mapped, f"{usd_name} was not mapped: {mapped}"
-    assert mapped[usd_name] == [str(alternate_usd)], (
-        f"{usd_name} mapped from unexpected runtime file: {mapped[usd_name]}"
-        if len(mapped[usd_name]) == 1
-        else f"{usd_name} mapped from {len(mapped[usd_name])} runtime files: {mapped[usd_name]}"
-    )
+        if name in client_names:
+            assert "/ovstage/bin/plugins/omni.client.lib/" in normalized_path

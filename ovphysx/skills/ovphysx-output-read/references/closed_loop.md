@@ -51,8 +51,20 @@ whether the attribute is an array.
 
 In C, the group's DLPack tensors are borrowed and can feed the ovstage write
 payload without repacking. Wait for the write to finish before releasing the
-group. In Python, the numeric tensors are NumPy copies, while `prim_list`,
-`attribute`, and the shared dictionary remain context-bound.
+group. In Python, every non-empty numeric column is a borrowed `warp.array` on
+its native CPU or CUDA device. `prim_list`, `attribute`, and the shared
+dictionary remain context-bound. If a Python ovstage write path needs DLPack
+lanes rather than Warp's trailing component dimension, perform that
+conversion while the source array and result context are live.
+
+A device column is handed over before its producing work has necessarily
+completed. Feeding one straight back into a write is safe only if the write is
+ordered after that work: native C callers wait on `cuda_sync.wait_event` for
+their destination stream, while `PhysX.read()` has already ordered the event
+onto Warp's current stream before returning to Python. If Python work later
+moves to another stream, establish an explicit Warp stream dependency first.
+The covered types also need at least one completed step on a GPU sim before they
+emit anything.
 
 Point-instancer `position` and `orientation` requests emit `positions` and
 `orientations` in instancer-local space.

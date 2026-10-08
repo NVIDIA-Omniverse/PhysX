@@ -1,7 +1,13 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-20 AC-21
+ *
+ * @implements REQ-PARSE-CORE-006
+ * @covers AC-8
+ */
 
 #include "PhysXPoissonSampling.h"
 #include "PhysXAttachment.h"
@@ -10,15 +16,13 @@
 #include <usdLoad/LoadUsd.h>
 #include <usdLoad/ScannedShapeCookingDispatch.h>
 
+#include <omni/physics/parse/ScanBackend.h>
+#include <omni/physics/parse/ScannedStage.h>
+
 #include <PhysXScene.h>
 #include <PhysXTools.h>
 #include <Setup.h>
 
-#include <omni/physics/usd/StageScan.h>
-
-#include <unordered_set>
-
-using namespace PXR_NS;
 using namespace carb;
 using namespace ::physx;
 using namespace omni::physx;
@@ -40,7 +44,7 @@ struct SurfaceSampler
     PxConvexMeshGeometry convexMesh;
     PxTriangleMeshGeometry triangleMesh;
 
-    SdfPath colliderPath;
+    omni::physics::parse::ObjectKey colliderKey;
     float samplingDistance;
 
     PxPhysics* physicsPtr;
@@ -63,22 +67,30 @@ struct UserDataInfo
     float samplingDistance;
 };
 
-PhysxShapeDesc* parseSurfaceSamplerShape(AttachedStage& attachedStage, const SdfPath& colliderPath)
+// Re-scans just the collider prim to cook a standalone PhysxShapeDesc for it (the sampler
+// needs the raw geometry, not an already-tracked simulation object).
+// Returns an owning DescPtr: the descriptor is moved out of the temporary ScannedStage,
+// so the caller's unique_ptr is what frees it.
+omni::physics::parse::DescPtr<PhysxShapeDesc> parseSurfaceSamplerShape(
+    AttachedStage& attachedStage, omni::physics::parse::ObjectKey colliderKey)
 {
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
-    if (!src || !src->exists(attachedStage.keyFor(colliderPath)))
-        return nullptr;
+    if (!src || !src->exists(colliderKey))
+        return {};
 
-    const std::vector<SdfPath> scanRoots{ colliderPath };
-    static const std::unordered_set<SdfPath, SdfPath::Hash> kNoExclude;
-    omni::physics::usd::ScannedStage scanned = omni::physics::usd::scanStage(
-        attachedStage.attachTarget(), scanRoots, kNoExclude, iceDescriptorAllocator());
+    const std::string colliderPathText(attachedStage.textViewFor(colliderKey));
+    const std::vector<std::string> scanRoots{ colliderPathText };
+    static const std::vector<std::string> kNoExclude;
+    omni::physics::parse::ScannedStage scanned = omni::physics::parse::scanStage(
+        attachedStage.attachTarget(), scanRoots, kNoExclude, omni::physics::parse::ScanOptions{},
+        iceDescriptorAllocator());
+    const omni::physics::parse::IPhysicsSource& scanSrc = scanned.source();
 
     for (auto& shape : scanned.shapes)
     {
         PhysxShapeDesc* desc = shape.get();
-        if (scanned.pathFor(desc->primKey) != colliderPath &&
-            (!desc->sourceGprim.valid() || scanned.pathFor(desc->sourceGprim) != colliderPath))
+        if (scanSrc.sourceKeyToString(desc->primKey) != colliderPathText &&
+            (!desc->sourceGprim.valid() || scanSrc.sourceKeyToString(desc->sourceGprim) != colliderPathText))
         {
             continue;
         }
@@ -86,14 +98,14 @@ PhysxShapeDesc* parseSurfaceSamplerShape(AttachedStage& attachedStage, const Sdf
         usdparser::scan::dispatchScannedShapeCooking(attachedStage, scanned, desc);
 
         if (desc->rigidBody.valid())
-            desc->rigidBody = attachedStage.keyFor(scanned.pathFor(desc->rigidBody));
+            desc->rigidBody = attachedStage.keyFor(scanSrc.sourceKeyToString(desc->rigidBody));
         if (desc->sourceGprim.valid())
-            desc->sourceGprim = attachedStage.keyFor(scanned.pathFor(desc->sourceGprim));
+            desc->sourceGprim = attachedStage.keyFor(scanSrc.sourceKeyToString(desc->sourceGprim));
         if (desc->type == eConvexMeshShape)
         {
             auto* d = static_cast<ConvexMeshPhysxShapeDesc*>(desc);
             if (d->meshPrimKey.valid())
-                d->meshPrimKey = attachedStage.keyFor(scanned.pathFor(d->meshPrimKey));
+                d->meshPrimKey = attachedStage.keyFor(scanSrc.sourceKeyToString(d->meshPrimKey));
         }
         else if (desc->type == eTriangleMeshShape ||
                  desc->type == eConvexMeshDecompositionShape ||
@@ -101,12 +113,12 @@ PhysxShapeDesc* parseSurfaceSamplerShape(AttachedStage& attachedStage, const Sdf
         {
             auto* d = static_cast<TriangleMeshPhysxShapeDesc*>(desc);
             if (d->meshPrimKey.valid())
-                d->meshPrimKey = attachedStage.keyFor(scanned.pathFor(d->meshPrimKey));
+                d->meshPrimKey = attachedStage.keyFor(scanSrc.sourceKeyToString(d->meshPrimKey));
         }
-        return shape.release();
+        return std::move(shape);
     }
 
-    return nullptr;
+    return {};
 }
 
 void createSamplerCallback(const ::physx::PxGeometry& geom, const ::physx::PxTransform& geomPos, void* userData)
@@ -171,34 +183,35 @@ void createSamplerCallback(const ::physx::PxGeometry& geom, const ::physx::PxTra
     info->surfaceSampler->geomPos = geomPos;
 }
 
-uint64_t createSurfaceSampler(const SdfPath& colliderPath, float samplingDistance)
+uint64_t createSurfaceSampler(omni::physics::parse::ObjectKey colliderKey, float samplingDistance)
 {
     omni::physx::OmniPhysX& omniPhysX = omni::physx::OmniPhysX::getInstance();
     usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
     if (!attachedStage)
         return 0;
 
-    PhysxShapeDesc* shapeDesc = parseSurfaceSamplerShape(*attachedStage, colliderPath);
+    const omni::physics::parse::DescPtr<PhysxShapeDesc> shapeOwner =
+        parseSurfaceSamplerShape(*attachedStage, colliderKey);
+    PhysxShapeDesc* shapeDesc = shapeOwner.get();
     if (!shapeDesc)
         return 0;
 
-    GfMatrix4d mat = omni::physx::internal::getWorldTransform(*attachedStage, attachedStage->keyFor(colliderPath), PXR_NS::UsdTimeCode::Default());
-    const GfTransform tr(mat);
-    const GfVec3d pos = tr.GetTranslation();
-    const GfQuatd rot = tr.GetRotation().GetQuat();
-    const GfVec3d scale = tr.GetScale();
+    const PxMat44d mat = omni::physx::internal::getWorldTransform(*attachedStage, colliderKey, omni::physics::parse::ReadTime::defaultTime());
+    PxTransform pose;
+    PxVec3 scale;
+    omni::physx::decomposeMatrix(pose, scale, mat);
 
-    shapeDesc->localPos = { float(pos[0]), float(pos[1]), float(pos[2]) };
-    shapeDesc->localRot = { float(rot.GetImaginary()[0]), float(rot.GetImaginary()[1]), float(rot.GetImaginary()[2]), float(rot.GetReal()) };
-    shapeDesc->localScale = { float(scale[0]), float(scale[1]), float(scale[2]) };
+    shapeDesc->localPos = { pose.p.x, pose.p.y, pose.p.z };
+    shapeDesc->localRot = { pose.q.x, pose.q.y, pose.q.z, pose.q.w };
+    shapeDesc->localScale = { scale.x, scale.y, scale.z };
 
     SurfaceSampler* surfaceSampler = ICE_PLACEMENT_NEW(SurfaceSampler)();
-    surfaceSampler->colliderPath = colliderPath;
+    surfaceSampler->colliderKey = colliderKey;
     surfaceSampler->samplingDistance = samplingDistance;
 
     UserDataInfo userData = { surfaceSampler, samplingDistance };
 
-    processRigidShapeGeometry(*attachedStage, colliderPath, shapeDesc, createSamplerCallback, &userData);
+    processRigidShapeGeometry(*attachedStage, colliderKey, shapeDesc, createSamplerCallback, &userData);
 
     surfaceSampler->physicsPtr = omniPhysX.getPhysXSetup().getPhysics();
     gSurfaceSamplerTable.push_back(surfaceSampler);
@@ -275,26 +288,27 @@ SurfaceSampler* getSurfaceSampler(const uint64_t surfaceSampler)
             return nullptr;
         }
 
-        PhysxShapeDesc* shapeDesc = parseSurfaceSamplerShape(*attachedStage, s->colliderPath);
+        const omni::physics::parse::DescPtr<PhysxShapeDesc> shapeOwner =
+            parseSurfaceSamplerShape(*attachedStage, s->colliderKey);
+        PhysxShapeDesc* shapeDesc = shapeOwner.get();
         if (!shapeDesc)
         {
             CARB_ASSERT(0);
             return nullptr;
         }
 
-        GfMatrix4d mat = omni::physx::internal::getWorldTransform(*attachedStage, attachedStage->keyFor(s->colliderPath), PXR_NS::UsdTimeCode::Default());
-        const GfTransform tr(mat);
-        const GfVec3d pos = tr.GetTranslation();
-        const GfQuatd rot = tr.GetRotation().GetQuat();
-        const GfVec3d scale = tr.GetScale();
+        const PxMat44d mat = omni::physx::internal::getWorldTransform(*attachedStage, s->colliderKey, omni::physics::parse::ReadTime::defaultTime());
+        PxTransform pose;
+        PxVec3 scale;
+        omni::physx::decomposeMatrix(pose, scale, mat);
 
-        shapeDesc->localPos = { float(pos[0]), float(pos[1]), float(pos[2]) };
-        shapeDesc->localRot = { float(rot.GetImaginary()[0]), float(rot.GetImaginary()[1]), float(rot.GetImaginary()[2]), float(rot.GetReal()) };
-        shapeDesc->localScale = { float(scale[0]), float(scale[1]), float(scale[2]) };
+        shapeDesc->localPos = { pose.p.x, pose.p.y, pose.p.z };
+        shapeDesc->localRot = { pose.q.x, pose.q.y, pose.q.z, pose.q.w };
+        shapeDesc->localScale = { scale.x, scale.y, scale.z };
 
         UserDataInfo userData = { s, s->samplingDistance };
 
-        processRigidShapeGeometry(*attachedStage, s->colliderPath, shapeDesc, createSamplerCallback, &userData);
+        processRigidShapeGeometry(*attachedStage, s->colliderKey, shapeDesc, createSamplerCallback, &userData);
 
         s->sampler->addSamples(s->samples);
         s->physicsPtr = OmniPhysX::getInstance().getPhysXSetup().getPhysics();

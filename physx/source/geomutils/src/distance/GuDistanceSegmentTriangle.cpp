@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "foundation/PxIntrinsics.h"
 #include "GuDistanceSegmentTriangle.h"
@@ -34,6 +11,7 @@
 
 using namespace physx;
 using namespace Gu;
+using namespace aos;
 
 // ptchernev: 
 // The Magic Software code uses a relative error test for parallel case.
@@ -376,11 +354,10 @@ PxReal Gu::distanceSegmentTriangleSquared(	const PxVec3& origin, const PxVec3& d
 
 //	closest0 is the closest point on segment pq
 //	closest1 is the closest point on triangle abc
-aos::FloatV Gu::distanceSegmentTriangleSquared(	const aos::Vec3VArg p, const aos::Vec3VArg q,
-												const aos::Vec3VArg a, const aos::Vec3VArg b, const aos::Vec3VArg c,
-												aos::Vec3V& closest0, aos::Vec3V& closest1)
+FloatV Gu::distanceSegmentTriangleSquared(	const Vec3VArg p, const Vec3VArg q,
+											const Vec3VArg a, const Vec3VArg b, const Vec3VArg c,
+											Vec3V& closest0, Vec3V& closest1)
 {
-	using namespace aos;
 	const FloatV zero = FZero();
 	//const FloatV one = FOne();
 	//const FloatV parallelTolerance  = FloatV_From_F32(PX_PARALLEL_TOLERANCE);

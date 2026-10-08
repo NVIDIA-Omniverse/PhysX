@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """Verify that OVPHYSX_LIB can select the installed wheel's bundled library."""
 
@@ -27,7 +27,7 @@ def main() -> None:
 
     PhysX.set_cpu_mode(True)
     physx = PhysX()
-    physx.release()
+    physx.destroy()
 
 
 if __name__ == "__main__":

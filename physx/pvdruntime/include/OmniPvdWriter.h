@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef OMNI_PVD_WRITER_H
 #define OMNI_PVD_WRITER_H
@@ -41,7 +18,10 @@ struct OmniPvdWriterStatusFlag
 	enum Enum
 	{
 		/**
-		 * \brief Set if any attempt to write to the stream failed
+		 * \brief Set if opening the bound stream or writing its command stream failed
+		 *
+		 * A lazy-open failure also latches further writer open attempts until clearStatus() or
+		 * setWriteStream() starts a new retry epoch.
          *
          * \see OmniPvdWriter.getStatus()
 		*/
@@ -52,13 +32,17 @@ struct OmniPvdWriterStatusFlag
 /**
  * \brief Used to write debug information to an OmniPvdWriteStream
  *
- * Allows the registration of OmniPVD classes and attributes, in a similar fashion to an object oriented language. A registration returns a unique identifier or handle.
+ * Allows the registration of OmniPVD classes and attributes, in a similar fashion to an object oriented language. A successful registration returns a unique identifier or handle.
  *
  * Once classes and attributes have been registered, one can create for example object instances of a class and set the values of the attributes of a specific object.
  *
  * Objects can be grouped by context using the context handle. The context handle is a user-specified handle which is passed to the set functions and object creation and destruction functions.
  *
  * Each context can have its own notion of time. The current time of a context can be exported with calls to the startFrame and stopFrame functions.
+ *
+ * The writer borrows its bound stream and never closes or destroys it. The caller must keep the
+ * stream alive while writer access is possible, or rebind the writer to another live stream after
+ * writes have quiesced and before closing and destroying/releasing the old stream.
  */
 class OmniPvdWriter
 {
@@ -75,16 +59,31 @@ public:
 	virtual void OMNI_PVD_CALL setLogFunction(OmniPvdLogFunction logFunction) = 0;
 
 	/**
-	 * \brief Sets the write stream to receive the API command stream
+	 * \brief Binds the write stream that receives the OmniPVD command stream.
 	 *
-	 * Binding a stream resets the writer's per-stream state, so every stream is
-	 * self-contained and can be decoded on its own. This happens on every setWriteStream()
-	 * call (binding a different stream, or re-binding the same stream object after a
-	 * reconnect), so no separate reset call is needed: the version header is written again at
-	 * the start of the stream, and the per-stream numbering restarts so the stream does not
-	 * depend on anything written to a previously bound stream.
+	 * Binding is non-owning and performs no I/O: it does not open, write, flush, close, or destroy
+	 * the stream. The next writer command lazily calls openStream() and, on success, emits the
+	 * version header before its payload. If opening fails, no payload is emitted, registration
+	 * calls return OMNI_PVD_INVALID_HANDLE without advancing schema handles, and
+	 * OmniPvdWriterStatusFlag::eSTREAM_WRITE_FAILURE is set. While the writer is still waiting for
+	 * its first write and that flag remains set, later commands are suppressed without another
+	 * openStream() call. Thus lazy open is attempted at most once per status epoch. clearStatus()
+	 * performs no I/O and permits one new attempt on the next command; setWriteStream() starts a new
+	 * session and retry epoch.
 	 *
-	 * \param writeStream The OmniPvdWriteStream to receive the stream of API calls/notifications
+	 * Every binding resets the writer's per-stream header state, schema handle numbering, and
+	 * status flags so subsequent writes form a self-contained versioned segment. Binding itself
+	 * does not clear transport bytes or reset its cursor. If the stream is already open, the segment
+	 * begins at its current position. If it is closed, the next command first applies that transport's
+	 * reopen policy: a file writer truncates, a memory writer preserves its FIFO position, and a TCP
+	 * writer reconnects. Decode an appended segment from its preserved boundary. When the complete
+	 * destination must contain one standalone recording, use a new or reset transport, or reopen a
+	 * file writer so it truncates. Closing and reopening without re-binding does not reset writer state.
+	 *
+	 * The writer borrows writeStream and never closes or destroys it. Keep it alive until writes
+	 * have quiesced or this writer has been rebound to another live stream.
+	 *
+	 * \param writeStream The borrowed OmniPvdWriteStream that receives API calls/notifications
 	 */
 	virtual void OMNI_PVD_CALL setWriteStream(OmniPvdWriteStream& writeStream) = 0;
 	
@@ -102,7 +101,8 @@ public:
 	 *
 	 * \param className The class name
 	 * \param baseClassHandle The handle to the base class. This handle is obtained by pre-registering the base class. Defaults to 0 which means the class has no parent class
-	 * \return A unique class handle for the registered class
+	 * \return A unique class handle, or OMNI_PVD_INVALID_HANDLE if no stream is bound or its lazy
+	 * open fails.
 	 *
 	 * \see OmniPvdWriter::registerAttribute()
 	 * \see OmniPvdWriter::registerEnumValue()
@@ -123,7 +123,8 @@ public:
 	 * \param classHandle The handle from the registerClass() call
 	 * \param attributeName The name of the enum value
 	 * \param value The value of the enum value
-	 * \return A unique attribute handle for the registered enum value
+	 * \return A unique attribute handle, or OMNI_PVD_INVALID_HANDLE if no stream is bound or its
+	 * lazy open fails.
 	 *
 	 * \see OmniPvdWriter::registerClass()
 	 */
@@ -138,7 +139,8 @@ public:
 	 * \param attributeName The attribute name
 	 * \param attributeDataType The attribute data type
 	 * \param nbElements The number of elements in the array. Set this to 0 to indicate a variable length array
-	 * \return A unique attribute handle for the registered attribute
+	 * \return A unique attribute handle, or OMNI_PVD_INVALID_HANDLE if no stream is bound or its
+	 * lazy open fails.
 	 *
 	 * \see OmniPvdWriter::registerClass()
 	 * \see OmniPvdWriter::setAttribute()
@@ -155,7 +157,8 @@ public:
 	 * \param classHandle The handle from the registerClass() call of the class
 	 * \param attributeName The attribute name
 	 * \param enumClassHandle The handle from the registerClass() call of the enum
-	 * \return A unique attribute handle for the registered flags attribute
+	 * \return A unique attribute handle, or OMNI_PVD_INVALID_HANDLE if no stream is bound or its
+	 * lazy open fails.
 	 *
 	 * \see OmniPvdWriter::registerClass()
 	 * \see OmniPvdWriter::setAttribute()
@@ -172,7 +175,8 @@ public:
 	 * \param classHandle The handle from the registerClass() call of the class
 	 * \param attributeName The attribute name
 	 * \param classAttributeHandle The handle from the registerClass() call of the class attribute
-	 * \return A unique handle for the registered class attribute
+	 * \return A unique handle, or OMNI_PVD_INVALID_HANDLE if no stream is bound or its lazy open
+	 * fails.
 	 *
 	 * \see OmniPvdWriter::registerClass()
 	 * \see OmniPvdWriter::setAttribute()
@@ -187,7 +191,8 @@ public:
 	 * \param classHandle The handle from the registerClass() call of the class
 	 * \param attributeName The attribute name
 	 * \param attributeDataType The data type of the items which will get added to the list attribute
-	 * \return A unique handle for the registered list attribute
+	 * \return A unique handle, or OMNI_PVD_INVALID_HANDLE if no stream is bound or its lazy open
+	 * fails.
 	 *
 	 * \see OmniPvdWriter::registerClass()
 	 * \see OmniPvdWriter::addToUniqueListAttribute()
@@ -393,8 +398,10 @@ public:
 	virtual uint32_t OMNI_PVD_CALL getStatus() = 0;
 
 	/**
-	 * \brief Clears or resets the status of the writer
+	 * \brief Clears or resets the status of the writer.
 	 *
+	 * This function performs no stream I/O. If a failed first-write lazy open is latched, clearing
+	 * the status permits the next writer command to attempt the open once in a new status epoch.
 	 */
 	virtual void OMNI_PVD_CALL clearStatus() = 0;
 

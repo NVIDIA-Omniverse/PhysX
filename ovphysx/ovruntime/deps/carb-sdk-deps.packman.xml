@@ -1,8 +1,9 @@
 <project toolsVersion="5.0">
-  <!-- Static Carbonite does not require exact version matching with separately
-       published runtime bundles. Keep the blessed public selection here so
-       Physics repository consumers can reuse it. -->
-  <dependency name="carb_sdk_plugins">
-    <package name="carb_sdk+plugins.${platform_target_abi}" version="213.0.2+release.14134.6a000408.gl" />
+  <!-- Carbonite for ovphysx/ovruntime, pinned by this repository rather than
+       taken from the ovruntime_deps package. Static Carbonite does not require
+       exact version matching with separately published runtime bundles.
+       Importers (ovphysx) override the linkPath via filter. -->
+  <dependency name="carb_sdk_plugins" linkPath="../_build/target-deps/carb_sdk_plugins">
+    <package name="carb_sdk+plugins.${platform_target_abi}" version="214.0.0+release.15092.d5f9d716.gl" />
   </dependency>
 </project>

@@ -1,5 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-SIM-NVTX-001
+ * @covers AC-5
+ */
 
 #include "PhysXFoundation.h"
 
@@ -152,6 +157,20 @@ struct omni::physx::PhysXFoundation
                                                 ::physx::PxCudaContextManager*& pxCudaContextManager,
                                                 const bool enableSynchronousKernelLaunches)
     {
+        // ### DEFENSIVE OMPE-102186
+        // Checked before the environment queries below so the outcome does not depend on whether
+        // the machine has a GPU. PxCreateCudaContextManager takes the foundation by reference and
+        // dereferences it immediately (PxgPhysXGpu.cpp, foundation.getErrorCallback() is pure
+        // virtual), so a null pxFoundation faults there rather than here. That is reachable
+        // whenever PxCreateFoundation has failed - PhysXSetup keeps a null mFoundation and callers
+        // only assert on it, and CARB_ASSERT compiles out in release. Refuse rather than crash,
+        // and report it: a null foundation means setup already failed and the real error is there.
+        if (!pxFoundation)
+        {
+            CARB_LOG_ERROR("Cannot create CUDA context manager: PhysX foundation is null.");
+            return false;
+        }
+
         if (isCpuMode())
         {
             return false;
@@ -269,7 +288,14 @@ struct omni::physx::PhysXFoundation
                 // Let PhysX create the context for the specified device
                 cudaContextManagerDesc.deviceOrdinal = preferences.deviceOrdinal;
             }
-            pxCudaContextManager = PxCreateCudaContextManager(*pxFoundation, cudaContextManagerDesc, NULL, enableSynchronousKernelLaunches);
+            // Hand the installed profiler callback to the GPU module: without it the
+            // PhysX GPU profile zones are dropped, so they reach neither the
+            // Carbonite profiler nor NVTX. PxGetProfilerCallback() returns null
+            // unless a sink was requested, which is the same as passing NULL here.
+            // The callback is installed while the PhysX SDK is created, which
+            // precedes every path that gets here (scene creation, cooking service).
+            pxCudaContextManager = PxCreateCudaContextManager(
+                *pxFoundation, cudaContextManagerDesc, ::PxGetProfilerCallback(), enableSynchronousKernelLaunches);
             if (pxCudaContextManager && !pxCudaContextManager->contextIsValid())
             {
                 CARB_LOG_ERROR("Failed to create Cuda Context Manager.");

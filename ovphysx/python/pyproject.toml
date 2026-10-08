@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]
@@ -8,22 +8,26 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ovphysx"
 dynamic = ["version"]
-description = "Self-contained Python library for USD-based physics simulation with DLPack tensor interoperability. x86_64 wheels require a CPU with AVX."
+description = "PhysX simulation library for ovstage-populated scenes with Warp array interoperability. x86_64 wheels require a CPU with AVX."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-  "packaging>=20,<24",  # PEP 440 version checking for USD compatibility
-  # ovstage ships the USD backend + monolith + libovstage that ovphysx loads at
-  # runtime. Keep the two-wheel release pair exact: this ovphysx build is validated
+  "packaging>=20,<24",  # PEP 440 version comparison (Python/native package parity)
+  # ovstage owns scene ingestion and brings its own namespaced USD runtime; it is
+  # the native stage provider ovphysx loads at runtime. Keep the two-wheel release
+  # pair exact: this ovphysx build is validated
   # against the population/runtime ABI of the pinned ovstage release. This pin is
   # generated from the OVSTAGE_VERSION constant in scripts/fetch_ovstage_release.py
   # (the version source of truth); do not edit this line by hand.
-  "ovstage==0.1.1.355824",
+  "ovstage==0.2.0.377349",
+  # Warp is the public CPU/CUDA array frontend for PhysX.read(). Floor is the tested line,
+  # pinned exactly in tests; <2 only guards a major bump (a minor cap collides with IsaacLab).
+  "warp-lang>=1.16,<2",
 ]
 license = "LicenseRef-NVIDIA-Omniverse"
 license-files = ["LICENSE.txt", "ovphysx-LICENSES.zip"]
 authors = [{ name = "Omniverse Physics Team" }]
-keywords = ["physics", "simulation", "usd", "openusd", "nvidia", "physx", "reinforcement-learning", "robotics", "dlpack", "tensor"]
+keywords = ["physics", "simulation", "usd", "openusd", "nvidia", "physx", "reinforcement-learning", "robotics", "warp", "dlpack", "tensor"]
 classifiers = [
   "Programming Language :: Python :: 3",
   "Operating System :: POSIX :: Linux",
@@ -44,6 +48,18 @@ Changelog = "https://nvidia-omniverse.github.io/PhysX/ovphysx/latest/changelog.h
 [dependency-groups]
 dev = [
   "build>=1.0.0", # for building a wheel
+  "pyright==1.1.411", # pinned; bump intentionally via MR
+  "warp-lang>=1.16,<1.17", # stub types for pyright's no-install-project environment
+]
+
+# uv.lock must resolve ovstage for every CI platform. Locks generated on x86_64
+# alone pin manylinux_2_35_x86_64 and break aarch64 pytest (uv cannot install the
+# locked wheel on manylinux_2_35_aarch64 hosts).
+[tool.uv]
+required-environments = [
+  "sys_platform == 'linux' and platform_machine == 'x86_64'",
+  "sys_platform == 'linux' and platform_machine == 'aarch64'",
+  "sys_platform == 'win32' and platform_machine == 'AMD64'",
 ]
 
 [tool.setuptools.dynamic]
@@ -71,4 +87,12 @@ include = ["ovphysx*"]
   "skills/**/*",
   "samples/**/*",
   "docs/**/*",
+  "py.typed",
+  "*.pyi",
+]
+# `packages.find` treats ovphysx.utils as its own package, so the "*.pyi" glob
+# above is not guaranteed to cross the package boundary. This entry pins the
+# subpackage's stubs into the wheel independently of setuptools' glob handling.
+"ovphysx.utils" = [
+  "*.pyi",
 ]

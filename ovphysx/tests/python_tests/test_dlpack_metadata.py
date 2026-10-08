@@ -1,14 +1,25 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# @implements REQ-PYTHON-READ-001
+# @covers AC-1 AC-2 AC-3
+# @maps_to TEST-PYTHON-READ-001
+# @implements REQ-CAPI-WRITE-001
+# @covers AC-9
+# @maps_to TEST-CAPI-WRITE-001
+# @implements REQ-INPUT-DEVICE-001
+# @covers AC-4
+# @maps_to TEST-INPUT-DEVICE-001
 
 import ctypes
 import subprocess
 import sys
 import textwrap
 
+import numpy as np
 import pytest
 from ovphysx._dlpack_utils import _validate_c_contiguous_layout
-from ovphysx.dlpack import DLTensor
+from ovphysx.dlpack import DLDeviceType, DLTensor
 
 
 def test_validate_c_contiguous_layout_rejects_invalid_metadata():
@@ -57,8 +68,12 @@ def test_acquire_dltensor_rejects_unbounded_rank_without_crashing():
         import ctypes
 
         from ovphysx._dlpack_utils import acquire_dltensor
-        from ovphysx.dlpack import DLManagedTensor, PyCapsule_Destructor, PyCapsule_New
+        from ovphysx.dlpack import DLManagedTensor
 
+        PyCapsule_Destructor = ctypes.CFUNCTYPE(None, ctypes.c_void_p)
+        PyCapsule_New = ctypes.pythonapi.PyCapsule_New
+        PyCapsule_New.argtypes = [ctypes.c_void_p, ctypes.c_char_p, PyCapsule_Destructor]
+        PyCapsule_New.restype = ctypes.py_object
 
         managed = DLManagedTensor()
         managed.dl_tensor.ndim = 1 << 28
@@ -97,74 +112,190 @@ def test_acquire_dltensor_rejects_unbounded_rank_without_crashing():
     )
 
 
-def _make_dltensor(buf, n, code, bits):
-    """Build a 1-D DLTensor over `buf` with `n` elements of the given dtype code/bits."""
-    shape = (ctypes.c_int64 * 1)(n)
+def _make_dltensor(
+    buf,
+    shape_values,
+    code,
+    bits,
+    *,
+    lanes=1,
+    device_type=DLDeviceType.kDLCPU,
+    device_id=0,
+):
+    """Build a DLTensor and retain its ctypes metadata for the converter call."""
+    shape = (ctypes.c_int64 * len(shape_values))(*shape_values)
     t = DLTensor()
     t.data = ctypes.cast(buf, ctypes.c_void_p) if buf is not None else None
-    t.ndim = 1
+    t.device.device_type = device_type
+    t.device.device_id = device_id
+    t.ndim = len(shape_values)
     t.shape = shape
+    t.strides = None
     t.byte_offset = 0
     t.dtype.code = code
     t.dtype.bits = bits
-    t.dtype.lanes = 1
-    return t, shape  # keep `shape` (and the caller's buf) alive for the call
+    t.dtype.lanes = lanes
+    t._test_keepalive = (buf, shape)
+    return t
 
 
-def test_dltensor_bool_column_decodes_as_numpy_bool():
-    """A non-empty kDLBool (code=6, bits=8) column decodes to numpy bool (issue #8, !7861/!7882 review).
+class _BorrowHolder:
+    def __init__(self):
+        self.retains = 0
+        self.releases = 0
 
-    setBool writes {kDLBool, 8, 1}; the read-column decoder must map it AND honor the
-    numpy dtype (bool), not return uint8 for the non-empty path.
-    """
-    import numpy as np
+    def retain(self):
+        self.retains += 1
+
+    def release_borrow(self, *_ignored):
+        self.releases += 1
+
+
+def _convert(t, holder=None):
+    import warp as wp
     from ovphysx.api import PhysX
 
-    buf = (ctypes.c_uint8 * 3)(1, 0, 1)
-    t, _shape = _make_dltensor(buf, 3, 6, 8)
+    return object.__new__(PhysX)._dltensor_to_warp_array(t, wp, holder or _BorrowHolder())
 
-    arr = PhysX._dltensor_to_numpy(t, np)
+
+def _convert_write(t):
+    import warp as wp
+    from ovphysx.api import PhysX
+
+    return object.__new__(PhysX)._dltensor_to_warp_array(t, wp, None)
+
+
+def test_dltensor_bool_column_wraps_as_warp_bool():
+    """A non-empty kDLBool column is a zero-copy Warp bool array."""
+    import gc
+
+    import warp as wp
+
+    buf = (ctypes.c_uint8 * 3)(1, 0, 1)
+    holder = _BorrowHolder()
+    arr = _convert(_make_dltensor(buf, [3], 6, 8), holder)
+
+    assert isinstance(arr, wp.array)
     assert arr.shape == (3,)
-    assert arr.dtype == np.bool_
-    assert arr.tolist() == [True, False, True]
+    assert arr.dtype == wp.bool
+    assert arr.ptr == ctypes.addressof(buf)
+    assert arr.numpy().tolist() == [True, False, True]
+    assert holder.retains == 1 and holder.releases == 0
+
+    del arr
+    gc.collect()
+    assert holder.releases == 1
 
 
 def test_dltensor_bool_empty_and_nonempty_dtype_parity():
-    """Empty and non-empty kDLBool columns return the same numpy dtype (bool)."""
-    import numpy as np
-    from ovphysx.api import PhysX
+    """Empty and non-empty kDLBool columns have the same Warp dtype."""
+    import warp as wp
 
-    empty_t, _es = _make_dltensor(None, 0, 6, 8)
-    empty = PhysX._dltensor_to_numpy(empty_t, np)
+    empty_holder = _BorrowHolder()
+    empty = _convert(_make_dltensor(None, [0], 6, 8), empty_holder)
     assert empty.shape == (0,)
-    assert empty.dtype == np.bool_
+    assert empty.dtype == wp.bool
+    assert empty_holder.retains == 0, "an empty Warp-owned array must not retain the read session"
 
     buf = (ctypes.c_uint8 * 2)(1, 0)
-    nonempty_t, _ns = _make_dltensor(buf, 2, 6, 8)
-    nonempty = PhysX._dltensor_to_numpy(nonempty_t, np)
-    assert nonempty.dtype == empty.dtype == np.bool_
+    nonempty = _convert(_make_dltensor(buf, [2], 6, 8))
+    assert nonempty.dtype == empty.dtype == wp.bool
 
 
-def test_dltensor_int64_column_dtype_parity():
-    """A non-bool column keeps its natural dtype (int64) through the astype copy."""
-    import numpy as np
-    from ovphysx.api import PhysX
+@pytest.mark.parametrize(
+    ("code", "bits", "ctype", "warp_name"),
+    [
+        (2, 32, ctypes.c_float, "float32"),
+        (0, 64, ctypes.c_int64, "int64"),
+        (6, 8, ctypes.c_uint8, "bool"),
+    ],
+)
+def test_supported_dltensor_dtypes_map_to_warp(code, bits, ctype, warp_name):
+    """A float, an int, and the non-trivial kDLBool mapping produce the Warp scalar."""
+    import warp as wp
 
-    buf = (ctypes.c_int64 * 2)(-3, 7)
-    t, _shape = _make_dltensor(buf, 2, 0, 64)  # kDLInt, 64
+    buf = (ctype * 1)(1)
+    arr = _convert(_make_dltensor(buf, [1], code, bits))
 
-    arr = PhysX._dltensor_to_numpy(t, np)
-    assert arr.dtype == np.int64
-    assert arr.tolist() == [-3, 7]
+    assert arr.dtype == getattr(wp, warp_name)
+    expected = [True] if warp_name == "bool" else [1]
+    assert arr.numpy().reshape(-1).tolist() == expected
+
+
+def test_dltensor_lanes_become_trailing_warp_dimension():
+    """Native dtype lanes become a trailing scalar dimension."""
+    import warp as wp
+
+    backing = (ctypes.c_float * 6)(*range(6))
+    t = _make_dltensor(backing, [2], 2, 32, lanes=3)
+    arr = _convert(t)
+
+    assert isinstance(arr, wp.array)
+    assert arr.ptr == ctypes.addressof(backing)
+    assert arr.shape == (2, 3)
+    assert arr.numpy().tolist() == [[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]
+
+
+def test_dltensor_byte_offset_shifts_the_aliased_base_address():
+    """byte_offset is part of the address, not the shape.
+
+    Dropping it aliases the column from the wrong first element and reads past the end
+    of the allocation, with no error anywhere.
+    """
+    import warp as wp
+
+    backing = (ctypes.c_float * 6)(*range(6))
+    t = _make_dltensor(backing, [3], 2, 32)
+    t.byte_offset = 3 * ctypes.sizeof(ctypes.c_float)
+    arr = _convert(t)
+
+    assert isinstance(arr, wp.array)
+    assert arr.ptr == ctypes.addressof(backing) + t.byte_offset
+    assert arr.numpy().tolist() == [3.0, 4.0, 5.0]
+
+
+def test_write_dltensor_nonempty_cpu_array_aliases_byte_offset_without_a_lease():
+    """A non-empty write array aliases mapped CPU storage and does not own its lifetime."""
+    import warp as wp
+
+    backing = (ctypes.c_float * 6)(*range(6))
+    t = _make_dltensor(backing, [3], 2, 32)
+    t.byte_offset = 3 * ctypes.sizeof(ctypes.c_float)
+    arr = _convert_write(t)
+
+    assert isinstance(arr, wp.array)
+    assert arr.device.is_cpu
+    assert arr.ptr == ctypes.addressof(backing) + t.byte_offset
+    assert arr.deleter is None
+    arr.assign(np.array([10.0, 11.0, 12.0], dtype=np.float32))
+    assert list(backing)[3:] == [10.0, 11.0, 12.0]
+
+
+def test_write_dltensor_empty_cpu_array_is_warp_owned():
+    """A zero-element write tensor needs no external pointer or session lease."""
+    import warp as wp
+
+    arr = _convert_write(_make_dltensor(None, [0], 2, 32))
+
+    assert isinstance(arr, wp.array)
+    assert arr.device.is_cpu
+    assert arr.shape == (0,)
+    assert arr.dtype == wp.float32
+    assert arr.ptr is None
+    assert arr.deleter is not None
 
 
 def test_dltensor_unsupported_dtype_raises_typeerror():
     """A genuinely unmapped dtype (float16) raises instead of silently decoding as float32."""
-    import numpy as np
-    from ovphysx.api import PhysX
-
     buf = (ctypes.c_uint8 * 2)(0, 0)
-    t, _shape = _make_dltensor(buf, 1, 2, 16)  # kDLFloat, 16 (float16) - not supported
+    t = _make_dltensor(buf, [1], 2, 16)  # kDLFloat 16 (float16) is not supported
 
     with pytest.raises(TypeError):
-        PhysX._dltensor_to_numpy(t, np)
+        _convert(t)
+
+
+def test_dltensor_unsupported_device_is_rejected():
+    buf = (ctypes.c_float * 1)(1.0)
+    t = _make_dltensor(buf, [1], 2, 32, device_type=DLDeviceType.kDLCUDAHost)
+    with pytest.raises(TypeError, match="unsupported DLPack device"):
+        _convert(t)

@@ -1,5 +1,11 @@
-# ovphysx Build Script (Cross-Platform)
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# ovphysx build script (cross-platform).
 # Usage: cmake [options] -P scripts/build.cmake
+#
+# @implements REQ-CAPI-BENCHMARK-002
+# @covers AC-4
 #
 # Options (passed via -D flags):
 #   -DCLEAN_BUILD=ON|OFF          Clean build directory (default: OFF)
@@ -9,9 +15,11 @@
 #   -DDEV_PHYSX=ON|OFF            Build PhysX SDK from source (default: OFF)
 #   -DDEV_SCHEMA=ON|OFF           Use locally-built namespaced physics schema (default: OFF).
 #   -DBENCHMARKS=ON|OFF           Build the opt-in benchmark suite (default: OFF)
+#   -DOVPHYSX_REQUIRE_BENCHMARK_CUDA=ON|OFF
+#                                   Reject CPU-only benchmark configuration (default: OFF)
 #   -DOVPHYSX_USE_RELEASE_RUNTIME_DEPS=ON|OFF
 #                                   Use release Packman runtime deps for Debug builds
-#                                   (required for Debug; OVStage runtime is Release-only)
+#                                   (required for Debug, the OVStage runtime is Release-only)
 #   -DGENERATE_ONLY=ON|OFF        Configure only, skip build (default: OFF)
 #   -DBUILD_TARGET=<name>         Build a specific CMake target (default: all)
 #
@@ -28,14 +36,12 @@
 
 cmake_minimum_required(VERSION 3.16)
 
-# Get script directory and project root
 get_filename_component(SCRIPT_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
 get_filename_component(PROJECT_ROOT "${SCRIPT_DIR}/.." ABSOLUTE)
 include("${SCRIPT_DIR}/crossplatform_helpers.cmake")
 include("${SCRIPT_DIR}/build_common.cmake")
 include("${SCRIPT_DIR}/host_path_utils.cmake")
 
-# Default values
 if(NOT DEFINED BUILD_DIR)
     set(BUILD_DIR "_build")
 endif()
@@ -60,8 +66,8 @@ if(NOT DEFINED DEV_SCHEMA)
     set(DEV_SCHEMA OFF)
 endif()
 
-# Parallel job count: -DJOBS=N overrides, otherwise core+RAM-aware auto-detect
-# (shared helper in build_common.cmake; see there for the bounding rationale).
+# Parallel job count. -DJOBS=N overrides, otherwise the core and RAM aware
+# auto-detect in build_common.cmake applies. See there for the bounding rationale.
 ovphysx_compute_build_jobs(JOBS)
 
 message(STATUS "ovphysx Build")
@@ -73,22 +79,20 @@ message(STATUS "Platform: ${CMAKE_HOST_SYSTEM_NAME}")
 message(STATUS "Parallel jobs: ${JOBS}")
 message(STATUS "USD mode: namespaced")
 
-# Set build path
 set(BUILD_PATH "${PROJECT_ROOT}/${BUILD_DIR}")
 set(OVPHYSX_DEV_SCHEMA_STAMP "${BUILD_PATH}/ovphysx_dev_schema.stamp")
 
-# Sibling ovruntime repository (included as CMake subproject, not built separately)
+# The sibling ovruntime repository is included as a CMake subproject, not built separately.
 set(OVRUNTIME_DIR "${PROJECT_ROOT}/ovruntime")
 if(NOT EXISTS "${OVRUNTIME_DIR}/CMakeLists.txt")
     message(FATAL_ERROR "Sibling ovruntime repository not found at: ${OVRUNTIME_DIR}")
 endif()
 
 
-# Clean build if requested
 if(CLEAN_BUILD)
     message(STATUS "Cleaning build directories and artifacts...")
 
-    # Clean ovruntime build artifacts directly (don't call build.sh -x which also rebuilds)
+    # The ovruntime build artifacts are removed directly. build.sh -x would also rebuild.
     file(GLOB OVRUNTIME_UNDERSCORE_DIRS "${OVRUNTIME_DIR}/_*")
     foreach(_DIR ${OVRUNTIME_UNDERSCORE_DIRS})
         if(IS_DIRECTORY "${_DIR}")
@@ -97,7 +101,8 @@ if(CLEAN_BUILD)
         endif()
     endforeach()
 
-    # Find and remove common build/cache directories. Cmake globbing doesn't work well with folders, so we do it manually.
+    # Find and remove the common build/cache directories. CMake globbing does not match
+    # directories by name, so the tree is walked and filtered here.
     file(GLOB_RECURSE ALL_ITEMS LIST_DIRECTORIES true "${PROJECT_ROOT}/*")
     set(DIRS_TO_REMOVE "")
     foreach(ITEM ${ALL_ITEMS})
@@ -113,17 +118,15 @@ if(CLEAN_BUILD)
             endif()
         endif()
     endforeach()
-    # Remove duplicates and sort.
     if(DIRS_TO_REMOVE)
         list(REMOVE_DUPLICATES DIRS_TO_REMOVE)
         list(SORT DIRS_TO_REMOVE)
         
-        # Filter out subdirectories whose parents are already being removed
+        # Subdirectories whose parents are already being removed are dropped.
         set(FILTERED_DIRS "")
         foreach(DIR ${DIRS_TO_REMOVE})
             set(IS_SUBDIR FALSE)
             foreach(PARENT ${FILTERED_DIRS})
-                # Check if DIR is a subdirectory of PARENT
                 string(FIND "${DIR}" "${PARENT}/" SUBDIR_POS)
                 if(SUBDIR_POS EQUAL 0)
                     set(IS_SUBDIR TRUE)
@@ -141,8 +144,8 @@ if(CLEAN_BUILD)
         endforeach()
     endif()
 
-    # Clean transient packaging-lock snapshots generated on lock mismatches.
-    # Keep canonical lock files (without _new suffix) untouched.
+    # Remove the transient packaging-lock snapshots generated on lock mismatches.
+    # The canonical lock files (without the _new suffix) stay untouched.
     set(PACKAGING_LOCK_DIR "${PROJECT_ROOT}/packaging_lock")
     if(IS_DIRECTORY "${PACKAGING_LOCK_DIR}")
         file(GLOB PACKAGING_LOCK_NEW_FILES "${PACKAGING_LOCK_DIR}/*_new.json")
@@ -162,46 +165,19 @@ if(CLEAN_BUILD)
     endif()
 endif()
 
-# Start overall build timer
 string(TIMESTAMP _BUILD_START_TS "%s")
 
-# Initialize repo and generate build system (if not already done)
 message(STATUS "  Initializing build system (generate + fetch dependencies)...")
 
-# Create build directory
 message(STATUS "Creating build directory...")
 file(MAKE_DIRECTORY "${BUILD_PATH}")
 file(REMOVE "${OVPHYSX_DEV_SCHEMA_STAMP}")
 
-# Use centralized cross-platform fetch script
-execute_process(
-    COMMAND ${CMAKE_COMMAND}
-            "-DCONFIG=${OVPHYSX_RUNTIME_DEPS_CONFIG}"
-            -P "${SCRIPT_DIR}/fetch_deps.cmake"
-    WORKING_DIRECTORY "${PROJECT_ROOT}"
-    RESULT_VARIABLE FETCH_DEPS_RESULT
-)
-if(NOT FETCH_DEPS_RESULT EQUAL 0)
-    message(FATAL_ERROR "Failed to download packman dependencies (exit code: ${FETCH_DEPS_RESULT})")
-endif()
-
-# Use target-deps Python (3.12) for scripts that need tomllib
-# Note: packman's bootstrap Python (tools/packman/python.bat) is older and lacks tomllib
-if(WIN32)
-    set(TARGET_PYTHON "${PROJECT_ROOT}/_build/target-deps/python/python.exe")
-else()
-    set(TARGET_PYTHON "${PROJECT_ROOT}/_build/target-deps/python/bin/python3")
-endif()
-
-if(NOT EXISTS "${TARGET_PYTHON}")
-    message(FATAL_ERROR "Target Python not found at: ${TARGET_PYTHON}\n"
-                        "Run scripts/fetch_deps.bat (Windows) or scripts/fetch_deps.sh (Linux) first.")
-endif()
-
 # ============================================================================
-# Fetch ovruntime dependencies (replaces build.sh invocation)
+# Fetch ovruntime dependencies
 # ============================================================================
-
+# Pulled BEFORE ovphysx fetch_deps, which imports the USD monolith from the
+# ovruntime_deps package that is only present after this pull.
 message(STATUS "")
 message(STATUS "Pulling ovruntime dependencies...")
 
@@ -220,10 +196,10 @@ if(NOT PULL_DEPS_RESULT STREQUAL "0")
     message(FATAL_ERROR "Failed to pull ovruntime dependencies (exit code: ${PULL_DEPS_RESULT})")
 endif()
 # On Windows with --devphysx, PhysX's CMake needs PM_SECURELOADLIBRARY_PATH to
-# find nvSecureLoadLibrary.c.  pull_dependencies.bat runs packman pull on
-# physx/dependencies.xml which downloads the package, but packman only sets
-# PM_*_PATH env vars for deps with a linkPath — SecureLoadLibrary has none.
-# Locate it directly in the packman cache.
+# find nvSecureLoadLibrary.c. pull_dependencies.bat runs packman pull on
+# physx/dependencies.xml, which downloads the package, but packman only sets
+# PM_*_PATH env vars for deps with a linkPath and SecureLoadLibrary has none.
+# It is located directly in the packman cache instead.
 if(DEV_PHYSX AND WIN32)
     file(GLOB _SLL_CANDIDATES "$ENV{PM_PACKAGES_ROOT}/chk/SecureLoadLibrary/*/src/nvSecureLoadLibrary.c")
     if(_SLL_CANDIDATES)
@@ -236,12 +212,36 @@ if(DEV_PHYSX AND WIN32)
 endif()
 message(STATUS "  [OK] ovruntime dependencies ready")
 
+execute_process(
+    COMMAND ${CMAKE_COMMAND}
+            "-DCONFIG=${OVPHYSX_RUNTIME_DEPS_CONFIG}"
+            -P "${SCRIPT_DIR}/fetch_deps.cmake"
+    WORKING_DIRECTORY "${PROJECT_ROOT}"
+    RESULT_VARIABLE FETCH_DEPS_RESULT
+)
+if(NOT FETCH_DEPS_RESULT EQUAL 0)
+    message(FATAL_ERROR "Failed to download packman dependencies (exit code: ${FETCH_DEPS_RESULT})")
+endif()
+
+# The target-deps Python (3.12) provides tomllib for the packaging scripts.
+# packman's bootstrap Python (tools/packman/python.bat) is older and lacks it.
+if(WIN32)
+    set(TARGET_PYTHON "${PROJECT_ROOT}/_build/target-deps/python/python.exe")
+else()
+    set(TARGET_PYTHON "${PROJECT_ROOT}/_build/target-deps/python/bin/python3")
+endif()
+
+if(NOT EXISTS "${TARGET_PYTHON}")
+    message(FATAL_ERROR "Target Python not found at: ${TARGET_PYTHON}\n"
+                        "Run scripts/fetch_deps.bat (Windows) or scripts/fetch_deps.sh (Linux) first.")
+endif()
+
 # Make sure the pulled schema package is codeless (no native lib, plugInfo is a
 # resource plugin). A codefull package regressing back in would reintroduce the
 # USD ABI hazard the codeless migration removed.
 if(NOT DEV_SCHEMA)
-    # usd_ext_physics is a single config-neutral package staged at a flat path;
-    # both release and debug builds consume the same tree.
+    # usd_ext_physics is a single config-neutral package staged at a flat path.
+    # Release and debug builds consume the same tree.
     set(_SCHEMA_VERIFY_DIR "${OVRUNTIME_DIR}/_build/target-deps/usd_ext_physics")
     if(EXISTS "${_SCHEMA_VERIFY_DIR}")
         message(STATUS "Verifying schema package (codeless) at ${_SCHEMA_VERIFY_DIR}...")
@@ -270,10 +270,10 @@ endif()
 # ============================================================================
 # Namespaced ovphysx uses the prebuilt namespaced-monolithic usd_ext_physics
 # packman package by default (pulled above via ovruntime's schema-deps
-# manifest). --devschema is an explicit override for schema
-# developers who want to iterate on schemas/physx locally; it rebuilds the
-# schema against the USD we just pulled and replaces the packman package
-# as ovruntime's USD_EXT_PHYSICS_DIR source.
+# manifest). --devschema is an explicit override for schema developers who
+# iterate on schemas/physx locally. It rebuilds the schema against the USD
+# pulled above and replaces the packman package as ovruntime's
+# USD_EXT_PHYSICS_DIR source.
 if(DEV_SCHEMA)
     set(SCHEMA_DIR "${PROJECT_ROOT}/../schemas/physx")
     set(SCHEMA_BUILD_DIR "${SCHEMA_DIR}/_build/schema")
@@ -297,8 +297,8 @@ if(DEV_SCHEMA)
     if(_SCHEMA_NEEDS_BUILD)
         message(STATUS "")
         message(STATUS "Building local physics schema...")
-        # build.sh/build.bat pull deps, regenerate codeless artifacts, and stage
-        # them to _build/schema (no repo_build/repo_usd/premake).
+        # build.sh/build.bat pull deps, regenerate the codeless artifacts, and stage
+        # them to _build/schema without repo_build/repo_usd/premake.
         execute_process(
             COMMAND "${SCHEMA_DIR}/build${SCRIPT_SUFFIX}"
             WORKING_DIRECTORY "${SCHEMA_DIR}"
@@ -326,20 +326,21 @@ endif()
 # ============================================================================
 # Setup packaged toolchain for ovphysx build (Windows only)
 # ============================================================================
-# ovphysx uses CMake (Ninja or VS generator) which discovers the compiler via
+# ovphysx uses CMake (Ninja or VS generator), which discovers the compiler via
 # PATH and environment variables. This section configures those from the
 # packaged MSVC/WinSDK (imported via host-deps.packman.xml from ovruntime).
 #
-# ovruntime does not need this — its premake/MSBuild toolchain is configured
+# ovruntime does not need this. Its premake/MSBuild toolchain is configured
 # by premake5-public.lua and repo_build independently.
 #
-# Generator selection via GENERATOR environment variable:
+# Generator selection via the GENERATOR environment variable:
 #   GENERATOR=ninja  - Ninja + packaged cl.exe (CLI, no .sln, no VS needed)
-#   GENERATOR=vs     - VS generator using packaged MSVC as portable instance
+#   GENERATOR=vs     - VS generator using the packaged MSVC as a portable instance
 #                      (CMake 3.23+). Produces .sln. No local VS needed.
-#                      CLI build uses packaged MSBuild. SDK paths redirected
-#                      to packaged WinSDK. Devs can also open .sln in local VS IDE.
-#   (not set)        - Auto-detect: if local VS found via vswhere -> vs, else -> ninja
+#                      The CLI build uses the packaged MSBuild. SDK paths are
+#                      redirected to the packaged WinSDK. Devs can also open the
+#                      .sln in a local VS IDE.
+#   (not set)        - Auto-detect: if a local VS is found via vswhere -> vs, else -> ninja
 #
 # Backward compat: USE_NINJA_GENERATOR=1 is mapped to GENERATOR=ninja.
 #
@@ -348,24 +349,24 @@ if(WIN32)
     message(STATUS "")
     message(STATUS "Setting up toolchain...")
 
-    # ---- Packaged tool paths (fetched by packman in deps/host-deps.packman.xml) ----
+    # ---- Packaged tool paths (fetched by packman from deps/host-deps.packman.xml) ----
     set(PACKAGED_MSVC "${PROJECT_ROOT}/_build/host-deps/msvc")
     set(PACKAGED_WINSDK "${PROJECT_ROOT}/_build/host-deps/winsdk")
     set(PACKAGED_NINJA_DIR "${PROJECT_ROOT}/_build/host-deps/ninja")
     set(PACKAGED_VSWHERE "${PROJECT_ROOT}/_build/host-deps/vswhere/VsWhere.exe")
 
-    # vswhere: prefer the packaged copy, else the VS installer's canonical one.
+    # The packaged vswhere takes precedence over the VS installer's canonical one.
     set(VSWHERE "${PACKAGED_VSWHERE}")
     if(NOT EXISTS "${VSWHERE}")
         set(VSWHERE "$ENV{ProgramFiles\(x86\)}/Microsoft Visual Studio/Installer/vswhere.exe")
     endif()
 
     # Put vswhere on PATH for the CMake invocations below. CMake enumerates VS
-    # instances through the VS Installer COM API, falling back to vswhere.exe;
-    # with neither available it gives up before considering
+    # instances through the VS Installer COM API, falling back to vswhere.exe.
+    # With neither available it gives up before considering
     # CMAKE_GENERATOR_INSTANCE and rejects even a fully packaged MSVC. A
-    # reachable vswhere lets that enumeration succeed (empty list), so CMake
-    # goes on to accept the packaged instance from disk.
+    # reachable vswhere lets that enumeration succeed with an empty list, so
+    # CMake goes on to accept the packaged instance from disk.
     if(EXISTS "${VSWHERE}")
         get_filename_component(VSWHERE_DIR "${VSWHERE}" DIRECTORY)
         set(ENV{PATH} "${VSWHERE_DIR};$ENV{PATH}")
@@ -374,15 +375,15 @@ if(WIN32)
     # ---- Toolchain mode ----
     # Internal checkouts pull the packaged MSVC/WinSDK via packman. The public
     # source drop does not ship them (non-redistributable, not on the public
-    # remotes), so fall back to a local Visual Studio installation there.
+    # remotes), so it falls back to a local Visual Studio installation.
     if(EXISTS "${PACKAGED_MSVC}/VC/Tools/MSVC")
         set(TOOLCHAIN_MODE "packaged")
         set(MSVC_ROOT "${PACKAGED_MSVC}")
         set(WINSDK_ROOT "${PACKAGED_WINSDK}")
     else()
         set(TOOLCHAIN_MODE "local")
-        # OVPHYSX_VS_ROOT pins a specific installation; otherwise pick the
-        # newest supported VS (2022, then 2019), falling back to the absolute
+        # OVPHYSX_VS_ROOT pins a specific installation. Otherwise the newest
+        # supported VS (2022, then 2019) is picked, falling back to the absolute
         # newest installation.
         if(DEFINED ENV{OVPHYSX_VS_ROOT} AND EXISTS "$ENV{OVPHYSX_VS_ROOT}/VC/Tools/MSVC")
             set(MSVC_ROOT "$ENV{OVPHYSX_VS_ROOT}")
@@ -392,12 +393,12 @@ if(WIN32)
                 message(FATAL_ERROR "Packaged MSVC not present and vswhere.exe not found.\n"
                                     "Install Visual Studio 2019/2022 with the 'Desktop development with C++' workload.")
             endif()
-            # NOTE: list elements must not carry the surrounding [..) brackets —
-            # an unbalanced '[' makes CMake's list parser swallow the ';'
+            # NOTE: list elements must not carry the surrounding [..) brackets.
+            # An unbalanced '[' makes CMake's list parser swallow the ';'
             # separators, collapsing the list into one garbage element. The
             # brackets are added when the vswhere argument is composed.
             set(_vs_ranges "17.0,18.0" "16.0,17.0")
-            # Last resort: newest of anything (GENERATOR=ninja works with any VS).
+            # Last resort: the newest of anything, since GENERATOR=ninja works with any VS.
             list(APPEND _vs_ranges "16.0,")
             set(MSVC_ROOT "")
             foreach(_vs_range IN LISTS _vs_ranges)
@@ -418,7 +419,7 @@ if(WIN32)
             endif()
             message(STATUS "  Using local Visual Studio: ${MSVC_ROOT}")
         endif()
-        # Local WinSDK (installed with the VS C++ workload).
+        # The local WinSDK is installed with the VS C++ workload.
         if(DEFINED ENV{WindowsSdkDir} AND EXISTS "$ENV{WindowsSdkDir}/Include")
             set(WINSDK_ROOT "$ENV{WindowsSdkDir}")
         else()
@@ -432,7 +433,7 @@ if(WIN32)
     set(MSBUILD_EXE "${MSVC_ROOT}/MSBuild/Current/Bin/MSBuild.exe")
 
     # ---- Discover the MSVC/WinSDK include, lib and bin layout ----
-    # (shared with the standalone sample builds; see scripts/host_toolchain.cmake)
+    # Shared with the standalone sample builds. See scripts/host_toolchain.cmake.
     ovphysx_resolve_msvc_layout("${MSVC_ROOT}" "${WINSDK_ROOT}")
 
     if(NOT EXISTS "${MSVC_BIN_DIR}/cl.exe")
@@ -455,11 +456,11 @@ if(WIN32)
                                 "Use GENERATOR=ninja or GENERATOR=vs, or unset GENERATOR for auto-detect.")
         endif()
     elseif(DEFINED ENV{USE_NINJA_GENERATOR} AND "$ENV{USE_NINJA_GENERATOR}" STREQUAL "1")
-        # Backward compat: USE_NINJA_GENERATOR=1 maps to GENERATOR=ninja
+        # Backward compat: USE_NINJA_GENERATOR=1 maps to GENERATOR=ninja.
         set(GENERATOR_MODE "ninja")
     else()
-        # Auto-detect: check for local VS installation via vswhere
-        set(GENERATOR_MODE "ninja")  # safe default
+        # Auto-detect a local VS installation via vswhere. Ninja is the safe default.
+        set(GENERATOR_MODE "ninja")
         if(EXISTS "${VSWHERE}")
             execute_process(
                 COMMAND "${VSWHERE}" -latest -version "[16.0,)"
@@ -484,13 +485,11 @@ if(WIN32)
     message(STATUS "    Set GENERATOR=ninja or GENERATOR=vs to override")
 endif()
 
-# End setup timer, start configure+build timer
 string(TIMESTAMP _SETUP_END_TS "%s")
 
-# Configure with CMake
 message(STATUS "Configuring with CMake...")
 
-# Generator change safeguard: CMake cannot switch generator without a clean build.
+# CMake cannot switch generator without a clean build.
 if(WIN32 AND EXISTS "${BUILD_PATH}/CMakeCache.txt")
     file(STRINGS "${BUILD_PATH}/CMakeCache.txt" _cached_generator REGEX "^CMAKE_GENERATOR:INTERNAL=")
     if(_cached_generator)
@@ -537,16 +536,19 @@ if(BENCHMARKS)
 else()
     list(APPEND CMAKE_ARGS "-DOVPHYSX_BUILD_BENCHMARKS=OFF")
 endif()
+if(OVPHYSX_REQUIRE_BENCHMARK_CUDA)
+    list(APPEND CMAKE_ARGS "-DOVPHYSX_REQUIRE_BENCHMARK_CUDA=ON")
+else()
+    list(APPEND CMAKE_ARGS "-DOVPHYSX_REQUIRE_BENCHMARK_CUDA=OFF")
+endif()
 
-# Platform-specific generator selection
 if(WIN32)
     if(GENERATOR_MODE STREQUAL "ninja")
         # ==================================================================
         # Ninja generator: packaged cl.exe + Ninja (CLI, no .sln)
         # ==================================================================
-        # Best for CI and local devs without VS. Fully self-contained.
+        # Suited to CI and local devs without VS. Fully self-contained.
 
-        # Add packaged Ninja to PATH
         if(NOT EXISTS "${PACKAGED_NINJA_DIR}/ninja.exe")
             message(FATAL_ERROR "Packaged Ninja not found at ${PACKAGED_NINJA_DIR}/ninja.exe\n"
                                 "Run scripts/fetch_deps.bat first to download host dependencies.")
@@ -555,17 +557,16 @@ if(WIN32)
         # nvcc string-compares the cl.exe dir it finds in PATH against -ccbin,
         # and both come from MSVC_BIN_DIR below. For a local VS under
         # "C:/Program Files/...", CMake 8.3-shortens -ccbin but not PATH, so they
-        # stop matching and nvcc aborts. Space-free makes both sides identical;
-        # forward slashes also survive the UNIX_COMMAND split in the compiler-id.
+        # stop matching and nvcc aborts. Space-free makes both sides identical.
+        # Forward slashes also survive the UNIX_COMMAND split in the compiler-id.
         ovphysx_space_free_host_path("${MSVC_BIN_DIR}" MSVC_BIN_DIR)
 
         set(ENV{PATH} "${PACKAGED_NINJA_DIR};${MSVC_BIN_DIR};${WINSDK_BIN_DIR};$ENV{PATH}")
 
-        # Set INCLUDE / LIB for the compiler
         set(ENV{INCLUDE} "${MSVC_INCLUDE};${WINSDK_UCRT_INCLUDE};${WINSDK_UM_INCLUDE};${WINSDK_SHARED_INCLUDE}")
         set(ENV{LIB} "${MSVC_LIB};${WINSDK_UCRT_LIB};${WINSDK_UM_LIB}")
 
-        # Set additional environment variables that CMake/Ninja may need
+        # Additional environment variables that CMake/Ninja may read.
         set(ENV{VCINSTALLDIR} "${MSVC_ROOT}/VC/")
         set(ENV{VCToolsInstallDir} "${MSVC_TOOLS_DIR}/")
         set(ENV{WindowsSdkDir} "${WINSDK_ROOT}/")
@@ -573,8 +574,8 @@ if(WIN32)
         if(DEV_PHYSX)
             set(_cuda_toolset_dir "${OVRUNTIME_DIR}/_build/target-deps/cuda")
             if(EXISTS "${_cuda_toolset_dir}/bin/nvcc.exe")
-                # Ninja + --devphysx: skip nvcc's vcvars64.bat during CMake CUDA detection.
-                # Environment is seeded above; PhysXDependency.cmake also sets --use-local-env.
+                # Ninja + --devphysx skips nvcc's vcvars64.bat during CMake CUDA detection.
+                # The environment is seeded above. PhysXDependency.cmake also sets --use-local-env.
                 list(APPEND CMAKE_ARGS
                     "-DCMAKE_CUDA_COMPILER=${_cuda_toolset_dir}/bin/nvcc.exe"
                     "-DCMAKE_CUDA_HOST_COMPILER=${MSVC_BIN_DIR}/cl.exe"
@@ -589,26 +590,26 @@ if(WIN32)
 
     elseif(GENERATOR_MODE STREQUAL "vs")
         # ==================================================================
-        # VS generator: produces .sln using packaged MSVC as portable instance
+        # VS generator: produces .sln using the packaged MSVC as a portable instance
         # ==================================================================
         # - Uses CMAKE_GENERATOR_INSTANCE with version= to register the packaged
         #   MSVC as a portable VS instance (CMake 3.23+ feature)
         # - No local VS installation required for generation or building
-        # - SDK include/lib paths redirected to packaged WinSDK via CMAKE_VS_SDK_*
-        #   (PhysX pattern), baked into .vcxproj files
+        # - SDK include/lib paths redirected to the packaged WinSDK via CMAKE_VS_SDK_*
+        #   (PhysX pattern), baked into the .vcxproj files
         # - cmake --build invokes the packaged MSBuild
-        # - Devs with local VS can also open the generated .sln in their IDE
+        # - Devs with a local VS can also open the generated .sln in their IDE
 
         # CMAKE_GENERATOR_INSTANCE with version= requires CMake 3.23+.
-        # The project minimum is 3.16 (fine for Ninja), so check at runtime.
+        # The project minimum is 3.16, which suffices for Ninja, so this is checked at runtime.
         if(CMAKE_VERSION VERSION_LESS "3.23")
             message(FATAL_ERROR "GENERATOR=vs requires CMake 3.23+ (found ${CMAKE_VERSION}).\n"
                                 "Upgrade CMake or use GENERATOR=ninja.")
         endif()
 
-        # Resolve VS build version from MSBuild (packaged or local VS).
-        # Prefer MSBuild.exe file version (robust across config layout changes).
-        # Fall back to MSBuild.exe.config parsing for older package shapes.
+        # Resolve the VS build version from MSBuild (packaged or local VS).
+        # The MSBuild.exe file version is robust across config layout changes.
+        # MSBuild.exe.config parsing is the fallback for older package shapes.
         set(MSBUILD_CONFIG "${MSVC_ROOT}/MSBuild/Current/Bin/MSBuild.exe.config")
         set(VS_BUILD_VERSION "")
         if(EXISTS "${MSBUILD_EXE}")
@@ -637,7 +638,7 @@ if(WIN32)
         endif()
 
         # Derive the VS generator string from the major version
-        # (16 -> "Visual Studio 16 2019", 17 -> "Visual Studio 17 2022", etc.)
+        # (16 -> "Visual Studio 16 2019", 17 -> "Visual Studio 17 2022", etc.).
         string(REGEX MATCH "^([0-9]+)" _vs_major "${VS_BUILD_VERSION}")
         if(_vs_major STREQUAL "16")
             set(VS_GENERATOR "Visual Studio 16 2019")
@@ -650,14 +651,14 @@ if(WIN32)
         endif()
 
         if(TOOLCHAIN_MODE STREQUAL "packaged")
-            # Use portable instance: path + version= (CMake 3.23+)
-            # This allows CMake's VS generator to use the packaged MSVC without
-            # the instance being registered with the Visual Studio Installer.
+            # A portable instance is "path,version=" (CMake 3.23+). It lets CMake's
+            # VS generator use the packaged MSVC without the instance being
+            # registered with the Visual Studio Installer.
             # See: https://cmake.org/cmake/help/latest/variable/CMAKE_GENERATOR_INSTANCE.html
             set(GENERATOR_INSTANCE "${MSVC_ROOT},version=${VS_BUILD_VERSION}")
             if(NOT EXISTS "${GENERATOR_INSTANCE}")
                 # CMake/MSBuild may resolve CMAKE_GENERATOR_INSTANCE literally (including ",version=")
-                # in generated vcxproj imports. Create a junction alias so those imports resolve.
+                # in generated vcxproj imports. A junction alias makes those imports resolve.
                 execute_process(
                     COMMAND powershell -NoProfile -ExecutionPolicy Bypass -Command "New-Item -ItemType Junction -Path '${GENERATOR_INSTANCE}' -Target '${MSVC_ROOT}' -Force | Out-Null"
                     RESULT_VARIABLE _junction_result
@@ -673,23 +674,24 @@ if(WIN32)
                 message(STATUS "  Using existing generator instance junction: ${GENERATOR_INSTANCE}")
             endif()
         else()
-            # Local VS is a registered instance: plain path, no portable-instance
-            # junction and no patching inside the installation.
+            # A local VS is a registered instance. It takes a plain path, with no
+            # portable-instance junction and no patching inside the installation.
             set(GENERATOR_INSTANCE "${MSVC_ROOT}")
         endif()
 
-        # Set environment variables so MSBuild (invoked by CMake during configure)
-        # can find the compiler, headers, and libraries in the packaged MSVC/WinSDK.
-        # Note: the actual fix for the compiler ID test is Directory.Build.props below,
-        # which provides LibraryPath/IncludePath to MSBuild (it overrides the LIB env var).
-        # These env vars are kept as a safety net for non-MSBuild tools.
+        # The environment variables below let MSBuild (invoked by CMake during
+        # configure) find the compiler, headers, and libraries in the packaged
+        # MSVC/WinSDK. The compiler ID test is fixed by Directory.Build.props
+        # further down, which provides LibraryPath/IncludePath to MSBuild and
+        # overrides the LIB env var. The env vars remain as a safety net for
+        # non-MSBuild tools.
         get_filename_component(_vc_tools_version "${MSVC_TOOLS_DIR}" NAME)
 
         # The packaged NVIDIA.ImportBefore.props ships with stale values that
-        # break the VS generator: wrong VCToolsVersion, and a relative
+        # break the VS generator: a wrong VCToolsVersion, and a relative
         # VCInstallDir_170 that resolves incorrectly from the amd64 MSBuild.
-        # Rather than patching the packman-distributed file (which may be
-        # read-only or cached), we drop an override props file that MSBuild
+        # Rather than patching the packman-distributed file, which may be
+        # read-only or cached, an override props file is written that MSBuild
         # imports AFTER the NVIDIA one (alphabetical wildcard import).
         if(TOOLCHAIN_MODE STREQUAL "packaged")
             set(_import_before_dir "${MSVC_ROOT}/MSBuild/Current/Imports/Microsoft.Common.Props/ImportBefore")
@@ -720,7 +722,7 @@ if(WIN32)
             # CMake accepts a portable (unregistered) VS instance only if it can
             # read the default toolset version from this marker and finds the
             # matching VC/Tools/MSVC/<version>. The packman MSVC does not ship
-            # the Auxiliary/Build tree, so synthesize it.
+            # the Auxiliary/Build tree, so it is synthesized here.
             set(_vctools_default_file
                 "${MSVC_ROOT}/VC/Auxiliary/Build/Microsoft.VCToolsVersion.default.txt")
             if(NOT EXISTS "${_vctools_default_file}")
@@ -728,7 +730,7 @@ if(WIN32)
                 message(STATUS "  Created missing toolset marker: ${_vctools_default_file}")
             endif()
 
-            # Ensure the exact toolset props file exists for imports generated
+            # The exact toolset props file must exist for imports generated
             # during compiler-id checks. A local VS installation ships the real
             # props file and must never be written into.
             set(_vctools_props_dir "${MSVC_ROOT}/VC/Auxiliary/Build/${_vc_tools_version}")
@@ -752,16 +754,16 @@ if(WIN32)
             "-DCMAKE_GENERATOR_INSTANCE=${GENERATOR_INSTANCE}"
         )
         if(TOOLCHAIN_MODE STREQUAL "packaged")
-            # Pin the exact toolset the portable instance ships; the matching
+            # Pin the exact toolset the portable instance ships. The matching
             # full-version props file is synthesized above. A local VS carries
             # props only for the minor toolset line, so this pin would break
-            # MSBuild's compiler detection there — local VS uses its default
+            # MSBuild's compiler detection there. A local VS uses its default
             # (newest) toolset instead.
             list(APPEND CMAKE_ARGS "-DCMAKE_VS_PLATFORM_TOOLSET_VERSION=${_vc_tools_version}")
         endif()
         set(_cuda_toolset_dir "${OVRUNTIME_DIR}/_build/target-deps/cuda")
         if(EXISTS "${_cuda_toolset_dir}/bin/nvcc.exe")
-            # PhysX enables CMake's CUDA language in --devphysx builds.  The
+            # PhysX enables CMake's CUDA language in --devphysx builds. The
             # VS generator requires an explicit CUDA toolset when CUDA comes
             # from packman rather than a machine-wide Visual Studio install.
             list(APPEND CMAKE_ARGS "-T" "cuda=${_cuda_toolset_dir}")
@@ -770,9 +772,9 @@ if(WIN32)
                             "Visual Studio --devphysx builds may fail during CUDA detection.")
         endif()
 
-        # Redirect SDK include/lib paths to packaged WinSDK (PhysX pattern)
+        # Redirect the SDK include/lib paths to the packaged WinSDK (PhysX pattern).
         # These are baked into the generated .vcxproj files, so builds use the
-        # packaged SDK regardless of whether invoked from CLI or the VS IDE.
+        # packaged SDK whether invoked from the CLI or the VS IDE.
         # Semicolons must be escaped so they survive CMake list expansion in execute_process.
         set(ALL_INCLUDE_DIRS "${MSVC_INCLUDE};${WINSDK_UCRT_INCLUDE};${WINSDK_UM_INCLUDE};${WINSDK_SHARED_INCLUDE}")
         set(ALL_LIB_DIRS "${MSVC_LIB};${WINSDK_UCRT_LIB};${WINSDK_UM_LIB}")
@@ -783,12 +785,12 @@ if(WIN32)
             "-DCMAKE_VS_SDK_LIBRARY_DIRECTORIES=${ALL_LIB_DIRS_ESC}"
         )
 
-        # Generate Directory.Build.props so MSBuild can find SDK libs/headers.
-        # The packaged MSVC blanks out Microsoft.Cpp.WindowsSDK.props, so MSBuild
-        # can't auto-discover SDK paths. This file is auto-imported for ALL .vcxproj
-        # in the build tree -- critically, for CMake's compiler ID test project
-        # (which does NOT get CMAKE_VS_SDK_* overrides).
-        # For the main project, CMAKE_VS_SDK_* in each .vcxproj takes precedence.
+        # Directory.Build.props lets MSBuild find the SDK libs/headers. The packaged
+        # MSVC blanks out Microsoft.Cpp.WindowsSDK.props, so MSBuild cannot
+        # auto-discover SDK paths. This file is auto-imported for ALL .vcxproj in
+        # the build tree, including CMake's compiler ID test project, which does
+        # NOT get the CMAKE_VS_SDK_* overrides. For the main project,
+        # CMAKE_VS_SDK_* in each .vcxproj takes precedence.
         file(WRITE "${BUILD_PATH}/Directory.Build.props"
 "<Project>\n\
   <PropertyGroup>\n\
@@ -821,7 +823,7 @@ if(VERBOSE)
     list(APPEND CMAKE_ARGS "-DCMAKE_VERBOSE_MAKEFILE=ON")
 endif()
 
-# Add any additional CMake arguments from environment
+# CMAKE_EXTRA_ARGS in the environment appends arbitrary configure arguments.
 if(DEFINED ENV{CMAKE_EXTRA_ARGS})
     separate_arguments(EXTRA_ARGS NATIVE_COMMAND "$ENV{CMAKE_EXTRA_ARGS}")
     list(APPEND CMAKE_ARGS ${EXTRA_ARGS})
@@ -872,11 +874,11 @@ endif()
 math(EXPR _COMPILE_SECS "${_COMPILE_END_TS} - ${_COMPILE_START_TS}")
 message(STATUS "  Main compilation finished in ${_COMPILE_SECS}s")
 
-# Verify ovruntime .so files landed in the expected output directory.
-# ovruntime output follows NvidiaBuildOptions convention: PX_OUTPUT_LIB_DIR/<config_lower>
+# Verify the ovruntime .so files landed in the expected output directory.
+# ovruntime output follows the NvidiaBuildOptions convention PX_OUTPUT_LIB_DIR/<config_lower>.
 set(OVRUNTIME_OUTPUT_DIR "${BUILD_PATH}/${BUILD_TYPE_LOWER}")
 if(NOT EXISTS "${OVRUNTIME_OUTPUT_DIR}" AND BUILD_TYPE_LOWER STREQUAL "release")
-    # devphysx remaps Release->checked
+    # devphysx remaps Release to checked.
     set(OVRUNTIME_OUTPUT_DIR "${BUILD_PATH}/checked")
 endif()
 if(EXISTS "${OVRUNTIME_OUTPUT_DIR}")

@@ -1,8 +1,14 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
- * Process-wide custom-token registry for the native USD walker.
+ * `TfToken`-typed view of the process-wide custom-token registry.
+ *
+ * The registry itself is source-agnostic and lives in the USD-free parse
+ * core — `omni/physics/parse/CustomTokens.h` — so the ovstage walker can
+ * consult it too. These functions are a thin, behaviour-preserving shim over
+ * it, kept because the runtime's extension points and `NativeWalker.cpp` are
+ * written against `TfToken`.
  *
  * Consumers (e.g. `IPhysxCustomGeometry` / `IPhysxCustomJoint`
  * extension points + the runtime's built-in token bootstrap) call

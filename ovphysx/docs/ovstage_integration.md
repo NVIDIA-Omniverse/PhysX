@@ -1,7 +1,7 @@
 <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
-<!-- SPDX-License-Identifier: BSD-3-Clause -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
-# Ovstage Integration and Physics Output Read
+# ovstage Integration and Physics Output Read
 
 ovphysx consumes a **caller-owned ovstage Stage** as its orchestration surface:
 the application authors scene edits into ovstage, ovphysx drains committed edits
@@ -25,9 +25,24 @@ exactly three ordinal-aware operations:
 
 | ovphysx call | Direction | Ordinal role |
 | --- | --- | --- |
-| `ovphysx_attach_ovstage(handle, stage, read_ordinal)` | attach | `stage` is an `ovstage_instance_t*`; initial scene parse reads at the sealed `read_ordinal` (`ovstage_ordinal_t`) |
+| `ovphysx_attach_ovstage(handle, stage, read_ordinal)` | attach | `stage` is an `ovstage_instance_t*`; initial scene parse reads at the sealed `read_ordinal` (`ovstage_ordinal_t`, must be non-zero) |
 | `ovphysx_update_from_ovstage(handle, range)` | **app → physics** | drains committed edits in the `ovstage_ordinal_range_t` `range` into the sim |
 | read API (`ovphysx_query` / `ovphysx_read`) | **physics → app** | reads the latest step's output; the app writes it back at an ordinal *it* chooses |
+
+### Register the PhysX schemas before populating
+
+ovphysx ships its PhysX USD schemas as codeless plugins; the application
+registers them. Before the first population call in the process (`open_usd`,
+`apply_usd_changes`, or an export), register them with ovstage: in Python,
+`ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])`;
+in C, pass the root from `ovphysx_get_codeless_schema_root()` to
+`ovstage_population_register_usd_schemas()`. USD assembles its schema registry
+once, so a late registration cannot be repaired: population silently drops every
+Physx* API it cannot resolve, and the scene would simulate without the asset's
+self-collision, joint-limit and solver settings. `attach_ovstage` therefore
+verifies the registration and fails with an error naming the missing call when
+population ran without it. Refer to
+[Physics Schemas](physics_schemas.md#making-schemas-available).
 
 ### Seal population changes before attaching or draining
 
@@ -48,8 +63,10 @@ def drain_population_change(stage, physx, ordinal):
 The same rule applies to initial population: seal and wait for `read_ordinal`
 before `attach_ovstage()`. That initial ordinal was then already parsed by the
 attach. For a later edit at ordinal 2, drain `(2, 2)`, not `(1, 2)`: including
-ordinal 1 replays the initial scene changes instead of applying only the new
-delta.
+ordinal 1 is harmless because consumed ordinals are skipped, but naming only the
+new range makes producer ownership explicit. A range containing only consumed
+ordinals is a successful no-op; an overlapping range applies only its unread
+suffix.
 
 Scene-graph instancing currently has one snapshot caveat: ovstage's public
 prototype/instance topology queries and resolved instance-material data expose
@@ -66,13 +83,16 @@ OR-combinable flags, not a choice of exactly one:
 
 | Python (`ovstage.PopulationDomain`) | C (`ovstage_population_domain_t`) | Populates |
 | --- | --- | --- |
-| `NONE` (0) | `OVSTAGE_POPULATION_DOMAIN_NONE` | nothing beyond the stage units below |
+| `NONE` (0) | `OVSTAGE_POPULATION_DOMAIN_NONE` | nothing |
 | `RENDERING` | `OVSTAGE_POPULATION_DOMAIN_RENDERING` | meshes, lights, materials, cameras |
-| `PHYSICS` | `OVSTAGE_POPULATION_DOMAIN_PHYSICS` | colliders, rigid bodies, joints, articulations, and the physics schema attributes authored on them |
+| `PHYSICS` | `OVSTAGE_POPULATION_DOMAIN_PHYSICS` | colliders, rigid bodies, joints, articulations, the physics schema attributes authored on them, and the stage units below |
 | `ALL` (`RENDERING \| PHYSICS`) | `OVSTAGE_POPULATION_DOMAIN_ALL` | both |
 
-Stage units (`metersPerUnit`, `kilogramsPerUnit`, `upAxis`) are authored onto the
-`/__ovstage_population_stage_info__` prim regardless of the mask.
+Stage units (`metersPerUnit`, `kilogramsPerUnit`, `upAxis`) are populated onto the
+root prim `/` under the reserved `usd-metadata:` column prefix, for example
+`usd-metadata:metersPerUnit`. They are brought in by the `PHYSICS` domain (and so
+by `ALL`); a `NONE`-only populate authors no units. A bare `PHYSICS`/`ALL`
+`open_usd` therefore already carries the units — no extra request is needed.
 
 > **ovstage's Python default is `PopulationDomain.RENDERING` — physics off.**
 > ovphysx finds no simulatable content on a Stage populated with the default, so
@@ -91,8 +111,11 @@ populator grows instance-aware traversal, `ALL` (equivalently
 instancing.
 
 ```python
+import ovphysx
 import ovstage
 
+# Register the codeless PhysX schemas before the first population call.
+ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
 stage = ovstage.Stage("scene")
 ovstage.population.open_usd(
     stage,
@@ -104,23 +127,42 @@ stage.advance_write_floor(ordinal=1).wait()
 ```
 
 ```c
-#include <string.h>
+#include <ovphysx/ovphysx.h>
 #include <ovstage/ovstage.h>
 #include <ovstage/ovstage_population.h>
 
-ovstage_instance_t* stage = /* already created */;
-ovx_string_t path = { .ptr = "scene.usda", .length = strlen("scene.usda") };
+#include <string.h>
 
-ovstage_population_enqueue_result_t pop = ovstage_population_open_usd_from_file(
-    stage, path, /*ordinal=*/1, /*time=*/0.0,
-    OVSTAGE_POPULATION_DOMAIN_ALL);
-if (pop.status != OVSTAGE_OK)
-    return /* handle enqueue failure */;
-if (ovstage_population_wait_op(
-        stage, pop.op_index, OVSTAGE_TIMEOUT_INFINITE, /*out=*/NULL) != OVSTAGE_OK)
-    return /* handle wait failure */;
-/* Then seal the ordinal (advance_write_floor) before attach -- see above. */
+static int populate_scene(ovstage_instance_t* stage)
+{
+    /* Register the codeless PhysX schemas before the first population call. */
+    ovphysx_string_t schema_root;
+    if (ovphysx_get_codeless_schema_root(&schema_root).status != OVPHYSX_API_SUCCESS)
+        return 3;
+    const ovx_string_t schema_path = { .ptr = schema_root.ptr, .length = schema_root.length };
+    if (ovstage_population_register_usd_schemas(&schema_path, 1) != OVSTAGE_OK)
+        return 4;
+
+    const ovx_string_t path = { .ptr = "scene.usda", .length = strlen("scene.usda") };
+    const ovstage_population_enqueue_result_t pop = ovstage_population_open_usd_from_file(
+        stage, path, /*ordinal=*/1, /*time=*/0.0,
+        OVSTAGE_POPULATION_DOMAIN_ALL);
+    if (pop.status != OVSTAGE_OK)
+        return 1;
+    if (pop.op_index != OVSTAGE_POPULATION_INVALID_OP_ID &&
+        ovstage_population_wait_op(
+            stage, pop.op_index, OVSTAGE_TIMEOUT_INFINITE, /*out=*/NULL) != OVSTAGE_OK)
+        return 2;
+
+    /* Do not attach yet. The caller must seal ordinal 1 as described in
+       "Seal population changes before attaching or draining". */
+    return 0;
+}
 ```
+
+After `populate_scene()` succeeds, seal ordinal 1 with
+`ovstage_advance_write_floor()` before attaching it to ovphysx, exactly as in
+[Seal population changes before attaching or draining](#seal-population-changes-before-attaching-or-draining).
 
 A Stage shared with a render consumer such as ovrtx needs the same union for a
 second reason: physics-only leaves the renderer with no geometry to draw, and
@@ -146,8 +188,10 @@ otherwise the only way to change the mask is to re-populate from USD.
 
 ### Sequencing a shared Stage
 
-Seal the population ordinal first, exactly as
-[above](#seal-population-changes-before-attaching-or-draining), then let each
+Register the codeless PhysX schemas before the first population call and seal
+the population ordinal first, exactly as
+[Seal population changes before attaching or draining](#seal-population-changes-before-attaching-or-draining)
+describes, then let each
 consumer observe it:
 
 1. `open_usd()` / `apply_usd_changes()`, and wait for the operation.
@@ -160,21 +204,27 @@ consumer observe it:
    For a one-shot initial load the first step can rebuild implicitly; later
    committed structural edits use update followed by step.
 
-The ordinal-lane rule in the next section is unchanged by a shared Stage:
-physics still must never drain the ordinals where physics output was written,
-whatever else reads them.
+For a scene known to contain rigid bodies, the sequence is complete when an
+`OVPHYSX_OBJECT_RIGID_BODY` query succeeds and
+`ovphysx_fetch_query_result()` reports a nonzero `total_prim_count`. Diagnose
+population and attach failures from their return codes and
+`ovphysx_get_last_error()`. A successful query can legitimately return zero
+objects when the requested type is absent from the scene.
+
+The ordinal-lane rule in
+[The key principle: physics must not get its own changes](#the-key-principle-physics-must-not-get-its-own-changes)
+is unchanged by a shared Stage: physics still must never drain the ordinals
+where physics output was written, whatever else reads them.
 
 ### Cost of `ALL` / shared population
 
-A Stage populated for rendering as well as physics carries the whole scene
-graph, and ovphysx's attach-time scene-graph instancing walk currently scales
-with the **total** prototype count rather than with the physics-relevant one. On
-a heavily instanced stage whose render-only prototypes greatly outnumber its
-colliders, `ovphysx_attach_ovstage` can therefore cost orders of magnitude more
-than the same fixture populated physics-only. The cost is paid once at attach,
-so it appears as a startup stall rather than a per-step regression. That cost is
-the reason the samples stay on `PHYSICS` when their content is known-safe; it is
-not a reason to choose `PHYSICS` for arbitrary scenes.
+A Stage populated with `ALL` carries render geometry as well as physics. ovphysx
+now scopes attach-time instance-root queries to prototypes that back collision
+shapes in common leaf-collider scenes, so render-only prototypes no longer
+dominate attach the way they once did. Preferring `PHYSICS` for known-safe
+non-instanced sample content is still reasonable when no renderer shares the
+Stage; it is not a reason to choose `PHYSICS` for arbitrary scenes, where
+native-instance colliders can be omitted.
 
 ## The key principle: physics must not get its own changes
 
@@ -184,8 +234,8 @@ ovstage Stage**. If physics drained the ordinals where its own output was writte
 it would re-ingest its last result as if it were a new authored change — corrupting
 the simulation.
 
-The rule that prevents this is simple and the application enforces it through the
-ordinals it passes to `ovphysx_update_from_ovstage`:
+One rule prevents this, and the application enforces it through the ordinals it
+passes to `ovphysx_update_from_ovstage`:
 
 > **App→physics edits flow through `ovphysx_update_from_ovstage`. Physics→app
 > output is written at ordinals that `ovphysx_update_from_ovstage` never covers.**
@@ -232,9 +282,9 @@ ordinal:   1        2        3        4        5        6      later
 ## Reading simulation output
 
 The read API mirrors the ovstage read idiom — open a query over a simulated type,
-read named attributes, iterate typed column groups, release — so the columns feed
-straight back into ovstage with no repack. It is ovstage-native: only meaningful
-while an ovstage Stage is attached.
+read named attributes, iterate typed column groups, release. Native borrowed
+columns can feed straight back into ovstage with no repack. It is ovstage-native:
+only meaningful while an ovstage Stage is attached.
 
 ```
 ovphysx_query(handle, type, scope, &query)
@@ -269,13 +319,26 @@ discovery). The ovstage-native shape passes through unflattened:
   instance array (by-index, `index_map == NULL`) for both ALL and ACTIVE scope, so
   the group forwards into `ovstage_query_from_path_list` verbatim; ACTIVE scope only
   selects WHICH instancers are emitted, not a sparse subset of instances.
-- **`data.cuda_sync`** — producer stream/event synchronization. Output groups
-  are CPU-backed and emit `{0, 0}`. With DirectGPU enabled, rigid-body and
-  articulation-link pose and velocity columns are gathered synchronously from
-  live GPU state, and volume and surface deformable points and velocities are
-  copied from live GPU sim-mesh buffers and synchronized before emission; where
-  sleeping is enabled, ALL refreshes sleepers while ACTIVE excludes them.
-  Preserve the field when forwarding a group.
+- **`data.cuda_sync`** — producer stream/event synchronization. Host-backed groups
+  emit `{0, 0}`. With DirectGPU enabled, rigid-body, articulation-link,
+  whole-articulation root/COM, and joint-DOF
+  columns are **device-resident** (`kDLCUDA`) and emit **`{0, event}`** — event only,
+  no stream, because a non-zero `stream` means "drain everything queued on it" to
+  ovstage, which is a heavier barrier than this handoff needs. **Such a column is
+  handed over before its producer work has necessarily completed:** wait on the event
+  before reading it on your own stream (consuming on the default/null stream is safe,
+  since the producer work is ordered there). `ovphysx_cuda_stream_wait_event(stream,
+  event)` is that wait, so honouring the native contract costs no CUDA dependency
+  of your own. The Python frontend instead orders the event onto Warp's current
+  stream before returning its `warp.array`. Volume and surface deformable `points`
+  and `velocities` are **device columns on a DirectGPU scene** — sourced from the live
+  GPU sim-mesh buffers and delivered without a copy to the host, carrying the same
+  `{0, event}` handoff as every other device column. Their `restPoints` and element
+  indices are authored topology and stay host-resident, so one deformable group
+  routinely mixes residencies; branch on each tensor's device rather than on the read.
+  See [Device residency and interop](read_write/device.md) for the per-column split. Where sleeping
+  is enabled, ALL refreshes sleepers while ACTIVE excludes them. Preserve the field when forwarding a
+  group.
 - **`is_array`** follows the source attribute kind (a ragged / USD-array /
   byte-string column), not whether the per-element dims happen to be uniform — a
   fixed-width array attribute is still `is_array`. When forwarding a group to
@@ -291,31 +354,52 @@ discovery). The ovstage-native shape passes through unflattened:
 
 Ownership & lifetime: the group is **producer-owned** — `ovphysx_fetch_read_next`
 hands back a borrowed `const ovstage_read_group_t*`, you do not allocate it. The
-struct and every field it points at are valid until the group's `read_group_id` is
-released through `ovphysx_release_group` (or `ovphysx_release_read`); fetching further
-groups does NOT invalidate earlier ones, and an intervening `ovphysx_step` does NOT
-either (columns are gathered into session-owned storage at read time).
+struct and stage-derived `prims.list` are valid until the group's `read_group_id`
+is released through `ovphysx_release_group`. Numeric tensors, maps, masks, and the
+CUDA completion event remain valid until `ovphysx_release_read`; fetching further
+groups and an intervening `ovphysx_step` invalidate neither lifetime.
 
-### Output attributes by type
+### Python Warp frontend
 
-| `ovphysx_sim_object_type_t` | Attributes | Group shape |
-| --- | --- | --- |
-| `OVPHYSX_OBJECT_RIGID_BODY` | `position`, `orientation`, `linearVelocity`, `angularVelocity` | fixed (standalone) + one array group per point-instancer prim (instancer-local) |
-| `OVPHYSX_OBJECT_ARTICULATION_LINK` | `position`, `orientation`, velocities | fixed |
-| `OVPHYSX_OBJECT_ARTICULATION_JOINT` | `jointPosition`, `jointVelocity` | array per joint (one row per unlocked DOF axis) |
-| `OVPHYSX_OBJECT_VEHICLE_WHEEL` | `position`, `orientation` | fixed (per wheel-root prim) |
-| `OVPHYSX_OBJECT_DEFORMABLE_VOLUME` / `_SURFACE` | `points`, `velocities` | array per sim-mesh prim (mesh-local) |
-| `OVPHYSX_OBJECT_PARTICLE_SET` | `points`, `velocities` | array per particle-set prim |
+`PhysX.read()` and `PhysX.read_tokens()` expose one numeric type on both backends:
+every non-empty tensor is a `warp.array` aliasing read-session storage on the read's
+native CPU or CUDA device, and `index_map` / `prim_index_map` are CPU `warp.array`
+values of `uint32` whatever the read's device. No host copy is implicit. A native
+`dtype.lanes` above 1 becomes a trailing Warp dimension, so a native vec3 column with
+`shape=[N]` is exposed as `shape=(N, 3)`. An empty tensor is a Warp-owned empty array;
+an empty index map is `None`.
 
-`OVPHYSX_SCOPE_ACTIVE` restricts the query to objects the solver moved last step
-(single-frame — re-query each step); `OVPHYSX_SCOPE_ALL` returns every object of
-the type.
+```python
+import warp as wp
 
-For `OVPHYSX_OBJECT_ARTICULATION_JOINT`, the array carries one row per unlocked
-reduced-coordinate DOF axis of the joint, in `PxArticulationAxis` enum order —
-independent of whether a `JointStateAPI` is authored. Angular axes are reported in
-degrees and linear (prismatic) axes in the stage's base length unit; an authored
-`JointStateAPI` overrides the per-axis degree/radian convention where present.
+from ovphysx.types import ObjectScope, SimObjectType
+
+def print_read_shapes(physx):
+    with physx.read(
+        SimObjectType.RIGID_BODY,
+        ["position", "orientation"],
+        ObjectScope.ALL,
+    ) as result:
+        for group in result.groups:
+            for tensor in group.tensors:
+                assert isinstance(tensor, wp.array)
+                print(tensor.device, tensor.shape)
+```
+
+A CUDA read orders each nonzero producer event onto the Warp stream current during
+`read()` before returning, without blocking the host; establish a Warp stream
+dependency before using an array on another stream. Non-empty arrays borrow the read
+session and may outlive the `ReadResult`, so drop every array and downstream view
+before `PhysX.destroy()`. Stage dictionary values (`prim_list`, `attribute`, and
+`result.dictionary`) stay context-bound.
+
+The per-type inventory of what each object type serves — attribute lists, physical meaning,
+units, frames, device residency, and group shape — lives in the
+[Read/Write Data Contract](read_write/index.md) section:
+[Readable data](read_write/readable.md), [Writable data](read_write/writable.md),
+[Data model and semantics](read_write/data_model.md), and
+[Device residency and interop](read_write/device.md). This page covers only how those groups
+plug into the ovstage Stage and its ordinal lifecycle.
 
 ## Worked example: one closed-loop frame
 
@@ -325,6 +409,7 @@ the control lane (drained by physics) and the output lane (never drained).
 ```c
 #include <ovphysx/ovphysx.h>
 #include <ovstage/ovstage.h>            // application owns the ovstage Stage
+#include <stdbool.h>
 #include <stdint.h>
 
 typedef void (*author_control_fn)(ovstage_instance_t*, ovstage_ordinal_t);
@@ -360,7 +445,8 @@ void run_closed_loop(
         // Step the simulation.
         ovphysx_enqueue_result_t step_result = ovphysx_step(h, 1.0f / 60.0f);
         ovphysx_op_wait_result_t step_wait = { 0 };
-        ovphysx_wait_op(h, step_result.op_index, UINT64_MAX, &step_wait);
+        ovphysx_wait_op(
+            h, step_result.op_index, OVPHYSX_TIMEOUT_INFINITE, &step_wait);
         ovphysx_destroy_wait_result(&step_wait);
 
         // Physics->app: read the step output.
@@ -411,6 +497,95 @@ The invariant to hold onto: **every ordinal passed to
 output ordinals are never named in a drain range.** That single rule is
 what keeps physics from consuming its own output.
 
+### Python utility: one call for step + read + write-back
+
+The opt-in `ovphysx.utils` helper composes `PhysX.step_sync`, `PhysX.read`, and
+the per-group write-back above without adding that application workflow to the
+core `PhysX` API:
+
+```python
+from ovphysx.utils import step_and_write_to_ovstage
+
+
+def publish_frame(physx, output_ordinal):
+    return step_and_write_to_ovstage(
+        physx,
+        dt=1.0 / 60.0,
+        output_ordinal=output_ordinal,
+    )
+```
+
+The utility imports the `ovstage` Python package only when called.
+It requires `PhysX.attach_ovstage()` to have received the Python
+`ovstage.Stage` object, not only its raw native handle.
+
+PhysX pose output contains world position and orientation, but deliberately
+contains no scale. For fixed rigid bodies, articulation links, and vehicle
+wheels, the utility reads the current row-vector float64
+`omni:fabric:worldMatrix`, derives its shear-free signed scale using the same
+matrix decomposition as ovphysx, releases every OVStage read view, and only
+then writes the reconstructed world matrix. It never writes `omni:xform` or
+changes `omni:resetXformStack`. Scale remains OVStage state, not physics state.
+
+`omni:fabric:worldMatrix` is a direct consumer-facing value. This helper does
+not turn it into authoritative local transform state, schedule hierarchy
+propagation, or update descendants. Do not run a later hierarchy computation
+expecting this output ordinal to become the prim's new local transform.
+
+Rigid-body point instancers use a different representation. The output read
+already converts simulated poses back into each instancer's local frame. The
+utility writes those values to the native `positions` (`float32`, POINT) and
+`orientations` (`float16`, QUATERNION) arrays. It preserves unsimulated holes
+and authored trailing rows from the current arrays; it does not touch `scales`,
+prototype indices, or other instancer arrays.
+
+The default mode above reads the current transform and point-instancer values
+on every call and retains no snapshots. Applications that prefer fewer OVStage
+reads and reusable CPU/CUDA buffers can explicitly own a copy cache:
+
+```python
+from ovphysx.utils import OvStageOutputCache, step_and_write_to_ovstage
+
+
+def publish_frames(physx, output_ordinals):
+    with OvStageOutputCache(physx) as output_cache:
+        for output_ordinal in output_ordinals:
+            step_and_write_to_ovstage(
+                physx,
+                dt=1.0 / 60.0,
+                output_ordinal=output_ordinal,
+                cache=output_cache,
+            )
+```
+
+The cache owns copies, never persistent borrowed OVStage views. Call
+`output_cache.refresh()` after transform, point-instancer pose-array, or
+topology changes. It is bound to the exact OVStage attachment and cannot be
+reused after a detach/reattach cycle. A lone `position` or `orientation`
+selection is rejected.
+
+The sampled `omni:fabric:worldMatrix` must already contain the current, sealed
+world transform. After changing authored local transforms or hierarchy, compute
+the hierarchy and advance its output write floor before calling this helper.
+
+Every other emitted attribute is written to a shadow `sim:<name>` attribute.
+Its `prim_list` forwards directly, fixed-group tensors pass through as-is, and
+array-group tensors are lane-folded into OVStage's `dtype.lanes` vector shape.
+Sparse index and CUDA synchronization metadata forward with unchanged data.
+Pose matrices and point-instancer array merges run in Warp on the relevant CPU
+or CUDA devices. The default path borrows OVStage DLPack views until the output
+buffers are ready, then releases them before writing. The normal full-group
+path does not clone source arrays. An optional cache owns source copies and
+reuses output buffers across calls. Cached CUDA writes receive an event recorded
+after the work; uncached calls finish work that uses a borrowed view before
+releasing it. No path copies poses through the host. The utility then calls
+`Stage.advance_write_floor(ordinal=output_ordinal)` once. `outputs` narrows the
+`{SimObjectType: [attribute, ...]}` read/write set; omit it for the default
+dynamic output set. `output_ordinal` must stay the never-drained lane -- never a
+value passed to `update_from_ovstage`. See
+`tests/python_samples/output_read.py` for the full closed loop using the
+preferred application-owned cache.
+
 ## Notes
 
 - The read is ovstage-only: it requires an attached ovstage Stage, else
@@ -421,11 +596,11 @@ what keeps physics from consuming its own output.
   matched prims and values are evaluated lazily (count at `ovphysx_fetch_query_result`,
   columns at `ovphysx_read`), each observing the most recently completed step. A step
   between query and read is fine — the read reflects the newer step.
-- Borrowed lifetime: the producer-owned group and its `tensors` / `index_map` /
-  `prim_list` are valid until that group's `read_group_id` is released through
-  `ovphysx_release_group` — fetching further groups (or stepping) does not invalidate
-  earlier ones. Copy out anything you must retain past release (writing it back into
-  ovstage within the window is the default path).
+- Borrowed lifetime: the producer-owned group struct and its `prim_list` are valid
+  until that group's `read_group_id` is released through `ovphysx_release_group`.
+  Numeric tensors, maps, masks, and the CUDA event remain valid until
+  `ovphysx_release_read`. Fetching further groups or stepping invalidates neither;
+  copy anything that must outlive its corresponding lifetime.
 - `OVPHYSX_SCOPE_ACTIVE` is single-frame; re-open the query each step.
 
 Refer also to the [Developer Guide](developer_guide.md) for the async/ordinal execution

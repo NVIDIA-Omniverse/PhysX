@@ -1,7 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-44
+ */
 
 #include "OmniPhysX.h"
 #include "PhysXScene.h"
@@ -52,8 +55,17 @@ void primGetRigidBodyInstancedData(usdparser::ObjectId* ids, uint32_t numIds, In
                 if (intActor->mInstanceIndex != internal::kInvalidUint32_t)
                 {
                     data.instanceIndex = intActor->mInstanceIndex;
-                    if (usdparser::AttachedStage* as = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage())
-                        data.instancerPath = asInt(as->pathFor(intActor->mInstanceKey));
+                    // instancerPath is now
+                    // mInstanceKey.handle directly (the ENCODE direction -- see IPhysxPrivate.h's
+                    // updated doc comment), not asInt(as->pathFor(...)). No AttachedStage lookup
+                    // needed any more, so this is unconditional -- and it no longer depends on
+                    // getActiveAttachedStage() happening to be the SPECIFIC attach that owns
+                    // intActor (a latent gap in the old code, which used "whichever attach is
+                    // active" rather than the actual owner). Generation-tag caveat (ADR-0021): a
+                    // consumer that reads this across a detach/reattach of the owning attach gets
+                    // a handle from the old generation, which will not resolve against the new
+                    // one -- a resolution failure on the consumer's side, not decode garbage.
+                    data.instancerPath = intActor->mInstanceKey.handle;
                 }
             }
         }

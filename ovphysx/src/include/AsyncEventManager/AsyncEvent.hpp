@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 
 #ifndef ASYNC_EVENT_HPP
@@ -46,7 +46,7 @@ namespace async
  * // Automatic cleanup when event goes out of scope
  * @endcode
  * 
- * @note Move-only type - events represent unique resources
+ * @note Move-only type. Events represent unique resources.
  * 
  * @threadsafety poll() and waitFor() can be called from any thread.
  *               However, each Event should only be accessed by one thread at a time.
@@ -63,7 +63,7 @@ public:
     explicit Event(async_event_handle_t handle) : m_handle(handle) {}
     
     /**
-     * @brief Destructor - automatically cleans up the event
+     * @brief Cleans up the event.
      */
     ~Event() noexcept
     {
@@ -72,7 +72,7 @@ public:
         }
     }
     
-    // Delete copy operations - events are unique resources
+    // Not copyable. Events are unique resources.
     Event(const Event&) = delete;
     Event& operator=(const Event&) = delete;
     
@@ -94,7 +94,7 @@ public:
     Event& operator=(Event&& other) noexcept
     {
         if (this != &other) {
-            // Clean up our current resource before taking ownership of other's
+            // Release the current resource before taking ownership of other's.
             if (m_handle != 0) {
                 AsyncEventManager::cleanup_event(m_handle);
             }
@@ -142,7 +142,7 @@ public:
     /**
      * @brief Get the underlying raw handle
      * @return Raw async event handle
-     * @note For advanced usage only - prefer using the Event methods
+     * @note For advanced usage only. Prefer the Event methods.
      */
     async_event_handle_t handle() const noexcept { return m_handle; }
     

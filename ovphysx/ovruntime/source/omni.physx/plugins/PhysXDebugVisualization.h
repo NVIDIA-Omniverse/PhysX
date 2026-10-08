@@ -1,13 +1,19 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-14
+ */
 
 #pragma once
 
-#include "UsdPCH.h"
-
+#include <omni/physics/parse/Handles.h>
 #include <omni/physx/IPhysxVisualization.h>
 
 #include <PxPhysicsAPI.h>
+
+#include <unordered_map>
 
 namespace omni
 {
@@ -32,8 +38,8 @@ struct CachedEdges
     uint32_t mNumEdges;
 };
 
-typedef PXR_NS::TfHashMap<PXR_NS::SdfPath, CachedLines, PXR_NS::SdfPath::Hash> LineMap;
-typedef PXR_NS::TfHashMap<PXR_NS::SdfPath, CachedEdges, PXR_NS::SdfPath::Hash> EdgeMap;
+typedef std::unordered_map<omni::physics::parse::ObjectKey, CachedLines, omni::physics::parse::ObjectKey::Hash> LineMap;
+typedef std::unordered_map<omni::physics::parse::ObjectKey, CachedEdges, omni::physics::parse::ObjectKey::Hash> EdgeMap;
 
 class DebugVisualizationCache
 {
@@ -47,15 +53,15 @@ public:
 
     void release();
 
-    void releasePath(const PXR_NS::SdfPath& path);
+    void releaseKey(omni::physics::parse::ObjectKey key);
 
-    const DebugLine* getLines(const PXR_NS::SdfPath& path, const ::physx::PxTransform& transform, uint32_t& numLines);
+    const DebugLine* getLines(omni::physics::parse::ObjectKey key, const ::physx::PxTransform& transform, uint32_t& numLines);
 
-    void addLines(const PXR_NS::SdfPath& path, const ::physx::PxTransform& transform, DebugLine* debugLines, uint32_t numLines);
+    void addLines(omni::physics::parse::ObjectKey key, const ::physx::PxTransform& transform, DebugLine* debugLines, uint32_t numLines);
 
-    const DebugEdge* getEdges(const PXR_NS::SdfPath& path, uint32_t& numEdges);
+    const DebugEdge* getEdges(omni::physics::parse::ObjectKey key, uint32_t& numEdges);
 
-    void addEdges(const PXR_NS::SdfPath& path, DebugEdge* debugEdges, uint32_t numEdges);
+    void addEdges(omni::physics::parse::ObjectKey key, DebugEdge* debugEdges, uint32_t numEdges);
 
 public:
     std::vector<DebugPoint> mPointsBuffer;
@@ -92,16 +98,16 @@ uint32_t getNbTriangles();
 
 const DebugTriangle* getTriangles();
 
-const DebugLine* getShapeDebugDraw(const PXR_NS::SdfPath& primKey, const usdparser::PhysxShapeDesc* desc, uint32_t& numLines);
+const DebugLine* getShapeDebugDraw(omni::physics::parse::ObjectKey key, const usdparser::PhysxShapeDesc* desc, uint32_t& numLines);
 
-const CollisionRepresentation* getCollisionRepresentation(const PXR_NS::SdfPath& usdPath,
+const CollisionRepresentation* getCollisionRepresentation(omni::physics::parse::ObjectKey key,
                                                           const usdparser::PhysxShapeDesc* desc);
 void releaseCollisionRepresentation(const CollisionRepresentation* cr);
 bool getMeshKey(const omni::physx::usdparser::PhysxShapeDesc& desc, omni::physx::usdparser::MeshKey& meshKey);
 
 void clearDebugVisualizationData();
 
-::physx::PxU32 getDebugDrawCollShapeColor(const PXR_NS::SdfPath& primKey);
+::physx::PxU32 getDebugDrawCollShapeColor(omni::physics::parse::ObjectKey key);
 
 } // namespace physx
 } // namespace omni

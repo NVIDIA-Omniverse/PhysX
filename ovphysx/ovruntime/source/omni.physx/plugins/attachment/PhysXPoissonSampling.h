@@ -1,5 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-20 AC-21
+ */
 
 #pragma once
 
@@ -10,7 +15,7 @@ namespace omni
 namespace sampling
 {
 
-uint64_t createSurfaceSampler(const PXR_NS::SdfPath& colliderPath, float samplingDistance);
+uint64_t createSurfaceSampler(omni::physics::parse::ObjectKey colliderKey, float samplingDistance);
 void releaseSurfaceSampler(const uint64_t surfaceSampler);
 void notifyPhysXSceneRelease();
 void addSurfaceSamplerPoints(const uint64_t surfaceSampler, const carb::Float3* points, const uint32_t pointsSize);

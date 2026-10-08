@@ -1,14 +1,24 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-// This include must come first
-// clang-format off
-#include "UsdPCH.h"
-// clang-format on
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-27 AC-28
+ *
+ * @implements REQ-PARSE-JOINT-004
+ * @covers AC-1 AC-2
+ *
+ * @implements REQ-PARSE-CORE-006
+ * @covers AC-8
+ */
+
+#include <limits>
 
 #include <carb/Types.h>
 #include <carb/logging/Log.h>
-#include <omni/physics/usd/PrimIterator.h>
+#include <omni/physics/parse/KnownTokens.h>
+#include <omni/physics/parse/ScanBackend.h>
+#include <omni/physics/parse/ScannedStage.h>
 #include <common/foundation/Allocator.h>
 
 #include "LoadTools.h"
@@ -19,17 +29,17 @@
 #include <internal/InternalActor.h>
 
 #include <PhysXTools.h>
+// pxr-free half of TypeCast.h: this file only ever names the carb <-> PhysX
+// overloads (toPhysX/toPhysXQuat/toFloat3/toFloat4), never a Gf type. Must
+// follow a PhysX header: (Carb)PhysXCast.h assumes ::physx is declared.
+#include <common/foundation/CarbPhysXCast.h>
 #include <OmniPhysX.h>
 #include <PhysXScene.h>
 
-#include <omni/physics/usd/StageScan.h>
-
 #include "IceDescriptorAllocator.h"
 
-
-using namespace PXR_NS;
 using namespace carb;
-using namespace omni::physics::schema;
+using namespace ::physx;
 
 namespace omni
 {
@@ -38,69 +48,70 @@ namespace physx
 namespace usdparser
 {
 
-namespace
-{
-// schemaTypeToken lives in PhysXTools.h (single boundary translation).
-using omni::physx::internal::schemaTypeToken;
-} // namespace
+using omni::physics::parse::ObjectKey;
 
-// Parse the first joint found under `targetPath`'s subtree.  Used by the
+// Parse the first joint found under `targetKey`'s subtree.  Used by the
 // joint-instancer to fetch a prototype joint descriptor it can stamp
 // per instance.  Runs scanStage on the subtree and returns the first
-// joint emitted. (No UsdPrim — the stage comes from the AttachedStage.)
-std::pair<SdfPath, PhysxObjectDesc*> parseJointPrototype(AttachedStage& attachedStage,
-    const SdfPath& targetPath,
-    const ObjectInstance& objectInstance)
+// joint emitted. (No UsdPrim -- the scan is driven off the AttachedStage's
+// attach target via the backend-dispatched scan path, ScanBackend.h.)
+//
+// Lifetime: `out.scannedStage` owns the ScannedStage, so `out.desc` stays a
+// non-owning pointer into it and is freed with it -- same contract as
+// PointInstancer.cpp's parsePrototype.
+void parseJointPrototype(AttachedStage& attachedStage,
+    ObjectKey targetKey,
+    const ObjectInstance& objectInstance,
+    TargetDesc& out)
 {
     (void)objectInstance;
 
-    const std::vector<SdfPath> scanRoots{ targetPath };
-    static const std::unordered_set<SdfPath, SdfPath::Hash> kNoExclude;
-    omni::physics::usd::ScannedStage scanned = omni::physics::usd::scanStage(
-        attachedStage.attachTarget(), scanRoots, kNoExclude,
-        omni::physx::usdparser::iceDescriptorAllocator());
+    const std::vector<std::string> scanRoots{ std::string(attachedStage.textViewFor(targetKey)) };
+    static const std::vector<std::string> kNoExclude;
+    omni::physics::parse::ScanOptions scanOptions;
+    auto scanned = std::make_unique<omni::physics::parse::ScannedStage>();
+    *scanned = omni::physics::parse::scanStage(attachedStage.attachTarget(), scanRoots, kNoExclude, scanOptions,
+                                               omni::physx::usdparser::iceDescriptorAllocator());
 
-    if (scanned.joints.empty())
-        return std::make_pair(SdfPath(), nullptr);
+    if (scanned->joints.empty())
+    {
+        out.scannedStage = std::move(scanned);
+        return;
+    }
 
-    // Take ownership of the first joint descriptor. `release()` hands the
-    // raw pointer to the caller, whose lifecycle today does not free it.
-    PXR_NS::SdfPath protoPath = scanned.pathFor(scanned.joints[0]->jointPrimKey);
-    PhysxObjectDesc* protoDesc = scanned.joints[0].release();
-    return std::make_pair(protoPath, protoDesc);
+    // Re-key the joint's scan-space key into attachedStage-space via the scanned
+    // source's own string identity (the same opaque-identity round trip
+    // ScannedShapeCookingDispatch.cpp's ObjectKey-native functions use).
+    out.descKey = attachedStage.keyFor(scanned->source().sourceKeyToString(scanned->joints[0]->jointPrimKey));
+    out.desc = scanned->joints[0].get();
+    out.scannedStage = std::move(scanned);
 }
 
-ObjectId resolveBodyPath(AttachedStage& attachedStage, const SdfPath& bodyPath, int bodyIndex)
-{    
+ObjectId resolveBodyPath(AttachedStage& attachedStage, ObjectKey bodyKey, int bodyIndex)
+{
     ObjectDb* objectDb = attachedStage.getObjectDatabase();
     internal::InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
 
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
-    if (src && bodyPath != SdfPath())
+    if (src && bodyKey.valid())
     {
-        const omni::physics::parse::ObjectKey bodyKey = attachedStage.keyFor(bodyPath);
+        const omni::physics::parse::KnownTokens& tok = attachedStage.getKnownTokens();
         if (src->exists(bodyKey))
         {
             // A.B. this is super slow and extremely inefficient
-            if (bodyIndex >= 0 && src->isA(bodyKey, schemaTypeToken<UsdGeomPointInstancer>(*src)))
+            if (bodyIndex >= 0 && src->isA(bodyKey, tok.pointInstancerType))
             {
-                VtArray<int> indices;
-                internal::getArrayValue(attachedStage, bodyKey, UsdGeomTokens->protoIndices, UsdTimeCode::Default(), indices);
+                std::vector<int32_t> indices;
+                internal::getArrayValue(attachedStage, bodyKey, tok.protoIndices,
+                                         omni::physics::parse::ReadTime::defaultTime(), indices);
                 if (bodyIndex < indices.size())
                 {
                     const int protoIndex = indices[bodyIndex];
-                    SdfPathVector protos;
+                    std::vector<omni::physics::parse::ObjectKey> protoKeys;
+                    src->getRelationshipTargets(bodyKey, tok.prototypes, protoKeys);
+                    if (protoIndex < protoKeys.size())
                     {
-                        std::vector<omni::physics::parse::ObjectKey> protoKeys;
-                        src->getRelationshipTargets(bodyKey, src->internToken(UsdGeomTokens->prototypes.GetString()), protoKeys);
-                        protos.reserve(protoKeys.size());
-                        for (const auto& k : protoKeys)
-                            protos.push_back(attachedStage.pathFor(k));
-                    }
-                    if (protoIndex < protos.size())
-                    {
-                        const SdfPath protoBodyPath = protos[protoIndex];
-                        const ObjectIdMap* entries = objectDb->getEntries(protoBodyPath);
+                        const ObjectIdMap* entries = objectDb->getEntries(protoKeys[protoIndex]);
                         if (entries)
                         {
                             ObjectIdMap::const_iterator it = entries->begin();
@@ -127,10 +138,10 @@ ObjectId resolveBodyPath(AttachedStage& attachedStage, const SdfPath& bodyPath, 
             }
             else
             {
-                ObjectId body = objectDb->findEntry(bodyPath, eBody);
+                ObjectId body = objectDb->findEntry(bodyKey, eBody);
                 if (body == kInvalidObjectId)
                 {
-                    body = objectDb->findEntry(bodyPath, eArticulationLink);
+                    body = objectDb->findEntry(bodyKey, eArticulationLink);
                 }
                 return body;
             }
@@ -141,40 +152,49 @@ ObjectId resolveBodyPath(AttachedStage& attachedStage, const SdfPath& bodyPath, 
 }
 
 void parseJointInstancer(AttachedStage& attachedStage,
-    const SdfPath& instancerPath)
+    omni::physics::parse::ObjectKey instancerKey)
 {
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
-    const omni::physics::parse::ObjectKey instancerKey = attachedStage.keyFor(instancerPath);
+    // Diagnostics-only path text for the CARB_LOG_WARN calls below; textFor()
+    // avoids materializing a path just to format a log string.
+    const char* instancerText = attachedStage.textFor(instancerKey);
 
-    // Resolve a relationship's targets into prim paths (source key-space).
-    const auto readTargets = [&](const PXR_NS::TfToken& rel) -> SdfPathVector
+    const omni::physics::parse::KnownTokens& tok = attachedStage.getKnownTokens();
+
+    // Resolve a relationship's targets into ObjectKeys (source key-space, which is
+    // attachedStage's own -- no re-key round trip needed, unlike parseJointPrototype's
+    // scanned-subtree descs above).
+    const auto readTargets = [&](omni::physics::parse::TokenId rel) -> std::vector<ObjectKey>
     {
-        SdfPathVector out;
+        std::vector<ObjectKey> out;
         if (!src)
             return out;
-        std::vector<omni::physics::parse::ObjectKey> keys;
-        src->getRelationshipTargets(instancerKey, src->internToken(rel.GetString()), keys);
-        out.reserve(keys.size());
-        for (const auto& k : keys)
-            out.push_back(attachedStage.pathFor(k));
+        src->getRelationshipTargets(instancerKey, rel, out);
         return out;
     };
     // Prefer the default value, fall back to the earliest time sample
     // (mirrors getAttributeArrayTimedFallback) — all via the source.
-    const auto readArray = [&](const PXR_NS::TfToken& attr, auto& out) -> bool
+    const auto readArray = [&](omni::physics::parse::TokenId attr, auto& out) -> bool
     {
-        return internal::getArrayValue(attachedStage, instancerKey, attr, UsdTimeCode::Default(), out) ||
-               internal::getArrayValue(attachedStage, instancerKey, attr, UsdTimeCode::EarliestTime(), out);
+        return internal::getArrayValue(attachedStage, instancerKey, attr,
+                                        omni::physics::parse::ReadTime::defaultTime(), out) ||
+               // std::numeric_limits<double>::lowest() is UsdTimeCode::EarliestTime()'s
+               // exact underlying value (pxr/usd/usd/timeCode.h); ReadTime::at() round-trips
+               // it straight back into UsdTimeCode(t) on the USD backend, so this is the
+               // same earliest-time read without needing the pxr timeCode header here.
+               internal::getArrayValue(attachedStage, instancerKey, attr,
+                                        omni::physics::parse::ReadTime::at(std::numeric_limits<double>::lowest()),
+                                        out);
     };
 
-    SdfPathVector targets = readTargets(PhysxSchemaTokens->physicsPrototypes);
+    std::vector<ObjectKey> targets = readTargets(tok.physicsPrototypes);
     TargetDescVector targetObjects;
 
     // these attributes are required and must match in length
-    VtArray<int> indices;
-    if (!readArray(PhysxSchemaTokens->physicsProtoIndices, indices))
+    std::vector<int32_t> indices;
+    if (!readArray(tok.physicsProtoIndices, indices))
     {
-        CARB_LOG_WARN("Physics:JointInstancer: (%s) indices array not valid\n", instancerPath.GetText());
+        CARB_LOG_WARN("Physics:JointInstancer: (%s) indices array not valid\n", instancerText);
     }
 
     if (indices.size() == 0)
@@ -183,52 +203,53 @@ void parseJointInstancer(AttachedStage& attachedStage,
     }
 
     // gather the joint instancer data
-    SdfPathVector body0s = readTargets(PhysxSchemaTokens->physicsBody0s);
-    SdfPathVector body1s = readTargets(PhysxSchemaTokens->physicsBody1s);
-    VtArray<int> body0indices;
-    if (!readArray(PhysxSchemaTokens->physicsBody0Indices, body0indices))
+    std::vector<ObjectKey> body0s = readTargets(tok.physicsBody0s);
+    std::vector<ObjectKey> body1s = readTargets(tok.physicsBody1s);
+    std::vector<int32_t> body0indices;
+    if (!readArray(tok.physicsBody0Indices, body0indices))
     {
-        CARB_LOG_WARN("Physics:JointInstancer: (%s) body0 indices array not valid\n", instancerPath.GetText());
+        CARB_LOG_WARN("Physics:JointInstancer: (%s) body0 indices array not valid\n", instancerText);
     }
-    VtArray<int> body1indices;
-    if (!readArray(PhysxSchemaTokens->physicsBody1Indices, body1indices))
+    std::vector<int32_t> body1indices;
+    if (!readArray(tok.physicsBody1Indices, body1indices))
     {
-        CARB_LOG_WARN("Physics:JointInstancer: (%s) body1 indices array not valid\n", instancerPath.GetText());
+        CARB_LOG_WARN("Physics:JointInstancer: (%s) body1 indices array not valid\n", instancerText);
     }
-    VtArray<GfVec3f> localPos0s;
-    if (!readArray(PhysxSchemaTokens->physicsLocalPos0s, localPos0s) || localPos0s.size() != indices.size())
+    std::vector<carb::Float3> localPos0s;
+    if (!readArray(tok.physicsLocalPos0s, localPos0s) || localPos0s.size() != indices.size())
     {
-        CARB_LOG_WARN("Physics:JointInstancer: (%s) localPos0 array not valid\n", instancerPath.GetText());
+        CARB_LOG_WARN("Physics:JointInstancer: (%s) localPos0 array not valid\n", instancerText);
     }
-    VtArray<GfQuath> localRot0s;
-    if (readArray(PhysxSchemaTokens->physicsLocalRot0s, localRot0s) && localRot0s.size() != indices.size())
+    // carb::Float4 also serves the on-disk GfQuath storage -- PhysXTools.h's fillArray
+    // dispatches on the source BufferElemType (eQuath) at runtime and widens half->float,
+    // it is not a memcpy.
+    std::vector<carb::Float4> localRot0s;
+    if (readArray(tok.physicsLocalRot0s, localRot0s) && localRot0s.size() != indices.size())
     {
         CARB_LOG_WARN("Physics:JointInstancer: (%s) localRot0 array size does not match instance count\n",
-            instancerPath.GetText());
+            instancerText);
     }
-    VtArray<GfVec3f> localPos1s;
-    if (!readArray(PhysxSchemaTokens->physicsLocalPos1s, localPos1s) || localPos1s.size() != indices.size())
+    std::vector<carb::Float3> localPos1s;
+    if (!readArray(tok.physicsLocalPos1s, localPos1s) || localPos1s.size() != indices.size())
     {
-        CARB_LOG_WARN("Physics:JointInstancer: (%s) localPos1 array not valid\n", instancerPath.GetText());
+        CARB_LOG_WARN("Physics:JointInstancer: (%s) localPos1 array not valid\n", instancerText);
     }
-    VtArray<GfQuath> localRot1s;
-    if (readArray(PhysxSchemaTokens->physicsLocalRot1s, localRot1s) && localRot1s.size() != indices.size())
+    std::vector<carb::Float4> localRot1s;
+    if (readArray(tok.physicsLocalRot1s, localRot1s) && localRot1s.size() != indices.size())
     {
         CARB_LOG_WARN("Physics:JointInstancer: (%s) localRot1 array size does not match instance count\n",
-            instancerPath.GetText());
+            instancerText);
     }
 
     for (size_t i = 0; i < targets.size(); i++)
     {
-        ObjectInstance objectInstance = { instancerPath, (uint32_t)i, SdfPath(), false };
-        const SdfPath& targetPath = targets[i];
-        if (src && src->exists(attachedStage.keyFor(targetPath)))
+        ObjectInstance objectInstance = { instancerKey, (uint32_t)i, omni::physics::parse::ObjectKey{}, false };
+        const ObjectKey targetKey = targets[i];
+        if (src && src->exists(targetKey))
         {
             TargetDesc targetDesc;
-            std::pair<SdfPath, PhysxObjectDesc*> proto = parseJointPrototype(attachedStage, targetPath, objectInstance);
-            targetDesc.desc = proto.second;
-            targetDesc.descPath = proto.first;
-            targetDesc.outsideInstancer = isOutsideInstancer(src, attachedStage.keyFor(targetPath), instancerKey);
+            parseJointPrototype(attachedStage, targetKey, objectInstance, targetDesc);
+            targetDesc.outsideInstancer = isOutsideInstancer(src, targetKey, instancerKey);
             targetObjects.push_back(std::move(targetDesc));
         }
         else
@@ -242,7 +263,7 @@ void parseJointInstancer(AttachedStage& attachedStage,
         if (size_t(indices[i]) >= targets.size())
             continue;
 
-        ObjectInstance objectInstance = { instancerPath, (uint32_t)i, targets[indices[i]], false };
+        ObjectInstance objectInstance = { instancerKey, (uint32_t)i, targets[indices[i]], false };
         const TargetDesc& targetDesc = targetObjects[indices[i]];
         PhysxObjectDesc* objectDesc = targetDesc.desc;
 
@@ -253,65 +274,56 @@ void parseJointInstancer(AttachedStage& attachedStage,
         {
             PhysxJointDesc* jointDesc = static_cast<PhysxJointDesc*>(objectDesc);
 
-            const GfVec3f instanceLocalPos0 = i < localPos0s.size() ? localPos0s[i] : GfVec3f(0.0f);
-            const GfQuatd instanceLocalRot0 = i < localRot0s.size() ? GfQuatd(localRot0s[i]) : GfQuatd(1.0);
-            const GfVec3f instanceLocalPos1 = i < localPos1s.size() ? localPos1s[i] : GfVec3f(0.0f);
-            const GfQuatd instanceLocalRot1 = i < localRot1s.size() ? GfQuatd(localRot1s[i]) : GfQuatd(1.0);
+            // USD read boundary: convert the authored instance arrays to PhysX math once,
+            // then compose entirely with PxTransform (Gf's row-vector matrix product
+            // A * B corresponds to the PxTransform product B * A).
+            // toPhysXQuat(GfQuath) yields the same four floats the old
+            // toPhysX(GfQuatd(GfQuath)) did: both go through GetImaginary()/GetReal(),
+            // and half->double->float is the same value as half->float.
+            const PxTransform instancePose0(
+                i < localPos0s.size() ? toPhysX(localPos0s[i]) : PxVec3(0.0f),
+                i < localRot0s.size() ? toPhysXQuat(localRot0s[i]) : PxQuat(PxIdentity));
+            const PxTransform instancePose1(
+                i < localPos1s.size() ? toPhysX(localPos1s[i]) : PxVec3(0.0f),
+                i < localRot1s.size() ? toPhysXQuat(localRot1s[i]) : PxQuat(PxIdentity));
 
-            const GfVec3f localJointPos0 = (GfVec3f&)jointDesc->localPose0Position;
-            GfQuatd localJointRot0;
-            Float4ToGfQuat(jointDesc->localPose0Orientation, localJointRot0);
-            const GfVec3f localJointPos1 = (GfVec3f&)jointDesc->localPose1Position;
-            GfQuatd localJointRot1;
-            Float4ToGfQuat(jointDesc->localPose1Orientation, localJointRot1);
+            const PxTransform localPose0 = toPhysX(jointDesc->localPose0Position, jointDesc->localPose0Orientation);
+            const PxTransform localPose1 = toPhysX(jointDesc->localPose1Position, jointDesc->localPose1Orientation);
 
-            GfMatrix4d localPose0Matrix;
-            localPose0Matrix.SetTranslate(GfVec3d(localJointPos0));
-            localPose0Matrix.SetRotateOnly(localJointRot0);
+            // The authored orientations are half-precision, so composing them can drift
+            // outside PxQuat::isUnit(). The Gf path normalized implicitly (GfRotation
+            // stores axis + angle); do it explicitly here.
+            const PxTransform pose0 = (instancePose0 * localPose0).getNormalized();
+            const PxTransform pose1 = (instancePose1 * localPose1).getNormalized();
 
-            GfMatrix4d localPose1Matrix;
-            localPose1Matrix.SetTranslate(GfVec3d(localJointPos1));
-            localPose1Matrix.SetRotateOnly(localJointRot1);
+            jointDesc->localPose0Position = toFloat3(pose0.p);
+            jointDesc->localPose0Orientation = toFloat4(pose0.q);
 
-            GfMatrix4d instancePose0Matrix;
-            instancePose0Matrix.SetTranslate(GfVec3d(instanceLocalPos0));
-            instancePose0Matrix.SetRotateOnly(instanceLocalRot0);
+            jointDesc->localPose1Position = toFloat3(pose1.p);
+            jointDesc->localPose1Orientation = toFloat4(pose1.q);
 
-            GfMatrix4d instancePose1Matrix;
-            instancePose1Matrix.SetTranslate(GfVec3d(instanceLocalPos1));
-            instancePose1Matrix.SetRotateOnly(instanceLocalRot1);
-
-            const GfMatrix4d pose0Matrix = localPose0Matrix * instancePose0Matrix;
-            const GfMatrix4d pose1Matrix = localPose1Matrix * instancePose1Matrix;
-
-            GfVec3ToFloat3(pose0Matrix.ExtractTranslation(), jointDesc->localPose0Position);            
-            GfQuatToFloat4(GfQuatf(pose0Matrix.ExtractRotation().GetQuat()), jointDesc->localPose0Orientation);
-
-            GfVec3ToFloat3(pose1Matrix.ExtractTranslation(), jointDesc->localPose1Position);
-            GfQuatToFloat4(GfQuatf(pose1Matrix.ExtractRotation().GetQuat()), jointDesc->localPose1Orientation);
-
-            const SdfPath body0Path = i < body0s.size() ? body0s[i] : (body0s.empty() ? SdfPath() : body0s[0]);
-            const SdfPath body1Path = i < body1s.size() ? body1s[i] : (body1s.empty() ? SdfPath() : body1s[0]);
+            const ObjectKey body0Key = i < body0s.size() ? body0s[i] : (body0s.empty() ? ObjectKey{} : body0s[0]);
+            const ObjectKey body1Key = i < body1s.size() ? body1s[i] : (body1s.empty() ? ObjectKey{} : body1s[0]);
 
             const int body0Index = i < body0indices.size() ? body0indices[i] : -1;
             const int body1Index = i < body1indices.size() ? body1indices[i] : -1;
 
-            const ObjectId resolvedBody0 = resolveBodyPath(attachedStage, body0Path, body0Index);
-            const ObjectId resolvedBody1 = resolveBodyPath(attachedStage, body1Path, body1Index);
+            const ObjectId resolvedBody0 = resolveBodyPath(attachedStage, body0Key, body0Index);
+            const ObjectId resolvedBody1 = resolveBodyPath(attachedStage, body1Key, body1Index);
 
             const bool body0Dynamic = resolvedBody0 == kInvalidObjectId ? false : isRigidBodyDynamic(resolvedBody0);
             const bool body1Dynamic = resolvedBody1 == kInvalidObjectId ? false : isRigidBodyDynamic(resolvedBody1);
 
-            createJoint(attachedStage, targetDesc.descPath, jointDesc, resolvedBody0, body0Dynamic, resolvedBody1, body1Dynamic);
+            createJoint(attachedStage, targetDesc.descKey, jointDesc, resolvedBody0, body0Dynamic, resolvedBody1, body1Dynamic);
 
             // change back the desc localPose
-            GfVec3ToFloat3(localJointPos0, jointDesc->localPose0Position);
-            GfQuatToFloat4(GfQuatf(localJointRot0), jointDesc->localPose0Orientation);
+            jointDesc->localPose0Position = toFloat3(localPose0.p);
+            jointDesc->localPose0Orientation = toFloat4(localPose0.q);
 
-            GfVec3ToFloat3(localJointPos1, jointDesc->localPose1Position);
-            GfQuatToFloat4(GfQuatf(localJointRot1), jointDesc->localPose1Orientation);
+            jointDesc->localPose1Position = toFloat3(localPose1.p);
+            jointDesc->localPose1Orientation = toFloat4(localPose1.q);
 
-        }  
+        }
     }
 }
 }

@@ -1,12 +1,17 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-TENSOR-ATTACH-001
+ * @covers AC-1
+ */
 
 // clang-format off
-#include <UsdPCH.h>
 // clang-format on
 
 #include "tensors/base/BaseVolumeDeformableBodyView.h"
 #include "tensors/base/BaseSimulationView.h"
+#include "usdLoad/AttachedStage.h"
 
 #include "tensors/GlobalsAreBad.h"
 
@@ -67,7 +72,7 @@ const char* BaseVolumeDeformableBodyView::getUsdPrimPath(uint32_t dbIdx) const
 {
     if (dbIdx < mEntries.size())
     {
-        return mEntries[dbIdx].path.GetString().c_str();
+        return mEntries[dbIdx].path.c_str();
     }
     return nullptr;
 }
@@ -76,7 +81,7 @@ const char* BaseVolumeDeformableBodyView::getUsdSimulationMeshPrimPath(uint32_t 
 {
     if (dbIdx < mEntries.size())
     {
-        return mEntries[dbIdx].simMeshPath.GetString().c_str();
+        return mEntries[dbIdx].simMeshPath.c_str();
     }
     return nullptr;
 }
@@ -85,7 +90,7 @@ const char* BaseVolumeDeformableBodyView::getUsdCollisionMeshPrimPath(uint32_t d
 {
     if (dbIdx < mEntries.size())
     {
-        return mEntries[dbIdx].collMeshPath.GetString().c_str();
+        return mEntries[dbIdx].collMeshPath.c_str();
     }
     return nullptr;
 }
@@ -163,9 +168,12 @@ bool BaseVolumeDeformableBodyView::check() const
         return false;
     }
 
+    usdparser::AttachedStage* attachedStage = mSim ? mSim->getAttachedStage() : nullptr;
     for (auto& entry : mEntries)
     {
-        void* ptr = g_physx->getPhysXPtr(entry.path, omni::physx::PhysXType::ePTDeformableVolume);
+        const omni::physics::parse::ObjectKey key =
+            attachedStage ? attachedStage->keyFor(entry.path) : omni::physics::parse::ObjectKey{};
+        void* ptr = BaseSimulationView::resolvePhysXPtr(attachedStage, key, omni::physx::PhysXType::ePTDeformableVolume);
         if (ptr != entry.body)
         {
             result = false;

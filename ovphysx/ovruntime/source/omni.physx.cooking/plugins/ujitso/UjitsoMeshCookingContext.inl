@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
@@ -18,10 +18,8 @@
 
 #include <carb/ujitso/UjitsoUtils.inl>
 #include <omni/physx/IPhysxCookingService.h>
-#include <common/utilities/Utilities.h> // intToPath
 
 using namespace carb::ujitso;
-using namespace PXR_NS;
 using namespace physx;
 
 namespace omni
@@ -38,29 +36,6 @@ typedef UjitsoProcessManager    UjitsoAsyncContext;
 static void addExtDep(RequestBuilder<>& req)
 {
     req.add(carb::ujitso::IRegistry::Extension, "omni.physx.cooking");
-}
-
-// Uses copyUsdMeshDataAndRespan to create a new copy of data pointed to by a view, and modifies the view
-// to point to the new copy
-static void buildUsdMeshAndRemakeView(CookingInputUSDRigidMesh& mesh, PhysxCookingMeshView& view)
-{
-    // Copy carb::Float3 -> PXR_NS::GfVec3f; both have a simple 3-float layout with no inheritance, so
-    // reinterpret-casting is safe even though GfVec3 may not be trivially copyable by its strict definition
-    static_assert(sizeof(GfVec3f) == sizeof(carb::Float3), "copyIntDataAndRespan: Data size mismatch");
-    mesh.pointsValue.assign(reinterpret_cast<const GfVec3f*>(view.points.data()),
-                            reinterpret_cast<const GfVec3f*>(view.points.data()) + view.points.size());
-
-    // Cast and assign to mesh arrays, int and uint32_t alias (assuming they're the same size)
-    static_assert(sizeof(int) == sizeof(uint32_t), "copyIntDataAndRespan: Data size mismatch");
-    mesh.indicesValue.assign(reinterpret_cast<const int*>(view.indices.data()),
-                             reinterpret_cast<const int*>(view.indices.data()) + view.indices.size());
-    mesh.facesValue.assign(reinterpret_cast<const int*>(view.faces.data()),
-                           reinterpret_cast<const int*>(view.faces.data()) + view.faces.size());
-    mesh.holesValue.assign(reinterpret_cast<const int*>(view.holeIndices.data()),
-                           reinterpret_cast<const int*>(view.holeIndices.data()) + view.holeIndices.size());
-
-    // These are the same data type
-    mesh.faceMaterials.assign(view.faceMaterials.begin(), view.faceMaterials.end());
 }
 
 /**
@@ -83,15 +58,16 @@ struct MeshCookingContext : public UjitsoProcessContext
      * \param[in]   cookingResult               The physx cooking result, which must also point to a valid cooking
      *                                          request through its request field.
      * \param[in]   cookingDataVersion          The data version requested for the cooking type given in the request.
-     * \param[in]   collisionTypeSchemaToken    The USD schema token for the cooked data type.
+     * \param[in]   collisionTypeSchemaToken    The USD schema token text (e.g. PhysxSchemaTokens->triangleMesh.GetText())
+     *                                          for the cooked data type. Stored, currently unread by this class.
      * \param[in]   canHaveMultipleBuffers      Whether or not the data type may be stored using multiple buffers.
      *                                          Currently only convex decomposition requires that this be true.
-     * 
+     *
      * \return a new MeshCookingContext.
      */
     static MeshCookingContext* create(UjitsoResourceManager* resourceManager, CacheBehaviorType cacheBehavior,
                                       const PhysxCookingComputeResult& cookingResult, int cookingDataVersion,
-                                      TfToken collisionTypeSchemaToken, bool canHaveMultipleBuffers = false)
+                                      const char* collisionTypeSchemaToken, bool canHaveMultipleBuffers = false)
     {
         return new MeshCookingContext(resourceManager, cacheBehavior, cookingResult, cookingDataVersion,
                                       collisionTypeSchemaToken, canHaveMultipleBuffers);
@@ -147,7 +123,7 @@ private:
     // See the definition of create(...) for a description of all parameters
     MeshCookingContext(UjitsoResourceManager* resourceManager, CacheBehaviorType cacheBehavior,
                        const PhysxCookingComputeResult& cookingResult, int cookingDataVersion,
-                       TfToken collisionTypeSchemaToken, bool canHaveMultipleBuffers) :
+                       const char* collisionTypeSchemaToken, bool canHaveMultipleBuffers) :
         UjitsoProcessContext(resourceManager, cacheBehavior),
         m_cookingRequest(*cookingResult.request), m_cookingResult(cookingResult),
         m_collisionTypeSchemaToken(collisionTypeSchemaToken), m_canHaveMultipleBuffers(canHaveMultipleBuffers),
@@ -160,33 +136,24 @@ private:
 
         saveCallbackFromRequest(m_cookingRequest);
 
-        CookingStageAndPrim stageAndPrim;
+        // A deformable volume mesh cook carries its whole input in volumeMeshView and is the one
+        // data type the processor never triangulates, so an empty primMeshView is expected here.
+        const bool inputIsSelfContained = m_cookingRequest.dataType == PhysxCookingDataType::eDEFORMABLE_VOLUME_MESH;
 
-        if (m_cookingRequest.primMeshView.isEmpty())    // If user supplied optionalMeshKey then meshView will be empty
+        if (!inputIsSelfContained && m_cookingRequest.primMeshView.isEmpty())    // If user supplied optionalMeshKey then meshView will be empty
         {
-            // If the mesh view is empty we require valid prim data
-            if (m_cookingRequest.dataInputMode != PhysxCookingComputeRequest::eINPUT_MODE_FROM_PRIM_ID)
-            {
-                m_cookingResult.result = PhysxCookingResult::eERROR_INVALID_PRIM;
-                return;
-            }
-
-            if (!ICookingComputeService::getStageAndPrim(m_cookingResult, m_cookingRequest, stageAndPrim) ||
-                !ICookingComputeService::fillMeshView(m_cookingResult, m_cookingRequest, stageAndPrim))
-            {
-                m_cookingResult.result = PhysxCookingResult::eERROR_INVALID_PRIM;
-                m_cookingRequest.onFinished(m_cookingResult);
-                return;
-            }
-        }
-        else
-        {
-            // If async, we can't be sure the data referenced by the mesh view will be valid when processing
-            // actually occurs, so copy the data
-            if (m_cookingRequest.options.hasFlag(PhysxCookingComputeRequest::Options::kComputeAsynchronously))
-                buildUsdMeshAndRemakeView(stageAndPrim.rigidMesh, m_cookingRequest.primMeshView);
+            // REQ-COOK-SOURCE-001: every request is mesh-view mode now (eINPUT_MODE_FROM_PRIM_ID
+            // removed) -- an empty mesh view here is unrecoverable, there is no USD re-read fallback.
+            m_cookingResult.result = PhysxCookingResult::eERROR_INVALID_PRIM;
+            return;
         }
 
+        // An asynchronous eINPUT_MODE_FROM_PRIM_MESH_VIEW request cannot be allowed to read the
+        // caller's view once this constructor returns: the build is only queued here and first
+        // runs from a later pumpAsyncContext(), long after the submitting frame released the
+        // memory the view points at. The copy is taken by each input container's constructor --
+        // below, and still on this (the submitting) thread -- see
+        // PhysicsInputContainerBase::shouldSnapshotInputNow().
         m_triangulationContainer =
             new PhysicsTriangulationInputContainer(m_cookingResult, m_cookingRequest);
 
@@ -467,7 +434,7 @@ private:
 
     PhysxCookingComputeRequest          m_cookingRequest;
     PhysxCookingComputeResult           m_cookingResult;
-    TfToken                             m_collisionTypeSchemaToken;
+    const char*                         m_collisionTypeSchemaToken;
     bool                                m_canHaveMultipleBuffers;
     int                                 m_cookingDataVersion;
 

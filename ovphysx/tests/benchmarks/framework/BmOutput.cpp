@@ -1,5 +1,17 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-CAPI-BENCHMARK-001
+ * @covers AC-4
+ */
+
+// Upstream omni.physx framework file, unmodified. It is where AC-4's
+// publication rules take effect. emit() prints the metric line and, under
+// --regenerate, appends the row to the _baseline.txt the destructor writes.
+// performanceDelta() returns 0 whenever either side is 0, so a zero baseline
+// entry for a row that never ran is permanently fail-open. That is why the
+// harness must publish no record for such a row.
 
 #include "UsdPCH.h"
 

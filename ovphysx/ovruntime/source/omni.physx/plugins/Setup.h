@@ -1,18 +1,33 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-OMNIPVD-TRANSPORT-001
+ * @covers AC-3
+ * @implements REQ-OMNIPVD-LATE-001
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7 AC-8 AC-9 AC-10
+ */
 
 #pragma once
 
 #include <PxPhysicsAPI.h>
+#include <omnipvd/PxOmniPvd.h>
 #include <carb/events/IEvents.h>
 #include <carb/settings/ISettings.h>
+#include <omni/physx/IPhysxSettings.h>
+#include <omni/physx/IPhysxSimulation.h>
 #include <private/omni/physx/IPhysxCookingServicePrivate.h>
 #include "utils/Pair.h"
+
+#include <mutex>
 
 #include "PhysXScene.h"
 #include "SceneMultiGPUMode.h"
 
 class CarbPhysXErrorCallback;
+class OmniPvdFileWriteStream;
+class OmniPvdSocketWriteStream;
+class OmniPvdWriteStream;
 
 namespace cookingdataasync
 {
@@ -44,7 +59,7 @@ using FilteredPairsSet = std::unordered_map<Pair<uint32_t>, uint32_t, PairHash>;
 using CollisionGroupsPairsSet = std::unordered_set<Pair<uint32_t>, PairHash>;
 
 // Class holding and handling PhysX global objects like PxPhysics, PxFoundation
-class PhysXSetup
+class PhysXSetup : private ::physx::PxOmniPvdEventCallback
 {
 public:
     PhysXSetup();
@@ -65,15 +80,29 @@ public:
     ///////////////////////////////////////////////////////////////////////////////////////
     // Pointer acceses
     ::physx::PxPhysics* getPhysics();
-    // Variant used when the stage to derive default tolerances from is already known by the
-    // caller (e.g. during physXAttach, before the AttachedStage is registered with UsdLoad).
-    ::physx::PxPhysics* getPhysics(PXR_NS::UsdStageWeakPtr stage);
     ::physx::PxDefaultAllocator& getAllocator()
     {
         return mAllocator;
     }
+    // Borrowed pointer, no reference taken. Only safe on the main thread and only for code that
+    // cannot outlive the current manager; anything else must use acquireCudaContextManager().
     ::physx::PxCudaContextManager* getCudaContextManager(size_t id = 0) const;
     ::physx::PxCudaContextManager* getNextCudaContextManager();
+
+    /**
+     * Same as getCudaContextManager(), but returns the manager with a reference already taken (or
+     * null), under the lock that also guards every release of mCudaContextManagers.
+     *
+     * This is what other subsystems must use when they keep the pointer past the call. A consumer
+     * on another thread has no race-free moment in which to call acquireReference() itself: it
+     * borrows the pointer from the getter above, and setupGPU()/clearCudaContextManagers() can
+     * destroy the manager on the main thread between that read and the acquire (OMPE-106105).
+     *
+     * @implements REQ-COOK-CUDACTX-001
+     * @covers AC-1
+     */
+    ::physx::PxCudaContextManager* acquireCudaContextManager(size_t id = 0);
+
     ::physx::PxCpuDispatcher* getCpuDispatcher() const
     {
         return mDispatcher;
@@ -193,10 +222,13 @@ public:
     {
         return mOmniPvd;
     }
-
     // Runtime change of PVD settings - CAVEAT: this must NOT be called in a running simulation
     // (no synchronization is provided between post-frame-end pvd flushing and client reconnection)
     void changePVDSettings(bool enableLegacyPVD, bool enableOmniPVD);
+
+    OmniPvdRecordingResult startOmniPvdRecording(const OmniPvdDestination& destination);
+    OmniPvdRecordingResult stopOmniPvdRecording();
+    bool isOmniPvdRecording() const;
 
     inline const ::physx::PxVehiclePvdAttributeHandles* getVehiclePvdRegistrationHandles() const
     {
@@ -264,14 +296,28 @@ private:
     void cleanupPhysics(); // called with scene destruction, this should not be required in the end
     void setOmniPVDoutputDirectory(const char* directory);
     void setOmniPVDTimeStampedFileName(const char* fileName);
-    void writeOutOmniPVDFile(bool omniPVDWasActive);
+    void writeOutOmniPVDFile(bool omniPVDWasActive, bool fileWriteStreamClosedOk);
+    bool releaseOmniPvdWriteStream();
+    bool closeOmniPvdWriteStream();
+    void onStartSampling(::physx::PxOmniPvd& omniPvd) override;
+    void registerVehiclePvdCallback();
+    void unregisterVehiclePvdCallback();
     void releaseVehiclePvdRegistrationHandles();
+    void releaseVehiclePvdTelemetry();
     void clearCudaContextManagers();
     void clearCudaContextManagersAndRefillWithNull(int numToFill);
+    // Caller must already hold mCudaContextManagerMutex.
+    void clearCudaContextManagersLocked();
 
     ::physx::PxFoundation* mFoundation{ nullptr };
     ::physx::PxPhysics* mPhysics{ nullptr };
     std::vector<::physx::PxCudaContextManager*> mCudaContextManagers;
+    // Guards every mutation of mCudaContextManagers (release, replace, resize) against
+    // acquireCudaContextManager(), which cooking calls from UJITSO/carb::tasking worker threads.
+    // std::mutex rather than carb::tasking::MutexWrapper on purpose: the critical sections here
+    // never yield (a vector access plus an atomic refcount bump, or a release loop), so there is
+    // no fiber to reschedule, and this header must not pull in carb tasking.
+    mutable std::mutex mCudaContextManagerMutex;
     size_t mNextCudaContextManagerId{ 0 };
     int mSceneMultiGPUMode{ (int)SceneMultiGPUMode::eDisabled };
     ::physx::PxSerializationRegistry* mSerializationRegistry{ nullptr };
@@ -293,7 +339,17 @@ private:
     ::physx::PxPvd* mVisualDebugger{ nullptr };
     ::physx::PxPvdTransport* mPvdTransport{ nullptr };
     ::physx::PxOmniPvd* mOmniPvd{ nullptr };
+    enum class OmniPvdStreamKind : uint8_t
+    {
+        eNone,
+        eStartupFile,
+        eFile,
+        eTcp,
+    };
+    OmniPvdWriteStream* mOmniPvdWriteStream{ nullptr };
+    OmniPvdStreamKind mOmniPvdStreamKind{ OmniPvdStreamKind::eNone };
     ::physx::PxVehiclePvdAttributeHandles* mVehiclePvdRegistrationHandles{ nullptr };
+    bool mVehiclePvdSnapshotSucceeded{ false };
     bool mWasOmniPVDSimStarted{ false };
     std::string mOmniPVDOutputDirectory;
     std::string mOmniPVDTimeStampedFileName;
@@ -305,6 +361,10 @@ private:
     bool mCudaLaunchSynchronous{ false };
     bool mCudaSettingsDeferralWarned{ false };       // sticky-log guard for deferred sync-launch/multiGPU setting change, OMPE-95128
     bool mCudaDeviceCountDeferralWarned{ false };    // sticky-log guard for deferred device-count change, OMPE-95128
+    // OMPE-102199: releasePhysXScenes() moves mPhysXScenes aside before destroying the scenes, so the map is
+    // empty while live PhysXScenes still cache the PxCudaContextManager. Set for that window so setupGPU()'s
+    // hasLiveScenes check keeps deferring manager changes until the last scene is really gone.
+    bool mReleasingPhysXScenes{ false };
     bool mExtensionsInitialized{ false };
     bool mVehicleSDKInitialized{ false }; // guards against multiple de-init, since scene release can be called
                                           // more than once (TODO: investigate why); also guards multiple init,

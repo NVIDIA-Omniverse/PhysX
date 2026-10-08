@@ -27,7 +27,7 @@ else
 	PM_CURL_SILENT="-s -S"
 	PM_WGET_QUIET="--quiet"
 fi
-export PM_PACKMAN_VERSION=8.5.0
+export PM_PACKMAN_VERSION=8.5.1
 
 
 cleanup() {

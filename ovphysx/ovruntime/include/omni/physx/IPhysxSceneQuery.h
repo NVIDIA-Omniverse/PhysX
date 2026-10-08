@@ -1,10 +1,17 @@
 // SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-41
+ */
 
 #pragma once
 
 #include <carb/Defines.h>
 #include <carb/Types.h>
+
+#include <omni/physics/parse/Handles.h> // ObjectKey
 
 #include "PhysxConvexMesh.h"
 
@@ -27,31 +34,37 @@ struct CollisionShapeAxis
 };
 
 // Sphere shape report function
-//\param[in] sdfPath		Collision shape SdfPath
+//\param[in] sdfPath		Collision shape ObjectKey
 //\param[in] position	    Collision shape world space position
 //\param[in] orientation    Collision shape world space orientation
 //\param[in] radius		    Sphere radius
 //\param[in] userData       User data passed to ICollisionShapeQueryCallback struct
-using SphereShapeReportFn = std::function<void(
-    uint64_t sdfPath, const carb::Float3& position, const carb::Float4& orientation, float radius, void* userData)>;
+using SphereShapeReportFn = std::function<void(omni::physics::parse::ObjectKey sdfPath,
+                                                const carb::Float3& position,
+                                                const carb::Float4& orientation,
+                                                float radius,
+                                                void* userData)>;
 
 // Box shape report function
-//\param[in] sdfPath		Collision shape SdfPath
+//\param[in] sdfPath		Collision shape ObjectKey
 //\param[in] position	    Collision shape world space position
 //\param[in] orientation    Collision shape world space orientation
 //\param[in] halfExtent		Box half extent
 //\param[in] userData       User data passed to ICollisionShapeQueryCallback struct
-using BoxShapeReportFn = std::function<void(
-    uint64_t sdfPath, const carb::Float3& position, const carb::Float4& orientation, const carb::Float3& halfExtent, void* userData)>;
+using BoxShapeReportFn = std::function<void(omni::physics::parse::ObjectKey sdfPath,
+                                            const carb::Float3& position,
+                                            const carb::Float4& orientation,
+                                            const carb::Float3& halfExtent,
+                                            void* userData)>;
 
 // Capsule shape report function
-//\param[in] sdfPath		Collision shape SdfPath
+//\param[in] sdfPath		Collision shape ObjectKey
 //\param[in] position	    Collision shape world space position
 //\param[in] orientation    Collision shape world space orientation
 //\param[in] radius		    Capsule radius
 //\param[in] height		    Capsule height
 //\param[in] userData       User data passed to ICollisionShapeQueryCallback struct
-using CapsuleShapeReportFn = std::function<void(uint64_t sdfPath,
+using CapsuleShapeReportFn = std::function<void(omni::physics::parse::ObjectKey sdfPath,
                                                 const carb::Float3& position,
                                                 const carb::Float4& orientation,
                                                 CollisionShapeAxis::Enum,
@@ -60,13 +73,13 @@ using CapsuleShapeReportFn = std::function<void(uint64_t sdfPath,
                                                 void* userData)>;
 
 // Cone shape report function
-//\param[in] sdfPath		Collision shape SdfPath
+//\param[in] sdfPath		Collision shape ObjectKey
 //\param[in] position	    Collision shape world space position
 //\param[in] orientation    Collision shape world space orientation
 //\param[in] radius		    Cone radius
 //\param[in] height		    Cone height
 //\param[in] userData       User data passed to ICollisionShapeQueryCallback struct
-using ConeShapeReportFn = std::function<void(uint64_t sdfPath,
+using ConeShapeReportFn = std::function<void(omni::physics::parse::ObjectKey sdfPath,
                                              const carb::Float3& position,
                                              const carb::Float4& orientation,
                                              CollisionShapeAxis::Enum,
@@ -75,13 +88,13 @@ using ConeShapeReportFn = std::function<void(uint64_t sdfPath,
                                              void* userData)>;
 
 // Cylinder shape report function
-//\param[in] sdfPath		Collision shape SdfPath
+//\param[in] sdfPath		Collision shape ObjectKey
 //\param[in] position	    Collision shape world space position
 //\param[in] orientation    Collision shape world space orientation
 //\param[in] radius		    Cylinder radius
 //\param[in] height		    Cylinder height
 //\param[in] userData       User data passed to ICollisionShapeQueryCallback struct
-using CylinderShapeReportFn = std::function<void(uint64_t sdfPath,
+using CylinderShapeReportFn = std::function<void(omni::physics::parse::ObjectKey sdfPath,
                                                  const carb::Float3& position,
                                                  const carb::Float4& orientation,
                                                  CollisionShapeAxis::Enum,
@@ -90,7 +103,7 @@ using CylinderShapeReportFn = std::function<void(uint64_t sdfPath,
                                                  void* userData)>;
 
 // Convex mesh shape report function
-//\param[in] sdfPath		Collision shape SdfPath
+//\param[in] sdfPath		Collision shape ObjectKey
 //\param[in] position	    Collision shape world space position
 //\param[in] orientation    Collision shape world space orientation
 //\param[in] meshScale	    Mesh scale
@@ -100,7 +113,7 @@ using CylinderShapeReportFn = std::function<void(uint64_t sdfPath,
 //\param[in] numPolygons	Number of polygons
 //\param[in] polygons		Polygons buffer
 //\param[in] userData       User data passed to ICollisionShapeQueryCallback struct
-using ConvexMeshShapeReportFn = std::function<void(uint64_t sdfPath,
+using ConvexMeshShapeReportFn = std::function<void(omni::physics::parse::ObjectKey sdfPath,
                                                    const carb::Float3& position,
                                                    const carb::Float4& orientation,
                                                    const carb::Float3& meshScale,
@@ -112,7 +125,7 @@ using ConvexMeshShapeReportFn = std::function<void(uint64_t sdfPath,
                                                    void* userData)>;
 
 // Triangle mesh shape report function
-//\param[in] sdfPath		Collision shape SdfPath
+//\param[in] sdfPath		Collision shape ObjectKey
 //\param[in] position	    Collision shape world space position
 //\param[in] orientation    Collision shape world space orientation
 //\param[in] meshScale	    Mesh scale
@@ -121,7 +134,7 @@ using ConvexMeshShapeReportFn = std::function<void(uint64_t sdfPath,
 //\param[in] numTriangles	Number of triangles
 //\param[in] triangles		Triangles buffer
 //\param[in] userData       User data passed to ICollisionShapeQueryCallback struct
-using TriangleMeshShapeReportFn = std::function<void(uint64_t sdfPath,
+using TriangleMeshShapeReportFn = std::function<void(omni::physics::parse::ObjectKey sdfPath,
                                                      const carb::Float3& position,
                                                      const carb::Float4& orientation,
                                                      const carb::Float3& meshScale,
@@ -149,8 +162,8 @@ struct ICollisionShapeQueryCallback
 
 struct SceneQueryHitObject
 {
-    uint64_t collision; // encoded SdfPath into uint64_t
-    uint64_t rigidBody; // encoded SdfPath into uint64_t
+    omni::physics::parse::ObjectKey collision; // collision shape's ObjectKey
+    omni::physics::parse::ObjectKey rigidBody; // rigid body's ObjectKey
     uint32_t protoIndex; // protoIndex, filled for pointInstancers otherwise 0xFFFFFFFF
 };
 
@@ -160,7 +173,7 @@ struct SceneQueryHitLocation : SceneQueryHitObject
     carb::Float3 position;
     float distance;
     uint32_t faceIndex;
-    uint64_t material; // encoded SdfPath into uint64_t
+    omni::physics::parse::ObjectKey material; // material's ObjectKey
 };
 
 struct OverlapHit : SceneQueryHitObject
@@ -264,11 +277,11 @@ struct IPhysxSceneQuery
     // \note A convex mesh approximation will be used for the test, the first query will compute the convex mesh
     // approximation and store the result in a local cache
     //
-    //\param[in] meshPath   Mesh path encoded in uint64_t
+    //\param[in] meshPath   Mesh's ObjectKey
     //\param[in] reportFn   Scene query hit report function, return True to continue traversal, False to stop traversal
     //\param[in] anyHit	    If true, the query will not report individual overlaps in reportFn but return 1 if there is
     // any overlap or 0 if there is no overlap at all. \return Number of overlaps found
-    uint32_t(CARB_ABI* overlapMesh)(uint64_t meshPath, OverlapHitReportFn reportFn, bool anyHit);
+    uint32_t(CARB_ABI* overlapMesh)(omni::physics::parse::ObjectKey meshPath, OverlapHitReportFn reportFn, bool anyHit);
 
     // Raycast any physics scene, returns only boolean if hit was found or not
     //\param[in] origin		Origin of the ray.
@@ -306,36 +319,36 @@ struct IPhysxSceneQuery
     // \note A convex mesh approximation will be used for the test, the first query will compute the convex mesh
     // approximation and store the result in a local cache
     //
-    //\param[in] meshPath   Mesh path encoded in uint64_t
+    //\param[in] meshPath   Mesh's ObjectKey
     //\return True if overlap found
-    bool(CARB_ABI* overlapMeshAny)(uint64_t meshPath);
+    bool(CARB_ABI* overlapMeshAny)(omni::physics::parse::ObjectKey meshPath);
 
     // Report collision shapes created on given path and its children
     //
-    //\param[in] path               SdfPath to start traversal
+    //\param[in] path               ObjectKey to start traversal
     //\param[in] reportCallback     Report callback to send collision shape information
     //\return Number of shapes reported
-    uint32_t(CARB_ABI* reportCollisionShapes)(uint64_t path, ICollisionShapeQueryCallback& reportCallback);
+    uint32_t(CARB_ABI* reportCollisionShapes)(omni::physics::parse::ObjectKey path, ICollisionShapeQueryCallback& reportCallback);
 
     // Overlap test of a UsdGeomGPrim against objects in the physics scene
     //
     // \note A convex mesh approximation will be used for meshes, the first query will compute the convex mesh
     // approximation and store the result in a local cache
     //
-    //\param[in] gPrimPath  UsdGeomGPrim path encoded in uint64_t
+    //\param[in] gPrimPath  UsdGeomGPrim's ObjectKey
     //\param[in] reportFn   Scene query hit report function, return True to continue traversal, False to stop traversal
     //\param[in] anyHit	    If true, the query will not report individual overlaps in reportFn but return 1 if there is
     // any overlap or 0 if there is no overlap at all. \return Number of overlaps found
-    uint32_t(CARB_ABI* overlapShape)(uint64_t gPrimPath, OverlapHitReportFn reportFn, bool anyHit);
+    uint32_t(CARB_ABI* overlapShape)(omni::physics::parse::ObjectKey gPrimPath, OverlapHitReportFn reportFn, bool anyHit);
 
     // Overlap test of a mesh against objects in the physics scene, reports only boolean
     //
     // \note A convex mesh approximation will be used for the test, the first query will compute the convex mesh
     // approximation and store the result in a local cache
     //
-    //\param[in] gPrimPath   UsdGeomGPrim path encoded in uint64_t
+    //\param[in] gPrimPath   UsdGeomGPrim's ObjectKey
     //\return True if overlap found
-    bool(CARB_ABI* overlapShapeAny)(uint64_t gPrimPath);
+    bool(CARB_ABI* overlapShapeAny)(omni::physics::parse::ObjectKey gPrimPath);
 
     // Sweep test of a box against all objects in the physics scene, returning the closest hit found.
     //\param[in] halfExtent Box half extent
@@ -359,28 +372,28 @@ struct IPhysxSceneQuery
     // \note A convex mesh approximation will be used for the test, the first query will compute the convex mesh
     // approximation and store the result in a local cache
     //
-    //\param[in] meshPath   Mesh path encoded in uint64_t
+    //\param[in] meshPath   Mesh's ObjectKey
     //\param[in] unitDir	Normalized direction of the sweep.
     //\param[in] distance	Length of the ray. Has to be in the[0, inf) range.
     //\param[out] hit	    Sweep hit report
     //\param[in] bothSides	If mesh both triangle sides should be checked.
     //\return True if hit was found
     bool(CARB_ABI* sweepMeshClosest)(
-        uint64_t meshPath, const carb::Float3& unitDir, float distance, SweepHit& hit, bool bothSides);
+        omni::physics::parse::ObjectKey meshPath, const carb::Float3& unitDir, float distance, SweepHit& hit, bool bothSides);
 
     // Sweep test of a UsdGeomGPrim against all objects in the physics scene, returning the closest hit found.
     //
     // \note A convex mesh approximation will be used for meshes, the first query will compute the convex mesh
     // approximation and store the result in a local cache
     //
-    //\param[in] gPrimPath  UsdGeomGPrim path encoded in uint64_t
+    //\param[in] gPrimPath  UsdGeomGPrim's ObjectKey
     //\param[in] unitDir	Normalized direction of the sweep.
     //\param[in] distance	Length of the ray. Has to be in the[0, inf) range.
     //\param[out] hit	    Sweep hit report
     //\param[in] bothSides	If mesh both triangle sides should be checked.
     //\return True if hit was found
     bool(CARB_ABI* sweepShapeClosest)(
-        uint64_t gPrimPath, const carb::Float3& unitDir, float distance, SweepHit& hit, bool bothSides);
+        omni::physics::parse::ObjectKey gPrimPath, const carb::Float3& unitDir, float distance, SweepHit& hit, bool bothSides);
 
     // Sweep test of a box against all objects in the physics scene, returning whether any hit was found.
     //\param[in] halfExtent Box half extent
@@ -402,24 +415,24 @@ struct IPhysxSceneQuery
     // \note A convex mesh approximation will be used for the test, the first query will compute the convex mesh
     // approximation and store the result in a local cache
     //
-    //\param[in] meshPath   Mesh path encoded in uint64_t
+    //\param[in] meshPath   Mesh's ObjectKey
     //\param[in] unitDir	Normalized direction of the sweep.
     //\param[in] distance	Length of the ray. Has to be in the[0, inf) range.
     //\param[in] bothSides	If mesh both triangle sides should be checked.
     //\return True if hit was found
-    bool(CARB_ABI* sweepMeshAny)(uint64_t meshPath, const carb::Float3& unitDir, float distance, bool bothSides);
+    bool(CARB_ABI* sweepMeshAny)(omni::physics::parse::ObjectKey meshPath, const carb::Float3& unitDir, float distance, bool bothSides);
 
     // Sweep test of a UsdGeomGPrim against all objects in the physics scene, returning whether any hit was found.
     //
     // \note A convex mesh approximation will be used for meshes, the first query will compute the convex mesh
     // approximation and store the result in a local cache
     //
-    //\param[in] gPrimPath  UsdGeomGPrim path encoded in uint64_t
+    //\param[in] gPrimPath  UsdGeomGPrim's ObjectKey
     //\param[in] unitDir	Normalized direction of the sweep.
     //\param[in] distance	Length of the ray. Has to be in the[0, inf) range.
     //\param[in] bothSides	If mesh both triangle sides should be checked.
     //\return True if hit was found
-    bool(CARB_ABI* sweepShapeAny)(uint64_t gPrimPath, const carb::Float3& unitDir, float distance, bool bothSides);
+    bool(CARB_ABI* sweepShapeAny)(omni::physics::parse::ObjectKey gPrimPath, const carb::Float3& unitDir, float distance, bool bothSides);
 
     // Sweep test of a box against all objects in the physics scene, returning all the hits found.
     //\param[in] halfExtent Box half extent
@@ -443,28 +456,34 @@ struct IPhysxSceneQuery
     // \note A convex mesh approximation will be used for the test, the first query will compute the convex mesh
     // approximation and store the result in a local cache
     //
-    //\param[in] meshPath   Mesh path encoded in uint64_t
+    //\param[in] meshPath   Mesh's ObjectKey
     //\param[in] unitDir	Normalized direction of the sweep.
     //\param[in] distance	Length of the ray. Has to be in the[0, inf) range.
     //\param[in] reportFn   Scene query hit report function, return True to continue traversal, False to stop traversal
     //\param[in] bothSides	If mesh both triangle sides should be checked.
     //\return True if hit was found
-    bool(CARB_ABI* sweepMeshAll)(
-        uint64_t meshPath, const carb::Float3& unitDir, float distance, SweepHitReportFn reportFn, bool bothSides);
+    bool(CARB_ABI* sweepMeshAll)(omni::physics::parse::ObjectKey meshPath,
+                                 const carb::Float3& unitDir,
+                                 float distance,
+                                 SweepHitReportFn reportFn,
+                                 bool bothSides);
 
     // Sweep test of a UsdGeomGPrim against all objects in the physics scene, returning all the hits found.
     //
     // \note A convex mesh approximation will be used for the test, the first query will compute the convex mesh
     // approximation and store the result in a local cache
     //
-    //\param[in] gPrimPath  UsdGeomGPrim path encoded in uint64_t
+    //\param[in] gPrimPath  UsdGeomGPrim's ObjectKey
     //\param[in] unitDir	Normalized direction of the sweep.
     //\param[in] distance	Length of the ray. Has to be in the[0, inf) range.
     //\param[in] reportFn   Scene query hit report function, return True to continue traversal, False to stop traversal
     //\param[in] bothSides	If mesh both triangle sides should be checked.
     //\return True if hit was found
-    bool(CARB_ABI* sweepShapeAll)(
-        uint64_t gPrimPath, const carb::Float3& unitDir, float distance, SweepHitReportFn reportFn, bool bothSides);
+    bool(CARB_ABI* sweepShapeAll)(omni::physics::parse::ObjectKey gPrimPath,
+                                  const carb::Float3& unitDir,
+                                  float distance,
+                                  SweepHitReportFn reportFn,
+                                  bool bothSides);
 };
 
 } // namespace physx

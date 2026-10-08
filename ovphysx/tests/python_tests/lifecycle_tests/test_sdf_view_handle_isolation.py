@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 """Fresh-process regression test for NVBug 6504951 SDF handle aliasing.
 
@@ -8,7 +8,7 @@ first instance handle resolved the first SDF view in that instance. Both now
 draw from one process-wide never-reused sequence, so the instance handle misses
 the SDF-view map.
 
-Only ONE PhysX create+release cycle is permitted per lifecycle test file.
+Only ONE PhysX create+destroy cycle is permitted per lifecycle test file.
 """
 
 import ctypes
@@ -31,7 +31,7 @@ def test_instance_handle_is_not_an_sdf_view_handle():
     try:
         load_usd_with_ovstage(physx, data_path("sdf_cube.usda"))
         physx.wait_all()
-        physx.warmup_gpu()
+        physx.warmup()
 
         sdf_view = physx.create_sdf_view(
             pattern=_CUBE_PATTERN, max_query_points=1
@@ -55,4 +55,4 @@ def test_instance_handle_is_not_an_sdf_view_handle():
         finally:
             sdf_view.destroy()
     finally:
-        physx.release()
+        physx.destroy()

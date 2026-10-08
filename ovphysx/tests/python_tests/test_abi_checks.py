@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 import ctypes
 from ctypes import c_int, c_uint64
@@ -10,6 +10,7 @@ from ovphysx._bindings import (
     DLTensor,
     ovphysx_config_entry_t,
     ovphysx_create_args,
+    ovphysx_omnipvd_destination_t,
 )
 from ovphysx.contact_types import ContactEventHeader, ContactPoint, FrictionAnchor
 
@@ -66,6 +67,17 @@ def test_config_entry_layout_matches():
         c_off = int(offset_fn(idx))
         py_off = getattr(ovphysx_config_entry_t, name).offset
         assert c_off == py_off, f"config_entry_t field {name} offset mismatch: C={c_off}, Python={py_off}"
+
+
+def test_omnipvd_destination_layout_matches():
+    """Verify the late-recording destination matches the public C ABI."""
+    _check_struct_layout(
+        "ovphysx_omnipvd_destination_t",
+        ovphysx_omnipvd_destination_t,
+        "ovphysx_internal_omnipvd_destination_sizeof",
+        "ovphysx_internal_omnipvd_destination_alignof",
+        "ovphysx_internal_omnipvd_destination_offset",
+    )
 
 
 def test_dl_data_type_layout_matches():

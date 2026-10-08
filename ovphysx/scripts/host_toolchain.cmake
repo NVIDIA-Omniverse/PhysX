@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 # Windows host-toolchain helpers, shared by build.cmake and the standalone
 # consumer builds (C++ samples, source-link test).
@@ -9,7 +9,7 @@
 # MSVC_INCLUDE, MSVC_LIB, WINSDK_BIN_DIR, WINSDK_UCRT_INCLUDE,
 # WINSDK_UM_INCLUDE, WINSDK_SHARED_INCLUDE, WINSDK_UCRT_LIB, WINSDK_UM_LIB.
 function(ovphysx_resolve_msvc_layout MSVC_ROOT WINSDK_ROOT)
-    # MSVC tools version (e.g. 14.29.30133); use the newest.
+    # Pick the newest MSVC tools version (e.g. 14.29.30133).
     file(GLOB _msvc_tools_dirs "${MSVC_ROOT}/VC/Tools/MSVC/*")
     if(NOT _msvc_tools_dirs)
         message(FATAL_ERROR "MSVC tools not found in ${MSVC_ROOT}/VC/Tools/MSVC/")
@@ -25,7 +25,7 @@ function(ovphysx_resolve_msvc_layout MSVC_ROOT WINSDK_ROOT)
         set(_winsdk_bin_base "${WINSDK_ROOT}/bin")
         message(STATUS "  Found WinSDK (flat structure)")
     else()
-        # Versioned structure (full WinSDK installation); use the newest.
+        # Versioned structure (full WinSDK installation). Pick the newest.
         file(GLOB _winsdk_version_dirs "${WINSDK_ROOT}/Include/10.*")
         if(NOT _winsdk_version_dirs)
             message(FATAL_ERROR "WinSDK include not found in ${WINSDK_ROOT}/Include/")
@@ -55,10 +55,10 @@ endfunction()
 # generator/compiler args to the list named by OUT_ARGS and exporting
 # INCLUDE/LIB/PATH (execute_process children inherit them).
 #
-# Those configures pass no generator, so CMake picks its default: the newest
-# Visual Studio the VS Installer knows about, or NMake Makefiles when there is
-# none. That builds the samples with whatever VS the machine happens to have
-# instead of the packaged MSVC, and fails outright on a runner with no VS.
+# Those configures pass no generator, so CMake picks its default, the newest
+# Visual Studio the VS Installer knows about or NMake Makefiles when there is
+# none. That builds the samples with whatever VS the machine has instead of the
+# packaged MSVC, and fails outright on a runner with no VS.
 #
 # No-op off Windows and without the packaged toolchain (public source drop),
 # where a local Visual Studio is the intended toolchain.

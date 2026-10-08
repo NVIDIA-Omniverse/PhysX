@@ -1,11 +1,24 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-7 AC-9 AC-10
+ *
+ * @implements REQ-PARSE-MASS-003
+ * @covers AC-1 AC-2
+ */
+
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-7 AC-9 AC-10
+ */
 
 #pragma once
 
-#include "UsdPCH.h"
-
 #include <PxPhysicsAPI.h>
+
+#include <string>
 
 #include <omni/physx/IPhysx.h>
 #include <private/omni/physx/PhysxUsd.h>
@@ -47,6 +60,10 @@ public:
         carb::Float4 localRot;
         carb::Float3 aabbLocalMin;
         carb::Float3 aabbLocalMax;
+        // Identity means no fitted geometry offset. createShape replaces it with poseOffset for fitted
+        // approximations.
+        carb::Float3 geometryToSourcePos = { 0.0f, 0.0f, 0.0f };
+        carb::Float4 geometryToSourceRot = { 0.0f, 0.0f, 0.0f, 1.0f };
     };
 
     PhysXUsdPhysicsInterface();
@@ -69,26 +86,38 @@ public:
     }
 
     // scristiano: this is temporary code to allow physics inspector. we should filter simulation owners at parsing
-    // stage
-    void setForceParseOnlySingleScene(PXR_NS::SdfPath forceParseOnlySingleScenePath)
+    // stage. Kit-inspector-only debug filter, opt-in via an explicit Kit setting. Plain string, not
+    // SdfPath: pxr-free storage so this setter is callable without pxr in hand; the read sites in
+    // UsdInterface.cpp (unconditional, any backend) compare it against the real scene path's string form.
+    void setForceParseOnlySingleScene(std::string forceParseOnlySingleScenePath)
     {
-        mForceParseOnlySingleScenePath = forceParseOnlySingleScenePath;
+        mForceParseOnlySingleScenePath = std::move(forceParseOnlySingleScenePath);
     }
 
+    // eInfiniteVoxelMap is unsupported in the USD-free runtime: the branch warns and returns
+    // kInvalidObjectId, so no ePTInfiniteVoxelMap record is ever published.
     usdparser::ObjectId createObject(usdparser::AttachedStage& attachedStage,
-                                     const PXR_NS::SdfPath& path,
+                                     omni::physics::parse::ObjectKey key,
                                      const usdparser::PhysxObjectDesc& objectDesc,
                                      const usdparser::ObjectInstance* instance = nullptr);
 
-    usdparser::ObjectId createShape(const PXR_NS::SdfPath& path,
+    // ObjectKey-native entry point: resolves the active attach directly (no
+    // UsdStageWeakPtr/stage-cache round trip needed). Both real callers
+    // (PointInstancer.cpp, Collision.cpp) already hold the ObjectKey directly; no
+    // SdfPath-taking overload is needed.
+    usdparser::ObjectId createShape(omni::physics::parse::ObjectKey key,
                                     const usdparser::PhysxObjectDesc& objectDesc,
                                     usdparser::ObjectId bodyId,
                                     const usdparser::ObjectInstance* instance = nullptr);
 
-    MassInformation getShapeMassInfo(const PXR_NS::SdfPath& path, usdparser::ObjectId objectId) const;
+    // Implements usdLoad/Mass.h's AbstractComputeRigidBodyMass::getShapeMassInfo -- the shape's
+    // identity was never actually needed here (it switches purely on objectId's InternalDatabase
+    // record type), so the interface dropped the unused SdfPath param and this works
+    // unconditionally now. Also implemented by PhysXPropertyQuery.cpp's own override.
+    MassInformation getShapeMassInfo(usdparser::ObjectId objectId) const;
 
     usdparser::ObjectId createJoint(usdparser::AttachedStage& attachedStage,
-                                    const PXR_NS::SdfPath& path,
+                                    omni::physics::parse::ObjectKey jointKey,
                                     const usdparser::PhysxJointDesc& desc,
                                     usdparser::ObjectId body0,
                                     usdparser::ObjectId body1);
@@ -99,17 +128,11 @@ public:
                                    usdparser::ObjectId link1);
 
     void releaseObject(usdparser::AttachedStage& attachedStage,
-                       const PXR_NS::SdfPath& removedPath,
+                       omni::physics::parse::ObjectKey removedKey,
                        usdparser::ObjectId objectId);
 
     void fillChangeParams(std::vector<usdparser::ChangeParams>& changeParams);
 
-    bool updateTransform(const usdparser::AttachedStage& attachedStage,
-                         const PXR_NS::SdfPath& path,
-                         usdparser::ObjectId objectId,
-                         const Transform& transform,
-                         bool resetVelocity = true,
-                         bool scaleProvided = true);
     bool updateTransform(const usdparser::AttachedStage& attachedStage,
                          omni::physics::parse::ObjectKey key,
                          usdparser::ObjectId objectId,
@@ -117,7 +140,8 @@ public:
                          bool resetVelocity = true,
                          bool scaleProvided = true);
 
-    bool updateMass(const PXR_NS::SdfPath& path,
+    // ObjectKey-native entry point (the `path` this replaces was already unused in the body).
+    bool updateMass(omni::physics::parse::ObjectKey key,
                     usdparser::ObjectId objectId,
                     float mass,
                     const carb::Float3& diagInertia,
@@ -125,8 +149,8 @@ public:
                     const carb::Float4& principalAxes);
 
     bool updateDeformableBodyMass(const usdparser::AttachedStage& attachedStage, usdparser::ObjectId objectId);
-    bool updateDeformableBodyPositions(const usdparser::AttachedStage& attachedStage, const usdparser::ObjectId objectId);
-    bool updateDeformableBodyVelocities(const usdparser::AttachedStage& attachedStage, const usdparser::ObjectId objectId);
+    bool updateDeformableBodyPositions(usdparser::AttachedStage& attachedStage, const usdparser::ObjectId objectId);
+    bool updateDeformableBodyVelocities(usdparser::AttachedStage& attachedStage, const usdparser::ObjectId objectId);
     bool updateDeformableRestOffset(const usdparser::AttachedStage& attachedStage,
                                     usdparser::ObjectId objectId,
                                     float value);
@@ -136,33 +160,40 @@ public:
     bool updateDeformableSelfCollisionFilterDistance(const usdparser::AttachedStage& attachedStage,
                                                      usdparser::ObjectId objectId,
                                                      float value);
-    bool updateParticleMass(const PXR_NS::SdfPath& path,
+    // ObjectKey-native entry point (the `path` this replaces was already unused in the body).
+    bool updateParticleMass(omni::physics::parse::ObjectKey key,
                             usdparser::ObjectId objectId,
                             const usdparser::ParticleDesc& particleDesc);
 
+    // ObjectKey-native entry point (the `path` this replaces was already unused in the body:
+    // updateFn itself carries the TokenId/ReadTime it needs).
     bool updateObject(usdparser::AttachedStage& attachedStage,
-                      const PXR_NS::SdfPath& path,
+                      omni::physics::parse::ObjectKey key,
                       usdparser::ObjectId objectId,
                       usdparser::OnUpdateObjectFn updateFn,
-                      const PXR_NS::TfToken& propertyName,
-                      const PXR_NS::UsdTimeCode& timeCode);
+                      omni::physics::parse::TokenId propertyName,
+                      omni::physics::parse::ReadTime timeCode);
 
-    void setupCollisionGroup(const PXR_NS::SdfPath& path, const usdparser::CollisionGroupDesc& desc);
+    // ObjectKey-native entry point (the `path` this replaces was already unused in the body).
+    void setupCollisionGroup(omni::physics::parse::ObjectKey key, const usdparser::CollisionGroupDesc& desc);
 
     bool setVehicleContext(const usdparser::AttachedStage& attachedStage, const usdparser::VehicleContextDesc&);
 
     void releaseAllObjects();
 
-    // get shapes for mass computation, return true if triggers are present
+    // get shapes for mass computation, return true if triggers are present. ObjectIdPathMap is
+    // ObjectKey-valued (LoadTools.h), so this works unconditionally.
     bool getRigidBodyShapes(const usdparser::AttachedStage& attachedStage,
                             usdparser::ObjectId rbId,
                             usdparser::ObjectIdPathMap& shapes) const;
 
-    static usdparser::ObjectId createShapeOrComputeMass(const PXR_NS::SdfPath& path,
+    // ObjectKey-native entry point; no UsdPrim/UsdStageWeakPtr needed
+    // internally (see the .cpp definition for why).
+    static usdparser::ObjectId createShapeOrComputeMass(omni::physics::parse::ObjectKey key,
                                                         const usdparser::PhysxShapeDesc& shapeDesc,
                                                         usdparser::ObjectId bodyId,
                                                         const usdparser::ObjectInstance* instance,
-                                                        PXR_NS::UsdStageWeakPtr stage,
+                                                        usdparser::AttachedStage* attachedStage,
                                                         PhysXScene* physxScene,
                                                         bool exposePrimNames,
                                                         PhysXType& physxType,
@@ -190,8 +221,8 @@ public:
 
     bool isReady(void);
 
-    PXR_NS::SdfPath getParentJointPathInArticulation(const usdparser::AttachedStage& attachedStage,
-                                                  const PXR_NS::SdfPath& jointKey);
+    omni::physics::parse::ObjectKey getParentJointPathInArticulation(const usdparser::AttachedStage& attachedStage,
+                                                  omni::physics::parse::ObjectKey jointKey);
 
     /**
      * Subscribe to physics object change notifications.
@@ -251,9 +282,9 @@ public:
         return mInitialStagePopulationInProgress;
     }
 
-    void sendObjectCreationNotification(const PXR_NS::SdfPath& path, usdparser::ObjectId objectId, PhysXType physxType);
+    void sendObjectCreationNotification(omni::physics::parse::ObjectKey key, usdparser::ObjectId objectId, PhysXType physxType);
 
-    void sendObjectDestructionNotification(const PXR_NS::SdfPath& path, usdparser::ObjectId objectId, PhysXType physxType);
+    void sendObjectDestructionNotification(omni::physics::parse::ObjectKey key, usdparser::ObjectId objectId, PhysXType physxType);
 
 
     /**
@@ -264,53 +295,58 @@ public:
      * @param removed whether the API was removed (true) or added (false)
      */
     void changeSchemaAPI(usdparser::AttachedStage& attachedStage,
-                         const PXR_NS::SdfPath& path,
+                         omni::physics::parse::ObjectKey key,
                          usdparser::SchemaAPIFlag::Enum flag,
                          bool removed);
 
 private:
+    usdparser::ObjectId createVolumeDeformableBody(usdparser::AttachedStage& attachedStage,
+                                                   omni::physics::parse::ObjectKey bodyKey,
+                                                   usdparser::PhysxVolumeDeformableBodyDesc const& desc);
+    usdparser::ObjectId createSurfaceDeformableBody(usdparser::AttachedStage& attachedStage,
+                                                    omni::physics::parse::ObjectKey bodyKey,
+                                                    usdparser::PhysxSurfaceDeformableBodyDesc const& desc);
+
+    // Defined in UsdInterfaceParticle.cpp. The Hydra-rendering primvar authoring inside
+    // createParticleSet stays individually fenced -- see its own comment.
     usdparser::ObjectId createPbdParticleSystem(usdparser::AttachedStage& attachedStage,
-                                                const PXR_NS::SdfPath& path,
+                                                omni::physics::parse::ObjectKey systemKey,
                                                 const usdparser::ParticleSystemDesc& desc);
 
     usdparser::ObjectId createParticleSet(usdparser::AttachedStage& attachedStage,
-                                          const PXR_NS::SdfPath& path,
+                                          omni::physics::parse::ObjectKey primKey,
                                           const usdparser::ParticleSetDesc& particlesDesc);
-    usdparser::ObjectId createVolumeDeformableBody(usdparser::AttachedStage& attachedStage,
-                                                   const PXR_NS::SdfPath& path,
-                                                   usdparser::PhysxVolumeDeformableBodyDesc const& desc);
-    usdparser::ObjectId createSurfaceDeformableBody(usdparser::AttachedStage& attachedStage,
-                                                    const PXR_NS::SdfPath& path,
-                                                    usdparser::PhysxSurfaceDeformableBodyDesc const& desc);
+
     usdparser::ObjectId createDeformableAttachment(usdparser::AttachedStage& attachedStage,
-                                                   const PXR_NS::SdfPath& path,
+                                                   omni::physics::parse::ObjectKey key,
                                                    const usdparser::PhysxDeformableAttachmentDesc& desc);
     usdparser::ObjectId createDeformableCollisionFilter(usdparser::AttachedStage& attachedStage,
-                                                        const PXR_NS::SdfPath& path,
+                                                        omni::physics::parse::ObjectKey key,
                                                         const usdparser::PhysxDeformableCollisionFilterDesc& desc);
 
-    usdparser::ObjectId createTireFrictionTable(const usdparser::TireFrictionTableDesc&, const PXR_NS::UsdPrim&);
-    usdparser::ObjectId createVehicle(const PXR_NS::SdfPath& vehiclePath,
-                                      const usdparser::VehicleDesc& vehicleDesc,
-                                      const PXR_NS::UsdPrim& usdPrim,
-                                      PXR_NS::UsdStageRefPtr usdStage);
-    usdparser::ObjectId createVehicleController(const PXR_NS::SdfPath&,
-                                                const PXR_NS::UsdPrim&,
+    // Vehicle creation/registration. The only USD dependency (xform-op authoring of
+    // wheel/shape scale) lives in InternalVehicle.cpp's WheelTransformManagementEntry::init.
+    usdparser::ObjectId createTireFrictionTable(const usdparser::TireFrictionTableDesc&);
+    usdparser::ObjectId createVehicle(usdparser::AttachedStage& attachedStage,
+                                      omni::physics::parse::ObjectKey vehicleKey,
+                                      const usdparser::VehicleDesc& vehicleDesc);
+    usdparser::ObjectId createVehicleController(usdparser::AttachedStage& attachedStage,
+                                                omni::physics::parse::ObjectKey vehicleControllerKey,
                                                 const usdparser::VehicleControllerDesc&);
-    usdparser::ObjectId registerVehicleComponent(const PXR_NS::UsdPrim& usdPrim, PhysXType type);
-    usdparser::ObjectId registerVehicleWheelComponent(const PXR_NS::UsdPrim&, PhysXType type);
-    usdparser::ObjectId createVehicleWheelController(const PXR_NS::SdfPath&,
-                                                     const PXR_NS::UsdPrim&,
+    usdparser::ObjectId registerVehicleComponent(omni::physics::parse::ObjectKey key, PhysXType type);
+    usdparser::ObjectId registerVehicleWheelComponent(omni::physics::parse::ObjectKey key, PhysXType type);
+    usdparser::ObjectId createVehicleWheelController(usdparser::AttachedStage& attachedStage,
+                                                     omni::physics::parse::ObjectKey wheelControllerKey,
                                                      const usdparser::WheelControllerDesc&);
 
     usdparser::ObjectId createMimicJoint(const usdparser::MimicJointDesc&);
 
     void changeParticlePostProcess(usdparser::AttachedStage& attachedStage,
-                                   const PXR_NS::SdfPath& path,
+                                   omni::physics::parse::ObjectKey key,
                                    bool removed,
                                    usdparser::SchemaAPIFlag::Enum flag);
 
-    void changeParticleDiffuseParticles(usdparser::AttachedStage& attachedStage, const PXR_NS::SdfPath& path, bool removed);
+    void changeParticleDiffuseParticles(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, bool removed);
 
     void removeArticulationFromSceneAndScheduleForReAdd(const ::physx::PxArticulationReducedCoordinate&);
 
@@ -336,7 +372,8 @@ private:
     std::vector<usdparser::ObjectId> mArticulations;
     std::vector<internal::InternalPbdParticleSystem*> mParticleSystems;
     PhysicsObjectChangeSubscriptionRegistry mPhysicsObjectChangeSubscriptions;
-    PXR_NS::SdfPath mForceParseOnlySingleScenePath;
+    // Kit-inspector-only debug filter storage; see setForceParseOnlySingleScene's comment above.
+    std::string mForceParseOnlySingleScenePath;
     usdparser::ObjectId mForceParseOnlySingleSceneObjectId;
     bool mDirty;
     bool mObjectChangeNotificationsEnabled;

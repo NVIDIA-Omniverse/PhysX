@@ -1,24 +1,26 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
 #ifdef _MSC_VER
 #    pragma warning(push)
-#    define NOMINMAX // Make sure nobody #defines min or max
+#    ifndef NOMINMAX
+#        define NOMINMAX // Make sure nobody #defines min or max
+#    endif
 #endif
 
 #ifdef __linux__
 #    define __forceinline __attribute__((always_inline))
 #endif
 
-#include "UsdPCH.h"
-
 #include <PxPhysicsAPI.h>
 #include <PhysXDefines.h>
 
-#include <internal/InternalXformOpResetStorage.h>
-#include <private/omni/physx/IPhysxParticlesPrivate.h>
+#include <private/omni/physx/ParticlePostFlag.h>
+// PhysxUsd.h is itself pxr-free (re-exports parse-lib ObjectId/etc. into usdparser::) -- pulled
+// in unconditionally for usdparser::ObjectId/kInvalidObjectId below.
+#include <private/omni/physx/PhysxUsd.h>
 #include <common/foundation/Allocator.h>
 
 #include <omni/physics/parse/Handles.h>
@@ -64,22 +66,6 @@ struct ParticleDirtyFlags
 
 class InternalPbdParticleSystem;
 
-class InternalPointCloud : public Allocateable
-{
-public:
-    PXR_NS::UsdPrim mPrim;
-    PXR_NS::UsdGeomPoints mGeo;
-};
-
-class InternalDiffuseParticles : public InternalPointCloud
-{
-public:
-    InternalDiffuseParticles()
-    {
-    }
-    ~InternalDiffuseParticles();
-};
-
 class InternalParticle : public Allocateable
 {
 public:
@@ -121,7 +107,9 @@ public:
     ::physx::PxDiffuseParticleParams mDiffuseParticleParams;
     float mMaxDiffuseParticleMultiplier;
     bool mDiffuseParticlesEnabled;
-    InternalDiffuseParticles* mSharedDiffuseParticles = nullptr;
+    // Whether this particle set has counted itself in the parent particle
+    // system's shared diffuse-particle-rendering refcount (mDiffuseParticleInstanceRefCount).
+    bool mHasSharedDiffuseParticles = false;
 
     // dirty flags for DtoH transfers
     uint32_t mDownloadDirtyFlags;
@@ -137,7 +125,7 @@ public:
 
     uint32_t mMaxParticles;
 
-    PXR_NS::GfMatrix4d mWorldToLocal;
+    ::physx::PxMat44d mWorldToLocal{ ::physx::PxIdentity };
 
     bool mFluid;
     float mParticleInvMass;
@@ -222,7 +210,7 @@ public:
           mCallback(nullptr)
 #endif
           ,
-          mDiffuseParticleInstance(nullptr),
+          mDiffuseParticleRenderingEnabled(false),
           mDiffuseParticleInstanceRefCount(0)
     {
     }
@@ -233,10 +221,11 @@ public:
     PhysXScene* mPhysXScene;
 
     usdparser::ObjectId mMaterialId;
-    // Source-agnostic handle for the particle-system prim; getPath() resolves it
-    // on demand (the particles:: post-process subsystem is still SdfPath-keyed).
+    // Source-agnostic handle for the particle-system prim; the particles:: post-process
+    // registry (particles/PhysXParticlePost.h) and the diffuse-particle-rendering sink
+    // (IPhysicsDataWrite::setDiffuseParticleRenderingEnabled/writeDiffuseParticlePoints)
+    // are both ObjectKey-keyed and take mKey directly.
     omni::physics::parse::ObjectKey mKey;
-    PXR_NS::SdfPath getPath() const;
 
     bool mEnabled;
     bool mParticleDataAvailable;
@@ -249,7 +238,9 @@ public:
     omni::physx::particles::PostProcessCallback* mCallback;
 #endif
 
-    InternalDiffuseParticles* mDiffuseParticleInstance;
+    // Whether the shared "DiffuseParticles" session-layer render prim is currently
+    // defined (see IPhysicsDataWrite::setDiffuseParticleRenderingEnabled).
+    bool mDiffuseParticleRenderingEnabled;
     uint32_t mDiffuseParticleInstanceRefCount;
 
     std::unordered_map<int, unsigned int> mPhaseMap;

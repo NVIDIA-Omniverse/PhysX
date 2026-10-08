@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef NP_RIGIDBODY_TEMPLATE_H
 #define NP_RIGIDBODY_TEMPLATE_H
@@ -54,6 +31,30 @@
 namespace physx
 {
 	class NpArticulationLink;
+
+#if PX_SUPPORT_OMNI_PVD
+PX_FORCE_INLINE void streamRigidBodyForceCallToOmniPvd(
+	NpScene* scene,
+	PxRigidBody& body,
+	const PxVec3* force,
+	const PxVec3* torque)
+{
+	// NpArticulationLink force/torque APIs can reach here after reporting Direct GPU misuse; leave recording to the Direct GPU path.
+	if(!scene || ((scene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && scene->isDirectGPUAPIInitialized()))
+		return;
+
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+	if(force)
+	{
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, force, body, *force);
+	}
+	if(torque)
+	{
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, torque, body, *torque);
+	}
+	OMNI_PVD_WRITE_SCOPE_END
+}
+#endif
 
 PX_INLINE PxVec3 invertDiagInertia(const PxVec3& m)
 {
@@ -509,6 +510,12 @@ void NpRigidBodyTemplate<APIClass>::addSpatialForce(const PxVec3* force, const P
 {
 	PX_ASSERT(!(mCore.getFlags() & PxRigidBodyFlag::eKINEMATIC));
 
+#if PX_SUPPORT_OMNI_PVD
+	// Preserve the API inputs before eFORCE/eIMPULSE rebind the pointers to block-scoped converted values.
+	const PxVec3* const forceForOmniPvd = force;
+	const PxVec3* const torqueForOmniPvd = torque;
+#endif
+
 	switch (mode)
 	{
 		case PxForceMode::eFORCE:
@@ -553,12 +560,23 @@ void NpRigidBodyTemplate<APIClass>::addSpatialForce(const PxVec3* force, const P
 			scAddSpatialVelocity(force, torque);
 		break;
 	}
+
+#if PX_SUPPORT_OMNI_PVD
+	streamRigidBodyForceCallToOmniPvd(RigidActorTemplateClass::getNpScene(),
+		static_cast<PxRigidBody&>(*this), forceForOmniPvd, torqueForOmniPvd);
+#endif
 }
 
 template<class APIClass>
 void NpRigidBodyTemplate<APIClass>::setSpatialForce(const PxVec3* force, const PxVec3* torque, PxForceMode::Enum mode)
 {
 	PX_ASSERT(!(mCore.getFlags() & PxRigidBodyFlag::eKINEMATIC));
+
+#if PX_SUPPORT_OMNI_PVD
+	// Preserve the API inputs before eFORCE/eIMPULSE rebind the pointers to block-scoped converted values.
+	const PxVec3* const forceForOmniPvd = force;
+	const PxVec3* const torqueForOmniPvd = torque;
+#endif
 
 	switch (mode)
 	{
@@ -604,6 +622,11 @@ void NpRigidBodyTemplate<APIClass>::setSpatialForce(const PxVec3* force, const P
 		scAddSpatialVelocity(force, torque);
 		break;
 	}
+
+#if PX_SUPPORT_OMNI_PVD
+	streamRigidBodyForceCallToOmniPvd(RigidActorTemplateClass::getNpScene(),
+		static_cast<PxRigidBody&>(*this), forceForOmniPvd, torqueForOmniPvd);
+#endif
 }
 
 template<class APIClass>
@@ -622,6 +645,12 @@ void NpRigidBodyTemplate<APIClass>::clearSpatialForce(PxForceMode::Enum mode, bo
 		scClearSpatialVelocity(force, torque);
 		break;
 	}
+
+#if PX_SUPPORT_OMNI_PVD
+	const PxVec3 zero(0.0f);
+	streamRigidBodyForceCallToOmniPvd(RigidActorTemplateClass::getNpScene(),
+		static_cast<PxRigidBody&>(*this), force ? &zero : NULL, torque ? &zero : NULL);
+#endif
 }
 
 #if PX_ENABLE_DEBUG_VISUALIZATION

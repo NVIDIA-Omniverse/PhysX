@@ -1,9 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
 #include "carb/Defines.h"
+
+#include <cstdint>
+#include <cstdio>
 
 #if CARB_PLATFORM_LINUX
 #    include <time.h>

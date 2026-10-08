@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
@@ -76,10 +76,10 @@ inline DLConvertError dlToTensorDesc(const DLTensor* dl, omni::physics::tensors:
 
     if (dl->strides != nullptr)
     {
-        // Any zero-sized dim makes the tensor empty; contiguity is trivially
-        // satisfied (no data to lay out). NumPy reports stride 0 for the dims
-        // outside a zero-sized one, which would otherwise fail the per-dim
-        // stride check below. Mirror the Python-side guard in _dlpack_utils.py.
+        // Any zero-sized dim makes the tensor empty, so contiguity is trivially
+        // satisfied. NumPy reports stride 0 for the dims outside a zero-sized
+        // one, which would otherwise fail the per-dim stride check below.
+        // Mirrors the Python-side guard in _dlpack_utils.py.
         bool hasZeroDim = false;
         for (int i = 0; i < out.numDims; ++i)
         {
@@ -96,8 +96,8 @@ inline DLConvertError dlToTensorDesc(const DLTensor* dl, omni::physics::tensors:
             {
                 const int64_t dim = dl->shape[i];
 
-                // Dim of size 1 has irrelevant stride and contributes a
-                // factor of 1 to expected_stride, so skip.
+                // A dim of size 1 has an irrelevant stride and contributes a
+                // factor of 1 to expected_stride, so it is skipped.
                 if (dim == 1)
                     continue;
 

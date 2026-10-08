@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef PXG_PARTICLE_SYSTEM_H
 #define PXG_PARTICLE_SYSTEM_H
@@ -115,6 +92,9 @@ namespace physx
 	{
 		static const PxU32 MaxStaticContactsPerParticle = 12;
 		static const PxU32 MaxStaticContactsPerMesh = 6;
+
+		// Penetration relative to the pair rest distance, which contact generation incorporates. The other
+		// contact types report a raw distance and apply the rest distance in the contact prep.
 		float4 mNormal_PenW;
 	}PX_ALIGN_SUFFIX(16);
 
@@ -178,8 +158,15 @@ namespace physx
 		PxU32*						mGridParticleHash;			//16	32
 		
 		
+		// Per-iteration solve scratch despite the name, the particle analog of
+		// PxgSoftBody::mSimDelta in sorted particle order. Every iteration
+		// ps_updateParticleLaunch consumes and zeroes it, updating mSortedVelocities
+		// always and mSortedPositions_InvMass plus mSortedDeltaP in position
+		// iterations only.
 		float4*						mAccumDeltaP;				//32	80
-		//float4*					mDeltaP;					//32	80
+		// Accumulated position delta since step start, in sorted particle order.
+		// Advances in position iterations only and stays frozen through velocity
+		// iterations. The contact solves read it for computing the separation.
 		float4*						mSortedDeltaP;				//32	80
 		PxU32*						mCellStart;					//36	88
 		PxU32*						mCellEnd;					//40	96
@@ -253,6 +240,8 @@ namespace physx
 		struct PxgParticlePrimitiveContact
 	{
 	public:
+		// Penetration relative to the pair rest distance, which contact generation incorporates. The other
+		// contact types report a raw distance and apply the rest distance in the contact prep.
 		PxVec4		normal_pen;				//normal pen
 
 		PxU64		rigidId;				//the corresponding rigid body node index

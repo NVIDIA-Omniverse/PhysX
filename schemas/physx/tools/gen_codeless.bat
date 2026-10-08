@@ -1,7 +1,7 @@
 @echo off
-:: SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-:: SPDX-License-Identifier: Apache-2.0
-::
+REM SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+REM SPDX-License-Identifier: Apache-2.0
+
 :: Build step for the codeless schemas (Windows). Regenerates everything from schema.usda
 :: using only this tooling + native OpenUSD usdGenSchema (NO repo_usd):
 ::   1. generatedSchema.usda + plugInfo.json per codeless schema via tools/gen_schema_data.py

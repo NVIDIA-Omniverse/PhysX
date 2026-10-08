@@ -1,11 +1,16 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# @implements REQ-PYTHON-BINDING-DEVICE-001
+# @covers AC-2
+# @maps_to TEST-PYTHON-BINDING-DEVICE-001
+# PARTIALLY DEPRECATED (tensor-binding-deprecation): test_prim_paths_gpu_binding and test_prim_paths_gpu_zero_count_binding exercise the binding's own prim_paths / count accessors, which retire with the binding and have no session-read equivalent. The warmup-read and GPU-without-DirectGPU tests here use PhysX.read, and the ContactBinding tests are a separate API that stays.
 
 """GPU-mode lifecycle and state-management tests.
 
 Covers gaps not addressed by test_tensor_bindings_api_gpu.py or the GPU session
 conftest:
-  - warmup_gpu explicit timing / idempotency / after-reset behaviour
+  - warmup explicit timing / idempotency / after-reset behaviour
   - prim_paths on GPU bindings
   - ContactBinding GPU properties and unfiltered error paths
   - step_n_sync n=0/-1 boundary on GPU
@@ -23,6 +28,7 @@ import pytest
 from ovphysx.types import TensorType
 from test_utils import data_path
 from test_utils import load_usd_with_ovstage
+from test_utils import read_rigid_body_poses
 
 _RB_PATTERN = "/World/Cube*"
 _ARTI_PATTERN = "/World/articulation*"
@@ -34,7 +40,7 @@ def _load_rb(sdk, warmup=True, n_steps=3):
     load_usd_with_ovstage(sdk, data_path("boxes_falling_on_groundplane.usda"))
     sdk.wait_all()
     if warmup:
-        sdk.warmup_gpu()
+        sdk.warmup()
     for _ in range(n_steps):
         sdk.step_sync(1.0 / 60.0)
 
@@ -42,51 +48,41 @@ def _load_rb(sdk, warmup=True, n_steps=3):
 def _load_artic(sdk, n_steps=3):
     load_usd_with_ovstage(sdk, data_path("two_articulations.usda"))
     sdk.wait_all()
-    sdk.warmup_gpu()
+    sdk.warmup()
     for _ in range(n_steps):
         sdk.step_sync(1.0 / 60.0)
 
 
 # ---------------------------------------------------------------------------
-# warmup_gpu behaviour on GPU
+# warmup behaviour on GPU
 # ---------------------------------------------------------------------------
 
 
-def test_warmup_gpu_explicit_then_first_read(physx_sdk):
-    """Explicit warmup_gpu before first tensor read must succeed and not error."""
+def test_warmup_explicit_then_first_read(physx_sdk):
+    """Explicit warmup before first tensor read must succeed and not error."""
     load_usd_with_ovstage(physx_sdk, data_path("boxes_falling_on_groundplane.usda"))
     physx_sdk.wait_all()
-    physx_sdk.warmup_gpu()
+    physx_sdk.warmup()
 
-    # Tensor read after explicit warmup should not trigger another warmup step
-    binding = physx_sdk.create_tensor_binding(pattern=_RB_PATTERN, tensor_type=TensorType.RIGID_BODY_POSE)
-    try:
-        buf = np.zeros(binding.shape, dtype=np.float32)
-        binding.read(buf)  # must not raise
-    finally:
-        binding.destroy()
+    # A read session after explicit warmup must open and yield the rigid-body poses.
+    assert read_rigid_body_poses(physx_sdk).shape[0] > 0, "expected rigid-body poses after warmup"
 
 
-def test_warmup_gpu_multiple_calls_idempotent(physx_sdk):
-    """warmup_gpu() called three times must not raise and state must be consistent."""
+def test_warmup_multiple_calls_idempotent(physx_sdk):
+    """warmup() called three times must not raise and state must be consistent."""
     load_usd_with_ovstage(physx_sdk, data_path("boxes_falling_on_groundplane.usda"))
     physx_sdk.wait_all()
 
-    physx_sdk.warmup_gpu()
-    physx_sdk.warmup_gpu()
-    physx_sdk.warmup_gpu()
+    physx_sdk.warmup()
+    physx_sdk.warmup()
+    physx_sdk.warmup()
 
-    # State must still be usable
-    binding = physx_sdk.create_tensor_binding(pattern=_RB_PATTERN, tensor_type=TensorType.RIGID_BODY_POSE)
-    try:
-        buf = np.zeros(binding.shape, dtype=np.float32)
-        binding.read(buf)
-    finally:
-        binding.destroy()
+    # State must still be usable: a read session opens and yields the rigid-body poses.
+    assert read_rigid_body_poses(physx_sdk).shape[0] > 0, "expected rigid-body poses after warmup"
 
 
-def test_warmup_gpu_after_reset_triggers_again(physx_sdk):
-    """After reset+reload, an explicit warmup_gpu must succeed (GPU state re-initializes)."""
+def test_warmup_after_reset_triggers_again(physx_sdk):
+    """After reset+reload, an explicit warmup must succeed (GPU state re-initializes)."""
     _load_rb(physx_sdk, warmup=True)
 
     physx_sdk.reset_stage()
@@ -95,14 +91,10 @@ def test_warmup_gpu_after_reset_triggers_again(physx_sdk):
     load_usd_with_ovstage(physx_sdk, data_path("boxes_falling_on_groundplane.usda"))
     physx_sdk.wait_all()
 
-    physx_sdk.warmup_gpu()
+    physx_sdk.warmup()
 
-    binding = physx_sdk.create_tensor_binding(pattern=_RB_PATTERN, tensor_type=TensorType.RIGID_BODY_POSE)
-    try:
-        buf = np.zeros(binding.shape, dtype=np.float32)
-        binding.read(buf)
-    finally:
-        binding.destroy()
+    # After reset + reload + warmup, a read session must open and yield the rigid-body poses.
+    assert read_rigid_body_poses(physx_sdk).shape[0] > 0, "expected rigid-body poses after warmup"
 
 
 # ---------------------------------------------------------------------------
@@ -156,7 +148,7 @@ def test_contact_binding_max_count_property_gpu(physx_sdk):
         filters_per_sensor=1,
         max_contact_data_count=CAPACITY,
     )
-    physx_sdk.warmup_gpu()
+    physx_sdk.warmup()
     try:
         assert cb.max_contact_data_count == CAPACITY
     finally:
@@ -173,7 +165,7 @@ def test_contact_binding_sensor_paths_gpu(physx_sdk):
         filters_per_sensor=1,
         max_contact_data_count=128,
     )
-    physx_sdk.warmup_gpu()
+    physx_sdk.warmup()
     try:
         paths = cb.sensor_paths
         assert isinstance(paths, list)
@@ -192,7 +184,7 @@ def test_contact_binding_unfiltered_read_force_matrix_raises_gpu(physx_sdk):
         sensor_patterns=[_SENSOR_PAT],
         max_contact_data_count=128,
     )
-    physx_sdk.warmup_gpu()
+    physx_sdk.warmup()
     physx_sdk.step_sync(1.0 / 60.0)
     try:
         buf = np.zeros((cb.sensor_count, cb.filter_count, 3), dtype=np.float32)
@@ -231,7 +223,7 @@ def test_get_contact_report_gpu(physx_sdk):
     num_headers >= 0 and accessible struct fields."""
     load_usd_with_ovstage(physx_sdk, data_path("boxes_falling_on_groundplane.usda"))
     physx_sdk.wait_all()
-    physx_sdk.warmup_gpu()
+    physx_sdk.warmup()
     for _ in range(20):  # let boxes fall and generate contacts
         physx_sdk.step_sync(1.0 / 60.0)
 
@@ -243,7 +235,6 @@ def test_get_contact_report_gpu(physx_sdk):
     assert "num_points" in report
     assert isinstance(report["num_points"], int)
 
-    # If there are contacts, verify struct field access
     if report["num_headers"] > 0:
         h = report["headers"][0]
         assert hasattr(h, "actor0")
@@ -258,20 +249,22 @@ def test_get_contact_report_gpu(physx_sdk):
 
 
 def test_gpu_mode_without_directgpu():
-    """GPU instance WITHOUT suppressReadback must support basic tensor read/write.
+    """GPU instance WITHOUT suppressReadback must support the session read.
 
-    The default since 0.4.1: GPU without DirectGPU. This subprocess verifies
-    that tensor bindings still work in the non-DirectGPU GPU path.
+    GPU without DirectGPU is the default. This subprocess verifies PhysX.read
+    works in the non-DirectGPU GPU path.
     """
     _tests_dir = os.path.dirname(os.path.abspath(__file__))
     _data_dir = os.path.join(_tests_dir, "..", "data")
     script = textwrap.dedent(f"""
         import sys, os
         sys.path.insert(0, {repr(os.path.dirname(os.path.abspath(__file__)))})
-        from ovphysx import PhysX
-        from ovphysx.types import TensorType
-        from test_utils import load_usd_with_ovstage
         import numpy as np
+        from ovphysx import PhysX
+        from ovphysx.dlpack import DLDeviceType
+        from ovphysx.types import TensorType
+        from ovphysx.types import ObjectScope, SimObjectType
+        from test_utils import load_usd_with_ovstage
 
         usd_path = os.path.join({repr(_data_dir)}, "boxes_falling_on_groundplane.usda")
 
@@ -279,17 +272,25 @@ def test_gpu_mode_without_directgpu():
         physx = PhysX()
         load_usd_with_ovstage(physx, usd_path)
         physx.wait_all()
-        physx.warmup_gpu()
+        physx.warmup()
         physx.step_sync(1.0 / 60.0)
 
         binding = physx.create_tensor_binding(
             pattern="/World/Cube*",
             tensor_type=TensorType.RIGID_BODY_POSE,
         )
+        assert binding.native_device.device_type.value == DLDeviceType.kDLCPU
+        assert binding.native_device.device_id == 0
         buf = np.zeros(binding.shape, dtype=np.float32)
         binding.read(buf)  # must succeed without DirectGPU
         assert buf.shape[1] == 7
         binding.destroy()
+        with physx.read(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
+            # The rigid-body pose column must read back without DirectGPU. Check every partition's
+            # column, not just groups[0] -- the first-group-only shape is the one that keeps regressing.
+            assert result.groups, "read returned no groups"
+            for g in result.groups:
+                assert g.tensors and g.tensors[0].shape[1] == 3
         print("GPU_NO_DIRECTGPU_OK")
     """)
 

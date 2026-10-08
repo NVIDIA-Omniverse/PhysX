@@ -1,10 +1,10 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 @PACKAGE_INIT@
 
 # ovphysx CMake Configuration File
-# This file provides configuration for projects that want to use ovphysx via find_package()
+# This file provides configuration for projects that consume ovphysx via find_package()
 
 # Check if the package has already been found
 if(ovphysx_FOUND)
@@ -21,7 +21,6 @@ include("${CMAKE_CURRENT_LIST_DIR}/ovphysxTargets.cmake")
 set(ovphysx_LIB_DIR "@PACKAGE_CMAKE_INSTALL_LIBDIR@")
 get_filename_component(OVPHYSX_PACKAGE_PREFIX "${ovphysx_LIB_DIR}/.." ABSOLUTE)
 
-# Define the main target alias for convenience
 # Set up variables that consuming projects might need
 get_target_property(ovphysx_INCLUDE_DIRS ovphysx::ovphysx INTERFACE_INCLUDE_DIRECTORIES)
 
@@ -39,7 +38,26 @@ set(ovphysx_PHYSX_INCLUDE_DIR "${OVPHYSX_PACKAGE_PREFIX}/include/physx")
 # Required even if you never call ovstage: public headers include ovstage headers,
 # and libovphysx has a runtime dependency on libovstage.
 include(CMakeFindDependencyMacro)
-find_dependency(ovstage)
+find_dependency(ovstage 0.2 CONFIG)
+
+# Capability gate: the bundled samples and test helpers call
+# ovstage_population_register_usd_schemas(), added in ovstage 0.2.0.374259. Both
+# 0.2.0.372377 and 0.2.0.374259 advertise CMake version 0.2.0, so find_dependency
+# cannot tell them apart and a consumer resolving 372377 would fail to compile the
+# samples. Checking the header declaration fails configuration early instead.
+get_target_property(_ovphysx_ovstage_incdirs ovstage::ovstage INTERFACE_INCLUDE_DIRECTORIES)
+find_file(_ovphysx_ovstage_population_h ovstage/ovstage_population.h
+    PATHS ${_ovphysx_ovstage_incdirs} ${ovstage_INCLUDE_DIRS} NO_DEFAULT_PATH)
+if(_ovphysx_ovstage_population_h)
+    file(READ "${_ovphysx_ovstage_population_h}" _ovphysx_ovstage_population_src)
+    if(NOT _ovphysx_ovstage_population_src MATCHES "ovstage_population_register_usd_schemas")
+        message(FATAL_ERROR
+            "ovphysx requires ovstage >= 0.2.0.374259: its samples register the codeless PhysX "
+            "schemas with ovstage_population_register_usd_schemas(), which the resolved ovstage package "
+            "does not provide. Download the matching ovstage native package (v0.2.0 build "
+            "374259 or newer) and point CMAKE_PREFIX_PATH at it.")
+    endif()
+endif()
 
 set_property(TARGET ovphysx::ovphysx APPEND PROPERTY
     INTERFACE_LINK_LIBRARIES ovstage::ovstage
@@ -71,13 +89,22 @@ if(UNIX AND NOT APPLE)
     set(_ovphysx_runtime_rpath
         "@PACKAGE_CMAKE_INSTALL_LIBDIR@"
         "${ovphysx_PLUGINS_DIR}"
-        "${ovphysx_PLUGINS_DIR}/gpu"
     )
     foreach(_dir IN LISTS _ovphysx_runtime_rpath)
         set_property(TARGET ovphysx::ovphysx APPEND PROPERTY
             INTERFACE_LINK_OPTIONS "-Wl,-rpath,${_dir}"
         )
     endforeach()
+
+    # libovphysx carries only an $ORIGIN RPATH and relies on the consumer's
+    # search list to find libovstage.so and other transitive libraries. The
+    # default DT_RUNPATH resolves only an object's own NEEDED entries, so the
+    # consumer needs old-style DT_RPATH to reach dependencies of dependencies.
+    # Same fix as tests/c_unittests/CMakeLists.txt.
+    # @implements REQ-PACKAGING-RPATH-001
+    set_property(TARGET ovphysx::ovphysx APPEND PROPERTY
+        INTERFACE_LINK_OPTIONS "LINKER:--disable-new-dtags"
+    )
 endif()
 
 # Windows: helper to copy runtime DLLs next to a target
@@ -89,12 +116,12 @@ if(WIN32)
 
         # Runtime layout (Windows SDK):
         # - Core ovphysx DLLs and config live in <prefix>/bin.
-        # - ovstage is NOT part of the package; the application supplies and
+        # - ovstage is NOT part of the package. The application supplies and
         #   deploys its own ovstage runtime.
-        # - GPU-only ovphysx plugins live under <prefix>/plugins/gpu and are
-        #   copied as part of the plugins tree. CarboniteLoader only makes that
-        #   directory visible when GPU is enabled.
         # - Some third-party runtime deps may live under <prefix>/plugins/bin/deps.
+        # - The codeless PhysX USD schemas live under <prefix>/schemas/physx and
+        #   are copied next to the executable so ovphysx_get_codeless_schema_root()
+        #   resolves them in the copied layout (REQ-CAPI-OVSTAGE-SCHEMA-001).
         file(GLOB _ovphysx_bin_entries "${OVPHYSX_PACKAGE_PREFIX}/bin/*")
         foreach(_entry IN LISTS _ovphysx_bin_entries)
             if(NOT IS_DIRECTORY "${_entry}")
@@ -129,10 +156,19 @@ if(WIN32)
                 COMMENT "ovphysx: copy runtime deps from ${ovphysx_PLUGINS_DIR}/bin/deps"
             )
         endif()
+
+        if(EXISTS "${OVPHYSX_PACKAGE_PREFIX}/schemas/physx")
+            add_custom_command(TARGET ${target} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E make_directory
+                    "$<TARGET_FILE_DIR:${target}>/schemas"
+                COMMAND ${CMAKE_COMMAND} -E copy_directory
+                    "${OVPHYSX_PACKAGE_PREFIX}/schemas" "$<TARGET_FILE_DIR:${target}>/schemas"
+                COMMENT "ovphysx: copy codeless schemas from ${OVPHYSX_PACKAGE_PREFIX}/schemas"
+            )
+        endif()
     endfunction()
 endif()
 
-# Check that all required components are available
 set(ovphysx_FOUND TRUE)
 
 # Provide information about what was found

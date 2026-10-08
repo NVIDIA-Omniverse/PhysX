@@ -1,7 +1,18 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
+
+// Convenience stage load/clear for the always-on benchmark rows (UsdLoad,
+// Step*, TensorBindings, OutputRead, LowLoad, Clone, Lab*). They delegate to
+// the c_sample helpers, which wait with OVSTAGE_TIMEOUT_INFINITE and report
+// through fprintf.
+//
+// The hidden Authoring.* / WriteScaling.* rows do not use these. They need
+// every wait bounded and every failure routed through bmRecordFailure() so a
+// row that did not complete its work publishes no number. Those rows use
+// authoringbm::populateAndAttachChecked() and authoringbm::clearOvstageChecked()
+// in benchmarks/AuthoringCommon.h instead.
 
 #include "../c_samples/common/ovstage_sample.h"
 

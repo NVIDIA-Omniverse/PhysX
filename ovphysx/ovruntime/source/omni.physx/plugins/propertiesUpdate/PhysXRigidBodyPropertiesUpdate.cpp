@@ -1,9 +1,28 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
+/**
+ * @implements REQ-PARSE-BODY-001
+ * @covers AC-5
+ *
+ * @implements REQ-SIM-MULTISCENE-001
+ * @covers AC-4
+ *
+ * @implements REQ-SPLINE-TARGET-001
+ * @covers AC-1 AC-2 AC-4
+ *
+ * @implements REQ-LOAD-TOKENS-001
+ * @covers AC-2
+ */
+
+/**
+ * @implements REQ-SIM-ACTIVEACTOR-001
+ * @covers AC-1
+ */
 
 #include "PhysXPropertiesUpdate.h"
+
+#include <omni/physics/parse/KnownTokens.h>
 
 #include <PhysXTools.h>
 #include <Setup.h>
@@ -18,10 +37,8 @@
 
 #include <usdLoad/LoadTools.h>
 #include <usdLoad/LoadUsd.h>
-#include <usdLoad/PhysicsBody.h>
 #include <usdLoad/IceDescriptorAllocator.h>
 
-#include <omni/physics/usd/StageScan.h>
 #include <omni/physics/parse/ParseApi.h>
 #include <omni/physics/parse/ParseContext.h>
 
@@ -29,20 +46,14 @@
 
 #include <private/omni/physx/PhysxUsd.h>
 
-#include <physxSchema/tokens.h>
-
 #include <PxPhysicsAPI.h>
 
 
 using namespace ::physx;
 using namespace carb;
-using namespace PXR_NS;
 using namespace omni::physx;
 using namespace omni::physx::usdparser;
 using namespace omni::physx::internal;
-
-// Single boundary translation point for schema type tokens.
-using omni::physx::internal::schemaTypeToken;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 // body
@@ -59,7 +70,10 @@ void wakeActor(PxRigidActor& actor)
     }
 }
 
-void changeRigidActorType(PxRigidActor* sourceActor, PxRigidActor* destActor, const SdfPath& actorPath)
+// actorKey is ObjectKey-typed (ADR-0019); ContactReport::removeActor
+// (ContactReport.h) has both an ObjectKey overload and an SdfPath sibling for
+// callers that still hold a live USD path, so this routes through the former.
+void changeRigidActorType(PxRigidActor* sourceActor, PxRigidActor* destActor, omni::physics::parse::ObjectKey actorKey)
 {
     OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -108,7 +122,7 @@ void changeRigidActorType(PxRigidActor* sourceActor, PxRigidActor* destActor, co
         PhysXScene* physxScene = omniPhysX.getPhysXSetup().getPhysXScene((size_t)sourceActor->getScene()->userData);
 
         physxScene->getContactReport()->swapActor(sourceActor, destActor);
-        physxScene->getContactReport()->removeActor(sourceActor, actorPath);
+        physxScene->getContactReport()->removeActor(sourceActor, actorKey);
 
         physxScene->getInternalScene()->swapForceActors(sourceActor, destActor);        
 
@@ -129,6 +143,7 @@ void applyPhysxProps(AttachedStage& attachedStage, omni::physics::parse::ObjectK
         return;
 
     omni::physics::parse::ParseContext ctx(*src, omni::physx::usdparser::iceDescriptorAllocator());
+    ctx.adoptKnownTokens(attachedStage.getKnownTokens());
     omni::physics::parse::DescPtr<omni::physics::parse::DynamicPhysxRigidBodyDesc> dyn =
         omni::physics::parse::parseDynamicBody(ctx, key);
     if (!dyn || dyn->type != omni::physics::parse::eDynamicBody)
@@ -138,7 +153,7 @@ void applyPhysxProps(AttachedStage& attachedStage, omni::physics::parse::ObjectK
 }
 
 
-bool omni::physx::updateBodyEnabled(AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateBodyEnabled(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -171,32 +186,34 @@ bool omni::physx::updateBodyEnabled(AttachedStage& attachedStage, ObjectId objec
             }
 
             PxScene* scene = dynamicActor->getScene();
-            attachedStage.getPhysXPhysicsInterface()->sendObjectDestructionNotification(attachedStage.pathFor(objectRecord->mKey), objectId, ePTActor);
+            attachedStage.getPhysXPhysicsInterface()->sendObjectDestructionNotification(objectRecord->mKey, objectId, ePTActor);
             PxRigidStatic* rigidStatic = OmniPhysX::getInstance().getPhysXSetup().getPhysics()->createRigidStatic(dynamicActor->getGlobalPose());
-            changeRigidActorType(dynamicActor, rigidStatic, attachedStage.pathFor(objectRecord->mKey));
+            changeRigidActorType(dynamicActor, rigidStatic, objectRecord->mKey);
             internalActor->mActor = rigidStatic;
             objectRecord->mPtr = rigidStatic;
+            internalScene->trackReleasedActiveActor(dynamicActor);
             dynamicActor->release();
             if (scene)
                 scene->addActor(*rigidStatic);
-            attachedStage.getPhysXPhysicsInterface()->sendObjectCreationNotification(attachedStage.pathFor(objectRecord->mKey), objectId, ePTActor);
+            attachedStage.getPhysXPhysicsInterface()->sendObjectCreationNotification(objectRecord->mKey, objectId, ePTActor);
         }
         else if (!isDynamic && data)
         {
             // switch from static to dynamic
             PxRigidActor* staticActor = actor->is<PxRigidActor>();
             PxScene* scene = staticActor->getScene();
-            attachedStage.getPhysXPhysicsInterface()->sendObjectDestructionNotification(attachedStage.pathFor(objectRecord->mKey), objectId, ePTActor);
+            attachedStage.getPhysXPhysicsInterface()->sendObjectDestructionNotification(objectRecord->mKey, objectId, ePTActor);
             PxRigidDynamic* rigidDynamic = OmniPhysX::getInstance().getPhysXSetup().getPhysics()->createRigidDynamic(staticActor->getGlobalPose());
-            changeRigidActorType(staticActor, rigidDynamic, attachedStage.pathFor(objectRecord->mKey));
+            changeRigidActorType(staticActor, rigidDynamic, objectRecord->mKey);
             applyPhysxProps(attachedStage, objectRecord->mKey, rigidDynamic, internalActor->mPhysXScene);
             internalActor->mActor = rigidDynamic;
             objectRecord->mPtr = rigidDynamic;
+            internalActor->mPhysXScene->getInternalScene()->trackReleasedActiveActor(staticActor);
             staticActor->release();
             if (scene)
                 scene->addActor(*rigidDynamic);
             db.addDirtyMassActor(size_t(objectId));
-            attachedStage.getPhysXPhysicsInterface()->sendObjectCreationNotification(attachedStage.pathFor(objectRecord->mKey), objectId, ePTActor);
+            attachedStage.getPhysXPhysicsInterface()->sendObjectCreationNotification(objectRecord->mKey, objectId, ePTActor);
         }
     }
     else if (objectRecord->mType == ePTLink)
@@ -215,7 +232,7 @@ bool omni::physx::updateBodyEnabled(AttachedStage& attachedStage, ObjectId objec
     return true;
 }
 
-bool omni::physx::updateBodyDensity(AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateBodyDensity(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -224,20 +241,24 @@ bool omni::physx::updateBodyDensity(AttachedStage& attachedStage, ObjectId objec
     return true;
 }
 
-void updateLinearVelocity(InternalActor* internalActor, PxRigidActor* actor, bool localSpaceVelocities, PXR_NS::GfVec3f& outVelocity)
+// zero test matching GfIsClose(v, zero, 1e-4)
+static bool isVelocityZero(const PxVec3& v)
+{
+    constexpr double kTolerance = 1e-4;
+    return double(v.magnitudeSquared()) <= kTolerance * kTolerance;
+}
+
+void updateLinearVelocity(InternalActor* internalActor, PxRigidActor* actor, bool localSpaceVelocities, PxVec3& outVelocity)
 {
     if (localSpaceVelocities)
     {
-        PxTransform tf = actor->getGlobalPose();
+        const PxTransform tf = actor->getGlobalPose();
 
-        const PXR_NS::GfRotation rot(PXR_NS::GfQuaternion(tf.q.w, PXR_NS::GfVec3f(tf.q.x, tf.q.y, tf.q.z)));
-        outVelocity = PXR_NS::GfVec3f(rot.TransformDir(outVelocity));
-        const PXR_NS::GfVec3f scale(internalActor->mScale.x, internalActor->mScale.y, internalActor->mScale.z);
-        outVelocity = GfCompMult(scale, outVelocity);
+        outVelocity = tf.q.rotate(outVelocity).multiply(toPhysX(internalActor->mScale));
     }
 }
 
-bool omni::physx::updateBodyLinearVelocity(AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateBodyLinearVelocity(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -249,30 +270,34 @@ bool omni::physx::updateBodyLinearVelocity(AttachedStage& attachedStage, ObjectI
 
     if (internalType == ePTActor)
     {
-        GfVec3f data;
-        if (!getValue<GfVec3f>(attachedStage, objectRecord->mKey, property, timeCode, data))
+        carb::Float3 data;
+        if (!getValue<carb::Float3>(attachedStage, objectRecord->mKey, property, timeCode, data))
             return true;
+        PxVec3 velocity = toPhysX(data);
 
         PxRigidActor* actor = (PxRigidActor*)objectRecord->mPtr;
         if (actor->getConcreteType() == PxConcreteType::eRIGID_DYNAMIC)
         {
             InternalActor* internalActor = (InternalActor*)objectRecord->mInternalPtr;
             CARB_ASSERT(internalActor);
-            updateLinearVelocity(internalActor, actor, internalActor->mFlags & InternalActorFlag::eLOCALSPACE_VELOCITIES, data);
+            updateLinearVelocity(internalActor, actor, internalActor->mFlags & InternalActorFlag::eLOCALSPACE_VELOCITIES, velocity);
 
             PxRigidDynamic* rbo = (PxRigidDynamic*)actor;
             if (rbo->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)
             {
-                internalActor->mSurfaceVelocity = toPhysX(data);
-                if (GfIsClose(data, GfVec3f(0.0f), 1e-4) &&
-                    GfIsClose(toVec3f(internalActor->mSurfaceAngularVelocity), GfVec3f(0.0f), 1e-4))
+                // Legacy path: a kinematic body's authored physics:velocity acts as the
+                // surface velocity. Parsing pins surfaceVelocityLocalSpace to false for
+                // it, so the effective and authored values are the same vector here.
+                internalActor->mSurfaceVelocity = velocity;
+                internalActor->mSurfaceVelocityAuthored = internalActor->mSurfaceVelocity;
+                if (isVelocityZero(velocity) && isVelocityZero(internalActor->mSurfaceAngularVelocity))
                     internalActor->enableSurfaceVelocity(false, *actor);
                 else
                     internalActor->enableSurfaceVelocity(true, *actor);
             }
             else
             {
-                rbo->setLinearVelocity(PxVec3(data[0], data[1], data[2]));
+                rbo->setLinearVelocity(velocity);
             }
         }
     }
@@ -285,11 +310,11 @@ bool omni::physx::updateBodyLinearVelocity(AttachedStage& attachedStage, ObjectI
         }
         else
         {
-            GfVec3f velocity;
-            if (!getValue<GfVec3f>(attachedStage, objectRecord->mKey, property, timeCode, velocity))
+            carb::Float3 velocity;
+            if (!getValue<carb::Float3>(attachedStage, objectRecord->mKey, property, timeCode, velocity))
                 return true;
 
-            actor->getArticulation().setRootLinearVelocity(PxVec3(velocity[0], velocity[1], velocity[2]));
+            actor->getArticulation().setRootLinearVelocity(toPhysX(velocity));
             // preist todo: Check if articulation->updatekinematic is needed here.
         }
     }
@@ -299,18 +324,17 @@ bool omni::physx::updateBodyLinearVelocity(AttachedStage& attachedStage, ObjectI
 void updateAngularVelocity(InternalActor* internalActor,
                            PxRigidActor* actor,
                            bool localSpaceVelocities,
-                           PXR_NS::GfVec3f& outVelocity)
+                           PxVec3& outVelocity)
 {
     if (localSpaceVelocities)
     {
-        PxTransform tf = actor->getGlobalPose();
+        const PxTransform tf = actor->getGlobalPose();
 
-        const PXR_NS::GfRotation rot(PXR_NS::GfQuaternion(tf.q.w, PXR_NS::GfVec3f(tf.q.x, tf.q.y, tf.q.z)));
-        outVelocity = PXR_NS::GfVec3f(rot.TransformDir(outVelocity));
+        outVelocity = tf.q.rotate(outVelocity);
     }
 }
 
-bool omni::physx::updateBodyAngularVelocity(AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateBodyAngularVelocity(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -322,32 +346,32 @@ bool omni::physx::updateBodyAngularVelocity(AttachedStage& attachedStage, Object
 
     if (internalType == ePTActor)
     {
-        GfVec3f data;
-        if (!getValue<GfVec3f>(attachedStage, objectRecord->mKey, property, timeCode, data))
+        carb::Float3 data;
+        if (!getValue<carb::Float3>(attachedStage, objectRecord->mKey, property, timeCode, data))
             return true;
+        PxVec3 angularVelocity = toPhysX(data);
 
         InternalActor* internalActor = (InternalActor*)objectRecord->mInternalPtr;
         CARB_ASSERT(internalActor);
         PxRigidActor* actor = (PxRigidActor*)objectRecord->mPtr;
-        updateAngularVelocity(internalActor, actor, internalActor->mFlags & InternalActorFlag::eLOCALSPACE_VELOCITIES, data);
-        data = degToRad(data);
-        
+        updateAngularVelocity(internalActor, actor, internalActor->mFlags & InternalActorFlag::eLOCALSPACE_VELOCITIES, angularVelocity);
+        angularVelocity = PxVec3(degToRad(angularVelocity.x), degToRad(angularVelocity.y), degToRad(angularVelocity.z));
+
         PxRigidDynamic* rbo = actor->is<PxRigidDynamic>();
         if (rbo)
         {
             if (rbo->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)
             {
-                internalActor->mSurfaceAngularVelocity = toPhysX(data);
+                internalActor->mSurfaceAngularVelocity = angularVelocity;
                 internalActor->mSurfaceAngularVelocityPivot = actor->getGlobalPose();
-                if (GfIsClose(data, GfVec3f(0.0f), 1e-4) &&
-                    GfIsClose(toVec3f(internalActor->mSurfaceVelocity), GfVec3f(0.0f), 1e-4))
+                if (isVelocityZero(angularVelocity) && isVelocityZero(internalActor->mSurfaceVelocity))
                     internalActor->enableSurfaceVelocity(false, *actor);
                 else
                     internalActor->enableSurfaceVelocity(true, *actor);
             }
             else
             {
-                rbo->setAngularVelocity(PxVec3(data[0], data[1], data[2]));
+                rbo->setAngularVelocity(angularVelocity);
             }
         }
     }
@@ -360,20 +384,18 @@ bool omni::physx::updateBodyAngularVelocity(AttachedStage& attachedStage, Object
         }
         else
         {
-            GfVec3f angularVelocity;
-            if (!getValue<GfVec3f>(attachedStage, objectRecord->mKey, property, timeCode, angularVelocity))
+            carb::Float3 angularVelocity;
+            if (!getValue<carb::Float3>(attachedStage, objectRecord->mKey, property, timeCode, angularVelocity))
                 return true;
 
-            angularVelocity = degToRad(angularVelocity);
-            actor->getArticulation().setRootAngularVelocity(
-                PxVec3(angularVelocity[0], angularVelocity[1], angularVelocity[2]));
+            actor->getArticulation().setRootAngularVelocity(degToRad(toPhysX(angularVelocity)));
             // preist todo: Check if articulation->updatekinematic is needed here.
         }
     }
     return true;
 }
 
-bool omni::physx::updateBodyLinearDamping(AttachedStage& attachedStage, ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateBodyLinearDamping(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -397,7 +419,7 @@ bool omni::physx::updateBodyLinearDamping(AttachedStage& attachedStage, ObjectId
 }
 
 bool omni::physx::updateBodyAngularDamping(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -421,7 +443,7 @@ bool omni::physx::updateBodyAngularDamping(AttachedStage& attachedStage, omni::p
 }
 
 bool omni::physx::updateBodyMaxLinearVelocity(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -445,7 +467,7 @@ bool omni::physx::updateBodyMaxLinearVelocity(AttachedStage& attachedStage, omni
 }
 
 bool omni::physx::updateBodyMaxAngularVelocity(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -470,7 +492,7 @@ bool omni::physx::updateBodyMaxAngularVelocity(AttachedStage& attachedStage, omn
 }
 
 bool omni::physx::updateBodyMaxContactImpulse(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -494,7 +516,7 @@ bool omni::physx::updateBodyMaxContactImpulse(AttachedStage& attachedStage, omni
 }
 
 bool omni::physx::updateBodySleepThreshold(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -520,7 +542,7 @@ bool omni::physx::updateBodySleepThreshold(AttachedStage& attachedStage, omni::p
 }
 
 bool omni::physx::updateBodyStabilizationThreshold(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -546,7 +568,7 @@ bool omni::physx::updateBodyStabilizationThreshold(AttachedStage& attachedStage,
 }
 
 bool omni::physx::updateBodyMaxDepenetrationVelocity(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -570,7 +592,7 @@ bool omni::physx::updateBodyMaxDepenetrationVelocity(AttachedStage& attachedStag
 }
 
 bool omni::physx::updateBodyContactSlopCoefficient(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -594,7 +616,7 @@ bool omni::physx::updateBodyContactSlopCoefficient(AttachedStage& attachedStage,
 }
 
 bool omni::physx::updateBodySolverPositionIterationCount(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -625,7 +647,7 @@ bool omni::physx::updateBodySolverPositionIterationCount(AttachedStage& attached
 }
 
 bool omni::physx::updateBodySolverVelocityIterationCount(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -656,7 +678,7 @@ bool omni::physx::updateBodySolverVelocityIterationCount(AttachedStage& attached
 }
 
 bool omni::physx::updateBodyEnableKinematics(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -715,7 +737,7 @@ bool omni::physx::updateBodyEnableKinematics(AttachedStage& attachedStage, omni:
     return true;
 }
 
-bool omni::physx::updateBodyEnableCCD(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateBodyEnableCCD(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -741,7 +763,7 @@ bool omni::physx::updateBodyEnableCCD(AttachedStage& attachedStage, omni::physx:
 }
 
 bool omni::physx::updateBodyEnableSpeculativeCCD(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -767,7 +789,7 @@ bool omni::physx::updateBodyEnableSpeculativeCCD(AttachedStage& attachedStage, o
 }
 
 bool omni::physx::updateBodyGyroscopicForces(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -794,7 +816,7 @@ bool omni::physx::updateBodyGyroscopicForces(AttachedStage& attachedStage, omni:
 
 
 bool omni::physx::updateBodyRetainAccelerations(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -820,7 +842,7 @@ bool omni::physx::updateBodyRetainAccelerations(AttachedStage& attachedStage, om
 }
 
 bool omni::physx::updateBodyDisableGravity(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -851,7 +873,7 @@ bool omni::physx::updateBodyDisableGravity(AttachedStage& attachedStage, omni::p
 }
 
 bool omni::physx::updateBodyLockedPosAxis(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -879,7 +901,7 @@ bool omni::physx::updateBodyLockedPosAxis(AttachedStage& attachedStage, omni::ph
 }
 
 bool omni::physx::updateBodyLockedRotAxis(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -910,7 +932,7 @@ bool omni::physx::updateBodyLockedRotAxis(AttachedStage& attachedStage, omni::ph
 }
 
 bool omni::physx::updateBodySolveContacts(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -933,7 +955,7 @@ bool omni::physx::updateBodySolveContacts(AttachedStage& attachedStage, omni::ph
     return true;
 }
 
-bool omni::physx::updateBodyTransformStack(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+bool omni::physx::updateBodyTransformStack(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     // No-op: transform write-back goes through IPhysicsDataWrite, which resolves each
     // body's parent frame per-frame, so no cached parent state needs refreshing here.
@@ -941,7 +963,7 @@ bool omni::physx::updateBodyTransformStack(AttachedStage& attachedStage, omni::p
 }
 
 bool omni::physx::updateBodyCfmScale(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -964,6 +986,29 @@ bool omni::physx::updateBodyCfmScale(AttachedStage& attachedStage, omni::physx::
         }
     }
     return true;
+}
+
+// Moves the InternalActor between the owning scenes' bookkeeping. InternalScene::mActors owns the
+// entry and the removal paths look the list up through InternalActor::mPhysXScene, so the two have to
+// be updated together - leaving the entry in the previous scene's list makes it dangle as soon as the
+// actor is deleted, and the teardown loop in InternalScene::release() then walks it (NVBugs 6504495).
+static void moveInternalActorToScene(InternalActor& internalActor, PhysXScene& newPhysXScene)
+{
+    PhysXScene* oldPhysXScene = internalActor.mPhysXScene;
+    if (oldPhysXScene == &newPhysXScene)
+    {
+        return;
+    }
+
+    if (oldPhysXScene && oldPhysXScene->getInternalScene())
+    {
+        oldPhysXScene->getInternalScene()->removeActor(internalActor);
+    }
+    if (newPhysXScene.getInternalScene())
+    {
+        newPhysXScene.getInternalScene()->addActor(internalActor);
+    }
+    internalActor.mPhysXScene = &newPhysXScene;
 }
 
 void clearSimulationOwners(InternalActor& internalActor, omni::physx::usdparser::ObjectId sceneId)
@@ -993,9 +1038,9 @@ void clearSimulationOwners(InternalActor& internalActor, omni::physx::usdparser:
         if (internalActor.mActor->getScene())
         {
             internalActor.mActor->getScene()->removeActor(*internalActor.mActor);
-        }        
+        }
         physxScene->getScene()->addActor(*internalActor.mActor);
-        internalActor.mPhysXScene = physxScene;
+        moveInternalActorToScene(internalActor, *physxScene);
     }
 
     std::vector<InternalActor*>& mirrorActors = oldPhysXScene->getInternalScene()->mMirorredActors;
@@ -1010,13 +1055,13 @@ void clearSimulationOwners(InternalActor& internalActor, omni::physx::usdparser:
     }
 }
 
-void swapMainSimulationOwner(AttachedStage& attachedStage, InternalActor& internalActor, const SdfPath& ownerPath)
+void swapMainSimulationOwner(AttachedStage& attachedStage, InternalActor& internalActor, omni::physics::parse::ObjectKey ownerKey)
 {
-    omni::physx::usdparser::ObjectId sceneId = omni::physx::usdparser::ObjectId(getObjectDataOrID<ObjectDataQueryType::eOBJECT_ID>(ownerPath, ePTScene, OmniPhysX::getInstance().getInternalPhysXDatabase(), attachedStage));
+    omni::physx::usdparser::ObjectId sceneId = omni::physx::usdparser::ObjectId(getObjectDataOrID<ObjectDataQueryType::eOBJECT_ID>(ownerKey, ePTScene, OmniPhysX::getInstance().getInternalPhysXDatabase(), attachedStage));
     PhysXScene* physxScene = OmniPhysX::getInstance().getPhysXSetup().getPhysXScene(sceneId);
     if (!physxScene)
     {
-        CARB_LOG_ERROR("No PhysX Scene found for path %s", ownerPath.GetText());
+        CARB_LOG_ERROR("No PhysX Scene found for path %s", attachedStage.textFor(ownerKey));
         return;
     }
     if (internalActor.mPhysXScene == physxScene && internalActor.mActor->getScene() == physxScene->getScene())
@@ -1024,10 +1069,10 @@ void swapMainSimulationOwner(AttachedStage& attachedStage, InternalActor& intern
 
     internalActor.mActor->getScene()->removeActor(*internalActor.mActor);
     physxScene->getScene()->addActor(*internalActor.mActor);
-    internalActor.mPhysXScene = physxScene;
+    moveInternalActorToScene(internalActor, *physxScene);
 }
 
-void createMirrorSimulationOwner(AttachedStage& attachedStage, InternalActor& internalActor, const SdfPathVector& ownersPaths)
+void createMirrorSimulationOwner(AttachedStage& attachedStage, InternalActor& internalActor, const std::vector<omni::physics::parse::ObjectKey>& ownersKeys)
 {
     PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
 
@@ -1040,14 +1085,14 @@ void createMirrorSimulationOwner(AttachedStage& attachedStage, InternalActor& in
     internalActor.mMirrorMemsize = memSize;
     internalActor.mMirrorMemory = mirrorMemBlock;
 
-    omni::physx::usdparser::ObjectId sceneId = omni::physx::usdparser::ObjectId(getObjectDataOrID<ObjectDataQueryType::eOBJECT_ID>(ownersPaths[0], ePTScene, OmniPhysX::getInstance().getInternalPhysXDatabase(), attachedStage));
-    PhysXScene* physxScene = physxSetup.getPhysXScene(sceneId);    
+    omni::physx::usdparser::ObjectId sceneId = omni::physx::usdparser::ObjectId(getObjectDataOrID<ObjectDataQueryType::eOBJECT_ID>(ownersKeys[0], ePTScene, OmniPhysX::getInstance().getInternalPhysXDatabase(), attachedStage));
+    PhysXScene* physxScene = physxSetup.getPhysXScene(sceneId);
     physxScene->getInternalScene()->mMirorredActors.push_back(&internalActor);
 
-    for (size_t i = 1; i < ownersPaths.size(); i++)
+    for (size_t i = 1; i < ownersKeys.size(); i++)
     {
         void* nm = copyAlignedMemory(mirrorMemBlock, memSize);
-        omni::physx::usdparser::ObjectId mirrorSceneId = omni::physx::usdparser::ObjectId(getObjectDataOrID<ObjectDataQueryType::eOBJECT_ID>(ownersPaths[i], ePTScene, OmniPhysX::getInstance().getInternalPhysXDatabase(), attachedStage));
+        omni::physx::usdparser::ObjectId mirrorSceneId = omni::physx::usdparser::ObjectId(getObjectDataOrID<ObjectDataQueryType::eOBJECT_ID>(ownersKeys[i], ePTScene, OmniPhysX::getInstance().getInternalPhysXDatabase(), attachedStage));
         PhysXScene* mirrorScene = physxSetup.getPhysXScene(mirrorSceneId);
         PxCollection* col = nullptr;
         PxRigidActor* actor = (PxRigidActor*)instantiateMirrorActor(nm, *physxSetup.getSerializationRegistry(),
@@ -1060,22 +1105,22 @@ void createMirrorSimulationOwner(AttachedStage& attachedStage, InternalActor& in
             {
                 dynamicBody->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
             }
-            internalActor.mMirrors.push_back({ nm, col, actor });
+            internalActor.mMirrors.push_back({ nm, col, actor, mirrorScene->getInternalScene() });
         }
     }
 
 }
 
-void swapMirrorSimulationOwner(AttachedStage& attachedStage, InternalActor& internalActor, const SdfPath& ownerPath, size_t mirrorIndex)
+void swapMirrorSimulationOwner(AttachedStage& attachedStage, InternalActor& internalActor, omni::physics::parse::ObjectKey ownerKey, size_t mirrorIndex)
 {
     PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
 
-    omni::physx::usdparser::ObjectId sceneId = omni::physx::usdparser::ObjectId(getObjectDataOrID<ObjectDataQueryType::eOBJECT_ID>(ownerPath, ePTScene, OmniPhysX::getInstance().getInternalPhysXDatabase(), attachedStage));
-    PhysXScene* physxScene = physxSetup.getPhysXScene(sceneId);    
+    omni::physx::usdparser::ObjectId sceneId = omni::physx::usdparser::ObjectId(getObjectDataOrID<ObjectDataQueryType::eOBJECT_ID>(ownerKey, ePTScene, OmniPhysX::getInstance().getInternalPhysXDatabase(), attachedStage));
+    PhysXScene* physxScene = physxSetup.getPhysXScene(sceneId);
 
     if (!physxScene)
     {
-        CARB_LOG_ERROR("No PhysX Scene found for path %s", ownerPath.GetText());
+        CARB_LOG_ERROR("No PhysX Scene found for path %s", attachedStage.textFor(ownerKey));
         return;
     }
     if (internalActor.mMirrors.empty())
@@ -1092,12 +1137,13 @@ void swapMirrorSimulationOwner(AttachedStage& attachedStage, InternalActor& inte
 
         mirror.actor->getScene()->removeActor(*mirror.actor);
         physxScene->getScene()->addActor(*mirror.actor);
+        mirror.internalScene = physxScene->getInternalScene();
     }
     else
     {
         // Add mirror
         void* nm = copyAlignedMemory(internalActor.mMirrorMemory, internalActor.mMirrorMemsize);
-        omni::physx::usdparser::ObjectId mirrorSceneId = omni::physx::usdparser::ObjectId(getObjectDataOrID<ObjectDataQueryType::eOBJECT_ID>(ownerPath, ePTScene, OmniPhysX::getInstance().getInternalPhysXDatabase(), attachedStage));
+        omni::physx::usdparser::ObjectId mirrorSceneId = omni::physx::usdparser::ObjectId(getObjectDataOrID<ObjectDataQueryType::eOBJECT_ID>(ownerKey, ePTScene, OmniPhysX::getInstance().getInternalPhysXDatabase(), attachedStage));
         PhysXScene* mirrorScene = physxSetup.getPhysXScene(mirrorSceneId);
         PxCollection* col = nullptr;
         PxRigidActor* actor = (PxRigidActor*)instantiateMirrorActor(nm, *physxSetup.getSerializationRegistry(),
@@ -1110,13 +1156,13 @@ void swapMirrorSimulationOwner(AttachedStage& attachedStage, InternalActor& inte
             {
                 dynamicBody->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
             }
-            internalActor.mMirrors.push_back({ nm, col, actor });
+            internalActor.mMirrors.push_back({ nm, col, actor, mirrorScene->getInternalScene() });
         }
     }
 }
 
 bool omni::physx::updateBodySimulationOwner(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -1133,7 +1179,7 @@ bool omni::physx::updateBodySimulationOwner(AttachedStage& attachedStage, omni::
         {
             if (hasRelationship(attachedStage, objectRecord->mKey, property))
             {
-                SdfPathVector owners;
+                std::vector<omni::physics::parse::ObjectKey> owners;
                 getRelationshipValue(attachedStage, objectRecord->mKey, property, owners);
                 if (owners.empty())
                 {
@@ -1180,7 +1226,7 @@ bool omni::physx::updateBodySimulationOwner(AttachedStage& attachedStage, omni::
 }
 
 bool omni::physx::updateBodySurfaceVelocityEnabled(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -1206,7 +1252,7 @@ bool omni::physx::updateBodySurfaceVelocityEnabled(AttachedStage& attachedStage,
 }
 
 bool omni::physx::updateBodySurfaceVelocityLocalSpace(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -1222,16 +1268,34 @@ bool omni::physx::updateBodySurfaceVelocityLocalSpace(AttachedStage& attachedSta
 
     if (internalType == ePTActor || internalType == ePTLink)
     {
-        PxRigidActor* actor = (PxRigidActor*)objectRecord->mPtr;
         InternalActor* internalActor = (InternalActor*)objectRecord->mInternalPtr;
-        internalActor->mSurfaceVelocityLocalSpace = data;        
+        internalActor->mSurfaceVelocityLocalSpace = data;
+
+        // The flag reaches the simulation only through mSurfaceVelocity, which had the
+        // body's scale folded in (or not) when the surface velocity was last derived.
+        // Flipping the flag on its own would leave the actor driving the previously
+        // derived vector, so re-derive it the way parsing does.
+        //
+        // The authored velocity comes from mSurfaceVelocityAuthored rather than from a
+        // read of the surfaceVelocity attribute: this callback is draining one specific
+        // change, and a cross-property read would resolve at the source's latest state.
+        // If surfaceVelocity is authored after this flag but drained later, that read
+        // would apply the newer velocity here, ahead of its own change.
+        const PxVec3 authored = internalActor->mSurfaceVelocityAuthored;
+        if (data)
+            internalActor->mSurfaceVelocity = authored.multiply(toPhysX(internalActor->mScale));
+        else
+            internalActor->mSurfaceVelocity = authored;
+
+        PxRigidActor* actor = (PxRigidActor*)objectRecord->mPtr;
+        wakeActor(*actor);
     }
 
     return true;
 }
 
 bool omni::physx::updateBodySurfaceLinearVelocity(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -1241,17 +1305,21 @@ bool omni::physx::updateBodySurfaceLinearVelocity(AttachedStage& attachedStage, 
     if (!objectRecord)
         return true;
 
-    GfVec3f data;
-    if (!getValue<GfVec3f>(attachedStage, objectRecord->mKey, property, timeCode, data))
+    carb::Float3 data;
+    if (!getValue<carb::Float3>(attachedStage, objectRecord->mKey, property, timeCode, data))
         return true;
 
     if (internalType == ePTActor || internalType == ePTLink)
     {
         InternalActor* internalActor = (InternalActor*)objectRecord->mInternalPtr;
+        // Cache the authored value alongside the derived one, so a later change to
+        // surfaceVelocityLocalSpace alone can re-derive without re-reading the source.
+        const PxVec3 velocity = toPhysX(data);
+        internalActor->mSurfaceVelocityAuthored = velocity;
         if (internalActor->mSurfaceVelocityLocalSpace)
-            internalActor->mSurfaceVelocity = toPhysX(GfCompMult((const GfVec3f&)internalActor->mScale, data));
+            internalActor->mSurfaceVelocity = velocity.multiply(toPhysX(internalActor->mScale));
         else
-            internalActor->mSurfaceVelocity = toPhysX(data);
+            internalActor->mSurfaceVelocity = velocity;
         PxRigidActor* actor = (PxRigidActor*)objectRecord->mPtr;
         wakeActor(*actor);
     }
@@ -1262,8 +1330,8 @@ bool omni::physx::updateBodySurfaceLinearVelocity(AttachedStage& attachedStage, 
 
 bool omni::physx::updateBodySplineSurfaceVelocityEnabled(AttachedStage& attachedStage,
                                                    omni::physx::usdparser::ObjectId objectId,
-                                                   const PXR_NS::TfToken& property,
-                                                   const PXR_NS::UsdTimeCode& timeCode)
+                                                   omni::physics::parse::TokenId property,
+                                                   omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -1284,30 +1352,67 @@ bool omni::physx::updateBodySplineSurfaceVelocityEnabled(AttachedStage& attached
         if (data)
         {
             const omni::physics::parse::ObjectKey bodyKey = objectRecord->mKey;
+            const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
+            omni::physics::parse::KnownTokens tok;
+            if (source)
+                tok.intern(*source);
             // An absent relationship and a defined-but-empty one are both invalid: a spline curve
             // target must be present.
-            const bool hasSplinesRel = hasRelationship(attachedStage, bodyKey, PhysxSchemaTokens->physxSplinesSurfaceVelocitySurfaceVelocityCurve);
-            SdfPathVector splinesList;
+            const bool hasSplinesRel = hasRelationship(attachedStage, bodyKey, tok.physxSplinesSurfaceVelocityCurve);
+            std::vector<omni::physics::parse::ObjectKey> splinesList;
             if (hasSplinesRel)
             {
-                getRelationshipValue(attachedStage, bodyKey, PhysxSchemaTokens->physxSplinesSurfaceVelocitySurfaceVelocityCurve, splinesList);
+                getRelationshipValue(attachedStage, bodyKey, tok.physxSplinesSurfaceVelocityCurve, splinesList);
             }
 
             if (!hasSplinesRel || splinesList.empty())
             {
-                CARB_LOG_ERROR("Splines surface velocity %s does not have a valid spline curve defined.",
+                CARB_LOG_ERROR("Splines surface velocity %s does not have a valid spline curve defined: "
+                               "the physxSplinesSurfaceVelocity:surfaceVelocityCurve relationship has no target.",
                                attachedStage.textFor(bodyKey));
 
                 return true;
             }
             else
             {
-                const SdfPath& splinePath = splinesList[0];
-                const omni::physics::parse::ObjectKey splineKey = attachedStage.keyFor(splinePath);
+                // Same cause-naming split as the load-time validation in LoadStage.cpp.
+                const omni::physics::parse::ObjectKey splineKey = splinesList[0];
                 const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
-                if (!(src && src->isA(splineKey, schemaTypeToken<UsdGeomBasisCurves>(*src))))
+                if (!(src && src->exists(splineKey)))
                 {
-                    CARB_LOG_ERROR("Splines surface velocity %s does not have a valid spline curve defined.",
+                    CARB_LOG_ERROR("Splines surface velocity %s does not have a valid spline curve defined: "
+                                   "the curve target %s is not present in the attached stage. When populating "
+                                   "with ovstage, the physics population must include the referenced BasisCurves prim.",
+                                   attachedStage.textFor(bodyKey), attachedStage.textFor(splineKey));
+
+                    return true;
+                }
+                if (!src->isA(splineKey, tok.basisCurvesType))
+                {
+                    const std::string_view typeText = src->tokenToString(src->getTypeName(splineKey));
+                    CARB_LOG_ERROR("Splines surface velocity %s does not have a valid spline curve defined: "
+                                   "the curve target %s is not a BasisCurves prim (type '%.*s').",
+                                   attachedStage.textFor(bodyKey), attachedStage.textFor(splineKey),
+                                   int(typeText.size()), typeText.data());
+
+                    return true;
+                }
+                // A body authored with splines disabled skipped the parse-time checks, so the
+                // descendant rule has to be applied here too (same walk as LoadStage.cpp).
+                bool parentBodyFound = false;
+                const omni::physics::parse::ObjectKey root = src->getRootKey();
+                for (omni::physics::parse::ObjectKey p = src->getParent(splineKey); p.valid() && p != root;
+                     p = src->getParent(p))
+                {
+                    if (p == bodyKey)
+                    {
+                        parentBodyFound = true;
+                        break;
+                    }
+                }
+                if (!parentBodyFound)
+                {
+                    CARB_LOG_ERROR("Splines surface velocity %s spline curve is not a child of the rigid body.",
                                    attachedStage.textFor(bodyKey));
 
                     return true;
@@ -1330,8 +1435,8 @@ bool omni::physx::updateBodySplineSurfaceVelocityEnabled(AttachedStage& attached
 
 bool omni::physx::updateBodySplineSurfaceVelocityMagnitude(AttachedStage& attachedStage,
                                                   omni::physx::usdparser::ObjectId objectId,
-                                                  const PXR_NS::TfToken& property,
-                                                  const PXR_NS::UsdTimeCode& timeCode)
+                                                  omni::physics::parse::TokenId property,
+                                                  omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -1357,7 +1462,7 @@ bool omni::physx::updateBodySplineSurfaceVelocityMagnitude(AttachedStage& attach
 }
 
 bool omni::physx::updateBodySurfaceAngularVelocity(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
@@ -1367,14 +1472,14 @@ bool omni::physx::updateBodySurfaceAngularVelocity(AttachedStage& attachedStage,
     if (!objectRecord)
         return true;
 
-    GfVec3f data;
-    if (!getValue<GfVec3f>(attachedStage, objectRecord->mKey, property, timeCode, data))
+    carb::Float3 data;
+    if (!getValue<carb::Float3>(attachedStage, objectRecord->mKey, property, timeCode, data))
         return true;
 
     if (internalType == ePTActor || internalType == ePTLink)
     {
         InternalActor* internalActor = (InternalActor*)objectRecord->mInternalPtr;
-        internalActor->mSurfaceAngularVelocity = toPhysX(degToRad(data));
+        internalActor->mSurfaceAngularVelocity = degToRad(toPhysX(data));
         PxRigidActor* actor = (PxRigidActor*)objectRecord->mPtr;
         wakeActor(*actor);
     }
@@ -1383,7 +1488,7 @@ bool omni::physx::updateBodySurfaceAngularVelocity(AttachedStage& attachedStage,
 }
 
 bool omni::physx::updatePhysxContactReportThreshold(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
-    const PXR_NS::TfToken& property, const PXR_NS::UsdTimeCode& timeCode)
+    omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();

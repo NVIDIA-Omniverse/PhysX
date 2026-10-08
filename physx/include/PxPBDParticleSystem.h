@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef PX_PBD_PARTICLE_SYSTEM_H
 #define PX_PBD_PARTICLE_SYSTEM_H
@@ -222,18 +199,19 @@ public:
 	/**
 	\brief Sets the solver iteration counts for the body.
 
-	The solver iteration count determines how accurately joints and contacts are resolved.
-	If you are having trouble with jointed bodies oscillating and behaving erratically, then
-	setting a higher position iteration count may improve their stability.
+	The position iteration count determines how accurately contacts and internal particle-particle
+	interactions (fluid density, self-collision) are resolved. With too few, particles can
+	become unstable or a fluid can appear too compressible; a higher position iteration count may help.
 
-	If intersecting bodies are being depenetrated too violently, increase the number of velocity
-	iterations. More velocity iterations will drive the relative exit velocity of the intersecting
-	objects closer to the correct value given the restitution.
+	Velocity iterations run after the position solve and correct velocities only. Increasing the
+	velocity iteration count may reduce the velocity lag inherent in position-based dynamics at
+	contacts, as well as violent depenetration. Internal particle-particle interactions are not
+	solved for, biasing the velocity result toward contacts.
 
 	<b>Default:</b> 4 position iterations, 1 velocity iteration
 
-	\param[in] minPositionIters Number of position iterations the solver should perform for this body. <b>Range:</b> [1,255]
-	\param[in] minVelocityIters Number of velocity iterations the solver should perform for this body. <b>Range:</b> [1,255]
+	\param[in] minPositionIters Number of position iterations the solver should perform for this particle system. <b>Range:</b> [1,255]
+	\param[in] minVelocityIters Number of velocity iterations the solver should perform for this particle system. <b>Range:</b> [0,255]
 
 	See #getSolverIterationCounts()
 	*/

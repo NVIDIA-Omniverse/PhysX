@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
-// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
+// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "PxgBroadPhaseDesc.h"
 #include "PxgIntegerAABB.h"
@@ -189,7 +166,7 @@ extern "C" __global__ void markRemovedPairsLaunch(const PxgBroadPhaseDesc* bpDes
 
 		bounds[handle].setEmpty();
 	}
-}  
+}
 
 //set projections and sap box as invalid
 static __device__ PX_FORCE_INLINE void clearPairs(const PxU32 handle, PxgSapBox1D* boxSapBox1D, PxU32* boxProjection)
@@ -231,7 +208,7 @@ extern "C" __global__ void markRemovedPairsProjectionsLaunch(const PxgBroadPhase
 		clearPairs(handle, boxSapBox1DY, boxProjectionY);
 		clearPairs(handle, boxSapBox1DZ, boxProjectionZ);
 	}
-}   
+}
 
 //This kernel will be called when we have new pairs inserted into the scene
 extern "C" __global__ void markCreatedPairsLaunch(const PxgBroadPhaseDesc* bpDesc)	// BP_UPDATE_CREATEDPAIRS //###ONESHOT
@@ -862,7 +839,7 @@ extern "C" __global__ void createRegionsKernel(const PxgBroadPhaseDesc* bpDesc)	
 			}
 			regionAccum[workIndex] = regionCount;
 		}
-	}  
+	}
 }
 
 template <PxU32 WARP_PERBLOCK_SIZE>
@@ -1859,7 +1836,7 @@ extern "C" __global__ void generateFoundPairsForNewBoundsRegion(PxgBroadPhaseDes
 						}
 					}
 				}
-			}  
+			}
 		}
 	
 		ltype2 res = warpScanAdd<WARP_SIZE>(FULL_MASK, threadIdx.x, threadIndexInWarp, sFoundPairsCount, foundCount, foundCount);

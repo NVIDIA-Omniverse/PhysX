@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 # NOTE: This file is included verbatim in documentation via literalinclude.
 # Tutorial marker comments below define the included range.
@@ -16,7 +16,7 @@ non-zero on failure.
 This runs in a fresh process, which is what makes ``RegisterPlugins()`` viable
 here. In a process that already opened a stage or queried the schema registry,
 registration is silently ineffective and ``PXR_PLUGINPATH_NAME`` must be preset
-instead; ``schema_registry_ordering.py`` covers both orderings (NVBug 6530141).
+instead. ``schema_registry_ordering.py`` covers both orderings (NVBug 6530141).
 """
 
 # [tutorial-start]
@@ -28,8 +28,8 @@ try:
     from pxr import Plug, Tf, Usd
 except ImportError:
     # Stock usd-core has no wheel for some platforms (e.g. linux-aarch64). The
-    # codeless schemas still ship in the wheel; there is simply no stock USD
-    # runtime to register them into here, so skip rather than fail.
+    # codeless schemas still ship in the wheel. Without a stock USD runtime to
+    # register them into, skip rather than fail.
     print("usd-core is not available on this platform; skipping codeless schema demo.")
     sys.exit(0)
 
@@ -39,15 +39,15 @@ def main() -> int:
 
     # Discover the codeless PhysX USD schema packages bundled with ovphysx.
     # Each path is a resources/ directory holding a codeless plugInfo.json
-    # (Type=resource) and generatedSchema.usda -- no compiled library.
+    # (Type=resource) and generatedSchema.usda, with no compiled library.
     schema_paths = ovphysx.codeless_schema_paths()
     print("Codeless schema packages:")
     for path in schema_paths:
         print("  ", path)
 
     # Register them with the stock usd-core runtime. This must happen before
-    # anything in the process opens a stage or queries USD's schema registry --
-    # that registry is built once, on first access, and a late call fails
+    # anything in the process opens a stage or queries USD's schema registry.
+    # That registry is built once, on first access, and a late call fails
     # silently. If USD may already be initialised (any DCC host), preset
     # PXR_PLUGINPATH_NAME before the process launches instead. Refer to
     # docs/physics_schemas.md.

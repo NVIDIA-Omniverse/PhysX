@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-CONSUMER-001
@@ -13,10 +13,11 @@
 
 #include <memory>
 
-namespace omni::physics::usd
+namespace omni::physics::parse
 {
+class IPhysicsSource;
 class ScannedStage;
-}
+} // namespace omni::physics::parse
 
 namespace omni
 {
@@ -24,8 +25,16 @@ namespace physx
 {
 namespace usdparser
 {
+
+// ObjectKey-native (ADR-0018): TargetDesc owns a `omni::physics::parse::ScannedStage` (the
+// backend-agnostic scan result, ScannedStage.h) rather than the USD-derived
+// `omni::physics::usd::ScannedStage` -- the pxr-typed `pathFor()` resolver it used is not on the
+// base class, so callers re-key through the source's string identity instead (see
+// PointInstancer.cpp / ScannedShapeCookingDispatch.cpp's `sourceKeyToString` idiom). The engine-side
+// object creation this pipeline drives (PhysXUsdPhysicsInterface::createObject/createShape) has
+// ObjectKey overloads (usdInterface/UsdInterface.h), so this pipeline is pxr-free end to end.
 using ObjectIdVector = std::vector<ObjectId>;
-using ShapeDescVector = std::vector<std::pair<PXR_NS::SdfPath, PhysxShapeDesc*>>;
+using ShapeDescVector = std::vector<std::pair<omni::physics::parse::ObjectKey, PhysxShapeDesc*>>;
 struct TargetDesc
 {
     TargetDesc();
@@ -41,7 +50,7 @@ struct TargetDesc
     TargetDesc& operator=(const TargetDesc&) = delete;
 
     PhysxObjectDesc* desc;
-    PXR_NS::SdfPath descPath;
+    omni::physics::parse::ObjectKey descKey;
     ShapeDescVector shapeDescVector;
     bool outsideInstancer;
     omni::physics::parse::Matrix4d protoTransformInverse;
@@ -50,14 +59,14 @@ struct TargetDesc
     // Set by parsePrototype when driven via the parse-library scan
     // path.  Null when the legacy listener path is used (descs
     // managed by ICE_PLACEMENT_NEW / ICE_FREE in that case).
-    std::unique_ptr<omni::physics::usd::ScannedStage> scannedStage;
+    std::unique_ptr<omni::physics::parse::ScannedStage> scannedStage;
 };
 
 using TargetDescVector = std::vector<TargetDesc>;
 
 
 void parseRigidBodyInstancer(AttachedStage& attachedStage,
-                             const PXR_NS::SdfPath& instancerPath,
+                             omni::physics::parse::ObjectKey instancerKey,
                              CollisionPairVector& filteredPairs);
 
 // True iff `primKey` is not under `instancerKey` in the source hierarchy

@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "PxcMaterialMethodImpl.h"
 #include "PxvGeometry.h"
@@ -68,6 +45,17 @@ static PX_FORCE_INLINE const PxU16* getMaterialIndicesLL(const PxTriangleMeshGeo
 	return static_cast<const Gu::TriangleMesh*>(meshGeom.triangleMesh)->getMaterials();
 }
 
+// PT: a contact is not guaranteed to carry a face index. Plane vs triangle mesh is the generator that
+// legitimately cannot provide one: it emits a contact per mesh *vertex* clipped against the plane, so there
+// is no single triangle to attribute the contact to. More generally
+// PxContactPoint::internalFaceIndex1 is documented as PXC_CONTACT_NO_FACE_INDEX whenever the generator does
+// not supply it. Using that value to index a per-triangle material array reads wildly out of bounds, so fall
+// back to the first material instead. See OMPE-103060.
+static PX_FORCE_INLINE PxU32 getLocalMaterialIndex(const PxU16* eaMaterialIndices, PxU32 faceIndex1)
+{
+	return (eaMaterialIndices && faceIndex1 != PXC_CONTACT_NO_FACE_INDEX) ? eaMaterialIndices[faceIndex1] : 0;
+}
+
 static void PxcGetMaterialMesh(const PxsShapeCore* shape, const PxU32 index, const PxContactBuffer& contactBuffer, PxsMaterialInfo* materialInfo)
 {
 	PX_ASSERT(index == 0 || index == 1);
@@ -84,7 +72,7 @@ static void PxcGetMaterialMesh(const PxsShapeCore* shape, const PxU32 index, con
 		for(PxU32 i=0; i<count; i++)
 		{
 			const PxContactPoint& contact = contactBuffer.contacts[i];
-			const PxU32 localMaterialIndex = eaMaterialIndices ? eaMaterialIndices[contact.internalFaceIndex1] : 0;//shapeMesh.triangleMesh->getTriangleMaterialIndex(contact.featureIndex1);
+			const PxU32 localMaterialIndex = getLocalMaterialIndex(eaMaterialIndices, contact.internalFaceIndex1);
 			(&materialInfo[i].mMaterialIndex0)[index] = indices[localMaterialIndex];
 		}
 	}
@@ -108,7 +96,7 @@ static void PxcGetMaterialShapeMesh(const PxsShapeCore* shape0, const PxsShapeCo
 			const PxContactPoint& contact = contactBuffer.contacts[i];
 			materialInfo[i].mMaterialIndex0 = materialIndex0;
 
-			const PxU32 localMaterialIndex = eaMaterialIndices ? eaMaterialIndices[contact.internalFaceIndex1] : 0;//shapeMesh.triangleMesh->getTriangleMaterialIndex(contact.featureIndex1);
+			const PxU32 localMaterialIndex = getLocalMaterialIndex(eaMaterialIndices, contact.internalFaceIndex1);
 			materialInfo[i].mMaterialIndex1 = indices[localMaterialIndex];
 		}
 	}
@@ -133,8 +121,7 @@ static void PxcGetMaterialSoftBodyMesh(const PxsShapeCore* shape0, const PxsShap
 			const PxContactPoint& contact = contactBuffer.contacts[i];
 			materialInfo[i].mMaterialIndex0 = materialIndex0;
 
-			const PxU32 localMaterialIndex = eaMaterialIndices ? eaMaterialIndices[contact.internalFaceIndex1] : 0;//shapeMesh.triangleMesh->getTriangleMaterialIndex(contact.featureIndex1);
-																						   //contact.featureIndex1 = shapeMesh.materials.indices[localMaterialIndex];
+			const PxU32 localMaterialIndex = getLocalMaterialIndex(eaMaterialIndices, contact.internalFaceIndex1);
 			materialInfo[i].mMaterialIndex1 = indices[localMaterialIndex];
 		}
 	}
@@ -144,6 +131,13 @@ static void PxcGetMaterialSoftBodyMesh(const PxsShapeCore* shape0, const PxsShap
 
 static PxU32 getMaterialIndex(const Gu::HeightFieldData* hfData, PxU32 triangleIndex)
 {
+	// PT: defensive, see getLocalMaterialIndex() above. All callers pass PxContactPoint::internalFaceIndex1,
+	// which is only set by generators that can provide it. No heightfield generator is known to leave it unset
+	// today, but the field is not guaranteed by the API contract and without this guard such a contact would
+	// make the sample lookup below read far out of bounds. See OMPE-103060.
+	if(triangleIndex == PXC_CONTACT_NO_FACE_INDEX)
+		return 0;
+
 	const PxU32 sampleIndex = triangleIndex >> 1;
 	const bool isFirstTriangle = (triangleIndex & 0x1) == 0;
 

@@ -1,10 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
 #include <carb/Defines.h>
 #include <carb/Types.h>
+
+#include <omni/physics/AttachHandle.h>
 
 
 namespace omni
@@ -275,12 +277,14 @@ struct IPhysxStatistics
 {
     /// Returns simulation statistics for a particular PhysicsScene.
     ///
-    /// \param[in] id USD stageId (can be retrieved from a stagePtr -
-    ///     PXR_NS::UsdUtilsStageCache::Get().GetId(stagePtr).ToLongInt())
-    /// \param[in] path The Physics scene path.
+    /// \param[in] attachHandle Attach holding the scene, from @ref
+    ///     IPhysxSimulation::getAttachHandle(), or kActiveAttach for the lone active attach.
+    /// \param[in] path The scene, as an `omni::physics::parse::ObjectKey::handle` value (e.g. from
+    ///            @ref IPhysx::resolveObjectKey()) -- NOT a legacy SdfPath-bit encoding (2026-08-29, ADR-0018:
+    ///            breaking change). A handle is only valid against the Source instance that minted it.
     /// \param[out] sceneStats Physics scene statistics.
     /// \return True if the scene was found and statistics were filled.
-    bool(CARB_ABI* getPhysXSceneStatistics)(uint64_t stageId, uint64_t path, PhysicsSceneStats& sceneStats);
+    bool(CARB_ABI* getPhysXSceneStatistics)(AttachHandle attachHandle, uint64_t path, PhysicsSceneStats& sceneStats);
 };
 
 } // namespace physx

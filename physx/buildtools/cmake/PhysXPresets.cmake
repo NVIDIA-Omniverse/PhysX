@@ -178,12 +178,6 @@ function(physx_override_fetchcontent_incompatible_options)
         message(STATUS "  PX_BUILDSNIPPETS = OFF (overridden for FetchContent compatibility)")
     endif()
     
-    # Disable PVD Runtime by default for simpler builds
-    if(PX_BUILDPVDRUNTIME)
-        set(PX_BUILDPVDRUNTIME OFF CACHE BOOL "Disabled for FetchContent (optional component)" FORCE) 
-        message(STATUS "  PX_BUILDPVDRUNTIME = OFF (overridden for FetchContent compatibility)")
-    endif()
-    
     # For cpu-only presets, ensure GPU-only mode is also disabled
     if(PHYSX_PRESET MATCHES "cpu-only")
         set(PX_GENERATE_GPU_PROJECTS_ONLY OFF CACHE BOOL "Disabled for CPU-only preset" FORCE)

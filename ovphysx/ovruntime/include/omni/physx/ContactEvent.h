@@ -1,10 +1,16 @@
 // SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-PUBLICAPI-002
+ * @covers AC-6
+ */
 #pragma once
 
 #include <carb/Defines.h>
 #include <carb/Types.h>
+
+#include <omni/physics/AttachHandle.h>
 
 #include "EventSubscriptionRegistry.h"
 
@@ -33,11 +39,20 @@ Contains information about the pair and the number of contact data.
 struct ContactEventHeader
 {
     ContactEventType::Enum type; //!< Contact event header type.
-    int64_t stageId; //!< Stage id of the simulated USD stage.
-    uint64_t actor0; //!< Actor0 of the contact pair, can be retyped to SdfPath.
-    uint64_t actor1; //!< Actor1 of the contact pair, can be retyped to SdfPath.
-    uint64_t collider0; //!< Collider0 of the contact pair, can be retyped to SdfPath.
-    uint64_t collider1; //!< Collider1 of the contact pair, can be retyped to SdfPath.
+    AttachHandle attachHandle; //!< The attach that reported the contact (matches
+                               //!< IPhysxSimulation::getAttachHandle()). Was int64_t stageId, which
+                               //!< reported 0 -- indistinguishable from "nothing attached" -- for a
+                               //!< source with no backing USD stage. Same width, so the mirrored C
+                               //!< struct in ovphysx_types.h keeps its layout; only the signedness
+                               //!< and the meaning change.
+    uint64_t actor0; //!< Actor0 of the contact pair. Remains a bare integer identity; must never
+                     //!< become SdfPath (ADR-0019).
+    uint64_t actor1; //!< Actor1 of the contact pair. Remains a bare integer identity; must never
+                     //!< become SdfPath (ADR-0019).
+    uint64_t collider0; //!< Collider0 of the contact pair. Remains a bare integer identity; must
+                        //!< never become SdfPath (ADR-0019).
+    uint64_t collider1; //!< Collider1 of the contact pair. Remains a bare integer identity; must
+                        //!< never become SdfPath (ADR-0019).
     uint32_t contactDataOffset; //!< Contact data offset index to the contact data array.
     uint32_t numContactData; //!< Number of contact data in the contact data array for given pair.
     uint32_t frictionAnchorsDataOffset; //!< Friction anchros offset index to the friction anchors data array.

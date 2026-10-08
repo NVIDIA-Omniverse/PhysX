@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef OMNI_PVD_MEMORY_STREAM_H
 #define OMNI_PVD_MEMORY_STREAM_H
@@ -35,7 +12,13 @@
 /**
  * \brief Used to abstract a memory read/write stream
  *
- * Used to get the read and write streams. 
+ * Used to get independently opened and closed read and write views of a shared FIFO. A newly
+ * created wrapper has no backing storage, so neither view opens until a nonzero setBufferSize()
+ * request succeeds. A failed open leaves that view closed and can be retried after storage exists.
+ * Closing the write view does not discard bytes that are waiting for the read view; this permits
+ * the normal writer-close/read-open handoff for an in-memory recording.
+ * The wrapper owns both views: do not destroy them separately or use them after destroying the
+ * OmniPvdMemoryStream.
  */
 class OmniPvdMemoryStream
 {
@@ -46,21 +29,29 @@ public:
 	/**
 	 * \brief Used to get the read stream
 	 *
-	 * \return The read stream
+	 * \return A non-null borrowed read-stream view owned by this wrapper
 	 */
 	virtual OmniPvdReadStream* OMNI_PVD_CALL getReadStream() = 0;
 
 	/**
 	 * \brief Used to get the write stream
 	 *
-	 * \return The write stream
+	 * \return A non-null borrowed write-stream view owned by this wrapper
 	 */
 	virtual OmniPvdWriteStream* OMNI_PVD_CALL getWriteStream() = 0;
 
 	/**
 	 * \brief Sets the buffer size in bytes of the memory streams
 	 *
-	 * \return The actually allocated length of the memory stream
+	 * A request is accepted only while both stream views are closed and the requested size is
+	 * nonzero and at least the current size. Every accepted equal-size or growth request
+	 * destructively discards all queued bytes and resets both the read and write cursors to byte
+	 * zero. A zero-size request or a request made while either view is open fails and returns zero.
+	 * A nonzero request to shrink the buffer returns its current size. Every rejected zero-size,
+	 * open-view, or shrink request leaves the existing storage, queued bytes, and both cursors intact.
+	 *
+	 * \return The allocated length after an accepted request, zero for a zero-size request or if
+	 * either view is open, or the unchanged current length for a rejected nonzero shrink request.
 	 */
 	virtual uint64_t OMNI_PVD_CALL setBufferSize(uint64_t bufferLength) = 0;
 };

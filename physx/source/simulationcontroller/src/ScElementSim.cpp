@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "ScElementSim.h"
 #include "ScElementSimInteraction.h"
@@ -114,14 +91,39 @@ static PX_FORCE_INLINE void onElementAttach(ElementSim& element, ShapeManager& m
 
 void Sc::ShapeManager::onElementDetach(ElementSim& element)
 {
-	const PxU32 index = element.mShapeArrayIndex;
-	PX_ASSERT(index != 0xffffffff);
-	PX_ASSERT(mShapes.getCount());
-	void** ptrs = mShapes.getPtrs();
-	PX_ASSERT(reinterpret_cast<ElementSim*>(ptrs[index]) == &element);
+	const PxU32 cachedIndex = element.mShapeArrayIndex;
+	PX_ASSERT(cachedIndex != 0xffffffff);
+	const PxU32 nbShapes = mShapes.getCount();
+	PX_ASSERT(nbShapes);
 
-	const PxU32 last = mShapes.getCount() - 1;
-	if (index != last)
+	// ### DEFENSIVE (OMPE-103062): mShapeArrayIndex is cached on the element at attach time and is never
+	// validated against this table. Unlike NpShapeManager::detachShape() we cannot just refuse: our only
+	// caller is ~ElementSim, which has no return value and no recovery path, and Sc::Scene::removeShape_ is
+	// about to hand this element back to mShapeSimPool. Leaving it in mShapes would therefore leave a
+	// dangling pointer that every later walk over getElements() dereferences - strictly worse than the
+	// out-of-bounds write we are guarding against. So recover the real position instead. find() is a linear
+	// scan, but the table holds a handful of entries and this is only paid on the already-broken path.
+	PxU32 index = cachedIndex;
+	if(cachedIndex >= nbShapes || reinterpret_cast<ElementSim*>(mShapes.getPtrs()[cachedIndex]) != &element)
+	{
+		index = mShapes.find(&element);
+
+		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Sc::ShapeManager::onElementDetach: element's cached index (%u) is stale (%u elements in the table); %s.",
+			cachedIndex, nbShapes, index == 0xffffffff ? "it is not in the table, nothing to remove" : "recovered its position by searching");
+
+		if(index == 0xffffffff)
+		{
+			// PT: genuinely absent, i.e. it has already been removed. The table is coherent and doing
+			// nothing is the correct outcome here.
+			element.mShapeArrayIndex = 0xffffffff;
+			return;
+		}
+	}
+
+	void** ptrs = mShapes.getPtrs();
+
+	const PxU32 last = nbShapes - 1;
+	if(index != last)
 	{
 		ElementSim* moved = reinterpret_cast<ElementSim*>(ptrs[last]);
 		PX_ASSERT(moved->mShapeArrayIndex == last);

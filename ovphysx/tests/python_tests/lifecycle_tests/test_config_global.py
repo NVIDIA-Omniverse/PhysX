@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
-"""Config global behaviour test — ONE create+release cycle per file.
+"""Config global behaviour test. ONE create+destroy cycle per file.
 
 Verifies that config is process-global (Carbonite settings are shared across
 all PhysX instances in the same process).
@@ -23,6 +23,6 @@ def test_config_is_global_across_instances():
             assert val1 == val2
             assert val2 is False
         finally:
-            physx2.release()
+            physx2.destroy()
     finally:
-        physx1.release()
+        physx1.destroy()

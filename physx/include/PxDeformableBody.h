@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef PX_DEFORMABLE_BODY_H
 #define PX_DEFORMABLE_BODY_H
@@ -157,13 +134,21 @@ public:
 	virtual		PxReal						getSelfCollisionFilterDistance() const = 0;
 
 	/**
-	\brief Sets the solver iteration count for the deformable body.
-	
-	Since deformables are currently implemented using an XPBD solver (extended position based dynamics), minVelocityIters is ignored. 
+	\brief Sets the solver iteration counts for the deformable body.
+
+	The solver iteration count determines how accurately contacts, attachments, and internal
+	constraints are resolved. If the deformable body does not converge to its intended stiffness, or
+	its contacts and attachments are poorly resolved, setting a higher position iteration count may help.
+
+	Velocity iterations run after the position solve and correct velocities only. Increasing the
+	velocity iteration count may reduce the velocity lag inherent in position-based dynamics at
+	contacts and attachments, as well as violent depenetration. Internal elastic forces and damping
+	are not solved for, biasing the velocity result toward contacts and attachments.
+
 	<b>Default:</b> 4 position iterations, 1 velocity iteration
 
 	\param[in] minPositionIters Number of position iterations the solver should perform for this deformable body. <b>Range:</b> [1,255]
-	\param[in] minVelocityIters Number of velocity iterations, currently ignored. <b>Range:</b> [1,255]
+	\param[in] minVelocityIters Number of velocity iterations the solver should perform for this deformable body. <b>Range:</b> [0,255]
 	\see getSolverIterationCounts()
 	*/
 	virtual		void						setSolverIterationCounts(PxU32 minPositionIters, PxU32 minVelocityIters = 1) = 0;

@@ -1,10 +1,18 @@
 // SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-10 AC-11
+ */
 
 #pragma once
 
 #include <carb/Defines.h>
 #include <carb/Types.h>
+
+#include <omni/physics/AttachHandle.h>
+#include <omni/physics/parse/Handles.h> // ObjectKey
 
 // Note requires PhysX SDK includes before including this file
 
@@ -17,21 +25,22 @@ static const size_t kInvalidCustomGeometryRegId = 0;
 
 /// Create custom geometry function
 ///
-/// \param[in] sdfPath SdfPath of the UsdGeomGPrim prim.
-/// \param[in] stageId USD stageId.
+/// \param[in] key ObjectKey of the UsdGeomGPrim prim.
+/// \param[in] attachHandle Attach the geometry belongs to (matches @ref
+/// IPhysxSimulation::getAttachHandle()).
 /// \param[in] typeId Custom geometry typeId
 /// \param[in] userData User data passed to ICustomGeometryCallback struct
 /// \return  User pointer that gets provided for each implementation function.
-typedef void* (*CreateCustomGeometryFn)(PXR_NS::SdfPath sdfPath,
-                                        long stageId,
+typedef void* (*CreateCustomGeometryFn)(omni::physics::parse::ObjectKey key,
+                                        AttachHandle attachHandle,
                                         const ::physx::PxCustomGeometry::Type& typeId,
                                         void* userData);
 
 /// Release custom geometry function
 ///
-/// \param[in] sdfPath SdfPath of the geom prim.
+/// \param[in] key ObjectKey of the geom prim.
 /// \param[in] userData User data passed to ICustomGeometryCallback struct
-typedef void (*ReleaseCustomGeometryFn)(PXR_NS::SdfPath sdfPath, void* userData);
+typedef void (*ReleaseCustomGeometryFn)(omni::physics::parse::ObjectKey key, void* userData);
 
 /// Compute local bounds function
 ///
@@ -195,7 +204,7 @@ struct IPhysxCustomGeometry
     /// \param[in] geometrySchemaAPIToken SchemaAPI applied to the UsdGeomGPrim together with the
     /// UsdPhysicsCollisionAPI. \param[in] geometryCallback Custom geomtry callbacks that will get fired. \return
     /// Registration id, used for unregister. Returns kInvalidCustomGeometryRegId on failure.
-    size_t(CARB_ABI* registerCustomGeometry)(const PXR_NS::TfToken& geometrySchemaAPIToken,
+    size_t(CARB_ABI* registerCustomGeometry)(const char* geometrySchemaAPIToken,
                                              ICustomGeometryCallback& geometryCallback);
 
     /// Unregister custom geometry

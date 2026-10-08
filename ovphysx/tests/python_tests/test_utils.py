@@ -1,5 +1,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# @implements REQ-CAPI-OVSTAGE-SCHEMA-001
+# @covers AC-4
 
 """Shared test utilities for PhysX Python tests.
 
@@ -155,6 +158,28 @@ def data_path(filename):
     return os.path.join(test_dir, "data", filename)
 
 
+_physx_schemas_registered = False
+
+
+def register_physx_schemas_with_ovstage():
+    """Register ovphysx's codeless PhysX schemas with ovstage, once per process.
+
+    ovphysx ships the schemas as data and never registers them itself: the
+    application owns the USD runtime. USD assembles its schema registry once, so
+    this must run before the first population call in the process. The tests
+    therefore route every population through this helper.
+    """
+    global _physx_schemas_registered
+    if _physx_schemas_registered:
+        return
+
+    import ovphysx
+    import ovstage
+
+    ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+    _physx_schemas_registered = True
+
+
 def attach_usd_with_ovstage(physx, usd_path: str, ordinal: int = 1):
     """Populate an ovstage Stage and attach it at the populated ordinal.
 
@@ -173,8 +198,9 @@ def attach_usd_with_ovstage(physx, usd_path: str, ordinal: int = 1):
     if not ovstage.population.available():
         raise RuntimeError("ovstage population bridge is unavailable")
 
-    # The released population bridge owns the backing USD stage. The temporary
-    # caller-owned StageCache entry point was removed from ovstage 0.1.
+    register_physx_schemas_with_ovstage()
+
+    # The population bridge owns the backing USD stage.
     stage = ovstage.Stage("ovphysx-test-stage")
     attached = False
     try:
@@ -184,9 +210,6 @@ def attach_usd_with_ovstage(physx, usd_path: str, ordinal: int = 1):
             ordinal=ordinal,
             domains=ovstage.PopulationDomain.PHYSICS,
         )
-        # Population never opens or commits an ordinal of its own; the caller owns
-        # ordinal lifecycle. attach_ovstage() reads at a *sealed* ordinal, so seal
-        # what population just authored before attaching.
         stage.advance_write_floor(ordinal=ordinal).wait()
         physx.attach_ovstage(stage, read_ordinal=ordinal)
         attached = True
@@ -215,7 +238,7 @@ def load_usd_with_ovstage(physx, usd_path: str, path_prefix: str = "", ordinal: 
     """Test helper that populates ovstage and attaches it to ovphysx.
 
     Returns an `op_index` for callers that want to wait on the load. The ovstage
-    attach performs the initial parse synchronously, so this is `OP_INDEX_ALL` -- waiting on it
+    attach performs the initial parse synchronously, so this is `OP_INDEX_ALL`. Waiting on it
     drains all currently pending work without advancing simulation state.
     """
     if path_prefix:
@@ -256,6 +279,8 @@ def destroy_ovstage_test_attachments(physx) -> None:
         pass
 
 
+# DEPRECATED (tensor-binding-deprecation): a TensorBinding-only helper used solely by
+# test_tensor_bindings.py, removed with the binding. The rest of this module stays.
 def verify_tensor_shape(binding, expected_count, expected_components):
     """Verify tensor binding shape matches expectations.
 
@@ -285,3 +310,50 @@ def verify_tensor_shape(binding, expected_count, expected_components):
 
     assert binding.shape == expected_shape, f"Expected shape {expected_shape}, got {binding.shape}"
     assert binding.count == expected_count, f"Expected count {expected_count}, got {binding.count}"
+
+
+def read_rigid_body_poses(sdk):
+    """Read every rigid body's pose as an ``[N, 7]`` array (xyz + quaternion) via the session API.
+
+    PhysX.read emits one group per scene partition per attribute, so a position column arrives as
+    ``[N, 3]`` and an orientation column as ``[N, 4]``, and a multi-scene stage yields several of
+    each. PhysX.read does NOT guarantee the position and orientation groups arrive in the same
+    partition order, so pair the two columns per partition by the interned ``group.prim_list`` handle
+    before joining. Concatenating each attribute independently and ``hstack``-ing would glue a
+    body's position to another partition's quaternion on a repartitioned read (and keeping only the
+    last group would drop every partition but one). ``tensor.numpy()`` copies a CUDA column back to
+    the host, so this works on CPU or GPU. Returns an empty ``[0, 7]`` array when the scene has no
+    rigid bodies.
+    """
+    from ovphysx.types import ObjectScope, SimObjectType
+
+    # prim_list is the interned handle for a partition's prim set. The position and orientation groups
+    # of one partition share it, so it pairs them. dict insertion order keeps partitions first-seen.
+    by_partition = {}
+    with sdk.read(SimObjectType.RIGID_BODY, ["position", "orientation"], scope=ObjectScope.ALL) as result:
+        for group in result.groups:
+            # Rows are assumed to be in prim order. An index_map would permute them and break the
+            # element-wise comparisons callers run on the returned array, so fail loudly instead.
+            assert group.index_map is None and group.prim_index_map is None, (
+                "read_rigid_body_poses does not handle index_map permutation"
+            )
+            slot = by_partition.setdefault(group.prim_list, {})
+            for tensor in group.tensors:
+                column = tensor if isinstance(tensor, np.ndarray) else tensor.numpy()
+                if column.shape[1] == 3:
+                    slot["position"] = column
+                elif column.shape[1] == 4:
+                    slot["orientation"] = column
+    # hstack within a partition pairs row i of position with row i of orientation (same body, same
+    # prim_list). Every partition must yield BOTH columns. A missing one is a read fault, so fail
+    # loudly rather than drop the partition. A silent drop would pass a before/after comparison
+    # while hiding lost bodies.
+    rows = []
+    for slot in by_partition.values():
+        assert "position" in slot and "orientation" in slot, (
+            "read partition is missing its position or orientation column; cannot build a pose"
+        )
+        rows.append(np.hstack([slot["position"], slot["orientation"]]))
+    if not rows:
+        return np.zeros((0, 7), dtype=np.float32)
+    return np.concatenate(rows).astype(np.float32, copy=False)

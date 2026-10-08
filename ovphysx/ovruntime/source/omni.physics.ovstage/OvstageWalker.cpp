@@ -1,24 +1,54 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-SCAN-001
- * @covers AC-1 AC-14 AC-16
+ * @covers AC-1 AC-14 AC-15 AC-16 AC-17 AC-18
+ *
+ * @implements REQ-PARSE-CONSUMER-001
+ * @covers AC-24
+ *
+ * @implements REQ-PARSE-CCT-001
+ * @covers AC-5
+ *
+ * @implements REQ-PARSE-MAT-001
+ * @covers AC-6
+ *
+ * @implements REQ-PUBLICAPI-003
+ * @covers AC-4
+ *
+ * @implements REQ-PARSE-SHAPE-004
+ * @covers AC-1
+ *
+ * @implements REQ-PARSE-JOINT-005
+ * @covers AC-3 AC-4
+ *
+ * @implements REQ-PARSE-FEED-003
+ * @covers AC-10 AC-12 AC-13 AC-14
+ *
+ * @implements REQ-PARSE-COL-005
+ * @covers AC-1
  */
 
 #include "OvstageWalker.h"
 
 #include "OvstageSource.h"
 
+
+
+#include <carb/extras/ScopeExit.h>
+
 #include <omni/physics/parse/ArticulationGraph.h>
+#include <omni/physics/parse/CustomTokens.h>
 #include <omni/physics/parse/ParseApi.h>
 #include <omni/physics/parse/ParseContext.h>
 #include <private/omni/physics/CollisionShapeTransform.h>
 #include <private/omni/physics/JointFrameTransform.h>
 
-#include <pxr/base/gf/matrix4d.h>
+#include <foundation/PxMat44.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cfloat>
 #include <cmath>
 #include <cstdint>
@@ -26,6 +56,7 @@
 #include <functional>
 #include <initializer_list>
 #include <limits>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -41,21 +72,72 @@ ovx_string_t ovxStr(const char* s)
     return { s, std::string_view(s).size() };
 }
 
-PXR_NS::GfMatrix4d toGfMatrix4d(const Matrix4d& matrix)
+// Test-only count of enumerate()'s data-column reads: a family with no matching prim must not
+// pay one to materialise zero prims.
+std::atomic_size_t& enumerateReadCounter()
 {
-    return PXR_NS::GfMatrix4d(
-        matrix.data[0], matrix.data[1], matrix.data[2], matrix.data[3],
-        matrix.data[4], matrix.data[5], matrix.data[6], matrix.data[7],
-        matrix.data[8], matrix.data[9], matrix.data[10], matrix.data[11],
-        matrix.data[12], matrix.data[13], matrix.data[14], matrix.data[15]);
+    static std::atomic_size_t counter{ 0 };
+    return counter;
 }
 
-void waitAndRelease(ovstage_instance_t* inst, ovstage_enqueue_result_t r)
+// Test-only count of enumerate()'s whole-stage filter queries: a prim-type family the source's
+// type index knows to be empty must not pay one.
+std::atomic_size_t& enumerateQueryCounter()
 {
-    if (r.status != OVSTAGE_OK || r.op_index == OVSTAGE_INVALID_OP_ID)
-        return;
-    ovstage_wait_op(inst, r.op_index, OVSTAGE_TIMEOUT_INFINITE, nullptr);
-    ovstage_release_op(inst, r.op_index);
+    static std::atomic_size_t counter{ 0 };
+    return counter;
+}
+
+// Test-only: the next N batched probe reads in enumerate() fail, so the per-column fallback runs.
+// Zero in production; set only by setOvstageWalkerEnumerateReadFaultForTest().
+std::atomic_int& enumerateReadFaultCounter()
+{
+    static std::atomic_int counter{ 0 };
+    return counter;
+}
+
+bool consumeEnumerateReadFault()
+{
+    int n = enumerateReadFaultCounter().load(std::memory_order_relaxed);
+    while (n > 0)
+    {
+        if (enumerateReadFaultCounter().compare_exchange_weak(n, n - 1, std::memory_order_relaxed))
+            return true;
+    }
+    return false;
+}
+
+// parse::Matrix4d is sixteen doubles in the layout PxMat44d/GfMatrix4d both use;
+// this is an element copy, not a transpose. Only the *product* order differs,
+// see common/foundation/MatrixTools.h.
+::physx::PxMat44d toPxMat44d(const Matrix4d& matrix)
+{
+    double values[16];
+    for (int i = 0; i < 16; ++i)
+        values[i] = matrix.data[i];
+    return ::physx::PxMat44d(values);
+}
+
+// This local helper reports completion for strict schema reads; OvstageChangeFeed keeps its lenient copy.
+bool waitAndRelease(ovstage_instance_t* inst, ovstage_enqueue_result_t result) noexcept
+{
+    if (result.status != OVSTAGE_OK || result.op_index == OVSTAGE_INVALID_OP_ID)
+        return false;
+
+    const ovstage_api_status_t waitStatus =
+        ovstage_wait_op(inst, result.op_index, OVSTAGE_TIMEOUT_INFINITE, nullptr);
+    if (waitStatus == OVSTAGE_OK || waitStatus == OVSTAGE_ERROR_OP_FAILED)
+        (void)ovstage_release_op(inst, result.op_index);
+    return waitStatus == OVSTAGE_OK;
+}
+
+[[noreturn]] void throwDataError(ovstage_api_status_t status,
+                                 const char* operation,
+                                 ovstage_ordinal_t readOrdinal)
+{
+    throw std::runtime_error("OVStage schema scan failed during " + std::string(operation) +
+                             " at read ordinal " + std::to_string(readOrdinal) +
+                             " (status " + std::to_string(static_cast<int>(status)) + ")");
 }
 
 // A concept's matched prims plus the attribute columns discovered on them — the
@@ -96,6 +178,35 @@ std::vector<std::string> appendedAttrs(const Bucket& bucket, size_t previousSize
     return std::vector<std::string>(bucket.attrs.begin() + previousSize, bucket.attrs.end());
 }
 
+// Drop appended columns [firstAppended, end) of hasSchema-gated joint sub-schema families
+// that no matched prim authors (absent from `discovered`): parseJoint reads them only behind
+// a hasSchema gate that is false when the schema is unapplied. Unconditionally read columns
+// carry none of these prefixes. Applied-but-all-default falls back to a live per-prim read.
+void trimUnauthoredGatedJointAttrs(Bucket& bucket,
+                                   size_t firstAppended,
+                                   const std::vector<std::string>& discovered)
+{
+    if (firstAppended >= bucket.attrs.size())
+        return;
+    static const std::string_view kGatedPrefixes[] = {
+        "physxLimit:", "physxJointAxis:", "drive:", "limit:", "state:",
+        "physxDrivePerformanceEnvelope:", "physxPhysicsDistanceJoint:",
+    };
+    const std::unordered_set<std::string_view> authored(discovered.begin(), discovered.end());
+    auto isGated = [](std::string_view name) {
+        for (const std::string_view pfx : kGatedPrefixes)
+            if (name.size() > pfx.size() && name.compare(0, pfx.size(), pfx) == 0)
+                return true;
+        return false;
+    };
+    std::vector<std::string>& attrs = bucket.attrs;
+    attrs.erase(std::remove_if(attrs.begin() + firstAppended, attrs.end(),
+                               [&](const std::string& name) {
+                                   return isGated(name) && authored.count(name) == 0;
+                               }),
+                attrs.end());
+}
+
 void appendTransformAttrs(Bucket& bucket)
 {
     appendBucketAttrs(bucket, {
@@ -106,46 +217,10 @@ void appendTransformAttrs(Bucket& bucket)
     });
 }
 
-std::vector<ObjectKey> collectTransformAncestors(const OvstageSource& src, const std::vector<ObjectKey>& keys)
-{
-    std::vector<ObjectKey> out;
-    std::unordered_set<uint64_t> seen;
-    seen.reserve(keys.size() * 2);
-    for (const ObjectKey key : keys)
-    {
-        if (!key.valid())
-            continue;
-        seen.insert(key.handle);
-        if (const uint64_t canonical = src.canonicalPath(key))
-            seen.insert(canonical);
-    }
-
-    const ObjectKey root = src.getRootKey();
-    for (const ObjectKey key : keys)
-    {
-        ObjectKey cur = src.getParent(key);
-        for (int guard = 0; cur.valid() && guard < 64; ++guard)
-        {
-            const uint64_t canonical = src.canonicalPath(cur);
-            const uint64_t dedupe = canonical ? canonical : cur.handle;
-            if (dedupe && seen.insert(dedupe).second)
-                out.push_back(cur);
-
-            if (cur == root)
-                break;
-            const ObjectKey next = src.getParent(cur);
-            if (next.handle == cur.handle)
-                break;
-            cur = next;
-        }
-    }
-    return out;
-}
-
 void prefetchTransformAncestors(OvstageSource& src, const std::vector<ObjectKey>& keys)
 {
     Bucket bucket;
-    bucket.keys = collectTransformAncestors(src, keys);
+    bucket.keys = src.collectAncestors(keys);
     if (bucket.keys.empty())
         return;
     appendTransformAttrs(bucket);
@@ -418,6 +493,9 @@ void appendPhysxJointAxisAttrs(Bucket& bucket, const char* axis)
     appendBucketAttrs(bucket, {
         "physxJoint:armature",
         "physxJoint:maxJointVelocity",
+        // Seeds maxJointVelocity before the PhysX reads (ParseJoint.cpp's
+        // readPhysxJointAxisApi), so it is read once per joint per axis.
+        "newton:velocityLimit",
     });
 }
 
@@ -583,7 +661,8 @@ void appendJointAttrs(Bucket& bucket, ObjectType type)
 // data attributes discovered on the matched set. `probeAttr` must be an attribute
 // every matched prim carries: the read group's prims.list materialises the
 // matched set (ovstage gives no path list on the query result itself).
-Bucket enumerate(ovstage_instance_t* inst,
+Bucket enumerate(const OvstageSource& src,
+                 ovstage_instance_t* inst,
                  ovx_path_dictionary_t* dict,
                  const char* predAttr,
                  ovstage_filter_op_t op,
@@ -594,6 +673,7 @@ Bucket enumerate(ovstage_instance_t* inst,
 {
     Bucket out;
     std::vector<ObjectKey>& keys = out.keys;
+    const bool requiresSchemaProbe = std::string_view(predAttr) == conv::kUsdSchemas;
 
     ovx_string_t value = ovxStr(predValue);
     ovstage_predicate_t pred{};
@@ -608,10 +688,20 @@ Bucket enumerate(ovstage_instance_t* inst,
     filter.count = 1;
 
     ovstage_query_handle_t q = OVSTAGE_INVALID_QUERY_HANDLE;
+    CARB_SCOPE_EXIT
+    {
+        if (q != OVSTAGE_INVALID_QUERY_HANDLE)
+            waitAndRelease(inst, ovstage_release_query(inst, q));
+    };
+    enumerateQueryCounter().fetch_add(1, std::memory_order_relaxed);
     const ovstage_enqueue_result_t qe = ovstage_query(inst, &filter, nullptr, 0, &q);
-    if (qe.status != OVSTAGE_OK)
+    if (!waitAndRelease(inst, qe) || q == OVSTAGE_INVALID_QUERY_HANDLE)
+    {
+        if (requiresSchemaProbe)
+            throwDataError(qe.status == OVSTAGE_OK ? OVSTAGE_ERROR_OP_FAILED : qe.status,
+                           "ovstage_query", readOrdinal);
         return out;
-    waitAndRelease(inst, qe);
+    }
 
     // ovstage gives no prim path list on the query result itself — the matched
     // prims materialise only as a read group's prims.list. Rather than assume a
@@ -619,14 +709,21 @@ Bucket enumerate(ovstage_instance_t* inst,
     // attributes — the hand populator vs ovpopulation), read the query result's
     // own *discovered* attributes: those are exactly the attributes present on the
     // matched set, so reading them back yields every matched prim. `probeAttr` is
-    // a fallback when the result reports no attributes. `usd-schemas` is readable
-    // metadata, so schema/type predicates can use an explicit metadata column as
-    // an enumeration probe even when the matched prim has no ordinary data column.
+    // a fallback when the result reports no attributes. Schema membership queries
+    // are not ordinal-scoped, so `usd-schemas` itself is the required probe for a
+    // schema predicate; reading an ordinary column would not prove that the schema
+    // data is readable at `readOrdinal`.
     ovstage_query_handle_t use = q;
     std::vector<ovx_token_t> probes; // all usable data columns; their union covers the matched set
     ovstage_query_result_t qr{};
-    if (ovstage_fetch_query_result(inst, q, OVSTAGE_TIMEOUT_INFINITE, &qr) == OVSTAGE_OK)
+    const ovstage_api_status_t queryResultStatus =
+        ovstage_fetch_query_result(inst, q, OVSTAGE_TIMEOUT_INFINITE, &qr);
+    if (queryResultStatus != OVSTAGE_OK && requiresSchemaProbe)
+        throwDataError(queryResultStatus, "ovstage_fetch_query_result", readOrdinal);
+    bool noMatch = false;
+    if (queryResultStatus == OVSTAGE_OK)
     {
+        noMatch = qr.total_prim_count == 0;
         if (qr.all_handle != OVSTAGE_INVALID_QUERY_HANDLE)
             use = qr.all_handle;
         // Probe with attributes the matched prims actually carry: discovered
@@ -647,44 +744,70 @@ Bucket enumerate(ovstage_instance_t* inst,
             // only for enumeration fallback, not as a bulk-prefetch attribute.
             if (s.length >= 4 && std::strncmp(s.ptr, "usd-", 4) == 0)
                 continue;
-            probes.push_back(qr.attributes[i]); // each usable column probes + bulk-reads
+            if (!requiresSchemaProbe)
+                probes.push_back(qr.attributes[i]); // each usable column probes + bulk-reads
             out.attrs.emplace_back(s.ptr, s.length);
         }
-        ovstage_release_query_result(inst, &qr);
+        (void)ovstage_release_query_result(inst, &qr);
     }
-    if (probes.empty())
+    // The query's own count decides an empty family: no fallback read to materialise zero
+    // prims. Schema predicates keep their read, which doubles as the readability proof.
+    if (noMatch && !requiresSchemaProbe)
+        return out;
+    if (requiresSchemaProbe || probes.empty())
     {
-        // No ordinary data column on the matched set: fall back to an explicit
-        // metadata/probe column so schema/type predicates still enumerate.
+        // Schema predicates must read their metadata column. Other predicates
+        // use the explicit metadata/probe column only when no ordinary data
+        // column can materialize the matched prims.
         ovx_token_t fb = OVX_INVALID_TOKEN;
         const char* fallbackProbe = metadataProbeAttr ? metadataProbeAttr : probeAttr;
         if (ovx_path_dictionary_intern_token(dict, ovxStr(fallbackProbe), &fb) == OVX_OK &&
             fb != OVX_INVALID_TOKEN)
             probes.push_back(fb);
+        else if (requiresSchemaProbe)
+            throw std::runtime_error("OVStage schema scan could not intern required usd-schemas token");
     }
 
     ovstage_ordinal_range_t range{};
     range.end_ordinal = readOrdinal;
     range.has_start_ordinal = false;
 
-    // Read EVERY usable column and union the matched prim lists. A single column
-    // is only authored on the prims that carry it, so one probe under-counts the
-    // matched set: a read group's prims.list holds only the prims with that
+    // Read EVERY usable column, in ONE multi-attribute read, and union the matched prim
+    // lists. A single column is only authored on the prims that carry it, so one probe
+    // under-counts the matched set: a read group's prims.list holds only the prims with that
     // column, dropping matched prims whose authored column was not the first one
     // picked (e.g. Sphere/Mesh/Cube colliders, particle systems). The discovered
     // columns are the union over the matched set, so every matched prim carries at
     // least one — reading them all and unioning (dedup by handle) yields the
     // complete set, which is what let us drop the USD-Traverse supplement in
     // OvstageSource::collectPrimTypeKeys. Handles come from the data-column read
-    // (the populator's canonical primpaths) so downstream key lookups still match.
+    // (the populator's canonical primpaths) so downstream key lookups still match. The
+    // groups come back tagged per column; only their prim lists matter here, so one round
+    // trip serves every column. Should that batched read fail, the columns are read one by
+    // one instead, so a single failing column drops only its own rows rather than emptying the
+    // family (a schema predicate's failing column is still an error, as before).
     std::unordered_set<uint64_t> seen;
-    for (const ovx_token_t probe : probes)
+    // One read over `toks`, its groups' prims unioned into `keys`. False when the read itself
+    // could not be issued (the batched caller then falls back per column).
+    auto readProbeUnion = [&](const ovx_token_t* toks, size_t tokCount, bool batched) -> bool
     {
+        if (batched && consumeEnumerateReadFault())
+            return false;
         ovstage_read_handle_t rh = OVSTAGE_INVALID_READ_HANDLE;
-        const ovstage_enqueue_result_t re = ovstage_read_attributes(inst, use, &probe, 1, range, &rh);
-        if (re.status != OVSTAGE_OK)
-            continue;
-        waitAndRelease(inst, re);
+        CARB_SCOPE_EXIT
+        {
+            if (rh != OVSTAGE_INVALID_READ_HANDLE)
+                waitAndRelease(inst, ovstage_release_read(inst, rh));
+        };
+        enumerateReadCounter().fetch_add(1, std::memory_order_relaxed);
+        const ovstage_enqueue_result_t re = ovstage_read_attributes(inst, use, toks, tokCount, range, &rh);
+        if (!waitAndRelease(inst, re) || rh == OVSTAGE_INVALID_READ_HANDLE)
+        {
+            if (!batched && requiresSchemaProbe)
+                throwDataError(re.status == OVSTAGE_OK ? OVSTAGE_ERROR_OP_FAILED : re.status,
+                               "ovstage_read_attributes", readOrdinal);
+            return false;
+        }
         ovstage_read_group_t g{};
         // Union prims from EVERY read group, not just the first. A scalar column
         // comes back as a single group whose prims.list covers all owning prims,
@@ -693,19 +816,30 @@ Bucket enumerate(ovstage_instance_t* inst,
         // first-group-only scan captured just one owner and dropped the rest (a
         // second collision group with only a ragged membership column went missing).
         // Dedup via `seen` keeps scalar reads idempotent.
-        while (ovstage_fetch_read_next(inst, rh, OVSTAGE_TIMEOUT_INFINITE, &g) == OVSTAGE_OK)
+        ovstage_api_status_t fetchStatus = OVSTAGE_OK;
+        // A list is fetched and unioned once, however many groups (one per owning prim on an array
+        // column) address it.
+        ReadListMemo listMemo(dict);
+        std::unordered_set<ovx_primpath_list_t> unioned;
+        while ((fetchStatus = ovstage_fetch_read_next(inst, rh, OVSTAGE_TIMEOUT_INFINITE, &g)) == OVSTAGE_OK)
         {
             const ovx_primpath_t* paths = nullptr;
             size_t count = 0;
-            if (ovx_path_dictionary_get_paths(dict, g.prims.list, &paths, &count) == OVX_OK)
+            if (listMemo.paths(g.prims.list, &paths, &count) && unioned.insert(g.prims.list).second)
                 for (size_t i = 0; i < count; ++i)
                     if (seen.insert(paths[i]).second)
-                        keys.push_back(ObjectKey{ paths[i] });
+                        keys.push_back(src.internKey(paths[i]));
             ovstage_release_group(inst, &g);
         }
-        waitAndRelease(inst, ovstage_release_read(inst, rh));
+        if (fetchStatus != OVSTAGE_ERROR_END_OF_ITERATION && requiresSchemaProbe)
+            throwDataError(fetchStatus, "ovstage_fetch_read_next", readOrdinal);
+        return true;
+    };
+    if (!probes.empty() && !readProbeUnion(probes.data(), probes.size(), /*batched=*/true))
+    {
+        for (const ovx_token_t probe : probes)
+            readProbeUnion(&probe, 1, /*batched=*/false);
     }
-    waitAndRelease(inst, ovstage_release_query(inst, q));
     return out;
 }
 
@@ -853,7 +987,10 @@ bool tokenColumnContains(ovstage_instance_t* inst,
         return false;
 
     const uint64_t canonical = src.canonicalPath(key);
-    ovx_primpath_t path = canonical ? canonical : key.handle;
+    // key.handle is the packed, generation-tagged ObjectKey (ADR-0021), never
+    // a valid ovx_primpath_t for the C API below -- rawHandle() is the true
+    // raw-handle fallback when canonicalization fails.
+    ovx_primpath_t path = canonical ? canonical : src.rawHandle(key);
     ovx_primpath_list_t list = OVX_INVALID_PRIMPATH_LIST;
     if (ovx_path_dictionary_create_path_list(dict, &path, 1, &list) != OVX_OK)
         return false;
@@ -934,30 +1071,40 @@ bool isXformable(const OvstageSource& src, ObjectKey key)
     return src.isA(key, src.internToken("Xformable"));
 }
 
-void appendUnique(std::vector<ObjectKey>& dst, const std::vector<ObjectKey>& srcKeys)
+// `src` provides the canonical identity used to dedup: `dst`/`srcKeys` may mix
+// keys minted through different routes for the same logical prim (schema-cache
+// keys are always canonical, but a raw enumerate()-sourced key is not
+// guaranteed to pack to the same value as its canonical alias -- ADR-0021), so
+// a raw ObjectKey.handle comparison alone is not a reliable identity test.
+void appendUnique(const OvstageSource& src, std::vector<ObjectKey>& dst, const std::vector<ObjectKey>& srcKeys)
 {
     for (const ObjectKey key : srcKeys)
     {
+        const uint64_t canonical = src.canonicalPath(key);
+        const uint64_t identity = canonical ? canonical : key.handle;
         const auto it = std::find_if(dst.begin(), dst.end(), [&](ObjectKey existing)
         {
-            return existing.handle == key.handle;
+            const uint64_t existingCanonical = src.canonicalPath(existing);
+            return (existingCanonical ? existingCanonical : existing.handle) == identity;
         });
         if (it == dst.end())
             dst.push_back(key);
     }
 }
 
-Bucket enumerateSchema(ovstage_instance_t* inst,
+Bucket enumerateSchema(const OvstageSource& src,
+                       ovstage_instance_t* inst,
                        ovx_path_dictionary_t* dict,
                        const char* schemaName,
                        const char* probeAttr,
                        ovstage_ordinal_t readOrdinal)
 {
-    return enumerate(inst, dict, "usd-schemas", OVSTAGE_FILTER_OP_CONTAINS,
+    return enumerate(src, inst, dict, "usd-schemas", OVSTAGE_FILTER_OP_CONTAINS,
                      schemaName, probeAttr, readOrdinal, conv::kUsdSchemas);
 }
 
-Bucket enumerateSchemas(ovstage_instance_t* inst,
+Bucket enumerateSchemas(const OvstageSource& src,
+                        ovstage_instance_t* inst,
                         ovx_path_dictionary_t* dict,
                         const char* const* schemaNames,
                         size_t schemaNameCount,
@@ -967,8 +1114,8 @@ Bucket enumerateSchemas(ovstage_instance_t* inst,
     Bucket out;
     for (size_t i = 0; i < schemaNameCount; ++i)
     {
-        Bucket one = enumerateSchema(inst, dict, schemaNames[i], probeAttr, readOrdinal);
-        appendUnique(out.keys, one.keys);
+        Bucket one = enumerateSchema(src, inst, dict, schemaNames[i], probeAttr, readOrdinal);
+        appendUnique(src, out.keys, one.keys);
         for (const std::string& attr : one.attrs)
         {
             if (std::find(out.attrs.begin(), out.attrs.end(), attr) == out.attrs.end())
@@ -1097,6 +1244,7 @@ bool fillCommonShape(ParseContext& ctx, ObjectKey key, const ShapeInfo& info, Ph
     fields.minTorsionalPatchRadius = desc.minTorsionalPatchRadius;
     fields.isTrigger = desc.isTrigger;
     fields.isTriggerUsdOutput = desc.isTriggerUsdOutput;
+    fields.attributeFallback = info.collisionAttributeFallback;
     parseCollisionExt(ctx, key, fields);
     desc.contactOffset = fields.contactOffset;
     desc.restOffset = fields.restOffset;
@@ -1201,11 +1349,12 @@ DescPtr<PhysxShapeDesc> buildMeshShapeDesc(OvstageScanResult& out, ParseContext&
         // the bounding-sphere radius / bounding-box halfExtents from those points.
         // (Mirrors NativeWalker's USD path; needed so a dynamic body gets an analytic
         // bounding shape instead of an illegal triangle-mesh simulation shape.)
+        // The points must carry the gprim's world scale: unlike the cooked-mesh
+        // descs there is no meshScale field for the consumer to apply later, so an
+        // unscaled buffer yields a bounding shape in mesh-local units.
         DescPtr<MergeMeshDesc> mm = allocateDesc<MergeMeshDesc>(ctx.descriptorAllocator());
         const MeshGeometry geom = parseMeshGeometry(ctx, gprimKey);
-        const BufferSpan<carb::Float3> pointsView = ctx.getBuffer<carb::Float3>(geom.points);
-        if (pointsView.count > 0)
-            mm->points.assign(pointsView.data, pointsView.data + pointsView.count);
+        scaleMeshPoints(ctx, geom.points, meshScale, mm->points);
 
         DescPtr<MergeMeshPhysxShapeDesc> typed;
         if (approx == MeshApproximation::eBoundingSphere)
@@ -1239,6 +1388,37 @@ DescPtr<PhysxShapeDesc> buildMeshShapeDesc(OvstageScanResult& out, ParseContext&
 }
 
 } // namespace
+
+// Not declared in the public header; test translation units forward-declare these.
+void resetOvstageWalkerEnumerateReadCountForTest()
+{
+    enumerateReadCounter().store(0, std::memory_order_relaxed);
+}
+
+size_t getOvstageWalkerEnumerateReadCountForTest()
+{
+    return enumerateReadCounter().load(std::memory_order_relaxed);
+}
+
+void resetOvstageWalkerEnumerateQueryCountForTest()
+{
+    enumerateQueryCounter().store(0, std::memory_order_relaxed);
+}
+
+size_t getOvstageWalkerEnumerateQueryCountForTest()
+{
+    return enumerateQueryCounter().load(std::memory_order_relaxed);
+}
+
+void setOvstageWalkerEnumerateReadFaultForTest(int count)
+{
+    enumerateReadFaultCounter().store(count, std::memory_order_relaxed);
+}
+
+int getOvstageWalkerEnumerateReadFaultForTest()
+{
+    return enumerateReadFaultCounter().load(std::memory_order_relaxed);
+}
 
 void emitTireFrictionTable(OvstageScanResult& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
 {
@@ -1751,9 +1931,79 @@ void emitElementCollisionFilter(OvstageScanResult& out, ParseContext& ctx, Objec
     }
 }
 
+// Character-controller emit — the ovstage peer of NativeWalker.cpp::emitCct.
+// Requires the prim to be a Capsule gprim, reads its radius/height and world
+// transform (translation + scale), and the simulationOwner relationship from
+// PhysxCharacterControllerAPI. Per-axis scale baking matches the native walker
+// exactly: radius scaled by scale.y, halfHeight by scale.z. parse-lib's
+// source-agnostic parseCct resolves slopeLimit and the owner key.
+void emitCct(OvstageScanResult& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
+{
+    // A CCT on non-capsule geometry is dropped, as in the native walker. That one
+    // logs "CCT prim must be a capsule geom"; this module links no logging backend
+    // (there is no carb/logging dependency in omni.physics.ovstage), so the drop is
+    // silent here.
+    if (!src.isA(key, src.internToken("Capsule")))
+        return;
+
+    // UsdGeomCapsule schema fallbacks: radius 0.5, height 1.0 -- the same pair the
+    // capsule SHAPE path below uses. `getAttribute` leaves `out` untouched on a miss,
+    // so these initializers ARE the fallback whenever the source has no resident USD
+    // stage to fall back through. The native walker gets away with initializing
+    // radius to 1.0 because `GetRadiusAttr().Get()` on a typed capsule always writes
+    // the schema fallback; here 1.0 would silently double an unauthored CCT's width.
+    double radiusAttr = 0.5, heightAttr = 1.0;
+    src.getAttribute(key, src.internToken("radius"), radiusAttr);
+    src.getAttribute(key, src.internToken("height"), heightAttr);
+
+    Matrix4d world;
+    src.getLocalToWorldTransform(key, world);
+    Matrix3d rotation;
+    carb::Float3 scale{ 1.0f, 1.0f, 1.0f };
+    src.getLocalToWorldRotationAndScale(key, rotation, scale);
+
+    CctInfo info;
+    info.radius = scale.y * static_cast<float>(radiusAttr);
+    info.halfHeight = scale.z * static_cast<float>(heightAttr) * 0.5f;
+    info.scale = scale;
+    info.pos = { static_cast<float>(world.data[12]), static_cast<float>(world.data[13]),
+                 static_cast<float>(world.data[14]) };
+    src.getRelationshipTargets(key, src.internToken("physxCharacterController:simulationOwner"),
+                               info.simulationOwners);
+
+    if (DescPtr<CapsuleCctDesc> desc = parseCct(ctx, key, info))
+        out.ccts.push_back(std::move(desc));
+}
+
 bool isPointBased(const OvstageSource& src, ObjectKey key)
 {
     return src.isA(key, src.internToken("PointBased"));
+}
+
+// A tet sim mesh is identified by its TET DATA, not by its concrete prim type.
+//
+// ovstage's `usd-prim-type` column reports a UsdGeomTetMesh as plain "Mesh" — the
+// populator has no TetMesh mapping — and isType() is an exact string match with no
+// inheritance, so requiring "TetMesh" here rejected every volume deformable whose
+// sim mesh came from ovstage. The surface branch only worked by luck: its required
+// type IS the fallback the populator emits.
+//
+// Gating on the presence of readable tetVertexIndices is both weaker in the right
+// way and stronger in practice: OmniPhysicsVolumeDeformableSimAPI already declares
+// intent, and tet connectivity is what the consumer actually needs. USD still
+// satisfies the fast path, since there the prim really is a TetMesh.
+// Presence check only — resolve the buffer to prove it is readable, but never copy it. A tet
+// mesh's connectivity is one of the largest arrays on the prim and this runs per candidate prim.
+bool hasTetConnectivity(const OvstageSource& src, ObjectKey key)
+{
+    const BufferHandle h = src.readArrayAttribute(key, "tetVertexIndices", BufferElemType::eInt4, 4);
+    if (!h.valid())
+        return false;
+    size_t byteCount = 0;
+    const bool readable = src.resolveBuffer(h, byteCount) != nullptr;
+    const bool nonEmpty = readable && h.elemCount > 0 && byteCount > 0;
+    src.releaseBuffer(h);
+    return nonEmpty;
 }
 
 bool isDeformableSimMesh(const OvstageSource& src, ovstage_instance_t* inst, ObjectKey key, ObjectType& outType)
@@ -1761,7 +2011,7 @@ bool isDeformableSimMesh(const OvstageSource& src, ovstage_instance_t* inst, Obj
     outType = eUndefined;
     if (src.hasSchema(key, src.internToken("OmniPhysicsVolumeDeformableSimAPI")))
     {
-        if (!isType(src, inst, key, "TetMesh"))
+        if (!isType(src, inst, key, "TetMesh") && !hasTetConnectivity(src, key))
             return false;
         outType = eVolumeDeformableBody;
         return true;
@@ -1783,7 +2033,13 @@ bool isEnabledCollisionGeom(const OvstageSource& src, ObjectKey key)
     if (!isPointBased(src, key))
         return false;
     bool enabled = true;
-    src.getAttribute(key, src.internToken("physics:collisionEnabled"), enabled);
+    const TokenId collisionEnabled = src.internToken("physics:collisionEnabled");
+    if (!src.getAttribute(key, collisionEnabled, enabled))
+    {
+        const ObjectKey backing = src.collisionAttributeBackingKey(key);
+        if (backing.valid() && backing != key)
+            src.getAttribute(backing, collisionEnabled, enabled);
+    }
     return enabled;
 }
 
@@ -2020,21 +2276,47 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
                               IDescriptorAllocator& allocator,
                               ovstage_ordinal_t readOrdinal,
                               const OvstageScanFilter* filter,
-                              uint64_t usdStageId)
+                              uint64_t usdStageId,
+                              OvstageSource* attached)
 {
     OvstageScanResult out;
     if (!instance || !dict)
         return out;
 
-    std::unique_ptr<OvstageSource> source = std::make_unique<OvstageSource>(instance, dict, readOrdinal, usdStageId);
-    OvstageSource& src = *source;
-    out.source = std::move(source);
-    src.beginLoadCache();
+    if (attached && attached->instance() != instance)
+        attached = nullptr; // a foreign attach's source cannot mint keys for this instance
+    std::unique_ptr<OvstageSource> owned;
+    if (!attached)
+        owned = std::make_unique<OvstageSource>(instance, dict, readOrdinal, usdStageId);
+    OvstageSource& src = attached ? *attached : *owned;
+    out.source = std::move(owned);
+    out.borrowedSource = attached;
+    // A consumer that opened a load-cache window on the attached source around its whole
+    // incremental load (LoadStage::loadFromRange) shares it: the scan's prefetches then also
+    // serve the consumer's follow-up reads, and the window is the consumer's to end.
+    const bool ownWindow = !(attached && attached->loadCacheActive());
+    if (ownWindow)
+        src.beginLoadCache();
+    // A borrowed source outlives the scan: drop the concept bucket with the load cache, or its
+    // last prefetch would keep serving later reads. A caller that re-enters the scan with a
+    // bucket of its own open (a drain's seeded read group, the mass update's prefetch, through
+    // PointInstancer::parsePrototype or the collision-group scan) gets it back instead: the
+    // scan's prefetches run on a suspended copy, mirroring the load-cache window join above.
     struct ScopedLoadCache
     {
         OvstageSource& source;
-        ~ScopedLoadCache() { source.clearLoadCache(); }
-    } scopedLoadCache{ src };
+        bool endWindow;
+        OvstageSource::BucketSnapshotPtr callerBucket;
+        ~ScopedLoadCache()
+        {
+            if (endWindow)
+                source.clearLoadCache();
+            if (callerBucket)
+                source.resumeBucket(std::move(callerBucket));
+            else
+                source.clearBucket();
+        }
+    } scopedLoadCache{ src, ownWindow, attached ? src.suspendBucket() : nullptr };
 
     ParseContext ctx(src, allocator);
     const SourceUnits units = src.getSourceUnits();
@@ -2094,75 +2376,75 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
                 return true;
         return false;
     };
-
-    // Ovstage enumeration and schema-cache iteration order can vary with
-    // process history. Re-rank every bucket by one stable depth-first traversal
-    // of the path-sorted source hierarchy so scan order depends only on the
-    // populated stage.
-    std::unordered_map<uint64_t, uint32_t> namespaceOrder;
-    bool namespaceOrderBuilt = false;
-    auto buildNamespaceOrder = [&]()
-    {
-        if (namespaceOrderBuilt)
-            return;
-        namespaceOrderBuilt = true;
-
-        std::vector<ObjectKey> hierarchy;
-        src.collectDescendantKeys(src.getRootKey(), hierarchy);
-        namespaceOrder.reserve(hierarchy.size() * 2);
-        uint32_t index = 0;
-        for (const ObjectKey key : hierarchy)
-        {
-            namespaceOrder.emplace(key.handle, index);
-            const uint64_t canonical = src.canonicalPath(key);
-            if (canonical && canonical != key.handle)
-                namespaceOrder.emplace(canonical, index);
-            ++index;
-        }
-    };
+    // --- Deterministic enumeration order ---------------------------------------
+    //
+    // ovstage does NOT give a stage-derived enumeration order, from either of the
+    // two routes a bucket's keys arrive by:
+    //   - enumerate() unions the prims.list of every read group returned for a
+    //     column, and ovstage emits those groups in an order that varies with
+    //     process history. The same column with byte-identical group contents was
+    //     observed coming back in three different orders depending on what had
+    //     been attached earlier in the process.
+    //   - collectSchemaKeys() serves from an unordered_set of prim handles, so its
+    //     iteration order is hash order over handles that themselves migrate
+    //     between id arenas as more ovstage instances are created.
+    //
+    // Scan order is load-bearing: Articulation.cpp::createArticulationLinks sorts
+    // the joint vector by scan index ("required to maintain parsing order and
+    // determinism") and createLinkHierarchy DFS-walks it, so scan order becomes
+    // PhysX link and DOF indices. An unstable order therefore silently permutes
+    // every tensor-view column for an identical asset — no error, matching counts,
+    // only the meaning of the indices moves.
+    //
+    // Re-key every enumerated bucket to the source hierarchy's depth-first
+    // traversal order. For valid absolute prim paths this is exactly one
+    // decorate-sort by canonical path string: USD prim names are [A-Za-z0-9_]+ and
+    // the '/' separator (0x2F) sorts below every legal name character, so
+    // lexicographic full-path order IS preorder DFS with path-sorted siblings.
+    // That guarantee needs no per-ancestor sibling query and no whole-stage walk,
+    // and — unlike an ancestor-chain rank that routes each key to its immediate
+    // parent's observed child set — it stays correct when an intermediate
+    // hierarchy level has no queryable row of its own: a child's full path sorts
+    // into position whether or not its typeless "/World"-style ancestors are
+    // separately enumerable (e.g. "/World/a/body" before "/World/z" even when
+    // "/World/a" is never authored as its own row).
+    //
+    // This makes ovstage agree with ITSELF across process histories. It does
+    // NOT make it agree with the USD backend: ovstage exposes no authoring
+    // order, and USD namespace order is authoring order, not path order.
+    // Articulation link/DOF indices therefore still differ between the two
+    // backends — closing that gap needs authoring order from ovstage.
+    //
+    // The sort key is the resolved canonical path string (never ObjectKey.handle
+    // -- ADR-0021): ObjectKey packs a per-instance local index over whichever raw
+    // handle happened to be interned first for a path, so two ObjectKeys naming
+    // the same prim are not guaranteed to carry the same packed handle. The path
+    // string is the one stable, alias-independent identity this ordering relies
+    // on, and OvstageSource resolves it from an interned per-key cache (no ovstage
+    // query, no stage walk). Keys whose path cannot be resolved (unparented /
+    // private rows) have no namespace position and are parked after the ranked
+    // keys, ordered among themselves by that same string, so the result is fully
+    // determined either way (REQ-PARSE-SCAN-001 AC-14).
     auto orderBucketKeys = [&](std::vector<ObjectKey>& keys)
     {
         if (keys.size() < 2)
             return;
-        buildNamespaceOrder();
-
-        struct RankedKey
-        {
-            uint32_t rank;
-            std::string fallback;
-            ObjectKey key;
-        };
-
-        std::vector<RankedKey> ranked;
-        ranked.reserve(keys.size());
+        std::vector<std::pair<std::string, ObjectKey>> decorated;
+        decorated.reserve(keys.size());
         for (const ObjectKey key : keys)
-        {
-            std::unordered_map<uint64_t, uint32_t>::const_iterator it = namespaceOrder.find(key.handle);
-            if (it == namespaceOrder.end())
-            {
-                const uint64_t canonical = src.canonicalPath(key);
-                if (canonical)
-                    it = namespaceOrder.find(canonical);
-            }
-            if (it != namespaceOrder.end())
-            {
-                ranked.push_back(RankedKey{ it->second, std::string(), key });
-            }
-            else
-            {
-                ranked.push_back(
-                    RankedKey{ std::numeric_limits<uint32_t>::max(), std::string(src.sourceKeyToString(key)), key });
-            }
-        }
-        std::sort(ranked.begin(), ranked.end(),
-                  [](const RankedKey& a, const RankedKey& b)
-                  {
-                      if (a.rank != b.rank)
-                          return a.rank < b.rank;
-                      return a.fallback < b.fallback;
-                  });
-        for (size_t i = 0; i < ranked.size(); ++i)
-            keys[i] = ranked[i].key;
+            decorated.emplace_back(std::string(src.sourceKeyToString(key)), key);
+        std::stable_sort(decorated.begin(), decorated.end(),
+                         [](const std::pair<std::string, ObjectKey>& a,
+                            const std::pair<std::string, ObjectKey>& b) -> bool
+                         {
+                             // Ranked (path-resolved) keys sort before parked
+                             // (unresolved-path) keys; within each group, by path.
+                             if (a.first.empty() != b.first.empty())
+                                 return !a.first.empty();
+                             return a.first < b.first;
+                         });
+        for (size_t i = 0; i < keys.size(); ++i)
+            keys[i] = decorated[i].second;
     };
 
     auto applyScanFilter = [&](Bucket bucket) -> Bucket
@@ -2181,12 +2463,26 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     auto enumerateFiltered = [&](const char* predAttr, ovstage_filter_op_t op, const char* predValue,
                                  const char* probeAttr, ovstage_ordinal_t ordinal) -> Bucket
     {
-        return applyScanFilter(enumerate(instance, dict, predAttr, op, predValue, probeAttr, ordinal, nullptr));
+        return applyScanFilter(enumerate(src, instance, dict, predAttr, op, predValue, probeAttr, ordinal, nullptr));
     };
     auto enumeratePrimTypeFiltered = [&](const char* typeName, const char* probeAttr,
                                          ovstage_ordinal_t ordinal) -> Bucket
     {
-        Bucket bucket = enumerate(instance, dict, "usd-prim-type", OVSTAGE_FILTER_OP_IN,
+        // A family the source's type index knows to be empty costs no whole-stage query; a
+        // populated one still enumerates live, which also discovers the columns its bucket
+        // prefetches.
+        std::vector<ObjectKey> indexed;
+        if (src.collectPrimTypeKeys(typeName, indexed))
+        {
+            // Nor does a populated family none of whose prims the scan's filter would keep (a
+            // scoped rescan below a spawned prim, with the scene elsewhere): the live enumerate
+            // could only return keys applyScanFilter drops.
+            const bool anyInScope = std::any_of(indexed.begin(), indexed.end(), [&](ObjectKey key)
+                                                { return keyPassesFilter(key) && !isBelowPointInstancer(key); });
+            if (!anyInScope)
+                return Bucket{};
+        }
+        Bucket bucket = enumerate(src, instance, dict, "usd-prim-type", OVSTAGE_FILTER_OP_IN,
                                   typeName, probeAttr, ordinal, conv::kUsdPath);
         return applyScanFilter(std::move(bucket));
     };
@@ -2207,7 +2503,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             return applyScanFilter(std::move(bucket));
         }
 
-        Bucket bucket = enumerateSchema(instance, dict, schemaName, probeAttr, ordinal);
+        Bucket bucket = enumerateSchema(src, instance, dict, schemaName, probeAttr, ordinal);
         return applyScanFilter(bucket);
     };
     auto enumerateSchemasFiltered = [&](const char* const* schemaNames, size_t schemaCount, const char* probeAttr,
@@ -2217,14 +2513,17 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         for (size_t i = 0; i < schemaCount; ++i)
         {
             Bucket one = enumerateSchemaFiltered(schemaNames[i], probeAttr, ordinal);
-            appendUnique(outBucket.keys, one.keys);
+            appendUnique(src, outBucket.keys, one.keys);
             for (const std::string& attr : one.attrs)
             {
                 if (std::find(outBucket.attrs.begin(), outBucket.attrs.end(), attr) == outBucket.attrs.end())
                     outBucket.attrs.push_back(attr);
             }
         }
-        // Re-order the union rather than preserving schema-bucket append order.
+        // Each per-schema bucket is namespace-ordered on its own, but appending
+        // them yields [schema0 keys][schema1 keys]. Re-order the union so a prim
+        // carrying several of the schemas lands at its namespace position rather
+        // than at whichever schema happened to claim it first.
         orderBucketKeys(outBucket.keys);
         return outBucket;
     };
@@ -2244,6 +2543,10 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     const TokenId tokCollisionAPI = src.internToken("PhysicsCollisionAPI");
     const TokenId tokCollisionEnabled = src.internToken("physics:collisionEnabled");
     const TokenId tokSimulationOwner = src.internToken("physics:simulationOwner");
+    const TokenId tokGeomSubset = src.internToken("GeomSubset");
+    const TokenId tokElementType = src.internToken("elementType");
+    const TokenId tokFace = src.internToken("face");
+    const TokenId tokPhysicsMaterialAPI = src.internToken("PhysicsMaterialAPI");
 
     const bool prunePointInstancerDescendants = !filter || filter->prunePointInstancerDescendants;
     auto collectPointInstancerPrimType = [&](const char* typeName)
@@ -2259,6 +2562,16 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     };
     collectPointInstancerPrimType("PointInstancer");
     collectPointInstancerPrimType("PhysxPhysicsJointInstancer");
+    // Consumer-registered instancer-shaped prim types (REQ-PARSE-CORE-005). The
+    // native walker tests every prim's type against the registry; ovstage
+    // enumerates instead, so this is one extra query per registered token —
+    // ADR-0002 open question 1. "PhysxPhysicsJointInstancer" is pre-registered
+    // and already collected above; skip it rather than query it twice.
+    for (const std::string& instancerToken : parse::customTokens(parse::CustomTokenKind::ePhysicsInstancer))
+    {
+        if (instancerToken != "PointInstancer" && instancerToken != "PhysxPhysicsJointInstancer")
+            collectPointInstancerPrimType(instancerToken.c_str());
+    }
 
     // --- Scenes (PRIM_TYPE == PhysicsScene) ---
     Bucket sceneBucket = enumeratePrimTypeFiltered("PhysicsScene", "physics:gravityMagnitude", readOrdinal);
@@ -2295,14 +2608,30 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     // consumer (which skips the source existence/ownership gates for it). See
     // makeDefaultSceneDesc + LoadStage processScannedDescs.
     //
-    // "This stage authors no PhysicsScene" is a whole-stage fact and cannot be
-    // concluded from a scoped scan. An incremental re-scan rooted at a newly added
-    // prim normally contains no scene, so synthesizing one here published a
-    // spurious extra `/__defaultPhysicsScene__` on every runtime prim add.
+    // "This stage authors no PhysicsScene" is a WHOLE-STAGE fact and cannot be
+    // concluded from a SCOPED scan. An incremental re-scan rooted at a newly added
+    // prim (PrimUpdateMap::addPrim) normally contains no scene, so synthesizing one
+    // here published a spurious extra `/__defaultPhysicsScene__` on every runtime
+    // prim add — measured as a third object-created notification where USD reports
+    // two. The USD path has no walker-side synthesis at all: LoadStage creates its
+    // default scene only when `initialStageLoad && !mSceneFound`. Gating on an
+    // unscoped scan is the ovstage mirror of that, and a scoped initial load still
+    // gets LoadStage's own fallback.
     //
-    // An exclude-only filter also scopes the scan unless every excluded path is a
-    // root prim. Root-prim excludes are ignored by keyPassesFilter for parity with
-    // the legacy traversal path and therefore do not make the scan scoped.
+    // An exclude-only filter scopes the scan just as much as a `scanRoots` one does --
+    // the excluded subtree is exactly where the authored scene may live -- so it must
+    // not synthesize either. "Scoped" here has to mean the same thing it means to
+    // `keyPassesFilter` above, which *ignores* a root-prim-level exclude (see
+    // `LoadStage.cpp::forEachLoadObject` for why: the legacy `Traverse()` walk yielded
+    // the root prim unchecked, so excluding e.g. "/World" was always a no-op). An
+    // exclude list holding only such paths therefore prunes nothing and leaves the
+    // scan genuinely whole-stage.
+    //
+    // Scope note: no in-repo runtime caller constructs an exclude-only filter today.
+    // `loadFromStage` passes `scanRoots{SdfPath::AbsoluteRootPath()}` on every load,
+    // selective or not (`LoadStage.cpp`), so the production selective-load path was
+    // already scoped by its roots. This gate is the direct `scanOvstage` /
+    // `IScanBackend` contract, pinned by `TestOvstageWalker.cpp`.
     const bool excludesScopeTheScan =
         filter && std::any_of(filter->excludePaths.begin(), filter->excludePaths.end(),
                               [&](const std::string& exclude) { return !isRootPrimPath(exclude); });
@@ -2399,7 +2728,67 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     const size_t bodyAttrCount = bodyBucket.attrs.size();
     appendRigidBodyAttrs(bodyBucket);
     appendMassAttrs(bodyBucket);
+
+    // The collision-shape family is enumerated here (the shape section below reuses it) so ONE
+    // columnar read can cover both families: bodies, shapes, their geometry backings and every
+    // ancestor, times every column the two sections and the consumer's follow-ups (mass update,
+    // actor setup) ask. Under the load cache the per-section prefetches below then find their
+    // columns covered and read nothing; usd-path in the set seeds the existence memo for the
+    // ancestor chains the actor setup walks.
+    Bucket shapeBucket = enumerateSchemaFiltered("PhysicsCollisionAPI", conv::kLocalTransform, readOrdinal);
+    const std::vector<std::string> shapeDiscoveredAttrs = shapeBucket.attrs;
+    const size_t shapeAttrCount = shapeBucket.attrs.size();
+    appendCollisionShapeAttrs(shapeBucket);
+    appendMassAttrs(shapeBucket);
+    std::vector<ObjectKey> shapeReadKeys = shapeBucket.keys;
+    {
+        std::unordered_set<uint64_t> shapeReadCanonical;
+        shapeReadCanonical.reserve(shapeBucket.keys.size() * 3);
+        for (const ObjectKey key : shapeBucket.keys)
+        {
+            const uint64_t canonical = src.canonicalPath(key);
+            if (canonical)
+                shapeReadCanonical.insert(canonical);
+        }
+        for (const ObjectKey key : shapeBucket.keys)
+        {
+            const ObjectKey backingKey = src.geometryBackingKey(key);
+            const uint64_t canonical = src.canonicalPath(backingKey);
+            if (canonical && shapeReadCanonical.insert(canonical).second)
+                shapeReadKeys.push_back(backingKey);
+            const ObjectKey collisionBackingKey = src.collisionAttributeBackingKey(key);
+            const uint64_t collisionCanonical = src.canonicalPath(collisionBackingKey);
+            if (collisionCanonical && shapeReadCanonical.insert(collisionCanonical).second)
+                shapeReadKeys.push_back(collisionBackingKey);
+        }
+    }
+    {
+        Bucket merged;
+        std::unordered_set<uint64_t> mergedIdentity; // canonical prim id: one row per prim
+        auto addKeys = [&](const std::vector<ObjectKey>& keys)
+        {
+            for (const ObjectKey key : keys)
+            {
+                const uint64_t canonical = src.canonicalPath(key);
+                if (mergedIdentity.insert(canonical ? canonical : key.handle).second)
+                    merged.keys.push_back(key);
+            }
+        };
+        addKeys(bodyBucket.keys);
+        addKeys(shapeReadKeys);
+        addKeys(src.collectAncestors(merged.keys));
+        appendTransformAttrs(merged);
+        for (const std::string& attr : OvstageSource::relationshipPrefetchAttrs())
+            appendBucketAttr(merged, attr.c_str());
+        for (const Bucket* family : { &bodyBucket, &shapeBucket })
+            for (const std::string& attr : family->attrs)
+                appendBucketAttr(merged, attr.c_str());
+        appendBucketAttr(merged, conv::kUsdPath);
+        src.prefetchBucket(merged.keys, merged.attrs);
+    }
+
     prefetchTransformAncestors(src, bodyBucket.keys);
+    src.prefetchRelationshipAncestors(bodyBucket.keys);
     prefetchTransformsForKeys(src, bodyBucket.keys);
     src.prefetchBucket(bodyBucket.keys, bodyDiscoveredAttrs);
     src.prefetchBucket(bodyBucket.keys, appendedAttrs(bodyBucket, bodyAttrCount));
@@ -2517,32 +2906,12 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
 
     // --- Collision shapes (HAS_APPLIED_SCHEMA PhysicsCollisionAPI) ---
     // Analytic and mesh geometry keep logical identity and transforms on an
-    // instance-proxy path while reading authored geometry from its prototype.
-    Bucket shapeBucket = enumerateSchemaFiltered("PhysicsCollisionAPI",
-                                                 conv::kLocalTransform,
-                                                 readOrdinal);
-    const std::vector<std::string> shapeDiscoveredAttrs = shapeBucket.attrs;
-    const size_t shapeAttrCount = shapeBucket.attrs.size();
-    appendCollisionShapeAttrs(shapeBucket);
-    appendMassAttrs(shapeBucket);
+    // instance-proxy path while reading authored geometry from its prototype. The family
+    // (shapeBucket / shapeReadKeys) was enumerated with the rigid bodies above; the merged read
+    // there already covers these prefetches under the load cache.
     prefetchTransformAncestors(src, shapeBucket.keys);
+    src.prefetchRelationshipAncestors(shapeBucket.keys);
     prefetchTransformsForKeys(src, shapeBucket.keys);
-    std::vector<ObjectKey> shapeReadKeys = shapeBucket.keys;
-    std::unordered_set<uint64_t> shapeReadCanonical;
-    shapeReadCanonical.reserve(shapeBucket.keys.size() * 2);
-    for (const ObjectKey key : shapeBucket.keys)
-    {
-        const uint64_t canonical = src.canonicalPath(key);
-        if (canonical)
-            shapeReadCanonical.insert(canonical);
-    }
-    for (const ObjectKey key : shapeBucket.keys)
-    {
-        const ObjectKey backingKey = src.geometryBackingKey(key);
-        const uint64_t canonical = src.canonicalPath(backingKey);
-        if (canonical && shapeReadCanonical.insert(canonical).second)
-            shapeReadKeys.push_back(backingKey);
-    }
     src.prefetchBucket(shapeReadKeys, shapeDiscoveredAttrs);
     src.prefetchBucket(shapeReadKeys, appendedAttrs(shapeBucket, shapeAttrCount));
     enum class PrimType : uint8_t
@@ -2554,25 +2923,20 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         eCone,
         ePlane,
         eMesh,
+        eNone, // resolved, but not one of the analytic types above (e.g. Xform)
     };
+    // No eager stage-wide prefetch here: primTypeIs() below is a per-key point
+    // query (usd-path IN [key] AND usd-prim-type IN [type], never a subtree or
+    // prefix scan), so its cost is bounded by the number of collision shapes
+    // actually classified, not by stage size. A prior version of this code
+    // prefetched every prim of each analytic type stage-wide into
+    // primTypeByCanonical up front -- including render-only geometry that has
+    // nothing to do with physics -- which made attach cost scale with total
+    // scene size instead of physics-relevant shape count (NVBug 6532970).
+    // primTypeByCanonical is instead populated lazily by primTypeIs() the first
+    // time a key's type resolves, so repeat probes for the same shape are served
+    // from the map.
     std::unordered_map<uint64_t, PrimType> primTypeByCanonical;
-    auto rememberPrimType = [&](const char* typeName, PrimType primType)
-    {
-        const Bucket typeBucket = enumeratePrimTypeFiltered(typeName, conv::kLocalTransform, readOrdinal);
-        for (const ObjectKey typeKey : typeBucket.keys)
-        {
-            const uint64_t canonical = src.canonicalPath(typeKey);
-            if (canonical)
-                primTypeByCanonical[canonical] = primType;
-        }
-    };
-    rememberPrimType("Cube", PrimType::eCube);
-    rememberPrimType("Sphere", PrimType::eSphere);
-    rememberPrimType("Capsule", PrimType::eCapsule);
-    rememberPrimType("Cylinder", PrimType::eCylinder);
-    rememberPrimType("Cone", PrimType::eCone);
-    rememberPrimType("Plane", PrimType::ePlane);
-    rememberPrimType("Mesh", PrimType::eMesh);
     auto primTypeName = [](PrimType primType) -> const char*
     {
         switch (primType)
@@ -2584,8 +2948,22 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         case PrimType::eCone: return "Cone";
         case PrimType::ePlane: return "Plane";
         case PrimType::eMesh: return "Mesh";
+        case PrimType::eNone: return nullptr;
         }
         return nullptr;
+    };
+    // Map an authored USD type name to one of the analytic PrimType buckets. Returns
+    // eNone for any prim whose type is not analytic geometry (Xform colliders, etc.).
+    auto primTypeFromName = [](std::string_view s) -> PrimType
+    {
+        if (s == "Cube") return PrimType::eCube;
+        if (s == "Sphere") return PrimType::eSphere;
+        if (s == "Capsule") return PrimType::eCapsule;
+        if (s == "Cylinder") return PrimType::eCylinder;
+        if (s == "Cone") return PrimType::eCone;
+        if (s == "Plane") return PrimType::ePlane;
+        if (s == "Mesh") return PrimType::eMesh;
+        return PrimType::eNone;
     };
     auto primTypeIs = [&](ObjectKey key, PrimType primType) -> bool
     {
@@ -2595,6 +2973,22 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         std::unordered_map<uint64_t, PrimType>::const_iterator it = primTypeByCanonical.find(canonical);
         if (it != primTypeByCanonical.end())
             return it->second == primType;
+
+        // Resolve the prim type once (getTypeName reads the geometry backing; tetMesh
+        // reports as "Mesh") so the analytic-type probes below hit the cache.
+        const TokenId actualTypeToken = src.getTypeName(key);
+        if (actualTypeToken.valid())
+        {
+            const std::string_view actualTypeName = src.tokenToString(actualTypeToken);
+            if (!actualTypeName.empty())
+            {
+                const PrimType resolved = primTypeFromName(actualTypeName);
+                primTypeByCanonical.emplace(canonical, resolved);
+                return resolved == primType;
+            }
+        }
+
+        // usd-prim-type unreadable: keep the uncached per-type probe.
         const char* typeName = primTypeName(primType);
         if (!typeName)
             return false;
@@ -2602,27 +2996,104 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         if (ovx_path_dictionary_intern_token(dict, ovxStr(typeName), &typeToken) == OVX_OK &&
             tokenColumnContains(instance, dict, src, key, conv::kUsdPrimType, typeToken, readOrdinal))
         {
+            // Remember the resolved type: the classifier calls primTypeIs() for
+            // several candidate types per shape (and Mesh twice, for subset
+            // materials), so caching the positive result answers the repeat and
+            // every subsequent candidate from the map instead of paying another
+            // synchronous usd-prim-type / isType() probe per shape.
+            primTypeByCanonical.emplace(canonical, primType);
             return true;
         }
-        return isType(src, instance, key, typeName);
+        if (isType(src, instance, key, typeName))
+        {
+            primTypeByCanonical.emplace(canonical, primType);
+            return true;
+        }
+        return false;
+    };
+
+    // Consumer-registered custom-geometry tokens (REQ-PARSE-CORE-005). A token
+    // matches either as an applied API on the collider or as its prim type, so
+    // both are resolved here: applied APIs through the source's schema map, prim
+    // types through one query per token (ADR-0002 open question 1) folded into a
+    // canonical-path -> token index the way `rememberPrimType` does for the
+    // analytic types.
+    //
+    // `PhysxMeshMergeCollisionAPI` is deliberately excluded. It is pre-registered
+    // as a shape token but the native walker routes it to a *typed* mesh-merge
+    // descriptor (`buildMeshMergeCustomShape`), not to a generic
+    // CustomPhysxShapeDesc, and that builder has no ovstage counterpart. Letting
+    // it through here would replace today's behaviour (children picked up as
+    // ordinary colliders) with a custom shape whose hash no consumer has
+    // registered — strictly worse. Mesh merge stays exactly as measured in
+    // PLAN-ovstage-test-coverage-completion.md §6 gap #16.
+    static const std::string kMeshMergeToken = "PhysxMeshMergeCollisionAPI";
+    const std::vector<std::string> customShapeTokens = parse::customTokens(parse::CustomTokenKind::eShape);
+    std::vector<TokenId> customShapeSchemaTokens;
+    customShapeSchemaTokens.reserve(customShapeTokens.size());
+    std::unordered_map<uint64_t, size_t> customShapeTokenByCanonical;
+    for (size_t i = 0; i < customShapeTokens.size(); ++i)
+    {
+        const std::string& shapeToken = customShapeTokens[i];
+        customShapeSchemaTokens.push_back(shapeToken == kMeshMergeToken ? TokenId{} :
+                                                                          src.internToken(shapeToken));
+        if (shapeToken == kMeshMergeToken)
+            continue;
+        const Bucket tokenBucket = enumeratePrimTypeFiltered(shapeToken.c_str(), conv::kLocalTransform, readOrdinal);
+        for (const ObjectKey tokenKey : tokenBucket.keys)
+        {
+            const uint64_t canonical = src.canonicalPath(tokenKey);
+            if (canonical)
+                customShapeTokenByCanonical.emplace(canonical, i);
+        }
+    }
+    // Index of the registered token that makes `colliderKey` a custom shape, or
+    // npos. Applied APIs are tested first, matching the native walker's
+    // `isCustomShapeApplied`, which scans the applied-API list before falling
+    // back to the prim type.
+    auto findCustomShapeToken = [&](ObjectKey colliderKey) -> size_t
+    {
+        if (customShapeTokens.empty())
+            return std::string::npos;
+        for (size_t i = 0; i < customShapeSchemaTokens.size(); ++i)
+        {
+            if (customShapeSchemaTokens[i].valid() && src.hasSchema(colliderKey, customShapeSchemaTokens[i]))
+                return i;
+        }
+        const uint64_t canonical = src.canonicalPath(colliderKey);
+        if (canonical)
+        {
+            const std::unordered_map<uint64_t, size_t>::const_iterator it =
+                customShapeTokenByCanonical.find(canonical);
+            if (it != customShapeTokenByCanonical.end())
+                return it->second;
+        }
+        return std::string::npos;
     };
 
     // Build and register one shape for a (collider, logical gprim) pair.
     // colliderKey owns collision state and gprimKey owns runtime identity,
-    // transforms, and material. geometryKey is private ovstage backing used only
-    // for prototype-authored type and geometry values.
+    // transforms, and material. geometryKey is private ovstage backing for
+    // prototype-authored type and geometry values. Selected collision values
+    // may use colliderBackingKey only after their logical read misses.
     auto emitShape = [&](ObjectKey colliderKey, ObjectKey gprimKey) -> bool
     {
         if (isDeformableCollider(colliderKey))
             return true;
         const ObjectKey geometryKey = src.geometryBackingKey(gprimKey);
+        const ObjectKey colliderBackingKey = src.collisionAttributeBackingKey(colliderKey);
 
         ShapeInfo info;
         info.rigidBody = resolveBody(colliderKey);
         info.sourceGprim = gprimKey;
-        src.getAttribute(colliderKey, tokCollisionEnabled, info.collisionEnabled);
-        // info.simulationOwners left empty so the parsers do not drop the shape
-        // on unresolved scenes (M2 single-scene scope).
+        info.collisionAttributeFallback = colliderBackingKey;
+        if (!src.getAttribute(colliderKey, tokCollisionEnabled, info.collisionEnabled) &&
+            colliderBackingKey.valid() && colliderBackingKey != colliderKey)
+            src.getAttribute(colliderBackingKey, tokCollisionEnabled, info.collisionEnabled);
+        // info.simulationOwners stays empty so the parsers do not drop the shape on
+        // unresolved scenes; the collider's owners are read onto the descriptor's
+        // sourceSimulationOwners below, which is where the native walker puts them
+        // and where the consumer resolves them.
 
         Matrix3d gprimRot;
         carb::Float3 gprimScale{ 1.0f, 1.0f, 1.0f };
@@ -2638,7 +3109,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             const uint64_t bodyCanonical = src.canonicalPath(info.rigidBody);
             if (src.canonicalPath(gprimKey) != bodyCanonical)
             {
-                PXR_NS::GfMatrix4d relativeTransform(1.0);
+                ::physx::PxMat44d relativeTransform(::physx::PxIdentity);
                 ObjectKey current = gprimKey;
                 for (int guard = 0; current.valid() && guard < 64; ++guard)
                 {
@@ -2648,7 +3119,9 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
                     Matrix4d localTransform;
                     bool resetsXformStack = false;
                     src.getLocalTransform(current, ReadTime::defaultTime(), localTransform, resetsXformStack);
-                    relativeTransform *= toGfMatrix4d(localTransform);
+                    // Gf order was `relativeTransform *= local`; operands swap in
+                    // PhysX order (see common/foundation/MatrixTools.h).
+                    relativeTransform = toPxMat44d(localTransform) * relativeTransform;
                     if (resetsXformStack)
                         break;
                     current = src.getParent(current);
@@ -2657,16 +3130,9 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
                 Matrix4d bodyWorldTransform;
                 src.getLocalToWorldTransform(info.rigidBody, bodyWorldTransform);
 
-                PXR_NS::GfVec3f localPos;
-                PXR_NS::GfQuatf localRot;
-                PXR_NS::GfVec3f localScale;
-                omni::physics::decomposeCollisionShapeLocalTransform(
-                    relativeTransform, toGfMatrix4d(bodyWorldTransform), localPos, localRot, localScale);
-                const PXR_NS::GfVec3f localRotImaginary = localRot.GetImaginary();
-                info.localPos = { localPos[0], localPos[1], localPos[2] };
-                info.localRot = { localRotImaginary[0], localRotImaginary[1], localRotImaginary[2],
-                                  localRot.GetReal() };
-                info.localScale = { localScale[0], localScale[1], localScale[2] };
+                omni::physics::decomposeCollisionShapeLocalTransform(relativeTransform,
+                                                                    toPxMat44d(bodyWorldTransform), info.localPos,
+                                                                    info.localRot, info.localScale);
             }
         }
         else
@@ -2681,7 +3147,38 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
 
         DescPtr<PhysxShapeDesc> shape;
         bool commonFilled = true;
-        if (primTypeIs(geometryKey, PrimType::eCube))
+        // Precedence mirrors NativeWalker::emitShape: a Plane gprim is decided
+        // before the custom-token check (which matters because "Plane" is itself a
+        // pre-registered shape token, a legacy alias for a non-UsdGeomPlane prim
+        // of that type), and the custom branch then outranks every analytic and
+        // mesh branch below -- a custom-geometry API on a Sphere is a custom
+        // shape, not a sphere.
+        //
+        // The two checks deliberately interrogate different keys, matching which
+        // prim NativeWalker::emitShape tests for each: for a collider applied
+        // directly to a gprim, colliderKey/gprimKey/geometryKey all collapse to
+        // that one prim, same as native's single `shapePrim`. For a collider on a
+        // non-gprim ancestor (the Xform-descent branch), native decides
+        // `customShape` exactly once against the collider prim before
+        // descending -- it is never re-tested per descendant child -- while the
+        // Plane check runs per child against that child's own prim. So
+        // `findCustomShapeToken` below is meant to see `colliderKey` (the
+        // collider, fixed across children) and `planeGprim` is meant to see
+        // `geometryKey` (the per-child geometry). Keep it this way rather than
+        // unifying them onto one key; that would change which prim decides
+        // custom-shape-ness for the Xform-descent case and diverge from native.
+        const bool planeGprim = primTypeIs(geometryKey, PrimType::ePlane);
+        const size_t customShapeToken = planeGprim ? std::string::npos : findCustomShapeToken(colliderKey);
+        if (planeGprim)
+        {
+            shape = descPtrCast<PhysxShapeDesc>(parsePlaneShape(ctx, colliderKey, info, readAxis(geometryKey)));
+        }
+        else if (customShapeToken != std::string::npos)
+        {
+            shape = descPtrCast<PhysxShapeDesc>(parseCustomShape(
+                ctx, colliderKey, info, customGeometryTokenHash(customShapeTokens[customShapeToken])));
+        }
+        else if (primTypeIs(geometryKey, PrimType::eCube))
         {
             double sizeAttr = 1.0;
             src.getAttribute(geometryKey, tokSize, sizeAttr);
@@ -2735,10 +3232,6 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             shape = descPtrCast<PhysxShapeDesc>(parseConeShape(
                 ctx, colliderKey, info, std::fabs(scaledRadius), std::fabs(scaledHalfHeight), axis));
         }
-        else if (primTypeIs(geometryKey, PrimType::ePlane))
-        {
-            shape = descPtrCast<PhysxShapeDesc>(parsePlaneShape(ctx, colliderKey, info, readAxis(geometryKey)));
-        }
         else if (primTypeIs(geometryKey, PrimType::eMesh))
         {
             // Mesh collider: build the cooking-input descriptor (triangle / convex /
@@ -2767,15 +3260,52 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         shape->primKey = colliderKey;
         shape->sourceGprim = gprimKey;
 
+        // Per-face physics materials: a collider mesh expresses them as GeomSubset
+        // children that each bind their own material, and that is the only way to
+        // author more than one physics material on a mesh. They occupy
+        // sourceMaterials [0..N) with the collider's own binding as the trailing
+        // default slot, which is the order the consumer hands to
+        // PxShape::setMaterials. Mirrors the native walker's mesh-subset branch.
+        // Resolved on the geometry key so prototype-authored subsets are found for
+        // an instance proxy too.
+        if (primTypeIs(geometryKey, PrimType::eMesh))
+        {
+            src.forEachChild(geometryKey, [&](ObjectKey child)
+            {
+                if (!src.isA(child, tokGeomSubset))
+                    return;
+                TokenId elementType{};
+                if (!src.getAttribute(child, tokElementType, elementType) || elementType != tokFace)
+                    return;
+                // A subset that binds no material of its own resolves the mesh's, so
+                // gate on the material actually being a physics material: a subset
+                // bound only to a render material must not take a slot.
+                const ObjectKey subsetMaterial = src.getMaterialBinding(child);
+                if (subsetMaterial.valid() && src.hasSchema(subsetMaterial, tokPhysicsMaterialAPI))
+                    shape->sourceMaterials.push_back(subsetMaterial);
+            });
+        }
+
         // Read direct material relationships or the resolved instance-material
         // column through the source. Keep the lookup on the logical gprim so
-        // per-instance overrides survive. Mirrors the native walker.
+        // per-instance overrides survive. Mirrors the native walker, including its
+        // unconditional trailing slot: with per-face subsets present the collider's
+        // own binding is the default-fallback entry at index N, and the consumer
+        // indexes it positionally, so the slot has to exist even when nothing is
+        // bound there.
         const ObjectKey material = src.getMaterialBinding(gprimKey);
-        if (material.valid())
+        if (material.valid() || !shape->sourceMaterials.empty())
             shape->sourceMaterials.push_back(material);
 
         // Per-shape collision filtering (PhysxFilteredPairsAPI on the collider).
         shape->sourceFilteredCollisions = parseFilteredPairs(ctx, colliderKey);
+
+        // Collider-level simulationOwner (physics:simulationOwner on CollisionAPI),
+        // which is what decides ownership for a bodyless static collider. Mirrors
+        // the native walker: the owners ride on the descriptor and the consumer
+        // resolves them, rather than going through ShapeInfo — whose
+        // unresolved-scene path drops the shape outright.
+        src.getRelationshipTargets(colliderKey, tokSimulationOwner, shape->sourceSimulationOwners);
 
         if (info.rigidBody.valid())
         {
@@ -2829,6 +3359,33 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         { "PhysxPhysicsGearJoint", eJointGear },
         { "PhysxPhysicsRackAndPinionJoint", eJointRackAndPinion },
     };
+
+    // Consumer-registered custom joint prim types (REQ-PARSE-CORE-005). Mirrors
+    // NativeWalker::jointPrimTypeToParse exactly: the typed schema variants win
+    // on their schema bit, gear / rack win on their name, and the registry's only
+    // effect there is to turn the eJointD6 fallback into eJointCustom. What the
+    // native walker gets for free and this one does not is *reaching* a type the
+    // list above does not name -- it visits every prim, while ovstage queries by
+    // exact prim type -- so a registered type absent from the list needs its own
+    // query (ADR-0002 open question 1).
+    const std::vector<std::string> customJointTokens = parse::customTokens(parse::CustomTokenKind::eJoint);
+    std::vector<JointType> jointTypes(std::begin(kJointTypes), std::end(kJointTypes));
+    for (JointType& jt : jointTypes)
+    {
+        if (jt.type == eJointD6 &&
+            parse::isCustomToken(parse::CustomTokenKind::eJoint, jt.typeName))
+        {
+            jt.type = eJointCustom;
+        }
+    }
+    for (const std::string& jointToken : customJointTokens)
+    {
+        const bool alreadyQueried =
+            std::any_of(std::begin(kJointTypes), std::end(kJointTypes),
+                        [&](const JointType& jt) { return jointToken == jt.typeName; });
+        if (!alreadyQueried)
+            jointTypes.push_back(JointType{ jointToken.c_str(), eJointCustom });
+    }
 
     const TokenId tokJointEnabled = src.internToken("physics:jointEnabled");
     const TokenId tokBreakForce = src.internToken("physics:breakForce");
@@ -2902,15 +3459,11 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
                                    ObjectKey body,
                                    carb::Float3& localPosition,
                                    carb::Float4& localOrientation) {
-        PXR_NS::GfQuatf orientation(
-            localOrientation.w, PXR_NS::GfVec3f(localOrientation.x, localOrientation.y, localOrientation.z));
-        orientation.Normalize();
+        ::physx::PxQuat orientation(localOrientation.x, localOrientation.y, localOrientation.z, localOrientation.w);
+        orientation.normalize();
+        localOrientation = { orientation.x, orientation.y, orientation.z, orientation.w };
         if (!relationshipTarget.valid())
         {
-            const PXR_NS::GfVec3f normalizedImaginary = orientation.GetImaginary();
-            localOrientation = {
-                normalizedImaginary[0], normalizedImaginary[1], normalizedImaginary[2], orientation.GetReal()
-            };
             return;
         }
 
@@ -2921,17 +3474,12 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             body.valid() && src.canonicalPath(body) == src.canonicalPath(relationshipTarget);
         Matrix4d bodyWorld = relationshipWorld;
         if (!body.valid())
-            bodyWorld = Matrix4d{};
+            bodyWorld = Matrix4d{}; // identity (Math.h): no body, the pose stays world-space
         else if (!relationshipTargetsBody)
             src.getLocalToWorldTransform(body, bodyWorld);
 
-        PXR_NS::GfVec3f position(localPosition.x, localPosition.y, localPosition.z);
-        omni::physics::transformJointFrameToBody(
-            toGfMatrix4d(relationshipWorld), toGfMatrix4d(bodyWorld), relationshipTargetsBody, position, orientation);
-
-        const PXR_NS::GfVec3f imaginary = orientation.GetImaginary();
-        localPosition = { position[0], position[1], position[2] };
-        localOrientation = { imaginary[0], imaginary[1], imaginary[2], orientation.GetReal() };
+        omni::physics::transformJointFrameToBody(toPxMat44d(relationshipWorld), toPxMat44d(bodyWorld),
+                                                 relationshipTargetsBody, localPosition, localOrientation);
     };
 
     struct ScannedJointEntry
@@ -2945,14 +3493,87 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     ScannedJointMap jointMap;
     std::vector<ObjectKey> jointOrder;
 
-    for (const JointType& jt : kJointTypes)
+    // Stage-wide joint sub-schema presence: one count-only membership query per family,
+    // OR'd over every instance parseJoint could probe. Any applied instance anywhere
+    // trips the flag, so skipping the per-joint probes is behaviour-preserving. Probed once,
+    // on the first non-empty joint bucket: the flags are read only inside the joint loop, so a
+    // stage without joints keeps the (conservative) defaults and pays nothing.
+    bool jointSchemaPresenceProbed = false;
+    auto probeJointSchemaPresence = [&]()
+    {
+        if (jointSchemaPresenceProbed)
+            return;
+        jointSchemaPresenceProbed = true;
+        auto countOf = [](auto& arr) { return sizeof(arr) / sizeof(arr[0]); };
+        static const char* const kLimit[] = {
+            "PhysxLimitAPI:angular", "PhysxLimitAPI:linear", "PhysxLimitAPI:cone", "PhysxLimitAPI:distance",
+            "PhysxLimitAPI:transX", "PhysxLimitAPI:transY", "PhysxLimitAPI:transZ",
+            "PhysxLimitAPI:rotX", "PhysxLimitAPI:rotY", "PhysxLimitAPI:rotZ" };
+        static const char* const kAxis[] = {
+            "PhysxJointAxisAPI:angular", "PhysxJointAxisAPI:linear",
+            "PhysxJointAxisAPI:rotX", "PhysxJointAxisAPI:rotY", "PhysxJointAxisAPI:rotZ" };
+        static const char* const kEnv[] = {
+            "PhysxDrivePerformanceEnvelopeAPI:angular", "PhysxDrivePerformanceEnvelopeAPI:linear",
+            "PhysxDrivePerformanceEnvelopeAPI:rotX", "PhysxDrivePerformanceEnvelopeAPI:rotY",
+            "PhysxDrivePerformanceEnvelopeAPI:rotZ" };
+        static const char* const kState[] = {
+            "PhysicsJointStateAPI:angular", "PhysicsJointStateAPI:linear",
+            "PhysicsJointStateAPI:transX", "PhysicsJointStateAPI:transY", "PhysicsJointStateAPI:transZ",
+            "PhysicsJointStateAPI:rotX", "PhysicsJointStateAPI:rotY", "PhysicsJointStateAPI:rotZ" };
+        static const char* const kDrive[] = {
+            "PhysicsDriveAPI:angular", "PhysicsDriveAPI:linear",
+            "PhysicsDriveAPI:transX", "PhysicsDriveAPI:transY", "PhysicsDriveAPI:transZ",
+            "PhysicsDriveAPI:rotX", "PhysicsDriveAPI:rotY", "PhysicsDriveAPI:rotZ", "PhysicsDriveAPI:distance" };
+        static const char* const kJointApi[] = { "PhysxJointAPI" };
+        static const char* const kDistApi[] = { "PhysxPhysicsDistanceJointAPI" };
+        // An undeterminable answer keeps the fail-open default (probe per joint).
+        JointSchemaPresence& present = ctx.jointSchemaPresence();
+        auto known = [&](const char* const* names, size_t count, bool& flag)
+        {
+            if (const std::optional<bool> v = src.stageHasAnySchema(names, count))
+                flag = *v;
+        };
+        known(kLimit, countOf(kLimit), present.physxLimit);
+        known(kAxis, countOf(kAxis), present.physxJointAxis);
+        known(kEnv, countOf(kEnv), present.drivePerfEnvelope);
+        known(kState, countOf(kState), present.jointState);
+        known(kDrive, countOf(kDrive), present.physicsDrive);
+        known(kJointApi, countOf(kJointApi), present.physxJointApi);
+        known(kDistApi, countOf(kDistApi), present.physxDistanceJoint);
+    };
+
+    for (const JointType& jt : jointTypes)
     {
         Bucket jointBucket = enumeratePrimTypeFiltered(jt.typeName, "physics:localPos0", readOrdinal);
+        if (!jointBucket.keys.empty())
+            probeJointSchemaPresence();
+        const bool stageHasPhysicsDrive = ctx.jointSchemaPresence().physicsDrive;
         const std::vector<std::string> jointDiscoveredAttrs = jointBucket.attrs;
         const size_t jointAttrCount = jointBucket.attrs.size();
         appendJointAttrs(jointBucket, jt.type);
-        src.prefetchBucket(jointBucket.keys, jointDiscoveredAttrs);
-        src.prefetchBucket(jointBucket.keys, appendedAttrs(jointBucket, jointAttrCount));
+        // Prefetch only gated-family columns some prim authors (trimUnauthoredGatedJointAttrs).
+        trimUnauthoredGatedJointAttrs(jointBucket, jointAttrCount, jointDiscoveredAttrs);
+        // One columnar read of discovered + appended attrs.
+        src.prefetchBucket(jointBucket.keys, jointBucket.attrs);
+
+        // Drive tokens are constant per joint type: intern once here, not per joint.
+        const char* const driveInst = (jt.type == eJointRevolute)  ? "angular"
+                                       : (jt.type == eJointPrismatic) ? "linear"
+                                                                      : nullptr;
+        TokenId driveApiToken, driveStiffnessTok, driveDampingTok, driveTargetPosTok,
+            driveTargetVelTok, driveMaxForceTok, driveTypeTok;
+        if (driveInst)
+        {
+            driveApiToken = src.internToken(std::string("PhysicsDriveAPI:") + driveInst);
+            const std::string pfx = std::string("drive:") + driveInst + ":physics:";
+            driveStiffnessTok = src.internToken(pfx + "stiffness");
+            driveDampingTok = src.internToken(pfx + "damping");
+            driveTargetPosTok = src.internToken(pfx + "targetPosition");
+            driveTargetVelTok = src.internToken(pfx + "targetVelocity");
+            driveMaxForceTok = src.internToken(pfx + "maxForce");
+            driveTypeTok = src.internToken(pfx + "type");
+        }
+
         for (const ObjectKey key : jointBucket.keys)
         {
             JointInfo info;
@@ -2985,16 +3606,17 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
 
             // Authored local frames are relative to the relationship targets;
             // convert them to the resolved body frames after reading.
-            src.getAttribute(key, tokLocalPos0, info.localPose0Position);
+            {             src.getAttribute(key, tokLocalPos0, info.localPose0Position);
             src.getAttribute(key, tokLocalRot0, info.localPose0Orientation);
             src.getAttribute(key, tokLocalPos1, info.localPose1Position);
             src.getAttribute(key, tokLocalRot1, info.localPose1Orientation);
             transformJointFrame(rel0, body0, info.localPose0Position, info.localPose0Orientation);
             transformJointFrame(rel1, body1, info.localPose1Position, info.localPose1Orientation);
+            }
 
             // Per-type axis and single limit. D6 per-axis data and drives are
             // populated separately below.
-            if (jt.type == eJointRevolute || jt.type == eJointPrismatic || jt.type == eJointSpherical)
+            {             if (jt.type == eJointRevolute || jt.type == eJointPrismatic || jt.type == eJointSpherical)
                 info.axis = readJointAxis(key);
             // A limit is active only when a bound is finite and inside the sentinel
             // range; USD's unlimited default (-inf/+inf, or the +-0.5e38 sentinel)
@@ -3084,23 +3706,19 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             // The instance is fixed by joint type ("angular" for revolute,
             // "linear" for prismatic), so it is read directly without multi-apply
             // enumeration. The drive is active iff that DriveAPI instance is applied.
-            if (jt.type == eJointRevolute || jt.type == eJointPrismatic)
+            if (driveInst && stageHasPhysicsDrive && src.hasSchema(key, driveApiToken))
             {
-                const char* inst = (jt.type == eJointRevolute) ? "angular" : "linear";
-                if (src.hasSchema(key, src.internToken(std::string("PhysicsDriveAPI:") + inst)))
-                {
-                    const std::string pfx = std::string("drive:") + inst + ":physics:";
-                    info.drive.enabled = true;
-                    info.drive.forceLimit = FLT_MAX;
-                    src.getAttribute(key, src.internToken(pfx + "stiffness"), info.drive.stiffness);
-                    src.getAttribute(key, src.internToken(pfx + "damping"), info.drive.damping);
-                    src.getAttribute(key, src.internToken(pfx + "targetPosition"), info.drive.targetPosition);
-                    src.getAttribute(key, src.internToken(pfx + "targetVelocity"), info.drive.targetVelocity);
-                    src.getAttribute(key, src.internToken(pfx + "maxForce"), info.drive.forceLimit);
-                    TokenId driveType{};
-                    if (src.getAttribute(key, src.internToken(pfx + "type"), driveType) && driveType.valid())
-                        info.drive.acceleration = (driveType == tokDriveAcceleration);
-                }
+                info.drive.enabled = true;
+                info.drive.forceLimit = FLT_MAX;
+                src.getAttribute(key, driveStiffnessTok, info.drive.stiffness);
+                src.getAttribute(key, driveDampingTok, info.drive.damping);
+                src.getAttribute(key, driveTargetPosTok, info.drive.targetPosition);
+                src.getAttribute(key, driveTargetVelTok, info.drive.targetVelocity);
+                src.getAttribute(key, driveMaxForceTok, info.drive.forceLimit);
+                TokenId driveType{};
+                if (src.getAttribute(key, driveTypeTok, driveType) && driveType.valid())
+                    info.drive.acceleration = (driveType == tokDriveAcceleration);
+            }
             }
 
             DescPtr<PhysxJointDesc> joint = parseJoint(ctx, key, info);
@@ -3202,6 +3820,12 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
                 parseNewtonMimicJoints(ctx, jointKey, info, jointTypeOf, out.mimicJoints);
         }
 
+        // parseFixedTendons probes every joint (one schema read each); skip the pass when no
+        // prim applies a fixed-tendon axis schema. Membership, not authored attributes: an
+        // applied instance with schema-default values is still a tendon.
+        static const char* const kFixedTendonBases[] = { "PhysxTendonAxisRootAPI", "PhysxTendonAxisAPI" };
+        if (src.stageHasAnySchema(kFixedTendonBases, sizeof(kFixedTendonBases) / sizeof(kFixedTendonBases[0]))
+                .value_or(true))
         for (const ObjectKey& jointKey : jointOrder)
         {
             ScannedJointMap::const_iterator it = jointMap.find(jointKey);
@@ -3226,8 +3850,11 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     constexpr size_t kSpatialTendonBaseCount =
         sizeof(kSpatialTendonBases) / sizeof(kSpatialTendonBases[0]);
     std::vector<ObjectKey> spatialTendonKeys;
-    for (const char* base : kSpatialTendonBases)
-        src.collectMultiApplySchemaKeys(src.internToken(base), spatialTendonKeys);
+    // Spatial-tendon instance names are user-arbitrary, so collectMultiApplySchemaKeys needs
+    // a whole-stage schema parse; skip it unless some prim applies one of the bases.
+    if (src.stageHasAnySchema(kSpatialTendonBases, kSpatialTendonBaseCount).value_or(true))
+        for (const char* base : kSpatialTendonBases)
+            src.collectMultiApplySchemaKeys(src.internToken(base), spatialTendonKeys);
     if (!spatialTendonKeys.empty())
     {
         for (const auto& bodyEntry : bodyByKey)
@@ -3362,7 +3989,21 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
                                                           readOrdinal);
     scanBucket(filterBucket, [&](ObjectKey key) { emitElementCollisionFilter(out, ctx, key); });
 
+    // --- Character controllers ---
+    // Peer of NativeWalker's ApiFlag::eCharacterControllerAPI dispatch. Needs the
+    // resolved world transform (position + scale), so it rides scanBucketWithTransform.
+    Bucket cctBucket = enumerateSchemaFiltered("PhysxCharacterControllerAPI",
+                                               "physxCharacterController:slopeLimit", readOrdinal);
+    appendBucketAttrs(cctBucket, {
+        "physxCharacterController:slopeLimit",
+        "physxCharacterController:simulationOwner",
+        "radius",
+        "height",
+    });
+    scanBucketWithTransform(cctBucket, [&](ObjectKey key) { emitCct(out, src, ctx, key); });
+
     // --- Vehicles: scene context + tire friction tables ---
+    // Descriptors in their own right (a vehicle may reference them later): always scanned.
     const Bucket vehCtxBucket = enumerateSchemaFiltered("PhysxVehicleContextAPI",
                                                 "physxVehicleContext:updateMode", readOrdinal);
     scanBucket(vehCtxBucket, [&](ObjectKey key) { emitVehicleContext(out, src, ctx, key); });
@@ -3372,6 +4013,20 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
                                                        readOrdinal);
     scanBucket(tftBucket, [&](ObjectKey key) { emitTireFrictionTable(out, src, ctx, key); });
 
+    // The ~16 component / vehicle enumerates below are each an ovstage query even when
+    // empty; one count query over the whole vehicle schema family gates them. Unknown → scan.
+    static const char* const kVehicleFamilySchemas[] = {
+        "PhysxVehicleAPI", "PhysxVehicleWheelAPI", "PhysxVehicleTireAPI", "PhysxVehicleSuspensionAPI",
+        "PhysxVehicleEngineAPI", "PhysxVehicleGearsAPI", "PhysxVehicleClutchAPI", "PhysxVehicleDriveBasicAPI",
+        "PhysxVehicleDriveStandardAPI", "PhysxVehicleTankDifferentialAPI", "PhysxVehicleMultiWheelDifferentialAPI",
+        "PhysxVehicleAutoGearBoxAPI", "PhysxVehicleBrakesAPI:brakes0", "PhysxVehicleBrakesAPI:brakes1",
+        "PhysxVehicleSteeringAPI", "PhysxVehicleAckermannSteeringAPI",
+        "PhysxVehicleNonlinearCommandResponseAPI:drive", "PhysxVehicleNonlinearCommandResponseAPI:steer",
+        "PhysxVehicleNonlinearCommandResponseAPI:brakes0", "PhysxVehicleNonlinearCommandResponseAPI:brakes1",
+        "PhysxVehicleWheelAttachmentAPI", "PhysxVehicleSuspensionComplianceAPI" };
+    if (src.stageHasAnySchema(kVehicleFamilySchemas, sizeof(kVehicleFamilySchemas) / sizeof(kVehicleFamilySchemas[0]))
+            .value_or(true))
+    {
     // --- Vehicles: shareable wheel/tire/suspension components ---
     const Bucket wheelBucket = enumerateSchemaFiltered("PhysxVehicleWheelAPI",
                                                "physxVehicleWheel:radius", readOrdinal);
@@ -3465,6 +4120,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     const Bucket vehicleBucket = enumerateSchemaFiltered("PhysxVehicleAPI",
                                                  "physxVehicle:vehicleEnabled", readOrdinal);
     scanBucketWithTransform(vehicleBucket, [&](ObjectKey key) { emitVehicle(out, src, ctx, key, lengthScale); });
+    }
 
     return out;
 }

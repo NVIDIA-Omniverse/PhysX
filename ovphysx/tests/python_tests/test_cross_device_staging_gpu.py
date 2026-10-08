@@ -1,5 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
+
+# DEPRECATED (tensor-binding-deprecation): a deprecated tensor-binding test, removed with the binding.
 
 """GPU cross-device staging tests: CPU numpy against GPU bindings.
 
@@ -7,7 +9,7 @@ The existing TestCrossDeviceStagingByteOffset only covers a byte_offset
 regression. This file comprehensively tests the staging path for common
 read/write combinations.
 
-Cross-device behaviour (per REFERENCE §5):
+Cross-device behaviour (per REFERENCE section 5):
   A CPU tensor against a GPU binding (or vice versa) is transparently handled
   via an internal staging buffer (memcpyDtoH / memcpyHtoD). Cross-GPU
   (different CUDA ordinals) still returns DEVICE_MISMATCH.
@@ -27,7 +29,7 @@ _ARTI_PATTERN = "/World/articulation*"
 def _load_rb(sdk, n_steps=3):
     load_usd_with_ovstage(sdk, data_path("boxes_falling_on_groundplane.usda"))
     sdk.wait_all()
-    sdk.warmup_gpu()
+    sdk.warmup()
     for _ in range(n_steps):
         sdk.step_sync(1.0 / 60.0)
 
@@ -35,7 +37,7 @@ def _load_rb(sdk, n_steps=3):
 def _load_artic(sdk, n_steps=3):
     load_usd_with_ovstage(sdk, data_path("two_articulations.usda"))
     sdk.wait_all()
-    sdk.warmup_gpu()
+    sdk.warmup()
     for _ in range(n_steps):
         sdk.step_sync(1.0 / 60.0)
 
@@ -53,8 +55,7 @@ def test_cpu_numpy_read_from_gpu_pose_binding(physx_sdk):
         if binding.count == 0:
             pytest.skip("No rigid body prims")
         np_buf = np.zeros(binding.shape, dtype=np.float32)
-        binding.read(np_buf)  # staged copy GPU→CPU must succeed
-        # Quaternion w component (index 6) should be close to 1 for valid poses
+        binding.read(np_buf)  # staged copy GPU to CPU must succeed
         assert not np.all(np_buf == 0), "Read result should not be all-zeros"
     finally:
         binding.destroy()
@@ -69,11 +70,10 @@ def test_cpu_numpy_write_to_gpu_pose_binding(physx_sdk):
             pytest.skip("No rigid body prims")
         N, C = binding.shape
 
-        # Write known values using numpy (CPU)
         src = np.zeros((N, C), dtype=np.float32)
         src[:, 2] = 2.0  # pz = 2.0
         src[:, 6] = 1.0  # qw = 1.0
-        binding.write(src)  # staged copy CPU→GPU must succeed
+        binding.write(src)  # staged copy CPU to GPU must succeed
 
         # Verify with a CUDA read-back
         dst = CudaArray((N, C))
@@ -86,7 +86,7 @@ def test_cpu_numpy_write_to_gpu_pose_binding(physx_sdk):
 
 
 def test_cpu_numpy_read_write_roundtrip_gpu_pose(physx_sdk):
-    """Full roundtrip: write CPU numpy → step → read CPU numpy, values differ from init."""
+    """Full roundtrip: write CPU numpy, step, read CPU numpy, values differ from init."""
     _load_rb(physx_sdk)
     binding = physx_sdk.create_tensor_binding(pattern=_RB_PATTERN, tensor_type=TensorType.RIGID_BODY_POSE)
     try:
@@ -142,7 +142,7 @@ def test_cpu_numpy_write_to_gpu_dof_position_target(physx_sdk):
         if binding.count == 0:
             pytest.skip("No articulations found")
         targets = np.full(binding.shape, 0.2, dtype=np.float32)
-        binding.write(targets)  # CPU→GPU staging must succeed
+        binding.write(targets)  # CPU to GPU staging must succeed
         # Step a few times to let the controller converge
         for _ in range(5):
             physx_sdk.step_sync(1.0 / 60.0)
@@ -175,8 +175,7 @@ def test_cpu_numpy_indexed_write_to_gpu_binding(physx_sdk):
         after = np.zeros((N, D), dtype=np.float32)
         binding.read(after)
 
-        # Row 0 should differ; other rows should be unchanged
-        # (physics state may shift due to indexing semantics)
+        # Only the call is verified. Physics state may shift, so row values are not asserted.
     finally:
         binding.destroy()
 

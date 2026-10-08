@@ -1,12 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-CONSUMER-001
  * @covers AC-9
  */
-
-#include "UsdPCH.h"
 
 #include "TimeSampledCallbacks.h"
 
@@ -14,33 +12,35 @@
 
 #include <propertiesUpdate/PhysXPropertiesUpdate.h>
 
-// USD + PhysxSchema headers are pulled in transitively by `UsdPCH.h`.
-#include <pxr/usd/usdPhysics/tokens.h>
-#include <pxr/usd/usdPhysics/rigidBodyAPI.h>
-#include <physxSchema/physxRigidBodyAPI.h>
-#include <physxSchema/physxCollisionAPI.h>
-#include <physxSchema/physxSurfaceVelocityAPI.h>
-#include <physxSchema/physxArticulationAPI.h>
-#include <physxSchema/physxForceAPI.h>
-#include <physxSchema/tokens.h>
+#include <omni/physics/parse/KnownTokens.h>
 
 namespace omni::physx::usdparser::callbacks
 {
 
 using namespace ::omni::physx;
-using namespace PXR_NS;
 using omni::physics::parse::IPhysicsSource;
 using omni::physics::parse::ObjectKey;
 using omni::physics::parse::TokenId;
 
-// Applied-schema name token for a C++ schema type, interned in the source.
-// Mirrors the legacy `PhysxSchemaXxxAPI::Get(...); if (api)` existence check via
-// `IPhysicsSource::hasSchema` (single-apply schema == HasAPI<>).
-template <typename SchemaT>
-static TokenId schemaTok(const IPhysicsSource& src)
+// physxSurfaceVelocity:* attribute names have no KnownTokens entry yet
+// (out of scope for this batch -- KnownTokens.h is shared with other
+// in-flight work). Interned directly here instead of round-tripping through
+// the generated PhysxSchemaTokens table.
+static TokenId physxSurfaceVelocitySurfaceVelocityEnabledTok(const IPhysicsSource& src)
 {
-    static const std::string name = UsdSchemaRegistry::GetSchemaTypeName(TfType::Find<SchemaT>()).GetString();
-    return src.internToken(name);
+    return src.internToken("physxSurfaceVelocity:surfaceVelocityEnabled");
+}
+static TokenId physxSurfaceVelocitySurfaceVelocityLocalSpaceTok(const IPhysicsSource& src)
+{
+    return src.internToken("physxSurfaceVelocity:surfaceVelocityLocalSpace");
+}
+static TokenId physxSurfaceVelocitySurfaceVelocityTok(const IPhysicsSource& src)
+{
+    return src.internToken("physxSurfaceVelocity:surfaceVelocity");
+}
+static TokenId physxSurfaceVelocitySurfaceAngularVelocityTok(const IPhysicsSource& src)
+{
+    return src.internToken("physxSurfaceVelocity:surfaceAngularVelocity");
 }
 
 // Gate matches the legacy `getAttribute(...)` template in `AttributeHelpers.h`:
@@ -48,13 +48,12 @@ static TokenId schemaTok(const IPhysicsSource& src)
 void maybeCollect(TimeSampledCallbackList& out,
                   const IPhysicsSource& src,
                   ObjectKey key,
-                  const TfToken& attr,
+                  TokenId attr,
                   OnUpdateObjectFn updateFn)
 {
     if (!updateFn)
         return;
-    const TokenId t = src.internToken(attr.GetString());
-    if (src.hasAuthoredAttribute(key, t) && src.mightBeTimeVarying(key, t))
+    if (src.hasAuthoredAttribute(key, attr) && src.mightBeTimeVarying(key, attr))
         out.push_back({ key, attr, updateFn });
 }
 
@@ -64,13 +63,12 @@ void maybeCollect(TimeSampledCallbackList& out,
 void maybeCollectIfMultiSample(TimeSampledCallbackList& out,
                                const IPhysicsSource& src,
                                ObjectKey key,
-                               const TfToken& attr,
+                               TokenId attr,
                                OnUpdateObjectFn updateFn)
 {
     if (!updateFn)
         return;
-    const TokenId t = src.internToken(attr.GetString());
-    if (src.isAttributeTimeSampled(key, t))
+    if (src.isAttributeTimeSampled(key, attr))
         out.push_back({ key, attr, updateFn });
 }
 
@@ -80,13 +78,12 @@ void maybeCollectIfMultiSample(TimeSampledCallbackList& out,
 static void maybeCollectIfTimeVarying(TimeSampledCallbackList& out,
                                       const IPhysicsSource& src,
                                       ObjectKey key,
-                                      const TfToken& attr,
+                                      TokenId attr,
                                       OnUpdateObjectFn updateFn)
 {
     if (!updateFn)
         return;
-    const TokenId t = src.internToken(attr.GetString());
-    if (src.mightBeTimeVarying(key, t))
+    if (src.mightBeTimeVarying(key, attr))
         out.push_back({ key, attr, updateFn });
 }
 
@@ -100,14 +97,17 @@ static void maybeCollectIfTimeVarying(TimeSampledCallbackList& out,
 void collectShapeTimeSampledCallbacks(const AttachedStage& attachedStage, ObjectKey key, TimeSampledCallbackList& out)
 {
     const IPhysicsSource* src = attachedStage.getSource();
-    if (!src || !src->hasSchema(key, schemaTok<PhysxSchemaPhysxCollisionAPI>(*src)))
+    if (!src)
+        return;
+    const omni::physics::parse::KnownTokens& tok = attachedStage.getKnownTokens();
+    if (!src->hasSchema(key, tok.physxCollisionAPI))
         return;
     // contactOffset / restOffset use the stricter `GetNumTimeSamples > 1` gate;
     // torsionalPatchRadius / minTorsionalPatchRadius use the looser gate.
-    maybeCollectIfMultiSample(out, *src, key, PhysxSchemaTokens->physxCollisionContactOffset,           updateShapeContactOffset);
-    maybeCollectIfMultiSample(out, *src, key, PhysxSchemaTokens->physxCollisionRestOffset,              updateShapeRestOffset);
-    maybeCollect             (out, *src, key, PhysxSchemaTokens->physxCollisionTorsionalPatchRadius,    updateShapeTorsionalPatchRadius);
-    maybeCollect             (out, *src, key, PhysxSchemaTokens->physxCollisionMinTorsionalPatchRadius, updateShapeMinTorsionalPatchRadius);
+    maybeCollectIfMultiSample(out, *src, key, tok.physxCollisionContactOffset,           updateShapeContactOffset);
+    maybeCollectIfMultiSample(out, *src, key, tok.physxCollisionRestOffset,              updateShapeRestOffset);
+    maybeCollect             (out, *src, key, tok.physxCollisionTorsionalPatchRadius,    updateShapeTorsionalPatchRadius);
+    maybeCollect             (out, *src, key, tok.physxCollisionMinTorsionalPatchRadius, updateShapeMinTorsionalPatchRadius);
 }
 
 // ---------------------------------------------------------------------------
@@ -121,44 +121,45 @@ void collectRigidBodyTimeSampledCallbacks(const AttachedStage& attachedStage, Ob
     const IPhysicsSource* src = attachedStage.getSource();
     if (!src)
         return;
+    const omni::physics::parse::KnownTokens& tok = attachedStage.getKnownTokens();
 
-    if (src->hasSchema(key, schemaTok<PhysxSchemaPhysxRigidBodyAPI>(*src)))
+    if (src->hasSchema(key, tok.physxRigidBodyAPI))
     {
-        maybeCollect(out, *src, key, PhysxSchemaTokens->physxRigidBodyLinearDamping,                updateBodyLinearDamping);
-        maybeCollect(out, *src, key, PhysxSchemaTokens->physxRigidBodyAngularDamping,               updateBodyAngularDamping);
-        maybeCollect(out, *src, key, PhysxSchemaTokens->physxRigidBodyMaxLinearVelocity,            updateBodyMaxLinearVelocity);
-        maybeCollect(out, *src, key, PhysxSchemaTokens->physxRigidBodyMaxAngularVelocity,           updateBodyMaxAngularVelocity);
-        maybeCollect(out, *src, key, PhysxSchemaTokens->physxRigidBodySleepThreshold,               updateBodySleepThreshold);
-        maybeCollect(out, *src, key, PhysxSchemaTokens->physxRigidBodyStabilizationThreshold,       updateBodyStabilizationThreshold);
-        maybeCollect(out, *src, key, PhysxSchemaTokens->physxRigidBodyMaxDepenetrationVelocity,     updateBodyMaxDepenetrationVelocity);
-        maybeCollect(out, *src, key, PhysxSchemaTokens->physxRigidBodyContactSlopCoefficient,       updateBodyContactSlopCoefficient);
-        maybeCollect(out, *src, key, PhysxSchemaTokens->physxRigidBodyMaxContactImpulse,            updateBodyMaxContactImpulse);
-        maybeCollect(out, *src, key, PhysxSchemaTokens->physxRigidBodyCfmScale,                     updateBodyCfmScale);
-        maybeCollect(out, *src, key, PhysxSchemaTokens->physxRigidBodySolverPositionIterationCount, updateBodySolverPositionIterationCount);
-        maybeCollect(out, *src, key, PhysxSchemaTokens->physxRigidBodySolverVelocityIterationCount, updateBodySolverVelocityIterationCount);
-        maybeCollect(out, *src, key, PhysxSchemaTokens->physxRigidBodyEnableCCD,                    updateBodyEnableCCD);
-        maybeCollect(out, *src, key, PhysxSchemaTokens->physxRigidBodyEnableSpeculativeCCD,         updateBodyEnableSpeculativeCCD);
-        maybeCollect(out, *src, key, PhysxSchemaTokens->physxRigidBodyDisableGravity,               updateBodyDisableGravity);
-        maybeCollect(out, *src, key, PhysxSchemaTokens->physxRigidBodyRetainAccelerations,          updateBodyRetainAccelerations);
-        maybeCollect(out, *src, key, PhysxSchemaTokens->physxRigidBodyEnableGyroscopicForces,       updateBodyGyroscopicForces);
-        maybeCollect(out, *src, key, PhysxSchemaTokens->physxRigidBodySolveContact,                 updateBodySolveContacts);
-        maybeCollect(out, *src, key, PhysxSchemaTokens->physxRigidBodyLockedPosAxis,                updateBodyLockedPosAxis);
-        maybeCollect(out, *src, key, PhysxSchemaTokens->physxRigidBodyLockedRotAxis,                updateBodyLockedRotAxis);
+        maybeCollect(out, *src, key, tok.physxRigidBodyLinearDamping,                updateBodyLinearDamping);
+        maybeCollect(out, *src, key, tok.physxRigidBodyAngularDamping,               updateBodyAngularDamping);
+        maybeCollect(out, *src, key, tok.physxRigidBodyMaxLinearVelocity,            updateBodyMaxLinearVelocity);
+        maybeCollect(out, *src, key, tok.physxRigidBodyMaxAngularVelocity,           updateBodyMaxAngularVelocity);
+        maybeCollect(out, *src, key, tok.physxRigidBodySleepThreshold,               updateBodySleepThreshold);
+        maybeCollect(out, *src, key, tok.physxRigidBodyStabilizationThreshold,       updateBodyStabilizationThreshold);
+        maybeCollect(out, *src, key, tok.physxRigidBodyMaxDepenetrationVelocity,     updateBodyMaxDepenetrationVelocity);
+        maybeCollect(out, *src, key, tok.physxRigidBodyContactSlopCoefficient,       updateBodyContactSlopCoefficient);
+        maybeCollect(out, *src, key, tok.physxRigidBodyMaxContactImpulse,            updateBodyMaxContactImpulse);
+        maybeCollect(out, *src, key, tok.physxRigidBodyCfmScale,                     updateBodyCfmScale);
+        maybeCollect(out, *src, key, tok.physxRigidBodySolverPositionIterationCount, updateBodySolverPositionIterationCount);
+        maybeCollect(out, *src, key, tok.physxRigidBodySolverVelocityIterationCount, updateBodySolverVelocityIterationCount);
+        maybeCollect(out, *src, key, tok.physxRigidBodyEnableCCD,                    updateBodyEnableCCD);
+        maybeCollect(out, *src, key, tok.physxRigidBodyEnableSpeculativeCCD,         updateBodyEnableSpeculativeCCD);
+        maybeCollect(out, *src, key, tok.physxRigidBodyDisableGravity,               updateBodyDisableGravity);
+        maybeCollect(out, *src, key, tok.physxRigidBodyRetainAccelerations,          updateBodyRetainAccelerations);
+        maybeCollect(out, *src, key, tok.physxRigidBodyEnableGyroscopicForces,       updateBodyGyroscopicForces);
+        maybeCollect(out, *src, key, tok.physxRigidBodySolveContact,                 updateBodySolveContacts);
+        maybeCollect(out, *src, key, tok.physxRigidBodyLockedPosAxis,                updateBodyLockedPosAxis);
+        maybeCollect(out, *src, key, tok.physxRigidBodyLockedRotAxis,                updateBodyLockedRotAxis);
     }
 
-    if (src->hasSchema(key, schemaTok<PhysxSchemaPhysxSurfaceVelocityAPI>(*src)))
+    if (src->hasSchema(key, tok.physxSurfaceVelocityAPI))
     {
-        maybeCollect(out, *src, key, PhysxSchemaTokens->physxSurfaceVelocitySurfaceVelocityEnabled,    updateBodySurfaceVelocityEnabled);
-        maybeCollect(out, *src, key, PhysxSchemaTokens->physxSurfaceVelocitySurfaceVelocityLocalSpace, updateBodySurfaceVelocityLocalSpace);
-        maybeCollect(out, *src, key, PhysxSchemaTokens->physxSurfaceVelocitySurfaceVelocity,           updateBodySurfaceLinearVelocity);
-        maybeCollect(out, *src, key, PhysxSchemaTokens->physxSurfaceVelocitySurfaceAngularVelocity,    updateBodySurfaceAngularVelocity);
+        maybeCollect(out, *src, key, physxSurfaceVelocitySurfaceVelocityEnabledTok(*src),    updateBodySurfaceVelocityEnabled);
+        maybeCollect(out, *src, key, physxSurfaceVelocitySurfaceVelocityLocalSpaceTok(*src), updateBodySurfaceVelocityLocalSpace);
+        maybeCollect(out, *src, key, physxSurfaceVelocitySurfaceVelocityTok(*src),           updateBodySurfaceLinearVelocity);
+        maybeCollect(out, *src, key, physxSurfaceVelocitySurfaceAngularVelocityTok(*src),    updateBodySurfaceAngularVelocity);
     }
 
     // The `physicsVelocity` attribute on the body prim itself is registered
     // without the authored gate in the legacy path.
-    if (src->hasSchema(key, schemaTok<UsdPhysicsRigidBodyAPI>(*src)))
+    if (src->hasSchema(key, tok.physicsRigidBodyAPI))
     {
-        maybeCollectIfTimeVarying(out, *src, key, UsdPhysicsTokens->physicsVelocity, updateBodyLinearVelocity);
+        maybeCollectIfTimeVarying(out, *src, key, tok.physicsVelocity, updateBodyLinearVelocity);
     }
 }
 
@@ -171,12 +172,15 @@ void collectRigidBodyTimeSampledCallbacks(const AttachedStage& attachedStage, Ob
 void collectArticulationTimeSampledCallbacks(const AttachedStage& attachedStage, ObjectKey key, TimeSampledCallbackList& out)
 {
     const IPhysicsSource* src = attachedStage.getSource();
-    if (!src || !src->hasSchema(key, schemaTok<PhysxSchemaPhysxArticulationAPI>(*src)))
+    if (!src)
         return;
-    maybeCollect(out, *src, key, PhysxSchemaTokens->physxArticulationSleepThreshold,               updateArticulationSleepThreshold);
-    maybeCollect(out, *src, key, PhysxSchemaTokens->physxArticulationStabilizationThreshold,       updateArticulationStabilizationThreshold);
-    maybeCollect(out, *src, key, PhysxSchemaTokens->physxArticulationSolverPositionIterationCount, updateArticulationSolverPositionIterationCount);
-    maybeCollect(out, *src, key, PhysxSchemaTokens->physxArticulationSolverVelocityIterationCount, updateArticulationSolverVelocityIterationCount);
+    const omni::physics::parse::KnownTokens& tok = attachedStage.getKnownTokens();
+    if (!src->hasSchema(key, tok.physxArticulationAPI))
+        return;
+    maybeCollect(out, *src, key, tok.physxArticulationSleepThreshold,               updateArticulationSleepThreshold);
+    maybeCollect(out, *src, key, tok.physxArticulationStabilizationThreshold,       updateArticulationStabilizationThreshold);
+    maybeCollect(out, *src, key, tok.physxArticulationSolverPositionIterationCount, updateArticulationSolverPositionIterationCount);
+    maybeCollect(out, *src, key, tok.physxArticulationSolverVelocityIterationCount, updateArticulationSolverVelocityIterationCount);
 }
 
 // ---------------------------------------------------------------------------
@@ -188,10 +192,13 @@ void collectArticulationTimeSampledCallbacks(const AttachedStage& attachedStage,
 void collectDeformableBodyTimeSampledCallbacks(const AttachedStage& attachedStage, ObjectKey key, TimeSampledCallbackList& out)
 {
     const IPhysicsSource* src = attachedStage.getSource();
-    if (!src || !src->hasSchema(key, schemaTok<PhysxSchemaPhysxCollisionAPI>(*src)))
+    if (!src)
         return;
-    maybeCollectIfMultiSample(out, *src, key, PhysxSchemaTokens->physxCollisionContactOffset, updateDeformableContactOffset);
-    maybeCollectIfMultiSample(out, *src, key, PhysxSchemaTokens->physxCollisionRestOffset,    updateDeformableRestOffset);
+    const omni::physics::parse::KnownTokens& tok = attachedStage.getKnownTokens();
+    if (!src->hasSchema(key, tok.physxCollisionAPI))
+        return;
+    maybeCollectIfMultiSample(out, *src, key, tok.physxCollisionContactOffset, updateDeformableContactOffset);
+    maybeCollectIfMultiSample(out, *src, key, tok.physxCollisionRestOffset,    updateDeformableRestOffset);
 }
 
 // ---------------------------------------------------------------------------
@@ -202,13 +209,16 @@ void collectDeformableBodyTimeSampledCallbacks(const AttachedStage& attachedStag
 void collectPhysxForceTimeSampledCallbacks(const AttachedStage& attachedStage, ObjectKey key, TimeSampledCallbackList& out)
 {
     const IPhysicsSource* src = attachedStage.getSource();
-    if (!src || !src->hasSchema(key, schemaTok<PhysxSchemaPhysxForceAPI>(*src)))
+    if (!src)
         return;
-    maybeCollect(out, *src, key, PhysxSchemaTokens->physxForceForceEnabled,      updatePhysxForceEnabled);
-    maybeCollect(out, *src, key, PhysxSchemaTokens->physxForceWorldFrameEnabled, updatePhysxForceWorldFrameEnabled);
-    maybeCollect(out, *src, key, PhysxSchemaTokens->physxForceForce,             updatePhysxForce);
-    maybeCollect(out, *src, key, PhysxSchemaTokens->physxForceTorque,            updatePhysxTorque);
-    maybeCollect(out, *src, key, PhysxSchemaTokens->physxForceMode,              updatePhysxForceMode);
+    const omni::physics::parse::KnownTokens& tok = attachedStage.getKnownTokens();
+    if (!src->hasSchema(key, tok.physxForceAPI))
+        return;
+    maybeCollect(out, *src, key, tok.physxForceForceEnabled,      updatePhysxForceEnabled);
+    maybeCollect(out, *src, key, tok.physxForceWorldFrameEnabled, updatePhysxForceWorldFrameEnabled);
+    maybeCollect(out, *src, key, tok.physxForceForce,             updatePhysxForce);
+    maybeCollect(out, *src, key, tok.physxForceTorque,            updatePhysxTorque);
+    maybeCollect(out, *src, key, tok.physxForceMode,              updatePhysxForceMode);
 }
 
 // ---------------------------------------------------------------------------
@@ -222,9 +232,7 @@ void applyTimeSampledCallbacks(AttachedStage& attachedStage,
     {
         if (!cb.key.valid() || !cb.updateFn)
             continue;
-        const SdfPath primPath = attachedStage.pathFor(cb.key);
-        if (!primPath.IsEmpty())
-            attachedStage.registerTimeSampledAttribute(primPath.AppendProperty(cb.attr), cb.updateFn);
+        attachedStage.registerTimeSampledAttribute(cb.key, cb.attr, cb.updateFn);
     }
 }
 

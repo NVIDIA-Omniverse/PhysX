@@ -1,30 +1,7 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
-// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
+// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 #include "PxgPBDParticleSystemCore.h"
 #include "PxgParticleSystem.h"
@@ -197,6 +174,10 @@ namespace physx
 		mUniqueId(uniqueIdIndexer++)
 	{
 		PX_ASSERT(maxNumParticles > 0);
+
+		// OMPE-93952: keep the context manager alive for the buffers below. Released in the destructor.
+		mContextManager.acquireReference();
+
 		mPositionInvMassesD = PX_DEVICE_MEMORY_ALLOC(PxVec4, contextManager, maxNumParticles);
 		mVelocitiesD = PX_DEVICE_MEMORY_ALLOC(PxVec4, contextManager, maxNumParticles);
 		mPhasesD = PX_DEVICE_MEMORY_ALLOC(PxU32, contextManager, maxNumParticles);
@@ -212,6 +193,9 @@ namespace physx
 		PX_PINNED_MEMORY_FREE(mContextManager, mPositionInvMassesH);
 		PX_PINNED_MEMORY_FREE(mContextManager, mVelocitiesH);
 		PX_PINNED_MEMORY_FREE(mContextManager, mPhasesH);
+
+		// release the reference taken in the constructor.
+		mContextManager.release();
 	}
 
 	template<class BufferClass>
@@ -1242,7 +1226,7 @@ namespace physx
 	}
 
 	void PxgParticleSystemCore::updateSortedVelocity(CUdeviceptr particleSystemsd, CUdeviceptr activeParticleSystemsd,
-		const PxU32 nbActiveParticleSystems, const PxReal dt, const bool skipNewPositionAdjustment)
+		const PxU32 nbActiveParticleSystems, const PxReal dt, const bool isVelocityIteration)
 	{
 
 		if (nbActiveParticleSystems == 0)
@@ -1267,7 +1251,7 @@ namespace physx
 				PX_CUDA_KERNEL_PARAM(particleSystemsd),
 				PX_CUDA_KERNEL_PARAM(activeParticleSystemsd),
 				PX_CUDA_KERNEL_PARAM(invDt),
-				PX_CUDA_KERNEL_PARAM(skipNewPositionAdjustment)
+				PX_CUDA_KERNEL_PARAM(isVelocityIteration)
 			};
 
 			{
@@ -1623,7 +1607,7 @@ namespace physx
 
 	void PxgParticleSystemCore::solvePrimitiveCollisionForParticles(CUdeviceptr prePrepDescd, CUdeviceptr solverCoreDescd,
 		CUdeviceptr artiCoreDescd, const PxReal dt, bool isTGS,
-		bool isVelIteration)
+		bool isVelocityIteration)
 	{
 		//solve particle-primitive collision
 		
@@ -1639,7 +1623,7 @@ namespace physx
 		// down-weight) in one pass before either PC solve. Runs on mStream; the rigid solve on
 		// solverStream waits for mPreCountParticleRigidEvent (recorded right after) so the refcount is
 		// visible cross-stream. Both streams are fully synchronized just before this function (see
-		// PxgPBDParticleSystemCore::solve / solveTGS).
+		// PxgPBDParticleSystemCore::solve).
 		{
 			// Size like the soft-body/cloth mFemRigidRefCount: per-link articulation bucketing must
 			// match getGlobalRigidBodyId or articulation indices overflow.
@@ -1700,8 +1684,7 @@ namespace physx
 			CUdeviceptr deltaVd = mDeltaVelParticleBuf.getDevicePtr();
 			CUdeviceptr rigidRefCountd = mParticleRigidRefCount.getDevicePtr();
 			{
-				const CUfunction solvePCParticleKernelFunction = isTGS ? mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::PS_SOLVE_PC_PARTICLE_TGS) :
-					mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::PS_SOLVE_PC_PARTICLE);
+				const CUfunction solvePCParticleKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::PS_SOLVE_PC_PARTICLE);
 
 				float4* solverBodyVelPoold = mGpuContext->getGpuSolverCore()->getSolverBodyVelPoolDevPtr();
 
@@ -1718,7 +1701,8 @@ namespace physx
 					PX_CUDA_KERNEL_PARAM(appliedForced),
 					PX_CUDA_KERNEL_PARAM(rigidRefCountd),
 					PX_CUDA_KERNEL_PARAM(dt),
-					PX_CUDA_KERNEL_PARAM(isVelIteration),
+					PX_CUDA_KERNEL_PARAM(isVelocityIteration),
+					PX_CUDA_KERNEL_PARAM(isTGS),
 					PX_CUDA_KERNEL_PARAM(artiCoreDescd)
 				};
 
@@ -1810,7 +1794,7 @@ namespace physx
 	//this will be just called by PBD
 	void PxgParticleSystemCore::solvePrimitiveCollisionForRigids(CUdeviceptr prePrepDescd, CUdeviceptr solverCoreDescd,
 		CUdeviceptr artiCoreDescd, CUstream solverStream, const PxReal dt, bool isTGS,
-		bool isVelIteration)
+		bool isVelocityIteration)
 	{
 		//solve particle-primitive collision
 
@@ -1827,8 +1811,7 @@ namespace physx
 			CUdeviceptr deltaVd = mDeltaVelRigidBuf.getDevicePtr();
 			CUdeviceptr rigidRefCountd = mParticleRigidRefCount.getDevicePtr();
 
-			const CUfunction solvePCRigidKernelFunction = isTGS ? mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::PS_SOLVE_PC_RIGID_TGS)
-				: mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::PS_SOLVE_PC_RIGID);
+			const CUfunction solvePCRigidKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::PS_SOLVE_PC_RIGID);
 
 			float4* solverBodyVelPoold = mGpuContext->getGpuSolverCore()->getSolverBodyVelPoolDevPtr();
 
@@ -1850,7 +1833,8 @@ namespace physx
 				PX_CUDA_KERNEL_PARAM(appliedForced),
 				PX_CUDA_KERNEL_PARAM(rigidRefCountd),
 				PX_CUDA_KERNEL_PARAM(dt),
-				PX_CUDA_KERNEL_PARAM(isVelIteration),
+				PX_CUDA_KERNEL_PARAM(isVelocityIteration),
+				PX_CUDA_KERNEL_PARAM(isTGS),
 				PX_CUDA_KERNEL_PARAM(artiCoreDescd)
 			};
 

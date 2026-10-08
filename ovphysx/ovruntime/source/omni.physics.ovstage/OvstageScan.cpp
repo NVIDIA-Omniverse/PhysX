@@ -1,10 +1,21 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-PARSE-CCT-001
+ * @covers AC-5
+ *
+ * @implements REQ-PARSE-BACKEND-001
+ * @covers AC-11 AC-12
+ */
 
 #include <omni/physics/ovstage/OvstageScan.h>
 #include <omni/physics/ovstage/OvstageParseBackend.h> // OvstageAttach
 
+#include "OvstageSource.h"
 #include "OvstageWalker.h"
+
+#include <carb/logging/Log.h>
 
 #include <memory>
 
@@ -16,17 +27,20 @@ omni::physics::parse::ScannedStage scanStageOvstage(ovstage_instance_t* instance
                                                     parse::IDescriptorAllocator& allocator,
                                                     ovstage_ordinal_t readOrdinal,
                                                     const OvstageScanFilter* filter,
-                                                    uint64_t usdStageId)
+                                                    uint64_t usdStageId,
+                                                    OvstageSource* attached)
 {
     if (!dict && instance)
         dict = ovstage_get_path_dictionary(instance);
     if (!instance || !dict)
         return {};
 
-    OvstageScanResult scan = scanOvstage(instance, dict, allocator, readOrdinal, filter, usdStageId);
+    OvstageScanResult scan = scanOvstage(instance, dict, allocator, readOrdinal, filter, usdStageId, attached);
 
-    // TokenIds are source-local, so retain the source that minted the descriptor handles.
-    parse::ScannedStage out = parse::makeScannedStageFromSource(std::move(scan.source));
+    // TokenIds are source-local, so retain the source that minted the descriptor handles: the
+    // attach's own source when the scan borrowed it, else the fresh one the scan built.
+    parse::ScannedStage out = scan.borrowedSource ? parse::makeScannedStageBorrowingSource(*scan.borrowedSource) :
+                                                    parse::makeScannedStageFromSource(std::move(scan.source));
     out.scenes = std::move(scan.scenes);
     out.materials = std::move(scan.materials);
     out.pbdMaterials = std::move(scan.pbdMaterials);
@@ -91,6 +105,7 @@ omni::physics::parse::ScannedStage scanStageOvstage(ovstage_instance_t* instance
     out.particleSets = std::move(scan.particleSets);
     out.particleSamplers = std::move(scan.particleSamplers);
     out.particleSamplerKeys = std::move(scan.particleSamplerKeys);
+    out.ccts = std::move(scan.ccts);
     out.hasPointInstancerPrims = scan.hasPointInstancerPrims;
     return out;
 }
@@ -103,6 +118,10 @@ namespace
 class OvstageScanBackend final : public omni::physics::parse::IScanBackend
 {
 public:
+    explicit OvstageScanBackend(const OvstageAttach* attachPayload) : mAttachPayload(attachPayload)
+    {
+    }
+
     omni::physics::parse::ScannedStage scan(const parse::AttachTarget& target,
                                             const std::vector<std::string>& scanRoots,
                                             const std::vector<std::string>& excludePaths,
@@ -111,7 +130,26 @@ public:
     {
         if (!target.nativeStage)
             return {};
-        const OvstageAttach* attach = static_cast<const OvstageAttach*>(target.nativeStage);
+
+        // `nativeStage` is backend-opaque and carries no tag saying which backend
+        // minted it, so a target built for another backend — a USD attach's
+        // `UsdStageWeakPtr*`, say — is bit-indistinguishable from ours at this
+        // point. Reinterpreting one is undefined behaviour, and in practice a
+        // SIGSEGV two frames down in OvstageSource. So accept only the payload this
+        // backend was registered for; anything else is IScanBackend::scan's
+        // documented "target this backend does not understand", reported rather
+        // than dereferenced. (A registration with no payload matches nothing, which
+        // is the safe direction.)
+        if (target.nativeStage != mAttachPayload)
+        {
+            CARB_LOG_ERROR("ovstage scan backend received a target it does not own (nativeStage %p, expected %p); "
+                           "returning an empty scan. A scan target must come from the attach this backend was "
+                           "registered for -- parse a USD stage through the native USD walk instead.",
+                           target.nativeStage, static_cast<const void*>(mAttachPayload));
+            return {};
+        }
+
+        const OvstageAttach* attach = mAttachPayload;
         OvstageScanFilter filter;
         filter.scanRoots = scanRoots;
         filter.excludePaths = excludePaths;
@@ -120,15 +158,25 @@ public:
         ovx_path_dictionary_t* dict = attach->dict ? attach->dict : ovstage_get_path_dictionary(attach->instance);
         const ovstage_ordinal_t readOrdinal =
             target.readOrdinal ? static_cast<ovstage_ordinal_t>(target.readOrdinal) : 1;
+        // Read through the attach's live source when it is ours: the change feed keeps its
+        // memos exact across drains, so the scan does not start cold (REQ-PARSE-BACKEND-001 AC-12).
+        auto* warm = dynamic_cast<OvstageSource*>(target.attachedSource);
+        if (warm && warm->instance() != attach->instance)
+            warm = nullptr;
         return scanStageOvstage(
-            attach->instance, dict, allocator, readOrdinal, &filter, target.residentBackingStageId);
+            attach->instance, dict, allocator, readOrdinal, &filter, target.residentBackingStageId, warm);
     }
+
+private:
+    // The one attach payload this backend serves. Not owned: the producer keeps it
+    // alive for the attach, and the backend is registered and released with it.
+    const OvstageAttach* mAttachPayload = nullptr;
 };
 } // namespace
 
-std::unique_ptr<omni::physics::parse::IScanBackend> makeOvstageScanBackend()
+std::unique_ptr<omni::physics::parse::IScanBackend> makeOvstageScanBackend(const void* attachPayload)
 {
-    return std::make_unique<OvstageScanBackend>();
+    return std::make_unique<OvstageScanBackend>(static_cast<const OvstageAttach*>(attachPayload));
 }
 
 } // namespace omni::physics::ovstage

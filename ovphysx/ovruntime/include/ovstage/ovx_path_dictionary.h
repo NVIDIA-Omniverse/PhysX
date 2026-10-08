@@ -1,10 +1,16 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-PARSE-FEED-005
+ * @covers AC-2
+ */
 
 #pragma once
 
 #include <ovx/path_dictionary/path_dictionary.h>
 
+#include <atomic>
 #include <string>
 #include <vector>
 
@@ -22,6 +28,14 @@ inline ovx_api_status_t status(ovx_path_dictionary_t* dict, ovx_api_result_t res
     if (out != OVX_API_SUCCESS && result.error.ptr && dict)
         path_dictionary_release_error(dict, result.error);
     return out;
+}
+
+// Process-wide count of whole-list fetches (every list entry copied out of the dictionary):
+// ovx_path_dictionary_get_paths below and ReadListMemo's miss path. A test seam only.
+inline std::atomic<size_t>& pathListFetchCounter()
+{
+    static std::atomic<size_t> counter{ 0 };
+    return counter;
 }
 } // namespace ovstage_compat
 
@@ -88,6 +102,9 @@ static inline ovx_api_status_t ovx_path_dictionary_token_to_string(
     return ovstage_compat::status(dict, path_dictionary_get_strings_from_tokens(dict, &token, 1, outString));
 }
 
+// *outPaths points into a thread_local buffer: it is valid only until the next call to this
+// function on the same thread. Copy the range out before calling anything that may resolve
+// another list.
 static inline ovx_api_status_t ovx_path_dictionary_get_paths(
     ovx_path_dictionary_t* dict,
     ovx_primpath_list_t list,
@@ -99,22 +116,32 @@ static inline ovx_api_status_t ovx_path_dictionary_get_paths(
 
     *outPaths = nullptr;
     *outCount = 0;
+    ovstage_compat::pathListFetchCounter().fetch_add(1, std::memory_order_relaxed);
 
-    size_t count = 0;
-    ovx_api_result_t result = path_dictionary_get_num_paths_from_path_list(dict, list, &count);
+    // Read groups mostly carry short lists: one paginated fetch answers those without the
+    // separate count round trip; only a full page falls back to count-then-fetch.
+    constexpr size_t kFirstPage = 64;
+    thread_local std::vector<ovx_primpath_t> paths;
+    paths.assign(kFirstPage, OVX_INVALID_PRIMPATH);
+    size_t fetched = 0;
+    ovx_api_result_t result = path_dictionary_get_paths_from_path_list(dict, list, 0, kFirstPage, paths.data(), &fetched);
     if (result.status != OVX_API_SUCCESS)
         return ovstage_compat::status(dict, result);
-
-    thread_local std::vector<ovx_primpath_t> paths;
-    paths.assign(count, OVX_INVALID_PRIMPATH);
-    if (count > 0)
+    if (fetched == kFirstPage)
     {
-        size_t fetched = 0;
-        result = path_dictionary_get_paths_from_path_list(dict, list, 0, count, paths.data(), &fetched);
+        size_t count = 0;
+        result = path_dictionary_get_num_paths_from_path_list(dict, list, &count);
         if (result.status != OVX_API_SUCCESS)
             return ovstage_compat::status(dict, result);
-        paths.resize(fetched);
+        if (count > kFirstPage)
+        {
+            paths.assign(count, OVX_INVALID_PRIMPATH);
+            result = path_dictionary_get_paths_from_path_list(dict, list, 0, count, paths.data(), &fetched);
+            if (result.status != OVX_API_SUCCESS)
+                return ovstage_compat::status(dict, result);
+        }
     }
+    paths.resize(fetched);
 
     *outPaths = paths.empty() ? nullptr : paths.data();
     *outCount = paths.size();

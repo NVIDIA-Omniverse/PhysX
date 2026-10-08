@@ -1,7 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
+/**
+ * @implements REQ-OMNIPVD-LATE-001
+ * @covers AC-10
+ */
+
 #include "PhysXTools.h"
 #include "VehicleGenerator.h"
 
@@ -713,21 +717,22 @@ void PhysXVehicleBase::simulate(const float dt, const ::physx::PxVehicleSimulati
     mComponentSequence.update(dt, context);
 }
 
-void PhysXVehicleBase::createPvdObjectHandles(::physx::PxAllocatorCallback& allocator,
-    const uint32_t maxNbMaterialFrictionEntries)
+void PhysXVehicleBase::createPvdObjectHandles(::physx::PxAllocatorCallback& allocator)
 {
     const uint32_t nbAntiRolls = 0;
     const OmniPvdContextHandle contextHandle = 1;  // hardcoded at the moment like in PhysX. Needs to be fetched from the PhysX scene
                                                    // as soon as PhysX makes proper use of contexts (see OM-83903)
     mPvdObjectHandles = ::physx::PxVehiclePvdObjectCreate(
-        mWheelCapacity, nbAntiRolls, maxNbMaterialFrictionEntries, contextHandle, 
+        mWheelCapacity, nbAntiRolls, mPvdMaxNbMaterialFrictionEntries, contextHandle,
         allocator);
+    resetPvdRegistration();
 }
 
 void PhysXVehicleBase::releasePvdObjectHandles(OmniPvdWriter& pvdWriter, ::physx::PxAllocatorCallback& allocator)
 {
     ::physx::PxVehiclePvdObjectRelease(pvdWriter, allocator,
         *mPvdObjectHandles);
+    mPvdObjectHandles = nullptr;
 }
 
 void PhysXVehicleBase::updateSprungMassProperties(const uint32_t wheelIndex,
@@ -992,8 +997,7 @@ static TVehicle* createInternal(::physx::PxRigidDynamic& vehicleActor,
 
         if (allocatorForPvd)
         {
-            vehicle->createPvdObjectHandles(*allocatorForPvd,
-                static_cast<uint32_t>(tireMaterialFrictionTables.size()));
+            vehicle->createPvdObjectHandles(*allocatorForPvd);
         }
 
         return vehicle;
@@ -1114,6 +1118,17 @@ void PhysXActorVehicleBase::setDataValues(const usdparser::VehicleDesc& vehicleD
         vehicleMass, vehicleMassSpaceInertiaTensor, bodyToActor,
         frame, pxPhysics.getTolerancesScale().length, gravityMagnitude);
 
+    mPvdMaxNbMaterialFrictionEntries = 0;
+    for (const ::physx::PxVehiclePhysXMaterialFrictionParams* frictionTable : tireMaterialFrictionTables)
+    {
+        CARB_ASSERT(frictionTable);
+        if (frictionTable)
+        {
+            mPvdMaxNbMaterialFrictionEntries =
+                ::physx::PxMax(mPvdMaxNbMaterialFrictionEntries, frictionTable->nbMaterialFrictions);
+        }
+    }
+
     //---
 
     if (vehicleDesc.queryType == VehicleDesc::eRAYCAST)
@@ -1195,11 +1210,23 @@ void PhysXActorVehicleBase::simulateEnd(const float dt, const ::physx::PxVehicle
 
     if (mPvdObjectHandles)
     {
-        CARB_ASSERT(static_cast<const ::physx::PxVehiclePhysXSimulationContext&>(context).pvdContext.attributeHandles);
-        CARB_ASSERT(static_cast<const ::physx::PxVehiclePhysXSimulationContext&>(context).pvdContext.writer);
+        const ::physx::PxVehiclePhysXSimulationContext& sourceContext =
+            static_cast<const ::physx::PxVehiclePhysXSimulationContext&>(context);
+        CARB_ASSERT(sourceContext.pvdContext.attributeHandles);
+        CARB_ASSERT(sourceContext.pvdContext.writer);
+
+        PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
+        ::physx::PxOmniPvd::ScopedExclusiveWriter writerScope(physxSetup.getOmniPvd());
+        OmniPvdWriter* writer = writerScope.getWriter();
+        CARB_ASSERT(writer);
+        if (!writer)
+            return;
+
+        ::physx::PxVehiclePhysXSimulationContext guardedContext = sourceContext;
+        guardedContext.pvdContext.writer = writer;
 
         ::physx::PxVehiclePVDComponent* pvdComp = static_cast<::physx::PxVehiclePVDComponent*>(this);
-        pvdComp->update(dt, context);
+        pvdComp->update(dt, guardedContext);
     }
 }
 

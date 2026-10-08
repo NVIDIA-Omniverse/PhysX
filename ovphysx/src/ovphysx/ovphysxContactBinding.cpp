@@ -1,5 +1,16 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-CAPI-STRING-001
+ * @covers AC-3
+ *
+ * @implements REQ-CAPI-PATTERN-001
+ * @covers AC-2
+ *
+ * @implements REQ-CAPI-CONTACT-001
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5
+ */
 
 #include "ovphysx/ovphysx.h"
 #include "internal/sdk/ovphysxSDK.hpp"
@@ -15,10 +26,9 @@
 #include <vector>
 #include <string>
 
-using omni::physics::tensors::ContactDataReadStatus;
 using ovphysx::internal::DLConvertError;
-using ovphysx::internal::dlConvertErrorMessage;
 using ovphysx::internal::dlToTensorDesc;
+using ovphysx::internal::dlConvertErrorMessage;
 using ovphysx::internal::getTensorApi;
 
 namespace
@@ -28,25 +38,6 @@ void destroyContactBindingResources(ContactBindingState& b)
 {
     if (b.contactView) { b.contactView->release(); b.contactView = nullptr; }
     if (b.simView) { b.simView->release(false); b.simView = nullptr; }
-}
-
-ovphysx_result_t mapContactDataReadStatus(ContactDataReadStatus status, const char* operation, uint32_t capacity)
-{
-    if (status == ContactDataReadStatus::eSuccess)
-        return success();
-    if (status == ContactDataReadStatus::eBufferTooSmall)
-    {
-        std::ostringstream message;
-        message << operation << ": max_contact_data_count " << capacity
-                << " is too small; count and start-index tensors contain the required layout. "
-                   "Use the maximum element of start + count as the capacity of a recreated binding for subsequent "
-                   "simulation steps.";
-        return set_error(OVPHYSX_API_BUFFER_TOO_SMALL, message.str());
-    }
-
-    std::ostringstream message;
-    message << operation << " failed";
-    return set_error(OVPHYSX_API_ERROR, message.str());
 }
 
 
@@ -155,6 +146,9 @@ ovphysx_result_t validateContactFlatTensorShape(
     return success();
 }
 
+// 2D shape `[rows, cols]`. Serves the filtered reads' `[S, F]` matrices as well as
+// the `[S, 2]` sensor layout and `[C, 2]` actor ids of ovphysx_read_raw_contact_data,
+// so the call sites use generic row/column names.
 ovphysx_result_t validateContactMatrixTensorShape(
     const DLTensor* tensor,
     const char* op,
@@ -175,9 +169,8 @@ ovphysx_result_t validateContactMatrixTensorShape(
     return success();
 }
 
-// 1D shape `[count]` -- used by ovphysx_read_raw_contact_data's per-sensor
-// count/start-index tensors and by the other-actor IDs tensor (paired with
-// validateContactIdTensorDtype for the int64/uint64 dtype check).
+// 1D shape `[count]` for the per-sensor vector tensors of the filtered contact
+// reads (paired with validateContactCountTensorDtype).
 ovphysx_result_t validateContactVectorTensorShape(
     const DLTensor* tensor,
     const char* op,
@@ -291,8 +284,8 @@ OVPHYSX_API ovphysx_result_t ovphysx_create_contact_binding(
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
-    if (!instance || instance->attachedStageId == 0)
-        return set_error(OVPHYSX_API_ERROR, "no USD stage loaded");
+    if (!instance || !instance->ovstage_attached)
+        return set_error(OVPHYSX_API_ERROR, "no physics stage attached");
 
     auto* tensorApi = getTensorApi();
     if (!tensorApi)
@@ -307,6 +300,8 @@ OVPHYSX_API ovphysx_result_t ovphysx_create_contact_binding(
         if (hasEmbeddedNul(sensor_patterns[i]))
             return set_error(OVPHYSX_API_INVALID_ARGUMENT,
                              "sensor_patterns contains an embedded NUL byte");
+        if (hasOversizedPathComponent(sensor_patterns[i]))
+            return set_error(OVPHYSX_API_INVALID_ARGUMENT, oversizedPathComponentMessage("sensor_patterns"));
         sensorPatterns.push_back(toStdString(sensor_patterns[i]));
     }
 
@@ -325,6 +320,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_create_contact_binding(
                 if (hasEmbeddedNul(filter_patterns[idx]))
                     return set_error(OVPHYSX_API_INVALID_ARGUMENT,
                                      "filter_patterns contains an embedded NUL byte");
+                if (hasOversizedPathComponent(filter_patterns[idx]))
+                    return set_error(OVPHYSX_API_INVALID_ARGUMENT,
+                                     oversizedPathComponentMessage("filter_patterns"));
                 filterPatterns[s].push_back(toStdString(filter_patterns[idx]));
             }
         }
@@ -341,9 +339,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_create_contact_binding(
         void disarm() { active = false; }
     } guard{&binding};
 
-    binding.stageId = instance->attachedStageId;
+    binding.attachHandle = instance->attachHandle;
 
-    binding.simView = tensorApi->createSimulationView(instance->attachedStageId);
+    binding.simView = tensorApi->createSimulationView(instance->attachHandle);
     if (!binding.simView || !binding.simView->getValid())
         return set_error(OVPHYSX_API_ERROR, "failed to create simulation view for contact binding");
 
@@ -418,7 +416,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_get_contact_binding_spec(
     if (!binding.contactView)
         return set_error(OVPHYSX_API_ERROR, "contact view is null");
 
-    if (instance->attachedStageId != binding.stageId)
+    if (instance->attachHandle != binding.attachHandle)
         return set_error(OVPHYSX_API_NOT_FOUND, "contact binding invalidated (stage changed); recreate binding");
 
     *out_sensor_count = static_cast<int32_t>(binding.contactView->getSensorCount());
@@ -452,7 +450,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_contact_binding_get_sensor_paths(
     if (!binding.contactView)
         return set_error(OVPHYSX_API_ERROR, "contact view is null");
 
-    if (instance->attachedStageId != binding.stageId)
+    if (instance->attachHandle != binding.attachHandle)
         return set_error(OVPHYSX_API_NOT_FOUND, "contact binding invalidated (stage changed); recreate binding");
 
     const uint32_t sensorCount = binding.contactView->getSensorCount();
@@ -501,7 +499,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_contact_binding_get_filter_paths(
     if (!binding.contactView)
         return set_error(OVPHYSX_API_ERROR, "contact view is null");
 
-    if (instance->attachedStageId != binding.stageId)
+    if (instance->attachHandle != binding.attachHandle)
         return set_error(OVPHYSX_API_NOT_FOUND, "contact binding invalidated (stage changed); recreate binding");
 
     const uint32_t sensorCount = binding.contactView->getSensorCount();
@@ -555,7 +553,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_get_contact_binding_capacity(
     if (!binding.contactView)
         return set_error(OVPHYSX_API_ERROR, "contact view is null");
 
-    if (instance->attachedStageId != binding.stageId)
+    if (instance->attachHandle != binding.attachHandle)
         return set_error(OVPHYSX_API_NOT_FOUND, "contact binding invalidated (stage changed); recreate binding");
 
     *out_max_contact_data_count = binding.contactView->getMaxContactDataCount();
@@ -578,7 +576,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_contact_net_forces(
     omni_sdk_physx_wait_all_pending_internal(handle);
 
     {
-        ovphysx_result_t warmup = ovphysx_gpu_warmup_if_needed(handle, false);
+        ovphysx_result_t warmup = ovphysx_warmup_if_needed(handle, false);
         if (warmup.status != OVPHYSX_API_SUCCESS) return warmup;
     }
 
@@ -598,7 +596,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_contact_net_forces(
     if (!binding.contactView)
         return set_error(OVPHYSX_API_ERROR, "contact view is null");
 
-    if (instance->attachedStageId != binding.stageId)
+    if (instance->attachHandle != binding.attachHandle)
         return set_error(OVPHYSX_API_NOT_FOUND, "contact binding invalidated (stage changed); recreate binding");
 
     ovphysx_result_t deviceCheck = validateContactDeviceMatch(dst_tensor, binding, "read_contact_net_forces");
@@ -641,7 +639,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_contact_force_matrix(
     omni_sdk_physx_wait_all_pending_internal(handle);
 
     {
-        ovphysx_result_t warmup = ovphysx_gpu_warmup_if_needed(handle, false);
+        ovphysx_result_t warmup = ovphysx_warmup_if_needed(handle, false);
         if (warmup.status != OVPHYSX_API_SUCCESS) return warmup;
     }
 
@@ -661,7 +659,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_contact_force_matrix(
     if (!binding.contactView)
         return set_error(OVPHYSX_API_ERROR, "contact view is null");
 
-    if (instance->attachedStageId != binding.stageId)
+    if (instance->attachHandle != binding.attachHandle)
         return set_error(OVPHYSX_API_NOT_FOUND, "contact binding invalidated (stage changed); recreate binding");
 
     ovphysx_result_t deviceCheck = validateContactDeviceMatch(dst_tensor, binding, "read_contact_force_matrix");
@@ -706,7 +704,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_contact_data(
     omni_sdk_physx_wait_all_pending_internal(handle);
 
     {
-        ovphysx_result_t warmup = ovphysx_gpu_warmup_if_needed(handle, false);
+        ovphysx_result_t warmup = ovphysx_warmup_if_needed(handle, false);
         if (warmup.status != OVPHYSX_API_SUCCESS) return warmup;
     }
 
@@ -726,7 +724,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_contact_data(
     if (!binding.contactView)
         return set_error(OVPHYSX_API_ERROR, "contact view is null");
 
-    if (instance->attachedStageId != binding.stageId)
+    if (instance->attachHandle != binding.attachHandle)
         return set_error(OVPHYSX_API_NOT_FOUND, "contact binding invalidated (stage changed); recreate binding");
 
     const int64_t sensorCount = static_cast<int64_t>(binding.contactView->getSensorCount());
@@ -786,9 +784,10 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_contact_data(
     if (err != DLConvertError::Success)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, dlConvertErrorMessage(err));
 
-    const ContactDataReadStatus readStatus =
-        binding.contactView->getContactData(&force, &point, &normal, &separation, &count, &startIndices, dt);
-    return mapContactDataReadStatus(readStatus, op, static_cast<uint32_t>(maxContactDataCount));
+    if (!binding.contactView->getContactData(&force, &point, &normal, &separation, &count, &startIndices, dt))
+        return set_error(OVPHYSX_API_ERROR, "getContactData failed");
+
+    return success();
 }
 
 OVPHYSX_API ovphysx_result_t ovphysx_read_raw_contact_data(
@@ -798,16 +797,15 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_raw_contact_data(
     DLTensor* contact_point_tensor,
     DLTensor* contact_normal_tensor,
     DLTensor* contact_separation_tensor,
-    DLTensor* contact_count_tensor,
-    DLTensor* contact_start_indices_tensor,
-    DLTensor* other_actor_ids_tensor)
+    DLTensor* sensor_layout_tensor,
+    DLTensor* actor_ids_tensor)
 {
     static constexpr const char* op = "read_raw_contact_data";
 
     omni_sdk_physx_wait_all_pending_internal(handle);
 
     {
-        ovphysx_result_t warmup = ovphysx_gpu_warmup_if_needed(handle, false);
+        ovphysx_result_t warmup = ovphysx_warmup_if_needed(handle, false);
         if (warmup.status != OVPHYSX_API_SUCCESS) return warmup;
     }
 
@@ -827,7 +825,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_raw_contact_data(
     if (!binding.contactView)
         return set_error(OVPHYSX_API_ERROR, "contact view is null");
 
-    if (instance->attachedStageId != binding.stageId)
+    if (instance->attachHandle != binding.attachHandle)
         return set_error(OVPHYSX_API_NOT_FOUND, "contact binding invalidated (stage changed); recreate binding");
 
     const int64_t sensorCount = static_cast<int64_t>(binding.contactView->getSensorCount());
@@ -837,7 +835,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_raw_contact_data(
             OVPHYSX_API_INVALID_ARGUMENT,
             "read_raw_contact_data requires max_contact_data_count > 0 at contact binding creation");
 
-    // Float tensors: [C, 1] or [C, 3] -- shared validator with read_contact_data.
+    // Float tensors: [C, 1] or [C, 3]
     ovphysx_result_t validation = validateDetailedContactFloatTensor(
         contact_force_tensor, binding, op, "contact_force_tensor", maxContactDataCount, 1);
     if (validation.status != OVPHYSX_API_SUCCESS) return validation;
@@ -851,30 +849,22 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_raw_contact_data(
         contact_separation_tensor, binding, op, "contact_separation_tensor", maxContactDataCount, 1);
     if (validation.status != OVPHYSX_API_SUCCESS) return validation;
 
-    // Count/start-index tensors here are 1D [S] (raw is per-sensor, not per-(sensor, filter)).
+    // Per-sensor layout: [S, 2] int32/uint32 with the count in column 0 and the start index in column 1.
     {
-        ovphysx_result_t check = validateContactCountTensorDtype(contact_count_tensor, op, "contact_count_tensor");
+        ovphysx_result_t check = validateContactCountTensorDtype(sensor_layout_tensor, op, "sensor_layout_tensor");
         if (check.status != OVPHYSX_API_SUCCESS) return check;
-        check = validateContactDeviceMatch(contact_count_tensor, binding, op);
+        check = validateContactDeviceMatch(sensor_layout_tensor, binding, op);
         if (check.status != OVPHYSX_API_SUCCESS) return check;
-        check = validateContactVectorTensorShape(contact_count_tensor, op, "contact_count_tensor", sensorCount);
+        check = validateContactMatrixTensorShape(sensor_layout_tensor, op, "sensor_layout_tensor", sensorCount, 2);
         if (check.status != OVPHYSX_API_SUCCESS) return check;
     }
+    // Per-contact identities: [C, 2] int64/uint64 with the sensor actor in column 0 and the other actor in column 1.
     {
-        ovphysx_result_t check = validateContactCountTensorDtype(contact_start_indices_tensor, op, "contact_start_indices_tensor");
+        ovphysx_result_t check = validateContactIdTensorDtype(actor_ids_tensor, op, "actor_ids_tensor");
         if (check.status != OVPHYSX_API_SUCCESS) return check;
-        check = validateContactDeviceMatch(contact_start_indices_tensor, binding, op);
+        check = validateContactDeviceMatch(actor_ids_tensor, binding, op);
         if (check.status != OVPHYSX_API_SUCCESS) return check;
-        check = validateContactVectorTensorShape(contact_start_indices_tensor, op, "contact_start_indices_tensor", sensorCount);
-        if (check.status != OVPHYSX_API_SUCCESS) return check;
-    }
-    // other_actor_ids: [C] int64/uint64.
-    {
-        ovphysx_result_t check = validateContactIdTensorDtype(other_actor_ids_tensor, op, "other_actor_ids_tensor");
-        if (check.status != OVPHYSX_API_SUCCESS) return check;
-        check = validateContactDeviceMatch(other_actor_ids_tensor, binding, op);
-        if (check.status != OVPHYSX_API_SUCCESS) return check;
-        check = validateContactVectorTensorShape(other_actor_ids_tensor, op, "other_actor_ids_tensor", maxContactDataCount);
+        check = validateContactMatrixTensorShape(actor_ids_tensor, op, "actor_ids_tensor", maxContactDataCount, 2);
         if (check.status != OVPHYSX_API_SUCCESS) return check;
     }
 
@@ -882,9 +872,8 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_raw_contact_data(
     omni::physics::tensors::TensorDesc point{};
     omni::physics::tensors::TensorDesc normal{};
     omni::physics::tensors::TensorDesc separation{};
-    omni::physics::tensors::TensorDesc count{};
-    omni::physics::tensors::TensorDesc startIndices{};
-    omni::physics::tensors::TensorDesc otherActorIds{};
+    omni::physics::tensors::TensorDesc sensorLayout{};
+    omni::physics::tensors::TensorDesc actorIds{};
 
     auto convert = [&](DLTensor* dl, omni::physics::tensors::TensorDesc& td) {
         DLConvertError err = dlToTensorDesc(dl, td);
@@ -894,18 +883,19 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_raw_contact_data(
     };
     {
         ovphysx_result_t r;
-        r = convert(contact_force_tensor, force);           if (r.status != OVPHYSX_API_SUCCESS) return r;
-        r = convert(contact_point_tensor, point);           if (r.status != OVPHYSX_API_SUCCESS) return r;
-        r = convert(contact_normal_tensor, normal);         if (r.status != OVPHYSX_API_SUCCESS) return r;
-        r = convert(contact_separation_tensor, separation); if (r.status != OVPHYSX_API_SUCCESS) return r;
-        r = convert(contact_count_tensor, count);           if (r.status != OVPHYSX_API_SUCCESS) return r;
-        r = convert(contact_start_indices_tensor, startIndices); if (r.status != OVPHYSX_API_SUCCESS) return r;
-        r = convert(other_actor_ids_tensor, otherActorIds); if (r.status != OVPHYSX_API_SUCCESS) return r;
+        r = convert(contact_force_tensor, force);               if (r.status != OVPHYSX_API_SUCCESS) return r;
+        r = convert(contact_point_tensor, point);               if (r.status != OVPHYSX_API_SUCCESS) return r;
+        r = convert(contact_normal_tensor, normal);             if (r.status != OVPHYSX_API_SUCCESS) return r;
+        r = convert(contact_separation_tensor, separation);     if (r.status != OVPHYSX_API_SUCCESS) return r;
+        r = convert(sensor_layout_tensor, sensorLayout);        if (r.status != OVPHYSX_API_SUCCESS) return r;
+        r = convert(actor_ids_tensor, actorIds);                if (r.status != OVPHYSX_API_SUCCESS) return r;
     }
 
-    const ContactDataReadStatus readStatus = binding.contactView->getRawContactData(
-        &force, &point, &normal, &separation, &count, &startIndices, &otherActorIds, dt);
-    return mapContactDataReadStatus(readStatus, op, static_cast<uint32_t>(maxContactDataCount));
+    if (!binding.contactView->getRawContactData(
+            &force, &point, &normal, &separation, &sensorLayout, &actorIds, dt))
+        return set_error(OVPHYSX_API_ERROR, "getRawContactData failed");
+
+    return success();
 }
 
 OVPHYSX_API ovphysx_result_t ovphysx_contact_binding_get_other_actor_paths_from_ids(
@@ -937,21 +927,18 @@ OVPHYSX_API ovphysx_result_t ovphysx_contact_binding_get_other_actor_paths_from_
     if (!binding.contactView)
         return set_error(OVPHYSX_API_ERROR, "contact view is null");
 
-    if (instance->attachedStageId != binding.stageId)
+    if (instance->attachHandle != binding.attachHandle)
         return set_error(OVPHYSX_API_NOT_FOUND, "contact binding invalidated (stage changed); recreate binding");
 
-    // ID tensor: 1D int64/uint64; length is free (driven by caller).
-    // validateContactIdTensorDtype already rejected NULL, so by this point
-    // ids_tensor is non-NULL; only shape and ndim still need checking.
+    // ID tensor: 1D int64/uint64 of any length. validateContactIdTensorDtype
+    // rejects NULL, so only shape and ndim remain to check.
     ovphysx_result_t dtype = validateContactIdTensorDtype(ids_tensor, op, "ids_tensor");
     if (dtype.status != OVPHYSX_API_SUCCESS) return dtype;
     if (!ids_tensor->shape || ids_tensor->ndim != 1)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "ids_tensor must be a 1D tensor");
-    // Actor-ID -> path resolution is host-side (getOtherActorPathsFromIds reads
-    // the IDs directly). A GPU ID tensor would be dereferenced as host memory
-    // and silently yield no paths, so require CPU here rather than matching the
-    // binding's device (which, for a GPU binding, would force exactly that bad
-    // GPU input). Callers with GPU IDs must copy to host first.
+    // Actor-ID to path resolution runs on the host and getOtherActorPathsFromIds
+    // dereferences the IDs directly, so a GPU tensor would silently yield no paths.
+    // A CPU tensor is required here even for a GPU binding.
     if (ids_tensor->device.device_type != kDLCPU)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT,
                          "ids_tensor must be a CPU tensor; actor-ID resolution is host-side");
@@ -961,8 +948,8 @@ OVPHYSX_API ovphysx_result_t ovphysx_contact_binding_get_other_actor_paths_from_
     if (err != DLConvertError::Success)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, dlConvertErrorMessage(err));
 
-    // Refill the cache; pointers handed back to the caller stay valid until
-    // the next call (which clears and refills the same vector) or destroy.
+    // Refill the cache. Pointers handed back to the caller stay valid until
+    // the next call refills the same vector or the binding is destroyed.
     binding.otherActorPathsCache.clear();
     binding.contactView->getOtherActorPathsFromIds(&ids, binding.otherActorPathsCache);
 
@@ -971,7 +958,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_contact_binding_get_other_actor_paths_from_
     for (uint32_t i = 0; i < toWrite; ++i)
         out_paths[i] = ovphysx_cstr(binding.otherActorPathsCache[i].c_str());
 
-    *out_count = total; // total needed; only toWrite entries are written
+    *out_count = toWrite;
     return success();
 }
 
@@ -988,7 +975,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_friction_data(
     omni_sdk_physx_wait_all_pending_internal(handle);
 
     {
-        ovphysx_result_t warmup = ovphysx_gpu_warmup_if_needed(handle, false);
+        ovphysx_result_t warmup = ovphysx_warmup_if_needed(handle, false);
         if (warmup.status != OVPHYSX_API_SUCCESS) return warmup;
     }
 
@@ -1008,7 +995,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_friction_data(
     if (!binding.contactView)
         return set_error(OVPHYSX_API_ERROR, "contact view is null");
 
-    if (instance->attachedStageId != binding.stageId)
+    if (instance->attachHandle != binding.attachHandle)
         return set_error(OVPHYSX_API_NOT_FOUND, "contact binding invalidated (stage changed); recreate binding");
 
     const int64_t sensorCount = static_cast<int64_t>(binding.contactView->getSensorCount());
@@ -1054,9 +1041,10 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_friction_data(
     if (err != DLConvertError::Success)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, dlConvertErrorMessage(err));
 
-    const ContactDataReadStatus readStatus =
-        binding.contactView->getFrictionData(&force, &point, &count, &startIndices, dt);
-    return mapContactDataReadStatus(readStatus, op, static_cast<uint32_t>(maxContactDataCount));
+    if (!binding.contactView->getFrictionData(&force, &point, &count, &startIndices, dt))
+        return set_error(OVPHYSX_API_ERROR, "getFrictionData failed");
+
+    return success();
 }
 
 } // extern "C"

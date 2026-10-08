@@ -1,5 +1,5 @@
 <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
-<!-- SPDX-License-Identifier: BSD-3-Clause -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
 # Joint Parameter Tuning Example: Robotiq 2F-85
 
@@ -16,7 +16,7 @@ precise numbers. Gravity is taken as 10 m/s^2 throughout.
 
 ## Test Scenes
 
-Tune with simple scenes: the gripper plus one object to grasp. Start with the
+Tune with minimal scenes: the gripper plus one object to grasp. Start with the
 object's gravity disabled, close the gripper, and watch for instability or
 penetration; then enable gravity and check the grip holds; then apply a lifting
 force. Cover several cases:
@@ -26,7 +26,12 @@ force. Cover several cases:
 - A collision-challenging thin-walled shape (cup, bowl).
 - The geometrically hardest object your application requires.
 
-![Example gripper test scenarios](images/gripper_test_scenarios.jpg)
+![Three renders of a Robotiq 2F-85 gripper, each holding a different object: a thin-walled cup, a box, and a thin plate.](images/gripper_test_scenarios.jpg)
+
+*Figure: The same gripper across three object shapes.* Left holds a thin-walled
+cup, the collision-challenging case. Center holds a box, the primitive case.
+Right holds a thin plate. Each object thickness closes the fingers to a
+different opening angle, which is why one tuning pass has to cover all three.
 
 ## The Gripper
 
@@ -34,7 +39,13 @@ Six revolute joints model the gripper's degrees of freedom. Only joint J0 has a
 drive; the other five are mimic joints of J0 (gearing 1 or -1, offset 0), driven
 indirectly. J0 ranges 0 deg (fully open) to 47 deg (fully closed).
 
-![Robotiq 2F-85 joint setup](images/gripper_joints_numbered.jpg)
+![Front view of the gripper with six revolute joint axes labeled J0 through J5, three per finger.](images/gripper_joints_numbered.jpg)
+
+*Figure: Joint numbering on the two fingers.* The joints come in mirrored
+triples. On one finger, J0 sits at the palm, J1 on the outer link, and J2 at the
+fingertip; the other finger carries J3, J4, and J5 in the same positions. J0 is
+the only driven joint, so every force figure below is derived at J0 and the
+remaining five follow it as mimic joints.
 
 ## Maximum Drive Force and Joint Velocity
 
@@ -137,7 +148,7 @@ not copy drive stiffness/damping into the compliance parameters.
 
 ## Verification and Fine-Tuning
 
-On the simple scenes, verify that: the simulated open-to-close time roughly
+On the minimal scenes, verify that: the simulated open-to-close time roughly
 matches the spec; the gripper holds the maximum rated load under gravity across
 finger states; there is no significant penetration (check collision meshes, not
 just visuals — use [OmniPVD](../tutorials/omnipvd_recording.md)); and there is no
@@ -145,7 +156,7 @@ significant jitter. Then fine-tune: can stiffness or max drive force be lowered
 while still holding the load? Recompute related parameters when you change one
 (re-derive damping when you change stiffness). If instability persists despite
 spec-based values, increase position iterations, reduce the timestep, or
-add/increase armature. Get the gripper right on simple scenes before simulating a
+add/increase armature. Get the gripper right on minimal scenes before simulating a
 full robot.
 
 Further reading:

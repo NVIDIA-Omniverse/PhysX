@@ -1,0 +1,19 @@
+{
+  "include": [
+    "ovphysx/**/*.pyi"
+  ],
+  "exclude": [
+    "ovphysx/lib/**",
+    "ovphysx/plugins/**",
+    "ovphysx/deps/**",
+    "ovphysx/samples/**",
+    "ovphysx/docs/**",
+    "ovphysx/skills/**",
+    "ovphysx/schemas/**"
+  ],
+  "pythonVersion": "3.10",
+  "typeCheckingMode": "standard",
+  "reportMissingModuleSource": false,
+  "reportMissingImports": true,
+  "reportUnusedImport": false
+}

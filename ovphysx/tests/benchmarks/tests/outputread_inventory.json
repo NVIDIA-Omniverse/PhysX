@@ -1,0 +1,245 @@
+{
+    "_comment": "OutputRead benchmark row inventory: the retained matrix, with an owner per row. Unlike producer_inventory.json this is NOT a frozen L1B contract -- OutputRead is a performance family, and test_benchmark_contract.cmake step 10 gates it on the producer contract (clean exit, published row, fail-closed on missing data) rather than on frozen numbers. What this file adds is ownership: step 10d asserts the registered OutputRead rows are exactly these, so a row cannot be added without an owner recorded here. THRESHOLD: rows carry the harness's per-row baseline tolerance, seeded by --slop (default 10%) when _baseline.txt is regenerated and compared on a non-regenerate run. CI's benchmark job runs with --regenerate and therefore publishes rather than gates; the CPU pass added to that job is the scheduled consumer, and its numbers land in the benchmark_results artifact.",
+    "require_owner": true,
+    "default_tolerance_pct": 10,
+    "rows": [
+        {
+            "name": "OutputRead.queryread_rb_1024_cpu",
+            "device": "cpu",
+            "hidden": false,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Rigid control, unchanged from before the output-read work: one full query + read round trip. The denominator every other rigid lane is read against."
+        },
+        {
+            "name": "OutputRead.queryread_rb_8192_cpu",
+            "device": "cpu",
+            "hidden": false,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Rigid control, unchanged from before the output-read work: one full query + read round trip. The denominator every other rigid lane is read against."
+        },
+        {
+            "name": "OutputRead.queryread_rb_1024_gpu",
+            "device": "gpu",
+            "hidden": true,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Rigid control, unchanged from before the output-read work: one full query + read round trip. The denominator every other rigid lane is read against."
+        },
+        {
+            "name": "OutputRead.queryread_rb_8192_gpu",
+            "device": "gpu",
+            "hidden": true,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Rigid control, unchanged from before the output-read work: one full query + read round trip. The denominator every other rigid lane is read against."
+        },
+        {
+            "name": "OutputRead.readonly_rb_8192_cpu",
+            "device": "cpu",
+            "hidden": false,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Rigid control: held query, read only. Separates read cost from query construction."
+        },
+        {
+            "name": "OutputRead.readonly_rb_8192_gpu",
+            "device": "gpu",
+            "hidden": true,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Rigid control: held query, read only. Separates read cost from query construction."
+        },
+        {
+            "name": "OutputRead.tensorbinding_rb_8192_cpu",
+            "device": "cpu",
+            "hidden": false,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Rigid control: the tensor-binding path over the same bodies -- the API the output read is replacing."
+        },
+        {
+            "name": "OutputRead.tensorbinding_rb_8192_gpu",
+            "device": "gpu",
+            "hidden": true,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Rigid control: the tensor-binding path over the same bodies -- the API the output read is replacing."
+        },
+        {
+            "name": "OutputRead.tensorcreate_rb_8192_cpu",
+            "device": "cpu",
+            "hidden": false,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Rigid control: binding construction alone, the fixed price the binding pays before it reads anything."
+        },
+        {
+            "name": "OutputRead.tensorcreate_rb_8192_gpu",
+            "device": "gpu",
+            "hidden": true,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Rigid control: binding construction alone, the fixed price the binding pays before it reads anything."
+        },
+        {
+            "name": "OutputRead.readonly_arti_link_8192_cpu",
+            "device": "cpu",
+            "hidden": false,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Articulation read at LINK granularity."
+        },
+        {
+            "name": "OutputRead.readonly_arti_link_8192_gpu",
+            "device": "gpu",
+            "hidden": true,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Articulation read at LINK granularity."
+        },
+        {
+            "name": "OutputRead.tensorbinding_arti_link_8192_cpu",
+            "device": "cpu",
+            "hidden": false,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Binding twin of the link-granularity read."
+        },
+        {
+            "name": "OutputRead.tensorbinding_arti_link_8192_gpu",
+            "device": "gpu",
+            "hidden": true,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Binding twin of the link-granularity read."
+        },
+        {
+            "name": "OutputRead.readonly_arti_dof_8192_cpu",
+            "device": "cpu",
+            "hidden": false,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Articulation read at DOF granularity."
+        },
+        {
+            "name": "OutputRead.readonly_arti_dof_8192_gpu",
+            "device": "gpu",
+            "hidden": true,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Articulation read at DOF granularity."
+        },
+        {
+            "name": "OutputRead.tensorbinding_arti_dof_8192_cpu",
+            "device": "cpu",
+            "hidden": false,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Binding twin of the DOF-granularity read."
+        },
+        {
+            "name": "OutputRead.tensorbinding_arti_dof_8192_gpu",
+            "device": "gpu",
+            "hidden": true,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Binding twin of the DOF-granularity read."
+        },
+        {
+            "name": "OutputRead.readonly_arti_root_8192_cpu",
+            "device": "cpu",
+            "hidden": false,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Articulation read at ROOT granularity -- one fixed row per articulation."
+        },
+        {
+            "name": "OutputRead.readonly_arti_root_8192_gpu",
+            "device": "gpu",
+            "hidden": true,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Articulation read at ROOT granularity -- one fixed row per articulation."
+        },
+        {
+            "name": "OutputRead.tensorbinding_arti_root_8192_cpu",
+            "device": "cpu",
+            "hidden": false,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Binding twin of the root-granularity read."
+        },
+        {
+            "name": "OutputRead.tensorbinding_arti_root_8192_gpu",
+            "device": "gpu",
+            "hidden": true,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Binding twin of the root-granularity read."
+        },
+        {
+            "name": "OutputRead.readonly_arti_inverse_dynamics_8192_cpu",
+            "device": "cpu",
+            "hidden": false,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Single-cohort inverse dynamics read (Jacobian + mass matrix). The denominator for the mixed-cohort row."
+        },
+        {
+            "name": "OutputRead.readonly_arti_inverse_dynamics_8192_gpu",
+            "device": "gpu",
+            "hidden": true,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Single-cohort inverse dynamics read (Jacobian + mass matrix). The denominator for the mixed-cohort row."
+        },
+        {
+            "name": "OutputRead.tensorbinding_arti_inverse_dynamics_8192_cpu",
+            "device": "cpu",
+            "hidden": false,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Binding twin of the single-cohort inverse dynamics read."
+        },
+        {
+            "name": "OutputRead.tensorbinding_arti_inverse_dynamics_8192_gpu",
+            "device": "gpu",
+            "hidden": true,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Binding twin of the single-cohort inverse dynamics read."
+        },
+        {
+            "name": "OutputRead.readonly_arti_inverse_dynamics_mixed_16_cpu",
+            "device": "cpu",
+            "hidden": false,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Sixteen distinct topologies in one read: cohort-partitioning cost. Meaningful only as a RATIO against readonly_arti_inverse_dynamics, which is why that row is retained."
+        },
+        {
+            "name": "OutputRead.readonly_arti_inverse_dynamics_mixed_16_gpu",
+            "device": "gpu",
+            "hidden": true,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Sixteen distinct topologies in one read: cohort-partitioning cost. Meaningful only as a RATIO against readonly_arti_inverse_dynamics, which is why that row is retained."
+        },
+        {
+            "name": "OutputRead.readonly_vehicle_wheel_1024_cpu",
+            "device": "cpu",
+            "hidden": false,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Vehicle wheel columns -- the only vehicle row retained."
+        },
+        {
+            "name": "OutputRead.readonly_particles_128_gpu",
+            "device": "gpu",
+            "hidden": true,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Particle-set read. Device-only by design (ADR-0008 Decision 9), so there is no CPU twin."
+        },
+        {
+            "name": "OutputRead.readonly_deformable_vol_128_gpu",
+            "device": "gpu",
+            "hidden": true,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Volume-deformable sim-mesh read."
+        },
+        {
+            "name": "OutputRead.readonly_deformable_surf_128_gpu",
+            "device": "gpu",
+            "hidden": true,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Surface-deformable sim-mesh read."
+        },
+        {
+            "name": "OutputRead.tensorbinding_deformable_vol_128_gpu",
+            "device": "gpu",
+            "hidden": true,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Binding twin of the volume-deformable read."
+        },
+        {
+            "name": "OutputRead.tensorbinding_deformable_surf_128_gpu",
+            "device": "gpu",
+            "hidden": true,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Binding twin of the surface-deformable read."
+        }
+    ]
+}

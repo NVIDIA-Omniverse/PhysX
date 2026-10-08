@@ -1,8 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-5
+ */
 
 // clang-format off
-#include <UsdPCH.h>
 // clang-format on
 
 #include "tensors/gpu/GpuSimulationData.h"
@@ -12,6 +16,10 @@
 #include "tensors/SimulationBackend.h"
 #include "tensors/gpu/CudaKernels.h"
 
+#include "PhysXTools.h"
+#include "usdLoad/AttachedStage.h"
+#include "usdLoad/LoadUsd.h"
+
 #include <omni/physx/IPhysx.h>
 
 #include <PxPhysicsAPI.h>
@@ -19,7 +27,6 @@
 #include <algorithm>
 
 using namespace physx;
-using namespace PXR_NS;
 
 namespace omni
 {
@@ -28,11 +35,118 @@ namespace physx
 namespace tensors
 {
 
-GpuSimulationData::GpuSimulationData(SimulationBackend& backend, long stageId)
+GpuSimulationData::GpuSimulationData(SimulationBackend& backend, omni::physics::tensors::AttachHandle attachHandle)
     : mBackend(backend)
-    , mStageId(stageId)
+    , mAttachHandle(attachHandle)
 {
 }
+
+bool GpuSimulationData::drainDirectGpuFinish(CUevent finishEvent, const char* label) const
+{
+    if (getCudaShim()->streamWaitEvent(uintptr_t(0), reinterpret_cast<uintptr_t>(finishEvent), 0, nullptr))
+    {
+        return true;
+    }
+
+    // PhysX may have queued work and recorded the finish event even when the DirectGPU call reports
+    // failure. If the asynchronous dependency cannot be queued, drain that producer before the
+    // caller is allowed to release the output or submit another user of the scratch.
+    CARB_LOG_ERROR("Failed to queue the completion wait for %s; draining the producer event", label);
+    if (!getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(finishEvent), nullptr))
+    {
+        CARB_LOG_ERROR("Failed to synchronize the completion event for %s; draining the CUDA device", label);
+        if (!CHECK_CUDA(cudaDeviceSynchronize()))
+        {
+            // Last fallback, and it failed too. Nothing has established that the producer stopped
+            // writing, so no later user of this scratch can be given a safe ordering edge either --
+            // quarantine every shared buffer rather than let the next producer proceed on an
+            // assumption that has just been disproved. Fail closed: a stalled read is recoverable,
+            // a gather racing a producer is not.
+            quarantineAllSharedBuffers("device drain after a failed completion wait");
+        }
+    }
+    return false;
+}
+
+
+bool GpuSimulationData::awaitDirectGpuFetch(bool issued, CUevent finishEvent, const char* label) const
+{
+    if (!issued)
+    {
+        CARB_LOG_ERROR("PxDirectGPUAPI refused the read for %s", label);
+        drainDirectGpuFinish(finishEvent, label);
+        return false;
+    }
+    return drainDirectGpuFinish(finishEvent, label);
+}
+
+
+void GpuSimulationData::quarantineAllSharedBuffers(const char* reason) const
+{
+    for (PxU32 i = 0; i < PxU32(SharedDeviceBuffer::eCOUNT); ++i)
+        mSharedBufferQuarantined[i] = true;
+    CARB_LOG_ERROR_ONCE("Shared device scratch quarantined (%s): the completion protocol lost its "
+                        "ordering edge and could not re-establish it. Reads over this scene's scratch "
+                        "are refused from here on.",
+                        reason ? reason : "unknown");
+}
+
+bool GpuSimulationData::recordKernelDone(PxU32 buf)
+{
+    if (buf >= SharedDeviceBuffer::eCOUNT)
+        return false;
+
+    // Postcondition callers rely on: on return the buffer is either guarded by an event that signals
+    // when our kernel finishes, or the kernel has already finished. A missing edge must therefore be
+    // made unnecessary by draining the stream -- handing the next Fetch a nullptr startEvent is the
+    // overwrite-under-gather race this protocol closes.
+    int status = 0;
+    const bool recorded =
+        mKernelDoneEvents[buf] &&
+        getCudaShim()->eventRecord(reinterpret_cast<uintptr_t>(mKernelDoneEvents[buf]), uintptr_t(0), &status);
+    if (recorded)
+        return true;
+
+    CARB_LOG_ERROR_ONCE("cuEventRecord failed for shared device buffer %u (CUresult %d); falling back to a "
+                        "synchronous drain, which is correct but stalls the host.",
+                        buf, status);
+    if (CHECK_CU(getCudaShim()->streamSynchronize(uintptr_t(0), nullptr)))
+        return true; // no edge, but the kernel has demonstrably finished -- the postcondition holds
+
+    // BOTH legs failed, so the postcondition above is false: nothing proves our kernel stopped
+    // touching this buffer. The result used to be discarded here, which handed the next DirectGPU
+    // producer a startEvent that was never recorded -- and CUDA treats a never-recorded event as
+    // already complete, so the producer would wait for nothing and overwrite scratch mid-gather.
+    //
+    // Latched rather than merely returned: this function is called from gatherThenRelease AFTER the
+    // kernel is enqueued, so the immediate caller can no longer undo anything. What has to change is
+    // what happens NEXT, and only a sticky flag reaches those callers.
+    mSharedBufferQuarantined[buf] = true;
+    CARB_LOG_ERROR_ONCE("Shared device buffer %u quarantined: neither the completion event nor the "
+                        "fallback drain could establish that our kernel finished with it.",
+                        buf);
+    return false;
+}
+
+namespace
+{
+// Resolves a PhysX actor userData id to the legacy asInt(ObjectKey)-encoded path id
+// (see CommonTypes.h's asInt()/keyFromLegacyId() comment) that GpuActorPathIdPair::pathId
+// and raw-contact consumers expect. Same encoding as ContactReport.cpp's
+// keyToLegacyPathInt, factored out once here rather than repeating this at each
+// of the three actor-collection call sites below (rigid dynamics / statics /
+// articulation links).
+bool legacyPathIdForObject(size_t objectId, uint64_t& pathIdOut)
+{
+    omni::physics::parse::ObjectKey objectKey = g_physx->getObjectKeyForId(objectId);
+    if (!objectKey.valid())
+    {
+        return false;
+    }
+    pathIdOut = asInt(objectKey);
+    return true;
+}
+} // namespace
 
 bool GpuSimulationData::init(PxScene* scene)
 {
@@ -197,7 +311,20 @@ bool GpuSimulationData::init(PxScene* scene)
         // arti DOF actuation forces
         prepareDeviceData(
             (void**)&mDofActuationForcesDev, nullptr, mDofBufSize * sizeof(float), "mDofActuationForcesDev");
+    }
 
+    // The inverse dynamics matrices are ROOT-INCLUSIVE, so they exist for a zero-dof articulation and are
+    // sized by numArtis rather than by mMaxDofs. Every size below is (6 + mMaxDofs)-based: at zero
+    // dofs that is 6, a 6x6 mass matrix and Jacobian, six-component Coriolis/gravity forces and a
+    // 6x7 centroidal matrix -- all meaningful for a floating body, all closed-form.
+    //
+    // These used to sit inside `if (mMaxDofs > 0)` with the two genuinely DOF-only buffers above.
+    // A floating single-link articulation therefore reached the device with null scratch, and the
+    // read had to decline rather than hand computeArticulationData a null buffer (which terminates
+    // the process). The CPU path served the same scene, so one requirement answered two ways
+    // depending on the backend.
+    if (numArtis > 0)
+    {
         mJacobianMaxCols = 6 + mMaxDofs;
         mJacobianMaxRows = 6 + (mMaxLinks - 1) * 6;
         uint32_t jacobianSize = mJacobianMaxCols * mJacobianMaxRows;
@@ -251,10 +378,22 @@ bool GpuSimulationData::init(PxScene* scene)
             PxRigidDynamic* rd = static_cast<PxRigidDynamic*>(rdActors[i]);
             mActor2RdIndexMap[rd] = i;
             rdGpuIndices[i] = rd->getGPUIndex();
+            // Seed the scene-wide disable hint off the index this loop already read: PhysX returns
+            // the invalid node handle for a body with no island node, which is what
+            // eDISABLE_SIMULATION leaves behind. Catches bodies authored disabled -- they are
+            // disabled before any view exists, so no epoch bump ever describes them.
+            if (PxU32(rdGpuIndices[i]) == 0xffffffffu)
+            {
+                mMayHaveDisabledRd = true;
+            }
             PxNodeIndex nodeIdx = rd->getInternalIslandNodeIndex();
 
             PxU32 rdIdx = nodeIdx.index();
-            if (rdIdx > maxRdIndex)
+            // A disabled body has no island node, so its index is the invalid handle (0xffffffff) --
+            // the same sentinel seeding the hint above. It owns no GPU state row, so it must not
+            // stretch mMaxRdIndex: downstream buffer sizing computes mMaxRdIndex + 1, and 0xffffffff
+            // wraps that to a zero-length allocation the next index write runs off the end of.
+            if (rdIdx != 0xffffffffu && rdIdx > maxRdIndex)
             {
                 maxRdIndex = rdIdx;
             }
@@ -284,26 +423,28 @@ bool GpuSimulationData::init(PxScene* scene)
 
     // contacts
 
-    // PxSceneDesc doesn't expose the GPU dynamics config, so read it from USD instead.
-    UsdStageRefPtr stage = UsdUtilsStageCache::Get().Find(UsdStageCache::Id::FromLongInt(mStageId));
-    if (stage && g_physx)
+    // PxSceneDesc doesn't expose the GPU dynamics config, so read it from the source
+    // instead, resolved through the attach handle rather than the USD stage cache
+    // (ADR-0013) -- a stageless attach has no stage-cache id to look up.
+    usdparser::AttachedStage* attachedStage =
+        usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(mAttachHandle);
+    if (attachedStage && g_physx)
     {
         size_t sceneObjectId = reinterpret_cast<size_t>(scene->userData);
-        SdfPath scenePath = g_physx->getPhysXObjectUsdPath(sceneObjectId);
-        if (!scenePath.IsEmpty())
+        // Source-backed read (IPhysicsSource::getAttributeAtTime via PhysXTools.h's
+        // pxr-free getValue overload), not USD-specific -- works identically on the
+        // UsdSource backend.
+        omni::physics::parse::ObjectKey sceneKey = g_physx->getObjectKeyForId(sceneObjectId);
+        if (sceneKey.valid())
         {
-            UsdPrim scenePrim = stage->GetPrimAtPath(scenePath);
-            if (scenePrim)
+            unsigned value = 0;
+            omni::physics::parse::KnownTokens tok;
+            if (const omni::physics::parse::IPhysicsSource* src = attachedStage->getSource())
+                tok.intern(*src);
+            if (internal::getValue(*attachedStage, sceneKey, tok.physxSceneGpuMaxRigidContactCount,
+                                   omni::physics::parse::ReadTime::defaultTime(), value))
             {
-                PhysxSchemaPhysxSceneAPI physxSceneApi(scenePrim);
-                if (physxSceneApi)
-                {
-                    unsigned value = 0;
-                    if (physxSceneApi.GetGpuMaxRigidContactCountAttr().Get(&value))
-                    {
-                        mMaxGpuContactPairs = value;
-                    }
-                }
+                mMaxGpuContactPairs = value;
             }
         }
     }
@@ -319,6 +460,9 @@ bool GpuSimulationData::init(PxScene* scene)
 
     // Build global actor-to-pathId lookup for raw contact data, so contact views can identify which
     // actor a contact is with on GPU (userData holds an object ID, which is converted to a path ID here).
+    // pathId uses the legacy asInt(ObjectKey) encoding (see CommonTypes.h's asInt()/
+    // keyFromLegacyId()) so raw contact actor ids stay consistent with the rest of the
+    // tensor API's legacy id encoding (RigidContactSensorEntry::referentId).
     if (g_physx)
     {
         std::vector<GpuActorPathIdPair> actorPathLookup;
@@ -333,12 +477,12 @@ bool GpuSimulationData::init(PxScene* scene)
                 if (actor && actor->userData)
                 {
                     size_t objectId = reinterpret_cast<size_t>(actor->userData);
-                    SdfPath path = g_physx->getPhysXObjectUsdPath(objectId);
-                    if (!path.IsEmpty())
+                    uint64_t pathId;
+                    if (legacyPathIdForObject(objectId, pathId))
                     {
                         GpuActorPathIdPair pair;
                         pair.actor = actor;
-                        pair.pathId = asInt(path);
+                        pair.pathId = pathId;
                         actorPathLookup.push_back(pair);
                     }
                 }
@@ -356,12 +500,12 @@ bool GpuSimulationData::init(PxScene* scene)
                 if (actor && actor->userData)
                 {
                     size_t objectId = reinterpret_cast<size_t>(actor->userData);
-                    SdfPath path = g_physx->getPhysXObjectUsdPath(objectId);
-                    if (!path.IsEmpty())
+                    uint64_t pathId;
+                    if (legacyPathIdForObject(objectId, pathId))
                     {
                         GpuActorPathIdPair pair;
                         pair.actor = actor;
-                        pair.pathId = asInt(path);
+                        pair.pathId = pathId;
                         actorPathLookup.push_back(pair);
                     }
                 }
@@ -381,12 +525,12 @@ bool GpuSimulationData::init(PxScene* scene)
                     if (link && link->userData)
                     {
                         size_t objectId = reinterpret_cast<size_t>(link->userData);
-                        SdfPath path = g_physx->getPhysXObjectUsdPath(objectId);
-                        if (!path.IsEmpty())
+                        uint64_t pathId;
+                        if (legacyPathIdForObject(objectId, pathId))
                         {
                             GpuActorPathIdPair pair;
                             pair.actor = link;
-                            pair.pathId = asInt(path);
+                            pair.pathId = pathId;
                             actorPathLookup.push_back(pair);
                         }
                     }
@@ -405,19 +549,33 @@ bool GpuSimulationData::init(PxScene* scene)
         }
     }
 
-    // synchronization events
+    // Synchronization events. Each carries an ordering edge, so a failed creation is fatal to init:
+    // a null event does not degrade to a slower-but-correct path, it silently removes the edge.
+    bool eventsOk = true;
     for (PxU32 i = 0; i < PxU32(CopyEvent::eCOUNT); i++)
     {
-        SHIM_CU_EVENT_CREATE(&mCopyEvents[i], CU_EVENT_DISABLE_TIMING);
+        eventsOk = SHIM_CU_EVENT_CREATE(&mCopyEvents[i], CU_EVENT_DISABLE_TIMING) && eventsOk;
         mCopyEventPointers[i] = mCopyEvents[i] ? &mCopyEvents[i] : nullptr;
     }
     for (PxU32 i = 0; i < PxU32(ApplyEvent::eCOUNT); i++)
     {
-        SHIM_CU_EVENT_CREATE(&mApplyWaitEvents[i], CU_EVENT_DISABLE_TIMING);
-        SHIM_CU_EVENT_CREATE(&mApplySignalEvents[i], CU_EVENT_DISABLE_TIMING);
+        eventsOk = SHIM_CU_EVENT_CREATE(&mApplyWaitEvents[i], CU_EVENT_DISABLE_TIMING) && eventsOk;
+        eventsOk = SHIM_CU_EVENT_CREATE(&mApplySignalEvents[i], CU_EVENT_DISABLE_TIMING) && eventsOk;
     }
 
-    SHIM_CU_EVENT_CREATE(&mContactReadEvent, CU_EVENT_DISABLE_TIMING);
+    for (PxU32 i = 0; i < PxU32(SharedDeviceBuffer::eCOUNT); i++)
+    {
+        eventsOk = SHIM_CU_EVENT_CREATE(&mKernelDoneEvents[i], CU_EVENT_DISABLE_TIMING) && eventsOk;
+    }
+
+    eventsOk = SHIM_CU_EVENT_CREATE(&mContactReadEvent, CU_EVENT_DISABLE_TIMING) && eventsOk;
+
+    // Every creation is attempted before bailing, so the shim logs each refusal, not only the first.
+    if (!eventsOk)
+    {
+        CARB_LOG_ERROR("Failed to prepare GPU data: could not create the CUDA synchronization events");
+        return false;
+    }
 
     CHECK_CUDA(cudaStreamSynchronize(nullptr));
 
@@ -482,6 +640,13 @@ GpuSimulationData::~GpuSimulationData()
         if (mApplySignalEvents[i])
         {
             CHECK_CU(getCudaShim()->eventDestroy(reinterpret_cast<uintptr_t>(mApplySignalEvents[i]), nullptr));
+        }
+    }
+    for (PxU32 i = 0; i < PxU32(SharedDeviceBuffer::eCOUNT); i++)
+    {
+        if (mKernelDoneEvents[i])
+        {
+            CHECK_CU(getCudaShim()->eventDestroy(reinterpret_cast<uintptr_t>(mKernelDoneEvents[i]), nullptr));
         }
     }
     if (mContactReadEvent)

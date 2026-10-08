@@ -1,19 +1,15 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-
-#include "UsdPCH.h"
+// SPDX-License-Identifier: Apache-2.0
 
 #include "FilteredPairs.h"
 
 #include <omni/physics/parse/IPhysicsSource.h>
 
-using namespace PXR_NS;
 using namespace carb;
-using namespace omni::physics::schema;
 using namespace omni::physx::usdparser;
 
 
-void omni::physx::usdparser::collectFilteredPairs(AttachedStage& attachedStage, const SdfPath& primKey, const SdfPathVector& filterPairPaths, ObjectIdPairVector& pairVector)
+void omni::physx::usdparser::collectFilteredPairs(AttachedStage& attachedStage, omni::physics::parse::ObjectKey primKey, const std::vector<omni::physics::parse::ObjectKey>& filterPairKeys, ObjectIdPairVector& pairVector)
 {
     ObjectDb& objectDb = *attachedStage.getObjectDatabase();
 
@@ -23,9 +19,9 @@ void omni::physx::usdparser::collectFilteredPairs(AttachedStage& attachedStage, 
         auto itFirst = entriesFirst->begin();
         while (itFirst != entriesFirst->end())
         {
-            for (const SdfPath& fPath : filterPairPaths)
+            for (const omni::physics::parse::ObjectKey fKey : filterPairKeys)
             {
-                const ObjectIdMap* entriesSecond = objectDb.getEntries(fPath);
+                const ObjectIdMap* entriesSecond = objectDb.getEntries(fKey);
                 if (entriesSecond && !entriesSecond->empty())
                 {
                     auto itSecond = entriesSecond->begin();
@@ -45,10 +41,14 @@ void omni::physx::usdparser::collectFilteredPairs(AttachedStage& attachedStage, 
                     if (const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource())
                     {
                         source->forEachDescendantPruned(
-                            attachedStage.keyFor(fPath),
+                            fKey,
                             [&](omni::physics::parse::ObjectKey childKey) -> bool {
                                 bool pairFound = false;
-                                const ObjectIdMap* entriesSecond = objectDb.getEntries(attachedStage.pathFor(childKey));
+                                // childKey is already attachedStage's own ObjectKey (minted by the
+                                // same source as objectDb's key resolver), so look it up directly
+                                // instead of round-tripping through pathFor -- no signature change
+                                // needed since ObjectDb::getEntries already has an ObjectKey overload.
+                                const ObjectIdMap* entriesSecond = objectDb.getEntries(childKey);
                                 if (entriesSecond && !entriesSecond->empty())
                                 {
                                     for (auto itSecond = entriesSecond->begin(); itSecond != entriesSecond->end();

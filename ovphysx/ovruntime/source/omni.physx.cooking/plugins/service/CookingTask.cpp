@@ -1,14 +1,13 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
 #include <carb/logging/Log.h>
 #include <carb/profiler/Profile.h>
 #include <carb/tasking/ITasking.h>
 
 #include <PxPhysicsAPI.h>
+#include <cudamanager/PxCudaContextManager.h> // acquireReference()/release() on the owned manager
 #include <common/foundation/Allocator.h>
-#include <common/utilities/Utilities.h>
 #include <common/utilities/MemoryMacros.h>
 
 #include "CookingTask.h"
@@ -16,8 +15,6 @@
 #include "../utility/TriangulateUsdMeshPrim.h"
 #include "../utility/MeshThickness.h"
 #include "CookingComputeService.h"
-
-using namespace PXR_NS;
 
 namespace cookingtask
 {
@@ -98,24 +95,30 @@ public:
         mResultObject.request = &mRequestObject;
         mPrimPathText.insert(
             mPrimPathText.begin(), result.request->primMeshText.data(), result.request->primMeshText.data() + result.request->primMeshText.size_bytes());
-        if(result.request->primId == 0)
-        {
-            if(SdfPath::IsValidPathString(mPrimPathText))
-            {
-                m_primPath = SdfPath(mPrimPathText);
-            }
-        }
-        else
-        {
-            m_primPath = intToPath(result.request->primId);
-        }
+        m_taskKey = computeCookingTaskKey(result.request->primId, mPrimPathText);
     }
 
     ~CookingTaskImpl(void)
     {
+        // If a background task was started, performTaskInternal() -> mParent->performTask() may still be
+        // running on a carb::tasking worker thread against this object's own members (m_pending,
+        // m_triangulate, mResultObject, etc.). m_future's destructor only releases a refcounted handle to
+        // the shared task state (safe on its own -- the worker keeps the task alive independently) but does
+        // not wait for it, so nothing below is safe to free until we know the worker is actually done.
+        // completeOpenTask() already guards the synchronous-wait path this way (task.futureWait(-1) before
+        // touching a started task); this mirrors it so every teardown path -- destroyAsyncContext(),
+        // finalizeAllTasks()/~CookingComputeService(), and this destructor's other callers -- gets the same
+        // guarantee instead of racing a delete against the worker mid-task.
+        //
+        futureWait(-1);
+
         delete m_pending; // if there was a pending task we nuke it too
-        SAFE_RELEASE(m_triangulate); // Release the USD geom mesh triangulation interface if it was created
+        SAFE_RELEASE(m_triangulate); // Release the mesh triangulation interface if it was created
         releaseTriangleMeshData();  // Release the memory for any triangle mesh data that was loaded from the cache
+        // Drop the CUDA context manager reference taken in setPxCudaAndGPUPointers(). This must
+        // come after the futureWait() above: the worker thread dereferences the manager while it
+        // cooks, so releasing earlier could destroy it out from under a task still running.
+        SAFE_RELEASE(mPxCudaContextManager);
         // If we started a task, then decrement the global task counter
         if (m_taskStarted)
         {
@@ -124,7 +127,7 @@ public:
     }
 
     /**
-    * Returns true if we have found valid UsdGeomMesh data in the source prim to operate on.
+    * Returns true if we have found valid mesh data in the source mesh view to operate on.
     * If no mesh data was resolved, then there is nothing to actually cook and we return false.
     *
     * @return : Returns true if we have source mesh data to operate on.
@@ -186,8 +189,8 @@ public:
     * Writes the triangulated mesh results to the cache so we don't have to
     * re-triangulate this geometry (identified by the 128-bit MeshKey) next time.
     *
-    * UsdGeomMesh data can be huge and must be accessed from the main thread, so the
-    * source data is copied there but the actual triangulation runs in a background
+    * The source mesh view can be huge and is only valid for the duration of the request, so the
+    * source data is copied on the main thread but the actual triangulation runs in a background
     * thread to avoid blocking. The final cache write happens on the main thread
     * because writing from the background thread caused thread-safety issues.
     */
@@ -287,7 +290,7 @@ public:
         const float *ret = nullptr;
         vertexCount = 0;
 
-        // If we have a triangulation of a UsdPrim we pull the vertices from it.
+        // If we have a triangulation of the source mesh view we pull the vertices from it.
         if (m_triangulate)
         {
             ret = m_triangulate->getVertices(vertexCount);
@@ -507,19 +510,9 @@ public:
 
     /**
     * Initializes a triangulation process. In this initial state we perform a deep
-    * copy of the source data in the UsdGeomMesh primitive so that we can
-    * perform the actual triangulation of the polygon data in a background thread
-    *
-    * @param usdPrim : The source primitive we wish to triangulate
+    * copy of the caller-supplied mesh view so that we can perform the actual
+    * triangulation of the polygon data in a background thread
     */
-    void initTriangulation(const UsdPrim &usdPrim, uint16_t& maxMaterialIndex)
-    {
-        CARB_PROFILE_ZONE(0, "CookingTask::initTriangulation");
-        SAFE_RELEASE(m_triangulate); // release any previous instance of the triangulation class
-        // Create in instance of the triangulation class relative to this UsdGeomMesh
-        m_triangulate = triangulateusd::TriangulateUSDPrim::create(usdPrim, maxMaterialIndex);
-    }
-
     void initTriangulation(const omni::physx::PhysxCookingMeshView& meshView)
     {
         CARB_PROFILE_ZONE(0, "CookingTask::initTriangulation");
@@ -528,7 +521,7 @@ public:
     }
 
     /**
-    * This method is called from a background thread. It takes the polygon data from the source UsdGeomMesh
+    * This method is called from a background thread. It takes the polygon data from the source mesh view
     * (read in initTriangulation) and converts it into an indexed triangle mesh.
     */
     void performTriangulation(void)
@@ -564,18 +557,13 @@ public:
     }
 
     /**
-    * Retrieve the fully qualified path name for the USD prim we are cooking
+    * Retrieve this task's opaque identity key (see computeCookingTaskKey).
     *
-    * @return : Returns the SdfPath of the primitive we are operating against
+    * @return : Returns the task key of the primitive we are operating against
     */
-    SdfPath getPrimPath(void) const
+    const std::string& getTaskKey(void) const
     {
-        return m_primPath;
-    }
-
-    UsdStageWeakPtr getStage() const
-    {
-        return UsdUtilsStageCache::Get().Find(UsdStageCache::Id::FromLongInt((long)mResultObject.request->primStageId));
+        return m_taskKey;
     }
 
     /**
@@ -671,6 +659,8 @@ public:
         return m_taskStarted;
     }
 
+    // Owned reference, taken in CookingTask::setPxCudaAndGPUPointers() and released in
+    // ~CookingTaskImpl(). Never a borrowed pointer: see REQ-COOK-CUDACTX-001.
     ::physx::PxCudaContextManager* mPxCudaContextManager = nullptr;
     ::physx::PxPhysicsGpu* mPxPhysicsGPU = nullptr;
     carb::Float3    mBmin{};    // The bounding box minimum for the source mesh
@@ -681,7 +671,7 @@ public:
     bool                m_taskStarted{ false }; // true if the task has been started
     std::atomic<bool> m_finished{ false };    // Set to true when the task is completed
     std::atomic<bool> m_succeeded{ false };    // Set to true when the task is succeded
-    SdfPath    m_primPath; // the name of the primitive we are cooking mesh data for.
+    std::string m_taskKey; // opaque identity of the primitive we are cooking mesh data for (see computeCookingTaskKey).
     carb::tasking::Future<> m_future; // Pointer to the counter allocated for this task
     triangulateusd::TriangulateUSDPrim  *m_triangulate{ nullptr };
     // if the triangulation was loaded from the mesh cache...
@@ -739,9 +729,23 @@ const uint16_t* CookingTask::getMaterialIndices(uint32_t& faceCount) const
     return mImpl->getMaterialIndices(faceCount);
 }
 
+/**
+ * @implements REQ-COOK-CUDACTX-001
+ * @covers AC-3
+ */
 void CookingTask::setPxCudaAndGPUPointers(::physx::PxCudaContextManager* cudaContextManager,
                                           ::physx::PxPhysicsGpu* physicsGPU)
 {
+    // A task can outlive the call that configured it - dispatchAsyncTasks() runs queued tasks on a
+    // carb::tasking worker long afterwards, and GPU SDF cooking dereferences the manager there. The
+    // host releases and recreates its manager from the main thread, so the task has to own a
+    // reference for its whole lifetime rather than borrow the caller's.
+    // Acquire before release so that re-setting the same manager cannot transiently drop it to zero.
+    if (cudaContextManager)
+    {
+        cudaContextManager->acquireReference();
+    }
+    SAFE_RELEASE(mImpl->mPxCudaContextManager);
     mImpl->mPxCudaContextManager = cudaContextManager;
     mImpl->mPxPhysicsGPU = physicsGPU;
 }
@@ -759,11 +763,6 @@ void CookingTask::setPxCudaAndGPUPointers(::physx::PxCudaContextManager* cudaCon
 void CookingTask::cancel(bool invokeCallbackAnyway)
 {
     mImpl->cancel(invokeCallbackAnyway);
-}
-
-void CookingTask::initTriangulation(const UsdPrim &usdPrim, uint16_t& maxMaterialIndex)
-{
-    mImpl->initTriangulation(usdPrim, maxMaterialIndex);
 }
 
 void CookingTask::performTriangulation(void) // called from another thread, perform the triangulation
@@ -796,9 +795,9 @@ void CookingTask::getCRC(omni::physx::usdparser::MeshKey &crc) const
     crc = mImpl->mResultObject.cookedDataCRC;
 }
 
-SdfPath CookingTask::getPrimPath(void) const
+const std::string& CookingTask::getTaskKey(void) const
 {
-    return mImpl->getPrimPath();
+    return mImpl->getTaskKey();
 }
 
 const std::string& CookingTask::getPrimPathText() const
@@ -814,11 +813,6 @@ bool CookingTask::setPrimPathText(const char* primPathText)
         return true;
     }
     return false;
-}
-
-UsdStageWeakPtr CookingTask::getStage() const
-{
-    return mImpl->getStage();
 }
 
 void CookingTask::fireFinishedCallback(omni::physx::PhysxCookingResult::Enum result)

@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-MIMIC-001
- * @covers AC-1 AC-2 AC-3 AC-4
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-7
  */
 
 // Per-joint mimic readers (PhysxMimicJointAPI multi-apply +
@@ -103,16 +103,12 @@ bool isAxisNotLocked(const JointLimitLookup& jointLimitOf, ObjectKey key, JointA
     return !limit || limit->lower < limit->upper;
 }
 
-// JointAxis enum mirror for the D6 path — three rotational axes.
-constexpr int kAxisRotX = 0; // matches JointAxis::eRotX
-constexpr int kAxisRotY = 1;
-constexpr int kAxisRotZ = 2;
-
 // Validate a joint's degree-of-freedom for mimic. `jointType` is the
 // joint kind for `jointKey`; `targetAxis` is the mimic-API axis
 // instance ("rotX" / "rotY" / "rotZ"). On success, writes the resolved
-// internal axis (`MimicJointDesc::eDEFAULT_AXIS` for revolute /
-// prismatic; the rotational axis for D6) into `outAxis`.
+// internal axis into `outAxis`: `MimicJointDesc::eDEFAULT_AXIS` for
+// revolute / prismatic, else the `JointAxis` enumerator of the
+// rotational axis (eRotX / eRotY / eRotZ) for D6 / Custom.
 bool checkDegreeOfFreedom(IPhysicsSource& src, const JointLimitLookup& jointLimitOf,
                           ObjectKey key, ObjectType jointType,
                           const std::string& targetAxis, std::string_view ownerPath,
@@ -181,9 +177,10 @@ bool checkDegreeOfFreedom(IPhysicsSource& src, const JointLimitLookup& jointLimi
         return false;
     }
 
-    if (targetAxis == "rotX")      outAxis = kAxisRotX;
-    else if (targetAxis == "rotY") outAxis = kAxisRotY;
-    else                           outAxis = kAxisRotZ;
+    // The consumer (InternalMimicJoint::getArticulationAxis) compares this against
+    // the JointAxis enumerators, so emit the enumerator value itself -- eRotX is 4,
+    // not 0. See the note on `outAxis` above.
+    outAxis = int(targetJointAxis);
     return true;
 }
 
@@ -213,7 +210,7 @@ ObjectKey readSingleRelTarget(IPhysicsSource& src, ObjectKey key, const std::str
 } // namespace
 
 // @implements REQ-PARSE-MIMIC-001
-// @covers AC-1 AC-2
+// @covers AC-1 AC-2 AC-7
 void parseMimicJoints(ParseContext& ctx, ObjectKey jointKey,
                      const MimicJointParseInfo& info,
                      const JointTypeLookup& jointTypeOf,

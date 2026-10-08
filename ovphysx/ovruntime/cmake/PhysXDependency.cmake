@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 # PhysX SDK dependency management for ovruntime.
 #
@@ -10,7 +10,8 @@
 #   ovruntime_link_physx_static_libs(<target> [FULL|MINIMAL])
 #     Links PhysX static libraries to <target>.
 #     FULL (default): all PhysX libs (Extensions, Vehicle, CharacterKinematic, Cooking, etc.)
-#     MINIMAL: only PhysX, PhysXCommon, PhysXFoundation
+#     MINIMAL: PhysX, PhysXCommon, PhysXFoundation, the separate PVDRuntime_static_64 archive,
+#              and Ws2_32 on Windows
 
 if(OVRUNTIME_DEV_PHYSX AND NOT TARGET PhysX)
     # --- Build PhysX from source ---
@@ -89,7 +90,15 @@ if(OVRUNTIME_DEV_PHYSX AND NOT TARGET PhysX)
     set(PX_BUILDBENCHMARKS OFF CACHE BOOL "" FORCE)
     set(PX_BUILDVISUALTESTS OFF CACHE BOOL "" FORCE)
     set(PX_BUILDPVDRUNTIME ON CACHE BOOL "" FORCE)
-    set(PX_BUILDSNIPPETS OFF CACHE BOOL "" FORCE)
+    # The public distro ships snippet sources, so the OSS --devphysx jobs opt in
+    # via OVPHYSX_BUILD_PHYSX_SNIPPETS and compile them in the same tree they
+    # already build. Off otherwise: ovphysx only needs the libraries it links.
+    if(DEFINED ENV{OVPHYSX_BUILD_PHYSX_SNIPPETS} AND "$ENV{OVPHYSX_BUILD_PHYSX_SNIPPETS}" STREQUAL "1")
+        set(PX_BUILDSNIPPETS ON CACHE BOOL "" FORCE)
+        message(STATUS "PhysX snippets: ENABLED (OVPHYSX_BUILD_PHYSX_SNIPPETS=1)")
+    else()
+        set(PX_BUILDSNIPPETS OFF CACHE BOOL "" FORCE)
+    endif()
     set(PX_BUILDVHACD ON CACHE BOOL "" FORCE)
     set(PX_CMAKE_SUPPRESS_REGENERATION OFF CACHE BOOL "" FORCE)
     set(PX_SCALAR_MATH OFF CACHE BOOL "" FORCE)
@@ -228,18 +237,55 @@ if(OVRUNTIME_DEV_PHYSX AND NOT TARGET PhysX)
         # same source layout that will be published.
         #
         # PUBLIC_RELEASE=ON matches the public layout's own default (set in
-        # physx/CMakeLists.txt). The freeglut/DLL-copy logic gated by it in
-        # source/compiler/cmake/windows/CMakeLists.txt only affects snippet,
-        # unit-test, and visualtest targets, all of which we disable above
-        # (PX_BUILDSNIPPETS / PX_BUILDUNITTESTS / PX_BUILDVISUALTESTS = OFF).
-        # The earlier reason for using compiler/internal (avoid PUBLIC_RELEASE=1
-        # pulling freeglut) does not apply once those targets are off.
+        # physx/CMakeLists.txt). The freeglut/DLL-copy it gates in
+        # source/compiler/cmake/windows/CMakeLists.txt affects only snippet,
+        # unit-test and visualtest targets; the DLL copy is EXISTS-guarded, so it
+        # is inert when freeglut is absent.
         set(PUBLIC_RELEASE ON CACHE BOOL "" FORCE)
         add_subdirectory(
             "${PHYSX_ROOT_DIR}/source/compiler/cmake"
             "${CMAKE_CURRENT_BINARY_DIR}/physx_sdk"
             EXCLUDE_FROM_ALL
         )
+        if(PX_BUILDSNIPPETS)
+            # We enter PhysX at source/compiler/cmake, which never reads
+            # PX_BUILDSNIPPETS -- only physx/CMakeLists.txt does, and it is the
+            # entry point this integration bypasses. Mirror what it does there
+            # (its lines 315 and 461-463) so the flag actually produces targets.
+            # No EXCLUDE_FROM_ALL: the snippets must build with the job, not just
+            # configure.
+            if(TARGET_BUILD_PLATFORM STREQUAL "linux")
+                find_package(OpenGL REQUIRED)
+            endif()
+            # snippets/compiler/cmake/windows/CMakeLists.txt adds the
+            # ConvexDecomposition snippet when PX_BUILDVHACD is on, and it links
+            # a VHACD target that only physx/compiler/internal defines -- the
+            # entry point the public layout does not have. Left on, the link
+            # fails with "cannot open input file VHACD.lib".
+            set(PX_BUILDVHACD OFF CACHE BOOL "" FORCE)
+            message(STATUS "Adding PhysX snippets to the build...")
+            add_subdirectory(
+                "${PHYSX_ROOT_DIR}/snippets/compiler/cmake"
+                "${CMAKE_CURRENT_BINARY_DIR}/physx_snippets"
+            )
+            # ovphysx adds ovruntime with EXCLUDE_FROM_ALL, and that is inherited
+            # by every subdirectory below it -- so the snippet targets would be
+            # generated and then never built, since nothing links them. Clear the
+            # property per target to put them back in the default build, which is
+            # the point of enabling them here.
+            get_property(_snippet_targets
+                DIRECTORY "${PHYSX_ROOT_DIR}/snippets/compiler/cmake"
+                PROPERTY BUILDSYSTEM_TARGETS
+            )
+            if(NOT _snippet_targets)
+                message(FATAL_ERROR "PhysX snippets produced no targets.")
+            endif()
+            foreach(_snippet_target IN LISTS _snippet_targets)
+                set_property(TARGET ${_snippet_target} PROPERTY EXCLUDE_FROM_ALL FALSE)
+            endforeach()
+            list(LENGTH _snippet_targets _snippet_count)
+            message(STATUS "PhysX snippets: ${_snippet_count} target(s) in the default build")
+        endif()
         if(PX_GENERATE_GPU_PROJECTS OR PX_GENERATE_GPU_PROJECTS_ONLY)
             add_subdirectory(
                 "${PHYSX_ROOT_DIR}/source/compiler/cmakegpu"
@@ -253,6 +299,23 @@ if(OVRUNTIME_DEV_PHYSX AND NOT TARGET PhysX)
                 "${CMAKE_CURRENT_BINARY_DIR}/physx_pvdruntime"
                 EXCLUDE_FROM_ALL
             )
+            # PhysX statically links the OmniPVD runtime: PhysX's own sources
+            # (source/physx/src/omnipvd/NpOmniPvd.cpp) call createOmniPvdWriter,
+            # which is defined in PVDRuntime.  physx/CMakeLists.txt declares this
+            # dependency right after its own add_subdirectory, but we enter PhysX
+            # through source/compiler/cmake and never execute physx/CMakeLists.txt,
+            # so the declaration has to be repeated here.
+            #
+            # Without it nothing references PVDRuntime, so the EXCLUDE_FROM_ALL
+            # target above is never built and createOmniPvdWriter stays
+            # unresolved.  A shared consumer such as libovphysx.so still links
+            # (undefined symbols are permitted in shared objects on Linux) and
+            # only fails when the symbol is first used, as
+            # "symbol lookup error: undefined symbol: createOmniPvdWriter" in the
+            # ovphysx-opensource-devphysx-build-test-* jobs.
+            if(TARGET PhysX AND TARGET PVDRuntime)
+                target_link_libraries(PhysX PRIVATE PVDRuntime)
+            endif()
         endif()
     endif()
 
@@ -268,8 +331,8 @@ if(OVRUNTIME_DEV_PHYSX AND NOT TARGET PhysX)
     set(CMAKE_BUILD_TYPE "${_OVRUNTIME_SAVED_BUILD_TYPE}" CACHE STRING "" FORCE)
     unset(_OVRUNTIME_SAVED_BUILD_TYPE)
 
-    # Fix output names: PhysX cmake uses OUTPUT_NAME "PhysXGpu" / "PVDRuntime"
-    # (no _64 suffix), which sets the SONAME to libPhysXGpu.so / libPVDRuntime.so.
+    # Fix output name: PhysX cmake uses OUTPUT_NAME "PhysXGpu" (no _64 suffix),
+    # which sets the SONAME to libPhysXGpu.so.
     # PxLoadPhysxGPUModule (compiled into the PhysX static lib) does
     # dlopen("libPhysXGpu_64.so") at runtime.  On Linux, dlopen matches by SONAME
     # when checking already-loaded libraries, so the SONAME must include _64 for the
@@ -277,9 +340,6 @@ if(OVRUNTIME_DEV_PHYSX AND NOT TARGET PhysX)
     # RPATH pointing to the bin directory.
     if(TARGET PhysXGpu)
         set_target_properties(PhysXGpu PROPERTIES OUTPUT_NAME "PhysXGpu_64")
-    endif()
-    if(TARGET PVDRuntime)
-        set_target_properties(PVDRuntime PROPERTIES OUTPUT_NAME "PVDRuntime_64")
     endif()
 
     # --- Release→checked compile-def patch (VS and single-config Linux) ---
@@ -363,7 +423,7 @@ endif()
 # Usage:
 #   ovruntime_link_physx_static_libs(MyTarget)          # links all PhysX libs
 #   ovruntime_link_physx_static_libs(MyTarget FULL)     # same as above
-#   ovruntime_link_physx_static_libs(MyTarget MINIMAL)  # links only PhysX, PhysXCommon, PhysXFoundation
+#   ovruntime_link_physx_static_libs(MyTarget MINIMAL)  # also links PVDRuntime_static_64 and Windows Ws2_32
 function(ovruntime_link_physx_static_libs _target)
     set(_mode "FULL")
     if(ARGC GREATER 1)
@@ -409,6 +469,7 @@ function(ovruntime_link_physx_static_libs _target)
                 target_link_libraries(${_target} PRIVATE
                     -Wl,--start-group
                     PhysX_static_64
+                    PVDRuntime_static_64
                     PhysXCommon_static_64
                     PhysXFoundation_static_64
                     -Wl,--end-group
@@ -416,8 +477,10 @@ function(ovruntime_link_physx_static_libs _target)
             else()
                 target_link_libraries(${_target} PRIVATE
                     PhysX_static_64
+                    PVDRuntime_static_64
                     PhysXCommon_static_64
                     PhysXFoundation_static_64
+                    Ws2_32
                 )
             endif()
         else()
@@ -426,6 +489,7 @@ function(ovruntime_link_physx_static_libs _target)
                     -Wl,--start-group
                     PhysXExtensions_static_64
                     PhysX_static_64
+                    PVDRuntime_static_64
                     PhysXPvdSDK_static_64
                     PhysXVehicle_static_64
                     PhysXCharacterKinematic_static_64
@@ -441,10 +505,12 @@ function(ovruntime_link_physx_static_libs _target)
                     PhysXExtensions_static_64
                     PhysXCharacterKinematic_static_64
                     PhysX_static_64
+                    PVDRuntime_static_64
                     PhysXPvdSDK_static_64
                     PhysXCooking_static_64
                     PhysXCommon_static_64
                     PhysXFoundation_static_64
+                    Ws2_32
                 )
             endif()
         endif()

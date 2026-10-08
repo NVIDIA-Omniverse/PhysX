@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 # Locate pip packages that were pre-installed into OVRUNTIME_TARGET_DEPS by
 # pull_dependencies (ovruntime standalone) or pip_fetch.py (ovphysx).

@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-#include "UsdPCH.h"
 
 #include "../service/CookingComputeService.h"
 #include "UjitsoMeshProcessors.h"
@@ -12,10 +11,8 @@
 
 #include <omni/physx/MeshKey.h>
 #include <private/omni/physx/IPhysxCookingServicePrivate.h>
-#include <common/utilities/Utilities.h>
 
 using namespace carb::ujitso;
-using namespace PXR_NS;
 using namespace physx;
 using namespace triangulateusd;
 

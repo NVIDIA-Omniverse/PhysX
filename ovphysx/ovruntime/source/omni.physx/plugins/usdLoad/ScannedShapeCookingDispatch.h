@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-CONSUMER-001
@@ -8,17 +8,20 @@
 
 #pragma once
 
-// Bridges a `omni::physics::usd::ScannedStage` snapshot to the
-// legacy cooking pipeline + consumer-side state translation.
+// Bridges a `parse::ScannedStage` snapshot to the legacy cooking pipeline +
+// consumer-side state translation.
 //
 // Background.  scanStage produces parse-library shape descriptors with
-// every USD-readable field populated, but mesh-type descriptors still
+// every source-readable field populated, but mesh-type descriptors still
 // need cooking-service dispatch to fill `crc` / `meshKey` — the cooking
 // service writes these via an `onFinished` callback after computing
 // the cooked-data CRC.  Bounding-shape mesh approximations also need
 // a cooking pass (`PxComputeBoundingSphere` / `createOBB`).  Both flows
-// are USD-coupled and stay consumer-side per ADR-0001 §13 and the
-// REQ-PARSE-SCAN-001 AC-9/AC-10 documented gaps.
+// stay consumer-side per ADR-0001 sect. 13 and the REQ-PARSE-SCAN-001 AC-9/AC-10
+// documented gaps.  `dispatchScannedShapeCooking` and
+// `resolveConsumerSideShapeState` are both pxr-free; the
+// SdfPath-taking sibling of the latter was deleted once its last caller
+// (LoadUsd.cpp) migrated to the ObjectKey-native overload below.
 //
 // Consumer pattern:
 //   1. `scanStage(attachTarget, roots)` produces ScannedStage.
@@ -38,18 +41,14 @@
 
 #include <omni/physics/parse/Handles.h>
 
-#include <pxr/usd/sdf/path.h>
-#include <pxr/usd/usdGeom/xformCache.h>
+#include "LoadTools.h"
 
 #include <unordered_map>
+#include <vector>
 
 namespace omni::physics::parse
 {
 struct PhysxShapeDesc;
-}
-
-namespace omni::physics::usd
-{
 class ScannedStage;
 }
 
@@ -57,8 +56,9 @@ namespace omni::physx::usdparser
 {
 class AttachedStage;
 using PhysxShapeDesc = ::omni::physics::parse::PhysxShapeDesc;
-using CollisionBlockPair = std::pair<PXR_NS::SdfPath, PXR_NS::SdfPath>;
-using CollisionPairVector = std::vector<CollisionBlockPair>;
+// CollisionBlockPair / CollisionPairVector are LoadTools.h's ObjectKey-keyed
+// aliases (the ~13-alias ObjectDb retype) -- do not redeclare an SdfPath-keyed
+// shadow here, it silently conflicts wherever both headers are included.
 }
 
 namespace omni::physx::usdparser::scan
@@ -110,28 +110,33 @@ private:
 // `usdLoad/Collision.cpp::processMeshCollision` for the four
 // cooking-service-driven mesh types (Convex / Triangle / ConvexDecomp /
 // SphereFill).
+//
+// Takes the backend-agnostic `parse::ScannedStage` base: the ScannedStage coupling is the
+// usual opaque-identity round trip
+// (`scanned.source().sourceKeyToString()` / `attachedStage.keyFor(string_view)`).
 void dispatchScannedShapeCooking(
     AttachedStage& attachedStage,
-    const omni::physics::usd::ScannedStage& scanned,
+    const omni::physics::parse::ScannedStage& scanned,
     PhysxShapeDesc* desc);
 
 // Translate the parse-lib desc's source-side ObjectKey lists into the
-// legacy USD-typed fields the consumer needs for registration:
+// fields the consumer needs for registration:
 //   - sourceSimulationOwners (ObjectKey list)  →  desc->sceneIds (ObjectId list, ObjectDatabase lookup)
-//   - sourceMaterials (ObjectKey list)         →  outMaterials (SdfPath list, finalizeShape input)
+//   - sourceMaterials (ObjectKey list)         ->  outMaterials (ObjectKey list, attachedStage-space)
 //   - sourceFilteredCollisions (ObjectKey list) → outFilteredPairs (pairs with primKey)
 //
 // Returns false in the same case `fillPhysxShapeDesc` returns false:
 // simulationOwners non-empty but no scene resolved.  Caller should
 // drop the shape on false (matches legacy gate).
 //
-// Mirrors `usdLoad/Collision.cpp::fillPhysxShapeDesc` lines 338-341 +
-// 516-526.
+// Mirrors `usdLoad/Collision.cpp::fillPhysxShapeDesc` lines 338-341 + 516-526, and its
+// outMaterials is the same attachedStage-space ObjectKey list Collision.h's ObjectKey-native
+// `finalizeShape` overload consumes directly (no SdfPath round-trip needed downstream).
 bool resolveConsumerSideShapeState(
     AttachedStage& attachedStage,
-    const omni::physics::usd::ScannedStage& scanned,
+    const omni::physics::parse::ScannedStage& scanned,
     PhysxShapeDesc* desc,
-    PXR_NS::SdfPathVector& outMaterials,
+    std::vector<omni::physics::parse::ObjectKey>& outMaterials,
     CollisionPairVector& outFilteredPairs);
 
 } // namespace omni::physx::usdparser::scan

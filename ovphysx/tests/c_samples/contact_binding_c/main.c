@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-// NOTE: This file is included verbatim in documentation via literalinclude.
+// NOTE: This file is included in the documentation via literalinclude.
+// The tutorial marker comments below define the included range.
 
 #include <ovphysx/ovphysx.h>
 #include <ovphysx/ovphysx_types.h>
@@ -45,7 +46,8 @@ static int check_enqueue(ovphysx_enqueue_result_t r, const char* ctx)
 static int wait_op(ovphysx_handle_t handle, ovphysx_op_index_t op_index, const char* ctx)
 {
     ovphysx_op_wait_result_t wait_result = {0};
-    ovphysx_result_t r = ovphysx_wait_op(handle, op_index, UINT64_MAX, &wait_result);
+    ovphysx_result_t r = ovphysx_wait_op(
+        handle, op_index, OVPHYSX_TIMEOUT_INFINITE, &wait_result);
     int has_errors = (wait_result.num_errors > 0);
     ovphysx_destroy_wait_result(&wait_result);
     if (has_errors) {
@@ -110,6 +112,7 @@ static int run(void)
     ovphysx_result_t r;
     ovphysx_enqueue_result_t er;
 
+    // [tutorial-start]
     /* 1. Initialize SDK */
     r = ovphysx_initialize();
     if (!check_result(r, "ovphysx_initialize")) return 1;
@@ -127,19 +130,22 @@ static int run(void)
         ovphysx_destroy_instance(handle); ovphysx_shutdown(); return 1;
     }
 
-    /* 3. Create contact binding BEFORE the first step.
-     *    sensor: the falling box.  filter: the ground plane. */
+    /* 3. Create the contact binding before the first step. The sensor is the
+     *    falling box. The filter is BigBase, the static collider it lands on,
+     *    rather than the ground plane at z=0. */
     ovphysx_string_t sensors[1];
     sensors[0] = ovphysx_cstr("/World/Cube1");
 
     ovphysx_string_t filters[1];
-    filters[0] = ovphysx_cstr("/World/GroundPlane/CollisionMesh");
+    filters[0] = ovphysx_cstr("/World/BigBase");
 
     ovphysx_contact_binding_handle_t cb = 0;
-    r = ovphysx_create_contact_binding(handle, sensors, 1, /* 1 sensor pattern */
-                                       filters, 1, /* 1 filter pattern per sensor */
-                                       256, /* flat contact-data capacity */
-                                       &cb);
+    r = ovphysx_create_contact_binding(
+        handle,
+        sensors, 1,     /* 1 sensor pattern */
+        filters, 1,     /* 1 filter pattern per sensor */
+        256,            /* max raw contact pairs */
+        &cb);
     if (!check_result(r, "ovphysx_create_contact_binding")) {
         ovphysx_sample_destroy_stage(handle, &stage_attachment);
         ovphysx_destroy_instance(handle); ovphysx_shutdown(); return 1;
@@ -176,8 +182,8 @@ static int run(void)
         return 1;
     }
 
-    /* 6. Read net contact forces: shape [S, 3].
-     *    dt is taken automatically from the last successful stepping call. */
+    /* 6. Read the net contact forces, shape [S, 3].
+     *    dt is taken from the last successful stepping call. */
     float* net_data   = NULL;
     int64_t* net_shp  = NULL;
     DLTensor net_tensor = make_tensor_f32_2d(
@@ -202,7 +208,7 @@ static int run(void)
     }
     free(net_data); free(net_shp);
 
-    /* 7. Read contact force matrix: shape [S, F, 3]. */
+    /* 7. Read the contact force matrix, shape [S, F, 3]. */
     float* mat_data   = NULL;
     int64_t* mat_shp  = NULL;
     DLTensor mat_tensor = make_tensor_f32_3d(
@@ -229,12 +235,34 @@ static int run(void)
                    mat_data[base + 2]);
         }
     }
+    /* Cube1 rests on BigBase, so the 1x1 matrix has to hold a real contact force.
+     * The max-abs norm avoids libm, which the CI sample link does not pass with -lm. */
+    if (sensor_count >= 1 && filter_count >= 1) {
+        float ax = mat_data[0] < 0.f ? -mat_data[0] : mat_data[0];
+        float ay = mat_data[1] < 0.f ? -mat_data[1] : mat_data[1];
+        float az = mat_data[2] < 0.f ? -mat_data[2] : mat_data[2];
+        float mag = ax > ay ? ax : ay;
+        if (az > mag) mag = az;
+        if (!(mag > 1.0f)) {
+            fprintf(stderr,
+                    "ERROR: expected Cube1 vs BigBase contact after 120 steps; "
+                    "force matrix mag=%f (fx=%f fy=%f fz=%f)\n",
+                    mag, mat_data[0], mat_data[1], mat_data[2]);
+            free(mat_data); free(mat_shp);
+            ovphysx_destroy_contact_binding(handle, cb);
+            ovphysx_sample_destroy_stage(handle, &stage_attachment);
+            ovphysx_destroy_instance(handle);
+            ovphysx_shutdown();
+            return 1;
+        }
+    }
     free(mat_data); free(mat_shp);
 
     printf("Contact binding sample completed successfully\n");
 
-    /* 8. Destroy contact binding */
+    /* 8. Destroy the contact binding. */
     ovphysx_destroy_contact_binding(handle, cb);
+    // [tutorial-end]
 
     ovphysx_sample_destroy_stage(handle, &stage_attachment);
     ovphysx_destroy_instance(handle);

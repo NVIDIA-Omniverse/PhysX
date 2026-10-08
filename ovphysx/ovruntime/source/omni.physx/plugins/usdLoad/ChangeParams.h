@@ -1,10 +1,16 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 #pragma once
 
+// OnPrimRequirementKeyCheckFn/OnPrimRequirementExtKeyCheckFn are the ObjectKey/TokenId-native
+// requirement-check function types. checkPrimChange(ObjectKey, TokenId) (PrimUpdate.cpp) is the
+// sole dispatch path for every source, including a genuine USD attach, so no SdfPath-typed
+// twin (OnPrimRequirementCheckFn/OnPrimRequirementCheckExtFn) exists any more.
+
 #include <private/omni/physx/PhysxUsd.h>
 #include <omni/physics/parse/Handles.h>
+#include <omni/physics/parse/IPhysicsSource.h>
 
 namespace omni
 {
@@ -16,28 +22,25 @@ class AttachedStage;
 
 typedef bool (*OnUpdateObjectFn)(AttachedStage& attachedStage,
                                  ObjectId objectId,
-                                 const PXR_NS::TfToken&,
-                                 const PXR_NS::UsdTimeCode&);
-typedef bool (*OnPrimRequirementCheckFn)(AttachedStage& attachedStage,
-                                         const PXR_NS::SdfPath&,
-                                         const PXR_NS::TfToken&,
-                                         const PXR_NS::UsdPrim* prim);
-typedef bool (*OnPrimRequirementCheckExtFn)(AttachedStage& attachedStage,
-                                            const PXR_NS::SdfPath&,
-                                            const PXR_NS::TfToken&,
-                                            const PXR_NS::UsdPrim* prim,
-                                            PXR_NS::SdfPath& resyncPath);
+                                 omni::physics::parse::TokenId,
+                                 omni::physics::parse::ReadTime);
 typedef bool (*OnPrimRequirementKeyCheckFn)(AttachedStage& attachedStage,
                                             omni::physics::parse::ObjectKey,
-                                            const PXR_NS::TfToken&);
+                                            omni::physics::parse::TokenId);
+
+// resyncKey reports the resync target, mirroring isNonMovable's own
+// ObjectKey&-out-param overload (PrimUpdate.cpp).
+typedef bool (*OnPrimRequirementExtKeyCheckFn)(AttachedStage& attachedStage,
+                                               omni::physics::parse::ObjectKey,
+                                               omni::physics::parse::TokenId,
+                                               omni::physics::parse::ObjectKey& resyncKey);
 
 struct ChangeParams
 {
     std::string changeAttribute;
-    OnPrimRequirementCheckFn onPrimCheck;
-    OnPrimRequirementCheckExtFn onPrimCheckExt;
     OnUpdateObjectFn onUpdate;
     OnPrimRequirementKeyCheckFn onPrimCheckKey = nullptr;
+    OnPrimRequirementExtKeyCheckFn onPrimCheckExtKey = nullptr;
 };
 
 } // namespace usdparser

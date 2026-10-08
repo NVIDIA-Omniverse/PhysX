@@ -1,8 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-CORE-003
+ * @covers AC-5
+ *
+ * @implements REQ-LOAD-TOKENS-001
  * @covers AC-5
  */
 
@@ -23,6 +26,23 @@ ParseContext::ParseContext(IPhysicsSource& source, IDescriptorAllocator& allocat
 }
 
 ParseContext::~ParseContext() = default;
+
+const KnownTokens& ParseContext::knownTokens()
+{
+    if (!mKnownTokensRef)
+    {
+        if (const KnownTokens* cached = mSource.knownTokens())
+        {
+            mKnownTokensRef = cached;
+        }
+        else
+        {
+            mKnownTokens.intern(mSource);
+            mKnownTokensRef = &mKnownTokens;
+        }
+    }
+    return *mKnownTokensRef;
+}
 
 uint32_t ParseContext::registerEnvId(TokenId token)
 {

@@ -1,5 +1,5 @@
 <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
-<!-- SPDX-License-Identifier: BSD-3-Clause -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
 # Articulation and Robot Simulation Stability Guide
 
@@ -13,11 +13,21 @@ Complex mechanisms have higher natural frequencies and need smaller timesteps.
 Closed articulation loops and humanoids often need well above the default 60 Hz
 (humanoids commonly run at 100 Hz or more).
 
+Before you change either value, note the scene's current
+`physxScene:timeStepsPerSecond` and position-iteration counts, and have a
+reproducible scene that shows the instability. Both steps are judged by whether
+that instability disappears, so an intermittent case gives you no signal.
+
 1. Try reducing the timestep (raise `physxScene:timeStepsPerSecond`) to see if
    instability resolves.
 2. If it does, try reducing the number of TGS/PGS position iterations — stability
    is often preserved with fewer iterations at a smaller timestep, improving
    performance.
+
+You are done when the instability is gone at the highest timestep and the lowest
+iteration count that still hold it. Both attributes are authored on the scene
+prim; refer to
+[Physics Solver](../simulation_setup/physics_scene.md#physics-solver).
 
 ## Mimic Joint Compliance
 
@@ -78,10 +88,10 @@ acceleration drives can appear too weak in manipulation.
 High stiffness for tight target tracking causes large forces and instability. Instead:
 
 - Add feed-forward effort (gravity, acceleration, Coriolis compensation) using
-  the read-only inverse-dynamics tensor types (`ARTICULATION_GRAVITY_FORCE`,
+  the read-only inverse dynamics tensor types (`ARTICULATION_GRAVITY_FORCE`,
   `ARTICULATION_MASS_MATRIX`, `ARTICULATION_CORIOLIS_AND_CENTRIFUGAL_FORCE`,
-  `ARTICULATION_JACOBIAN`) — see
-  [Tensor Bindings](../tutorials/tensor_bindings.md).
+  `ARTICULATION_JACOBIAN`) — refer to
+  [Tensor Bindings (deprecated)](../tutorials/tensor_bindings.md).
 - Limit the drive force, or rate-limit the drive targets, to avoid large forces
   from targets far from the current state.
 
@@ -106,11 +116,18 @@ Unintended self-collisions between non-adjacent links cause instability. When
 `physxArticulation:enabledSelfCollisions` is enabled, PhysX always filters
 parent/child link collisions, but non-adjacent links can still collide.
 
-![Articulation self-collision](images/articulation_self_collision.png)
+![Three articulation links A, B, and C in a chain. Joints connect A to B and B to C. A red circle highlights where link A and link C interpenetrate.](images/articulation_self_collision.png)
+
+*Figure: A three-link chain where only the non-adjacent pair collides.* Links A
+and B share a joint, and links B and C share a joint, so PhysX filters both of
+those pairs automatically. A and C have no joint between them, so they remain an
+active collision pair -- and in the pose drawn, the corner of C penetrates A
+(the red circle). A and C is the pair to filter here; A and B, and B and C, need
+no action.
 
 Rather than disabling self-collisions globally (usually needed for modeling),
 selectively disable collision between the problem links with
-`UsdPhysicsFilteredPairsAPI` (see
+`UsdPhysicsFilteredPairsAPI` (refer to
 [pairwise filtering](../simulation_setup/collision.md#collision-filtering)). A
 good first diagnostic step is to disable self-collisions to confirm they are the
 cause.
@@ -119,11 +136,17 @@ cause.
 
 The solver has a strict constraint ordering. For gripping, resolving dynamic
 contact toward the end of the solver can help (the solver favors constraints
-resolved last). Enable it on the scene:
+resolved last).
+
+Enable it on the `PhysicsScene` prim. This example extends an existing stage
+rather than creating one, so it assumes you already registered the codeless
+PhysX schemas and have the scene path (refer to
+[Physics Schemas](../physics_schemas.md)):
 
 ```python
 from pxr import Sdf
 
+scene_prim = stage.GetPrimAtPath("/World/physicsScene")
 scene_prim.ApplyAPI("PhysxSceneAPI")
 scene_prim.CreateAttribute("physxScene:solveArticulationContactLast", Sdf.ValueTypeNames.Bool).Set(True)
 ```

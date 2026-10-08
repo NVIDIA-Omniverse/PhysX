@@ -1,10 +1,17 @@
 // SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-PUBLICAPI-001
+ * @covers AC-26
+ */
 
 #pragma once
 
 #include <carb/Defines.h>
 #include <carb/Types.h>
+
+#include <omni/physics/parse/Handles.h>
 
 #include <string>
 #include <vector>
@@ -39,10 +46,10 @@ struct IPhysxUI
 
     /// Tendons attachment helper selection
     ///
-    /// \param bodyPath                     Body path
-    /// \param attachmentInstanceName       TfToken instance of the tendons
-    void(CARB_ABI* selectSpatialTendonAttachmentHelper)(const PXR_NS::SdfPath bodyPath,
-                                                        const PXR_NS::TfToken attachmentInstanceName);
+    /// \param bodyKey                      Body object key
+    /// \param attachmentInstanceName       Interned instance name of the tendons (multi-apply schema instance, not an object)
+    void(CARB_ABI* selectSpatialTendonAttachmentHelper)(const omni::physics::parse::ObjectKey bodyKey,
+                                                        const omni::physics::parse::TokenId attachmentInstanceName);
 
     /// Tendons visualization filter
     ///
@@ -89,8 +96,8 @@ struct IPhysxUI
 
     /// Refresh deformable attachment.
     ///
-    /// \param attachmentPath   Sdf.Path to the attachment.
-    void(CARB_ABI* refreshAttachment)(PXR_NS::SdfPath attachmentPath);
+    /// \param attachmentKey   Object key of the attachment.
+    void(CARB_ABI* refreshAttachment)(omni::physics::parse::ObjectKey attachmentKey);
 
     /// Sets the camera position for the UI.
     ///

@@ -1,12 +1,11 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: Apache-2.0
 
-# Cross-Platform Helpers
+# Cross-platform helpers.
 
 include_guard(GLOBAL)
 
-# Detect target operating system
-# In script mode (cmake -P), CMAKE_SYSTEM_NAME is not set, so fall back to CMAKE_HOST_SYSTEM_NAME
+# In script mode (cmake -P), CMAKE_SYSTEM_NAME is not set, so CMAKE_HOST_SYSTEM_NAME is used.
 if(NOT CMAKE_SYSTEM_NAME)
     set(CMAKE_SYSTEM_NAME "${CMAKE_HOST_SYSTEM_NAME}")
 endif()
@@ -33,28 +32,25 @@ else()
     message(FATAL_ERROR "Unknown target OS: ${CMAKE_SYSTEM_NAME}")
 endif()
 
-# Detect target architecture
-# In script mode (cmake -P), CMAKE_SYSTEM_PROCESSOR may not be set, so fall back to CMAKE_HOST_SYSTEM_PROCESSOR
+# In script mode (cmake -P), CMAKE_SYSTEM_PROCESSOR may not be set, so CMAKE_HOST_SYSTEM_PROCESSOR is used.
 if(NOT CMAKE_SYSTEM_PROCESSOR)
     set(CMAKE_SYSTEM_PROCESSOR "${CMAKE_HOST_SYSTEM_PROCESSOR}")
 endif()
 
-# If still empty, try to detect using system commands (see bug https://gitlab.kitware.com/cmake/cmake/-/issues/25151)
+# CMAKE_HOST_SYSTEM_PROCESSOR can also be empty in script mode
+# (https://gitlab.kitware.com/cmake/cmake/-/issues/25151), so system queries are the last resort.
 if(NOT CMAKE_SYSTEM_PROCESSOR OR CMAKE_SYSTEM_PROCESSOR STREQUAL "")
     if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-        # On Windows, check the PROCESSOR_ARCHITECTURE environment variable.
         # A 32-bit CMake running under WOW64 on a 64-bit host (e.g. the CMake
         # bundled with VS Build Tools) reports PROCESSOR_ARCHITECTURE=x86 while
         # the true host arch is in PROCESSOR_ARCHITEW6432 (AMD64 or ARM64).
-        # Prefer PROCESSOR_ARCHITEW6432 when set so the host is detected
-        # correctly regardless of CMake bitness.
+        # PROCESSOR_ARCHITEW6432 therefore takes precedence when set.
         if(NOT "$ENV{PROCESSOR_ARCHITEW6432}" STREQUAL "")
             set(CMAKE_SYSTEM_PROCESSOR "$ENV{PROCESSOR_ARCHITEW6432}")
         else()
             set(CMAKE_SYSTEM_PROCESSOR "$ENV{PROCESSOR_ARCHITECTURE}")
         endif()
     else()
-        # On Unix-like systems, use uname -m
         execute_process(
             COMMAND uname -m
             OUTPUT_VARIABLE CMAKE_SYSTEM_PROCESSOR
@@ -76,12 +72,10 @@ else()
     message(FATAL_ERROR "Unknown target architecture: ${CMAKE_SYSTEM_PROCESSOR}")
 endif()
 
-# Combined platform identifiers
 set(PLATFORM_NAME "${OS_NAME}-${ARCH_NAME}")
 
-# Install directory layout
-# Windows: DLLs go in bin/, Linux: .so files go in lib/
-# Deps always go in lib/deps/ on both platforms
+# Install directory layout. Windows DLLs go in bin/ and Linux .so files go in lib/.
+# Deps always go in lib/deps/ on both platforms.
 if(OS_NAME STREQUAL "windows")
     set(INSTALL_RUNTIME_SUBDIR "bin")
 else()
@@ -89,14 +83,13 @@ else()
 endif()
 set(INSTALL_DEPS_SUBDIR "lib/deps")
 
-# SDK package archive extension
 if(OS_NAME STREQUAL "windows")
     set(SDK_ARCHIVE_EXT "zip")
 else()
     set(SDK_ARCHIVE_EXT "tar.gz")
 endif()
 
-# Copy a single file only when content differs (avoids timestamp churn).
+# Copy a single file only when its content differs, which avoids timestamp churn.
 function(copy_file_if_different SRC_FILE DST_FILE)
     if(NOT EXISTS "${SRC_FILE}" OR IS_DIRECTORY "${SRC_FILE}")
         message(FATAL_ERROR "Expected file not found: ${SRC_FILE}")
@@ -113,8 +106,8 @@ function(copy_file_if_different SRC_FILE DST_FILE)
 endfunction()
 
 # Recursively copy a directory tree, only updating files whose content changed.
-# EXCLUDE_DIRS matches any path component below SRC_DIR, file names included:
-# a file named like an excluded directory is skipped too.
+# EXCLUDE_DIRS matches any path component below SRC_DIR, file names included,
+# so a file named like an excluded directory is skipped too.
 function(copy_tree_if_different SRC_DIR DST_DIR)
     cmake_parse_arguments(_CT "" "" "EXCLUDE_DIRS" ${ARGN})
     if(NOT IS_DIRECTORY "${SRC_DIR}")
@@ -148,31 +141,31 @@ function(copy_tree_if_different SRC_DIR DST_DIR)
 endfunction()
 
 # Stage a Python samples tree into a package tree, leaving developer-local
-# state behind.  .venv/, __pycache__/ and .pytest_cache/ are
-# build-environment-specific and must not ship.  They have to be excluded from
-# the copy rather than deleted after it: .venv/bin/python is a symlink to an
+# state behind. .venv/, __pycache__/ and .pytest_cache/ are
+# build-environment-specific and must not ship. They have to be excluded from
+# the copy rather than deleted after it. .venv/bin/python is a symlink to an
 # interpreter outside the repository, which copy_file_if_different() cannot
-# resolve, so merely walking the tree aborts the wheel build on any machine
+# resolve, so walking the tree would abort the wheel build on any machine
 # that has run the python-samples tests.
 function(stage_python_samples_tree SRC_DIR DST_DIR)
     copy_tree_if_different("${SRC_DIR}" "${DST_DIR}"
         EXCLUDE_DIRS .venv __pycache__ .pytest_cache)
-    # The lock file pins one local resolution; wheel consumers re-resolve.
+    # The lock file pins one local resolution. Wheel consumers re-resolve.
     if(EXISTS "${DST_DIR}/uv.lock")
         file(REMOVE "${DST_DIR}/uv.lock")
     endif()
 endfunction()
 
-# Function to convert semver to PEP 440 format for Python
+# Convert a semver string to PEP 440 format for Python.
 # Semver: X.Y.Z-suffix (hyphen for pre-release)
 # PEP 440: X.Y.Z.suffix (dot for local version segment)
-# Sets PEP440_VERSION in parent scope
+# Sets PEP440_VERSION in the parent scope.
 function(semver_to_pep440 SEMVER_VERSION)
     string(REPLACE "-" "." PEP440_RESULT "${SEMVER_VERSION}")
     set(PEP440_VERSION "${PEP440_RESULT}" PARENT_SCOPE)
 endfunction()
 
-# Git helpers (prefer CI vars, fall back to git)
+# Git helpers. CI variables take precedence over git commands.
 function(get_git_sha OUTPUT_VAR WORKING_DIR SHORT)
     if(NOT DEFINED WORKING_DIR OR WORKING_DIR STREQUAL "")
         set(WORKING_DIR ".")
@@ -221,8 +214,8 @@ function(get_git_branch OUTPUT_VAR WORKING_DIR)
     set(${OUTPUT_VAR} "${BRANCH}" PARENT_SCOPE)
 endfunction()
 
-# Append branch info to PEP 440 version as local segment (e.g. 1.2.3+fix.test.ab12cd)
-# Output variable is set in parent scope.
+# Append branch info to a PEP 440 version as its local segment (e.g. 1.2.3+fix.test.ab12cd).
+# The output variable is set in the parent scope.
 function(append_branch_local_version BASE_VERSION WORKING_DIR OUTPUT_VAR)
     if(NOT DEFINED WORKING_DIR OR WORKING_DIR STREQUAL "")
         set(WORKING_DIR ".")
@@ -254,13 +247,12 @@ function(append_branch_local_version BASE_VERSION WORKING_DIR OUTPUT_VAR)
     set(${OUTPUT_VAR} "${VERSION_WITH_LOCAL}" PARENT_SCOPE)
 endfunction()
 
-# Function to get Python wheel platform tag
-# Sets WHEEL_PLAT_NAME in parent scope
-# Uses the already-detected OS_NAME and ARCH_NAME variables
+# Derive the Python wheel platform tag from OS_NAME and ARCH_NAME.
+# Sets WHEEL_PLAT_NAME in the parent scope.
 #
 # Linux wheels use PEP 600 manylinux tags to communicate the minimum glibc
 # version required. This is standard practice for GPU-capable wheels (PyTorch,
-# CuPy, etc.) even though a strict auditwheel check may flag conditionally-
+# CuPy, etc.) even though a strict auditwheel check may flag conditionally
 # loaded GPU plugins.
 function(get_wheel_platform_tag)
     if(OS_NAME STREQUAL "linux")

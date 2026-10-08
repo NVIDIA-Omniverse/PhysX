@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-CORE-001
@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 
@@ -59,6 +60,22 @@ struct ObjectKey
         size_t operator()(ObjectKey k) const { return k.handle; }
     };
 };
+
+/// @brief Mint the next `ObjectKey` generation tag, shared by every backend.
+///
+/// `UsdSource`/`OvstageSource` each fold a generation into the high 32 bits
+/// of every `ObjectKey` they mint so a stale key from a torn-down instance
+/// can't alias a live one (ADR-0021). Drawing from one process-wide counter
+/// here -- instead of a separate per-backend counter each restarting at 1 --
+/// closes the cross-backend case too: the first key minted by a fresh
+/// `UsdSource` and the first minted by a fresh `OvstageSource` now carry
+/// different generations, so a key retained across a USD<->ovstage source
+/// switch can't numerically alias an unrelated live object either.
+inline uint32_t nextObjectKeyGeneration()
+{
+    static std::atomic<uint32_t> counter{ 1 };
+    return counter.fetch_add(1, std::memory_order_relaxed);
+}
 
 /// @brief Interned token id, minted by `IPhysicsSource::internToken`.
 ///

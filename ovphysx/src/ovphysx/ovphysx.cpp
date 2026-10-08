@@ -1,7 +1,60 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * @implements REQ-CAPI-LOG-001
+ * @covers AC-5 AC-6
+ *
+ * @implements REQ-CAPI-STRING-001
+ * @covers AC-2 AC-3
+ *
+ * @implements REQ-PYTHON-LIFECYCLE-001
+ * @covers AC-3
+ *
+ * @implements REQ-CAPI-OMNIPVD-001
+ * @covers AC-2 AC-3
+ *
+ * @implements REQ-CAPI-OMNIPVD-LATE-001
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7 AC-8 AC-9 AC-10 AC-11
+ *
+ * @implements REQ-CAPI-READPOOL-001
+ * @covers AC-1 AC-2 AC-3 AC-4
+ */
+
+/**
+ * @implements REQ-CAPI-SDFVIEW-001
+ * @covers AC-1
+ *
+ * @implements REQ-CAPI-CUDA-001
+ * @covers AC-1 AC-2
+ *
+ * @implements REQ-CAPI-CPU-001
+ * @covers AC-1 AC-2 AC-3 AC-4
+ *
+ * @implements REQ-CAPI-DETACH-001
+ * @covers AC-1 AC-2
+ *
+ * @implements REQ-CAPI-ASYNC-001
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5
+ *
+ * @implements REQ-CAPI-OVSTAGE-ATTACH-001
+ * @covers AC-1 AC-2 AC-3
+ *
+ * @implements REQ-CAPI-OVSTAGE-UPDATE-001
+ * @covers AC-1 AC-2
+ *
+ * @implements REQ-CAPI-ATTACH-OWNER-001
+ * @covers AC-1 AC-2 AC-3 AC-4
+ *
+ * @implements REQ-CAPI-NVTX-001
+ * @covers AC-1 AC-2 AC-3 AC-5
+ *
+ * @implements REQ-CAPI-OVSTAGE-SCHEMA-001
+ * @covers AC-1 AC-2 AC-3 AC-5
+ */
 
 #include "internal/CpuFeatureCheck.h"
+#include "LogManager.hpp"
 #include "ovphysx/ovphysx.h"
 #include "ovphysx/ovphysx_config.h"
 
@@ -9,8 +62,8 @@
 #include "cuda_shim/CudaShim.h"
 #include <omni/physx/PhysXRuntime.h>
 #include "UsdSchemaPaths/UsdSchemaPaths.h"
-#include "UsdVersionCheck/UsdVersionCheck.h"
 #include "AsyncEventManager/AsyncEventManager.hpp"
+#include <ovstage/ovstage_population.h>
 using ovphysx::async::async_event_handle_t;
 using ovphysx::async::AsyncEventManager;
 
@@ -26,7 +79,8 @@ using ovphysx::async::AsyncEventManager;
 
 // Platform-specific includes (Windows/Linux dynamic loading)
 #include "internal/sdk/PlatformIncludes.hpp"
-#include "internal/sdk/LibraryPathUtils.hpp"
+#include "internal/sdk/ovphysxAsyncWait.hpp"
+#include "internal/Nvtx.h"
 
 // PhysX simulation interface
 #include <omni/physx/IPhysxSimulation.h>
@@ -42,7 +96,6 @@ using ovphysx::async::AsyncEventManager;
 // Extension interface for tensor plugin initialization
 #include <omni/ext/IExt.h>
 #include <omni/physics/tensors/TensorApi.h>
-#include <pxr/usd/sdf/path.h>
 
 #include <memory>
 #include <string>
@@ -65,17 +118,14 @@ using ovphysx::async::AsyncEventManager;
 #endif
 #include "internal/sdk/ovphysxSDK.hpp"
 #include <omni/physics/tensors/ISdfShapeView.h>
-// Private C API declarations for internal tensor loader (C header)
-#include "internal/sdk/ovphysxSDK.h"
 // Internal sidecar API + loader (shared between main library and replicator)
 #include "internal/sdk/ovphysxSDKSidecarLoader.hpp"
 #include "internal/sidecar/ovphysxInternalInterop.h"
-// Global instances map definition - stores shared_ptr for safe lifetime management
+// Global instance map. shared_ptr storage keeps an instance alive for callers
+// that still hold it after erase.
 std::unordered_map<ovphysx_handle_t, std::shared_ptr<InstanceData>> g_instances;
 
-// Global reader-writer lock to protect g_instances map access
-// - Use shared_lock (read) for lookups (allows concurrent reads)
-// - Use unique_lock (write) for insert/erase (exclusive access)
+// Guards g_instances. Lookups take shared_lock, insert/erase take unique_lock.
 std::shared_mutex g_instances_mutex;
 
 namespace
@@ -84,20 +134,15 @@ namespace
 // The one process-wide serial sequence behind every ovphysx-owned opaque object
 // handle: instances, tensor bindings, contact bindings and SDF views.
 //
-// It is process-wide on purpose. NVBug 6504951 is an ACROSS-OWNER aliasing bug:
-// the previous implementation used independent counters that shared the same
-// numeric space, so values from different object kinds and different instances
-// could collide. An instance handle and that instance's first tensor binding
-// were both the number 1, and a binding handle from a destroyed instance
-// matched the first binding of the next instance.
+// It is process-wide on purpose (NVBug 6504951). Independent per-kind counters
+// share the same numeric space, so an instance handle and that instance's first
+// tensor binding would both be 1, and a binding handle from a destroyed instance
+// would match the first binding of the next one. One never-reused sequence keeps
+// the four handle kinds numerically unique for the life of the process. Handles
+// stay opaque uint64_t and 0 stays the invalid sentinel.
 //
-// One never-reused sequence makes the four handle kinds numerically unique for
-// the life of the process. Its process-wide scope prevents stale tokens and
-// tokens from another kind or owner from aliasing a different ovphysx-owned
-// object. Handles stay opaque uint64_t and 0 stays the invalid sentinel.
-//
-// Deliberately a single internally-linked constant-initialized atomic: no
-// mutex, no pointer, no singleton, and therefore no static-initialization or
+// Deliberately a single internally-linked constant-initialized atomic with no
+// mutex, pointer or singleton, so there is no static-initialization or
 // destruction order to reason about. Do not turn this into a function-local
 // static or a registry.
 std::atomic<uint64_t> g_nextOpaqueObjectHandle{ 1 };
@@ -118,25 +163,64 @@ InstanceData::~InstanceData()
 // PhysX consumes it.
 std::mutex g_gpuAttachMutex;
 
+// The instance handle that currently owns the one live process-wide
+// IPhysxSimulation attach (0 == none). IPhysxSimulation is a process-wide
+// singleton and beginSimulationAttach() unconditionally tears down whatever
+// attach is currently live, so a second instance's attach attempt is rejected
+// rather than silently displacing the first. Always read and written while
+// holding g_gpuAttachMutex so the ownership check and the guarded
+// physxSim->attachOvstage()/detachStage() call happen atomically.
+static ovphysx_handle_t g_liveAttachOwner = 0;
+
+// The public owner of the shared runtime's one active OmniPVD stream. This is
+// separate from stage ownership: a peer handle may start recording the one
+// attached stage. Recording transitions share g_gpuAttachMutex with attach and
+// detach so a stream cannot be rebound while its stage is being torn down.
+static ovphysx_handle_t g_omniPvdRecordingOwner = OVPHYSX_INVALID_HANDLE;
+
 // Process-wide CPU-only mode. Set via ovphysx_set_cpu_mode(true) before any instances
 // are created. When true, IPhysxFoundation::setCpuMode(true) is applied at first attach,
 // preventing any CUDA driver contact for the process lifetime.
 static std::atomic<bool> g_forceCpuMode{false};
 
-// True when this process must never touch the GPU: either CPU-only mode was forced via
-// ovphysx_set_cpu_mode(true) or the OVPHYSX_DISABLE_GPU env var is set. Both inputs are
-// fixed for the process lifetime once instances exist, so callers on hot paths may cache
-// the result. Whether a usable CUDA device is actually present is a separate check
-// through the CPU-only-safe CUDA shim.
-// Declared in ovphysxSDK.hpp so other translation units (e.g. ovphysxTensorBinding.cpp)
-// gate GPU-only work on the same predicate rather than re-checking the env var alone.
+// OVPHYSX_DISABLE_GPU is latched at ovphysx_initialize() and stays sticky until
+// shutdown. Outside that interval the env is read live, so a pre-init
+// get_cpu_mode() cannot snapshot a missing variable and miss a later setenv.
+static std::atomic<bool> g_envGpuDisabledLatched{false};
+static std::atomic<bool> g_envGpuDisabledValue{false};
+
+static bool readEnvGpuDisabledLive()
+{
+    return std::getenv("OVPHYSX_DISABLE_GPU") != nullptr;
+}
+
+static void latchEnvGpuDisabledFromEnvironment()
+{
+    g_envGpuDisabledValue.store(readEnvGpuDisabledLive(), std::memory_order_release);
+    g_envGpuDisabledLatched.store(true, std::memory_order_release);
+}
+
+static void clearEnvGpuDisabledLatch()
+{
+    g_envGpuDisabledLatched.store(false, std::memory_order_release);
+}
+
+static bool isEnvGpuDisabled()
+{
+    if (g_envGpuDisabledLatched.load(std::memory_order_acquire))
+        return g_envGpuDisabledValue.load(std::memory_order_acquire);
+    return readEnvGpuDisabledLive();
+}
+
+// True when this process must never touch the GPU: CPU-only mode forced via
+// ovphysx_set_cpu_mode(true) or OVPHYSX_DISABLE_GPU active. Whether a usable CUDA
+// device is present is a separate check through the CUDA shim. Declared in
+// ovphysxSDK.hpp so other translation units gate GPU-only work on the same predicate.
 bool isProcessGpuDisabled()
 {
-    // The env var is fixed for the process lifetime, so read it once. g_forceCpuMode
-    // can still be toggled by ovphysx_set_cpu_mode() (before instances exist), so it is
-    // loaded live. This keeps the predicate a single atomic load on per-step call sites.
-    static const bool envDisabled = std::getenv("OVPHYSX_DISABLE_GPU") != nullptr;
-    return g_forceCpuMode.load(std::memory_order_acquire) || envDisabled;
+    // g_forceCpuMode can still be toggled by ovphysx_set_cpu_mode() before instances
+    // exist, so it is loaded live.
+    return g_forceCpuMode.load(std::memory_order_acquire) || isEnvGpuDisabled();
 }
 std::atomic<uint32_t> g_unloadSequenceCounter{0};
 
@@ -163,8 +247,8 @@ static constexpr int32_t kMultiGPU_SkipFirst = 2; // all except first GPU (eSkip
 
 // Parse a comma-separated GPU ordinal string into a sorted vector.
 // Empty input returns {0} as an internal parse placeholder. The create path
-// preserves empty input as automatic selection and distinguishes it from an
-// explicit "0" before storing the parsed ordinals.
+// preserves empty input as "no ovphysx ordinal override" and distinguishes it
+// from an explicit "0" before storing the parsed ordinals.
 // On error, writes a message to errbuf and returns an empty vector.
 static std::vector<int32_t> parseActiveCudaGpus(const char* str, size_t len,
                                                  char* errbuf, size_t errsize)
@@ -178,11 +262,9 @@ static std::vector<int32_t> parseActiveCudaGpus(const char* str, size_t len,
 
     while (p < end)
     {
-        // skip leading whitespace
         while (p < end && (*p == ' ' || *p == '\t')) ++p;
         if (p >= end) break;
 
-        // optional leading minus
         bool negative = false;
         if (*p == '-') { negative = true; ++p; }
 
@@ -212,14 +294,12 @@ static std::vector<int32_t> parseActiveCudaGpus(const char* str, size_t len,
         }
         result.push_back(val);
 
-        // skip trailing whitespace before comma
         while (p < end && (*p == ' ' || *p == '\t')) ++p;
         if (p < end)
         {
             if (*p == ',')
             {
                 ++p;
-                // skip whitespace after comma, then check for trailing comma
                 while (p < end && (*p == ' ' || *p == '\t')) ++p;
                 if (p >= end)
                 {
@@ -261,7 +341,6 @@ static std::vector<int32_t> parseActiveCudaGpus(const char* str, size_t len,
         return {};
     }
 
-    // reject duplicates
     for (size_t i = 1; i < result.size(); ++i)
     {
         if (result[i] == result[i - 1])
@@ -559,12 +638,10 @@ namespace
    
 } // end anonymous namespace (temporarily closed for ovphysx_ensure_physics_attached / omni_sdk_physx_simulate_instance)
 
-// Lazily call attachStage() if not yet done for the
-// current stage.  Also performs the initial PhysX scene parse (simulate(0,0) +
-// fetchResults) so that TensorAPI can discover prims.  Attachment is deferred
-// until the caller has drained ovstage edits.
-//
-// Called from simulate(), warmup_gpu(), and create_tensor_binding().
+// Lazily calls attachStage() for the current stage if not yet done, then runs the
+// initial PhysX scene parse (simulate(0,0) + fetchResults) so TensorAPI can discover
+// prims. Deferred until the caller has drained ovstage edits. Called from simulate(),
+// warmup(), and create_tensor_binding().
 ovphysx_api_status_t ovphysx_ensure_physics_attached(ovphysx_handle_t handle)
 {
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
@@ -622,10 +699,9 @@ ovphysx_api_status_t ovphysx_ensure_physics_attached(ovphysx_handle_t handle)
         // handles cannot overwrite /physics/cudaDevice while PhysX consumes it.
         std::unique_lock<std::mutex> attachLock(g_gpuAttachMutex);
 
-        // Re-check under the lock: a concurrent ensure_physics_attached() for this same
-        // handle may have completed the attach while we waited on attachLock. Without this
-        // re-check we would write the process-global settings and call attachStage() a
-        // second time on an already-attached stage.
+        // Re-check under the lock. A concurrent ensure_physics_attached() for this handle
+        // may have completed the attach while waiting on attachLock, and attachStage()
+        // must not run a second time on an already-attached stage.
         if (!instance->physics_attached.load(std::memory_order_acquire)) {
             // Apply process-wide CPU-only mode before PhysX creates a CUDA context manager.
             // IPhysxFoundation::setCpuMode(true) is sticky for the process lifetime and gates
@@ -654,12 +730,17 @@ ovphysx_api_status_t ovphysx_ensure_physics_attached(ovphysx_handle_t handle)
             }
 
             instance->physics_attached.store(true, std::memory_order_release);
+            if (g_omniPvdRecordingOwner == OVPHYSX_INVALID_HANDLE &&
+                physxSim->isOmniPvdRecording && physxSim->isOmniPvdRecording())
+            {
+                g_omniPvdRecordingOwner = handle;
+            }
             CARB_LOG_INFO("[PHYSICS] Lazy attachStage() completed for stage %" PRId64, stageId);
         }
     }
 
-    // Initial scene parse -- PhysX needs a simulate()+fetchResults() cycle
-    // to discover articulations, joints, etc. from the attached scene.
+    // PhysX needs a simulate()+fetchResults() cycle to discover articulations,
+    // joints, etc. from the attached scene.
     if (!instance->initial_parse_done.load(std::memory_order_acquire)) {
         if (physxSim) {
             try {
@@ -678,9 +759,8 @@ ovphysx_api_status_t ovphysx_ensure_physics_attached(ovphysx_handle_t handle)
     return OVPHYSX_API_SUCCESS;
 }
 
-// Instance-aware simulation function
-// This initiates simulation but does NOT wait for results (returns quickly)
-// Non-static: also used by ovphysxTensorBinding.cpp for auto-warmup
+// Starts a simulation step without waiting for results. Non-static because
+// ovphysxTensorBinding.cpp uses it for auto-warmup.
 ovphysx_api_status_t omni_sdk_physx_simulate_instance(ovphysx_handle_t handle, float elapsedTime, float currentTime) {
         if (elapsedTime < 0.0f || elapsedTime > 1.0f) {
             CARB_LOG_ERROR("[PHYSICS SIMULATION] ERROR: Invalid elapsedTime: %f", elapsedTime);
@@ -718,8 +798,8 @@ ovphysx_api_status_t omni_sdk_physx_simulate_instance(ovphysx_handle_t handle, f
         // invalidation during map rehash.
         std::unique_lock<std::mutex> instance_lock(instance->simulationMutex);
 
-        // PhysX simulate() can be called multiple times safely, but we can only track
-        // one pending event, so complete/cleanup any previous one first.
+        // PhysX simulate() can be called repeatedly, but only one pending event is
+        // tracked, so any previous one is completed and cleaned up first.
         if (instance->pendingSimulationEvent != 0) {
             async_event_handle_t event_to_cleanup = instance->pendingSimulationEvent;
             ovphysx::async::AsyncEventManager::complete_event(event_to_cleanup, true, 
@@ -741,7 +821,7 @@ ovphysx_api_status_t omni_sdk_physx_simulate_instance(ovphysx_handle_t handle, f
 
             physxSim->simulate(elapsedTime, currentTime);
 
-            // Store pending state (don't call fetchResults here!)
+            // Store pending state. fetchResults() runs in sync().
             instance->pendingElapsedTime = elapsedTime;
             instance->pendingCurrentTime = currentTime;
             instance->pendingSimulationEvent = event_handle;
@@ -762,7 +842,7 @@ ovphysx_api_status_t omni_sdk_physx_simulate_instance(ovphysx_handle_t handle, f
 
 namespace { // reopen anonymous namespace
 
-    // Sync function - waits for pending simulation to complete
+    // Waits for the pending simulation step to complete.
     static ovphysx_api_status_t omni_sdk_physx_sync(ovphysx_handle_t handle)
     {
         // Pin the instance without holding the global map lock while blocking.
@@ -779,10 +859,10 @@ namespace { // reopen anonymous namespace
             return OVPHYSX_API_SUCCESS;
         }
 
-        const bool hasPhysicsStage = (instanceShared->attachedStageId != 0) || instanceShared->ovstage_attached;
+        const bool hasPhysicsStage = instanceShared->attachHandle != omni::physics::tensors::kNoAttach;
 
-        // WARNING: Calling fetchResults() with no USD stage loaded causes PhysX to hang!
-        // Guard against it by checking for an attached stage first; with no stage this is a no-op, not an error.
+        // fetchResults() with no stage attached hangs PhysX. With no stage this is
+        // a no-op, not an error.
         if (!hasPhysicsStage) {
             async_event_handle_t event_to_cleanup = instanceShared->pendingSimulationEvent;
             ovphysx::async::AsyncEventManager::complete_event(event_to_cleanup, true);
@@ -837,19 +917,24 @@ namespace { // reopen anonymous namespace
         return result;
     }
     // ========================================================================
-    // Typed config system: enum → Carbonite path lookup tables
+    // Typed config system: enum to Carbonite path lookup tables
     // ========================================================================
     static const char* s_boolKeyPaths[] = {
         "/physics/disableContactProcessing",
         "/physics/collisionConeCustomGeometry",
         "/physics/collisionCylinderCustomGeometry",
-        "/physics/omniPvdOutputEnabled",
+        omni::physx::kOmniPvdOutputEnabled,
+        omni::physx::kSettingNvtxEnabled,
+        omni::physx::kOmniPvdRecordingCapable,
     };
     static_assert(std::size(s_boolKeyPaths) == OVPHYSX_CONFIG_BOOL_COUNT, "s_boolKeyPaths out of sync with enum");
 
     static const char* s_int32KeyPaths[] = {
         "/physics/numThreads",
         "/physics/sceneMultiGPUMode",
+        omni::physx::kOmniPvdTcpPort,
+        omni::physx::kOmniPvdTcpTimeoutMs,
+        "/physics/ovstageReadPoolMaxMB",
     };
     static_assert(std::size(s_int32KeyPaths) == OVPHYSX_CONFIG_INT32_COUNT, "s_int32KeyPaths out of sync with enum");
 
@@ -861,11 +946,26 @@ namespace { // reopen anonymous namespace
     static const char* s_stringKeyPaths[] = {
         "/persistent/physics/omniPvdOvdRecordingDirectory",
         "/UJITSO/datastore/localCachePath",
+        omni::physx::kOmniPvdTransport,
+        omni::physx::kOmniPvdTcpAddress,
     };
     static_assert(std::size(s_stringKeyPaths) == OVPHYSX_CONFIG_STRING_COUNT, "s_stringKeyPaths out of sync with enum");
 
     // Forward declaration (defined below).
     static void applySettingValue(carb::settings::ISettings* settings, const char* key, const char* value);
+
+    template <size_t N>
+    static bool configStringEquals(const ovphysx_string_t& value, const char (&expected)[N])
+    {
+        constexpr size_t expectedLength = N - 1;
+        return expected[expectedLength] == '\0' && value.ptr && value.length == expectedLength &&
+               std::memcmp(value.ptr, expected, expectedLength) == 0;
+    }
+
+    static bool configStringHasEmbeddedNull(const ovphysx_string_t& value)
+    {
+        return value.ptr && std::memchr(value.ptr, '\0', value.length) != nullptr;
+    }
 
     static ovphysx_api_status_t applyConfigEntry(carb::settings::ISettings* settings,
                                                   const ovphysx_config_entry_t& entry)
@@ -895,7 +995,15 @@ namespace { // reopen anonymous namespace
             if (entry.key.string_key < 0 || entry.key.string_key >= OVPHYSX_CONFIG_STRING_COUNT)
                 return OVPHYSX_API_INVALID_ARGUMENT;
             {
-                std::string val(entry.value.string_value.ptr, entry.value.string_value.length);
+                if ((!entry.value.string_value.ptr && entry.value.string_value.length != 0) ||
+                    ((entry.key.string_key == OVPHYSX_CONFIG_OMNIPVD_OVD_RECORDING_DIRECTORY ||
+                      entry.key.string_key == OVPHYSX_CONFIG_OMNIPVD_TRANSPORT ||
+                      entry.key.string_key == OVPHYSX_CONFIG_OMNIPVD_TCP_ADDRESS) &&
+                     configStringHasEmbeddedNull(entry.value.string_value)))
+                    return OVPHYSX_API_INVALID_ARGUMENT;
+                std::string val(
+                    entry.value.string_value.ptr ? entry.value.string_value.ptr : "",
+                    entry.value.string_value.length);
                 settings->setString(s_stringKeyPaths[entry.key.string_key], val.c_str());
                 CARB_LOG_INFO("[Config] Set string %s = %s", s_stringKeyPaths[entry.key.string_key], val.c_str());
             }
@@ -904,6 +1012,9 @@ namespace { // reopen anonymous namespace
             if (!entry.key.carbonite_key.ptr || !entry.value.string_value.ptr)
                 return OVPHYSX_API_INVALID_ARGUMENT;
             {
+                if (configStringHasEmbeddedNull(entry.key.carbonite_key) ||
+                    configStringHasEmbeddedNull(entry.value.string_value))
+                    return OVPHYSX_API_INVALID_ARGUMENT;
                 std::string key(entry.key.carbonite_key.ptr, entry.key.carbonite_key.length);
                 if (key == "/physics/cudaDevice") {
                     CARB_LOG_ERROR("[Config] Cannot set '/physics/cudaDevice' via carbonite config entry. Use active_cuda_gpus on create_args instead.");
@@ -914,12 +1025,106 @@ namespace { // reopen anonymous namespace
                 for (int i = 0; i < OVPHYSX_CONFIG_INT32_COUNT; ++i)
                     if (key == s_int32KeyPaths[i]) { CARB_LOG_WARN("[Config] Carbonite key '%s' overlaps typed int32 key %d; prefer the typed API.", key.c_str(), i); break; }
                 std::string val(entry.value.string_value.ptr, entry.value.string_value.length);
+                if (key == omni::physx::kOmniPvdTcpPort || key == omni::physx::kOmniPvdTcpTimeoutMs)
+                {
+                    int32_t parsedValue = 0;
+                    const std::from_chars_result parsed =
+                        std::from_chars(val.data(), val.data() + val.size(), parsedValue, 10);
+                    if (parsed.ec != std::errc{} || parsed.ptr != val.data() + val.size())
+                        return OVPHYSX_API_INVALID_ARGUMENT;
+                    settings->setInt(key.c_str(), parsedValue);
+                    return OVPHYSX_API_SUCCESS;
+                }
                 applySettingValue(settings, key.c_str(), val.c_str());
             }
             return OVPHYSX_API_SUCCESS;
         default:
             return OVPHYSX_API_INVALID_ARGUMENT;
         }
+    }
+
+    static bool isOmniPvdCreateOnlyEntry(const ovphysx_config_entry_t& entry)
+    {
+        if (entry.key_type == OVPHYSX_CONFIG_KEY_TYPE_BOOL)
+            return entry.key.bool_key == OVPHYSX_CONFIG_OMNIPVD_OUTPUT_ENABLED ||
+                   entry.key.bool_key == OVPHYSX_CONFIG_OMNIPVD_RECORDING_CAPABLE;
+
+        if (entry.key_type == OVPHYSX_CONFIG_KEY_TYPE_INT32)
+            return entry.key.int32_key == OVPHYSX_CONFIG_OMNIPVD_TCP_PORT ||
+                   entry.key.int32_key == OVPHYSX_CONFIG_OMNIPVD_TCP_TIMEOUT_MS;
+
+        if (entry.key_type == OVPHYSX_CONFIG_KEY_TYPE_STRING)
+            return entry.key.string_key == OVPHYSX_CONFIG_OMNIPVD_OVD_RECORDING_DIRECTORY ||
+                   entry.key.string_key == OVPHYSX_CONFIG_OMNIPVD_TRANSPORT ||
+                   entry.key.string_key == OVPHYSX_CONFIG_OMNIPVD_TCP_ADDRESS;
+
+        if (entry.key_type != OVPHYSX_CONFIG_KEY_TYPE_CARBONITE || !entry.key.carbonite_key.ptr)
+            return false;
+
+        return configStringEquals(entry.key.carbonite_key, omni::physx::kOmniPvdOutputEnabled) ||
+               configStringEquals(entry.key.carbonite_key, omni::physx::kOmniPvdRecordingCapable) ||
+               configStringEquals(entry.key.carbonite_key, omni::physx::kOmniPvdOvdRecordingDirectory) ||
+               configStringEquals(entry.key.carbonite_key, omni::physx::kOmniPvdTransport) ||
+               configStringEquals(entry.key.carbonite_key, omni::physx::kOmniPvdTcpAddress) ||
+               configStringEquals(entry.key.carbonite_key, omni::physx::kOmniPvdTcpPort) ||
+               configStringEquals(entry.key.carbonite_key, omni::physx::kOmniPvdTcpTimeoutMs);
+    }
+
+    static bool isOmniPvdOutputEnabledEntry(const ovphysx_config_entry_t& entry)
+    {
+        if (entry.key_type == OVPHYSX_CONFIG_KEY_TYPE_BOOL)
+            return entry.key.bool_key == OVPHYSX_CONFIG_OMNIPVD_OUTPUT_ENABLED;
+
+        return entry.key_type == OVPHYSX_CONFIG_KEY_TYPE_CARBONITE &&
+               configStringEquals(entry.key.carbonite_key, omni::physx::kOmniPvdOutputEnabled);
+    }
+
+    static ovphysx_api_status_t applyCreateConfigEntries(carb::settings::ISettings* settings,
+                                                          const ovphysx_config_entry_t* entries,
+                                                          uint32_t entryCount)
+    {
+        const auto applyPass = [&](bool outputEnabledEntries) -> ovphysx_api_status_t
+        {
+            for (uint32_t i = 0; i < entryCount; ++i)
+            {
+                if (isOmniPvdOutputEnabledEntry(entries[i]) != outputEnabledEntries)
+                    continue;
+
+                const ovphysx_api_status_t status = applyConfigEntry(settings, entries[i]);
+                if (status != OVPHYSX_API_SUCCESS)
+                    return status;
+            }
+            return OVPHYSX_API_SUCCESS;
+        };
+
+        // A retained runtime reacts synchronously to the output-enabled setting
+        // and reads the current recording directory. Apply that trigger only
+        // after all peer settings, preserving caller order within each pass.
+        const ovphysx_api_status_t peerStatus = applyPass(false);
+        return peerStatus == OVPHYSX_API_SUCCESS ? applyPass(true) : peerStatus;
+    }
+
+    static ovphysx_api_status_t validateEffectiveOmniPvdStartupConfig(
+        carb::settings::ISettings* settings, const char*& errorMessage)
+    {
+        carb::settings::ScopedRead settingsRead(settings);
+        size_t transportLength = 0;
+        size_t directoryLength = 0;
+        size_t addressLength = 0;
+        const char* transport = settings->getStringBuffer(omni::physx::kOmniPvdTransport, &transportLength);
+        const char* directory =
+            settings->getStringBuffer(omni::physx::kOmniPvdOvdRecordingDirectory, &directoryLength);
+        const char* address = settings->getStringBuffer(omni::physx::kOmniPvdTcpAddress, &addressLength);
+        omni::physx::OmniPvdDestination destination;
+        if (!omni::physx::normalizeOmniPvdDestination(
+                transport, transportLength,
+                directory, directoryLength,
+                address, addressLength,
+                settings->getAsInt(omni::physx::kOmniPvdTcpPort),
+                settings->getAsInt(omni::physx::kOmniPvdTcpTimeoutMs),
+                destination, errorMessage))
+            return OVPHYSX_API_INVALID_ARGUMENT;
+        return OVPHYSX_API_SUCCESS;
     }
 
     static const char* getConfigEntryPath(const ovphysx_config_entry_t& entry)
@@ -939,13 +1144,11 @@ namespace { // reopen anonymous namespace
         }
     }
 
-    // Helper to detect type and apply a setting value
-    // Supports: bool ("true"/"false"), int, float, string
+    // Detects the value type (bool, int, float, string) and applies the setting.
     static void applySettingValue(carb::settings::ISettings* settings, const char* key, const char* value)
     {
         if (!settings || !key || !value) return;
         
-        // Try bool first ("true" or "false")
         if (strcmp(value, "true") == 0 || strcmp(value, "True") == 0 || strcmp(value, "TRUE") == 0) {
             settings->setBool(key, true);
             CARB_LOG_INFO("[Settings] Set bool %s = true", key);
@@ -968,9 +1171,9 @@ namespace { // reopen anonymous namespace
                 CARB_LOG_INFO("[Settings] Set int %s = %d", key, intVal);
                 return;
             }
-            // Only treat overflow as terminal when the entire string was a
-            // pure integer (ptr reached the end).  If ptr stopped at e.g. '.'
-            // the value may be a float like "99999999999.5" -- fall through.
+            // Overflow is terminal only when the entire string is an integer. If
+            // ptr stopped at '.', the value may be a float like "99999999999.5",
+            // which the float parse below handles.
             if (ec == std::errc::result_out_of_range && ptr == valueEnd)
             {
                 settings->setString(key, value);
@@ -991,22 +1194,19 @@ namespace { // reopen anonymous namespace
             }
         }
         
-        // Default: treat as string
         settings->setString(key, value);
         CARB_LOG_INFO("[Settings] Set string %s = %s", key, value);
     }
     
-    // Helper to get a setting value as string
-    // Returns true if setting exists, false otherwise
+    // Formats a setting value as a string. Returns false when the setting does not exist.
     static bool getSettingValueAsString(carb::settings::ISettings* settings, const char* key,
                                         char* value_out, uint32_t value_out_size,
                                         size_t* out_required_size = nullptr)
     {
         if (!settings || !key || !value_out || value_out_size == 0) return false;
 
-        // Helper: write the formatted value into the caller's buffer and
-        // optionally report the full size (including null terminator) via
-        // out_required_size.  Returns true (setting exists).
+        // Writes the value into the caller's buffer and reports the full size,
+        // including the null terminator, through out_required_size.
         auto writeAndReport = [&](const char* src) -> bool {
             size_t full_len = strlen(src);
             if (out_required_size)
@@ -1047,7 +1247,7 @@ namespace { // reopen anonymous namespace
         }
 
         if (itemType == carb::dictionary::ItemType::eString) {
-            // Already handled above, but just in case
+            // Normally handled by the getStringBuffer call above.
             const char* str = settings->getStringBuffer(key);
             if (str) {
                 return writeAndReport(str);
@@ -1061,8 +1261,8 @@ namespace { // reopen anonymous namespace
 } // namespace
 
 namespace {
-    // Clamp uint64 timeout values to std::chrono::nanoseconds range.
-    static std::chrono::nanoseconds clamp_timeout_ns(uint64_t timeout_ns) {
+    // Clamp ovphysx timeout values to std::chrono::nanoseconds range.
+    static std::chrono::nanoseconds clamp_timeout_ns(ovphysx_timeout_t timeout_ns) {
         using ns = std::chrono::nanoseconds;
         const uint64_t ns_max = static_cast<uint64_t>(ns::max().count());
         if (timeout_ns >= ns_max) {
@@ -1101,9 +1301,9 @@ namespace {
             if (module)
             {
                 void* proc = dlsym(module, symbol);
-                // RTLD_NOLOAD still bumps the refcount on a match; balance it so repeated
-                // symbol lookups don't leak references and pin libovstage past unload. The
-                // library stays mapped via its real owner, so proc remains valid.
+                // RTLD_NOLOAD still bumps the refcount on a match. Balance it so repeated
+                // lookups do not pin libovstage past unload. The library stays mapped via
+                // its real owner, so proc remains valid.
                 dlclose(module);
                 if (proc)
                     return proc;
@@ -1131,23 +1331,103 @@ namespace {
 
         return usd_stage_id;
     }
-    
-    // Wait on a single event with timeout, handling simulation completion if needed
-    // Returns: OVPHYSX_API_SUCCESS, OVPHYSX_API_TIMEOUT, or OVPHYSX_API_ERROR
-    // If the operation failed, error_out will be populated with the error message
+
+    using ovstage_population_register_usd_schemas_fn = int (*)(const ovx_string_t* paths, size_t path_count);
+    using ovstage_population_get_last_error_fn = ovx_string_t (*)(void);
+
+    // Attach-time gate on the application's schema registration. ovstage treats
+    // re-registering a family as a no-op and reports a family registered after
+    // population already read the schema definitions as OVSTAGE_ERROR_OP_FAILED.
+    // The attached stage was populated before this call, so the probe tells
+    // "registered in time" from "never registered" without changing the registry.
+    // Without the registration every Physx* API is dropped from the population and
+    // the scene simulates with schema defaults the asset authored against.
+    // Carbonite setting (create-time config entry): false turns a failed schema
+    // registration probe at attach into a warning instead of a refused attach.
+    static const char* const kSettingRequireSchemaRegistration = "/ovphysx/schemas/requireRegistration";
+
+    static const char* const kPhysxSchemasLateMessage =
+        "attach_ovstage: the PhysX USD schemas were not registered with ovstage before the first "
+        "population in this process, so every Physx* API and attribute was dropped from the populated "
+        "stage. Register them before populating: pass ovphysx_get_codeless_schema_root() to "
+        "ovstage_population_register_usd_schemas() (Python: "
+        "ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])).";
+
+    // Set once the probe below has seen a late registration. The late call itself
+    // registers the plugins (ovstage cannot take that back), so a second probe in the
+    // same process would report OVSTAGE_OK; the USD registry it built without the
+    // schemas is process-global and stays broken, so the refusal has to be too.
+    static std::atomic<bool> g_physxSchemasRegisteredLate{ false };
+
+    static ovphysx_api_status_t verify_physx_schemas_registered(std::string& error_out)
+    {
+        if (g_physxSchemasRegisteredLate.load(std::memory_order_acquire))
+        {
+            error_out = kPhysxSchemasLateMessage;
+            return OVPHYSX_API_ERROR;
+        }
+
+        std::string rootError;
+        const std::string root = omni::sdk::usd_schema_paths::getCodelessSchemaRoot(&rootError);
+        if (root.empty())
+        {
+            error_out = "attach_ovstage: cannot locate the codeless PhysX schemas: " + rootError;
+            return OVPHYSX_API_ERROR;
+        }
+
+        void* proc = resolve_ovstage_symbol("ovstage_population_register_usd_schemas");
+        if (!proc)
+        {
+            // No registration entry point in the loaded ovstage: nothing to verify against.
+            return OVPHYSX_API_SUCCESS;
+        }
+        const ovx_string_t path{ root.c_str(), root.size() };
+        const int status = reinterpret_cast<ovstage_population_register_usd_schemas_fn>(proc)(&path, 1);
+        if (status == OVSTAGE_OK)
+        {
+            return OVPHYSX_API_SUCCESS;
+        }
+
+        if (status == OVSTAGE_ERROR_OP_FAILED)
+        {
+            g_physxSchemasRegisteredLate.store(true, std::memory_order_release);
+            error_out = kPhysxSchemasLateMessage;
+        }
+        else
+        {
+            error_out = "attach_ovstage: registering the codeless PhysX schemas at '" + root +
+                        "' with ovstage failed with status " + std::to_string(status) + ".";
+        }
+        if (void* lastError = resolve_ovstage_symbol("ovstage_population_get_last_error"))
+        {
+            const ovx_string_t msg = reinterpret_cast<ovstage_population_get_last_error_fn>(lastError)();
+            if (msg.ptr && msg.length)
+            {
+                error_out += " ovstage: ";
+                error_out.append(msg.ptr, msg.length);
+            }
+        }
+        return OVPHYSX_API_ERROR;
+    }
+
+    // Waits on a single event with timeout, running fetchResults() first when the
+    // event is the pending simulation step. On failure error_out receives the message.
     static ovphysx_api_status_t wait_on_single_event(ovphysx_handle_t handle, 
                                                       ovphysx_op_index_t op_index,
                                                       async_event_handle_t event,
-                                                      uint64_t timeout_ns,
+                                                      ovphysx_timeout_t timeout_ns,
                                                       std::string& error_out,
                                                       bool consume_op_index) {
         if (event == 0) {
             return OVPHYSX_API_ERROR;
         }
         
-        // Calculate timeout parameters upfront for proper poll semantics
-        auto timeout = clamp_timeout_ns(timeout_ns);
-        const bool no_wait = (timeout.count() == 0);
+        // Preserve the max-value sentinel as a literal unbounded wait. A
+        // clamped finite duration must not accidentally stand in for forever.
+        const bool wait_forever = (timeout_ns == OVPHYSX_TIMEOUT_INFINITE);
+        const std::chrono::nanoseconds timeout = clamp_timeout_ns(timeout_ns);
+        const bool no_wait = (timeout_ns == OVPHYSX_TIMEOUT_POLL);
+        const std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
         
         bool needsFetchResults = false;
         {
@@ -1158,26 +1438,35 @@ namespace {
             }
         }
 
-        // IMPORTANT: For non-blocking poll (timeout=0), check completion status first
-        // and only call fetchResults if we're willing to block.
+        // Simulation completion requires fetchResults(), but fetchResults() is
+        // blocking. Poll checkResults() until ready before finalizing so zero
+        // and finite waits honor their timeout and leave a pending op tracked.
         if (needsFetchResults) {
-            if (no_wait) {
-                async_status_t status = async_poll_event(event);
-                if (status == ASYNC_STATUS_PENDING) {
-                    return OVPHYSX_API_TIMEOUT;
-                }
-                // If already completed/failed, fall through to handle result
-            }
-
             std::shared_ptr<InstanceData> instanceShared = get_instance(handle);
             if (instanceShared) {
                 std::unique_lock<std::mutex> instance_lock(instanceShared->simulationMutex);
 
-                auto physxSim = instanceShared->carbonite->getPhysxSimulation();
+                omni::physx::IPhysxSimulation* physxSim = instanceShared->carbonite->getPhysxSimulation();
 
-                if (physxSim && (instanceShared->attachedStageId != 0 || instanceShared->ovstage_attached)) {
+                if (physxSim && instanceShared->attachHandle != omni::physics::tensors::kNoAttach) {
                     try {
-                        // Blocks until simulation completes (or returns quickly if already done)
+                        if (!wait_forever) {
+                            const bool results_ready = ovphysx::async::detail::wait_until_simulation_ready(
+                                no_wait,
+                                timeout,
+                                start,
+                                [physxSim]() { return physxSim->checkResults(); },
+                                []() { return std::chrono::steady_clock::now(); },
+                                [](std::chrono::steady_clock::duration duration) {
+                                    std::this_thread::sleep_for(duration);
+                                });
+                            if (!results_ready) {
+                                return OVPHYSX_API_TIMEOUT;
+                            }
+                        }
+
+                        // Finite waits establish readiness first. Infinite waits
+                        // preserve the direct blocking fetch used by the hot path.
                         physxSim->fetchResults();
 
                         AsyncEventManager::complete_event(event, true);
@@ -1194,11 +1483,12 @@ namespace {
                 instanceShared->pendingSimulationEvent = 0;
             }
         }
-        auto start = std::chrono::steady_clock::now();
         
         while (true) {
             async_status_t status = async_poll_event(event);
             if (status == ASYNC_STATUS_COMPLETED || status == ASYNC_STATUS_FAILED) {
+                // A terminal observation wins at the deadline: the operation is
+                // no longer pending, so consume and report its actual result.
                 if (status == ASYNC_STATUS_FAILED) {
                     error_out = AsyncEventManager::get_event_error(event);
                 }
@@ -1224,20 +1514,21 @@ namespace {
                 return OVPHYSX_API_TIMEOUT;
             }
 
-            auto elapsed = std::chrono::steady_clock::now() - start;
-            if (elapsed >= timeout) {
+            const std::chrono::steady_clock::duration elapsed = std::chrono::steady_clock::now() - start;
+            if (!wait_forever && elapsed >= timeout) {
                 return OVPHYSX_API_TIMEOUT;
             }
-            // Brief sleep to avoid busy-waiting
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
+            const std::chrono::steady_clock::duration sleep_duration = wait_forever
+                ? std::chrono::microseconds(100)
+                : std::min<std::chrono::steady_clock::duration>(
+                    std::chrono::microseconds(100), timeout - elapsed);
+            std::this_thread::sleep_for(sleep_duration);
         }
     }
     
-    // Wait for all pending operations to complete (for stream-ordered execution)
-    // Returns OVPHYSX_API_SUCCESS if all operations completed, or error status.
-    // On success, all waited ops are consumed from the tracking map and their events
-    // are cleaned up, preventing unbounded growth in long-running loops. A high-water
-    // mark lets a later wait_op() observe an operation consumed by internal synchronization.
+    // Waits for every pending operation, then consumes them and cleans up their
+    // events so long-running loops do not grow the tracking map. A high-water mark
+    // lets a later wait_op() observe an operation consumed by internal synchronization.
     static ovphysx_api_status_t wait_for_all_pending_ops(ovphysx_handle_t handle) {
         std::vector<ovphysx_op_index_t> pending_ops = ovphysx::async::get_pending_ops(handle, OVPHYSX_OP_INDEX_ALL);
 
@@ -1245,18 +1536,21 @@ namespace {
             return OVPHYSX_API_SUCCESS;
         }
 
-        // Wait on each operation without timeout (don't consume yet - wait for all first)
+        // Do not consume yet. All ops are waited on first.
         for (ovphysx_op_index_t pending_op : pending_ops) {
-            // Event may be 0 for CUDA-only ops (tensor binding async). wait_on_single_event
-            // handles CUDA events even when this is not an AsyncEventManager event.
             async_event_handle_t event = ovphysx::async::get_event_for_op(handle, pending_op);
 
             std::string error_msg;
-            ovphysx_api_status_t status = wait_on_single_event(handle, pending_op, event, UINT64_MAX, error_msg, /*consume_op_index=*/false);
+            ovphysx_api_status_t status = wait_on_single_event(
+                handle,
+                pending_op,
+                event,
+                OVPHYSX_TIMEOUT_INFINITE,
+                error_msg,
+                /*consume_op_index=*/false);
             if (status != OVPHYSX_API_SUCCESS) {
-                // Operation failed - this is an error in stream-ordered execution.
-                // Leave failed and subsequent ops in the map so the user can retrieve
-                // errors via wait_op().
+                // Leave the failed and subsequent ops in the map so the user can
+                // retrieve errors via wait_op().
                 return OVPHYSX_API_ERROR;
             }
         }
@@ -1284,12 +1578,49 @@ namespace {
 
         return OVPHYSX_API_SUCCESS;
     }
+
+    // Recording mutates the one process-wide PhysX/OmniPVD runtime, while an
+    // asynchronous step is tracked only by the handle that owns the live stage.
+    // Drain both queues without holding the transition mutex, then reacquire it
+    // and verify that the drained owner is still the live owner. Public
+    // lifecycle calls follow the same-thread contract, so an ownership change is
+    // an invalid transition rather than a concurrency case to retry here.
+    static ovphysx_api_status_t acquire_shared_runtime_safe_point(
+        ovphysx_handle_t caller, std::unique_lock<std::mutex>& transitionLock)
+    {
+        const ovphysx_api_status_t callerStatus = wait_for_all_pending_ops(caller);
+
+        ovphysx_handle_t attachOwner = OVPHYSX_INVALID_HANDLE;
+        {
+            std::lock_guard<std::mutex> lock(g_gpuAttachMutex);
+            attachOwner = g_liveAttachOwner;
+        }
+
+        ovphysx_api_status_t ownerStatus = OVPHYSX_API_SUCCESS;
+        if (attachOwner != OVPHYSX_INVALID_HANDLE && attachOwner != caller)
+            ownerStatus = wait_for_all_pending_ops(attachOwner);
+
+        transitionLock.lock();
+        if (g_liveAttachOwner != attachOwner)
+            return OVPHYSX_API_INVALID_STATE;
+        return callerStatus != OVPHYSX_API_SUCCESS ? callerStatus : ownerStatus;
+    }
+
+    // Must be called while holding g_gpuAttachMutex, after a shared-runtime
+    // transition that may have stopped OmniPVD sampling. Preserve the public
+    // owner when sampling is still active. Another handle may own the recording.
+    static void reconcile_recording_owner_after_runtime_transition(
+        omni::physx::IPhysxSimulation* physxSim)
+    {
+        if (physxSim && physxSim->isOmniPvdRecording && !physxSim->isOmniPvdRecording())
+            g_omniPvdRecordingOwner = OVPHYSX_INVALID_HANDLE;
+    }
 }
 
 // Internal C++ function implementation (exposed via ovphysxSDK.hpp)
 ovphysx_api_status_t omni_sdk_physx_wait_all_pending_internal(ovphysx_handle_t handle) {
-    // Fast path: if all_ops_synced is already true, we know nothing is pending.
-    // Avoids the 2-mutex + vector-alloc overhead of wait_for_all_pending_ops.
+    // Fast path. When all_ops_synced is set nothing is pending, which skips the two
+    // mutexes and the vector allocation in wait_for_all_pending_ops.
     {
         std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
         InstanceData* instance = get_instance_ptr(handle);
@@ -1418,49 +1749,74 @@ ovphysx_api_status_t omni_sdk_physx_unload_usd(ovphysx_handle_t handle)
 
             ovphysx_sdf_view_cleanup_instance(instance);
 
-            // Detach PhysX simulation.
-            // When physics was never explicitly attached (deferred path), we must
-            // still attach+detach here: scene population during load_usd creates
-            // state that PhysX observes internally, and only detachStage clears it.
-            // Skipping detach leaves dangling refs that corrupt later simulate().
+            // Even when physics was never explicitly attached, an attach+detach pair
+            // is needed. Scene population during load creates state that only
+            // detachStage clears, and skipping it leaves dangling refs that corrupt
+            // later simulate().
             {
                 omni::physx::IPhysxSimulation* physxSim =
                     instance->carbonite ? instance->carbonite->getPhysxSimulation() : nullptr;
 
-                if (!instance->physics_attached.load(std::memory_order_acquire)) {
-                    // Pair a quick attach+detach so the PhysX plugin releases
-                    // any refs it accumulated during load.
-                    if (physxSim) {
-                        std::lock_guard<std::mutex> attachLock(g_gpuAttachMutex);
-                        applyAttachTimeGpuSelection(
-                            *instance, carb::getFramework(), "late attachStage for detach");
-                        physxSim->attachStage(stageId);
+                if (physxSim)
+                {
+                    std::lock_guard<std::mutex> attachLock(g_gpuAttachMutex);
+                    if (g_liveAttachOwner != OVPHYSX_INVALID_HANDLE && g_liveAttachOwner != handle)
+                    {
+                        // This legacy unload path must not detach the shared runtime
+                        // while another OvPhysX handle owns the live ovstage attach.
+                        CARB_LOG_WARN(
+                            "[UNLOAD #%u] Stage %" PRId64
+                            " - skipping runtime detach owned by instance %" PRIu64,
+                            unloadSeq, stageId, g_liveAttachOwner);
                     }
-                    CARB_LOG_INFO("[UNLOAD #%u] Stage %" PRId64 " - late attach for clean detach (physics was deferred)", unloadSeq, stageId);
-                }
+                    else
+                    {
+                        if (!instance->physics_attached.load(std::memory_order_acquire))
+                        {
+                            // Pair a quick attach+detach so the PhysX plugin releases
+                            // any refs it accumulated during load.
+                            applyAttachTimeGpuSelection(
+                                *instance, carb::getFramework(), "late attachStage for detach");
+                            physxSim->attachStage(stageId);
+                            CARB_LOG_INFO(
+                                "[UNLOAD #%u] Stage %" PRId64
+                                " - late attach for clean detach (physics was deferred)",
+                                unloadSeq, stageId);
+                        }
 
-                if (physxSim) {
-                    CARB_LOG_INFO("[UNLOAD #%u] Detaching PhysX simulation for stage %" PRId64, unloadSeq, stageId);
-                    physxSim->detachStage();
-                    CARB_LOG_INFO("[UNLOAD #%u] PhysX simulation detached for stage %" PRId64, unloadSeq, stageId);
-                } else {
-                    CARB_LOG_WARN("[UNLOAD #%u] WARNING: PhysX simulation interface unavailable for stage %" PRId64, unloadSeq, stageId);
+                        CARB_LOG_INFO(
+                            "[UNLOAD #%u] Detaching PhysX simulation for stage %" PRId64,
+                            unloadSeq, stageId);
+                        physxSim->detachStage();
+                        reconcile_recording_owner_after_runtime_transition(physxSim);
+                        if (g_liveAttachOwner == handle)
+                            g_liveAttachOwner = OVPHYSX_INVALID_HANDLE;
+                        CARB_LOG_INFO(
+                            "[UNLOAD #%u] PhysX simulation detached for stage %" PRId64,
+                            unloadSeq, stageId);
+                    }
+                }
+                else
+                {
+                    CARB_LOG_WARN(
+                        "[UNLOAD #%u] WARNING: PhysX simulation interface unavailable for stage %" PRId64,
+                        unloadSeq, stageId);
                 }
             }
             
             
-            // Release the tensor SimulationBackend's per-stage data before clearing the stage id.
-            // Retained from the legacy unload path; keeps the tensor backend from holding stale
-            // views across reset / reattach.
+            // Release the tensor SimulationBackend's data for this attach before
+            // clearing it, so the tensor backend does not hold stale views across
+            // reset or reattach.
             if (omni::physics::tensors::TensorApi* tensorApi =
                     omni::physx::runtime::tryGetTensorApiInterface()) {
                 if (tensorApi->resetStage)
-                    tensorApi->resetStage(stageId);
+                    tensorApi->resetStage(instance->attachHandle);
             }
 
             instance->attachedStageId = 0;
+            instance->attachHandle = omni::physics::tensors::kNoAttach;
             instance->resetStageFlags();
-            ovphysx_close_usd_stage_wrapper(stageId);
             unloadGuard.disarm();
             markStageDetached(stageId, "unload_usd_complete");
         } catch (const std::exception& e) {
@@ -1486,19 +1842,38 @@ static void clearVisualizationScopeTokens()
 
 ovphysx_api_status_t omni_sdk_physx_destroy(ovphysx_handle_t handle)
 {
-    // Wait for all pending operations, then unload (these acquire their own locks)
-    wait_for_all_pending_ops(handle);  // Ignore return value - continue cleanup even if wait fails
+    // Reject an already-absent handle before any process-global teardown. This
+    // defensive path lets Python recover from an ambiguous FFI exception
+    // without disturbing live peers or their asynchronous state.
+    {
+        std::shared_lock<std::shared_mutex> mapLock(g_instances_mutex);
+        std::unordered_map<ovphysx_handle_t, std::shared_ptr<InstanceData>>::const_iterator it =
+            g_instances.find(handle);
+        if (it == g_instances.end() || !it->second)
+            return OVPHYSX_API_ERROR;
+    }
+
+    // Destruction can finalize a stream owned by a peer of the attached stage, so
+    // establish the same shared-runtime safe point as explicit start/stop before
+    // any teardown. Failures are ignored so destruction still makes best-effort
+    // progress.
+    bool recordingOwnedAtDestroy = false;
+    {
+        std::unique_lock<std::mutex> transitionLock(g_gpuAttachMutex, std::defer_lock);
+        (void)acquire_shared_runtime_safe_point(handle, transitionLock);
+        recordingOwnedAtDestroy = g_omniPvdRecordingOwner == handle;
+    }
 
     bool detachOvstage = false;
-    // Capture the attached stageId before detach/unload clear it. This is used
-    // as a TensorAPI cleanup fallback when unload exits before clearing the stage.
-    int64_t destroyedStageId = 0;
+    // Capture the attach handle before detach/unload clear it. It is the TensorAPI
+    // cleanup fallback when unload exits before clearing the stage.
+    omni::physics::tensors::AttachHandle destroyedAttachHandle = omni::physics::tensors::kNoAttach;
     {
         std::shared_lock<std::shared_mutex> mapLock(g_instances_mutex);
         auto it = g_instances.find(handle);
         if (it != g_instances.end() && it->second)
         {
-            destroyedStageId = it->second->attachedStageId;
+            destroyedAttachHandle = it->second->attachHandle;
             detachOvstage = it->second->ovstage_attached;
         }
     }
@@ -1511,6 +1886,25 @@ ovphysx_api_status_t omni_sdk_physx_destroy(ovphysx_handle_t handle)
             // running. The scope owns dictionary-backed tokens, so clear it
             // before the instance (and potentially the dictionary) disappears.
             clearVisualizationScopeTokens();
+
+            // ovphysx_detach_ovstage() bailed out before its runtime-detach block
+            // (for example wait_for_all_pending_ops() failed), so this handle may
+            // still hold the process-wide live-attach latch. Force the release here,
+            // independently of pending-op success, so destruction never leaves that
+            // latch stuck.
+            std::shared_ptr<InstanceData> instanceShared = get_instance(handle);
+            std::lock_guard<std::mutex> attachLock(g_gpuAttachMutex);
+            if (g_liveAttachOwner == handle)
+            {
+                omni::physx::IPhysxSimulation* physxSim =
+                    instanceShared && instanceShared->carbonite ? instanceShared->carbonite->getPhysxSimulation() : nullptr;
+                if (physxSim && physxSim->detachStage)
+                {
+                    physxSim->detachStage();
+                    reconcile_recording_owner_after_runtime_transition(physxSim);
+                }
+                g_liveAttachOwner = OVPHYSX_INVALID_HANDLE;
+            }
         }
     }
 
@@ -1519,11 +1913,37 @@ ovphysx_api_status_t omni_sdk_physx_destroy(ovphysx_handle_t handle)
         omni_sdk_physx_unload_usd(handle);  // Ignore return value - continue cleanup even if unload fails
     }
 
+    // Stage teardown releases PxPhysics while sampling is still active so its
+    // final object-removal telemetry reaches the stream. If no stage existed,
+    // or teardown failed before doing that, finalize the owner session here.
+    std::shared_ptr<InstanceData> recordingInstance = get_instance(handle);
+    {
+        std::lock_guard<std::mutex> recordingLock(g_gpuAttachMutex);
+        if (recordingOwnedAtDestroy && recordingInstance && recordingInstance->carbonite &&
+            (g_omniPvdRecordingOwner == handle ||
+             g_omniPvdRecordingOwner == OVPHYSX_INVALID_HANDLE))
+        {
+            omni::physx::IPhysxSimulation* physxSim = recordingInstance->carbonite->getPhysxSimulation();
+            if (physxSim && physxSim->stopOmniPvdRecording && physxSim->isOmniPvdRecording &&
+                physxSim->isOmniPvdRecording())
+            {
+                // If detach cleared the latch but did not actually stop sampling,
+                // restore ownership until the explicit finalizer succeeds.
+                g_omniPvdRecordingOwner = handle;
+                const omni::physx::OmniPvdRecordingResult stopResult = physxSim->stopOmniPvdRecording();
+                if (stopResult != omni::physx::OmniPvdRecordingResult::eSuccess)
+                    CARB_LOG_ERROR("[DESTROY] Failed to finalize the active OmniPVD recording");
+            }
+            reconcile_recording_owner_after_runtime_transition(physxSim);
+        }
+    }
+
     bool stageUnloadCompleted = false;
     {
         std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
         auto it = g_instances.find(handle);
-        stageUnloadCompleted = it != g_instances.end() && it->second && it->second->attachedStageId == 0;
+        stageUnloadCompleted = it != g_instances.end() && it->second &&
+                               it->second->attachHandle == omni::physics::tensors::kNoAttach;
     }
 
     async_cleanup_all_events();
@@ -1570,22 +1990,19 @@ ovphysx_api_status_t omni_sdk_physx_destroy(ovphysx_handle_t handle)
     omni::physics::tensors::TensorApi* tensorApi = omni::physx::runtime::tryGetTensorApiInterface();
     if (tensorApi)
     {
-        // Per-instance fallback: release sim data if unload did not clear this stage.
-        // Unlike the full reset() below, this needs no g_createInstanceMutex
-        // serialization: it only touches destroyedStageId's entries, and this stage
-        // was already detached above, so a concurrent create_instance+stage ingest (which
-        // populates a *different* stageId) cannot collide.
-        // SimulationBackend::resetStage takes its own per-backend lock.
-        if (tensorApi->resetStage && destroyedStageId > 0 && !stageUnloadCompleted)
-            tensorApi->resetStage(destroyedStageId);
+        // Per-instance fallback when unload did not clear this stage. Unlike the full
+        // reset() below this needs no g_createInstanceMutex serialization, because it
+        // only touches destroyedAttachHandle's entries and a concurrent create_instance
+        // mints a different handle. SimulationBackend::resetStage takes its own lock.
+        if (tensorApi->resetStage && destroyedAttachHandle != omni::physics::tensors::kNoAttach &&
+            !stageUnloadCompleted)
+            tensorApi->resetStage(destroyedAttachHandle);
 
-        // On last instance: full backend reset to release any remaining resources.
-        // reset() clears sim data for ALL stages, so it must not race a concurrent
-        // create_instance+ovstage ingest that has populated a new stage's data. Hold
-        // g_createInstanceMutex across the emptiness re-check AND the reset() call:
-        // create_instance holds the same mutex while inserting into g_instances, so
-        // this serialization guarantees no instance can appear between the re-check
-        // and reset(). Lock order (create mutex then instances mutex) matches
+        // On the last instance a full backend reset releases the remaining resources.
+        // reset() clears sim data for all stages, so g_createInstanceMutex is held
+        // across the emptiness re-check and the reset() call. create_instance holds
+        // the same mutex while inserting into g_instances, so no instance can appear
+        // in between. Lock order (create mutex then instances mutex) matches
         // createInstanceInternal().
         if (lastInstance && tensorApi->reset)
         {
@@ -1602,18 +2019,29 @@ ovphysx_api_status_t omni_sdk_physx_destroy(ovphysx_handle_t handle)
 
     if (lastInstance)
     {
-        CARB_LOG_INFO("[ovphysx] Static runtime kept alive until process exit");
+        CARB_LOG_INFO("[ovphysx] Direct runtime retained until ovphysx_shutdown");
     }
 
     return OVPHYSX_API_SUCCESS;
 }
+// ==================== Public API functions ====================
 
-// ==================== NEW API FUNCTIONS ====================
-
-OVPHYSX_API ovphysx_result_t ovphysx_register_schema_paths(void)
+OVPHYSX_API ovphysx_result_t ovphysx_get_codeless_schema_root(ovphysx_string_t* out_root)
 {
+    if (!out_root)
+    {
+        return set_error(OVPHYSX_API_INVALID_ARGUMENT, "ovphysx_get_codeless_schema_root: out_root is null");
+    }
+
+    // Thread-local so concurrent callers never observe each other's buffer and
+    // tests can point OVPHYSX_LIB at a different layout between calls. The
+    // returned view stays valid until this thread calls the function again.
+    thread_local std::string s_root;
     std::string error;
-    if (!omni::sdk::usd_schema_paths::registerSchemaPathsOnce(&error))
+    s_root = omni::sdk::usd_schema_paths::getCodelessSchemaRoot(&error);
+    out_root->ptr = s_root.c_str();
+    out_root->length = s_root.size();
+    if (s_root.empty())
     {
         return set_error(OVPHYSX_API_ERROR, error);
     }
@@ -1621,10 +2049,11 @@ OVPHYSX_API ovphysx_result_t ovphysx_register_schema_paths(void)
 }
 
 // Main SDK bootstrap entry point.
-// It serializes process-global setup, starts
-// Carbonite, reuses or preloads namespaced USD, applies user config, then loads
-// ovphysx's own PhysX plugins. It rejects a process that already loaded a PhysX
-// Carbonite stack because only namespaced USD is shared with other OV libraries.
+// It serializes process-global setup, starts Carbonite, applies user config,
+// then loads ovphysx's own PhysX plugins. It rejects a process that already
+// loaded a PhysX Carbonite stack. ovphysx neither loads nor registers USD here:
+// the application owns its USD runtime and registers ovphysx's schemas itself
+// (see ovphysx_get_codeless_schema_root).
 static ovphysx_result_t createInstanceInternal(const ovphysx_create_args* create_args, ovphysx_handle_t* out_handle) {
     if (!create_args || !out_handle) {
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "Invalid arguments to create_instance");
@@ -1640,15 +2069,29 @@ static ovphysx_result_t createInstanceInternal(const ovphysx_create_args* create
 
     std::lock_guard<std::mutex> createLock(g_createInstanceMutex);
 
-    // Create instance data as shared_ptr for safe lifetime management
+    bool isFirstLiveInstance = false;
+    {
+        std::shared_lock<std::shared_mutex> mapLock(g_instances_mutex);
+        isFirstLiveInstance = g_instances.empty();
+    }
+    if (args->config_entry_count > 0 && !isFirstLiveInstance)
+    {
+        for (uint32_t i = 0; i < args->config_entry_count; ++i)
+        {
+            if (isOmniPvdCreateOnlyEntry(args->config_entries[i]))
+                return set_error(
+                    OVPHYSX_API_ERROR,
+                    "OmniPVD creation config cannot be applied while an instance exists");
+        }
+    }
+
     auto instanceData = std::make_shared<InstanceData>();
 
 
-    // Parse active_cuda_gpus early to fail fast on bad syntax before bringing up
-    // Carbonite/PhysX. The parsed ordinals are range-validated post-init (device
-    // count) and stored on the instance for the deferred /physics/cudaDevice write
-    // by either supported scene-attach path. CarboniteLoader is given the fixed
-    // -2 sentinel below, not an ordinal from this list.
+    // Parse active_cuda_gpus early to fail fast before bringing up Carbonite/PhysX.
+    // The ordinals are range-validated post-init and stored on the instance for the
+    // deferred /physics/cudaDevice write at scene attach. CarboniteLoader gets the
+    // fixed -2 sentinel below, not an ordinal from this list.
     std::vector<int32_t> requestedOrdinals;
     {
         char parseErr[256] = {};
@@ -1660,9 +2103,8 @@ static ovphysx_result_t createInstanceInternal(const ovphysx_create_args* create
             CARB_LOG_ERROR("[ovphysx] active_cuda_gpus parse error: %s", parseErr);
             return set_error(OVPHYSX_API_INVALID_ARGUMENT, parseErr);
         }
-        // parseActiveCudaGpus returns {0} for empty input and a non-empty vector
-        // on success; an empty result only occurs on error (errbuf filled),
-        // which is handled above. Guard here defensively.
+        // parseActiveCudaGpus only returns an empty vector on error, which is
+        // handled above. Defensive guard.
         if (requestedOrdinals.empty())
         {
             return set_error(OVPHYSX_API_INVALID_ARGUMENT,
@@ -1671,18 +2113,10 @@ static ovphysx_result_t createInstanceInternal(const ovphysx_create_args* create
     }
 
     // ========================================================================
-    // Configure Carbonite bootstrap before PhysX plugins load. The -2 sentinel
-    // below skips unused Carbonite GPU plugins; it does not select the PhysX
-    // CUDA ordinal, which is applied by the scene-attach paths.
+    // Configure Carbonite bootstrap before PhysX plugins load. The PhysX CUDA
+    // ordinal is applied later by the scene-attach paths.
     // ========================================================================
     {
-        // Pass -2 to CarboniteLoader so it skips loading omni.gpucompute-cuda.plugin
-        // and related Carbonite GPU plugins at startup. PhysX manages its own GPU
-        // context via the PhysX SDK directly and does not depend on those plugins.
-        // /physics/cudaDevice (the GPU ordinal) is written later by the selected
-        // scene-attach path under g_gpuAttachMutex.
-        int32_t cudaDevice = -2;
-
         if (args && args->config_entry_count > 0 && args->config_entries)
         {
             for (uint32_t i = 0; i < args->config_entry_count; ++i)
@@ -1704,9 +2138,8 @@ static ovphysx_result_t createInstanceInternal(const ovphysx_create_args* create
             }
         }
 
-        ovphysx::CarboniteLoader::setStartupCudaDevice(cudaDevice);
-        // Note: /physics/suppressReadback (DirectGPU-API mode) is opt-in by
-        // the host; ovphysx never writes it. See create_args doc-comment in
+        // Note: /physics/suppressReadback (DirectGPU-API mode) is opt-in by the
+        // host and ovphysx never writes it. See the create_args doc comment in
         // ovphysx_types.h.
     }
 
@@ -1723,56 +2156,60 @@ static ovphysx_result_t createInstanceInternal(const ovphysx_create_args* create
         return set_error(OVPHYSX_API_ERROR, message);
     }
 
-    // Load the SDK config after Carbonite startup. In this namespaced-only
-    // branch this does not validate or attach to a host/classic USD runtime.
-    // This loads config.toml and makes it available to later setup code.
-    ovphysx_result_t usd_init_result = omni::sdk::usd_version::initializeUsdVersionCheck();
-    if (usd_init_result.status != OVPHYSX_API_SUCCESS) {
-        // initializeUsdVersionCheck() already set a detailed TLS error; propagate it as-is.
-        return usd_init_result;
-    }
-
-    // Reuse an already-loaded OV namespaced USD monolith when one exists,
-    // otherwise preload the packaged SDK USD libs now.
-    CARB_LOG_INFO("[USD Compatibility] Ensuring SDK USD libs are preloaded");
-    if (!instanceData->carbonite->preloadUsdLibraries()) {
-        CARB_LOG_ERROR("Failed to preload USD for ovphysx");
-        return set_error(OVPHYSX_API_ERROR, "Failed to preload USD libraries");
-    }
-    if (!instanceData->carbonite->loadUsdDependentPlugins()) {
-        CARB_LOG_WARN("[ovphysx] Failed to load USD-dependent plugins; USD-dependent operations may fail");
-    }
+    bool reserveOmniPvdStartupOwner = false;
 
     // Apply user config entries BEFORE loading PhysX plugins. OmniPVD recording
     // is initialized during createPhysics() (triggered by loadPhysxPlugins), so
     // settings like omniPvdOutputEnabled must already be in place.
-    if (args && args->config_entry_count > 0 && args->config_entries) {
-        auto* framework = carb::getFramework();
-        auto* settings = framework ? framework->tryAcquireInterface<carb::settings::ISettings>() : nullptr;
-        if (settings) {
-            CARB_LOG_INFO("[ovphysx] Applying %u user config entries (pre-plugin-load)", args->config_entry_count);
-            for (uint32_t i = 0; i < args->config_entry_count; ++i) {
-                ovphysx_api_status_t status = applyConfigEntry(settings, args->config_entries[i]);
-                if (status != OVPHYSX_API_SUCCESS) {
-                    CARB_LOG_WARN("[ovphysx] Failed to apply config entry %u (status=%d)", i, status);
-                }
+    {
+        carb::Framework* framework = carb::getFramework();
+        carb::settings::ISettings* settings =
+            framework ? framework->tryAcquireInterface<carb::settings::ISettings>() : nullptr;
+        if (settings)
+        {
+            settings->setDefaultString(omni::physx::kOmniPvdTransport, "file");
+            settings->setDefaultString(omni::physx::kOmniPvdTcpAddress, "");
+            settings->setDefaultInt(omni::physx::kOmniPvdTcpPort, 0);
+            settings->setDefaultInt(omni::physx::kOmniPvdTcpTimeoutMs, 0);
+            if (args->config_entry_count > 0)
+            {
+                CARB_LOG_INFO(
+                    "[ovphysx] Applying %u user config entries (pre-plugin-load)",
+                    args->config_entry_count);
+                const ovphysx_api_status_t applyStatus =
+                    applyCreateConfigEntries(settings, args->config_entries, args->config_entry_count);
+                if (applyStatus != OVPHYSX_API_SUCCESS)
+                    return set_error(applyStatus, "Invalid config entry");
             }
-        } else {
+            const char* destinationError = nullptr;
+            const ovphysx_api_status_t destinationStatus =
+                validateEffectiveOmniPvdStartupConfig(settings, destinationError);
+            if (destinationStatus != OVPHYSX_API_SUCCESS)
+                return set_error(destinationStatus, destinationError ? destinationError : "Invalid OmniPVD destination");
+            reserveOmniPvdStartupOwner = isFirstLiveInstance &&
+                settings->getAsBool(omni::physx::kOmniPvdOutputEnabled) &&
+                !settings->getAsBool(omni::physx::kOmniPvdIsOVDStage);
+        }
+        else
+        {
             CARB_LOG_WARN("[ovphysx] Warning: ISettings not available, cannot apply user config entries");
         }
     }
 
+    // Resolve NVTX profiling before the PhysX plugins load: the omni.physx runtime
+    // reads /physics/nvtxEnabled while creating the PhysX SDK, and this call also
+    // writes the OVPHYSX_NVTX environment variable through to that setting.
+    ovphysx::nvtx::resolveEnabled();
+
     if (!instanceData->carbonite->loadPhysxPlugins()) {
         const std::string& loaderError = instanceData->carbonite->getLastError();
-        const char* message = loaderError.empty() ? "Failed to load PhysX plugins after USD preload"
+        const char* message = loaderError.empty() ? "Failed to load PhysX plugins"
                                                   : loaderError.c_str();
         CARB_LOG_ERROR("%s", message);
         return set_error(OVPHYSX_API_ERROR, message);
     }
-
     // Preload the internal sidecar so its carb::Framework + OmniCore built-ins are seeded
-    // before first use. CarboniteLoader has already made the USD monolith globally visible,
-    // so the sidecar binds to that runtime without pulling in another USD image.
+    // before first use.
     CARB_LOG_INFO("[ovphysx] Attempting to preload internal sidecar...");
     if (loadInternalSidecar()) {
         CARB_LOG_INFO("[ovphysx] Internal sidecar preloaded successfully");
@@ -1780,10 +2217,9 @@ static ovphysx_result_t createInstanceInternal(const ovphysx_create_args* create
         CARB_LOG_INFO("[ovphysx] Internal sidecar preload failed (will load on-demand on first use)");
     }
 
-    // Validate active_cuda_gpus ordinal early so the user gets a fast error at create
-    // time rather than at first attach. The actual /physics/cudaDevice write is
-    // deferred to the selected scene-attach path under g_gpuAttachMutex so that
-    // it is held atomically with PhysX attachment.
+    // Validate the active_cuda_gpus ordinal early so the error surfaces at create
+    // time rather than at first attach. The /physics/cudaDevice write is deferred to
+    // the scene-attach path under g_gpuAttachMutex so it is atomic with PhysX attachment.
     if (args && args->active_cuda_gpus.ptr && args->active_cuda_gpus.length > 0 &&
         !isProcessGpuDisabled())
     {
@@ -1823,17 +2259,15 @@ static ovphysx_result_t createInstanceInternal(const ovphysx_create_args* create
     if (args) {
         instanceData->create_args = *args;
         // Clear pointers to caller-owned memory so nothing in create_args dangles
-        // after this call returns. config_entries were already applied above;
-        // active_cuda_gpus is consumed at first attach via the parsed
-        // active_cuda_ordinals below, so the string view is no longer needed.
+        // after this call returns. config_entries were applied above and
+        // active_cuda_gpus lives on as the parsed active_cuda_ordinals.
         instanceData->create_args.config_entries = nullptr;
         instanceData->create_args.config_entry_count = 0;
         instanceData->create_args.active_cuda_gpus.ptr = nullptr;
         instanceData->create_args.active_cuda_gpus.length = 0;
-        // Persist the parsed ordinals (resolved above into requestedOrdinals) only
-        // when the caller actually restricted GPU ordinals. requestedOrdinals
-        // defaults to {0} for empty input, so gate on the original string to keep
-        // "no active_cuda_gpus" distinct from an explicit "0".
+        // Persist the parsed ordinals only when the caller restricted GPU ordinals.
+        // requestedOrdinals defaults to {0} for empty input, so gate on the original
+        // string to keep "no active_cuda_gpus" distinct from an explicit "0".
         if (args->active_cuda_gpus.ptr && args->active_cuda_gpus.length > 0) {
             instanceData->active_cuda_ordinals = requestedOrdinals;
         }
@@ -1845,15 +2279,69 @@ static ovphysx_result_t createInstanceInternal(const ovphysx_create_args* create
     if (handle == OVPHYSX_INVALID_HANDLE)
         return set_error(OVPHYSX_API_ERROR, "opaque object handle space exhausted");
 
-    CARB_LOG_INFO("[ovphysx] Instance %" PRIu64 " created", handle);
+    // Summarize the process GPU policy at create so hosts can confirm the effective
+    // CPU-only mode and CUDA selection intent. Per-scene enableGPUDynamics remains
+    // USD-owned (ADR-0011). This reports hard-policy and create-args intent only,
+    // not the attach-time resolved dynamics mode or the chosen ordinal.
+    {
+        const bool processCpuOnly = isProcessGpuDisabled();
+        const bool envDisabled = isEnvGpuDisabled();
+        const bool apiForced = g_forceCpuMode.load(std::memory_order_acquire);
+        const char* cpuReason = "none";
+        if (envDisabled && apiForced)
+            cpuReason = "OVPHYSX_DISABLE_GPU+ovphysx_set_cpu_mode";
+        else if (envDisabled)
+            cpuReason = "OVPHYSX_DISABLE_GPU";
+        else if (apiForced)
+            cpuReason = "ovphysx_set_cpu_mode";
+
+        const char* cudaAvailableStr = "n/a";
+        if (!processCpuOnly)
+            cudaAvailableStr = omni::physx::cudaShim::isCudaAvailable() ? "true" : "false";
+
+        char activeGpusBuf[128] = "inactive";
+        if (!processCpuOnly)
+        {
+            const std::vector<int32_t>& ordinals = instanceData->active_cuda_ordinals;
+            if (ordinals.empty())
+            {
+                // Empty active_cuda_gpus is "no ovphysx ordinal override"
+                // (ADR-0011), not PhysX automatic selection ("-1").
+                std::snprintf(activeGpusBuf, sizeof(activeGpusBuf), "no_override");
+            }
+            else
+            {
+                size_t off = 0;
+                activeGpusBuf[0] = '\0';
+                for (size_t i = 0; i < ordinals.size(); ++i)
+                {
+                    const int written = std::snprintf(
+                        activeGpusBuf + off, sizeof(activeGpusBuf) - off, "%s%d",
+                        (i == 0) ? "" : ",", ordinals[i]);
+                    if (written < 0 || static_cast<size_t>(written) >= sizeof(activeGpusBuf) - off)
+                        break;
+                    off += static_cast<size_t>(written);
+                }
+            }
+        }
+
+        CARB_LOG_INFO(
+            "[ovphysx] Instance %" PRIu64
+            " created: process_cpu_only=%s [%s] cuda_available=%s active_cuda_gpus=%s",
+            handle, processCpuOnly ? "true" : "false", cpuReason, cudaAvailableStr, activeGpusBuf);
+    }
 
     {
         std::unique_lock<std::shared_mutex> map_lock(g_instances_mutex);
         g_instances[handle] = std::move(instanceData);
     }
+    if (reserveOmniPvdStartupOwner)
+    {
+        std::lock_guard<std::mutex> recordingLock(g_gpuAttachMutex);
+        if (g_omniPvdRecordingOwner == OVPHYSX_INVALID_HANDLE)
+            g_omniPvdRecordingOwner = handle;
+    }
     *out_handle = handle;
-
-    // DirectGPU (/physics/suppressReadback) is intentionally host-managed.
 
     return success();
 }
@@ -1861,22 +2349,20 @@ static ovphysx_result_t createInstanceInternal(const ovphysx_create_args* create
 // Process-wide lifecycle: ovphysx_initialize() / ovphysx_shutdown() / the
 // init-check in ovphysx_create_instance().
 //
-// Per the ovphysx threading contract, process-lifecycle calls must be
-// serialized by the caller (the Python wrapper does this via
-// _PROCESS_LIFECYCLE_LOCK). The g_initialized atomic only enforces matched
-// init/shutdown pairing; it is NOT a lock. We intentionally do not guard these
-// with g_createInstanceMutex: ovphysx_create_instance() delegates to
-// createInstanceInternal(), which already takes that (non-recursive) mutex, so
-// checking g_initialized under it here would self-deadlock.
+// Per the ovphysx threading contract, process-lifecycle calls are serialized by
+// the caller (the Python wrapper uses its lifecycle condition). The g_initialized
+// atomic only enforces matched init/shutdown pairing, it is not a lock. These are
+// not guarded with g_createInstanceMutex because createInstanceInternal() already
+// takes that non-recursive mutex, so checking g_initialized under it would
+// self-deadlock.
 //
-// This is safe today because initialize/shutdown are no-op placeholders (they
-// only flip the flag). If they ever gain real global setup/teardown, a
-// concurrent shutdown-vs-create would become a use-after-free hazard and this
-// will need a dedicated lifecycle mutex held across the create path — not the
-// create mutex.
+// Initialize performs only CPU capability validation, the atomic lifecycle claim,
+// and environment-policy latching. It must not emit logs, invoke callbacks, or
+// wait for callback delivery, because the Python wrapper lets concurrent
+// constructors wait for this transition. Shutdown can flush and drain callbacks,
+// so Python callers racing final shutdown remain fail-fast.
 OVPHYSX_API ovphysx_result_t ovphysx_initialize(void)
 {
-    // Reserved process-wide lifecycle slot for future global initialization and OV library API conformance.
 #if defined(__x86_64__) || defined(_M_X64) || defined(__amd64__)
     if (!ovphysx::internal::cpuSupportsAvx())
     {
@@ -1892,6 +2378,10 @@ OVPHYSX_API ovphysx_result_t ovphysx_initialize(void)
     {
         return set_error(OVPHYSX_API_ERROR, "ovphysx_initialize called while already initialized");
     }
+
+    // Sample OVPHYSX_DISABLE_GPU at the documented initialization boundary so a
+    // prior observational get_cpu_mode() cannot permanently miss a later setenv.
+    latchEnvGpuDisabledFromEnvironment();
 
     return success();
 }
@@ -1911,15 +2401,156 @@ OVPHYSX_API ovphysx_result_t ovphysx_create_instance(const ovphysx_create_args* 
 }
 
 OVPHYSX_API ovphysx_result_t ovphysx_destroy_instance(ovphysx_handle_t handle) {
-    // No g_createInstanceMutex here: omni_sdk_physx_destroy has its own
-    // internal serialization, and ovphysx_destroy_instance is called from
-    // PhysX RAII destructors that can fire on error paths within
-    // createInstanceInternal (which holds g_createInstanceMutex) -- taking
-    // it here would deadlock.
+    // No g_createInstanceMutex here. omni_sdk_physx_destroy has its own
+    // serialization, and ovphysx_destroy_instance is called from PhysX RAII
+    // destructors that can fire on error paths inside createInstanceInternal,
+    // which holds that mutex, so taking it here would deadlock.
     ovphysx_api_status_t status = omni_sdk_physx_destroy(handle);
     if (status != OVPHYSX_API_SUCCESS) {
         return {status}; // Don't set error on destroy failure
     }
+    return success();
+}
+
+OVPHYSX_API ovphysx_result_t ovphysx_start_recording(
+    ovphysx_handle_t handle, const ovphysx_omnipvd_destination_t* destination)
+{
+    std::shared_ptr<InstanceData> instance = get_instance(handle);
+    if (!instance)
+        return set_error(OVPHYSX_API_INVALID_ARGUMENT, "start_recording: invalid handle");
+    if (!destination)
+        return set_error(OVPHYSX_API_INVALID_ARGUMENT, "start_recording: destination is null");
+
+    std::string filePath;
+    std::string tcpAddress;
+    if (!omni::physx::copyOmniPvdConfigString(
+            destination->file_path.ptr, destination->file_path.length, filePath) ||
+        !omni::physx::copyOmniPvdConfigString(
+            destination->tcp_address.ptr, destination->tcp_address.length, tcpAddress))
+    {
+        return set_error(
+            OVPHYSX_API_INVALID_ARGUMENT, "start_recording: destination strings must not contain embedded NUL bytes");
+    }
+
+    uint32_t transport = 0;
+    const char* target = nullptr;
+    uint16_t tcpPort = 0;
+    uint32_t tcpTimeoutMs = 0;
+    if (destination->transport == OVPHYSX_OMNIPVD_TRANSPORT_FILE)
+    {
+        if (filePath.empty() || !tcpAddress.empty() || destination->tcp_port != 0 ||
+            destination->tcp_timeout_ms != 0)
+        {
+            return set_error(
+                OVPHYSX_API_INVALID_ARGUMENT,
+                "start_recording: FILE requires a non-empty file_path and empty/zero TCP fields");
+        }
+        target = filePath.c_str();
+    }
+    else if (destination->transport == OVPHYSX_OMNIPVD_TRANSPORT_TCP)
+    {
+        if (!filePath.empty() || tcpAddress.empty() || destination->tcp_port == 0 ||
+            destination->tcp_port > 65535 || destination->tcp_timeout_ms < 0)
+        {
+            return set_error(
+                OVPHYSX_API_INVALID_ARGUMENT,
+                "start_recording: TCP requires an empty file_path, non-empty address, port in 1..65535, and non-negative timeout");
+        }
+        transport = 1;
+        target = tcpAddress.c_str();
+        tcpPort = static_cast<uint16_t>(destination->tcp_port);
+        tcpTimeoutMs = static_cast<uint32_t>(destination->tcp_timeout_ms);
+    }
+    else
+    {
+        return set_error(OVPHYSX_API_INVALID_ARGUMENT, "start_recording: invalid destination transport");
+    }
+
+    std::unique_lock<std::mutex> recordingLock(g_gpuAttachMutex, std::defer_lock);
+    const ovphysx_api_status_t waitStatus = acquire_shared_runtime_safe_point(handle, recordingLock);
+    if (waitStatus != OVPHYSX_API_SUCCESS)
+        return set_error(waitStatus, "start_recording: failed to reach a shared-runtime safe point");
+
+    omni::physx::IPhysxSimulation* physxSim =
+        instance->carbonite ? instance->carbonite->getPhysxSimulation() : nullptr;
+    if (!physxSim || !physxSim->startOmniPvdRecording)
+        return set_error(OVPHYSX_API_ERROR, "start_recording: OmniPVD runtime API is unavailable");
+
+    if (physxSim->isOmniPvdRecording && physxSim->isOmniPvdRecording())
+        return set_error(OVPHYSX_API_INVALID_STATE, "start_recording: a recording is already active");
+
+    const omni::physx::OmniPvdRecordingResult result =
+        physxSim->startOmniPvdRecording(transport, target, tcpPort, tcpTimeoutMs);
+    switch (result)
+    {
+    case omni::physx::OmniPvdRecordingResult::eSuccess:
+        g_omniPvdRecordingOwner = handle;
+        return success();
+    case omni::physx::OmniPvdRecordingResult::eInvalidState:
+        return set_error(
+            OVPHYSX_API_INVALID_STATE,
+            "start_recording: attach and initialize a stage before starting a late recording");
+    case omni::physx::OmniPvdRecordingResult::eNotSupported:
+        return set_error(OVPHYSX_API_NOT_IMPLEMENTED, "start_recording: OmniPVD recording is unsupported on this platform");
+    case omni::physx::OmniPvdRecordingResult::eNotCapable:
+        return set_error(
+            OVPHYSX_API_INVALID_STATE,
+            "start_recording: set omnipvd_recording_capable=true before creating the first instance");
+    case omni::physx::OmniPvdRecordingResult::eError:
+    default:
+        return set_error(OVPHYSX_API_ERROR, "start_recording: failed to open the destination or start sampling");
+    }
+}
+
+OVPHYSX_API ovphysx_result_t ovphysx_stop_recording(ovphysx_handle_t handle)
+{
+    std::shared_ptr<InstanceData> instance = get_instance(handle);
+    if (!instance)
+        return set_error(OVPHYSX_API_INVALID_ARGUMENT, "stop_recording: invalid handle");
+
+    std::unique_lock<std::mutex> recordingLock(g_gpuAttachMutex, std::defer_lock);
+    const ovphysx_api_status_t waitStatus = acquire_shared_runtime_safe_point(handle, recordingLock);
+    if (waitStatus != OVPHYSX_API_SUCCESS)
+        return set_error(waitStatus, "stop_recording: failed to reach a shared-runtime safe point");
+    omni::physx::IPhysxSimulation* physxSim =
+        instance->carbonite ? instance->carbonite->getPhysxSimulation() : nullptr;
+    if (!physxSim || !physxSim->stopOmniPvdRecording)
+        return set_error(OVPHYSX_API_ERROR, "stop_recording: OmniPVD runtime API is unavailable");
+
+    if (g_omniPvdRecordingOwner != handle)
+        return set_error(OVPHYSX_API_INVALID_STATE, "stop_recording: no recording is active");
+    if (!physxSim->isOmniPvdRecording || !physxSim->isOmniPvdRecording())
+        return set_error(OVPHYSX_API_INVALID_STATE, "stop_recording: no recording is active");
+
+    const omni::physx::OmniPvdRecordingResult result = physxSim->stopOmniPvdRecording();
+    if (!physxSim->isOmniPvdRecording || !physxSim->isOmniPvdRecording())
+        g_omniPvdRecordingOwner = OVPHYSX_INVALID_HANDLE;
+    if (result == omni::physx::OmniPvdRecordingResult::eSuccess)
+        return success();
+    if (result == omni::physx::OmniPvdRecordingResult::eInvalidState)
+        return set_error(OVPHYSX_API_INVALID_STATE, "stop_recording: no recording is active");
+    if (result == omni::physx::OmniPvdRecordingResult::eNotSupported)
+        return set_error(OVPHYSX_API_NOT_IMPLEMENTED, "stop_recording: OmniPVD recording is unsupported on this platform");
+    return set_error(OVPHYSX_API_ERROR, "stop_recording: failed to finalize the recording");
+}
+
+OVPHYSX_API ovphysx_result_t ovphysx_is_recording(
+    ovphysx_handle_t handle, bool* out_is_recording)
+{
+    if (!out_is_recording)
+        return set_error(OVPHYSX_API_INVALID_ARGUMENT, "is_recording: out_is_recording is null");
+    *out_is_recording = false;
+
+    std::shared_ptr<InstanceData> instance = get_instance(handle);
+    if (!instance)
+        return set_error(OVPHYSX_API_INVALID_ARGUMENT, "is_recording: invalid handle");
+    omni::physx::IPhysxSimulation* physxSim =
+        instance->carbonite ? instance->carbonite->getPhysxSimulation() : nullptr;
+    if (!physxSim || !physxSim->isOmniPvdRecording)
+        return set_error(OVPHYSX_API_ERROR, "is_recording: OmniPVD runtime API is unavailable");
+
+    std::lock_guard<std::mutex> recordingLock(g_gpuAttachMutex);
+    *out_is_recording = g_omniPvdRecordingOwner == handle && physxSim->isOmniPvdRecording();
     return success();
 }
 
@@ -1938,7 +2569,19 @@ OVPHYSX_API ovphysx_result_t ovphysx_set_cpu_mode(bool cpu_only)
     return success();
 }
 
+OVPHYSX_API ovphysx_result_t ovphysx_get_cpu_mode(bool* out_cpu_only)
+{
+    if (!out_cpu_only)
+        return set_error(OVPHYSX_API_INVALID_ARGUMENT,
+            "ovphysx_get_cpu_mode: out_cpu_only must not be null");
+    *out_cpu_only = isProcessGpuDisabled();
+    return success();
+}
+
 OVPHYSX_API ovphysx_result_t ovphysx_shutdown(void) {
+    if (ovphysx::isInLogCallback())
+        return set_error(OVPHYSX_API_ERROR, "ovphysx_shutdown cannot be called from within a log callback");
+
     // Guard: must be called with a matching ovphysx_initialize().
     bool expected = true;
     if (!g_initialized.compare_exchange_strong(expected, false, std::memory_order_acq_rel))
@@ -1946,35 +2589,43 @@ OVPHYSX_API ovphysx_result_t ovphysx_shutdown(void) {
         return set_error(OVPHYSX_API_ERROR, "ovphysx_shutdown called without matching ovphysx_initialize");
     }
 
-    // If instances are still alive, the g_initialized flag is cleared above
-    // (so a second shutdown() will error), but handles stay owned by their
-    // callers. Static runtime services remain resident until process exit.
+    // Allow the next initialize() to re-sample OVPHYSX_DISABLE_GPU. Pre-init
+    // get_cpu_mode() between shutdown and re-init reads the env live again.
+    clearEnvGpuDisabledLatch();
+
+    // With instances still alive, g_initialized is cleared above so a second
+    // shutdown() errors, but handles stay owned by their callers solely for
+    // explicit destruction. Further work on them is unsupported. Successful
+    // shutdown still disables and drains the application log callback.
+    bool hasLiveInstances = false;
     {
         std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
-        if (!g_instances.empty()) {
-            return success();
-        }
+        hasLiveInstances = !g_instances.empty();
     }
+    if (hasLiveInstances)
+        return ovphysx::shutdownLogCallback();
 
     // Drain the direct PhysX runtime while Carbonite's settings/dictionary/log
     // plugins are still resident. omni::physx::runtime::shutdown() tears down
-    // OmniPhysX (UJITSO processors, scenes, tensors, foundation runtime). If we
-    // skip it, those objects are instead destroyed during C++ static destruction
-    // at process exit, where they reach back into an already-torn-down Carbonite
-    // (carb.settings -> carb::dictionary::IDictionary fails to resolve) and the
-    // process dies with an access violation, preceded by "Leaked processor"
-    // UJITSO errors. That is the teardown crash CI's Windows python-runtime and
-    // C-sample jobs hit. The drain must happen here on the explicit, terminal
-    // ovphysx_shutdown() call -- the per-instance destroy path keeps the runtime
-    // resident so device-switch create/destroy/create cycles can reuse it.
+    // OmniPhysX (UJITSO processors, scenes, tensors, foundation runtime). Left to
+    // C++ static destruction at process exit, those objects reach back into an
+    // already-torn-down Carbonite and the process dies with an access violation,
+    // preceded by "Leaked processor" UJITSO errors. The drain belongs on this
+    // explicit, terminal call because the per-instance destroy path keeps the
+    // runtime resident for device-switch create/destroy/create cycles.
     //
-    // The Carbonite framework itself is intentionally kept resident for its
-    // static process-exit hook; only the direct runtime is drained here.
+    // The Carbonite framework itself is kept resident for its static
+    // process-exit hook. Only the direct runtime is drained here.
     omni::physx::runtime::shutdown();
+    {
+        std::lock_guard<std::mutex> recordingLock(g_gpuAttachMutex);
+        g_liveAttachOwner = OVPHYSX_INVALID_HANDLE;
+        g_omniPvdRecordingOwner = OVPHYSX_INVALID_HANDLE;
+    }
 
     CARB_LOG_VERBOSE("[ovphysx] Direct runtime shut down; Carbonite framework kept resident until process exit");
 
-    return success();
+    return ovphysx::shutdownLogCallback();
 }
 
 
@@ -1984,15 +2635,12 @@ OVPHYSX_API ovphysx_enqueue_result_t ovphysx_reset_stage(ovphysx_handle_t handle
         return set_enqueue_error(wait_status, "Failed to complete pending operations before reset_stage");
     }
 
-    // Gating solely on ovstage_attached is complete, not just a special case:
-    // attachedStageId is set/cleared exclusively by ovphysx_attach_ovstage() /
-    // ovphysx_detach_ovstage(), always together with ovstage_attached (see
-    // those two functions) -- there is no live attach path that leaves a
-    // handle with attachedStageId != 0 while ovstage_attached is false. So
-    // ovphysx_detach_ovstage() is the only place gpu_warmup_done/
-    // first_step_done need clearing here; the stageId-keyed fallback in
-    // omni_sdk_physx_unload_usd() (full instance teardown only) is a
-    // defensive safety net, not a second reachable attach flow.
+    // Gating solely on ovstage_attached is complete. attachedStageId / attachHandle
+    // are set and cleared only by ovphysx_attach_ovstage() / ovphysx_detach_ovstage(),
+    // always together with ovstage_attached, so no live attach path leaves a handle
+    // attached while ovstage_attached is false. The stageId-keyed fallback in
+    // omni_sdk_physx_unload_usd() is a defensive safety net for full instance
+    // teardown, not a second attach flow.
     bool detach_ovstage = false;
     {
         std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
@@ -2023,27 +2671,24 @@ OVPHYSX_API ovphysx_enqueue_result_t ovphysx_reset_stage(ovphysx_handle_t handle
 
 OVPHYSX_API ovphysx_enqueue_result_t ovphysx_step(ovphysx_handle_t handle,
                                                           float step_dt) {
+    OVPHYSX_NVTX_ZONE("ovphysx_step");
     // Reject negative / non-finite dt up front so a bad value never advances
     // (and poisons) the internal sim-time counter.
     if (step_dt < 0.0f || !std::isfinite(step_dt))
         return set_enqueue_error(OVPHYSX_API_INVALID_ARGUMENT, "Invalid step_dt: must be a finite value >= 0.0");
 
-    // Reject a stage-less handle before ever reaching simulate(). Without this,
-    // omni_sdk_physx_simulate_instance()'s ensure_physics_attached() call treats
-    // "no stage" as a trivial success and falls through to physxSim->simulate()
-    // unconditionally -- and IPhysxSimulation is a process-wide singleton, so
-    // that call would silently advance whatever OTHER handle's stage happens
-    // to be attached, while only THIS handle's first_step_done/gpu_warmup_done
-    // get set (not the actual stage owner's), letting clone() on the real
-    // owner pass its after-step guard despite the owner's stage having
-    // genuinely been stepped. ovphysx_step_sync()/_step_n_sync() already guard
-    // on this; this closes the same hole for the async path.
+    // Reject a stage-less handle before reaching simulate(). ensure_physics_attached()
+    // treats "no stage" as success, and IPhysxSimulation is a process-wide singleton,
+    // so simulate() would silently advance whatever other handle's stage is attached
+    // while only this handle's first_step_done/warmup_done get set. That would let
+    // clone() on the real owner pass its after-step guard. ovphysx_step_sync() and
+    // ovphysx_step_n_sync() have the same guard.
     {
         std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
         InstanceData* instance = get_instance_ptr(handle);
         if (!instance)
             return set_enqueue_error(OVPHYSX_API_ERROR, "Invalid handle");
-        const bool hasPhysicsStage = (instance->attachedStageId != 0) || instance->ovstage_attached;
+        const bool hasPhysicsStage = instance->attachHandle != omni::physics::tensors::kNoAttach;
         if (!hasPhysicsStage)
             return set_enqueue_error(OVPHYSX_API_ERROR, "No stage attached");
     }
@@ -2077,7 +2722,6 @@ OVPHYSX_API ovphysx_enqueue_result_t ovphysx_step(ovphysx_handle_t handle,
     if (!std::isfinite(next_time))
         return set_enqueue_error(OVPHYSX_API_INVALID_ARGUMENT, "sim_time would overflow (current_time + step_dt is not finite)");
 
-    // Call internal simulate with the counter value as current time.
     ovphysx_api_status_t status = omni_sdk_physx_simulate_instance(handle, step_dt, current_time);
 
     if (status != OVPHYSX_API_SUCCESS) {
@@ -2091,27 +2735,24 @@ OVPHYSX_API ovphysx_enqueue_result_t ovphysx_step(ovphysx_handle_t handle,
         InstanceData* instance = get_instance_ptr(handle);
         if (instance) {
             event = instance->pendingSimulationEvent;
-            // Cache last dt for contact read functions (force = impulse / dt).
-            // Clamp to a tiny positive value so we never divide by zero
-            // (a zero-dt step produces zero impulses, and 0/eps ~ 0).
+            // Cache last dt for contact reads (force = impulse / dt). A zero-dt step
+            // produces zero impulses, so substituting 1.0 avoids the division by
+            // zero without changing the result.
             instance->last_step_dt = (step_dt > 0.0f) ? step_dt : 1.0f;
-            // Advance the internal counter once the step is successfully
-            // enqueued. (Async: this is dispatch success, not fetch
-            // completion — the counter reflects the step that was issued.)
+            // Advance the internal counter once the step is enqueued. For the async
+            // path this is dispatch success, not fetch completion, so the counter
+            // reflects the step that was issued.
             instance->sim_time = next_time;
-            // Mark GPU warmup as done for GPU-capable processes so that clone()
-            // can guard against post-step cloning (which would corrupt GPU buffers).
-            // Skipped for CPU-only processes since there are no GPU buffers to corrupt.
-            if (instance->attachedStageId != 0 && !isProcessGpuDisabled()) {
-                instance->gpu_warmup_done.store(true, std::memory_order_release);
-                instance->gpu_warmup_stage_id.store(instance->attachedStageId, std::memory_order_release);
+            // Mark warmup as done so clone() can guard against post-step cloning.
+            if (instance->attachHandle != omni::physics::tensors::kNoAttach) {
+                instance->warmup_done.store(true, std::memory_order_release);
+                instance->warmup_attach_handle.store(instance->attachHandle, std::memory_order_release);
             }
-            // Mark first-step-done in both CPU and GPU mode (unlike gpu_warmup_done,
-            // which is GPU-only) so clone()'s after-step precondition is enforced the
-            // same way in both modes. Still gated on attachedStageId != 0 -- this
-            // handle's own stage, not the process-global runtime -- so a handle with
-            // no attached stage is never falsely marked as having stepped.
-            if (instance->attachedStageId != 0) {
+            // Mark first-step-done in both CPU and GPU mode so clone()'s after-step
+            // guard fires even without an explicit warmup(). Gated on this handle's
+            // own attach, so a handle with nothing attached is never marked as
+            // having stepped.
+            if (instance->attachHandle != omni::physics::tensors::kNoAttach) {
                 instance->first_step_done.store(true, std::memory_order_release);
             }
         }
@@ -2122,12 +2763,12 @@ OVPHYSX_API ovphysx_enqueue_result_t ovphysx_step(ovphysx_handle_t handle,
     return enqueue_success(op_index);
 }
 
-// Fast synchronous step+wait that bypasses the async event machinery.
-// Equivalent to ovphysx_step() followed immediately by wait_op(), but
-// uses a single lock acquisition and avoids the AsyncEventManager overhead
-// (~0.88ms per step in the common synchronous case).
+// Synchronous step+wait that bypasses the async event machinery. Equivalent to
+// ovphysx_step() followed by wait_op(), with a single lock acquisition and no
+// AsyncEventManager overhead.
 OVPHYSX_API ovphysx_result_t ovphysx_step_sync(ovphysx_handle_t handle,
                                                 float step_dt) {
+    OVPHYSX_NVTX_ZONE("ovphysx_step_sync");
     if (step_dt < 0.0f || !std::isfinite(step_dt)) {
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "Invalid step_dt: must be a finite value >= 0.0");
     }
@@ -2141,7 +2782,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_step_sync(ovphysx_handle_t handle,
     }
 
     auto physxSim = instance->carbonite->getPhysxSimulation();
-    const bool hasPhysicsStage = (instance->attachedStageId != 0) || instance->ovstage_attached;
+    const bool hasPhysicsStage = instance->attachHandle != omni::physics::tensors::kNoAttach;
     if (!physxSim || !hasPhysicsStage) {
         return set_error(OVPHYSX_API_ERROR, "No stage attached");
     }
@@ -2162,27 +2803,17 @@ OVPHYSX_API ovphysx_result_t ovphysx_step_sync(ovphysx_handle_t handle,
     if (!std::isfinite(next_time))
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "sim_time would overflow (current_time + step_dt is not finite)");
 
-    // Dispatch GPU work (returns almost immediately - ~0.2ms).
+    // Dispatch GPU work. Returns almost immediately.
     physxSim->simulate(step_dt, current_time);
 
-    if (!isProcessGpuDisabled()) {
-        instance->gpu_warmup_done.store(true, std::memory_order_release);
-        instance->gpu_warmup_stage_id.store(instance->attachedStageId, std::memory_order_release);
-    }
-    // Mark first-step-done in both CPU and GPU mode (unlike gpu_warmup_done,
-    // which is GPU-only). Gated on attachedStageId != 0 like the async
-    // ovphysx_step() path: hasPhysicsStage above can be satisfied by
-    // ovstage_attached alone (attachedStageId == 0), and such a handle must not
-    // be marked as having stepped its own USD stage.
-    if (instance->attachedStageId != 0) {
-        instance->first_step_done.store(true, std::memory_order_release);
-    }
+    instance->warmup_done.store(true, std::memory_order_release);
+    instance->warmup_attach_handle.store(instance->attachHandle, std::memory_order_release);
 
-    // Release map lock while waiting for GPU to avoid holding it during the
-    // 3-4ms fetchResults() blocking call.
+    // Release map lock while waiting for fetchResults() to avoid holding it during the
+    // blocking call.
     map_lock.unlock();
 
-    // Wait for GPU (3-4ms).
+    // Blocks until the step results are ready.
     physxSim->fetchResults();
 
     // Re-acquire to post-process.
@@ -2213,6 +2844,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_step_sync(ovphysx_handle_t handle,
 OVPHYSX_API ovphysx_result_t ovphysx_step_n_sync(ovphysx_handle_t handle,
                                                   int32_t n_steps,
                                                   float step_dt) {
+    OVPHYSX_NVTX_ZONE("ovphysx_step_n_sync");
     if (n_steps <= 0)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "n_steps must be > 0");
     if (step_dt < 0.0f || !std::isfinite(step_dt))
@@ -2225,7 +2857,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_step_n_sync(ovphysx_handle_t handle,
         return set_error(OVPHYSX_API_ERROR, "Invalid handle");
 
     auto physxSim = instance->carbonite->getPhysxSimulation();
-    const bool hasPhysicsStage = (instance->attachedStageId != 0) || instance->ovstage_attached;
+    const bool hasPhysicsStage = instance->attachHandle != omni::physics::tensors::kNoAttach;
     if (!physxSim || !hasPhysicsStage)
         return set_error(OVPHYSX_API_ERROR, "No stage attached");
 
@@ -2239,25 +2871,13 @@ OVPHYSX_API ovphysx_result_t ovphysx_step_n_sync(ovphysx_handle_t handle,
     if (!std::isfinite(next_time))
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "sim_time would overflow (base_time + n_steps*step_dt is not finite)");
 
-    // GPU-capability is fixed for the process lifetime; resolve it once rather than
-    // re-reading the env var on every iteration of the batch.
-    const bool markGpuWarmup = !isProcessGpuDisabled();
-
     for (int32_t i = 0; i < n_steps; ++i) {
         const float sim_time = base_time + i * step_dt;
 
         physxSim->simulate(step_dt, sim_time);
 
-        if (markGpuWarmup) {
-            instance->gpu_warmup_done.store(true, std::memory_order_release);
-            instance->gpu_warmup_stage_id.store(instance->attachedStageId, std::memory_order_release);
-        }
-        // Mark first-step-done in both CPU and GPU mode, gated on attachedStageId
-        // != 0 like gpu_warmup_done above -- this handle's own stage, so a handle
-        // without one attached is never falsely marked as having stepped.
-        if (instance->attachedStageId != 0) {
-            instance->first_step_done.store(true, std::memory_order_release);
-        }
+        instance->warmup_done.store(true, std::memory_order_release);
+        instance->warmup_attach_handle.store(instance->attachHandle, std::memory_order_release);
 
         map_lock.unlock();
         physxSim->fetchResults();
@@ -2267,8 +2887,8 @@ OVPHYSX_API ovphysx_result_t ovphysx_step_n_sync(ovphysx_handle_t handle,
         if (!instance)
             return set_error(OVPHYSX_API_ERROR, "Handle invalidated during fetchResults");
 
-        // No ovphysx → ovstage write-back: results are consumed via the read /
-        // tensor-binding API; the application owns writing them back to ovstage.
+        // No ovphysx to ovstage write-back. Results are consumed via the read /
+        // tensor-binding API and the application owns writing them back to ovstage.
     }
 
     // The whole batch completed successfully. Every step used the same dt, so
@@ -2287,8 +2907,17 @@ OVPHYSX_API ovphysx_result_t ovphysx_step_n_sync(ovphysx_handle_t handle,
 // ========================================================================
 
 OVPHYSX_API ovphysx_result_t ovphysx_set_global_config(ovphysx_config_entry_t entry) {
-    auto* framework = carb::getFramework();
-    auto* settings = framework ? framework->tryAcquireInterface<carb::settings::ISettings>() : nullptr;
+    std::unique_lock<std::mutex> createLock(g_createInstanceMutex, std::defer_lock);
+    if (isOmniPvdCreateOnlyEntry(entry))
+    {
+        createLock.lock();
+        std::shared_lock<std::shared_mutex> mapLock(g_instances_mutex);
+        if (!g_instances.empty())
+            return set_error(OVPHYSX_API_ERROR, "OmniPVD startup config cannot change while an instance exists");
+    }
+    carb::Framework* framework = carb::getFramework();
+    carb::settings::ISettings* settings =
+        framework ? framework->tryAcquireInterface<carb::settings::ISettings>() : nullptr;
     if (!settings) return set_error(OVPHYSX_API_ERROR, "Settings interface not available");
     ovphysx_api_status_t status = applyConfigEntry(settings, entry);
     if (status != OVPHYSX_API_SUCCESS) return set_error(status, "Invalid config entry");
@@ -2326,28 +2955,49 @@ OVPHYSX_API ovphysx_result_t ovphysx_get_global_config_float(ovphysx_config_floa
 }
 
 OVPHYSX_API ovphysx_result_t ovphysx_get_global_config_string(ovphysx_config_string_t key, ovphysx_string_t* value_out, size_t* out_required_size) {
-    if (!value_out || !out_required_size || key < 0 || key >= OVPHYSX_CONFIG_STRING_COUNT)
+    if (!value_out || !value_out->ptr || value_out->length == 0 || !out_required_size ||
+        key < 0 || key >= OVPHYSX_CONFIG_STRING_COUNT)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "Invalid arguments");
+    if (value_out->length > UINT32_MAX)
+        return set_error(OVPHYSX_API_INVALID_ARGUMENT, "Buffer capacity exceeds UINT32_MAX");
+    const size_t buffer_capacity = value_out->length;
     auto* framework = carb::getFramework();
     auto* settings = framework ? framework->tryAcquireInterface<carb::settings::ISettings>() : nullptr;
     if (!settings) return set_error(OVPHYSX_API_ERROR, "Settings interface not available");
     char* mutable_buffer = const_cast<char*>(value_out->ptr);
     size_t required_size = 0;
-    if (!getSettingValueAsString(settings, s_stringKeyPaths[key], mutable_buffer, static_cast<uint32_t>(value_out->length), &required_size)) {
+    if (!getSettingValueAsString(
+            settings,
+            s_stringKeyPaths[key],
+            mutable_buffer,
+            static_cast<uint32_t>(buffer_capacity),
+            &required_size)) {
         *out_required_size = 0;
         return set_error(OVPHYSX_API_NOT_FOUND, "Config value not found");
     }
     *out_required_size = required_size;
-    if (required_size > value_out->length) return set_error(OVPHYSX_API_BUFFER_TOO_SMALL, "Buffer too small");
-    value_out->length = strlen(value_out->ptr);
+    if (required_size > buffer_capacity)
+    {
+        return set_error(OVPHYSX_API_BUFFER_TOO_SMALL, "Buffer too small");
+    }
+    value_out->length = required_size - 1;
     return {OVPHYSX_API_SUCCESS};
 }
 
 OVPHYSX_API ovphysx_result_t ovphysx_attach_ovstage(ovphysx_handle_t handle,
                                                      ovstage_instance_t* stage,
                                                      ovstage_ordinal_t read_ordinal) {
+    OVPHYSX_NVTX_ZONE("ovphysx_attach_ovstage");
     if (!stage) {
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "attach_ovstage: stage is null");
+    }
+    // 0 is AttachedStage's internal sentinel for "use the payload attach-time
+    // ordinal". Storing it as the skip cursor leaves replay of the real attach
+    // ordinal unguarded. The public contract is a caller-owned sealed ordinal.
+    // Samples and the Python default start at 1.
+    if (read_ordinal == 0) {
+        return set_error(OVPHYSX_API_INVALID_ARGUMENT,
+                         "attach_ovstage: read_ordinal must be a caller-owned sealed ordinal; 0 is reserved");
     }
 
     ovphysx_api_status_t wait_status = wait_for_all_pending_ops(handle);
@@ -2363,7 +3013,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_attach_ovstage(ovphysx_handle_t handle,
     // handle (see AGENTS.md / the public header @note). This already-attached
     // check and the attach below are intentionally not locked against concurrent
     // foreground callers on the same instance.
-    if (instanceShared->attachedStageId != 0 || instanceShared->ovstage_attached) {
+    if (instanceShared->attachHandle != omni::physics::tensors::kNoAttach) {
         return set_error(OVPHYSX_API_ERROR,
                          "attach_ovstage: a stage is already attached; detach or reset before attaching ovstage");
     }
@@ -2373,6 +3023,30 @@ OVPHYSX_API ovphysx_result_t ovphysx_attach_ovstage(ovphysx_handle_t handle,
     if (!physxSim || !physxSim->attachOvstage) {
         return set_error(OVPHYSX_API_ERROR,
                          "attach_ovstage: IPhysxSimulation::attachOvstage is unavailable");
+    }
+
+    // A stage populated without the PhysX schemas carries none of the asset's Physx*
+    // settings (self-collision, joint velocity limits, solver iterations, ...). Refuse
+    // it here rather than simulate a scene the asset never authored. The setting
+    // downgrades the refusal to a warning for a host that owns registration by a
+    // route the probe cannot see.
+    {
+        std::string schemaError;
+        const ovphysx_api_status_t schemaStatus = verify_physx_schemas_registered(schemaError);
+        if (schemaStatus != OVPHYSX_API_SUCCESS) {
+            bool requireRegistration = true;
+            if (carb::Framework* fw = carb::getFramework()) {
+                if (carb::settings::ISettings* settings = fw->tryAcquireInterface<carb::settings::ISettings>()) {
+                    settings->setDefaultBool(kSettingRequireSchemaRegistration, true);
+                    requireRegistration = settings->getAsBool(kSettingRequireSchemaRegistration);
+                }
+            }
+            if (requireRegistration) {
+                return set_error(schemaStatus, schemaError);
+            }
+            CARB_LOG_WARN("[ovphysx] %s (continuing: %s is false)", schemaError.c_str(),
+                          kSettingRequireSchemaRegistration);
+        }
     }
 
     instanceShared->ovstage_attach_payload.instance = stage;
@@ -2392,15 +3066,33 @@ OVPHYSX_API ovphysx_result_t ovphysx_attach_ovstage(ovphysx_handle_t handle,
     }
 
     // GPU selection is process-global and PhysX consumes it synchronously while
-    // attachOvstage creates the first GPU scene. Keep the setting and attach in
-    // the same transaction, matching the legacy attachStage path.
-    // The caller owns the sealed read ordinal and passes it explicitly; the
-    // initial scene parse reads at this ordinal.
+    // attachOvstage creates the first GPU scene, so the setting and the attach
+    // stay in one transaction. The caller owns the sealed read ordinal, and the
+    // initial scene parse reads at it.
     bool attached = false;
+    bool ownedByOther = false;
     {
         std::lock_guard<std::mutex> attachLock(g_gpuAttachMutex);
-        applyAttachTimeGpuSelection(*instanceShared, carb::getFramework(), "attachOvstage");
-        attached = physxSim->attachOvstage(&instanceShared->ovstage_attach_payload, read_ordinal);
+        if (g_liveAttachOwner != 0 && g_liveAttachOwner != handle) {
+            ownedByOther = true;
+        } else {
+            applyAttachTimeGpuSelection(*instanceShared, carb::getFramework(), "attachOvstage");
+            attached = physxSim->attachOvstage(&instanceShared->ovstage_attach_payload, read_ordinal);
+            if (attached) {
+                g_liveAttachOwner = handle;
+                if (g_omniPvdRecordingOwner == OVPHYSX_INVALID_HANDLE &&
+                    physxSim->isOmniPvdRecording && physxSim->isOmniPvdRecording())
+                {
+                    g_omniPvdRecordingOwner = handle;
+                }
+            }
+        }
+    }
+    if (ownedByOther) {
+        instanceShared->ovstage_attach_payload = OvstageAttachPayload{};
+        return set_error(OVPHYSX_API_ERROR,
+                         "attach_ovstage: another instance already owns the live PhysX attach; "
+                         "detach it before attaching a new one");
     }
     if (!attached) {
         instanceShared->ovstage_attach_payload = OvstageAttachPayload{};
@@ -2408,14 +3100,23 @@ OVPHYSX_API ovphysx_result_t ovphysx_attach_ovstage(ovphysx_handle_t handle,
                          "attach_ovstage: IPhysxSimulation::attachOvstage failed");
     }
 
+    // Two different things, deliberately read separately (ADR-0013): the backing
+    // USD stage id, used only for USD-stage lifecycle below, and the attach handle,
+    // which identifies this attach and is nonzero even when there is no stage.
     const int64_t stageId = physxSim->getAttachedStage
         ? static_cast<int64_t>(physxSim->getAttachedStage())
         : 0;
+    const omni::physics::tensors::AttachHandle attachHandle =
+        physxSim->getAttachHandle ? physxSim->getAttachHandle() : omni::physics::tensors::kNoAttach;
 
     instanceShared->attachedStageId = stageId;
+    instanceShared->attachHandle = attachHandle;
     instanceShared->ovstage_attached = true;
-    instanceShared->resetStageFlags(/*physicsAttached=*/stageId != 0);
+    // Physics is attached whenever the attach succeeded. A zero stage id only
+    // means there is no backing USD stage.
+    instanceShared->resetStageFlags(attachHandle != omni::physics::tensors::kNoAttach);
     if (stageId != 0) {
+        // Genuinely about the USD stage object, so it stays keyed by stage id.
         registerStageLifecycleEntry(stageId);
     }
     return success();
@@ -2465,14 +3166,14 @@ OVPHYSX_API ovphysx_enqueue_result_t ovphysx_clone(ovphysx_handle_t handle,
                                                    ovphysx_string_t source_path_in_usd,
                                                    ovphysx_string_t* target_paths,
                                                    uint32_t num_target_paths,
-                                                   const float* parent_transforms,
+                                                   const float* anchor_transforms,
                                                    const uint32_t* env_ids) {
-    // Clone the source subtree to the target paths via the PhysX SDK replicator (routed
-    // through IPhysxSimulation::cloneEnvironments). Only path strings + a flat
-    // [num_target_paths * 7] transform array cross the C ABI (no USD types).
-    // parent_transforms[i] positions copy i's parent (copy = transform[i] *
-    // inverse(source_parent) * body), NULL co-locates on the source. env_ids[i] names
-    // copy i's logical environment (stable across calls), NULL = per-call numbering.
+    OVPHYSX_NVTX_ZONE("ovphysx_clone");
+    // Clone the source subtree to the target paths via the PhysX SDK replicator
+    // (IPhysxSimulation::cloneEnvironments). Only path strings and a flat
+    // [num_target_paths * 7] transform array cross the C ABI. anchor_transforms[i] is
+    // the world pose of target_paths[i] (NULL co-locates on the source), and env_ids[i]
+    // identifies copy i's logical environment (NULL means per-call numbering).
 
     // Failures here are synchronous (work runs inline), so report via set_enqueue_error
     // (status, no async op). Registering a failed op would orphan it: callers discard the
@@ -2500,15 +3201,16 @@ OVPHYSX_API ovphysx_enqueue_result_t ovphysx_clone(ovphysx_handle_t handle,
                                  "clone: no ovstage is attached (call ovphysx_attach_ovstage first)");
     }
 
-    // Enforce the same clone-before-step contract in CPU and GPU mode. gpu_warmup_done
-    // catches explicit GPU warmup; first_step_done catches every stepping entry point.
-    // Use a synchronous error with no op so reset_stage() remains a valid recovery path.
-    if (instanceShared->gpu_warmup_done.load(std::memory_order_acquire) ||
+    // clone() must be called before warmup() or the first step() in all modes.
+    // On GPU, warmup allocates DirectGPU buffers sized by actor count, and cloning
+    // after that reallocates and corrupts simulation state. CPU enforces the same
+    // ordering so code validated in CPU mode behaves the same on GPU.
+    if (instanceShared->warmup_done.load(std::memory_order_acquire) ||
         instanceShared->first_step_done.load(std::memory_order_acquire)) {
         return set_enqueue_error(OVPHYSX_API_INVALID_ARGUMENT,
-                                 "clone: must be called before warmup_gpu() and the first step(). "
-                                 "Cloning after GPU warmup reallocates buffers and silently corrupts "
-                                 "simulation state. Call reset_stage() to clone after warmup.");
+                                 "clone() must be called before warmup() and the first step(). "
+                                 "Call reset_stage(), then reload or reattach the source stage, "
+                                 "to re-clone after warmup.");
     }
 
     omni::physx::IPhysxSimulation* physxSim =
@@ -2517,8 +3219,9 @@ OVPHYSX_API ovphysx_enqueue_result_t ovphysx_clone(ovphysx_handle_t handle,
         return set_enqueue_error(OVPHYSX_API_ERROR, "clone: IPhysxSimulation::cloneEnvironments is unavailable");
     }
 
-    // env-id cross-environment collision filtering is a per-process setting (default on); with
-    // explicit transforms the copies are already physically separated, so it is an optional add-on.
+    // env-id cross-environment collision filtering is a per-process setting (default on).
+    // With explicit transforms the copies are already physically separated, so it is an
+    // optional add-on.
     bool useEnvIds = true;
     if (carb::Framework* fw = carb::getFramework()) {
         if (carb::settings::ISettings* settings = fw->tryAcquireInterface<carb::settings::ISettings>()) {
@@ -2527,8 +3230,8 @@ OVPHYSX_API ovphysx_enqueue_result_t ovphysx_clone(ovphysx_handle_t handle,
         }
     }
 
-    // Views are not guaranteed null-terminated; the runtime entry takes C strings. Build a
-    // null-terminated source path + a stable array of target C-string pointers.
+    // Views are not guaranteed null-terminated and the runtime entry takes C strings, so
+    // build a null-terminated source path and a stable array of target C-string pointers.
     const std::string source_path(source_path_in_usd.ptr, source_path_in_usd.length);
     if (source_path.find('\0') != std::string::npos) {
         return set_enqueue_error(OVPHYSX_API_INVALID_ARGUMENT,
@@ -2548,7 +3251,7 @@ OVPHYSX_API ovphysx_enqueue_result_t ovphysx_clone(ovphysx_handle_t handle,
             return set_enqueue_error(OVPHYSX_API_INVALID_ARGUMENT, "clone: target path must be non-empty");
         }
         std::string target(target_paths[i].ptr, target_paths[i].length);
-        // The length-tagged view can carry an embedded NUL; the seam takes a C string, so
+        // The length-tagged view can carry an embedded NUL. The seam takes a C string, so
         // c_str() would truncate and could silently alias the source. Reject it before the
         // length-based source comparison below.
         if (target.find('\0') != std::string::npos) {
@@ -2572,8 +3275,8 @@ OVPHYSX_API ovphysx_enqueue_result_t ovphysx_clone(ovphysx_handle_t handle,
     }
 
     // Logical env id maps to runtime id env_ids[i] + 1 (0 is the source's). PhysX requires
-    // every environment id < 1<<24 (setEnvironmentID), so the caller id must be < 0x00FFFFFF;
-    // a larger value would silently make setEnvironmentID fail (body collides with all).
+    // every environment id < 1<<24 (setEnvironmentID), so the caller id must be < 0x00FFFFFF.
+    // A larger value would silently make setEnvironmentID fail and the body collide with all.
     if (env_ids) {
         for (uint32_t i = 0; i < num_target_paths; ++i) {
             if (env_ids[i] >= 0x00FFFFFFu) {
@@ -2591,7 +3294,7 @@ OVPHYSX_API ovphysx_enqueue_result_t ovphysx_clone(ovphysx_handle_t handle,
     bool cloned = false;
     try {
         cloned = physxSim->cloneEnvironments(source_path.c_str(), targetPtrs.data(),
-                                             num_target_paths, parent_transforms, env_ids, useEnvIds);
+                                             num_target_paths, anchor_transforms, env_ids, useEnvIds);
     } catch (const std::exception& e) {
         return set_enqueue_error(OVPHYSX_API_ERROR, std::string("clone: cloneEnvironments threw: ") + e.what());
     } catch (...) {
@@ -2599,19 +3302,20 @@ OVPHYSX_API ovphysx_enqueue_result_t ovphysx_clone(ovphysx_handle_t handle,
     }
     if (!cloned) {
         return set_enqueue_error(OVPHYSX_API_ERROR,
-                                 "clone: cloneEnvironments failed (a target may already be populated with "
-                                 "physics, or the source subtree is invalid) -- see the log for the specific path");
+                                 "clone: cloneEnvironments failed (the attach may have no backing USD stage, "
+                                 "a target may already be populated with physics, or the source subtree is "
+                                 "invalid) -- see the log for the specific cause");
     }
 
     // A tensor backend created before clone() cached the pre-clone actor population and
-    // buffer sizes. Invalidate it after a successful clone so the next binding rebuilds
-    // against the complete population; existing pre-clone views are stale by definition.
-    const int64_t stageId = instanceShared->attachedStageId;
-    if (stageId != 0) {
+    // buffer sizes, so invalidate it after a successful clone. Keyed by attach handle
+    // rather than stage id, because a stageless attach would otherwise keep pre-clone
+    // views live against a changed population.
+    if (instanceShared->attachHandle != omni::physics::tensors::kNoAttach) {
         if (omni::physics::tensors::TensorApi* tensorApi =
                 omni::physx::runtime::tryGetTensorApiInterface()) {
             if (tensorApi->resetStage)
-                tensorApi->resetStage(stageId);
+                tensorApi->resetStage(instanceShared->attachHandle);
         }
     }
 
@@ -2639,6 +3343,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_detach_ovstage(ovphysx_handle_t handle) {
 
     if (hadOvstage) {
         const int64_t stageId = instanceShared->attachedStageId;
+        const omni::physics::tensors::AttachHandle attachHandle = instanceShared->attachHandle;
 
         // ovx_primpath_t handles are owned by the attached Stage's path
         // dictionary. Drop the process-global visualization scope before the
@@ -2649,29 +3354,65 @@ OVPHYSX_API ovphysx_result_t ovphysx_detach_ovstage(ovphysx_handle_t handle) {
         // objects do not outlive the per-stage SimulationBackend data.
         ovphysx_sdf_view_cleanup_instance(instanceShared.get());
 
-        omni::physx::IPhysxSimulation* physxSim =
-            instanceShared->carbonite ? instanceShared->carbonite->getPhysxSimulation() : nullptr;
-        if (physxSim && physxSim->detachStage) {
-            physxSim->detachStage();
+        // Release the tensor SimulationBackend's data for this attach before
+        // detachStage() destroys the AttachedStage that the views borrow. Keyed by
+        // the attach handle and not gated on a nonzero stage id, because a
+        // stageless attach needs this most of all.
+        if (omni::physics::tensors::TensorApi* tensorApi =
+                omni::physx::runtime::tryGetTensorApiInterface()) {
+            if (tensorApi->resetStage)
+                tensorApi->resetStage(attachHandle);
         }
 
+        omni::physx::IPhysxSimulation* physxSim =
+            instanceShared->carbonite ? instanceShared->carbonite->getPhysxSimulation() : nullptr;
+        {
+            std::lock_guard<std::mutex> attachLock(g_gpuAttachMutex);
+            if (g_liveAttachOwner == handle) {
+                if (physxSim && physxSim->detachStage) {
+                    physxSim->detachStage();
+                    reconcile_recording_owner_after_runtime_transition(physxSim);
+                }
+                g_liveAttachOwner = OVPHYSX_INVALID_HANDLE;
+            } else {
+                // Should be unreachable. attach_ovstage's owner latch means this
+                // instance's attachHandle can only be live while it also holds
+                // g_liveAttachOwner. detachStage() must not be called here because
+                // it would tear down whichever other instance's attach is live.
+                CARB_LOG_ERROR("[PHYSICS] detach_ovstage: instance %" PRIu64
+                                " no longer owns the process-wide live attach; skipping runtime detach",
+                                handle);
+            }
+        }
 
         if (stageId != 0) {
-            // Release the tensor SimulationBackend's per-stage data so a later reattach starts
-            // clean; stale views/data would otherwise persist across reset_stage / reattach.
-            if (omni::physics::tensors::TensorApi* tensorApi =
-                    omni::physx::runtime::tryGetTensorApiInterface()) {
-                if (tensorApi->resetStage)
-                    tensorApi->resetStage(stageId);
-            }
             markStageDetached(stageId, "detach_ovstage");
         }
         instanceShared->attachedStageId = 0;
+        instanceShared->attachHandle = omni::physics::tensors::kNoAttach;
         instanceShared->ovstage_attached = false;
         instanceShared->ovstage_attach_payload = OvstageAttachPayload{};
         instanceShared->resetStageFlags();
     }
 
+    return success();
+}
+
+OVPHYSX_API ovphysx_result_t ovphysx_get_attach_handle(ovphysx_handle_t instance_handle,
+                                                      uint64_t* out_attach_handle) {
+    if (!out_attach_handle)
+        return set_error(OVPHYSX_API_INVALID_ARGUMENT, "get_attach_handle: out_attach_handle is NULL");
+    *out_attach_handle = omni::physics::tensors::kNoAttach;
+
+    // Surfaces the handle recorded at attach. No pending-op wait, because this
+    // reads attach identity, not simulation state, and the value is written only
+    // by ovphysx_attach_ovstage() and cleared by ovphysx_detach_ovstage().
+    std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
+    InstanceData* instance = get_instance_ptr(instance_handle);
+    if (!instance)
+        return set_error(OVPHYSX_API_INVALID_ARGUMENT, "get_attach_handle: invalid handle");
+
+    *out_attach_handle = static_cast<uint64_t>(instance->attachHandle);
     return success();
 }
 
@@ -2722,7 +3463,7 @@ OVPHYSX_API ovphysx_enqueue_result_t ovphysx_add_user_task(ovphysx_handle_t hand
     const bool task_succeeded = (result.status == OVPHYSX_API_SUCCESS);
     std::string event_error;
     if (!task_succeeded) {
-        // The user task stored its error in TLS via set_error(); retrieve it
+        // The user task stored its error in TLS via set_error().
         auto& last_err = tls_error().last_error;
         if (!last_err.empty()) {
             event_error = last_err;
@@ -2739,15 +3480,17 @@ OVPHYSX_API ovphysx_enqueue_result_t ovphysx_add_user_task(ovphysx_handle_t hand
 
 OVPHYSX_API ovphysx_result_t ovphysx_wait_op(ovphysx_handle_t handle,
                                                      ovphysx_op_index_t op_index,
-                                                     uint64_t timeout_ns,
+                                                     ovphysx_timeout_t timeout_ns,
                                                      ovphysx_op_wait_result_t* out_wait_result) {
+    OVPHYSX_NVTX_ZONE("ovphysx_wait_op");
     // Clear per-op errors at the start of each wait_op call
     tls_error().op_errors.clear();
 
-    // Fast path: for the RL hot loop (step -> wait_op -> reads/writes -> step),
-    // the only tracked op can skip the generic get_pending_ops/event machinery
-    // and go straight to simulation sync.
-    if (op_index != OVPHYSX_OP_INDEX_ALL) {
+    // Infinite waits in the RL hot loop (step -> wait_op -> reads/writes -> step)
+    // can skip the generic get_pending_ops/event machinery when the requested
+    // simulation is the only tracked op. Poll and finite waits stay on the
+    // generic path so checkResults() can enforce their readiness budget.
+    if (op_index != OVPHYSX_OP_INDEX_ALL && timeout_ns == OVPHYSX_TIMEOUT_INFINITE) {
         std::shared_ptr<InstanceData> instanceShared = get_instance(handle);
         async_event_handle_t simulation_event = 0;
         if (instanceShared) {
@@ -2770,7 +3513,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_wait_op(ovphysx_handle_t handle,
             }
         }
         if (simulation_event != 0) {
-            // This IS the simulation event -- sync directly
+            // This is the simulation event, so sync directly.
             ovphysx_api_status_t sync_status = omni_sdk_physx_sync(handle);
             AsyncEventManager::cleanup_event(simulation_event);
             instanceShared->all_ops_synced.store(true, std::memory_order_release);
@@ -2875,28 +3618,28 @@ OVPHYSX_API ovphysx_result_t ovphysx_wait_op(ovphysx_handle_t handle,
         return set_error(OVPHYSX_API_NOT_FOUND, "op_index not found");
     }
 
-    auto timeout_duration = clamp_timeout_ns(timeout_ns);
-    auto start_time = std::chrono::steady_clock::now();
+    const bool wait_forever = (timeout_ns == OVPHYSX_TIMEOUT_INFINITE);
+    const std::chrono::nanoseconds timeout_duration = clamp_timeout_ns(timeout_ns);
+    const std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
 
-    // Collect failed op indices; error messages go into TLS op_errors map
+    // Failed op indices. Error messages go into the TLS op_errors map.
     std::vector<ovphysx_op_index_t> collected_error_indices;
 
     ovphysx_op_index_t lowest_pending = 0;
     for (ovphysx_op_index_t pending_op : pending_ops) {
         // Calculate remaining timeout (allow zero to still poll once)
-        uint64_t remaining_timeout_ns = 0;
-        auto elapsed = std::chrono::steady_clock::now() - start_time;
-        if (timeout_duration.count() == 0 || elapsed >= timeout_duration) {
-            remaining_timeout_ns = 0;  // immediate poll only
+        ovphysx_timeout_t remaining_timeout_ns = OVPHYSX_TIMEOUT_POLL;
+        const std::chrono::steady_clock::duration elapsed = std::chrono::steady_clock::now() - start_time;
+        if (wait_forever) {
+            remaining_timeout_ns = OVPHYSX_TIMEOUT_INFINITE;
+        } else if (timeout_duration.count() == 0 || elapsed >= timeout_duration) {
+            remaining_timeout_ns = OVPHYSX_TIMEOUT_POLL;
         } else {
-            remaining_timeout_ns = static_cast<uint64_t>(
+            remaining_timeout_ns = static_cast<ovphysx_timeout_t>(
                 std::chrono::duration_cast<std::chrono::nanoseconds>(timeout_duration - elapsed).count());
         }
 
         async_event_handle_t event = ovphysx::async::get_event_for_op(handle, pending_op);
-        // event may be 0 for CUDA-only ops (tensor binding async). wait_on_single_event
-        // handles CUDA events first. For completed ops, it returns SUCCESS.
-
         std::string error_msg;
         ovphysx_api_status_t wait_status = wait_on_single_event(handle, pending_op, event, remaining_timeout_ns, error_msg, /*consume_op_index=*/true);
 
@@ -2950,19 +3693,26 @@ OVPHYSX_API ovphysx_result_t ovphysx_wait_op(ovphysx_handle_t handle,
         return set_error(OVPHYSX_API_ERROR, "One or more operations failed");
     }
 
+    std::shared_ptr<InstanceData> instance_shared = get_instance(handle);
+    if (instance_shared) {
+        std::lock_guard<std::mutex> op_lock(instance_shared->op_tracking_mutex);
+        if (instance_shared->op_to_event.empty())
+            instance_shared->all_ops_synced.store(true, std::memory_order_release);
+    }
+
     return success();
 }
 
 OVPHYSX_API ovphysx_string_t ovphysx_get_last_error(void) {
     auto& err = tls_error().last_error;
-    if (err.empty()) return {nullptr, 0};
+    if (err.empty()) return {"", 0};
     return {err.c_str(), err.size()};
 }
 
 OVPHYSX_API ovphysx_string_t ovphysx_get_last_op_error(ovphysx_op_index_t op_index) {
     auto& op_errors = tls_error().op_errors;
     auto it = op_errors.find(op_index);
-    if (it == op_errors.end() || it->second.empty()) return {nullptr, 0};
+    if (it == op_errors.end() || it->second.empty()) return {"", 0};
     return {it->second.c_str(), it->second.size()};
 }
 
@@ -2975,246 +3725,5 @@ OVPHYSX_API void ovphysx_destroy_wait_result(ovphysx_op_wait_result_t* result) {
 }
 
 } // extern "C"
-
-// Private C API: load the internal tensor plugins used by TensorBindingsAPI.
-// Exposed symbol is needed for ctypes, but not in the public header.
-// Uses the same flat plugins/ directory as CarboniteLoader.
-extern "C" OVPHYSX_API int32_t ovphysx_load_tensor_plugins(void)
-{
-    // Load tensor plugins once after success, but allow retry after early
-    // failures. Python can ask for TensorApi before ovphysx has loaded config;
-    // std::call_once would permanently poison that process.
-    static std::mutex s_tensorPluginsMutex;
-    static bool s_tensorPluginsLoaded = false;
-
-    std::lock_guard<std::mutex> lock(s_tensorPluginsMutex);
-    if (s_tensorPluginsLoaded)
-        return OVPHYSX_API_SUCCESS;
-
-    carb::Framework* framework = carb::getFramework();
-    if (!framework)
-    {
-        CARB_LOG_ERROR("[TensorPlugins] Carbonite framework unavailable");
-        return OVPHYSX_API_ERROR;
-    }
-
-    // Get plugins directory (shared utility with CarboniteLoader)
-    std::string pluginsDirStr = omni::sdk::usd_version::getPluginsDirectory();
-    if (pluginsDirStr.empty() || !std::filesystem::exists(pluginsDirStr))
-    {
-        CARB_LOG_ERROR("[TensorPlugins] Plugins directory not found: %s", pluginsDirStr.c_str());
-        return OVPHYSX_API_ERROR;
-    }
-
-    std::vector<std::string> searchPaths = { pluginsDirStr };
-    CARB_LOG_INFO("[TensorPlugins] Using plugins directory: %s", pluginsDirStr.c_str());
-
-    std::vector<std::string> preloadPaths = { pluginsDirStr };
-    try
-    {
-        std::filesystem::path pluginsPath(pluginsDirStr);
-        std::filesystem::path libsPath = pluginsPath.parent_path().parent_path() / "ovphysx.libs";
-        if (std::filesystem::exists(libsPath))
-        {
-            preloadPaths.push_back(libsPath.string());
-            CARB_LOG_INFO("[TensorPlugins] Using libs directory: %s", libsPath.string().c_str());
-        }
-    }
-    catch (const std::exception& e)
-    {
-        CARB_LOG_WARN("[TensorPlugins] Failed to probe ovphysx.libs: %s (falling back to plugins directory)", e.what());
-    }
-
-    std::vector<const char*> searchPathsC;
-    searchPathsC.reserve(searchPaths.size());
-    for (const std::string& p : searchPaths)
-        searchPathsC.push_back(p.c_str());
-
-#ifdef _WIN32
-    // Windows: Add all search paths to the process PATH so dependent DLLs can be found
-    // This is required because Windows doesn't use rpath like Linux
-    static bool s_tensorPluginPathConfigured = false;
-    if (!s_tensorPluginPathConfigured)
-    {
-        std::string path_additions;
-        for (const std::string& search_path : preloadPaths)
-        {
-            if (!path_additions.empty())
-                path_additions += ";";
-            path_additions += search_path;
-        }
-
-        if (!path_additions.empty())
-        {
-            const char* current_path = std::getenv("PATH");
-            std::string new_path = path_additions;
-            if (current_path && current_path[0] != '\0')
-            {
-                new_path += ";";
-                new_path += current_path;
-            }
-
-            if (_putenv_s("PATH", new_path.c_str()) != 0)
-            {
-                CARB_LOG_WARN("[TensorPlugins] WARNING: Failed to update PATH environment variable");
-            }
-            else
-            {
-                s_tensorPluginPathConfigured = true;
-                CARB_LOG_INFO("[TensorPlugins] Added %zu directories to PATH for DLL resolution", preloadPaths.size());
-            }
-        }
-    }
-#else
-    // Linux: Pre-load additional tensor libraries with RTLD_GLOBAL
-    // Core libraries are already loaded by CarboniteLoader during initialization
-    const std::vector<std::string>* libs_to_preload = omni::sdk::usd_version::getPreloadLibrariesLinux();
-    if (!libs_to_preload)
-    {
-        CARB_LOG_ERROR("[TensorPlugins] FATAL: Config not available. Call ovphysx_create_instance() first.");
-        return OVPHYSX_API_ERROR;
-    }
-
-    if (libs_to_preload->empty())
-    {
-        CARB_LOG_INFO("[TensorPlugins] No additional tensor libraries to preload");
-    }
-    else
-    {
-        CARB_LOG_INFO("[TensorPlugins] Preloading %zu additional tensor libraries from config", libs_to_preload->size());
-
-        int loaded_count = 0;
-        // Resolve library path by exact name first, then by stem-*.so suffix.
-        // This handles versioned/hashed library filenames without computing any hash.
-        auto resolve_versioned_lib_path = [](const std::vector<std::string>& paths, const std::string& lib_name) -> std::string
-        {
-            for (const std::string& search_path : paths)
-            {
-                std::string resolved = omni::sdk::internal::findLibPath(
-                    search_path,
-                    lib_name.c_str(),
-                    [&lib_name](const std::filesystem::path& dir, const char* libName, const std::filesystem::filesystem_error& e)
-                    {
-                        CARB_LOG_WARN("[TensorPlugins] Failed to scan %s for %s: %s",
-                                      dir.string().c_str(), libName, e.what());
-                    });
-                if (!resolved.empty())
-                    return resolved;
-            }
-            return {};
-        };
-
-        bool preloadSucceeded = true;
-        for (const std::string& lib_name : *libs_to_preload)
-        {
-            const std::string resolved = resolve_versioned_lib_path(preloadPaths, lib_name);
-            if (!resolved.empty())
-            {
-                void* handle = dlopen(resolved.c_str(), RTLD_NOW | RTLD_GLOBAL);
-                if (handle)
-                {
-                    loaded_count++;
-                }
-                else
-                {
-                    preloadSucceeded = false;
-                    CARB_LOG_WARN("[TensorPlugins] Failed to pre-load %s: %s",
-                                  resolved.c_str(), dlerror());
-                }
-            }
-            else
-            {
-                preloadSucceeded = false;
-                CARB_LOG_WARN("[TensorPlugins] Library not found in any search path: %s", lib_name.c_str());
-            }
-        }
-
-        CARB_LOG_INFO("[TensorPlugins] Pre-loaded %d/%zu additional tensor libraries",
-                      loaded_count, libs_to_preload->size());
-        if (!preloadSucceeded)
-        {
-            CARB_LOG_ERROR("[TensorPlugins] Tensor library preloading failed. Cannot load tensor plugins.");
-            return OVPHYSX_API_ERROR;
-        }
-    }
-#endif
-
-    // Load plugins from config (config was already loaded in ovphysx_create_instance)
-    const std::vector<omni::sdk::usd_version::PluginConfig>* plugins = omni::sdk::usd_version::getPlugins();
-    if (!plugins)
-    {
-        CARB_LOG_ERROR("[TensorPlugins] FATAL: Config not available. Cannot determine which plugins to load.");
-        CARB_LOG_ERROR("[TensorPlugins] This should not happen - config should be loaded during ovphysx_create_instance().");
-        return OVPHYSX_API_ERROR;
-    }
-
-    if (plugins->empty())
-    {
-        CARB_LOG_INFO("[TensorPlugins] No plugins configured to load");
-        s_tensorPluginsLoaded = true;
-        return OVPHYSX_API_SUCCESS;
-    }
-
-    carb::PluginLoadingDesc desc = carb::PluginLoadingDesc::getDefault();
-    desc.searchPaths = searchPathsC.data();
-    desc.searchPathCount = (uint32_t)searchPathsC.size();
-    desc.excludedFileWildcards = nullptr;
-    desc.excludedFileWildcardCount = 0;
-    
-    for (const auto& plugin : *plugins)
-    {
-        CARB_LOG_INFO("[TensorPlugins] Loading plugin: %s (required=%s)", 
-                      plugin.name.c_str(), plugin.required ? "true" : "false");
-
-        // Verify the plugin binary exists in at least one search path before loading.
-        // Some plugins do not expose IExt; the existence check prevents us from
-        // silently succeeding when the binary is missing.
-#if CARB_PLATFORM_WINDOWS
-        std::string pluginFilename = plugin.name + ".dll";
-#else
-        std::string pluginFilename = "lib" + plugin.name + ".so";
-#endif
-
-        bool pluginBinaryFound = false;
-        for (const std::string& search_path : searchPaths)
-        {
-            const auto candidate = std::filesystem::path(search_path) / pluginFilename;
-            if (std::filesystem::exists(candidate))
-            {
-                pluginBinaryFound = true;
-                break;
-            }
-        }
-
-        if (!pluginBinaryFound)
-        {
-            CARB_LOG_ERROR("[TensorPlugins] Plugin binary not found: %s", pluginFilename.c_str());
-            if (plugin.required)
-            {
-                return OVPHYSX_API_ERROR;
-            }
-            continue;
-        }
-        
-        const char* plugin_name = plugin.name.c_str();
-        desc.loadedFileWildcards = &plugin_name;
-        desc.loadedFileWildcardCount = 1;
-        
-        framework->loadPlugins(desc);
-        
-        // Force plugin initialization by acquiring its IExt interface when available.
-        // Not all plugins expose IExt (some register their own interfaces only).
-        // Treat absence as non-fatal after the binary check.
-        auto* ext = framework->tryAcquireInterface<omni::ext::IExt>(plugin.name.c_str());
-        if (!ext)
-        {
-            CARB_LOG_WARN("[TensorPlugins] %s loaded (no omni::ext::IExt interface exposed)", plugin.name.c_str());
-        }
-    }
-
-    s_tensorPluginsLoaded = true;
-
-    return OVPHYSX_API_SUCCESS;
-}
 
 // Log capture API and logging configuration are implemented in LogManager.cpp

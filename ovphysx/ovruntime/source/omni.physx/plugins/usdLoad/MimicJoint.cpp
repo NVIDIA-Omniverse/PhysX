@@ -1,23 +1,19 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
-// This include must come first
-// clang-format off
-#include "UsdPCH.h"
-// clang-format on
+/**
+ * @implements REQ-LOAD-OBJECTDB-001
+ * @covers AC-4
+ */
 
 #include <carb/logging/Log.h>
 
 #include "LoadTools.h"
 
 #include "MimicJoint.h"
-#include "NewtonCompat.h"
 
 #include <omni/physx/IPhysxSettings.h>
 #include <OmniPhysX.h>
-
-using namespace PXR_NS;
-using namespace omni::physics::schema;
 
 namespace omni
 {
@@ -25,8 +21,6 @@ namespace physx
 {
 namespace usdparser
 {
-
-
 
 static ObjectType getObjectType(SchemaAPIFlag::Enum schemaAPIFlag)
 {
@@ -66,36 +60,43 @@ static SchemaAPIFlag::Enum getSchemaAPIFlag(ObjectType objectType)
 
 ObjectId createMimicJoint(AttachedStage& attachedStage, MimicJointDesc& desc)
 {
-    if (desc.mimicJointPath == desc.referenceJointPath)
+    if (desc.mimicJointKey == desc.referenceJointKey)
     {
         CARB_LOG_ERROR(
             "Usd Physics: PhysxMimicJointAPI at %s has same joint for mimic and reference. The native ovruntime "
             "mimic path does not support using the same joint as both mimic and reference.",
-            desc.mimicJointPath.GetText());
+            attachedStage.textFor(desc.mimicJointKey));
         return kInvalidObjectId;
     }
 
     ObjectDb* objectDb = attachedStage.getObjectDatabase();
 
-    ObjectId mimicJointId = objectDb->findEntry(desc.mimicJointPath, eArticulationJoint);
+    ObjectId mimicJointId = objectDb->findEntry(desc.mimicJointKey, eArticulationJoint);
     if (mimicJointId != kInvalidObjectId)
     {
         desc.mimicJointId = mimicJointId;
 
-        ObjectId referenceJointId = objectDb->findEntry(desc.referenceJointPath, eArticulationJoint);
+        ObjectId referenceJointId = objectDb->findEntry(desc.referenceJointKey, eArticulationJoint);
         if (referenceJointId != kInvalidObjectId)
         {
             desc.referenceJointId = referenceJointId;
 
             PhysXUsdPhysicsInterface* physInt = attachedStage.getPhysXPhysicsInterface();
-            const ObjectId id = physInt->createObject(attachedStage, desc.mimicJointPath, desc);
+            const ObjectId id = physInt->createObject(attachedStage, desc.mimicJointKey, desc);
 
             if (id != kInvalidObjectId)
             {
-                objectDb->findOrCreateEntry(desc.mimicJointPath, desc.type, id);
-
                 SchemaAPIFlag::Enum schemaAPIFlag = getSchemaAPIFlag(desc.type);
-                objectDb->addSchemaAPI(desc.mimicJointPath, schemaAPIFlag);
+                // The ObjectKey+pathText overload also registers the path in the path-keyed
+                // PrimHierarchyStorage, which the tensor wildcard matcher and the replicator's
+                // subtree scan read. releaseMimicJoint's removeEntry below undoes both sides.
+                objectDb->findOrCreateEntry(desc.mimicJointKey, attachedStage.textFor(desc.mimicJointKey), desc.type, id);
+                // addSchemaAPI(ObjectKey) only touches mKeySchemaAPIMap, never the path-keyed
+                // mSchemaAPIMap -- but no live reader needs these mimic flags from the
+                // path-keyed side: ChangeRegister.cpp/PrimUpdate.cpp only check
+                // eDeformableBodyAPI there, and PhysXReplicator.cpp's schema-flags read already
+                // ORs in the ObjectKey side. Unconditional, ObjectKey-native.
+                objectDb->addSchemaAPI(desc.mimicJointKey, schemaAPIFlag);
             }
 
             return id;
@@ -106,7 +107,7 @@ ObjectId createMimicJoint(AttachedStage& attachedStage, MimicJointDesc& desc)
             CARB_LOG_ERROR("Usd Physics: failed to find internal joint object for reference joint at prim "
                 "%s for PhysxMimicJointAPI at %s. Please ensure that the prim is a supported joint type and "
                 "is part of an articulation.\n",
-                desc.referenceJointPath.GetText(), desc.mimicJointPath.GetText());
+                attachedStage.textFor(desc.referenceJointKey), attachedStage.textFor(desc.mimicJointKey));
         }
     }
     else if (OmniPhysX::getInstance().getISettings()->getStringBuffer(kSettingForceParseOnlySingleScene) == nullptr)
@@ -114,32 +115,38 @@ ObjectId createMimicJoint(AttachedStage& attachedStage, MimicJointDesc& desc)
         // scristiano: if in forced parsing single scene mode, the joints may have not been created
         CARB_LOG_ERROR("Usd Physics: failed to find internal joint object for PhysxMimicJointAPI at %s. "
             "Please ensure that the prim is a supported joint type and is part of an articulation.\n",
-            desc.mimicJointPath.GetText());
+            attachedStage.textFor(desc.mimicJointKey));
     }
 
     return kInvalidObjectId;
 }
 
-void releaseMimicJoint(AttachedStage& attachedStage, const PXR_NS::SdfPath& path,
+void releaseMimicJoint(AttachedStage& attachedStage, omni::physics::parse::ObjectKey mimicJointKey,
     SchemaAPIFlag::Enum schemaAPIFlag)
 {
     ObjectType type = getObjectType(schemaAPIFlag);
 
     ObjectDb* objectDb = attachedStage.getObjectDatabase();
 
-    ObjectId mimicJointId = objectDb->findEntry(path, type);
+    ObjectId mimicJointId = objectDb->findEntry(mimicJointKey, type);
     if (mimicJointId != kInvalidObjectId)
     {
         PhysXUsdPhysicsInterface* physInt = attachedStage.getPhysXPhysicsInterface();
+        physInt->releaseObject(attachedStage, mimicJointKey, mimicJointId);
 
-        physInt->releaseObject(attachedStage, path, mimicJointId);
+        // ObjectKey-native, unconditional -- see createMimicJoint's addSchemaAPI comment above
+        // for why the path-keyed mSchemaAPIMap side is dead for these flags.
+        objectDb->removeSchemaAPI(mimicJointKey, schemaAPIFlag);
 
-        objectDb->removeSchemaAPI(path, schemaAPIFlag);
-
-        objectDb->removeEntry(path, type, mimicJointId);
+        // removeEntry undoes createMimicJoint's findOrCreateEntry, path-keyed
+        // PrimHierarchyStorage row included, without a path argument: ObjectDb remembers what
+        // creation registered and evicts it itself (REQ-LOAD-OBJECTDB-001). Here the row
+        // normally survives anyway -- the mimic API sits on a joint prim that keeps its own
+        // eArticulationJoint entry at this key -- but that is the call site's luck, not its
+        // doing.
+        objectDb->removeEntry(mimicJointKey, type, mimicJointId);
     }
 }
-
 
 } // namespace usdparser
 } // namespace physx

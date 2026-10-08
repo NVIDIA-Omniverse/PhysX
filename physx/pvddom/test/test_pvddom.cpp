@@ -1,36 +1,18 @@
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2026 NVIDIA Corporation. All rights reserved.
-// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
+// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 // pvddom unit tests: write OVD data with pvdruntime, read back with pvddom, verify DOM.
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
+#include <string>
+#include <vector>
+
 #include "PvdDom.h"
+#include "PvdDomLog.h"
 #include "PvdDomParser.h"
 #include "PvdDomQuery.h"
 #include "PvdDomUtils.h"
@@ -38,17 +20,17 @@
 #include "OmniPvdWriter.h"
 #include "OmniPvdReader.h"
 #include "OmniPvdMemoryStream.h"
+#include "OmniPvdLibraryFunctions.h"
 #include "OmniPvdDefines.h"
 #include "OmniPvdCommands.h"
 
-// pvdruntime factory functions (compiled into pvddom in standalone mode)
-extern "C" {
-    OmniPvdWriter* OMNI_PVD_CALL createOmniPvdWriter();
-    void OMNI_PVD_CALL destroyOmniPvdWriter(OmniPvdWriter& writer);
-    OmniPvdReader* OMNI_PVD_CALL createOmniPvdReader();
-    void OMNI_PVD_CALL destroyOmniPvdReader(OmniPvdReader& reader);
-    OmniPvdMemoryStream* OMNI_PVD_CALL createOmniPvdMemoryStream();
-    void OMNI_PVD_CALL destroyOmniPvdMemoryStream(OmniPvdMemoryStream& stream);
+static PvdDomLogLevel gPvdDomCapturedLogLevel = ePvdDomLogInfo;
+static std::string gPvdDomCapturedLogMessage;
+
+static void capturePvdDomLog(PvdDomLogLevel level, const char* message)
+{
+    gPvdDomCapturedLogLevel = level;
+    gPvdDomCapturedLogMessage = message ? message : "";
 }
 
 // Helper: write OVD to memory, then parse into DOM
@@ -70,25 +52,39 @@ protected:
 
     void TearDown() override
     {
-        if (writer) destroyOmniPvdWriter(*writer);
-        if (memStream) destroyOmniPvdMemoryStream(*memStream);
+        if (writer)
+        {
+            destroyOmniPvdWriter(*writer);
+            writer = nullptr;
+        }
+        if (memStream)
+        {
+            memStream->getReadStream()->closeStream();
+            memStream->getWriteStream()->closeStream();
+            destroyOmniPvdMemoryStream(*memStream);
+            memStream = nullptr;
+        }
     }
 
     bool parseDom(OmniPvdDOMState& domState)
     {
+        memStream->getWriteStream()->closeStream();
         OmniPvdReader* reader = createOmniPvdReader();
         if (!reader) return false;
 
-        reader->setReadStream(*memStream->getReadStream());
+        OmniPvdReadStream* readStream = memStream->getReadStream();
+        reader->setReadStream(*readStream);
         OmniPvdVersionType major, minor, patch;
         if (!reader->startReading(major, minor, patch))
         {
             destroyOmniPvdReader(*reader);
+            readStream->closeStream();
             return false;
         }
 
         bool result = buildPvdDomState(reader, domState);
         destroyOmniPvdReader(*reader);
+        readStream->closeStream();
         return result;
     }
 };
@@ -207,6 +203,130 @@ TEST_F(PvdDomTest, SetAttributeValue)
     EXPECT_FLOAT_EQ(readPos[0], 1.0f);
     EXPECT_FLOAT_EQ(readPos[1], 2.0f);
     EXPECT_FLOAT_EQ(readPos[2], 3.0f);
+}
+
+// ============================================================================
+// Test: Cached attribute indices are validated for each object's class
+// ============================================================================
+TEST_F(PvdDomTest, CachedAttributeLookupDoesNotAliasAcrossDerivedClasses)
+{
+    const OmniPvdContextHandle ctx = 1;
+    const OmniPvdObjectHandle rigidHandle = 301;
+    const OmniPvdObjectHandle particleHandle = 302;
+
+    OmniPvdClassHandle actorClass = writer->registerClass("PxActor");
+    OmniPvdClassHandle rigidActorClass = writer->registerClass("PxRigidActor", actorClass);
+    OmniPvdClassHandle rigidDynamicClass = writer->registerClass("PxRigidDynamic", rigidActorClass);
+    OmniPvdClassHandle particleSystemClass = writer->registerClass("PxPBDParticleSystem", actorClass);
+
+    // Both derived classes deliberately use their first attribute slot. A cache
+    // resolved for PxRigidActor.globalPose must not alias the particle system's
+    // unrelated positionIterations attribute at the same [class][attribute] indices.
+    OmniPvdAttributeHandle globalPoseAttribute = writer->registerAttribute(
+        rigidActorClass, "globalPose", OmniPvdDataType::eFLOAT32, 7);
+    OmniPvdAttributeHandle positionIterationsAttribute = writer->registerAttribute(
+        particleSystemClass, "positionIterations", OmniPvdDataType::eUINT32, 1);
+
+    writer->createObject(ctx, rigidDynamicClass, rigidHandle, "rigid");
+    writer->createObject(ctx, particleSystemClass, particleHandle, "particles");
+
+    const float globalPose[7] = { 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 2.0f, 3.0f };
+    const uint32_t positionIterations = 4;
+    writer->setAttribute(ctx, rigidHandle, globalPoseAttribute,
+        reinterpret_cast<const uint8_t*>(globalPose), sizeof(globalPose));
+    writer->setAttribute(ctx, particleHandle, positionIterationsAttribute,
+        reinterpret_cast<const uint8_t*>(&positionIterations), sizeof(positionIterations));
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+
+    OmniPvdObject* rigidObject = findOmniPvdObject(
+        getInternalHandle(rigidHandle, domState.mExternalToInternalHandleMap),
+        domState.mObjectHandleToObjectMap);
+    OmniPvdObject* particleObject = findOmniPvdObject(
+        getInternalHandle(particleHandle, domState.mExternalToInternalHandleMap),
+        domState.mObjectHandleToObjectMap);
+    ASSERT_NE(rigidObject, nullptr);
+    ASSERT_NE(particleObject, nullptr);
+
+    int32_t listAttributeIndex = -1;
+    int32_t listClassIndex = -1;
+    ASSERT_NE(getAttribList(listAttributeIndex, listClassIndex, "globalPose", rigidObject), nullptr);
+    ASSERT_EQ(listAttributeIndex, 0);
+    ASSERT_EQ(listClassIndex, 1);
+    EXPECT_EQ(getAttribList(listAttributeIndex, listClassIndex, "globalPose", particleObject), nullptr);
+
+    int32_t dataAttributeIndex = -1;
+    int32_t dataClassIndex = -1;
+    ASSERT_NE(getAttribData(dataAttributeIndex, dataClassIndex, "globalPose", rigidObject), nullptr);
+    ASSERT_EQ(dataAttributeIndex, 0);
+    ASSERT_EQ(dataClassIndex, 1);
+    EXPECT_EQ(getAttribData(dataAttributeIndex, dataClassIndex, "globalPose", particleObject), nullptr);
+}
+
+// ============================================================================
+// Test: Cached attribute validation rejects invalid indices and unique lists
+// ============================================================================
+TEST_F(PvdDomTest, CachedAttributeLookupValidatesBoundsAndAttributeKind)
+{
+    const OmniPvdContextHandle ctx = 1;
+    const OmniPvdObjectHandle objectHandle = 303;
+
+    OmniPvdClassHandle baseClass = writer->registerClass("CacheBase");
+    OmniPvdAttributeHandle uniqueAttribute = writer->registerUniqueListAttribute(
+        baseClass, "value", OmniPvdDataType::eUINT32);
+    OmniPvdClassHandle derivedClass = writer->registerClass("CacheDerived", baseClass);
+    OmniPvdAttributeHandle regularAttribute = writer->registerAttribute(
+        derivedClass, "value", OmniPvdDataType::eUINT32, 1);
+
+    writer->createObject(ctx, derivedClass, objectHandle, "cacheObject");
+
+    const uint32_t uniqueValue = 7;
+    const uint32_t regularValue = 42;
+    writer->addToUniqueListAttribute(ctx, objectHandle, uniqueAttribute,
+        reinterpret_cast<const uint8_t*>(&uniqueValue), sizeof(uniqueValue));
+    writer->setAttribute(ctx, objectHandle, regularAttribute,
+        reinterpret_cast<const uint8_t*>(&regularValue), sizeof(regularValue));
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+
+    OmniPvdObject* object = findOmniPvdObject(
+        getInternalHandle(objectHandle, domState.mExternalToInternalHandleMap),
+        domState.mObjectHandleToObjectMap);
+    ASSERT_NE(object, nullptr);
+    ASSERT_EQ(object->mOmniPvdClass->mInheritanceChain.size(), 2u);
+    ASSERT_NE(object->mOmniPvdClass->mInheritanceChain[1], nullptr);
+    ASSERT_EQ(object->mOmniPvdClass->mInheritanceChain[1]->mAttributeDefinitions.size(), 1u);
+
+    // classIndex == chain size must be rejected and resolved to derived.value.
+    int32_t attributeIndex = 0;
+    int32_t classIndex = 2;
+    OmniPvdAttributeInstList* list = getAttribList(attributeIndex, classIndex, "value", object);
+    ASSERT_NE(list, nullptr);
+    EXPECT_EQ(attributeIndex, 0);
+    EXPECT_EQ(classIndex, 1);
+
+    // attributeIndex == definition count must also be rejected and resolved.
+    attributeIndex = 1;
+    classIndex = 1;
+    uint8_t* data = getAttribData(attributeIndex, classIndex, "value", object);
+    ASSERT_NE(data, nullptr);
+    EXPECT_EQ(attributeIndex, 0);
+    EXPECT_EQ(classIndex, 1);
+    EXPECT_EQ(*reinterpret_cast<const uint32_t*>(data), regularValue);
+
+    // The base slot has the requested name but is a unique list. Canonical
+    // attribute lookup skips it and resolves the regular derived attribute.
+    attributeIndex = 0;
+    classIndex = 0;
+    list = getAttribList(attributeIndex, classIndex, "value", object);
+    ASSERT_NE(list, nullptr);
+    EXPECT_EQ(attributeIndex, 0);
+    EXPECT_EQ(classIndex, 1);
+    ASSERT_NE(list->mAttributeDef, nullptr);
+    EXPECT_FALSE(list->mAttributeDef->mIsUniqueList);
+    EXPECT_EQ(list->mAttributeDef->mOmniAttributeHandle, regularAttribute);
 }
 
 // ============================================================================
@@ -1411,6 +1531,22 @@ TEST(PvdDomFile, ParsePhysXOvdFile)
         (unsigned long long)domState.mMaxFrame);
 }
 
+TEST(PvdDomFile, MissingFileReportsOpenFailure)
+{
+    const char* missingPath = "__missing_omnipvd_directory__/missing_capture.ovd";
+    OmniPvdDOMState domState;
+    gPvdDomCapturedLogMessage.clear();
+    pvdDomSetLogFunction(capturePvdDomLog);
+
+    EXPECT_FALSE(buildPvdDomStateFromFile(missingPath, domState));
+
+    pvdDomSetLogFunction(nullptr);
+    EXPECT_EQ(ePvdDomLogError, gPvdDomCapturedLogLevel);
+    EXPECT_NE(std::string::npos, gPvdDomCapturedLogMessage.find("failed to open OVD file"));
+    EXPECT_NE(std::string::npos, gPvdDomCapturedLogMessage.find(missingPath));
+    EXPECT_EQ(std::string::npos, gPvdDomCapturedLogMessage.find("malformed or incompatible"));
+}
+
 // ============================================================================
 // PvdDomQuery helpers
 // ============================================================================
@@ -2262,4 +2398,1235 @@ TEST(PvdDomLifespan, RemoveOnStepNHidesBothPreAndPostSim)
     EXPECT_FALSE(isObjectAliveAtFrame(&obj, 249));  // pre-sim of step 125
     EXPECT_FALSE(isObjectAliveAtFrame(&obj, 250));  // post-sim of step 125
     EXPECT_FALSE(isObjectAliveAtFrame(&obj, 1000));
+}
+
+static void collectObjectsByApiHandle(OmniPvdDOMState& domState, uint64_t apiHandle,
+                                      std::vector<OmniPvdObject*>& out)
+{
+    for (auto& kv : domState.mObjectHandleToObjectMap)
+    {
+        if (kv.second->mOmniAPIHandle == apiHandle)
+            out.push_back(kv.second);
+    }
+    // Sort duplicate handles by creation order.
+    std::sort(out.begin(), out.end(), [](OmniPvdObject* a, OmniPvdObject* b)
+              { return a->mUID < b->mUID; });
+}
+
+TEST_F(PvdDomTest, MultiSegmentResampleLifespans)
+{
+    const OmniPvdContextHandle ctx = 1;
+    const OmniPvdObjectHandle hMeta  = 0xAA0;
+    const OmniPvdObjectHandle hScene = 0xAA1;
+    const OmniPvdObjectHandle hActor = 0xAA2;
+    const OmniPvdObjectHandle hShape = 0xAA3;
+    const OmniPvdObjectHandle hCfg   = 0xAA4; // scene-child analog (PxGpuDynamicsMemoryConfig)
+    const OmniPvdObjectHandle hSceneY = 0xAA5; // second scene with a LONGER timeline (discriminator)
+
+    // ---- segment A: schema + live world, frames 1..3 ----
+    OmniPvdClassHandle metaA = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdAttributeHandle verMajA = writer->registerAttribute(metaA, "ovdIntegrationVersionMajor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdAttributeHandle verMinA = writer->registerAttribute(metaA, "ovdIntegrationVersionMinor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdClassHandle sceneA = writer->registerClass("PxScene");
+    OmniPvdAttributeHandle actorsA = writer->registerUniqueListAttribute(sceneA, "actors", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle actorClsA = writer->registerClass("PxRigidDynamic");
+    OmniPvdAttributeHandle shapesA = writer->registerUniqueListAttribute(actorClsA, "shapes", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle shapeClsA = writer->registerClass("PxShape");
+    OmniPvdClassHandle cfgClsA = writer->registerClass("PxGpuDynamicsMemoryConfig");
+    OmniPvdClassHandle actorTypeA = writer->registerClass("PxActorType");
+    writer->registerEnumValue(actorTypeA, "eRIGID_DYNAMIC", 1);
+    OmniPvdAttributeHandle typeAttrA = writer->registerFlagsAttribute(actorClsA, "type", actorTypeA);
+
+    writer->createObject(ctx, metaA, hMeta, "");
+    uint32_t vMaj = 3, vMin = 1; // context-aware frame commands (integration version >= 1.4)
+    writer->setAttribute(ctx, hMeta, verMajA, reinterpret_cast<const uint8_t*>(&vMaj), sizeof(vMaj));
+    writer->setAttribute(ctx, hMeta, verMinA, reinterpret_cast<const uint8_t*>(&vMin), sizeof(vMin));
+
+    writer->createObject(ctx, sceneA, hScene, "");
+    writer->startFrame(hScene, 1); // frame context = the scene handle, like PhysX
+    writer->createObject(ctx, cfgClsA, hCfg, "");
+    writer->createObject(ctx, shapeClsA, hShape, "");
+    writer->createObject(ctx, actorClsA, hActor, "");
+    uint32_t actorTypeRigidDynamic = 1; // real streams always set the actor type at create
+    writer->setAttribute(ctx, hActor, typeAttrA, reinterpret_cast<const uint8_t*>(&actorTypeRigidDynamic), sizeof(actorTypeRigidDynamic));
+    writer->addToUniqueListAttribute(ctx, hActor, shapesA, reinterpret_cast<const uint8_t*>(&hShape), sizeof(hShape));
+    writer->addToUniqueListAttribute(ctx, hScene, actorsA, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor));
+    writer->stopFrame(hScene, 1);
+    writer->startFrame(hScene, 2); writer->stopFrame(hScene, 2);
+    writer->startFrame(hScene, 3); writer->stopFrame(hScene, 3);
+    // Make scene X's frame 3 differ from mMaxFrame 5.
+    writer->createObject(ctx, sceneA, hSceneY, "");
+    writer->startFrame(hSceneY, 4); writer->stopFrame(hSceneY, 4);
+    writer->startFrame(hSceneY, 5); writer->stopFrame(hSceneY, 5);
+
+    // ---- segment B: new schema handles, frames restart at 1 ----
+    OmniPvdClassHandle metaB = writer->registerClass("PxOmniPvdMetaData");
+    (void)writer->registerAttribute(metaB, "ovdIntegrationVersionMajor", OmniPvdDataType::eUINT32, 1);
+    (void)writer->registerAttribute(metaB, "ovdIntegrationVersionMinor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdClassHandle sceneB = writer->registerClass("PxScene");
+    OmniPvdAttributeHandle actorsB = writer->registerUniqueListAttribute(sceneB, "actors", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle actorClsB = writer->registerClass("PxRigidDynamic");
+    OmniPvdAttributeHandle shapesB = writer->registerUniqueListAttribute(actorClsB, "shapes", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle shapeClsB = writer->registerClass("PxShape");
+    OmniPvdClassHandle cfgClsB = writer->registerClass("PxGpuDynamicsMemoryConfig");
+    OmniPvdClassHandle actorTypeB = writer->registerClass("PxActorType");
+    writer->registerEnumValue(actorTypeB, "eRIGID_DYNAMIC", 1);
+    OmniPvdAttributeHandle typeAttrB = writer->registerFlagsAttribute(actorClsB, "type", actorTypeB);
+
+    writer->createObject(ctx, metaB, hMeta, "");
+    writer->createObject(ctx, shapeClsB, hShape, "");
+    writer->createObject(ctx, actorClsB, hActor, "");
+    writer->setAttribute(ctx, hActor, typeAttrB, reinterpret_cast<const uint8_t*>(&actorTypeRigidDynamic), sizeof(actorTypeRigidDynamic));
+    writer->addToUniqueListAttribute(ctx, hActor, shapesB, reinterpret_cast<const uint8_t*>(&hShape), sizeof(hShape));
+    writer->createObject(ctx, sceneB, hScene, "");
+    writer->startFrame(hScene, 1);
+    writer->createObject(ctx, cfgClsB, hCfg, ""); // scene child re-created AFTER the new scene
+    writer->addToUniqueListAttribute(ctx, hScene, actorsB, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor));
+    writer->stopFrame(hScene, 1);
+    writer->startFrame(hScene, 2); writer->stopFrame(hScene, 2);
+    writer->startFrame(hScene, 3); writer->stopFrame(hScene, 3);
+    // teardown: destroys resolve to the segment-B objects
+    writer->destroyObject(ctx, hCfg);
+    writer->destroyObject(ctx, hScene);
+    writer->destroyObject(ctx, hShape);
+    writer->destroyObject(ctx, hActor);
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+
+    // Two DOM objects per re-created external handle (old first, new second).
+    std::vector<OmniPvdObject*> scenes, actors, shapes, cfgs;
+    collectObjectsByApiHandle(domState, hScene, scenes);
+    collectObjectsByApiHandle(domState, hActor, actors);
+    collectObjectsByApiHandle(domState, hShape, shapes);
+    collectObjectsByApiHandle(domState, hCfg, cfgs);
+    ASSERT_EQ(scenes.size(), 2u);
+    ASSERT_EQ(actors.size(), 2u);
+    ASSERT_EQ(shapes.size(), 2u);
+    ASSERT_EQ(cfgs.size(), 2u);
+
+    // Scene X closes at its own frame 3.
+    EXPECT_EQ(scenes[0]->mLifeSpans[0].mFrameStop, 4u)
+        << "old scene is superseded AFTER its own last frame (3): half-open close at 3+1, so it"
+           " stays alive AT frame 3 -- and never closes at mMaxFrame or a foreign scene's frame";
+    // Actor and shape lifespans close with scene X at frame 3.
+    EXPECT_EQ(actors[0]->mLifeSpans[0].mFrameStop, 4u) << "old actor superseded after ITS scene's last frame";
+    EXPECT_EQ(shapes[0]->mLifeSpans[0].mFrameStop, 4u) << "old shape superseded after ITS scene's last frame";
+    // The scene-less config closes at mMaxFrame 5.
+    EXPECT_EQ(cfgs[0]->mLifeSpans[0].mFrameStop, 6u)
+        << "scene-less old scene-child is superseded after the known timeline end (mMaxFrame 5 + 1),"
+           " never at the NEW scene's current frame";
+    // The scene-less destroy closes at segment B's current frame 3.
+    EXPECT_EQ(cfgs[1]->mLifeSpans[0].mFrameStop, 3u)
+        << "destroyed scene-less object must close at the current segment's frame, not mMaxFrame";
+
+    // Segment B objects open at frame 0 or their scene-entry frame.
+    EXPECT_EQ(shapes[1]->mLifeSpans[0].mFrameStart, 1u)
+        << "re-created shape opens at its actor's scene-join frame (still-at-0 descendant opens"
+           " are restamped when the actor joins the scene), never stamped from the OLD scene";
+    EXPECT_EQ(shapes[1]->mLifeSpans[0].mFrameStop, 3u) << "re-created shape closes at its destroy";
+    EXPECT_LT(shapes[1]->mLifeSpans[0].mFrameStart, shapes[1]->mLifeSpans[0].mFrameStop)
+        << "re-created shape lifespan must not be empty";
+    EXPECT_EQ(actors[1]->mLifeSpans[0].mFrameStart, 1u) << "re-created actor starts at its scene-add frame";
+    EXPECT_EQ(actors[1]->mLifeSpans[0].mFrameStop, 3u) << "re-created actor closes at its destroy";
+    EXPECT_EQ(scenes[1]->mLifeSpans[0].mFrameStart, 0u);
+    EXPECT_EQ(scenes[1]->mLifeSpans[0].mFrameStop, 3u) << "re-created scene closes at its destroy";
+}
+
+TEST_F(PvdDomTest, ContextAwareFrameCountersPerScene)
+{
+    const OmniPvdContextHandle ctx = 1;
+    const OmniPvdObjectHandle hMeta   = 0xBB0;
+    const OmniPvdObjectHandle hSceneX = 0xBB1;
+    const OmniPvdObjectHandle hSceneY = 0xBB2;
+
+    OmniPvdClassHandle metaCls = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdAttributeHandle verMaj = writer->registerAttribute(metaCls, "ovdIntegrationVersionMajor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdAttributeHandle verMin = writer->registerAttribute(metaCls, "ovdIntegrationVersionMinor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdClassHandle sceneCls = writer->registerClass("PxScene");
+
+    writer->createObject(ctx, metaCls, hMeta, "");
+    uint32_t vMaj = 3, vMin = 1;
+    writer->setAttribute(ctx, hMeta, verMaj, reinterpret_cast<const uint8_t*>(&vMaj), sizeof(vMaj));
+    writer->setAttribute(ctx, hMeta, verMin, reinterpret_cast<const uint8_t*>(&vMin), sizeof(vMin));
+
+    writer->createObject(ctx, sceneCls, hSceneX, "");
+    writer->createObject(ctx, sceneCls, hSceneY, "");
+    writer->startFrame(hSceneX, 1); writer->stopFrame(hSceneX, 1);
+    writer->startFrame(hSceneY, 5); writer->stopFrame(hSceneY, 5);
+    writer->startFrame(hSceneX, 2); writer->stopFrame(hSceneX, 2);
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+
+    EXPECT_EQ(domState.mStreamOvdIntegVersionMajor, 3u) << "stream integration version not read from the metadata object";
+    OmniPvdObject* sceneX = findOmniPvdObject(getInternalHandle(hSceneX, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    OmniPvdObject* sceneY = findOmniPvdObject(getInternalHandle(hSceneY, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_NE(sceneX, nullptr);
+    ASSERT_NE(sceneY, nullptr);
+    EXPECT_EQ(sceneX->mFrameId, 2u) << "scene X must keep its own frame counter";
+    EXPECT_EQ(sceneY->mFrameId, 5u) << "scene Y must keep its own frame counter (legacy path stamps it with every frame)";
+}
+
+TEST_F(PvdDomTest, TooNewIntegrationMajorFailsParse)
+{
+    const OmniPvdContextHandle ctx = 1;
+    OmniPvdClassHandle metaCls = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdAttributeHandle verMaj = writer->registerAttribute(metaCls, "ovdIntegrationVersionMajor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdClassHandle sceneCls = writer->registerClass("PxScene");
+
+    writer->createObject(ctx, metaCls, 0xDD0, "");
+    uint32_t vMaj = 1000; // far above any accepted major
+    writer->setAttribute(ctx, 0xDD0, verMaj, reinterpret_cast<const uint8_t*>(&vMaj), sizeof(vMaj));
+    writer->createObject(ctx, sceneCls, 0xDD1, ""); // second stream object triggers the check
+    writer->startFrame(0xDD1, 1); writer->stopFrame(0xDD1, 1);
+
+    OmniPvdDOMState domState;
+    EXPECT_FALSE(parseDom(domState))
+        << "a stream whose integration major exceeds the accepted major must fail the parse";
+    EXPECT_TRUE(domState.mOvdIntegVersionWasChecked);
+    EXPECT_FALSE(domState.mOvdIntegVersionPassed);
+}
+
+TEST_F(PvdDomTest, MidCaptureActorCreationOpensAtSceneJoinFrame)
+{
+    const OmniPvdContextHandle ctx = 1;
+    OmniPvdClassHandle metaCls = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdAttributeHandle verMaj = writer->registerAttribute(metaCls, "ovdIntegrationVersionMajor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdAttributeHandle verMin = writer->registerAttribute(metaCls, "ovdIntegrationVersionMinor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdClassHandle sceneCls = writer->registerClass("PxScene");
+    OmniPvdAttributeHandle actorsAttr = writer->registerUniqueListAttribute(sceneCls, "actors", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle actorCls = writer->registerClass("PxRigidDynamic");
+    OmniPvdAttributeHandle shapesAttr = writer->registerUniqueListAttribute(actorCls, "shapes", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle shapeCls = writer->registerClass("PxShape");
+    OmniPvdClassHandle actorTypeCls = writer->registerClass("PxActorType");
+    writer->registerEnumValue(actorTypeCls, "eRIGID_DYNAMIC", 1);
+    OmniPvdAttributeHandle typeAttr = writer->registerFlagsAttribute(actorCls, "type", actorTypeCls);
+
+    const OmniPvdObjectHandle hMeta = 0xEE0, hScene = 0xEE1, hActor = 0xEE2, hShape = 0xEE3;
+    writer->createObject(ctx, metaCls, hMeta, "");
+    uint32_t vMaj = 3, vMin = 1;
+    writer->setAttribute(ctx, hMeta, verMaj, reinterpret_cast<const uint8_t*>(&vMaj), sizeof(vMaj));
+    writer->setAttribute(ctx, hMeta, verMin, reinterpret_cast<const uint8_t*>(&vMin), sizeof(vMin));
+    writer->createObject(ctx, sceneCls, hScene, "");
+    writer->startFrame(hScene, 1); writer->stopFrame(hScene, 1);
+    writer->startFrame(hScene, 2); writer->stopFrame(hScene, 2);
+    writer->startFrame(hScene, 3);
+    // Mid-capture spawn during frame 3: create, attach the shape, then addActor.
+    writer->createObject(ctx, shapeCls, hShape, "");
+    writer->createObject(ctx, actorCls, hActor, "");
+    uint32_t rigidDynamic = 1;
+    writer->setAttribute(ctx, hActor, typeAttr, reinterpret_cast<const uint8_t*>(&rigidDynamic), sizeof(rigidDynamic));
+    writer->addToUniqueListAttribute(ctx, hActor, shapesAttr, reinterpret_cast<const uint8_t*>(&hShape), sizeof(hShape));
+    writer->addToUniqueListAttribute(ctx, hScene, actorsAttr, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor));
+    writer->stopFrame(hScene, 3);
+    writer->startFrame(hScene, 4); writer->stopFrame(hScene, 4);
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+    OmniPvdObject* actor = findOmniPvdObject(getInternalHandle(hActor, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    OmniPvdObject* shape = findOmniPvdObject(getInternalHandle(hShape, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_NE(actor, nullptr);
+    ASSERT_NE(shape, nullptr);
+    EXPECT_EQ(actor->mLifeSpans[0].mFrameStart, 3u) << "actor opens at its scene-join frame";
+    EXPECT_EQ(shape->mLifeSpans[0].mFrameStart, 3u)
+        << "shape attached before addActor must open at the actor's scene-join frame, not 0";
+}
+
+TEST_F(PvdDomTest, ZeroFrameSegmentSupersededObjectsClose)
+{
+    const OmniPvdContextHandle ctx = 1;
+    OmniPvdClassHandle metaA = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdAttributeHandle verMajA = writer->registerAttribute(metaA, "ovdIntegrationVersionMajor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdClassHandle sceneA = writer->registerClass("PxScene");
+    const OmniPvdObjectHandle hMeta = 0xFF0, hScene = 0xFF1;
+    writer->createObject(ctx, metaA, hMeta, "");
+    uint32_t vMaj = 3;
+    writer->setAttribute(ctx, hMeta, verMajA, reinterpret_cast<const uint8_t*>(&vMaj), sizeof(vMaj));
+    writer->createObject(ctx, sceneA, hScene, "");
+    // The segment ends with NO frames recorded; the next one re-registers and re-creates.
+    OmniPvdClassHandle metaB = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdClassHandle sceneB = writer->registerClass("PxScene");
+    writer->createObject(ctx, metaB, hMeta, "");
+    writer->createObject(ctx, sceneB, hScene, "");
+    writer->startFrame(hScene, 1); writer->stopFrame(hScene, 1);
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+    std::vector<OmniPvdObject*> scenes;
+    collectObjectsByApiHandle(domState, hScene, scenes);
+    ASSERT_EQ(scenes.size(), 2u);
+    EXPECT_NE(scenes[0]->mLifeSpans[0].mFrameStop, 0u)
+        << "the zero-frame segment's superseded scene must not read as never-destroyed";
+}
+
+TEST_F(PvdDomTest, UntypedActorKeepsSceneContext)
+{
+    const OmniPvdContextHandle ctx = 1;
+    OmniPvdClassHandle metaCls = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdAttributeHandle verMaj = writer->registerAttribute(metaCls, "ovdIntegrationVersionMajor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdAttributeHandle verMin = writer->registerAttribute(metaCls, "ovdIntegrationVersionMinor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdClassHandle sceneCls = writer->registerClass("PxScene");
+    OmniPvdAttributeHandle actorsAttr = writer->registerUniqueListAttribute(sceneCls, "actors", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle actorCls = writer->registerClass("PxRigidDynamic");
+    OmniPvdAttributeHandle shapesAttr = writer->registerUniqueListAttribute(actorCls, "shapes", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle shapeCls = writer->registerClass("PxShape");
+
+    const OmniPvdObjectHandle hMeta = 0xA10, hScene = 0xA11, hActor = 0xA12, hShape = 0xA13;
+    writer->createObject(ctx, metaCls, hMeta, "");
+    uint32_t vMaj = 3, vMin = 1;
+    writer->setAttribute(ctx, hMeta, verMaj, reinterpret_cast<const uint8_t*>(&vMaj), sizeof(vMaj));
+    writer->setAttribute(ctx, hMeta, verMin, reinterpret_cast<const uint8_t*>(&vMin), sizeof(vMin));
+    writer->createObject(ctx, sceneCls, hScene, "");
+    writer->startFrame(hScene, 1);
+    writer->createObject(ctx, actorCls, hActor, ""); // no "type" attribute ever set
+    writer->addToUniqueListAttribute(ctx, hScene, actorsAttr, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor));
+    writer->stopFrame(hScene, 1);
+    writer->startFrame(hScene, 2);
+    writer->createObject(ctx, shapeCls, hShape, "");
+    writer->addToUniqueListAttribute(ctx, hActor, shapesAttr, reinterpret_cast<const uint8_t*>(&hShape), sizeof(hShape));
+    writer->stopFrame(hScene, 2);
+    writer->startFrame(hScene, 3); writer->stopFrame(hScene, 3);
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+    OmniPvdObject* scene = findOmniPvdObject(getInternalHandle(hScene, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    OmniPvdObject* actor = findOmniPvdObject(getInternalHandle(hActor, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    OmniPvdObject* shape = findOmniPvdObject(getInternalHandle(hShape, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_NE(scene, nullptr);
+    ASSERT_NE(actor, nullptr);
+    ASSERT_NE(shape, nullptr);
+
+    bool sceneIsAncestor = false;
+    int depth = 0;
+    for (OmniPvdObject* a = actor->mAncestor; a && depth < 64; a = a->mAncestor, ++depth)
+    {
+        if (a == scene)
+        {
+            sceneIsAncestor = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(sceneIsAncestor) << "untyped actor must still be parented under its scene";
+    EXPECT_EQ(actor->mLifeSpans[0].mFrameStart, 1u) << "actor opens at its scene-join frame";
+    EXPECT_EQ(shape->mLifeSpans[0].mFrameStart, 2u)
+        << "shape attached after the scene join must open at its attach frame, which needs the"
+           " actor's scene ancestry";
+}
+
+TEST_F(PvdDomTest, SharedShapeReattachBeforeSceneJoinRestampsLastSpan)
+{
+    const OmniPvdContextHandle ctx = 1;
+    OmniPvdClassHandle metaCls = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdAttributeHandle verMaj = writer->registerAttribute(metaCls, "ovdIntegrationVersionMajor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdAttributeHandle verMin = writer->registerAttribute(metaCls, "ovdIntegrationVersionMinor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdClassHandle sceneCls = writer->registerClass("PxScene");
+    OmniPvdAttributeHandle actorsAttr = writer->registerUniqueListAttribute(sceneCls, "actors", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle actorCls = writer->registerClass("PxRigidDynamic");
+    OmniPvdAttributeHandle shapesAttr = writer->registerUniqueListAttribute(actorCls, "shapes", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle shapeCls = writer->registerClass("PxShape");
+    OmniPvdAttributeHandle exclAttr = writer->registerAttribute(shapeCls, "isExclusive", OmniPvdDataType::eUINT8, 1);
+    OmniPvdClassHandle actorTypeCls = writer->registerClass("PxActorType");
+    writer->registerEnumValue(actorTypeCls, "eRIGID_DYNAMIC", 1);
+    OmniPvdAttributeHandle typeAttr = writer->registerFlagsAttribute(actorCls, "type", actorTypeCls);
+
+    const OmniPvdObjectHandle hMeta = 0xA20, hScene = 0xA21, hActor = 0xA22, hShape = 0xA23;
+    writer->createObject(ctx, metaCls, hMeta, "");
+    uint32_t vMaj = 3, vMin = 1;
+    writer->setAttribute(ctx, hMeta, verMaj, reinterpret_cast<const uint8_t*>(&vMaj), sizeof(vMaj));
+    writer->setAttribute(ctx, hMeta, verMin, reinterpret_cast<const uint8_t*>(&vMin), sizeof(vMin));
+    writer->createObject(ctx, sceneCls, hScene, "");
+    writer->startFrame(hScene, 1); writer->stopFrame(hScene, 1);
+    writer->startFrame(hScene, 2); writer->stopFrame(hScene, 2);
+    writer->startFrame(hScene, 3);
+    writer->createObject(ctx, shapeCls, hShape, "");
+    uint8_t notExclusive = 0;
+    writer->setAttribute(ctx, hShape, exclAttr, &notExclusive, sizeof(notExclusive)); // shared shape
+    writer->createObject(ctx, actorCls, hActor, "");
+    uint32_t rigidDynamic = 1;
+    writer->setAttribute(ctx, hActor, typeAttr, reinterpret_cast<const uint8_t*>(&rigidDynamic), sizeof(rigidDynamic));
+    // attach, detach, re-attach BEFORE the actor joins the scene
+    writer->addToUniqueListAttribute(ctx, hActor, shapesAttr, reinterpret_cast<const uint8_t*>(&hShape), sizeof(hShape));
+    writer->removeFromUniqueListAttribute(ctx, hActor, shapesAttr, reinterpret_cast<const uint8_t*>(&hShape), sizeof(hShape));
+    writer->addToUniqueListAttribute(ctx, hActor, shapesAttr, reinterpret_cast<const uint8_t*>(&hShape), sizeof(hShape));
+    writer->addToUniqueListAttribute(ctx, hScene, actorsAttr, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor));
+    writer->stopFrame(hScene, 3);
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+    // Reference keys pair the actor UID with the shape's external handle.
+    auto it = domState.mActorSharedShapeToShapeRefMap.find(
+        { getInternalHandle(hActor, domState.mExternalToInternalHandleMap), hShape });
+    ASSERT_NE(it, domState.mActorSharedShapeToShapeRefMap.end()) << "shared-shape ref object not created";
+    OmniPvdObject* refObject = it->second;
+    ASSERT_EQ(refObject->mLifeSpans.size(), 2u) << "re-attach must grow a second lifespan";
+    EXPECT_EQ(refObject->mLifeSpans[1].mFrameStart, 3u)
+        << "the re-attach span must be restamped at the actor's scene-join frame, not stay at 0";
+}
+
+TEST_F(PvdDomTest, DestroyBeforeFirstFrameCloses)
+{
+    const OmniPvdContextHandle ctx = 1;
+    OmniPvdClassHandle metaCls = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdAttributeHandle verMaj = writer->registerAttribute(metaCls, "ovdIntegrationVersionMajor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdClassHandle sceneCls = writer->registerClass("PxScene");
+    OmniPvdClassHandle cfgCls = writer->registerClass("PxGpuDynamicsMemoryConfig");
+
+    const OmniPvdObjectHandle hMeta = 0xA30, hScene = 0xA31, hCfg = 0xA32;
+    writer->createObject(ctx, metaCls, hMeta, "");
+    uint32_t vMaj = 3;
+    writer->setAttribute(ctx, hMeta, verMaj, reinterpret_cast<const uint8_t*>(&vMaj), sizeof(vMaj));
+    writer->createObject(ctx, sceneCls, hScene, "");
+    writer->createObject(ctx, cfgCls, hCfg, "");
+    writer->destroyObject(ctx, hCfg); // destroyed during setup, before the first frame
+    writer->startFrame(hScene, 1); writer->stopFrame(hScene, 1);
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+    OmniPvdObject* cfg = findOmniPvdObject(getInternalHandle(hCfg, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_NE(cfg, nullptr);
+    EXPECT_EQ(cfg->mLifeSpans[0].mFrameStop, 1u)
+        << "a pre-frame destroy must not write the mFrameStop == 0 never-destroyed sentinel";
+}
+
+TEST_F(PvdDomTest, SceneLessSampleStampsStayMonotonic)
+{
+    const OmniPvdContextHandle ctx = 1;
+    OmniPvdClassHandle metaCls = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdAttributeHandle verMaj = writer->registerAttribute(metaCls, "ovdIntegrationVersionMajor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdAttributeHandle verMin = writer->registerAttribute(metaCls, "ovdIntegrationVersionMinor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdClassHandle sceneCls = writer->registerClass("PxScene");
+    OmniPvdClassHandle cfgCls = writer->registerClass("PxGpuDynamicsMemoryConfig");
+    OmniPvdAttributeHandle valAttr = writer->registerAttribute(cfgCls, "gpuVal", OmniPvdDataType::eUINT32, 1);
+
+    const OmniPvdObjectHandle hMeta = 0xA40, hSceneX = 0xA41, hSceneY = 0xA42, hCfg = 0xA43;
+    writer->createObject(ctx, metaCls, hMeta, "");
+    uint32_t vMaj = 3, vMin = 1; // context-aware frame commands
+    writer->setAttribute(ctx, hMeta, verMaj, reinterpret_cast<const uint8_t*>(&vMaj), sizeof(vMaj));
+    writer->setAttribute(ctx, hMeta, verMin, reinterpret_cast<const uint8_t*>(&vMin), sizeof(vMin));
+    writer->createObject(ctx, sceneCls, hSceneX, "");
+    writer->createObject(ctx, sceneCls, hSceneY, "");
+    writer->createObject(ctx, cfgCls, hCfg, "");
+
+    uint32_t v = 10;
+    writer->startFrame(hSceneX, 1);
+    writer->setAttribute(ctx, hCfg, valAttr, reinterpret_cast<const uint8_t*>(&v), sizeof(v));
+    writer->stopFrame(hSceneX, 1);
+    v = 20;
+    writer->startFrame(hSceneY, 5);
+    writer->setAttribute(ctx, hCfg, valAttr, reinterpret_cast<const uint8_t*>(&v), sizeof(v));
+    writer->stopFrame(hSceneY, 5);
+    v = 30;
+    writer->startFrame(hSceneX, 2); // scene X's counter is BEHIND the global latest (5)
+    writer->setAttribute(ctx, hCfg, valAttr, reinterpret_cast<const uint8_t*>(&v), sizeof(v));
+    writer->stopFrame(hSceneX, 2);
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+    OmniPvdObject* cfg = findOmniPvdObject(getInternalHandle(hCfg, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_NE(cfg, nullptr);
+    int32_t attribIndex = -1, classIndex = -1;
+    getAttribIndex(attribIndex, classIndex, "gpuVal", cfg);
+    ASSERT_GE(classIndex, 0);
+    ASSERT_GE(attribIndex, 0);
+    OmniPvdAttributeInstList* list = cfg->mInheritedClassInstances[classIndex].mClassAttributeLists[attribIndex];
+    ASSERT_NE(list, nullptr);
+    int samples = 0;
+    uint64_t prev = 0, last = 0;
+    for (OmniPvdAttributeInst* inst = list->mFirst; inst; inst = inst->mNextAttribute)
+    {
+        EXPECT_GE(inst->mTimeStamp, prev) << "sample stamps must be non-decreasing (sample " << samples << ")";
+        prev = last = inst->mTimeStamp;
+        ++samples;
+    }
+    EXPECT_EQ(samples, 3);
+    EXPECT_EQ(last, 5u) << "the write during scene X's lagging frame clamps to the list's last stamp";
+}
+
+TEST_F(PvdDomTest, ActorRemoveReAddKeepsBothResidencies)
+{
+    const OmniPvdContextHandle ctx = 1;
+    OmniPvdClassHandle metaCls = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdAttributeHandle verMaj = writer->registerAttribute(metaCls, "ovdIntegrationVersionMajor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdAttributeHandle verMin = writer->registerAttribute(metaCls, "ovdIntegrationVersionMinor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdClassHandle sceneCls = writer->registerClass("PxScene");
+    OmniPvdAttributeHandle actorsAttr = writer->registerUniqueListAttribute(sceneCls, "actors", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle actorCls = writer->registerClass("PxRigidDynamic");
+    OmniPvdClassHandle actorTypeCls = writer->registerClass("PxActorType");
+    writer->registerEnumValue(actorTypeCls, "eRIGID_DYNAMIC", 1);
+    OmniPvdAttributeHandle typeAttr = writer->registerFlagsAttribute(actorCls, "type", actorTypeCls);
+
+    const OmniPvdObjectHandle hMeta = 0xB10, hScene = 0xB11, hActor = 0xB12;
+    writer->createObject(ctx, metaCls, hMeta, "");
+    uint32_t vMaj = 3, vMin = 1;
+    writer->setAttribute(ctx, hMeta, verMaj, reinterpret_cast<const uint8_t*>(&vMaj), sizeof(vMaj));
+    writer->setAttribute(ctx, hMeta, verMin, reinterpret_cast<const uint8_t*>(&vMin), sizeof(vMin));
+    writer->createObject(ctx, sceneCls, hScene, "");
+    writer->createObject(ctx, actorCls, hActor, "");
+    uint32_t rigidDynamic = 1;
+    writer->setAttribute(ctx, hActor, typeAttr, reinterpret_cast<const uint8_t*>(&rigidDynamic), sizeof(rigidDynamic));
+
+    for (uint64_t f = 1; f <= 9; ++f)
+    {
+        writer->startFrame(hScene, f);
+        if (f == 3)
+            writer->addToUniqueListAttribute(ctx, hScene, actorsAttr, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor));
+        if (f == 5)
+            writer->removeFromUniqueListAttribute(ctx, hScene, actorsAttr, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor));
+        if (f == 8)
+            writer->addToUniqueListAttribute(ctx, hScene, actorsAttr, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor));
+        writer->stopFrame(hScene, f);
+    }
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+    OmniPvdObject* actor = findOmniPvdObject(getInternalHandle(hActor, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_NE(actor, nullptr);
+    ASSERT_EQ(actor->mLifeSpans.size(), 2u) << "one lifespan per scene residency";
+    EXPECT_EQ(actor->mLifeSpans[0].mFrameStart, 3u);
+    EXPECT_EQ(actor->mLifeSpans[0].mFrameStop, 5u);
+    EXPECT_EQ(actor->mLifeSpans[1].mFrameStart, 8u);
+    EXPECT_EQ(actor->mLifeSpans[1].mFrameStop, 0u) << "second residency still open";
+    EXPECT_TRUE(isObjectAliveAtFrame(actor, 3));
+    EXPECT_TRUE(isObjectAliveAtFrame(actor, 4));
+    EXPECT_FALSE(isObjectAliveAtFrame(actor, 5));
+    EXPECT_FALSE(isObjectAliveAtFrame(actor, 7));
+    EXPECT_TRUE(isObjectAliveAtFrame(actor, 8));
+    EXPECT_TRUE(isObjectAliveAtFrame(actor, 9));
+}
+
+TEST_F(PvdDomTest, SupersededSubtreeInternalNodesClose)
+{
+    const OmniPvdContextHandle ctx = 1;
+    // ---- segment A: scene + typed actor + SHARED shape (creates a ref node) ----
+    OmniPvdClassHandle metaA = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdAttributeHandle verMajA = writer->registerAttribute(metaA, "ovdIntegrationVersionMajor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdAttributeHandle verMinA = writer->registerAttribute(metaA, "ovdIntegrationVersionMinor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdClassHandle sceneA = writer->registerClass("PxScene");
+    OmniPvdAttributeHandle actorsA = writer->registerUniqueListAttribute(sceneA, "actors", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle actorClsA = writer->registerClass("PxRigidDynamic");
+    OmniPvdAttributeHandle shapesA = writer->registerUniqueListAttribute(actorClsA, "shapes", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle shapeClsA = writer->registerClass("PxShape");
+    OmniPvdAttributeHandle exclA = writer->registerAttribute(shapeClsA, "isExclusive", OmniPvdDataType::eUINT8, 1);
+    OmniPvdClassHandle actorTypeA = writer->registerClass("PxActorType");
+    writer->registerEnumValue(actorTypeA, "eRIGID_DYNAMIC", 1);
+    OmniPvdAttributeHandle typeA = writer->registerFlagsAttribute(actorClsA, "type", actorTypeA);
+
+    const OmniPvdObjectHandle hMeta = 0xB20, hScene = 0xB21, hActor = 0xB22, hShape = 0xB23;
+    writer->createObject(ctx, metaA, hMeta, "");
+    uint32_t vMaj = 3, vMin = 1;
+    writer->setAttribute(ctx, hMeta, verMajA, reinterpret_cast<const uint8_t*>(&vMaj), sizeof(vMaj));
+    writer->setAttribute(ctx, hMeta, verMinA, reinterpret_cast<const uint8_t*>(&vMin), sizeof(vMin));
+    writer->createObject(ctx, sceneA, hScene, "");
+    writer->startFrame(hScene, 1);
+    writer->createObject(ctx, shapeClsA, hShape, "");
+    uint8_t notExclusive = 0;
+    writer->setAttribute(ctx, hShape, exclA, &notExclusive, sizeof(notExclusive)); // shared
+    writer->createObject(ctx, actorClsA, hActor, "");
+    uint32_t rigidDynamic = 1;
+    writer->setAttribute(ctx, hActor, typeA, reinterpret_cast<const uint8_t*>(&rigidDynamic), sizeof(rigidDynamic));
+    writer->addToUniqueListAttribute(ctx, hActor, shapesA, reinterpret_cast<const uint8_t*>(&hShape), sizeof(hShape));
+    writer->addToUniqueListAttribute(ctx, hScene, actorsA, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor));
+    writer->stopFrame(hScene, 1);
+    writer->startFrame(hScene, 2); writer->stopFrame(hScene, 2);
+    writer->startFrame(hScene, 3); writer->stopFrame(hScene, 3);
+
+    // ---- segment B: schema re-registered, world re-created (snapshot order) ----
+    OmniPvdClassHandle metaB = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdClassHandle sceneB = writer->registerClass("PxScene");
+    OmniPvdAttributeHandle actorsB = writer->registerUniqueListAttribute(sceneB, "actors", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle actorClsB = writer->registerClass("PxRigidDynamic");
+    OmniPvdAttributeHandle shapesB = writer->registerUniqueListAttribute(actorClsB, "shapes", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle shapeClsB = writer->registerClass("PxShape");
+    OmniPvdClassHandle actorTypeB = writer->registerClass("PxActorType");
+    writer->registerEnumValue(actorTypeB, "eRIGID_DYNAMIC", 1);
+    OmniPvdAttributeHandle typeB = writer->registerFlagsAttribute(actorClsB, "type", actorTypeB);
+
+    writer->createObject(ctx, metaB, hMeta, "");
+    writer->createObject(ctx, shapeClsB, hShape, "");
+    writer->createObject(ctx, actorClsB, hActor, "");
+    writer->setAttribute(ctx, hActor, typeB, reinterpret_cast<const uint8_t*>(&rigidDynamic), sizeof(rigidDynamic));
+    writer->addToUniqueListAttribute(ctx, hActor, shapesB, reinterpret_cast<const uint8_t*>(&hShape), sizeof(hShape));
+    writer->createObject(ctx, sceneB, hScene, "");
+    writer->startFrame(hScene, 1);
+    writer->addToUniqueListAttribute(ctx, hScene, actorsB, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor));
+    writer->stopFrame(hScene, 1);
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+
+    std::vector<OmniPvdObject*> actors, scenes;
+    collectObjectsByApiHandle(domState, hActor, actors);
+    collectObjectsByApiHandle(domState, hScene, scenes);
+    ASSERT_EQ(actors.size(), 2u);
+    ASSERT_EQ(scenes.size(), 2u);
+
+    // The OLD actor's SharedShapeRef node closes with the old actor (3 + 1).
+    OmniPvdObject* oldRef = nullptr;
+    for (OmniPvdObject* c = actors[0]->mFirstChild; c; c = c->mNextSibling)
+        if (c->mOmniPvdClass == domState.mSharedShapeRefClass)
+            oldRef = c;
+    ASSERT_NE(oldRef, nullptr) << "segment-A shared-shape ref node not found under the old actor";
+    EXPECT_EQ(oldRef->mLifeSpans.back().mFrameStop, 4u)
+        << "internal ref node must close when its subtree is superseded, not stay alive forever";
+    EXPECT_FALSE(isObjectAliveAtFrame(oldRef, 5));
+
+    // The OLD scene's internal aggregation branches close with the old scene.
+    int openOldSceneBranches = 0;
+    for (OmniPvdObject* c = scenes[0]->mFirstChild; c; c = c->mNextSibling)
+        if (c->mLifeSpans.back().mFrameStop == 0)
+            ++openOldSceneBranches;
+    EXPECT_EQ(openOldSceneBranches, 0)
+        << "no internal node under the superseded scene may keep the never-destroyed sentinel";
+}
+
+TEST_F(PvdDomTest, ShapeAttachedToInSceneActorRestampsGeometry)
+{
+    const OmniPvdContextHandle ctx = 1;
+    OmniPvdClassHandle metaCls = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdAttributeHandle verMaj = writer->registerAttribute(metaCls, "ovdIntegrationVersionMajor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdAttributeHandle verMin = writer->registerAttribute(metaCls, "ovdIntegrationVersionMinor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdClassHandle sceneCls = writer->registerClass("PxScene");
+    OmniPvdAttributeHandle actorsAttr = writer->registerUniqueListAttribute(sceneCls, "actors", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle actorCls = writer->registerClass("PxRigidDynamic");
+    OmniPvdAttributeHandle shapesAttr = writer->registerUniqueListAttribute(actorCls, "shapes", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle shapeCls = writer->registerClass("PxShape");
+    OmniPvdAttributeHandle geomAttr = writer->registerAttribute(shapeCls, "geom", OmniPvdDataType::eOBJECT_HANDLE, 1);
+    OmniPvdClassHandle geomCls = writer->registerClass("PxGeomSphere");
+    OmniPvdClassHandle actorTypeCls = writer->registerClass("PxActorType");
+    writer->registerEnumValue(actorTypeCls, "eRIGID_DYNAMIC", 1);
+    OmniPvdAttributeHandle typeAttr = writer->registerFlagsAttribute(actorCls, "type", actorTypeCls);
+
+    const OmniPvdObjectHandle hMeta = 0xC10, hScene = 0xC11, hActor = 0xC12, hShape = 0xC13, hGeom = 0xC14;
+    writer->createObject(ctx, metaCls, hMeta, "");
+    uint32_t vMaj = 3, vMin = 1;
+    writer->setAttribute(ctx, hMeta, verMaj, reinterpret_cast<const uint8_t*>(&vMaj), sizeof(vMaj));
+    writer->setAttribute(ctx, hMeta, verMin, reinterpret_cast<const uint8_t*>(&vMin), sizeof(vMin));
+    writer->createObject(ctx, sceneCls, hScene, "");
+    writer->startFrame(hScene, 1);
+    writer->createObject(ctx, actorCls, hActor, "");
+    uint32_t rigidDynamic = 1;
+    writer->setAttribute(ctx, hActor, typeAttr, reinterpret_cast<const uint8_t*>(&rigidDynamic), sizeof(rigidDynamic));
+    writer->addToUniqueListAttribute(ctx, hScene, actorsAttr, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor));
+    writer->stopFrame(hScene, 1);
+    writer->startFrame(hScene, 2); writer->stopFrame(hScene, 2);
+    writer->startFrame(hScene, 3);
+    // Attach the completed shape to an actor already in the scene.
+    writer->createObject(ctx, shapeCls, hShape, "");
+    writer->createObject(ctx, geomCls, hGeom, "");
+    writer->setAttribute(ctx, hShape, geomAttr, reinterpret_cast<const uint8_t*>(&hGeom), sizeof(hGeom));
+    writer->addToUniqueListAttribute(ctx, hActor, shapesAttr, reinterpret_cast<const uint8_t*>(&hShape), sizeof(hShape));
+    writer->stopFrame(hScene, 3);
+    writer->startFrame(hScene, 4); writer->stopFrame(hScene, 4);
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+    OmniPvdObject* shape = findOmniPvdObject(getInternalHandle(hShape, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    OmniPvdObject* geom = findOmniPvdObject(getInternalHandle(hGeom, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_NE(shape, nullptr);
+    ASSERT_NE(geom, nullptr);
+    EXPECT_EQ(shape->mLifeSpans[0].mFrameStart, 3u) << "shape opens at its attach frame";
+    EXPECT_EQ(geom->mLifeSpans[0].mFrameStart, 3u)
+        << "geometry set before the attach must open with the shape, not read alive from frame 0";
+}
+
+TEST_F(PvdDomTest, ActorRemoveClosesAndReAddReopensSubtree)
+{
+    const OmniPvdContextHandle ctx = 1;
+    OmniPvdClassHandle metaCls = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdAttributeHandle verMaj = writer->registerAttribute(metaCls, "ovdIntegrationVersionMajor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdAttributeHandle verMin = writer->registerAttribute(metaCls, "ovdIntegrationVersionMinor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdClassHandle sceneCls = writer->registerClass("PxScene");
+    OmniPvdAttributeHandle actorsAttr = writer->registerUniqueListAttribute(sceneCls, "actors", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle actorCls = writer->registerClass("PxRigidDynamic");
+    OmniPvdAttributeHandle shapesAttr = writer->registerUniqueListAttribute(actorCls, "shapes", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle shapeCls = writer->registerClass("PxShape");
+    OmniPvdClassHandle actorTypeCls = writer->registerClass("PxActorType");
+    writer->registerEnumValue(actorTypeCls, "eRIGID_DYNAMIC", 1);
+    OmniPvdAttributeHandle typeAttr = writer->registerFlagsAttribute(actorCls, "type", actorTypeCls);
+
+    const OmniPvdObjectHandle hMeta = 0xC20, hScene = 0xC21, hActor = 0xC22, hShape = 0xC23;
+    writer->createObject(ctx, metaCls, hMeta, "");
+    uint32_t vMaj = 3, vMin = 1;
+    writer->setAttribute(ctx, hMeta, verMaj, reinterpret_cast<const uint8_t*>(&vMaj), sizeof(vMaj));
+    writer->setAttribute(ctx, hMeta, verMin, reinterpret_cast<const uint8_t*>(&vMin), sizeof(vMin));
+    writer->createObject(ctx, sceneCls, hScene, "");
+    writer->createObject(ctx, actorCls, hActor, "");
+    uint32_t rigidDynamic = 1;
+    writer->setAttribute(ctx, hActor, typeAttr, reinterpret_cast<const uint8_t*>(&rigidDynamic), sizeof(rigidDynamic));
+    writer->createObject(ctx, shapeCls, hShape, "");
+    writer->addToUniqueListAttribute(ctx, hActor, shapesAttr, reinterpret_cast<const uint8_t*>(&hShape), sizeof(hShape));
+
+    for (uint64_t f = 1; f <= 9; ++f)
+    {
+        writer->startFrame(hScene, f);
+        if (f == 3)
+            writer->addToUniqueListAttribute(ctx, hScene, actorsAttr, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor));
+        if (f == 5)
+            writer->removeFromUniqueListAttribute(ctx, hScene, actorsAttr, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor));
+        if (f == 8)
+            writer->addToUniqueListAttribute(ctx, hScene, actorsAttr, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor));
+        writer->stopFrame(hScene, f);
+    }
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+    OmniPvdObject* shape = findOmniPvdObject(getInternalHandle(hShape, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_NE(shape, nullptr);
+    ASSERT_EQ(shape->mLifeSpans.size(), 2u) << "shape residency must follow its actor's leave and re-join";
+    EXPECT_EQ(shape->mLifeSpans[0].mFrameStart, 3u);
+    EXPECT_EQ(shape->mLifeSpans[0].mFrameStop, 5u) << "removeActor must close the attached shape";
+    EXPECT_EQ(shape->mLifeSpans[1].mFrameStart, 8u) << "addActor must reopen the leave-closed shape";
+    EXPECT_EQ(shape->mLifeSpans[1].mFrameStop, 0u);
+    EXPECT_TRUE(isObjectAliveAtFrame(shape, 4));
+    EXPECT_FALSE(isObjectAliveAtFrame(shape, 6));
+    EXPECT_TRUE(isObjectAliveAtFrame(shape, 9));
+}
+
+TEST_F(PvdDomTest, SceneParentedUnderOwningPhysics)
+{
+    const OmniPvdContextHandle ctx = 1;
+    const OmniPvdObjectHandle hMeta = 0xD10, hPhysics = 0xD11, hScene = 0xD12;
+
+    // ---- segment A ----
+    OmniPvdClassHandle metaA = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdAttributeHandle verMajA = writer->registerAttribute(metaA, "ovdIntegrationVersionMajor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdClassHandle physicsA = writer->registerClass("PxPhysics");
+    OmniPvdAttributeHandle scenesA = writer->registerUniqueListAttribute(physicsA, "scenes", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle sceneClsA = writer->registerClass("PxScene");
+
+    writer->createObject(ctx, metaA, hMeta, "");
+    uint32_t vMaj = 3;
+    writer->setAttribute(ctx, hMeta, verMajA, reinterpret_cast<const uint8_t*>(&vMaj), sizeof(vMaj));
+    writer->createObject(ctx, physicsA, hPhysics, "");
+    writer->createObject(ctx, sceneClsA, hScene, "");
+    writer->addToUniqueListAttribute(ctx, hPhysics, scenesA, reinterpret_cast<const uint8_t*>(&hScene), sizeof(hScene));
+    writer->startFrame(hScene, 1); writer->stopFrame(hScene, 1);
+
+    // Omit the segment B scenes edge to exercise creation-order parenting.
+    OmniPvdClassHandle metaB = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdClassHandle physicsB = writer->registerClass("PxPhysics");
+    (void)writer->registerUniqueListAttribute(physicsB, "scenes", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle sceneClsB = writer->registerClass("PxScene");
+    writer->createObject(ctx, metaB, hMeta, "");
+    writer->createObject(ctx, physicsB, hPhysics, "");
+    writer->createObject(ctx, sceneClsB, hScene, "");
+    // (no PxPhysics.scenes add here -- the segment-B scene must still nest)
+    writer->startFrame(hScene, 1); writer->stopFrame(hScene, 1);
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+
+    std::vector<OmniPvdObject*> physics, scenes;
+    collectObjectsByApiHandle(domState, hPhysics, physics);
+    collectObjectsByApiHandle(domState, hScene, scenes);
+    ASSERT_EQ(physics.size(), 2u);
+    ASSERT_EQ(scenes.size(), 2u);
+
+    // Each scene uses the PxPhysics from its own segment.
+    EXPECT_EQ(scenes[0]->mAncestor, physics[0])
+        << "segment A scene must nest under segment A physics";
+    EXPECT_EQ(scenes[1]->mAncestor, physics[1])
+        << "segment B scene must nest under segment B physics, not a foreign segment's physics";
+    // The physics node is a top-level object (no scene ancestor above it).
+    EXPECT_TRUE(physics[0]->mAncestor == nullptr || physics[0]->mAncestor == domState.mSceneRoot);
+}
+
+TEST_F(PvdDomTest, ExclusiveShapeDetachClosesGeomSubtree)
+{
+    const OmniPvdContextHandle ctx = 1;
+    OmniPvdClassHandle metaCls = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdAttributeHandle verMaj = writer->registerAttribute(metaCls, "ovdIntegrationVersionMajor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdAttributeHandle verMin = writer->registerAttribute(metaCls, "ovdIntegrationVersionMinor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdClassHandle sceneCls = writer->registerClass("PxScene");
+    OmniPvdAttributeHandle actorsAttr = writer->registerUniqueListAttribute(sceneCls, "actors", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle actorCls = writer->registerClass("PxRigidDynamic");
+    OmniPvdAttributeHandle shapesAttr = writer->registerUniqueListAttribute(actorCls, "shapes", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle actorTypeCls = writer->registerClass("PxActorType");
+    writer->registerEnumValue(actorTypeCls, "eRIGID_DYNAMIC", 1);
+    OmniPvdAttributeHandle typeAttr = writer->registerFlagsAttribute(actorCls, "type", actorTypeCls);
+    OmniPvdClassHandle shapeCls = writer->registerClass("PxShape");
+    OmniPvdAttributeHandle exclAttr = writer->registerAttribute(shapeCls, "isExclusive", OmniPvdDataType::eUINT8, 1);
+    OmniPvdAttributeHandle geomAttr = writer->registerAttribute(shapeCls, "geom", OmniPvdDataType::eOBJECT_HANDLE, 1);
+    OmniPvdClassHandle geomCls = writer->registerClass("PxGeomSphere");
+
+    const OmniPvdObjectHandle hMeta = 0xC30, hScene = 0xC31, hActor = 0xC32, hShape = 0xC33, hGeom = 0xC34;
+    writer->createObject(ctx, metaCls, hMeta, "");
+    uint32_t vMaj = 3, vMin = 1;
+    writer->setAttribute(ctx, hMeta, verMaj, reinterpret_cast<const uint8_t*>(&vMaj), sizeof(vMaj));
+    writer->setAttribute(ctx, hMeta, verMin, reinterpret_cast<const uint8_t*>(&vMin), sizeof(vMin));
+    writer->createObject(ctx, sceneCls, hScene, "");
+    writer->createObject(ctx, actorCls, hActor, "");
+    uint32_t rigidDynamic = 1;
+    writer->setAttribute(ctx, hActor, typeAttr, reinterpret_cast<const uint8_t*>(&rigidDynamic), sizeof(rigidDynamic));
+    writer->startFrame(hScene, 1);
+    writer->addToUniqueListAttribute(ctx, hScene, actorsAttr, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor));
+    writer->stopFrame(hScene, 1);
+    writer->startFrame(hScene, 2);
+    writer->createObject(ctx, shapeCls, hShape, "");
+    uint8_t exclusive = 1;
+    writer->setAttribute(ctx, hShape, exclAttr, &exclusive, sizeof(exclusive)); // exclusive shape
+    writer->createObject(ctx, geomCls, hGeom, "");
+    writer->setAttribute(ctx, hShape, geomAttr, reinterpret_cast<const uint8_t*>(&hGeom), sizeof(hGeom));
+    writer->addToUniqueListAttribute(ctx, hActor, shapesAttr, reinterpret_cast<const uint8_t*>(&hShape), sizeof(hShape));
+    writer->stopFrame(hScene, 2);
+    writer->startFrame(hScene, 3);
+    writer->removeFromUniqueListAttribute(ctx, hActor, shapesAttr, reinterpret_cast<const uint8_t*>(&hShape), sizeof(hShape)); // detach, no destroy
+    writer->stopFrame(hScene, 3);
+    writer->startFrame(hScene, 4); writer->stopFrame(hScene, 4);
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+    OmniPvdObject* shape = findOmniPvdObject(getInternalHandle(hShape, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    OmniPvdObject* geom = findOmniPvdObject(getInternalHandle(hGeom, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_NE(shape, nullptr);
+    ASSERT_NE(geom, nullptr);
+    EXPECT_EQ(shape->mLifeSpans.back().mFrameStop, 3u) << "detached exclusive shape closes at the detach frame";
+    EXPECT_NE(geom->mLifeSpans.back().mFrameStop, 0u) << "geometry under a detached shape must not stay open";
+    EXPECT_FALSE(isObjectAliveAtFrame(geom, 4)) << "geometry must not surface without its shape after the detach";
+}
+
+TEST_F(PvdDomTest, ShapeDetachedWhileActorGoneStaysDead)
+{
+    const OmniPvdContextHandle ctx = 1;
+    OmniPvdClassHandle metaCls = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdAttributeHandle verMaj = writer->registerAttribute(metaCls, "ovdIntegrationVersionMajor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdAttributeHandle verMin = writer->registerAttribute(metaCls, "ovdIntegrationVersionMinor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdClassHandle sceneCls = writer->registerClass("PxScene");
+    OmniPvdAttributeHandle actorsAttr = writer->registerUniqueListAttribute(sceneCls, "actors", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle actorCls = writer->registerClass("PxRigidDynamic");
+    OmniPvdAttributeHandle shapesAttr = writer->registerUniqueListAttribute(actorCls, "shapes", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle actorTypeCls = writer->registerClass("PxActorType");
+    writer->registerEnumValue(actorTypeCls, "eRIGID_DYNAMIC", 1);
+    OmniPvdAttributeHandle typeAttr = writer->registerFlagsAttribute(actorCls, "type", actorTypeCls);
+    OmniPvdClassHandle shapeCls = writer->registerClass("PxShape");
+    OmniPvdAttributeHandle exclAttr = writer->registerAttribute(shapeCls, "isExclusive", OmniPvdDataType::eUINT8, 1);
+
+    const OmniPvdObjectHandle hMeta = 0xC40, hScene = 0xC41, hActor = 0xC42, hShape = 0xC43;
+    writer->createObject(ctx, metaCls, hMeta, "");
+    uint32_t vMaj = 3, vMin = 1;
+    writer->setAttribute(ctx, hMeta, verMaj, reinterpret_cast<const uint8_t*>(&vMaj), sizeof(vMaj));
+    writer->setAttribute(ctx, hMeta, verMin, reinterpret_cast<const uint8_t*>(&vMin), sizeof(vMin));
+    writer->createObject(ctx, sceneCls, hScene, "");
+    writer->createObject(ctx, actorCls, hActor, "");
+    uint32_t rigidDynamic = 1;
+    writer->setAttribute(ctx, hActor, typeAttr, reinterpret_cast<const uint8_t*>(&rigidDynamic), sizeof(rigidDynamic));
+    writer->createObject(ctx, shapeCls, hShape, "");
+    uint8_t exclusive = 1;
+    writer->setAttribute(ctx, hShape, exclAttr, &exclusive, sizeof(exclusive));
+    writer->addToUniqueListAttribute(ctx, hActor, shapesAttr, reinterpret_cast<const uint8_t*>(&hShape), sizeof(hShape));
+
+    for (uint64_t f = 1; f <= 8; ++f)
+    {
+        writer->startFrame(hScene, f);
+        if (f == 1)
+            writer->addToUniqueListAttribute(ctx, hScene, actorsAttr, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor)); // actor joins
+        if (f == 3)
+            writer->removeFromUniqueListAttribute(ctx, hScene, actorsAttr, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor)); // actor leaves
+        if (f == 4)
+            writer->removeFromUniqueListAttribute(ctx, hActor, shapesAttr, reinterpret_cast<const uint8_t*>(&hShape), sizeof(hShape)); // shape detached while actor gone
+        if (f == 6)
+            writer->addToUniqueListAttribute(ctx, hScene, actorsAttr, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor)); // actor re-joins
+        writer->stopFrame(hScene, f);
+    }
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+    OmniPvdObject* actor = findOmniPvdObject(getInternalHandle(hActor, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    OmniPvdObject* shape = findOmniPvdObject(getInternalHandle(hShape, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_NE(actor, nullptr);
+    ASSERT_NE(shape, nullptr);
+    EXPECT_TRUE(isObjectAliveAtFrame(actor, 7)) << "the actor re-joined the scene at frame 6";
+    EXPECT_FALSE(isObjectAliveAtFrame(shape, 7))
+        << "a shape detached while its actor was gone must not reopen when the actor re-joins";
+    EXPECT_FALSE(isObjectAliveAtFrame(shape, 5)) << "detached shape is dead while the actor is gone";
+}
+
+TEST_F(PvdDomTest, ExclusiveShapeReAttachReopensGeom)
+{
+    const OmniPvdContextHandle ctx = 1;
+    OmniPvdClassHandle metaCls = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdAttributeHandle verMaj = writer->registerAttribute(metaCls, "ovdIntegrationVersionMajor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdAttributeHandle verMin = writer->registerAttribute(metaCls, "ovdIntegrationVersionMinor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdClassHandle sceneCls = writer->registerClass("PxScene");
+    OmniPvdAttributeHandle actorsAttr = writer->registerUniqueListAttribute(sceneCls, "actors", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle actorCls = writer->registerClass("PxRigidDynamic");
+    OmniPvdAttributeHandle shapesAttr = writer->registerUniqueListAttribute(actorCls, "shapes", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle actorTypeCls = writer->registerClass("PxActorType");
+    writer->registerEnumValue(actorTypeCls, "eRIGID_DYNAMIC", 1);
+    OmniPvdAttributeHandle typeAttr = writer->registerFlagsAttribute(actorCls, "type", actorTypeCls);
+    OmniPvdClassHandle shapeCls = writer->registerClass("PxShape");
+    OmniPvdAttributeHandle exclAttr = writer->registerAttribute(shapeCls, "isExclusive", OmniPvdDataType::eUINT8, 1);
+    OmniPvdAttributeHandle geomAttr = writer->registerAttribute(shapeCls, "geom", OmniPvdDataType::eOBJECT_HANDLE, 1);
+    OmniPvdClassHandle geomCls = writer->registerClass("PxGeomSphere");
+
+    const OmniPvdObjectHandle hMeta = 0xC50, hScene = 0xC51, hActor = 0xC52, hShape = 0xC53, hGeom = 0xC54;
+    writer->createObject(ctx, metaCls, hMeta, "");
+    uint32_t vMaj = 3, vMin = 1;
+    writer->setAttribute(ctx, hMeta, verMaj, reinterpret_cast<const uint8_t*>(&vMaj), sizeof(vMaj));
+    writer->setAttribute(ctx, hMeta, verMin, reinterpret_cast<const uint8_t*>(&vMin), sizeof(vMin));
+    writer->createObject(ctx, sceneCls, hScene, "");
+    writer->createObject(ctx, actorCls, hActor, "");
+    uint32_t rigidDynamic = 1;
+    writer->setAttribute(ctx, hActor, typeAttr, reinterpret_cast<const uint8_t*>(&rigidDynamic), sizeof(rigidDynamic));
+    writer->createObject(ctx, shapeCls, hShape, "");
+    uint8_t exclusive = 1;
+    writer->setAttribute(ctx, hShape, exclAttr, &exclusive, sizeof(exclusive));
+    writer->createObject(ctx, geomCls, hGeom, "");
+    writer->setAttribute(ctx, hShape, geomAttr, reinterpret_cast<const uint8_t*>(&hGeom), sizeof(hGeom));
+
+    for (uint64_t f = 1; f <= 8; ++f)
+    {
+        writer->startFrame(hScene, f);
+        if (f == 1)
+        {
+            writer->addToUniqueListAttribute(ctx, hScene, actorsAttr, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor));
+            writer->addToUniqueListAttribute(ctx, hActor, shapesAttr, reinterpret_cast<const uint8_t*>(&hShape), sizeof(hShape));
+        }
+        if (f == 3)
+            writer->removeFromUniqueListAttribute(ctx, hActor, shapesAttr, reinterpret_cast<const uint8_t*>(&hShape), sizeof(hShape)); // detach
+        if (f == 5)
+            writer->addToUniqueListAttribute(ctx, hActor, shapesAttr, reinterpret_cast<const uint8_t*>(&hShape), sizeof(hShape)); // re-attach
+        writer->stopFrame(hScene, f);
+    }
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+    OmniPvdObject* geom = findOmniPvdObject(getInternalHandle(hGeom, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_NE(geom, nullptr);
+    EXPECT_FALSE(isObjectAliveAtFrame(geom, 4)) << "geom is dead while the shape is detached";
+    EXPECT_TRUE(isObjectAliveAtFrame(geom, 6)) << "geom reopens with its shape on re-attach";
+}
+
+TEST_F(PvdDomTest, ActorReAddDoesNotResurrectGeomUnderDetachedShape)
+{
+    const OmniPvdContextHandle ctx = 1;
+    OmniPvdClassHandle metaCls = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdAttributeHandle verMaj = writer->registerAttribute(metaCls, "ovdIntegrationVersionMajor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdAttributeHandle verMin = writer->registerAttribute(metaCls, "ovdIntegrationVersionMinor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdClassHandle sceneCls = writer->registerClass("PxScene");
+    OmniPvdAttributeHandle actorsAttr = writer->registerUniqueListAttribute(sceneCls, "actors", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle actorCls = writer->registerClass("PxRigidDynamic");
+    OmniPvdAttributeHandle shapesAttr = writer->registerUniqueListAttribute(actorCls, "shapes", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle actorTypeCls = writer->registerClass("PxActorType");
+    writer->registerEnumValue(actorTypeCls, "eRIGID_DYNAMIC", 1);
+    OmniPvdAttributeHandle typeAttr = writer->registerFlagsAttribute(actorCls, "type", actorTypeCls);
+    OmniPvdClassHandle shapeCls = writer->registerClass("PxShape");
+    OmniPvdAttributeHandle exclAttr = writer->registerAttribute(shapeCls, "isExclusive", OmniPvdDataType::eUINT8, 1);
+    OmniPvdAttributeHandle geomAttr = writer->registerAttribute(shapeCls, "geom", OmniPvdDataType::eOBJECT_HANDLE, 1);
+    OmniPvdClassHandle geomCls = writer->registerClass("PxGeomSphere");
+
+    const OmniPvdObjectHandle hMeta = 0xC60, hScene = 0xC61, hActor = 0xC62, hShape = 0xC63, hGeom = 0xC64;
+    writer->createObject(ctx, metaCls, hMeta, "");
+    uint32_t vMaj = 3, vMin = 1;
+    writer->setAttribute(ctx, hMeta, verMaj, reinterpret_cast<const uint8_t*>(&vMaj), sizeof(vMaj));
+    writer->setAttribute(ctx, hMeta, verMin, reinterpret_cast<const uint8_t*>(&vMin), sizeof(vMin));
+    writer->createObject(ctx, sceneCls, hScene, "");
+    writer->createObject(ctx, actorCls, hActor, "");
+    uint32_t rigidDynamic = 1;
+    writer->setAttribute(ctx, hActor, typeAttr, reinterpret_cast<const uint8_t*>(&rigidDynamic), sizeof(rigidDynamic));
+
+    for (uint64_t f = 1; f <= 21; ++f)
+    {
+        writer->startFrame(hScene, f);
+        if (f == 2)
+            writer->addToUniqueListAttribute(ctx, hScene, actorsAttr, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor)); // actor joins
+        if (f == 3)
+        {
+            writer->createObject(ctx, shapeCls, hShape, "");
+            uint8_t exclusive = 1;
+            writer->setAttribute(ctx, hShape, exclAttr, &exclusive, sizeof(exclusive));
+            writer->createObject(ctx, geomCls, hGeom, "");
+            writer->setAttribute(ctx, hShape, geomAttr, reinterpret_cast<const uint8_t*>(&hGeom), sizeof(hGeom)); // geom under shape
+            writer->addToUniqueListAttribute(ctx, hActor, shapesAttr, reinterpret_cast<const uint8_t*>(&hShape), sizeof(hShape)); // shape attaches
+        }
+        if (f == 10)
+            writer->removeFromUniqueListAttribute(ctx, hScene, actorsAttr, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor)); // actor leaves
+        if (f == 12)
+            writer->removeFromUniqueListAttribute(ctx, hActor, shapesAttr, reinterpret_cast<const uint8_t*>(&hShape), sizeof(hShape)); // shape detached while actor gone
+        if (f == 20)
+            writer->addToUniqueListAttribute(ctx, hScene, actorsAttr, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor)); // actor re-joins WITHOUT the shape
+        writer->stopFrame(hScene, f);
+    }
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+    OmniPvdObject* actor = findOmniPvdObject(getInternalHandle(hActor, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    OmniPvdObject* shape = findOmniPvdObject(getInternalHandle(hShape, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    OmniPvdObject* geom = findOmniPvdObject(getInternalHandle(hGeom, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_NE(actor, nullptr); ASSERT_NE(shape, nullptr); ASSERT_NE(geom, nullptr);
+    EXPECT_TRUE(isObjectAliveAtFrame(actor, 20)) << "the actor re-joined the scene at frame 20";
+    EXPECT_FALSE(isObjectAliveAtFrame(shape, 20)) << "the shape was detached at 12 and never re-added";
+    EXPECT_FALSE(isObjectAliveAtFrame(geom, 20))
+        << "geometry under a still-detached shape must not be resurrected by the actor re-add";
+}
+
+TEST_F(PvdDomTest, GeomReSetDoesNotInvertLifespan)
+{
+    const OmniPvdContextHandle ctx = 1;
+    OmniPvdClassHandle metaCls = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdAttributeHandle verMaj = writer->registerAttribute(metaCls, "ovdIntegrationVersionMajor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdAttributeHandle verMin = writer->registerAttribute(metaCls, "ovdIntegrationVersionMinor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdClassHandle sceneCls = writer->registerClass("PxScene");
+    OmniPvdAttributeHandle actorsAttr = writer->registerUniqueListAttribute(sceneCls, "actors", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle actorCls = writer->registerClass("PxRigidDynamic");
+    OmniPvdAttributeHandle shapesAttr = writer->registerUniqueListAttribute(actorCls, "shapes", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle actorTypeCls = writer->registerClass("PxActorType");
+    writer->registerEnumValue(actorTypeCls, "eRIGID_DYNAMIC", 1);
+    OmniPvdAttributeHandle typeAttr = writer->registerFlagsAttribute(actorCls, "type", actorTypeCls);
+    OmniPvdClassHandle shapeCls = writer->registerClass("PxShape");
+    OmniPvdAttributeHandle exclAttr = writer->registerAttribute(shapeCls, "isExclusive", OmniPvdDataType::eUINT8, 1);
+    OmniPvdAttributeHandle geomAttr = writer->registerAttribute(shapeCls, "geom", OmniPvdDataType::eOBJECT_HANDLE, 1);
+    OmniPvdClassHandle geomCls = writer->registerClass("PxGeomSphere");
+
+    const OmniPvdObjectHandle hMeta = 0xC70, hScene = 0xC71, hActor = 0xC72, hShape = 0xC73, hGeom = 0xC74;
+    writer->createObject(ctx, metaCls, hMeta, "");
+    uint32_t vMaj = 3, vMin = 1;
+    writer->setAttribute(ctx, hMeta, verMaj, reinterpret_cast<const uint8_t*>(&vMaj), sizeof(vMaj));
+    writer->setAttribute(ctx, hMeta, verMin, reinterpret_cast<const uint8_t*>(&vMin), sizeof(vMin));
+    writer->createObject(ctx, sceneCls, hScene, "");
+    writer->createObject(ctx, actorCls, hActor, "");
+    uint32_t rigidDynamic = 1;
+    writer->setAttribute(ctx, hActor, typeAttr, reinterpret_cast<const uint8_t*>(&rigidDynamic), sizeof(rigidDynamic));
+    writer->createObject(ctx, shapeCls, hShape, "");
+    uint8_t exclusive = 1;
+    writer->setAttribute(ctx, hShape, exclAttr, &exclusive, sizeof(exclusive));
+    writer->createObject(ctx, geomCls, hGeom, "");
+    writer->setAttribute(ctx, hShape, geomAttr, reinterpret_cast<const uint8_t*>(&hGeom), sizeof(hGeom)); // geom under shape
+
+    for (uint64_t f = 1; f <= 9; ++f)
+    {
+        writer->startFrame(hScene, f);
+        if (f == 1)
+            writer->addToUniqueListAttribute(ctx, hScene, actorsAttr, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor));
+        if (f == 2)
+            writer->addToUniqueListAttribute(ctx, hActor, shapesAttr, reinterpret_cast<const uint8_t*>(&hShape), sizeof(hShape)); // attach
+        if (f == 5)
+            writer->removeFromUniqueListAttribute(ctx, hActor, shapesAttr, reinterpret_cast<const uint8_t*>(&hShape), sizeof(hShape)); // detach
+        if (f == 8)
+        {
+            writer->addToUniqueListAttribute(ctx, hActor, shapesAttr, reinterpret_cast<const uint8_t*>(&hShape), sizeof(hShape)); // re-attach
+            writer->setAttribute(ctx, hShape, geomAttr, reinterpret_cast<const uint8_t*>(&hGeom), sizeof(hGeom)); // geom re-set (setGeometry)
+        }
+        writer->stopFrame(hScene, f);
+    }
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+    OmniPvdObject* geom = findOmniPvdObject(getInternalHandle(hGeom, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_NE(geom, nullptr);
+    for (const OmniPvdObjectLifeSpan& span : geom->mLifeSpans)
+        EXPECT_TRUE(span.mFrameStop == 0u || span.mFrameStart < span.mFrameStop)
+            << "geometry lifespan must not be inverted (start " << span.mFrameStart << " >= stop " << span.mFrameStop << ")";
+    EXPECT_TRUE(isObjectAliveAtFrame(geom, 3)) << "geometry stays alive during its first attachment after a re-set";
+}
+
+TEST_F(PvdDomTest, DestroyedShapeNotResurrectedByActorReAdd)
+{
+    const OmniPvdContextHandle ctx = 1;
+    OmniPvdClassHandle metaCls = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdAttributeHandle verMaj = writer->registerAttribute(metaCls, "ovdIntegrationVersionMajor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdAttributeHandle verMin = writer->registerAttribute(metaCls, "ovdIntegrationVersionMinor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdClassHandle sceneCls = writer->registerClass("PxScene");
+    OmniPvdAttributeHandle actorsAttr = writer->registerUniqueListAttribute(sceneCls, "actors", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle actorCls = writer->registerClass("PxRigidDynamic");
+    OmniPvdAttributeHandle shapesAttr = writer->registerUniqueListAttribute(actorCls, "shapes", OmniPvdDataType::eOBJECT_HANDLE);
+    OmniPvdClassHandle actorTypeCls = writer->registerClass("PxActorType");
+    writer->registerEnumValue(actorTypeCls, "eRIGID_DYNAMIC", 1);
+    OmniPvdAttributeHandle typeAttr = writer->registerFlagsAttribute(actorCls, "type", actorTypeCls);
+    OmniPvdClassHandle shapeCls = writer->registerClass("PxShape");
+    OmniPvdAttributeHandle exclAttr = writer->registerAttribute(shapeCls, "isExclusive", OmniPvdDataType::eUINT8, 1);
+
+    const OmniPvdObjectHandle hMeta = 0xC80, hScene = 0xC81, hActor = 0xC82, hShape = 0xC83;
+    writer->createObject(ctx, metaCls, hMeta, "");
+    uint32_t vMaj = 3, vMin = 1;
+    writer->setAttribute(ctx, hMeta, verMaj, reinterpret_cast<const uint8_t*>(&vMaj), sizeof(vMaj));
+    writer->setAttribute(ctx, hMeta, verMin, reinterpret_cast<const uint8_t*>(&vMin), sizeof(vMin));
+    writer->createObject(ctx, sceneCls, hScene, "");
+    writer->createObject(ctx, actorCls, hActor, "");
+    uint32_t rigidDynamic = 1;
+    writer->setAttribute(ctx, hActor, typeAttr, reinterpret_cast<const uint8_t*>(&rigidDynamic), sizeof(rigidDynamic));
+    writer->createObject(ctx, shapeCls, hShape, "");
+    uint8_t exclusive = 1;
+    writer->setAttribute(ctx, hShape, exclAttr, &exclusive, sizeof(exclusive));
+
+    for (uint64_t f = 1; f <= 21; ++f)
+    {
+        writer->startFrame(hScene, f);
+        if (f == 1)
+        {
+            writer->addToUniqueListAttribute(ctx, hScene, actorsAttr, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor));
+            writer->addToUniqueListAttribute(ctx, hActor, shapesAttr, reinterpret_cast<const uint8_t*>(&hShape), sizeof(hShape));
+        }
+        if (f == 10)
+        {
+            writer->removeFromUniqueListAttribute(ctx, hScene, actorsAttr, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor)); // actor leaves (marks shape reopenable @10)
+            writer->destroyObject(ctx, hShape); // shape destroyed same frame -> must clear the marker
+        }
+        if (f == 20)
+            writer->addToUniqueListAttribute(ctx, hScene, actorsAttr, reinterpret_cast<const uint8_t*>(&hActor), sizeof(hActor)); // actor re-joins
+        writer->stopFrame(hScene, f);
+    }
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+    OmniPvdObject* actor = findOmniPvdObject(getInternalHandle(hActor, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    OmniPvdObject* shape = findOmniPvdObject(getInternalHandle(hShape, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_NE(actor, nullptr); ASSERT_NE(shape, nullptr);
+    EXPECT_TRUE(isObjectAliveAtFrame(actor, 20)) << "actor re-joined at 20";
+    EXPECT_FALSE(isObjectAliveAtFrame(shape, 20)) << "a destroyed shape must not be resurrected by the actor re-add";
+}
+
+TEST_F(PvdDomTest, SupersededObjectSceneLessSnapshotOnlyStampedAtFrameZero)
+{
+    const OmniPvdContextHandle ctx = 1;
+    OmniPvdClassHandle metaA = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdClassHandle meshA = writer->registerClass("PxTriangleMesh");
+    writer->registerAttribute(meshA, "positions", OmniPvdDataType::eFLOAT32, 1);
+    const OmniPvdObjectHandle hMeta = 0xB00, hMesh = 0xB01, hPlain = 0xB02;
+
+    writer->createObject(ctx, metaA, hMeta, "");
+    writer->createObject(ctx, meshA, hMesh, "mesh");
+    for (uint64_t f = 1; f <= 5; ++f) { writer->startFrame(ctx, f); writer->stopFrame(ctx, f); }
+
+    OmniPvdClassHandle metaB = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdClassHandle meshB = writer->registerClass("PxTriangleMesh");
+    OmniPvdAttributeHandle positionsB = writer->registerAttribute(meshB, "positions", OmniPvdDataType::eFLOAT32, 1);
+    OmniPvdClassHandle plainB = writer->registerClass("Plain");
+    OmniPvdAttributeHandle valB = writer->registerAttribute(plainB, "val", OmniPvdDataType::eFLOAT32, 1);
+    writer->createObject(ctx, metaB, hMeta, "");
+
+    // The recreated shared mesh snapshot starts at frame 0.
+    writer->createObject(ctx, meshB, hMesh, "mesh");
+    float position = 42.0f;
+    writer->setAttribute(ctx, hMesh, positionsB, reinterpret_cast<const uint8_t*>(&position), sizeof(position));
+
+    // Other scene-less objects keep the current stream frame.
+    writer->createObject(ctx, plainB, hPlain, "plain");
+    float val = 7.0f;
+    writer->setAttribute(ctx, hPlain, valB, reinterpret_cast<const uint8_t*>(&val), sizeof(val));
+
+    // Later writes belong to the new segment's frame.
+    writer->startFrame(ctx, 1);
+    position = 43.0f;
+    writer->setAttribute(ctx, hMesh, positionsB, reinterpret_cast<const uint8_t*>(&position), sizeof(position));
+    writer->stopFrame(ctx, 1);
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+
+    OmniPvdObject* mesh = findOmniPvdObject(getInternalHandle(hMesh, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_NE(mesh, nullptr);
+    int32_t ai = -1, ci = -1;
+    OmniPvdAttributeInstList* positions = getAttribList(ai, ci, "positions", mesh);
+    ASSERT_NE(positions, nullptr);
+    std::vector<uint64_t> timestamps;
+    for (OmniPvdAttributeInst* sample = positions->mFirst; sample; sample = sample->mNextAttribute)
+        timestamps.push_back(sample->mTimeStamp);
+    EXPECT_EQ(timestamps, std::vector<uint64_t>({0, 1}));
+
+    OmniPvdObject* plain = findOmniPvdObject(getInternalHandle(hPlain, domState.mExternalToInternalHandleMap), domState.mObjectHandleToObjectMap);
+    ASSERT_NE(plain, nullptr);
+    ai = -1; ci = -1;
+    OmniPvdAttributeInstList* plainList = getAttribList(ai, ci, "val", plain);
+    ASSERT_NE(plainList, nullptr);
+    ASSERT_NE(plainList->mFirst, nullptr);
+    EXPECT_EQ(plainList->mFirst->mTimeStamp, 5u)
+        << "a scene-less object that was never re-created keeps the stream position so its samples stay monotonic";
+}
+
+TEST_F(PvdDomTest, SupersededPhysicsClosesScenesAtTheirOwnFrames)
+{
+    const OmniPvdContextHandle ctx = 1;
+    const OmniPvdObjectHandle hMeta = 0xB10, hPhysics = 0xB11, hSceneX = 0xB12, hSceneY = 0xB13;
+
+    OmniPvdClassHandle metaA = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdAttributeHandle verMajA = writer->registerAttribute(metaA, "ovdIntegrationVersionMajor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdAttributeHandle verMinA = writer->registerAttribute(metaA, "ovdIntegrationVersionMinor", OmniPvdDataType::eUINT32, 1);
+    OmniPvdClassHandle physicsA = writer->registerClass("PxPhysics");
+    OmniPvdClassHandle sceneA = writer->registerClass("PxScene");
+
+    writer->createObject(ctx, metaA, hMeta, "");
+    uint32_t vMaj = 3, vMin = 1;
+    writer->setAttribute(ctx, hMeta, verMajA, reinterpret_cast<const uint8_t*>(&vMaj), sizeof(vMaj));
+    writer->setAttribute(ctx, hMeta, verMinA, reinterpret_cast<const uint8_t*>(&vMin), sizeof(vMin));
+    writer->createObject(ctx, physicsA, hPhysics, "");
+    writer->createObject(ctx, sceneA, hSceneX, "");
+    writer->createObject(ctx, sceneA, hSceneY, "");
+    writer->startFrame(hSceneX, 1); writer->stopFrame(hSceneX, 1);
+    writer->startFrame(hSceneY, 5); writer->stopFrame(hSceneY, 5);
+
+    OmniPvdClassHandle metaB = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdClassHandle physicsB = writer->registerClass("PxPhysics");
+    OmniPvdClassHandle sceneB = writer->registerClass("PxScene");
+    writer->createObject(ctx, metaB, hMeta, "");
+    writer->createObject(ctx, physicsB, hPhysics, "");
+    writer->createObject(ctx, sceneB, hSceneX, "");
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+
+    std::vector<OmniPvdObject*> scenesX, scenesY;
+    collectObjectsByApiHandle(domState, hSceneX, scenesX);
+    collectObjectsByApiHandle(domState, hSceneY, scenesY);
+    ASSERT_EQ(scenesX.size(), 2u);
+    ASSERT_EQ(scenesY.size(), 1u);
+    EXPECT_EQ(scenesX[0]->mLifeSpans[0].mFrameStop, 2u);
+    EXPECT_EQ(scenesY[0]->mLifeSpans[0].mFrameStop, 6u);
+}
+
+TEST_F(PvdDomTest, SceneLessSupersedeUsesObjectSegmentMax)
+{
+    const OmniPvdContextHandle ctx = 1;
+    const OmniPvdObjectHandle hMeta = 0xB20, hObject = 0xB21, hSkipped = 0xB22, hGeometry = 0xB23;
+
+    OmniPvdClassHandle metaA = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdClassHandle classA = writer->registerClass("Plain");
+    OmniPvdClassHandle geometryA = writer->registerClass("PxTriangleMeshGeometry");
+    writer->createObject(ctx, metaA, hMeta, "");
+    writer->createObject(ctx, classA, hObject, "");
+    writer->createObject(ctx, classA, hSkipped, "");
+    writer->createObject(ctx, geometryA, hGeometry, "");
+    for (uint64_t frame = 1; frame <= 100; ++frame)
+    {
+        writer->startFrame(ctx, frame);
+        writer->stopFrame(ctx, frame);
+    }
+
+    OmniPvdClassHandle metaB = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdClassHandle classB = writer->registerClass("Plain");
+    OmniPvdClassHandle geometryB = writer->registerClass("PxTriangleMeshGeometry");
+    writer->createObject(ctx, metaB, hMeta, "");
+    writer->createObject(ctx, classB, hObject, "");
+    writer->createObject(ctx, geometryB, hGeometry, "");
+    writer->startFrame(ctx, 1); writer->stopFrame(ctx, 1);
+    writer->startFrame(ctx, 2); writer->stopFrame(ctx, 2);
+
+    OmniPvdClassHandle metaC = writer->registerClass("PxOmniPvdMetaData");
+    OmniPvdClassHandle classC = writer->registerClass("Plain");
+    OmniPvdClassHandle geometryC = writer->registerClass("PxTriangleMeshGeometry");
+    writer->createObject(ctx, metaC, hMeta, "");
+    writer->createObject(ctx, classC, hObject, "");
+    writer->createObject(ctx, classC, hSkipped, "");
+    writer->createObject(ctx, geometryC, hGeometry, "");
+
+    OmniPvdDOMState domState;
+    ASSERT_TRUE(parseDom(domState));
+
+    std::vector<OmniPvdObject*> objects, skipped, geometries;
+    collectObjectsByApiHandle(domState, hObject, objects);
+    collectObjectsByApiHandle(domState, hSkipped, skipped);
+    collectObjectsByApiHandle(domState, hGeometry, geometries);
+    ASSERT_EQ(objects.size(), 3u);
+    ASSERT_EQ(skipped.size(), 2u);
+    ASSERT_EQ(geometries.size(), 3u);
+    EXPECT_EQ(objects[0]->mLifeSpans[0].mFrameStop, 101u);
+    EXPECT_EQ(objects[1]->mLifeSpans[0].mFrameStop, 3u)
+        << "the short second segment ends after frame 2, not after the first segment's frame 100";
+    EXPECT_EQ(skipped[0]->mLifeSpans[0].mFrameStop, 101u)
+        << "an object skipped by segment B still closes from its own segment A maximum";
+    ASSERT_NE(geometries[1]->mReferenceObject, nullptr);
+    EXPECT_EQ(geometries[1]->mReferenceObject->mLifeSpans[0].mFrameStop, 3u)
+        << "a synthetic child closes with its segment B parent";
+    EXPECT_EQ(domState.mMaxFrame, 100u);
 }

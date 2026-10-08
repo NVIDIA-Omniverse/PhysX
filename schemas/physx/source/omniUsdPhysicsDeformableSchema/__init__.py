@@ -1,10 +1,11 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-#
+
 # Codeless OmniUsdPhysicsDeformableSchema Python API. No compiled bindings: the schema
 # classes (OmniUsdPhysicsDeformableSchema.<Class>) and the token table
 # (OmniUsdPhysicsDeformableSchema.Tokens) are pure-Python, generated from schema.usda by
 # tools/gen_codeless_api.py / gen_tokens.py.
+
 from pathlib import Path
 
 from .codeless_api import *      # noqa: F401,F403  -- OmniUsdPhysicsDeformableSchema.<Class> API

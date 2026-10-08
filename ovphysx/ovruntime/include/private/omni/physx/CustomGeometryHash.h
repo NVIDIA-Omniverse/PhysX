@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * @implements REQ-PARSE-SHAPE-002
@@ -8,9 +8,7 @@
 
 #pragma once
 
-#include <carb/extras/Hash.h>
-
-#include <pxr/base/tf/token.h>
+#include <omni/physics/parse/CustomTokens.h>
 
 #include <cstddef>
 #include <string>
@@ -27,19 +25,16 @@ namespace physx
 // interned-pointer hash (which is process-stable but harder to reproduce
 // from a USD-free parse-lib path).
 //
-// Uses `carb::extras::fnv128hash` (the same hash family the cooking service
-// uses internally via MeshKey::compute*Hash) and XOR-reduces to 64-bit,
-// matching the `MeshKey::getHashIndex` reduction.
+// The implementation lives in the USD-free parse core
+// (`omni::physics::parse::customGeometryTokenHash`) because the ovstage walker
+// mints the same hash and cannot name `TfToken`. This is a spelling
+// convenience over it, not a second implementation. The TfToken overload
+// this file used to carry is gone under ADR-0019: `IPhysxCustomGeometry`'s
+// public surface no longer names `TfToken` (or `SdfPath`), so no caller here
+// holds one anymore.
 inline size_t computeCustomGeometryHash(const std::string& tokenStr)
 {
-    const auto h = carb::extras::fnv128hash(
-        reinterpret_cast<const uint8_t*>(tokenStr.data()), tokenStr.size());
-    return static_cast<size_t>(h.d[0] ^ h.d[1]);
-}
-
-inline size_t computeCustomGeometryHash(const PXR_NS::TfToken& token)
-{
-    return computeCustomGeometryHash(token.GetString());
+    return omni::physics::parse::customGeometryTokenHash(tokenStr);
 }
 
 } // namespace physx

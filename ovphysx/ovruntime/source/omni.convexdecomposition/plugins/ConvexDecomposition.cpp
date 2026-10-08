@@ -1,9 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-// SPDX-License-Identifier: BSD-3-Clause
-
-// clang-format off
-#include "UsdPCH.h"
-// clang-format on
+// SPDX-License-Identifier: Apache-2.0
 
 #include <omni/convexdecomposition/ConvexDecomposition.h>
 
@@ -15,7 +11,6 @@
 #include "vcd.h"
 #include "FM.h"
 #include "ScopedTime.h"
-#include "TriangulateUsdMeshPrim.h"
 #define ENABLE_SPHERE_APPROX_IMPLEMENTATION 1
 #include "SphereApprox.h"
 
@@ -912,65 +907,6 @@ const SimpleSphere* ConvexDecomposition::computeSphereApproximation(
     VHACDHANDLE id, const Parameters& p, const SimpleMesh& sourceMesh, uint32_t& sphereCount, bool reducedResults)
 {
     return state().factory.computeSphereApproximation(id,p,sourceMesh,sphereCount,reducedResults);
-}
-
-bool ConvexDecomposition::applySphereApproximation(const char *primPath,uint32_t stageId)
-{
-    bool ret = false;
-
-    PXR_NS::UsdStageRefPtr currentStage = PXR_NS::UsdUtilsStageCache::Get().Find(PXR_NS::UsdStageCache::Id::FromLongInt(stageId));
-    if ( currentStage )
-    {
-        auto prim = currentStage->GetPrimAtPath(PXR_NS::SdfPath(primPath));
-        if ( prim )
-        {
-            triangulateusd::TriangulateUSDPrim *tprim = triangulateusd::TriangulateUSDPrim::create(prim);
-            if ( tprim )
-            {
-                uint32_t tcount = tprim->triangulate();
-                if ( tcount )
-                {
-                    sphereapprox::SphereApprox *sa = sphereapprox::SphereApprox::create();
-                    sphereapprox::SphereApprox::Parameters p;
-                    uint32_t vertexCount;
-                    const float *vertices = tprim->getVertices(vertexCount);
-                    const uint32_t *indices = tprim->getIndices(tcount);
-                    sa->compute(vertices,vertexCount,indices,tcount,p);
-                    while ( !sa->isReady() )
-                    {
-                        sa->wait(5);
-                    }
-                    uint32_t sphereCount;
-                    const sphereapprox::SphereApprox::Sphere *spheres = sa->getSpheres(sphereCount,true);
-                    std::string apath = std::string(primPath) + "/sphereapprox";
-                    auto aprim = PXR_NS::UsdGeomPoints::Define(currentStage,PXR_NS::SdfPath(apath));
-                    PXR_NS::VtArray<PXR_NS::GfVec3f> spoints;
-                    PXR_NS::VtArray<float> widths;
-                    for (uint32_t i=0; i<sphereCount; i++)
-                    {
-                        const auto &s = spheres[i];
-                        PXR_NS::GfVec3f p;
-                        p[0] = (float)s.mCenter[0];
-                        p[1] = (float)s.mCenter[1];
-                        p[2] = (float)s.mCenter[2];
-                        spoints.push_back(p);
-                        widths.push_back(float(s.mRadius*2));
-                    }
-
-                    aprim.GetPointsAttr().Set(spoints);
-                    aprim.GetWidthsAttr().Set(widths);
-                    auto sprim = currentStage->GetPrimAtPath(PXR_NS::SdfPath(apath));
-                    PXR_NS::UsdPhysicsCollisionAPI::Apply(sprim);
-                    PXR_NS::UsdPhysicsRigidBodyAPI::Apply(prim);
-                    sa->release();
-
-                    ret = true;
-                }
-                tprim->release();
-            }
-        }
-    }
-    return ret;
 }
 
 } // namespace convexdecomposition
