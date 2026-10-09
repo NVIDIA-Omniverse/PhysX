@@ -13,6 +13,7 @@ import warp as wp
 from ovphysx.api import PhysX
 from ovphysx.types import ObjectScope, SimObjectType
 from ovphysx.utils import OvStageOutputCache, step_and_write_to_ovstage
+from ovphysx.utils.simulation import _write_to_ovstage
 
 import ovphysx
 
@@ -252,7 +253,8 @@ def test_pose_selection_is_rejected_before_step():
 
 
 @pytest.mark.parametrize("device", ["cpu", pytest.param("cuda:0", marks=pytest.mark.cuda)])
-def test_fixed_pose_writes_only_world_matrix_and_reuses_buffers(device, monkeypatch):
+@pytest.mark.parametrize("write_only", [False, True], ids=["step-and-write", "write-only"])
+def test_fixed_pose_writes_only_world_matrix_and_reuses_buffers(device, write_only, monkeypatch):
     if device.startswith("cuda") and not wp.is_cuda_available():
         pytest.skip("CUDA is unavailable")
     with ovstage.Stage(f"output-cache-fixed-{device}") as raw_stage:
@@ -282,29 +284,37 @@ def test_fixed_pose_writes_only_world_matrix_and_reuses_buffers(device, monkeypa
                     _group(attribute=position_token, prim_list=int(path_list), tensors=[positions], prim_count=2),
                 ]
                 physx = _PhysX(stage, {SimObjectType.RIGID_BODY: groups})
+                write_attribute = stage.write_attribute
+
+                def check_order_and_write(*args, **kwargs):
+                    assert physx.steps == expected_steps
+                    assert stage.write_floors == expected_floors
+                    return write_attribute(*args, **kwargs)
+
                 with monkeypatch.context() as patch:
                     patch.setattr(ovstage.ReadGroup, "array", _reject_numpy_view)
+                    patch.setattr(stage, "write_attribute", check_order_and_write)
                     with OvStageOutputCache(physx) as cache:
-                        assert (
-                            step_and_write_to_ovstage(
-                                physx,
-                                dt=1.0 / 60.0,
-                                output_ordinal=2,
-                                cache=cache,
-                                outputs={SimObjectType.RIGID_BODY: ["position", "orientation"]},
-                            )
-                            == 1
-                        )
-                        assert (
-                            step_and_write_to_ovstage(
-                                physx,
-                                dt=1.0 / 60.0,
-                                output_ordinal=3,
-                                cache=cache,
-                                outputs={SimObjectType.RIGID_BODY: ["position", "orientation"]},
-                            )
-                            == 1
-                        )
+                        outputs = {SimObjectType.RIGID_BODY: ["position", "orientation"]}
+                        for ordinal in (2, 3):
+                            expected_steps = [] if write_only else [1.0 / 60.0] * (ordinal - 1)
+                            expected_floors = list(range(1, ordinal))
+                            if write_only:
+                                written = _write_to_ovstage(physx, ordinal, cache, list(outputs.items()), retain=True)
+                                assert physx.steps == []
+                                assert stage.write_floors == expected_floors
+                                stage.advance_write_floor(ordinal=ordinal).wait()
+                            else:
+                                written = step_and_write_to_ovstage(
+                                    physx,
+                                    dt=1.0 / 60.0,
+                                    output_ordinal=ordinal,
+                                    cache=cache,
+                                    outputs=outputs,
+                                )
+                            assert written == 1
+                            assert physx.steps == expected_steps
+                            assert stage.write_floors == list(range(1, ordinal + 1))
 
                 assert stage.reads == 1
 

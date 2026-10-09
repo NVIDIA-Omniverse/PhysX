@@ -87,6 +87,39 @@ def test_shipped_pluginfo_is_codeless():
             assert plugin.get("Info", {}).get("Types"), f"no Info.Types in {path}"
 
 
+def test_newton_schema_root_locates_the_installed_package_without_importing_it():
+    """newton-usd-schemas is a test dependency; the helper must find its plugInfo.json
+    through find_spec alone, since importing the package needs pxr and registers the
+    schema with that stock USD runtime rather than with ovstage's."""
+    import sys
+
+    sys.modules.pop("newton_usd_schemas", None)
+    root = ovphysx.newton_schema_root()
+    assert (root / "plugInfo.json").is_file(), root
+    assert (root / "generatedSchema.usda").is_file(), root
+    assert "newton_usd_schemas" not in sys.modules
+
+
+def test_newton_schema_root_reports_a_missing_package_with_the_install_hint(monkeypatch):
+    import importlib.util
+
+    from ovphysx import schemas
+
+    real_find_spec = importlib.util.find_spec
+    monkeypatch.setattr(
+        importlib.util,
+        "find_spec",
+        lambda name, *a, **k: None if name == "newton_usd_schemas" else real_find_spec(name, *a, **k),
+    )
+    assert schemas.find_newton_schema_root() is None
+    with pytest.raises(FileNotFoundError) as excinfo:
+        schemas.newton_schema_root()
+    message = str(excinfo.value)
+    assert "pip install newton-usd-schemas" in message
+    assert "github.com/newton-physics/newton-usd-schemas" in message
+    assert "register_usd_schemas" in message
+
+
 def _fake_layout(base, lib_dir, schema_parent):
     lib = base / lib_dir / "libovphysx.so"
     lib.parent.mkdir(parents=True, exist_ok=True)

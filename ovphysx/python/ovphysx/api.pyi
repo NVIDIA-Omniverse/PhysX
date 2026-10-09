@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-CAPI-CONTACT-003
+# @covers AC-1 AC-2 AC-3 AC-4
+
 # @implements REQ-PYTHON-LIFECYCLE-001
 # @covers AC-1 AC-5
 # @implements REQ-PYTHON-READ-001
@@ -13,6 +16,10 @@
 # @covers AC-9
 # @implements REQ-PYTHON-BINDING-DEVICE-001
 # @covers AC-1 AC-2 AC-3 AC-4
+# @implements REQ-CAPI-CONTACT-001
+# @covers AC-5 AC-6 AC-7
+# @implements REQ-CAPI-CONTACT-002
+# @covers AC-2 AC-3 AC-4
 
 from __future__ import annotations
 
@@ -247,6 +254,7 @@ class SdfView:
     def __exit__(self, *args: object) -> None: ...
 
 
+@deprecated("The contact-binding API is deprecated and retained for compatibility.")
 class ContactBinding:
     def __init__(
         self,
@@ -266,8 +274,29 @@ class ContactBinding:
     def sensor_paths(self) -> list[str]: ...
     @property
     def filter_paths(self) -> list[list[str]]: ...
+    @deprecated("The contact-binding API is deprecated and retained for compatibility.")
+    def read_net_normal_forces(self, output: Any) -> None: ...
+    @deprecated("The contact-binding API is deprecated and retained for compatibility.")
+    def read_net_friction_forces(self, output: Any) -> None: ...
+    @deprecated("The contact-binding API is deprecated and retained for compatibility.")
+    def read_normal_force_matrix(self, output: Any) -> None: ...
+    @deprecated("The contact-binding API is deprecated and retained for compatibility.")
+    def read_friction_force_matrix(self, output: Any) -> None: ...
+    @deprecated("Use read_net_normal_forces(); returns normal forces only")
     def read_net_forces(self, output: Any) -> None: ...
+    @deprecated("Use read_normal_force_matrix(); returns normal forces only")
     def read_force_matrix(self, output: Any) -> None: ...
+    @deprecated("The contact-binding API is deprecated and retained for compatibility.")
+    def read_normal_contact_data(
+        self,
+        contact_forces: Any,
+        positions: Any,
+        normals: Any,
+        separations: Any,
+        counts: Any,
+        start_indices: Any,
+    ) -> int: ...
+    @deprecated("Use read_normal_contact_data(); forces contain only normal components")
     def read_contact_data(
         self,
         contact_forces: Any,
@@ -276,7 +305,7 @@ class ContactBinding:
         separations: Any,
         counts: Any,
         start_indices: Any,
-    ) -> None: ...
+    ) -> int: ...
     def read_raw_contact_data(
         self,
         contact_forces: Any,
@@ -285,15 +314,24 @@ class ContactBinding:
         separations: Any,
         sensor_layout: Any,
         actor_ids: Any,
-    ) -> None: ...
+    ) -> int: ...
     def get_other_actor_paths_from_ids(self, ids_array: Any) -> list[str]: ...
+    @deprecated("The contact-binding API is deprecated and retained for compatibility.")
+    def read_friction_contact_data(
+        self,
+        friction_forces: Any,
+        friction_points: Any,
+        counts: Any,
+        start_indices: Any,
+    ) -> int: ...
+    @deprecated("Use read_friction_contact_data()")
     def read_friction_data(
         self,
         friction_forces: Any,
         friction_points: Any,
         counts: Any,
         start_indices: Any,
-    ) -> None: ...
+    ) -> int: ...
     def destroy(self) -> None: ...
     def __enter__(self) -> ContactBinding: ...
     def __exit__(self, *args: object) -> None: ...
@@ -406,6 +444,7 @@ class PhysX:
         **kwargs: float | str | Sequence[float],
     ) -> list[SceneQueryHit]: ...
     def get_scene_query_paths_from_ids(self, ids: Sequence[int]) -> list[str]: ...
+    @deprecated("The contact-binding API is deprecated and retained for compatibility.")
     def create_contact_binding(
         self,
         sensor_patterns: list[str],

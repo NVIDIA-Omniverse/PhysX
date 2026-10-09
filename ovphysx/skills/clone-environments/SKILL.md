@@ -31,6 +31,9 @@ Use this skill when a caller needs many copies of one loaded environment for RL-
 ## Python
 
 ```python
+from pathlib import Path
+
+import ovphysx
 from ovphysx import PhysX, codeless_schema_root
 import ovstage
 
@@ -39,7 +42,8 @@ physx = PhysX()
 # Register the codeless PhysX schemas before the first population call.
 ovstage.population.register_usd_schemas([str(codeless_schema_root())])
 stage = ovstage.Stage("ovphysx-clone")
-ovstage.population.open_usd(stage, "scene.usda", ordinal=1, domains=ovstage.PopulationDomain.PHYSICS)
+usd_path = Path(ovphysx.__file__).resolve().parent / "samples" / "data" / "basic_simulation.usda"
+ovstage.population.open_usd(stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.PHYSICS)
 # attach_ovstage() reads at a sealed ordinal.
 stage.advance_write_floor(ordinal=1).wait()
 physx.attach_ovstage(stage, read_ordinal=1)
@@ -86,8 +90,9 @@ Full sample:
 
 The clone + wait is the skill's subject; the ovstage populate/attach that precedes
 it is the same public flow as `basic-workflow`. This fragment uses only public
-ovphysx / ovstage API (the caller passes a stage it created with
-`ovstage_create_instance`):
+ovphysx / ovstage API. The caller passes a stage it created with
+`ovstage_create_instance` and the absolute path to the SDK's
+`samples/data/basic_simulation.usda`, which contains `/World/envs/env0`:
 
 ```c
 #include <ovphysx/ovphysx.h>
@@ -109,11 +114,11 @@ static int wait_for_op(ovphysx_handle_t handle, ovphysx_op_index_t op_index)
     return ok;
 }
 
-static int load_and_clone_envs(ovphysx_handle_t handle, ovstage_instance_t* stage)
+static int load_and_clone_envs(
+    ovphysx_handle_t handle, ovstage_instance_t* stage, const char* usd_path)
 {
     // Populate the ovstage from USD, seal its ordinal, then attach (public API).
     const uint64_t ordinal = 1;
-    const char* usd_path = "scene.usda";
     ovx_string_t path;
     path.ptr = usd_path;
     path.length = strnlen(usd_path, 4096);

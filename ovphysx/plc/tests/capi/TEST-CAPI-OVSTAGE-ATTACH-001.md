@@ -30,10 +30,12 @@ is unsealed, while a seal that covers selected physics data remains sufficient.
 ## Then
 
 - The unsealed attach returns `OVPHYSX_API_ERROR` with no partial attachment,
-  and the sealed retry succeeds (REQ AC-1).
+  and its error names the schema scan, `ovstage_read_attributes` and ordinal 1.
+  The sealed retry succeeds and leaves an empty public error (REQ AC-1).
 - The attribute-scoped sealed attach succeeds (REQ AC-2).
 - The zero-ordinal attach returns `OVPHYSX_API_INVALID_ARGUMENT` and a later
   valid attach on the same handle still succeeds (REQ AC-3).
-- `test_usd_loading.cpp`: `UnsealedAttachFailsAndSealedRetrySucceeds`,
+- `ovphysx/tests/c_unittests/test_usd_loading.cpp`:
+  `UnsealedAttachFailsAndSealedRetrySucceeds`,
   `ScopedSealAllowsUnrelatedUnsealedData`, and
   `AttachOvstageRejectsZeroReadOrdinal`.

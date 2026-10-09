@@ -22,6 +22,6 @@ Every declared attribute is published at its resolved value. The only derivation
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
 | `physxCollision:contactOffset` | float32 | length | `-inf` | when unauthored: 0.02 / metersPerUnit on a Plane collider only; every other shape keeps -inf | -1.0 | -1, meaning the PhysX layer computes the offset from shape size. Writing the raw fallback -inf is equivalent to omitting the column. |
-| `physxCollision:restOffset` | float32 | length | `-inf` | resolved USD value (authored, else raw fallback) | 0.0 | 0. Committed only when restOffset < contactOffset. |
+| `physxCollision:restOffset` | float32 | length | `-inf` | resolved USD value (authored, else raw fallback) | 0.0 | 0. An authored rest offset is preserved when contact offset is automatic; with a concrete contact offset it is committed only when restOffset < contactOffset. |
 | `physxCollision:torsionalPatchRadius` | float32 | length | 0.0 | resolved USD value (authored, else raw fallback) | 0.0 | 0. |
 | `physxCollision:minTorsionalPatchRadius` | float32 | length | 0.0 | resolved USD value (authored, else raw fallback) | 0.0 | 0. |

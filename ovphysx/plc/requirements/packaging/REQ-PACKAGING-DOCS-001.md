@@ -11,9 +11,14 @@ owner: ovphysx
 ## Description
 
 The ovphysx Python wheel and C/C++ SDK provide a portable copy of the public
-documentation alongside any rendered HTML. Portable documentation lets offline
+documentation alongside the rendered HTML. Portable documentation lets offline
 consumers and tools inspect the same guides, simulation-setup material, Python
 API source, and referenced images that are public in the source repository.
+
+The documentation payload is a property of the release, not of the platform a
+given artifact was built on: every platform's wheel and SDK of one release
+carries the same documentation, including the rendered HTML tree and the C
+headers Sphinx publishes as download artifacts.
 
 Internal publishing documentation and source-only test trees remain excluded
 from both artifacts. Packaging documentation does not change runtime behavior.
@@ -29,6 +34,12 @@ from both artifacts. Packaging documentation does not change runtime behavior.
   Every inline relative link in its portable Markdown resolves inside the
   artifact, except C/C++ header links that resolve only in the SDK; portable
   documentation must not link to source-only `tests/` paths.
+
+- AC-3: A wheel or SDK built for release carries the rendered documentation
+  tree, with an `index.html` and the three downloadable C headers
+  (`ovphysx.h`, `ovphysx_types.h`, `ovphysx_config.h`). Producing either
+  artifact without it fails rather than succeeding with a smaller payload.
+  Builds that opt out of rendering documentation are unaffected.
 
 ## Test References
 

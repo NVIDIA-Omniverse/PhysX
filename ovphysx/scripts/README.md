@@ -75,8 +75,9 @@ the `validate_all` CMake target (install, wheel, all tests). That target alone p
 the same install/wheel/test steps; use this script when you want build and validation in
 one command without a separate `build.cmake` pass.
 
-CI runs equivalent build and test steps, plus formatting (`ci_validate.cmake`),
-docs build, and packaging.
+CI runs equivalent build and test steps, plus extra validation (`ci_validate.cmake`),
+docs build, and packaging. The SPDX legal-blurb check is a separate `lint-ovphysx`
+job; run it locally with `./repo.sh format --legal-only --verify`.
 
 **Rename:** `scripts/test.cmake` was removed; use `validate_all.cmake` instead (same role).
 

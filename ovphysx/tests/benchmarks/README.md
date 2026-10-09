@@ -347,7 +347,7 @@ python3 tests/benchmarks/data/gen_cubes20.py --envs > \
 
 The cmake driver runs a third `cpu_st` pass after `gpu` and `cpu` that
 invokes the binary with `--threads=1`. The harness wires that through to
-the `/physics/numThreads` Carbonite setting BEFORE PhysX bootstrap, so the
+the `/persistent/physics/numThreads` Carbonite setting BEFORE PhysX bootstrap, so the
 dispatcher comes up with one worker. There is no USD attribute for the
 per-scene thread count — only the global Carbonite setting takes effect.
 

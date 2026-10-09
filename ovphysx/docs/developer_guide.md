@@ -73,6 +73,7 @@ The ovphysx samples are runnable references for SDK and wheel usage, designed to
 | `tensor_bindings_views.py` | | Build lightweight view wrappers on TensorBindingsAPI (advanced; **deprecated**) |
 | `omnipvd_recording.py` | [OmniPVD Recording](tutorials/omnipvd_recording.md) | Record physics internals to .ovd files |
 | `output_read.py` | [ovstage Integration](ovstage_integration.md) | Closed loop: author control into ovstage, drain it explicitly, step, and read rigid-body position and velocity from `boxes_falling_on_groundplane.usda` |
+| `session_write.py` | [Tensor Bindings](tutorials/tensor_bindings.md#migrating-to-the-session-readwrite-api) | Open a `PhysX.write()` session for `linearVelocity`, commit it, step, and verify the consequence by reading `position` back |
 
 **Extra Python Samples** (`tests/python_samples_extra/`):
 
@@ -453,6 +454,12 @@ the ovphysx wheel and its exact `ovstage` wheel dependency:
   `ovphysx.tensors` compatibility layer is no longer shipped.
 - `pip install ovphysx` resolves the ovstage wheel automatically. Native SDK
   users manually download both archives.
+- The Newton USD schema is not a package dependency. Scenes that author
+  `newton:*` attributes (read as fallbacks for the PhysX spellings) need
+  `pip install newton-usd-schemas`, or the schema downloaded from
+  <https://github.com/newton-physics/newton-usd-schemas>, registered with
+  ovstage next to the codeless PhysX schemas; refer to
+  [Physics Schemas](physics_schemas.md#registering-the-newton-usd-schema).
 - Auto-detects library location through `getLibraryDirectory()`
 - On Linux, pre-loads `libovstage.so` with `RTLD_GLOBAL` so `libovphysx.so` can
   bind its ovstage dependency from the separate Python package
@@ -664,8 +671,11 @@ import ovstage
 
 def step_remote_scene(scene_url: str) -> None:
     # ovphysx never registers its codeless PhysX schemas; do it before the
-    # first population call in the process.
-    ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+    # first population call in the process, together with the Newton schema
+    # (pip install newton-usd-schemas).
+    ovstage.population.register_usd_schemas(
+        [str(ovphysx.codeless_schema_root()), str(ovphysx.newton_schema_root())]
+    )
     stage = ovstage.Stage("remote-scene")
     physx = None
     try:
@@ -1168,7 +1178,10 @@ them itself. The application registers them with the USD runtime it owns before
 the first ovstage population call in the process: obtain the root with
 `ovphysx_get_codeless_schema_root()` and pass it to
 `ovstage_population_register_usd_schemas()` (Python:
-`ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])`).
+`ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])`),
+and register the separately installed Newton USD schema
+(`ovphysx.newton_schema_root()`) in the same call when scenes author `newton:*`
+attributes.
 When another USD-aware subsystem, such as ovrtx, shares the process, register
 its schemas through its own documented mechanism in the same early window,
 before any subsystem populates a stage or otherwise touches the USD schema
@@ -1424,7 +1437,7 @@ with recording inactive. FILE alone renames/imports files.
 
 ```python
 import ovstage
-from ovphysx import PhysX, PhysXConfig, codeless_schema_root
+from ovphysx import PhysX, PhysXConfig, codeless_schema_root, newton_schema_root
 
 physx = PhysX(
     config=PhysXConfig(
@@ -1433,8 +1446,8 @@ physx = PhysX(
     )
 )
 
-# Register the codeless PhysX schemas before the first population call.
-ovstage.population.register_usd_schemas([str(codeless_schema_root())])
+# Register the codeless PhysX schemas and the Newton schema before the first population call.
+ovstage.population.register_usd_schemas([str(codeless_schema_root()), str(newton_schema_root())])
 stage = ovstage.Stage("recorded-scene")
 ovstage.population.open_usd(
     stage, "scene.usda", ordinal=1, domains=ovstage.PopulationDomain.PHYSICS

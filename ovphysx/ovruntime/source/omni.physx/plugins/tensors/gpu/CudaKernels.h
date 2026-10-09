@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-TENSOR-CONTACT-003
+ * @covers AC-1 AC-2 AC-3 AC-4
+ *
  * @implements REQ-READ-CORE-001
  * @covers AC-6
  *
@@ -11,6 +14,7 @@
 
 #pragma once
 
+#include "tensors/ForceComponent.h"
 #include "tensors/PhysicsTypes.h"
 #include "tensors/gpu/CudaCommon.h"
 #include "tensors/gpu/GpuSimulationData.h"
@@ -684,7 +688,8 @@ bool fetchNetRigidContactForces(::physx::PxVec3* netForces,
                                 float timeStepInv,
                                 const ::physx::PxU32* nodeIdx2ArtiGpuIdx,
                                 const ::physx::PxU32* rdContactIndices,
-                                const ::physx::PxU32* linkContactIndices);
+                                const ::physx::PxU32* linkContactIndices,
+                                ForceComponent component);
 
 bool fetchRigidContactForceMatrix(::physx::PxVec3* forceMatrix,
                                   const ::physx::PxGpuContactPair* contactPairs,
@@ -695,7 +700,8 @@ bool fetchRigidContactForceMatrix(::physx::PxVec3* forceMatrix,
                                   const ::physx::PxU32* nodeIdx2ArtiGpuIdx,
                                   const ::physx::PxU32* rdContactIndices,
                                   const ::physx::PxU32* linkContactIndices,
-                                  const GpuRigidContactFilterIdPair* filterLookup);
+                                  const GpuRigidContactFilterIdPair* filterLookup,
+                                  ForceComponent component);
 
 bool fetchRigidContactCount(::physx::PxU32* countMatrix,
                             const ::physx::PxGpuContactPair* contactPairs,

@@ -98,6 +98,8 @@ target_include_directories(OvruntimePhysicsParse
         ${PARSE_INCLUDE_DIR}    # <omni/physics/parse/...>
 )
 
+target_link_libraries(OvruntimePhysicsParse PRIVATE OvruntimeCommon)
+
 # External dependencies — SYSTEM includes to suppress third-party warnings.
 # Core parse headers use carb types (Float3, etc.) and PhysX-runtime types
 # (ObjectId, MeshKey, CookingParams) but never include pxr/ USD headers.

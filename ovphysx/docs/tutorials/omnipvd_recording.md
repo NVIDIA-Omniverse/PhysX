@@ -139,11 +139,11 @@ prerequisites:
 
 ```python
 import ovstage
-from ovphysx import OmniPvdDestination, PhysX, PhysXConfig, codeless_schema_root
+from ovphysx import OmniPvdDestination, PhysX, PhysXConfig, codeless_schema_root, newton_schema_root
 
 physx = PhysX(config=PhysXConfig(omnipvd_recording_capable=True))
-# Register the codeless PhysX schemas before the first population call.
-ovstage.population.register_usd_schemas([str(codeless_schema_root())])
+# Register the codeless PhysX schemas and the Newton schema before the first population call.
+ovstage.population.register_usd_schemas([str(codeless_schema_root()), str(newton_schema_root())])
 stage = ovstage.Stage("late-recorded-scene")
 ovstage.population.open_usd(
     stage, "scene.usda", ordinal=1, domains=ovstage.PopulationDomain.PHYSICS

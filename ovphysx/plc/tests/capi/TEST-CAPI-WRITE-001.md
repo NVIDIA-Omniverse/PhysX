@@ -18,13 +18,21 @@ manager, whose exit is the only thing standing between a caller and a forgotten 
 
 Exercised through the C API first (the C-first validation rule of REQ AC-8 means the
 Python cases must not be able to reach a check the C cases cannot), then repeated
-through the Python surface.
+through the Python surface. The public implementations are
+`ovphysx/tests/c_unittests/test_write_api.cpp` and
+`ovphysx/tests/python_tests/test_write_api.py`. Additional runtime-only regression
+cases are not included in the public source distribution.
 
 ## Given
 
-- A stepped ovphysx instance with dynamic rigid bodies and an articulation, run once on
-  CPU and once on GPU under DirectGPU (`--forceGpu --directGpu --hidden`), since both
-  the write and the legacy binding branch on `PxSceneFlag::eENABLE_DIRECT_GPU_API`.
+- A stepped ovphysx instance with dynamic rigid bodies and an articulation, run on
+  CPU, on GPU with readback, and on GPU under DirectGPU (`--forceGpu --directGpu` /
+  Python `suppressReadback`). The round-trip cases need a stepped scene; AC-5a is the
+  unstepped exception below. The write and the legacy binding branch on
+  `PxSceneFlag::eENABLE_DIRECT_GPU_API`.
+- A separate plain `PhysX()` subprocess running GPU dynamics with default Carbonite
+  settings and no `suppressReadback` override. It warms up and steps once before
+  writing `disableGravity`.
 - A read session over `OVPHYSX_OBJECT_RIGID_BODY` / `OVPHYSX_SCOPE_ALL` for
   `OVPHYSX_ATTR_POSITION` and `OVPHYSX_ATTR_ORIENTATION`, supplying the baseline values.
   The write half needs one session per attribute.
@@ -32,6 +40,8 @@ through the Python surface.
   proper subset of the `OVPHYSX_SCOPE_ALL` set.
 - The shared dictionary from `ovphysx_query_shared_dictionary`, to resolve interned
   handles when a case needs to name prims.
+- A CPU scene containing standalone dynamic and kinematic rigid bodies, with both
+  velocity columns captured before writing.
 
 ## When
 
@@ -53,20 +63,32 @@ through the Python surface.
   session is released **without** committing it.
 - **Errors.** A null `out_group`, a null out-param on `ovphysx_write`, an attribute name
   the queried type does not accept, and a read-only attribute name are each submitted.
-- **First-write warmup.** On a freshly attached scene that has not been warmed up or
-  stepped, a write session is opened and one group committed, with simulation time
-  sampled before and after.
+- **Diagnostic preservation.** Unknown and read-only rigid-body names, and an attribute
+  readable only on another object type, are rejected through C and Python. Python cleanup
+  is also exercised with a query release that clears the native last-error string.
+  An application log callback also attempts `ovphysx_set_log_level()` while an
+  unknown attribute is being rejected; the callback-time call is itself rejected.
+- **Mixed velocity group.** Through Python, the dynamic/kinematic group is filled and
+  committed once for `linearVelocity` and once for `angularVelocity`, then read without
+  stepping.
+- **First-write, no auto-warm.** On a freshly attached scene that has not been warmed up
+  or stepped, a write session is opened and one group committed. The case is run on CPU,
+  on GPU with readback, and on DirectGPU (`--forceGpu --directGpu` / Python
+  `suppressReadback`), because AC-5a is mode-specific.
 - **Unknown handles.** A handle that was never issued is passed to each of
   `ovphysx_fetch_write_next`, `ovphysx_commit_group`, and `ovphysx_release_write`, and a
   group pointer that was already committed is passed to `ovphysx_commit_group` again.
 - **Python.** The same round trip runs through `PhysX.write()` as a context manager,
   once exiting normally and once exiting via an exception raised inside the block.
+- **Python ordinary GPU dynamics.** After bodies are moving under gravity,
+  `PhysX.write()` changes only `disableGravity` before the next step. Disabled bodies'
+  vertical velocities are compared with gravity-enabled controls, then gravity is
+  re-enabled and the simulation steps again.
 - **Python fill on both residencies.** Non-empty host and device tensors are filled
   through the `warp.array` objects Python hands back. The shared converter is also
   exercised with a zero-element host DLTensor. The device fill is committed with the
   caller's current Warp stream. Both non-empty tensors are read back natively; the
-  forced-race event coverage is owned by
-  [TEST-INPUT-DEVICE-001](../../../ovruntime/plc/tests/input/TEST-INPUT-DEVICE-001.md).
+  forced-race event case is not included in the public test suite.
 
 ## Then
 
@@ -105,11 +127,11 @@ through the Python surface.
 - Null out-params and null required arguments return `OVPHYSX_API_INVALID_ARGUMENT`. A
   name the type does not accept, and a read-only name, are each rejected with a message
   naming the attribute (REQ AC-7, and REQ-INPUT-COVERAGE-001 AC-5).
-- A write to a scene that has not been stepped is **refused**, not silently warmed: the
-  DirectGPU superset view it scatters into does not exist until the first step, so the
-  session fails rather than advancing simulation on the caller's behalf. This is symmetric
-  with the read's pre-step omission; a caller steps or calls `ovphysx_warmup()` itself
-  first (REQ AC-5a).
+- A pre-step write does **not** auto-warm in any mode (simulation time is unchanged by
+  the commit itself). On CPU and on GPU with readback the commit **succeeds** and a
+  subsequent read (CPU can read before the first step) or the next step shows the written
+  values. On DirectGPU the commit **fails** and the write does not land; a later step
+  without a new write shows only the solver's own motion (REQ AC-5a).
 - Unknown handles split by whether the call mutates, exactly as REQ AC-7 scopes them:
   `ovphysx_fetch_write_next` and `ovphysx_commit_group` return an error, while
   `ovphysx_release_write` returns success. The commit case matters most — a success there
@@ -117,9 +139,26 @@ through the Python surface.
 - Every rejection above is produced by the C API: the Python cases raise exceptions
   carrying the same C-level messages, and no check exists only in Python (REQ AC-8,
   AC-9).
+- Rejected attribute errors retain the requested name and runtime reason in both the C
+  last-error string and the Python exception, including after Python cleanup. The
+  DirectGPU pre-step rigid-body velocity failure names the first-step requirement and
+  `warmup()` or stepping as the remedy (REQ AC-7, AC-9, AC-13).
+- Callback-time rejection does not replace the enclosing write's attribute error
+  (REQ AC-7; `WriteApiTest.RejectedAttributeSurvivesLogCallbackError`). This checks
+  public error preservation, not the runtime's internal nested-scope isolation.
+- Each mixed CPU velocity commit raises with the SDK setter's kinematic-body reason.
+  Dynamic rows before and after the rejected body read back the requested velocity;
+  the kinematic row stays unchanged (REQ AC-13;
+  `test_mixed_kinematic_cpu_velocity_reports_partial_write`).
+  A second commit of the failed group also raises (REQ AC-13).
 - The Python context manager releases on both the normal and the exception path without
   leaking the session. On the normal path the explicitly committed groups read back; on
-  the exception path nothing the block had filled is published (REQ AC-9, AC-4).
+  the exception-before-commit path the filled group is discarded (REQ AC-9, AC-4).
+- In the plain `PhysX()` subprocess, disabled bodies coast at roughly constant vertical
+  velocity on the first step after the isolated `disableGravity` write while enabled
+  controls accelerate downward. After the flag is cleared, all bodies accelerate
+  downward, proving the Python write reaches the simulation on ordinary GPU dynamics
+  rather than only changing readable host state (REQ AC-1, AC-9).
 - Every Python write tensor is a `warp.array` on the native CPU or CUDA device. The
   zero-element result is Warp-owned rather than presented as an alias of a null native
   pointer (REQ AC-9).

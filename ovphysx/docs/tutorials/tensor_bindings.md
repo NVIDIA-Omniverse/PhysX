@@ -7,7 +7,8 @@
 > by the session read/write API — `ovphysx_read` / `ovphysx_write` in C, `PhysX.read` /
 > `PhysX.write` in Python. Bindings keep working through the deprecation window but are not the
 > recommended path for new code. The runnable session samples are
-> `tests/c_samples/output_read_c/` and `tests/python_samples/output_read.py`. Refer to
+> `tests/c_samples/output_read_c/` and `tests/python_samples/output_read.py` for reads, and
+> `tests/python_samples/session_write.py` for writes (no C write sample ships yet). Refer to
 > [Migrating to the Session Read/Write API](#migrating-to-the-session-readwrite-api).
 
 This tutorial shows how to read and write simulation data through tensor bindings after you attach an ovstage-populated scene. You learn how to use path patterns to bind multiple physics objects in one call, including runtime-only clone paths.
@@ -53,8 +54,21 @@ attributes:
 | `ARTICULATION_LINK_WRENCH` | `ARTICULATION_LINK` | `wrench` (write-only) |
 
 This is the common subset. The full attribute vocabulary is the `OVPHYSX_ATTR_*` macros in
-`ovphysx_types.h`, and which `(object type, attribute)` pairs are writable is queryable at
-runtime through `ovphysx_writability`.
+`ovphysx_types.h` (C-only; a Python caller passes the plain attribute-name string directly,
+e.g. `"position"`), and which `(object type, attribute)` pairs are writable is queryable at
+runtime through `ovphysx_writability`, which has no *public* Python binding
+(`ovphysx._bindings.writability()` is a private wrapper around the same call, not a
+supported public API). Consult the
+**Writable attributes by object type** table in the `ovphysx-session-write` skill, or attempt
+the write, which raises `RuntimeError` immediately for an unwritable attribute.
+
+**Runnable session-write sample:**
+
+```{literalinclude} ../../tests/python_samples/session_write.py
+:language: python
+:start-after: [tutorial-start]
+:end-before: [tutorial-end]
+```
 
 ## Prerequisites
 

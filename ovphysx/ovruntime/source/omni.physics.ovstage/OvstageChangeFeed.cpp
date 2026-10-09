@@ -24,12 +24,14 @@
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5
  *
  * @implements REQ-PARSE-FEED-005
- * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-8 AC-9
  */
 
 #include "OvstageChangeFeed.h"
 
 #include "OvstageSource.h"
+#include "ReadGroupUtils.h"
+#include "ReadColumn.h"
 
 
 #include <carb/profiler/Profile.h>
@@ -1911,7 +1913,7 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
     // A consumer returning false (partial commit) fails the drain closed so the cursor holds.
     bool ok = true;
 
-    // The change-range read selects exactly the changed keys, one group per key. A latest-
+    // The change-range read selects exactly the changed keys. A latest-
     // snapshot read would be dense, but its groups carry the attribute's latest ordinal, not
     // each row's, so it cannot tell changed rows from unchanged ones and would re-publish
     // stale values to prims not written in the range.
@@ -1934,7 +1936,8 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
         // arrives as N one-row groups. Consumers pay per batch (the write backend plans and
         // scatters each ChangeBatch), so the fixed-width host groups of one attribute are
         // gathered into a single contiguous column and dispatched once per attribute after the
-        // loop; ragged, sparse, masked and device groups keep the per-group path below.
+        // loop. Indexed columns select data rows independently of the prim-list indexes;
+        // masked-out rows are omitted. Ragged and device groups keep the per-group path below.
         struct CoalescedColumn
         {
             ovx_token_t attr = OVX_INVALID_TOKEN;
@@ -1951,17 +1954,14 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
 
         auto tryCoalesce = [&](const ovstage_read_group_t& grp, TokenId property) -> bool
         {
-            if (grp.data.tensor_count == 0 || !grp.data.tensors || !grp.data.tensors[0].data || grp.is_array ||
-                grp.data.index_map != nullptr || grp.data.mask != nullptr || grp.prims.count == 0 ||
-                mGroupKeys.size() != grp.prims.count || !mGroupListPaths)
+            ReadColumn column;
+            if (!readColumn(grp, column) || mGroupKeys.size() != grp.prims.count || !mGroupListPaths)
                 return false;
-            const DLTensor& t = grp.data.tensors[0];
-            if (t.device.device_type != kDLCPU)
-                return false;
+            const DLTensor& t = *column.tensor;
             const uint32_t rows = grp.prims.count;
-            const int64_t comps = totalElements(t) / static_cast<int64_t>(rows);
+            const int64_t comps = column.components;
             const ColumnType ct = columnTypeOf(t.dtype, comps);
-            const size_t rowBytes = comps > 0 ? static_cast<size_t>(comps) * (t.dtype.bits / 8) : 0;
+            const size_t rowBytes = column.rowBytes;
             if (ct == ColumnType::eNone || comps < 1 || comps > 4 || rowBytes == 0)
                 return false;
 
@@ -1986,14 +1986,28 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
             {
                 return false; // a differently shaped group of the same column takes the per-group path
             }
-            col->keys.insert(col->keys.end(), mGroupKeys.begin(), mGroupKeys.end());
+            if (!column.indexes && !column.mask)
+            {
+                col->keys.insert(col->keys.end(), mGroupKeys.begin(), mGroupKeys.end());
+                for (uint32_t i = 0; i < rows; ++i)
+                {
+                    const uint32_t idx = grp.prims.index_map ? grp.prims.index_map[i] : (grp.prims.offset + i);
+                    col->raws.push_back(idx < mGroupListCount ? mGroupListPaths[idx] : 0);
+                }
+                const uint8_t* src = column.data(0);
+                col->bytes.insert(col->bytes.end(), src, src + static_cast<size_t>(rows) * rowBytes);
+                return true;
+            }
             for (uint32_t i = 0; i < rows; ++i)
             {
+                if (!column.present(i))
+                    continue;
+                col->keys.push_back(mGroupKeys[i]);
                 const uint32_t idx = grp.prims.index_map ? grp.prims.index_map[i] : (grp.prims.offset + i);
                 col->raws.push_back(idx < mGroupListCount ? mGroupListPaths[idx] : 0);
+                const uint8_t* src = column.data(i);
+                col->bytes.insert(col->bytes.end(), src, src + rowBytes);
             }
-            const uint8_t* src = static_cast<const uint8_t*>(t.data) + t.byte_offset;
-            col->bytes.insert(col->bytes.end(), src, src + static_cast<size_t>(rows) * rowBytes);
             return true;
         };
 
@@ -2061,13 +2075,13 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
                 // row count; if any row was skipped above (out-of-range / null primpath)
                 // the shorter key array would pair values[i] with the wrong prim, so fall
                 // back to per-key reads instead (issue #8).
-                if (g.data.tensor_count > 0 && g.data.tensors && g.data.tensors[0].data &&
-                    !g.is_array && g.data.index_map == nullptr && g.data.mask == nullptr &&
+                ReadColumn denseColumn;
+                if (readColumn(g, denseColumn) && !denseColumn.indexes && !denseColumn.mask &&
                     mGroupKeys.size() == g.prims.count)
                 {
-                    const DLTensor& t = g.data.tensors[0];
+                    const DLTensor& t = *denseColumn.tensor;
                     const uint32_t rows = g.prims.count;
-                    const int64_t comps = rows > 0 ? totalElements(t) / static_cast<int64_t>(rows) : totalElements(t);
+                    const int64_t comps = denseColumn.components;
                     const ColumnType ct = columnTypeOf(t.dtype, comps);
                     // Host columns only, as the ragged path below already requires. A device column
                     // carries a producer-ordering event (`g.data.cuda_sync`) a consumer MUST wait on before
@@ -2109,11 +2123,11 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
                         // lanes: a double3[] row otherwise passes and has half its 8-byte payload copied and
                         // read as float32, silent corruption the correct CSR offset would not flag. Array /
                         // ragged tensors are outside OVStage's fixed-size canonical-layout guarantee, so a
-                        // strided (non-null strides) or shape-malformed row could be non-compact -- reading it
-                        // as packed would corrupt the values too. DLPack: strides == nullptr means compact.
-                        if (!t.data || t.dtype.code != kDLFloat || t.dtype.bits != 32 ||
+                        // non-compact or shape-malformed row cannot be copied as packed. Explicit compact
+                        // strides are valid and required by newer DLPack read producers.
+                        if (t.dtype.code != kDLFloat || t.dtype.bits != 32 ||
                             t.dtype.lanes != lanes || t.device.device_type != kDLCPU ||
-                            t.strides || t.ndim < 0 || (t.ndim > 0 && !t.shape))
+                            !detail::isCompactReadTensor(t))
                         {
                             ragOk = false;
                             break;
@@ -2123,7 +2137,7 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
                         // static_cast<size_t> below would then wrap `bytes` to an enormous value and the
                         // insert would read far past the buffer. A count past UINT32_MAX would also overflow
                         // the uint32_t CSR offset. Reject either to the parse-layer fallback.
-                        if (elems < 0 || elems > static_cast<int64_t>(UINT32_MAX))
+                        if (elems < 0 || elems > static_cast<int64_t>(UINT32_MAX) || (elems > 0 && !t.data))
                         {
                             ragOk = false;
                             break;
@@ -2136,8 +2150,11 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
                             break;
                         }
                         const size_t bytes = static_cast<size_t>(elems) * lanes * sizeof(float);
-                        const uint8_t* srcBytes = static_cast<const uint8_t*>(t.data) + t.byte_offset;
-                        raggedBuf.insert(raggedBuf.end(), srcBytes, srcBytes + bytes);
+                        if (bytes != 0)
+                        {
+                            const uint8_t* srcBytes = static_cast<const uint8_t*>(t.data) + t.byte_offset;
+                            raggedBuf.insert(raggedBuf.end(), srcBytes, srcBytes + bytes);
+                        }
                         raggedOffsets.push_back(raggedOffsets.back() + static_cast<uint32_t>(elems));
                     }
                     if (ragOk)

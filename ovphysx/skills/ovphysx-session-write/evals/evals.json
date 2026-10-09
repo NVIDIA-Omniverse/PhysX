@@ -16,12 +16,13 @@
     },
     {
       "id": 2,
-      "prompt": "My PhysX.write() call right after loading the stage commits but nothing moves. Why?",
-      "expected_output": "Explains the session write is refused before the first step and does not auto-warm; call warmup() or step_sync() before the write.",
+      "prompt": "I attached a stage and called PhysX.write() for linearVelocity with no warmup or step first. On CPU the commit succeeded and after one step the dynamic bodies have the velocity I wrote. Was that write refused?",
+      "expected_output": "No: on CPU and on GPU-with-readback a pre-step session write is applied. DirectGPU (suppressReadback) is the mode that refuses at commit until a first step. The write never auto-warms in any mode. 'Nothing moves' on CPU/GPU is not explained by a refused pre-step write.",
       "files": [],
       "expectations": [
-        "Explains a pre-step write is refused / not applied, and the write never auto-warms",
-        "Tells the caller to warmup() or step first, then write"
+        "Explains a pre-step write is applied on CPU and GPU-with-readback, not refused",
+        "Names DirectGPU / suppressReadback as the mode that refuses until a first step",
+        "Notes the write never auto-warms"
       ]
     },
     {
@@ -53,6 +54,19 @@
       "expectations": [
         "Identifies the tensor-binding API as deprecated",
         "Selects ovphysx-session-write as the successor for the write side"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "My articulation has revolute and prismatic joints. Can I fill every jointPosition tensor with 30 to set all joints to 30 degrees?",
+      "expected_output": "Explains that angular coordinates use degrees and prismatic coordinates use the stage base length unit. Restricts the uniform-degrees helper to an all-angular scene. For mixed scenes, maps authored per-axis metadata to returned joint order and fills every mapped entry with the appropriate units before committing.",
+      "files": [],
+      "expectations": [
+        "Selects ovphysx-session-write",
+        "States jointPosition uses degrees for angular axes and stage base length units for prismatic axes",
+        "Does not apply the all-angular helper or a blanket radian conversion to a mixed articulation",
+        "Does not invent an angular-only query or per-joint filter",
+        "Fills every tensor and every mapped entry before committing the group"
       ]
     }
   ]

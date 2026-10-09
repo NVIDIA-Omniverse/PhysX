@@ -3,7 +3,7 @@
 
 /**
  * @implements REQ-TENSOR-VIEW-001
- * @covers AC-7
+ * @covers AC-7 AC-12
  *
  * @implements REQ-READ-CORE-001
  * @covers AC-8
@@ -50,11 +50,18 @@ GpuSimulationView::GpuSimulationView(usdparser::AttachedStage* attachedStage,
     if (mGpuSimData)
     {
         mDevice = mGpuSimData->mDevice;
+        mSelectionRdDisableEpoch = mGpuSimData->mRdDisableEpoch;
     }
 }
 
 GpuSimulationView::~GpuSimulationView()
 {
+}
+
+bool GpuSimulationView::isSelectionCurrent() const
+{
+    return BaseSimulationView::isSelectionCurrent() && mGpuSimData &&
+        mSelectionRdDisableEpoch == mGpuSimData->mRdDisableEpoch;
 }
 
 

@@ -33,11 +33,13 @@
     {
       "id": 3,
       "prompt": "For an RL loop, read every rigid-body pose each frame into a preallocated PyTorch CUDA tensor that my code owns.",
-      "expected_output": "Routes to the GPU TensorBindings skill/API rather than the ovstage-native output-read skill.",
+      "expected_output": "Uses ovphysx-output-read to read CUDA Warp arrays, then copies them into the caller-owned PyTorch CUDA tensor via Warp's supported interoperability path while keeping the source arrays alive; does not use the deprecated tensor-binding API.",
       "files": [],
       "expectations": [
-        "Does not select ovphysx-output-read for caller-owned bulk CUDA buffers",
-        "Selects tensor-bindings-gpu and its DLPack tensor-binding read path"
+        "Selects ovphysx-output-read for new simulation-output code",
+        "Reads the poses as native-device Warp arrays and uses Warp's supported PyTorch interoperability path",
+        "Copies the poses into the caller's preallocated PyTorch CUDA tensor with matching row layout and CUDA stream ordering, rather than only converting or returning a view",
+        "Does not select the deprecated tensor-bindings-gpu skill"
       ]
     },
     {

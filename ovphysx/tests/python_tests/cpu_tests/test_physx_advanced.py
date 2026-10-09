@@ -102,8 +102,8 @@ def test_update_articulations_kinematic_changes_link_pose(physx_sdk):
     before = _read_link_positions(physx_sdk)
 
     # Drive every DOF to a clearly non-zero joint position. The session's angular units are
-    # degrees, so 17.19 deg is about 0.3 rad. The warmup() above makes the scene writable: the
-    # ovstage write is refused before the first step and does not auto-warm (AC-5a).
+    # degrees, so 17.19 deg is about 0.3 rad. warmup() is the portable recipe (DirectGPU
+    # refuses a pre-step write; CPU applies it -- REQ-CAPI-WRITE-001 AC-5a).
     groups_written = 0
     with physx_sdk.write(SimObjectType.ARTICULATION_JOINT, "jointPosition") as w:
         for g in w.groups:

@@ -1,6 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-INPUT-CORE-001
+ * @covers AC-4
+ */
+
 #pragma once
 
 #include "tensors/CommonTypes.h"
@@ -49,6 +54,11 @@ public:
     bool setInertias(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
     bool setDisableGravities(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
     bool setDisableSimulations(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
+
+    // Set the actor flag and notify the solver when the affected body is already active, or when
+    // gravity is re-enabled. Shared by rigid-body, per-link, and per-link articulation-view writes
+    // so legacy tensor bindings and the ovstage write API have identical simulation semantics.
+    static void setDisableGravityAndRefresh(::physx::PxRigidBody& body, bool disabled);
 
     bool wakeUp(const TensorDesc* indexTensor) override;
     bool putToSleep(const TensorDesc* indexTensor) override;

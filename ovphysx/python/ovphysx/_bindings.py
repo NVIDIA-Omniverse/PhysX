@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-CAPI-CONTACT-003
+# @covers AC-1 AC-2 AC-3
+
 # @implements REQ-PYTHON-BINDING-DEVICE-001
 # @covers AC-1
 
@@ -9,6 +12,10 @@
 
 # @implements REQ-PACKAGING-CLOSURE-001
 # @covers AC-2
+# @implements REQ-CAPI-CONTACT-001
+# @covers AC-5 AC-6 AC-7
+# @implements REQ-CAPI-CONTACT-002
+# @covers AC-2 AC-3
 
 """Low-level ctypes bindings for the ovphysx library.
 
@@ -998,11 +1005,36 @@ _lib.ovphysx_contact_binding_get_filter_paths.argtypes = [
 _lib.ovphysx_get_contact_binding_capacity.restype = ovphysx_result_t
 _lib.ovphysx_get_contact_binding_capacity.argtypes = [c_uint64, c_uint64, POINTER(c_uint32)]
 
+_lib.ovphysx_read_contact_net_normal_forces.restype = ovphysx_result_t
+_lib.ovphysx_read_contact_net_normal_forces.argtypes = [c_uint64, c_uint64, POINTER(DLTensor)]
+
+_lib.ovphysx_read_contact_net_friction_forces.restype = ovphysx_result_t
+_lib.ovphysx_read_contact_net_friction_forces.argtypes = [c_uint64, c_uint64, POINTER(DLTensor)]
+
+_lib.ovphysx_read_contact_normal_force_matrix.restype = ovphysx_result_t
+_lib.ovphysx_read_contact_normal_force_matrix.argtypes = [c_uint64, c_uint64, POINTER(DLTensor)]
+
+_lib.ovphysx_read_contact_friction_force_matrix.restype = ovphysx_result_t
+_lib.ovphysx_read_contact_friction_force_matrix.argtypes = [c_uint64, c_uint64, POINTER(DLTensor)]
+
 _lib.ovphysx_read_contact_net_forces.restype = ovphysx_result_t
 _lib.ovphysx_read_contact_net_forces.argtypes = [c_uint64, c_uint64, POINTER(DLTensor)]
 
 _lib.ovphysx_read_contact_force_matrix.restype = ovphysx_result_t
 _lib.ovphysx_read_contact_force_matrix.argtypes = [c_uint64, c_uint64, POINTER(DLTensor)]
+
+_lib.ovphysx_read_normal_contact_data.restype = ovphysx_result_t
+_lib.ovphysx_read_normal_contact_data.argtypes = [
+    c_uint64,
+    c_uint64,
+    POINTER(DLTensor),
+    POINTER(DLTensor),
+    POINTER(DLTensor),
+    POINTER(DLTensor),
+    POINTER(DLTensor),
+    POINTER(DLTensor),
+    POINTER(c_uint32),
+]
 
 _lib.ovphysx_read_contact_data.restype = ovphysx_result_t
 _lib.ovphysx_read_contact_data.argtypes = [
@@ -1014,6 +1046,18 @@ _lib.ovphysx_read_contact_data.argtypes = [
     POINTER(DLTensor),
     POINTER(DLTensor),
     POINTER(DLTensor),
+    POINTER(c_uint32),
+]
+
+_lib.ovphysx_read_friction_contact_data.restype = ovphysx_result_t
+_lib.ovphysx_read_friction_contact_data.argtypes = [
+    c_uint64,
+    c_uint64,
+    POINTER(DLTensor),
+    POINTER(DLTensor),
+    POINTER(DLTensor),
+    POINTER(DLTensor),
+    POINTER(c_uint32),
 ]
 
 _lib.ovphysx_read_friction_data.restype = ovphysx_result_t
@@ -1024,6 +1068,7 @@ _lib.ovphysx_read_friction_data.argtypes = [
     POINTER(DLTensor),
     POINTER(DLTensor),
     POINTER(DLTensor),
+    POINTER(c_uint32),
 ]
 
 _lib.ovphysx_read_raw_contact_data.restype = ovphysx_result_t
@@ -1036,6 +1081,7 @@ _lib.ovphysx_read_raw_contact_data.argtypes = [
     POINTER(DLTensor),  # contact_separation_tensor  [C, 1]
     POINTER(DLTensor),  # sensor_layout_tensor       [S, 2] count, start
     POINTER(DLTensor),  # actor_ids_tensor           [C, 2] uint64 sensor, other
+    POINTER(c_uint32),  # out_required_contact_count
 ]
 
 _lib.ovphysx_contact_binding_get_other_actor_paths_from_ids.restype = ovphysx_result_t

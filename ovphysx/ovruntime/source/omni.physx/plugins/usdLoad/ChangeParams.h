@@ -1,6 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-PROPS-MAT-001
+ * @covers AC-2
+ */
+
 #pragma once
 
 // OnPrimRequirementKeyCheckFn/OnPrimRequirementExtKeyCheckFn are the ObjectKey/TokenId-native
@@ -41,6 +46,8 @@ struct ChangeParams
     OnUpdateObjectFn onUpdate;
     OnPrimRequirementKeyCheckFn onPrimCheckKey = nullptr;
     OnPrimRequirementExtKeyCheckFn onPrimCheckExtKey = nullptr;
+    // Resolve cross-object relationships after queued prim creation, even in synchronous mode.
+    bool deferUntilFlush = false;
 };
 
 } // namespace usdparser

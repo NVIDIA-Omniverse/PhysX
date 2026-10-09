@@ -1,6 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-RUNTIME-ERROR-001
+ * @covers AC-3 AC-4
+ */
+
 #pragma once
 
 #include <carb/logging/Log.h>
@@ -10,6 +15,7 @@
 #include <PxPhysicsAPI.h>
 #include <cudamanager/PxCudaContext.h>
 #include <omni/physx/IPhysx.h>
+#include <omni/physx/RuntimeError.h>
 
 // AD: hardcode this here to avoid pulling in CUDA headers.
 #define CUDA_OUT_OF_MEMORY 2
@@ -53,6 +59,8 @@ public:
         }
         else if(code & ::physx::PxErrorCode::eABORT)
         {
+            // Capture only the SDK cause; the log also carries its source file and line.
+            omni::physx::recordRuntimeError(message);
             CARB_LOG_ERROR("PhysX ABORT error: %s, FILE %s, LINE %d", message, file, line);
             sendTooManyErrorsStopSimulationEvent();
         }
@@ -64,6 +72,7 @@ public:
                 customErrMsg = message;
             }
 
+            omni::physx::recordRuntimeError(customErrMsg.c_str());
             CARB_LOG_ERROR("PhysX error: %s, FILE %s, LINE %d", customErrMsg.c_str(), file, line);
 
             if (mEventStream)

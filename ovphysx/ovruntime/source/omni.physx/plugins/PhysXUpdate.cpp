@@ -1,6 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-SIM-GPU-ERROR-001
+ * @covers AC-1 AC-2
+ */
+
 #include "PhysXUpdate.h"
 #include "OmniPhysX.h"
 
@@ -23,9 +28,13 @@
 
 #include <private/omni/physx/PhysxUsd.h>
 #include <omni/physx/IPhysx.h>
+#include <omni/physx/RuntimeError.h>
 #include <carb/profiler/Profile.h>
 
 #include <PxPhysicsAPI.h>
+#if USE_PHYSX_GPU
+#include <cudamanager/PxCudaContext.h>
+#endif
 
 #include "utils/Profile.h"
 
@@ -488,6 +497,25 @@ static void physxFetchResultsInternal(SceneFilter sceneFilter)
 
             if (checkSkipScene(sceneFilter, sc))
                 continue;
+
+#if USE_PHYSX_GPU
+            PxScene* scene = sc->getScene();
+            if ((scene->getFlags() & PxSceneFlag::eENABLE_GPU_DYNAMICS) ||
+                scene->getBroadPhaseType() == PxBroadPhaseType::eGPU)
+            {
+                PxCudaContextManager* manager = scene->getCudaContextManager();
+                if (manager)
+                {
+                    const PxCUresult cudaError = manager->getCudaContext()->getLastError();
+                    if (cudaError != 0)
+                    {
+                        // Worker-thread diagnostics do not reach the caller's RuntimeErrorScope.
+                        OVX_RUNTIME_ERROR("GPU simulation cannot continue: CUDA error %d.", static_cast<int>(cudaError));
+                        continue;
+                    }
+                }
+            }
+#endif
 
             if (!sc->isReadbackSuppressed())
             {

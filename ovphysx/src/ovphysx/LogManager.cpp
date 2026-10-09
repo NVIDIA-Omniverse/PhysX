@@ -10,6 +10,9 @@
  *
  * @implements REQ-CAPI-ASYNC-001
  * @covers AC-2
+ *
+ * @implements REQ-RUNTIME-ERROR-001
+ * @covers AC-2
  */
 
 // LogManager: global log level, one application callback, and test capture.
@@ -25,6 +28,7 @@
 #include <carb/logging/Log.h>
 #include <omni/log/ILog.h>
 #include <omni/log/LogChannel.h>
+#include <omni/physx/RuntimeError.h>
 
 #include <atomic>
 #include <chrono>
@@ -368,6 +372,8 @@ struct UserCallbackLogger : public carb::logging::Logger2
                 }
                 try
                 {
+                    // Errors from application code belong to its nested calls, not the operation logging here.
+                    omni::physx::RuntimeErrorScope callbackErrors;
                     registration->callback(
                         level,
                         ovphysx_cstr(message),

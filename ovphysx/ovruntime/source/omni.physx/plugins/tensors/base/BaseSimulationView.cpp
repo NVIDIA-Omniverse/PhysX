@@ -9,7 +9,7 @@
  * @covers AC-3
  *
  * @implements REQ-TENSOR-VIEW-001
- * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-10
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-10 AC-12
  *
  * @implements REQ-TENSOR-PATH-001
  * @covers AC-2
@@ -27,7 +27,7 @@
  * @covers AC-1 AC-2 AC-3
  *
  * @implements REQ-PUBLICAPI-001
- * @covers AC-5 AC-34 AC-35 AC-36 AC-37 AC-38 AC-40 AC-47 AC-48 AC-49
+ * @covers AC-5 AC-34 AC-35 AC-36 AC-37 AC-38 AC-40 AC-47 AC-48 AC-49 AC-50
  */
 
 #include "tensors/base/BaseSimulationView.h"
@@ -54,6 +54,7 @@
 #include "OmniPhysX.h"
 #include <omni/physx/PhysXRuntime.h>
 #include "internal/InternalScene.h"
+#include "internal/Internal.h"
 #include "ObjectDataQuery.h"
 
 #include <algorithm>
@@ -427,6 +428,9 @@ BaseSimulationView::BaseSimulationView(usdparser::AttachedStage* attachedStage,
     : mAttachedStage(attachedStage)
     , mScene(scene)
     , mSimData(std::make_shared<BaseSimulationData>())
+    , mSelectionRecordEpoch(internal::recordLifetimeEpoch())
+    , mSelectionReadOrdinal(attachedStage ? attachedStage->attachTarget().readOrdinal : 0)
+    , mSelectionRecursiveLeafMatch(isRecursiveLeafPatternMatchEnabled())
 {
     omni::physx::IPhysicsObjectChangeCallback callback;
     callback.objectDestructionNotifyFn = onPhysXObjectDeletedCallback;
@@ -439,6 +443,13 @@ BaseSimulationView::BaseSimulationView(usdparser::AttachedStage* attachedStage,
     callback.userData = this;
     callback.stopCallbackWhenSimStopped = !notifyWhenSimStopped;
     subscriptionObjId = g_physx->subscribeObjectChangeNotifications(callback);
+}
+
+bool BaseSimulationView::isSelectionCurrent() const
+{
+    return isValid && mSelectionRecordEpoch == internal::recordLifetimeEpoch() &&
+           mSelectionReadOrdinal == (mAttachedStage ? mAttachedStage->attachTarget().readOrdinal : 0) &&
+           mSelectionRecursiveLeafMatch == isRecursiveLeafPatternMatchEnabled();
 }
 
 void BaseSimulationView::invalidate()
@@ -897,15 +908,51 @@ void BaseSimulationView::findMatchingArticulations(const std::string& pattern,
 void BaseSimulationView::processRigidBodyEntries(const std::vector<std::string>& patterns,
                                                  std::vector<RigidBodyEntry>& entries)
 {
-    // Dedup across the full pattern list: overlapping patterns that
-    // resolve to the same PxRigidBody (for example an articulation-root
-    // prim and its root link prim, or any pattern matched by two rules)
-    // must not be appended twice.
-    std::unordered_set<const ::physx::PxRigidBody*> seenBodies;
-    for (const auto& pattern : patterns)
+    // Resolve literal candidates together. The batch matcher preserves a result
+    // slot per pattern, wildcard ordering, and physics-only clone fallback.
+    std::vector<std::string> validPatterns;
+    validPatterns.reserve(patterns.size());
+    if (mAttachedStage)
     {
-        size_t currentSize = entries.size();
-        findMatchingRigidBodies(pattern, entries, seenBodies);
+        for (const std::string& pattern : patterns)
+        {
+            if (!pattern.empty() && pattern[0] == '/')
+                validPatterns.push_back(pattern);
+        }
+    }
+    std::vector<std::vector<omni::physics::parse::ObjectKey>> resolvedKeys;
+    if (!validPatterns.empty())
+        findMatchingPathsBatch(validPatterns, resolvedKeys);
+
+    // Dedup by body identity across every pattern. An articulation root and
+    // its root link, as well as overlapping patterns, can name the same body.
+    std::unordered_set<const ::physx::PxRigidBody*> seenBodies;
+    size_t validPatternIndex = 0;
+    for (const std::string& pattern : patterns)
+    {
+        const size_t currentSize = entries.size();
+        if (mAttachedStage)
+        {
+            if (pattern.empty())
+            {
+                CARB_LOG_ERROR("Empty pattern not allowed");
+            }
+            else if (pattern[0] != '/')
+            {
+                CARB_LOG_ERROR("Pattern must be an absolute USD path, got '%s'\n", pattern.c_str());
+            }
+            else
+            {
+                const std::vector<omni::physics::parse::ObjectKey>& keys = resolvedKeys[validPatternIndex++];
+                for (const omni::physics::parse::ObjectKey key : keys)
+                {
+                    RigidBodyEntry entry;
+                    // Wrong-type candidates are normal pattern filtering.
+                    if (getRigidBodyAtPath(key, entry) && seenBodies.insert(entry.body).second)
+                        entries.push_back(entry);
+                }
+            }
+        }
         if (entries.size() == currentSize)
         {
             if (isNoMatchLoggingQuiet())
@@ -915,50 +962,6 @@ void BaseSimulationView::processRigidBodyEntries(const std::vector<std::string>&
             else
             {
                 CARB_LOG_ERROR("Pattern '%s' did not match any rigid bodies\n", pattern.c_str());
-            }
-        }
-    }
-}
-
-void BaseSimulationView::findMatchingRigidBodies(const std::string& pattern,
-                                                 std::vector<RigidBodyEntry>& entriesRet,
-                                                 std::unordered_set<const ::physx::PxRigidBody*>& seenBodies)
-{
-    if (!mAttachedStage)
-    {
-        return;
-    }
-    if (pattern.empty())
-    {
-        CARB_LOG_ERROR("Empty pattern not allowed");
-        return;
-    }
-    // we only support absolute paths atm
-    if (pattern[0] != '/')
-    {
-        CARB_LOG_ERROR("Pattern must be an absolute USD path, got '%s'\n", pattern.c_str());
-        return;
-    }
-
-    std::vector<omni::physics::parse::ObjectKey> keys;
-    findMatchingPaths(pattern, keys);
-
-    // Pattern matching is intentionally type-agnostic. Wrong-type candidates are normal filtering;
-    // processRigidBodyEntries reports when filtering adds no result for a pattern.
-    // Dedup by body pointer using a set owned by the caller
-    // (processRigidBodyEntries), so overlapping patterns that resolve to
-    // the same PxRigidBody don't inflate the view. The set also absorbs
-    // within-pattern duplicates from a '**' expansion hitting both an
-    // articulation-root prim and its root link prim, which
-    // getRigidBodyAtPath resolves to the same PxRigidBody.
-    for (unsigned i = 0; i < keys.size(); i++)
-    {
-        RigidBodyEntry entry;
-        if (getRigidBodyAtPath(keys[i], entry))
-        {
-            if (seenBodies.insert(entry.body).second)
-            {
-                entriesRet.push_back(entry);
             }
         }
     }

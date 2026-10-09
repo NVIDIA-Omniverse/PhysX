@@ -22,10 +22,13 @@ def attach_scene(physx, usd_path):
 
     # ovphysx ships its PhysX USD schemas as codeless resources and does not register
     # them itself. Register them with ovstage once, before the first population
-    # call in the process.
+    # call in the process. The Newton USD schema (pip package newton-usd-schemas)
+    # is registered alongside so authored newton:* attributes reach the parser.
     global _physx_schemas_registered
     if not _physx_schemas_registered:
-        ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+        ovstage.population.register_usd_schemas(
+            [str(ovphysx.codeless_schema_root()), str(ovphysx.newton_schema_root())]
+        )
         _physx_schemas_registered = True
     stage = ovstage.Stage("ovphysx-hello-world")
     ordinal = 1

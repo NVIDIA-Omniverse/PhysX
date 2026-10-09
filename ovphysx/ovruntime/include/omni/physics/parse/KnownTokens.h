@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PARSE-NEWTON-JOINT-001
+ * @covers AC-1
+ *
  * @implements REQ-PARSE-CORE-001
  * @covers AC-1
  *
@@ -207,6 +210,11 @@ struct KnownTokens
     TokenId physxJointMaxJointVelocity;
     // NewtonJointAPI fallback for physxJoint:maxJointVelocity.
     TokenId newtonVelocityLimit;
+    // NewtonJointAPI fallbacks for the PhysxJointAxisAPI armature, friction
+    // efforts and viscous friction coefficient.
+    TokenId newtonArmature;
+    TokenId newtonFriction;
+    TokenId newtonDamping;
 
     // PhysxCollisionAPI extensions (subset routed through parse library)
     TokenId physxCollisionAPI;

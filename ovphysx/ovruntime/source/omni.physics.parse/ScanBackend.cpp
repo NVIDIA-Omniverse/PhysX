@@ -7,10 +7,14 @@
  *
  * @implements REQ-BUILD-UNIBUILD-001
  * @covers AC-6
+ *
+ * @implements REQ-RUNTIME-ERROR-001
+ * @covers AC-3 AC-4
  */
 
 #include <omni/physics/parse/ScanBackend.h>
 #include <omni/physics/parse/ScannedStage.h>
+#include <omni/physx/RuntimeError.h>
 
 #include <carb/logging/Log.h>
 
@@ -61,11 +65,11 @@ ScannedStage scanStage(const parse::AttachTarget& target,
     }
     catch (const std::exception& error)
     {
-        CARB_LOG_ERROR("Physics scan backend failed: %s", error.what());
+        OVX_RUNTIME_ERROR("Physics scan backend failed: %s", error.what());
     }
     catch (...)
     {
-        CARB_LOG_ERROR("Physics scan backend failed with an unknown exception");
+        OVX_RUNTIME_ERROR("Physics scan backend failed with an unknown exception");
     }
     return {};
 }

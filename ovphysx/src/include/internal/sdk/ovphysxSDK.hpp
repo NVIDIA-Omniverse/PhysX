@@ -1,6 +1,14 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-CAPI-BINDING-SELECTION-001
+ * @covers AC-1 AC-2 AC-3 AC-4
+ *
+ * @implements REQ-CAPI-STRING-001
+ * @covers AC-2
+ */
+
 #pragma once
 
 #include "ovphysx/ovphysx.h"
@@ -32,8 +40,9 @@ struct TensorBindingState
     // live binding from one whose attach had been torn down and replaced.
     omni::physics::tensors::AttachHandle attachHandle = omni::physics::tensors::kNoAttach;
     ovphysx_tensor_type_t tensorType = OVPHYSX_TENSOR_INVALID;
-    std::string pattern;
-    omni::physics::tensors::ISimulationView* simView = nullptr;
+    std::shared_ptr<const std::vector<std::string>> patterns;
+    // Attributes share a simulation view, which owns the borrowed child view below.
+    std::shared_ptr<omni::physics::tensors::ISimulationView> simView;
     omni::physics::tensors::IRigidBodyView* rbView = nullptr;
     omni::physics::tensors::IArticulationView* artiView = nullptr;
     omni::physics::tensors::IDeformableBodyView* defBodyView = nullptr;
@@ -315,6 +324,12 @@ inline ovphysx_result_t set_error(ovphysx_api_status_t status, const char* msg) 
 inline ovphysx_result_t set_error(ovphysx_api_status_t status, const std::string& msg) {
     tls_error().last_error = msg;
     return {status};
+}
+
+// Both strings are caller-owned, non-null text. Copy the runtime detail before its scope ends.
+inline ovphysx_result_t set_runtime_error(const char* context, const char* detail) {
+    return detail[0] ? set_error(OVPHYSX_API_ERROR, std::string(context) + ": " + detail)
+                     : set_error(OVPHYSX_API_ERROR, context);
 }
 
 inline ovphysx_result_t success() {

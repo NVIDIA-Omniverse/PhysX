@@ -29,7 +29,7 @@ import platform
 import sys
 
 MIN_PYTHON_VERSION = (3, 10, 0)
-MAX_PYTHON_VERSION = (3, 12, 13)
+MAX_PYTHON_VERSION = (3, 12, 14)
 
 
 def is_valid_python_version(version: tuple[int, int, int] = sys.version_info[:3]):

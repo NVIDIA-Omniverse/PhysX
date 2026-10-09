@@ -27,7 +27,7 @@ else
 	PM_CURL_SILENT="-s -S"
 	PM_WGET_QUIET="--quiet"
 fi
-export PM_PACKMAN_VERSION=8.5.1
+export PM_PACKMAN_VERSION=8.6.2
 
 
 cleanup() {
@@ -145,12 +145,12 @@ main() {
     {
         PLATFORM=`uname`
         PROCESSOR=`uname -m`
-        PYTHON_VERSION=3.12.13-nv6
+        PYTHON_VERSION=3.12.14-nv3
         PYTHON_EXE=python
         PYTHON_CONTAINER=tar.gz
 
         if [ $PLATFORM == 'Darwin' ]; then
-            PYTHON_PACKAGE=3.12.13-macos-aarch64
+            PYTHON_PACKAGE=3.12.14-macos-aarch64
         elif [ $PLATFORM == 'Linux' ] && [ $PROCESSOR == 'x86_64' ]; then
             PYTHON_PACKAGE=$PYTHON_VERSION-manylinux_2_35-x86_64
         elif [ $PLATFORM == 'Linux' ] && [ $PROCESSOR == 'aarch64' ]; then

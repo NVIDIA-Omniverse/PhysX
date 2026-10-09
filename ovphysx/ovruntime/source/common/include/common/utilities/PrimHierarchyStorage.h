@@ -84,6 +84,9 @@ public:
     void removeIteration(Iterator& it);
 
     void mergeHierarchyStorage(const std::string& topPath, const PrimHierarchyStorage& storage);
+    // Consume incoming nodes while retaining copy-merge destination precedence
+    // and ancestor repair. Only duplicate rows remain in the incoming storage.
+    void mergeHierarchyStorage(const std::string& topPath, PrimHierarchyStorage&& storage);
 
     const StorageMap& getStorageMap() const
     {

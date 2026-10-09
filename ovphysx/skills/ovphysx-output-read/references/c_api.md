@@ -30,7 +30,32 @@ string before cleanup if a failure must be reported.
 prim count. Its arrays belong to the query until `ovphysx_release_query()`.
 `ovphysx_query_shared_dictionary()` returns the runtime-owned ovstage path
 dictionary that resolves the query's tokens and prim lists; the caller does not
-free it.
+free it. A group's `prim_list` and `attribute` are interned integers, not paths or
+names. The getter hands back a `void*`; cast it to `ovx_path_dictionary_t*`, then resolve
+with the helpers in `<ovstage/ovx_path_dictionary.h>` — `get_paths` + `path_to_string`
+for the prim paths, `token_to_string` for the emitted attribute name:
+
+```c
+void* dict_void = NULL;
+ovphysx_query_shared_dictionary(handle, query, &dict_void);
+ovx_path_dictionary_t* dict = (ovx_path_dictionary_t*)dict_void;
+
+/* for each fetched ovstage_read_group_t* g: */
+ovx_string_t attr = { 0 };
+ovx_path_dictionary_token_to_string(dict, g->attribute, &attr);      /* "position" (EMITTED name) */
+
+const ovx_primpath_t* prims = NULL;
+size_t count = 0;
+ovx_path_dictionary_get_paths(dict, g->prims.list, &prims, &count);  /* count == rows */
+for (size_t i = 0; i < count; ++i) {
+    ovx_string_t path = { 0 };
+    ovx_path_dictionary_path_to_string(dict, prims[i], &path);       /* "/World/Sphere1" -- row i */
+}
+```
+
+`get_paths` returns a thread-local buffer valid only until the next `get_paths` call, so
+finish the loop before resolving another list. The shipped `c_samples/output_read_c` sample
+does exactly this (see `dump_group`).
 
 The query is a lazy selector over simulated type and scope. Membership and
 column values are evaluated against the latest completed step when discovery or

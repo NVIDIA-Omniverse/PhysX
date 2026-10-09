@@ -5,7 +5,7 @@ license: Apache-2.0
 compatibility: "ovphysx >=0.6.0 wheel or SDK; Python examples require the ovphysx Python package, and C examples require the OVPhysX SDK plus the matching native OVStage package."
 allowed-tools: Read Shell
 metadata:
-  version: "0.1.3"
+  version: "0.1.4"
   author: NVIDIA Omniverse Physics
   tags: "ovphysx, physics, quickstart"
 ---
@@ -74,8 +74,11 @@ instances.
 
 ### Later ovstage edits
 
-When a running test changes the USD population after attach, use this exact
-handoff:
+The drain only transfers a population change that was authored first. Calling
+it against an unchanged population succeeds as a no-op.
+
+For a wheel-only application, add another USD file with `open_usd()` at a new
+ordinal, then drain that same ordinal:
 
 ```python
 import ovstage
@@ -85,13 +88,33 @@ def drain_population_change(stage, physx, ordinal):
     ovstage.population.apply_usd_changes(stage, ordinal=ordinal)
     stage.advance_write_floor(ordinal=ordinal).wait()
     physx.update_from_ovstage(ordinal, ordinal)
+
+
+def add_usd_file_and_drain(stage, physx, usd_path, ordinal):
+    ovstage.population.open_usd(
+        stage,
+        str(usd_path),
+        ordinal=ordinal,
+        domains=ovstage.PopulationDomain.PHYSICS,
+    )
+    drain_population_change(stage, physx, ordinal)
 ```
 
+Here `open_usd()` is the operation that adds content; the drain is not an edit
+API. The wheel's `ovstage.Stage` does not expose its backing USD stage for
+direct OpenUSD authoring, and `add_usd_reference()` does not accept an ordinal.
+Use `open_usd()` as above for the public wheel route. Applications with their
+own backing-USD integration may author there instead, then call
+`drain_population_change()` with the edit's ordinal.
+
 `apply_usd_changes()` waits for population work but does not seal the ordinal.
-Do not drain the initial `read_ordinal` again; `attach_ovstage()` already parsed
-it. Before a structural add or remove, destroy cached tensor bindings when
-practical, then create replacements after the update completes. Do not use a
-pre-update binding's membership as the test oracle.
+Use a fresh ordinal for each later change. Do not drain the initial
+`read_ordinal` again; `attach_ovstage()` already parsed it. For arbitrary USD
+content, use `PopulationDomain.ALL` instead of `PHYSICS`; the latter is
+sufficient for the non-instanced rigid-body files used by this skill. Before a
+structural add or remove, destroy cached tensor bindings when practical, then
+create replacements after the update completes. Do not use a pre-update
+binding's membership as the test oracle.
 
 Full sample:
 - `samples/python_samples/hello_world.py` (wheel)

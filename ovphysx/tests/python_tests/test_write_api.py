@@ -11,7 +11,7 @@ buffer alone would pass even if nothing reached the solver.
 """
 
 # @implements REQ-CAPI-WRITE-001
-# @covers AC-4 AC-5 AC-9
+# @covers AC-4 AC-5 AC-5a AC-7 AC-8 AC-9
 # @maps_to TEST-CAPI-WRITE-001
 # @implements REQ-INPUT-DEVICE-001
 # @covers AC-1 AC-4 AC-5
@@ -153,6 +153,38 @@ def test_write_position_round_trips(physx_sdk):
     np.testing.assert_allclose(after, target, rtol=0, atol=1e-3)
 
 
+def test_prestep_write_refused_on_directgpu(physx_sdk):
+    """DirectGPU: a write before the first step opens, then commit is refused (AC-5a)."""
+    load_usd_with_ovstage(physx_sdk, data_path("boxes_falling_on_groundplane.usda"))
+    # WriteSession.__exit__ still close()s when commit raises; pytest.raises wraps
+    # the with-block so the native session is released on the failure path.
+    chunks = []
+    # Fill every group first so a first-group commit refusal still yields a full
+    # unique target to compare against after the required DirectGPU step.
+    with pytest.raises(RuntimeError, match="commit failed"):
+        with physx_sdk.write(SimObjectType.RIGID_BODY, "position") as w:
+            assert w.groups, "the session opens; DirectGPU refusal is at commit"
+            float_off = 0
+            for g in w.groups:
+                n = g.prim_count
+                block = np.arange(n * 3, dtype=np.float32).reshape(n, 3) + 100.0 + float_off
+                _fill(g.tensors[0], block)
+                chunks.append(block)
+                float_off += n * 3
+            for g in w.groups:
+                _commit_after_fill(w, g)
+    assert chunks, "expected at least one group to fill before commit refused"
+    target = np.concatenate(chunks)
+    physx_sdk.step_sync(1.0 / 60.0)
+    after = _read_positions(physx_sdk)
+    assert after.shape == target.shape
+    # DirectGPU can only be read after a step. One gravity step moves Y by ~1 mm,
+    # which exceeds 1e-3, so a tight not-allclose would pass even if the write
+    # landed. The 100-offset target is the witness (authored poses stay near the
+    # USDA translates); 1.0 is far above gravity and far below that offset.
+    assert not np.allclose(after, target, rtol=0, atol=1.0), "DirectGPU pre-step write must not land"
+
+
 def test_write_leaves_orientation_alone(physx_sdk):
     """position and orientation share one transform, so writing one must preserve the other."""
     load_usd_with_ovstage(physx_sdk, data_path("boxes_falling_on_groundplane.usda"))
@@ -200,15 +232,126 @@ def test_double_commit_raises(physx_sdk):
 
 
 def test_unwritable_attribute_raises(physx_sdk):
-    """A name the type does not accept fails at open, not silently at commit."""
+    """A rejected name retains the runtime diagnostic through query cleanup."""
     load_usd_with_ovstage(physx_sdk, data_path("boxes_falling_on_groundplane.usda"))
     physx_sdk.step_sync(1.0 / 60.0)
 
-    with pytest.raises(RuntimeError):
-        physx_sdk.write(SimObjectType.RIGID_BODY, "notAnAttribute")
-    # Readable on other types, but rigid bodies do not produce it.
-    with pytest.raises(RuntimeError):
-        physx_sdk.write(SimObjectType.RIGID_BODY, "points")
+    # Unknown, readable only on other types, and read-only on this type.
+    for attr in ("notAnAttribute", "points", "inverseMass", "linearAcceleration"):
+        with pytest.raises(RuntimeError) as exc:
+            physx_sdk.write(SimObjectType.RIGID_BODY, attr)
+        message = str(exc.value)
+        assert attr in message
+        assert "rigid" in message.lower()
+        assert "do not accept" in message.lower()
+        assert "unknown error" not in message.lower()
+
+
+def test_directgpu_pre_step_write_reports_prerequisite_and_recovers(physx_sdk):
+    """A refused pre-step commit names the prerequisite and permits a fresh write after stepping."""
+    load_usd_with_ovstage(physx_sdk, data_path("boxes_falling_on_groundplane.usda"))
+
+    with physx_sdk.write(SimObjectType.RIGID_BODY, "linearVelocity") as session:
+        assert len(session.groups) == 1
+        group = session.groups[0]
+        assert group.prim_count > 0
+        assert group.tensors[0].device.is_cuda
+        target = np.full((group.prim_count, 3), 13.0, dtype=np.float32)
+        _fill(group.tensors[0], target)
+        with pytest.raises(RuntimeError) as exc:
+            _commit_after_fill(session, group)
+        message = str(exc.value)
+        assert "DirectGPU" in message
+        assert "step" in message.lower()
+        assert "nothing was written" in message.lower()
+        assert "unknown error" not in message.lower()
+
+    physx_sdk.step_sync(1.0 / 60.0)
+    with physx_sdk.write(SimObjectType.RIGID_BODY, "linearVelocity") as session:
+        assert len(session.groups) == 1
+        group = session.groups[0]
+        assert group.tensors[0].device.is_cuda
+        _fill(group.tensors[0], target)
+        _commit_after_fill(session, group)
+    np.testing.assert_allclose(_read_positions(physx_sdk, "linearVelocity"), target, rtol=0, atol=1e-5)
+
+
+@pytest.mark.parametrize("attribute", ["linearVelocity", "angularVelocity"])
+@pytest.mark.parametrize("kinematic_index", range(3))
+def test_mixed_kinematic_cpu_velocity_reports_partial_write(physx_sdk, tmp_path, attribute, kinematic_index):
+    """SDK rejection spends the group while valid dynamic rows retain their writes."""
+    scene_path = tmp_path / "mixed_kinematic_cpu.usda"
+    scene = '''#usda 1.0
+(
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+def PhysicsScene "PhysicsScene" (
+    prepend apiSchemas = ["PhysxSceneAPI"]
+)
+{
+    float physics:gravityMagnitude = 0
+    bool physxScene:enableGPUDynamics = false
+    token physxScene:broadphaseType = "MBP"
+}
+'''
+    for index in range(3):
+        scene += f'''def Cube "Box{index}" (
+    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI"]
+)
+{{
+    double size = 1
+    bool physics:kinematicEnabled = {str(index == kinematic_index).lower()}
+    double3 xformOp:translate = ({index * 4}, 0, 0)
+    uniform token[] xformOpOrder = ["xformOp:translate"]
+}}
+'''
+    scene_path.write_text(scene, encoding="ascii")
+    stage = attach_usd_with_ovstage(physx_sdk, str(scene_path))
+    physx_sdk.step_sync(1.0 / 60.0)
+    with ovstage.PathDictionary(stage) as paths:
+        def group_paths(group):
+            prim_paths = paths.get_paths(group.prim_list)
+            return [
+                paths.path_to_string(p)
+                for p in prim_paths[group.prim_offset : group.prim_offset + group.prim_count]
+            ]
+
+        def read_rows():
+            with physx_sdk.read(SimObjectType.RIGID_BODY, [attribute]) as read:
+                return {
+                    path: value.copy()
+                    for group in read.groups
+                    for path, value in zip(group_paths(group), _to_host(group.tensors[0]).reshape(-1, 3))
+                }
+
+        before = read_rows()
+        assert len(before) == 3
+        with physx_sdk.write(SimObjectType.RIGID_BODY, attribute) as session:
+            assert len(session.groups) == 1
+            group = session.groups[0]
+            assert group.prim_count == 3
+            assert group.tensors[0].device.is_cpu
+            target = np.arange(10, 19, dtype=np.float32).reshape(3, 3)
+            requested = dict(zip(group_paths(group), target))
+            assert requested.keys() == before.keys()
+            _fill(group.tensors[0], target)
+            with pytest.raises(RuntimeError) as exc:
+                session.commit(group)
+            message = str(exc.value).lower()
+            assert "set" + attribute.lower() in message
+            assert "kinematic" in message
+            assert "may have been applied" in message
+            assert "spent" in message
+            assert "unknown error" not in message
+            with pytest.raises(RuntimeError):
+                session.commit(group)
+
+        after = read_rows()
+        assert after.keys() == before.keys()
+        for path, value in after.items():
+            expected = before[path] if path == f"/Box{kinematic_index}" else requested[path]
+            np.testing.assert_array_equal(value, expected)
 
 
 def test_write_groups_match_the_read(physx_sdk):
@@ -319,8 +462,10 @@ def test_articulation_link_attributes_are_refused_by_name(physx_sdk):
     load_usd_with_ovstage(physx_sdk, data_path("CartPole.usda"))
     physx_sdk.step_sync(1.0 / 60.0)
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(RuntimeError, match="position.*articulation link") as exc:
         physx_sdk.write(SimObjectType.ARTICULATION_LINK, "position")
+    assert "root pose" in str(exc.value)
+    assert "unknown error" not in str(exc.value).lower()
 
     with physx_sdk.write(SimObjectType.ARTICULATION_LINK, "mass") as w:
         assert w.groups, "link mass is writable -- a link is a rigid body"
@@ -437,5 +582,10 @@ def test_articulation_refuses_names_it_does_not_serve(physx_sdk):
 
     # "position" is refused too: it is the RIGID spelling, and the articulation takes root* names.
     for attr in ("jointPosition", "mass", "points", "position"):
-        with pytest.raises(RuntimeError):
+        with pytest.raises(RuntimeError) as exc:
             physx_sdk.write(SimObjectType.ARTICULATION, attr)
+        message = str(exc.value)
+        assert attr in message
+        assert "articulation" in message.lower()
+        assert "do not accept" in message.lower()
+        assert "unknown error" not in message.lower()

@@ -55,6 +55,18 @@
         "Selects tensor-bindings-gpu for the existing CUDA binding path after clones exist",
         "Does not claim clone alone performs GPU tensor reads"
       ]
+    },
+    {
+      "id": 6,
+      "prompt": "I'm maintaining existing GPU tensor-binding code that binds /World/envs/env*/table after cloning, writes a CUDA pose tensor, steps, and reads back. The bind currently matches nothing and still runs to completion. Keep the tensor-binding API.",
+      "expected_output": "Keeps the tensor-binding path; clones then wait_all before create_tensor_binding; passes raise_if_empty=True (or checks binding.count); keeps native_device.device_type.value != DLDeviceType.kDLCUDA.",
+      "files": [],
+      "expectations": [
+        "Selects tensor-bindings-gpu to maintain the existing CUDA binding code",
+        "Clones then wait_all (or equivalent wait) before create_tensor_binding when binding /World/envs/env*",
+        "Passes raise_if_empty=True on create_tensor_binding, or checks binding.count before read/write",
+        "Keeps native_device.device_type.value != DLDeviceType.kDLCUDA rather than comparing the enum object to the int"
+      ]
     }
   ]
 }

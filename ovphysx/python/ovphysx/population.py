@@ -665,7 +665,7 @@ class PrimBatch:
         return self
 
     def define_cone(self, *, local_matrix=None, reset_xform_stack=None, world_matrix=None, radius=None, height=None, margin=None, axis=None):
-        """Cone geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cone (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; the runtime setting /collisionApproximateCones (default false) switches it to a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.
+        """Cone geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cone (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; OVPHYSX_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY defaults to true. Set it to false to use a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.
 
         ``local_matrix`` is (N, 16) row-major, identity when omitted. ``world_matrix`` is
         optional and must be the composed world transform if given.
@@ -693,7 +693,7 @@ class PrimBatch:
         return self
 
     def define_cylinder(self, *, local_matrix=None, reset_xform_stack=None, world_matrix=None, radius=None, height=None, margin=None, axis=None):
-        """Cylinder geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cylinder (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; the runtime setting /collisionApproximateCylinders (default false) switches it to a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.
+        """Cylinder geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cylinder (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; OVPHYSX_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY defaults to true. Set it to false to use a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.
 
         ``local_matrix`` is (N, 16) row-major, identity when omitted. ``world_matrix`` is
         optional and must be the composed world transform if given.

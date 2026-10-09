@@ -133,11 +133,12 @@ public:
 
     void fillChangeParams(std::vector<usdparser::ChangeParams>& changeParams);
 
+    // Pose changes preserve a non-kinematic actor's linear and angular velocities.
+    // Kinematic targets retain their existing simulation-step semantics.
     bool updateTransform(const usdparser::AttachedStage& attachedStage,
                          omni::physics::parse::ObjectKey key,
                          usdparser::ObjectId objectId,
                          const Transform& transform,
-                         bool resetVelocity = true,
                          bool scaleProvided = true);
 
     // ObjectKey-native entry point (the `path` this replaces was already unused in the body).

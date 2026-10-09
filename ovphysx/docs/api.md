@@ -13,6 +13,7 @@ C++ convenience wrappers (experimental, C++17):
 
 - [`include/ovphysx/experimental/ovphysx.hpp`](../include/ovphysx/experimental/ovphysx.hpp) -- RAII instance wrapper
 - [`include/ovphysx/experimental/Helpers.hpp`](../include/ovphysx/experimental/Helpers.hpp) -- RAII helpers, including `WaitResult`
+- [`include/ovphysx/experimental/OvStageOutput.hpp`](../include/ovphysx/experimental/OvStageOutput.hpp) -- application-owned CPU/CUDA world-transform publication in `ovphysx::utils`; see [ovstage integration](ovstage_integration.md#c-utility-publish-fixed-world-transforms)
 - [`include/ovphysx/experimental/TensorBinding.hpp`](../include/ovphysx/experimental/TensorBinding.hpp) -- RAII tensor binding wrapper (**deprecated**; use `ovphysx_read` / `ovphysx_write`)
 
 For rendered documentation with full descriptions, refer to the

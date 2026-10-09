@@ -30,6 +30,11 @@ scene and to a stock `usd-core` when you author or validate offline.
 - **Omni Physics Deformable Schema (codeless)** — extends `UsdPhysics` with
   deformable bodies (`OmniPhysicsDeformableBodyAPI` and friends). Refer to
   [Deformables](simulation_setup/deformables.md).
+- **Newton Schema (`newton:*`, not shipped)** — the
+  [Newton USD schema](https://github.com/newton-physics/newton-usd-schemas), a
+  subset of whose attributes ovphysx reads as fallbacks for the PhysX spellings.
+  Install and register it yourself; refer to
+  [Registering the Newton USD schema](#registering-the-newton-usd-schema).
 
 The complete attribute set for each schema — types, defaults, and allowed values
 — is authoritative in the schema definitions themselves and is rendered in the
@@ -132,6 +137,65 @@ process. Without the registration, population resolves only the properties
 authored in the file rather than each prim's full schema-declared property set.
 Registration is process-scoped and irreversible; registering the same root
 twice is a no-op.
+
+### Registering the Newton USD schema
+
+ovphysx also reads a subset of the
+[Newton USD schema](https://github.com/newton-physics/newton-usd-schemas)
+(`NewtonJointAPI`, `NewtonArticulationRootAPI`, `NewtonSceneAPI`, ...) as
+fallbacks for the PhysX spellings. `newton:velocityLimit`, for example, maps onto
+`physxJoint:maxJointVelocity`: an authored PhysX limit below `FLT_MAX` wins, then
+an authored Newton value, then the PhysX default. An explicitly unlimited PhysX
+value (`inf` or `FLT_MAX`) counts as no PhysX opinion and yields to an authored
+Newton limit; the per-attribute contract is in
+[PhysxJointAPI](population/PhysxJointAPI.md). ovphysx does not ship this schema. It is a
+separate package that the application installs and registers, in the same call
+and under the same ordering rule as the PhysX schemas:
+
+```bash
+pip install newton-usd-schemas
+```
+
+```python
+import ovphysx
+import ovstage
+
+ovstage.population.register_usd_schemas(
+    [str(ovphysx.codeless_schema_root()), str(ovphysx.newton_schema_root())]
+)
+```
+
+The bundled Python samples register it this way; their project file declares
+`newton-usd-schemas`, so `uv run` resolves it, and a plain `pip install ovphysx`
+environment needs `pip install newton-usd-schemas` before running them.
+`ovphysx.newton_schema_root()` returns the directory of the installed
+`newton-usd-schemas` package without importing it (importing it requires `pxr`
+and registers the schema with that stock USD runtime instead), and raises
+`FileNotFoundError` with the install hint when the package is missing. Without
+the pip package, download the schema from its
+[GitHub repository](https://github.com/newton-physics/newton-usd-schemas) and pass
+the directory holding its `plugInfo.json` to `register_usd_schemas()` (in C,
+`ovstage_population_register_usd_schemas()`) yourself.
+
+ovstage populates an attribute only when a registered schema defines it, so a
+scene that authors `newton:*` attributes without this registration loses them
+silently: a joint authoring only `newton:velocityLimit` simulates unlimited.
+`PhysX.attach_ovstage()` therefore checks, once per process and before the
+native attach, that the installed `newton-usd-schemas` package was registered
+before the first population and emits a `RuntimeWarning` otherwise. When the
+package is not installed at all it logs a warning on the `ovphysx` Python logger
+instead: nothing is wrong for a scene without `newton:*` attributes, and a suite
+that promotes warnings to errors keeps running. ovstage keys registration on the plugin
+family, so a complete copy of the Newton schema registered from any directory
+(a GitHub checkout) is recognized. The check probes only once USD has built its
+schema definitions; a stage authored procedurally through `ovphysx.population`
+and attached before any USD population is left alone, so the check never
+registers a schema on the application's behalf. A
+registration ovstage cannot observe (another USD consumer in the process read
+the schema definitions first) is not detected; silence the check in that case
+with `PhysXConfig(carbonite_overrides={"/ovphysx/schemas/warnMissingNewtonSchema": False})`
+(the string `"false"` is accepted too). The C API cannot locate the package and
+performs no such check.
 
 ### Authoring with a stock `usd-core`
 

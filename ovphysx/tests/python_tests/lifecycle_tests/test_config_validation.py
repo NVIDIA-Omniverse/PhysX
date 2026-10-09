@@ -27,7 +27,7 @@ def test_config_validation():
     with pytest.raises(ValueError, match="conflicts with typed field"):
         PhysX(
             config=PhysXConfig(
-                carbonite_overrides={"/physics/numThreads": 8},
+                carbonite_overrides={"/persistent/physics/numThreads": 8},
             )
         )
 

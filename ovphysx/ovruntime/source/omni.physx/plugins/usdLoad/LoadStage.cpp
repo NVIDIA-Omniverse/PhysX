@@ -2,6 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-LOAD-TOKENS-001
+ * @covers AC-5
+ */
+
+/**
+ * @implements REQ-PARSE-INSTANCER-DISPATCH-001
+ * @covers AC-2 AC-3 AC-4
+ */
+
+/**
  * @implements REQ-PARSE-CONSUMER-001
  * @covers AC-9 AC-16 AC-17 AC-18 AC-19 AC-20 AC-21 AC-22 AC-23 AC-24
  *
@@ -80,7 +90,6 @@ namespace omni { namespace physx { bool isRigidBodyDynamic(omni::physx::usdparse
 #include <VoxelMap.h>
 #include <particles/PhysXParticleSampling.h>
 
-
 // physx specific stuff
 #include "FixedTendon.h"
 #include "SpatialTendon.h"
@@ -113,8 +122,6 @@ namespace omni { namespace physx { bool isRigidBodyDynamic(omni::physx::usdparse
 
 #include <OvstageSource.h>
 #include "ScannedShapeCookingDispatch.h"
-
-
 
 #include "TimeSampledCallbacks.h"
 #include "DeformableBodyConverter.h"
@@ -832,8 +839,7 @@ ObjectId createObject(AttachedStage& attachedStage, omni::physics::parse::Object
 // data transform on already-resolved data — no UsdCollectionAPI calls
 // happen here.  See ADR-0006 and REQ-PARSE-COLGROUP-002.
 //
-// `beginIdx` / `endIdx` slice `scanned.collisionGroups` so the same
-// helper drives the serial path and the parallel-batched path.  Append
+// `beginIdx` / `endIdx` select the groups to invert in source walk order. Append
 // semantics match the legacy `updateCollisionCollection` exactly: a
 // re-invocation on the same group adds duplicate entries (callers
 // either consult `mCollectionsPopulated` to skip re-entry or, in the
@@ -847,20 +853,20 @@ void invertCollisionGroupMembers(const AttachedStage& attachedStage,
                                  size_t beginIdx, size_t endIdx,
                                  CollisionGroupsMap& cgMap)
 {
-    // Re-key from scanStage's source into attachedStage's: they are different intern tables
-    // even when scanning the full stage. keyFor(string_view) populates its table lazily on a
-    // miss; the source serializes that internally, so the caller's parallelFor can't race.
+    // Attachment scan contexts share the owner's key namespace; independent
+    // scans translate native identities through the destination backend.
     for (size_t i = beginIdx; i < endIdx; ++i)
     {
         const auto& group = scanned.collisionGroups[i];
         const omni::physics::parse::ObjectKey groupKey =
             attachedStage.keyFor(scanned.source().sourceKeyToString(group->primKey));
-        for (const omni::physics::parse::ObjectKey member : group->sourceMembers)
-        {
-            const omni::physics::parse::ObjectKey memberKey =
-                attachedStage.keyFor(scanned.source().sourceKeyToString(member));
+        const bool sameSource = attachedStage.getSource() == scanned.sourcePtr();
+        const std::vector<omni::physics::parse::ObjectKey> remapped = sameSource ?
+            std::vector<omni::physics::parse::ObjectKey>{} :
+            attachedStage.getSource()->remapKeysFrom(scanned.source(), group->sourceMembers);
+        const std::vector<omni::physics::parse::ObjectKey>& members = sameSource ? group->sourceMembers : remapped;
+        for (const omni::physics::parse::ObjectKey memberKey : members)
             cgMap[memberKey].push_back(groupKey);
-        }
     }
 }
 
@@ -1084,7 +1090,6 @@ public:
     {
         mNoPhysXScene = !attachedStage.isPhysXDefaultSimulator();
     }
-
 
     // Per-prim side-effect walk.  scanStage's descriptor lists cover
     // most of the data, but a handful of per-prim parse-flag and
@@ -1372,7 +1377,7 @@ public:
         if (!scanned.ccts.empty())
             mParsingFlags |= ParsingFlag::eParseInternal;
 
-        if (scanned.hasPointInstancerPrims ||
+        if (!scanned.particleObjectCandidates.empty() || scanned.hasPointInstancerPrims ||
             !scanned.particleSystems.empty() || !scanned.particleSets.empty() ||
             !scanned.particleSamplers.empty() || !scanned.particleAnisotropies.empty() ||
             !scanned.particleSmoothings.empty() || !scanned.particleIsosurfaces.empty())
@@ -1601,38 +1606,36 @@ public:
             if (!mCollectionsPopulated)
             {
                 PHYSICS_PROFILE("invertCollisionGroupMembers");
-                const size_t minBatchSize = 20;
-                const size_t collisionGroupsSize = scanned.collisionGroups.size();
-                const bool serialCollisionGroupInversion = mAttachedStage.hasExternalSource();
-                if (collisionGroupsSize < minBatchSize || serialCollisionGroupInversion)
-                {
-                    invertCollisionGroupMembers(mAttachedStage, scanned, 0, collisionGroupsSize,
-                                                mAttachedStage.getCollisionGroupMap());
-                }
+                CollisionGroupsMap& groups = mAttachedStage.getCollisionGroupMap();
+                const size_t count = scanned.collisionGroups.size();
+                if (count < 20 || (mAttachedStage.hasExternalSource() &&
+                    mAttachedStage.getSource() != scanned.sourcePtr()))
+                    invertCollisionGroupMembers(mAttachedStage, scanned, 0, count, groups);
                 else
                 {
-                    const size_t numBatches = 24;
-                    const size_t batchSize = collisionGroupsSize / numBatches;
-                    if (!mAttachedStage.getAdditionalCollisionGroupMaps().empty())
+                    // Allocate independent maps in parallel, then transfer their nodes
+                    // into one lookup map. Merge contiguous ranges in walk order so
+                    // overlapping members retain every group in the original order.
+                    const size_t batches = std::min(size_t(8), count);
+                    std::vector<CollisionGroupsMap> maps(batches);
+                    const auto invert = [&](size_t batch)
                     {
-                        PHYSICS_PROFILE("invertCollisionGroupMembers:merge");
-                        CollisionGroupsMap& cgMap = mAttachedStage.getCollisionGroupMap();
-                        for (const CollisionGroupsMap& m : mAttachedStage.getAdditionalCollisionGroupMaps())
-                            cgMap.insert(m.begin(), m.end());
-                        mAttachedStage.getAdditionalCollisionGroupMaps().clear();
-                    }
-                    std::vector<CollisionGroupsMap>& cgMaps = mAttachedStage.getAdditionalCollisionGroupMaps();
-                    cgMaps.resize(numBatches);
-                    auto&& computeFunc = [this, &scanned, numBatches, batchSize, collisionGroupsSize, &cgMaps](size_t batchIndex)
-                    {
-                        const size_t batchEnd =
-                            batchIndex == (numBatches - 1) ? collisionGroupsSize : (batchIndex + 1) * batchSize;
-                        invertCollisionGroupMembers(mAttachedStage, scanned, batchIndex * batchSize, batchEnd, cgMaps[batchIndex]);
+                        invertCollisionGroupMembers(mAttachedStage, scanned,
+                            count * batch / batches, count * (batch + 1) / batches, maps[batch]);
                     };
+                    carb::getCachedInterface<carb::tasking::ITasking>()->parallelFor(size_t(0), batches, invert);
+                    size_t capacity = groups.size();
+                    for (const CollisionGroupsMap& map : maps)
+                        capacity += map.size();
+                    groups.reserve(capacity);
+                    for (CollisionGroupsMap& map : maps)
                     {
-                        PHYSICS_PROFILE("invertCollisionGroupMembers:parallelFor");
-                        ITasking* tasking = carb::getCachedInterface<ITasking>();
-                        tasking->parallelFor(size_t(0), numBatches, computeFunc);
+                        groups.merge(map);
+                        for (CollisionGroupsMap::const_reference entry : map)
+                        {
+                            std::vector<omni::physics::parse::ObjectKey>& existing = groups.at(entry.first);
+                            existing.insert(existing.end(), entry.second.begin(), entry.second.end());
+                        }
                     }
                 }
                 mCollectionsPopulated = true;
@@ -3664,7 +3667,8 @@ public:
         if (!scanned.sourcePtr())
             return false;
 
-        if (!scanned.particleSystems.empty() || !scanned.particleSets.empty() ||
+        if (!scanned.particleObjectCandidates.empty() ||
+            !scanned.particleSystems.empty() || !scanned.particleSets.empty() ||
             !scanned.particleSamplers.empty() || !scanned.particleAnisotropies.empty() ||
             !scanned.particleSmoothings.empty() || !scanned.particleIsosurfaces.empty())
         {
@@ -3933,7 +3937,6 @@ public:
         }
 
         // parse all instancers and particle objects
-        // A.B. TODO merge some traversals
         std::vector<ParticleSystemDesc*> particleSysDescs;
         std::vector<ParticleDesc*> particleDescs;
 
@@ -3942,11 +3945,9 @@ public:
             CARB_PROFILE_ZONE(0, "OmniPhysX:particles");
             KeySet jointInstancerKeys;
 
-            // Source-backed type/schema dispatch keyed by ObjectKey (no UsdPrim).
+            // Dispatch only the scan-discovered candidates (no per-render-prim type probes).
             const omni::physics::parse::IPhysicsSource* src = mAttachedStage.getSource();
-            omni::physics::parse::KnownTokens tok;
-            if (src)
-                tok.intern(*src);
+            const omni::physics::parse::KnownTokens& tok = mAttachedStage.getKnownTokens();
 
             // Index by SOURCE-TEXT, not ObjectKey: the scan's source and attachedStage's
             // persistent source are different IPhysicsSource instances, and re-keying
@@ -3967,7 +3968,7 @@ public:
                 scannedSamplers[scanSrc.sourceKeyToString(scanned.particleSamplerKeys[i])] = scanned.particleSamplers[i].get();
             std::unordered_set<std::string_view> queuedParticleSystems;
             std::unordered_set<std::string_view> queuedParticleSets;
-            // Voxel-map subtrees are pruned by forEachLoadObject below (it stops descending under
+            // Voxel-map candidate subtrees are pruned below (it stops processing under
             // an InfiniteVoxelMapAPI Xform). scanStage has no voxel-map awareness, so the scanned
             // particle lists still contain prims nested under a voxel map; the catch-all loops
             // after the walk must replicate the prune and skip them. Text-prefix (mirrors
@@ -3983,37 +3984,40 @@ public:
                        path[root.size()] == '/';
             };
 
-            forEachLoadObject(scanRoots, excludePaths, [&](omni::physics::parse::ObjectKey primObjKey) -> bool
+            for (const omni::physics::parse::ParticleObjectCandidate& candidate : scanned.particleObjectCandidates)
             {
-                if (src->isA(primObjKey, tok.physxParticleSystemType))
+                const std::string_view candidatePath = scanSrc.sourceKeyToString(candidate.key);
+                if (candidatePath.empty())
+                    continue;
+                // Both backends emit contiguous depth-first subtrees. Only the
+                // latest retained voxel root can contain the next candidate.
+                // Keep all roots for the unordered descriptor fallback below.
+                if (!voxelMapRoots.empty() && hasTextPrefix(candidatePath, voxelMapRoots.back()))
+                    continue;
+                const omni::physics::parse::ObjectKey primObjKey = mAttachedStage.keyFor(candidatePath);
+                using Kind = omni::physics::parse::ParticleObjectCandidate::Kind;
+                if (candidate.kind == Kind::eParticleSystem)
                 {
-                    auto sysIt = scannedSystems.find(mAttachedStage.textViewFor(primObjKey));
+                    auto sysIt = scannedSystems.find(candidatePath);
                     if (sysIt != scannedSystems.end())
                     {
                         particleSysDescs.push_back(buildParticleSystemDesc(mAttachedStage, scanned, *sysIt->second));
                         queuedParticleSystems.insert(sysIt->first);
                     }
                 }
-                else if (src->isA(primObjKey, tok.xformType))
+                else if (candidate.kind == Kind::eVoxelMap)
                 {
-                    if (src->hasSchema(primObjKey, src->internToken("InfiniteVoxelMapAPI")))
-                    {
-                        // Unsupported in the USD-free runtime: no descriptor, no object. The subtree
-                        // is still pruned so its Chunk_* PointInstancers are not parsed as bodies.
-                        CARB_LOG_WARN("InfiniteVoxelMapAPI on '%s' is not supported by the USD-free runtime; the voxel map is ignored",
-                                      mAttachedStage.textFor(primObjKey));
-                        voxelMapRoots.push_back(mAttachedStage.textViewFor(primObjKey));
-                        return true; // prune subtree
-                    }
-                    return false;
+                    CARB_LOG_WARN("InfiniteVoxelMapAPI on '%s' is not supported by the USD-free runtime; the voxel map is ignored",
+                                  mAttachedStage.textFor(primObjKey));
+                    voxelMapRoots.push_back(candidatePath);
+                    continue;
                 }
-                else if (src->isA(primObjKey, tok.meshType) &&
-                         src->hasSchema(primObjKey, tok.physxParticleSamplingAPI))
+                else if (candidate.kind == Kind::eParticleSampler)
                 {
                     cookingdataasync::CookingDataAsync* cookingDataAsync = omni::physx::OmniPhysX::getInstance().getPhysXSetup().getCookingDataAsync();
                     // Build the engine sampling descriptor from the scanned
                     // parse descriptor (no USD re-read).
-                    auto samplerIt = scannedSamplers.find(mAttachedStage.textViewFor(primObjKey));
+                    auto samplerIt = scannedSamplers.find(candidatePath);
                     const omni::physics::parse::ParticleSamplingDesc* scanSampling =
                         samplerIt != scannedSamplers.end() ? samplerIt->second : nullptr;
                     ParticleSamplingDesc samplingDesc;
@@ -4054,10 +4058,9 @@ public:
                         }
                     }
                 }
-                else if (src->isA(primObjKey, tok.pointBasedType) &&
-                         src->hasSchema(primObjKey, tok.physxParticleSetAPI))
+                else if (candidate.kind == Kind::eParticleSet)
                 {
-                    auto setIt = scannedSets.find(mAttachedStage.textViewFor(primObjKey));
+                    auto setIt = scannedSets.find(candidatePath);
                     if (setIt != scannedSets.end())
                     {
                         if (ParticleSetDesc* desc = buildParticleSetDesc(mAttachedStage, scanned, *setIt->second))
@@ -4067,37 +4070,22 @@ public:
                         }
                     }
                 }
-                else if (src->isA(primObjKey, tok.pointInstancerType))
+                else if (candidate.kind == Kind::ePointInstancer)
                 {
-                    if (src->hasSchema(primObjKey, tok.physxParticleSetAPI))
-                    {
-                        auto setIt = scannedSets.find(mAttachedStage.textViewFor(primObjKey));
-                        if (setIt != scannedSets.end())
-                        {
-                            if (ParticleSetDesc* desc = buildParticleSetDesc(mAttachedStage, scanned, *setIt->second))
-                            {
-                                particleDescs.push_back(desc);
-                                queuedParticleSets.insert(setIt->first);
-                            }
-                        }
-                    }
-                    else if (!src->isInstance(primObjKey) && !src->isInstanceProxy(primObjKey))
-                    {
+                    if (!src->isInstance(primObjKey) && !src->isInstanceProxy(primObjKey))
                         parseRigidBodyInstancer(mAttachedStage, primObjKey, mFilteredPairs);
-                    }
                 }
-                else if (src->isA(primObjKey, tok.physxPhysicsJointInstancerType))
+                else if (candidate.kind == Kind::eJointInstancer)
                 {
                     if (!src->isInstance(primObjKey) && !src->isInstanceProxy(primObjKey))
                     {
                         jointInstancerKeys.insert(primObjKey);
                     }
                 }
-                return false;
-            });
+            }
 
             // Skip scanned particle prims nested under a pruned voxel-map subtree so the catch-all
-            // does not create particle systems/sets that forEachLoadObject deliberately excluded.
+            // does not create particle systems/sets that candidate dispatch deliberately excluded.
             // Text-prefix rather than an ObjectKey ancestry walk: re-keying scan-space text
             // just for this check would reintroduce the cross-source identity hazard above.
             auto underVoxelMap = [&](std::string_view path) -> bool

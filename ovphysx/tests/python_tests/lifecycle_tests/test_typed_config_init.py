@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-CAPI-COLLISION-CONFIG-001
+# @covers AC-1
+
 """Init-time typed config tests, ONE create+destroy per file.
 
 Tests that PhysXConfig entries passed during construction are applied correctly.

@@ -8,6 +8,9 @@
  * @implements REQ-PARSE-SHAPE-002
  * @covers AC-1
  *
+ * @implements REQ-PARSE-SHAPE-006
+ * @covers AC-1 AC-2 AC-3
+ *
  * @implements REQ-PARSE-COL-005
  * @covers AC-1
  */
@@ -184,7 +187,7 @@ DescPtr<CustomPhysxShapeDesc> parseCustomShape(ParseContext& ctx, ObjectKey key,
     return d;
 }
 
-MeshApproximation parseMeshApproximation(ParseContext& ctx, ObjectKey key)
+MeshApproximation parseMeshApproximation(ParseContext& ctx, ObjectKey key, ObjectKey attributeFallback)
 {
     IPhysicsSource& src = ctx.source();
     const KnownTokens& tok = ctx.knownTokens();
@@ -196,7 +199,12 @@ MeshApproximation parseMeshApproximation(ParseContext& ctx, ObjectKey key)
         return MeshApproximation::eNone;
 
     TokenId approx;
-    if (!src.getAttribute(key, tok.physicsApproximation, approx))
+    // The walker supplies only a strict-ancestor prototype backing key. A
+    // readable logical value (including "none") always wins; instance roots
+    // with value blocks must not fall back to their own geometry prototype.
+    if (!src.getAttribute(key, tok.physicsApproximation, approx) &&
+        (!attributeFallback.valid() || attributeFallback == key ||
+         !src.getAttribute(attributeFallback, tok.physicsApproximation, approx)))
         return MeshApproximation::eNone;
 
     if      (approx == tok.approximationNone)               return MeshApproximation::eNone;
@@ -233,6 +241,16 @@ void scaleShapeDescByInstance(PhysxShapeDesc& desc, carb::Float3 instanceScale)
     auto compMult = [](const carb::Float3& a, const carb::Float3& b) {
         return carb::Float3{ a.x * b.x, a.y * b.y, a.z * b.z };
     };
+
+    // Bounding shapes are fitted later from this per-instance working buffer.
+    // Scaling just radius/halfExtents is insufficient: fitting overwrites them.
+    if (desc.type == eBoundingSphereShape || desc.type == eBoundingBoxShape)
+    {
+        MergeMeshPhysxShapeDesc& d = static_cast<MergeMeshPhysxShapeDesc&>(desc);
+        if (d.mergedMesh)
+            for (carb::Float3& point : d.mergedMesh->points)
+                point = compMult(point, instanceScale);
+    }
 
     switch (desc.type)
     {

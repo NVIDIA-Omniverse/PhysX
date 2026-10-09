@@ -434,7 +434,8 @@ void scaleMeshPoints(ParseContext& ctx, BufferHandle points,
 // fields in place. Per-shape-type radius/halfExtents/meshScale
 // adjustment; does NOT touch localPos / localScale (those depend on the
 // USD-stage / xfCache state the parse-lib doesn't own — the caller
-// sets them).
+// sets them). Bounding-shape mergedMesh points are also scaled in place;
+// callers must supply a buffer owned exclusively by this instance.
 //
 // Used by `scanStage::emitShape` when `inDesc.masterDesc=true` so each
 // instance proxy gets a descriptor with the instance's world scale baked
@@ -484,7 +485,11 @@ enum class MeshApproximation : uint32_t
     eSdf,
 };
 
-MeshApproximation parseMeshApproximation(ParseContext& ctx, ObjectKey key);
+// Optional attribute fallback is supplied by the walker for instance-proxy
+// rows that omit prototype-authored values. Schema membership remains logical;
+// a readable logical value wins. Do not pass an instance root's own prototype
+// where an unreadable value could represent a stronger value block.
+MeshApproximation parseMeshApproximation(ParseContext& ctx, ObjectKey key, ObjectKey attributeFallback = {});
 
 // Resolve a mesh-typed prim's raw geometry into BufferHandles + scalars.
 // Wraps IPhysicsSource::getMeshAttributes; the source does the heavy

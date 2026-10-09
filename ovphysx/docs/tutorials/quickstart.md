@@ -40,8 +40,14 @@ For both Python and C:
 Install the wheel:
 
 ```bash
-pip install ovphysx
+pip install ovphysx newton-usd-schemas
 ```
+
+`pip` installs the OVStage version required by ovphysx automatically.
+
+`newton-usd-schemas` is the Newton USD schema the snippet below registers next
+to ovphysx's own; scenes that author no `newton:*` attributes can leave it out
+and drop the `newton_schema_root()` entry.
 
 ```python
 from pathlib import Path
@@ -60,8 +66,12 @@ if not usd_path.is_file():
     raise FileNotFoundError(f"ovphysx sample data is missing: {usd_path}")
 
 # ovphysx ships its PhysX USD schemas as codeless resources and never registers
-# them itself; register them with ovstage before the first population call.
-ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+# them itself; register them with ovstage before the first population call. The
+# Newton USD schema (pip install newton-usd-schemas) goes in the same call so
+# authored newton:* attributes reach the parser.
+ovstage.population.register_usd_schemas(
+    [str(ovphysx.codeless_schema_root()), str(ovphysx.newton_schema_root())]
+)
 stage = ovstage.Stage("scene")
 ovstage.population.open_usd(
     stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.PHYSICS
@@ -88,21 +98,23 @@ native scene-graph instances — refer to
 Download the ovphysx SDK package from the [GitHub Releases](https://github.com/NVIDIA-Omniverse/PhysX/releases) page and extract it to a local path.
 You also need CMake 3.16 or newer and a C or C++ compiler.
 
-Repository source builds fetch ovstage automatically from public PyPI. The
-manual download described in this section applies only if you use the prebuilt
-ovphysx SDK.
+Repository source builds fetch the pinned ovstage version automatically from
+public PyPI. The manual download described in this section applies only if you
+use the prebuilt ovphysx SDK.
 
 **ovstage is not part of the SDK.** ovphysx binds to the application-supplied
 ovstage, so the package ships no ovstage headers, library, or runtime. Download
 the matching native archive for your platform from the
 [ovstage GitHub Releases](https://github.com/NVIDIA-Omniverse/ovstage/releases)
-page and extract it to a separate directory beside ovphysx. This release uses
-OVStage `0.2.0.377349`, published under the `v0.2.0` release. Do not overlay the
-two package trees.
+page and extract it to a separate directory beside ovphysx. The SDK records its
+OVStage release in `ovphysx_OVSTAGE_VERSION` in
+`lib/cmake/ovphysx/ovphysxConfig.cmake`; use that value to select the archive.
+Do not overlay the two package trees.
 
 `find_package(ovphysx)` pulls it in through `find_dependency(ovstage)`, so add
-both roots to `CMAKE_PREFIX_PATH`. Both roots are required even if you never
-call ovstage, because the public ovphysx headers `#include <ovstage/...>`.
+both roots to `CMAKE_PREFIX_PATH`. CMake checks that ovstage's major, minor, and
+patch version match the SDK's requirement. Both roots are required even if you
+never call ovstage, because the public ovphysx headers `#include <ovstage/...>`.
 
 **SDK Directory Layout**
 

@@ -4,6 +4,11 @@
 // Direct C API coverage for ovphysx_raycast / ovphysx_sweep / ovphysx_overlap.
 // Python tests exercise the ctypes mirror. This file validates the C ABI.
 
+/**
+ * @implements REQ-CAPI-SCENEQUERY-001
+ * @covers AC-1 AC-2 AC-3 AC-4
+ */
+
 #include <gtest/gtest.h>
 #include <ovstage/ovx_path_dictionary.h>
 #include "ovphysx/ovphysx.h"
@@ -421,7 +426,7 @@ TEST_F(SceneQueryRigidBodyTest, ResolvePathsFromIdsTruncatesToMaxPaths)
     ovphysx_string_t paths[1]{};
     uint32_t resolved = 0;
     ovphysx_result_t r = ovphysx_scene_query_get_paths_from_ids(m_handle, ids, 2, paths, 1, &resolved);
-    EXPECT_EQ(r.status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(r.status, OVPHYSX_API_BUFFER_TOO_SMALL);
     EXPECT_EQ(resolved, 2u) << "out_count reports total needed, not entries written";
 }
 

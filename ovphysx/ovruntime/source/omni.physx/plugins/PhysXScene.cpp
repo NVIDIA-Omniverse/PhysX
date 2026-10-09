@@ -10,6 +10,9 @@
  *
  * @implements REQ-SIM-DIAGNOSTICS-001
  * @covers AC-1
+ *
+ * @implements REQ-SIM-GPU-ERROR-001
+ * @covers AC-1
  */
 
 #include "PhysXSettings.h"
@@ -1263,7 +1266,11 @@ void PhysXStepper::run()
                     CARB_ASSERT(taskResumed);
                     CARB_UNUSED(taskResumed);
                     const bool resultsFetched = scene->fetchResults(false);
-                    CARB_ASSERT(resultsFetched);
+                    // Let the waiting caller report a fatal GPU error after this worker completes.
+                    CARB_ASSERT(resultsFetched ||
+                                (((scene->getFlags() & PxSceneFlag::eENABLE_GPU_DYNAMICS) ||
+                                  scene->getBroadPhaseType() == PxBroadPhaseType::eGPU) &&
+                                 cudaContextManager && cudaContextManager->getCudaContext()->getLastError() != 0));
                     CARB_UNUSED(resultsFetched);
                 }
             }

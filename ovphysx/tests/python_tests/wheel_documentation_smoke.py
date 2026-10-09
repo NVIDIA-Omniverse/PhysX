@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # @implements REQ-PACKAGING-DOCS-001
-# @covers AC-1 AC-2
+# @covers AC-1 AC-2 AC-3
 
 """Validate the portable documentation bundled in an ovphysx artifact."""
 
@@ -16,6 +16,10 @@ from urllib.parse import unquote, urlsplit
 
 _PUBLIC_DOC_SUFFIXES = {".jpg", ".md", ".png", ".rst"}
 _MARKDOWN_LINK_RE = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
+
+# Sphinx publishes the C headers as download artifacts under hashed directories,
+# so they are checked by name rather than by path.
+_RENDERED_DOC_HEADERS = ("ovphysx.h", "ovphysx_types.h", "ovphysx_config.h")
 
 
 def _installed_package_root() -> Path:
@@ -93,15 +97,45 @@ def _broken_relative_links(package_root: Path, *, allow_unbundled_header_links: 
     return findings
 
 
+def _rendered_docs_findings(package_docs: Path) -> list[str]:
+    """Report what the rendered documentation tree is missing, if anything.
+
+    The rendered tree is built once and reused by every platform, so its absence
+    means a platform silently shipped a smaller artifact than its siblings --
+    which is exactly how the aarch64 wheel lost all 118 rendered files for two
+    releases (NVBug 6717253).
+    """
+    rendered_root = package_docs / "html"
+    if not rendered_root.is_dir():
+        return [f"the rendered documentation tree is absent: {rendered_root}"]
+
+    findings: list[str] = []
+    if not (rendered_root / "index.html").is_file():
+        findings.append(f"no index.html under {rendered_root}")
+
+    downloadable = {path.name for path in rendered_root.rglob("*") if path.is_file()}
+    missing_headers = [name for name in _RENDERED_DOC_HEADERS if name not in downloadable]
+    if missing_headers:
+        findings.append(f"downloadable C headers are absent: {', '.join(missing_headers)}")
+    return findings
+
+
 def validate(
     package_root: Path,
     source_docs: Path,
     *,
     allow_unbundled_header_links: bool = False,
+    require_rendered_docs: bool = False,
 ) -> None:
     package_docs = package_root / "docs"
     if not package_docs.is_dir():
         raise RuntimeError(f"Bundled documentation directory was not found: {package_docs}")
+
+    if require_rendered_docs:
+        rendered_findings = _rendered_docs_findings(package_docs)
+        if rendered_findings:
+            rendered_lines = "\n".join(f"  {finding}" for finding in rendered_findings)
+            raise RuntimeError(f"Rendered documentation is missing from the artifact:\n{rendered_lines}")
 
     internal_paths = sorted(
         path.relative_to(package_docs)
@@ -153,6 +187,7 @@ def main() -> None:
     parser.add_argument("--package-root", type=Path, default=None)
     parser.add_argument("--source-docs", type=Path, default=default_source_docs)
     parser.add_argument("--allow-unbundled-header-links", action="store_true")
+    parser.add_argument("--require-rendered-docs", action="store_true")
     args = parser.parse_args()
 
     package_root = args.package_root or _installed_package_root()
@@ -160,6 +195,7 @@ def main() -> None:
         package_root.resolve(),
         args.source_docs.resolve(),
         allow_unbundled_header_links=args.allow_unbundled_header_links,
+        require_rendered_docs=args.require_rendered_docs,
     )
 
 

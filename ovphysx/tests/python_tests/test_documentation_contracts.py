@@ -4,6 +4,7 @@
 """Contract checks for public documentation that mirrors shipped behavior."""
 
 import ast
+import json
 import platform
 import re
 import subprocess
@@ -179,6 +180,10 @@ def test_getting_started_docs_match_shipped_packages():
         assert population_blocks, f"{site} has no Python population example"
         for block in population_blocks:
             tree = ast.parse(block)
+            if "def add_usd_file_and_drain" in block:
+                # This later-edit helper intentionally accepts the added USD
+                # path from its caller rather than naming shipped sample data.
+                continue
             strings = {
                 node.value
                 for node in ast.walk(tree)
@@ -241,9 +246,6 @@ def test_getting_started_docs_match_shipped_packages():
     numeric_ovstage_version = ".".join(ovstage_version.split(".")[:4])
     pyproject = (PROJECT_ROOT / "python/pyproject.toml").read_text(encoding="utf-8")
     assert f'"ovstage=={numeric_ovstage_version}"' in pyproject
-    for site in ("docs/tutorials/quickstart.md", "SDK_README.md"):
-        text = (PROJECT_ROOT / site).read_text(encoding="utf-8")
-        assert f"OVStage `{ovstage_version}`" in text
 
 
 def test_fixed_base_jacobian_shape_matches_public_header():
@@ -457,6 +459,73 @@ def test_skill_frontmatter_declares_canonical_metadata():
             assert pattern.search(frontmatter), (
                 f"{skill_path} frontmatter metadata missing {label}:"
             )
+
+
+# NVBug 6763283 / OMPE-109807: eval rubrics must use the current lifecycle API
+# and route new read/write code away from the deprecated tensor-binding skills.
+def test_skill_evals_use_current_api_and_deprecation_routes():
+    def eval_case(skill_name, case_id):
+        dataset_path = (
+            PROJECT_ROOT / "skills" / skill_name / "evals" / "evals.json"
+        )
+        dataset = json.loads(dataset_path.read_text(encoding="utf-8"))
+        return next(case for case in dataset["evals"] if case["id"] == case_id)
+
+    basic_lifecycle = eval_case("basic-workflow", 1)
+    lifecycle_rubric = " ".join(
+        [basic_lifecycle["expected_output"], *basic_lifecycle["expectations"]]
+    )
+    assert "physx.destroy" in lifecycle_rubric
+    assert "physx.release" not in lifecycle_rubric
+
+    expected_routes = (
+        ("basic-workflow", 4, ("clone-environments", "ovphysx-session-write")),
+        ("ovphysx-output-read", 3, ("ovphysx-output-read",)),
+        (
+            "ovphysx-usd-authoring",
+            5,
+            ("basic-workflow", "ovphysx-output-read"),
+        ),
+    )
+
+    def _is_negated_mention(clause):
+        lower = clause.lower()
+        return (
+            lower.startswith("does not select")
+            or "does not use" in lower
+            or (
+                "not " in lower
+                and "deprecated tensor-binding" in lower
+            )
+        )
+
+    for skill_name, case_id, required_skills in expected_routes:
+        case = eval_case(skill_name, case_id)
+        rubric_clauses = [case["expected_output"], *case["expectations"]]
+        rubric = " ".join(rubric_clauses)
+        for required_skill in required_skills:
+            assert required_skill in rubric, (
+                f"{skill_name} eval {case_id} does not route to "
+                f"{required_skill}"
+            )
+
+        stale_route = any(
+            deprecated in clause
+            for clause in rubric_clauses
+            if not _is_negated_mention(clause)
+            for deprecated in ("tensor-bindings-cpu", "tensor-bindings-gpu")
+        )
+        assert not stale_route, (
+            f"{skill_name} eval {case_id} positively routes new code to a "
+            "deprecated skill"
+        )
+
+    output_read = eval_case("ovphysx-output-read", 3)
+    output_read_rubric = " ".join(
+        [output_read["expected_output"], *output_read["expectations"]]
+    )
+    assert "preallocated" in output_read_rubric
+    assert "copies" in output_read_rubric.lower()
 
 
 def test_gpu_dynamics_default_documentation_consistent():

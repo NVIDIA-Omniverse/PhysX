@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # @implements REQ-CAPI-OVSTAGE-SCHEMA-001
-# @covers AC-1
+# @covers AC-1 AC-6
 
 """Discovery of the codeless PhysX USD schemas that ovphysx ships.
 
@@ -35,15 +35,43 @@ identifier, e.g. ``prim.ApplyAPI("PhysxRigidBodyAPI")``. Codeless schemas carry
 no compiled C++/Python helper classes (no ``PhysxSchema.PhysxRigidBodyAPI``
 binding); use USD's generic schema API.
 
+The parser also reads the Newton USD schema's ``newton:*`` attributes as
+fallbacks for the PhysX spellings (``newton:velocityLimit`` for
+``physxJoint:maxJointVelocity``, ...). ovphysx does not ship that schema. It is
+the ``newton-usd-schemas`` package on PyPI (also on GitHub at
+https://github.com/newton-physics/newton-usd-schemas), and ovstage populates an
+attribute only when a registered schema defines it, so register it alongside
+the PhysX schemas or every authored ``newton:*`` attribute is dropped::
+
+    ovstage.population.register_usd_schemas(
+        [str(ovphysx.codeless_schema_root()), str(ovphysx.newton_schema_root())]
+    )
+
+:func:`newton_schema_root` locates the installed package without importing it:
+importing ``newton_usd_schemas`` requires ``pxr`` and registers the schema with
+that stock USD runtime, which is not the runtime ovstage populates through.
+
 These helpers are pure-Python: importing or calling them never triggers
 ovphysx native loading, so they are safe to use in a process that only authors
 or validates USD with a stock ``usd-core`` and never starts the simulator.
 """
 
+import importlib.util
 import os
 from pathlib import Path
 
-__all__ = ["codeless_schema_root", "codeless_schema_paths"]
+__all__ = ["codeless_schema_root", "codeless_schema_paths", "newton_schema_root", "find_newton_schema_root"]
+
+# The Newton USD schema is a separate, application-installed package.
+NEWTON_SCHEMA_PACKAGE = "newton_usd_schemas"
+NEWTON_SCHEMA_PIP_NAME = "newton-usd-schemas"
+NEWTON_SCHEMA_URL = "https://github.com/newton-physics/newton-usd-schemas"
+NEWTON_SCHEMA_INSTALL_HINT = (
+    f"Install it with 'pip install {NEWTON_SCHEMA_PIP_NAME}' or download it from "
+    f"{NEWTON_SCHEMA_URL}, and register the directory holding its plugInfo.json with "
+    "ovstage.population.register_usd_schemas() together with ovphysx.codeless_schema_root() "
+    "before the first population call in the process."
+)
 
 # Stable, documented filesystem convention for the exposed codeless schemas.
 # <ovphysx>/schemas/physx/<module>/resources/{plugInfo.json,generatedSchema.usda}
@@ -93,6 +121,49 @@ def codeless_schema_root() -> Path:
         f"{searched}. Install the ovphysx wheel (pip install ovphysx) or run "
         "'cmake -P scripts/install.cmake' to stage them."
     )
+
+
+def find_newton_schema_root() -> Path | None:
+    """Return the installed ``newton_usd_schemas`` package directory, or ``None``.
+
+    The directory holds the schema's ``plugInfo.json`` and ``generatedSchema.usda``
+    and is what ``ovstage.population.register_usd_schemas()`` takes. The package
+    is located through ``importlib.util.find_spec`` and never imported: its import
+    needs ``pxr`` and registers the schema with that stock USD runtime, not with
+    the runtime ovstage populates through.
+    """
+    try:
+        spec = importlib.util.find_spec(NEWTON_SCHEMA_PACKAGE)
+    except (ImportError, ValueError):
+        return None
+    if spec is None or not spec.submodule_search_locations:
+        return None
+    for location in spec.submodule_search_locations:
+        root = Path(location)
+        if (root / "plugInfo.json").is_file():
+            return root
+    return None
+
+
+def newton_schema_root() -> Path:
+    """Return the directory of the installed Newton USD schema (``newton-usd-schemas``).
+
+    Register it with ovstage alongside :func:`codeless_schema_root`, before the
+    first population call in the process; the parser reads the schema's
+    ``newton:*`` attributes as fallbacks for the PhysX spellings, and population
+    drops them unless the schema is registered.
+
+    Raises:
+        FileNotFoundError: If the ``newton-usd-schemas`` package is not installed
+            in this Python environment. The message carries the install hint.
+    """
+    root = find_newton_schema_root()
+    if root is None:
+        raise FileNotFoundError(
+            f"The Newton USD schema ({NEWTON_SCHEMA_PIP_NAME}) is not installed in this "
+            f"Python environment. {NEWTON_SCHEMA_INSTALL_HINT}"
+        )
+    return root
 
 
 def codeless_schema_paths() -> list[Path]:

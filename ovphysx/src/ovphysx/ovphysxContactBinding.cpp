@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-CAPI-CONTACT-003
+ * @covers AC-1 AC-2 AC-3
+ *
  * @implements REQ-CAPI-STRING-001
  * @covers AC-3
  *
@@ -9,7 +12,10 @@
  * @covers AC-2
  *
  * @implements REQ-CAPI-CONTACT-001
- * @covers AC-1 AC-2 AC-3 AC-4 AC-5
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7
+ *
+ * @implements REQ-CAPI-CONTACT-002
+ * @covers AC-1 AC-2 AC-3 AC-4
  */
 
 #include "ovphysx/ovphysx.h"
@@ -34,12 +40,49 @@ using ovphysx::internal::getTensorApi;
 namespace
 {
 
+enum class ForceComponent
+{
+    eNormal,
+    eFriction
+};
+
 void destroyContactBindingResources(ContactBindingState& b)
 {
     if (b.contactView) { b.contactView->release(); b.contactView = nullptr; }
     if (b.simView) { b.simView->release(false); b.simView = nullptr; }
 }
 
+ovphysx_result_t fillOwnedPathBuffer(
+    ovphysx_string_t* out_paths,
+    uint32_t max_paths,
+    uint32_t* out_count,
+    const std::vector<std::string>& cache,
+    uint32_t demand,
+    const char* what)
+{
+    *out_count = demand;
+    const uint32_t toWrite = (demand < max_paths) ? demand : max_paths;
+    for (uint32_t i = 0; i < toWrite; ++i)
+        out_paths[i] = ovphysx_cstr(cache[i].c_str());
+    if (demand > max_paths)
+    {
+        return set_error(
+            OVPHYSX_API_BUFFER_TOO_SMALL,
+            std::string(what) + " buffer too small: " + std::to_string(demand) +
+                " paths required but max_paths is " + std::to_string(max_paths));
+    }
+    return success();
+}
+
+ovphysx_result_t checkContactDataCapacity(uint32_t required, uint32_t maxContactDataCount, const char* what, const char* unit)
+{
+    if (required <= maxContactDataCount)
+        return success();
+    return set_error(
+        OVPHYSX_API_BUFFER_TOO_SMALL,
+        std::string(what) + " buffer too small: " + std::to_string(required) + " " + unit +
+            " required but max_contact_data_count is " + std::to_string(maxContactDataCount));
+}
 
 ovphysx_result_t validateContactDstTensorDtype(const DLTensor* tensor, const char* op)
 {
@@ -465,12 +508,8 @@ OVPHYSX_API ovphysx_result_t ovphysx_contact_binding_get_sensor_paths(
         }
     }
 
-    const uint32_t toWrite = (sensorCount < max_paths) ? sensorCount : max_paths;
-    for (uint32_t i = 0; i < toWrite; ++i)
-        out_paths[i] = ovphysx_cstr(binding.sensorPathCache[i].c_str());
-
-    *out_count = toWrite;
-    return success();
+    return fillOwnedPathBuffer(
+        out_paths, max_paths, out_count, binding.sensorPathCache, sensorCount, "Sensor path");
 }
 
 OVPHYSX_API ovphysx_result_t ovphysx_contact_binding_get_filter_paths(
@@ -521,12 +560,8 @@ OVPHYSX_API ovphysx_result_t ovphysx_contact_binding_get_filter_paths(
         }
     }
 
-    const uint32_t toWrite = (pathCount < max_paths) ? pathCount : max_paths;
-    for (uint32_t i = 0; i < toWrite; ++i)
-        out_paths[i] = ovphysx_cstr(binding.filterPathCache[i].c_str());
-
-    *out_count = toWrite;
-    return success();
+    return fillOwnedPathBuffer(
+        out_paths, max_paths, out_count, binding.filterPathCache, pathCount, "Filter path");
 }
 
 OVPHYSX_API ovphysx_result_t ovphysx_get_contact_binding_capacity(
@@ -560,16 +595,16 @@ OVPHYSX_API ovphysx_result_t ovphysx_get_contact_binding_capacity(
     return success();
 }
 
-OVPHYSX_API ovphysx_result_t ovphysx_read_contact_net_forces(
+static ovphysx_result_t readContactNetForces(
     ovphysx_handle_t handle,
     ovphysx_contact_binding_handle_t contact_handle,
-    DLTensor* dst_tensor)
+    DLTensor* dst_tensor, ForceComponent component, const char* op)
 {
     if (!dst_tensor)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "dst_tensor is NULL");
 
     {
-        ovphysx_result_t dtypeCheck = validateContactDstTensorDtype(dst_tensor, "read_contact_net_forces");
+        ovphysx_result_t dtypeCheck = validateContactDstTensorDtype(dst_tensor, op);
         if (dtypeCheck.status != OVPHYSX_API_SUCCESS) return dtypeCheck;
     }
 
@@ -599,7 +634,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_contact_net_forces(
     if (instance->attachHandle != binding.attachHandle)
         return set_error(OVPHYSX_API_NOT_FOUND, "contact binding invalidated (stage changed); recreate binding");
 
-    ovphysx_result_t deviceCheck = validateContactDeviceMatch(dst_tensor, binding, "read_contact_net_forces");
+    ovphysx_result_t deviceCheck = validateContactDeviceMatch(dst_tensor, binding, op);
     if (deviceCheck.status != OVPHYSX_API_SUCCESS) return deviceCheck;
 
     const int32_t sensorCount = static_cast<int32_t>(binding.contactView->getSensorCount());
@@ -617,22 +652,43 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_contact_net_forces(
     if (err != DLConvertError::Success)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, dlConvertErrorMessage(err));
 
-    if (!binding.contactView->getNetContactForces(&dst, dt))
-        return set_error(OVPHYSX_API_ERROR, "getNetContactForces failed");
+    const bool ok = component == ForceComponent::eFriction ?
+                       binding.contactView->getNetFrictionContactForces(&dst, dt) :
+                       binding.contactView->getNetNormalContactForces(&dst, dt);
+    if (!ok)
+        return set_error(OVPHYSX_API_ERROR, std::string(op) + " failed");
 
     return success();
 }
 
-OVPHYSX_API ovphysx_result_t ovphysx_read_contact_force_matrix(
+OVPHYSX_API ovphysx_result_t ovphysx_read_contact_net_normal_forces(
+    ovphysx_handle_t handle, ovphysx_contact_binding_handle_t contact_handle, DLTensor* dst_tensor)
+{
+    return readContactNetForces(handle, contact_handle, dst_tensor, ForceComponent::eNormal, "read_contact_net_normal_forces");
+}
+
+OVPHYSX_API ovphysx_result_t ovphysx_read_contact_net_friction_forces(
+    ovphysx_handle_t handle, ovphysx_contact_binding_handle_t contact_handle, DLTensor* dst_tensor)
+{
+    return readContactNetForces(handle, contact_handle, dst_tensor, ForceComponent::eFriction, "read_contact_net_friction_forces");
+}
+
+OVPHYSX_API ovphysx_result_t ovphysx_read_contact_net_forces(
+    ovphysx_handle_t handle, ovphysx_contact_binding_handle_t contact_handle, DLTensor* dst_tensor)
+{
+    return readContactNetForces(handle, contact_handle, dst_tensor, ForceComponent::eNormal, "read_contact_net_forces");
+}
+
+static ovphysx_result_t readContactForceMatrix(
     ovphysx_handle_t handle,
     ovphysx_contact_binding_handle_t contact_handle,
-    DLTensor* dst_tensor)
+    DLTensor* dst_tensor, ForceComponent component, const char* op)
 {
     if (!dst_tensor)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "dst_tensor is NULL");
 
     {
-        ovphysx_result_t dtypeCheck = validateContactDstTensorDtype(dst_tensor, "read_contact_force_matrix");
+        ovphysx_result_t dtypeCheck = validateContactDstTensorDtype(dst_tensor, op);
         if (dtypeCheck.status != OVPHYSX_API_SUCCESS) return dtypeCheck;
     }
 
@@ -662,7 +718,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_contact_force_matrix(
     if (instance->attachHandle != binding.attachHandle)
         return set_error(OVPHYSX_API_NOT_FOUND, "contact binding invalidated (stage changed); recreate binding");
 
-    ovphysx_result_t deviceCheck = validateContactDeviceMatch(dst_tensor, binding, "read_contact_force_matrix");
+    ovphysx_result_t deviceCheck = validateContactDeviceMatch(dst_tensor, binding, op);
     if (deviceCheck.status != OVPHYSX_API_SUCCESS) return deviceCheck;
 
     const int32_t sensorCount = static_cast<int32_t>(binding.contactView->getSensorCount());
@@ -683,13 +739,34 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_contact_force_matrix(
     if (err != DLConvertError::Success)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, dlConvertErrorMessage(err));
 
-    if (!binding.contactView->getContactForceMatrix(&dst, dt))
-        return set_error(OVPHYSX_API_ERROR, "getContactForceMatrix failed");
+    const bool ok = component == ForceComponent::eFriction ?
+                       binding.contactView->getFrictionContactForceMatrix(&dst, dt) :
+                       binding.contactView->getNormalContactForceMatrix(&dst, dt);
+    if (!ok)
+        return set_error(OVPHYSX_API_ERROR, std::string(op) + " failed");
 
     return success();
 }
 
-OVPHYSX_API ovphysx_result_t ovphysx_read_contact_data(
+OVPHYSX_API ovphysx_result_t ovphysx_read_contact_normal_force_matrix(
+    ovphysx_handle_t handle, ovphysx_contact_binding_handle_t contact_handle, DLTensor* dst_tensor)
+{
+    return readContactForceMatrix(handle, contact_handle, dst_tensor, ForceComponent::eNormal, "read_contact_normal_force_matrix");
+}
+
+OVPHYSX_API ovphysx_result_t ovphysx_read_contact_friction_force_matrix(
+    ovphysx_handle_t handle, ovphysx_contact_binding_handle_t contact_handle, DLTensor* dst_tensor)
+{
+    return readContactForceMatrix(handle, contact_handle, dst_tensor, ForceComponent::eFriction, "read_contact_friction_force_matrix");
+}
+
+OVPHYSX_API ovphysx_result_t ovphysx_read_contact_force_matrix(
+    ovphysx_handle_t handle, ovphysx_contact_binding_handle_t contact_handle, DLTensor* dst_tensor)
+{
+    return readContactForceMatrix(handle, contact_handle, dst_tensor, ForceComponent::eNormal, "read_contact_force_matrix");
+}
+
+static ovphysx_result_t readNormalContactData(
     ovphysx_handle_t handle,
     ovphysx_contact_binding_handle_t contact_handle,
     DLTensor* contact_force_tensor,
@@ -697,9 +774,13 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_contact_data(
     DLTensor* contact_normal_tensor,
     DLTensor* contact_separation_tensor,
     DLTensor* contact_count_tensor,
-    DLTensor* contact_start_indices_tensor)
+    DLTensor* contact_start_indices_tensor,
+    uint32_t* out_required_contact_count,
+    const char* op)
 {
-    static constexpr const char* op = "read_contact_data";
+    if (!out_required_contact_count)
+        return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_required_contact_count is NULL");
+    *out_required_contact_count = 0;
 
     omni_sdk_physx_wait_all_pending_internal(handle);
 
@@ -733,11 +814,11 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_contact_data(
     if (maxContactDataCount <= 0)
         return set_error(
             OVPHYSX_API_INVALID_ARGUMENT,
-            "read_contact_data requires max_contact_data_count > 0 at contact binding creation");
+            std::string(op) + " requires max_contact_data_count > 0 at contact binding creation");
     if (filterCount <= 0)
         return set_error(
             OVPHYSX_API_INVALID_ARGUMENT,
-            "read_contact_data requires filters_per_sensor > 0 at contact binding creation");
+            std::string(op) + " requires filters_per_sensor > 0 at contact binding creation");
 
     ovphysx_result_t validation = validateDetailedContactFloatTensor(
         contact_force_tensor, binding, op, "contact_force_tensor", maxContactDataCount, 1);
@@ -784,10 +865,50 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_contact_data(
     if (err != DLConvertError::Success)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, dlConvertErrorMessage(err));
 
-    if (!binding.contactView->getContactData(&force, &point, &normal, &separation, &count, &startIndices, dt))
-        return set_error(OVPHYSX_API_ERROR, "getContactData failed");
+    if (!binding.contactView->getNormalContactData(
+            &force, &point, &normal, &separation, &count, &startIndices, out_required_contact_count, dt))
+        return set_error(OVPHYSX_API_ERROR, std::string(op) == "read_contact_data" ? "getContactData failed" : "getNormalContactData failed");
+
+    ovphysx_result_t capacityResult = checkContactDataCapacity(
+        *out_required_contact_count, static_cast<uint32_t>(maxContactDataCount), "Contact data", "contacts");
+    if (capacityResult.status != OVPHYSX_API_SUCCESS)
+        return capacityResult;
 
     return success();
+}
+
+OVPHYSX_API ovphysx_result_t ovphysx_read_normal_contact_data(
+    ovphysx_handle_t handle,
+    ovphysx_contact_binding_handle_t contact_handle,
+    DLTensor* contact_force_tensor,
+    DLTensor* contact_point_tensor,
+    DLTensor* contact_normal_tensor,
+    DLTensor* contact_separation_tensor,
+    DLTensor* contact_count_tensor,
+    DLTensor* contact_start_indices_tensor,
+    uint32_t* out_required_contact_count)
+{
+    return readNormalContactData(
+        handle, contact_handle, contact_force_tensor, contact_point_tensor,
+        contact_normal_tensor, contact_separation_tensor, contact_count_tensor,
+        contact_start_indices_tensor, out_required_contact_count, "read_normal_contact_data");
+}
+
+OVPHYSX_API ovphysx_result_t ovphysx_read_contact_data(
+    ovphysx_handle_t handle,
+    ovphysx_contact_binding_handle_t contact_handle,
+    DLTensor* contact_force_tensor,
+    DLTensor* contact_point_tensor,
+    DLTensor* contact_normal_tensor,
+    DLTensor* contact_separation_tensor,
+    DLTensor* contact_count_tensor,
+    DLTensor* contact_start_indices_tensor,
+    uint32_t* out_required_contact_count)
+{
+    return readNormalContactData(
+        handle, contact_handle, contact_force_tensor, contact_point_tensor,
+        contact_normal_tensor, contact_separation_tensor, contact_count_tensor,
+        contact_start_indices_tensor, out_required_contact_count, "read_contact_data");
 }
 
 OVPHYSX_API ovphysx_result_t ovphysx_read_raw_contact_data(
@@ -798,9 +919,14 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_raw_contact_data(
     DLTensor* contact_normal_tensor,
     DLTensor* contact_separation_tensor,
     DLTensor* sensor_layout_tensor,
-    DLTensor* actor_ids_tensor)
+    DLTensor* actor_ids_tensor,
+    uint32_t* out_required_contact_count)
 {
     static constexpr const char* op = "read_raw_contact_data";
+
+    if (!out_required_contact_count)
+        return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_required_contact_count is NULL");
+    *out_required_contact_count = 0;
 
     omni_sdk_physx_wait_all_pending_internal(handle);
 
@@ -892,8 +1018,16 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_raw_contact_data(
     }
 
     if (!binding.contactView->getRawContactData(
-            &force, &point, &normal, &separation, &sensorLayout, &actorIds, dt))
+            &force, &point, &normal, &separation, &sensorLayout, &actorIds, out_required_contact_count, dt))
         return set_error(OVPHYSX_API_ERROR, "getRawContactData failed");
+
+    if (*out_required_contact_count > static_cast<uint32_t>(maxContactDataCount))
+    {
+        return set_error(
+            OVPHYSX_API_BUFFER_TOO_SMALL,
+            "Raw contact data buffer too small: " + std::to_string(*out_required_contact_count) +
+                " contacts required but max_contact_data_count is " + std::to_string(maxContactDataCount));
+    }
 
     return success();
 }
@@ -953,24 +1087,38 @@ OVPHYSX_API ovphysx_result_t ovphysx_contact_binding_get_other_actor_paths_from_
     binding.otherActorPathsCache.clear();
     binding.contactView->getOtherActorPathsFromIds(&ids, binding.otherActorPathsCache);
 
-    const uint32_t total = static_cast<uint32_t>(binding.otherActorPathsCache.size());
+    // dlToTensorDesc already rejected dims outside [0, INT32_MAX].
+    const uint32_t total = static_cast<uint32_t>(ids.dims[0]);
+    if (binding.otherActorPathsCache.size() != static_cast<size_t>(total))
+        return set_error(OVPHYSX_API_ERROR, "actor path resolve length mismatch");
     const uint32_t toWrite = (total < max_paths) ? total : max_paths;
     for (uint32_t i = 0; i < toWrite; ++i)
         out_paths[i] = ovphysx_cstr(binding.otherActorPathsCache[i].c_str());
 
-    *out_count = toWrite;
+    *out_count = total;
+    if (total > max_paths)
+    {
+        return set_error(
+            OVPHYSX_API_BUFFER_TOO_SMALL,
+            "Actor path buffer too small: " + std::to_string(total) +
+                " paths required but max_paths is " + std::to_string(max_paths));
+    }
     return success();
 }
 
-OVPHYSX_API ovphysx_result_t ovphysx_read_friction_data(
+static ovphysx_result_t readFrictionContactData(
     ovphysx_handle_t handle,
     ovphysx_contact_binding_handle_t contact_handle,
     DLTensor* friction_force_tensor,
     DLTensor* friction_point_tensor,
     DLTensor* contact_count_tensor,
-    DLTensor* contact_start_indices_tensor)
+    DLTensor* contact_start_indices_tensor,
+    uint32_t* out_required_friction_count,
+    const char* op)
 {
-    static constexpr const char* op = "read_friction_data";
+    if (!out_required_friction_count)
+        return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_required_friction_count is NULL");
+    *out_required_friction_count = 0;
 
     omni_sdk_physx_wait_all_pending_internal(handle);
 
@@ -1004,11 +1152,11 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_friction_data(
     if (maxContactDataCount <= 0)
         return set_error(
             OVPHYSX_API_INVALID_ARGUMENT,
-            "read_friction_data requires max_contact_data_count > 0 at contact binding creation");
+            std::string(op) + " requires max_contact_data_count > 0 at contact binding creation");
     if (filterCount <= 0)
         return set_error(
             OVPHYSX_API_INVALID_ARGUMENT,
-            "read_friction_data requires filters_per_sensor > 0 at contact binding creation");
+            std::string(op) + " requires filters_per_sensor > 0 at contact binding creation");
 
     ovphysx_result_t validation = validateDetailedContactFloatTensor(
         friction_force_tensor, binding, op, "friction_force_tensor", maxContactDataCount, 3);
@@ -1041,10 +1189,44 @@ OVPHYSX_API ovphysx_result_t ovphysx_read_friction_data(
     if (err != DLConvertError::Success)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, dlConvertErrorMessage(err));
 
-    if (!binding.contactView->getFrictionData(&force, &point, &count, &startIndices, dt))
-        return set_error(OVPHYSX_API_ERROR, "getFrictionData failed");
+    if (!binding.contactView->getFrictionContactData(
+            &force, &point, &count, &startIndices, out_required_friction_count, dt))
+        return set_error(OVPHYSX_API_ERROR, std::string(op) == "read_friction_data" ? "getFrictionData failed" : "getFrictionContactData failed");
+
+    ovphysx_result_t capacityResult = checkContactDataCapacity(
+        *out_required_friction_count, static_cast<uint32_t>(maxContactDataCount), "Friction data", "friction anchors");
+    if (capacityResult.status != OVPHYSX_API_SUCCESS)
+        return capacityResult;
 
     return success();
+}
+
+OVPHYSX_API ovphysx_result_t ovphysx_read_friction_contact_data(
+    ovphysx_handle_t handle,
+    ovphysx_contact_binding_handle_t contact_handle,
+    DLTensor* friction_force_tensor,
+    DLTensor* friction_point_tensor,
+    DLTensor* contact_count_tensor,
+    DLTensor* contact_start_indices_tensor,
+    uint32_t* out_required_friction_count)
+{
+    return readFrictionContactData(
+        handle, contact_handle, friction_force_tensor, friction_point_tensor,
+        contact_count_tensor, contact_start_indices_tensor, out_required_friction_count, "read_friction_contact_data");
+}
+
+OVPHYSX_API ovphysx_result_t ovphysx_read_friction_data(
+    ovphysx_handle_t handle,
+    ovphysx_contact_binding_handle_t contact_handle,
+    DLTensor* friction_force_tensor,
+    DLTensor* friction_point_tensor,
+    DLTensor* contact_count_tensor,
+    DLTensor* contact_start_indices_tensor,
+    uint32_t* out_required_friction_count)
+{
+    return readFrictionContactData(
+        handle, contact_handle, friction_force_tensor, friction_point_tensor,
+        contact_count_tensor, contact_start_indices_tensor, out_required_friction_count, "read_friction_data");
 }
 
 } // extern "C"

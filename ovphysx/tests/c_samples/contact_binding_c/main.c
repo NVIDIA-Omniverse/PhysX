@@ -3,6 +3,7 @@
 
 // NOTE: This file is included in the documentation via literalinclude.
 // The tutorial marker comments below define the included range.
+// This sample exercises the deprecated contact-binding API during its compatibility period.
 
 #include <ovphysx/ovphysx.h>
 #include <ovphysx/ovphysx_types.h>
@@ -182,16 +183,25 @@ static int run(void)
         return 1;
     }
 
-    /* 6. Read the net contact forces, shape [S, 3].
-     *    dt is taken from the last successful stepping call. */
-    float* net_data   = NULL;
-    int64_t* net_shp  = NULL;
-    DLTensor net_tensor = make_tensor_f32_2d(
-        (size_t)sensor_count, 3, &net_data, &net_shp);
+    /* 6. Read net normal and friction forces, shape [S, 3].
+     *    dt is taken from the last successful stepping call.
+     *    Read both components from the same step before adding them. */
+    float* net_normal_data   = NULL;
+    int64_t* net_normal_shp  = NULL;
+    DLTensor net_normal_tensor = make_tensor_f32_2d(
+        (size_t)sensor_count, 3, &net_normal_data, &net_normal_shp);
 
-    r = ovphysx_read_contact_net_forces(handle, cb, &net_tensor);
-    if (!check_result(r, "ovphysx_read_contact_net_forces")) {
-        free(net_data); free(net_shp);
+    float* net_friction_data = NULL;
+    int64_t* net_friction_shp = NULL;
+    DLTensor net_friction_tensor = make_tensor_f32_2d(
+        (size_t)sensor_count, 3, &net_friction_data, &net_friction_shp);
+
+    if (!check_result(ovphysx_read_contact_net_normal_forces(handle, cb, &net_normal_tensor),
+                      "ovphysx_read_contact_net_normal_forces") ||
+        !check_result(ovphysx_read_contact_net_friction_forces(handle, cb, &net_friction_tensor),
+                      "ovphysx_read_contact_net_friction_forces")) {
+        free(net_normal_data); free(net_normal_shp);
+        free(net_friction_data); free(net_friction_shp);
         ovphysx_destroy_contact_binding(handle, cb);
         ovphysx_sample_destroy_stage(handle, &stage_attachment);
         ovphysx_destroy_instance(handle);
@@ -200,24 +210,38 @@ static int run(void)
     }
     printf("Net contact forces [%d, 3]:\n", sensor_count);
     for (int s = 0; s < sensor_count; s++) {
-        printf("  sensor %d: fx=%.3f  fy=%.3f  fz=%.3f\n",
+        printf("  sensor %d normal:   fx=%.3f  fy=%.3f  fz=%.3f\n",
+               s, net_normal_data[s * 3], net_normal_data[s * 3 + 1], net_normal_data[s * 3 + 2]);
+        printf("  sensor %d friction: fx=%.3f  fy=%.3f  fz=%.3f\n",
+               s, net_friction_data[s * 3], net_friction_data[s * 3 + 1], net_friction_data[s * 3 + 2]);
+        printf("  sensor %d total:    fx=%.3f  fy=%.3f  fz=%.3f\n",
                s,
-               net_data[s * 3 + 0],
-               net_data[s * 3 + 1],
-               net_data[s * 3 + 2]);
+               net_normal_data[s * 3] + net_friction_data[s * 3],
+               net_normal_data[s * 3 + 1] + net_friction_data[s * 3 + 1],
+               net_normal_data[s * 3 + 2] + net_friction_data[s * 3 + 2]);
     }
-    free(net_data); free(net_shp);
+    free(net_normal_data); free(net_normal_shp);
+    free(net_friction_data); free(net_friction_shp);
 
-    /* 7. Read the contact force matrix, shape [S, F, 3]. */
-    float* mat_data   = NULL;
-    int64_t* mat_shp  = NULL;
-    DLTensor mat_tensor = make_tensor_f32_3d(
+    /* 7. Read normal and friction force matrices, shape [S, F, 3]. */
+    float* mat_normal_data   = NULL;
+    int64_t* mat_normal_shp  = NULL;
+    DLTensor mat_normal_tensor = make_tensor_f32_3d(
         (size_t)sensor_count, (size_t)filter_count, 3,
-        &mat_data, &mat_shp);
+        &mat_normal_data, &mat_normal_shp);
 
-    r = ovphysx_read_contact_force_matrix(handle, cb, &mat_tensor);
-    if (!check_result(r, "ovphysx_read_contact_force_matrix")) {
-        free(mat_data); free(mat_shp);
+    float* mat_friction_data = NULL;
+    int64_t* mat_friction_shp = NULL;
+    DLTensor mat_friction_tensor = make_tensor_f32_3d(
+        (size_t)sensor_count, (size_t)filter_count, 3,
+        &mat_friction_data, &mat_friction_shp);
+
+    if (!check_result(ovphysx_read_contact_normal_force_matrix(handle, cb, &mat_normal_tensor),
+                      "ovphysx_read_contact_normal_force_matrix") ||
+        !check_result(ovphysx_read_contact_friction_force_matrix(handle, cb, &mat_friction_tensor),
+                      "ovphysx_read_contact_friction_force_matrix")) {
+        free(mat_normal_data); free(mat_normal_shp);
+        free(mat_friction_data); free(mat_friction_shp);
         ovphysx_destroy_contact_binding(handle, cb);
         ovphysx_sample_destroy_stage(handle, &stage_attachment);
         ovphysx_destroy_instance(handle);
@@ -228,27 +252,32 @@ static int run(void)
     for (int s = 0; s < sensor_count; s++) {
         for (int f = 0; f < filter_count; f++) {
             int base = (s * filter_count + f) * 3;
-            printf("  [%d][%d]: fx=%.3f  fy=%.3f  fz=%.3f\n",
+            printf("  [%d][%d] normal:   fx=%.3f  fy=%.3f  fz=%.3f\n",
+                   s, f, mat_normal_data[base], mat_normal_data[base + 1], mat_normal_data[base + 2]);
+            printf("  [%d][%d] friction: fx=%.3f  fy=%.3f  fz=%.3f\n",
+                   s, f, mat_friction_data[base], mat_friction_data[base + 1], mat_friction_data[base + 2]);
+            printf("  [%d][%d] total:    fx=%.3f  fy=%.3f  fz=%.3f\n",
                    s, f,
-                   mat_data[base + 0],
-                   mat_data[base + 1],
-                   mat_data[base + 2]);
+                   mat_normal_data[base] + mat_friction_data[base],
+                   mat_normal_data[base + 1] + mat_friction_data[base + 1],
+                   mat_normal_data[base + 2] + mat_friction_data[base + 2]);
         }
     }
     /* Cube1 rests on BigBase, so the 1x1 matrix has to hold a real contact force.
      * The max-abs norm avoids libm, which the CI sample link does not pass with -lm. */
     if (sensor_count >= 1 && filter_count >= 1) {
-        float ax = mat_data[0] < 0.f ? -mat_data[0] : mat_data[0];
-        float ay = mat_data[1] < 0.f ? -mat_data[1] : mat_data[1];
-        float az = mat_data[2] < 0.f ? -mat_data[2] : mat_data[2];
+        float ax = mat_normal_data[0] < 0.f ? -mat_normal_data[0] : mat_normal_data[0];
+        float ay = mat_normal_data[1] < 0.f ? -mat_normal_data[1] : mat_normal_data[1];
+        float az = mat_normal_data[2] < 0.f ? -mat_normal_data[2] : mat_normal_data[2];
         float mag = ax > ay ? ax : ay;
         if (az > mag) mag = az;
         if (!(mag > 1.0f)) {
             fprintf(stderr,
                     "ERROR: expected Cube1 vs BigBase contact after 120 steps; "
                     "force matrix mag=%f (fx=%f fy=%f fz=%f)\n",
-                    mag, mat_data[0], mat_data[1], mat_data[2]);
-            free(mat_data); free(mat_shp);
+                    mag, mat_normal_data[0], mat_normal_data[1], mat_normal_data[2]);
+            free(mat_normal_data); free(mat_normal_shp);
+            free(mat_friction_data); free(mat_friction_shp);
             ovphysx_destroy_contact_binding(handle, cb);
             ovphysx_sample_destroy_stage(handle, &stage_attachment);
             ovphysx_destroy_instance(handle);
@@ -256,7 +285,8 @@ static int run(void)
             return 1;
         }
     }
-    free(mat_data); free(mat_shp);
+    free(mat_normal_data); free(mat_normal_shp);
+    free(mat_friction_data); free(mat_friction_shp);
 
     printf("Contact binding sample completed successfully\n");
 

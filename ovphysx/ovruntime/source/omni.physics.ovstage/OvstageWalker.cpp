@@ -2,6 +2,22 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-LOAD-TOKENS-001
+ * @covers AC-5
+ */
+
+/**
+ * @implements REQ-PARSE-INSTANCER-DISPATCH-001
+ * @covers AC-1 AC-2
+ */
+
+/**
+ * @implements REQ-PARSE-NEWTON-JOINT-001
+ * @covers AC-1 AC-3
+ *
+ * @implements REQ-PARSE-BODY-003
+ * @covers AC-1 AC-2 AC-3
+ *
  * @implements REQ-PARSE-SCAN-001
  * @covers AC-1 AC-14 AC-15 AC-16 AC-17 AC-18
  *
@@ -26,6 +42,9 @@
  * @implements REQ-PARSE-FEED-003
  * @covers AC-10 AC-12 AC-13 AC-14
  *
+ * @implements REQ-PARSE-SHAPE-006
+ * @covers AC-1 AC-3
+ *
  * @implements REQ-PARSE-COL-005
  * @covers AC-1
  */
@@ -37,6 +56,7 @@
 
 
 #include <carb/extras/ScopeExit.h>
+#include <carb/logging/Log.h>
 
 #include <omni/physics/parse/ArticulationGraph.h>
 #include <omni/physics/parse/CustomTokens.h>
@@ -496,6 +516,10 @@ void appendPhysxJointAxisAttrs(Bucket& bucket, const char* axis)
         // Seeds maxJointVelocity before the PhysX reads (ParseJoint.cpp's
         // readPhysxJointAxisApi), so it is read once per joint per axis.
         "newton:velocityLimit",
+        // Likewise seed armature, the friction efforts and viscousFrictionCoefficient.
+        "newton:armature",
+        "newton:friction",
+        "newton:damping",
     });
 }
 
@@ -1268,14 +1292,13 @@ bool fillCommonShape(ParseContext& ctx, ObjectKey key, const ShapeInfo& info, Ph
 // bodies (PhysX rejects non-SDF triangle meshes as a simulation shape on a dynamic body),
 // and allocates the typed descriptor. meshPrimKey = gprimKey: the cooking service reads
 // the geometry from there via IPhysicsSource::getMeshAttributes (FROM_PRIM_MESH_VIEW path).
-// Bounding-sphere/cube are not handled (they need an eagerly-merged point buffer the scan
-// owns) -> fall through to a triangle mesh.
+// Bounding-sphere/cube retain a scaled point buffer owned by the scan for fitting.
 DescPtr<PhysxShapeDesc> buildMeshShapeDesc(OvstageScanResult& out, ParseContext& ctx, const IPhysicsSource& src,
                                            ObjectKey shapeKey, ObjectKey gprimKey, ObjectKey rigidBodyKey,
                                            const carb::Float3& meshScale, const carb::Float3& signScale,
-                                           bool doubleSided)
+                                           bool doubleSided, ObjectKey attributeFallback)
 {
-    MeshApproximation approx = parseMeshApproximation(ctx, shapeKey);
+    MeshApproximation approx = parseMeshApproximation(ctx, shapeKey, attributeFallback);
 
     if ((approx == MeshApproximation::eNone || approx == MeshApproximation::eMeshSimplification) &&
         rigidBodyKey.valid())
@@ -2529,6 +2552,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     };
 
     const TokenId tokRigidBodyEnabled = src.internToken("physics:rigidBodyEnabled");
+    const TokenId tokKinematicEnabled = src.internToken("physics:kinematicEnabled");
     const TokenId tokGravityDir = src.internToken("physics:gravityDirection");
     const TokenId tokGravityMag = src.internToken("physics:gravityMagnitude");
     const TokenId tokSize = src.internToken("size");
@@ -2548,29 +2572,88 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     const TokenId tokFace = src.internToken("face");
     const TokenId tokPhysicsMaterialAPI = src.internToken("PhysicsMaterialAPI");
 
-    const bool prunePointInstancerDescendants = !filter || filter->prunePointInstancerDescendants;
-    auto collectPointInstancerPrimType = [&](const char* typeName)
+    // Discover dispatch candidates before installing the ordinary descriptor
+    // prune roots. These targeted type/API buckets include nested instancers and
+    // invalid samplers without walking unrelated render prims in the consumer.
+    std::vector<ObjectKey> particleObjectKeys;
+    std::vector<ObjectKey> instancerKeys;
+    std::unordered_set<uint64_t> candidateIdentities;
+    std::unordered_set<uint64_t> instancerIdentities;
+    auto appendCandidates = [&](const Bucket& bucket, bool instancer)
     {
-        const Bucket pointInstancerBucket = enumeratePrimTypeFiltered(typeName, conv::kLocalTransform, readOrdinal);
-        if (!pointInstancerBucket.keys.empty())
-            out.hasPointInstancerPrims = true;
-        if (!prunePointInstancerDescendants)
-            return;
-        pointInstancerSubtreeRoots.reserve(pointInstancerSubtreeRoots.size() + pointInstancerBucket.keys.size());
-        for (const ObjectKey key : pointInstancerBucket.keys)
-            pointInstancerSubtreeRoots.emplace_back(src.sourceKeyToString(key));
+        for (const ObjectKey key : bucket.keys)
+        {
+            const uint64_t canonical = src.canonicalPath(key);
+            const uint64_t identity = canonical ? canonical : key.handle;
+            if (candidateIdentities.insert(identity).second)
+                particleObjectKeys.push_back(key);
+            // A consumer may also register a built-in particle type as an
+            // instancer, so descriptor pruning is independent of dispatch dedup.
+            if (instancer && instancerIdentities.insert(identity).second)
+                instancerKeys.push_back(key);
+        }
     };
-    collectPointInstancerPrimType("PointInstancer");
-    collectPointInstancerPrimType("PhysxPhysicsJointInstancer");
-    // Consumer-registered instancer-shaped prim types (REQ-PARSE-CORE-005). The
-    // native walker tests every prim's type against the registry; ovstage
-    // enumerates instead, so this is one extra query per registered token —
-    // ADR-0002 open question 1. "PhysxPhysicsJointInstancer" is pre-registered
-    // and already collected above; skip it rather than query it twice.
-    for (const std::string& instancerToken : parse::customTokens(parse::CustomTokenKind::ePhysicsInstancer))
+    for (const char* typeName : { "PhysxParticleSystem", "PointInstancer", "PhysxPhysicsJointInstancer" })
     {
-        if (instancerToken != "PointInstancer" && instancerToken != "PhysxPhysicsJointInstancer")
-            collectPointInstancerPrimType(instancerToken.c_str());
+        const Bucket bucket = enumeratePrimTypeFiltered(typeName, conv::kLocalTransform, readOrdinal);
+        appendCandidates(bucket, std::string_view(typeName) != "PhysxParticleSystem");
+    }
+    for (const std::string& typeName : parse::customTokens(parse::CustomTokenKind::ePhysicsInstancer))
+    {
+        if (typeName == "PointInstancer" || typeName == "PhysxPhysicsJointInstancer")
+            continue;
+        const Bucket bucket = enumeratePrimTypeFiltered(typeName.c_str(), conv::kLocalTransform, readOrdinal);
+        appendCandidates(bucket, true);
+    }
+    for (const char* schemaName : { "PhysxParticleSetAPI", "PhysxParticleSamplingAPI", "InfiniteVoxelMapAPI" })
+    {
+        const Bucket bucket = enumerateSchemaFiltered(schemaName, conv::kLocalTransform, readOrdinal);
+        appendCandidates(bucket, false);
+    }
+    orderBucketKeys(particleObjectKeys);
+    const KnownTokens& dispatchTokens = ctx.knownTokens();
+    const TokenId voxelMapAPI = src.internToken("InfiniteVoxelMapAPI");
+    for (const ObjectKey key : particleObjectKeys)
+    {
+        using Kind = ParticleObjectCandidate::Kind;
+        // Classify once while the scan's load cache is active; the consumer must
+        // not repeat isA() fallbacks against the render instancing graph.
+        if (src.isA(key, dispatchTokens.physxParticleSystemType))
+            out.particleObjectCandidates.push_back({ key, Kind::eParticleSystem });
+        else if (src.isA(key, dispatchTokens.xformType))
+        {
+            if (src.hasSchema(key, voxelMapAPI))
+                out.particleObjectCandidates.push_back({ key, Kind::eVoxelMap });
+            else
+            {
+                const uint64_t canonical = src.canonicalPath(key);
+                if (instancerIdentities.count(canonical ? canonical : key.handle))
+                    out.particleObjectCandidates.push_back({ key, Kind::eCustomInstancer });
+            }
+        }
+        else if (src.isA(key, dispatchTokens.meshType) && src.hasSchema(key, dispatchTokens.physxParticleSamplingAPI))
+            out.particleObjectCandidates.push_back({ key, Kind::eParticleSampler });
+        else if ((src.isA(key, dispatchTokens.pointBasedType) || src.isA(key, dispatchTokens.pointInstancerType)) &&
+                 src.hasSchema(key, dispatchTokens.physxParticleSetAPI))
+            out.particleObjectCandidates.push_back({ key, Kind::eParticleSet });
+        else if (src.isA(key, dispatchTokens.pointInstancerType))
+            out.particleObjectCandidates.push_back({ key, Kind::ePointInstancer });
+        else if (src.isA(key, dispatchTokens.physxPhysicsJointInstancerType))
+            out.particleObjectCandidates.push_back({ key, Kind::eJointInstancer });
+        else
+        {
+            const uint64_t canonical = src.canonicalPath(key);
+            if (instancerIdentities.count(canonical ? canonical : key.handle))
+                out.particleObjectCandidates.push_back({ key, Kind::eCustomInstancer });
+        }
+    }
+
+    out.hasPointInstancerPrims = !instancerKeys.empty();
+    if (!filter || filter->prunePointInstancerDescendants)
+    {
+        pointInstancerSubtreeRoots.reserve(instancerKeys.size());
+        for (const ObjectKey key : instancerKeys)
+            pointInstancerSubtreeRoots.emplace_back(src.sourceKeyToString(key));
     }
 
     // --- Scenes (PRIM_TYPE == PhysicsScene) ---
@@ -2775,6 +2858,14 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             }
         };
         addKeys(bodyBucket.keys);
+        std::vector<ObjectKey> bodyBackingKeys;
+        for (const ObjectKey key : bodyBucket.keys)
+        {
+            const ObjectKey backing = src.collisionAttributeBackingKey(key);
+            if (backing.valid())
+                bodyBackingKeys.push_back(backing);
+        }
+        addKeys(bodyBackingKeys);
         addKeys(shapeReadKeys);
         addKeys(src.collectAncestors(merged.keys));
         appendTransformAttrs(merged);
@@ -2794,10 +2885,24 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     src.prefetchBucket(bodyBucket.keys, appendedAttrs(bodyBucket, bodyAttrCount));
     for (const ObjectKey key : bodyBucket.keys)
     {
+        // Match NativeWalker: a dynamic body cannot move inside a scene-graph
+        // prototype. Only kinematic or disabled instance proxies are supported.
+        // Resolve just these validation controls from the strict ancestor's
+        // backing row; a top-level instance root keeps its own authored values.
+        const ObjectKey backing = src.collisionAttributeBackingKey(key);
         bool enabled = true;
-        bool enabledVal = false;
-        if (src.getAttribute(key, tokRigidBodyEnabled, enabledVal))
-            enabled = enabledVal;
+        bool kinematic = false;
+        if (!src.getAttribute(key, tokRigidBodyEnabled, enabled) && backing.valid())
+            src.getAttribute(backing, tokRigidBodyEnabled, enabled);
+        if (!src.getAttribute(key, tokKinematicEnabled, kinematic) && backing.valid())
+            src.getAttribute(backing, tokKinematicEnabled, kinematic);
+        if (backing.valid() && enabled && !kinematic)
+        {
+            const std::string path(src.sourceKeyToString(key));
+            CARB_LOG_WARN("RigidBodyAPI on an instance proxy not supported, "
+                          "unless set to kinematic or not enabled. %s", path.c_str());
+            continue;
+        }
 
         DescPtr<PhysxRigidBodyDesc> base;
         if (enabled)
@@ -2805,6 +2910,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             DescPtr<DynamicPhysxRigidBodyDesc> dyn = parseDynamicBody(ctx, key);
             if (!dyn)
                 continue;
+            dyn->kinematicBody = kinematic;
             base = descPtrCast<PhysxRigidBodyDesc>(std::move(dyn));
         }
         else
@@ -3245,7 +3351,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             bool doubleSided = false;
             src.getAttribute(geometryKey, tokDoubleSided, doubleSided);
             shape = buildMeshShapeDesc(out, ctx, src, colliderKey, gprimKey, info.rigidBody, meshScale, signScale,
-                                       doubleSided);
+                                       doubleSided, colliderBackingKey);
             commonFilled = false;
         }
         else

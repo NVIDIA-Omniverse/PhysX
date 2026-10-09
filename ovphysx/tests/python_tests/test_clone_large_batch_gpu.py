@@ -9,38 +9,35 @@ from test_utils import data_path, load_usd_with_ovstage
 
 
 @pytest.mark.parametrize("num_targets", [256, 512])
-def test_large_clone_batch_survives_reset_cycle(physx_sdk, num_targets: int):
+@pytest.mark.parametrize(
+    "scene,source,object_type,attribute,source_count",
+    [
+        ("basic_simulation.usda", "/World/envs/env0", SimObjectType.RIGID_BODY, "position", 1),
+        ("two_articulations_gpu.usda", "/World/articulation", SimObjectType.ARTICULATION, "rootPosition", 2),
+    ],
+)
+def test_large_clone_batch_survives_reset_cycle(physx_sdk, num_targets, scene, source, object_type, attribute, source_count):
     """DirectGPU large clone batches must survive reset_stage() -> reload -> clone."""
-    usd_path = data_path("basic_simulation.usda")
+    usd_path = data_path(scene)
+    expected = num_targets + source_count
 
     def run_cycle(label: str) -> None:
         load_usd_with_ovstage(physx_sdk, usd_path)
         physx_sdk.wait_all()
         targets = [f"/World/envs/env{i}" for i in range(1, num_targets + 1)]
-        physx_sdk.clone("/World/envs/env0", targets)
+        physx_sdk.clone(source, targets)
         physx_sdk.wait_all()
         physx_sdk.warmup()
         for _ in range(10):
             physx_sdk.step(1.0 / 60.0)
         physx_sdk.wait_all()
 
-        # The tables (source + clones) are the scene's only rigid bodies, so a whole-set read
-        # must see all num_targets + 1. That verifies the whole batch survived the cycle without
-        # a use-after-free.
-        with physx_sdk.read(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
+        # Read every original and clone after rebuilding the scene's views and stepping.
+        with physx_sdk.read(object_type, [attribute], scope=ObjectScope.ALL) as result:
             body_count = sum(g.prim_count for g in result.groups)
-        assert body_count == num_targets + 1, (
-            f"{label}: expected {num_targets + 1} bodies, got {body_count}"
-        )
+        assert body_count == expected, f"{label}: expected {expected} objects, got {body_count}"
 
     run_cycle("first")
     physx_sdk.reset_stage()
     physx_sdk.wait_all()
     run_cycle("second")
-
-    with physx_sdk.read(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
-        body_count = sum(g.prim_count for g in result.groups)
-    expected = num_targets + 1
-    assert body_count == expected, (
-        f"second cycle: expected {expected} bodies, got {body_count}"
-    )

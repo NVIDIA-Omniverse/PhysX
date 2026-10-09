@@ -5,7 +5,7 @@
 
 /**
  * @implements REQ-TENSOR-VIEW-001
- * @covers AC-1
+ * @covers AC-1 AC-12
  *
  * @implements REQ-TENSOR-ATTACH-001
  * @covers AC-1 AC-2
@@ -99,9 +99,6 @@ public:
                                    std::unordered_set<const ::physx::PxArticulationReducedCoordinate*>& seenArtis);
 
     void processRigidBodyEntries(const std::vector<std::string>& patterns, std::vector<RigidBodyEntry>& entries);
-    void findMatchingRigidBodies(const std::string& pattern,
-                                 std::vector<RigidBodyEntry>& entriesRet,
-                                 std::unordered_set<const ::physx::PxRigidBody*>& seenBodies);
 
     void setNoMatchLoggingQuiet(bool quiet) override;
     bool isNoMatchLoggingQuiet() const override;
@@ -246,6 +243,7 @@ public:
     {
         return isValid;
     }
+    bool isSelectionCurrent() const override;
     void invalidate() override;
     bool hasRigidBody(::physx::PxRigidBody* body) const;
     bool hasArticulation(::physx::PxArticulationReducedCoordinate* arti) const;
@@ -294,6 +292,10 @@ protected:
     std::vector<BasePointInstancerView*> mPointInstancerViews;
 
 private:
+    // Reuse eligibility only: record, source or matching-policy changes leave existing views live.
+    const uint64_t mSelectionRecordEpoch;
+    const uint64_t mSelectionReadOrdinal;
+    const bool mSelectionRecursiveLeafMatch;
     omni::physx::SubscriptionId subscriptionObjId;
     std::mutex mMutex;
 };

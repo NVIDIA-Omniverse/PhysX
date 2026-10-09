@@ -9,13 +9,16 @@
  * live in `NativeWalker.cpp`.
  *
  * @implements REQ-PARSE-SCAN-001
- * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7 AC-8 AC-9 AC-12 AC-13 AC-16
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7 AC-8 AC-9 AC-12 AC-13 AC-16 AC-19
  *
  * @implements REQ-PARSE-ART-002
  * @covers AC-1 AC-2 AC-3 AC-5 AC-6
  *
  * @implements REQ-PARSE-DEF-001
  * @covers AC-6
+ *
+ * @implements REQ-RUNTIME-ERROR-001
+ * @covers AC-3 AC-4
  */
 
 #include <pxr/base/gf/transform.h>
@@ -32,6 +35,7 @@
 
 #include <omni/physics/usd/StageScan.h>
 #include <omni/physics/usd/UsdScanBackend.h>
+#include <omni/physx/RuntimeError.h>
 
 #include "NativeWalker.h"
 #include "UsdSource.h" // asUsdSource — USD-source fast resolver path
@@ -258,7 +262,41 @@ ScannedStage scanTargetNative(const parse::AttachTarget& target,
 {
     const PXR_NS::UsdStageWeakPtr stage =
         target.nativeStage ? *static_cast<const PXR_NS::UsdStageWeakPtr*>(target.nativeStage) : PXR_NS::UsdStageWeakPtr{};
-    return scanStage(stage, scanRoots, excludePaths, allocator, traversalForScope(options.descendantScope));
+    if (!target.attachedSource)
+        return scanStage(stage, scanRoots, excludePaths, allocator, traversalForScope(options.descendantScope));
+
+    // Share the matching attach's identity table, with private scan-local caches.
+    // A foreign backend or a different stage cannot provide this identity owner.
+    UsdSource* source = dynamic_cast<UsdSource*>(target.attachedSource);
+    if (!source || !source->isForStage(stage) || !stage || scanRoots.empty())
+        return {};
+    const SubtreeTraversal traversal = traversalForScope(options.descendantScope);
+    if (!excludePaths.empty())
+    {
+        CARB_ASSERT(scanRoots.size() == 1 &&
+            "scanStage: excludePaths is only supported with a single root (replicator selective load)");
+        const PXR_NS::UsdPrim rootPrim = stage->GetPrimAtPath(scanRoots.front());
+        if (!rootPrim)
+            return {};
+        PXR_NS::UsdPrimRange range(rootPrim, PXR_NS::UsdTraverseInstanceProxies(
+            PXR_NS::UsdPrimIsActive && PXR_NS::UsdPrimIsDefined && PXR_NS::UsdPrimIsLoaded &&
+            !PXR_NS::UsdPrimIsAbstract));
+        omni::physics::schema::PrimIteratorExcludeRange iterator(std::move(range), excludePaths);
+        return scanStageNative(stage, iterator, allocator, source);
+    }
+    if (scanRoots.size() == 1 && traversal != SubtreeTraversal::eInstanceProxies)
+    {
+        const PXR_NS::UsdPrim prim = stage->GetPrimAtPath(scanRoots.front());
+        if (!prim)
+            return {};
+        PXR_NS::UsdPrimRange range = traversal == SubtreeTraversal::eAllPrims ?
+            PXR_NS::UsdPrimRange(prim, PXR_NS::UsdPrimAllPrimsPredicate) : PXR_NS::UsdPrimRange(prim);
+        omni::physics::schema::PrimIteratorRange iterator(range);
+        return scanStageNative(stage, iterator, allocator, source);
+    }
+    const std::set<PXR_NS::SdfPath> rootSet(scanRoots.begin(), scanRoots.end());
+    omni::physics::schema::PrimIteratorMapRange iterator(rootSet, stage);
+    return scanStageNative(stage, iterator, allocator, source);
 }
 
 // Backend-dispatched whole-stage scan (ADR-0002 M2c) — the single switch point.
@@ -286,11 +324,11 @@ ScannedStage scanStage(const parse::AttachTarget& target,
         }
         catch (const std::exception& error)
         {
-            CARB_LOG_ERROR("Physics scan backend failed: %s", error.what());
+            OVX_RUNTIME_ERROR("Physics scan backend failed: %s", error.what());
         }
         catch (...)
         {
-            CARB_LOG_ERROR("Physics scan backend failed with an unknown exception");
+            OVX_RUNTIME_ERROR("Physics scan backend failed with an unknown exception");
         }
 
         return {};

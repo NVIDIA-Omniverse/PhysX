@@ -2,7 +2,7 @@
 name: ovphysx-output-read
 description: Read ovphysx simulation output with the ovstage-native output-read API when results must retain ovstage identity or write back without rebuilding paths. Covers Python `PhysX.read()` / `PhysX.read_tokens()`, C `ovphysx_query()` / `ovphysx_read()`, emitted attribute tokens, borrowed groups, and closed-loop physics-to-ovstage write-back.
 license: Apache-2.0
-compatibility: "Requires ovphysx >=0.6.0 and an attached ovstage Stage; supports the Python wheel and C SDK."
+compatibility: "Requires ovphysx >=0.6.0 and an attached ovstage Stage; supports the Python wheel and C SDK. Python PhysX.read() creates Warp arrays and needs a writable Warp cache directory. If the default cache location is not writable, set WARP_CACHE_PATH before Warp is initialized."
 metadata:
   author: "NVIDIA Omniverse Physics Team"
   version: "0.2.0"
@@ -16,6 +16,11 @@ attribute tokens, and fixed/array column layout. The session write API
 (`ovphysx_write` / `PhysX.write`) is the route for pushing caller-owned bulk buffers in --
 see the `ovphysx-session-write` skill (the deprecated tensor-binding API also covered this);
 raycast, sweep, and overlap are geometry queries.
+
+The prim list and attribute token a result carries are **interned integers**, not paths or
+names. Resolve them through `ovstage.PathDictionary(stage)` — `get_path_strings(group.prim_list)`
+for the prim paths and `token_to_string(group.attribute)` for the emitted attribute name (C:
+`ovx_path_dictionary_get_paths` / `_token_to_string`). See `references/python.md`.
 
 ## Workflow
 

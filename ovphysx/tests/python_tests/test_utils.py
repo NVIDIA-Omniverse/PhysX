@@ -19,8 +19,10 @@ import ctypes
 import math
 import os
 import sys
+from contextlib import contextmanager
 
 import numpy as np
+import pytest
 from ovphysx.dlpack import DLDataType, DLDataTypeCode, DLDevice, DLDeviceType, DLTensor
 from ovphysx._bindings import OP_INDEX_ALL
 
@@ -141,6 +143,15 @@ class CudaArray:
             self._ptr = ctypes.c_uint64(0)
 
 
+@contextmanager
+def contact_test_case(**parameters):
+    """Include the contact method or capacity in failures from a combined test."""
+    try:
+        yield
+    except (Exception, pytest.fail.Exception) as exc:
+        raise AssertionError(f"Contact test case {parameters}: {exc}") from exc
+
+
 def data_path(filename):
     """Resolve a test data file path inside the tests/data directory.
 
@@ -176,7 +187,12 @@ def register_physx_schemas_with_ovstage():
     import ovphysx
     import ovstage
 
-    ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+    # The Newton USD schema (newton-usd-schemas, a test dependency) goes in the same
+    # call: the parser reads its newton:* attributes as fallbacks for the PhysX ones,
+    # and population drops them unless the schema is registered.
+    ovstage.population.register_usd_schemas(
+        [str(ovphysx.codeless_schema_root()), str(ovphysx.newton_schema_root())]
+    )
     _physx_schemas_registered = True
 
 

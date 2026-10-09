@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-TENSOR-CONTACT-003
+ * @covers AC-1 AC-2 AC-3 AC-4
+ *
  * @implements REQ-READ-CORE-001
  * @covers AC-6
  *
@@ -19,6 +22,9 @@
  *
  * @implements REQ-READ-COVERAGE-001
  * @covers AC-4c, AC-4d
+ *
+ * @implements REQ-TENSOR-CONTACT-002
+ * @covers AC-2 AC-3
  */
 
 #include "tensors/gpu/CudaKernels.h"
@@ -28,6 +34,7 @@
 #include "tensors/ArticulationTendonOvStageRecord.h"
 #include "tensors/InstancerReframe.h"
 #include "tensors/PointSetReframe.h"
+#include "tensors/ContactLayoutClamp.h"
 #include "tensors/gpu/ThrustUtils.h"
 
 #include <thrust/device_ptr.h>
@@ -2605,7 +2612,7 @@ __device__ __forceinline__ static PxU32 getRigidContactReferentIndex(const PxNod
     return INVALID_IDX;
 }
 
-__device__ __forceinline__ static PxVec3 getRigidContactPairForce(const PxGpuContactPair& cp, float timeStepInv)
+__device__ __forceinline__ static PxVec3 getRigidContactPairNormalForce(const PxGpuContactPair& cp, float timeStepInv)
 {
     PxVec3 impulse(0.0f);
 
@@ -2624,6 +2631,20 @@ __device__ __forceinline__ static PxVec3 getRigidContactPairForce(const PxGpuCon
 }
 
 
+__device__ __forceinline__ static PxVec3 getRigidContactPairFrictionForce(const PxGpuContactPair& cp, float timeStepInv)
+{
+    PxVec3 impulse(0.0f);
+    if (cp.frictionPatches)
+    {
+        const PxFrictionPatch* patches = reinterpret_cast<const PxFrictionPatch*>(cp.frictionPatches);
+        for (PxU32 i = 0; i < cp.nbPatches; ++i)
+            for (PxU32 j = 0; j < patches[i].anchorCount; ++j)
+                impulse += patches[i].anchorImpulses[j];
+    }
+    return timeStepInv * impulse;
+}
+
+template <ForceComponent component>
 __global__ static void fetchNetRigidContactForcesKernel(PxVec3* netForces,
                                                         const PxGpuContactPair* contactPairs,
                                                         PxU32 numContactPairs,
@@ -2650,7 +2671,9 @@ __global__ static void fetchNetRigidContactForcesKernel(PxVec3* netForces,
         // check if we are interested in either of these objects
         if (refIdx0 != INVALID_IDX || refIdx1 != INVALID_IDX)
         {
-            PxVec3 force = getRigidContactPairForce(cp, timeStepInv);
+            const PxVec3 force = component == ForceComponent::eFriction ?
+                                     getRigidContactPairFrictionForce(cp, timeStepInv) :
+                                     getRigidContactPairNormalForce(cp, timeStepInv);
 
             if (refIdx0 != INVALID_IDX)
             {
@@ -2678,12 +2701,20 @@ bool fetchNetRigidContactForces(PxVec3* netForces,
                                 float timeStepInv,
                                 const PxU32* nodeIdx2ArtiGpuIdx,
                                 const PxU32* rdContactIndices,
-                                const PxU32* linkContactIndices)
+                                const PxU32* linkContactIndices,
+                                ForceComponent component)
 {
     if (numContactPairs > 0)
-        fetchNetRigidContactForcesKernel<<<(numContactPairs + 1023) / 1024, 1024>>>(
-            netForces, contactPairs, numContactPairs, maxLinks, timeStepInv, nodeIdx2ArtiGpuIdx, rdContactIndices,
-            linkContactIndices);
+    {
+        if (component == ForceComponent::eFriction)
+            fetchNetRigidContactForcesKernel<ForceComponent::eFriction><<<(numContactPairs + 1023) / 1024, 1024>>>(
+                netForces, contactPairs, numContactPairs, maxLinks, timeStepInv, nodeIdx2ArtiGpuIdx,
+                rdContactIndices, linkContactIndices);
+        else
+            fetchNetRigidContactForcesKernel<ForceComponent::eNormal><<<(numContactPairs + 1023) / 1024, 1024>>>(
+                netForces, contactPairs, numContactPairs, maxLinks, timeStepInv, nodeIdx2ArtiGpuIdx,
+                rdContactIndices, linkContactIndices);
+    }
     return launchOk(CHECK_CUDA(cudaGetLastError()));
 }
 
@@ -2758,6 +2789,7 @@ __device__ __forceinline__ static uint64_t getActorPathId(const GpuActorPathIdPa
     return 0;
 }
 
+template <ForceComponent component>
 __global__ static void fetchRigidContactForceMatrixKernel(PxVec3* forceMatrix,
                                                           const PxGpuContactPair* contactPairs,
                                                           PxU32 numContactPairs,
@@ -2783,7 +2815,9 @@ __global__ static void fetchRigidContactForceMatrixKernel(PxVec3* forceMatrix,
         // check if we are interested in either of these objects
         if (refIdx0 != INVALID_IDX || refIdx1 != INVALID_IDX)
         {
-            PxVec3 force = getRigidContactPairForce(cp, timeStepInv);
+            const PxVec3 force = component == ForceComponent::eFriction ?
+                                     getRigidContactPairFrictionForce(cp, timeStepInv) :
+                                     getRigidContactPairNormalForce(cp, timeStepInv);
 
             if (refIdx0 != INVALID_IDX && cp.actor1 != nullptr)
             {
@@ -2829,12 +2863,20 @@ bool fetchRigidContactForceMatrix(PxVec3* forceMatrix,
                                   const PxU32* nodeIdx2ArtiGpuIdx,
                                   const PxU32* rdContactIndices,
                                   const PxU32* linkContactIndices,
-                                  const GpuRigidContactFilterIdPair* filterLookup)
+                                  const GpuRigidContactFilterIdPair* filterLookup,
+                                  ForceComponent component)
 {
     if (numContactPairs > 0)
-        fetchRigidContactForceMatrixKernel<<<(numContactPairs + 1023) / 1024, 1024>>>(
-            forceMatrix, contactPairs, numContactPairs, numFilters, maxLinks, timeStepInv, nodeIdx2ArtiGpuIdx,
-            rdContactIndices, linkContactIndices, filterLookup);
+    {
+        if (component == ForceComponent::eFriction)
+            fetchRigidContactForceMatrixKernel<ForceComponent::eFriction><<<(numContactPairs + 1023) / 1024, 1024>>>(
+                forceMatrix, contactPairs, numContactPairs, numFilters, maxLinks, timeStepInv, nodeIdx2ArtiGpuIdx,
+                rdContactIndices, linkContactIndices, filterLookup);
+        else
+            fetchRigidContactForceMatrixKernel<ForceComponent::eNormal><<<(numContactPairs + 1023) / 1024, 1024>>>(
+                forceMatrix, contactPairs, numContactPairs, numFilters, maxLinks, timeStepInv, nodeIdx2ArtiGpuIdx,
+                rdContactIndices, linkContactIndices, filterLookup);
+    }
     return launchOk(CHECK_CUDA(cudaGetLastError()));
 }
 
@@ -2851,13 +2893,12 @@ __device__ __forceinline__ static void getFrictionData(PxVec3* forceBuffer,
     PxU32* count = countMatrix + matrixIdx;
     PxU32 currentCount = atomicAdd(count, frictionPatch.anchorCount);
     PxU32 elementIdx = startIndicesMatrix[matrixIdx] + currentCount;
-    if (elementIdx < maxDataPoints)
+    for (PxU32 i = 0; i < frictionPatch.anchorCount; i++)
     {
-        for (PxU32 i = 0; i < frictionPatch.anchorCount; i++)
-        {
-            forceBuffer[elementIdx + i] = frictionPatch.anchorImpulses[i] * multiplier;
-            pointBuffer[elementIdx + i] = frictionPatch.anchorPositions[i];
-        }
+        if (elementIdx + i >= maxDataPoints)
+            break;
+        forceBuffer[elementIdx + i] = frictionPatch.anchorImpulses[i] * multiplier;
+        pointBuffer[elementIdx + i] = frictionPatch.anchorPositions[i];
     }
 }
 
@@ -3360,18 +3401,7 @@ __global__ static void clampContactLayoutKernel(
 {
     PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < numSensors)
-    {
-        PxU32 start = startIndices[i];
-        if (start >= cap)
-        {
-            startIndices[i] = cap;
-            counts[i] = 0;
-        }
-        else if (start + counts[i] > cap)
-        {
-            counts[i] = cap - start;
-        }
-    }
+        clampContactLayoutEntry(counts, startIndices, i, cap);
 }
 
 // Interleave contiguous per-sensor counts/starts into a caller-facing (numSensors, 2)

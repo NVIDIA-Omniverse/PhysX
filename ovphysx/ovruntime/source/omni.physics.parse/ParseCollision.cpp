@@ -122,9 +122,8 @@ void parseCollisionExt(ParseContext& ctx, ObjectKey key, CollisionExtFields& fie
     //   contactOffset: clamp to [0, FLT_MAX].
     //   restOffset:    clamp to [-FLT_MAX, FLT_MAX].
     //
-    // Cross-validation: only writes the local back to outDesc when
-    // `contactOffset >= restOffset` (and the inverse for restOffset), so
-    // a one-sided author can't violate the constraint.
+    // Cross-validate concrete contact offsets. A negative contact offset
+    // means automatic; the runtime resolves it from geometry and restOffset.
     if (src.hasSchema(key, tok.physxCollisionAPI))
     {
         float contactOffset = fields.contactOffset;
@@ -166,13 +165,12 @@ void parseCollisionExt(ParseContext& ctx, ObjectKey key, CollisionExtFields& fie
                 restOffset = attrVal;
         }
 
-        // Cross-validation gates the writeback: each field is only
-        // committed if it leaves contactOffset >= restOffset. When
-        // neither is authored, both locals equal the input fields and
-        // the writes are no-ops, so this is safe.
-        if (contactOffset >= restOffset)
+        // Preserve the automatic contact sentinel and authored rest offset
+        // together. Comparing restOffset to the unresolved -1 sentinel would
+        // discard valid values before the runtime can compute contactOffset.
+        if (contactOffset < 0.0f || contactOffset >= restOffset)
             fields.contactOffset = contactOffset;
-        if (restOffset < contactOffset)
+        if (contactOffset < 0.0f || restOffset < contactOffset)
             fields.restOffset = restOffset;
     }
 

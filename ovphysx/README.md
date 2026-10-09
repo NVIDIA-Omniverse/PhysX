@@ -61,6 +61,12 @@ ovphysx is a standalone library for USD-based physics simulation, offering a C A
 - **Linux** (x86_64, aarch64) or **Windows** (x86_64)
 - **x86_64 CPUs must support AVX** (Advanced Vector Extensions). Pre-built Linux and Windows x86_64 binaries are compiled with AVX enabled and do not include a non-AVX fallback. `ovphysx_initialize()` / creating a Python `PhysX()` instance fails fast with a clear error when AVX is unavailable. Linux aarch64 wheels are unaffected. Check Linux x86_64 hosts with `grep -qw avx /proc/cpuinfo`; on Windows, confirm AVX support in your CPU specifications.
 - NVIDIA GPU + driver **recommended** for acceleration (CPU-only simulation also supported)
+- **A writable Warp cache directory.** Python `PhysX.read()` and `PhysX.write()`
+  create [Warp](https://github.com/NVIDIA/warp) arrays, initializing Warp on first
+  use. Warp initializes its cache at a platform-specific default location. If
+  that location is not writable, initialization can fail with `PermissionError`
+  or `OSError`. Set `WARP_CACHE_PATH` to a writable directory before Warp is
+  initialized, for example before the first `read()`/`write()` call.
 
 ---
 
@@ -69,7 +75,7 @@ ovphysx is a standalone library for USD-based physics simulation, offering a C A
 - **Source code:** Apache License 2.0 — permissive, free for commercial and non-commercial use.
 - **Pre-built binaries** (SDK packages and Python wheels): distributed under the **NVIDIA Omniverse License**.
 
-> **Note:** ovphysx is pre-release and not yet mature. ovphysx ships its PhysX USD schemas as codeless plugins and never registers them itself; register them with the USD runtime your application owns (for ovstage, `ovstage.population.register_usd_schemas()`) before the first population call or schema-registry access. Parts of the API may change before 1.0.
+> **Note:** ovphysx is pre-release and not yet mature. ovphysx ships its PhysX USD schemas as codeless plugins and never registers them itself; register them with the USD runtime your application owns (for ovstage, `ovstage.population.register_usd_schemas()`) before the first population call or schema-registry access. The Newton USD schema (`pip install newton-usd-schemas`) is a separate dependency of scenes that author `newton:*` attributes and is registered the same way. Parts of the API may change before 1.0.
 
 ---
 
@@ -78,8 +84,12 @@ ovphysx is a standalone library for USD-based physics simulation, offering a C A
 ## Quick Start
 
 ```bash
-pip install ovphysx
+pip install ovphysx newton-usd-schemas
 ```
+
+`newton-usd-schemas` is the Newton USD schema the snippet below registers next
+to ovphysx's own; scenes that author no `newton:*` attributes can leave it out
+and drop the `newton_schema_root()` entry.
 
 ```python
 from pathlib import Path
@@ -98,8 +108,12 @@ if not usd_path.is_file():
     raise FileNotFoundError(f"ovphysx sample data is missing: {usd_path}")
 
 # ovphysx ships its PhysX USD schemas as codeless resources and never registers
-# them itself; register them with ovstage before the first population call.
-ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+# them itself; register them with ovstage before the first population call. The
+# Newton USD schema (pip install newton-usd-schemas) goes in the same call so
+# authored newton:* attributes reach the parser.
+ovstage.population.register_usd_schemas(
+    [str(ovphysx.codeless_schema_root()), str(ovphysx.newton_schema_root())]
+)
 stage = ovstage.Stage("scene")
 ovstage.population.open_usd(
     stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.PHYSICS
@@ -154,8 +168,10 @@ if not usd_path.is_file():
 
 PhysX.set_cpu_mode(True)
 physx = PhysX()
-# Register the codeless PhysX schemas before the first population call.
-ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+# Register the codeless PhysX schemas and the Newton schema before the first population call.
+ovstage.population.register_usd_schemas(
+    [str(ovphysx.codeless_schema_root()), str(ovphysx.newton_schema_root())]
+)
 stage = ovstage.Stage("scene")
 ovstage.population.open_usd(
     stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.PHYSICS
@@ -365,8 +381,9 @@ cmake --build --preset validate-all               # builds validate_all in _buil
 ```
 
 **CI vs local:** `validate_all.cmake` reproduces the full build + test pipeline locally.
-CI runs the same build/test steps plus formatting checks (`ci_validate.cmake`), docs build,
-and packaging.
+CI runs the same build/test steps plus extra validation (`ci_validate.cmake`), docs build,
+and packaging. The SPDX legal-blurb check is a separate `lint-ovphysx` job; run it locally
+with `./repo.sh format --legal-only --verify`.
 
 ### Source-tree sample workflow
 
@@ -428,6 +445,16 @@ before the first population call. The bundled samples do this in their
 `attach_scene` helpers (Python) and in `tests/c_samples/common/ovstage_sample.h`
 (C). Refer to `docs/physics_schemas.md` for registering the same schemas with a
 stock `usd-core`.
+
+ovphysx also reads the Newton USD schema's `newton:*` attributes as fallbacks for
+the PhysX spellings (for example `newton:velocityLimit` for
+`physxJoint:maxJointVelocity`, where a PhysX limit below `FLT_MAX` wins and an
+unlimited one yields to Newton), but does not ship that schema. Install it
+(`pip install newton-usd-schemas`, or download it from
+<https://github.com/newton-physics/newton-usd-schemas>) and register it in the
+same call, `ovphysx.newton_schema_root()` in Python. Population drops every
+`newton:*` attribute otherwise, and `PhysX.attach_ovstage()` warns when the
+installed package was not registered before the first population.
 
 ### Development mode (`OVPHYSX_LIB`)
 

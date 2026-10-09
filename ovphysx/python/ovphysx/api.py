@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-CAPI-CONTACT-003
+# @covers AC-1 AC-2 AC-3 AC-4
+
 # @implements REQ-CAPI-LOG-001
 # @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7
 # @implements REQ-PYTHON-KEYWORD-001
@@ -8,13 +11,25 @@
 # @implements REQ-PYTHON-OMNIPVD-LATE-001
 # @covers AC-3 AC-4 AC-5 AC-6 AC-7 AC-8
 # @implements REQ-CAPI-WRITE-001
-# @covers AC-9 AC-11 AC-12
+# @covers AC-5a AC-9 AC-11 AC-12
 # @implements REQ-PYTHON-READPOOL-001
 # @covers AC-3
 # @implements REQ-PYTHON-BINDING-DEVICE-001
 # @covers AC-1 AC-2 AC-3 AC-4
 # @implements REQ-PYTHON-CLONE-001
 # @covers AC-2
+# @implements REQ-CAPI-OVSTAGE-SCHEMA-001
+# @covers AC-6
+# @implements REQ-PACKAGING-BUILDNUM-001
+# @covers AC-7
+# @implements REQ-CAPI-CONTACT-001
+# @covers AC-5 AC-6 AC-7
+# @implements REQ-CAPI-SCENEQUERY-001
+# @covers AC-1
+# @implements REQ-CAPI-CONTACT-002
+# @covers AC-2 AC-3 AC-4
+# @implements REQ-PYTHON-WAIT-RANGE-001
+# @covers AC-1 AC-2 AC-3
 
 """High-level Python API for the ovphysx library.
 
@@ -77,6 +92,7 @@ Thread Safety
 import atexit
 import ctypes
 import gc
+import logging
 import math
 import operator
 import threading
@@ -254,6 +270,10 @@ class WriteSession:
         runtime orders the scatter behind them before reading the column. For
         ``cuda_stream``, ``0`` means no synchronization and ``1`` means CUDA's default
         stream.
+
+        On a DirectGPU scene, a commit issued before the first step is refused (the GPU
+        scatter view does not exist yet). On CPU and GPU-with-readback the same pre-step
+        commit is applied. The write never auto-warms.
         """
         if self._closed:
             raise RuntimeError("write session is closed")
@@ -396,6 +416,142 @@ def _dl_int(v) -> int:
 
 
 _CPU_MODE_WARP_BUILD_CHECKED = False
+
+# Carbonite setting (create-time config entry, ``PhysXConfig.carbonite_overrides``):
+# False silences the Newton schema registration check in ``attach_ovstage()``.
+NEWTON_SCHEMA_WARNING_SETTING = "/ovphysx/schemas/warnMissingNewtonSchema"
+_NEWTON_SCHEMA_CHECKED = False
+
+
+def _carbonite_override_is_false(value) -> bool:
+    """Interpret a ``carbonite_overrides`` value the way the native config parser does.
+
+    Overrides travel as strings (``_make_carbonite_entry``), and the native side reads
+    ``"false"`` / ``"False"`` / ``"FALSE"`` and ``"0"`` as false, so the Python-side reader of
+    this one setting must agree with it rather than apply Python truthiness.
+    """
+    if isinstance(value, str):
+        return value.strip().lower() in ("false", "0")
+    return not value
+
+
+_SCHEMA_PROBE_DIR = None
+
+
+def _usd_schema_definitions_built(ovstage):
+    """Tell whether USD has already built its schema definitions in this process.
+
+    True once a population or export has run (the registry is frozen), False while it
+    is still open, None when ovstage could not be asked. ovstage exposes no query for
+    this; what it reports is a registration that arrives after the definitions were
+    built. So a throwaway descriptor is registered: a uniquely named plugin that
+    declares no schema types, which therefore selects no schema for anyone and changes
+    nothing whether the registry is open or frozen. A fresh name is used on every call
+    because a path registered once is deduplicated afterwards. The descriptors live in
+    one process-lifetime directory, removed at exit.
+    """
+    global _SCHEMA_PROBE_DIR
+    import json
+    import os
+    import shutil
+    import tempfile
+    import uuid
+
+    try:
+        if _SCHEMA_PROBE_DIR is None:
+            _SCHEMA_PROBE_DIR = tempfile.mkdtemp(prefix="ovphysx-schema-registry-probe-")
+            atexit.register(shutil.rmtree, _SCHEMA_PROBE_DIR, True)
+        probe = os.path.join(_SCHEMA_PROBE_DIR, uuid.uuid4().hex)
+        os.mkdir(probe)
+        with open(os.path.join(probe, "plugInfo.json"), "w", encoding="utf-8") as fh:
+            json.dump(
+                {"Plugins": [{"Name": "ovphysx_schema_registry_probe_" + os.path.basename(probe),
+                              "Type": "resource", "Root": ".", "ResourcePath": ".", "Info": {}}]},
+                fh,
+            )
+    except OSError:
+        return None
+    try:
+        ovstage.population.register_usd_schemas([probe])
+    except Exception as exc:
+        return True if "already built" in str(exc) else None
+    return False
+
+
+def _warn_if_newton_schema_unregistered() -> None:
+    """Warn once per process when the Newton USD schema was not registered with ovstage.
+
+    The parser reads the Newton schema's newton:* attributes as fallbacks for the PhysX
+    spellings, and population drops every newton:* attribute the scene authors unless the
+    schema was registered before the first population. ovstage keeps no queryable record
+    of registered schema families; what it does report is a registration that arrives
+    after USD built its schema definitions. So, once those definitions are built, the
+    check re-registers the installed newton-usd-schemas package: a no-op when the family
+    was registered in time (from that path or any other complete copy), an error when it
+    was not.
+
+    That probe would be a real registration while USD's registry is still open, so it
+    runs only after ``_usd_schema_definitions_built`` says the registry is frozen. A stage
+    authored procedurally and attached before any USD population in the process leaves
+    the registry open: the check then does nothing to the Newton family, the application
+    still chooses its own copy, and the check stays armed for a later attach.
+
+    Runs before the native attach so a warning promoted to an error leaves the instance
+    detached. Latches once it has spoken or probed: USD's registry cannot change for the
+    rest of the process, and the probe itself registers the plugins, so a second probe
+    would report success.
+    """
+    global _NEWTON_SCHEMA_CHECKED
+    if _NEWTON_SCHEMA_CHECKED:
+        return
+
+    from .schemas import NEWTON_SCHEMA_INSTALL_HINT, NEWTON_SCHEMA_PIP_NAME, find_newton_schema_root
+
+    silence = (
+        f" Set {NEWTON_SCHEMA_WARNING_SETTING} to false "
+        f"(PhysXConfig(carbonite_overrides={{'{NEWTON_SCHEMA_WARNING_SETTING}': False}})) to silence this check."
+    )
+    root = find_newton_schema_root()
+    if root is None:
+        # Not installed is the default state of a consumer whose scenes author no newton:*
+        # attribute, and nothing is wrong there. A logged warning keeps the pointer visible
+        # without turning attach into an exception for suites that promote warnings to errors.
+        _NEWTON_SCHEMA_CHECKED = True
+        logging.getLogger("ovphysx").warning(
+            "attach_ovstage: the Newton USD schema (%s) is not installed in this Python environment, so "
+            "ovphysx cannot verify that it was registered with ovstage. ovphysx reads its newton:* attributes "
+            "as fallbacks for the PhysX spellings (newton:velocityLimit for physxJoint:maxJointVelocity, ...), "
+            "and population drops every newton:* attribute a scene authors unless the schema was registered "
+            "before the first population; scenes that author none are unaffected. %s%s",
+            NEWTON_SCHEMA_PIP_NAME,
+            NEWTON_SCHEMA_INSTALL_HINT,
+            silence,
+        )
+        return
+
+    try:
+        import ovstage
+    except ImportError:
+        return
+    if not ovstage.population.available():
+        return
+    if _usd_schema_definitions_built(ovstage) is not True:
+        return  # registry still open (or unknown): registering now would select a schema for the app
+    _NEWTON_SCHEMA_CHECKED = True
+    try:
+        ovstage.population.register_usd_schemas([str(root)])
+    except Exception as exc:  # ovstage reports a late registration as OP_FAILED
+        warnings.warn(
+            f"attach_ovstage: the Newton USD schema at '{root}' was not registered with ovstage before the "
+            "first population in this process, so every newton:* attribute the scene authors (for example "
+            "newton:velocityLimit) was dropped and its PhysX fallback keeps the PhysX default. Register it "
+            "together with the PhysX schemas before populating: ovstage.population.register_usd_schemas("
+            "[str(ovphysx.codeless_schema_root()), str(ovphysx.newton_schema_root())]). A registration "
+            "ovstage could not observe (another USD consumer read the schema definitions first) is not "
+            f"detected.{silence} (ovstage: {exc})",
+            RuntimeWarning,
+            stacklevel=3,
+        )
 
 
 def _warp_build_has_cuda(wp) -> "bool | None":
@@ -742,13 +898,33 @@ def _check_version_match() -> None:
             f"Python: '{_python_version}', native: '{native_version}'."
         ) from exc
 
-    if python_base != native_base:
+    # Compare the release line only. A CI build stamps the pipeline id as a
+    # fourth component (REQ-PACKAGING-BUILDNUM-001), and the two sides do not
+    # always carry it: the native library is built from CMake, while the Python
+    # version comes from _version.py in a wheel but falls back to the bare
+    # VERSION file in a source-tree or editable install. Comparing the full
+    # version would fail every CI run for a difference that says nothing about
+    # API compatibility.
+    def _line(version: str) -> tuple[int, ...]:
+        return tuple(Version(version).release[:3])
+
+    if _line(python_base) != _line(native_base):
         raise RuntimeError(
             "ovphysx Python package version does not match the native library. "
             f"Python: '{_python_version}' (base {python_base}), "
             f"native: '{native_version}' (base {native_base}). "
             "Reinstall the wheel or set OVPHYSX_LIB to the matching library. "
             "To bypass this check, pass ignore_version_mismatch=True."
+        )
+
+    if python_base != native_base:
+        # Same release, different build. Not an API mismatch, but it does mean
+        # the wheel and the library came from different pipelines.
+        logger.warning(
+            "ovphysx Python package and native library are the same release but "
+            "different builds. Python: '%s', native: '%s'.",
+            _python_version,
+            native_version,
         )
 
 
@@ -1754,8 +1930,25 @@ class SdfView:
                 pass
 
 
+def _decode_truncated_paths(paths_arr, out_count: int, capacity: int, api_name: str) -> list[str]:
+    """Decode a native path array, warning if the native call reports more than fits.
+
+    ``out_count`` may legitimately exceed ``capacity`` (OVPHYSX_API_BUFFER_TOO_SMALL);
+    only the in-range prefix was written, so indexing stops at ``capacity``.
+    """
+    written = min(out_count, capacity)
+    if out_count > capacity:
+        logging.getLogger(__name__).warning(
+            "%s: native out_count=%d > buffer size=%d; truncating", api_name, out_count, capacity,
+        )
+    return [str(paths_arr[i]) for i in range(written)]
+
+
 class ContactBinding:
     """Contact tensor binding backed by IRigidContactView.
+
+    .. deprecated:: 0.6.0
+        The contact-binding API is deprecated and retained for compatibility.
 
     Do not instantiate directly. Use :meth:`PhysX.create_contact_binding` to
     obtain an instance. The :attr:`sensor_paths` and :attr:`filter_paths`
@@ -1813,17 +2006,11 @@ class ContactBinding:
                 self._sensor_count,
                 ctypes.byref(out_count),
             )
-            if result.status != ApiStatus.SUCCESS:
+            if result.status not in (ApiStatus.SUCCESS, ApiStatus.BUFFER_TOO_SMALL):
                 raise RuntimeError(f"Failed to get contact sensor paths: {self._sdk._get_last_error()}")
-            if out_count.value > self._sensor_count:
-                # Same defensive log as TensorBinding.prim_paths. A native
-                # out_count exceeding the buffer size is a C-library bug.
-                import logging as _logging
-                _logging.getLogger(__name__).warning(
-                    "ovphysx_contact_binding_get_sensor_paths: native out_count=%d > buffer size=%d; truncating",
-                    out_count.value, self._sensor_count,
-                )
-            return [str(paths_arr[i]) for i in range(min(out_count.value, self._sensor_count))]
+            return _decode_truncated_paths(
+                paths_arr, out_count.value, self._sensor_count, "ovphysx_contact_binding_get_sensor_paths"
+            )
 
     @property
     def filter_paths(self) -> list[list[str]]:
@@ -1852,23 +2039,84 @@ class ContactBinding:
                 total,
                 ctypes.byref(out_count),
             )
-            if result.status != ApiStatus.SUCCESS:
+            if result.status not in (ApiStatus.SUCCESS, ApiStatus.BUFFER_TOO_SMALL):
                 raise RuntimeError(f"Failed to get contact filter paths: {self._sdk._get_last_error()}")
-            if out_count.value != total:
+            if result.status == ApiStatus.SUCCESS and out_count.value != total:
                 raise RuntimeError(f"Expected {total} contact filter paths, got {out_count.value}")
-            flat = [str(paths_arr[i]) for i in range(out_count.value)]
+            flat = _decode_truncated_paths(
+                paths_arr, out_count.value, total, "ovphysx_contact_binding_get_filter_paths"
+            )
             return [
                 flat[sensor_idx * self._filter_count:(sensor_idx + 1) * self._filter_count]
                 for sensor_idx in range(self._sensor_count)
             ]
 
-    def read_net_forces(self, output) -> None:
-        """Read net contact forces into output. Expected shape: [sensor_count, 3].
+    def read_net_normal_forces(self, output) -> None:
+        """Read net normal forces into output, shape ``[sensor_count, 3]``.
 
-        The dt for impulse-to-force conversion is taken automatically from the
-        last successful :meth:`PhysX.step`, :meth:`PhysX.step_sync`, or
-        :meth:`PhysX.step_n_sync` call.
+        .. deprecated:: 0.6.0
+            The contact-binding API is deprecated and retained for compatibility.
+
+        Sums world-space normal forces over all reported contacts of each sensor,
+        regardless of filters or detailed-contact capacity. Add
+        :meth:`read_net_friction_forces` from the same step for total contact force.
+        Impulse-to-force conversion uses the last successful simulation step's dt.
         """
+        self._read_forces(output, _lib.ovphysx_read_contact_net_normal_forces, "net contact forces")
+
+    def read_net_friction_forces(self, output) -> None:
+        """Read net friction forces into output, shape ``[sensor_count, 3]``.
+
+        .. deprecated:: 0.6.0
+            The contact-binding API is deprecated and retained for compatibility.
+
+        Sums world-space friction-anchor forces over all reported contacts of each
+        sensor, including contacts with bodies not matched by the configured
+        filters. Filters and detailed-contact capacity are not required.
+        Adding the result to :meth:`read_net_normal_forces` from the same step
+        yields the total contact force. Impulse-to-force conversion uses that step's dt.
+
+        For example, if a foot touches the floor and a wall but its filter selects
+        only the floor, this function includes friction from both bodies.
+        The friction force matrix includes only the floor contribution.
+
+        Opposing anchor forces may cancel while producing torque.
+        This vector sum does not report friction torque.
+        """
+        self._read_forces(output, _lib.ovphysx_read_contact_net_friction_forces, "net friction forces")
+
+    def read_normal_force_matrix(self, output) -> None:
+        """Read normal forces into output, shape ``[sensor_count, filter_count, 3]``.
+
+        .. deprecated:: 0.6.0
+            The contact-binding API is deprecated and retained for compatibility.
+
+        Each entry sums world-space normal forces for its sensor/filter pair,
+        independently of detailed-contact capacity. Adding
+        :meth:`read_friction_force_matrix` from the same step yields total contact
+        forces for the configured pairs. Impulse-to-force conversion uses the
+        last successful simulation step's dt.
+        """
+        self._read_forces(output, _lib.ovphysx_read_contact_normal_force_matrix, "contact force matrix")
+
+    def read_friction_force_matrix(self, output) -> None:
+        """Read friction forces into output, shape ``[sensor_count, filter_count, 3]``.
+
+        .. deprecated:: 0.6.0
+            The contact-binding API is deprecated and retained for compatibility.
+
+        Each entry sums world-space friction forces for its sensor/filter pair,
+        independently of detailed-contact capacity. Only contacts with configured
+        filter bodies contribute. Adding :meth:`read_normal_force_matrix` from
+        the same step yields total contact forces for those pairs. Individual
+        friction forces and anchor points are available through
+        :meth:`read_friction_contact_data`.
+
+        Impulse-to-force conversion uses the last successful simulation step's dt.
+        """
+        self._read_forces(output, _lib.ovphysx_read_contact_friction_force_matrix, "friction force matrix")
+
+    def _read_forces(self, output, reader, description: str) -> None:
         with self._lock:
             if self._destroyed:
                 raise RuntimeError("ContactBinding has been destroyed")
@@ -1876,36 +2124,41 @@ class ContactBinding:
             from ._dlpack_utils import acquire_dltensor
 
             dl_tensor, keepalive = acquire_dltensor(output)
-            result = _lib.ovphysx_read_contact_net_forces(
+            result = reader(
                 self._sdk._omni_physx_sdk_handle.value, self._handle, ctypes.byref(dl_tensor)
             )
             _ = keepalive
             if result.status != ApiStatus.SUCCESS:
-                raise RuntimeError(f"Failed to read net contact forces: {self._sdk._get_last_error()}")
+                raise RuntimeError(f"Failed to read {description}: {self._sdk._get_last_error()}")
+
+    def read_net_forces(self, output) -> None:
+        """Deprecated alias of :meth:`read_net_normal_forces`; returns normal forces only."""
+        warnings.warn(
+            "read_net_forces() is deprecated; use read_net_normal_forces(). "
+            "The result still contains normal forces only.",
+            DeprecationWarning, stacklevel=2,
+        )
+        self.read_net_normal_forces(output)
 
     def read_force_matrix(self, output) -> None:
-        """Read contact force matrix into output. Expected shape: [sensor_count, filter_count, 3].
+        """Deprecated alias of :meth:`read_normal_force_matrix`; returns normal forces only."""
+        warnings.warn(
+            "read_force_matrix() is deprecated; use read_normal_force_matrix(). "
+            "The result still contains normal forces only.",
+            DeprecationWarning, stacklevel=2,
+        )
+        self.read_normal_force_matrix(output)
 
-        The dt for impulse-to-force conversion is taken automatically from the
-        last successful :meth:`PhysX.step`, :meth:`PhysX.step_sync`, or
-        :meth:`PhysX.step_n_sync` call.
-        """
-        with self._lock:
-            if self._destroyed:
-                raise RuntimeError("ContactBinding has been destroyed")
-            self._check_sdk_valid()
-            from ._dlpack_utils import acquire_dltensor
+    def read_normal_contact_data(self, contact_forces, positions, normals, separations, counts, start_indices) -> int:
+        """Read detailed normal contact data into flat buffers.
 
-            dl_tensor, keepalive = acquire_dltensor(output)
-            result = _lib.ovphysx_read_contact_force_matrix(
-                self._sdk._omni_physx_sdk_handle.value, self._handle, ctypes.byref(dl_tensor)
-            )
-            _ = keepalive
-            if result.status != ApiStatus.SUCCESS:
-                raise RuntimeError(f"Failed to read contact force matrix: {self._sdk._get_last_error()}")
+        .. deprecated:: 0.6.0
+            The contact-binding API is deprecated and retained for compatibility.
 
-    def read_contact_data(self, contact_forces, positions, normals, separations, counts, start_indices) -> None:
-        """Read detailed contact data into flat buffers.
+        ``contact_forces`` contains scalar normal forces. Multiply each scalar
+        by the corresponding ``normals`` vector to obtain the world-space
+        normal force vector. Friction forces are returned separately by
+        :meth:`read_friction_contact_data`.
 
         Expected shapes are ``[C, 1]`` for ``contact_forces`` and ``separations``,
         ``[C, 3]`` for ``positions`` and ``normals``, and ``[sensor_count,
@@ -1915,6 +2168,14 @@ class ContactBinding:
         Contact force magnitudes use the timestep from the last successful
         :meth:`PhysX.step`, :meth:`PhysX.step_sync`, or
         :meth:`PhysX.step_n_sync` call.
+
+        Returns the total number of contacts produced for the step. When this
+        exceeds ``max_contact_data_count``, the buffers contain the valid prefix
+        that fit. A pair's count reports only contacts actually written, and
+        its start index is clamped to ``max_contact_data_count``, so
+        ``[start, start + count)`` is always an in-range (possibly empty) slice.
+        Recreate the binding with at least the returned capacity, step again,
+        and retry to obtain a complete result.
         """
         with self._lock:
             if self._destroyed:
@@ -1938,8 +2199,9 @@ class ContactBinding:
             sep_dl, sep_keepalive = acquire_dltensor(separations)
             count_dl, count_keepalive = acquire_dltensor(counts)
             start_dl, start_keepalive = acquire_dltensor(start_indices)
+            required_contact_count = ctypes.c_uint32(0)
 
-            result = _lib.ovphysx_read_contact_data(
+            result = _lib.ovphysx_read_normal_contact_data(
                 self._sdk._omni_physx_sdk_handle.value,
                 self._handle,
                 ctypes.byref(force_dl),
@@ -1948,10 +2210,23 @@ class ContactBinding:
                 ctypes.byref(sep_dl),
                 ctypes.byref(count_dl),
                 ctypes.byref(start_dl),
+                ctypes.byref(required_contact_count),
             )
             _ = (force_keepalive, pos_keepalive, normal_keepalive, sep_keepalive, count_keepalive, start_keepalive)
-            if result.status != ApiStatus.SUCCESS:
+            if result.status not in (ApiStatus.SUCCESS, ApiStatus.BUFFER_TOO_SMALL):
                 raise RuntimeError(f"Failed to read detailed contact data: {self._sdk._get_last_error()}")
+            return required_contact_count.value
+
+    def read_contact_data(self, contact_forces, positions, normals, separations, counts, start_indices) -> int:
+        """Deprecated alias of :meth:`read_normal_contact_data`; forces contain only normal components."""
+        warnings.warn(
+            "read_contact_data() is deprecated; use read_normal_contact_data(). "
+            "The force values still contain normal components only.",
+            DeprecationWarning, stacklevel=2,
+        )
+        return self.read_normal_contact_data(
+            contact_forces, positions, normals, separations, counts, start_indices,
+        )
 
     def read_raw_contact_data(
         self,
@@ -1961,10 +2236,10 @@ class ContactBinding:
         separations,
         sensor_layout,
         actor_ids,
-    ) -> None:
+    ) -> int:
         """Read raw (unfiltered) contact data into flat buffers.
 
-        Filter-less variant of :meth:`read_contact_data`. Returns every
+        Filter-less variant of :meth:`read_normal_contact_data`. Returns every
         contact involving each sensor regardless of which other actor it
         collided with, plus per-contact actor-identity tensors for identifying
         both the sensor and the contacting body via
@@ -1983,13 +2258,13 @@ class ContactBinding:
         :meth:`PhysX.step`, :meth:`PhysX.step_sync`, or
         :meth:`PhysX.step_n_sync` call.
 
-        **Truncation**: when the total contact count for a step exceeds
-        ``max_contact_data_count``, the runtime fills the buffers with as many
-        contacts as fit and emits a logged warning. A sensor's count reports
-        only the contacts actually written, and its start index is clamped to
-        ``max_contact_data_count``, so ``[start, start + count)`` is always an
-        in-range (possibly empty) slice. Increase
-        ``max_contact_data_count`` at binding creation if truncation occurs.
+        Returns the total number of contacts produced for the step. When this
+        exceeds ``max_contact_data_count``, the buffers contain the valid prefix
+        that fit. A sensor's count reports only contacts actually written, and
+        its start index is clamped to ``max_contact_data_count``, so
+        ``[start, start + count)`` is always an in-range (possibly empty) slice.
+        Recreate the binding with at least the returned capacity, step again,
+        and retry to obtain a complete result.
 
         **Token lifetime**: tokens in ``actor_ids`` are opaque actor handles,
         not encoded paths, and are
@@ -2015,6 +2290,7 @@ class ContactBinding:
             sep_dl, sep_keepalive = acquire_dltensor(separations)
             layout_dl, layout_keepalive = acquire_dltensor(sensor_layout)
             ids_dl, ids_keepalive = acquire_dltensor(actor_ids)
+            required_contact_count = ctypes.c_uint32(0)
 
             result = _lib.ovphysx_read_raw_contact_data(
                 self._sdk._omni_physx_sdk_handle.value,
@@ -2025,11 +2301,13 @@ class ContactBinding:
                 ctypes.byref(sep_dl),
                 ctypes.byref(layout_dl),
                 ctypes.byref(ids_dl),
+                ctypes.byref(required_contact_count),
             )
             _ = (force_keepalive, pos_keepalive, normal_keepalive, sep_keepalive,
                  layout_keepalive, ids_keepalive)
-            if result.status != ApiStatus.SUCCESS:
+            if result.status not in (ApiStatus.SUCCESS, ApiStatus.BUFFER_TOO_SMALL):
                 raise RuntimeError(f"Failed to read raw contact data: {self._sdk._get_last_error()}")
+            return required_contact_count.value
 
     def get_other_actor_paths_from_ids(self, ids_array) -> list[str]:
         """Resolve actor IDs from :meth:`read_raw_contact_data` to physics-object paths.
@@ -2081,20 +2359,26 @@ class ContactBinding:
                 ctypes.byref(count),
             )
             _ = ids_keepalive
-            if result.status != ApiStatus.SUCCESS:
+            if result.status not in (ApiStatus.SUCCESS, ApiStatus.BUFFER_TOO_SMALL):
                 raise RuntimeError(
                     f"Failed to resolve actor IDs to paths: {self._sdk._get_last_error()}"
                 )
-            # Clamp to the provided buffer. The engine should never write
-            # more than `n`, but never index past `buf` if it does.
-            written = min(int(count.value), n)
-            # Decode by explicit length even though returned strings guarantee
-            # ptr[length] == NUL. This preserves the view contract, and direct
-            # c_char_p slicing would truncate at the first NUL.
-            return [str(buf[i]) for i in range(written)]
+            return _decode_truncated_paths(
+                buf,
+                int(count.value),
+                n,
+                "ovphysx_contact_binding_get_other_actor_paths_from_ids",
+            )
 
-    def read_friction_data(self, friction_forces, friction_points, counts, start_indices) -> None:
-        """Read detailed friction data into flat buffers.
+    def read_friction_contact_data(self, friction_forces, friction_points, counts, start_indices) -> int:
+        """Read detailed friction contact data into flat buffers.
+
+        .. deprecated:: 0.6.0
+            The contact-binding API is deprecated and retained for compatibility.
+
+        Returns world-space friction force vectors at friction anchors. These
+        anchors need not correspond one-to-one with the contact points from
+        :meth:`read_normal_contact_data`; use this read's own counts and start indices.
 
         Expected shapes are ``[C, 3]`` for ``friction_forces`` and
         ``friction_points``, and ``[sensor_count, filter_count]`` for ``counts``
@@ -2106,6 +2390,14 @@ class ContactBinding:
         Friction forces use the timestep from the last successful
         :meth:`PhysX.step`, :meth:`PhysX.step_sync`, or
         :meth:`PhysX.step_n_sync` call.
+
+        Returns the total number of friction anchors produced for the step. When
+        this exceeds ``max_contact_data_count``, the buffers contain the valid
+        prefix that fit. A pair's count reports only anchors actually written,
+        and its start index is clamped to ``max_contact_data_count``, so
+        ``[start, start + count)`` is always an in-range (possibly empty) slice.
+        Recreate the binding with at least the returned capacity, step again,
+        and retry to obtain a complete result.
         """
         with self._lock:
             if self._destroyed:
@@ -2127,18 +2419,29 @@ class ContactBinding:
             point_dl, point_keepalive = acquire_dltensor(friction_points)
             count_dl, count_keepalive = acquire_dltensor(counts)
             start_dl, start_keepalive = acquire_dltensor(start_indices)
+            required_friction_count = ctypes.c_uint32(0)
 
-            result = _lib.ovphysx_read_friction_data(
+            result = _lib.ovphysx_read_friction_contact_data(
                 self._sdk._omni_physx_sdk_handle.value,
                 self._handle,
                 ctypes.byref(force_dl),
                 ctypes.byref(point_dl),
                 ctypes.byref(count_dl),
                 ctypes.byref(start_dl),
+                ctypes.byref(required_friction_count),
             )
             _ = (force_keepalive, point_keepalive, count_keepalive, start_keepalive)
-            if result.status != ApiStatus.SUCCESS:
+            if result.status not in (ApiStatus.SUCCESS, ApiStatus.BUFFER_TOO_SMALL):
                 raise RuntimeError(f"Failed to read detailed friction data: {self._sdk._get_last_error()}")
+            return required_friction_count.value
+
+    def read_friction_data(self, friction_forces, friction_points, counts, start_indices) -> int:
+        """Deprecated alias of :meth:`read_friction_contact_data`."""
+        warnings.warn(
+            "read_friction_data() is deprecated; use read_friction_contact_data().",
+            DeprecationWarning, stacklevel=2,
+        )
+        return self.read_friction_contact_data(friction_forces, friction_points, counts, start_indices)
 
     def destroy(self) -> None:
         """Release contact binding resources.
@@ -2998,6 +3301,11 @@ class PhysX:
         # its native instance alive for the duration of the attachment. Set in
         # attach_ovstage(), cleared in detach_ovstage()/destroy().
         self._attached_ovstage = None
+        # The Newton schema check in attach_ovstage() runs in Python (the C API cannot
+        # locate the package), so its Carbonite override is read from the config here.
+        overrides = getattr(config, "carbonite_overrides", None) or {}
+        self._warn_missing_newton_schema = not _carbonite_override_is_false(
+            overrides.get(NEWTON_SCHEMA_WARNING_SETTING, True))
 
         if not ignore_version_mismatch:
             _check_version_match()
@@ -3510,7 +3818,7 @@ class PhysX:
 
         Faster than ``step()`` + ``wait_op()`` for performance-critical
         applications like RL training that always wait immediately.
-        Simulation time is tracked internally and advanced by ``dt``.
+        Simulation time is tracked internally and advanced by ``dt`` on success.
 
         Args:
             dt: Delta time [s] for this step.
@@ -3528,18 +3836,24 @@ class PhysX:
     def step_n_sync(self, n: int, dt: float) -> None:
         """Run N steps in a single C call, saving (N-1) ctypes round-trips.
 
-        Equivalent to calling ``step_sync(dt)`` n times, but with only one
-        Python-to-C transition. Simulation time is tracked internally and
-        advanced by ``n * dt``.
+        On success, equivalent to calling ``step_sync(dt)`` n times, but with
+        only one Python-to-C transition. Simulation time is tracked internally
+        and advanced by ``n * dt`` on success.
+
+        If a step fails, the batch stops and raises RuntimeError. Previously
+        completed physics steps are not rolled back.
 
         Args:
-            n: Number of steps to run (must be >= 1).
+            n: Number of steps to run (must be in [1, 2147483647]).
             dt: Duration of each step [s].
 
         Raises:
-            RuntimeError: If any step fails.
+            RuntimeError: If n is out of range or any step fails.
         """
         self._check_valid()
+        n = operator.index(n)
+        if not 1 <= n <= 0x7FFFFFFF:
+            raise RuntimeError("step_n_sync failed: n must be in [1, 2147483647]")
         self._drain_pending_read_releases()
         result = self._lib.ovphysx_step_n_sync(
             self._omni_physx_sdk_handle.value, c_int32(n), c_float(dt)
@@ -3575,15 +3889,19 @@ class PhysX:
         """Wait for operation(s) to complete.
 
         Args:
-            op_index: Operation index to wait for, or OP_INDEX_ALL for all ops
-            timeout_ns: Readiness timeout in nanoseconds. None waits
-                indefinitely, and 0 performs one non-blocking readiness poll.
-                A positive value bounds only the wait for readiness; once an
-                operation is ready, synchronous result finalization may make
-                the total call duration exceed this timeout.
+            op_index: Operation index in [0, 2**64 - 1], or OP_INDEX_ALL
+                (2**64 - 1) for all ops.
+            timeout_ns: Readiness timeout in nanoseconds, in [0, 2**64 - 1].
+                None or 2**64 - 1 waits indefinitely, and 0 performs one
+                non-blocking readiness poll. Other positive values bound only
+                the wait for readiness; once an operation is ready, synchronous
+                result finalization may make the total call duration exceed
+                this timeout.
 
         Raises:
-            RuntimeError: If an operation failed or op_index is invalid or already consumed.
+            TypeError: If op_index or a non-None timeout_ns is not an integer.
+            ValueError: If op_index or timeout_ns is outside [0, 2**64 - 1].
+            RuntimeError: If an operation failed or op_index is unknown or already consumed.
             TimeoutError: If timeout expired (e.g., when polling with timeout_ns=0 and the operation is not ready)
 
         Preconditions:
@@ -3616,8 +3934,14 @@ class PhysX:
                 return True
         """
         self._check_valid()
+        op_index = operator.index(op_index)
+        if not 0 <= op_index <= (1 << 64) - 1:
+            raise ValueError("op_index must be in range 0 through 2**64 - 1")
         if timeout_ns is None:
             timeout_ns = 0xFFFFFFFFFFFFFFFF  # Infinite wait
+        timeout_ns = operator.index(timeout_ns)
+        if not 0 <= timeout_ns <= (1 << 64) - 1:
+            raise ValueError("timeout_ns must be in range 0 through 2**64 - 1")
 
         wait_result = ovphysx_op_wait_result_t()
         result = self._lib.ovphysx_wait_op(self._omni_physx_sdk_handle.value, op_index, timeout_ns, byref(wait_result))
@@ -3657,6 +3981,8 @@ class PhysX:
         Threading:
             - Serialize all calls on the same instance externally.
         Errors:
+            - Raises TypeError if a non-None timeout_ns is not an integer.
+            - Raises ValueError if timeout_ns is outside [0, 2**64 - 1].
             - Raises RuntimeError on failure.
             - Raises TimeoutError if timeout expired (e.g., when polling with timeout_ns=0 and operations are not ready).
         """
@@ -3696,6 +4022,25 @@ class PhysX:
               rest of the process; the Carbonite setting
               ``/ovphysx/schemas/requireRegistration = false`` downgrades this
               to a warning).
+            - Scenes that author Newton ``newton:*`` attributes need the Newton
+              USD schema (``pip install newton-usd-schemas``) registered in the
+              same call (``ovphysx.newton_schema_root()``); population drops
+              those attributes otherwise. Before the native attach this call
+              checks, once per process, that the installed package was
+              registered before the first population and emits a
+              ``RuntimeWarning`` when it was not; a warning promoted to an error
+              therefore leaves the instance detached. When the package is not
+              installed it logs a warning on the ``ovphysx`` logger instead
+              (nothing is wrong for scenes without ``newton:*`` attributes, and
+              suites that promote warnings to errors stay unaffected). The
+              check probes only once USD has built its
+              schema definitions (a procedurally authored stage attached before
+              any USD population is left alone, so the check never registers a
+              schema on the application's behalf), and it recognizes the Newton
+              schema family registered from any complete copy. The
+              setting ``/ovphysx/schemas/warnMissingNewtonSchema = false``
+              (``PhysXConfig(carbonite_overrides=...)``, ``"false"`` accepted)
+              silences the check, for a registration ovstage cannot observe.
 
         Lifetime:
             - ``stage`` must outlive the attachment because ovphysx captures and
@@ -3729,6 +4074,10 @@ class PhysX:
         if int(read_ordinal) == 0:
             raise ValueError(
                 "attach_ovstage: read_ordinal must be a caller-owned sealed ordinal; 0 is reserved")
+        # Before the native attach: a RuntimeWarning promoted to an error must propagate
+        # from an instance that holds no native reference to the stage.
+        if self._warn_missing_newton_schema:
+            _warn_if_newton_schema_unregistered()
         result = self._lib.ovphysx_attach_ovstage(
             self._omni_physx_sdk_handle.value, ctypes.c_void_p(ptr), c_uint64(read_ordinal))
         if result.status != ApiStatus.SUCCESS:
@@ -4146,8 +4495,15 @@ class PhysX:
         An attribute the type does not accept raises here rather than silently writing
         nothing.
 
+        **Pre-step writes are mode-specific.** The session write never auto-warms. On CPU
+        and on GPU with readback a write issued before the first step commits and is
+        applied. On a DirectGPU scene (``/physics/suppressReadback``) commit is refused
+        until a first step has sized the GPU view -- call :meth:`warmup` or
+        :meth:`step_sync` first for a recipe that works on every mode.
+
         Raises RuntimeError if no ovstage Stage is attached, or if the attribute is not
-        writable for ``object_type``.
+        writable for ``object_type``. DirectGPU pre-step refusal surfaces on
+        :meth:`WriteSession.commit`, not on this call.
         """
         self._check_valid()
         self._drain_pending_read_releases()  # owning-thread drain of any deferred read teardown
@@ -4166,8 +4522,9 @@ class PhysX:
         write = c_uint64(0)
         result = self._lib.ovphysx_write(handle, query, ctypes.byref(attr), ctypes.byref(write))
         if result.status != ApiStatus.SUCCESS:
+            message = self._get_last_error()
             self._lib.ovphysx_release_query(handle, query)
-            raise RuntimeError(f"write session open failed: {self._get_last_error()}")
+            raise RuntimeError(f"write session open failed: {message}")
 
         groups: list[WriteGroup] = []
         native: list = []
@@ -4677,7 +5034,11 @@ class PhysX:
         Side effects:
             - Allocates native binding resources.
         Ownership/Lifetime:
-            - Returned TensorBinding owns native resources until ``destroy()``.
+            - Returned TensorBinding retains native resources until ``destroy()``.
+              Each call returns an independent handle; destroying one binding
+              does not invalidate a sibling selecting the same objects.
+            - A new binding selects the currently eligible realized objects,
+              even while an older binding for the same pattern remains alive.
             - Use ``binding.shape`` and ``binding.dtype`` (or ``binding.spec``)
               for layout and ``binding.native_device`` for no-staging placement.
               Most tensor types are float32, but some types such as
@@ -5171,11 +5532,15 @@ class PhysX:
             paths_buf,
             ctypes.c_uint32(n),
             ctypes.byref(count))
-        if result.status != ApiStatus.SUCCESS:
+        if result.status not in (ApiStatus.SUCCESS, ApiStatus.BUFFER_TOO_SMALL):
             raise RuntimeError(
                 f"Failed to resolve scene-query IDs to paths: {self._get_last_error()}")
-        written = min(int(count.value), n)
-        return [str(paths_buf[i]) for i in range(written)]
+        return _decode_truncated_paths(
+            paths_buf,
+            int(count.value),
+            n,
+            "ovphysx_scene_query_get_paths_from_ids",
+        )
 
     # ------------------------------------------------------------------
     # Contact bindings
@@ -5190,11 +5555,14 @@ class PhysX:
     ) -> ContactBinding:
         """Create a contact binding for reading aggregate and detailed contact tensors.
 
+        .. deprecated:: 0.6.0
+            The contact-binding API is deprecated and retained for compatibility.
+
         Returns DLPack-compatible tensors of net forces ``[S, 3]`` or force
         matrices ``[S, F, 3]``. Detailed contact and friction data are exposed
         as flat ``[C, ...]`` buffers plus ``[S, F]`` count/start-index tensors
-        via :meth:`ContactBinding.read_contact_data` and
-        :meth:`ContactBinding.read_friction_data`.
+        via :meth:`ContactBinding.read_normal_contact_data` and
+        :meth:`ContactBinding.read_friction_contact_data`.
 
         A **sensor** is a set of rigid bodies matched by a physics-object path
         pattern. A **filter** is a second set of bodies whose contacts with each
@@ -5211,8 +5579,8 @@ class PhysX:
 
         The binding must be created *before* the first simulation step whose
         contacts you want to observe. Call
-        :meth:`ContactBinding.read_net_forces` or
-        :meth:`ContactBinding.read_force_matrix` after a successful
+        :meth:`ContactBinding.read_net_normal_forces` or
+        :meth:`ContactBinding.read_normal_force_matrix` after a successful
         :meth:`PhysX.step`, :meth:`PhysX.step_sync`, or
         :meth:`PhysX.step_n_sync` call. Before the first step, both return
         all-zeros tensors.
@@ -5242,7 +5610,7 @@ class PhysX:
                     forces = torch.zeros(
                         (binding.sensor_count, 3), device="cuda"
                     )
-                    binding.read_net_forces(forces)
+                    binding.read_net_normal_forces(forces)
                     return forces
 
         Args:
@@ -5258,6 +5626,10 @@ class PhysX:
                 Detailed reads require this value and ``filters_per_sensor`` to
                 be positive.
         """
+        warnings.warn(
+            "ovphysx contact bindings are deprecated and will be removed in a future release.",
+            DeprecationWarning, stacklevel=2,
+        )
         self._check_valid()
         n_sensors = len(sensor_patterns)
         if n_sensors == 0:

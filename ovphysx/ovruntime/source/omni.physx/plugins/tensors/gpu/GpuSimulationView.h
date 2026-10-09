@@ -5,7 +5,7 @@
 
 /**
  * @implements REQ-TENSOR-VIEW-001
- * @covers AC-1
+ * @covers AC-1 AC-12
  */
 
 #include "tensors/base/BaseSimulationView.h"
@@ -50,6 +50,7 @@ public:
         return mGpuSimData ? mGpuSimData->mCtx : nullptr;
     }
 
+    bool isSelectionCurrent() const override;
 
     GpuArticulationView* createArticulationView(const char* pattern) override;
     GpuArticulationView* createArticulationView(const std::vector<std::string>& patterns) override;
@@ -131,6 +132,8 @@ private:
     int mDevice = -1;
 
     GpuSimulationDataPtr mGpuSimData;
+    // A re-enabled rigid body was absent from older enabled-only selections.
+    uint64_t mSelectionRdDisableEpoch = 0;
 
     // Built on first use, released with this view.
     GpuRigidBodyView* mSupersetRigidView = nullptr;

@@ -68,6 +68,7 @@
 
 #include <algorithm>
 #include <set>
+#include <stdexcept>
 
 namespace omni::physics::usd
 {
@@ -84,12 +85,25 @@ long usdStageCacheId(PXR_NS::UsdStageWeakPtr stage)
 
 UsdSource::UsdSource(PXR_NS::UsdStageWeakPtr stage)
     : mStage(std::move(stage)), mStageId(usdStageCacheId(mStage)),
-      mGeneration(omni::physics::parse::nextObjectKeyGeneration())
+      mGeneration(omni::physics::parse::nextObjectKeyGeneration()),
+      mInternShards(std::make_shared<std::array<InternShard, kInternShardCount>>())
 {
     // Reserve slot 0 — handle 0 is the invalid sentinel
-    mKeyToPath.emplace_back();
-    mKeyStrings.emplace_back();
+    for (InternShard& shard : *mInternShards)
+        shard.keyToPath.emplace_back();
     mIdToToken.emplace_back();
+}
+
+UsdSource::UsdSource(const UsdSource& owner, ScanIdentity)
+    : mStage(owner.mStage), mStageId(owner.mStageId), mGeneration(owner.mGeneration),
+      mInternShards(owner.mInternShards)
+{
+    mIdToToken.emplace_back();
+}
+
+std::unique_ptr<UsdSource> UsdSource::makeScanSource() const
+{
+    return std::unique_ptr<UsdSource>(new UsdSource(*this, ScanIdentity{}));
 }
 
 UsdSource::~UsdSource() = default;
@@ -102,38 +116,79 @@ ObjectKey UsdSource::keyFor(const PXR_NS::SdfPath& path) const
 {
     if (path.IsEmpty())
         return {};
+    const uint32_t shardIndex = shardForPath(path);
+    InternShard& shard = (*mInternShards)[shardIndex];
+    {
+        std::shared_lock<std::shared_mutex> lock(shard.mutex);
+        const auto it = shard.pathToKey.find(path);
+        if (it != shard.pathToKey.end())
+            return it->second;
+    }
+    std::unique_lock<std::shared_mutex> lock(shard.mutex);
+    return keyForLocked(shard, shardIndex, path);
+}
 
-    // mPathToKey/mKeyToPath/mKeyStrings are a lazily-populated cache shared
-    // by every caller of this const method; take the lock for the whole
-    // lookup-or-insert so concurrent callers (e.g. invertCollisionGroupMembers's
-    // parallelFor batches) can't race on the first-time insert.
-    std::lock_guard<std::mutex> lock(mInternMutex);
-    auto [it, inserted] = mPathToKey.try_emplace(path, ObjectKey{});
+ObjectKey UsdSource::keyForLocked(InternShard& shard, uint32_t shardIndex, const PXR_NS::SdfPath& path) const
+{
+    auto [it, inserted] = shard.pathToKey.try_emplace(path, ObjectKey{});
     if (inserted)
     {
-        it->second = packKey(static_cast<uint32_t>(mKeyToPath.size()));
-        mKeyToPath.push_back(path);
-        mKeyStrings.push_back(path.GetString());
+        if (shard.keyToPath.size() >= (uint64_t(1) << (32 - kInternShardBits)))
+        {
+            shard.pathToKey.erase(it);
+            throw std::length_error("USD source identity shard is exhausted");
+        }
+        const uint32_t index = static_cast<uint32_t>(shard.keyToPath.size());
+        try
+        {
+            shard.keyToPath.push_back(path);
+        }
+        catch (...)
+        {
+            shard.pathToKey.erase(it);
+            throw;
+        }
+        it->second = packKey(shardIndex, index);
     }
     return it->second;
+}
+
+UsdSource::CachedPath& UsdSource::cacheFor(ObjectKey key)
+{
+    // Direct mapping keeps lookup constant-time. Full generation-tagged keys
+    // distinguish owners; retained native nodes keep cached text references live.
+    static thread_local std::array<CachedPath, 256> cache;
+    return cache[static_cast<uint32_t>(key.handle) % cache.size()];
 }
 
 PXR_NS::SdfPath UsdSource::pathFor(ObjectKey key) const
 {
     const uint32_t localIndex = decodeLocalIndex(key);
-    std::lock_guard<std::mutex> lock(mInternMutex);
-    if (localIndex == 0 || localIndex >= mKeyToPath.size())
+    if (!localIndex)
         return {};
-    return mKeyToPath[localIndex];
+    CachedPath& cached = cacheFor(key);
+    if (cached.key == key)
+        return cached.path;
+    const InternShard& shard = (*mInternShards)[static_cast<uint32_t>(key.handle) & (kInternShardCount - 1)];
+    std::shared_lock<std::shared_mutex> lock(shard.mutex);
+    if (localIndex >= shard.keyToPath.size())
+        return {};
+    const PXR_NS::SdfPath path = shard.keyToPath[localIndex];
+    cached = CachedPath{key, path, nullptr};
+    return path;
 }
 
 std::string_view UsdSource::sourceKeyToString(ObjectKey key) const
 {
-    const uint32_t localIndex = decodeLocalIndex(key);
-    std::lock_guard<std::mutex> lock(mInternMutex);
-    if (localIndex == 0 || localIndex >= mKeyStrings.size())
+    // Avoid repeating USD's synchronized persistent-token lookup for names and
+    // hierarchy paths. Only materialize text when a caller requests it.
+    const PXR_NS::SdfPath path = pathFor(key);
+    if (path.IsEmpty())
         return {};
-    return mKeyStrings[localIndex];
+    CachedPath& cached = cacheFor(key);
+    if (!cached.text)
+        cached.text = &path.GetString();
+    return *cached.text;
 }
 
 // ---------------------------------------------------------------------------
@@ -273,6 +328,56 @@ ObjectKey UsdSource::mintKeyForPath(std::string_view path) const
     if (path.empty())
         return {};
     return keyFor(PXR_NS::SdfPath(std::string(path)));
+}
+
+// @implements REQ-PARSE-KEYREMAP-001
+// @covers AC-1 AC-2 AC-3 AC-4
+std::vector<ObjectKey> UsdSource::remapKeysFrom(const IPhysicsSource& source,
+                                             const std::vector<ObjectKey>& keys) const
+{
+    const UsdSource* usd = dynamic_cast<const UsdSource*>(&source);
+    if (!usd)
+        return IPhysicsSource::remapKeysFrom(source, keys);
+    std::vector<ObjectKey> result;
+    result.reserve(keys.size());
+    if (usd->mInternShards == mInternShards)
+    {
+        // A scan context shares identities with its attach, while owning its
+        // transient buffers and transforms. Validate the batch without reminting.
+        std::array<std::shared_lock<std::shared_mutex>, kInternShardCount> locks;
+        for (uint32_t i = 0; i < kInternShardCount; ++i)
+            locks[i] = std::shared_lock<std::shared_mutex>((*mInternShards)[i].mutex);
+        for (const ObjectKey key : keys)
+        {
+            const uint32_t index = decodeLocalIndex(key);
+            const uint32_t shard = static_cast<uint32_t>(key.handle) & (kInternShardCount - 1);
+            result.push_back(index && index < (*mInternShards)[shard].keyToPath.size() ? key : ObjectKey{});
+        }
+        return result;
+    }
+    // Read the native identity before inserting into the destination. No call
+    // holds two sources' locks, so opposite-direction translations cannot deadlock.
+    for (const ObjectKey key : keys)
+    {
+        const PXR_NS::SdfPath path = usd->pathFor(key);
+        result.push_back(path.IsEmpty() ? ObjectKey{} : usd == this ? key : keyFor(path));
+    }
+    return result;
+}
+
+// @implements REQ-PARSE-KEYPREFIX-001
+// @covers AC-1 AC-2 AC-3
+ObjectKey UsdSource::replacePathPrefix(ObjectKey key, ObjectKey prefix, ObjectKey replacement) const
+{
+    const PXR_NS::SdfPath original = pathFor(key);
+    const PXR_NS::SdfPath from = pathFor(prefix);
+    const PXR_NS::SdfPath to = pathFor(replacement);
+    if (original.IsEmpty() || from.IsEmpty() || to.IsEmpty())
+        return {};
+    const PXR_NS::SdfPath path = original.ReplacePrefix(from, to);
+    if (path.IsEmpty() || (path.IsPropertyPath() && path.GetParentPath().IsAbsoluteRootPath()))
+        return {};
+    return keyFor(path);
 }
 
 // ---------------------------------------------------------------------------
@@ -1154,13 +1259,42 @@ void UsdSource::resolveCollection(ObjectKey primKey,
         return;
 
     const PXR_NS::SdfPathSet includedPaths = PXR_NS::UsdCollectionAPI::ComputeIncludedPaths(
-        collectionAPI.ComputeMembershipQuery(),
-        mStage,
-        PXR_NS::UsdTraverseInstanceProxies());
+        collectionAPI.ComputeMembershipQuery(), mStage, PXR_NS::UsdTraverseInstanceProxies());
+    members.resize(includedPaths.size());
+    if (includedPaths.empty())
+        return;
 
-    members.reserve(includedPaths.size());
-    for (const PXR_NS::SdfPath& p : includedPaths)
-        members.push_back(keyFor(p));
+    // Group native paths by shard with a counting pass. Each worker takes one
+    // lock per populated shard, while output indices preserve USD member order.
+    std::array<size_t, kInternShardCount> counts{};
+    for (const PXR_NS::SdfPath& path : includedPaths)
+        ++counts[shardForPath(path)];
+    std::array<size_t, kInternShardCount> offsets{};
+    size_t total = 0;
+    for (uint32_t i = 0; i < kInternShardCount; ++i)
+    {
+        offsets[i] = total;
+        total += counts[i];
+    }
+    struct MemberPath
+    {
+        const PXR_NS::SdfPath* path;
+        size_t outputIndex;
+    };
+    std::vector<MemberPath> ordered(total);
+    std::array<size_t, kInternShardCount> next = offsets;
+    size_t outputIndex = 0;
+    for (const PXR_NS::SdfPath& path : includedPaths)
+        ordered[next[shardForPath(path)]++] = MemberPath{&path, outputIndex++};
+    for (uint32_t i = 0; i < kInternShardCount; ++i)
+    {
+        if (!counts[i])
+            continue;
+        InternShard& shard = (*mInternShards)[i];
+        std::unique_lock<std::shared_mutex> lock(shard.mutex);
+        for (size_t j = offsets[i]; j < offsets[i] + counts[i]; ++j)
+            members[ordered[j].outputIndex] = keyForLocked(shard, i, *ordered[j].path);
+    }
 }
 
 // @implements REQ-PARSE-CORE-003

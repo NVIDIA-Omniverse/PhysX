@@ -27,6 +27,9 @@ every supported Python version.
 - The same test compares RST and image bytes, searches each artifact for any
   internal path, and resolves every inline artifact-scoped relative Markdown
   link.
+- Run with `--require-rendered-docs`, which CI sets through
+  `OVPHYSX_REQUIRE_HTML_DOCS`, it additionally checks the rendered `docs/html`
+  tree: its `index.html` and the three downloadable C headers.
 
 ## Then
 
@@ -36,9 +39,17 @@ every supported Python version.
   tests or escapes its package root, and every other inline artifact-scoped
   relative link resolves. C/C++ header links tracked by NVBug 6560076 remain
   explicitly outside the wheel check (REQ AC-2).
+- Under `--require-rendered-docs`, an artifact missing the rendered tree, its
+  index page, or any downloadable C header is rejected; without the flag such an
+  artifact still passes, so a local build that never rendered the documentation
+  stays testable (REQ AC-3). Unit tests in `test_wheel_documentation_smoke.py` cover
+  both outcomes against the artifact shape the aarch64 wheel had in NVBug
+  6717253: portable Markdown present, `docs/html` absent.
 
 ## Code References
 
 - ovphysx/tests/python_tests/wheel_documentation_smoke.py
 - ovphysx/tests/python_tests/test_wheel_documentation_smoke.py
 - ovphysx/scripts/test_python_wheel.cmake
+- ovphysx/scripts/install.cmake
+- ovphysx/scripts/build_wheel.cmake

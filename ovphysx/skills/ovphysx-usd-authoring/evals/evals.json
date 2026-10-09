@@ -50,11 +50,13 @@
     {
       "id": 5,
       "prompt": "Write a loop that steps an ovphysx simulation and reads rigid-body poses with the tensor API.",
-      "expected_output": "Routes to the tensor-bindings or output-read skills, not ovphysx-usd-authoring.",
+      "expected_output": "Routes lifecycle and stepping to basic-workflow and simulation-output reads to ovphysx-output-read, not ovphysx-usd-authoring or the deprecated tensor-binding skills.",
       "files": [],
       "expectations": [
         "Does not select ovphysx-usd-authoring (this is runtime stepping / tensor I/O, not USD authoring)",
-        "Selects tensor-bindings-cpu, tensor-bindings-gpu, or ovphysx-output-read"
+        "Selects basic-workflow for the simulation lifecycle and stepping",
+        "Selects ovphysx-output-read for the rigid-body pose reads",
+        "Does not select the deprecated tensor-bindings-cpu or tensor-bindings-gpu skills"
       ]
     },
     {

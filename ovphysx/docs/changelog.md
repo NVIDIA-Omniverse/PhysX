@@ -5,6 +5,37 @@
 
 All notable changes to `ovphysx` are documented in this file.
 
+## [0.6.4] - Date TBD
+
+### Added
+- **Contact bindings report friction forces next to normal forces.** The net
+  force and force matrix reads return only the normal component, so a sensor on
+  a slope or pushed sideways reads less than the total contact force and at a
+  different angle. `ContactBinding.read_net_friction_forces()` and
+  `ovphysx_read_contact_net_friction_forces()` return the net friction force on
+  each sensor, from all reported contacts, including contacts with bodies
+  outside the configured filters. `read_friction_force_matrix()` and
+  `ovphysx_read_contact_friction_force_matrix()` return it per sensor/filter
+  pair. Add the normal read from the same step to get the total contact force.
+  The net friction vector does not include friction torque.
+
+### Deprecated
+- **The contact-binding API is deprecated, including the explicit normal and
+  friction read methods.** C calls produce compiler deprecation warnings.
+  Python type stubs and API documentation mark the methods deprecated,
+  and `PhysX.create_contact_binding()` emits `DeprecationWarning`.
+  The API remains available with unchanged results during the
+  compatibility period.
+- **Contact force reads now name the component they return.**
+  `read_net_forces()`, `read_force_matrix()` and `read_contact_data()` are
+  deprecated aliases of `read_net_normal_forces()`,
+  `read_normal_force_matrix()` and `read_normal_contact_data()` and still
+  return normal forces only. `read_friction_data()` is a deprecated alias of
+  `read_friction_contact_data()`. The C functions are renamed the same way, for
+  example `ovphysx_read_contact_net_normal_forces()`. All old names return the
+  same results as before; Python emits a `DeprecationWarning` and C compilers
+  warn at the call site.
+
 ## [0.6.3] - Date 2026-09-10
 
 ### Added
@@ -67,7 +98,12 @@ All notable changes to `ovphysx` are documented in this file.
   shadow attribute. The sampled world matrix must already be current, so
   compute the hierarchy and advance its write floor before calling the helper.
   This helper does not make its output the prim's new local transform, and does
-  not propagate to descendants.
+  not propagate to descendants. Because writing a fixed pose now composes a
+  world matrix from both halves, `step_and_write_to_ovstage()` and
+  `OvStageOutputCache` also reject an `outputs` selection that names
+  `position` without `orientation` (or the reverse) for a rigid body,
+  articulation link, or vehicle wheel, raising `ValueError`. Select both
+  attributes together, or neither.
 - **`ovphysx_attach_ovstage()` refuses a stage populated without the PhysX USD
   schemas.** ovstage drops applied API schemas it cannot resolve, so a stage
   populated before
@@ -132,6 +168,9 @@ All notable changes to `ovphysx` are documented in this file.
   attach on scenes whose instances carry no physics.
 
 ### Fixed
+- **The configured solver worker count now reaches the PhysX dispatcher.**
+  `num_threads` previously left the dispatcher at its default of eight workers.
+  The setting controls PhysX task concurrency, not the size of supporting worker pools.
 - **Instance-proxy colliders keep their authored collision settings.** ovstage
   instance-proxy rows carry the logical collider path, but some collision
   values live only on the prototype's backing row. The runtime read the logical

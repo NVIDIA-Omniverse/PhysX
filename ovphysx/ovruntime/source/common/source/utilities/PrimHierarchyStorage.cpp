@@ -134,6 +134,36 @@ void PrimHierarchyStorage::mergeHierarchyStorage(const std::string& topPath, con
     }
 }
 
+// @implements REQ-REPLICATE-001
+// @covers AC-7
+void PrimHierarchyStorage::mergeHierarchyStorage(const std::string& topPath, PrimHierarchyStorage&& storage)
+{
+    // Preserve the direct-child list needed by absolute-root repair before
+    // transferring rows. Ordinary nested targets need no extra path copies.
+    std::vector<std::string> rootChildren;
+    if (getParentPath(topPath) == "/")
+    {
+        for (StorageMap::const_reference entry : storage.mStorageMap)
+        {
+            if (entry.first != topPath && entry.second.parent.empty() && getParentPath(entry.first) == topPath)
+                rootChildren.push_back(entry.first);
+        }
+    }
+    mStorageMap.merge(storage.mStorageMap);
+    // Failed transfers are duplicates; the copying overload retains existing
+    // destination rows and repairs ancestor links without replacing their data.
+    mergeHierarchyStorage(topPath, static_cast<const PrimHierarchyStorage&>(storage));
+    if (!rootChildren.empty())
+    {
+        Item& root = mStorageMap[topPath];
+        for (const std::string& child : rootChildren)
+        {
+            mStorageMap[child].parent = topPath;
+            root.children.insert(child);
+        }
+    }
+}
+
 void PrimHierarchyStorage::addPrim(const std::string& primPath)
 {
     if (primPath.empty())

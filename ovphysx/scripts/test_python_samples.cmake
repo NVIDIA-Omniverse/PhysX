@@ -164,6 +164,7 @@ set(BASE_SAMPLES
     "nvtx_profiling.py"         # runs without Nsight attached, so the ranges are no-ops
     "tensor_bindings_views.py"  # TensorBindingsAPI-only (pure ctypes), cross-minor
     "output_read.py"            # closed-loop ovstage control-in / output-read (ADR-0007)
+    "session_write.py"          # PhysX.write() session API (ADR-0012), mirrors output_read.py
 )
 
 file(GLOB EXTERNAL_SAMPLE_FILES RELATIVE "${PYTHON_SAMPLES_DIR}" "${PYTHON_SAMPLES_DIR}/*.py")

@@ -4,13 +4,19 @@
 # @implements REQ-PYTHON-BINDING-DEVICE-001
 # @covers AC-1 AC-2 AC-3 AC-4
 # @maps_to TEST-PYTHON-BINDING-DEVICE-001
+# @implements REQ-TENSOR-CONTACT-002
+# @covers AC-2 AC-3
+# @maps_to TEST-TENSOR-CONTACT-002
+# @implements REQ-CAPI-CONTACT-003
+# @covers AC-1 AC-3
+# @maps_to TEST-CAPI-CONTACT-003
 # DEPRECATED (tensor-binding-deprecation): a deprecated tensor-binding test. Removed with the binding.
 
 """GPU-mode tests for TensorBindingsAPI features.
 
 Covers DOF properties, body properties, shape properties, inverse dynamics tensors,
-link wrench, fixed tendons, and spatial tendons in GPU mode with actual
-simulation stepping where needed.
+contact force components, link wrench, fixed tendons, and spatial tendons in GPU
+mode with actual simulation stepping where needed.
 
 GPU-state tensors (inverse dynamics, wrench, tendons) require kDLCUDA buffers.
 A minimal CudaArray helper allocates device memory via the CUDA driver API
@@ -25,6 +31,7 @@ import ctypes
 import math
 import subprocess
 import sys
+from contextlib import ExitStack
 from pathlib import Path
 
 import numpy as np
@@ -32,7 +39,7 @@ import pytest
 from ovphysx.dlpack import DLDataType, DLDataTypeCode, DLDevice, DLDeviceType, DLTensor
 from ovphysx.types import LogLevel, TensorType
 from test_utils import NP_TO_DL_DTYPE, CudaArray, data_path, get_cuda_driver
-from test_utils import load_usd_with_ovstage
+from test_utils import contact_test_case, load_usd_with_ovstage
 
 
 def _require_cuda_driver():
@@ -97,7 +104,7 @@ def _load_and_step(sdk, scene="two_articulations.usda", n_steps=5):
     sdk.wait_all()
 
 
-def _make_cube_pair_contact_binding(sdk):
+def _make_cube_pair_contact_binding(sdk, max_contact_data_count=256):
     load_usd_with_ovstage(sdk, data_path("boxes_falling_on_groundplane.usda"))
     sdk.wait_all()
     sdk.warmup()
@@ -120,7 +127,7 @@ def _make_cube_pair_contact_binding(sdk):
         sensor_patterns=["/World/Cube1"],
         filter_patterns=["/World/Cube2"],
         filters_per_sensor=1,
-        max_contact_data_count=256,
+        max_contact_data_count=max_contact_data_count,
     )
 
     sdk.step(DT)
@@ -343,11 +350,111 @@ class TestShapePropertiesGpu:
 
 
 # ---------------------------------------------------------------------------
-# Contact bindings: GPU-state detailed contact/friction buffers
+# Contact bindings: force components and detailed contact/friction buffers
 # ---------------------------------------------------------------------------
 
 
 class TestContactBindingGpu:
+
+    @staticmethod
+    def _read_component(binding, reader, is_matrix=False):
+        shape = ((binding.sensor_count, binding.filter_count, 3) if is_matrix
+                 else (binding.sensor_count, 3))
+        output = _gpu_tensor(shape)
+        getattr(binding, reader)(output.dltensor)
+        return output.numpy()
+
+    def test_force_components(self, physx_sdk):
+        """Friction includes unfiltered contacts and is independent of detailed capacity."""
+        load_usd_with_ovstage(physx_sdk, data_path("boxes_falling_on_groundplane.usda"))
+        physx_sdk.wait_all()
+        physx_sdk.warmup()
+        with ExitStack() as stack:
+            unfiltered = stack.enter_context(physx_sdk.create_contact_binding(
+                sensor_patterns=["/World/Cube1"], max_contact_data_count=0,
+            ))
+            bindings = []
+            for capacity in (0, 1, 64):
+                with contact_test_case(capacity=capacity):
+                    excluded = stack.enter_context(physx_sdk.create_contact_binding(
+                        sensor_patterns=["/World/Cube1"],
+                        filter_patterns=["/World/GroundPlane/CollisionPlane"],
+                        filters_per_sensor=1, max_contact_data_count=capacity,
+                    ))
+                    support = stack.enter_context(physx_sdk.create_contact_binding(
+                        sensor_patterns=["/World/Cube1"], filter_patterns=["/World/BigBase"],
+                        filters_per_sensor=1, max_contact_data_count=capacity,
+                    ))
+                    bindings.append((capacity, excluded, support))
+
+            # All capacities observe the same simulation step after one settling run.
+            for _ in range(120):
+                physx_sdk.step(DT)
+            physx_sdk.wait_all()
+            with physx_sdk.create_tensor_binding(
+                pattern="/World/Cube1", tensor_type=TensorType.RIGID_BODY_VELOCITY,
+            ) as velocity:
+                values = np.zeros(velocity.shape, dtype=np.float32)
+                values[0, 0] = 0.5
+                _gpu_write(velocity, values)
+                physx_sdk.wait_all()
+                physx_sdk.step_sync(DT)
+
+            normal = self._read_component(unfiltered, "read_net_normal_forces")
+            friction = self._read_component(unfiltered, "read_net_friction_forces")
+            assert normal[0, 2] > 0.0
+            assert friction[0, 0] < -0.1
+            np.testing.assert_allclose(normal[:, 0], 0.0, atol=1e-3)
+            np.testing.assert_allclose(friction[:, 2], 0.0, atol=1e-3)
+
+            for capacity, excluded, support in bindings:
+                for component, net in (("normal", normal), ("friction", friction)):
+                    with contact_test_case(capacity=capacity, component=component):
+                        net_reader = f"read_net_{component}_forces"
+                        matrix_reader = f"read_{component}_force_matrix"
+                        np.testing.assert_allclose(self._read_component(excluded, net_reader), net, rtol=1e-5, atol=1e-4)
+                        np.testing.assert_allclose(self._read_component(support, net_reader), net, rtol=1e-5, atol=1e-4)
+                        matrix = self._read_component(support, matrix_reader, is_matrix=True)
+                        np.testing.assert_allclose(matrix[:, 0], net, rtol=1e-5, atol=1e-4)
+                        np.testing.assert_array_equal(self._read_component(excluded, matrix_reader, is_matrix=True), 0.0)
+
+    def test_component_validation(self, physx_sdk):
+        """CUDA bindings reject host output, invalid CUDA tensors, and use after destruction."""
+        load_usd_with_ovstage(physx_sdk, data_path("boxes_falling_on_groundplane.usda"))
+        physx_sdk.wait_all()
+        physx_sdk.warmup()
+        readers = (
+            ("read_net_normal_forces", False), ("read_net_friction_forces", False),
+            ("read_normal_force_matrix", True), ("read_friction_force_matrix", True),
+        )
+        outputs = []
+        with physx_sdk.create_contact_binding(
+            sensor_patterns=["/World/Cube1"], filter_patterns=["/World/BigBase"],
+            filters_per_sensor=1,
+        ) as binding:
+            physx_sdk.step_sync(DT)
+            for reader, is_matrix in readers:
+                with contact_test_case(reader=reader):
+                    shape = (1, 1, 3) if is_matrix else (1, 3)
+                    method = getattr(binding, reader)
+                    output = _gpu_tensor(shape)
+                    method(output.dltensor)
+
+                    # This also ensures the binding uses the GPU tensor backend.
+                    with pytest.raises(RuntimeError, match="device mismatch"):
+                        method(np.zeros(shape, dtype=np.float32))
+                    wrong_dtype = CudaArray(shape, dtype=np.int32)
+                    with pytest.raises(RuntimeError, match="float32"):
+                        method(wrong_dtype.dltensor)
+                    wrong_shape = _gpu_tensor(shape[:-1] + (2,))
+                    with pytest.raises(RuntimeError, match="expected dst shape"):
+                        method(wrong_shape.dltensor)
+                    method(output.dltensor)
+                    outputs.append((reader, method, output))
+
+        for reader, method, output in outputs:
+            with contact_test_case(reader=reader), pytest.raises(RuntimeError, match="destroyed"):
+                method(output.dltensor)
 
     def test_cuda_output_without_directgpu_mentions_opt_in(self):
         _require_cuda_driver()
@@ -374,7 +481,7 @@ assert cb.sensor_count > 0, "Expected ContactBinding to resolve at least one sen
 dst = CudaArray((cb.sensor_count, 3), dtype=np.float32)
 
 try:
-    cb.read_net_forces(dst.dltensor)
+    cb.read_net_normal_forces(dst.dltensor)
 except RuntimeError as exc:
     msg = str(exc)
     assert "DirectGPU" in msg, msg
@@ -401,7 +508,7 @@ else:
         counts = CudaArray((cb.sensor_count, cb.filter_count), dtype=np.int32)
         starts = CudaArray((cb.sensor_count, cb.filter_count), dtype=np.int32)
 
-        cb.read_contact_data(
+        cb.read_normal_contact_data(
             contact_forces.dltensor,
             positions.dltensor,
             normals.dltensor,
@@ -440,7 +547,7 @@ else:
         counts = CudaArray((cb.sensor_count, cb.filter_count), dtype=np.int32)
         starts = CudaArray((cb.sensor_count, cb.filter_count), dtype=np.int32)
 
-        cb.read_friction_data(friction_forces.dltensor, friction_points.dltensor, counts.dltensor, starts.dltensor)
+        cb.read_friction_contact_data(friction_forces.dltensor, friction_points.dltensor, counts.dltensor, starts.dltensor)
 
         friction_forces_np = friction_forces.numpy()
         friction_points_np = friction_points.numpy()
@@ -456,6 +563,40 @@ else:
         pair_start = int(starts_np[0, 0])
         assert pair_count > 0, "Overlapped Cube1/Cube2 pair should produce friction anchors"
         assert pair_start + pair_count <= c
+        cb.destroy()
+
+    def test_read_friction_contact_data_overflow_does_not_write_past_capacity_on_gpu(self, physx_sdk):
+        cb = _make_cube_pair_contact_binding(physx_sdk, max_contact_data_count=1)
+
+        guard = np.float32(1234.5)
+        friction_forces = CudaArray((2, 3), dtype=np.float32)
+        friction_points = CudaArray((2, 3), dtype=np.float32)
+        friction_forces.upload(np.full((2, 3), guard, dtype=np.float32))
+        friction_points.upload(np.full((2, 3), guard, dtype=np.float32))
+        # Present capacity-1 tensors; the extra row is a canary for an OOB kernel write.
+        friction_forces._shape_arr[0] = 1
+        friction_points._shape_arr[0] = 1
+
+        counts = CudaArray((cb.sensor_count, cb.filter_count), dtype=np.int32)
+        starts = CudaArray((cb.sensor_count, cb.filter_count), dtype=np.int32)
+
+        required = cb.read_friction_contact_data(
+            friction_forces.dltensor, friction_points.dltensor, counts.dltensor, starts.dltensor
+        )
+
+        counts_np = counts.numpy()
+        starts_np = starts.numpy()
+        friction_forces_np = friction_forces.numpy()
+        friction_points_np = friction_points.numpy()
+
+        assert required > cb.max_contact_data_count
+        assert np.all(counts_np >= 0)
+        assert np.all(starts_np >= 0)
+        assert int(counts_np.sum()) == cb.max_contact_data_count
+        assert np.all(starts_np + counts_np <= cb.max_contact_data_count)
+        assert np.all(friction_forces_np[1] == guard)
+        assert np.all(friction_points_np[1] == guard)
+
         cb.destroy()
 
 

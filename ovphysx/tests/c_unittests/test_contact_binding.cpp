@@ -7,8 +7,10 @@
 //   ovphysx_create_contact_binding   - null-argument error conditions
 //   ovphysx_destroy_contact_binding  - invalid-handle rejection
 //   ovphysx_get_contact_binding_spec - invalid-handle rejection
-//   ovphysx_contact_binding_get_sensor_paths - invalid-handle rejection
-//   ovphysx_contact_binding_get_filter_paths - invalid-handle rejection
+//   ovphysx_contact_binding_get_sensor_paths - invalid-handle rejection and
+//                                              short-buffer demand report
+//   ovphysx_contact_binding_get_filter_paths - invalid-handle rejection and
+//                                              short-buffer demand report
 
 //   ovphysx_get_contact_binding_capacity - invalid-handle rejection
 //   ovphysx_get_contact_report       - zero-count contract before any step and
@@ -26,8 +28,17 @@
 // the tests below cover only C-ABI boundary conditions that Python cannot reach.
 
 /**
+ * @implements REQ-CAPI-CONTACT-003
+ * @covers AC-1 AC-2 AC-3
+ *
  * @implements REQ-CAPI-STRING-001
  * @covers AC-3
+ *
+ * @implements REQ-CAPI-CONTACT-001
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-6 AC-7
+ *
+ * @implements REQ-CAPI-CONTACT-002
+ * @covers AC-1 AC-2 AC-3 AC-4
  */
 
 #include <gtest/gtest.h>
@@ -35,6 +46,7 @@
 #include "global_test_environment.h"
 #include "test_utilities.h"
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -62,6 +74,70 @@ static bool step_cb(ovphysx_handle_t handle, float elapsed)
 {
     ovphysx_enqueue_result_t r = ovphysx_step(handle, elapsed);
     return r.status == OVPHYSX_API_SUCCESS && wait_cb_op(handle, r.op_index);
+}
+
+// Buffer utilities accept an entry point; they do not depend on deprecated APIs.
+struct ContactDataBuffers
+{
+    std::vector<float> forces, points, normals, separations;
+    std::vector<int32_t> counts, starts;
+    ovphysx_api_status_t status;
+    uint32_t required = 0;
+};
+
+static DLTensor make_contact_tensor(void* data, int64_t* shape, uint8_t code)
+{
+    DLTensor tensor{};
+    tensor.data = data;
+    tensor.device = {kDLCPU, 0};
+    tensor.ndim = 2;
+    tensor.dtype = {code, 32, 1};
+    tensor.shape = shape;
+    return tensor;
+}
+
+static ContactDataBuffers read_normal_contact_buffers(
+    ovphysx_handle_t instance, ovphysx_contact_binding_handle_t binding,
+    uint32_t capacity, int32_t sensors, int32_t filters, decltype(&ovphysx_read_normal_contact_data) read)
+{
+    ContactDataBuffers data;
+    data.forces.resize(capacity);
+    data.points.resize(capacity * 3);
+    data.normals.resize(capacity * 3);
+    data.separations.resize(capacity);
+    data.counts.resize(static_cast<size_t>(sensors) * filters);
+    data.starts.resize(data.counts.size());
+    int64_t scalarShape[2]{capacity, 1};
+    int64_t vectorShape[2]{capacity, 3};
+    int64_t pairShape[2]{sensors, filters};
+    DLTensor forces = make_contact_tensor(data.forces.data(), scalarShape, kDLFloat);
+    DLTensor points = make_contact_tensor(data.points.data(), vectorShape, kDLFloat);
+    DLTensor normals = make_contact_tensor(data.normals.data(), vectorShape, kDLFloat);
+    DLTensor separations = make_contact_tensor(data.separations.data(), scalarShape, kDLFloat);
+    DLTensor counts = make_contact_tensor(data.counts.data(), pairShape, kDLInt);
+    DLTensor starts = make_contact_tensor(data.starts.data(), pairShape, kDLInt);
+    data.status = read(instance, binding, &forces, &points, &normals, &separations,
+                       &counts, &starts, &data.required).status;
+    return data;
+}
+
+static ContactDataBuffers read_friction_contact_buffers(
+    ovphysx_handle_t instance, ovphysx_contact_binding_handle_t binding,
+    uint32_t capacity, int32_t sensors, int32_t filters, decltype(&ovphysx_read_friction_contact_data) read)
+{
+    ContactDataBuffers data;
+    data.forces.resize(capacity * 3);
+    data.points.resize(capacity * 3);
+    data.counts.resize(static_cast<size_t>(sensors) * filters);
+    data.starts.resize(data.counts.size());
+    int64_t vectorShape[2]{capacity, 3};
+    int64_t pairShape[2]{sensors, filters};
+    DLTensor forces = make_contact_tensor(data.forces.data(), vectorShape, kDLFloat);
+    DLTensor points = make_contact_tensor(data.points.data(), vectorShape, kDLFloat);
+    DLTensor counts = make_contact_tensor(data.counts.data(), pairShape, kDLInt);
+    DLTensor starts = make_contact_tensor(data.starts.data(), pairShape, kDLInt);
+    data.status = read(instance, binding, &forces, &points, &counts, &starts, &data.required).status;
+    return data;
 }
 
 class ContactBindingTest : public PhysXTestFixture {};
@@ -336,6 +412,46 @@ TEST_F(ContactBindingTest, GetContactBindingSpecExactCounts)
     ovphysx_destroy_contact_binding(m_handle, cb);
 }
 
+TEST_F(ContactBindingTest, PathGettersReportDemandAndBufferTooSmall)
+{
+    ovphysx_usd_handle_t usd_handle = 0;
+    ASSERT_TRUE(load_usd_cb(m_handle,
+        "tests/data/boxes_falling_on_groundplane.usda", usd_handle));
+
+    ovphysx_string_t sensors[2] = {
+        make_ovx_string("/World/Cube1"),
+        make_ovx_string("/World/Cube2"),
+    };
+    ovphysx_string_t filters[4] = {
+        make_ovx_string("/World/Cube2"),
+        make_ovx_string("/World/Cube3"),
+        make_ovx_string("/World/Cube2"),
+        make_ovx_string("/World/Cube3"),
+    };
+    ovphysx_contact_binding_handle_t cb = 0;
+    ovphysx_result_t r = ovphysx_create_contact_binding(
+        m_handle, sensors, 2, filters, 2, 256, &cb);
+    ASSERT_EQ(r.status, OVPHYSX_API_SUCCESS) << "Failed to create contact binding";
+
+    ovphysx_string_t sensor_prefix[1]{};
+    uint32_t path_count = 0;
+    r = ovphysx_contact_binding_get_sensor_paths(m_handle, cb, sensor_prefix, 1, &path_count);
+    EXPECT_EQ(r.status, OVPHYSX_API_BUFFER_TOO_SMALL);
+    ASSERT_EQ(path_count, 2u);
+    ASSERT_NE(sensor_prefix[0].ptr, nullptr);
+    EXPECT_EQ(std::string(sensor_prefix[0].ptr, sensor_prefix[0].length), "/World/Cube1");
+
+    ovphysx_string_t filter_prefix[1]{};
+    path_count = 0;
+    r = ovphysx_contact_binding_get_filter_paths(m_handle, cb, filter_prefix, 1, &path_count);
+    EXPECT_EQ(r.status, OVPHYSX_API_BUFFER_TOO_SMALL);
+    ASSERT_EQ(path_count, 4u);
+    ASSERT_NE(filter_prefix[0].ptr, nullptr);
+    EXPECT_EQ(std::string(filter_prefix[0].ptr, filter_prefix[0].length), "/World/Cube2");
+
+    ovphysx_destroy_contact_binding(m_handle, cb);
+}
+
 TEST_F(ContactBindingTest, DetailedReadsRejectUnfilteredBinding)
 {
     ovphysx_usd_handle_t usd_handle = 0;
@@ -362,13 +478,15 @@ TEST_F(ContactBindingTest, DetailedReadsRejectUnfilteredBinding)
     DLTensor* starts = make_int32_tensor({}, {sensor_count, filter_count});
     DLTensor* friction_forces = make_float32_tensor(std::vector<float>(256 * 3), {256, 3});
     DLTensor* friction_points = make_float32_tensor(std::vector<float>(256 * 3), {256, 3});
+    uint32_t required_contact_count = 0;
+    uint32_t required_friction_count = 0;
 
-    r = ovphysx_read_contact_data(
-        m_handle, cb, contact_forces, positions, normals, separations, counts, starts);
+    r = ovphysx_read_normal_contact_data(
+        m_handle, cb, contact_forces, positions, normals, separations, counts, starts, &required_contact_count);
     EXPECT_EQ(r.status, OVPHYSX_API_INVALID_ARGUMENT);
 
-    r = ovphysx_read_friction_data(
-        m_handle, cb, friction_forces, friction_points, counts, starts);
+    r = ovphysx_read_friction_contact_data(
+        m_handle, cb, friction_forces, friction_points, counts, starts, &required_friction_count);
     EXPECT_EQ(r.status, OVPHYSX_API_INVALID_ARGUMENT);
 
     free_tensor(contact_forces);
@@ -382,9 +500,113 @@ TEST_F(ContactBindingTest, DetailedReadsRejectUnfilteredBinding)
     ovphysx_destroy_contact_binding(m_handle, cb);
 }
 
+// Overflow reports the complete demand while preserving a usable prefix.
+TEST_F(ContactBindingTest, FilteredReadsOverflowReturnsRequiredCountAndValidPrefix)
+{
+    ovphysx_usd_handle_t usd_handle = 0;
+    ASSERT_TRUE(load_usd_cb(m_handle,
+        "tests/data/boxes_falling_on_groundplane.usda", usd_handle));
+
+    ovphysx_string_t sensor = make_ovx_string("/World/Cube*");
+    ovphysx_string_t filter = make_ovx_string("/World/BigBase");
+    constexpr uint32_t kSmallCapacity = 1;
+    constexpr uint32_t kReferenceCapacity = 64;
+    ovphysx_contact_binding_handle_t small_cb = 0;
+    ovphysx_contact_binding_handle_t reference_cb = 0;
+    ASSERT_EQ(ovphysx_create_contact_binding(
+        m_handle, &sensor, 1, &filter, 1, kSmallCapacity, &small_cb).status,
+        OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_create_contact_binding(
+        m_handle, &sensor, 1, &filter, 1, kReferenceCapacity, &reference_cb).status,
+        OVPHYSX_API_SUCCESS);
+
+    int32_t sensor_count = -1;
+    int32_t filter_count = -1;
+    ASSERT_EQ(ovphysx_get_contact_binding_spec(
+        m_handle, small_cb, &sensor_count, &filter_count).status, OVPHYSX_API_SUCCESS);
+    ASSERT_GT(sensor_count, 0);
+    ASSERT_GT(filter_count, 0);
+
+    for (int i = 0; i < 60; ++i)
+        ASSERT_TRUE(step_cb(m_handle, 1.0f / 60.0f));
+
+    struct LayoutSummary
+    {
+        ovphysx_api_status_t status;
+        uint32_t required;
+        uint32_t written;
+        uint32_t maxEnd;
+    };
+
+    auto summarize = [&](const std::vector<int32_t>& counts, const std::vector<int32_t>& starts,
+                         ovphysx_api_status_t status, uint32_t required)
+    {
+        uint32_t written = 0;
+        uint32_t max_end = 0;
+        const size_t pairs = static_cast<size_t>(sensor_count) * static_cast<size_t>(filter_count);
+        for (size_t i = 0; i < pairs; ++i)
+        {
+            if (counts[i] < 0 || starts[i] < 0)
+            {
+                ADD_FAILURE() << "negative layout at pair " << i
+                              << " count=" << counts[i] << " start=" << starts[i];
+                written = UINT32_MAX;
+                max_end = UINT32_MAX;
+                break;
+            }
+            const uint32_t count = static_cast<uint32_t>(counts[i]);
+            const uint32_t start = static_cast<uint32_t>(starts[i]);
+            written += count;
+            max_end = std::max(max_end, start + count);
+        }
+        return LayoutSummary{status, required, written, max_end};
+    };
+
+    auto read_contacts = [&](ovphysx_contact_binding_handle_t binding, uint32_t capacity)
+    {
+        const ContactDataBuffers data = read_normal_contact_buffers(
+            m_handle, binding, capacity, sensor_count, filter_count, ovphysx_read_normal_contact_data);
+        return summarize(data.counts, data.starts, data.status, data.required);
+    };
+    auto read_friction = [&](ovphysx_contact_binding_handle_t binding, uint32_t capacity)
+    {
+        const ContactDataBuffers data = read_friction_contact_buffers(
+            m_handle, binding, capacity, sensor_count, filter_count, ovphysx_read_friction_contact_data);
+        return summarize(data.counts, data.starts, data.status, data.required);
+    };
+
+    // Read both bindings against the same settled step so contact counts cannot
+    // drift between the reference and undersized reads.
+    const LayoutSummary contact_reference = read_contacts(reference_cb, kReferenceCapacity);
+    ASSERT_EQ(contact_reference.status, OVPHYSX_API_SUCCESS) << ovphysx_get_last_error().ptr;
+    ASSERT_GT(contact_reference.required, kSmallCapacity);
+    EXPECT_EQ(contact_reference.written, contact_reference.required);
+
+    const LayoutSummary contact_small = read_contacts(small_cb, kSmallCapacity);
+    EXPECT_EQ(contact_small.status, OVPHYSX_API_BUFFER_TOO_SMALL);
+    EXPECT_EQ(contact_small.required, contact_reference.required);
+    EXPECT_EQ(contact_small.written, kSmallCapacity);
+    EXPECT_LE(contact_small.maxEnd, kSmallCapacity);
+
+    const LayoutSummary friction_reference = read_friction(reference_cb, kReferenceCapacity);
+    ASSERT_EQ(friction_reference.status, OVPHYSX_API_SUCCESS) << ovphysx_get_last_error().ptr;
+    ASSERT_GT(friction_reference.required, kSmallCapacity);
+    EXPECT_EQ(friction_reference.written, friction_reference.required);
+
+    const LayoutSummary friction_small = read_friction(small_cb, kSmallCapacity);
+    EXPECT_EQ(friction_small.status, OVPHYSX_API_BUFFER_TOO_SMALL);
+    EXPECT_EQ(friction_small.required, friction_reference.required);
+    EXPECT_EQ(friction_small.written, kSmallCapacity);
+    EXPECT_LE(friction_small.maxEnd, kSmallCapacity);
+
+    ovphysx_destroy_contact_binding(m_handle, small_cb);
+    ovphysx_destroy_contact_binding(m_handle, reference_cb);
+}
+
 // ---------------------------------------------------------------------------
 // get_contact_report - contract tests not reachable from Python
 // ---------------------------------------------------------------------------
+
 
 // Before any simulation step the report must be empty (both counts == 0).
 // Python test_no_contacts_before_collision only asserts >= 0. The C ABI
@@ -479,7 +701,7 @@ TEST_F(ContactBindingTest, GetContactReportStructConsistencyAfterSteps)
 // (OMPE-94459 #21 wire-up)
 // ---------------------------------------------------------------------------
 
-// Raw contact data is the filter-less variant of read_contact_data: per-sensor
+// Raw contact data is the filter-less variant of read_normal_contact_data: per-sensor
 // counts/start-indices are 1D [S] (no filter dim) and each contact carries an
 // opaque actor id resolvable to a USD prim path. This test exercises the
 // happy path on stacked boxes after enough simulation steps for the stack to
@@ -537,14 +759,17 @@ TEST_F(ContactBindingTest, RawContactDataAndOtherActorPaths)
     DLTensor layout_t     = make_tensor(layout_buf.data(),      2, sshape, kDLInt,   32);
     DLTensor ids_t        = make_tensor(ids_buf.data(),         2, ishape, kDLInt,   64);
 
+    uint32_t required_contact_count = 0;
     r = ovphysx_read_raw_contact_data(
-        m_handle, cb, &force_t, &point_t, &normal_t, &separation_t, &layout_t, &ids_t);
+        m_handle, cb, &force_t, &point_t, &normal_t, &separation_t, &layout_t, &ids_t,
+        &required_contact_count);
     EXPECT_EQ(r.status, OVPHYSX_API_SUCCESS) << ovphysx_get_last_error().ptr;
 
     // At least one sensor must have at least one contact after settling.
     int32_t total_contacts = 0;
     for (int32_t i = 0; i < sensor_count; ++i) total_contacts += layout_buf[i * 2 + 0];
     EXPECT_GT(total_contacts, 0) << "expected at least one contact after 60 steps";
+    EXPECT_EQ(required_contact_count, static_cast<uint32_t>(total_contacts));
 
     // Every written sensor/other id within [start, start+count) is non-zero.
     for (int32_t i = 0; i < sensor_count; ++i)
@@ -598,7 +823,135 @@ TEST_F(ContactBindingTest, RawContactDataAndOtherActorPaths)
     resolve_and_check(other_col_t, other_col.data(), "other_actor_ids");
     resolve_and_check(sensor_col_t, sensor_col.data(), "sensor_actor_ids");
 
+    {
+        std::vector<ovphysx_string_t> short_paths(1);
+        uint32_t demand = 0;
+        ovphysx_result_t truncated = ovphysx_contact_binding_get_other_actor_paths_from_ids(
+            m_handle, cb, &other_col_t, short_paths.data(), 1, &demand);
+        EXPECT_EQ(truncated.status, OVPHYSX_API_BUFFER_TOO_SMALL)
+            << ovphysx_get_last_error().ptr;
+        EXPECT_EQ(demand, kMaxContacts);
+        ASSERT_NE(short_paths[0].ptr, nullptr);
+        if (other_col[0] != 0)
+        {
+            EXPECT_GT(short_paths[0].length, 0u);
+        }
+    }
+
     ovphysx_destroy_contact_binding(m_handle, cb);
+}
+
+// Overflow reports the complete demand while preserving a usable prefix.
+TEST_F(ContactBindingTest, RawContactDataOverflowReturnsRequiredCountAndValidPrefix)
+{
+    ovphysx_usd_handle_t usd_handle = 0;
+    ASSERT_TRUE(load_usd_cb(m_handle,
+        "tests/data/boxes_falling_on_groundplane.usda", usd_handle));
+
+    ovphysx_string_t sensor = make_ovx_string("/World/Cube*");
+    constexpr uint32_t kSmallCapacity = 1;
+    constexpr uint32_t kReferenceCapacity = 64;
+    ovphysx_contact_binding_handle_t small_cb = 0;
+    ovphysx_contact_binding_handle_t reference_cb = 0;
+    ASSERT_EQ(ovphysx_create_contact_binding(
+        m_handle, &sensor, 1, nullptr, 0, kSmallCapacity, &small_cb).status,
+        OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_create_contact_binding(
+        m_handle, &sensor, 1, nullptr, 0, kReferenceCapacity, &reference_cb).status,
+        OVPHYSX_API_SUCCESS);
+
+    int32_t sensor_count = -1;
+    int32_t filter_count = -1;
+    ASSERT_EQ(ovphysx_get_contact_binding_spec(
+        m_handle, small_cb, &sensor_count, &filter_count).status, OVPHYSX_API_SUCCESS);
+    ASSERT_GT(sensor_count, 0);
+
+    for (int i = 0; i < 60; ++i)
+        ASSERT_TRUE(step_cb(m_handle, 1.0f / 60.0f));
+
+    struct ReadSummary
+    {
+        ovphysx_api_status_t status;
+        uint32_t required;
+        uint32_t written;
+        uint32_t maxEnd;
+        int64_t firstSensorId;
+        int64_t firstOtherId;
+    };
+
+    auto read = [&](ovphysx_contact_binding_handle_t binding, uint32_t capacity)
+    {
+        std::vector<float> forces(capacity, 0.0f);
+        std::vector<float> points(capacity * 3, 0.0f);
+        std::vector<float> normals(capacity * 3, 0.0f);
+        std::vector<float> separations(capacity, 0.0f);
+        std::vector<int32_t> layout(static_cast<size_t>(sensor_count) * 2, 0);
+        std::vector<int64_t> ids(static_cast<size_t>(capacity) * 2, 0);
+
+        int64_t scalar_shape[2] = {capacity, 1};
+        int64_t vector_shape[2] = {capacity, 3};
+        int64_t layout_shape[2] = {sensor_count, 2};
+        int64_t ids_shape[2] = {capacity, 2};
+        auto make_tensor = [](void* data, int64_t* shape, uint8_t code, uint8_t bits)
+        {
+            DLTensor tensor{};
+            tensor.data = data;
+            tensor.device = {kDLCPU, 0};
+            tensor.ndim = 2;
+            tensor.dtype = {code, bits, 1};
+            tensor.shape = shape;
+            return tensor;
+        };
+        DLTensor force_tensor = make_tensor(forces.data(), scalar_shape, kDLFloat, 32);
+        DLTensor point_tensor = make_tensor(points.data(), vector_shape, kDLFloat, 32);
+        DLTensor normal_tensor = make_tensor(normals.data(), vector_shape, kDLFloat, 32);
+        DLTensor separation_tensor = make_tensor(separations.data(), scalar_shape, kDLFloat, 32);
+        DLTensor layout_tensor = make_tensor(layout.data(), layout_shape, kDLInt, 32);
+        DLTensor ids_tensor = make_tensor(ids.data(), ids_shape, kDLInt, 64);
+
+        uint32_t required = 0;
+        const ovphysx_result_t result = ovphysx_read_raw_contact_data(
+            m_handle, binding, &force_tensor, &point_tensor, &normal_tensor,
+            &separation_tensor, &layout_tensor, &ids_tensor, &required);
+
+        uint32_t written = 0;
+        uint32_t max_end = 0;
+        for (int32_t i = 0; i < sensor_count; ++i)
+        {
+            const uint32_t count = static_cast<uint32_t>(layout[static_cast<size_t>(i) * 2]);
+            const uint32_t start = static_cast<uint32_t>(layout[static_cast<size_t>(i) * 2 + 1]);
+            written += count;
+            max_end = std::max(max_end, start + count);
+        }
+        return ReadSummary{
+            result.status,
+            required,
+            written,
+            max_end,
+            ids[0],
+            ids[1],
+        };
+    };
+
+    // Read both bindings against the same settled step -- getRawContactData is a
+    // non-destructive read of the last step's contact data, so re-stepping between
+    // the two reads would let contact counts drift (they are not guaranteed to be
+    // bit-stable step over step) and make small.required != reference.required a flake.
+    const ReadSummary reference = read(reference_cb, kReferenceCapacity);
+    ASSERT_EQ(reference.status, OVPHYSX_API_SUCCESS) << ovphysx_get_last_error().ptr;
+    ASSERT_GT(reference.required, kSmallCapacity);
+    EXPECT_EQ(reference.written, reference.required);
+
+    const ReadSummary small = read(small_cb, kSmallCapacity);
+    EXPECT_EQ(small.status, OVPHYSX_API_BUFFER_TOO_SMALL);
+    EXPECT_EQ(small.required, reference.required);
+    EXPECT_EQ(small.written, kSmallCapacity);
+    EXPECT_LE(small.maxEnd, kSmallCapacity);
+    EXPECT_NE(small.firstSensorId, 0);
+    EXPECT_NE(small.firstOtherId, 0);
+
+    ovphysx_destroy_contact_binding(m_handle, small_cb);
+    ovphysx_destroy_contact_binding(m_handle, reference_cb);
 }
 
 // Shape-mismatch rejection: count tensor with the wrong dim must be rejected.
@@ -643,10 +996,215 @@ TEST_F(ContactBindingTest, RawContactDataRejectsWrongShape)
     DLTensor layout_t       = make_tensor(layout_buf.data(),       2, layout_bad_shape, kDLInt, 32);
     DLTensor ids_t2         = make_tensor(ids_buf2.data(),         2, ishape, kDLInt, 64);
 
+    uint32_t required_contact_count = 0;
     ovphysx_result_t r = ovphysx_read_raw_contact_data(
-        m_handle, cb, &force_t, &point_t, &normal_t, &separation_t, &layout_t, &ids_t2);
+        m_handle, cb, &force_t, &point_t, &normal_t, &separation_t, &layout_t, &ids_t2,
+        &required_contact_count);
     EXPECT_EQ(r.status, OVPHYSX_API_INVALID_ARGUMENT)
         << "expected shape-mismatch rejection (sensor layout was [S, 4], raw read wants [S, 2])";
 
     ovphysx_destroy_contact_binding(m_handle, cb);
+}
+
+// Component reads retain the C boundary contract independently of compatibility aliases.
+TEST_F(ContactBindingTest, ForceComponents)
+{
+    ovphysx_usd_handle_t usd_handle = 0;
+    ASSERT_TRUE(load_usd_cb(m_handle, "tests/data/boxes_falling_on_groundplane.usda", usd_handle));
+    ovphysx_string_t sensor = make_ovx_string("/World/Cube1");
+    ovphysx_string_t filter = make_ovx_string("/World/BigBase");
+    ovphysx_contact_binding_handle_t cb = 0;
+    ASSERT_EQ(ovphysx_create_contact_binding(m_handle, &sensor, 1, &filter, 1, 0, &cb).status,
+              OVPHYSX_API_SUCCESS);
+    for (int i = 0; i < 120; ++i)
+        ASSERT_TRUE(step_cb(m_handle, 1.0f / 60.0f));
+
+    float normal[3]{}, friction[3]{}, matrix[3]{};
+    int64_t netShape[2]{1, 3};
+    int64_t matrixShape[3]{1, 1, 3};
+    DLTensor dst{};
+    dst.data = normal;
+    dst.device = {kDLCPU, 0};
+    dst.dtype = {kDLFloat, 32, 1};
+    dst.ndim = 2;
+    dst.shape = netShape;
+    ASSERT_EQ(ovphysx_read_contact_net_normal_forces(m_handle, cb, &dst).status, OVPHYSX_API_SUCCESS);
+    EXPECT_GT(normal[2], 0.0f);
+    dst.data = friction;
+    ASSERT_EQ(ovphysx_read_contact_net_friction_forces(m_handle, cb, &dst).status, OVPHYSX_API_SUCCESS);
+    // Friction on this horizontal support must not include its normal force.
+    EXPECT_NEAR(friction[2], 0.0f, 0.1f);
+
+    EXPECT_EQ(ovphysx_read_contact_net_friction_forces(m_handle, cb, nullptr).status,
+              OVPHYSX_API_INVALID_ARGUMENT);
+    dst.dtype.code = kDLInt;
+    EXPECT_EQ(ovphysx_read_contact_net_friction_forces(m_handle, cb, &dst).status,
+              OVPHYSX_API_INVALID_ARGUMENT);
+    dst.dtype.code = kDLFloat;
+    netShape[1] = 2;
+    EXPECT_EQ(ovphysx_read_contact_net_friction_forces(m_handle, cb, &dst).status,
+              OVPHYSX_API_INVALID_ARGUMENT);
+    netShape[1] = 3;
+    dst.device.device_type = kDLCUDA;
+    EXPECT_EQ(ovphysx_read_contact_net_friction_forces(m_handle, cb, &dst).status,
+              OVPHYSX_API_DEVICE_MISMATCH);
+    dst.device.device_type = kDLCPU;
+
+    dst.ndim = 3;
+    dst.shape = matrixShape;
+    dst.data = matrix;
+    ASSERT_EQ(ovphysx_read_contact_normal_force_matrix(m_handle, cb, &dst).status, OVPHYSX_API_SUCCESS);
+    for (int c = 0; c < 3; ++c)
+        EXPECT_FLOAT_EQ(matrix[c], normal[c]);
+
+    dst.data = matrix;
+    ASSERT_EQ(ovphysx_read_contact_friction_force_matrix(m_handle, cb, &dst).status, OVPHYSX_API_SUCCESS);
+    for (int c = 0; c < 3; ++c)
+        EXPECT_FLOAT_EQ(matrix[c], friction[c]);
+    EXPECT_EQ(ovphysx_read_contact_friction_force_matrix(m_handle, cb, nullptr).status,
+              OVPHYSX_API_INVALID_ARGUMENT);
+    dst.dtype.code = kDLInt;
+    EXPECT_EQ(ovphysx_read_contact_friction_force_matrix(m_handle, cb, &dst).status,
+              OVPHYSX_API_INVALID_ARGUMENT);
+    dst.dtype.code = kDLFloat;
+    matrixShape[2] = 2;
+    EXPECT_EQ(ovphysx_read_contact_friction_force_matrix(m_handle, cb, &dst).status,
+              OVPHYSX_API_INVALID_ARGUMENT);
+    matrixShape[2] = 3;
+    dst.device.device_type = kDLCUDA;
+    EXPECT_EQ(ovphysx_read_contact_friction_force_matrix(m_handle, cb, &dst).status,
+              OVPHYSX_API_DEVICE_MISMATCH);
+    dst.device.device_type = kDLCPU;
+
+    ASSERT_EQ(ovphysx_destroy_contact_binding(m_handle, cb).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_read_contact_friction_force_matrix(m_handle, cb, &dst).status, OVPHYSX_API_NOT_FOUND);
+    dst.ndim = 2;
+    dst.shape = netShape;
+    EXPECT_EQ(ovphysx_read_contact_net_friction_forces(m_handle, cb, &dst).status, OVPHYSX_API_NOT_FOUND);
+}
+
+
+// Compatibility only: these cases retire with the deprecated contact aliases.
+TEST_F(ContactBindingTest, DeprecatedAggregateContactAliases)
+{
+    ovphysx_usd_handle_t usd = 0;
+    ASSERT_TRUE(load_usd_cb(m_handle, "tests/data/boxes_falling_on_groundplane.usda", usd));
+    ovphysx_string_t sensor = make_ovx_string("/World/Cube1");
+    ovphysx_string_t filter = make_ovx_string("/World/BigBase");
+    ovphysx_contact_binding_handle_t binding = 0;
+    ASSERT_EQ(ovphysx_create_contact_binding(m_handle, &sensor, 1, &filter, 1, 0, &binding).status,
+              OVPHYSX_API_SUCCESS);
+    for (int i = 0; i < 120; ++i)
+        ASSERT_TRUE(step_cb(m_handle, 1.0f / 60.0f));
+
+    float current[3]{}, deprecated[3]{};
+    int64_t shape[3]{1, 3, 3};
+    DLTensor dst = make_contact_tensor(current, shape, kDLFloat);
+    ASSERT_EQ(ovphysx_read_contact_net_normal_forces(m_handle, binding, &dst).status, OVPHYSX_API_SUCCESS);
+    ASSERT_GT(current[2], 0.0f);
+    dst.data = deprecated;
+    ASSERT_EQ(ovphysx_read_contact_net_forces(m_handle, binding, &dst).status, OVPHYSX_API_SUCCESS);
+    for (int c = 0; c < 3; ++c)
+        EXPECT_FLOAT_EQ(deprecated[c], current[c]);
+
+    dst.ndim = 3;
+    shape[1] = 1;
+    dst.data = current;
+    ASSERT_EQ(ovphysx_read_contact_normal_force_matrix(m_handle, binding, &dst).status, OVPHYSX_API_SUCCESS);
+    dst.data = deprecated;
+    ASSERT_EQ(ovphysx_read_contact_force_matrix(m_handle, binding, &dst).status, OVPHYSX_API_SUCCESS);
+    for (int c = 0; c < 3; ++c)
+        EXPECT_FLOAT_EQ(deprecated[c], current[c]);
+    struct ReadCase
+    {
+        decltype(&ovphysx_read_contact_net_normal_forces) read;
+        const char* operation;
+    };
+    const ReadCase reads[] = {
+        {ovphysx_read_contact_net_normal_forces, "read_contact_net_normal_forces"},
+        {ovphysx_read_contact_net_friction_forces, "read_contact_net_friction_forces"},
+        {ovphysx_read_contact_normal_force_matrix, "read_contact_normal_force_matrix"},
+        {ovphysx_read_contact_friction_force_matrix, "read_contact_friction_force_matrix"},
+        {ovphysx_read_contact_net_forces, "read_contact_net_forces"},
+        {ovphysx_read_contact_force_matrix, "read_contact_force_matrix"},
+    };
+    dst.dtype.code = kDLInt;
+    for (const ReadCase& read : reads)
+    {
+        SCOPED_TRACE(read.operation);
+        EXPECT_EQ(read.read(m_handle, binding, &dst).status, OVPHYSX_API_INVALID_ARGUMENT);
+        const ovphysx_string_t error = ovphysx_get_last_error();
+        EXPECT_EQ(std::string(error.ptr, error.length), std::string(read.operation) + ": expected float32 tensor");
+    }
+    EXPECT_EQ(ovphysx_destroy_contact_binding(m_handle, binding).status, OVPHYSX_API_SUCCESS);
+}
+
+TEST_F(ContactBindingTest, DeprecatedDetailedContactAliases)
+{
+    ovphysx_usd_handle_t usd = 0;
+    ASSERT_TRUE(load_usd_cb(m_handle, "tests/data/boxes_falling_on_groundplane.usda", usd));
+    ovphysx_string_t sensor = make_ovx_string("/World/Cube1");
+    ovphysx_string_t filter = make_ovx_string("/World/BigBase");
+    ovphysx_contact_binding_handle_t complete = 0, truncated = 0;
+    ASSERT_EQ(ovphysx_create_contact_binding(m_handle, &sensor, 1, &filter, 1, 64, &complete).status,
+              OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_create_contact_binding(m_handle, &sensor, 1, &filter, 1, 1, &truncated).status,
+              OVPHYSX_API_SUCCESS);
+    for (int i = 0; i < 120; ++i)
+        ASSERT_TRUE(step_cb(m_handle, 1.0f / 60.0f));
+
+    for (uint32_t capacity : {1u, 64u})
+    {
+        SCOPED_TRACE(capacity);
+        const ovphysx_contact_binding_handle_t binding = capacity == 1 ? truncated : complete;
+        const ContactDataBuffers normal = read_normal_contact_buffers(
+            m_handle, binding, capacity, 1, 1, ovphysx_read_normal_contact_data);
+        const ContactDataBuffers oldNormal = read_normal_contact_buffers(
+            m_handle, binding, capacity, 1, 1, ovphysx_read_contact_data);
+        ASSERT_GT(normal.required, 1u);
+        EXPECT_EQ(normal.status, capacity == 1 ? OVPHYSX_API_BUFFER_TOO_SMALL : OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(oldNormal.status, normal.status);
+        EXPECT_EQ(oldNormal.required, normal.required);
+        EXPECT_EQ(oldNormal.forces, normal.forces);
+        EXPECT_EQ(oldNormal.points, normal.points);
+        EXPECT_EQ(oldNormal.normals, normal.normals);
+        EXPECT_EQ(oldNormal.separations, normal.separations);
+        EXPECT_EQ(oldNormal.counts, normal.counts);
+        EXPECT_EQ(oldNormal.starts, normal.starts);
+
+        const ContactDataBuffers friction = read_friction_contact_buffers(
+            m_handle, binding, capacity, 1, 1, ovphysx_read_friction_contact_data);
+        const ContactDataBuffers oldFriction = read_friction_contact_buffers(
+            m_handle, binding, capacity, 1, 1, ovphysx_read_friction_data);
+        ASSERT_GT(friction.required, 1u);
+        EXPECT_EQ(friction.status, capacity == 1 ? OVPHYSX_API_BUFFER_TOO_SMALL : OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(oldFriction.status, friction.status);
+        EXPECT_EQ(oldFriction.required, friction.required);
+        EXPECT_EQ(oldFriction.forces, friction.forces);
+        EXPECT_EQ(oldFriction.points, friction.points);
+        EXPECT_EQ(oldFriction.counts, friction.counts);
+        EXPECT_EQ(oldFriction.starts, friction.starts);
+    }
+    // Invalid detailed buffers must name the entry point the caller actually used.
+    float invalidData[3]{};
+    int64_t invalidShape[2]{64, 1};
+    DLTensor invalid = make_contact_tensor(invalidData, invalidShape, kDLInt);
+    uint32_t required = 0;
+    for (bool deprecated : {false, true})
+    {
+        const decltype(&ovphysx_read_normal_contact_data) readNormal = deprecated ? ovphysx_read_contact_data : ovphysx_read_normal_contact_data;
+        const decltype(&ovphysx_read_friction_contact_data) readFriction = deprecated ? ovphysx_read_friction_data : ovphysx_read_friction_contact_data;
+        const char* normalOp = deprecated ? "read_contact_data" : "read_normal_contact_data";
+        const char* frictionOp = deprecated ? "read_friction_data" : "read_friction_contact_data";
+        EXPECT_EQ(readNormal(m_handle, complete, &invalid, nullptr, nullptr, nullptr, nullptr, nullptr, &required).status,
+                  OVPHYSX_API_INVALID_ARGUMENT);
+        const ovphysx_string_t normalError = ovphysx_get_last_error();
+        EXPECT_EQ(std::string(normalError.ptr, normalError.length), std::string(normalOp) + ": expected float32 tensor");
+        EXPECT_EQ(readFriction(m_handle, complete, &invalid, nullptr, nullptr, nullptr, &required).status,
+                  OVPHYSX_API_INVALID_ARGUMENT);
+        const ovphysx_string_t frictionError = ovphysx_get_last_error();
+        EXPECT_EQ(std::string(frictionError.ptr, frictionError.length), std::string(frictionOp) + ": expected float32 tensor");
+    }
+    EXPECT_EQ(ovphysx_destroy_contact_binding(m_handle, truncated).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_destroy_contact_binding(m_handle, complete).status, OVPHYSX_API_SUCCESS);
 }

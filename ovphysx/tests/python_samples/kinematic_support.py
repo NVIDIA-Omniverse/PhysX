@@ -24,10 +24,18 @@ def attach_scene(physx, usd_path):
         raise RuntimeError("ovstage population bridge is unavailable")
     # ovphysx ships its PhysX USD schemas as codeless resources and does not register
     # them itself. Register them with ovstage once, before the first population
-    # call in the process.
+    # call in the process. The Newton USD schema (pip package newton-usd-schemas) is
+    # registered alongside when installed, so authored newton:* attributes reach the
+    # parser; this scene has none, and the package is not a wheel dependency, so
+    # don't require it.
     global _physx_schemas_registered
     if not _physx_schemas_registered:
-        ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+        schema_roots = [str(ovphysx.codeless_schema_root())]
+        try:
+            schema_roots.append(str(ovphysx.newton_schema_root()))
+        except FileNotFoundError:
+            pass  # newton-usd-schemas is optional; this scene has no newton:* attributes.
+        ovstage.population.register_usd_schemas(schema_roots)
         _physx_schemas_registered = True
     stage = ovstage.Stage("ovphysx-kinematic-support-sample")
     try:

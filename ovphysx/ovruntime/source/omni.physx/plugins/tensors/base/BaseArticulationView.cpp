@@ -14,6 +14,9 @@
  * @implements REQ-TENSOR-CPU-ONLY-001
  * @covers AC-1 AC-2 AC-5
  *
+ * @implements REQ-INPUT-CORE-001
+ * @covers AC-4
+ *
  * @implements REQ-READ-ARTICULATION-001
  * @covers AC-5
  *
@@ -28,6 +31,7 @@
 // clang-format on
 
 #include "tensors/base/BaseArticulationView.h"
+#include "tensors/base/BaseRigidBodyView.h"
 #include "tensors/base/BaseSimulationView.h"
 #include "usdLoad/AttachedStage.h"
 #include "tensors/base/OvStageShapeProperty.h"
@@ -2138,7 +2142,7 @@ bool BaseArticulationView::setDisableGravities(const TensorDesc* srcTensor, cons
             const uint8_t* src = static_cast<const uint8_t*>(srcTensor->data) + idx * mMaxLinks;
             for (PxU32 j = 0; j < mEntries[idx].numLinks; j++)
             {
-                mEntries[idx].links[j]->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, src[j]);
+                BaseRigidBodyView::setDisableGravityAndRefresh(*mEntries[idx].links[j], src[j] != 0);
             }
         }
     }

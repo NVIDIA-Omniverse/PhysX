@@ -11,7 +11,7 @@ owner: ovphysx
 ## Description
 
 ovphysx shall expose an **app → physics** write API shaped as the mirror of the
-ADR-0007 output read, replacing the write-oriented tensor-binding surface
+output read API, replacing the write-oriented tensor-binding surface
 (`ovphysx_write_tensor_binding` / `ovphysx_write_tensor_binding_masked`) as the
 supported way for an application to push simulation state in.
 
@@ -22,12 +22,12 @@ synchronization handoff, iteration termination, error reporting — is the read'
 applied in the opposite direction, so a group fetched from one direction feeds the other
 with no repack.
 
-Contractual foundation: [ADR-0012](../../../ovruntime/plc/adr/ADR-0012-app-to-physics-write-api.md).
-The runtime scatter that backs it is [REQ-INPUT-CORE-001](../../../ovruntime/plc/requirements/input/REQ-INPUT-CORE-001.md);
-type coverage is [REQ-INPUT-COVERAGE-001](../../../ovruntime/plc/requirements/input/REQ-INPUT-COVERAGE-001.md);
-device residency is [REQ-INPUT-DEVICE-001](../../../ovruntime/plc/requirements/input/REQ-INPUT-DEVICE-001.md).
-Those requirements carry their own tests; `TEST-INPUT-CORE-001` in particular is the
-scatter-correctness oracle that this surface exposes.
+The [session overview](../../../docs/read_write/index.md),
+[writable data](../../../docs/read_write/writable.md), and
+[device contract](../../../docs/read_write/device.md) describe this public surface.
+The runtime scatter is implemented in
+`ovphysx/ovruntime/source/omni.physx/plugins/OvxPhysicsWrite.cpp`; public C and Python
+write tests verify its observable behavior through this surface.
 
 ## Acceptance Criteria
 
@@ -78,7 +78,7 @@ scatter-correctness oracle that this surface exposes.
   undefined behavior rather than a checked error, since a raw `data.tensors[i].data`
   access makes no API call the runtime could reject.
 
-- AC-5: **Synchronization.** `ovphysx_commit_group` and `ovphysx_release_write` take
+- AC-5: **Synchronization.** `ovphysx_commit_group` takes
   `ovstage_cuda_sync_t write_done_sync` `{stream, wait_event}` — the type ovstage's
   `unmap_group` / `unmap_attribute` take and the mirror of the read's
   `data.cuda_sync`. Physics waits on a supplied `wait_event` before consuming the
@@ -87,15 +87,21 @@ scatter-correctness oracle that this surface exposes.
   anywhere in this contract. The runtime additionally orders the write against an
   in-flight step, draining pending simulation before scattering.
 
-- AC-5a: **A first write is refused, not warmed.** The write shares the read's step-first
-  precondition (ADR-0008 Decision 10): the DirectGPU superset view it scatters into does
-  not exist until the scene's first step, so a write issued before any step is **refused**
-  rather than silently advancing simulation on the caller's behalf. This is symmetric with
-  the read, which treats a pre-step scene as a clean omission, not a failure. A caller
-  controls when that first step happens by calling `ovphysx_step` / `ovphysx_warmup()`
-  itself, exactly as before a read; the write never steps for it. The header states this
-  precondition at the write entry points. (The tensor-binding write does auto-warm; the
-  ovstage write deliberately does not — see ADR-0012's 2026-08-27 amendment.)
+- AC-5a: **A first write is never auto-warmed; refusal is DirectGPU-only.** The ovstage
+  write never calls `ovphysx_warmup_if_needed` (the tensor-binding write does — see
+  ADR-0012's 2026-08-27 amendment). Device modes differ on a scene that has not yet
+  stepped:
+  - **CPU** and **GPU with readback** (no `/physics/suppressReadback`): a pre-step write
+    **commits and is applied**. The host scatter has somewhere to land.
+  - **DirectGPU** (`eENABLE_DIRECT_GPU_API` / `suppressReadback`): commit is **refused**.
+    The DirectGPU superset view it scatters into does not exist until the first step
+    (ADR-0008 Decision 10's DirectGPU sizing). The runtime log names
+    `setVelocityColumnOvStage` (and siblings) as requiring a prior step.
+  The write never advances simulation time on the caller's behalf in any mode. A caller
+  that wants one recipe for all three modes calls `ovphysx_step` / `ovphysx_warmup()`
+  first; that is portability, not a CPU/GPU refusal. The header states the split at the
+  write entry points. (NVBugs 6763272: earlier text treated the DirectGPU refusal as
+  universal.)
 
 - AC-6: **Completeness, and what a failed session leaves behind.** The caller fills
   every mapped entry of a group before committing it. There is no signal for "which
@@ -124,9 +130,9 @@ scatter-correctness oracle that this surface exposes.
   checks the C API does not already make.
 
 - AC-9: **Python surface, filling in place.** `PhysX.write()` returns a context manager
-  whose `__exit__` releases the session; uncommitted groups are discarded per AC-4, so
-  an exception inside the block publishes nothing. The caller commits each group
-  explicitly.
+  whose `__exit__` releases the session and discards uncommitted groups per AC-4.
+  An exception does not roll back earlier commits or a partially applied failed commit.
+  The caller commits each group explicitly.
 
   Every Python group tensor is a `warp.array` on the tensor's native CPU or CUDA
   device. A non-empty tensor is a **writable alias of the mapped memory, never a
@@ -161,7 +167,7 @@ scatter-correctness oracle that this surface exposes.
   and `ovphysx_update_articulations_kinematic` for the binding FK update. The metadata/names
   and wake/sleep helpers have **no non-binding successor yet**; that gap is a
   **removal-blocker** (a read-API topology/names path and a session wake/sleep control),
-  tracked in the deprecation plan — it is not a reason to leave them looking supported. A
+  detailed in AC-14 — it is not a reason to leave them looking supported. A
   helper being unreachable without the deprecated binding makes it part of the surface that
   is removed with it. Compatibility behavior is retained for the approved deprecation period;
   **removal is not required in ovphysx 0.6** unless the approved compatibility policy permits it.
@@ -178,18 +184,19 @@ scatter-correctness oracle that this surface exposes.
 - AC-13: **A failed commit reports WHICH failure it was.** `ovphysx_commit_group` separates a
   group that was never live — unknown session, or a group unknown, foreign or already
   committed — from a live group whose publish failed. The first is rejected before any
-  publish, so it truthfully reports that nothing was written. The second is not: the group
-  was accepted, the scatter ran, and a device scatter can fail after writing part of its
-  rows, so the error says the group is spent and that how much reached the solver is not
-  reported at this layer. Neither case may be described with the other's wording. A failure
+  publish, so it truthfully reports that nothing was written. A live group is spent even
+  when a preflight check rejects it before publishing. Its error preserves the runtime's
+  cause and any known write outcome; otherwise it reports that partial application is
+  possible, because a device scatter can fail after writing some rows. Neither case may
+  be described with the other's wording. The Python exception preserves the same cause
+  before releasing query or session handles, which may replace the last-error string. A failure
   the runtime does not classify (the write sidecar faulted or is absent) is reported as
   unknown rather than as either. The distinction is carried out of the runtime by
   `ovxCommitGroup`'s optional `OvxCommitFailure` out-param, since the `bool` cannot express it.
 
 - AC-14: **Removal is gated on read-API capabilities that do not exist in 0.6.** The whole
   tensor-binding surface can be *removed* only once its consumers have a non-binding
-  replacement. Three gaps block that, recorded here so they outlive the migration plan (which is
-  deleted when the migration lands): (a) **path/pattern selection on the read** — `ovphysx_query`
+  replacement. Three gaps block that: (a) **path/pattern selection on the read** — `ovphysx_query`
   selects all objects of a type, with no prim/pattern argument, so a binding read of a specific
   prim subset has no 1:1 session equivalent (it must read-all-then-filter through the ovx
   path-dictionary API); and (b) the **binding-coupled helpers with no successor** —
@@ -218,18 +225,17 @@ scatter-correctness oracle that this surface exposes.
 ## Code References
 
 - ovphysx/include/ovphysx/ovphysx.h (`ovphysx_write`, `ovphysx_fetch_write_next`, `ovphysx_commit_group`, `ovphysx_release_write`; deprecation markers on the superseded entry points)
-- ovphysx/include/ovphysx/ovphysx_types.h (`ovphysx_write_handle_t`; writability signal per REQ-INPUT-COVERAGE-001)
+- ovphysx/include/ovphysx/ovphysx_types.h (`ovphysx_write_handle_t`; writability classification)
 - ovphysx/src/ovphysx/ (write session implementation + C-first validation)
 - ovphysx/python/ovphysx/api.py (`PhysX.write` context manager)
 - ovphysx/python/ovphysx/_bindings.py (write entry-point bindings)
 - ovphysx/docs/changelog.md (user-facing behavior change + deprecation notice)
-- ovphysx/tests/c_samples/ (new — runnable write sample, sibling of output_read_c)
-- ovphysx/tests/python_samples/ (new — runnable Python write sample)
-- ovphysx/docs/tutorials/ (literalinclude of both, per the hello_world pattern)
+- ovphysx/tests/c_samples/ (still outstanding — runnable write sample, sibling of output_read_c)
+- ovphysx/tests/python_samples/session_write.py (runnable Python write sample)
+- ovphysx/docs/tutorials/tensor_bindings.md (literalinclude of session_write.py; the C side, tests/c_samples/, remains outstanding)
 
 ## Dependencies
 
-- ADR-0012 (the decision)
-- REQ-INPUT-CORE-001 (runtime scatter backing this surface)
-- REQ-INPUT-COVERAGE-001 (which types are writable and reachable by name)
-- REQ-INPUT-DEVICE-001 (device residency of the mapped tensors)
+- ovphysx/ovruntime/include/omni/physx/IOvxPhysicsWrite.h (runtime write and commit contract)
+- ovphysx/ovruntime/source/omni.physx/plugins/OvxPhysicsWrite.cpp (scatter, type coverage and device residency)
+- ovphysx/ovruntime/include/omni/physx/RuntimeError.h (shared synchronous runtime cause capture)

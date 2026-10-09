@@ -4,6 +4,12 @@ Read this file for the C `ovphysx_write()` branch. Every call returns
 `ovphysx_result_t`; check `.status == OVPHYSX_API_SUCCESS` and release on both
 the success and error paths.
 
+Before calling the helper, initialize ovphysx and attach a populated ovstage
+instance as described in [Basic Workflow](../../basic-workflow/SKILL.md#c).
+Complete a warmup or step before the first write. The helper requires
+CPU-resident velocity columns and an `error_text` buffer with nonzero capacity.
+Keep the instance and stage alive until it returns.
+
 ## Lifecycle
 
 1. **Query** the simulated type (`ovphysx_query`), by type -- not schema or
@@ -17,74 +23,92 @@ the success and error paths.
    `ovphysx_commit_group`. A group never committed publishes nothing.
 4. **Release** the write handle then the query handle.
 
+Add this helper to `examples/session_write.c` in your SDK application. It
+extends the attached-instance lifecycle; it does not replace initialization
+or stage setup. Success returns `OVPHYSX_API_SUCCESS` after at least one commit.
+
 ```c
 #include <ovphysx/ovphysx.h>
+#include <stdio.h>
 
-// Precondition: warm up or step first -- a write before the first step is
-// REFUSED (the DirectGPU superset view does not exist yet), never auto-warmed.
-static ovphysx_result_t drive_all_bodies_x(ovphysx_handle_t handle, float vx)
+// Precondition: the write never auto-warms. On CPU / GPU-with-readback a pre-step
+// write is applied. On DirectGPU, commit is refused until a first step has sized
+// the GPU view -- warmup() or step first for a recipe that works on every mode.
+// error_text must point to error_capacity writable bytes; capacity must be nonzero.
+static ovphysx_result_t drive_all_bodies_x(ovphysx_handle_t handle, float vx,
+                                         char* error_text, size_t error_capacity)
 {
     ovphysx_query_handle_t query = 0;
-    ovphysx_result_t r = ovphysx_query(handle, OVPHYSX_OBJECT_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query);
-    if (r.status != OVPHYSX_API_SUCCESS)
-        return r;
-
+    ovphysx_write_handle_t write = 0;
+    const ovstage_map_group_t* group = NULL;
+    int committed = 0;
     const ovx_string_or_token_t attr = {
         0, { OVPHYSX_ATTR_LINEAR_VELOCITY, sizeof(OVPHYSX_ATTR_LINEAR_VELOCITY) - 1 }
     };
-    ovphysx_write_handle_t write = 0;
+    error_text[0] = '\0';
+    ovphysx_result_t r = ovphysx_query(handle, OVPHYSX_OBJECT_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query);
+    if (r.status != OVPHYSX_API_SUCCESS)
+        goto failed;
     r = ovphysx_write(handle, query, &attr, &write);
-    if (r.status != OVPHYSX_API_SUCCESS) {
-        ovphysx_release_query(handle, query);
-        return r;
-    }
+    if (r.status != OVPHYSX_API_SUCCESS)
+        goto failed;
 
-    const ovstage_map_group_t* group = NULL;
-    int committed = 0;
-    for (ovphysx_result_t fw;
-         (fw = ovphysx_fetch_write_next(handle, write, &group)).status != OVPHYSX_API_END_OF_ITERATION;) {
-        if (fw.status != OVPHYSX_API_SUCCESS) {          // a real error, not exhaustion
-            ovphysx_release_write(handle, write);
-            ovphysx_release_query(handle, query);
-            return fw;
-        }
-        // Fill EVERY tensor of the group: commit publishes the whole group, so an
-        // unfilled tensor drives its prims with stale memory. This is a CPU write
-        // session, so a non-CPU tensor is a setup error -- fail fast rather than skip
-        // and commit a partially filled group (a GPU scene takes the device path
-        // described below, not a continue).
-        for (uint32_t ti = 0; group->data.tensors && ti < group->data.tensor_count; ++ti) {
+    for (;;) {
+        r = ovphysx_fetch_write_next(handle, write, &group);
+        if (r.status == OVPHYSX_API_END_OF_ITERATION)
+            break;
+        if (r.status != OVPHYSX_API_SUCCESS)
+            goto failed;
+        // Fill every tensor. This helper expects CPU-resident float vec3 columns.
+        for (uint32_t ti = 0; ti < group->data.tensor_count; ++ti) {
             const DLTensor* t = &group->data.tensors[ti];
             if (!t->data || t->device.device_type != kDLCPU) {
-                ovphysx_release_write(handle, write);
-                ovphysx_release_query(handle, query);
-                return (ovphysx_result_t){ OVPHYSX_API_DEVICE_MISMATCH };
+                r = (ovphysx_result_t){ OVPHYSX_API_DEVICE_MISMATCH };
+                snprintf(error_text, error_capacity, "drive_all_bodies_x requires CPU tensors");
+                goto cleanup;
             }
-            const size_t lanes = t->dtype.lanes ? t->dtype.lanes : 1;   // vec3 -> 3
+            const size_t lanes = t->dtype.lanes ? t->dtype.lanes : 1;
             const size_t rows = (size_t)t->shape[0];
             float* dst = (float*)t->data;
             for (size_t i = 0; i < rows; ++i) {
-                dst[i * lanes + 0] = vx;                 // x
+                dst[i * lanes + 0] = vx;
                 for (size_t c = 1; c < lanes; ++c)
                     dst[i * lanes + c] = 0.0f;
             }
         }
-        // ovstage_cuda_sync_t{} == {0, 0}: nothing outstanding on a host write.
         r = ovphysx_commit_group(handle, write, group, (ovstage_cuda_sync_t){ 0 });
-        if (r.status != OVPHYSX_API_SUCCESS) {
-            ovphysx_release_write(handle, write);
-            ovphysx_release_query(handle, query);
-            return r;
-        }
+        if (r.status != OVPHYSX_API_SUCCESS)
+            goto failed;
         ++committed;
     }
 
-    ovphysx_release_write(handle, write);
-    ovphysx_release_query(handle, query);
-    return committed > 0 ? (ovphysx_result_t){ OVPHYSX_API_SUCCESS }
-                         : (ovphysx_result_t){ OVPHYSX_API_ERROR };     // no groups: nothing driven
+    r = (ovphysx_result_t){ committed > 0 ? OVPHYSX_API_SUCCESS : OVPHYSX_API_ERROR };
+    if (committed == 0)
+        snprintf(error_text, error_capacity, "write produced no groups; nothing was driven");
+    goto cleanup;
+
+failed:
+    {
+        // Cleanup may replace the native error; copy it into caller-owned storage first.
+        const ovphysx_string_t error = ovphysx_get_last_error();
+        snprintf(error_text, error_capacity, "%.*s", (int)error.length, error.ptr ? error.ptr : "");
+    }
+cleanup:
+    if (write)
+        ovphysx_release_write(handle, write);
+    if (query)
+        ovphysx_release_query(handle, query);
+    return r;
 }
 ```
+
+The caller retains the failure reason in `error_text` after the helper releases its
+handles. On CPU or GPU-with-readback scenes, PhysX rejects this velocity setter on
+standalone kinematic bodies, and commit reports the SDK error. Valid dynamic rows in
+the same group can still be written, including rows after the rejected body; the
+kinematic body's velocity stays unchanged. The failed group is spent, with no rollback
+or applied/rejected row count. The default rigid-body query includes kinematic bodies;
+there is no per-body selection or kinematic-body filter.
 
 ## Device and streams
 
@@ -103,12 +127,17 @@ there is nothing to read back -- assert the consequence.
 
 ## Validation
 
-- Warm up or step before the first write; a pre-step write is refused.
-- Every group's tensors are fully filled before `ovphysx_commit_group`; to write
-  fewer prims, query fewer.
+- Warm up or step before the first write for a recipe that works on DirectGPU too.
+  On CPU and GPU-with-readback a pre-step write is applied; on DirectGPU it is
+  refused. The write never auto-warms.
+- Every group's tensors are fully filled before `ovphysx_commit_group`; there is
+  no fill mask for skipping individual bodies. Queries select object types and
+  attributes, not individual prims. Refer to
+  [Read/Write Limitations](../../../docs/read_write/limitations.md) before
+  choosing an API for per-body control.
 - Both handles are released on the success AND every error path.
 - The test observes a physical consequence, not the write-only input read back.
 
-Read simulated results back with `ovphysx_read` -- see the `ovphysx-output-read`
+Read simulated results back with `ovphysx_read` -- see the [Output Read](../../ovphysx-output-read/SKILL.md)
 skill. Worked write example (source checkout): the write loop in
 `tests/c_unittests/test_joint_datamovement.cpp`.

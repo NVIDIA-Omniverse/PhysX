@@ -5,8 +5,12 @@
 /**
  * @implements REQ-CAPI-LOG-001
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7
+ * @implements REQ-CAPI-BINDING-SELECTION-001
+ * @covers AC-2 AC-3
  * @implements REQ-CAPI-STRING-001
  * @covers AC-1 AC-2 AC-3 AC-4
+ * @implements REQ-CAPI-STEP-001
+ * @covers AC-1 AC-2 AC-3
  * @implements REQ-CAPI-ASYNC-001
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5
  * @implements REQ-CAPI-OMNIPVD-LATE-001
@@ -18,9 +22,17 @@
  * @implements REQ-CAPI-OVSTAGE-SCHEMA-001
  * @covers AC-1 AC-2 AC-3
  * @implements REQ-CAPI-WRITE-001
- * @covers AC-11
+ * @covers AC-5a AC-11
  * @implements REQ-PYTHON-CLONE-001
  * @covers AC-2
+ * @implements REQ-CAPI-CONTACT-001
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7
+ * @implements REQ-CAPI-SCENEQUERY-001
+ * @covers AC-1 AC-2 AC-3 AC-4
+ * @implements REQ-CAPI-CONTACT-002
+ * @covers AC-1 AC-2 AC-3 AC-4
+ * @implements REQ-CAPI-CONTACT-003
+ * @covers AC-1 AC-2 AC-3 AC-4
  */
 /** @endcond */
 
@@ -719,7 +731,11 @@ extern "C" {
     * @note The application owns schema registration: pass the directory returned
     *       by @ref ovphysx_get_codeless_schema_root to
     *       `ovstage_population_register_usd_schemas()` before the first population
-    *       in the process. Population drops every Physx* API it cannot resolve,
+    *       in the process, together with the Newton USD schema
+    *       (https://github.com/newton-physics/newton-usd-schemas) when scenes author
+    *       `newton:*` attributes; ovphysx reads those as fallbacks for the PhysX
+    *       spellings, does not ship that schema, and this call cannot verify its
+    *       registration. Population drops every Physx* API it cannot resolve,
     *       so an unregistered stage carries none of the asset's PhysX settings
     *       (self-collision, joint velocity limits, solver iterations, deformable
     *       and particle fallbacks). This call verifies the registration by
@@ -1176,6 +1192,10 @@ extern "C" {
      * infer it from the scene. Handing a host pointer to a device column, or the
      * reverse, faults asynchronously and is reported far from here.
      *
+     * A session may be opened on a scene that has not yet stepped. CPU and
+     * GPU-with-readback apply a pre-step write; DirectGPU refuses at
+     * @ref ovphysx_commit_group, not here.
+     *
      * @param handle ovphysx instance handle.
      * @param query Query handle from @ref ovphysx_query.
      * @param attribute The single attribute to write (string name or interned token).
@@ -1253,10 +1273,11 @@ extern "C" {
      * with no event) still drains that stream. Only `{0, 0}` asserts nothing is
      * outstanding. A host-resident group does NOT imply `{0, 0}`, since the caller may
      * have staged on its own stream. The runtime orders the write against an in-flight step.
-     * It does NOT warm up a scene that has not stepped: a write issued before the first step is
-     * **refused**, not silently advanced on the caller's behalf. This is symmetric with the read,
-     * which omits pre-step rows rather than failing. Call @ref ovphysx_warmup or @ref ovphysx_step
-     * to control when that first step happens. The write never steps on the caller's behalf.
+     * It does NOT warm up a scene that has not stepped. Device modes differ:
+     * on CPU and on GPU-with-readback a pre-step write **commits and is applied**; on
+     * DirectGPU (`eENABLE_DIRECT_GPU_API`) commit is **refused** until a first step has
+     * sized the GPU scatter view. Call @ref ovphysx_warmup or @ref ovphysx_step for a
+     * recipe that works on every mode. The write never steps on the caller's behalf.
      *
      * @param handle ovphysx instance handle.
      * @param write Write-session handle the group came from.
@@ -1269,6 +1290,8 @@ extern "C" {
      * - OVPHYSX_API_ERROR for a write handle or group pointer that is not live. This is
      *   deliberately NOT idempotent: commit is the mutation, so reporting success for a
      *   stale pointer would claim data was published when none was.
+     * - OVPHYSX_API_ERROR on DirectGPU when the scene has not yet stepped (the GPU scatter
+     *   view is unsized). CPU and GPU-with-readback do not take this error.
      */
     OVPHYSX_API ovphysx_result_t ovphysx_commit_group(ovphysx_handle_t handle,
                                                       ovphysx_write_handle_t write,
@@ -1491,6 +1514,9 @@ extern "C" {
     * - OVPHYSX_API_INVALID_ARGUMENT for invalid inputs
     * - OVPHYSX_API_ERROR for internal failures
     *
+    * PhysX CUDA-context failures after admission are reported by ovphysx_wait_op,
+    * with a retained CUDA diagnostic even when logging is disabled.
+    *
      * @code{.c}
      * #include <ovphysx/ovphysx.h>
      *
@@ -1507,7 +1533,7 @@ extern "C" {
      * @brief Synchronous step: simulate one physics timestep and wait for
      * completion in a single call.
      *
-     * Functionally equivalent to ovphysx_step() followed by ovphysx_wait_op()
+     * On success, equivalent to ovphysx_step() followed by ovphysx_wait_op()
      * on the returned operation index, but bypasses the async event machinery
      * entirely (mutex acquisitions, operation map insert/lookup/cleanup). In
      * IsaacLab RL training at 4096 environments this saves about 0.2 ms per
@@ -1517,12 +1543,15 @@ extern "C" {
      * that is, does not overlap GPU simulation with CPU work between dispatch
      * and fetch.
      *
-     * The simulation time is tracked internally. Each step advances it by
-     * step_dt.
+     * The simulation time is tracked internally. Each successful step advances
+     * it by step_dt.
      *
      * @param handle  Physics instance handle.
      * @param step_dt  Timestep [s].
      * @return ovphysx_result_t with OVPHYSX_API_SUCCESS on success.
+     * A PhysX CUDA-context error returns OVPHYSX_API_ERROR; retrieve its
+     * diagnostic with ovphysx_get_last_error(), even when logging is disabled.
+     * A recoverable capacity-overflow report alone does not fail the call.
      */
     OVPHYSX_API ovphysx_result_t ovphysx_step_sync(ovphysx_handle_t handle,
                                                             float step_dt);
@@ -1533,12 +1562,16 @@ extern "C" {
      * simulation time + i * step_dt. This saves (n_steps-1) ctypes
      * round-trips for workloads that use decimation (one RL step =
      * multiple physics steps). The internal counter advances by
-     * n_steps * step_dt.
+     * n_steps * step_dt on success.
      *
      * @param handle       Physics instance handle.
      * @param n_steps      Number of steps to run (must be > 0).
      * @param step_dt      Duration of each step [s].
      * @return ovphysx_result_t with OVPHYSX_API_SUCCESS on success.
+     * A PhysX CUDA-context error stops the batch and returns OVPHYSX_API_ERROR;
+     * retrieve its diagnostic with ovphysx_get_last_error(), even when logging
+     * is disabled. A recoverable capacity-overflow report alone does not fail
+     * the call. Completed physics steps are not rolled back.
      */
     OVPHYSX_API ovphysx_result_t ovphysx_step_n_sync(ovphysx_handle_t handle,
                                                               int32_t n_steps,
@@ -1644,6 +1677,9 @@ extern "C" {
      * tensor type (e.g., OVPHYSX_TENSOR_RIGID_BODY_POSE_F32), enabling efficient
      * bulk read/write of physics data for all matching objects. Runtime-only clone
      * paths are eligible even when no USD prim is authored at the path.
+     * Each call returns an independent handle. Destroying one binding does not
+     * invalidate another binding for the same objects. A new binding selects the
+     * currently eligible realized objects even while older bindings remain alive.
      *
      * If the pattern matches zero physics objects, the binding is still created successfully
      * with element_count = 0. This lets callers treat optional scene content as
@@ -1666,7 +1702,7 @@ extern "C" {
      * @return ovphysx_result_t (synchronous - completes before returning)
      *
      * @pre handle, desc, and out_binding_handle must be valid.
-     * @post Binding handle owns native resources until explicitly destroyed via
+     * @post Binding handle retains native resources until explicitly destroyed via
      *       ovphysx_destroy_tensor_binding(), or until the parent instance is
      *       destroyed. Stage reset or bound-object removal invalidates the
      *       underlying TensorAPI view. Destroy stale bindings and create
@@ -2329,8 +2365,8 @@ extern "C" {
      * limits, or force monitoring. GPU-compatible.
      *
      * For tensorized **per-contact-point geometry** (position, normal,
-     * separation, force, and friction), use ovphysx_read_contact_data() and
-     * ovphysx_read_friction_data(). Use ovphysx_get_contact_report() for
+     * separation, force, and friction), use ovphysx_read_normal_contact_data() and
+     * ovphysx_read_friction_contact_data(). Use ovphysx_get_contact_report() for
      * event headers or raw actor-pair report records.
      *
      * A **sensor** is a set of rigid bodies identified by a physics-object path
@@ -2392,8 +2428,8 @@ extern "C" {
      *   Pass NULL with filters_per_sensor=0 for unfiltered contacts.
      * @param filters_per_sensor Number of filter patterns per sensor (same for all sensors)
      * @param max_contact_data_count Max detailed contact/friction entries to track.
-     *   Set this to a positive value before using ovphysx_read_contact_data()
-     *   or ovphysx_read_friction_data(). Detailed reads also require
+     *   Set this to a positive value before using ovphysx_read_normal_contact_data()
+     *   or ovphysx_read_friction_contact_data(). Detailed reads also require
      *   filters_per_sensor > 0. Aggregate net-force reads do not need detailed
      *   contact capacity or filters.
      * @param out_handle [out] Contact binding handle
@@ -2419,8 +2455,10 @@ extern "C" {
      *         handle, sensors, 1, filters, 1, 256, out_binding);
      * }
      * @endcode
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
-    OVPHYSX_API ovphysx_result_t ovphysx_create_contact_binding(
+    OVPHYSX_API OVPHYSX_DEPRECATED_MSG("The contact-binding API is deprecated and retained for compatibility.")
+    ovphysx_result_t ovphysx_create_contact_binding(
         ovphysx_handle_t handle,
         const ovphysx_string_t* sensor_patterns,
         uint32_t sensor_patterns_count,
@@ -2435,8 +2473,10 @@ extern "C" {
      * @param handle Instance handle
      * @param contact_handle Contact binding to destroy
      * @return ovphysx_result_t
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
-    OVPHYSX_API ovphysx_result_t ovphysx_destroy_contact_binding(
+    OVPHYSX_API OVPHYSX_DEPRECATED_MSG("The contact-binding API is deprecated and retained for compatibility.")
+    ovphysx_result_t ovphysx_destroy_contact_binding(
         ovphysx_handle_t handle,
         ovphysx_contact_binding_handle_t contact_handle);
 
@@ -2448,8 +2488,10 @@ extern "C" {
      * @param out_sensor_count [out] Number of sensor bodies matched
      * @param out_filter_count [out] Number of filter bodies per sensor
      * @return ovphysx_result_t
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
-    OVPHYSX_API ovphysx_result_t ovphysx_get_contact_binding_spec(
+    OVPHYSX_API OVPHYSX_DEPRECATED_MSG("The contact-binding API is deprecated and retained for compatibility.")
+    ovphysx_result_t ovphysx_get_contact_binding_spec(
         ovphysx_handle_t handle,
         ovphysx_contact_binding_handle_t contact_handle,
         int32_t* out_sensor_count,
@@ -2462,15 +2504,21 @@ extern "C" {
      * ovphysx owns the returned string storage. String pointers remain valid
      * until the binding is destroyed.
      *
+     * Callers must index `min(*out_count, max_paths)`. A short `out_paths`
+     * still receives a valid prefix.
+     *
      * @param handle Instance handle
      * @param contact_handle Contact binding
      * @param out_paths [out] Array of ovphysx_string_t to fill
-     * @param max_paths Capacity of out_paths array. Must be at least
-     *   sensor_count to receive all sensor paths.
-     * @param out_count [out] Actual number of paths written
-     * @return ovphysx_result_t
+     * @param max_paths Capacity of out_paths array
+     * @param out_count [out] Total sensor-path demand, even when that exceeds
+     *   max_paths
+     * @return OVPHYSX_API_SUCCESS when every sensor path was written, or
+     *   OVPHYSX_API_BUFFER_TOO_SMALL when demand exceeds max_paths
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
-    OVPHYSX_API ovphysx_result_t ovphysx_contact_binding_get_sensor_paths(
+    OVPHYSX_API OVPHYSX_DEPRECATED_MSG("The contact-binding API is deprecated and retained for compatibility.")
+    ovphysx_result_t ovphysx_contact_binding_get_sensor_paths(
         ovphysx_handle_t handle,
         ovphysx_contact_binding_handle_t contact_handle,
         ovphysx_string_t* out_paths,
@@ -2484,15 +2532,21 @@ extern "C" {
      * count `sensor_count * filter_count`. ovphysx owns the returned string
      * storage. String pointers remain valid until the binding is destroyed.
      *
+     * Callers must index `min(*out_count, max_paths)`. A short `out_paths`
+     * still receives a valid prefix.
+     *
      * @param handle Instance handle
      * @param contact_handle Contact binding
      * @param out_paths [out] Array of ovphysx_string_t to fill
-     * @param max_paths Capacity of out_paths array. Must be at least
-     *   sensor_count * filter_count to receive all filter paths.
-     * @param out_count [out] Actual number of paths written
-     * @return ovphysx_result_t
+     * @param max_paths Capacity of out_paths array
+     * @param out_count [out] Total filter-path demand
+     *   (`sensor_count * filter_count`), even when that exceeds max_paths
+     * @return OVPHYSX_API_SUCCESS when every filter path was written, or
+     *   OVPHYSX_API_BUFFER_TOO_SMALL when demand exceeds max_paths
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
-    OVPHYSX_API ovphysx_result_t ovphysx_contact_binding_get_filter_paths(
+    OVPHYSX_API OVPHYSX_DEPRECATED_MSG("The contact-binding API is deprecated and retained for compatibility.")
+    ovphysx_result_t ovphysx_contact_binding_get_filter_paths(
         ovphysx_handle_t handle,
         ovphysx_contact_binding_handle_t contact_handle,
         ovphysx_string_t* out_paths,
@@ -2502,8 +2556,8 @@ extern "C" {
     /**
      * @brief Query detailed contact/friction flat-buffer capacity.
      *
-     * This is the C dimension for `ovphysx_read_contact_data()` and
-     * `ovphysx_read_friction_data()` flat buffers. Allocate force/separation
+     * This is the C dimension for `ovphysx_read_normal_contact_data()` and
+     * `ovphysx_read_friction_contact_data()` flat buffers. Allocate force/separation
      * buffers as `[C, 1]`, point/normal/friction buffers as `[C, 3]`, and
      * count/start-index buffers as `[S, F]`, where `C` is this value and
      * `S`, `F` come from `ovphysx_get_contact_binding_spec()`.
@@ -2512,48 +2566,113 @@ extern "C" {
      * @param contact_handle Contact binding
      * @param out_max_contact_data_count [out] Max detailed contact/friction entries
      * @return ovphysx_result_t
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
-    OVPHYSX_API ovphysx_result_t ovphysx_get_contact_binding_capacity(
+    OVPHYSX_API OVPHYSX_DEPRECATED_MSG("The contact-binding API is deprecated and retained for compatibility.")
+    ovphysx_result_t ovphysx_get_contact_binding_capacity(
         ovphysx_handle_t handle,
         ovphysx_contact_binding_handle_t contact_handle,
         uint32_t* out_max_contact_data_count);
 
     /**
-     * @brief Read net contact forces. dst shape: [S, 3] where S = sensor_count.
+     * @brief Read net normal contact forces. dst shape: [S, 3].
      *
-     * The dt for impulse-to-force conversion is taken automatically from the
-     * last successful ovphysx_step(), ovphysx_step_sync(), or
-     * ovphysx_step_n_sync() call.
+     * Returns world-space normal forces over all reported contacts of each
+     * sensor, regardless of filters or detailed-contact capacity. Adding the result
+     * of ovphysx_read_contact_net_friction_forces() from the same simulation step
+     * yields total contact forces.
      *
-     * @param handle Instance handle
-     * @param contact_handle Contact binding
-     * @param dst_tensor Pre-allocated DLTensor with shape [S, 3]
-     * @return ovphysx_result_t
+     * Impulse-to-force conversion uses dt from the last successful ovphysx_step(),
+     * ovphysx_step_sync(), or ovphysx_step_n_sync(). This function waits for pending
+     * SDK work before retrieving the contact forces.
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
-    OVPHYSX_API ovphysx_result_t ovphysx_read_contact_net_forces(
+    OVPHYSX_API OVPHYSX_DEPRECATED_MSG("The contact-binding API is deprecated and retained for compatibility.")
+    ovphysx_result_t ovphysx_read_contact_net_normal_forces(
         ovphysx_handle_t handle,
         ovphysx_contact_binding_handle_t contact_handle,
         DLTensor* dst_tensor);
 
     /**
-     * @brief Read contact force matrix. dst shape: [S, F, 3].
+     * @brief Read net friction forces. dst shape: [S, 3].
      *
-     * The dt for impulse-to-force conversion is taken automatically from the
-     * last successful ovphysx_step(), ovphysx_step_sync(), or
-     * ovphysx_step_n_sync() call.
+     * Sums world-space friction-anchor forces over all reported contacts of each
+     * sensor, including contacts with bodies not matched by the binding's
+     * filter patterns. Neither filters nor detailed-contact capacity are required.
+     * Opposing anchor forces can cancel while producing torque.
+     * This vector sum does not report friction torque.
      *
-     * @param handle Instance handle
-     * @param contact_handle Contact binding
-     * @param dst_tensor Pre-allocated DLTensor with shape [S, F, 3]
-     * @return ovphysx_result_t
+     * Impulse-to-force conversion uses dt from the last successful ovphysx_step(),
+     * ovphysx_step_sync(), or ovphysx_step_n_sync(). This function waits for pending
+     * SDK work before retrieving the contact forces.
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
-    OVPHYSX_API ovphysx_result_t ovphysx_read_contact_force_matrix(
+    OVPHYSX_API OVPHYSX_DEPRECATED_MSG("The contact-binding API is deprecated and retained for compatibility.")
+    ovphysx_result_t ovphysx_read_contact_net_friction_forces(
         ovphysx_handle_t handle,
         ovphysx_contact_binding_handle_t contact_handle,
         DLTensor* dst_tensor);
 
     /**
-     * @brief Read detailed contact data into flat buffers.
+     * @brief Read normal contact force matrix. dst shape: [S, F, 3].
+     *
+     * Each entry sums world-space normal forces for its sensor/filter pair,
+     * independently of detailed-contact capacity. Adding the result of
+     * ovphysx_read_contact_friction_force_matrix() from the same step yields
+     * total contact forces for the configured pairs.
+     *
+     * Impulse-to-force conversion uses dt from the last successful ovphysx_step(),
+     * ovphysx_step_sync(), or ovphysx_step_n_sync(). This function waits for pending
+     * SDK work before retrieving the contact forces.
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
+     */
+    OVPHYSX_API OVPHYSX_DEPRECATED_MSG("The contact-binding API is deprecated and retained for compatibility.")
+    ovphysx_result_t ovphysx_read_contact_normal_force_matrix(
+        ovphysx_handle_t handle,
+        ovphysx_contact_binding_handle_t contact_handle,
+        DLTensor* dst_tensor);
+
+    /**
+     * @brief Read friction force matrix. dst shape: [S, F, 3].
+     *
+     * Each entry sums world-space friction forces for its sensor/filter pair,
+     * independently of detailed-contact capacity. Only contacts with configured
+     * filter bodies contribute. Adding the normal force matrix from the same
+     * step yields total contact forces for those pairs. Individual friction
+     * forces and anchor points are available through ovphysx_read_friction_contact_data().
+     *
+     * Impulse-to-force conversion uses dt from the last successful ovphysx_step(),
+     * ovphysx_step_sync(), or ovphysx_step_n_sync(). This function waits for pending
+     * SDK work before retrieving the contact forces.
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
+     */
+    OVPHYSX_API OVPHYSX_DEPRECATED_MSG("The contact-binding API is deprecated and retained for compatibility.")
+    ovphysx_result_t ovphysx_read_contact_friction_force_matrix(
+        ovphysx_handle_t handle,
+        ovphysx_contact_binding_handle_t contact_handle,
+        DLTensor* dst_tensor);
+
+    /** @deprecated Use ovphysx_read_contact_net_normal_forces(). Still returns normal forces only. */
+    OVPHYSX_API OVPHYSX_DEPRECATED_MSG("use ovphysx_read_contact_net_normal_forces; returns normal forces only")
+    ovphysx_result_t ovphysx_read_contact_net_forces(
+        ovphysx_handle_t handle,
+        ovphysx_contact_binding_handle_t contact_handle,
+        DLTensor* dst_tensor);
+
+    /** @deprecated Use ovphysx_read_contact_normal_force_matrix(). Still returns normal forces only. */
+    OVPHYSX_API OVPHYSX_DEPRECATED_MSG("use ovphysx_read_contact_normal_force_matrix; returns normal forces only")
+    ovphysx_result_t ovphysx_read_contact_force_matrix(
+        ovphysx_handle_t handle,
+        ovphysx_contact_binding_handle_t contact_handle,
+        DLTensor* dst_tensor);
+
+    /**
+     * @brief Read detailed normal contact data into flat buffers.
+     *
+     * contact_force_tensor contains scalar normal forces. Multiply each scalar
+     * by the corresponding contact_normal_tensor vector to obtain the world-space
+     * normal force vector. Friction forces are returned separately by
+     * ovphysx_read_friction_contact_data().
      *
      * Required shapes:
      * - contact_force_tensor: `[C, 1]` float32
@@ -2574,6 +2693,17 @@ extern "C" {
      * Contact force magnitudes use the timestep from the last successful
      * ovphysx_step(), ovphysx_step_sync(), or ovphysx_step_n_sync() call.
      *
+     * **Truncation**: `out_required_contact_count` receives the total number of
+     * contacts produced for the step, before truncation. When that value exceeds
+     * max_contact_data_count, the function returns
+     * OVPHYSX_API_BUFFER_TOO_SMALL while still filling the flat buffers with as
+     * many contacts as fit. A pair's count reports only contacts actually
+     * written, and its start index is clamped to max_contact_data_count, so
+     * `[start, start + count)` is always an in-range (possibly empty) slice.
+     * Recreate the binding with max_contact_data_count at least
+     * `out_required_contact_count`, step again, and retry to obtain a complete
+     * result.
+     *
      * @param handle Instance handle
      * @param contact_handle Contact binding
      * @param contact_force_tensor Pre-allocated contact normal force magnitudes
@@ -2582,9 +2712,15 @@ extern "C" {
      * @param contact_separation_tensor Pre-allocated contact separations
      * @param contact_count_tensor Pre-allocated count matrix
      * @param contact_start_indices_tensor Pre-allocated start-index matrix
-     * @return ovphysx_result_t
+     * @param out_required_contact_count [out] Total contacts produced for the
+     *   step before truncation; the capacity required for a complete read.
+     * @return OVPHYSX_API_SUCCESS when the complete result fits,
+     *   OVPHYSX_API_BUFFER_TOO_SMALL when only a valid prefix was written, or
+     *   another error status on failure.
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
-    OVPHYSX_API ovphysx_result_t ovphysx_read_contact_data(
+    OVPHYSX_API OVPHYSX_DEPRECATED_MSG("The contact-binding API is deprecated and retained for compatibility.")
+    ovphysx_result_t ovphysx_read_normal_contact_data(
         ovphysx_handle_t handle,
         ovphysx_contact_binding_handle_t contact_handle,
         DLTensor* contact_force_tensor,
@@ -2592,10 +2728,28 @@ extern "C" {
         DLTensor* contact_normal_tensor,
         DLTensor* contact_separation_tensor,
         DLTensor* contact_count_tensor,
-        DLTensor* contact_start_indices_tensor);
+        DLTensor* contact_start_indices_tensor,
+        uint32_t* out_required_contact_count);
+
+    /** @deprecated Use ovphysx_read_normal_contact_data(). Forces remain normal components only. */
+    OVPHYSX_API OVPHYSX_DEPRECATED_MSG("use ovphysx_read_normal_contact_data; forces are normal components only")
+    ovphysx_result_t ovphysx_read_contact_data(
+        ovphysx_handle_t handle,
+        ovphysx_contact_binding_handle_t contact_handle,
+        DLTensor* contact_force_tensor,
+        DLTensor* contact_point_tensor,
+        DLTensor* contact_normal_tensor,
+        DLTensor* contact_separation_tensor,
+        DLTensor* contact_count_tensor,
+        DLTensor* contact_start_indices_tensor,
+        uint32_t* out_required_contact_count);
 
     /**
-     * @brief Read detailed friction data into flat buffers.
+     * @brief Read detailed friction contact data into flat buffers.
+     *
+     * Returns world-space friction force vectors at friction anchors. These
+     * anchors need not correspond one-to-one with the contact points from
+     * ovphysx_read_normal_contact_data(); use this read's own counts and start indices.
      *
      * Required shapes:
      * - friction_force_tensor: `[C, 3]` float32
@@ -2604,7 +2758,7 @@ extern "C" {
      * - contact_start_indices_tensor: `[S, F]` int32 or uint32
      *
      * `C`, `S`, and `F` have the same meanings as in
-     * `ovphysx_read_contact_data()`. For each `(sensor, filter)` pair, use the
+     * `ovphysx_read_normal_contact_data()`. For each `(sensor, filter)` pair, use the
      * count/start-index tensors to index valid entries in the flat friction
      * buffers. `C` and `F` must be positive. Pass a positive
      * max_contact_data_count and filters_per_sensor > 0 when creating the
@@ -2612,26 +2766,55 @@ extern "C" {
      * Friction forces use the timestep from the last successful
      * ovphysx_step(), ovphysx_step_sync(), or ovphysx_step_n_sync() call.
      *
+     * **Truncation**: `out_required_friction_count` receives the total number of
+     * friction anchors produced for the step, before truncation. When that value
+     * exceeds max_contact_data_count, the function returns
+     * OVPHYSX_API_BUFFER_TOO_SMALL while still filling the flat buffers with as
+     * many anchors as fit. A pair's count reports only anchors actually written,
+     * and its start index is clamped to max_contact_data_count, so
+     * `[start, start + count)` is always an in-range (possibly empty) slice.
+     * Recreate the binding with max_contact_data_count at least
+     * `out_required_friction_count`, step again, and retry to obtain a complete
+     * result.
+     *
      * @param handle Instance handle
      * @param contact_handle Contact binding
      * @param friction_force_tensor Pre-allocated world-frame friction forces
      * @param friction_point_tensor Pre-allocated world-frame friction points
      * @param contact_count_tensor Pre-allocated count matrix
      * @param contact_start_indices_tensor Pre-allocated start-index matrix
-     * @return ovphysx_result_t
+     * @param out_required_friction_count [out] Total friction anchors produced
+     *   for the step before truncation; the capacity required for a complete read.
+     * @return OVPHYSX_API_SUCCESS when the complete result fits,
+     *   OVPHYSX_API_BUFFER_TOO_SMALL when only a valid prefix was written, or
+     *   another error status on failure.
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
-    OVPHYSX_API ovphysx_result_t ovphysx_read_friction_data(
+    OVPHYSX_API OVPHYSX_DEPRECATED_MSG("The contact-binding API is deprecated and retained for compatibility.")
+    ovphysx_result_t ovphysx_read_friction_contact_data(
         ovphysx_handle_t handle,
         ovphysx_contact_binding_handle_t contact_handle,
         DLTensor* friction_force_tensor,
         DLTensor* friction_point_tensor,
         DLTensor* contact_count_tensor,
-        DLTensor* contact_start_indices_tensor);
+        DLTensor* contact_start_indices_tensor,
+        uint32_t* out_required_friction_count);
+
+    /** @deprecated Use ovphysx_read_friction_contact_data(). */
+    OVPHYSX_API OVPHYSX_DEPRECATED_MSG("use ovphysx_read_friction_contact_data")
+    ovphysx_result_t ovphysx_read_friction_data(
+        ovphysx_handle_t handle,
+        ovphysx_contact_binding_handle_t contact_handle,
+        DLTensor* friction_force_tensor,
+        DLTensor* friction_point_tensor,
+        DLTensor* contact_count_tensor,
+        DLTensor* contact_start_indices_tensor,
+        uint32_t* out_required_friction_count);
 
     /**
      * @brief Read raw (unfiltered) contact data for a contact binding.
      *
-     * Filter-less variant of @ref ovphysx_read_contact_data : returns every
+     * Filter-less variant of @ref ovphysx_read_normal_contact_data : returns every
      * contact involving each sensor body regardless of which other actor it
      * collided with, plus per-contact actor-identity tensors so callers can
      * identify both the sensor and the contacting body via
@@ -2649,7 +2832,7 @@ extern "C" {
      *
      * The two pairs that are only meaningful together are single tensors rather than
      * separate buffers the caller has to keep in step. The four per-contact value
-     * tensors stay separate, matching ovphysx_read_contact_data().
+     * tensors stay separate, matching ovphysx_read_normal_contact_data().
      *
      * The contact binding must be created with `max_contact_data_count > 0`.
      * No filter dimension is required, so `filters_per_sensor` may be zero. The
@@ -2657,13 +2840,16 @@ extern "C" {
      * successful ovphysx_step(), ovphysx_step_sync(), or
      * ovphysx_step_n_sync() call.
      *
-     * **Truncation**: when the total contact count for a step exceeds
-     * max_contact_data_count, the runtime fills the flat buffers with as many
-     * contacts as fit and emits a logged warning. A sensor's count reports only
-     * the contacts actually written, and its start index is clamped to
-     * max_contact_data_count, so `[start, start + count)` is always an in-range
-     * (possibly empty) slice. Callers that need every contact must pass a larger
-     * max_contact_data_count.
+     * **Truncation**: `out_required_contact_count` receives the total number of
+     * contacts produced for the step, before truncation. When that value exceeds
+     * max_contact_data_count, the function returns
+     * OVPHYSX_API_BUFFER_TOO_SMALL while still filling the flat buffers with as
+     * many contacts as fit. A sensor's count reports only contacts actually
+     * written, and its start index is clamped to max_contact_data_count, so
+     * `[start, start + count)` is always an in-range (possibly empty) slice.
+     * Recreate the binding with max_contact_data_count at least
+     * `out_required_contact_count`, step again, and retry to obtain a complete
+     * result.
      *
      * **Token lifetime**: the uint64 tokens in actor_ids_tensor are opaque runtime
      * actor handles, not encoded paths. Do not decode one. Resolve it with
@@ -2673,9 +2859,15 @@ extern "C" {
      *
      * @param handle Instance handle
      * @param contact_handle Contact binding
-     * @return ovphysx_result_t
+     * @param out_required_contact_count [out] Total contacts produced for the
+     *   step before truncation; the capacity required for a complete read.
+     * @return OVPHYSX_API_SUCCESS when the complete result fits,
+     *   OVPHYSX_API_BUFFER_TOO_SMALL when only a valid prefix was written, or
+     *   another error status on failure.
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
-    OVPHYSX_API ovphysx_result_t ovphysx_read_raw_contact_data(
+    OVPHYSX_API OVPHYSX_DEPRECATED_MSG("The contact-binding API is deprecated and retained for compatibility.")
+    ovphysx_result_t ovphysx_read_raw_contact_data(
         ovphysx_handle_t handle,
         ovphysx_contact_binding_handle_t contact_handle,
         DLTensor* contact_force_tensor,
@@ -2683,7 +2875,8 @@ extern "C" {
         DLTensor* contact_normal_tensor,
         DLTensor* contact_separation_tensor,
         DLTensor* sensor_layout_tensor,
-        DLTensor* actor_ids_tensor);
+        DLTensor* actor_ids_tensor,
+        uint32_t* out_required_contact_count);
 
     /**
      * @brief Resolve actor IDs from @ref ovphysx_read_raw_contact_data to physics-object paths.
@@ -2707,6 +2900,10 @@ extern "C" {
      * explicit: for a non-zero ID an empty path means "not resolvable now", and
      * only ID `0` yields an empty path for a live read.
      *
+     * **Truncation**: `out_count` receives the length of `ids_tensor`. When that
+     * exceeds `max_paths`, the function returns OVPHYSX_API_BUFFER_TOO_SMALL
+     * while writing a valid prefix of `min(*out_count, max_paths)` strings.
+     *
      * The check is as precise as the attached backend's notion of existence. On an
      * ovstage attach a removed prim reports stale. On a USD stage a merely
      * *deactivated* prim still resolves, because existence there follows prim
@@ -2720,10 +2917,15 @@ extern "C" {
      *   next call to this function on the same binding (which replaces the
      *   cache) or until the binding is destroyed.
      * @param max_paths Capacity of `out_paths` array.
-     * @param out_count [out] Actual number of paths written.
-     * @return ovphysx_result_t
+     * @param out_count [out] Length of `ids_tensor` (total demand). Only
+     *   `min(*out_count, max_paths)` entries are written to `out_paths`.
+     * @return OVPHYSX_API_SUCCESS when the complete result fits,
+     *   OVPHYSX_API_BUFFER_TOO_SMALL when only a valid prefix was written, or
+     *   another error status on failure.
+     * @deprecated The contact-binding API is deprecated and retained for compatibility.
      */
-    OVPHYSX_API ovphysx_result_t ovphysx_contact_binding_get_other_actor_paths_from_ids(
+    OVPHYSX_API OVPHYSX_DEPRECATED_MSG("The contact-binding API is deprecated and retained for compatibility.")
+    ovphysx_result_t ovphysx_contact_binding_get_other_actor_paths_from_ids(
         ovphysx_handle_t handle,
         ovphysx_contact_binding_handle_t contact_handle,
         DLTensor* ids_tensor,
@@ -3238,9 +3440,11 @@ extern "C" {
      *   that need a path to outlive a detach/re-attach must copy it.
      * @param max_paths Capacity of `out_paths` array.
      * @param[out] out_count Total number of ids in `ids` (== id_count). Only
-     *   `min(id_count, max_paths)` entries are written to `out_paths`, so
-     *   compare against `max_paths` to detect truncation.
-     * @return ovphysx_result_t
+     *   `min(id_count, max_paths)` entries are written to `out_paths`.
+     * @return OVPHYSX_API_SUCCESS when the complete result fits,
+     *   OVPHYSX_API_BUFFER_TOO_SMALL when only a valid prefix was written.
+     *   Unresolvable ids still yield empty strings; BUFFER_TOO_SMALL is only
+     *   for a short `out_paths`, not for empty path entries.
      */
     OVPHYSX_API ovphysx_result_t ovphysx_scene_query_get_paths_from_ids(
         ovphysx_handle_t handle,

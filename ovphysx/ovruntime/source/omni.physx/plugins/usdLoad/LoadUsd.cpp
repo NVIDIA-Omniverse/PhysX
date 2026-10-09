@@ -13,11 +13,15 @@
  *
  * @implements REQ-SIM-OVSTAGE-ATTACH-001
  * @covers AC-1 AC-2 AC-3
+ *
+ * @implements REQ-RUNTIME-ERROR-001
+ * @covers AC-3 AC-4
  */
 
 #include <carb/settings/ISettings.h>
 #include <omni/physx/IPhysxSettings.h>
 #include <omni/physx/PhysxTokens.h>
+#include <omni/physx/RuntimeError.h>
 #include <common/foundation/Allocator.h>
 #include <common/utilities/OmniPhysXUtilities.h>
 #include <carb/profiler/Profile.h>
@@ -173,25 +177,25 @@ bool UsdLoad::attachOvstageCore(const void* ovstageAttachPayload,
 {
     if (!ovstageAttachPayload)
     {
-        CARB_LOG_ERROR("PhysicsUsdLoad - attachOvstage called without an ovstage payload");
+        OVX_RUNTIME_ERROR("PhysicsUsdLoad - attachOvstage called without an ovstage payload");
         return false;
     }
 
     if (!usdPhysicsInt)
     {
-        CARB_LOG_ERROR("PhysicsUsdLoad - attachOvstage called without a physics interface");
+        OVX_RUNTIME_ERROR("PhysicsUsdLoad - attachOvstage called without a physics interface");
         return false;
     }
 
     if (!mAttachedStages.empty() || mExternalBackendInstalled || mRestoreParseBackend)
     {
-        CARB_LOG_ERROR("PhysicsUsdLoad - attachOvstage called while another stage or external backend is active");
+        OVX_RUNTIME_ERROR("PhysicsUsdLoad - attachOvstage called while another stage or external backend is active");
         return false;
     }
 
     if (bridgeBackingStageCacheId(backingStage) != effectiveBackingStageId)
     {
-        CARB_LOG_ERROR("PhysicsUsdLoad - attachOvstage received inconsistent backing stage and effective id");
+        OVX_RUNTIME_ERROR("PhysicsUsdLoad - attachOvstage received inconsistent backing stage and effective id");
         return false;
     }
 
@@ -245,11 +249,11 @@ bool UsdLoad::attachOvstageCore(const void* ovstageAttachPayload,
     }
     catch (const std::exception& error)
     {
-        CARB_LOG_ERROR("PhysicsUsdLoad - attachOvstage failed: %s", error.what());
+        OVX_RUNTIME_ERROR("PhysicsUsdLoad - attachOvstage failed: %s", error.what());
     }
     catch (...)
     {
-        CARB_LOG_ERROR("PhysicsUsdLoad - attachOvstage failed with an unknown exception");
+        OVX_RUNTIME_ERROR("PhysicsUsdLoad - attachOvstage failed with an unknown exception");
     }
 
     if (attachedStage)

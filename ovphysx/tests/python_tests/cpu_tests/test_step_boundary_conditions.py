@@ -11,6 +11,7 @@ import os
 import subprocess
 import sys
 import textwrap
+from unittest.mock import Mock
 
 import pytest
 from test_utils import load_usd_with_ovstage
@@ -58,6 +59,26 @@ def test_step_n_sync_large_n_succeeds(physx_sdk):
     physx_sdk.step_n_sync(n=50, dt=1.0 / 240.0)
 
 
+@pytest.mark.parametrize("n", [2**31, 2**32, 2**32 + 1, -(2**32) + 1, 2**100, -(2**100)])
+def test_step_n_sync_out_of_range_does_not_call_native(physx_sdk, monkeypatch, n):
+    """Out-of-range counts must not wrap into a different native step count."""
+    native_step = Mock(side_effect=AssertionError("out-of-range count reached native code"))
+    monkeypatch.setattr(physx_sdk._lib, "ovphysx_step_n_sync", native_step)
+    with pytest.raises(RuntimeError, match="n must be in"):
+        physx_sdk.step_n_sync(n, 1.0 / 60.0)
+    native_step.assert_not_called()
+
+
+@pytest.mark.parametrize("n", [1, 2**31 - 1])
+def test_step_n_sync_count_boundaries_reach_native_unchanged(physx_sdk, monkeypatch, n):
+    """Check both valid bounds without actually running billions of steps."""
+    native_step = Mock(return_value=Mock(status=0))
+    monkeypatch.setattr(physx_sdk._lib, "ovphysx_step_n_sync", native_step)
+    physx_sdk.step_n_sync(n, 1.0 / 60.0)
+    native_step.assert_called_once()
+    assert native_step.call_args.args[1].value == n
+
+
 # ---------------------------------------------------------------------------
 # Non-finite dt: NaN rejection (negative / inf dt are covered in test_simulation.py)
 # ---------------------------------------------------------------------------
@@ -98,8 +119,55 @@ def test_step_and_step_sync_interleaved(physx_sdk):
 
 
 # ---------------------------------------------------------------------------
-# wait_op single-use semantics
+# wait_op argument ranges and single-use semantics
 # ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("argument", ["op_index", "timeout_ns"])
+@pytest.mark.parametrize("value", [-1, 2**64, 2**64 + 1, -(2**64) + 1, 2**100, -(2**100)])
+def test_wait_op_out_of_range_does_not_call_native(physx_sdk, monkeypatch, argument, value):
+    """Invalid integers must not alias an operation, wait-all, or a timeout."""
+    native_wait = Mock(side_effect=AssertionError("out-of-range argument reached native code"))
+    monkeypatch.setattr(physx_sdk._lib, "ovphysx_wait_op", native_wait)
+    arguments = {"op_index": 1, "timeout_ns": 0, argument: value}
+    with pytest.raises(ValueError, match=f"{argument} must be in range"):
+        physx_sdk.wait_op(**arguments)
+    native_wait.assert_not_called()
+
+
+@pytest.mark.parametrize("argument", ["op_index", "timeout_ns"])
+@pytest.mark.parametrize("value", [0.5, "1"])
+def test_wait_op_noninteger_does_not_call_native(physx_sdk, monkeypatch, argument, value):
+    """Do not truncate floats or parse strings as operation indices or timeouts."""
+    native_wait = Mock(side_effect=AssertionError("noninteger argument reached native code"))
+    monkeypatch.setattr(physx_sdk._lib, "ovphysx_wait_op", native_wait)
+    with pytest.raises(TypeError):
+        physx_sdk.wait_op(**{"op_index": 1, "timeout_ns": 0, argument: value})
+    native_wait.assert_not_called()
+
+
+@pytest.mark.parametrize("op_index", [0, 1, 2**64 - 1])
+@pytest.mark.parametrize("timeout_ns", [None, 0, 2**64 - 1])
+def test_wait_op_integer_boundaries_reach_native_unchanged(physx_sdk, monkeypatch, op_index, timeout_ns):
+    """Keep the documented uint64 endpoints and the default infinite timeout."""
+    native_wait = Mock(return_value=Mock(status=0))
+    monkeypatch.setattr(physx_sdk._lib, "ovphysx_wait_op", native_wait)
+    physx_sdk.wait_op(op_index, timeout_ns=timeout_ns)
+    native_wait.assert_called_once()
+    assert native_wait.call_args.args[1:3] == (op_index, 2**64 - 1 if timeout_ns is None else timeout_ns)
+
+
+def test_wait_op_rejected_arguments_leave_operation_unconsumed(physx_sdk):
+    """Reject aliases before they can consume a real operation."""
+    _load_basic(physx_sdk)
+    op = physx_sdk.step(1.0 / 60.0)
+    for invalid_op in (-1, op + 2**64):
+        with pytest.raises(ValueError, match="op_index"):
+            physx_sdk.wait_op(invalid_op)
+    for invalid_timeout in (-1, 2**64):
+        with pytest.raises(ValueError, match="timeout_ns"):
+            physx_sdk.wait_all(timeout_ns=invalid_timeout)
+    physx_sdk.wait_op(op)
 
 
 def test_wait_op_rejects_consumed_op(physx_sdk):

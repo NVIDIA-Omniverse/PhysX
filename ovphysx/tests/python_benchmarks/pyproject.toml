@@ -14,6 +14,7 @@ dependencies = [
   "pytest-benchmark>=4",
   "numpy>=1.20",
   "ovphysx",
+  "newton-usd-schemas>=0.4.1",
 ]
 
 [project.optional-dependencies]

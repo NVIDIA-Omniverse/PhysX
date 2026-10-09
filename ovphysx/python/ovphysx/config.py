@@ -1,6 +1,11 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-CAPI-THREADS-001
+# @covers AC-2
+# @implements REQ-CAPI-COLLISION-CONFIG-001
+# @covers AC-1 AC-3
+
 # @implements REQ-PYTHON-OMNIPVD-001
 # @covers AC-1 AC-2
 # @implements REQ-PYTHON-OMNIPVD-LATE-001
@@ -191,7 +196,11 @@ class PhysXConfig:
     """
 
     disable_contact_processing: bool | None = None
+    #: True (default) selects a convex core; False selects a convex mesh.
+    #: Set before stage attachment; existing shapes are not rebuilt.
     collision_cone_custom_geometry: bool | None = None
+    #: True (default) selects a convex core; False selects a convex mesh.
+    #: Set before stage attachment; existing shapes are not rebuilt.
     collision_cylinder_custom_geometry: bool | None = None
     num_threads: int | None = None
     scene_multi_gpu_mode: int | None = None  #: 0=disabled, 1=all GPUs, 2=skip first GPU. Used only when active_cuda_gpus is empty
@@ -279,9 +288,9 @@ class PhysXConfig:
 # field_name -> (factory_fn, enum_key, carbonite_path)
 _FIELD_TO_ENTRY: dict[str, tuple] = {
     "disable_contact_processing":        (_make_bool_entry,  _DISABLE_CONTACT_PROCESSING,        "/physics/disableContactProcessing"),
-    "collision_cone_custom_geometry":     (_make_bool_entry,  _COLLISION_CONE_CUSTOM_GEOMETRY,     "/physics/collisionConeCustomGeometry"),
-    "collision_cylinder_custom_geometry": (_make_bool_entry,  _COLLISION_CYLINDER_CUSTOM_GEOMETRY, "/physics/collisionCylinderCustomGeometry"),
-    "num_threads":                       (_make_int32_entry, _NUM_THREADS,                        "/physics/numThreads"),
+    "collision_cone_custom_geometry":     (_make_bool_entry,  _COLLISION_CONE_CUSTOM_GEOMETRY,     "/physics/collisionApproximateCones"),
+    "collision_cylinder_custom_geometry": (_make_bool_entry,  _COLLISION_CYLINDER_CUSTOM_GEOMETRY, "/physics/collisionApproximateCylinders"),
+    "num_threads":                       (_make_int32_entry, _NUM_THREADS,                        "/persistent/physics/numThreads"),
     "scene_multi_gpu_mode":              (_make_int32_entry, _SCENE_MULTI_GPU_MODE,               "/physics/sceneMultiGPUMode"),
     "omnipvd_tcp_port":                  (_make_int32_entry, _OMNIPVD_TCP_PORT,                   "/physics/omniPvdTcpPort"),
     "omnipvd_tcp_timeout_ms":            (_make_int32_entry, _OMNIPVD_TCP_TIMEOUT_MS,             "/physics/omniPvdTcpTimeoutMs"),

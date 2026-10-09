@@ -8,4 +8,6 @@ requires-python = ">=3.10"
 dependencies = [
   "ovphysx",
   "numpy",
+  # Newton USD schema, registered with ovstage next to the codeless PhysX schemas.
+  "newton-usd-schemas>=0.4.1",
 ]

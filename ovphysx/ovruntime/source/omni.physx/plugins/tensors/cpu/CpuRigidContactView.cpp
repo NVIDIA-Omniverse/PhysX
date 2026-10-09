@@ -2,8 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-TENSOR-CONTACT-003
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5
+ *
  * @implements REQ-TENSOR-CONTACT-001
  * @covers AC-1 AC-2 AC-3 AC-4
+ *
+ * @implements REQ-TENSOR-CONTACT-002
+ * @covers AC-1 AC-2 AC-3
  *
  * @implements REQ-PUBLICAPI-001
  * @covers AC-40
@@ -14,6 +20,7 @@
 
 #include "tensors/GlobalsAreBad.h"
 #include "tensors/CommonTypes.h"
+#include "tensors/ContactLayoutClamp.h"
 
 #include <PxPhysicsAPI.h>
 
@@ -31,8 +38,18 @@ using omni::physics::tensors::checkTensorInt64;
 using omni::physics::tensors::checkTensorSizeExact;
 using omni::physics::tensors::checkTensorSizeMinimum;
 using omni::physics::tensors::getTensorTotalSize;
+using omni::physx::tensors::clampContactLayoutEntry;
 
 using namespace physx;
+
+namespace
+{
+void clampContactLayoutHost(PxU32* counts, PxU32* startIndices, PxU32 numPairs, PxU32 cap)
+{
+    for (PxU32 i = 0; i < numPairs; ++i)
+        clampContactLayoutEntry(counts, startIndices, i, cap);
+}
+}
 
 namespace omni
 {
@@ -74,7 +91,70 @@ CpuRigidContactView::~CpuRigidContactView()
     }
 }
 
-bool CpuRigidContactView::getNetContactForces(const TensorDesc* dstTensor, float dt) const
+bool CpuRigidContactView::getNetNormalContactForces(const TensorDesc* dstTensor, float dt) const
+{
+    return getNetForces(dstTensor, dt, ForceComponent::eNormal, "net normal contact forces", __FUNCTION__);
+}
+
+bool CpuRigidContactView::getNetFrictionContactForces(const TensorDesc* dstTensor, float dt) const
+{
+    return getNetForces(dstTensor, dt, ForceComponent::eFriction, "net friction contact forces", __FUNCTION__);
+}
+
+bool CpuRigidContactView::getNormalContactForceMatrix(const TensorDesc* dstTensor, float dt) const
+{
+    return getForceMatrix(dstTensor, dt, ForceComponent::eNormal, "normal contact force matrix", __FUNCTION__);
+}
+
+bool CpuRigidContactView::getFrictionContactForceMatrix(const TensorDesc* dstTensor, float dt) const
+{
+    return getForceMatrix(dstTensor, dt, ForceComponent::eFriction, "friction contact force matrix", __FUNCTION__);
+}
+
+void CpuRigidContactView::accumulatePairImpulse(PxVec3& impulse,
+                                               const RigidContactHeaderRef& headerRef,
+                                               ForceComponent component) const
+{
+    const ::omni::physx::ContactEventHeader& header = *headerRef.header;
+    // Accumulate directly into the caller's sum to preserve per-contact addition order.
+    if (component == ForceComponent::eFriction)
+    {
+        const ::omni::physx::FrictionAnchor* frictionData = mCpuSimData->getCurrentFrictionData();
+        for (PxU32 k = 0; k < header.numfrictionAnchorsData; ++k)
+        {
+            const ::omni::physx::FrictionAnchor& anchor = frictionData[header.frictionAnchorsDataOffset + k];
+            const PxVec3 anchorImpulse(anchor.impulse.x, anchor.impulse.y, anchor.impulse.z);
+            impulse += headerRef.invert ? -anchorImpulse : anchorImpulse;
+        }
+    }
+    else
+    {
+        const ::omni::physx::ContactData* contactData =
+            mCpuSimData->getCurrentContactData() + header.contactDataOffset;
+        for (PxU32 k = 0; k < header.numContactData; ++k)
+        {
+            const ::omni::physx::ContactData& cdata = contactData[k];
+            if (!headerRef.invert)
+            {
+                impulse.x += cdata.impulse.x;
+                impulse.y += cdata.impulse.y;
+                impulse.z += cdata.impulse.z;
+            }
+            else
+            {
+                impulse.x -= cdata.impulse.x;
+                impulse.y -= cdata.impulse.y;
+                impulse.z -= cdata.impulse.z;
+            }
+        }
+    }
+}
+
+bool CpuRigidContactView::getNetForces(const TensorDesc* dstTensor,
+                                      float dt,
+                                      ForceComponent component,
+                                      const char* description,
+                                      const char* functionName) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
 
@@ -83,65 +163,38 @@ bool CpuRigidContactView::getNetContactForces(const TensorDesc* dstTensor, float
         return false;
     }
 
-    float* dstForce = nullptr;
-    if (dstTensor && dstTensor->data)
+    if (!checkTensorDevice(*dstTensor, -1, description, functionName) ||
+        !checkTensorFloat32(*dstTensor, description, functionName) ||
+        !checkTensorSizeExact(*dstTensor, getSensorCount() * 3, description, functionName))
     {
-        if (!checkTensorDevice(*dstTensor, -1, "net contact forces", __FUNCTION__) ||
-            !checkTensorFloat32(*dstTensor, "net contact forces", __FUNCTION__) ||
-            !checkTensorSizeExact(*dstTensor, getSensorCount() * 3, "net contact forces", __FUNCTION__))
-        {
-            return false;
-        }
-        dstForce = static_cast<float*>(dstTensor->data);
+        return false;
     }
 
     // make sure we have the latest contact reports
     mCpuSimData->updateContactReports();
 
-    float invDt = 1.0f / dt;
-
-    const ::omni::physx::ContactData* globalContactData = mCpuSimData->getCurrentContactData();
-    for (PxU32 i = 0; i < mEntries.size(); i++)
+    const float invDt = 1.0f / dt;
+    float* dst = static_cast<float*>(dstTensor->data);
+    for (PxU32 i = 0; i < mEntries.size(); ++i)
     {
-        PxVec3 netImpulse(0.0f);
-        
-        uint32_t headerCount = mBuckets[i].getHeaderCount();
-        for (PxU32 j = 0; j < headerCount; j++)
+        PxVec3 impulse(0.0f);
+        const uint32_t headerCount = mBuckets[i].getHeaderCount();
+        for (PxU32 j = 0; j < headerCount; ++j)
         {
-            const RigidContactHeaderRef& headerRef = mBuckets[i].getHeaderRef(j);
-            const ::omni::physx::ContactEventHeader* header = headerRef.header;
-            const ::omni::physx::ContactData* contactData = globalContactData + header->contactDataOffset;
-            for (PxU32 k = 0; k < header->numContactData; k++)
-            {
-                const ::omni::physx::ContactData& cdata = contactData[k];
-                if (!headerRef.invert)
-                {
-                    netImpulse.x += cdata.impulse.x;
-                    netImpulse.y += cdata.impulse.y;
-                    netImpulse.z += cdata.impulse.z;
-                }
-                else
-                {
-                    netImpulse.x -= cdata.impulse.x;
-                    netImpulse.y -= cdata.impulse.y;
-                    netImpulse.z -= cdata.impulse.z;
-                }
-            }
+            accumulatePairImpulse(impulse, mBuckets[i].getHeaderRef(j), component);
         }
 
         // assumes that all contacts had the same dt
-        if (dstForce)
-        {
-            *dstForce++ = invDt * netImpulse.x;
-            *dstForce++ = invDt * netImpulse.y;
-            *dstForce++ = invDt * netImpulse.z;
-        }
+        *dst++ = invDt * impulse.x;
+        *dst++ = invDt * impulse.y;
+        *dst++ = invDt * impulse.z;
     }
-
     return true;
 }
 
-bool CpuRigidContactView::getContactForceMatrix(const TensorDesc* dstTensor, float dt) const
+bool CpuRigidContactView::getForceMatrix(const TensorDesc* dstTensor, float dt, ForceComponent component,
+                                      const char* description,
+                                      const char* functionName) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
 
@@ -150,116 +203,94 @@ bool CpuRigidContactView::getContactForceMatrix(const TensorDesc* dstTensor, flo
         return false;
     }
 
-    if (!checkTensorDevice(*dstTensor, -1, "contact force matrix", __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, "contact force matrix", __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, getSensorCount() * getFilterCount() * 3, "contact force matrix", __FUNCTION__))
+    if (!checkTensorDevice(*dstTensor, -1, description, functionName) ||
+        !checkTensorFloat32(*dstTensor, description, functionName) ||
+        !checkTensorSizeExact(*dstTensor, getSensorCount() * getFilterCount() * 3, description, functionName))
     {
         return false;
     }
 
-    if (mCpuSimData)
+    // make sure we have the latest contact reports
+    mCpuSimData->updateContactReports();
+
+    const float invDt = 1.0f / dt;
+    float* dst = static_cast<float*>(dstTensor->data);
+    const uint32_t numSensors = getSensorCount();
+    const uint32_t numFilters = getFilterCount();
+    std::vector<PxVec3> netImpulses(numFilters);
+
+    for (PxU32 i = 0; i < numSensors; ++i)
     {
-        // make sure we have the latest contact reports
-        mCpuSimData->updateContactReports();
-
-        float invDt = 1.0f / dt;
-
-        float* dst = static_cast<float*>(dstTensor->data);
-        const ::omni::physx::ContactData* globalContactData = mCpuSimData->getCurrentContactData();
-
-        uint32_t numSensors = getSensorCount();
-        uint32_t numFilters = getFilterCount();
-
-        std::vector<PxVec3> netImpulses(numFilters);
-
-        for (PxU32 i = 0; i < numSensors; i++)
+        for (PxU32 k = 0; k < numFilters; ++k)
         {
-            for (PxU32 k = 0; k < numFilters; k++)
+            netImpulses[k] = {0.0f, 0.0f, 0.0f};
+        }
+
+        const uint32_t headerCount = mBuckets[i].getHeaderCount();
+        for (PxU32 j = 0; j < headerCount; ++j)
+        {
+            const RigidContactHeaderRef& headerRef = mBuckets[i].getHeaderRef(j);
+            const ::omni::physx::ContactEventHeader* header = headerRef.header;
+            const std::unordered_map<uint64_t, uint32_t>& filterIndexMap = mEntries[i].filterIndexMap;
+
+            uint64_t otherActor, otherCollider;
+            if (!headerRef.invert)
             {
-                netImpulses[k] = {0.0f, 0.0f, 0.0f};
+                otherActor = header->actor1;
+                otherCollider = header->collider1;
+            }
+            else
+            {
+                otherActor = header->actor0;
+                otherCollider = header->collider0;
             }
 
-            uint32_t headerCount = mBuckets[i].getHeaderCount();
-            for (PxU32 j = 0; j < headerCount; j++)
+            auto indexIter = filterIndexMap.find(otherActor);
+            if (indexIter == filterIndexMap.end())
             {
-                const RigidContactHeaderRef& headerRef = mBuckets[i].getHeaderRef(j);
-                const ::omni::physx::ContactEventHeader* header = headerRef.header;
-                auto& filterIndexMap = mEntries[i].filterIndexMap;
-
-                uint64_t otherActor, otherCollider;
-                if (!headerRef.invert)
+                if (otherCollider != otherActor)
                 {
-                    otherActor = header->actor1;
-                    otherCollider = header->collider1;
-                }
-                else
-                {
-                    otherActor = header->actor0;
-                    otherCollider = header->collider0;
-                }
-
-                auto indexIter = filterIndexMap.find(otherActor);
-                if (indexIter == filterIndexMap.end())
-                {
-                    if (otherCollider != otherActor)
-                    {
-                        indexIter = filterIndexMap.find(otherCollider);
-                    }
-                }
-
-                if (indexIter != filterIndexMap.end())
-                {
-                    uint32_t idx = indexIter->second;
-                    const ::omni::physx::ContactData* contactData = globalContactData + header->contactDataOffset;
-                    for (PxU32 k = 0; k < header->numContactData; k++)
-                    {
-                        const ::omni::physx::ContactData& cdata = contactData[k];
-                        if (!headerRef.invert)
-                        {
-                            netImpulses[idx].x += cdata.impulse.x;
-                            netImpulses[idx].y += cdata.impulse.y;
-                            netImpulses[idx].z += cdata.impulse.z;
-                        }
-                        else
-                        {
-                            netImpulses[idx].x -= cdata.impulse.x;
-                            netImpulses[idx].y -= cdata.impulse.y;
-                            netImpulses[idx].z -= cdata.impulse.z;
-                        }
-                    }
+                    indexIter = filterIndexMap.find(otherCollider);
                 }
             }
 
-            for (PxU32 k = 0; k < numFilters; k++)
+            if (indexIter != filterIndexMap.end())
             {
-                // assumes that all contacts had the same dt
-                *dst++ = invDt * netImpulses[k].x;
-                *dst++ = invDt * netImpulses[k].y;
-                *dst++ = invDt * netImpulses[k].z;
+                accumulatePairImpulse(netImpulses[indexIter->second], headerRef, component);
             }
+        }
+
+        for (PxU32 k = 0; k < numFilters; ++k)
+        {
+            // assumes that all contacts had the same dt
+            *dst++ = invDt * netImpulses[k].x;
+            *dst++ = invDt * netImpulses[k].y;
+            *dst++ = invDt * netImpulses[k].z;
         }
     }
 
     return true;
 }
 
-bool CpuRigidContactView::getContactData(const TensorDesc* contactForceTensor,
-                                         const TensorDesc* contactPointTensor,
-                                         const TensorDesc* contactNormalTensor,
-                                         const TensorDesc* contactSeparationTensor,
-                                         const TensorDesc* contactCountTensor,
-                                         const TensorDesc* contactStartIndicesTensor,
-                                         float dt) const
+bool CpuRigidContactView::getNormalContactData(const TensorDesc* contactForceTensor,
+                                               const TensorDesc* contactPointTensor,
+                                               const TensorDesc* contactNormalTensor,
+                                               const TensorDesc* contactSeparationTensor,
+                                               const TensorDesc* contactCountTensor,
+                                               const TensorDesc* contactStartIndicesTensor,
+                                               uint32_t* outRequiredContactCount,
+                                               float dt) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
 
     if (!contactForceTensor || !contactForceTensor->data || !contactPointTensor || !contactPointTensor->data ||
         !contactNormalTensor || !contactNormalTensor->data || !contactSeparationTensor ||
         !contactSeparationTensor->data || !contactCountTensor || !contactCountTensor->data ||
-        !contactStartIndicesTensor || !contactStartIndicesTensor->data)
+        !contactStartIndicesTensor || !contactStartIndicesTensor->data || !outRequiredContactCount)
     {
         return false;
     }
+    *outRequiredContactCount = 0;
 
     if (!checkTensorDevice(*contactForceTensor, -1, "contact force buffer", __FUNCTION__) ||
         !checkTensorFloat32(*contactForceTensor, "contact force buffer", __FUNCTION__) ||
@@ -379,10 +410,14 @@ bool CpuRigidContactView::getContactData(const TensorDesc* contactForceTensor,
             }
         }
 
-        PxU32 totalCount = dstStartIndices[numSensors * numFilters - 1] + dstContactCount[numSensors * numFilters - 1];
+        const PxU32 numPairs = numSensors * numFilters;
+        PxU32 totalCount = 0;
+        if (numPairs > 0)
+            totalCount = dstStartIndices[numPairs - 1] + dstContactCount[numPairs - 1];
+        *outRequiredContactCount = totalCount;
         if (totalCount > getMaxContactDataCount())
             CARB_LOG_WARN(
-                "Incomplete contact data is reported in CpuRigidContactView::getContactData because there are more contact data points than specified maxContactDataCount = %u.",
+                "Incomplete contact data is reported in CpuRigidContactView::getNormalContactData because there are more contact data points than specified maxContactDataCount = %u.",
                 getMaxContactDataCount());
 
 
@@ -448,24 +483,27 @@ bool CpuRigidContactView::getContactData(const TensorDesc* contactForceTensor,
                 }
             }
         }
+        clampContactLayoutHost(dstContactCount, dstStartIndices, numSensors * numFilters, getMaxContactDataCount());
     }
 
     return true;
 }
 
-bool CpuRigidContactView::getFrictionData(const TensorDesc* FrictionForceTensor,
-                                          const TensorDesc* contactPointTensor,
-                                          const TensorDesc* contactCountTensor,
-                                          const TensorDesc* contactStartIndicesTensor,
-                                          float dt) const
+bool CpuRigidContactView::getFrictionContactData(const TensorDesc* FrictionForceTensor,
+                                                 const TensorDesc* contactPointTensor,
+                                                 const TensorDesc* contactCountTensor,
+                                                 const TensorDesc* contactStartIndicesTensor,
+                                                 uint32_t* outRequiredFrictionCount,
+                                                 float dt) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
     if (!FrictionForceTensor || !FrictionForceTensor->data || !contactPointTensor || !contactPointTensor->data ||
         !contactCountTensor || !contactCountTensor->data || !contactStartIndicesTensor ||
-        !contactStartIndicesTensor->data)
+        !contactStartIndicesTensor->data || !outRequiredFrictionCount)
     {
         return false;
     }
+    *outRequiredFrictionCount = 0;
 
     if (!checkTensorDevice(*FrictionForceTensor, -1, "friction force buffer", __FUNCTION__) ||
         !checkTensorFloat32(*FrictionForceTensor, "friction force buffer", __FUNCTION__) ||
@@ -567,10 +605,14 @@ bool CpuRigidContactView::getFrictionData(const TensorDesc* FrictionForceTensor,
             }
         }
 
-        PxU32 totalCount = dstStartIndices[numSensors * numFilters - 1] + dstCounts[numSensors * numFilters - 1];
+        const PxU32 numPairs = numSensors * numFilters;
+        PxU32 totalCount = 0;
+        if (numPairs > 0)
+            totalCount = dstStartIndices[numPairs - 1] + dstCounts[numPairs - 1];
+        *outRequiredFrictionCount = totalCount;
         if (totalCount > getMaxContactDataCount())
             CARB_LOG_WARN(
-                "Incomplete contact data is reported in CpuRigidContactView::getContactData because there are more contact data points than specified maxContactDataCount = %u.",
+                "Incomplete contact data is reported in CpuRigidContactView::getFrictionContactData because there are more contact data points than specified maxContactDataCount = %u.",
                 getMaxContactDataCount());
 
 
@@ -634,6 +676,7 @@ bool CpuRigidContactView::getFrictionData(const TensorDesc* FrictionForceTensor,
                 }
             }
         }
+        clampContactLayoutHost(dstCounts, dstStartIndices, numSensors * numFilters, getMaxContactDataCount());
     }
 
     return true;
@@ -645,6 +688,7 @@ bool CpuRigidContactView::getRawContactData(const TensorDesc* contactForceTensor
                                             const TensorDesc* contactSeparationTensor,
                                             const TensorDesc* sensorLayoutTensor,
                                             const TensorDesc* actorIdsTensor,
+                                            uint32_t* outRequiredContactCount,
                                             float dt) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
@@ -652,10 +696,11 @@ bool CpuRigidContactView::getRawContactData(const TensorDesc* contactForceTensor
     if (!contactForceTensor || !contactForceTensor->data || !contactPointTensor || !contactPointTensor->data ||
         !contactNormalTensor || !contactNormalTensor->data || !contactSeparationTensor ||
         !contactSeparationTensor->data || !sensorLayoutTensor || !sensorLayoutTensor->data ||
-        !actorIdsTensor || !actorIdsTensor->data)
+        !actorIdsTensor || !actorIdsTensor->data || !outRequiredContactCount)
     {
         return false;
     }
+    *outRequiredContactCount = 0;
 
     if (!checkTensorDevice(*contactForceTensor, -1, "contact force buffer", __FUNCTION__) ||
         !checkTensorFloat32(*contactForceTensor, "contact force buffer", __FUNCTION__) ||
@@ -753,6 +798,7 @@ bool CpuRigidContactView::getRawContactData(const TensorDesc* contactForceTensor
         }
 
         PxU32 totalCount = (numSensors > 0) ? (dstStartIndices[numSensors - 1] + dstContactCount[numSensors - 1]) : 0;
+        *outRequiredContactCount = totalCount;
         if (totalCount > getMaxContactDataCount())
         {
             CARB_LOG_WARN(

@@ -4,14 +4,14 @@
     {
       "id": 1,
       "prompt": "Write the smallest Python program that loads scene.usda with ovphysx, takes one simulation step, and cleans up every resource.",
-      "expected_output": "A Python lifecycle that creates PhysX and an ovstage Stage, populates and seals ordinal 1, attaches, uses step_sync, then detaches/destroys/releases in a finally block.",
+      "expected_output": "A Python lifecycle that creates PhysX and an ovstage Stage, populates and seals ordinal 1, attaches, uses step_sync, then detaches and destroys every resource in a finally block.",
       "files": [],
       "expectations": [
         "Selects basic-workflow rather than tensor-bindings or clone-environments",
         "Uses PhysX(), ovstage.Stage, open_usd with domains=PHYSICS, advance_write_floor(ordinal=1).wait(), and attach_ovstage(stage, read_ordinal=1)",
         "Registers the codeless PhysX schemas with ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())]) before the first population call",
         "Uses step_sync for the single step rather than bare async step without waiting",
-        "Teardown calls detach_ovstage, stage.destroy, and physx.release on all paths"
+        "Teardown calls detach_ovstage, stage.destroy, and physx.destroy on all paths"
       ]
     },
     {
@@ -29,11 +29,13 @@
     {
       "id": 3,
       "prompt": "After attach, my test adds a new rigid body to the USD population. How do I drain that change into ovphysx before creating tensor bindings?",
-      "expected_output": "Uses apply_usd_changes, advance_write_floor, and update_from_ovstage for the new ordinal; does not re-drain the initial attach ordinal; refreshes bindings after the update.",
+      "expected_output": "Shows the complete public wheel route: open_usd adds the rigid-body USD at a fresh ordinal, then apply_usd_changes, advance_write_floor, and update_from_ovstage drain that ordinal before bindings are refreshed.",
       "files": [],
       "expectations": [
         "Uses the later-ovstage-edits handoff from basic-workflow",
+        "Authors the change first with open_usd at a fresh ordinal instead of presenting the drain itself as an edit API",
         "Calls apply_usd_changes then advance_write_floor then update_from_ovstage",
+        "Explains that draining an unchanged population is a successful no-op and that add_usd_reference does not take an ordinal",
         "Does not treat apply_usd_changes alone as sealing the ordinal",
         "Destroys or replaces pre-update tensor bindings rather than trusting their membership"
       ]
@@ -41,11 +43,12 @@
     {
       "id": 4,
       "prompt": "Clone one environment into 512 RL copies and bind articulation DOF targets on the clones.",
-      "expected_output": "Routes to clone-environments (and tensor bindings after clone), not basic-workflow alone.",
+      "expected_output": "Routes to clone-environments for replication, then ovphysx-session-write for articulation targets after the clone operation completes; does not use basic-workflow alone.",
       "files": [],
       "expectations": [
         "Does not treat basic-workflow as sufficient for batched clone + binding work",
-        "Selects clone-environments for replication and tensor-bindings-cpu or tensor-bindings-gpu for bulk I/O"
+        "Selects clone-environments for replication and waits for cloning before creating downstream views",
+        "Selects ovphysx-session-write for the articulation DOF target write"
       ]
     }
   ]

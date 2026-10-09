@@ -59,8 +59,9 @@ ovstage_cuda_sync_t noSync()
 TEST_F(PhysXTestFixture, JointLimitOnAFreeAxisIsRefusedAndWritesNothing)
 {
     ASSERT_TRUE(attach_usd_with_ovstage(m_handle, "tests/data/CartPole.usda")) << "Failed to attach CartPole.usda";
-    // A session refuses reads/writes before the first step, and the limit getters need a stepped
-    // articulation to resolve.
+    // Reads and joint-limit getters need a stepped articulation. On CPU a pre-step write
+    // would apply (AC-5a); this case still steps because the limit column is resolved after
+    // the first step.
     for (int i = 0; i < 3; ++i)
         ASSERT_EQ(ovphysx_step_sync(m_handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
 

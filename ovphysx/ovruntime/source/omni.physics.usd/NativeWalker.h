@@ -9,7 +9,7 @@
  * Internal-only — callable from `StageScan.cpp`.
  *
  * @implements REQ-PARSE-SCAN-001
- * @covers AC-1 AC-2 AC-3
+ * @covers AC-1 AC-2 AC-3 AC-19
  */
 
 #pragma once
@@ -27,14 +27,18 @@ namespace omni::physics::usd
 {
 using namespace omni::physics::parse;
 
+class UsdSource;
+
 // Same contract as the public `scanStage(stage, primIterator)` —
 // returns a `ScannedStage` populated by walking `stage` natively.
 // `allocator` is propagated to every descriptor allocation produced
 // by the scan (parse-lib parsers + walker-local allocations both
-// route through `ParseContext::descriptorAllocator()`).
+// route through `ParseContext::descriptorAllocator()`). A matching attached
+// source shares its identity table with an owned scan context (ADR-0043).
 ScannedStage scanStageNative(PXR_NS::UsdStageWeakPtr stage,
                              omni::physics::schema::PrimIteratorBase& primIterator,
-                             parse::IDescriptorAllocator& allocator);
+                             parse::IDescriptorAllocator& allocator,
+                             UsdSource* attachedSource = nullptr);
 
 // Resolve a prim's bound `UsdShadeMaterial` path for the "physics" purpose.
 // Mirrors `usdmaterialutils::getMaterialBinding` (common/) verbatim so the USD

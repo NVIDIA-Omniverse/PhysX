@@ -16,9 +16,11 @@ and a C/C++ package.
 The native OVPhysX package does not include OVStage. Download the matching
 native archive from the
 [OVStage GitHub Releases](https://github.com/NVIDIA-Omniverse/ovstage/releases)
-page and extract it beside OVPhysX, without overlaying the two trees. This
-release uses OVStage `0.2.0.377349`, published under the `v0.2.0` release. Then
-build and run a bundled sample:
+page and extract it beside OVPhysX, without overlaying the two trees. The SDK
+records its OVStage release in `ovphysx_OVSTAGE_VERSION` in
+`lib/cmake/ovphysx/ovphysxConfig.cmake`; use that value to select the archive.
+`find_package(ovphysx)` checks that OVStage's major, minor, and patch version
+match the SDK's requirement. Then build and run a bundled sample:
 
 ```bash
 # Run from the extracted SDK root directory
@@ -59,7 +61,11 @@ Important notes:
   `schemas/physx/`; register them with
   `ovstage_population_register_usd_schemas()` (path from
   `ovphysx_get_codeless_schema_root()`) before the first population call, as
-  `samples/c_samples/common/ovstage_sample.h` does.
+  `samples/c_samples/common/ovstage_sample.h` does. Scenes that author Newton
+  `newton:*` attributes also need the Newton USD schema
+  (https://github.com/newton-physics/newton-usd-schemas, or the
+  `newton-usd-schemas` PyPI package) registered in the same call; the SDK does
+  not ship it and the C API does not check for it.
 - `PhysX.read()` and `read_tokens()` return `warp.array` values on CPU and CUDA.
   Warp owns downstream DLPack interoperability with other frameworks; the native
   C API and compatibility tensor-binding surface retain DLTensor descriptors.

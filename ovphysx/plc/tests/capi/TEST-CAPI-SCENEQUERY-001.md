@@ -85,9 +85,9 @@ pointer-lifetime contract holds independent of any real hit.
   handle case asserts a non-`OVPHYSX_API_SUCCESS` status and `*out_count ==
   0`, not a crash (REQ AC-3).
 - `ResolvePathsFromIdsTruncatesToMaxPaths`: the call returns
-  `OVPHYSX_API_SUCCESS` with `*out_count == 2` (the full id count) even
-  though only 1 entry fit in `out_paths`, confirming the "total needed, not
-  written" counting contract (REQ AC-1).
+  `OVPHYSX_API_BUFFER_TOO_SMALL` with `*out_count == 2` (the full id count)
+  even though only 1 entry fit in `out_paths`, confirming demand is reported
+  separately from the written prefix (REQ AC-1).
 - `ResolveAfterDetachReattachGivesFreshAnswer`: the fresh attach's own
   resolve of the same physics object returns the identical path text (via a
   new pointer) the pre-detach resolve did; the id captured before the detach

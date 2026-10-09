@@ -15,8 +15,12 @@ PhysX and provides:
 ## Quick start
 
 ```bash
-pip install ovphysx
+pip install ovphysx newton-usd-schemas
 ```
+
+`newton-usd-schemas` is the Newton USD schema the snippet below registers next
+to ovphysx's own; scenes that author no `newton:*` attributes can leave it out
+and drop the `newton_schema_root()` entry.
 
 ```python
 from pathlib import Path
@@ -35,8 +39,12 @@ if not usd_path.is_file():
     raise FileNotFoundError(f"ovphysx sample data is missing: {usd_path}")
 
 # ovphysx ships its PhysX USD schemas as codeless resources and never registers
-# them itself; register them with ovstage before the first population call.
-ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+# them itself; register them with ovstage before the first population call. The
+# Newton USD schema (pip install newton-usd-schemas) goes in the same call so
+# authored newton:* attributes reach the parser.
+ovstage.population.register_usd_schemas(
+    [str(ovphysx.codeless_schema_root()), str(ovphysx.newton_schema_root())]
+)
 stage = ovstage.Stage("scene")
 ovstage.population.open_usd(
     stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.PHYSICS

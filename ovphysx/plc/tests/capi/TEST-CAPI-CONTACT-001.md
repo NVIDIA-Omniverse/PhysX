@@ -20,6 +20,8 @@ correctly end to end — from the C ABI down to the runtime, and up through the 
   `max_contact_data_count = 64`, settled by 60 simulation steps.
 - The Python `TestContactBinding._make_cube_pair_contact_binding` fixture (Cube1 sensor,
   Cube2 filter, settled by one step after positioning Cube2 to overlap Cube1).
+- Two C-ABI contact bindings over the settled boxes: a reference binding with capacity
+  64 and an undersized binding with capacity 1.
 
 ## When
 
@@ -32,6 +34,8 @@ correctly end to end — from the C ABI down to the runtime, and up through the 
 - (Python) `ContactBinding.read_raw_contact_data(...)` is called with six tensors, then
   `ContactBinding.get_other_actor_paths_from_ids(...)` is called once on a slice of
   `sensor_actor_ids` and once on a slice of `other_actor_ids`.
+- (C ABI) `ovphysx_contact_binding_get_other_actor_paths_from_ids` is called with
+  `max_paths == 1` against an `N`-id tensor from the settled raw-contact read.
 
 ## Then
 
@@ -47,3 +51,11 @@ correctly end to end — from the C ABI down to the runtime, and up through the 
   resolving Cube1's sensor-actor ids via `get_other_actor_paths_from_ids` returns paths
   containing `"Cube1"`, and resolving the other-actor ids returns paths containing `"Cube2"`
   (REQ AC-1, AC-2, AC-4, AC-5).
+- The reference C read succeeds and reports a required count equal to its summed
+  per-sensor counts. The undersized C read returns `OVPHYSX_API_BUFFER_TOO_SMALL`, reports
+  the same complete required count, writes exactly one contact, keeps every sensor range
+  in bounds, and writes both actor IDs for that prefix. Python returns a required count
+  greater than capacity while exposing the same valid one-contact prefix (REQ AC-6).
+- A short `out_paths` for `ovphysx_contact_binding_get_other_actor_paths_from_ids`
+  (`max_paths == 1` against an `N`-id tensor) returns `OVPHYSX_API_BUFFER_TOO_SMALL`,
+  reports `out_count == N`, and writes a valid first path (REQ AC-7).

@@ -17,6 +17,8 @@
  * @covers AC-1
  * @implements REQ-CAPI-OBJECTTYPE-001
  * @covers AC-1
+ * @implements REQ-CAPI-COLLISION-CONFIG-001
+ * @covers AC-1
  */
 /** @endcond */
 
@@ -1661,8 +1663,10 @@ extern "C"
     typedef enum ovphysx_config_bool_t
     {
         OVPHYSX_CONFIG_DISABLE_CONTACT_PROCESSING,        /**< /physics/disableContactProcessing */
-        OVPHYSX_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY,     /**< /physics/collisionConeCustomGeometry */
-        OVPHYSX_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY, /**< /physics/collisionCylinderCustomGeometry */
+        OVPHYSX_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY,     /**< Convex core (true, default) or convex mesh (false).
+                                                             Inverse of /physics/collisionApproximateCones; set before attach. */
+        OVPHYSX_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY, /**< Convex core (true, default) or convex mesh (false).
+                                                             Inverse of /physics/collisionApproximateCylinders; set before attach. */
         OVPHYSX_CONFIG_OMNIPVD_OUTPUT_ENABLED,            /**< /physics/omniPvdOutputEnabled */
         OVPHYSX_CONFIG_NVTX_ENABLED,                      /**< /physics/nvtxEnabled: emit NVTX ranges for
                                                                capture with Nsight Systems. Equivalent to
@@ -1674,7 +1678,7 @@ extern "C"
     /** Int32 config keys. Value type: int32_t. */
     typedef enum ovphysx_config_int32_t
     {
-        OVPHYSX_CONFIG_NUM_THREADS,          /**< /physics/numThreads */
+        OVPHYSX_CONFIG_NUM_THREADS,          /**< /persistent/physics/numThreads */
         OVPHYSX_CONFIG_SCENE_MULTI_GPU_MODE, /**< /physics/sceneMultiGPUMode (0=disabled, 1=all, 2=skip-first).
                                                   Used only when active_cuda_gpus is empty */
         OVPHYSX_CONFIG_OMNIPVD_TCP_PORT,       /**< /physics/omniPvdTcpPort */

@@ -5,7 +5,7 @@ license: Apache-2.0
 compatibility: "ovphysx >=0.6.0 GPU mode with CUDA device memory; C examples require the SDK headers, libraries, CUDA runtime, and an NVIDIA GPU; Python examples require PyTorch with CUDA."
 allowed-tools: Read Shell
 metadata:
-  version: "0.1.4"
+  version: "0.1.5"
   author: NVIDIA Omniverse Physics
   tags: "ovphysx, physics, tensor-bindings, gpu, cuda"
 ---
@@ -122,6 +122,9 @@ The snippet uses `strides = NULL` for C-contiguous tensors, matching the ovphysx
 ## Python with PyTorch
 
 ```python
+from pathlib import Path
+
+import ovphysx
 import torch
 from ovphysx import DLDeviceType, PhysX, PhysXConfig, codeless_schema_root
 from ovphysx.types import TensorType
@@ -137,14 +140,27 @@ physx = PhysX(
 # Register the codeless PhysX schemas before the first population call.
 ovstage.population.register_usd_schemas([str(codeless_schema_root())])
 stage = ovstage.Stage("ovphysx-gpu-tensors")
-ovstage.population.open_usd(stage, "scene.usda", ordinal=1, domains=ovstage.PopulationDomain.PHYSICS)
+usd_path = Path(ovphysx.__file__).resolve().parent / "samples" / "data" / "basic_simulation.usda"
+ovstage.population.open_usd(stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.PHYSICS)
 # attach_ovstage() reads at a sealed ordinal.
 stage.advance_write_floor(ordinal=1).wait()
 physx.attach_ovstage(stage, read_ordinal=1)
 
+# /World/envs/env* is a clone pattern: env1..env3 exist only after clone + wait.
+# clone-environments owns the full clone contract (wait_all, CPU isolation).
+targets = ["/World/envs/env1", "/World/envs/env2", "/World/envs/env3"]
+anchor_transforms = [
+    (4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0),
+    (8.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0),
+    (12.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0),
+]
+physx.clone("/World/envs/env0", targets, anchor_transforms=anchor_transforms)
+physx.wait_all()
+
 binding = physx.create_tensor_binding(
-    pattern="/World/envs/env*/box",
+    pattern="/World/envs/env*/table",
     tensor_type=TensorType.RIGID_BODY_POSE,
+    raise_if_empty=True,
 )
 
 native_device = binding.native_device
@@ -190,6 +206,9 @@ sample USD. For arbitrary content prefer `ALL` — see
   simulation device. CPU-only property bindings require host-resident source and
   mask tensors.
 - Create bindings once outside simulation loops and reuse them; binding creation allocates native TensorAPI resources.
+- Pass `raise_if_empty=True` when a zero-count binding is a configuration error
+  (wrong pattern, missing clone). The default `False` accepts empty bindings;
+  check `binding.count` before reading. See `docs/tutorials/tensor_bindings.md`.
 
 ## References
 

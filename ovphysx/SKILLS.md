@@ -78,14 +78,14 @@ copying a snippet into production code.
 - **References**:
   - Physics scene and ground: `skills/ovphysx-usd-authoring/references/scene_setup.md`
   - Rigid body: `skills/ovphysx-usd-authoring/references/rigid_body.md`
-- **Evaluation**: `skills/ovphysx-usd-authoring/evals/evals.json` covers `.usda` and Python authoring of scene/collider/rigid-body/mass, the codeless PhysX schema path for PhysX-only attributes, and routing away from runtime stepping, tensor I/O, cloning, and rendering.
+- **Evaluation**: `skills/ovphysx-usd-authoring/evals/evals.json` covers `.usda` and Python authoring of scene/collider/rigid-body/mass, the codeless PhysX schema path for PhysX-only attributes, and routing runtime stepping/reads to `basic-workflow` / `ovphysx-output-read` while routing cloning and rendering away.
 
 ### `basic-workflow`
 - **Goal**: Create an instance, attach an ovstage scene, step simulation, clean up.
-- **Skill version**: 0.1.3
+- **Skill version**: 0.1.4
 - **APIs**: `PhysX()`, `attach_ovstage()`, `step_sync()` (default) / `step()`, `destroy()` / C: `ovphysx_create_instance()`, `ovphysx_attach_ovstage()`, `ovphysx_step_sync()` / `ovphysx_step()`, `ovphysx_destroy_instance()`
 - **Doc**: [skills/basic-workflow/SKILL.md](skills/basic-workflow/SKILL.md)
-- **Evaluation**: `skills/basic-workflow/evals/evals.json` covers the minimal Python/C lifecycle, post-attach population drains, and routing away from clone/tensor work.
+- **Evaluation**: `skills/basic-workflow/evals/evals.json` covers the minimal Python/C lifecycle and current destroy API, complete post-attach population additions and drains, and routing clone/control work to `clone-environments` / `ovphysx-session-write`.
 - **References**:
   - Docs: `docs/tutorials/hello_world.md`
   - Python sample: `samples/python_samples/hello_world.py` (wheel; source: `tests/python_samples/hello_world.py`)
@@ -96,7 +96,7 @@ copying a snippet into production code.
 - **Metadata**: Canonical skill version, author, tags, and ovphysx compatibility are declared in the skill frontmatter.
 - **APIs**: Python: `PhysX.read()` / `PhysX.read_tokens()`; C: `ovphysx_query()`, `ovphysx_read()`, `ovphysx_fetch_read_next()`, and matching release calls
 - **Doc**: [skills/ovphysx-output-read/SKILL.md](skills/ovphysx-output-read/SKILL.md)
-- **Evaluation**: `skills/ovphysx-output-read/evals/evals.json` covers Python reads, C no-repack write-back, caller-owned CUDA-buffer routing, and `ACTIVE`/layout guardrails.
+- **Evaluation**: `skills/ovphysx-output-read/evals/evals.json` covers Python reads and framework interoperability, C no-repack write-back, deprecation-aware new-code routing, and `ACTIVE`/layout guardrails.
 - **References**:
   - Bundled: `skills/ovphysx-output-read/references/{python,c,scope_and_layout,closed_loop}.md`
   - Public docs: <https://nvidia-omniverse.github.io/PhysX/ovphysx/latest/index.html>
@@ -108,18 +108,18 @@ copying a snippet into production code.
 - **Metadata**: Canonical skill version, author, tags, and ovphysx compatibility are declared in the skill frontmatter.
 - **APIs**: Python: `PhysX.write()`, `WriteSession`, `WriteGroup`; C: `ovphysx_query()`, `ovphysx_write()`, `ovphysx_fetch_write_next()`, `ovphysx_commit_group()`, and matching release calls
 - **Doc**: [skills/ovphysx-session-write/SKILL.md](skills/ovphysx-session-write/SKILL.md)
-- **Evaluation**: `skills/ovphysx-session-write/evals/evals.json` covers writing control targets then reading state, the refuse-before-first-step contract, force-vs-wrench placement, and read/deprecation routing.
+- **Evaluation**: `skills/ovphysx-session-write/evals/evals.json` covers writing control targets then reading state, CPU/GPU pre-step write applying (DirectGPU still refuses), force-vs-wrench placement, [mixed angular/prismatic joint units](skills/ovphysx-session-write/references/python.md#fill-every-mapped-entry), and read/deprecation routing.
 - **References**:
   - Bundled: `skills/ovphysx-session-write/references/{python,c_api}.md`
   - Public docs: <https://nvidia-omniverse.github.io/PhysX/ovphysx/latest/index.html>
-  - Worked example (source checkout, not shipped): `tests/python_samples_internal/rigid_body_falling_tensors.py`; C write loop in `tests/c_unittests/test_joint_datamovement.cpp`
+  - Worked example (shipped in the wheel): `tests/python_samples/session_write.py`; C write loop in `tests/c_unittests/test_joint_datamovement.cpp`
 
 ### `tensor-bindings-cpu` (deprecated)
 - **Goal**: Exchange CPU simulation state (poses, velocities, joint targets) as caller-owned NumPy arrays through tensor bindings: create tensor bindings, write control inputs, step, read back state on CPU. The tensor-binding CODE API is deprecated (ovphysx 0.6) in favor of the session read/write API; use the ovphysx-session-write skill for the write path and ovphysx-output-read for reads. Kept only for maintaining existing caller-owned bulk-NumPy binding code.
-- **Skill version**: 0.1.4
+- **Skill version**: 0.1.5
 - **APIs**: `create_tensor_binding()`, `.native_device`, `.read()`, `.write()` / C: `ovphysx_create_tensor_binding()`, `ovphysx_get_tensor_binding_native_device()`, `ovphysx_read_tensor_binding()`, `ovphysx_write_tensor_binding()`
 - **Doc**: [skills/tensor-bindings-cpu/SKILL.md](skills/tensor-bindings-cpu/SKILL.md)
-- **Evaluation**: `skills/tensor-bindings-cpu/evals/evals.json` covers maintaining/extending existing binding code, the target-vs-state read pitfall, and routing new code (and GPU / ovstage-identity needs) to the session skills -- `ovphysx-session-write` / `ovphysx-output-read`.
+- **Evaluation**: `skills/tensor-bindings-cpu/evals/evals.json` covers maintaining/extending existing binding code, `raise_if_empty` / `binding.count`, the target-vs-state read pitfall, and routing new code (and GPU / ovstage-identity needs) to the session skills -- `ovphysx-session-write` / `ovphysx-output-read`.
 - **References**:
   - Docs: `docs/tutorials/tensor_bindings.md`
   - Python sample: `samples/python_samples/tensor_bindings.py` (wheel; source: `tests/python_samples/tensor_bindings.py`)
@@ -138,12 +138,12 @@ copying a snippet into production code.
 
 ### `tensor-bindings-gpu` (deprecated)
 - **Goal**: Exchange GPU simulation state as caller-owned CUDA tensors (DLPack, GPU-to-GPU with no CPU staging) through tensor bindings: read and write simulation data on GPU using CUDA device pointers and DLPack. The tensor-binding CODE API is deprecated (ovphysx 0.6) in favor of the session read/write API; use the ovphysx-session-write skill for the write path and ovphysx-output-read for reads. Kept only for maintaining existing caller-owned bulk-CUDA binding code.
-- **Skill version**: 0.1.4
+- **Skill version**: 0.1.5
 - **APIs**: Same as CPU bindings; query `.native_device` (or the C getter)
   before allocating because native CUDA state bindings require DirectGPU and
   CPU-only binding types remain on CPU.
 - **Doc**: [skills/tensor-bindings-gpu/SKILL.md](skills/tensor-bindings-gpu/SKILL.md)
-- **Evaluation**: `skills/tensor-bindings-gpu/evals/evals.json` covers maintaining existing DLPack CUDA binding code, the DirectGPU vs contact-modification tradeoff, and routing new code (and CPU-only needs) to the session skills or clone.
+- **Evaluation**: `skills/tensor-bindings-gpu/evals/evals.json` covers maintaining existing DLPack CUDA binding code, clone-then-bind with `raise_if_empty`, the DirectGPU vs contact-modification tradeoff, and routing new code (and CPU-only needs) to the session skills or clone.
 - **References**:
   - Docs: `docs/tutorials/tensor_bindings.md`; `docs/developer_guide.md` for GPU/DirectGPU specifics
   - C sample: `samples/c_samples/tensor_bindings_gpu_c/main.c` (SDK; source: `tests/c_samples/tensor_bindings_gpu_c/main.c`)

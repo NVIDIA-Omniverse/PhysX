@@ -35,6 +35,12 @@ register them with the USD runtime it owns (see :doc:`physics_schemas`).
 .. autofunction:: ovphysx.codeless_schema_root
 .. autofunction:: ovphysx.codeless_schema_paths
 
+The Newton USD schema (``pip install newton-usd-schemas``) is a separate package
+whose ``newton:*`` attributes ovphysx reads as fallbacks for the PhysX spellings;
+this helper locates the installed package so it can be registered in the same call.
+
+.. autofunction:: ovphysx.newton_schema_root
+
 Logging
 -------
 

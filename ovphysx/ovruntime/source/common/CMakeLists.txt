@@ -3,6 +3,7 @@
 
 # Collect header files (public API)
 set(COMMON_HEADERS
+    ${OVRUNTIME_ROOT_DIR}/include/omni/physx/RuntimeError.h
     # foundation
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/foundation/Algorithms.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/foundation/Allocator.h
@@ -47,6 +48,7 @@ set(COMMON_SOURCE
     ${CMAKE_CURRENT_SOURCE_DIR}/source/utilities/OptionalCudaShim.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/source/utilities/PhysXErrorCallback.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/source/utilities/PrimHierarchyStorage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/source/utilities/RuntimeError.cpp
 )
 source_group(source FILES ${COMMON_SOURCE})
 
@@ -105,6 +107,11 @@ else()
 endif()
 
 # Install rules - public headers (preserving directory structure)
+install(FILES
+    ${OVRUNTIME_ROOT_DIR}/include/omni/physx/RuntimeError.h
+    DESTINATION include/omni/physx
+)
+
 install(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/foundation/Algorithms.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/common/foundation/Allocator.h

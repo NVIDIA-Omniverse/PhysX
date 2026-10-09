@@ -2,8 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PROPS-MAT-001
+ * @covers AC-1
+ *
  * @implements REQ-PARSE-CORE-003
  * @covers AC-2
+ */
+
+/**
+ * @implements REQ-SIM-BODY-INPUT-001
+ * @covers AC-2 AC-5 AC-6
  */
 
 #pragma once
@@ -77,6 +85,13 @@ bool updateBodyAngularVelocity(omni::physx::usdparser::AttachedStage& attachedSt
                                omni::physx::usdparser::ObjectId objectId,
                                omni::physics::parse::TokenId,
                                omni::physics::parse::ReadTime);
+// Apply an already captured input without reading the source again.
+bool updateBodyLinearVelocity(omni::physx::usdparser::AttachedStage& attachedStage,
+                              omni::physx::usdparser::ObjectId objectId,
+                              const carb::Float3& value);
+bool updateBodyAngularVelocity(omni::physx::usdparser::AttachedStage& attachedStage,
+                               omni::physx::usdparser::ObjectId objectId,
+                               const carb::Float3& value);
 bool updateBodyLinearDamping(omni::physx::usdparser::AttachedStage& attachedStage,
                              omni::physx::usdparser::ObjectId objectId,
                              omni::physics::parse::TokenId,
@@ -266,6 +281,10 @@ bool updateShapeMinTorsionalPatchRadius(omni::physx::usdparser::AttachedStage& a
                                         omni::physics::parse::ReadTime);
 
 // material
+bool updateShapeMaterialBinding(omni::physx::usdparser::AttachedStage& attachedStage,
+                                omni::physx::usdparser::ObjectId objectId,
+                                omni::physics::parse::TokenId,
+                                omni::physics::parse::ReadTime);
 bool updateMaterialDynamicFriction(omni::physx::usdparser::AttachedStage& attachedStage,
                                    omni::physx::usdparser::ObjectId objectId,
                                    omni::physics::parse::TokenId,

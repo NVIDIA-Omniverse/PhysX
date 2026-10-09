@@ -88,6 +88,13 @@ extern "C"
      */
     OVPHYSX_API bool ovphysx_log_get_global_enabled_for_test(void);
 
+    /**
+     * @brief Read one Carbonite bool setting. Test-only.
+     *
+     * Returns OVPHYSX_API_NOT_FOUND when the item is unset.
+     */
+    OVPHYSX_API ovphysx_result_t ovphysx_test_get_settings_bool(const char* path, bool* out_value);
+
 #ifdef __cplusplus
 }
 #endif

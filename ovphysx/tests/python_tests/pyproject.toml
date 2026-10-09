@@ -23,6 +23,9 @@ dependencies = [
   # utils_tests/ there. Wheels exist for linux x86_64 and Windows (the two
   # required-environments below that can pip-install it).
   "usd-core; platform_machine != 'aarch64'",
+  # The Newton USD schema the parser reads newton:* fallbacks from. Registered next
+  # to the codeless PhysX schemas by test_utils.register_physx_schemas_with_ovstage.
+  "newton-usd-schemas>=0.4.1",
   # Depend on the local Python package name; source mapping below
   # The ovphysx wheel includes the SDK plus TensorBindingsAPI support.
   "ovphysx",

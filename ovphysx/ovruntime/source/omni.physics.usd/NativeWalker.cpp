@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PARSE-INSTANCER-DISPATCH-001
+ * @covers AC-1 AC-2
+ */
+
+/**
  * Native USD prim walker.
  *
  * Walks the supplied `PrimIteratorBase` range, classifies each prim by
@@ -33,6 +38,7 @@
 #include <foundation/PxMat33.h>
 #include <foundation/PxVec2.h>
 
+#include <pxr/base/work/loops.h>
 #include <pxr/base/gf/matrix4f.h>
 #include <pxr/base/gf/quath.h>
 #include <pxr/base/gf/quaternion.h>
@@ -59,11 +65,13 @@
 #include <pxr/usd/usdGeom/tetMesh.h>
 #include <pxr/usd/usdGeom/tokens.h>
 #include <pxr/usd/usdGeom/xformable.h>
+#include <pxr/usd/usdGeom/xform.h>
 #include <pxr/usd/usdGeom/xformCache.h>
 
 #include <physxSchema/physxCharacterControllerAPI.h>
 #include <physxSchema/physxVehicleTireFrictionTable.h>
 #include <physxSchema/physxParticleSystem.h>
+#include <physxSchema/physxPhysicsJointInstancer.h>
 #include <physxSchema/physxVehicleWheelAPI.h>
 #include <physxSchema/physxVehicleTireAPI.h>
 #include <physxSchema/physxVehicleSuspensionAPI.h>
@@ -646,14 +654,37 @@ void emitDeformableMaterial(ScannedStage& out, parse::ParseContext& ctx,
     out.deformableMaterials.push_back(std::move(desc));
 }
 
-void emitCollisionGroup(ScannedStage& out, parse::ParseContext& ctx, parse::ObjectKey key)
+// @implements REQ-PARSE-COLGROUP-002
+// @covers AC-3
+void emitCollisionGroups(ScannedStage& out, parse::ParseContext& ctx,
+                         const std::vector<parse::ObjectKey>& keys)
 {
-    parse::CollisionGroupInfo info = parse::parseCollisionGroup(ctx, key);
-    parse::DescPtr<parse::CollisionGroupDesc> desc = parse::allocateDesc<parse::CollisionGroupDesc>(ctx.descriptorAllocator());
-    desc->primKey = key;
-    desc->sourceFilteredGroups = std::move(info.filteredGroups);
-    desc->sourceMembers        = std::move(info.members);
-    out.collisionGroups.push_back(std::move(desc));
+    if (keys.empty())
+        return;
+
+    // Initialize token interning before the read-only collection queries run in
+    // parallel. Descriptor allocation and emission stay serial and retain walk order.
+    ctx.knownTokens();
+    std::vector<parse::CollisionGroupInfo> infos(keys.size());
+    const auto resolveGroups = [&ctx, &keys, &infos](size_t begin, size_t end)
+    {
+        for (size_t i = begin; i < end; ++i)
+            infos[i] = parse::parseCollisionGroup(ctx, keys[i]);
+    };
+    if (keys.size() >= 20)
+        PXR_NS::WorkParallelForN(keys.size(), resolveGroups);
+    else
+        resolveGroups(0, keys.size());
+
+    for (size_t i = 0; i < keys.size(); ++i)
+    {
+        parse::DescPtr<parse::CollisionGroupDesc> desc =
+            parse::allocateDesc<parse::CollisionGroupDesc>(ctx.descriptorAllocator());
+        desc->primKey = keys[i];
+        desc->sourceFilteredGroups = std::move(infos[i].filteredGroups);
+        desc->sourceMembers = std::move(infos[i].members);
+        out.collisionGroups.push_back(std::move(desc));
+    }
 }
 
 // Attachment emit. parse::parseAttachment does the
@@ -3961,23 +3992,29 @@ PXR_NS::SdfPath getMaterialBindingPath(const PXR_NS::UsdPrim& usdPrim)
     return materialKey;
 }
 
+// @implements REQ-PARSE-SCAN-001
+// @covers AC-3 AC-19
 ScannedStage scanStageNative(PXR_NS::UsdStageWeakPtr stage,
                              omni::physics::schema::PrimIteratorBase& primIterator,
-                             parse::IDescriptorAllocator& allocator)
+                             parse::IDescriptorAllocator& allocator,
+                             UsdSource* attachedSource)
 {
     if (!stage)
         return {};
 
-    // The walk drives a concrete UsdSource (it needs UsdSource-specific
-    // resolvers like keyFor(SdfPath)); the scan owns it type-erased as the
-    // backend `IPhysicsSource`. Moving the unique_ptr does not move the
-    // pointee, so `usdSource` stays valid for the walk.
-    std::unique_ptr<UsdSource> usdPtr = std::make_unique<UsdSource>(stage);
-    UsdSource& usdSource = *usdPtr;
-    ScannedStage out{ parse::makeScannedStageFromSource(std::move(usdPtr)) };
+    // Share only attachment identity state. Each snapshot owns fresh transform,
+    // token and buffer state, so nested/rescanned snapshots do not retain stale
+    // matrices or accumulate source-side array buffers (ADR-0043).
+    if (attachedSource && !attachedSource->isForStage(stage))
+        return {};
+    std::unique_ptr<UsdSource> owned = attachedSource ? attachedSource->makeScanSource() :
+                                                    std::make_unique<UsdSource>(stage);
+    UsdSource& usdSource = *owned;
+    ScannedStage out{parse::makeScannedStageFromSource(std::move(owned))};
     UsdWalkCtx impl{ usdSource, stage, out };
     parse::ParseContext ctx(usdSource, allocator);
     WalkState walk;
+    std::vector<parse::ObjectKey> collisionGroupKeys;
 
     // Mass scale (1 / kilogramsPerUnit) used by parse-lib vehicle
     // component parsers (Tire's deprecated longitudinalStiffnessPerUnit-
@@ -3988,6 +4025,57 @@ ScannedStage scanStageNative(PXR_NS::UsdStageWeakPtr stage,
     const float massScale   = 1.0f / static_cast<float>(kilogramsPerUnit);
     const float lengthScale = 1.0f / static_cast<float>(metersPerUnit);
     const float kgmsScale   = (lengthScale * lengthScale) * massScale;
+
+    // Retain dispatch candidates even below an instancer, before the ordinary
+    // descriptor walk prunes its prototypes. Direct USD type/API classification
+    // keeps this discovery independent of source instancing resolution.
+    std::unordered_set<parse::ObjectKey, parse::ObjectKey::Hash> seenParticleCandidates;
+    primIterator.reset();
+    while (!primIterator.atEnd())
+    {
+        const PXR_NS::UsdPrim& prim = *primIterator.getCurrent();
+        if (!prim)
+        {
+            primIterator.pruneChildren();
+            primIterator.next();
+            continue;
+        }
+        const PXR_NS::TfTokenVector apis = prim.GetPrimTypeInfo().GetAppliedAPISchemas();
+        const uint64_t apiFlags = classifyApiSchemas(apis);
+        using Kind = parse::ParticleObjectCandidate::Kind;
+        Kind kind = Kind::eCustomInstancer;
+        bool candidate = true;
+        if (prim.IsA<PXR_NS::PhysxSchemaPhysxParticleSystem>())
+            kind = Kind::eParticleSystem;
+        else if (prim.IsA<PXR_NS::UsdGeomXform>())
+        {
+            candidate = std::find(apis.begin(), apis.end(), PXR_NS::TfToken("InfiniteVoxelMapAPI")) != apis.end();
+            kind = Kind::eVoxelMap;
+        }
+        else if (prim.IsA<PXR_NS::UsdGeomMesh>() && (apiFlags & ApiFlag::eParticleSamplingAPI))
+            kind = Kind::eParticleSampler;
+        else if ((prim.IsA<PXR_NS::UsdGeomPointBased>() || prim.IsA<PXR_NS::UsdGeomPointInstancer>()) &&
+                 (apiFlags & ApiFlag::eParticleSetAPI))
+            kind = Kind::eParticleSet;
+        else if (prim.IsA<PXR_NS::UsdGeomPointInstancer>())
+            kind = Kind::ePointInstancer;
+        else if (prim.IsA<PXR_NS::PhysxSchemaPhysxPhysicsJointInstancer>())
+            kind = Kind::eJointInstancer;
+        else
+            candidate = false;
+        if (!candidate && isCustomPhysicsInstancerToken(prim.GetTypeName()))
+        {
+            candidate = true;
+            kind = Kind::eCustomInstancer;
+        }
+        if (candidate)
+        {
+            const parse::ObjectKey key = impl.source.keyFor(prim.GetPrimPath());
+            if (seenParticleCandidates.insert(key).second)
+                out.particleObjectCandidates.push_back({ key, kind });
+        }
+        primIterator.next();
+    }
 
     primIterator.reset();
     while (!primIterator.atEnd())
@@ -4033,7 +4121,7 @@ ScannedStage scanStageNative(PXR_NS::UsdStageWeakPtr stage,
         }
         else if (typeBits & PrimTypeBits::eUsdPhysicsCollisionGroup)
         {
-            emitCollisionGroup(out, ctx, key);
+            collisionGroupKeys.push_back(key);
         }
         else if (typeBits & PrimTypeBits::ePhysxVehicleTireFrictionTable)
         {
@@ -4245,6 +4333,8 @@ ScannedStage scanStageNative(PXR_NS::UsdStageWeakPtr stage,
 
         primIterator.next();
     }
+
+    emitCollisionGroups(out, ctx, collisionGroupKeys);
 
     // Pass-2: shape ancestor walk + finalizeCollision.
     finalizeBodiesAndShapes(walk, impl);

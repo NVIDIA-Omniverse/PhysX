@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-PACKAGING-BUILDNUM-001
+// @covers AC-5
+
 // Windows version resource - auto-generated from ovphysx.rc.in by CMake
 
 #include <windows.h>
@@ -24,12 +27,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "NVIDIA Corporation"
             VALUE "FileDescription", "ovphysx - Omniverse Physics Runtime Library"
-            VALUE "FileVersion", "@OVPHYSX_VERSION@"
+            VALUE "FileVersion", "@OVPHYSX_VERSION_FULL@"
             VALUE "InternalName", "ovphysx"
             VALUE "LegalCopyright", "Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved."
             VALUE "OriginalFilename", "ovphysx.dll"
             VALUE "ProductName", "NVIDIA Omniverse Physics"
-            VALUE "ProductVersion", "@OVPHYSX_VERSION@"
+            VALUE "ProductVersion", "@OVPHYSX_VERSION_FULL@"
         END
     END
     BLOCK "VarFileInfo"

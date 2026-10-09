@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PARSE-INSTANCER-DISPATCH-001
+ * @covers AC-1 AC-2
+ */
+
+/**
  * @implements REQ-PARSE-BACKEND-001
  * @covers AC-12
  */
@@ -11,6 +16,7 @@
 #include <omni/physics/parse/Descriptors.h>
 #include <omni/physics/parse/IPhysicsSource.h>
 #include <omni/physics/parse/ParseApi.h>
+#include <omni/physics/parse/ScannedStage.h>
 
 #include <ovstage/ovstage.h>
 #include <ovstage/ovx_path_dictionary.h>
@@ -133,6 +139,7 @@ struct OvstageScanResult
     std::vector<ObjectKey> particleSamplerKeys;
     std::vector<DescPtr<CapsuleCctDesc>> ccts;
     bool hasPointInstancerPrims = false;
+    std::vector<ParticleObjectCandidate> particleObjectCandidates;
 
     // Collision prims that matched but whose geometry type is not handled.
     // Surfaced so callers/tests can see coverage gaps rather than silently

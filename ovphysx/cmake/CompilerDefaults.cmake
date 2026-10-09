@@ -73,6 +73,9 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         $<$<COMPILE_LANGUAGE:C,CXX>:-Wextra>
         $<$<COMPILE_LANGUAGE:C,CXX>:-Werror>
         $<$<COMPILE_LANGUAGE:C,CXX>:-fvisibility=hidden>
+        # ovruntime is statically linked into ovphysx; its release objects need
+        # DWARF too so the final library's symbols resolve runtime source lines.
+        $<$<COMPILE_LANGUAGE:C,CXX>:-g>
     )
 endif()
 

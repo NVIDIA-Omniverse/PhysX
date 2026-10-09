@@ -9,4 +9,5 @@ dependencies = [
   "ovphysx",
   "numpy",
   "rerun-sdk>=0.29",
+  "newton-usd-schemas>=0.4.1",
 ]

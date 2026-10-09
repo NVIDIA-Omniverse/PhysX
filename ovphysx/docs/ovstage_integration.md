@@ -36,7 +36,11 @@ registers them. Before the first population call in the process (`open_usd`,
 `apply_usd_changes`, or an export), register them with ovstage: in Python,
 `ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])`;
 in C, pass the root from `ovphysx_get_codeless_schema_root()` to
-`ovstage_population_register_usd_schemas()`. USD assembles its schema registry
+`ovstage_population_register_usd_schemas()`. Scenes that author Newton
+`newton:*` attributes also need the separately installed Newton USD schema
+(`pip install newton-usd-schemas`, `ovphysx.newton_schema_root()`) in the same
+call; refer to [Physics Schemas](physics_schemas.md#registering-the-newton-usd-schema).
+USD assembles its schema registry
 once, so a late registration cannot be repaired: population silently drops every
 Physx* API it cannot resolve, and the scene would simulate without the asset's
 self-collision, joint-limit and solver settings. `attach_ovstage` therefore
@@ -114,8 +118,10 @@ instancing.
 import ovphysx
 import ovstage
 
-# Register the codeless PhysX schemas before the first population call.
-ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+# Register the codeless PhysX schemas and the Newton schema before the first population call.
+ovstage.population.register_usd_schemas(
+    [str(ovphysx.codeless_schema_root()), str(ovphysx.newton_schema_root())]
+)
 stage = ovstage.Stage("scene")
 ovstage.population.open_usd(
     stage,
@@ -378,7 +384,7 @@ def print_read_shapes(physx):
     with physx.read(
         SimObjectType.RIGID_BODY,
         ["position", "orientation"],
-        ObjectScope.ALL,
+        scope=ObjectScope.ALL,
     ) as result:
         for group in result.groups:
             for tensor in group.tensors:
@@ -411,6 +417,7 @@ the control lane (drained by physics) and the output lane (never drained).
 #include <ovstage/ovstage.h>            // application owns the ovstage Stage
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 
 typedef void (*author_control_fn)(ovstage_instance_t*, ovstage_ordinal_t);
 typedef void (*write_output_fn)(
@@ -424,7 +431,13 @@ void run_closed_loop(
     write_output_fn write_output_to_ovstage)
 {
     // Attach: the scene was authored and sealed at ordinal 1.
-    ovphysx_attach_ovstage(h, stage, /*read_ordinal=*/1);
+    ovphysx_result_t result = ovphysx_attach_ovstage(h, stage, /*read_ordinal=*/1);
+    if (result.status != OVPHYSX_API_SUCCESS)
+    {
+        ovphysx_string_t error = ovphysx_get_last_error();
+        fprintf(stderr, "Attach failed: %.*s\n", (int)error.length, error.ptr);
+        return;
+    }
 
     ovstage_ordinal_t control_ord = 2;  // even lane: app edits physics processes
     ovstage_ordinal_t output_ord  = 3;  // odd lane: physics output (NEVER drained)
@@ -440,7 +453,13 @@ void run_closed_loop(
         ovstage_ordinal_range_t ctrl = {
             control_ord, control_ord, /*has_start_ordinal=*/true
         };
-        ovphysx_update_from_ovstage(h, ctrl);
+        result = ovphysx_update_from_ovstage(h, ctrl);
+        if (result.status != OVPHYSX_API_SUCCESS)
+        {
+            ovphysx_string_t error = ovphysx_get_last_error();
+            fprintf(stderr, "Update failed: %.*s\n", (int)error.length, error.ptr);
+            return;
+        }
 
         // Step the simulation.
         ovphysx_enqueue_result_t step_result = ovphysx_step(h, 1.0f / 60.0f);
@@ -497,6 +516,71 @@ The invariant to hold onto: **every ordinal passed to
 output ordinals are never named in a drain range.** That single rule is
 what keeps physics from consuming its own output.
 
+### C++ utility: publish fixed world transforms
+
+`ovphysx::utils::writeWorldTransformsToOvstage()` in
+`<ovphysx/experimental/OvStageOutput.hpp>` publishes fixed rigid-body and
+articulation-link poses to `omni:fabric:worldMatrix`. It supports CPU and CUDA
+output. The C++17 application uses the existing ovphysx library; it needs no
+CUDA or PhysX SDK headers or CUDA compiler to call the utility. Point-instancer
+array groups are skipped and counted in
+`OvStageOutputResult::instancerGroupsSkipped`. Vehicle wheels and other output
+attributes are outside this utility's selection.
+
+CUDA processing uses the primary context of each tensor's DLPack device
+ordinal and requires its data to be addressable there. It uses CUDA directly,
+without accessing the simulation's CUDA manager, and restores the calling
+thread's prior context.
+
+The application supplies the actual attached stage, completes its simulation
+step, and chooses a fresh `outputOrdinal` above the sealed write floor. The
+utility waits for its writes and returns their result; the application then
+seals the output ordinal. It does not step, seal, drain, or update an
+application transform journal. Never include its output ordinals in a range
+passed to `ovphysx_update_from_ovstage()`.
+
+Scale comes from the current, sealed `omni:fabric:worldMatrix`. After authoring
+local transforms or hierarchy, compute the hierarchy and seal its output
+before using the utility, including before a cache's first use. Seal each
+published output before the next call, and complete any pending world-matrix
+edits first. A different stage is rejected before the utility accesses that
+stage or binds the cache.
+
+The utility combines that scale with physics position and orientation using
+ovphysx's signed-scale convention and writes a row-vector float64 MATRIX. It
+does not preserve shear. CUDA poses stay on the device while matrices are
+composed and published. These direct world matrices leave `omni:xform` and
+`omni:resetXformStack` unchanged and do not propagate to descendants. A later
+hierarchy computation can overwrite them with matrices derived from the
+authored local transforms.
+
+Omit the optional cache argument to read current scale on every call. An
+application-owned `OvStageOutputCache` retains scale copies and reusable
+CPU/CUDA buffers, never borrowed stage views. It binds to the instance, stage
+pointer and attachment on its first use. Call `refresh()` after authored
+transform or topology changes; this discards cached data but keeps the
+binding. Create a new cache after detach/reattach. Destroy the cache before
+the instance and stage, and serialize calls with simulation and stage edits.
+ovstage supplies CPU world-matrix reads for scale capture, including for
+matrices authored on CUDA. Retaining the cache avoids rereading and
+decomposing them on subsequent frames.
+
+`OvStageOutputResult::ok()` reports success, including a scene with no selected
+fixed poses. `matricesWritten` counts completed matrix rows. Failures return a
+native ovphysx status and a descriptive `message`; missing or malformed source
+matrices are not replaced with unit scale. A later write failure can leave
+earlier writes completed at the unsealed output ordinal, with their row count
+reported in the result. There is no rollback.
+
+The installed `samples/c_samples/ovstage_output_cpp` sample demonstrates a
+caller-owned cache and explicit step, publication and sealing:
+
+```{literalinclude} ../tests/c_samples/ovstage_output_cpp/main.cpp
+:language: cpp
+:start-after: [tutorial-start]
+:end-before: [tutorial-end]
+```
+
 ### Python utility: one call for step + read + write-back
 
 The opt-in `ovphysx.utils` helper composes `PhysX.step_sync`, `PhysX.read`, and
@@ -531,6 +615,12 @@ changes `omni:resetXformStack`. Scale remains OVStage state, not physics state.
 not turn it into authoritative local transform state, schedule hierarchy
 propagation, or update descendants. Do not run a later hierarchy computation
 expecting this output ordinal to become the prim's new local transform.
+
+Because a fixed pose write composes a world matrix from both halves, an
+`outputs` selection that names `position` without `orientation` (or the
+reverse) for a rigid body, articulation link, or vehicle wheel raises
+`ValueError`. Select both attributes together, or neither -- there is no
+partial-pose selection for these object types.
 
 Rigid-body point instancers use a different representation. The output read
 already converts simulated poses back into each instancer's local frame. The
@@ -585,6 +675,12 @@ dynamic output set. `output_ordinal` must stay the never-drained lane -- never a
 value passed to `update_from_ovstage`. See
 `tests/python_samples/output_read.py` for the full closed loop using the
 preferred application-owned cache.
+
+```{literalinclude} ../tests/python_samples/output_read.py
+:language: python
+:start-after: [tutorial-start]
+:end-before: [tutorial-end]
+```
 
 ## Notes
 

@@ -18,7 +18,7 @@
 
 /**
  * @implements REQ-CAPI-WRITE-001
- * @covers AC-1 AC-1a AC-2 AC-3 AC-4 AC-5 AC-5a AC-6 AC-7 AC-8 AC-10
+ * @covers AC-1 AC-1a AC-2 AC-3 AC-4 AC-5 AC-5a AC-6 AC-7 AC-8 AC-10 AC-13
  *
  * The public C write surface: ovphysx_write / ovphysx_fetch_write_next / ovphysx_commit_group /
  * ovphysx_release_write. Validation is C-first (AC-8), so every argument, handle and lifecycle
@@ -39,6 +39,7 @@
 #include <carb/Framework.h>
 #include <omni/physx/IOptionalCuda.h>
 #include <omni/physx/PhysXRuntime.h>
+#include <omni/physx/RuntimeError.h>
 
 #include <cmath>   // std::isfinite for debug-render arg validation
 #include <string>
@@ -368,11 +369,12 @@ OVPHYSX_API ovphysx_result_t ovphysx_write(ovphysx_handle_t handle,
     // real rejection and must surface as one: an unproduced name on the READ emits no group and
     // that is correct, but the same silence on a write would mean the caller's data went nowhere
     // while the call reported success.
+    omni::physx::RuntimeErrorScope runtimeError;
     *out_write = fn(query, attribute);
     if (*out_write == 0)
-        return set_error(OVPHYSX_API_ERROR,
-                         "ovphysx_write: failed to open a write session -- the attribute may not be "
-                         "writable for this query's object type, or the query handle may be invalid");
+    {
+        return set_runtime_error("ovphysx_write: failed to open a write session", runtimeError.message());
+    }
     return success();
 }
 
@@ -647,17 +649,20 @@ OVPHYSX_API ovphysx_result_t ovphysx_commit_group(ovphysx_handle_t handle,
     // return would tell the caller state was published when it was not.
     //
     // The two failures are reported apart because they mean different things to a caller. A group
-    // that was never live was rejected before anything ran. A publish that failed had a live group
-    // and a scatter that started, and this layer cannot say how much of it landed. Claiming
-    // "nothing was published" for it would be a guarantee the runtime does not make.
+    // that was never live was rejected before anything ran. A failed live group is spent; the
+    // runtime diagnostic identifies a preflight rejection when it can prove no writes occurred.
+    // Otherwise this layer cannot say how much of a failed scatter landed.
     int32_t why = kOvphysxCommitFailureNone;
+    omni::physx::RuntimeErrorScope runtimeError;
     if (fn(write, group, write_done_sync, &why) == 0)
     {
         if (why == kOvphysxCommitFailurePublish)
-            return set_error(OVPHYSX_API_ERROR,
-                             "ovphysx_commit_group: the group was live but publishing it failed. The "
-                             "group is spent -- commit is not retryable -- and how much of it reached "
-                             "the solver is not reported here; the runtime log names the reason.");
+        {
+            return set_runtime_error(
+                "ovphysx_commit_group: the group is spent -- commit is not retryable. "
+                "Some rows may have been applied unless the runtime explicitly reports that nothing was written",
+                runtimeError.message());
+        }
         if (why == kOvphysxCommitFailureNotLive)
             return set_error(OVPHYSX_API_ERROR,
                              "ovphysx_commit_group: the group is not live -- unknown, from another "

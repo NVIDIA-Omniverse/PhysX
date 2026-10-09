@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-PACKAGING-OVSTAGEVERSION-001
+# @covers AC-1 AC-2
+
 @PACKAGE_INIT@
 
 # ovphysx CMake Configuration File
@@ -37,8 +40,12 @@ set(ovphysx_PHYSX_INCLUDE_DIR "${OVPHYSX_PACKAGE_PREFIX}/include/physx")
 #
 # Required even if you never call ovstage: public headers include ovstage headers,
 # and libovphysx has a runtime dependency on libovstage.
+# The full release identifies the matching download. Native OVStage configs
+# expose only major.minor.patch, so CMake cannot distinguish builds of that release.
+set(ovphysx_OVSTAGE_VERSION "@OVPHYSX_OVSTAGE_VERSION@")
+set(ovphysx_OVSTAGE_CMAKE_VERSION "@OVPHYSX_OVSTAGE_CMAKE_VERSION@")
 include(CMakeFindDependencyMacro)
-find_dependency(ovstage 0.2 CONFIG)
+find_dependency(ovstage ${ovphysx_OVSTAGE_CMAKE_VERSION} EXACT CONFIG)
 
 # Capability gate: the bundled samples and test helpers call
 # ovstage_population_register_usd_schemas(), added in ovstage 0.2.0.374259. Both
@@ -52,10 +59,9 @@ if(_ovphysx_ovstage_population_h)
     file(READ "${_ovphysx_ovstage_population_h}" _ovphysx_ovstage_population_src)
     if(NOT _ovphysx_ovstage_population_src MATCHES "ovstage_population_register_usd_schemas")
         message(FATAL_ERROR
-            "ovphysx requires ovstage >= 0.2.0.374259: its samples register the codeless PhysX "
-            "schemas with ovstage_population_register_usd_schemas(), which the resolved ovstage package "
-            "does not provide. Download the matching ovstage native package (v0.2.0 build "
-            "374259 or newer) and point CMAKE_PREFIX_PATH at it.")
+            "The resolved ovstage package does not provide ovstage_population_register_usd_schemas(), "
+            "which ovphysx samples need to register the codeless PhysX schemas. "
+            "Download OVStage ${ovphysx_OVSTAGE_VERSION} and point CMAKE_PREFIX_PATH at it.")
     endif()
 endif()
 

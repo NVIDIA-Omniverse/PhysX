@@ -35,7 +35,11 @@ the object type is bounds-checked). It classifies the *attribute*, not the objec
 
 ## Write timing, ordering, and persistence
 
-- **A first step is required.** A write before the scene's first step is refused (not auto-warmed).
+- **Never auto-warmed.** The session write never steps for you. On CPU and on GPU with
+  readback, a write before the scene's first step **commits and is applied**. On DirectGPU
+  (`suppressReadback` / `eENABLE_DIRECT_GPU_API`), that same pre-step commit is **refused**
+  until a first step has sized the GPU view. Call `ovphysx_warmup` / `step_sync` first for
+  a recipe that works on every mode. See [data model — DirectGPU](data_model.md#step-first-precondition-directgpu).
 - **Applied at commit, into live PhysX** — not deferred to the next step. A written value is
   observable through a read (or the raw PhysX pointer, `ovphysx_get_physx_ptr` / `get_physx_ptr`)
   before the next step. Commit orders the write against an in-flight step and honours the CUDA sync
@@ -57,17 +61,30 @@ the object type is bounds-checked). It classifies the *attribute*, not the objec
 - **No fill mask; one attribute per session.** A commit publishes the whole mapped group — every
   object of the queried type in scope. There is currently **no way to write a subset of prims**:
   a query cannot pick individual prims (per-prim selection is a planned extension).
+  Neither `ALL` nor `ACTIVE` scope is a kinematic-body filter.
   Rows are re-resolved at every commit, never cached across sessions or steps.
 - **Commit consumes the group.** After a commit — `ovphysx_commit_group` in C, `session.commit(group)`
   in Python — the mapped buffers belong to physics (dereferencing the C pointers, or touching the
   Python tensor views, is undefined) and commit is not idempotent. A group left uncommitted when the
   session is released (or the Python `with` block exits) is discarded, not published.
+- **Read the failure reason.** Python raises `RuntimeError` with the write's diagnostic.
+  In C, read `ovphysx_get_last_error()` on the calling thread before another API call,
+  including cleanup. A failed commit consumes a live group, so it cannot be retried.
+  Previously committed groups remain applied, and the failing group may also be
+  partially applied. There is no rollback or applied/rejected row count; a failure
+  guarantees zero writes only when its diagnostic says so.
 
 ## Rigid bodies
 
 Rigid bodies (`RIGID_BODY`): all rigid **state** and **authored inputs** are writable; derived
 quantities (`linearAcceleration`, `angularAcceleration`, `inverseMass`, `inverseInertia`,
 `shapeCount`) are read-only.
+
+On CPU and GPU-with-readback scenes, PhysX rejects `linearVelocity` and
+`angularVelocity` setters on standalone kinematic bodies. Commit reports the SDK
+error, but valid dynamic rows in the same group can still be written, including rows
+after the rejected body. The kinematic body's velocity stays unchanged. This SDK
+restriction does not apply to DirectGPU velocity writes.
 
 | Attribute | Meaning | dtype × lanes | Frame | Units |
 | --- | --- | --- | --- | --- |

@@ -41,9 +41,13 @@ stage and the instance in lifetime-safe order:
 
 The `attach_scene` helper registers with ovstage the codeless PhysX USD schemas
 that ovphysx ships (`ovstage.population.register_usd_schemas()` with
-`ovphysx.codeless_schema_root()`) before it creates and populates the stage;
-ovphysx never registers them itself, and the registration must precede the first
-population call in the process.
+`ovphysx.codeless_schema_root()`) and the separately installed Newton USD schema
+(`pip install newton-usd-schemas`, located with `ovphysx.newton_schema_root()`)
+before it creates and populates the stage; ovphysx never registers them itself,
+and the registration must precede the first population call in the process. The
+samples' `pyproject.toml` declares `newton-usd-schemas`, so `uv run` resolves it;
+install it yourself before running a sample from a plain `pip install ovphysx`
+environment.
 
 ### C
 

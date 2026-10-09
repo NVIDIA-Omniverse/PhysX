@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PROPS-MAT-001
+ * @covers AC-2
+ */
+
+/**
  * @implements REQ-SIM-ACTIVEACTOR-001
  * @covers AC-1 AC-3
  */
@@ -93,6 +98,8 @@ public:
 
     ~InternalShape() = default;
 
+    // Geometry used for initial material resolution, which may be below the collider.
+    omni::physics::parse::ObjectKey mSourceGprim;
     carb::Float3 mScale;
     usdparser::ObjectId mMaterialId;
     PhysXUsdPhysicsInterface::MassInformation mMassInfo;

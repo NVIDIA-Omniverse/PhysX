@@ -2,6 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PARSE-SUBTREE-001
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5
+ */
+
+/**
+ * @implements REQ-PARSE-KEYREMAP-001
+ * @covers AC-1 AC-2 AC-3 AC-4
+ *
+ * @implements REQ-PARSE-KEYPREFIX-001
+ * @covers AC-1 AC-2 AC-3
+ *
  * @implements REQ-PARSE-CORE-001
  * @covers AC-1 AC-2
  *
@@ -920,6 +931,70 @@ public:
     virtual const KnownTokens* knownTokens() const
     {
         return nullptr;
+    }
+
+    /// @brief Run a read-only hierarchy traversal scoped to root and its descendants.
+    /// Backends may materialize a fresh subtree for the duration of visit. Child
+    /// order, recursive matching semantics and object identity do not change.
+    /// Nested calls and exceptions restore the enclosing read context. No scope
+    /// persists across calls; incomplete reads must use the normal live fallback.
+    /// The callback must not author structural changes. Other backends need no
+    /// special implementation: the default invokes the existing traversal.
+    virtual void withSubtreeHierarchy(ObjectKey root, const std::function<void()>& visit) const
+    {
+        if (root.valid() && visit)
+            visit();
+    }
+
+    /// @brief Translate keys from another source into this source's namespace.
+    /// @details Preserves input order and duplicates, including invalid entries.
+    /// Delegates to mintKeyForPath without adding an existence check; backends
+    /// supporting synthetic identities can translate unauthored paths.
+    /// Backends may override to translate native identities without text conversion.
+    virtual std::vector<ObjectKey> remapKeysFrom(const IPhysicsSource& source,
+                                               const std::vector<ObjectKey>& keys) const
+    {
+        std::vector<ObjectKey> result;
+        result.reserve(keys.size());
+        for (const ObjectKey key : keys)
+        {
+            const std::string_view path = source.sourceKeyToString(key);
+            result.push_back(path.empty() ? ObjectKey{} : mintKeyForPath(path));
+        }
+        return result;
+    }
+
+    /// @brief Derive a key by replacing a namespace prefix in this source.
+    /// @details All three keys belong to this source. Invalid keys return invalid.
+    /// Paths outside the prefix are unchanged; descendants and properties retain
+    /// their suffix. The derived key does not require a live authored prim.
+    virtual ObjectKey replacePathPrefix(ObjectKey key, ObjectKey prefix, ObjectKey replacement) const
+    {
+        const std::string_view path = sourceKeyToString(key);
+        const std::string_view from = sourceKeyToString(prefix);
+        const std::string_view to = sourceKeyToString(replacement);
+        if (path.empty() || from.empty() || to.empty())
+            return {};
+        if (path == from)
+            return mintKeyForPath(to);
+        const bool rootPrefix = from == "/";
+        if (rootPrefix && path.front() != '/')
+            return key;
+        if (!rootPrefix && (path.size() < from.size() || path.substr(0, from.size()) != from ||
+                            (path[from.size()] != '/' && path[from.size()] != '.')))
+            return key;
+        const std::string_view suffix = path.substr(from.size());
+        // A property cannot be authored directly on the absolute root.
+        if (to == "/" && !suffix.empty() && suffix.front() == '.')
+            return {};
+        std::string result(to);
+        if (rootPrefix && to != "/")
+            result += '/';
+        if (!rootPrefix && to == "/" && !suffix.empty() && suffix.front() == '/')
+            result.append(suffix.substr(1));
+        else
+            result.append(suffix);
+        return mintKeyForPath(result);
     }
 
     /// @}

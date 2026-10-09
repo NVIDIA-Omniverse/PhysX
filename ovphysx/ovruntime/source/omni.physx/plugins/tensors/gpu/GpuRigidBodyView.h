@@ -244,8 +244,8 @@ public:
     // setDisable*/material/rest/contact/compliant Masked: BaseRigidBodyView (CPU-only host mask)
 
     // OMPE-103213: CPU-only PhysX property APIs -- no silent GPU->host staging.
-    // Callers must pass host tensors. setDisableGravities keeps the DirectGPU
-    // wake-for-refresh side effect; setDisableSimulations keeps rd-index dirtying.
+    // Callers must pass host tensors. setDisableGravities inherits the shared base
+    // solver refresh; setDisableSimulations keeps rd-index dirtying.
     bool setDisableGravities(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
     bool setDisableSimulations(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
 

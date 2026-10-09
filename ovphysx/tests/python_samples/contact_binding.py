@@ -6,10 +6,12 @@
 """
 ContactBinding sample: reading contact forces between sensor and filter bodies.
 
+This sample exercises the deprecated contact-binding API during its compatibility period.
+
 This sample demonstrates:
 1. Creating a contact binding before the first simulation step
-2. Reading per-sensor net contact forces  [S, 3]
-3. Reading a sensor x filter force matrix [S, F, 3]
+2. Reading net normal and friction forces per sensor [S, 3] and adding them
+3. Reading normal and friction force matrices [S, F, 3] and adding them
 4. Using the context-manager form to ensure proper cleanup
 """
 
@@ -31,10 +33,13 @@ def attach_scene(physx, usd_path, stage_name):
 
     # ovphysx ships its PhysX USD schemas as codeless resources and does not register
     # them itself. Register them with ovstage once, before the first population
-    # call in the process.
+    # call in the process. The Newton USD schema (pip package newton-usd-schemas)
+    # is registered alongside so authored newton:* attributes reach the parser.
     global _physx_schemas_registered
     if not _physx_schemas_registered:
-        ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+        ovstage.population.register_usd_schemas(
+            [str(ovphysx.codeless_schema_root()), str(ovphysx.newton_schema_root())]
+        )
         _physx_schemas_registered = True
     stage = ovstage.Stage(stage_name)
     ordinal = 1
@@ -86,16 +91,27 @@ def main():
             physx.step(1.0 / 60.0)
         physx.wait_all()
 
-        # --- 4. Read net contact forces: shape [S, 3] ---
+        # --- 4. Read net normal and friction forces: shape [S, 3] ---
         # dt is taken automatically from the last successful stepping call.
-        net_forces = np.zeros((sensor_count, 3), dtype=np.float32)
-        cb.read_net_forces(net_forces)
-        print("Net contact forces [S, 3]:", net_forces)
+        # Read both components from the same step before adding them.
+        net_normal_forces = np.zeros((sensor_count, 3), dtype=np.float32)
+        net_friction_forces = np.zeros_like(net_normal_forces)
+        cb.read_net_normal_forces(net_normal_forces)
+        cb.read_net_friction_forces(net_friction_forces)
+        net_forces = net_normal_forces + net_friction_forces
+        print("Net normal contact forces [S, 3]:", net_normal_forces)
+        print("Net friction contact forces [S, 3]:", net_friction_forces)
+        print("Total net contact forces [S, 3]:", net_forces)
 
-        # --- 5. Read contact force matrix: shape [S, F, 3] ---
-        force_matrix = np.zeros((sensor_count, filter_count, 3), dtype=np.float32)
-        cb.read_force_matrix(force_matrix)
-        print("Contact force matrix [S, F, 3]:", force_matrix)
+        # --- 5. Read normal and friction force matrices: shape [S, F, 3] ---
+        normal_force_matrix = np.zeros((sensor_count, filter_count, 3), dtype=np.float32)
+        friction_force_matrix = np.zeros_like(normal_force_matrix)
+        cb.read_normal_force_matrix(normal_force_matrix)
+        cb.read_friction_force_matrix(friction_force_matrix)
+        force_matrix = normal_force_matrix + friction_force_matrix
+        print("Normal contact force matrix [S, F, 3]:", normal_force_matrix)
+        print("Friction contact force matrix [S, F, 3]:", friction_force_matrix)
+        print("Total contact force matrix [S, F, 3]:", force_matrix)
         # 1x1 matrix equals net force here (Cube1 vs BigBase). Fail loudly if
         # the filter again names a body Cube1 is not touching.
         assert np.linalg.norm(force_matrix) > 1.0, (
@@ -124,8 +140,8 @@ def main():
                 physx.step(1.0 / 60.0)
             physx.wait_all()
             out = np.zeros((cb2.sensor_count, 3), dtype=np.float32)
-            cb2.read_net_forces(out)
-            print("Net forces (context manager):", out)
+            cb2.read_net_normal_forces(out)
+            print("Net normal contact forces (context manager):", out)
         # cb2 is automatically destroyed here
         # [tutorial-context-manager-end]
 

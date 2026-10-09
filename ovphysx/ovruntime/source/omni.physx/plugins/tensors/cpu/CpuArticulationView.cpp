@@ -28,6 +28,9 @@
  *
  * @implements REQ-INPUT-COVERAGE-001
  * @covers AC-11
+ *
+ * @implements REQ-TENSOR-TENDON-002
+ * @covers AC-1 AC-2
  */
 
 // clang-format off
@@ -2982,9 +2985,9 @@ bool CpuArticulationView::getFixedTendonStiffnesses(const TensorDesc* dstTensor)
     float* dst = (float*)dstTensor->data;
     for (PxU32 i = 0; i < mEntries.size(); i++)
     {
-        for (PxU32 j = 0; j < mEntries[i].numFixedTendons; j++)
+        for (PxU32 j = 0; j < mMaxFixedTendons; j++)
         {
-            *dst++ = mEntries[i].fixedTendons[j]->getStiffness();
+            *dst++ = j < mEntries[i].numFixedTendons ? mEntries[i].fixedTendons[j]->getStiffness() : 0.0f;
         }
     }
 
@@ -3009,9 +3012,9 @@ bool CpuArticulationView::getFixedTendonDampings(const TensorDesc* dstTensor) co
     float* dst = (float*)dstTensor->data;
     for (PxU32 i = 0; i < mEntries.size(); i++)
     {
-        for (PxU32 j = 0; j < mEntries[i].numFixedTendons; j++)
+        for (PxU32 j = 0; j < mMaxFixedTendons; j++)
         {
-            *dst++ = mEntries[i].fixedTendons[j]->getDamping();
+            *dst++ = j < mEntries[i].numFixedTendons ? mEntries[i].fixedTendons[j]->getDamping() : 0.0f;
         }
     }
 
@@ -3038,9 +3041,9 @@ bool CpuArticulationView::getFixedTendonLimitStiffnesses(const TensorDesc* dstTe
     float* dst = (float*)dstTensor->data;
     for (PxU32 i = 0; i < mEntries.size(); i++)
     {
-        for (PxU32 j = 0; j < mEntries[i].numFixedTendons; j++)
+        for (PxU32 j = 0; j < mMaxFixedTendons; j++)
         {
-            *dst++ = mEntries[i].fixedTendons[j]->getLimitStiffness();
+            *dst++ = j < mEntries[i].numFixedTendons ? mEntries[i].fixedTendons[j]->getLimitStiffness() : 0.0f;
         }
     }
 
@@ -3067,10 +3070,12 @@ bool CpuArticulationView::getFixedTendonLimits(const TensorDesc* dstTensor) cons
     float* dst = (float*)dstTensor->data;
     for (PxU32 i = 0; i < mEntries.size(); i++)
     {
-        for (PxU32 j = 0; j < mEntries[i].numFixedTendons; j++)
+        for (PxU32 j = 0; j < mMaxFixedTendons; j++)
         {
-            *dst++ = mEntries[i].fixedTendons[j]->getLimitParameters().lowLimit;
-            *dst++ = mEntries[i].fixedTendons[j]->getLimitParameters().highLimit;
+            *dst++ =
+                j < mEntries[i].numFixedTendons ? mEntries[i].fixedTendons[j]->getLimitParameters().lowLimit : 0.0f;
+            *dst++ =
+                j < mEntries[i].numFixedTendons ? mEntries[i].fixedTendons[j]->getLimitParameters().highLimit : 0.0f;
         }
     }
 
@@ -3097,9 +3102,9 @@ bool CpuArticulationView::getFixedTendonfixedSpringRestLengths(const TensorDesc*
     float* dst = (float*)dstTensor->data;
     for (PxU32 i = 0; i < mEntries.size(); i++)
     {
-        for (PxU32 j = 0; j < mEntries[i].numFixedTendons; j++)
+        for (PxU32 j = 0; j < mMaxFixedTendons; j++)
         {
-            *dst++ = mEntries[i].fixedTendons[j]->getRestLength();
+            *dst++ = j < mEntries[i].numFixedTendons ? mEntries[i].fixedTendons[j]->getRestLength() : 0.0f;
         }
     }
 
@@ -3126,9 +3131,9 @@ bool CpuArticulationView::getFixedTendonOffsets(const TensorDesc* dstTensor) con
     float* dst = (float*)dstTensor->data;
     for (PxU32 i = 0; i < mEntries.size(); i++)
     {
-        for (PxU32 j = 0; j < mEntries[i].numFixedTendons; j++)
+        for (PxU32 j = 0; j < mMaxFixedTendons; j++)
         {
-            *dst++ = mEntries[i].fixedTendons[j]->getOffset();
+            *dst++ = j < mEntries[i].numFixedTendons ? mEntries[i].fixedTendons[j]->getOffset() : 0.0f;
         }
     }
 
@@ -3155,9 +3160,9 @@ bool CpuArticulationView::getSpatialTendonStiffnesses(const TensorDesc* dstTenso
     float* dst = (float*)dstTensor->data;
     for (PxU32 i = 0; i < mEntries.size(); i++)
     {
-        for (PxU32 j = 0; j < mEntries[i].numSpatialTendons; j++)
+        for (PxU32 j = 0; j < mMaxSpatialTendons; j++)
         {
-            *dst++ = mEntries[i].spatialTendons[j]->getStiffness();
+            *dst++ = j < mEntries[i].numSpatialTendons ? mEntries[i].spatialTendons[j]->getStiffness() : 0.0f;
         }
     }
 
@@ -3182,9 +3187,9 @@ bool CpuArticulationView::getSpatialTendonDampings(const TensorDesc* dstTensor) 
     float* dst = (float*)dstTensor->data;
     for (PxU32 i = 0; i < mEntries.size(); i++)
     {
-        for (PxU32 j = 0; j < mEntries[i].numSpatialTendons; j++)
+        for (PxU32 j = 0; j < mMaxSpatialTendons; j++)
         {
-            *dst++ = mEntries[i].spatialTendons[j]->getDamping();
+            *dst++ = j < mEntries[i].numSpatialTendons ? mEntries[i].spatialTendons[j]->getDamping() : 0.0f;
         }
     }
 
@@ -3211,9 +3216,9 @@ bool CpuArticulationView::getSpatialTendonLimitStiffnesses(const TensorDesc* dst
     float* dst = (float*)dstTensor->data;
     for (PxU32 i = 0; i < mEntries.size(); i++)
     {
-        for (PxU32 j = 0; j < mEntries[i].numSpatialTendons; j++)
+        for (PxU32 j = 0; j < mMaxSpatialTendons; j++)
         {
-            *dst++ = mEntries[i].spatialTendons[j]->getLimitStiffness();
+            *dst++ = j < mEntries[i].numSpatialTendons ? mEntries[i].spatialTendons[j]->getLimitStiffness() : 0.0f;
         }
     }
 
@@ -3240,9 +3245,9 @@ bool CpuArticulationView::getSpatialTendonOffsets(const TensorDesc* dstTensor) c
     float* dst = (float*)dstTensor->data;
     for (PxU32 i = 0; i < mEntries.size(); i++)
     {
-        for (PxU32 j = 0; j < mEntries[i].numSpatialTendons; j++)
+        for (PxU32 j = 0; j < mMaxSpatialTendons; j++)
         {
-            *dst++ = mEntries[i].spatialTendons[j]->getOffset();
+            *dst++ = j < mEntries[i].numSpatialTendons ? mEntries[i].spatialTendons[j]->getOffset() : 0.0f;
         }
     }
 

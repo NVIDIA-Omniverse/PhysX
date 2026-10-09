@@ -3,6 +3,12 @@
 Read this file only when physics output is written back into the attached
 ovstage Stage.
 
+An ordinal identifies a batch of stage changes. Advancing the write floor
+seals that batch for readers; refer to [ovstage Integration](../../../docs/ovstage_integration.md).
+DLPack describes tensor storage exchanged between libraries. Warp is the Python
+array library used by ovphysx output reads. A point instancer represents many
+object instances as arrays on one prim rather than one prim per instance.
+
 ## Ordinal Ownership, Not Magic Parity
 
 Application controls flow from ovstage into physics. Physics output flows back
@@ -45,9 +51,11 @@ For each frame:
 ## Preserve ovstage Identity
 
 Use the group's interned prim list rather than rebuilding paths. Use the emitted
-attribute token rather than assuming it equals the requested semantic name.
-Forward `semantic` and `is_array`; tensor count and shape do not determine
-whether the attribute is an array.
+attribute token rather than assuming it equals the requested semantic name. Both are
+interned integers; resolve them through `ovstage.PathDictionary(stage)` —
+`get_path_strings(group.prim_list)` for the prim paths and `token_to_string(group.attribute)`
+for the emitted name (refer to [Python Output Read](python.md)). Forward `semantic` and `is_array`;
+tensor count and shape do not determine whether the attribute is an array.
 
 In C, the group's DLPack tensors are borrowed and can feed the ovstage write
 payload without repacking. Wait for the write to finish before releasing the

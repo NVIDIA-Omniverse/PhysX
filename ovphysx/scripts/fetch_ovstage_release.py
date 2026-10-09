@@ -31,7 +31,7 @@ import zipfile
 # The pinned ovstage version (a numeric pip/wheel version). An internal maintainer
 # tool propagates it into python/pyproject.toml and every checked-in uv lock that
 # records ovstage.
-OVSTAGE_VERSION = "0.2.0.377349"
+OVSTAGE_VERSION = "0.2.1.385922"
 
 # The PEP 503 simple index the ovstage wheel is fetched from. The same internal
 # tool switches it between the internal and public indexes.

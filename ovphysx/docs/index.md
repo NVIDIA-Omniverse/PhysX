@@ -11,7 +11,7 @@ To get started, refer to the [Quickstart](tutorials/quickstart.md).
 > **Note**
 >
 > - **Maturity**: ovphysx is pre-release software and not yet mature.
-> - **USD coexistence**: ovphysx ships no OpenUSD runtime and never loads, links, or version-checks one. ovstage, the mandatory exact-version dependency, ingests USD scenes through its own internal namespaced OpenUSD runtime; the application owns whatever USD it authors with (for example stock `usd-core`). ovphysx ships its PhysX USD schemas as codeless plugins: register them with the USD runtime you own before the first ovstage population call or schema-registry access, or the ovstage attach is refused. Refer to [Physics Schemas](physics_schemas.md).
+> - **USD coexistence**: ovphysx ships no OpenUSD runtime and never loads, links, or version-checks one. ovstage, the mandatory exact-version dependency, ingests USD scenes through its own internal namespaced OpenUSD runtime; the application owns whatever USD it authors with (for example stock `usd-core`). ovphysx ships its PhysX USD schemas as codeless plugins: register them with the USD runtime you own before the first ovstage population call or schema-registry access, or the ovstage attach is refused. Scenes that author Newton `newton:*` attributes also need the separately installed `newton-usd-schemas` package registered the same way; `attach_ovstage()` warns when it was not. Refer to [Physics Schemas](physics_schemas.md).
 > - **API stability**: Parts of the API are still being completed and may change before 1.0.
 
 ovphysx packages a USD-aware PhysX simulation runtime with tensorized data access. Applications populate scenes through ovstage, attach the stage to ovphysx, and drain committed ordinal ranges into simulation.

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # @implements REQ-PACKAGING-DOCS-001
-# @covers AC-1 AC-2
+# @covers AC-1 AC-2 AC-3
 
 # ovphysx Python wheel smoke tests.
 # Validates the installed wheel via `python -m ovphysx` across Python versions.
@@ -78,6 +78,14 @@ if(NOT EXISTS "${DOCUMENTATION_SMOKE}")
     message(FATAL_ERROR "Documentation smoke test not found: ${DOCUMENTATION_SMOKE}")
 endif()
 
+# CI sets this because its artifacts reach users and must all carry the same
+# rendered docs (NVBug 6717253). A local build that never rendered the
+# documentation is still testable without it.
+set(REQUIRE_RENDERED_DOCS_ARG)
+if(NOT "$ENV{OVPHYSX_REQUIRE_HTML_DOCS}" STREQUAL "" AND NOT "$ENV{OVPHYSX_REQUIRE_HTML_DOCS}" STREQUAL "0")
+    set(REQUIRE_RENDERED_DOCS_ARG "--require-rendered-docs")
+endif()
+
 set(PYTHON_VERSIONS
     "3.10"
     "3.11"
@@ -141,6 +149,7 @@ foreach(PY_VER ${PYTHON_VERSIONS})
         COMMAND ${CMAKE_COMMAND} -E env ${UV_ENV}
             "${OVPHYSX_UV_COMMAND}" run --python ${_VENV_DIR} --no-sync --
             python "${DOCUMENTATION_SMOKE}" --allow-unbundled-header-links
+            ${REQUIRE_RENDERED_DOCS_ARG}
         RESULT_VARIABLE _DOCUMENTATION_RESULT
         OUTPUT_VARIABLE _DOCUMENTATION_OUTPUT
         ERROR_VARIABLE _DOCUMENTATION_OUTPUT
@@ -164,6 +173,7 @@ foreach(PY_VER ${PYTHON_VERSIONS})
             python "${DOCUMENTATION_SMOKE}"
             --package-root "${PROJECT_ROOT}/_install"
             --source-docs "${PROJECT_ROOT}/docs"
+            ${REQUIRE_RENDERED_DOCS_ARG}
         RESULT_VARIABLE _SDK_DOCUMENTATION_RESULT
         OUTPUT_VARIABLE _SDK_DOCUMENTATION_OUTPUT
         ERROR_VARIABLE _SDK_DOCUMENTATION_OUTPUT

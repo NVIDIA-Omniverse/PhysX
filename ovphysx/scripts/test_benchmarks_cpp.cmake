@@ -218,7 +218,7 @@ if(RUN_CPU)
     run_bench_pass("cpu" FALSE "" "" FALSE)
 endif()
 if(RUN_CPU_ST)
-    # Single-threaded baseline. --threads=1 sets the /physics/numThreads
+    # Single-threaded baseline. --threads=1 sets the /persistent/physics/numThreads
     # Carbonite setting before PhysX bootstrap so the dispatcher runs one
     # worker. Scoped to cubes20, the cheap minimal scene where the contrast
     # with the multithreaded pass is the signal.

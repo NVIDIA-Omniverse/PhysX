@@ -38,6 +38,7 @@ from .dlpack import (
 )
 from .schemas import codeless_schema_paths as codeless_schema_paths
 from .schemas import codeless_schema_root as codeless_schema_root
+from .schemas import newton_schema_root as newton_schema_root
 from .types import (
     ApiStatus as ApiStatus,
     BindingPrimMode as BindingPrimMode,

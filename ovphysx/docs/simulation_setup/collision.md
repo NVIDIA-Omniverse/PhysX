@@ -78,7 +78,9 @@ cylinder_prim.CreateAttribute("physxConvexGeometry:margin", Sdf.ValueTypeNames.F
 
 Cones and cylinders can also be approximated with convex meshes, which ignores
 the margin but is often faster (prefer it unless you need smooth rolling
-behavior). In ovphysx this is controlled per instance through `PhysXConfig`:
+behavior). In ovphysx these process-global settings are configured through
+`PhysXConfig` before stage attachment. `True` (the default) selects convex-core
+geometry; `False` selects a convex mesh. Existing shapes are not rebuilt:
 
 ```python
 from ovphysx import PhysX, PhysXConfig

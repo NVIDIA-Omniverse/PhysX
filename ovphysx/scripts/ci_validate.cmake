@@ -9,18 +9,6 @@ cmake_minimum_required(VERSION 3.16)
 
 get_filename_component(SCRIPT_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
 get_filename_component(PROJECT_ROOT "${SCRIPT_DIR}/.." ABSOLUTE)
-include("${SCRIPT_DIR}/crossplatform_helpers.cmake")
-
-message(STATUS "Validating formatting (ovphysx)")
-execute_process(
-    COMMAND "${PROJECT_ROOT}/repo${SCRIPT_SUFFIX}" format --legal-only --verify
-    WORKING_DIRECTORY "${PROJECT_ROOT}"
-    RESULT_VARIABLE FORMAT_RESULT
-)
-if(NOT FORMAT_RESULT STREQUAL "0")
-    message(FATAL_ERROR "ovphysx formatting validation failed (exit code: ${FORMAT_RESULT})")
-endif()
-message(STATUS "  [OK] ovphysx formatting validation passed")
 
 # ---------------------------------------------------------------------------
 # uv.lock validation

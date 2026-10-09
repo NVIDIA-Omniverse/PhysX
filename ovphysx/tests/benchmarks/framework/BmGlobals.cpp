@@ -167,7 +167,7 @@ BmGlobals::BmGlobals(bool sanityCheck,
     // gate on each benchmark ensures only stages matching the current pass's
     // device are loaded.
 
-    // --threads=N on the CLI sets the Carbonite /physics/numThreads setting
+    // --threads=N on the CLI sets the Carbonite /persistent/physics/numThreads setting
     // before PhysX bootstrap, so the dispatcher comes up with N workers
     // (1 is the single-threaded baseline, 0 is auto). DirectGPU defaults to the
     // eight workers used by IsaacLab unless the CLI overrides it. Otherwise,

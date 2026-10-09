@@ -3,6 +3,11 @@
 
 #pragma once
 
+/**
+ * @implements REQ-TENSOR-VIEW-001
+ * @covers AC-12
+ */
+
 #include "ObjectTypes.h"
 
 #include <cstddef>
@@ -45,6 +50,12 @@ public:
 
     // return false if the simulation view is invalidated due to prim deletion
     virtual bool getValid() const = 0;
+
+    // True when the view is valid and its captured selection inputs still match:
+    // record-lifetime epoch, applied read ordinal, recursive-leaf matching mode,
+    // and (for GPU views) the rigid-body disable epoch. Existing selections may
+    // remain readable when this returns false. Serialize this check with mutations.
+    virtual bool isSelectionCurrent() const = 0;
 
     // invalidate the simulationView
     virtual void invalidate() = 0;

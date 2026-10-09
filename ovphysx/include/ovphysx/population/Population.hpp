@@ -993,7 +993,7 @@ struct CapsuleArgs
     std::optional<std::vector<std::string>> axis; // axis (token per prim)
 };
 
-/// Cone geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cone (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; the runtime setting /collisionApproximateCones (default false) switches it to a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.
+/// Cone geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cone (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; OVPHYSX_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY defaults to true. Set it to false to use a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.
 struct ConeArgs
 {
     std::optional<std::vector<double>> radius; // radius
@@ -1008,7 +1008,7 @@ struct CubeArgs
     std::optional<std::vector<double>> size; // size
 };
 
-/// Cylinder geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cylinder (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; the runtime setting /collisionApproximateCylinders (default false) switches it to a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.
+/// Cylinder geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cylinder (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; OVPHYSX_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY defaults to true. Set it to false to use a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.
 struct CylinderArgs
 {
     std::optional<std::vector<double>> radius; // radius
@@ -1765,7 +1765,7 @@ public:
         return *this;
     }
 
-    /// Cone geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cone (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; the runtime setting /collisionApproximateCones (default false) switches it to a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.
+    /// Cone geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cone (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; OVPHYSX_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY defaults to true. Set it to false to use a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.
     PrimBatch& defineCone(const ConeArgs& args = {}, const TransformArgs& xf = {})
     {
         define("Cone", &xf);
@@ -1789,7 +1789,7 @@ public:
         return *this;
     }
 
-    /// Cylinder geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cylinder (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; the runtime setting /collisionApproximateCylinders (default false) switches it to a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.
+    /// Cylinder geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cylinder (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; OVPHYSX_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY defaults to true. Set it to false to use a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.
     PrimBatch& defineCylinder(const CylinderArgs& args = {}, const TransformArgs& xf = {})
     {
         define("Cylinder", &xf);

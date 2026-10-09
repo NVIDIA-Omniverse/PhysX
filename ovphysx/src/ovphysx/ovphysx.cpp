@@ -2,6 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-CAPI-STEP-001
+ * @covers AC-1 AC-2 AC-3
+ *
+ * @implements REQ-CAPI-THREADS-001
+ * @covers AC-1 AC-2
+ *
+ * @implements REQ-CAPI-COLLISION-CONFIG-001
+ * @covers AC-1 AC-2
+ *
  * @implements REQ-CAPI-LOG-001
  * @covers AC-5 AC-6
  *
@@ -43,6 +52,9 @@
  * @implements REQ-CAPI-OVSTAGE-UPDATE-001
  * @covers AC-1 AC-2
  *
+ * @implements REQ-CAPI-OVSTAGE-UPDATE-002
+ * @covers AC-1 AC-2 AC-3
+ *
  * @implements REQ-CAPI-ATTACH-OWNER-001
  * @covers AC-1 AC-2 AC-3 AC-4
  *
@@ -61,6 +73,7 @@
 #include "CarboniteLoader/CarboniteLoader.hpp"
 #include "cuda_shim/CudaShim.h"
 #include <omni/physx/PhysXRuntime.h>
+#include <omni/physx/RuntimeError.h>
 #include "UsdSchemaPaths/UsdSchemaPaths.h"
 #include "AsyncEventManager/AsyncEventManager.hpp"
 #include <ovstage/ovstage_population.h>
@@ -843,7 +856,7 @@ ovphysx_api_status_t omni_sdk_physx_simulate_instance(ovphysx_handle_t handle, f
 namespace { // reopen anonymous namespace
 
     // Waits for the pending simulation step to complete.
-    static ovphysx_api_status_t omni_sdk_physx_sync(ovphysx_handle_t handle)
+    static ovphysx_api_status_t omni_sdk_physx_sync(ovphysx_handle_t handle, std::string& error_out)
     {
         // Pin the instance without holding the global map lock while blocking.
         std::shared_ptr<InstanceData> instanceShared = get_instance(handle);
@@ -885,18 +898,21 @@ namespace { // reopen anonymous namespace
                 instanceShared->pendingSimulationEvent = 0;
                 result = OVPHYSX_API_ERROR;
             } else {
+                omni::physx::RuntimeErrorScope runtimeError;
                 physxSim->fetchResults();
+                error_out = runtimeError.message();
 
                 // ovphysx never writes results back to the attached ovstage Stage:
                 // simulation state is exposed through the read / tensor-binding API
                 // and the application owns writing it back to ovstage.
 
                 async_event_handle_t event_to_cleanup = instanceShared->pendingSimulationEvent;
-                ovphysx::async::AsyncEventManager::complete_event(event_to_cleanup, true);
+                ovphysx::async::AsyncEventManager::complete_event(
+                    event_to_cleanup, error_out.empty(), error_out.c_str());
                 ovphysx::async::AsyncEventManager::cleanup_event(event_to_cleanup);
                 instanceShared->pendingSimulationEvent = 0;
                 
-                result = OVPHYSX_API_SUCCESS;
+                result = error_out.empty() ? OVPHYSX_API_SUCCESS : OVPHYSX_API_ERROR;
             }
         } catch (const std::exception& e) {
             CARB_LOG_ERROR("[PHYSICS SYNC] EXCEPTION: %s", e.what());
@@ -921,8 +937,8 @@ namespace { // reopen anonymous namespace
     // ========================================================================
     static const char* s_boolKeyPaths[] = {
         "/physics/disableContactProcessing",
-        "/physics/collisionConeCustomGeometry",
-        "/physics/collisionCylinderCustomGeometry",
+        omni::physx::kSettingCollisionApproximateCones,
+        omni::physx::kSettingCollisionApproximateCylinders,
         omni::physx::kOmniPvdOutputEnabled,
         omni::physx::kSettingNvtxEnabled,
         omni::physx::kOmniPvdRecordingCapable,
@@ -930,7 +946,7 @@ namespace { // reopen anonymous namespace
     static_assert(std::size(s_boolKeyPaths) == OVPHYSX_CONFIG_BOOL_COUNT, "s_boolKeyPaths out of sync with enum");
 
     static const char* s_int32KeyPaths[] = {
-        "/physics/numThreads",
+        omni::physx::kSettingNumThreads,
         "/physics/sceneMultiGPUMode",
         omni::physx::kOmniPvdTcpPort,
         omni::physx::kOmniPvdTcpTimeoutMs,
@@ -976,8 +992,16 @@ namespace { // reopen anonymous namespace
         case OVPHYSX_CONFIG_KEY_TYPE_BOOL:
             if (entry.key.bool_key < 0 || entry.key.bool_key >= OVPHYSX_CONFIG_BOOL_COUNT)
                 return OVPHYSX_API_INVALID_ARGUMENT;
-            settings->setBool(s_boolKeyPaths[entry.key.bool_key], entry.value.bool_value);
-            CARB_LOG_INFO("[Config] Set bool %s = %s", s_boolKeyPaths[entry.key.bool_key], entry.value.bool_value ? "true" : "false");
+            {
+                // Public custom geometry is the inverse of runtime mesh approximation.
+                const bool stored =
+                    (entry.key.bool_key == OVPHYSX_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY ||
+                     entry.key.bool_key == OVPHYSX_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY)
+                        ? !entry.value.bool_value
+                        : entry.value.bool_value;
+                settings->setBool(s_boolKeyPaths[entry.key.bool_key], stored);
+                CARB_LOG_INFO("[Config] Set bool %s = %s", s_boolKeyPaths[entry.key.bool_key], stored ? "true" : "false");
+            }
             return OVPHYSX_API_SUCCESS;
         case OVPHYSX_CONFIG_KEY_TYPE_INT32:
             if (entry.key.int32_key < 0 || entry.key.int32_key >= OVPHYSX_CONFIG_INT32_COUNT)
@@ -1467,9 +1491,11 @@ namespace {
 
                         // Finite waits establish readiness first. Infinite waits
                         // preserve the direct blocking fetch used by the hot path.
+                        omni::physx::RuntimeErrorScope runtimeError;
                         physxSim->fetchResults();
 
-                        AsyncEventManager::complete_event(event, true);
+                        AsyncEventManager::complete_event(
+                            event, !runtimeError.message()[0], runtimeError.message());
                     } catch (const std::exception& e) {
                         AsyncEventManager::complete_event(event, false, e.what());
                     } catch (...) {
@@ -2814,7 +2840,10 @@ OVPHYSX_API ovphysx_result_t ovphysx_step_sync(ovphysx_handle_t handle,
     map_lock.unlock();
 
     // Blocks until the step results are ready.
+    omni::physx::RuntimeErrorScope runtimeError;
     physxSim->fetchResults();
+    if (runtimeError.message()[0])
+        return set_error(OVPHYSX_API_ERROR, runtimeError.message());
 
     // Re-acquire to post-process.
     map_lock.lock();
@@ -2880,7 +2909,10 @@ OVPHYSX_API ovphysx_result_t ovphysx_step_n_sync(ovphysx_handle_t handle,
         instance->warmup_attach_handle.store(instance->attachHandle, std::memory_order_release);
 
         map_lock.unlock();
+        omni::physx::RuntimeErrorScope runtimeError;
         physxSim->fetchResults();
+        if (runtimeError.message()[0])
+            return set_error(OVPHYSX_API_ERROR, runtimeError.message());
         map_lock.lock();
 
         instance = get_instance_ptr(handle);
@@ -2924,6 +2956,21 @@ OVPHYSX_API ovphysx_result_t ovphysx_set_global_config(ovphysx_config_entry_t en
     return {OVPHYSX_API_SUCCESS};
 }
 
+OVPHYSX_API ovphysx_result_t ovphysx_test_get_settings_bool(const char* path, bool* out_value)
+{
+    if (!path || !out_value)
+        return set_error(OVPHYSX_API_INVALID_ARGUMENT, "Invalid arguments");
+    carb::Framework* framework = carb::getFramework();
+    carb::settings::ISettings* settings =
+        framework ? framework->tryAcquireInterface<carb::settings::ISettings>() : nullptr;
+    if (!settings)
+        return set_error(OVPHYSX_API_ERROR, "Settings interface not available");
+    if (settings->getItemType(path) == carb::dictionary::ItemType::eCount)
+        return set_error(OVPHYSX_API_NOT_FOUND, "Configuration value is not set");
+    *out_value = settings->getAsBool(path);
+    return success();
+}
+
 OVPHYSX_API ovphysx_result_t ovphysx_get_global_config_bool(ovphysx_config_bool_t key, bool* out_value) {
     if (!out_value || key < 0 || key >= OVPHYSX_CONFIG_BOOL_COUNT)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "Invalid arguments");
@@ -2931,6 +2978,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_get_global_config_bool(ovphysx_config_bool_
     auto* settings = framework ? framework->tryAcquireInterface<carb::settings::ISettings>() : nullptr;
     if (!settings) return set_error(OVPHYSX_API_ERROR, "Settings interface not available");
     *out_value = settings->getAsBool(s_boolKeyPaths[key]);
+    if (key == OVPHYSX_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY ||
+        key == OVPHYSX_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY)
+        *out_value = !*out_value;
     return {OVPHYSX_API_SUCCESS};
 }
 
@@ -3069,6 +3119,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_attach_ovstage(ovphysx_handle_t handle,
     // attachOvstage creates the first GPU scene, so the setting and the attach
     // stay in one transaction. The caller owns the sealed read ordinal, and the
     // initial scene parse reads at it.
+    omni::physx::RuntimeErrorScope runtimeError;
     bool attached = false;
     bool ownedByOther = false;
     {
@@ -3096,8 +3147,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_attach_ovstage(ovphysx_handle_t handle,
     }
     if (!attached) {
         instanceShared->ovstage_attach_payload = OvstageAttachPayload{};
-        return set_error(OVPHYSX_API_ERROR,
-                         "attach_ovstage: IPhysxSimulation::attachOvstage failed");
+        return set_runtime_error("attach_ovstage: IPhysxSimulation::attachOvstage failed", runtimeError.message());
     }
 
     // Two different things, deliberately read separately (ADR-0013): the backing
@@ -3153,10 +3203,11 @@ OVPHYSX_API ovphysx_result_t ovphysx_update_from_ovstage(ovphysx_handle_t handle
                          "update_from_ovstage: IPhysxSimulation::updateFromOvStage is unavailable");
     }
 
+    omni::physx::RuntimeErrorScope runtimeError;
     const bool updated = physxSim->updateFromOvStage(from_ordinal, to_ordinal);
     if (!updated) {
-        return set_error(OVPHYSX_API_ERROR,
-                         "update_from_ovstage: IPhysxSimulation::updateFromOvStage failed");
+        return set_runtime_error("update_from_ovstage: IPhysxSimulation::updateFromOvStage failed",
+                                 runtimeError.message());
     }
 
     return success();
@@ -3514,7 +3565,8 @@ OVPHYSX_API ovphysx_result_t ovphysx_wait_op(ovphysx_handle_t handle,
         }
         if (simulation_event != 0) {
             // This is the simulation event, so sync directly.
-            ovphysx_api_status_t sync_status = omni_sdk_physx_sync(handle);
+            std::string sync_error;
+            ovphysx_api_status_t sync_status = omni_sdk_physx_sync(handle, sync_error);
             AsyncEventManager::cleanup_event(simulation_event);
             instanceShared->all_ops_synced.store(true, std::memory_order_release);
             if (out_wait_result) {
@@ -3523,7 +3575,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_wait_op(ovphysx_handle_t handle,
                 out_wait_result->lowest_pending_op_index = 0;
             }
             if (sync_status != OVPHYSX_API_SUCCESS) {
-                tls_error().op_errors[op_index] = "Simulation sync failed";
+                if (sync_error.empty())
+                    sync_error = "Simulation sync failed";
+                tls_error().op_errors[op_index] = sync_error;
                 if (out_wait_result) {
                     try {
                         out_wait_result->error_op_indices = new ovphysx_op_index_t[1]{op_index};
@@ -3532,7 +3586,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_wait_op(ovphysx_handle_t handle,
                         return set_error(OVPHYSX_API_ERROR, "Out of memory allocating wait_op error indices");
                     }
                 }
-                return set_error(sync_status, "Simulation sync failed");
+                return set_error(sync_status, sync_error);
             }
             return success();
         }

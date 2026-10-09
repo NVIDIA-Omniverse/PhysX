@@ -107,11 +107,13 @@ step** and rejects direct-GPU access until it has run. Therefore, before the fir
 
 - a **read** emits **no groups** for device-sourced types (it reports end-of-iteration immediately —
   not an error, and currently indistinguishable from a genuinely empty match), and
-- a **write** is **refused** (it is not auto-warmed).
+- a **write** session still opens, but **commit is refused** (it is not auto-warmed).
 
-You control the first step with `ovphysx_step` / `ovphysx_step_sync` / `ovphysx_warmup`. A **CPU
-scene** *does* report authored initial state before the first step. Readiness is per-scene: a
-multi-scene read returns ready partitions while omitting an unready DirectGPU scene.
+On **CPU** and on **GPU with readback** (no `suppressReadback`) a pre-step **write commits and is
+applied**. The write never auto-warms in any mode. You control the first step with `ovphysx_step` /
+`ovphysx_step_sync` / `ovphysx_warmup`. A **CPU scene** also reports authored initial state on a
+**read** before the first step. Readiness is per-scene: a multi-scene read returns ready partitions
+while omitting an unready DirectGPU scene.
 
 ### Missing and partial data
 

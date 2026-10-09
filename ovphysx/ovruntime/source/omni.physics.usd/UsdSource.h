@@ -6,6 +6,7 @@
 #include <omni/physics/parse/IPhysicsSource.h>
 
 #include <carb/extras/Hash.h>
+#include <carb/Warning.h>
 
 #include <pxr/base/tf/token.h>
 #include <pxr/base/vt/array.h>
@@ -14,9 +15,11 @@
 #include <pxr/usd/usdGeom/xformCache.h>
 
 #include <any>
+#include <array>
 #include <deque>
 #include <memory>
 #include <mutex>
+#include <shared_mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -51,6 +54,9 @@ public:
     // Existence-independent: interns the SdfPath directly (keyFor), so a not-yet-authored
     // path (e.g. a runtime clone target) still mints a stable key -- unlike findByPath.
     ObjectKey mintKeyForPath(std::string_view path) const override;
+    std::vector<ObjectKey> remapKeysFrom(const IPhysicsSource& source,
+                                       const std::vector<ObjectKey>& keys) const override;
+    ObjectKey replacePathPrefix(ObjectKey key, ObjectKey prefix, ObjectKey replacement) const override;
 
     bool hasSchema(ObjectKey key, TokenId schemaToken) const override;
     bool isA(ObjectKey key, TokenId typeToken) const override;
@@ -135,6 +141,14 @@ public:
         return mStageId;
     }
 
+    bool isForStage(PXR_NS::UsdStageWeakPtr stage) const
+    {
+        return mStage == stage;
+    }
+    // A scan shares this owner's identity table, but owns fresh token, transform
+    // and buffer state. It can retain its snapshot without retaining runtime state.
+    std::unique_ptr<UsdSource> makeScanSource() const;
+
     ObjectKey keyFor(const PXR_NS::SdfPath& path) const;
     PXR_NS::SdfPath pathFor(ObjectKey key) const;
 
@@ -158,21 +172,47 @@ public:
     void releaseBuffers() const;
 
 private:
-    // Pack/decode ObjectKey::handle as (mGeneration << 32) | (1-based local
-    // index into mKeyToPath/mKeyStrings). decodeLocalIndex returns 0 (an always-
-    // invalid index, since slot 0 is reserved) when `key` was not minted by
-    // *this* instance -- either its generation doesn't match, or it is the
-    // all-zero invalid sentinel. See mGeneration's doc comment for why.
-    ObjectKey packKey(uint32_t localIndex) const
+    struct ScanIdentity {};
+    UsdSource(const UsdSource& owner, ScanIdentity);
+    static constexpr uint32_t kInternShardBits = 5;
+    static constexpr uint32_t kInternShardCount = 1u << kInternShardBits;
+    // Cache-line padding is intentional so adjacent shard locks do not share a line.
+    CARB_IGNOREWARNING_MSC_WITH_PUSH(4324)
+    struct alignas(64) InternShard
     {
-        return ObjectKey{ (static_cast<uint64_t>(mGeneration) << 32) | localIndex };
+        mutable std::shared_mutex mutex;
+        std::unordered_map<PXR_NS::SdfPath, ObjectKey, PXR_NS::SdfPath::Hash> pathToKey;
+        std::deque<PXR_NS::SdfPath> keyToPath;
+    };
+    CARB_IGNOREWARNING_MSC_POP
+    static uint32_t shardForPath(const PXR_NS::SdfPath& path)
+    {
+        return static_cast<uint32_t>(path.GetHash()) & (kInternShardCount - 1);
+    }
+    // Caller holds this shard exclusively; path must be nonempty.
+    ObjectKey keyForLocked(InternShard& shard, uint32_t shardIndex, const PXR_NS::SdfPath& path) const;
+
+    // High 32 bits retain the source generation. Low bits encode a shard and
+    // its 1-based index. Slot zero in every shard is the invalid sentinel.
+    ObjectKey packKey(uint32_t shard, uint32_t localIndex) const
+    {
+        return ObjectKey{(static_cast<uint64_t>(mGeneration) << 32) |
+                         (static_cast<uint64_t>(localIndex) << kInternShardBits) | shard};
     }
     uint32_t decodeLocalIndex(ObjectKey key) const
     {
         if (key.handle == 0 || static_cast<uint32_t>(key.handle >> 32) != mGeneration)
             return 0;
-        return static_cast<uint32_t>(key.handle & 0xFFFFFFFFu);
+        return static_cast<uint32_t>(key.handle) >> kInternShardBits;
     }
+
+    struct CachedPath
+    {
+        ObjectKey key;
+        PXR_NS::SdfPath path;
+        const std::string* text = nullptr;
+    };
+    static CachedPath& cacheFor(ObjectKey key);
 
     struct BufferEntry
     {
@@ -186,10 +226,10 @@ private:
     // getStageId() for why it is a snapshot rather than a live lookup.
     long mStageId = 0;
 
-    // Per-instance identity folded into the high 32 bits of every ObjectKey this
+    // Per-owner identity folded into the high 32 bits of every ObjectKey this
     // Source mints (see keyFor()/pathFor()/sourceKeyToString()). A fresh UsdSource
     // is constructed on every attach/reattach (AttachedStage::rebuildSource), and
-    // its own intern table (mKeyToPath below) restarts numbering from 1 each time
+    // its own per-shard path tables restart numbering from 1 each time
     // -- so the Nth path interned by one UsdSource instance and the Nth path
     // interned by the next instance would otherwise mint the SAME raw ObjectKey.
     // A stale key held across a detach/reattach could then silently resolve
@@ -208,36 +248,18 @@ private:
     // because UsdSource is constructed before its owning AttachedStage's
     // AttachHandle is minted (LoadUsd.cpp loadAttachedStage()), so the real
     // AttachHandle is not yet available at this point.
+    // Owned scan contexts inherit their attachment's identity namespace while
+    // keeping transient token/transform/buffer state private.
     const uint32_t mGeneration;
 
-    // Guards mPathToKey/mKeyToPath/mKeyStrings below. keyFor()/pathFor()/
-    // sourceKeyToString() are documented (and relied upon, e.g. by
-    // invertCollisionGroupMembers's parallelFor batching in LoadStage.cpp) as
-    // safely callable from multiple worker threads concurrently, but the
-    // intern table they share is a lazily-populated cache: a lookup that
-    // misses mutates mPathToKey/mKeyToPath/mKeyStrings. Without this lock,
-    // two threads racing to intern different not-yet-seen paths at the same
-    // time corrupt the unordered_map/deque (observed as a heap-corrupting
-    // SIGSEGV/double-free inside UsdSource::keyFor under the Replicator
-    // Multithreading Tests).
-    mutable std::mutex mInternMutex;
-
-    // Bidirectional SdfPath <-> ObjectKey intern table. mKeyToPath is a deque
-    // (not a vector) because pathFor() returns/callers may retain references
-    // into it across further keyFor() calls that grow the table: a vector
-    // push_back can reallocate and invalidate every prior element, but a
-    // deque never moves existing elements when growing.
-    mutable std::unordered_map<PXR_NS::SdfPath, ObjectKey, PXR_NS::SdfPath::Hash> mPathToKey;
-    mutable std::deque<PXR_NS::SdfPath> mKeyToPath;
+    // Independent path shards avoid serializing collection and clone workers
+    // on one table. Each shard synchronizes reads and insertion; retained path
+    // nodes keep identities and diagnostic text stable for this source's life.
+    std::shared_ptr<std::array<InternShard, kInternShardCount>> mInternShards;
 
     // Bidirectional TfToken <-> TokenId intern table
     mutable std::unordered_map<PXR_NS::TfToken, TokenId, PXR_NS::TfToken::HashFunctor> mTokenToId;
     mutable std::vector<PXR_NS::TfToken> mIdToToken;
-
-    // Cached string representations for sourceKeyToString return stability.
-    // deque for the same pointer/reference-stability reason as mKeyToPath —
-    // sourceKeyToString() returns a std::string_view into an element here.
-    mutable std::deque<std::string> mKeyStrings;
 
     // Lazily-built xform cache for getLocalToWorldTransform. mutable because
     // the cache populates on read but the source itself is logically const.

@@ -2,6 +2,13 @@
 
 Read this file for the Python `PhysX.read()` or `PhysX.read_tokens()` branch.
 
+Before using these helpers, attach a populated `ovstage.Stage` to `PhysX`
+using [Basic Workflow](../../basic-workflow/SKILL.md), then complete the step
+you intend to inspect. Keep the stage alive for every dictionary lookup.
+DirectGPU means GPU simulation with `/physics/suppressReadback` enabled. Warp
+is the array library used for numeric output; DLPack describes tensor storage
+for interoperability with other libraries.
+
 ## Open the read
 
 Use semantic strings when the requested columns are known:
@@ -10,7 +17,12 @@ Every tensor is a `warp.array`, so callers never branch on frontend type. Reside
 is per COLUMN, not per read: on a GPU scene the backend-sourced columns are CUDA
 arrays while host-resident ones (rest points, element indices, per-shape properties)
 stay on the CPU, so one group can mix the two. A non-empty index map is always a CPU
-`warp.array` of `uint32`, whatever the read's device:
+`warp.array` of `uint32`, whatever the read's device.
+
+Create `examples/output_read.py` with this helper and its imports. Call
+`inspect_active_rigid_bodies(physx)` after the completed step. It prints the
+returned identity, device, and shape for each column; no output means no groups
+matched. Refer to [Step First](#step-first) before interpreting an empty read.
 
 ```python
 import warp as wp
@@ -45,7 +57,10 @@ A device column is handed over **before its producing work has necessarily
 finished**. `PhysX.read()` orders the group's producer event onto the current
 Warp stream for the column's device before returning, without blocking the host.
 Select a non-default stream around the read when that is where the first work
-will run:
+will run. Add this helper to `examples/output_read.py`. Its `stream` argument
+is a `warp.Stream` on the same CUDA device as the requested position columns;
+its `physx` argument is the attached instance. Returned arrays retain their
+read-session lease, so drop them before destroying that instance:
 
 ```python
 import warp as wp
@@ -104,11 +119,63 @@ only while `ReadResult` is open:
 - `group.attribute`
 - `result.dictionary`
 
+Each is an **opaque interned integer**, not a path or a name: `prim_list` is a
+prim-path-list handle, `attribute` is an attribute token, and `result.dictionary` is a
+handle to the Stage's shared path dictionary. Resolve them through that dictionary with
+`ovstage.PathDictionary(stage)` — the same process-shared dictionary the attached Stage
+uses, so nothing is rebuilt:
+
+Add this helper to `examples/output_read.py`. Pass the same attached `stage`
+and `physx` used for the read. It returns copied path strings and emitted
+attribute names, so its return value is independent of the closed result:
+
+```python
+import ovstage
+from ovphysx.types import ObjectScope, SimObjectType
+
+
+def inspect_rigid_body_paths(physx, stage):
+    identities = []
+    with physx.read(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
+        with ovstage.PathDictionary(stage) as paths:
+            for group in result.groups:
+                prim_paths = paths.get_path_strings(group.prim_list)
+                attribute = paths.token_to_string(group.attribute)
+                # Fixed group: row i belongs to prim_paths[i].
+                # Array group: tensor i contains prim_paths[i]'s array.
+                identities.append((prim_paths, attribute))
+    return identities
+```
+
+`group.attribute` is the *emitted* token and may differ from the requested name (a
+`"position"` request on a point-instancer emits `"positions"`), so resolve it rather than
+assuming the requested string. `group.prim_list` also feeds
+`stage.query_from_path_list(group.prim_list)` directly for a no-repack write-back. See
+the source-checkout example `tests/python_samples/output_read.py` for the same
+pattern end to end. The wheel installs it as `samples/python_samples/output_read.py`.
+
 The context manager releases context-bound identity handles and drops its session
 reference. Numeric storage is released after the last array/view is gone. Drop
 all aliases before calling `PhysX.destroy()`. Destroying first emits a
 `ResourceWarning` and leaves that read session allocated so its pointers do not
 dangle.
+
+## Read Inputs
+
+The [Python API Reference](../../../docs/python_api.rst) defines the complete
+result fields. The two read entry points accept these arguments:
+
+| Field | Type | Required | Valid Values and Meaning |
+|---|---|---|---|
+| `object_type` | `SimObjectType` | Yes | One simulated type, such as `RIGID_BODY`. |
+| `attribute_names` | `list[str]` | For `read()` | Semantic names emitted by the selected type, such as `position`. Unsupported attributes produce no column. |
+| `attribute_tokens` | `list[int]` | For `read_tokens()` | Interned attribute tokens obtained from the attached Stage dictionary or query discovery. |
+| `scope` | `ObjectScope` | No | `ALL` by default or `ACTIVE`, with the type-specific behavior in [Scope and Layout Constraints](scope_and_layout.md). |
+
+Both entry points return a `ReadResult` context manager. `result.groups` is a
+list of `ReadGroup` values and may be empty. The [Ownership](#ownership)
+contract distinguishes the lifetime of borrowed numeric arrays from identity
+handles. A degree of freedom (DOF) is one independently movable joint axis.
 
 ## Scope and Layout
 

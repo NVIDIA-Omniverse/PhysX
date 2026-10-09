@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PROPS-MAT-001
+ * @covers AC-1
+ *
  * @implements REQ-PARSE-BODY-001
  * @covers AC-5
  *
@@ -718,6 +721,12 @@ void registerChangeParams(std::vector<usdparser::ChangeParams>& changeParams)
 
     // filtered pairs rel
     REGISTER_CHANGE(changeParams, "physics:filteredPairs", emptyRequirementCheck, updateFilteredPairs)
+
+    // Collider binding changes use the same dispatcher on USD and ovstage.
+    REGISTER_CHANGE(changeParams, "material:binding:physics", emptyRequirementCheck, updateShapeMaterialBinding)
+    changeParams.back().deferUntilFlush = true;
+    REGISTER_CHANGE(changeParams, "material:binding", emptyRequirementCheck, updateShapeMaterialBinding)
+    changeParams.back().deferUntilFlush = true;
 
     // material live changes
     REGISTER_CHANGE(changeParams, "physics:density", materialRequirementCheck, updateMaterialDensity)

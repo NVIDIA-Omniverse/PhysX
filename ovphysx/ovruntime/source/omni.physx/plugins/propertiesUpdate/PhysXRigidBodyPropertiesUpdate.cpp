@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PROPS-LINK-001
+ * @covers AC-1 AC-2
+ *
  * @implements REQ-PARSE-BODY-001
  * @covers AC-5
  *
@@ -18,6 +21,11 @@
 /**
  * @implements REQ-SIM-ACTIVEACTOR-001
  * @covers AC-1
+ */
+
+/**
+ * @implements REQ-SIM-BODY-INPUT-001
+ * @covers AC-2 AC-5 AC-6
  */
 
 #include "PhysXPropertiesUpdate.h"
@@ -260,6 +268,17 @@ void updateLinearVelocity(InternalActor* internalActor, PxRigidActor* actor, boo
 
 bool omni::physx::updateBodyLinearVelocity(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
+    const InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    PhysXType type = ePTRemoved;
+    const InternalDatabase::Record* record = db.getFullRecord(type, objectId);
+    carb::Float3 value;
+    if (!record || !getValue<carb::Float3>(attachedStage, record->mKey, property, timeCode, value))
+        return true;
+    return updateBodyLinearVelocity(attachedStage, objectId, value);
+}
+
+bool omni::physx::updateBodyLinearVelocity(AttachedStage& attachedStage, ObjectId objectId, const carb::Float3& data)
+{
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
 
@@ -270,9 +289,6 @@ bool omni::physx::updateBodyLinearVelocity(AttachedStage& attachedStage, ObjectI
 
     if (internalType == ePTActor)
     {
-        carb::Float3 data;
-        if (!getValue<carb::Float3>(attachedStage, objectRecord->mKey, property, timeCode, data))
-            return true;
         PxVec3 velocity = toPhysX(data);
 
         PxRigidActor* actor = (PxRigidActor*)objectRecord->mPtr;
@@ -310,11 +326,7 @@ bool omni::physx::updateBodyLinearVelocity(AttachedStage& attachedStage, ObjectI
         }
         else
         {
-            carb::Float3 velocity;
-            if (!getValue<carb::Float3>(attachedStage, objectRecord->mKey, property, timeCode, velocity))
-                return true;
-
-            actor->getArticulation().setRootLinearVelocity(toPhysX(velocity));
+            actor->getArticulation().setRootLinearVelocity(toPhysX(data));
             // preist todo: Check if articulation->updatekinematic is needed here.
         }
     }
@@ -336,6 +348,17 @@ void updateAngularVelocity(InternalActor* internalActor,
 
 bool omni::physx::updateBodyAngularVelocity(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
+    const InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    PhysXType type = ePTRemoved;
+    const InternalDatabase::Record* record = db.getFullRecord(type, objectId);
+    carb::Float3 value;
+    if (!record || !getValue<carb::Float3>(attachedStage, record->mKey, property, timeCode, value))
+        return true;
+    return updateBodyAngularVelocity(attachedStage, objectId, value);
+}
+
+bool omni::physx::updateBodyAngularVelocity(AttachedStage& attachedStage, ObjectId objectId, const carb::Float3& data)
+{
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
 
@@ -346,9 +369,6 @@ bool omni::physx::updateBodyAngularVelocity(AttachedStage& attachedStage, Object
 
     if (internalType == ePTActor)
     {
-        carb::Float3 data;
-        if (!getValue<carb::Float3>(attachedStage, objectRecord->mKey, property, timeCode, data))
-            return true;
         PxVec3 angularVelocity = toPhysX(data);
 
         InternalActor* internalActor = (InternalActor*)objectRecord->mInternalPtr;
@@ -384,11 +404,7 @@ bool omni::physx::updateBodyAngularVelocity(AttachedStage& attachedStage, Object
         }
         else
         {
-            carb::Float3 angularVelocity;
-            if (!getValue<carb::Float3>(attachedStage, objectRecord->mKey, property, timeCode, angularVelocity))
-                return true;
-
-            actor->getArticulation().setRootAngularVelocity(degToRad(toPhysX(angularVelocity)));
+            actor->getArticulation().setRootAngularVelocity(degToRad(toPhysX(data)));
             // preist todo: Check if articulation->updatekinematic is needed here.
         }
     }
@@ -412,8 +428,8 @@ bool omni::physx::updateBodyLinearDamping(AttachedStage& attachedStage, ObjectId
             return true;
 
         PxRigidActor* actor = (PxRigidActor*)objectRecord->mPtr;
-        if (actor->is<PxRigidDynamic>())
-            actor->is<PxRigidDynamic>()->setLinearDamping(data);
+        if (actor->is<PxRigidBody>())
+            actor->is<PxRigidBody>()->setLinearDamping(data);
     }
     return true;
 }
@@ -436,8 +452,8 @@ bool omni::physx::updateBodyAngularDamping(AttachedStage& attachedStage, omni::p
             return true;
 
         PxRigidActor* actor = (PxRigidActor*)objectRecord->mPtr;
-        if (actor->is<PxRigidDynamic>())
-            actor->is<PxRigidDynamic>()->setAngularDamping(data);
+        if (actor->is<PxRigidBody>())
+            actor->is<PxRigidBody>()->setAngularDamping(data);
     }
     return true;
 }
@@ -460,8 +476,8 @@ bool omni::physx::updateBodyMaxLinearVelocity(AttachedStage& attachedStage, omni
             return true;
 
         PxRigidActor* actor = (PxRigidActor*)objectRecord->mPtr;
-        if (actor->is<PxRigidDynamic>() && data >= 0.0f && data <= SQRT_FLT_MAX)
-            actor->is<PxRigidDynamic>()->setMaxLinearVelocity(data);
+        if (actor->is<PxRigidBody>() && data >= 0.0f && data <= SQRT_FLT_MAX)
+            actor->is<PxRigidBody>()->setMaxLinearVelocity(data);
     }
     return true;
 }
@@ -485,8 +501,8 @@ bool omni::physx::updateBodyMaxAngularVelocity(AttachedStage& attachedStage, omn
 
         data = degToRad(data);
         PxRigidActor* actor = (PxRigidActor*)objectRecord->mPtr;
-        if (actor->is<PxRigidDynamic>() && data >= 0.0f && data <= SQRT_FLT_MAX)
-            actor->is<PxRigidDynamic>()->setMaxAngularVelocity(data);
+        if (actor->is<PxRigidBody>() && data >= 0.0f && data <= SQRT_FLT_MAX)
+            actor->is<PxRigidBody>()->setMaxAngularVelocity(data);
     }
     return true;
 }
@@ -509,8 +525,8 @@ bool omni::physx::updateBodyMaxContactImpulse(AttachedStage& attachedStage, omni
             return true;
 
         PxRigidActor* actor = (PxRigidActor*)objectRecord->mPtr;
-        if (actor->is<PxRigidDynamic>())
-            actor->is<PxRigidDynamic>()->setMaxContactImpulse(data);
+        if (actor->is<PxRigidBody>())
+            actor->is<PxRigidBody>()->setMaxContactImpulse(data);
     }
     return true;
 }
@@ -585,8 +601,8 @@ bool omni::physx::updateBodyMaxDepenetrationVelocity(AttachedStage& attachedStag
             return true;
 
         PxRigidActor* actor = (PxRigidActor*)objectRecord->mPtr;
-        if (actor->is<PxRigidDynamic>())
-            actor->is<PxRigidDynamic>()->setMaxDepenetrationVelocity(data);
+        if (actor->is<PxRigidBody>())
+            actor->is<PxRigidBody>()->setMaxDepenetrationVelocity(data);
     }
     return true;
 }
@@ -609,8 +625,8 @@ bool omni::physx::updateBodyContactSlopCoefficient(AttachedStage& attachedStage,
             return true;
 
         PxRigidActor* actor = (PxRigidActor*)objectRecord->mPtr;
-        if (actor->is<PxRigidDynamic>())
-            actor->is<PxRigidDynamic>()->setContactSlopCoefficient(data);
+        if (actor->is<PxRigidBody>())
+            actor->is<PxRigidBody>()->setContactSlopCoefficient(data);
     }
     return true;
 }

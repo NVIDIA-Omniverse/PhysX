@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PARSE-INSTANCER-DISPATCH-001
+ * @covers AC-1
+ */
+
+/**
  * @implements REQ-PARSE-CCT-001
  * @covers AC-5
  *
@@ -107,6 +112,7 @@ omni::physics::parse::ScannedStage scanStageOvstage(ovstage_instance_t* instance
     out.particleSamplerKeys = std::move(scan.particleSamplerKeys);
     out.ccts = std::move(scan.ccts);
     out.hasPointInstancerPrims = scan.hasPointInstancerPrims;
+    out.particleObjectCandidates = std::move(scan.particleObjectCandidates);
     return out;
 }
 

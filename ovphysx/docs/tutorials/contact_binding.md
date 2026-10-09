@@ -3,6 +3,11 @@
 
 # Contact Binding -- Reading Contact Forces
 
+> **Deprecated.** The contact-binding API, including the normal and friction
+> read methods, is retained for compatibility. C calls produce compiler
+> deprecation warnings. Python `PhysX.create_contact_binding()` emits
+> `DeprecationWarning`.
+
 Contact bindings let you read contact forces between **sensor** bodies and
 **filter** bodies. A sensor is a rigid body prim (or a set of prims matched by a
 USD path pattern) whose contacts you want to measure. A filter is a second set of
@@ -57,21 +62,41 @@ reporting from the source actor.
   automatically from the last successful `step()`, `step_sync()`, or
   `step_n_sync()` call. You do not pass it manually.
 - Result tensor shapes:
-  - Net forces: `[S, 3]` -- one 3-D force vector per matched sensor object.
-  - Force matrix: `[S, F, 3]` — force vectors per (sensor, filter) pair.
-  - Detailed contact data: contact forces and separations use `[C, 1]`;
+  - Net normal or net friction forces: `[S, 3]` -- one 3-D force vector per sensor.
+  - Normal or friction force matrix: `[S, F, 3]` — force vectors per (sensor, filter) pair.
+  - Detailed contact data: scalar normal forces and separations use `[C, 1]`;
     positions and normals use `[C, 3]`; all are indexed by `[S, F]`
     count/start-index tensors.
   - Detailed friction data: friction forces and points use `[C, 3]` buffers
     indexed by `[S, F]` count/start-index tensors.
+
+### Force Components and Filtering
+
+Net normal and net friction forces are reported separately as world-space
+vectors for each sensor. Both include all reported contacts, regardless of the
+configured filters. Adding the two vectors from the same simulation step yields
+the total contact force.
+
+The normal and friction force matrices contain only contributions from the
+configured sensor/filter pairs. Adding the two matrices from the same simulation
+step yields total contact forces for those pairs. For example, if a foot touches
+the floor and a wall but its filter selects only the floor, the friction matrix
+and detailed friction data omit the wall contribution. The net friction force
+includes both.
+
+The net friction force is the vector sum of the forces at the friction anchors.
+Opposing forces can cancel while still producing a torque, such as when a box
+rotates on the ground without translating. The net friction force does not
+represent that torque.
 
 ## Python
 
 ### Full Binding + Destroy
 
 This sample creates a contact binding on `boxes_falling_on_groundplane.usda`,
-steps until the sensor lands, reads both the net forces and the force matrix,
-then destroys the binding explicitly:
+steps until the sensor lands, and prints the normal, friction, and total contact
+forces for both net forces and the force matrix. It then destroys the binding
+explicitly:
 
 ```{literalinclude} ../../tests/python_samples/contact_binding.py
 :language: python
@@ -79,8 +104,9 @@ then destroys the binding explicitly:
 :end-before: [tutorial-end]
 ```
 
-After 120 steps both `read_net_forces()` and `read_force_matrix()` print a
-non-zero vector on the order of Cube1's weight (about 9810 N in Z). In
+After 120 steps the normal and total contact force vectors are on the order of
+Cube1's weight (about 9810 N in Z); friction is approximately zero for the settled
+box. The sample prints these components for both net forces and the force matrix. In
 `boxes_falling_on_groundplane.usda`, Cube1 lands on `/World/BigBase`, not the
 ground plane, so the sample's filter is that prim. A filter naming the ground
 still creates a valid 1x1 binding; the matrix is then all zeros while net
@@ -96,6 +122,42 @@ explicit `destroy()` call is required:
 :start-after: [tutorial-context-manager]
 :end-before: [tutorial-context-manager-end]
 ```
+
+### Reading Normal and Friction Forces
+
+`read_net_normal_forces()` returns the net normal force on each sensor.
+`read_net_friction_forces()` returns the corresponding net friction force.
+Both methods work without filters or detailed-contact buffer capacity.
+`read_normal_force_matrix()` and `read_friction_force_matrix()` return the
+corresponding force components for each configured sensor/filter pair. Both
+matrices are independent of detailed-contact buffer capacity.
+
+For an existing binding and output arrays of shape `[sensor_count, 3]`, the
+total contact force is obtained by adding the results from the same simulation
+step:
+
+```python
+binding.read_net_normal_forces(normal_forces)
+binding.read_net_friction_forces(friction_forces)
+total_forces = normal_forces + friction_forces
+```
+
+For output arrays of shape `[sensor_count, filter_count, 3]`, the corresponding
+total forces for the configured pairs are obtained as follows:
+
+```python
+binding.read_normal_force_matrix(normal_matrix)
+binding.read_friction_force_matrix(friction_matrix)
+total_force_matrix = normal_matrix + friction_matrix
+```
+
+`read_net_forces()`, `read_force_matrix()`, and `read_contact_data()` remain as
+deprecated aliases of `read_net_normal_forces()`, `read_normal_force_matrix()`,
+and `read_normal_contact_data()`, respectively. Their force values remain
+normal-only; existing calculations that add separately reported friction retain
+their meaning.
+`read_friction_data()` is a deprecated alias of `read_friction_contact_data()`
+with unchanged results.
 
 ## C
 
@@ -159,6 +221,18 @@ def create_filtered_binding(physx):
 
 ## Detailed Contact and Friction Data
 
+`read_normal_contact_data()` returns scalar normal forces, contact normals, points,
+and separations. Each normal force vector is obtained by multiplying the scalar
+force by its corresponding contact normal. `read_friction_contact_data()` returns
+friction force vectors and their anchor points. Both methods report data for
+the configured sensor/filter pairs.
+
+Friction anchors need not correspond one-to-one with contact points. Each
+method's count/start-index tensors describe its own data. Summing detailed
+friction data reproduces the net friction only when the filters cover all
+relevant contacts without double counting and the buffers contain all reported
+anchors.
+
 Use `cb.max_contact_data_count` to allocate reusable flat buffers. For each
 sensor/filter pair, `counts[s, f]` and `start_indices[s, f]` identify the valid
 slice inside the flat buffers.
@@ -167,9 +241,10 @@ slice inside the flat buffers.
 `cb.filter_paths` returns a nested `[sensor][filter]` list in column order.
 
 Create the binding with `filter_patterns`, `filters_per_sensor > 0`, and
-`max_contact_data_count > 0` before calling `read_contact_data()` or
-`read_friction_data()`. The aggregate `read_net_forces()` and
-`read_force_matrix()` calls do not require this detailed-contact capacity.
+`max_contact_data_count > 0` before calling `read_normal_contact_data()` or
+`read_friction_contact_data()`. The aggregate `read_net_normal_forces()`,
+`read_net_friction_forces()`, `read_normal_force_matrix()`, and
+`read_friction_force_matrix()` calls do not require this detailed-contact capacity.
 `counts` and `start_indices` can be `int32` or `uint32`; NumPy's default integer
 dtype is usually `int64`, so allocate these arrays with an explicit dtype.
 
@@ -186,7 +261,7 @@ def read_detailed_data(binding):
     counts = np.zeros(shape, dtype=np.int32)
     starts = np.zeros(shape, dtype=np.int32)
 
-    binding.read_contact_data(
+    required_contacts = binding.read_normal_contact_data(
         contact_forces,
         positions,
         normals,
@@ -194,6 +269,8 @@ def read_detailed_data(binding):
         counts,
         starts,
     )
+    # required_contacts is the complete demand. If it exceeds capacity, counts/starts
+    # still describe only the in-range prefix that was written.
 
     sensor = 0
     contact_filter = 0
@@ -206,7 +283,7 @@ def read_detailed_data(binding):
     friction_counts = np.zeros(shape, dtype=np.int32)
     friction_starts = np.zeros(shape, dtype=np.int32)
 
-    binding.read_friction_data(
+    required_friction = binding.read_friction_contact_data(
         friction_forces,
         friction_points,
         friction_counts,
@@ -375,6 +452,9 @@ removed mid-run, re-resolve rather than trusting a cached entry, since a removed
 resolves to `""` and would not match the path test that produced the original verdict.
 
 In C, `ovphysx_read_raw_contact_data` takes the same six tensors in the same order —
-`sensor_layout_tensor` then `actor_ids_tensor` after the four value buffers. Refer to
-the [`ovphysx_read_raw_contact_data` declaration](../api.md) for the full parameter
+`sensor_layout_tensor` then `actor_ids_tensor` after the four value buffers — followed
+by `out_required_contact_count`. That output is the total demand before truncation. If
+it exceeds the binding's `max_contact_data_count`, the function returns
+`OVPHYSX_API_BUFFER_TOO_SMALL` while leaving a valid prefix in the tensors. Refer to the
+[`ovphysx_read_raw_contact_data` declaration](../api.md) for the full parameter
 documentation.

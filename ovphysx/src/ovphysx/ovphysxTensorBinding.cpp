@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-CAPI-BINDING-SELECTION-001
+ * @covers AC-1 AC-2 AC-3 AC-4
+ *
  * @implements REQ-CAPI-STRING-001
  * @covers AC-3
  *
@@ -324,15 +327,8 @@ void destroyBindingResources(TensorBindingState& b)
             }
         }
     }
-    // Reset unconditionally so a null simView or a failed context push does not leave a dangling pointer.
-    b.wrenchSoaScratchDev = 0;
-    b.wrenchSoaScratchBytes = 0;
-
-    if (b.rbView) { b.rbView->release(); b.rbView = nullptr; }
-    if (b.artiView) { b.artiView->release(); b.artiView = nullptr; }
-    if (b.defBodyView) { b.defBodyView->release(); b.defBodyView = nullptr; }
-    if (b.defMatView) { b.defMatView->release(); b.defMatView = nullptr; }
-    if (b.simView) { b.simView->release(false); b.simView = nullptr; }
+    // The last binding releases the simulation view and its child view together.
+    b = {};
 }
 
 bool requiresRigidBodyView(ovphysx_tensor_type_t type)
@@ -1689,121 +1685,83 @@ OVPHYSX_API ovphysx_result_t ovphysx_create_tensor_binding(
     if (!instance || !instance->ovstage_attached)
         return set_error(OVPHYSX_API_ERROR, "no physics stage attached");
 
-    auto* tensorApi = getTensorApi();
+    omni::physics::tensors::TensorApi* tensorApi = getTensorApi();
     if (!tensorApi)
         return set_error(OVPHYSX_API_ERROR, "TensorApi unavailable (plugins not loaded?)");
 
     TensorBindingState binding;
-    struct BindingGuard {
-        TensorBindingState* state{nullptr};
-        bool active{true};
-        ~BindingGuard() {
-            if (active && state) {
-                destroyBindingResources(*state);
-            }
-        }
-        void disarm() { active = false; }
-    } guard{&binding};
-
     binding.attachHandle = instance->attachHandle;
     binding.tensorType = desc->tensor_type;
-    // Store descriptive pattern string for debugging
-    binding.pattern = usingExplicitPaths
-        ? ("explicit_paths[" + std::to_string(desc->prim_paths_count) + "]")
-        : patterns[0];
 
-    binding.simView = tensorApi->createSimulationView(instance->attachHandle);
-    if (!binding.simView || !binding.simView->getValid())
+    // Reuse the native selection, not the attribute handle or its scratch buffers.
     {
-        return set_error(OVPHYSX_API_ERROR, "failed to create simulation view");
+        std::lock_guard<std::mutex> lock(instance->tensor_binding_mutex);
+        for (const std::pair<const ovphysx_tensor_binding_handle_t, TensorBindingState>& entry : instance->tensor_bindings)
+        {
+            const TensorBindingState& candidate = entry.second;
+            const bool sameFamily =
+                (requiresRigidBodyView(desc->tensor_type) && candidate.rbView) ||
+                (requiresArticulationView(desc->tensor_type) && candidate.artiView) ||
+                (requiresDeformableMaterialView(desc->tensor_type) && candidate.defMatView) ||
+                (requiresDeformableBodyView(desc->tensor_type) && candidate.defBodyView &&
+                 isSurfaceDeformableBodyType(desc->tensor_type) == isSurfaceDeformableBodyType(candidate.tensorType));
+            if (!sameFamily || candidate.attachHandle != instance->attachHandle ||
+                *candidate.patterns != patterns || !candidate.simView->isSelectionCurrent())
+                continue;
+            // GPU disable writes retire their own mapping immediately; GPU row reads
+            // retire it on refresh. Neither may retire a host-property binding.
+            if (candidate.rbView && candidate.simView->getDeviceOrdinal() >= 0 &&
+                (desc->tensor_type == OVPHYSX_TENSOR_RIGID_BODY_DISABLE_SIMULATION_BOOL ||
+                 candidate.tensorType == OVPHYSX_TENSOR_RIGID_BODY_DISABLE_SIMULATION_BOOL ||
+                 isCpuOnlyTensorType(desc->tensor_type) != isCpuOnlyTensorType(candidate.tensorType)))
+                continue;
+            binding.patterns = candidate.patterns;
+            binding.simView = candidate.simView;
+            binding.rbView = candidate.rbView;
+            binding.artiView = candidate.artiView;
+            binding.defBodyView = candidate.defBodyView;
+            binding.defMatView = candidate.defMatView;
+            break;
+        }
     }
 
-    // Create the view for the tensor type. TensorAPI returns nullptr when no prims
-    // match the pattern, which ovphysx treats as a valid empty binding.
+    // Null child views remain valid empty bindings. A stale selection is rebuilt
+    // without retiring older bindings that can still read their original objects.
+    if (!binding.simView)
     {
-        ScopedTensorNoMatchLogQuiet quietNoMatchLogs(binding.simView, !usingExplicitPaths);
+        binding.patterns = std::make_shared<const std::vector<std::string>>(std::move(patterns));
+        binding.simView.reset(tensorApi->createSimulationView(instance->attachHandle),
+                             [](omni::physics::tensors::ISimulationView* view) { if (view) view->release(true); });
+        if (!binding.simView || !binding.simView->getValid())
+            return set_error(OVPHYSX_API_ERROR, "failed to create simulation view");
+        ScopedTensorNoMatchLogQuiet quietNoMatchLogs(binding.simView.get(), !usingExplicitPaths);
         if (requiresRigidBodyView(desc->tensor_type))
-        {
-            binding.rbView = binding.simView->createRigidBodyView(patterns);
-            // A null view means 0 prims matched and getCount() returns 0.
-            if (binding.rbView)
-            {
-                CARB_LOG_INFO("Created rigid body binding with %u prims for pattern '%s'",
-                              binding.rbView->getCount(), binding.pattern.c_str());
-            }
-            else
-            {
-                CARB_LOG_INFO("Created valid empty rigid body binding with 0 prims for pattern '%s'",
-                              binding.pattern.c_str());
-            }
-        }
+            binding.rbView = binding.simView->createRigidBodyView(*binding.patterns);
         else if (requiresArticulationView(desc->tensor_type))
-        {
-            binding.artiView = binding.simView->createArticulationView(patterns);
-            // A null view means 0 prims matched and getCount() returns 0.
-            if (binding.artiView)
-            {
-                // Centroidal momentum is only defined for floating-base articulations, so a
-                // fixed-base match is rejected at creation instead of at read time. Every
-                // matched articulation is checked rather than the shared metatype, because a
-                // pattern can resolve to a mix of fixed- and floating-base articulations and
-                // one fixed-base entry already makes the read undefined. Empty views stay valid.
-                if (desc->tensor_type == OVPHYSX_TENSOR_ARTICULATION_CENTROIDAL_MOMENTUM_F32)
-                {
-                    const uint32_t artiCount = binding.artiView->getCount();
-                    for (uint32_t i = 0; i < artiCount; ++i)
-                    {
-                        const auto* metatype = binding.artiView->getMetatype(i);
-                        if (metatype && metatype->getFixedBase())
-                            return set_error(OVPHYSX_API_INVALID_ARGUMENT,
-                                             "centroidal momentum is only defined for floating-base "
-                                             "articulations; matched a fixed-base articulation");
-                    }
-                }
-                CARB_LOG_INFO("Created articulation binding with %u prims for pattern '%s'",
-                              binding.artiView->getCount(), binding.pattern.c_str());
-            }
-            else
-            {
-                CARB_LOG_INFO("Created valid empty articulation binding with 0 prims for pattern '%s'",
-                              binding.pattern.c_str());
-            }
-        }
+            binding.artiView = binding.simView->createArticulationView(*binding.patterns);
         else if (requiresDeformableBodyView(desc->tensor_type))
         {
             if (isSurfaceDeformableBodyType(desc->tensor_type))
-                binding.defBodyView = binding.simView->createSurfaceDeformableBodyView(patterns);
+                binding.defBodyView = binding.simView->createSurfaceDeformableBodyView(*binding.patterns);
             else
-                binding.defBodyView = binding.simView->createVolumeDeformableBodyView(patterns);
-            const char* bodyKind = isSurfaceDeformableBodyType(desc->tensor_type) ? "surface" : "volume";
-            if (binding.defBodyView)
-            {
-                CARB_LOG_INFO("Created %s deformable body binding with %u prims for pattern '%s'",
-                              bodyKind, binding.defBodyView->getCount(), binding.pattern.c_str());
-            }
-            else
-            {
-                CARB_LOG_WARN("%s deformable body binding created with 0 prims for pattern '%s'",
-                              bodyKind, binding.pattern.c_str());
-            }
+                binding.defBodyView = binding.simView->createVolumeDeformableBodyView(*binding.patterns);
         }
         else if (requiresDeformableMaterialView(desc->tensor_type))
-        {
-            binding.defMatView = binding.simView->createDeformableMaterialView(patterns);
-            if (binding.defMatView)
-            {
-                CARB_LOG_INFO("Created deformable material binding with %u prims for pattern '%s'",
-                              binding.defMatView->getCount(), binding.pattern.c_str());
-            }
-            else
-            {
-                CARB_LOG_WARN("Deformable material binding created with 0 prims for pattern '%s'",
-                              binding.pattern.c_str());
-            }
-        }
+            binding.defMatView = binding.simView->createDeformableMaterialView(*binding.patterns);
         else
-        {
             return set_error(OVPHYSX_API_INVALID_ARGUMENT, "unsupported tensor type");
+    }
+
+    // This attribute restriction also applies when another binding already owns the view.
+    if (binding.artiView && desc->tensor_type == OVPHYSX_TENSOR_ARTICULATION_CENTROIDAL_MOMENTUM_F32)
+    {
+        for (uint32_t i = 0; i < binding.artiView->getCount(); ++i)
+        {
+            const omni::physics::tensors::IArticulationMetatype* metatype = binding.artiView->getMetatype(i);
+            if (metatype && metatype->getFixedBase())
+                return set_error(OVPHYSX_API_INVALID_ARGUMENT,
+                                 "centroidal momentum is only defined for floating-base "
+                                 "articulations; matched a fixed-base articulation");
         }
     }
 
@@ -1815,8 +1773,6 @@ OVPHYSX_API ovphysx_result_t ovphysx_create_tensor_binding(
         std::lock_guard<std::mutex> lock(instance->tensor_binding_mutex);
         instance->tensor_bindings[bindingHandle] = std::move(binding);
     }
-    guard.disarm();
-
     *out_binding_handle = bindingHandle;
     return success();
 }

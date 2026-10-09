@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-CAPI-THREADS-001
+# @covers AC-1 AC-2
+#
 # ovphysx C++ unit tests.
 # Runs the GTest-based C++ unit tests against the installed SDK.
 # Usage: cmake -P scripts/test_cpp.cmake
@@ -8,6 +11,7 @@
 # The device mode (CPU vs GPU) and lifecycle refs are process-global. Tests run
 # in separate processes so those locks and refs start clean for each pass:
 #   Attach-time CUDA selection test (isolated process)         clean selector
+#   Default GPU dynamics      (filter: DefaultGpuDynamicsTest) readback path
 #   Remaining GPU tests       (filter: *GpuTest*)               GPU lock
 #   Global lifecycle tests    (filter: GlobalLifecycle.*)       clean refs
 #   Non-GPU tests             (filter: -*GpuTest*:GlobalLifecycle.*) CPU lock
@@ -125,12 +129,12 @@ function(run_gtest_pass _P_LABEL _P_FILTER)
 
     set(_P_ENV)
     set(_P_ORIGINAL_PATH "$ENV{PATH}")
-    if("${_P_LABEL}" STREQUAL "gpu")
+    if("${_P_LABEL}" STREQUAL "gpu" OR "${_P_LABEL}" STREQUAL "default-gpu")
         list(APPEND _P_ENV "OVPHYSX_TEST_REQUIRE_CUDA=1")
     elseif("${_P_LABEL}" MATCHES "^lifecycle")
         list(APPEND _P_ENV "OVPHYSX_DISABLE_GPU=1")
         list(APPEND _P_ENV "OVPHYSX_TEST_LIFECYCLE_OWNS_INIT=1")
-    elseif("${_P_LABEL}" STREQUAL "cpu")
+    elseif("${_P_LABEL}" STREQUAL "cpu" OR "${_P_LABEL}" MATCHES "^solver-threads-")
         list(APPEND _P_ENV "OVPHYSX_DISABLE_GPU=1")
         if(OS_NAME STREQUAL "windows")
             set(ENV{PATH} "${BASE_TEST_PATH}")
@@ -220,6 +224,13 @@ run_gtest_pass(
     "ActiveCudaGpusAttachTest.DirectGpuHostReadOnNonZeroOrdinal")
 
 # -------------------------------------------------------------------------
+# Default GPU dynamics without suppressReadback / DirectGPU. This is a fresh
+# process because Carbonite settings and the selected simulation path are
+# process-global.
+# -------------------------------------------------------------------------
+run_gtest_pass("default-gpu" "DefaultGpuDynamicsTest.*")
+
+# -------------------------------------------------------------------------
 # Remaining GPU tests. The CPU-no-CUDA-context test also requires a fresh
 # process and is routed to its own pass below.
 # -------------------------------------------------------------------------
@@ -245,9 +256,18 @@ run_gtest_pass(
 run_gtest_pass("omnipvd-cold" "OmniPvdColdCreation.*")
 
 # -------------------------------------------------------------------------
+# Each requested dispatcher count needs a fresh runtime and settings store.
+foreach(_THREAD_COUNT 1 2 4 8)
+    run_gtest_pass("solver-threads-${_THREAD_COUNT}"
+        "SolverThreadCount.Workers${_THREAD_COUNT}" "${GTEST_EXECUTABLE}" 60)
+endforeach()
+
+# -------------------------------------------------------------------------
 # Non-GPU tests
 # -------------------------------------------------------------------------
-run_gtest_pass("cpu" "-*GpuTest*:GlobalLifecycle.*:ActiveCudaGpusAttachTest.*:OmniPvdColdCreation.*")
+run_gtest_pass(
+    "cpu"
+    "-*GpuTest*:DefaultGpuDynamicsTest.*:GlobalLifecycle.*:ActiveCudaGpusAttachTest.*:OmniPvdColdCreation.*:SolverThreadCount.*")
 
 # -------------------------------------------------------------------------
 # CPU-no-CUDA-context contract. On a GPU box, a cpu_only instance must not open
@@ -268,10 +288,15 @@ set(GTEST_ALL_OUTPUT "")
 foreach(_LEAK_LOG
     "${TEST_RESULTS_DIR}/gtest_cuda-selection-attach.log"
     "${TEST_RESULTS_DIR}/gtest_cuda-selection-nonzero-ordinal.log"
+    "${TEST_RESULTS_DIR}/gtest_default-gpu.log"
     "${TEST_RESULTS_DIR}/gtest_gpu.log"
     "${TEST_RESULTS_DIR}/gtest_lifecycle.log"
     "${TEST_RESULTS_DIR}/gtest_lifecycle-lock-drain.log"
     "${TEST_RESULTS_DIR}/gtest_omnipvd-cold.log"
+    "${TEST_RESULTS_DIR}/gtest_solver-threads-1.log"
+    "${TEST_RESULTS_DIR}/gtest_solver-threads-2.log"
+    "${TEST_RESULTS_DIR}/gtest_solver-threads-4.log"
+    "${TEST_RESULTS_DIR}/gtest_solver-threads-8.log"
     "${TEST_RESULTS_DIR}/gtest_cpu.log"
     "${TEST_RESULTS_DIR}/gtest_cpu-no-cuda-context.log"
     "${TEST_RESULTS_DIR}/gtest_sidecar-token-scope.log")

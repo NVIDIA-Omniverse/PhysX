@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PROPS-MAT-001
+ * @covers AC-2
+ */
+
+/**
  * @implements REQ-PARSE-BACKEND-001
  * @covers AC-6
  *
@@ -48,6 +53,11 @@
  * per-object parse path for exactly the rows the drain reported as unresolved (the split, AC-13).
  */
 
+/**
+ * @implements REQ-SIM-BODY-INPUT-001
+ * @covers AC-2 AC-3 AC-5 AC-6
+ */
+
 #include <atomic>
 #include <cmath>
 
@@ -67,6 +77,7 @@
 #include <omni/physics/parse/IChangeFeed.h>
 #include <omni/physics/parse/KnownTokens.h>
 #include <PhysXTools.h>
+#include <propertiesUpdate/PhysXPropertiesUpdate.h>
 
 #include <omni/physx/PhysxTokens.h>
 #include <omni/physx/IOvxPhysicsWrite.h> // applyOvstageValueBatch -- the ovstage drain value-apply
@@ -243,6 +254,7 @@ void PrimChangeMap::internRegisteredChanges(const omni::physics::parse::IPhysics
         pc.onUpdate = changeParam.onUpdate;
         pc.onPrimCheckKey = changeParam.onPrimCheckKey;
         pc.onPrimCheckExtKey = changeParam.onPrimCheckExtKey;
+        pc.deferUntilFlush = changeParam.deferUntilFlush;
         m_propertyChanges.insert(std::pair<omni::physics::parse::TokenId, PropertyChange>(
             source.internToken(changeParam.changeAttribute), pc));
     }
@@ -263,6 +275,7 @@ void PrimChangeMap::registerStageSpecificChange(omni::physics::parse::TokenId at
     pc.onUpdate = changeParam.onUpdate;
     pc.onPrimCheckKey = changeParam.onPrimCheckKey;
     pc.onPrimCheckExtKey = changeParam.onPrimCheckExtKey;
+    pc.deferUntilFlush = changeParam.deferUntilFlush;
     m_stageSpecificChanges.insert(std::pair<omni::physics::parse::TokenId, PropertyChange>(attributeId, pc));
 }
 
@@ -308,7 +321,7 @@ void moveBody(AttachedStage& attachedStage, omni::physics::parse::ObjectKey key)
         while (it != entries->end())
         {
             bool updateOk = attachedStage.getPhysXPhysicsInterface()->updateTransform(
-                attachedStage, key, it->second, fcTransform, true, scaleProvided);
+                attachedStage, key, it->second, fcTransform, scaleProvided);
             if (!updateOk)
             {
                 structChange = true;
@@ -975,7 +988,23 @@ void PrimChangeMap::checkPrimChange(AttachedStage& attachedStage,
             if (src && internal::physxtools_detail::isCookedGeometryAttribute(src->tokenToString(propertyTokenId)))
                 internal::clearCookedValue(attachedStage, primKey, propertyTokenId);
 
-            if (!deferUpdates)
+            // Copy velocity inputs while the source batch is still valid. Both
+            // synchronous and async updates apply them after the final transform.
+            if (propertyTokenId == tok.physicsVelocity || propertyTokenId == tok.physicsAngularVelocity)
+            {
+                carb::Float3 value;
+                if (internal::getValue<carb::Float3>(attachedStage, primKey, propertyTokenId,
+                                                   omni::physics::parse::ReadTime::defaultTime(), value))
+                {
+                    VelocityChange& pending = m_postTransformVelocityChanges[primKey];
+                    if (propertyTokenId == tok.physicsVelocity)
+                        pending.linear = value;
+                    else
+                        pending.angular = value;
+                }
+                return;
+            }
+            if (!deferUpdates && !change.deferUntilFlush)
             {
                 const ObjectIdMap* entries = attachedStage.getObjectDatabase()->getEntries(primKey);
                 if (entries && !entries->empty())
@@ -996,7 +1025,7 @@ void PrimChangeMap::checkPrimChange(AttachedStage& attachedStage,
                 while (it != m_keyChangeMap.end() && it->first == primKey)
                 {
                     ChangeData& changeData = it->second;
-                    if (changeData.second == propertyTokenId)
+                    if (changeData.property == propertyTokenId)
                     {
                         attributeSet = true;
                         break;
@@ -1007,7 +1036,7 @@ void PrimChangeMap::checkPrimChange(AttachedStage& attachedStage,
                 if (!attributeSet)
                 {
                     m_keyChangeMap.insert(std::pair<omni::physics::parse::ObjectKey, ChangeData>(
-                        primKey, { change.onUpdate, propertyTokenId }));
+                        primKey, { change.onUpdate, propertyTokenId, change.deferUntilFlush }));
                 }
                 return;
             }
@@ -1080,9 +1109,11 @@ void PrimChangeMap::checkPrimChange(AttachedStage& attachedStage,
     }
 }
 
-void PrimChangeMap::clearMap()
+void PrimChangeMap::clearMap(bool preserveQueuedProperties)
 {
-    m_keyChangeMap.clear();
+    if (!preserveQueuedProperties)
+        m_keyChangeMap.clear();
+    m_postTransformVelocityChanges.clear();
     m_keyTransformChangesSet.clear();
 }
 
@@ -1094,6 +1125,7 @@ void PrimChangeMap::removePrim(omni::physics::parse::ObjectKey key)
     KeyChangeMap::iterator it = m_keyChangeMap.find(key);
     if (it != m_keyChangeMap.end())
         m_keyChangeMap.erase(it);
+    m_postTransformVelocityChanges.erase(key);
 }
 
 void PrimChangeMap::processTransformUpdates(AttachedStage& attachedStage)
@@ -1116,6 +1148,24 @@ void PrimChangeMap::processTransformChanges(AttachedStage& attachedStage)
         handleTransformChange(attachedStage, key);
     }
     m_keyTransformChangesSet.clear();
+}
+
+void PrimChangeMap::processPostTransformVelocityChanges(AttachedStage& attachedStage)
+{
+    for (const auto& [key, velocity] : m_postTransformVelocityChanges)
+    {
+        const ObjectIdMap* entries = attachedStage.getObjectDatabase()->getEntries(key);
+        if (!entries)
+            continue;
+        for (const ObjectIdMap::value_type& entry : *entries)
+        {
+            if (velocity.linear)
+                updateBodyLinearVelocity(attachedStage, entry.second, *velocity.linear);
+            if (velocity.angular)
+                updateBodyAngularVelocity(attachedStage, entry.second, *velocity.angular);
+        }
+    }
+    m_postTransformVelocityChanges.clear();
 }
 
 bool PrimUpdateMap::needsSceneReset(const AttachedStage& attachedStage, omni::physics::parse::ObjectKey key)
@@ -1205,19 +1255,26 @@ void PrimUpdateMap::checkMap(const AttachedStage& attachedStage)
     }
 }
 
-void processChangeMap(AttachedStage& attachedStage)
+void processChangeMap(AttachedStage& attachedStage, bool includeFlushChanges)
 {
     // Guards both drains below against re-entrant dispatch while applying a
     // deferred update (same ChangeSource::eUsd marker onSourceChange itself
     // uses for every source, not just a literal USD one).
     auto changeSourceBlock = attachedStage.getChangeSourceBlock(ChangeSource::eUsd);
 
-    KeyChangeMap::const_iterator itKeyCh = attachedStage.getPrimChangeMap().getKeyMap().begin();
-    KeyChangeMap::const_iterator itKeyChEnd = attachedStage.getPrimChangeMap().getKeyMap().end();
-    while (itKeyCh != itKeyChEnd)
+    KeyChangeMap& changes = attachedStage.getPrimChangeMap().getKeyMap();
+    KeyChangeMap::iterator itKeyCh = changes.begin();
+    while (itKeyCh != changes.end())
     {
         const omni::physics::parse::ObjectKey primKey = itKeyCh->first;
         const ChangeData& changeData = itKeyCh->second;
+        // Fetch applies ordinary async inputs, but relationship edits must wait
+        // until a full flush has processed queued prim creation.
+        if (changeData.deferUntilFlush && !includeFlushChanges)
+        {
+            ++itKeyCh;
+            continue;
+        }
 
         const ObjectIdMap* entries = attachedStage.getObjectDatabase()->getEntries(primKey);
         if (entries && !entries->empty())
@@ -1225,15 +1282,16 @@ void processChangeMap(AttachedStage& attachedStage)
             auto it = entries->begin();
             while (it != entries->end())
             {
-                changeData.first(attachedStage, it->second, changeData.second, omni::physics::parse::ReadTime::defaultTime());
+                changeData.onUpdate(attachedStage, it->second, changeData.property, omni::physics::parse::ReadTime::defaultTime());
                 it++;
             }
         }
-        itKeyCh++;
+        itKeyCh = changes.erase(itKeyCh);
     }
 
     attachedStage.getPrimChangeMap().processTransformUpdates(attachedStage);
-    attachedStage.getPrimChangeMap().clearMap();
+    attachedStage.getPrimChangeMap().processPostTransformVelocityChanges(attachedStage);
+    attachedStage.getPrimChangeMap().clearMap(/*preserveQueuedProperties=*/true);
 }
 
 void flushBufferedChanges(AttachedStage& attachedStage, float currentTime)
@@ -1301,7 +1359,7 @@ void flushBufferedChanges(AttachedStage& attachedStage, float currentTime)
         attachedStage.getPrimUpdateMap().clearMap();
     }
 
-    processChangeMap(attachedStage);
+    processChangeMap(attachedStage, true);
 }
 
 void processUpdates(AttachedStage& attachedStage, float currentTime)
@@ -1556,6 +1614,8 @@ void onSourceGroupComplete(AttachedStage& attachedStage)
         return;
     auto changeSourceBlock = attachedStage.getChangeSourceBlock(ChangeSource::eUsd);
     attachedStage.getPrimChangeMap().processTransformChanges(attachedStage);
+    if (!usdLoad->getAsyncUSDUpdate())
+        attachedStage.getPrimChangeMap().processPostTransformVelocityChanges(attachedStage);
 }
 
 

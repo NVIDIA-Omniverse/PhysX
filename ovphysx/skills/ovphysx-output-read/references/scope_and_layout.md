@@ -3,6 +3,11 @@
 Read this file when using `ACTIVE` scope, consuming discovery counts for an
 `ACTIVE` query, or caching prim order and tensor shapes across structural edits.
 
+A *prim* is a named scene element. A query selects a simulated object type;
+refer to [C Query/Read Lifecycle](c_api.md) or [Python Output Reads](python.md)
+for its lifetime. DirectGPU means GPU simulation with
+`/physics/suppressReadback` enabled.
+
 ## `ACTIVE` Support
 
 `ACTIVE` has two independently implemented behaviors: filtering the groups

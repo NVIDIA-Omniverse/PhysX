@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-SIM-LOCALVELOCITY-001
+// @covers AC-1, AC-2
+
 /**
  * @implements REQ-PUBLICAPI-001
  * @covers AC-27 AC-28
@@ -711,9 +714,8 @@ void parseRigidBodyInstancer(AttachedStage& attachedStage,
                     transformedVelocity = ::physx::PxVec3d(velocities[i].x, velocities[i].y, velocities[i].z);
                 if (dynamicBody->localSpaceVelocities)
                 {
-                    // GfMatrix4d::Transform is a point transform (translation included);
-                    // PxMat44::transform matches it.
-                    transformedVelocity = instancerMatrix.transform(transformedVelocity);
+                    // Velocity is a direction: apply rotation and scale, excluding translation.
+                    transformedVelocity = instancerMatrix.rotate(transformedVelocity);
                 }
                 dynamicBody->linearVelocity = carb::Float3{ float(transformedVelocity.x), float(transformedVelocity.y),
                                                             float(transformedVelocity.z) };

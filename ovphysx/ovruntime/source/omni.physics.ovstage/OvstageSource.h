@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PARSE-SUBTREE-001
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5
+ */
+
+/**
  * @implements REQ-PUBLICAPI-003
  * @covers AC-1 AC-2 AC-3 AC-4 AC-6
  *
@@ -232,8 +237,8 @@ public:
 
     ObjectKey getRootKey() const override;
     bool exists(ObjectKey key) const override;
-    // One `usd-path IN [...]` round trip for every cold key in `keys`, instead of
-    // exists()'s one round trip per cold key. See IPhysicsSource::existsBatch.
+    // One usd-path read over a query built from the cold candidate paths in `keys`,
+    // instead of exists()'s one query per cold key. See IPhysicsSource::existsBatch.
     void existsBatch(const std::vector<ObjectKey>& keys, std::vector<bool>& outExists) const override;
     // existsBatch() that reports whether every cold key was actually resolved (false: the live
     // query failed, so a `false` answer is not proof of absence).
@@ -243,6 +248,7 @@ public:
                                  std::function<bool(ObjectKey)> visit,
                                  DescendantScope scope = DescendantScope::eAll) const override;
     void forEachChild(ObjectKey parent, std::function<void(ObjectKey)> cb) const override;
+    void withSubtreeHierarchy(ObjectKey root, const std::function<void()>& visit) const override;
     ObjectKey findByPath(std::string_view path) const override;
     ObjectKey getParent(ObjectKey key) const override;
     // enumerate/get_paths and intern_path can hand back distinct handles for the
@@ -389,7 +395,9 @@ public:
     void clearKnownKeys() const;
     // Seed the same scalar bucket from a change-feed read group that has already
     // been fetched. This lets update callbacks use getAttribute/getValue without
-    // causing a second ovstage read for the same changed column. With `append` the
+    // causing a second ovstage read for the same changed column. Fixed-size host
+    // columns use data.index_map to select tensor rows and honor presence masks;
+    // their prim-list indexes are independent of their data-row indexes. With `append` the
     // group's rows join the current bucket instead of replacing it; only the world
     // matrix column supports this (it is decoded eagerly, so the released group is
     // never dereferenced later).
@@ -504,7 +512,8 @@ public:
     // must keep descriptor identity, transforms, materials, and relationships on
     // the logical key; this backing key is only for type and geometry reads.
     ObjectKey geometryBackingKey(ObjectKey key) const;
-    // Resolve selected collision attributes through the nearest strict
+    // Resolve selected collision attributes and rigid-body validation controls
+    // through the nearest strict
     // scene-graph instance-root ancestor. Returns invalid when there is no such
     // ancestor, so a top-level instance root's value blocks remain authoritative.
     ObjectKey collisionAttributeBackingKey(ObjectKey key) const;
@@ -650,7 +659,7 @@ private:
     bool buildPrototypeRootCache() const;
     bool buildPhysicsInstancingCache() const;
     bool buildInstanceMaterialCache() const;
-    void buildChildCache() const;
+    void buildChildCache(const std::string& rootPath = "/") const;
     // Insert `child` under `parent` keeping the (pathOfRaw, handle) order buildChildCache
     // imposes. Returns false when the edge (or an alias of it) is already present.
     bool insertChildEdgeSorted(uint64_t parent, uint64_t child) const;

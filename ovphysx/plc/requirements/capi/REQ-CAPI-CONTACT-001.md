@@ -25,6 +25,11 @@ it previously took seven. No new C API function is introduced; the reshaped sign
 direct replacement, and the break is acceptable because the C ABI is pre-release
 (`ovphysx/AGENTS.md`).
 
+The call also makes contact-buffer overflow explicit. It reports the total contacts
+produced for the step separately from the valid prefix written into the fixed-capacity
+output tensors, allowing callers to distinguish truncation from sensors that genuinely
+reported no contacts and to size a replacement binding for a complete read.
+
 ## Acceptance Criteria
 
 - AC-1: `ovphysx_read_raw_contact_data` returns force, point, normal, separation, the
@@ -45,6 +50,19 @@ direct replacement, and the break is acceptable because the C ABI is pre-release
 - AC-5: The Python `ContactBinding.read_raw_contact_data(...)` method exposes all six tensors
   (forces, points, normals, separations, sensor_layout, actor_ids) following the same
   ctypes/DLPack pattern as the existing API.
+- AC-6: `ovphysx_read_raw_contact_data` sets `out_required_contact_count` to the total
+  contacts produced for the step before truncation. If that total exceeds the binding's
+  `max_contact_data_count`, it returns `OVPHYSX_API_BUFFER_TOO_SMALL` while preserving a
+  valid prefix: per-sensor counts describe only contacts written and every
+  `[start, start + count)` range remains within capacity. Python returns the same total
+  without discarding the valid prefix.
+- AC-7: `ovphysx_contact_binding_get_other_actor_paths_from_ids` sets `out_count` to the
+  length of `ids_tensor`. If that length exceeds `max_paths`, it returns
+  `OVPHYSX_API_BUFFER_TOO_SMALL` while writing a valid prefix of
+  `min(*out_count, max_paths)` strings. Unresolvable IDs still yield empty strings.
+  Python `ContactBinding.get_other_actor_paths_from_ids` keeps returning a list of
+  length `N` and treats `BUFFER_TOO_SMALL` as a truncated C fill, never indexing past
+  the allocated buffer.
 
 ## Test References
 

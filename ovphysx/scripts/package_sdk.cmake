@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-PACKAGING-BUILDNUM-001
+# @covers AC-4
+
 # ovphysx SDK packaging script.
 # Creates a distributable SDK archive from _install/ into _dist/.
 # Usage: cmake [options] -P scripts/package_sdk.cmake
@@ -28,6 +31,9 @@ string(STRIP "${PACKAGE_VERSION}" PACKAGE_VERSION)
 if(NOT PACKAGE_VERSION)
     message(FATAL_ERROR "Could not read version from VERSION file")
 endif()
+# The archive name below must match what push_artifacts.cmake looks for, so both
+# apply the build number.
+apply_build_number("${PACKAGE_VERSION}" PACKAGE_VERSION)
 
 set(PACKAGE_OS "${OS_NAME}")
 set(PACKAGE_ARCH "${ARCH_NAME}")

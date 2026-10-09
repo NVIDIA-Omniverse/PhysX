@@ -11,6 +11,9 @@
  * @implements REQ-TENSOR-CPU-ONLY-001
  * @covers AC-1 AC-2
  *
+ * @implements REQ-INPUT-CORE-001
+ * @covers AC-4
+ *
  * @implements REQ-READ-ATTRS-001
  * @covers AC-1, AC-7, AC-8, AC-10, AC-11, AC-12, AC-14
  *
@@ -77,6 +80,34 @@ BaseRigidBodyView::~BaseRigidBodyView()
     if (mSim)
     {
         mSim->_onChildRelease(this);
+    }
+}
+
+void BaseRigidBodyView::setDisableGravityAndRefresh(PxRigidBody& body, const bool disabled)
+{
+    body.setActorFlag(PxActorFlag::eDISABLE_GRAVITY, disabled);
+
+    if (PxRigidDynamic* dynamicBody = body.is<PxRigidDynamic>())
+    {
+        if (dynamicBody->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION) ||
+            dynamicBody->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC))
+        {
+            return;
+        }
+
+        // An awake GPU-dynamics body needs a wake notification for the changed actor flag to reach
+        // its solver body. A sleeping body with gravity disabled needs no refresh until it wakes;
+        // re-enabling gravity must wake it so gravity starts affecting it immediately.
+        if (!disabled || !dynamicBody->isSleeping())
+            dynamicBody->wakeUp();
+        return;
+    }
+
+    if (PxArticulationLink* link = body.is<PxArticulationLink>())
+    {
+        PxArticulationReducedCoordinate& articulation = link->getArticulation();
+        if (!disabled || !articulation.isSleeping())
+            articulation.wakeUp();
     }
 }
 
@@ -511,7 +542,7 @@ bool BaseRigidBodyView::setDisableGravities(const TensorDesc* srcTensor, const T
         if (idx < mEntries.size())
         {
             const uint8_t* src = static_cast<const uint8_t*>(srcTensor->data) + idx;
-            mEntries[idx].body->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, *src);
+            setDisableGravityAndRefresh(*mEntries[idx].body, *src != 0);
         }
     }
 
@@ -1576,7 +1607,7 @@ bool BaseRigidBodyView::setBodyPropertyOvStage(const BodyProperty prop,
             break;
         }
         case BodyProperty::eDisableGravity:
-            body.setActorFlag(PxActorFlag::eDISABLE_GRAVITY, *bsrc++ != 0);
+            setDisableGravityAndRefresh(body, *bsrc++ != 0);
             break;
         case BodyProperty::eDisableSimulation:
             // Toggling this frees or reallocates the body's DirectGPU island index, which every

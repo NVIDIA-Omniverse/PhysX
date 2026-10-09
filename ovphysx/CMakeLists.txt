@@ -5,6 +5,10 @@
 # @covers AC-4
 # @implements REQ-PACKAGING-CLOSURE-001
 # @covers AC-2
+# @implements REQ-PACKAGING-BUILDNUM-001
+# @covers AC-5
+# @implements REQ-PACKAGING-OVSTAGEVERSION-001
+# @covers AC-1 AC-3
 
 cmake_minimum_required(VERSION 3.16)
 
@@ -53,6 +57,12 @@ endif()
 include("${CMAKE_CURRENT_SOURCE_DIR}/scripts/crossplatform_helpers.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/CarbPlatform.cmake")
 
+# Version reported by the built binaries. OVPHYSX_VERSION stays the VERSION-file
+# value that project() and the component variables above were parsed from; the
+# build number only ever reaches the stamped strings.
+apply_build_number("${OVPHYSX_VERSION}" OVPHYSX_VERSION_FULL)
+message(STATUS "ovphysx version: ${OVPHYSX_VERSION_FULL}")
+
 # -Werror is on in CI builds, which use the baseline compiler where all warnings
 # are clean. A host build with a newer compiler keeps warnings visible but non-fatal.
 # CI is detected via the provider-agnostic CI env var or the OMNI_REPO_BUILD_NO_DOCKER flag.
@@ -82,6 +92,7 @@ endif()
 function(ovphysx_apply_compiler_defaults _target)
     cmake_parse_arguments(ARG "" "" "GCC_SUPPRESSIONS;MSVC_SUPPRESSIONS" ${ARGN})
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_link_options(${_target} PRIVATE "-Wl,--build-id=sha1")
         target_compile_options(${_target} PRIVATE
             # Core flags (from CompilerDefaults.cmake)
             $<$<COMPILE_LANGUAGE:C,CXX>:-Wall>
@@ -89,6 +100,8 @@ function(ovphysx_apply_compiler_defaults _target)
             $<$<COMPILE_LANGUAGE:C,CXX>:-fvisibility=hidden>
             $<$<COMPILE_LANGUAGE:C,CXX>:-fstack-protector-strong>
             $<$<COMPILE_LANGUAGE:C,CXX>:-pthread>
+            # Preserve source lines for symbols from the exact optimized release.
+            $<$<COMPILE_LANGUAGE:C,CXX>:-g>
             # Common suppressions for ovphysx code (triggered by USD/PhysX/Carbonite headers)
             $<$<COMPILE_LANGUAGE:C,CXX>:-Wno-unused-parameter>
             $<$<COMPILE_LANGUAGE:C,CXX>:-Wno-unused-variable>
@@ -118,6 +131,10 @@ function(ovphysx_apply_compiler_defaults _target)
                 $<$<COMPILE_LANGUAGE:C,CXX>:-Werror>)
         endif()
     elseif(MSVC)
+        target_compile_options(${_target} PRIVATE $<$<COMPILE_LANGUAGE:C,CXX>:/Zi>)
+        target_link_options(${_target} PRIVATE /DEBUG:FULL
+            $<$<OR:$<CONFIG:Release>,$<CONFIG:Checked>>:/OPT:REF>
+            $<$<OR:$<CONFIG:Release>,$<CONFIG:Checked>>:/OPT:ICF>)
         # Suppressions aligned with the ovruntime/source/pch/UsdPCH.h pragma block.
         # ovruntime scopes these via #pragma warning(push/pop) around USD/PhysX
         # includes in its precompiled header. ovphysx has no PCH, so they are
@@ -675,6 +692,7 @@ add_library(ovphysx SHARED
     src/ovphysx/CpuFeatureCheck.cpp
     src/ovphysx/LogManager.cpp
     src/ovphysx/Nvtx.cpp
+    src/ovphysx/OvStageOutput.cpp
     src/ovphysx/ovphysx.cpp
     src/ovphysx/ovphysxTensorBinding.cpp
     src/ovphysx/ovphysxContactBinding.cpp
@@ -850,7 +868,26 @@ target_compile_definitions(ovphysx PRIVATE
     carb_dictionary_IDictionary=carb_dictionary_IDictionary_latest
 )
 target_link_libraries(ovphysx PRIVATE ${CARB_STATIC_LIBRARY} ${CARB_STATIC_PLUGIN_LIBS})
-target_link_libraries(ovphysx PRIVATE OvruntimePhysXCudaShim OvruntimePhysX)
+target_link_libraries(ovphysx PRIVATE OvruntimePhysXCudaShim OvruntimePhysX OvruntimeCommon)
+
+# Reuse ovruntime's CUDA setup in this directory scope, including its Windows
+# nvcc command and architecture policy.
+get_directory_property(CUDA_DIR DIRECTORY "${OVRUNTIME_DIR}" DEFINITION CUDA_DIR)
+set(OVRUNTIME_ROOT_DIR "${OVRUNTIME_DIR}")
+include("${OVRUNTIME_DIR}/cmake/CudaUtils.cmake")
+ovruntime_target_add_cuda_sources(ovphysx
+    SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/ovphysx/OvStageOutputCuda.cu"
+    INCLUDE_DIRS ${OVSTAGE_INCLUDE_DIRS}
+                 "${_OVPHYSX_PHYSX_INCLUDE_SOURCE}"
+                 "${CARB_SDK_INCLUDE_DIR}"
+)
+target_include_directories(ovphysx SYSTEM PRIVATE "${CUDA_DIR}/include")
+set_target_properties(ovphysx PROPERTIES
+    CUDA_ARCHITECTURES "${OVRUNTIME_CUDA_ARCHITECTURES}"
+    CUDA_STANDARD 17
+    CUDA_STANDARD_REQUIRED ON
+    CUDA_VISIBILITY_PRESET hidden
+)
 
 # OvruntimePhysX is a static archive. Its private external dependencies are
 # linked into the final owner binary, so ovphysx must provide the matching
@@ -1079,6 +1116,14 @@ install(EXPORT ovphysxTargets
     NAMESPACE ovphysx::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ovphysx
 )
+
+# Derive the installed dependency requirement from the source fetcher's pin.
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/ReadOvstageVersion.cmake")
+ovphysx_read_ovstage_version(
+    "${CMAKE_CURRENT_SOURCE_DIR}/scripts/fetch_ovstage_release.py"
+    OVPHYSX_OVSTAGE_VERSION OVPHYSX_OVSTAGE_CMAKE_VERSION)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/scripts/fetch_ovstage_release.py")
 
 # Create the config file
 configure_package_config_file(

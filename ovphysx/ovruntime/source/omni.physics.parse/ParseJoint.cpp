@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PARSE-NEWTON-JOINT-001
+ * @covers AC-1 AC-2 AC-3 AC-4
+ *
  * @implements REQ-PARSE-JOINT-001
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5
  *
@@ -246,7 +249,7 @@ void initAxisPropertiesDefaults(PhysxJointAxisProperties& p)
 // `instance` is the multi-apply schema instance ("linear", "angular",
 // "rotX", "rotY", "rotZ"). When the API is *not* applied for the axis,
 // falls back to PhysxJointAPI's `armature` and `maxJointVelocity` (the
-// friction fields stay at default).
+// friction fields keep their Newton seed or default).
 //
 // The caller is responsible for the deg→rad / rad→deg conversions on
 // rotational axes — different joint types apply them slightly differently
@@ -270,6 +273,23 @@ void readPhysxJointAxisApi(IPhysicsSource& src, ObjectKey key,
     properties.maxJointVelocity = readClampedScalar<float>(
         src, key, tok.newtonVelocityLimit, properties.maxJointVelocity, 0.0f, FLT_MAX);
 
+    // Newton fallbacks for the passive joint dynamics, seeded the same way:
+    // newton:armature -> armature, newton:friction -> staticFrictionEffort and
+    // dynamicFrictionEffort, newton:damping -> viscousFrictionCoefficient. These are
+    // joint-level too and share units with the fields they seed (newton:damping is
+    // effort*s/deg on angular DOFs, converted by applyRotationalAxisConversions like the
+    // PhysX value), so they are direct mappings as well. newton:friction is dry Coulomb
+    // friction that also holds a joint at rest, hence both efforts. A strictly positive
+    // PhysX value wins over them: per axis (the two efforts as a pair), and for armature
+    // also at joint level.
+    properties.armature = readClampedScalar<float>(
+        src, key, tok.newtonArmature, properties.armature, 0.0f, FLT_MAX);
+    properties.staticFrictionEffort = readClampedScalar<float>(
+        src, key, tok.newtonFriction, properties.staticFrictionEffort, 0.0f, FLT_MAX);
+    properties.dynamicFrictionEffort = properties.staticFrictionEffort;
+    properties.viscousFrictionCoefficient = readClampedScalar<float>(
+        src, key, tok.newtonDamping, properties.viscousFrictionCoefficient, 0.0f, FLT_MAX);
+
     // PhysxJointAPI joint-level fallback for `armature`/`maxJointVelocity`. This must
     // run before the per-axis block below and unconditionally on whether
     // PhysxJointAxisAPI is applied for this axis at all: applying the per-axis API to
@@ -286,8 +306,12 @@ void readPhysxJointAxisApi(IPhysicsSource& src, ObjectKey key,
             properties.maxJointVelocity = readClampedScalar<float>(
                 src, key, tok.physxJointMaxJointVelocity, properties.maxJointVelocity, 0.0f, FLT_MAX);
         }
-        properties.armature = readClampedScalar<float>(
-            src, key, tok.physxJointArmature, properties.armature, 0.0f, FLT_MAX);
+        // Only a strictly positive joint-level armature displaces the Newton seed, for
+        // the reason given at the per-axis armature below.
+        const float jointArmature = readClampedScalar<float>(
+            src, key, tok.physxJointArmature, 0.0f, 0.0f, FLT_MAX);
+        if (jointArmature > 0.0f)
+            properties.armature = jointArmature;
     }
 
     if (present.physxJointAxis && src.hasSchema(key, physxJointAxisApiToken(src, tok, instance)))
@@ -338,9 +362,20 @@ void readPhysxJointAxisApi(IPhysicsSource& src, ObjectKey key,
         {
             properties.maxJointVelocity      = readClamped("maxJointVelocity",          0.0f, FLT_MAX, properties.maxJointVelocity);
         }
-        properties.staticFrictionEffort      = readClamped("staticFrictionEffort",      0.0f, FLT_MAX, properties.staticFrictionEffort);
-        properties.dynamicFrictionEffort     = readClamped("dynamicFrictionEffort",     0.0f, FLT_MAX, properties.dynamicFrictionEffort);
-        properties.viscousFrictionCoefficient = readClamped("viscousFrictionCoefficient", 0.0f, FLT_MAX, properties.viscousFrictionCoefficient);
+        // The friction fields have no sentinel either, so the same rule as for armature
+        // keeps an unauthored 0.0 from displacing the Newton seeds above. The two efforts
+        // are taken as a pair, so that mixing sources cannot break the static >= dynamic
+        // requirement of PxJointFrictionParams.
+        const float axisStaticFriction = readClamped("staticFrictionEffort", 0.0f, FLT_MAX, 0.0f);
+        const float axisDynamicFriction = readClamped("dynamicFrictionEffort", 0.0f, FLT_MAX, 0.0f);
+        if (axisStaticFriction > 0.0f || axisDynamicFriction > 0.0f)
+        {
+            properties.staticFrictionEffort = axisStaticFriction;
+            properties.dynamicFrictionEffort = axisDynamicFriction;
+        }
+        const float axisViscousFriction = readClamped("viscousFrictionCoefficient", 0.0f, FLT_MAX, 0.0f);
+        if (axisViscousFriction > 0.0f)
+            properties.viscousFrictionCoefficient = axisViscousFriction;
     }
 }
 

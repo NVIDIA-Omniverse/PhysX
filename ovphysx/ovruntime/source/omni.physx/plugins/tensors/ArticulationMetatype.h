@@ -1,12 +1,18 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-TENSOR-METATYPE-001
+ * @covers AC-1 AC-2
+ */
+
 #pragma once
 
 #include <omni/physics/tensors/IArticulationMetatype.h>
 
 #include <map>
 #include <string>
+#include <tuple>
 #include <vector>
 
 namespace omni
@@ -113,43 +119,10 @@ struct ArticulationMetatypeLT
 {
     bool operator()(const ArticulationMetatype& a, const ArticulationMetatype& b) const
     {
-        if (a.mFixedBase < b.mFixedBase)
-        {
-            return true;
-        }
-        else if (a.mFixedBase == b.mFixedBase)
-        {
-            if (a.mJointTypes < b.mJointTypes)
-            {
-                return true;
-            }
-            else if (a.mJointTypes == b.mJointTypes)
-            {
-                if (a.mJointNames < b.mJointNames)
-                {
-                    return true;
-                }
-                else if (a.mJointNames == b.mJointNames)
-                {
-                    if (a.mDofIsBody0Parent < b.mDofIsBody0Parent)
-                    {
-                        return true;
-                    }
-                    else if (a.mDofIsBody0Parent == b.mDofIsBody0Parent)
-                    {
-                        if (a.mLinkParentIndices < b.mLinkParentIndices)
-                        {
-                            return true;
-                        }
-                        else if (a.mLinkParentIndices == b.mLinkParentIndices)
-                        {
-                            return a.mLinkNames < b.mLinkNames;
-                        }
-                    }
-                }
-            }
-        }
-        return false;
+        return std::tie(a.mFixedBase, a.mJointTypes, a.mJointNames, a.mDofIsBody0Parent,
+                        a.mLinkParentIndices, a.mLinkNames, a.mJointDofCounts, a.mDofNames, a.mDofTypes) <
+               std::tie(b.mFixedBase, b.mJointTypes, b.mJointNames, b.mDofIsBody0Parent,
+                        b.mLinkParentIndices, b.mLinkNames, b.mJointDofCounts, b.mDofNames, b.mDofTypes);
     }
 };
 

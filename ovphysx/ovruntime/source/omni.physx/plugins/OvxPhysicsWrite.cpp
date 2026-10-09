@@ -3,7 +3,7 @@
 
 /**
  * @implements REQ-INPUT-CORE-001
- * @covers AC-6 AC-10
+ * @covers AC-6 AC-10 AC-12
  *
  * @implements REQ-INPUT-DEVICE-001
  * @covers AC-1 AC-1a AC-1b AC-3
@@ -13,6 +13,9 @@
  *
  * @implements REQ-SIM-OVSTAGE-WRITEAPPLY-001
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7 AC-8 AC-9 AC-10 AC-12 AC-13
+ *
+ * @implements REQ-RUNTIME-ERROR-001
+ * @covers AC-3 AC-4
  *
  * ADR-0012: the app -> physics write, the return direction of OvxPhysicsRead.cpp.
  *
@@ -47,6 +50,7 @@
  */
 
 #include <omni/physx/IOvxPhysicsWrite.h>
+#include <omni/physx/RuntimeError.h>
 #include <omni/physx/IOvxPhysicsRead.h> // OvxAttr names, OvxObjectType, kOvx* scopes
 #include <omni/physics/parse/IChangeFeed.h> // ChangeBatch/ColumnView -- the ovstage drain's apply input
 #include <cstring> // std::memcpy (drain column gather/stage)
@@ -87,6 +91,7 @@
 #include <carb/logging/Log.h>
 
 #include <algorithm> // std::find
+#include <cstdio>
 #include <cstdint>
 #include <memory>
 #include <mutex>
@@ -621,9 +626,9 @@ bool planRigidGroup(WriteSession& s,
 {
     if (bodies.size() != keys.size())
     {
-        CARB_LOG_ERROR("ovxWriteAttribute: rigid-body and key lists disagree for '%s' (%zu bodies, %zu keys); "
-                       "nothing was planned.",
-                       s.attribute.c_str(), bodies.size(), keys.size());
+        OVX_RUNTIME_ERROR("ovxWriteAttribute: rigid-body and key lists disagree for '%s' (%zu bodies, %zu keys); "
+                   "nothing was planned.",
+                   s.attribute.c_str(), bodies.size(), keys.size());
         return false;
     }
 
@@ -688,14 +693,14 @@ bool planRigidGroup(WriteSession& s,
         PxCudaContext* cu = ctxMgr ? ctxMgr->getCudaContext() : nullptr;
         if (!cu)
         {
-            CARB_LOG_ERROR("ovxWriteAttribute: DirectGPU scene has no CUDA context; no group emitted.");
+            OVX_RUNTIME_ERROR("ovxWriteAttribute: DirectGPU scene has no CUDA context; no group emitted.");
             return false;
         }
         PxScopedCudaLock _lock(*ctxMgr);
         cu->memAlloc(&slot->deviceData, bytes);
         if (!slot->deviceData)
         {
-            CARB_LOG_ERROR("ovxWriteAttribute: column allocation failed (%zu floats).", floats);
+            OVX_RUNTIME_ERROR("ovxWriteAttribute: column allocation failed (%zu floats).", floats);
             return false;
         }
         slot->ctxMgr = ctxMgr;
@@ -753,9 +758,9 @@ bool planRigidGroup(WriteSession& s,
     slot->cacheKey = cacheKey;
     if (slot->list == OVX_INVALID_PRIMPATH_LIST || !dict)
     {
-        CARB_LOG_ERROR("ovxWriteAttribute: failed to build ovx_primpath_list_t for '%s' (%zu prims) -- "
-                       "the active backend is not ovstage (this write is ovstage-only).",
-                       s.attribute.c_str(), outputKeys.size());
+        OVX_RUNTIME_ERROR("ovxWriteAttribute: failed to build ovx_primpath_list_t for '%s' (%zu prims) -- "
+                   "the active backend is not ovstage (this write is ovstage-only).",
+                   s.attribute.c_str(), outputKeys.size());
         return false;
     }
     s.dict = dict;
@@ -810,7 +815,7 @@ bool planJointGroup(WriteSession& s,
     // so this costs an epoch comparison once the cache is warm.
     if (!ovx::refreshArticulationCache(ovx::allPhysicsScenes()))
     {
-        CARB_LOG_ERROR("ovxWriteAttribute: the articulation structural walk failed; nothing was written.");
+        OVX_RUNTIME_ERROR("ovxWriteAttribute: the articulation structural walk failed; nothing was written.");
         return false;
     }
     ovx::ArticulationReadCacheEntry* jcPtr = ovx::articulationCacheEntry(scene);
@@ -956,14 +961,14 @@ bool planArticulationGroup(WriteSession& s,
         PxCudaContext* cu = ctxMgr ? ctxMgr->getCudaContext() : nullptr;
         if (!cu)
         {
-            CARB_LOG_ERROR("ovxWriteAttribute: DirectGPU scene has no CUDA context; no group emitted.");
+            OVX_RUNTIME_ERROR("ovxWriteAttribute: DirectGPU scene has no CUDA context; no group emitted.");
             return false;
         }
         PxScopedCudaLock _lock(*ctxMgr);
         cu->memAlloc(&slot->deviceData, bytes);
         if (!slot->deviceData)
         {
-            CARB_LOG_ERROR("ovxWriteAttribute: articulation column allocation failed (%zu bytes).", bytes);
+            OVX_RUNTIME_ERROR("ovxWriteAttribute: articulation column allocation failed (%zu bytes).", bytes);
             return false;
         }
         slot->ctxMgr = ctxMgr;
@@ -981,9 +986,9 @@ bool planArticulationGroup(WriteSession& s,
     slot->list = omni::physics::ovstage::buildPathList(source, keys.data(), keys.size(), &dict);
     if (slot->list == OVX_INVALID_PRIMPATH_LIST || !dict)
     {
-        CARB_LOG_ERROR("ovxWriteAttribute: failed to build ovx_primpath_list_t for '%s' (%zu articulations) -- "
-                       "the active backend is not ovstage (this write is ovstage-only).",
-                       s.attribute.c_str(), keys.size());
+        OVX_RUNTIME_ERROR("ovxWriteAttribute: failed to build ovx_primpath_list_t for '%s' (%zu articulations) -- "
+                   "the active backend is not ovstage (this write is ovstage-only).",
+                   s.attribute.c_str(), keys.size());
         return false;
     }
     s.dict = dict;
@@ -1159,8 +1164,8 @@ bool planVehicleGroup(WriteSession& s,
     ovx::VehicleReadCacheEntry* vc = ovx::vehicleCacheEntry(scene);
     if (!vc)
     {
-        CARB_LOG_ERROR("ovxWriteAttribute: no vehicle enumeration cached for this scene -- read a wheel "
-                       "attribute once before writing one, so both directions agree on the wheel set.");
+        OVX_RUNTIME_ERROR("ovxWriteAttribute: no vehicle enumeration cached for this scene -- read a wheel "
+                   "attribute once before writing one, so both directions agree on the wheel set.");
         return false;
     }
     if (vc->recs.empty())
@@ -1251,14 +1256,14 @@ bool planInstancerGroup(WriteSession& s,
         PxCudaContext* cu = ctxMgr ? ctxMgr->getCudaContext() : nullptr;
         if (!cu)
         {
-            CARB_LOG_ERROR("ovxWriteAttribute: DirectGPU scene has no CUDA context; no instancer group.");
+            OVX_RUNTIME_ERROR("ovxWriteAttribute: DirectGPU scene has no CUDA context; no instancer group.");
             return false;
         }
         PxScopedCudaLock _lock(*ctxMgr);
         cu->memAlloc(&slot->deviceData, bytes);
         if (!slot->deviceData)
         {
-            CARB_LOG_ERROR("ovxWriteAttribute: instancer column allocation failed (%zu bytes).", bytes);
+            OVX_RUNTIME_ERROR("ovxWriteAttribute: instancer column allocation failed (%zu bytes).", bytes);
             return false;
         }
         slot->ctxMgr = ctxMgr;
@@ -1334,7 +1339,7 @@ bool planDeformableGroup(WriteSession& s,
     PxCudaContext* cu = ctxMgr ? ctxMgr->getCudaContext() : nullptr;
     if (!cu)
     {
-        CARB_LOG_ERROR("ovxWriteAttribute: deformable write needs a CUDA context -- none available.");
+        OVX_RUNTIME_ERROR("ovxWriteAttribute: deformable write needs a CUDA context -- none available.");
         return false;
     }
 
@@ -1370,7 +1375,7 @@ bool planDeformableGroup(WriteSession& s,
     }
     if (!slot->deviceData)
     {
-        CARB_LOG_ERROR("ovxWriteAttribute: deformable column allocation failed (%zu floats).", totalFloats);
+        OVX_RUNTIME_ERROR("ovxWriteAttribute: deformable column allocation failed (%zu floats).", totalFloats);
         return false;
     }
     slot->ctxMgr = ctxMgr;
@@ -1444,8 +1449,8 @@ bool scatterDeformableGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
         PxDeformableSurface* surface = volume ? nullptr : body->is<PxDeformableSurface>();
         if (slot.deformableVolume != (volume != nullptr))
         {
-            CARB_LOG_ERROR("ovxCommitGroup: deformable body is not the kind the query selected; nothing "
-                           "written for it.");
+            OVX_RUNTIME_ERROR("ovxCommitGroup: deformable body is not the kind the query selected; nothing "
+                       "written for it.");
             return false;
         }
         if (volume)
@@ -1456,7 +1461,7 @@ bool scatterDeformableGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
                                             surface->getPositionInvMassBufferD();
         if (!dst)
         {
-            CARB_LOG_ERROR("ovxCommitGroup: deformable body has no device buffer for this column.");
+            OVX_RUNTIME_ERROR("ovxCommitGroup: deformable body has no device buffer for this column.");
             return false;
         }
 
@@ -1481,7 +1486,7 @@ bool scatterDeformableGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
         if (!omni::physx::tensors::submitPointSetColumnOvStage(dst, src, xf, slot.deformableCounts[i],
                                                               !slot.deformableVelocity))
         {
-            CARB_LOG_ERROR("ovxCommitGroup: deformable column scatter failed.");
+            OVX_RUNTIME_ERROR("ovxCommitGroup: deformable column scatter failed.");
             return false;
         }
 
@@ -1709,8 +1714,8 @@ bool scatterParticleGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
         ::physx::PxVec4* const dst = slot.particleVelocity ? ps->mVelocities : ps->mPositions;
         if (!dst)
         {
-            CARB_LOG_ERROR("ovxCommitGroup: particle set has no staging buffer for '%s'.",
-                           slot.particleVelocity ? "velocities" : "points");
+            OVX_RUNTIME_ERROR("ovxCommitGroup: particle set has no staging buffer for '%s'.",
+                       slot.particleVelocity ? "velocities" : "points");
             return false;
         }
         // Commit point: this set's buffer is valid and about to be written, so flag it HERE, not before the
@@ -1813,7 +1818,7 @@ bool planJointPropertyGroup(WriteSession& s,
 
     if (!ovx::refreshArticulationCache(ovx::allPhysicsScenes()))
     {
-        CARB_LOG_ERROR("ovxWriteAttribute: the articulation structural walk failed; nothing was written.");
+        OVX_RUNTIME_ERROR("ovxWriteAttribute: the articulation structural walk failed; nothing was written.");
         return false;
     }
     ovx::ArticulationReadCacheEntry* jcPtr = ovx::articulationCacheEntry(scene);
@@ -1922,7 +1927,7 @@ bool planGroups(WriteSession& s)
     uint32_t scope = 0;
     if (!ovx::queryTypeScope(s.query, type, scope))
     {
-        CARB_LOG_ERROR("ovxWriteAttribute: invalid query handle %llu.", (unsigned long long)s.query);
+        OVX_RUNTIME_ERROR("ovxWriteAttribute: invalid query handle %llu.", (unsigned long long)s.query);
         return false;
     }
     // Articulation LINKS accept the attributes PhysX can set on a link, and refuse the rest BY NAME.
@@ -1940,17 +1945,17 @@ bool planGroups(WriteSession& s)
         const WriteAttributeRow* lrow = findRigidWriteAttribute(s.attribute);
         if (!lrow)
         {
-            CARB_LOG_ERROR("ovxWriteAttribute: articulation links do not accept attribute '%s'.",
-                           s.attribute.c_str());
+            OVX_RUNTIME_ERROR("ovxWriteAttribute: articulation links do not accept attribute '%s'.",
+                       s.attribute.c_str());
             return false;
         }
         if (!lrow->linkWritable)
         {
-            CARB_LOG_ERROR("ovxWriteAttribute: '%s' is not writable on an articulation link. PhysX has "
-                           "no link write for it -- move the articulation through its root pose and "
-                           "jointPosition instead. Link mass, inertia, centreOfMass*, disableGravity "
-                           "and the per-shape properties ARE writable.",
-                           s.attribute.c_str());
+            OVX_RUNTIME_ERROR("ovxWriteAttribute: '%s' is not writable on an articulation link. PhysX has "
+                       "no link write for it -- move the articulation through its root pose and "
+                       "jointPosition instead. Link mass, inertia, centreOfMass*, disableGravity "
+                       "and the per-shape properties ARE writable.",
+                       s.attribute.c_str());
             return false;
         }
 
@@ -1982,11 +1987,11 @@ bool planGroups(WriteSession& s)
         const ArtiWriteAttributeRow* arow = findArtiWriteAttribute(s.attribute);
         if (!arow)
         {
-            CARB_LOG_ERROR("ovxWriteAttribute: articulations do not accept attribute '%s'. Root state is "
-                           "'rootPosition', 'rootOrientation', 'rootLinearVelocity' and 'rootAngularVelocity'; "
-                           "joint state goes through kOvxArticulationJoint and link properties through "
-                           "kOvxArticulationLink.",
-                           s.attribute.c_str());
+            OVX_RUNTIME_ERROR("ovxWriteAttribute: articulations do not accept attribute '%s'. Root state is "
+                       "'rootPosition', 'rootOrientation', 'rootLinearVelocity' and 'rootAngularVelocity'; "
+                       "joint state goes through kOvxArticulationJoint and link properties through "
+                       "kOvxArticulationLink.",
+                       s.attribute.c_str());
             return false;
         }
         ovx::ActiveContext actx;
@@ -1998,7 +2003,7 @@ bool planGroups(WriteSession& s)
         const std::vector<PxScene*> artiScenes = ovx::allPhysicsScenes();
         if (!ovx::refreshArticulationCache(artiScenes))
         {
-            CARB_LOG_ERROR("ovxWriteAttribute: the articulation structural walk failed; nothing was written.");
+            OVX_RUNTIME_ERROR("ovxWriteAttribute: the articulation structural walk failed; nothing was written.");
             return false;
         }
         for (PxScene* scene : artiScenes)
@@ -2011,8 +2016,8 @@ bool planGroups(WriteSession& s)
                 // The read refuses to emit under this, so the write must too: a duplicated
                 // articulation pointer means the root list does not identify prims one-to-one, and a
                 // scatter through it would write one articulation's values into another's row.
-                CARB_LOG_ERROR("ovxWriteAttribute: duplicate or inconsistent ePTArticulation records "
-                               "for this scene; nothing was written.");
+                OVX_RUNTIME_ERROR("ovxWriteAttribute: duplicate or inconsistent ePTArticulation records "
+                           "for this scene; nothing was written.");
                 return false;
             }
             // kOvxActive narrows to what the solver moved. Deliberately NOT the active-actor set:
@@ -2044,8 +2049,8 @@ bool planGroups(WriteSession& s)
         const TendonWriteAttributeRow* trow = findTendonWriteAttribute(s.attribute);
         if (!trow)
         {
-            CARB_LOG_ERROR("ovxWriteAttribute: %s tendons do not accept attribute '%s'.",
-                           fixed ? "fixed" : "spatial", s.attribute.c_str());
+            OVX_RUNTIME_ERROR("ovxWriteAttribute: %s tendons do not accept attribute '%s'.",
+                       fixed ? "fixed" : "spatial", s.attribute.c_str());
             return false;
         }
         if (!fixed && trow->fixedOnly)
@@ -2053,9 +2058,9 @@ bool planGroups(WriteSession& s)
             // Refused by NAME, and not because PhysX lacks the setter: the schema puts a spatial
             // tendon's limit and rest length on its LEAF ATTACHMENT, so there is no such property on
             // the tendon to write. The read refuses the same pair for the same reason.
-            CARB_LOG_ERROR("ovxWriteAttribute: '%s' does not exist on a spatial tendon -- the schema "
-                           "places it on the leaf attachment. It is writable on kOvxFixedTendon.",
-                           s.attribute.c_str());
+            OVX_RUNTIME_ERROR("ovxWriteAttribute: '%s' does not exist on a spatial tendon -- the schema "
+                       "places it on the leaf attachment. It is writable on kOvxFixedTendon.",
+                       s.attribute.c_str());
             return false;
         }
         ovx::ActiveContext tctx;
@@ -2083,8 +2088,8 @@ bool planGroups(WriteSession& s)
         const JointWriteAttributeRow* jrow = findJointWriteAttribute(s.attribute);
         if (!jrow)
         {
-            CARB_LOG_ERROR("ovxWriteAttribute: articulation joints do not accept attribute '%s'.",
-                           s.attribute.c_str());
+            OVX_RUNTIME_ERROR("ovxWriteAttribute: articulation joints do not accept attribute '%s'.",
+                       s.attribute.c_str());
             return false;
         }
         ovx::ActiveContext jctx;
@@ -2121,11 +2126,11 @@ bool planGroups(WriteSession& s)
         const VehicleWriteAttributeRow* vrow = findVehicleWriteAttribute(s.attribute);
         if (!vrow)
         {
-            CARB_LOG_ERROR("ovxWriteAttribute: '%s' is not writable on a vehicle wheel, and will not be. A "
-                           "wheel's pose is derived from the chassis, its suspension and its steer angle "
-                           "every step, so a written value is overwritten by the next one. The wheel's "
-                           "CONTROLS are writable: 'driveTorque', 'brakeTorque' and 'steerAngle'.",
-                           s.attribute.c_str());
+            OVX_RUNTIME_ERROR("ovxWriteAttribute: '%s' is not writable on a vehicle wheel, and will not be. A "
+                       "wheel's pose is derived from the chassis, its suspension and its steer angle "
+                       "every step, so a written value is overwritten by the next one. The wheel's "
+                       "CONTROLS are writable: 'driveTorque', 'brakeTorque' and 'steerAngle'.",
+                       s.attribute.c_str());
             return false;
         }
         ovx::ActiveContext vctx;
@@ -2154,11 +2159,11 @@ bool planGroups(WriteSession& s)
             //                    one over would leave PhysX reading freed device memory. Serving it
             //                    needs an owned per-body buffer with a lifetime this API does not
             //                    have -- a design question, not an unwritten scatter.
-            CARB_LOG_ERROR("ovxWriteAttribute: deformable bodies do not accept attribute '%s'. They accept "
-                           "'points' and 'velocities'. 'restPoints' is authored geometry the solver never "
-                           "rewrites. 'kinematicTarget' is set by handing PhysX a buffer it keeps, which a "
-                           "write session cannot supply because its column is freed at release.",
-                           s.attribute.c_str());
+            OVX_RUNTIME_ERROR("ovxWriteAttribute: deformable bodies do not accept attribute '%s'. They accept "
+                       "'points' and 'velocities'. 'restPoints' is authored geometry the solver never "
+                       "rewrites. 'kinematicTarget' is set by handing PhysX a buffer it keeps, which a "
+                       "write session cannot supply because its column is freed at release.",
+                       s.attribute.c_str());
             return false;
         }
         const bool isVolume = (type == kOvxDeformableVolume);
@@ -2183,8 +2188,8 @@ bool planGroups(WriteSession& s)
         const DeformableMaterialWriteRow* mrow = findDeformableMaterialWriteAttribute(s.attribute);
         if (!mrow)
         {
-            CARB_LOG_ERROR("ovxWriteAttribute: deformable materials do not accept attribute '%s'.",
-                           s.attribute.c_str());
+            OVX_RUNTIME_ERROR("ovxWriteAttribute: deformable materials do not accept attribute '%s'.",
+                       s.attribute.c_str());
             return false;
         }
         ovx::ActiveContext mctx;
@@ -2201,9 +2206,9 @@ bool planGroups(WriteSession& s)
         const bool velocity = (s.attribute == OvxAttr::kVelocities);
         if (!velocity && s.attribute != OvxAttr::kPoints)
         {
-            CARB_LOG_ERROR("ovxWriteAttribute: particle sets do not accept attribute '%s'. They accept "
-                           "'points' and 'velocities'.",
-                           s.attribute.c_str());
+            OVX_RUNTIME_ERROR("ovxWriteAttribute: particle sets do not accept attribute '%s'. They accept "
+                       "'points' and 'velocities'.",
+                       s.attribute.c_str());
             return false;
         }
         ovx::ActiveContext pctx;
@@ -2222,14 +2227,14 @@ bool planGroups(WriteSession& s)
 
     if (type != kOvxRigidBody)
     {
-        CARB_LOG_ERROR("ovxWriteAttribute: object type %u is not writable yet.", type);
+        OVX_RUNTIME_ERROR("ovxWriteAttribute: object type %u is not writable yet.", type);
         return false;
     }
 
     const WriteAttributeRow* row = findRigidWriteAttribute(s.attribute);
     if (!row)
     {
-        CARB_LOG_ERROR("ovxWriteAttribute: rigid bodies do not accept attribute '%s'.", s.attribute.c_str());
+        OVX_RUNTIME_ERROR("ovxWriteAttribute: rigid bodies do not accept attribute '%s'.", s.attribute.c_str());
         return false;
     }
 
@@ -2371,7 +2376,7 @@ bool scatterJointGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
             sv ? sv->supersetArticulationView(&artiRowMap, &entries) : nullptr;
         if (!av)
         {
-            CARB_LOG_ERROR("ovxCommitGroup: superset articulation view unavailable; nothing was written.");
+            OVX_RUNTIME_ERROR("ovxCommitGroup: superset articulation view unavailable; nothing was written.");
             return false;
         }
         t_scatterCommitAttempted = true; // past every pre-commit check; this setter is the commit point
@@ -2384,22 +2389,22 @@ bool scatterJointGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
         sv ? sv->supersetArticulationView(&artiRowMap, &entries) : nullptr;
     if (!av)
     {
-        CARB_LOG_ERROR("ovxCommitGroup: superset articulation view unavailable; nothing was written.");
+        OVX_RUNTIME_ERROR("ovxCommitGroup: superset articulation view unavailable; nothing was written.");
         return false;
     }
     // Host records live in the shared cache; the host path has no device upload to read them from.
     const ovx::ArticulationReadCacheEntry* jcPtr = ovx::articulationCacheEntry(slot.scene);
     if (!jcPtr)
     {
-        CARB_LOG_ERROR("ovxCommitGroup: the articulation cache no longer describes this scene; "
-                       "nothing was written.");
+        OVX_RUNTIME_ERROR("ovxCommitGroup: the articulation cache no longer describes this scene; "
+                   "nothing was written.");
         return false;
     }
     const ovx::ArticulationReadCacheEntry& jc = *jcPtr;
     if (jc.recs.size() != slot.numOut)
     {
-        CARB_LOG_ERROR("ovxCommitGroup: the joint record list moved since this group was planned; "
-                       "nothing was written.");
+        OVX_RUNTIME_ERROR("ovxCommitGroup: the joint record list moved since this group was planned; "
+                   "nothing was written.");
         return false;
     }
     t_scatterCommitAttempted = true; // past every pre-commit check; this setter is the commit point
@@ -2420,7 +2425,7 @@ bool scatterArticulationGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync
     omni::physx::tensors::SimulationBackend* backend = omni::physx::tensors::GetSimulationBackend();
     if (!backend)
     {
-        CARB_LOG_ERROR("ovxCommitGroup: no tensor backend.");
+        OVX_RUNTIME_ERROR("ovxCommitGroup: no tensor backend.");
         return false;
     }
     const bool gpu = slot.deviceOrdinal >= 0;
@@ -2443,7 +2448,7 @@ bool scatterArticulationGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync
     }
     if ((!gpuView && !cpuView) || !artiRowMap)
     {
-        CARB_LOG_ERROR("ovxCommitGroup: superset articulation view unavailable; nothing was written.");
+        OVX_RUNTIME_ERROR("ovxCommitGroup: superset articulation view unavailable; nothing was written.");
         return false;
     }
 
@@ -2455,8 +2460,8 @@ bool scatterArticulationGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync
             artiRowMap->find(arti);
         if (it == artiRowMap->end())
         {
-            CARB_LOG_ERROR("ovxCommitGroup: the superset articulation view does not describe this "
-                           "articulation set; nothing was written.");
+            OVX_RUNTIME_ERROR("ovxCommitGroup: the superset articulation view does not describe this "
+                       "articulation set; nothing was written.");
             return false;
         }
         rows.push_back(it->second);
@@ -2511,7 +2516,7 @@ bool scatterTendonGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
             sv ? sv->supersetArticulationView(&artiRowMap, &entries) : nullptr;
         if (!av)
         {
-            CARB_LOG_ERROR("ovxCommitGroup: superset articulation view unavailable; nothing was written.");
+            OVX_RUNTIME_ERROR("ovxCommitGroup: superset articulation view unavailable; nothing was written.");
             return false;
         }
         const omni::physx::tensors::ArticulationTendonOvStageRecord* recs =
@@ -2525,15 +2530,15 @@ bool scatterTendonGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
         sv ? sv->supersetArticulationView(&artiRowMap, &entries) : nullptr;
     if (!av)
     {
-        CARB_LOG_ERROR("ovxCommitGroup: superset articulation view unavailable; nothing was written.");
+        OVX_RUNTIME_ERROR("ovxCommitGroup: superset articulation view unavailable; nothing was written.");
         return false;
     }
     // Host records live in the shared cache; the host path has no device upload to read them from.
     ovx::TendonReadCacheEntry& tc = ovx::tendonCacheEntry(slot.scene, slot.tendonFixed);
     if (tc.recs.size() != slot.numOut)
     {
-        CARB_LOG_ERROR("ovxCommitGroup: the tendon record list moved since this group was planned; "
-                       "nothing was written.");
+        OVX_RUNTIME_ERROR("ovxCommitGroup: the tendon record list moved since this group was planned; "
+                   "nothing was written.");
         return false;
     }
     return slot.tendonFixed ?
@@ -2567,14 +2572,14 @@ bool scatterVehicleGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
         (sv && internalScene) ? sv->vehicleView(*internalScene) : nullptr;
     if (!vv)
     {
-        CARB_LOG_ERROR("ovxCommitGroup: vehicle view unavailable; nothing was written.");
+        OVX_RUNTIME_ERROR("ovxCommitGroup: vehicle view unavailable; nothing was written.");
         return false;
     }
     const ovx::VehicleReadCacheEntry* vc = ovx::vehicleCacheEntry(slot.scene);
     if (!vc || vc->recs.size() != slot.numOut)
     {
-        CARB_LOG_ERROR("ovxCommitGroup: the vehicle wheel list moved since this group was planned; "
-                       "nothing was written.");
+        OVX_RUNTIME_ERROR("ovxCommitGroup: the vehicle wheel list moved since this group was planned; "
+                   "nothing was written.");
         return false;
     }
 
@@ -2617,8 +2622,8 @@ bool scatterJointPropertyGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSyn
     const ovx::ArticulationReadCacheEntry* jc = ovx::articulationCacheEntry(slot.scene);
     if (!jc || jc->recs.size() != slot.numOut)
     {
-        CARB_LOG_ERROR("ovxCommitGroup: the joint record list moved since this group was planned; "
-                       "nothing was written.");
+        OVX_RUNTIME_ERROR("ovxCommitGroup: the joint record list moved since this group was planned; "
+                   "nothing was written.");
         return false;
     }
 
@@ -2641,7 +2646,7 @@ bool scatterJointPropertyGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSyn
     }
     if (!av)
     {
-        CARB_LOG_ERROR("ovxCommitGroup: superset articulation view unavailable; nothing was written.");
+        OVX_RUNTIME_ERROR("ovxCommitGroup: superset articulation view unavailable; nothing was written.");
         return false;
     }
 
@@ -2683,7 +2688,7 @@ bool scatterGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
     omni::physx::tensors::SimulationBackend* backend = omni::physx::tensors::GetSimulationBackend();
     if (!backend)
     {
-        CARB_LOG_ERROR("ovxCommitGroup: no tensor backend.");
+        OVX_RUNTIME_ERROR("ovxCommitGroup: no tensor backend.");
         return false;
     }
     const bool gpu = slot.deviceOrdinal >= 0; // the COLUMN's residency: what td below describes
@@ -2786,7 +2791,7 @@ bool scatterGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
     }
     if (sceneIsGpu ? (gpuView == nullptr) : (cpuView == nullptr))
     {
-        CARB_LOG_ERROR("ovxCommitGroup: superset rigid-body view unavailable; nothing was written.");
+        OVX_RUNTIME_ERROR("ovxCommitGroup: superset rigid-body view unavailable; nothing was written.");
         return false;
     }
 
@@ -2796,11 +2801,12 @@ bool scatterGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
         // group still occupies a compacted DirectGPU slot.
         if (!gpuView->refreshDisabledRowsOvStage())
         {
-            CARB_LOG_ERROR("ovxCommitGroup: DirectGPU row refresh failed; nothing was written.");
+            OVX_RUNTIME_ERROR("ovxCommitGroup: DirectGPU row refresh failed; nothing was written.");
             return false;
         }
     }
 
+    // A refused live group is spent too, so finish its producer handoff before rejecting it.
     honourCallerSync(slot, writeDoneSync);
 
     // Past every pre-commit check; the setter below is the commit point (see t_scatterCommitAttempted).
@@ -2907,7 +2913,10 @@ extern "C"
 OMNI_OVX_WRITE_API OvxWriteHandle ovxWriteAttribute(OvxOutputQueryHandle query, const ovx_string_or_token_t* attr)
 {
     if (query == 0 || !attr)
+    {
+        OVX_RUNTIME_ERROR("ovxWriteAttribute: a valid query handle and attribute are required.");
         return 0;
+    }
 
     std::lock_guard<std::mutex> lock(g_mutex);
 
@@ -2934,13 +2943,19 @@ OMNI_OVX_WRITE_API OvxWriteHandle ovxWriteAttribute(OvxOutputQueryHandle query, 
 OMNI_OVX_WRITE_API OvxWriteStatus ovxFetchWriteNext(OvxWriteHandle write, const ovstage_map_group_t** outGroup)
 {
     if (!outGroup)
+    {
+        OVX_RUNTIME_ERROR("ovxFetchWriteNext: outGroup is null.");
         return kOvxWriteStatusError;
+    }
     *outGroup = nullptr;
 
     std::lock_guard<std::mutex> lock(g_mutex);
     WriteSession* s = findSession(write);
     if (!s)
+    {
+        OVX_RUNTIME_ERROR("ovxFetchWriteNext: invalid write session handle.");
         return kOvxWriteStatusError; // a bad handle is a failure to iterate, not exhaustion
+    }
 
     if (s->nextFetch >= s->groups.size())
         return kOvxWriteStatusEndOfIteration;
@@ -2973,12 +2988,35 @@ OMNI_OVX_WRITE_API bool ovxCommitGroup(OvxWriteHandle write,
     // Marked committed BEFORE the publish so a second commit of the same pointer is refused even if
     // the publish itself fails: commit is not retryable through this path.
     slot->committed = true;
+    // Match the rigid GPU setter's readiness rule here so only session commits gain this
+    // diagnostic. The stage drain keeps its own fallback/commit-point behavior.
+    if (slot->row && slot->deviceOrdinal >= 0)
+    {
+        omni::physx::tensors::SimulationBackend* backend = omni::physx::tensors::GetSimulationBackend();
+        if (backend && backend->getStepCount() < 1)
+        {
+            honourCallerSync(*slot, writeDoneSync);
+            OVX_RUNTIME_ERROR("ovxCommitGroup: DirectGPU write '%s' requires at least one simulation step. "
+                       "Call warmup() or step_sync() before writing; nothing was written.", slot->row->token);
+            return fail(kOvxCommitFailurePublish);
+        }
+    }
     // Reported apart from the not-live cases above, which is the whole reason outFailure exists:
-    // this group WAS accepted, the scatter ran, and a device scatter can fail after writing part of
-    // its rows -- so no caller-facing layer may turn this into "nothing was published".
-    if (!scatterGroup(*slot, writeDoneSync))
-        return fail(kOvxCommitFailurePublish);
-    return true;
+    // this group WAS accepted and is spent. The diagnostic can identify a preflight refusal, but
+    // a later device scatter can fail after writing part of its rows.
+    char cause[2048];
+    {
+        // CPU setters can reject a row through the SDK callback while their batch still returns true.
+        // A fresh scope makes native commit status independent of any caller's existing diagnostic.
+        RuntimeErrorScope error;
+        const bool published = scatterGroup(*slot, writeDoneSync);
+        if (published && error.message()[0] == '\0')
+            return true;
+        std::snprintf(cause, sizeof(cause), "%s", error.message());
+    }
+    // The inner scope has ended; forward its cause without logging the same failure twice.
+    recordRuntimeError(cause);
+    return fail(kOvxCommitFailurePublish);
 }
 
 OMNI_OVX_WRITE_API void ovxReleaseWrite(OvxWriteHandle write)

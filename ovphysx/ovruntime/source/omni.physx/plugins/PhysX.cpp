@@ -267,10 +267,12 @@ omni::physics::parse::ObjectKey resolveObjectKey(const char* path)
     const omni::physics::parse::ObjectKey key = attachedStage->keyFor(std::string_view(path));
     if (!key.valid())
         return {};
-    if (source->exists(key))
-        return key;
+    // Registry first: an ObjectDb hit is a map lookup, while exists() can cost an
+    // ovstage whole-stage query for keys outside the source's caches.
     const usdparser::ObjectIdMap* entries = attachedStage->getObjectIds(key);
-    return (entries && !entries->empty()) ? key : omni::physics::parse::ObjectKey{};
+    if (entries && !entries->empty())
+        return key;
+    return source->exists(key) ? key : omni::physics::parse::ObjectKey{};
 }
 
 // The other lookup-side ADR-0019 path-string-crossing function on the public API:

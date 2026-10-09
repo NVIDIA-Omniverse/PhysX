@@ -278,6 +278,8 @@ void AttachedStage::setOvstageSource(const void* attachPayload,
     rebuildSource();
 }
 
+// @implements REQ-PARSE-SCAN-001
+// @covers AC-19
 omni::physics::parse::AttachTarget AttachedStage::attachTarget() const
 {
     omni::physics::parse::AttachTarget target;
@@ -290,9 +292,6 @@ omni::physics::parse::AttachTarget AttachedStage::attachTarget() const
         target.nativeStage = mExternalAttachPayload;
         target.readOrdinal = mExternalReadOrdinal;
         target.residentBackingStageId = mExternalBackingStageId;
-        // The scan backend reads through the live source (warm across drains); the parse
-        // backend ignores it (rebuildSource runs while this is still the old source).
-        target.attachedSource = mSource.get();
     }
     else
     {
@@ -300,6 +299,7 @@ omni::physics::parse::AttachTarget AttachedStage::attachTarget() const
         // No backing id -- the USD backend computes it from the stage.
         fillUsdAttachTarget(target);
     }
+    target.attachedSource = mSource.get();
     return target;
 }
 

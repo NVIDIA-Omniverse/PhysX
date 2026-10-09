@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PARSE-SUBTREE-001
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6
+ */
+
+/**
  * @implements REQ-PUBLICAPI-001
  * @covers AC-32 AC-33 AC-34 AC-40 AC-49
  */
@@ -247,63 +252,79 @@ void matchPatternKeys(const IPhysicsSource& source,
         }
     }
 
-    for (int i = 0; i < numTokens; i++)
+    auto matchTokens = [&](auto&& self, int first, bool scoped) -> void
     {
-        matches.clear();
-
-        const bool isLeaf = (i == numTokens - 1);
-        const bool isRecursiveDescent = (tokens[i] == kRecursiveDescentToken);
-        // A bare `*` leaf stays strict (direct children only); only a *named*
-        // or glob leaf is searched at any depth. Callers who want a bare
-        // recursive descent must use `**`.
-        const bool isBareWildcard = (tokens[i] == "*");
-
-        if (isRecursiveDescent)
+        for (int i = first; i < numTokens; i++)
         {
-            for (ObjectKey root : roots)
+            // Scope before intermediate wildcards fan out into many roots. Keep one
+            // fresh common-ancestor snapshot for the rest of this pattern evaluation.
+            const bool recursiveLeaf = i == numTokens - 1 && recursiveLeafPatternMatch &&
+                                       tokens[i] != "*" && !patternHasRecursiveDescent;
+            const bool branches = tokens[i].find_first_of("*?()|[]{}^$+\\") != std::string::npos;
+            if (!scoped && !roots.empty() && (branches || recursiveLeaf) &&
+                (patternHasRecursiveDescent || (recursiveLeafPatternMatch && tokens.back() != "*")))
             {
-                source.forEachDescendant(root, [&](ObjectKey key) { matches.push_back(key); });
+                const ObjectKey scopeRoot = roots.size() == 1 ? roots.front() : source.getRootKey();
+                source.withSubtreeHierarchy(scopeRoot, [&]() { self(self, i, true); });
+                return;
             }
-        }
-        else if (isLeaf && recursiveLeafPatternMatch && !isBareWildcard && !patternHasRecursiveDescent)
-        {
-            // Leaf-recursive: the final named/glob token is searched at any depth
-            // beneath the strictly-matched ancestor chain (with same-name
-            // suppression). Pre-leaf tokens above were matched strictly, so
-            // intermediate structure is respected.
-            const GlobRegex matcher(tokens[i]);
-            for (ObjectKey root : roots)
+            matches.clear();
+
+            const bool isLeaf = (i == numTokens - 1);
+            const bool isRecursiveDescent = (tokens[i] == kRecursiveDescentToken);
+            // A bare `*` leaf stays strict (direct children only); only a *named*
+            // or glob leaf is searched at any depth. Callers who want a bare
+            // recursive descent must use `**`.
+            const bool isBareWildcard = (tokens[i] == "*");
+
+            if (isRecursiveDescent)
             {
-                std::set<std::string> matchedOnPath;
-                collectMatchingDescendants(source, root, matcher, matchedOnPath, matches);
+                for (ObjectKey root : roots)
+                {
+                    source.forEachDescendant(root, [&](ObjectKey key) { matches.push_back(key); });
+                }
             }
-        }
-        else
-        {
-            const GlobRegex matcher(tokens[i]);
-            for (ObjectKey root : roots)
+            else if (isLeaf && recursiveLeafPatternMatch && !isBareWildcard && !patternHasRecursiveDescent)
             {
-                source.forEachChild(root,
-                    [&](ObjectKey child)
-                    {
-                        if (matcher.match(lastPathComponent(source, child)))
+                // Leaf-recursive: the final named/glob token is searched at any depth
+                // beneath the strictly-matched ancestor chain (with same-name
+                // suppression). Pre-leaf tokens above were matched strictly, so
+                // intermediate structure is respected.
+                const GlobRegex matcher(tokens[i]);
+                for (ObjectKey root : roots)
+                {
+                    std::set<std::string> matchedOnPath;
+                    collectMatchingDescendants(source, root, matcher, matchedOnPath, matches);
+                }
+            }
+            else
+            {
+                const GlobRegex matcher(tokens[i]);
+                for (ObjectKey root : roots)
+                {
+                    source.forEachChild(root,
+                        [&](ObjectKey child)
                         {
-                            matches.push_back(child);
-                        }
-                    });
+                            if (matcher.match(lastPathComponent(source, child)))
+                            {
+                                matches.push_back(child);
+                            }
+                        });
+                }
+            }
+
+            if (i < numTokens - 1)
+            {
+                std::swap(roots, matches);
             }
         }
 
-        if (i < numTokens - 1)
+        for (ObjectKey key : matches)
         {
-            std::swap(roots, matches);
+            keysRet.push_back(key);
         }
-    }
-
-    for (ObjectKey key : matches)
-    {
-        keysRet.push_back(key);
-    }
+    };
+    matchTokens(matchTokens, 0, false);
 }
 
 } // namespace

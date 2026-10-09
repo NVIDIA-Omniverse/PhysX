@@ -1,6 +1,16 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-PROPS-MAT-001
+ * @covers AC-2
+ */
+
+/**
+ * @implements REQ-SIM-BODY-INPUT-001
+ * @covers AC-2 AC-3 AC-5 AC-6
+ */
+
 #pragma once
 
 // PropertyChangeMap is TokenId-keyed (ADR-0019), interned per-source by
@@ -11,6 +21,8 @@
 #include <private/omni/physx/PhysxUsd.h>
 #include "ChangeParams.h"
 
+#include <optional>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -29,12 +41,18 @@ struct PropertyChange
     OnUpdateObjectFn onUpdate;
     OnPrimRequirementKeyCheckFn onPrimCheckKey;
     OnPrimRequirementExtKeyCheckFn onPrimCheckExtKey;
+    bool deferUntilFlush = false;
 };
 
 // TokenId-keyed (ADR-0019); see PrimChangeMap::internRegisteredChanges for why interning
 // is deferred to source-attach time.
 using PropertyChangeMap = std::unordered_multimap<omni::physics::parse::TokenId, PropertyChange, omni::physics::parse::TokenId::Hash>;
-using ChangeData = std::pair<OnUpdateObjectFn, omni::physics::parse::TokenId>;
+struct ChangeData
+{
+    OnUpdateObjectFn onUpdate;
+    omni::physics::parse::TokenId property;
+    bool deferUntilFlush = false;
+};
 // Async-update deferral map, populated by PrimChangeMap::checkPrimChange.
 using KeyChangeMap = std::unordered_multimap<omni::physics::parse::ObjectKey, ChangeData, omni::physics::parse::ObjectKey::Hash>;
 using PrimKeySet = std::unordered_set<omni::physics::parse::ObjectKey, omni::physics::parse::ObjectKey::Hash>;
@@ -88,9 +106,9 @@ public:
     PrimChangeMap();
     ~PrimChangeMap();
 
-    void clearMap();
+    void clearMap(bool preserveQueuedProperties = false);
 
-    // Drops any pending m_keyChangeMap entry for this key.
+    // Drops pending property changes for this key.
     void removePrim(omni::physics::parse::ObjectKey key);
 
     // registerPrimChange only stages the ChangeParams (source-independent);
@@ -123,6 +141,7 @@ public:
     }
 
     void processTransformChanges(AttachedStage& attachedStage);
+    void processPostTransformVelocityChanges(AttachedStage& attachedStage);
 
     // registerStageSpecificChange interns immediately (the caller,
     // AttachedStage::registerStageSpecificAttribute, always has a live source
@@ -141,13 +160,20 @@ public:
         return m_stageSpecificChanges;
     }
 
-    const KeyChangeMap& getKeyMap() const
+    KeyChangeMap& getKeyMap()
     {
         return m_keyChangeMap;
     }
 
 private:
     KeyChangeMap m_keyChangeMap;
+    struct VelocityChange
+    {
+        std::optional<carb::Float3> linear;
+        std::optional<carb::Float3> angular;
+    };
+    std::unordered_map<omni::physics::parse::ObjectKey, VelocityChange,
+                       omni::physics::parse::ObjectKey::Hash> m_postTransformVelocityChanges;
     // Deferred transform-change queue for the async-update path.
     std::vector<omni::physics::parse::ObjectKey> m_transformKeyUpdates;
     PropertyChangeMap m_propertyChanges; // persistent for all PhysX stages
@@ -170,7 +196,7 @@ void onSourceGroupComplete(AttachedStage& attachedStage);
 
 void processUpdates(AttachedStage& attachedStage, float currentTime);
 void flushBufferedChanges(AttachedStage& attachedStage, float currentTime);
-void processChangeMap(AttachedStage& attachedStage);
+void processChangeMap(AttachedStage& attachedStage, bool includeFlushChanges = false);
 
 } // namespace usdparser
 } // namespace physx

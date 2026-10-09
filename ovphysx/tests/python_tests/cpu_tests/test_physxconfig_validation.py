@@ -1,6 +1,12 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-CAPI-THREADS-001
+# @covers AC-2
+#
+# @implements REQ-CAPI-COLLISION-CONFIG-001
+# @covers AC-3
+#
 # @implements REQ-PYTHON-OMNIPVD-001
 # @covers AC-1 AC-2
 
@@ -228,9 +234,9 @@ def test_carbonite_overrides_rejects_non_dict(bad_value):
 # carbonite_overrides must raise ValueError at _to_c_config time.
 _CONFLICTING_CARBONITE_PATHS = [
     "/physics/disableContactProcessing",
-    "/physics/collisionConeCustomGeometry",
-    "/physics/collisionCylinderCustomGeometry",
-    "/physics/numThreads",
+    "/physics/collisionApproximateCones",
+    "/physics/collisionApproximateCylinders",
+    "/persistent/physics/numThreads",
     "/physics/sceneMultiGPUMode",
     "/physics/omniPvdOutputEnabled",
     "/physics/nvtxEnabled",

@@ -120,15 +120,22 @@ def test_tensor_binding_explicit_paths(physx_sdk):
     load_usd_with_ovstage(physx_sdk, data_path("boxes_falling_on_groundplane.usda"))
     physx_sdk.wait_all()
 
-    # Explicit paths (unordered list)
+    # Mixed present, absent and repeated paths must select each existing body once.
     binding = physx_sdk.create_tensor_binding(
-        prim_paths=["/World/Cube3", "/World/Cube1", "/World/Cube2"],
+        prim_paths=["/World/Cube3", "/World/Missing", "/World/Cube1", "/World/Cube2", "/World/Cube3"],
         tensor_type=TensorType.RIGID_BODY_POSE,
     )
 
     assert binding.count == 3
     assert binding.shape == (3, 7)
+    assert binding.prim_paths == ["/World/Cube3", "/World/Cube1", "/World/Cube2"]
 
+    reordered = physx_sdk.create_tensor_binding(
+        prim_paths=["/World/Cube2", "/World/Cube3", "/World/Missing", "/World/Cube1", "/World/Cube3"],
+        tensor_type=TensorType.RIGID_BODY_VELOCITY,
+    )
+    assert reordered.prim_paths == ["/World/Cube2", "/World/Cube3", "/World/Cube1"]
+    reordered.destroy()
     binding.destroy()
 
 

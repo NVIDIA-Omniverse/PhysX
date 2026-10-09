@@ -2,12 +2,28 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-CAPI-BINDING-SELECTION-001
+ * @covers AC-1 AC-2 AC-3 AC-4
+ * @maps_to TEST-CAPI-BINDING-SELECTION-001
+ *
  * @implements REQ-CAPI-BINDING-DEVICE-001
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5
  *
  * @implements REQ-CAPI-OBJECTTYPE-001
  * @covers AC-2 AC-3
  * @maps_to TEST-CAPI-OBJECTTYPE-001
+ *
+ * @implements REQ-INPUT-COVERAGE-001
+ * @covers AC-1
+ * @maps_to TEST-INPUT-COVERAGE-001
+ *
+ * @implements REQ-INPUT-CORE-001
+ * @covers AC-4
+ * @maps_to TEST-INPUT-CORE-001
+ *
+ * @implements REQ-CAPI-WRITE-001
+ * @covers AC-1
+ * @maps_to TEST-CAPI-WRITE-001
  */
 // DEPRECATED (tensor-binding-deprecation): a deprecated tensor-binding test; removed with the binding.
 
@@ -101,32 +117,39 @@ static bool load_usd_and_wait(ovphysx_handle_t handle, const char* usd_path, ovp
 namespace
 {
 
-// Intercepts TensorApi::resetStage to count per-stage tensor-backend resets during a test.
-class ScopedTensorResetStageProbe
+// Count native view allocation and per-stage resets without changing the public binding API.
+class ScopedTensorApiProbe
 {
 public:
-    explicit ScopedTensorResetStageProbe(omni::physics::tensors::TensorApi& tensorApi)
-        : mTensorApi(tensorApi), mOriginal(tensorApi.resetStage)
+    explicit ScopedTensorApiProbe(omni::physics::tensors::TensorApi& tensorApi)
+        : mTensorApi(tensorApi), mOriginal(tensorApi.resetStage), mOriginalCreate(tensorApi.createSimulationView)
     {
         sOriginal = mOriginal;
+        sOriginalCreate = mOriginalCreate;
         sCallCount = 0;
+        sCreateCount = 0;
         sLastStageId = 0;
         mTensorApi.resetStage = &intercept;
+        mTensorApi.createSimulationView = &create;
     }
 
-    ~ScopedTensorResetStageProbe()
+    ~ScopedTensorApiProbe()
     {
         mTensorApi.resetStage = mOriginal;
+        mTensorApi.createSimulationView = mOriginalCreate;
         sOriginal = nullptr;
+        sOriginalCreate = nullptr;
     }
 
-    ScopedTensorResetStageProbe(const ScopedTensorResetStageProbe&) = delete;
-    ScopedTensorResetStageProbe& operator=(const ScopedTensorResetStageProbe&) = delete;
+    ScopedTensorApiProbe(const ScopedTensorApiProbe&) = delete;
+    ScopedTensorApiProbe& operator=(const ScopedTensorApiProbe&) = delete;
 
-    int callCount() const
+    int resetCount() const
     {
         return sCallCount;
     }
+
+    int createCount() const { return sCreateCount; }
 
     omni::physics::AttachHandle lastStageId() const
     {
@@ -134,6 +157,12 @@ public:
     }
 
 private:
+    static omni::physics::tensors::ISimulationView* CARB_ABI create(omni::physics::AttachHandle stageId)
+    {
+        ++sCreateCount;
+        return sOriginalCreate(stageId);
+    }
+
     static void CARB_ABI intercept(omni::physics::AttachHandle stageId)
     {
         ++sCallCount;
@@ -144,9 +173,12 @@ private:
 
     omni::physics::tensors::TensorApi& mTensorApi;
     void(CARB_ABI* mOriginal)(omni::physics::AttachHandle) = nullptr;
+    omni::physics::tensors::ISimulationView*(CARB_ABI* mOriginalCreate)(omni::physics::AttachHandle) = nullptr;
 
     static inline void(CARB_ABI* sOriginal)(omni::physics::AttachHandle) = nullptr;
+    static inline omni::physics::tensors::ISimulationView*(CARB_ABI* sOriginalCreate)(omni::physics::AttachHandle) = nullptr;
     static inline int sCallCount = 0;
+    static inline int sCreateCount = 0;
     static inline omni::physics::AttachHandle sLastStageId = 0;
 };
 
@@ -225,13 +257,13 @@ TEST_F(TensorBindingCpuTest, ResetStageReleasesTensorBackendStage)
     auto* tensorApi = static_cast<omni::physics::tensors::TensorApi*>(ovphysx_get_tensor_api_internal());
     ASSERT_NE(tensorApi, nullptr);
     ASSERT_NE(tensorApi->resetStage, nullptr);
-    ScopedTensorResetStageProbe probe(*tensorApi);
+    ScopedTensorApiProbe probe(*tensorApi);
 
     ovphysx_enqueue_result_t resetResult = ovphysx_reset_stage(m_handle);
     ASSERT_EQ(resetResult.status, OVPHYSX_API_SUCCESS);
     ASSERT_TRUE(wait_op_success(m_handle, resetResult.op_index));
 
-    EXPECT_EQ(probe.callCount(), 1);
+    EXPECT_EQ(probe.resetCount(), 1);
     EXPECT_GT(probe.lastStageId(), 0);
     EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, binding).status, OVPHYSX_API_SUCCESS);
 }
@@ -295,12 +327,17 @@ TEST_F(TensorBindingCpuTest, CpuArticulationCentroidalMomentumFixedBaseRejected)
     ovphysx_tensor_binding_handle_t binding = 0;
     ovphysx_tensor_binding_desc_t desc{};
     desc.pattern = OVPHYSX_LITERAL("/World/articulation");
+    desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_DOF_POSITION_F32;
+    ovphysx_tensor_binding_handle_t position = 0;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &position).status, OVPHYSX_API_SUCCESS);
     desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_CENTROIDAL_MOMENTUM_F32;
 
     ovphysx_result_t result = ovphysx_create_tensor_binding(m_handle, &desc, &binding);
     EXPECT_EQ(result.status, OVPHYSX_API_INVALID_ARGUMENT)
         << "fixed-base articulation must reject a centroidal-momentum binding at creation";
-    // No binding was created on the rejection path, so there is nothing to destroy.
+    ovphysx_tensor_spec_t spec{};
+    EXPECT_EQ(ovphysx_get_tensor_binding_spec(m_handle, position, &spec).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, position).status, OVPHYSX_API_SUCCESS);
 }
 
 // Companion to the fixed-base rejection above: a floating-base articulation
@@ -665,14 +702,18 @@ TEST_F(TensorBindingCpuTest, CpuRigidBodyDisableGravitySuppressesFall) {
     ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, pose_binding, &pose_t).status, OVPHYSX_API_SUCCESS);
     const float z_initial = poses[2];
 
-    // Let bodies fall briefly, then disable gravity and zero velocity (PhysX keeps
-    // coasting with existing velocity unless it is cleared).
+    // Let bodies fall briefly so disabling gravity can be checked without a
+    // separate solver-refreshing write.
     for (int i = 0; i < 5; ++i)
         step_once();
     ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, pose_binding, &pose_t).status, OVPHYSX_API_SUCCESS);
     const float z_falling = poses[2];
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, vel_binding, &vel_t).status, OVPHYSX_API_SUCCESS);
+    const std::vector<float> before_vels = vels;
 
-    std::vector<uint8_t> flags(static_cast<size_t>(n), 1);
+    std::vector<uint8_t> flags(static_cast<size_t>(n), 0);
+    for (int64_t i = 0; i < n; i += 2)
+        flags[static_cast<size_t>(i)] = 1;
     DLTensor flag_t{};
     flag_t.data = flags.data();
     flag_t.device = {kDLCPU, 0};
@@ -682,33 +723,89 @@ TEST_F(TensorBindingCpuTest, CpuRigidBodyDisableGravitySuppressesFall) {
     flag_t.shape = flag_shape;
     ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, grav_binding, &flag_t, nullptr).status, OVPHYSX_API_SUCCESS);
 
-    std::fill(vels.begin(), vels.end(), 0.0f);
-    ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, vel_binding, &vel_t, nullptr).status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, pose_binding, &pose_t).status, OVPHYSX_API_SUCCESS);
-    const float z_disabled = poses[2];
-
-    for (int i = 0; i < 20; ++i)
-        step_once();
+    step_once();
     ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, vel_binding, &vel_t).status, OVPHYSX_API_SUCCESS);
     ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, pose_binding, &pose_t).status, OVPHYSX_API_SUCCESS);
-    EXPECT_NEAR(vels[2], 0.0f, 1e-3f) << "Gravity-disabled body should stay at zero velocity";
-    EXPECT_NEAR(poses[2], z_disabled, 0.08f) << "Gravity-disabled body should not drift after velocity zeroed";
+    const std::vector<float> disabled_poses = poses;
+    for (int64_t i = 0; i < n; ++i)
+    {
+        const float before_vz = before_vels[static_cast<size_t>(i * 6 + 2)];
+        const float after_vz = vels[static_cast<size_t>(i * 6 + 2)];
+        if (i % 2 == 0)
+            EXPECT_NEAR(after_vz, before_vz, 0.02f) << "Gravity-disabled body " << i << " did not coast";
+        else
+            EXPECT_LT(after_vz, before_vz - 0.1f)
+                << "Gravity-enabled control body " << i << " did not accelerate";
+    }
 
     std::fill(flags.begin(), flags.end(), 0);
     flag_t.data = flags.data();
     ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, grav_binding, &flag_t, nullptr).status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_rigid_body_view_wake_up(m_handle, pose_binding, nullptr).status, OVPHYSX_API_SUCCESS);
     for (int i = 0; i < 10; ++i)
         step_once();
     ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, vel_binding, &vel_t).status, OVPHYSX_API_SUCCESS);
     ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, pose_binding, &pose_t).status, OVPHYSX_API_SUCCESS);
     EXPECT_LT(vels[2], -0.5f) << "Body should fall after re-enabling gravity";
-    EXPECT_LT(poses[2], z_disabled - 0.05f) << "Body should fall after re-enabling gravity";
+    EXPECT_LT(poses[2], disabled_poses[2] - 0.05f) << "Body should fall after re-enabling gravity";
     EXPECT_LT(z_falling, z_initial) << "Sanity: body fell before gravity was disabled";
 
     EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, vel_binding).status, OVPHYSX_API_SUCCESS);
 
     EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, pose_binding).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, grav_binding).status, OVPHYSX_API_SUCCESS);
+}
+
+TEST_F(TensorBindingCpuTest, CpuRigidBodyDisableGravitySleepingBodiesWakeOnReenable)
+{
+    ovphysx_usd_handle_t usd_handle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/boxes_falling_on_groundplane.usda", usd_handle));
+
+    ovphysx_tensor_binding_handle_t grav_binding = 0;
+    ovphysx_tensor_binding_desc_t desc{};
+    desc.pattern = OVPHYSX_LITERAL("/World/Cube*");
+    desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_DISABLE_GRAVITY_BOOL;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &grav_binding).status, OVPHYSX_API_SUCCESS);
+    ovphysx_tensor_spec_t spec{};
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, grav_binding, &spec).status, OVPHYSX_API_SUCCESS);
+    const int64_t count = spec.shape[0];
+    ASSERT_GT(count, 0);
+
+    auto active_count = [&]() -> uint64_t {
+        ovphysx_query_handle_t query = 0;
+        EXPECT_EQ(ovphysx_query(m_handle, OVPHYSX_OBJECT_RIGID_BODY, OVPHYSX_SCOPE_ACTIVE, &query).status,
+                  OVPHYSX_API_SUCCESS);
+        ovstage_query_result_t result{};
+        EXPECT_EQ(ovphysx_fetch_query_result(m_handle, query, &result).status, OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(ovphysx_release_query(m_handle, query).status, OVPHYSX_API_SUCCESS);
+        return result.total_prim_count;
+    };
+    auto step_once = [&]() {
+        ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
+        ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
+        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+    };
+
+    ASSERT_EQ(ovphysx_rigid_body_view_sleep(m_handle, grav_binding, nullptr).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(active_count(), 0u);
+
+    std::vector<uint8_t> flags(static_cast<size_t>(count), 1);
+    int64_t shape[1] = { count };
+    DLTensor flag{};
+    flag.data = flags.data();
+    flag.device = { kDLCPU, 0 };
+    flag.ndim = 1;
+    flag.dtype = { kDLUInt, 8, 1 };
+    flag.shape = shape;
+    ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, grav_binding, &flag, nullptr).status, OVPHYSX_API_SUCCESS);
+    step_once();
+    EXPECT_EQ(active_count(), 0u) << "disabling gravity must not wake a sleeping body";
+
+    std::fill(flags.begin(), flags.end(), 0);
+    ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, grav_binding, &flag, nullptr).status, OVPHYSX_API_SUCCESS);
+    step_once();
+    EXPECT_EQ(active_count(), static_cast<uint64_t>(count))
+        << "re-enabling gravity must wake sleeping bodies without a public wake call";
+
     EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, grav_binding).status, OVPHYSX_API_SUCCESS);
 }
 
@@ -2707,56 +2804,135 @@ TEST_F(TensorBindingCpuTest, IndexedWrite) {
 // MULTIPLE BINDINGS TEST
 // ============================================================================
 
+
+TEST_F(TensorBindingCpuTest, NewBindingIncludesAddedBody)
+{
+    ovphysx_usd_handle_t usdHandle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/empty_dynamic_boxes_cpu.usda", usdHandle));
+    ovstage_instance_t* stage = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(test_utils::ovstage_test_attachments_mutex());
+        stage = test_utils::ovstage_test_attachments().at(m_handle).back().stage;
+    }
+    constexpr const char* body = R"(#usda 1.0
+(defaultPrim = "Body")
+def Xform "Body" (prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"])
+{
+    float physics:mass = 1.0
+    def Cube "Collider" (prepend apiSchemas = ["PhysicsCollisionAPI"])
+    {
+        double size = 0.5
+    }
+}
+)";
+    constexpr ovstage_timeout_ns_t waitTimeout = 10'000'000'000ULL;
+    auto waitPopulation = [&](ovstage_population_enqueue_result_t op) {
+        if (op.status != OVSTAGE_OK)
+            return false;
+        ovstage_population_op_wait_result_t result{};
+        return ovstage_population_wait_op(stage, op.op_index, waitTimeout, &result) == OVSTAGE_OK &&
+               result.error_op_id_count == 0;
+    };
+    auto addBody = [&](const char* path, uint64_t ordinal) {
+        if (!waitPopulation(ovstage_population_add_usd_reference_from_string(
+                stage, {body, std::strlen(body)}, {path, std::strlen(path)}, nullptr)) ||
+            !waitPopulation(ovstage_population_apply_usd_changes(stage, ordinal)))
+            return false;
+        ovstage_write_floor_desc_t floorDesc{};
+        floorDesc.ordinal = ordinal;
+        floorDesc.scope = OVSTAGE_SCOPE_ALL;
+        const ovstage_enqueue_result_t floor = ovstage_advance_write_floor(stage, &floorDesc);
+        if (floor.status != OVSTAGE_OK)
+            return false;
+        ovstage_op_wait_result_t floorResult{};
+        const ovstage_api_status_t waitStatus =
+            ovstage_wait_op(stage, floor.op_index, waitTimeout, &floorResult);
+        if (waitStatus != OVSTAGE_OK && waitStatus != OVSTAGE_ERROR_OP_FAILED)
+            return false;
+        const ovstage_api_status_t releaseStatus = ovstage_release_op(stage, floor.op_index);
+        if (waitStatus != OVSTAGE_OK || floorResult.error_op_id_count != 0 || releaseStatus != OVSTAGE_OK)
+            return false;
+        ovstage_ordinal_range_t range{};
+        range.has_start_ordinal = true;
+        range.start_ordinal = ordinal;
+        range.end_ordinal = ordinal;
+        return ovphysx_update_from_ovstage(m_handle, range).status == OVPHYSX_API_SUCCESS;
+    };
+    ASSERT_TRUE(addBody("/World/DynamicBoxes/box_0", 2));
+    ovphysx_tensor_binding_desc_t desc{};
+    desc.pattern = OVPHYSX_LITERAL("/World/DynamicBoxes/*");
+    desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_POSE_F32;
+    ovphysx_tensor_binding_handle_t oldPose = 0;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &oldPose).status, OVPHYSX_API_SUCCESS);
+    ovphysx_tensor_spec_t spec{};
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, oldPose, &spec).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(spec.shape[0], 1);
+
+    ASSERT_TRUE(addBody("/World/DynamicBoxes/box_1", 3));
+    desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_VELOCITY_F32;
+    ovphysx_tensor_binding_handle_t velocity = 0;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &velocity).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, velocity, &spec).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(spec.shape[0], 2);
+    // New selection eligibility must not retire the still-valid original binding.
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, oldPose, &spec).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(spec.shape[0], 1);
+    float poseData[7]{};
+    int64_t poseShape[] = {1, 7};
+    DLTensor pose{};
+    pose.data = poseData;
+    pose.device = {kDLCPU, 0};
+    pose.ndim = 2;
+    pose.dtype = {kDLFloat, 32, 1};
+    pose.shape = poseShape;
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, oldPose, &pose).status, OVPHYSX_API_SUCCESS);
+    for (float value : poseData)
+        EXPECT_TRUE(std::isfinite(value));
+    ASSERT_EQ(ovphysx_destroy_tensor_binding(m_handle, oldPose).status, OVPHYSX_API_SUCCESS);
+    desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_POSE_F32;
+    ovphysx_tensor_binding_handle_t newPose = 0;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &newPose).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, newPose, &spec).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(spec.shape[0], 2);
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, velocity).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, newPose).status, OVPHYSX_API_SUCCESS);
+}
+
 TEST_F(TensorBindingCpuTest, MultipleSamePatternBindings) {
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/links_chain_sample.usda", usd_handle));
 
-    // Several bindings on the same pattern with different tensor types.
-    ovphysx_tensor_binding_handle_t pos_binding = 0;
-    ovphysx_tensor_binding_handle_t vel_binding = 0;
-    ovphysx_tensor_binding_handle_t target_binding = 0;
+    omni::physics::tensors::TensorApi* tensorApi =
+        static_cast<omni::physics::tensors::TensorApi*>(ovphysx_get_tensor_api_internal());
+    ASSERT_NE(tensorApi, nullptr);
+    ScopedTensorApiProbe probe(*tensorApi);
 
-    ovphysx_tensor_binding_desc_t pos_desc{};
-    pos_desc.pattern = OVPHYSX_LITERAL("/World/articulation");
-    pos_desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_DOF_POSITION_F32;
-
-    ovphysx_tensor_binding_desc_t vel_desc{};
-    vel_desc.pattern = OVPHYSX_LITERAL("/World/articulation");
-    vel_desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_DOF_VELOCITY_F32;
-
-    ovphysx_tensor_binding_desc_t target_desc{};
-    target_desc.pattern = OVPHYSX_LITERAL("/World/articulation");
-    target_desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_DOF_POSITION_TARGET_F32;
-
-    ovphysx_result_t result = ovphysx_create_tensor_binding(m_handle, &pos_desc, &pos_binding);
-    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
-
-    result = ovphysx_create_tensor_binding(m_handle, &vel_desc, &vel_binding);
-    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
-
-    result = ovphysx_create_tensor_binding(m_handle, &target_desc, &target_binding);
-    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
-
-    // The same pattern yields the same shape for every binding.
-    ovphysx_tensor_spec_t pos_spec, vel_spec, target_spec;
-
-    result = ovphysx_get_tensor_binding_spec(m_handle, pos_binding, &pos_spec);
-    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
-
-    result = ovphysx_get_tensor_binding_spec(m_handle, vel_binding, &vel_spec);
-    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
-
-    result = ovphysx_get_tensor_binding_spec(m_handle, target_binding, &target_spec);
-    ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
-
-    EXPECT_EQ(pos_spec.shape[0], vel_spec.shape[0]);
-    EXPECT_EQ(pos_spec.shape[0], target_spec.shape[0]);
-    EXPECT_EQ(pos_spec.shape[1], vel_spec.shape[1]);
-    EXPECT_EQ(pos_spec.shape[1], target_spec.shape[1]);
-
-    ovphysx_destroy_tensor_binding(m_handle, pos_binding);
-    ovphysx_destroy_tensor_binding(m_handle, vel_binding);
-    ovphysx_destroy_tensor_binding(m_handle, target_binding);
+    // Distinct attributes share one selection but retain separate handles and specs.
+    const ovphysx_tensor_type_t types[] = {
+        OVPHYSX_TENSOR_ARTICULATION_DOF_POSITION_F32,
+        OVPHYSX_TENSOR_ARTICULATION_DOF_VELOCITY_F32,
+        OVPHYSX_TENSOR_ARTICULATION_DOF_POSITION_TARGET_F32,
+    };
+    ovphysx_tensor_binding_handle_t bindings[3]{};
+    ovphysx_tensor_spec_t specs[3]{};
+    ovphysx_tensor_binding_desc_t desc{};
+    desc.pattern = OVPHYSX_LITERAL("/World/articulation");
+    for (uint32_t i = 0; i < 3; ++i)
+    {
+        desc.tensor_type = types[i];
+        ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &bindings[i]).status, OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, bindings[i], &specs[i]).status, OVPHYSX_API_SUCCESS);
+    }
+    EXPECT_EQ(probe.createCount(), 1);
+    for (uint32_t i = 1; i < 3; ++i)
+    {
+        EXPECT_NE(bindings[0], bindings[i]);
+        EXPECT_NE(bindings[i - 1], bindings[i]);
+        EXPECT_EQ(specs[0].shape[0], specs[i].shape[0]);
+        EXPECT_EQ(specs[0].shape[1], specs[i].shape[1]);
+    }
+    for (ovphysx_tensor_binding_handle_t binding : bindings)
+        EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, binding).status, OVPHYSX_API_SUCCESS);
 }
 
 TEST_F(TensorBindingCpuTest, DuplicateBindingSameType) {
@@ -2819,7 +2995,8 @@ TEST_F(TensorBindingCpuTest, DuplicateBindingSameType) {
         EXPECT_FLOAT_EQ(data1[i], data2[i]);
     }
 
-    ovphysx_destroy_tensor_binding(m_handle, binding1);
+    ASSERT_EQ(ovphysx_destroy_tensor_binding(m_handle, binding1).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_read_tensor_binding(m_handle, binding2, &tensor2).status, OVPHYSX_API_SUCCESS);
     ovphysx_destroy_tensor_binding(m_handle, binding2);
 }
 
@@ -3235,7 +3412,460 @@ TEST_F(TensorBindingCpuTest, CpuOnlyCudaTensorRejected) {
 }
 
 // ============================================================================
-// GPU MODE TESTS
+// DEFAULT GPU-DYNAMICS TESTS (NO DIRECTGPU)
+// ============================================================================
+
+class DefaultGpuDynamicsTest : public ::testing::Test
+{
+    static ovphysx_handle_t s_handle;
+    static std::string s_skipReason;
+
+protected:
+    ovphysx_handle_t m_handle = 0;
+
+    static void SetUpTestSuite()
+    {
+#if !OVPHYSX_ENABLE_GPU_TESTS
+        s_skipReason = "GPU tests disabled at compile time";
+        return;
+#endif
+        const ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
+        const ovphysx_result_t createResult = ovphysx_create_instance(&args, &s_handle);
+        if (createResult.status != OVPHYSX_API_SUCCESS)
+        {
+            const ovphysx_string_t error = ovphysx_get_last_error();
+            s_skipReason = error.ptr ? std::string(error.ptr, error.length) : "Failed to create default GPU instance";
+            s_handle = 0;
+        }
+    }
+
+    static void TearDownTestSuite()
+    {
+        if (s_handle == 0)
+            return;
+        const ovphysx_enqueue_result_t resetResult = ovphysx_reset_stage(s_handle);
+        if (resetResult.status == OVPHYSX_API_SUCCESS && resetResult.op_index != 0)
+            wait_op_success(s_handle, resetResult.op_index);
+        test_utils::destroy_ovstage_test_attachments(s_handle);
+        ovphysx_destroy_instance(s_handle);
+        s_handle = 0;
+    }
+
+    void SetUp() override
+    {
+        if (s_handle == 0)
+        {
+            if (ovphysxTestRequireCuda())
+                FAIL() << "GPU/CUDA not available (OVPHYSX_TEST_REQUIRE_CUDA=1): " << s_skipReason;
+            GTEST_SKIP() << s_skipReason;
+        }
+        m_handle = s_handle;
+    }
+
+    void TearDown() override
+    {
+        if (m_handle == 0)
+            return;
+        const ovphysx_enqueue_result_t resetResult = ovphysx_reset_stage(m_handle);
+        if (resetResult.status == OVPHYSX_API_SUCCESS && resetResult.op_index != 0)
+            EXPECT_TRUE(wait_op_success(m_handle, resetResult.op_index));
+        else
+            EXPECT_EQ(resetResult.status, OVPHYSX_API_SUCCESS);
+        test_utils::destroy_ovstage_test_attachments(m_handle);
+        m_handle = 0;
+    }
+
+    void step(int count)
+    {
+        for (int i = 0; i < count; ++i)
+        {
+            const ovphysx_enqueue_result_t result = ovphysx_step(m_handle, 1.0f / 60.0f);
+            ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
+            ASSERT_TRUE(wait_op_success(m_handle, result.op_index));
+        }
+    }
+
+    void warmupAndStep()
+    {
+        ASSERT_EQ(ovphysx_warmup(m_handle).status, OVPHYSX_API_SUCCESS);
+        step(1);
+    }
+
+    uint64_t activeCount(const ovphysx_sim_object_type_t objectType)
+    {
+        ovphysx_query_handle_t query = 0;
+        EXPECT_EQ(ovphysx_query(m_handle, objectType, OVPHYSX_SCOPE_ACTIVE, &query).status,
+                  OVPHYSX_API_SUCCESS);
+        ovstage_query_result_t result{};
+        EXPECT_EQ(ovphysx_fetch_query_result(m_handle, query, &result).status, OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(ovphysx_release_query(m_handle, query).status, OVPHYSX_API_SUCCESS);
+        return result.total_prim_count;
+    }
+
+    void writeUniformU8(const ovphysx_sim_object_type_t objectType,
+                        const char* attributeName,
+                        const uint8_t value)
+    {
+        writeUniform(objectType, attributeName, kDLUInt, 8, &value, sizeof(value));
+    }
+
+    void writeDisableGravity(const ovphysx_sim_object_type_t objectType, const uint8_t value)
+    {
+        writeUniformU8(objectType, OVPHYSX_ATTR_DISABLE_GRAVITY, value);
+    }
+
+    void writeUniform(const ovphysx_sim_object_type_t objectType,
+                      const char* attributeName,
+                      const uint8_t dtypeCode,
+                      const uint8_t dtypeBits,
+                      const void* fillValue,
+                      const size_t fillBytes)
+    {
+        struct WriteSessionGuard
+        {
+            explicit WriteSessionGuard(const ovphysx_handle_t instance) : handle(instance)
+            {
+            }
+
+            ~WriteSessionGuard()
+            {
+                if (write)
+                    ovphysx_release_write(handle, write);
+                if (query)
+                    ovphysx_release_query(handle, query);
+            }
+
+            ovphysx_handle_t handle;
+            ovphysx_query_handle_t query = 0;
+            ovphysx_write_handle_t write = 0;
+        } guard(m_handle);
+
+        ASSERT_EQ(ovphysx_query(m_handle, objectType, OVPHYSX_SCOPE_ALL, &guard.query).status,
+                  OVPHYSX_API_SUCCESS);
+
+        const ovx_string_or_token_t attribute = {
+            0,
+            { attributeName, std::strlen(attributeName) }
+        };
+        ASSERT_EQ(ovphysx_write(m_handle, guard.query, &attribute, &guard.write).status, OVPHYSX_API_SUCCESS);
+
+        const ovstage_map_group_t* group = nullptr;
+        ovphysx_result_t fetch{};
+        while ((fetch = ovphysx_fetch_write_next(m_handle, guard.write, &group)).status == OVPHYSX_API_SUCCESS)
+        {
+            ASSERT_NE(group, nullptr);
+            ASSERT_EQ(group->data.tensor_count, 1u);
+            const DLTensor& tensor = group->data.tensors[0];
+            ASSERT_EQ(tensor.device.device_type, kDLCPU);
+            ASSERT_EQ(tensor.dtype.code, dtypeCode);
+            ASSERT_EQ(tensor.dtype.bits, dtypeBits);
+            size_t elementCount = tensor.dtype.lanes ? tensor.dtype.lanes : 1;
+            for (int32_t dim = 0; dim < tensor.ndim; ++dim)
+                elementCount *= static_cast<size_t>(tensor.shape[dim]);
+            uint8_t* dst = static_cast<uint8_t*>(tensor.data);
+            for (size_t i = 0; i < elementCount; ++i)
+                std::memcpy(dst + i * fillBytes, fillValue, fillBytes);
+            ASSERT_EQ(ovphysx_commit_group(m_handle, guard.write, group, ovstage_cuda_sync_t{}).status,
+                      OVPHYSX_API_SUCCESS);
+        }
+        EXPECT_EQ(fetch.status, OVPHYSX_API_END_OF_ITERATION);
+        EXPECT_EQ(ovphysx_release_write(m_handle, guard.write).status, OVPHYSX_API_SUCCESS);
+        guard.write = 0;
+        EXPECT_EQ(ovphysx_release_query(m_handle, guard.query).status, OVPHYSX_API_SUCCESS);
+        guard.query = 0;
+    }
+};
+
+ovphysx_handle_t DefaultGpuDynamicsTest::s_handle = 0;
+std::string DefaultGpuDynamicsTest::s_skipReason;
+
+TEST_F(DefaultGpuDynamicsTest, TensorBindingRigidBodyDisableGravityAffectsSimulation)
+{
+    ovphysx_usd_handle_t usdHandle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/boxes_falling_on_groundplane_gpu.usda", usdHandle));
+    warmupAndStep();
+
+    ovphysx_tensor_binding_handle_t gravityBinding = 0;
+    ovphysx_tensor_binding_handle_t velBinding = 0;
+    ovphysx_tensor_binding_desc_t desc{};
+    desc.pattern = OVPHYSX_LITERAL("/World/Cube*");
+    desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_DISABLE_GRAVITY_BOOL;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &gravityBinding).status, OVPHYSX_API_SUCCESS);
+    desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_VELOCITY_F32;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &velBinding).status, OVPHYSX_API_SUCCESS);
+
+    ovphysx_tensor_spec_t velSpec{};
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, velBinding, &velSpec).status, OVPHYSX_API_SUCCESS);
+    const int64_t count = velSpec.shape[0];
+    ASSERT_GT(count, 1);
+    std::vector<float> before(static_cast<size_t>(count * 6), 0.0f);
+    int64_t velShape[2] = { count, 6 };
+    DLTensor vel{};
+    vel.data = before.data();
+    vel.device = { kDLCPU, 0 };
+    vel.ndim = 2;
+    vel.dtype = { kDLFloat, 32, 1 };
+    vel.shape = velShape;
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, velBinding, &vel).status, OVPHYSX_API_SUCCESS);
+
+    std::vector<uint8_t> flags(static_cast<size_t>(count), 0);
+    for (int64_t i = 0; i < count; i += 2)
+        flags[static_cast<size_t>(i)] = 1;
+    int64_t flagShape[1] = { count };
+    DLTensor flag{};
+    flag.data = flags.data();
+    flag.device = { kDLCPU, 0 };
+    flag.ndim = 1;
+    flag.dtype = { kDLUInt, 8, 1 };
+    flag.shape = flagShape;
+    ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, gravityBinding, &flag, nullptr).status, OVPHYSX_API_SUCCESS);
+
+    step(1);
+    std::vector<float> after(static_cast<size_t>(count * 6), 0.0f);
+    vel.data = after.data();
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, velBinding, &vel).status, OVPHYSX_API_SUCCESS);
+    for (int64_t i = 0; i < count; ++i)
+    {
+        const float beforeVz = before[static_cast<size_t>(i * 6 + 2)];
+        const float afterVz = after[static_cast<size_t>(i * 6 + 2)];
+        if (i % 2 == 0)
+            EXPECT_NEAR(afterVz, beforeVz, 0.02f) << "gravity-disabled body " << i << " did not coast";
+        else
+            EXPECT_LT(afterVz, beforeVz - 0.1f)
+                << "gravity-enabled control body " << i << " did not accelerate";
+    }
+
+    ovphysx_destroy_tensor_binding(m_handle, velBinding);
+    ovphysx_destroy_tensor_binding(m_handle, gravityBinding);
+}
+
+TEST_F(DefaultGpuDynamicsTest, SessionWriteRigidBodyDisableGravityAffectsSimulation)
+{
+    ovphysx_usd_handle_t usdHandle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/boxes_falling_on_groundplane_gpu.usda", usdHandle));
+    warmupAndStep();
+
+    ovphysx_tensor_binding_handle_t poseBinding = 0;
+    ovphysx_tensor_binding_desc_t desc{};
+    desc.pattern = OVPHYSX_LITERAL("/World/Cube*");
+    desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_POSE_F32;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &poseBinding).status, OVPHYSX_API_SUCCESS);
+    ovphysx_tensor_binding_handle_t velBinding = 0;
+    desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_VELOCITY_F32;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &velBinding).status, OVPHYSX_API_SUCCESS);
+    ovphysx_tensor_spec_t spec{};
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, poseBinding, &spec).status, OVPHYSX_API_SUCCESS);
+    const int64_t count = spec.shape[0];
+    ASSERT_GT(count, 1);
+    int64_t shape[2] = { count, 7 };
+    DLTensor pose{};
+    pose.device = { kDLCPU, 0 };
+    pose.ndim = 2;
+    pose.dtype = { kDLFloat, 32, 1 };
+    pose.shape = shape;
+
+    int64_t velShape[2] = { count, 6 };
+    std::vector<float> beforeVel(static_cast<size_t>(count * 6), 0.0f);
+    DLTensor vel{};
+    vel.data = beforeVel.data();
+    vel.device = { kDLCPU, 0 };
+    vel.ndim = 2;
+    vel.dtype = { kDLFloat, 32, 1 };
+    vel.shape = velShape;
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, velBinding, &vel).status, OVPHYSX_API_SUCCESS);
+
+    step(1);
+    std::vector<float> movingVel(static_cast<size_t>(count * 6), 0.0f);
+    vel.data = movingVel.data();
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, velBinding, &vel).status, OVPHYSX_API_SUCCESS);
+    for (int64_t i = 0; i < count; ++i)
+    {
+        const float beforeVz = beforeVel[static_cast<size_t>(i * 6 + 2)];
+        const float movingVz = movingVel[static_cast<size_t>(i * 6 + 2)];
+        EXPECT_LT(movingVz, beforeVz - 0.1f)
+            << "gravity-enabled control body " << i << " did not accelerate";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(writeDisableGravity(OVPHYSX_OBJECT_RIGID_BODY, 1));
+    step(1);
+    std::vector<float> disabledVel(static_cast<size_t>(count * 6), 0.0f);
+    vel.data = disabledVel.data();
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, velBinding, &vel).status, OVPHYSX_API_SUCCESS);
+    for (int64_t i = 0; i < count; ++i)
+    {
+        const float movingVz = movingVel[static_cast<size_t>(i * 6 + 2)];
+        const float disabledVz = disabledVel[static_cast<size_t>(i * 6 + 2)];
+        EXPECT_NEAR(disabledVz, movingVz, 0.02f) << "gravity-disabled body " << i << " did not coast";
+    }
+
+    std::vector<float> held(static_cast<size_t>(count * 7), 0.0f);
+    pose.data = held.data();
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, poseBinding, &pose).status, OVPHYSX_API_SUCCESS);
+
+    ASSERT_NO_FATAL_FAILURE(writeDisableGravity(OVPHYSX_OBJECT_RIGID_BODY, 0));
+    step(20);
+    std::vector<float> released(static_cast<size_t>(count * 7), 0.0f);
+    pose.data = released.data();
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, poseBinding, &pose).status, OVPHYSX_API_SUCCESS);
+    for (int64_t i = 0; i < count; ++i)
+        EXPECT_LT(released[static_cast<size_t>(i * 7 + 2)], held[static_cast<size_t>(i * 7 + 2)] - 0.05f);
+
+    ovphysx_destroy_tensor_binding(m_handle, velBinding);
+    ovphysx_destroy_tensor_binding(m_handle, poseBinding);
+}
+
+TEST_F(DefaultGpuDynamicsTest, SleepingRigidBodiesWakeOnlyWhenGravityIsReenabled)
+{
+    ovphysx_usd_handle_t usdHandle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/boxes_falling_on_groundplane_gpu.usda", usdHandle));
+
+    ovphysx_tensor_binding_handle_t gravityBinding = 0;
+    ovphysx_tensor_binding_desc_t desc{};
+    desc.pattern = OVPHYSX_LITERAL("/World/Cube*");
+    desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_DISABLE_GRAVITY_BOOL;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &gravityBinding).status, OVPHYSX_API_SUCCESS);
+    ovphysx_tensor_spec_t spec{};
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, gravityBinding, &spec).status, OVPHYSX_API_SUCCESS);
+    const int64_t count = spec.shape[0];
+    ASSERT_GT(count, 0);
+
+    ASSERT_EQ(ovphysx_rigid_body_view_sleep(m_handle, gravityBinding, nullptr).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(activeCount(OVPHYSX_OBJECT_RIGID_BODY), 0u);
+
+    std::vector<uint8_t> flags(static_cast<size_t>(count), 1);
+    int64_t shape[1] = { count };
+    DLTensor flag{};
+    flag.data = flags.data();
+    flag.device = { kDLCPU, 0 };
+    flag.ndim = 1;
+    flag.dtype = { kDLUInt, 8, 1 };
+    flag.shape = shape;
+    ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, gravityBinding, &flag, nullptr).status, OVPHYSX_API_SUCCESS);
+    step(1);
+    EXPECT_EQ(activeCount(OVPHYSX_OBJECT_RIGID_BODY), 0u)
+        << "disabling gravity must not wake a sleeping body";
+
+    std::fill(flags.begin(), flags.end(), 0);
+    ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, gravityBinding, &flag, nullptr).status, OVPHYSX_API_SUCCESS);
+    step(1);
+    EXPECT_EQ(activeCount(OVPHYSX_OBJECT_RIGID_BODY), static_cast<uint64_t>(count))
+        << "re-enabling gravity must wake sleeping bodies for the next step";
+
+    ovphysx_destroy_tensor_binding(m_handle, gravityBinding);
+}
+
+TEST_F(DefaultGpuDynamicsTest, TensorBindingArticulationDisableGravityAffectsSimulation)
+{
+    ovphysx_usd_handle_t usdHandle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/mixed_base_articulations_gpu.usda", usdHandle));
+    warmupAndStep();
+
+    ovphysx_tensor_binding_handle_t gravityBinding = 0;
+    ovphysx_tensor_binding_handle_t rootVelBinding = 0;
+    ovphysx_tensor_binding_desc_t desc{};
+    desc.pattern = OVPHYSX_LITERAL("/World/articulation2");
+    desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_BODY_DISABLE_GRAVITY_BOOL;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &gravityBinding).status, OVPHYSX_API_SUCCESS);
+    desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_ROOT_VELOCITY_F32;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &rootVelBinding).status, OVPHYSX_API_SUCCESS);
+
+    ovphysx_tensor_spec_t gravitySpec{};
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, gravityBinding, &gravitySpec).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(gravitySpec.shape[0], 1);
+    const int64_t linkCount = gravitySpec.shape[1];
+    ASSERT_GT(linkCount, 0);
+    std::vector<uint8_t> flags(static_cast<size_t>(linkCount), 1);
+    int64_t flagShape[2] = { 1, linkCount };
+    DLTensor flag{};
+    flag.data = flags.data();
+    flag.device = { kDLCPU, 0 };
+    flag.ndim = 2;
+    flag.dtype = { kDLUInt, 8, 1 };
+    flag.shape = flagShape;
+
+    float beforeVel[6]{};
+    int64_t velShape[2] = { 1, 6 };
+    DLTensor vel{};
+    vel.data = beforeVel;
+    vel.device = { kDLCPU, 0 };
+    vel.ndim = 2;
+    vel.dtype = { kDLFloat, 32, 1 };
+    vel.shape = velShape;
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, rootVelBinding, &vel).status, OVPHYSX_API_SUCCESS);
+
+    step(1);
+    float movingVel[6]{};
+    vel.data = movingVel;
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, rootVelBinding, &vel).status, OVPHYSX_API_SUCCESS);
+    EXPECT_LT(movingVel[2], beforeVel[2] - 0.1f)
+        << "gravity-enabled articulation control did not accelerate";
+
+    ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, gravityBinding, &flag, nullptr).status, OVPHYSX_API_SUCCESS);
+    step(1);
+    float disabledVel[6]{};
+    vel.data = disabledVel;
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, rootVelBinding, &vel).status, OVPHYSX_API_SUCCESS);
+    EXPECT_NEAR(disabledVel[2], movingVel[2], 0.02f) << "gravity-disabled articulation did not coast";
+
+    std::fill(flags.begin(), flags.end(), 0);
+    ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, gravityBinding, &flag, nullptr).status, OVPHYSX_API_SUCCESS);
+    step(20);
+    float releasedVel[6]{};
+    vel.data = releasedVel;
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, rootVelBinding, &vel).status, OVPHYSX_API_SUCCESS);
+    EXPECT_LT(releasedVel[2], disabledVel[2] - 0.5f);
+
+    ovphysx_destroy_tensor_binding(m_handle, rootVelBinding);
+    ovphysx_destroy_tensor_binding(m_handle, gravityBinding);
+}
+
+TEST_F(DefaultGpuDynamicsTest, SessionWriteArticulationLinkDisableGravityAffectsSimulation)
+{
+    ovphysx_usd_handle_t usdHandle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/mixed_base_articulations_gpu.usda", usdHandle));
+    warmupAndStep();
+
+    ovphysx_tensor_binding_handle_t rootVelBinding = 0;
+    ovphysx_tensor_binding_desc_t desc{};
+    desc.pattern = OVPHYSX_LITERAL("/World/articulation2");
+    desc.tensor_type = OVPHYSX_TENSOR_ARTICULATION_ROOT_VELOCITY_F32;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &rootVelBinding).status, OVPHYSX_API_SUCCESS);
+    int64_t shape[2] = { 1, 6 };
+    float beforeVel[6]{};
+    DLTensor vel{};
+    vel.data = beforeVel;
+    vel.device = { kDLCPU, 0 };
+    vel.ndim = 2;
+    vel.dtype = { kDLFloat, 32, 1 };
+    vel.shape = shape;
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, rootVelBinding, &vel).status, OVPHYSX_API_SUCCESS);
+
+    step(1);
+    float movingVel[6]{};
+    vel.data = movingVel;
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, rootVelBinding, &vel).status, OVPHYSX_API_SUCCESS);
+    EXPECT_LT(movingVel[2], beforeVel[2] - 0.1f)
+        << "gravity-enabled articulation control did not accelerate";
+
+    ASSERT_NO_FATAL_FAILURE(writeDisableGravity(OVPHYSX_OBJECT_ARTICULATION_LINK, 1));
+    step(1);
+    float disabledVel[6]{};
+    vel.data = disabledVel;
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, rootVelBinding, &vel).status, OVPHYSX_API_SUCCESS);
+    EXPECT_NEAR(disabledVel[2], movingVel[2], 0.02f) << "gravity-disabled articulation did not coast";
+
+    ASSERT_NO_FATAL_FAILURE(writeDisableGravity(OVPHYSX_OBJECT_ARTICULATION_LINK, 0));
+    step(20);
+    float releasedVel[6]{};
+    vel.data = releasedVel;
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, rootVelBinding, &vel).status, OVPHYSX_API_SUCCESS);
+    EXPECT_LT(releasedVel[2], disabledVel[2] - 0.5f);
+
+    ovphysx_destroy_tensor_binding(m_handle, rootVelBinding);
+}
+
+// ============================================================================
+// DIRECTGPU TESTS
 // ============================================================================
 
 // Shared GPU instance for all TensorBindingGpuTest tests.
@@ -6313,6 +6943,158 @@ TEST_F(TensorBindingGpuTest, GpuRigidBodyDisableGravityPartialMaskCpuSource) {
     ovphysx_destroy_tensor_binding(m_handle, binding);
 }
 
+TEST_F(TensorBindingGpuTest, NewBindingIncludesReenabledBody)
+{
+    ovphysx_usd_handle_t usdHandle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/boxes_falling_on_groundplane_gpu.usda", usdHandle));
+    ASSERT_EQ(ovphysx_warmup(m_handle).status, OVPHYSX_API_SUCCESS);
+
+    ovphysx_tensor_binding_desc_t desc{};
+    desc.pattern = OVPHYSX_LITERAL("/World/Cube1");
+    desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_DISABLE_SIMULATION_BOOL;
+    ovphysx_tensor_binding_handle_t disable = 0;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &disable).status, OVPHYSX_API_SUCCESS);
+    uint8_t disabled = 1;
+    int64_t flagShape[] = {1};
+    DLTensor flag{};
+    flag.data = &disabled;
+    flag.device = {kDLCPU, 0};
+    flag.ndim = 1;
+    flag.dtype = {kDLUInt, 8, 1};
+    flag.shape = flagShape;
+    ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, disable, &flag, nullptr).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_destroy_tensor_binding(m_handle, disable).status, OVPHYSX_API_SUCCESS);
+
+    desc.pattern = OVPHYSX_LITERAL("/World/Cube*");
+    desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_POSE_F32;
+    ovphysx_tensor_binding_handle_t oldPose = 0;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &oldPose).status, OVPHYSX_API_SUCCESS);
+    ovphysx_tensor_spec_t spec{};
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, oldPose, &spec).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(spec.shape[0], 10);
+
+    // Session writes can reach disabled actors that the enabled-only binding omitted.
+    ovphysx_query_handle_t query = 0;
+    ASSERT_EQ(ovphysx_query(
+                  m_handle, OVPHYSX_OBJECT_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query).status, OVPHYSX_API_SUCCESS);
+    const ovx_string_or_token_t attribute = {0, {OVPHYSX_ATTR_DISABLE_SIMULATION,
+                                                sizeof(OVPHYSX_ATTR_DISABLE_SIMULATION) - 1}};
+    ovphysx_write_handle_t write = 0;
+    ASSERT_EQ(ovphysx_write(m_handle, query, &attribute, &write).status,
+              OVPHYSX_API_SUCCESS);
+    const ovstage_map_group_t* group = nullptr;
+    uint32_t groupsWritten = 0;
+    ovphysx_result_t fetch{};
+    while ((fetch = ovphysx_fetch_write_next(m_handle, write, &group)).status == OVPHYSX_API_SUCCESS)
+    {
+        ASSERT_NE(group, nullptr);
+        ASSERT_EQ(group->data.tensor_count, 1u);
+        const DLTensor& tensor = group->data.tensors[0];
+        ASSERT_EQ(tensor.device.device_type, kDLCPU);
+        ASSERT_EQ(tensor.dtype.code, kDLUInt);
+        ASSERT_EQ(tensor.dtype.bits, 8);
+        ASSERT_EQ(tensor.ndim, 1);
+        std::memset(tensor.data, 0, static_cast<size_t>(tensor.shape[0]));
+        ASSERT_EQ(ovphysx_commit_group(
+                      m_handle, write, group, ovstage_cuda_sync_t{}).status, OVPHYSX_API_SUCCESS);
+        ++groupsWritten;
+    }
+    ASSERT_EQ(fetch.status, OVPHYSX_API_END_OF_ITERATION);
+    ASSERT_GT(groupsWritten, 0u);
+    ASSERT_EQ(ovphysx_release_write(m_handle, write).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_release_query(m_handle, query).status, OVPHYSX_API_SUCCESS);
+
+    desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_VELOCITY_F32;
+    ovphysx_tensor_binding_handle_t velocity = 0;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &velocity).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, velocity, &spec).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(spec.shape[0], 11);
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, oldPose, &spec).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(spec.shape[0], 10);
+    float poseData[70]{};
+    int64_t poseShape[] = {10, 7};
+    DLTensor pose{};
+    pose.data = allocGpuBuffer(sizeof(poseData), oldPose);
+    ASSERT_NE(pose.data, nullptr);
+    pose.device = {kDLCUDA, 0};
+    pose.ndim = 2;
+    pose.dtype = {kDLFloat, 32, 1};
+    pose.shape = poseShape;
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, oldPose, &pose).status, OVPHYSX_API_SUCCESS);
+    ASSERT_TRUE(m_cudaOps.memcpyDtoH(poseData, m_gpuBuffer, sizeof(poseData)));
+    for (float value : poseData)
+        EXPECT_TRUE(std::isfinite(value));
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, oldPose).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, velocity).status, OVPHYSX_API_SUCCESS);
+}
+
+TEST_F(TensorBindingGpuTest, HostPropertiesSurviveSiblingDisableAndRowRefresh)
+{
+    ovphysx_usd_handle_t usdHandle = 0;
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/boxes_falling_on_groundplane_gpu.usda", usdHandle));
+
+    ovphysx_tensor_binding_desc_t desc{};
+    desc.pattern = OVPHYSX_LITERAL("/World/Cube*");
+    desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_MASS_F32;
+    ovphysx_tensor_binding_handle_t mass = 0;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &mass).status, OVPHYSX_API_SUCCESS);
+    desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_POSE_F32;
+    ovphysx_tensor_binding_handle_t pose = 0;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &pose).status, OVPHYSX_API_SUCCESS);
+    desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_DISABLE_SIMULATION_BOOL;
+    ovphysx_tensor_binding_handle_t disable = 0;
+    ASSERT_EQ(ovphysx_create_tensor_binding(m_handle, &desc, &disable).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_warmup(m_handle).status, OVPHYSX_API_SUCCESS);
+
+    ovphysx_tensor_spec_t spec{};
+    ASSERT_EQ(ovphysx_get_tensor_binding_spec(m_handle, mass, &spec).status, OVPHYSX_API_SUCCESS);
+    ASSERT_GT(spec.shape[0], 1);
+    int64_t propertyShape[] = {spec.shape[0]};
+    std::vector<float> masses(static_cast<size_t>(propertyShape[0]));
+    DLTensor massTensor{};
+    massTensor.data = masses.data();
+    massTensor.device = {kDLCPU, 0};
+    massTensor.ndim = 1;
+    massTensor.dtype = {kDLFloat, 32, 1};
+    massTensor.shape = propertyShape;
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, mass, &massTensor).status, OVPHYSX_API_SUCCESS);
+    const std::vector<float> initialMasses = masses;
+
+    std::vector<uint8_t> flags(masses.size(), 0);
+    flags[0] = 1;
+    DLTensor disableTensor{};
+    disableTensor.data = flags.data();
+    disableTensor.device = {kDLCPU, 0};
+    disableTensor.ndim = 1;
+    disableTensor.dtype = {kDLUInt, 8, 1};
+    disableTensor.shape = propertyShape;
+    ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, disable, &disableTensor, nullptr).status, OVPHYSX_API_SUCCESS);
+
+    // Retiring the disable view must leave both siblings valid until a GPU row read.
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, mass, &massTensor).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(masses, initialMasses);
+    DLDevice poseDevice{};
+    ASSERT_EQ(ovphysx_get_tensor_binding_native_device(m_handle, pose, &poseDevice).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(poseDevice.device_type, kDLCUDA);
+    int64_t poseShape[] = {propertyShape[0], 7};
+    DLTensor poseTensor{};
+    poseTensor.data = allocGpuBuffer(masses.size() * 7 * sizeof(float), pose);
+    ASSERT_NE(poseTensor.data, nullptr);
+    poseTensor.device = {kDLCUDA, 0};
+    poseTensor.ndim = 2;
+    poseTensor.dtype = {kDLFloat, 32, 1};
+    poseTensor.shape = poseShape;
+    EXPECT_NE(ovphysx_read_tensor_binding(m_handle, pose, &poseTensor).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_read_tensor_binding(m_handle, pose, &poseTensor).status, OVPHYSX_API_NOT_FOUND);
+
+    // Refreshing the pose mapping must not retire the still-readable host properties.
+    ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, mass, &massTensor).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(masses, initialMasses);
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, disable).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, pose).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, mass).status, OVPHYSX_API_SUCCESS);
+}
+
 // Companion to CpuRigidBodyDisableSimulationStopsSimulation. On GPU (OMPE-103213)
 // writing DISABLE_SIMULATION=1 invalidates the DirectGPU mapping, so later pose reads
 // on the same binding return OVPHYSX_API_NOT_FOUND. A binding recreated over the
@@ -6394,6 +7176,9 @@ TEST_F(TensorBindingGpuTest, GpuRigidBodyDisableSimulationStopsSimulation) {
 
     // The disable binding's SimulationView is invalidated immediately.
     EXPECT_EQ(ovphysx_write_tensor_binding(m_handle, disable_binding, &flag_t, nullptr).status, OVPHYSX_API_NOT_FOUND);
+    DLDevice poseDevice{};
+    ASSERT_EQ(ovphysx_get_tensor_binding_native_device(m_handle, pose_binding, &poseDevice).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(poseDevice.device_type, kDLCUDA);
     // The sibling pose binding invalidates on the next DirectGPU op, when the refresh
     // detects the missing rows. The first read may surface ERROR, later reads NOT_FOUND.
     {

@@ -5,7 +5,7 @@ license: Apache-2.0
 compatibility: "ovphysx >=0.6.0 wheel or SDK; Python examples require NumPy, and C examples require SDK headers and libraries."
 allowed-tools: Read Shell
 metadata:
-  version: "0.1.4"
+  version: "0.1.5"
   author: NVIDIA Omniverse Physics
   tags: "ovphysx, physics, tensor-bindings, cpu"
 ---
@@ -40,6 +40,9 @@ Use this skill when a caller needs bulk CPU tensor reads or writes for simulatio
 ## Python
 
 ```python
+from pathlib import Path
+
+import ovphysx
 from ovphysx import PhysX, codeless_schema_root
 from ovphysx.types import TensorType
 import numpy as np
@@ -50,7 +53,8 @@ physx = PhysX()
 # Register the codeless PhysX schemas before the first population call.
 ovstage.population.register_usd_schemas([str(codeless_schema_root())])
 stage = ovstage.Stage("ovphysx-tensors")
-ovstage.population.open_usd(stage, "scene.usda", ordinal=1, domains=ovstage.PopulationDomain.PHYSICS)
+usd_path = Path(ovphysx.__file__).resolve().parent / "samples" / "data" / "links_chain_sample.usda"
+ovstage.population.open_usd(stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.PHYSICS)
 # attach_ovstage() reads at a sealed ordinal.
 stage.advance_write_floor(ordinal=1).wait()
 physx.attach_ovstage(stage, read_ordinal=1)
@@ -59,12 +63,14 @@ physx.attach_ovstage(stage, read_ordinal=1)
 velocity_target_binding = physx.create_tensor_binding(
     pattern="/World/articulation/articulationLink*",
     tensor_type=TensorType.ARTICULATION_DOF_VELOCITY_TARGET,
+    raise_if_empty=True,
 )
 
 # Use a separate binding for the simulated state you read back.
 link_pose_binding = physx.create_tensor_binding(
     pattern="/World/articulation/articulationLink*",
     tensor_type=TensorType.ARTICULATION_LINK_POSE,
+    raise_if_empty=True,
 )
 
 # Write control inputs
@@ -90,6 +96,9 @@ physx.destroy()
 Read simulated results from a *state* binding (poses, positions), not from a
 *target* binding: a velocity-target binding reads back the control inputs you
 wrote, not the physics outcome.
+
+Pass `raise_if_empty=True` when a zero-count binding is a configuration error.
+The default `False` accepts empty bindings; check `binding.count` before reading.
 
 The physics-only `domains` mask above is fine for this skill's non-instanced
 sample USD. For arbitrary content prefer `ALL` — see
@@ -122,7 +131,7 @@ the `OVPHYSX_TENSOR_*_F32` enum spelling (for example Python
 
 | Python | C |
 |--------|---|
-| `physx.create_tensor_binding(pattern, tensor_type)` | `ovphysx_create_tensor_binding()` |
+| `physx.create_tensor_binding(pattern, tensor_type, *, raise_if_empty=False)` | `ovphysx_create_tensor_binding()` |
 | `binding.native_device` | `ovphysx_get_tensor_binding_native_device()` |
 | `binding.read(output)` | `ovphysx_read_tensor_binding()` |
 | `binding.write(input)` | `ovphysx_write_tensor_binding()` |

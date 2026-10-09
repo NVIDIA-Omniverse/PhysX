@@ -277,7 +277,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "ovstage", specifier = "==0.2.0.377349" },
+    { name = "ovstage", specifier = "==0.2.1.385922" },
     { name = "packaging", specifier = ">=20,<24" },
     { name = "warp-lang", specifier = ">=1.16,<2" },
 ]
@@ -291,12 +291,12 @@ dev = [
 
 [[package]]
 name = "ovstage"
-version = "0.2.0.377349"
+version = "0.2.1.385922"
 source = { registry = "../_build/target-deps/ovstage_wheel" }
 wheels = [
-    { path = "ovstage-0.2.0.377349-py3-none-manylinux_2_35_aarch64.whl" },
-    { path = "ovstage-0.2.0.377349-py3-none-manylinux_2_35_x86_64.whl" },
-    { path = "ovstage-0.2.0.377349-py3-none-win_amd64.whl" },
+    { path = "ovstage-0.2.1.385922-py3-none-manylinux_2_35_aarch64.whl" },
+    { path = "ovstage-0.2.1.385922-py3-none-manylinux_2_35_x86_64.whl" },
+    { path = "ovstage-0.2.1.385922-py3-none-win_amd64.whl" },
 ]
 
 [[package]]

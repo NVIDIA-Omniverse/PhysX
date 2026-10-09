@@ -10,6 +10,7 @@
         "Selects tensor-bindings-cpu to maintain/extend the existing binding code",
         "Adds the read through create_tensor_binding (a state binding), not by rewriting onto PhysX.read / PhysX.write",
         "Reads simulated results from a state binding, not a control-target binding",
+        "Passes raise_if_empty=True on create_tensor_binding, or checks binding.count before read/write",
         "Uses step_sync (or step + wait) before the read",
         "Destroys bindings and releases PhysX/ovstage resources",
         "Registers the codeless PhysX schemas with ovstage.population.register_usd_schemas([str(codeless_schema_root())]) before the first population call"

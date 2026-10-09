@@ -2,6 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PARSE-SUBTREE-001
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6
+ */
+
+/**
+ * @implements REQ-PARSE-BODY-003
+ * @covers AC-3
+ *
  * @implements REQ-PARSE-CORE-003
  * @covers AC-6 AC-7 AC-8 AC-9 AC-10 AC-11 AC-12 AC-13 AC-15 AC-16
  *
@@ -21,10 +29,10 @@
  * @covers AC-1 AC-2
  *
  * @implements REQ-PARSE-FEED-005
- * @covers AC-2 AC-5 AC-6 AC-7
+ * @covers AC-2 AC-5 AC-6 AC-7 AC-8
  *
  * @implements REQ-PUBLICAPI-001
- * @covers AC-40 AC-45
+ * @covers AC-40 AC-45 AC-50
  *
  * @implements REQ-PUBLICAPI-003
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7 AC-8 AC-9
@@ -43,6 +51,7 @@
  */
 
 #include "OvstageSource.h"
+#include "ReadColumn.h"
 
 
 #include "OvstageChangeFeed.h"
@@ -233,6 +242,12 @@ std::atomic_size_t& schemaQueryCounter()
 // enumeration, the usd-path IN existence query, the 2-predicate isA type filter and the
 // stage-wide schema presence probe.
 std::atomic_size_t& liveChildQueryCounter()
+{
+    static std::atomic_size_t counter{ 0 };
+    return counter;
+}
+
+std::atomic_size_t& subtreePathCounter()
 {
     static std::atomic_size_t counter{ 0 };
     return counter;
@@ -649,6 +664,11 @@ size_t getOvstageSchemaQueryCountForTest()
     return schemaQueryCounter().load(std::memory_order_relaxed);
 }
 
+size_t getOvstageSubtreePathCountForTest()
+{
+    return subtreePathCounter().load(std::memory_order_relaxed);
+}
+
 void resetOvstageLiveChildQueryCountForTest()
 {
     liveChildQueryCounter().store(0, std::memory_order_relaxed);
@@ -1009,7 +1029,7 @@ bool OvstageSource::buildPhysicsInstancingCache() const
     // resolver tracked by OMPE-100947. One get_instance_roots() call currently
     // rebuilds the full P-prototype/I-instance graph. Raw collision membership
     // reduces attach from P such rebuilds to R, where R is the number of unique
-    // prototype roots that actually back physics collision shapes.
+    // prototype roots that actually back physics collision shapes or rigid bodies.
     bool needsCompleteExpansion = false;
     std::vector<uint64_t> collisionKeys;
     if (!collectSchemaKeysRaw(internToken("PhysicsCollisionAPI"), collisionKeys))
@@ -1039,6 +1059,29 @@ bool OvstageSource::buildPhysicsInstancingCache() const
             if (foundPrototype)
                 continue;
             externalCollisionKeys.push_back(key);
+        }
+    }
+
+    // Include body-bearing prototypes even without CollisionAPI so the walker
+    // can reject unsupported dynamic instance proxies. Keep unrelated render-only
+    // instancing graphs out of this validation lookup.
+    std::vector<uint64_t> bodyKeys;
+    if (!collectSchemaKeysRaw(internToken("PhysicsRigidBodyAPI"), bodyKeys))
+        needsCompleteExpansion = true;
+    for (const uint64_t key : bodyKeys)
+    {
+        std::string ancestor = pathOfRaw(key);
+        while (!ancestor.empty())
+        {
+            if (mPrototypeRootPaths.count(ancestor) != 0)
+            {
+                relevantPrototypePathSet.insert(ancestor);
+                break;
+            }
+            const size_t slash = ancestor.rfind('/');
+            if (slash == std::string::npos || slash == 0)
+                break;
+            ancestor.resize(slash);
         }
     }
 
@@ -1544,7 +1587,7 @@ uint64_t OvstageSource::getParentRaw(uint64_t key) const
     return parentKey;
 }
 
-void OvstageSource::buildChildCache() const
+void OvstageSource::buildChildCache(const std::string& rootPath) const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
     if (mChildCacheBuilt)
@@ -1558,55 +1601,9 @@ void OvstageSource::buildChildCache() const
     if (!mInstance || !mDict)
         return;
 
-    const ovx_string_t prefixVal{ "/", 1 };
-    ovstage_predicate_t pred{};
-    pred.attribute.token = 0;
-    pred.attribute.string = ovx_string_t{ conv::kUsdPath, std::string_view(conv::kUsdPath).size() };
-    pred.op = OVSTAGE_FILTER_OP_PREFIX;
-    pred.values = &prefixVal;
-    pred.value_count = 1;
-    ovstage_filter_t filter{};
-    filter.predicates = &pred;
-    filter.count = 1;
-
-    ovstage_query_handle_t q = OVSTAGE_INVALID_QUERY_HANDLE;
-    const ovstage_enqueue_result_t e = ovstage_query(mInstance, &filter, nullptr, 0, &q);
-    if (e.status != OVSTAGE_OK)
-        return;
-    waitAndRelease(mInstance, e);
-
-    ovstage_query_handle_t use = q;
-    std::vector<ovx_token_t> dataProbes;
-    std::vector<ovx_token_t> metadataProbes;
-    std::unordered_set<ovx_token_t> probeSet;
-    ovstage_query_result_t qr{};
-    if (ovstage_fetch_query_result(mInstance, q, OVSTAGE_TIMEOUT_INFINITE, &qr) == OVSTAGE_OK)
-    {
-        if (qr.all_handle != OVSTAGE_INVALID_QUERY_HANDLE)
-            use = qr.all_handle;
-        for (size_t i = 0; i < qr.attribute_count; ++i)
-        {
-            ovx_string_t s{};
-            if (ovx_path_dictionary_token_to_string(mDict, qr.attributes[i], &s) != OVX_OK || !s.ptr || s.length == 0)
-                continue;
-            if (s.ptr[0] == '_')
-                continue;
-            if (s.length >= 4 && std::strncmp(s.ptr, "usd-", 4) == 0)
-                continue;
-            if (probeSet.insert(qr.attributes[i]).second)
-                dataProbes.push_back(qr.attributes[i]);
-        }
-        ovstage_release_query_result(mInstance, &qr);
-    }
-
-    for (const char* metadataProbe : { conv::kUsdPath, conv::kUsdParent, conv::kUsdChildren })
-    {
-        ovx_token_t probe = OVX_INVALID_TOKEN;
-        ovx_path_dictionary_intern_token(mDict, ovx_string_t{ metadataProbe, std::string_view(metadataProbe).size() }, &probe);
-        if (probe != OVX_INVALID_TOKEN && probeSet.insert(probe).second)
-            metadataProbes.push_back(probe);
-    }
-
+    std::unordered_set<ovx_primpath_t> allPaths;
+    bool authoritativeReadClean = true;
+    bool scopeConsistent = true;
     ovstage_ordinal_range_t range{};
     // The initial scan is a snapshot at the caller's requested ordinal. After
     // that scan, hierarchy invalidation means a structural edit occurred, so a
@@ -1626,214 +1623,302 @@ void OvstageSource::buildChildCache() const
         const uint64_t edgeKey = (parent * 0x9E3779B97F4A7C15ull) ^ child;
         if (!insertedEdges.insert(edgeKey).second)
             return;
+        if (rootPath != "/")
+        {
+            const std::string childPath = pathOfRaw(child);
+            if (childPath == rootPath)
+                return; // The root's incoming edge is outside this subtree.
+            const std::string parentPath = pathOfRaw(parent);
+            const std::string prefix = rootPath + "/";
+            if ((parentPath != rootPath && parentPath.compare(0, prefix.size(), prefix) != 0) ||
+                childPath.compare(0, prefix.size(), prefix) != 0)
+            {
+                scopeConsistent = false; // Preserve unusual metadata via the live fallback.
+                return;
+            }
+        }
         mChildCache[parent].push_back(child);
         mParentHandleCache[child] = parent;
     };
 
-    auto tryBuildFromUsdChildren = [&]() -> bool
+    for (const bool rootOnly : { false, true })
     {
-        ovx_token_t childrenProbe = OVX_INVALID_TOKEN;
-        ovx_path_dictionary_intern_token(mDict, ovx_string_t{ conv::kUsdChildren, std::string_view(conv::kUsdChildren).size() },
-                                         &childrenProbe);
-        if (childrenProbe == OVX_INVALID_TOKEN)
-            return false;
-
-        ovstage_read_handle_t rh = OVSTAGE_INVALID_READ_HANDLE;
-        const ovstage_enqueue_result_t re = ovstage_read_attributes(mInstance, use, &childrenProbe, 1, range, &rh);
-        if (re.status != OVSTAGE_OK)
-            return false;
-
-        waitAndRelease(mInstance, re);
-        bool foundAny = false;
-        ReadListMemo listMemo(mDict);
-        ovstage_read_group_t g{};
-        while (ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g) == OVSTAGE_OK)
+        if (rootOnly && rootPath == "/")
+            break;
+        ovstage_query_handle_t q = OVSTAGE_INVALID_QUERY_HANDLE;
+        bool queryReady = false;
+        if (rootOnly)
         {
-            if (g.is_delete || !g.is_array || g.data.tensor_count == 0 || !g.data.tensors || g.data.mask)
+            const ovx_string_t path{ rootPath.data(), rootPath.size() };
+            ovx_primpath_list_t list = OVX_INVALID_PRIMPATH_LIST;
+            if (ovx_path_dictionary_create_path_list_from_strings(mDict, &path, 1, &list) == OVX_OK)
             {
-                ovstage_release_group(mInstance, &g);
-                continue;
+                queryReady = ovstage_query_from_path_list(mInstance, list, &q) == OVSTAGE_OK;
+                ovx_path_dictionary_destroy_path_list(mDict, list);
             }
-
-            const ovx_primpath_t* parentPaths = nullptr;
-            size_t parentCount = 0;
-            if (!listMemo.paths(g.prims.list, &parentPaths, &parentCount))
-            {
-                ovstage_release_group(mInstance, &g);
-                continue;
-            }
-
-            for (uint32_t row = 0; row < g.prims.count; ++row)
-            {
-                const uint32_t parentIdx = g.prims.index_map ? g.prims.index_map[row] : (g.prims.offset + row);
-                if (parentIdx >= parentCount)
-                    continue;
-                const uint32_t tensorIndex = g.data.index_map ? g.data.index_map[row] : row;
-                if (tensorIndex >= g.data.tensor_count)
-                    continue;
-                const DLTensor& t = g.data.tensors[tensorIndex];
-                if (!canDecodeRelationshipTargets(t))
-                    continue;
-                const int64_t n = totalElements(t);
-                const uint8_t* base = static_cast<const uint8_t*>(t.data) + t.byte_offset;
-                const uint64_t* children = reinterpret_cast<const uint64_t*>(base);
-                const uint64_t parent = parentPaths[parentIdx];
-                for (int64_t i = 0; i < n; ++i)
-                {
-                    const uint64_t child = children[i];
-                    if (child == OVX_INVALID_PRIMPATH)
-                        continue;
-                    insertChild(parent, child);
-                    foundAny = true;
-                }
-            }
-            ovstage_release_group(mInstance, &g);
         }
-        waitAndRelease(mInstance, ovstage_release_read(mInstance, rh));
-        return foundAny;
-    };
-
-    auto tryBuildFromUsdParent = [&]() -> bool
-    {
-        ovx_token_t parentProbe = OVX_INVALID_TOKEN;
-        ovx_path_dictionary_intern_token(mDict, ovx_string_t{ conv::kUsdParent, std::string_view(conv::kUsdParent).size() },
-                                         &parentProbe);
-        if (parentProbe == OVX_INVALID_TOKEN)
-            return false;
-
-        ovstage_read_handle_t rh = OVSTAGE_INVALID_READ_HANDLE;
-        const ovstage_enqueue_result_t re = ovstage_read_attributes(mInstance, use, &parentProbe, 1, range, &rh);
-        if (re.status != OVSTAGE_OK)
-            return false;
-
-        waitAndRelease(mInstance, re);
-        bool foundAny = false;
-        ReadListMemo listMemo(mDict);
-        ovstage_read_group_t g{};
-        while (ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g) == OVSTAGE_OK)
+        else
         {
-            if (g.is_delete || g.is_array || g.data.tensor_count == 0 || !g.data.tensors || g.data.mask)
-            {
-                ovstage_release_group(mInstance, &g);
-                continue;
-            }
-
-            const DLTensor& t = g.data.tensors[0];
-            if (!canDecodeRelationshipTargets(t))
-            {
-                ovstage_release_group(mInstance, &g);
-                continue;
-            }
-
-            const ovx_primpath_t* childPaths = nullptr;
-            size_t childCount = 0;
-            if (!listMemo.paths(g.prims.list, &childPaths, &childCount))
-            {
-                ovstage_release_group(mInstance, &g);
-                continue;
-            }
-
-            const int64_t total = totalElements(t);
-            int64_t storedRows = g.prims.count;
-            if (g.data.index_map)
-            {
-                storedRows = 0;
-                for (uint32_t i = 0; i < g.prims.count; ++i)
-                    storedRows = std::max<int64_t>(storedRows, static_cast<int64_t>(g.data.index_map[i]) + 1);
-            }
-            if (total < 0 || storedRows <= 0 || (total % storedRows) != 0)
-            {
-                ovstage_release_group(mInstance, &g);
-                continue;
-            }
-            const int64_t comps = total / storedRows;
-            if (comps <= 0)
-            {
-                ovstage_release_group(mInstance, &g);
-                continue;
-            }
-
-            const uint8_t* base = static_cast<const uint8_t*>(t.data) + t.byte_offset;
-            for (uint32_t row = 0; row < g.prims.count; ++row)
-            {
-                const uint32_t childIdx = g.prims.index_map ? g.prims.index_map[row] : (g.prims.offset + row);
-                if (childIdx >= childCount)
-                    continue;
-                const uint32_t dataRow = g.data.index_map ? g.data.index_map[row] : row;
-                if (dataRow >= static_cast<uint32_t>(storedRows))
-                    continue;
-                const uint64_t parent = reinterpret_cast<const uint64_t*>(base + dataRow * comps * sizeof(uint64_t))[0];
-                const uint64_t child = childPaths[childIdx];
-                insertChild(parent, child);
-                foundAny = true;
-            }
-            ovstage_release_group(mInstance, &g);
+            const std::string prefix = rootPath == "/" ? rootPath : rootPath + "/";
+            const ovx_string_t prefixVal{ prefix.data(), prefix.size() };
+            ovstage_predicate_t pred{};
+            pred.attribute.string = { conv::kUsdPath, std::string_view(conv::kUsdPath).size() };
+            pred.op = OVSTAGE_FILTER_OP_PREFIX;
+            pred.values = &prefixVal;
+            pred.value_count = 1;
+            ovstage_filter_t filter{};
+            filter.predicates = &pred;
+            filter.count = 1;
+            const ovstage_enqueue_result_t enqueued = ovstage_query(mInstance, &filter, nullptr, 0, &q);
+            queryReady = enqueued.status == OVSTAGE_OK;
+            if (queryReady)
+                waitAndRelease(mInstance, enqueued);
         }
-        waitAndRelease(mInstance, ovstage_release_read(mInstance, rh));
-        return foundAny;
-    };
-
-    // usd-children / usd-parent are only emitted for some prims by some
-    // populators (e.g. the internal stage-info prims), so on their own they
-    // yield at most a partial edge set. Use them as a supplement, then ALWAYS
-    // fall through to the usd-path prefix derivation below: usd-path is
-    // populated for every queryable row, so it is the authoritative builder that
-    // connects the rest of the hierarchy (e.g. "/" -> "/World" -> descendants).
-    tryBuildFromUsdChildren();
-    tryBuildFromUsdParent();
-
-    // The usd-path column is populated for every queryable row, so its read is the
-    // authoritative whole-stage enumeration. Track whether it terminates cleanly
-    // (ends exactly at OVSTAGE_ERROR_END_OF_ITERATION) so a transient/partial read
-    // is not mistaken for a complete edge set below.
-    ovx_token_t usdPathProbe = OVX_INVALID_TOKEN;
-    ovx_path_dictionary_intern_token(
-        mDict, ovx_string_t{ conv::kUsdPath, std::string_view(conv::kUsdPath).size() }, &usdPathProbe);
-
-    std::unordered_set<ovx_primpath_t> allPaths;
-    bool authoritativeReadClean = false;
-    auto readPathProbes = [&](const std::vector<ovx_token_t>& probes)
-    {
-        for (const ovx_token_t probe : probes)
+        if (!queryReady || q == OVSTAGE_INVALID_QUERY_HANDLE)
         {
-            const bool isAuthoritative = (usdPathProbe != OVX_INVALID_TOKEN && probe == usdPathProbe);
+            authoritativeReadClean = false;
+            continue;
+        }
+        ovstage_query_handle_t use = q;
+        std::vector<ovx_token_t> dataProbes;
+        std::vector<ovx_token_t> metadataProbes;
+        std::unordered_set<ovx_token_t> probeSet;
+        ovstage_query_result_t qr{};
+        if (ovstage_fetch_query_result(mInstance, q, OVSTAGE_TIMEOUT_INFINITE, &qr) == OVSTAGE_OK)
+        {
+            if (qr.all_handle != OVSTAGE_INVALID_QUERY_HANDLE)
+                use = qr.all_handle;
+            for (size_t i = 0; i < qr.attribute_count; ++i)
+            {
+                ovx_string_t s{};
+                if (ovx_path_dictionary_token_to_string(mDict, qr.attributes[i], &s) != OVX_OK || !s.ptr || s.length == 0)
+                    continue;
+                if (s.ptr[0] == '_')
+                    continue;
+                if (s.length >= 4 && std::strncmp(s.ptr, "usd-", 4) == 0)
+                    continue;
+                if (probeSet.insert(qr.attributes[i]).second)
+                    dataProbes.push_back(qr.attributes[i]);
+            }
+            ovstage_release_query_result(mInstance, &qr);
+        }
+
+        for (const char* metadataProbe : { conv::kUsdPath, conv::kUsdParent, conv::kUsdChildren })
+        {
+            ovx_token_t probe = OVX_INVALID_TOKEN;
+            ovx_path_dictionary_intern_token(mDict, ovx_string_t{ metadataProbe, std::string_view(metadataProbe).size() }, &probe);
+            if (probe != OVX_INVALID_TOKEN && probeSet.insert(probe).second)
+                metadataProbes.push_back(probe);
+        }
+
+        auto tryBuildFromUsdChildren = [&]() -> bool
+        {
+            ovx_token_t childrenProbe = OVX_INVALID_TOKEN;
+            ovx_path_dictionary_intern_token(mDict, ovx_string_t{ conv::kUsdChildren, std::string_view(conv::kUsdChildren).size() },
+                                             &childrenProbe);
+            if (childrenProbe == OVX_INVALID_TOKEN)
+                return false;
+
             ovstage_read_handle_t rh = OVSTAGE_INVALID_READ_HANDLE;
-            const ovstage_enqueue_result_t re = ovstage_read_attributes(mInstance, use, &probe, 1, range, &rh);
+            const ovstage_enqueue_result_t re = ovstage_read_attributes(mInstance, use, &childrenProbe, 1, range, &rh);
             if (re.status != OVSTAGE_OK)
-                continue;
+                return false;
 
             waitAndRelease(mInstance, re);
+            bool foundAny = false;
             ReadListMemo listMemo(mDict);
             ovstage_read_group_t g{};
-            ovstage_api_status_t fetchStatus = OVSTAGE_OK;
-            while ((fetchStatus = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g)) == OVSTAGE_OK)
+            while (ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g) == OVSTAGE_OK)
             {
-                const ovx_primpath_t* paths = nullptr;
-                size_t count = 0;
-                if (listMemo.paths(g.prims.list, &paths, &count))
+                if (g.is_delete || !g.is_array || g.data.tensor_count == 0 || !g.data.tensors || g.data.mask)
                 {
-                    for (uint32_t i = 0; i < g.prims.count; ++i)
+                    ovstage_release_group(mInstance, &g);
+                    continue;
+                }
+
+                const ovx_primpath_t* parentPaths = nullptr;
+                size_t parentCount = 0;
+                if (!listMemo.paths(g.prims.list, &parentPaths, &parentCount))
+                {
+                    ovstage_release_group(mInstance, &g);
+                    continue;
+                }
+
+                for (uint32_t row = 0; row < g.prims.count; ++row)
+                {
+                    const uint32_t parentIdx = g.prims.index_map ? g.prims.index_map[row] : (g.prims.offset + row);
+                    if (parentIdx >= parentCount)
+                        continue;
+                    const uint32_t tensorIndex = g.data.index_map ? g.data.index_map[row] : row;
+                    if (tensorIndex >= g.data.tensor_count)
+                        continue;
+                    const DLTensor& t = g.data.tensors[tensorIndex];
+                    if (!canDecodeRelationshipTargets(t))
+                        continue;
+                    const int64_t n = totalElements(t);
+                    const uint8_t* base = static_cast<const uint8_t*>(t.data) + t.byte_offset;
+                    const uint64_t* children = reinterpret_cast<const uint64_t*>(base);
+                    const uint64_t parent = parentPaths[parentIdx];
+                    for (int64_t i = 0; i < n; ++i)
                     {
-                        const uint32_t idx = g.prims.index_map ? g.prims.index_map[i] : (g.prims.offset + i);
-                        if (idx < count)
-                            allPaths.insert(paths[idx]);
+                        const uint64_t child = children[i];
+                        if (child == OVX_INVALID_PRIMPATH)
+                            continue;
+                        insertChild(parent, child);
+                        foundAny = true;
                     }
                 }
                 ovstage_release_group(mInstance, &g);
             }
-            // A clean pass ends exactly at END_OF_ITERATION; any other terminal
-            // status means the enumeration was cut short (transient/partial read).
-            // The test hook forces the not-clean path for deterministic coverage.
-            if (isAuthoritative && fetchStatus == OVSTAGE_ERROR_END_OF_ITERATION &&
-                !consumeAuthoritativeReadFaultForTest())
-                authoritativeReadClean = true;
             waitAndRelease(mInstance, ovstage_release_read(mInstance, rh));
-        }
-    };
-    readPathProbes(metadataProbes);
-    if (allPaths.empty())
-        readPathProbes(dataProbes);
-    waitAndRelease(mInstance, ovstage_release_query(mInstance, q));
+            return foundAny;
+        };
+
+        auto tryBuildFromUsdParent = [&]() -> bool
+        {
+            ovx_token_t parentProbe = OVX_INVALID_TOKEN;
+            ovx_path_dictionary_intern_token(mDict, ovx_string_t{ conv::kUsdParent, std::string_view(conv::kUsdParent).size() },
+                                             &parentProbe);
+            if (parentProbe == OVX_INVALID_TOKEN)
+                return false;
+
+            ovstage_read_handle_t rh = OVSTAGE_INVALID_READ_HANDLE;
+            const ovstage_enqueue_result_t re = ovstage_read_attributes(mInstance, use, &parentProbe, 1, range, &rh);
+            if (re.status != OVSTAGE_OK)
+                return false;
+
+            waitAndRelease(mInstance, re);
+            bool foundAny = false;
+            ReadListMemo listMemo(mDict);
+            ovstage_read_group_t g{};
+            while (ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g) == OVSTAGE_OK)
+            {
+                if (g.is_delete || g.is_array || g.data.tensor_count == 0 || !g.data.tensors || g.data.mask)
+                {
+                    ovstage_release_group(mInstance, &g);
+                    continue;
+                }
+
+                const DLTensor& t = g.data.tensors[0];
+                if (!canDecodeRelationshipTargets(t))
+                {
+                    ovstage_release_group(mInstance, &g);
+                    continue;
+                }
+
+                const ovx_primpath_t* childPaths = nullptr;
+                size_t childCount = 0;
+                if (!listMemo.paths(g.prims.list, &childPaths, &childCount))
+                {
+                    ovstage_release_group(mInstance, &g);
+                    continue;
+                }
+
+                const int64_t total = totalElements(t);
+                int64_t storedRows = g.prims.count;
+                if (g.data.index_map)
+                {
+                    storedRows = 0;
+                    for (uint32_t i = 0; i < g.prims.count; ++i)
+                        storedRows = std::max<int64_t>(storedRows, static_cast<int64_t>(g.data.index_map[i]) + 1);
+                }
+                if (total < 0 || storedRows <= 0 || (total % storedRows) != 0)
+                {
+                    ovstage_release_group(mInstance, &g);
+                    continue;
+                }
+                const int64_t comps = total / storedRows;
+                if (comps <= 0)
+                {
+                    ovstage_release_group(mInstance, &g);
+                    continue;
+                }
+
+                const uint8_t* base = static_cast<const uint8_t*>(t.data) + t.byte_offset;
+                for (uint32_t row = 0; row < g.prims.count; ++row)
+                {
+                    const uint32_t childIdx = g.prims.index_map ? g.prims.index_map[row] : (g.prims.offset + row);
+                    if (childIdx >= childCount)
+                        continue;
+                    const uint32_t dataRow = g.data.index_map ? g.data.index_map[row] : row;
+                    if (dataRow >= static_cast<uint32_t>(storedRows))
+                        continue;
+                    const uint64_t parent = reinterpret_cast<const uint64_t*>(base + dataRow * comps * sizeof(uint64_t))[0];
+                    const uint64_t child = childPaths[childIdx];
+                    insertChild(parent, child);
+                    foundAny = true;
+                }
+                ovstage_release_group(mInstance, &g);
+            }
+            waitAndRelease(mInstance, ovstage_release_read(mInstance, rh));
+            return foundAny;
+        };
+
+        // usd-children / usd-parent are only emitted for some prims by some
+        // populators (e.g. the internal stage-info prims), so on their own they
+        // yield at most a partial edge set. Use them as a supplement, then ALWAYS
+        // fall through to the usd-path prefix derivation below: usd-path is
+        // populated for every queryable row, so it is the authoritative builder that
+        // connects the rest of the hierarchy (e.g. "/" -> "/World" -> descendants).
+        tryBuildFromUsdChildren();
+        tryBuildFromUsdParent();
+
+        // The usd-path column is populated for every queryable row, so its read is the
+        // authoritative whole-stage enumeration. Track whether it terminates cleanly
+        // (ends exactly at OVSTAGE_ERROR_END_OF_ITERATION) so a transient/partial read
+        // is not mistaken for a complete edge set below.
+        ovx_token_t usdPathProbe = OVX_INVALID_TOKEN;
+        ovx_path_dictionary_intern_token(
+            mDict, ovx_string_t{ conv::kUsdPath, std::string_view(conv::kUsdPath).size() }, &usdPathProbe);
+
+        bool queryReadClean = false;
+        auto readPathProbes = [&](const std::vector<ovx_token_t>& probes)
+        {
+            for (const ovx_token_t probe : probes)
+            {
+                const bool isAuthoritative = (usdPathProbe != OVX_INVALID_TOKEN && probe == usdPathProbe);
+                ovstage_read_handle_t rh = OVSTAGE_INVALID_READ_HANDLE;
+                const ovstage_enqueue_result_t re = ovstage_read_attributes(mInstance, use, &probe, 1, range, &rh);
+                if (re.status != OVSTAGE_OK)
+                    continue;
+
+                waitAndRelease(mInstance, re);
+                ReadListMemo listMemo(mDict);
+                ovstage_read_group_t g{};
+                ovstage_api_status_t fetchStatus = OVSTAGE_OK;
+                while ((fetchStatus = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g)) == OVSTAGE_OK)
+                {
+                    const ovx_primpath_t* paths = nullptr;
+                    size_t count = 0;
+                    if (listMemo.paths(g.prims.list, &paths, &count))
+                    {
+                        for (uint32_t i = 0; i < g.prims.count; ++i)
+                        {
+                            const uint32_t idx = g.prims.index_map ? g.prims.index_map[i] : (g.prims.offset + i);
+                            if (idx < count)
+                                allPaths.insert(paths[idx]);
+                        }
+                    }
+                    ovstage_release_group(mInstance, &g);
+                }
+                // A clean pass ends exactly at END_OF_ITERATION; any other terminal
+                // status means the enumeration was cut short (transient/partial read).
+                // The test hook forces the not-clean path for deterministic coverage.
+                if (isAuthoritative && fetchStatus == OVSTAGE_ERROR_END_OF_ITERATION &&
+                    !consumeAuthoritativeReadFaultForTest())
+                    queryReadClean = true;
+                waitAndRelease(mInstance, ovstage_release_read(mInstance, rh));
+            }
+        };
+        readPathProbes(metadataProbes);
+        if (allPaths.empty())
+            readPathProbes(dataProbes);
+        waitAndRelease(mInstance, ovstage_release_query(mInstance, q));
+        authoritativeReadClean = authoritativeReadClean && queryReadClean;
+    }
+
+    if (rootPath != "/")
+        subtreePathCounter().store(allPaths.size(), std::memory_order_relaxed);
 
     // allPaths is a hash set, so iterating it directly would derive the supplemental
     // ancestor edges (and therefore forEachChild()'s published child order) in a
@@ -1863,7 +1948,7 @@ void OvstageSource::buildChildCache() const
         // prim's immediate parent would leave the typeless level dangling and
         // break the root-anchored descent (forEachDescendantPruned).
         std::string childPath = leafPath;
-        while (childPath != "/" && !childPath.empty())
+        while (childPath != rootPath && childPath != "/" && !childPath.empty())
         {
             const size_t slash = childPath.rfind('/');
             if (slash == std::string::npos)
@@ -1930,7 +2015,17 @@ void OvstageSource::buildChildCache() const
     // become a permanently authoritative negative cache; leaving this false
     // makes forEachChild() fall back to the live
     // prefix query for cache misses, and lets a later build retry.
-    mChildCacheComplete = authoritativeReadClean && !allPaths.empty();
+    mChildCacheComplete = authoritativeReadClean && scopeConsistent && !allPaths.empty();
+    if (rootPath != "/" && mChildCacheComplete)
+    {
+        // Certify only roots supported by their own row or live descendants.
+        // Descendants also establish implicit ancestors without an authored root row.
+        // An entirely absent root retains the normal live-query fallback.
+        const size_t slash = rootPath.rfind('/');
+        const std::string parentPath = slash == 0 ? "/" : rootPath.substr(0, slash);
+        mParentHandleCache[canonicalHandleRaw(findByPathRaw(rootPath))] =
+            canonicalHandleRaw(findByPathRaw(parentPath));
+    }
 }
 
 void OvstageSource::collectDescendantKeys(ObjectKey root, std::vector<ObjectKey>& out) const
@@ -2005,6 +2100,62 @@ void OvstageSource::collectDescendantKeysRaw(uint64_t root, std::vector<uint64_t
     // Memoize only a cleanly-built traversal; see the note above.
     if (mChildCacheComplete)
         mDescendantCache[rootHandle] = std::move(handles);
+}
+
+void OvstageSource::withSubtreeHierarchy(ObjectKey root, const std::function<void()>& visit) const
+{
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
+    if (!root.valid() || !visit)
+        return;
+    const std::string rootPath = pathOfRaw(rawHandle(root));
+    if (!mInstance || !mDict || rootPath.empty() || mLoadCacheActive)
+    {
+        visit();
+        return;
+    }
+
+    // A temporary, fresh cache for this subtree only. The callback runs under
+    // the same recursive source lock as forEachChild, and cannot publish this
+    // snapshot as a persistent cache for later binding requests.
+    struct RestoreHierarchy
+    {
+        const OvstageSource& source;
+        decltype(mChildCache) children;
+        decltype(mParentHandleCache) parents;
+        decltype(mDescendantCache) descendants;
+        bool built;
+        bool complete;
+        bool bulk;
+        ~RestoreHierarchy()
+        {
+            source.mChildCache = std::move(children);
+            source.mParentHandleCache = std::move(parents);
+            source.mDescendantCache = std::move(descendants);
+            source.mChildCacheBuilt = built;
+            source.mChildCacheComplete = complete;
+            source.mHierarchyBulkRead = bulk;
+        }
+    } restore{ *this, std::move(mChildCache), std::move(mParentHandleCache), std::move(mDescendantCache),
+               mChildCacheBuilt, mChildCacheComplete, mHierarchyBulkRead };
+    mChildCacheBuilt = false;
+    mChildCacheComplete = false;
+    buildChildCache(rootPath);
+    if (!mChildCacheComplete)
+    {
+        // Discard the incomplete snapshot before the callback. Retain the
+        // pre-existing cache/fallback behavior; never publish partial negatives.
+        mChildCache = restore.children;
+        mParentHandleCache = restore.parents;
+        mDescendantCache = restore.descendants;
+        mChildCacheBuilt = restore.built;
+        mChildCacheComplete = restore.complete;
+        mHierarchyBulkRead = restore.bulk;
+    }
+    else
+    {
+        mHierarchyBulkRead = true;
+    }
+    visit();
 }
 
 void OvstageSource::forEachChild(ObjectKey parent, std::function<void(ObjectKey)> cb) const
@@ -2322,6 +2473,14 @@ bool OvstageSource::existsRaw(uint64_t key) const
     if (!mInstance || !mDict)
         return false;
 
+    // A live usd-path row on the single-path latest read proves the prim without the
+    // whole-stage filter query; no row falls through to the query for the negative answer.
+    if (withAttributeTensor(key, conv::kUsdPath, [](const DLTensor&, uint32_t) {}))
+    {
+        mExistsMemo[key] = true;
+        return true;
+    }
+
     const ovx_string_t pathVal{ path.data(), path.size() };
     ovstage_predicate_t pred{};
     pred.attribute.token = 0;
@@ -2357,7 +2516,8 @@ bool OvstageSource::existsRaw(uint64_t key) const
 
 void OvstageSource::existsBatch(const std::vector<ObjectKey>& keys, std::vector<bool>& outExists) const
 {
-    (void)existsBatchChecked(keys, outExists);
+    if (!existsBatchChecked(keys, outExists))
+        IPhysicsSource::existsBatch(keys, outExists);
 }
 
 bool OvstageSource::existsBatchChecked(const std::vector<ObjectKey>& keys, std::vector<bool>& outExists) const
@@ -2417,112 +2577,105 @@ bool OvstageSource::existsBatchChecked(const std::vector<ObjectKey>& keys, std::
     if (!mInstance || !mDict)
         return false;
 
-    // One `usd-path IN [p1..pN]` query covers every cold path in a single round
-    // trip -- the same predicate shape exists() uses for a single key, just with
-    // value_count == the distinct cold-path count instead of 1.
-    std::vector<ovx_string_t> pathVals;
-    pathVals.reserve(coldPathIndices.size());
+    // A path-list query selects only the requested handles, without a stage-wide
+    // string predicate. Its count includes absent paths; only live usd-path read
+    // rows establish existence. Keep string back-mapping so canonical/raw aliases
+    // and duplicate input keys receive the same answer.
+    std::vector<ovx_primpath_t> paths;
+    paths.reserve(coldPathIndices.size());
     for (const std::pair<const std::string, std::vector<size_t>>& kv : coldPathIndices)
-        pathVals.push_back(ovx_string_t{ kv.first.data(), kv.first.size() });
+    {
+        const uint64_t raw = rawHandle(keys[kv.second.front()]);
+        const uint64_t canonical = canonicalHandleRaw(raw);
+        paths.push_back(canonical ? canonical : raw);
+    }
 
-    ovstage_predicate_t pred{};
-    pred.attribute.token = 0;
-    pred.attribute.string = ovx_string_t{ conv::kUsdPath, std::string_view(conv::kUsdPath).size() };
-    pred.op = OVSTAGE_FILTER_OP_IN;
-    pred.values = pathVals.data();
-    pred.value_count = pathVals.size();
-
-    ovstage_filter_t filter{};
-    filter.predicates = &pred;
-    filter.count = 1;
+    ovx_primpath_list_t list = OVX_INVALID_PRIMPATH_LIST;
+    if (ovx_path_dictionary_create_path_list(mDict, paths.data(), paths.size(), &list) != OVX_OK)
+        return false;
 
     existsQueryCounter().fetch_add(1, std::memory_order_relaxed);
     ovstage_query_handle_t q = OVSTAGE_INVALID_QUERY_HANDLE;
-    const ovstage_enqueue_result_t e = ovstage_query(mInstance, &filter, nullptr, 0, &q);
-    if (e.status != OVSTAGE_OK)
-    {
+    const ovstage_api_status_t queryStatus = ovstage_query_from_path_list(mInstance, list, &q);
+    // The query retains its own reference to the path list.
+    (void)ovx_path_dictionary_destroy_path_list(mDict, list);
+    if (queryStatus != OVSTAGE_OK || q == OVSTAGE_INVALID_QUERY_HANDLE)
         return false;
-    }
-    waitAndRelease(mInstance, e);
-
-    // total_prim_count alone would say HOW MANY of the cold paths matched, not
-    // WHICH -- a partial match is the common case for this caller (pattern
-    // matching over a mixed literal-path candidate list), so read the matched
-    // set's usd-path column back (same technique buildChildCache's live fallback
-    // uses to resolve a read group's prims to path handles) and mark exactly the
-    // requested indices whose path came back.
-    ovstage_query_handle_t use = q;
-    size_t totalMatched = 0;
-    bool fetched = false;
-    ovstage_query_result_t qr{};
-    if (ovstage_fetch_query_result(mInstance, q, OVSTAGE_TIMEOUT_INFINITE, &qr) == OVSTAGE_OK)
-    {
-        fetched = true;
-        if (qr.all_handle != OVSTAGE_INVALID_QUERY_HANDLE)
-            use = qr.all_handle;
-        totalMatched = qr.total_prim_count;
-        ovstage_release_query_result(mInstance, &qr);
-    }
-
-    if (!fetched)
-    {
-        waitAndRelease(mInstance, ovstage_release_query(mInstance, q));
-        return false;
-    }
-    if (totalMatched == 0)
-    {
-        waitAndRelease(mInstance, ovstage_release_query(mInstance, q));
-        memoizeResults();
-        return true;
-    }
 
     bool resolved = false;
+    std::vector<size_t> liveIndices;
+    liveIndices.reserve(coldIndices.size());
     ovx_token_t usdPathProbe = OVX_INVALID_TOKEN;
-    ovx_path_dictionary_intern_token(
+    const ovx_api_status_t tokenStatus = ovx_path_dictionary_intern_token(
         mDict, ovx_string_t{ conv::kUsdPath, std::string_view(conv::kUsdPath).size() }, &usdPathProbe);
-    if (usdPathProbe != OVX_INVALID_TOKEN)
+    if (tokenStatus == OVX_OK && usdPathProbe != OVX_INVALID_TOKEN)
     {
         ovstage_ordinal_range_t range{};
-        range.end_ordinal = ~ovstage_ordinal_t(0); // latest
+        range.end_ordinal = ~ovstage_ordinal_t(0); // latest, including current liveness
         range.has_start_ordinal = false;
 
         ovstage_read_handle_t rh = OVSTAGE_INVALID_READ_HANDLE;
-        const ovstage_enqueue_result_t re = ovstage_read_attributes(mInstance, use, &usdPathProbe, 1, range, &rh);
+        const ovstage_enqueue_result_t re = ovstage_read_attributes(mInstance, q, &usdPathProbe, 1, range, &rh);
         if (re.status == OVSTAGE_OK)
         {
-            waitAndRelease(mInstance, re);
-            ReadListMemo listMemo(mDict);
-            ovstage_read_group_t g{};
-            ovstage_api_status_t fetchErr;
-            while ((fetchErr = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g)) == OVSTAGE_OK)
+            const bool readOk = waitAndRelease(mInstance, re);
+            if (readOk)
             {
-                const ovx_primpath_t* paths = nullptr;
-                size_t count = 0;
-                if (listMemo.paths(g.prims.list, &paths, &count))
+                ReadListMemo listMemo(mDict);
+                bool validGroups = true;
+                ovstage_read_group_t g{};
+                ovstage_api_status_t fetchErr;
+                while ((fetchErr = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g)) == OVSTAGE_OK)
                 {
-                    for (uint32_t i = 0; i < g.prims.count; ++i)
+                    if (g.attribute == usdPathProbe && !g.is_delete && g.prims.count != 0 &&
+                        g.data.tensor_count > 0)
                     {
-                        const uint32_t idx = g.prims.index_map ? g.prims.index_map[i] : (g.prims.offset + i);
-                        if (idx >= count)
-                            continue;
-                        const std::string matchedPath = pathOfRaw(paths[idx]);
-                        const auto it = coldPathIndices.find(matchedPath);
-                        if (it != coldPathIndices.end())
+                        const ovx_primpath_t* paths = nullptr;
+                        size_t count = 0;
+                        if (!listMemo.paths(g.prims.list, &paths, &count) || !paths)
                         {
-                            for (const size_t idxOut : it->second)
-                                outExists[idxOut] = true;
+                            validGroups = false;
+                        }
+                        else
+                        {
+                            for (uint32_t i = 0; i < g.prims.count; ++i)
+                            {
+                                if (g.data.mask && !(g.data.mask[i / 64] & (uint64_t(1) << (i % 64))))
+                                    continue;
+                                const size_t idx = g.prims.index_map ? g.prims.index_map[i] :
+                                                                      (static_cast<size_t>(g.prims.offset) + i);
+                                if (idx >= count || !paths[idx])
+                                {
+                                    validGroups = false;
+                                    continue;
+                                }
+                                const std::string matchedPath = pathOfRaw(paths[idx]);
+                                const auto it = coldPathIndices.find(matchedPath);
+                                if (it != coldPathIndices.end())
+                                    liveIndices.insert(liveIndices.end(), it->second.begin(), it->second.end());
+                                else
+                                    validGroups = false;
+                            }
                         }
                     }
+                    ovstage_release_group(mInstance, &g);
                 }
-                ovstage_release_group(mInstance, &g);
+                resolved = validGroups && fetchErr == OVSTAGE_ERROR_END_OF_ITERATION;
             }
-            resolved = fetchErr == OVSTAGE_ERROR_END_OF_ITERATION;
-            waitAndRelease(mInstance, ovstage_release_read(mInstance, rh));
+            const bool released = waitAndRelease(mInstance, ovstage_release_read(mInstance, rh));
+            resolved = resolved && released;
         }
     }
-    waitAndRelease(mInstance, ovstage_release_query(mInstance, q));
+    const bool released = waitAndRelease(mInstance, ovstage_release_query(mInstance, q));
+    resolved = resolved && released;
+    // A failed or truncated read must not cache absence or publish partial live
+    // answers. A clean empty read is valid: every cold requested path is absent.
     if (resolved)
+    {
+        for (const size_t index : liveIndices)
+            outExists[index] = true;
         memoizeResults();
+    }
     return resolved;
 }
 
@@ -4962,6 +5115,9 @@ void OvstageSource::seedBucketFromReadGroup(TokenId attr,
     const bool isLocalTransform = attr == mBucketLocalTransformAttr || attr == mBucketFabricLocalTransformAttr;
     const bool isResetXformStack = attr == mBucketResetXformStackAttr;
 
+    ReadColumn column;
+    const bool readable = readColumn(group, column);
+
     const ovx_primpath_t* gpaths = listPaths;
     size_t gcount = listCount;
     if (!gpaths && (ovx_path_dictionary_get_paths(mDict, group.prims.list, &gpaths, &gcount) != OVX_OK || !gpaths))
@@ -4973,7 +5129,6 @@ void OvstageSource::seedBucketFromReadGroup(TokenId attr,
     groupRows.reserve(group.prims.count * 2);
     mBucketRows.reserve(mBucketRows.size() + group.prims.count * 2);
     mBucketKeys.reserve(mBucketKeys.size() + group.prims.count * 2);
-    mBucketAttributeIds.insert(attr.id);
     size_t keyOrdinal = 0;
     for (uint32_t i = 0; i < group.prims.count; ++i)
     {
@@ -4984,29 +5139,37 @@ void OvstageSource::seedBucketFromReadGroup(TokenId attr,
         if (!raw)
             continue;
         mBucketKeys.insert(raw);
-        mBucketRows[raw] = i;
-        groupRows.emplace_back(raw, i);
+        const bool present = readable && column.present(i);
+        const uint32_t dataRow = present ? column.row(i) : 0;
+        if (present)
+        {
+            mBucketRows[raw] = dataRow;
+            groupRows.emplace_back(raw, dataRow);
+        }
         if (keys && keyOrdinal < keyCount)
         {
             const uint64_t keyHandle = rawHandle(keys[keyOrdinal]);
             if (keyHandle)
             {
                 mBucketKeys.insert(keyHandle);
-                mBucketRows[keyHandle] = i;
-                groupRows.emplace_back(keyHandle, i);
+                if (present && keyHandle != raw)
+                {
+                    mBucketRows[keyHandle] = dataRow;
+                    groupRows.emplace_back(keyHandle, dataRow);
+                }
             }
         }
         ++keyOrdinal;
     }
 
-    if (groupRows.empty())
+    // Count this group's valid keys, not the accumulated bucket or present rows:
+    // a fully masked column still contributes coverage for its valid keys.
+    if (keyOrdinal == 0)
         return;
 
+    mBucketAttributeIds.insert(attr.id);
     mBucketActive = true;
-    const bool usable =
-        group.data.tensor_count > 0 && group.data.tensors && group.data.tensors[0].data;
-    const bool dense = usable && !group.is_array && group.data.index_map == nullptr && group.data.mask == nullptr;
-    if (!dense)
+    if (!readable)
     {
         if (isWorldTransform || isLocalTransform || isResetXformStack)
             mBucketTransformsComplete = false;
@@ -5015,8 +5178,8 @@ void OvstageSource::seedBucketFromReadGroup(TokenId attr,
         return;
     }
 
-    const DLTensor& t = group.data.tensors[0];
-    const int64_t comps = componentsPerPrim(t, group.prims.count);
+    const DLTensor& t = *column.tensor;
+    const int64_t comps = column.components;
     if (isWorldTransform)
     {
         if (comps < 16)

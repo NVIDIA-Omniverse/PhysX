@@ -23,7 +23,7 @@
  * @covers AC-1 AC-1b AC-2 AC-3 AC-8
  *
  * @implements REQ-INPUT-CORE-001
- * @covers AC-10
+ * @covers AC-4 AC-10
  */
 
 #include "tensors/gpu/CudaKernels.h"
@@ -2495,44 +2495,10 @@ bool requireHostTensor(const TensorDesc* desc, const char* tensorName, const cha
 // setDisable*/material/rest/contact/compliant Masked: BaseRigidBodyView
 
 
-// setDisableGravities keeps a DirectGPU wake-for-refresh after the CPU flag write.
-// OMPE-103213: require host tensors -- no silent GPU staging.
+// OMPE-103213: require host tensors -- no silent GPU staging. The base setter owns the
+// device-independent solver refresh, so DirectGPU does not carry a separate behavior path.
 bool GpuRigidBodyView::setDisableGravities(const TensorDesc* srcTensor, const TensorDesc* indexTensor)
 {
-    // Host-index wake used as a DirectGPU body-sim refresh, not a public wake_up.
-    // Skip eKINEMATIC: kinematics ignore gravity, and PxRigidDynamic::wakeUp emits
-    // a checked-build error ("Body must be non-kinematic!"). Skip sleeping bodies:
-    // they are not integrated, so a stale GPU disableGravity is irrelevant until
-    // they wake. Also skip eDISABLE_SIMULATION (same as BaseRigidBodyView::wakeUp).
-    auto wakeForGravityRefresh = [this](const TensorDesc* idxTensor) {
-        const PxU32* indices = nullptr;
-        PxU32 numIndices = 0;
-        if (idxTensor && idxTensor->data)
-        {
-            indices = static_cast<const PxU32*>(idxTensor->data);
-            numIndices = PxU32(getTensorTotalSize(*idxTensor));
-        }
-        else
-        {
-            indices = mAllIndices.data();
-            numIndices = PxU32(mAllIndices.size());
-        }
-        for (PxU32 i = 0; i < numIndices; ++i)
-        {
-            const PxU32 idx = indices[i];
-            if (idx >= mEntries.size() || mEntries[idx].type != RigidBodyType::eRigidDynamic)
-                continue;
-            PxRigidDynamic* dynamicBody = static_cast<PxRigidDynamic*>(mEntries[idx].body);
-            if (dynamicBody->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION))
-                continue;
-            if (dynamicBody->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC))
-                continue;
-            if (dynamicBody->isSleeping())
-                continue;
-            dynamicBody->wakeUp();
-        }
-    };
-
     if (!requireHostTensor(srcTensor, "src", "setDisableGravities"))
         return false;
     if (!requireHostTensor(indexTensor, "index", "setDisableGravities"))
@@ -2541,12 +2507,7 @@ bool GpuRigidBodyView::setDisableGravities(const TensorDesc* srcTensor, const Te
         return false;
 
     const TensorDesc* idxArg = (indexTensor && indexTensor->data) ? indexTensor : nullptr;
-    const bool ok = BaseRigidBodyView::setDisableGravities(srcTensor, idxArg);
-    if (!ok)
-        return false;
-
-    wakeForGravityRefresh(idxArg);
-    return true;
+    return BaseRigidBodyView::setDisableGravities(srcTensor, idxArg);
 }
 
 bool GpuRigidBodyView::setDisableSimulations(const TensorDesc* srcTensor, const TensorDesc* indexTensor)

@@ -4,6 +4,12 @@
 # @implements REQ-PYTHON-BINDING-DEVICE-001
 # @covers AC-2
 # @maps_to TEST-PYTHON-BINDING-DEVICE-001
+# @implements REQ-INPUT-CORE-001
+# @covers AC-4
+# @maps_to TEST-INPUT-CORE-001
+# @implements REQ-CAPI-WRITE-001
+# @covers AC-1 AC-5a AC-9
+# @maps_to TEST-CAPI-WRITE-001
 # PARTIALLY DEPRECATED (tensor-binding-deprecation): test_prim_paths_gpu_binding and test_prim_paths_gpu_zero_count_binding exercise the binding's own prim_paths / count accessors, which retire with the binding and have no session-read equivalent. The warmup-read and GPU-without-DirectGPU tests here use PhysX.read, and the ContactBinding tests are a separate API that stays.
 
 """GPU-mode lifecycle and state-management tests.
@@ -26,9 +32,7 @@ import textwrap
 import numpy as np
 import pytest
 from ovphysx.types import TensorType
-from test_utils import data_path
-from test_utils import load_usd_with_ovstage
-from test_utils import read_rigid_body_poses
+from test_utils import data_path, load_usd_with_ovstage, read_rigid_body_poses
 
 _RB_PATTERN = "/World/Cube*"
 _ARTI_PATTERN = "/World/articulation*"
@@ -176,8 +180,8 @@ def test_contact_binding_sensor_paths_gpu(physx_sdk):
         cb.destroy()
 
 
-def test_contact_binding_unfiltered_read_force_matrix_raises_gpu(physx_sdk):
-    """read_force_matrix on an unfiltered GPU binding must raise."""
+def test_contact_binding_unfiltered_read_normal_force_matrix_raises_gpu(physx_sdk):
+    """read_normal_force_matrix on an unfiltered GPU binding must raise."""
     load_usd_with_ovstage(physx_sdk, data_path("boxes_falling_on_groundplane.usda"))
     physx_sdk.wait_all()
     cb = physx_sdk.create_contact_binding(
@@ -189,7 +193,7 @@ def test_contact_binding_unfiltered_read_force_matrix_raises_gpu(physx_sdk):
     try:
         buf = np.zeros((cb.sensor_count, cb.filter_count, 3), dtype=np.float32)
         with pytest.raises((RuntimeError, ValueError)):
-            cb.read_force_matrix(buf)
+            cb.read_normal_force_matrix(buf)
     finally:
         cb.destroy()
 
@@ -249,10 +253,10 @@ def test_get_contact_report_gpu(physx_sdk):
 
 
 def test_gpu_mode_without_directgpu():
-    """GPU instance WITHOUT suppressReadback must support the session read.
+    """GPU instance WITHOUT suppressReadback must support session read and write.
 
     GPU without DirectGPU is the default. This subprocess verifies PhysX.read
-    works in the non-DirectGPU GPU path.
+    and the disableGravity simulation effect through PhysX.write.
     """
     _tests_dir = os.path.dirname(os.path.abspath(__file__))
     _data_dir = os.path.join(_tests_dir, "..", "data")
@@ -266,7 +270,7 @@ def test_gpu_mode_without_directgpu():
         from ovphysx.types import ObjectScope, SimObjectType
         from test_utils import load_usd_with_ovstage
 
-        usd_path = os.path.join({repr(_data_dir)}, "boxes_falling_on_groundplane.usda")
+        usd_path = os.path.join({repr(_data_dir)}, "boxes_falling_on_groundplane_gpu.usda")
 
         # GPU WITHOUT suppressReadback (default after 0.4.1)
         physx = PhysX()
@@ -291,6 +295,50 @@ def test_gpu_mode_without_directgpu():
             assert result.groups, "read returned no groups"
             for g in result.groups:
                 assert g.tensors and g.tensors[0].shape[1] == 3
+
+        def write_uniform(attribute, value, dtype):
+            with physx.write(SimObjectType.RIGID_BODY, attribute) as session:
+                assert session.groups
+                for group in session.groups:
+                    tensor = group.tensors[0]
+                    tensor.assign(np.full(tensor.shape, value, dtype=dtype))
+                    session.commit(group)
+
+        def read_positions():
+            with physx.read(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
+                assert result.groups
+                return np.concatenate([group.tensors[0].numpy() for group in result.groups])
+
+        def read_velocities():
+            with physx.read(SimObjectType.RIGID_BODY, ["linearVelocity"], scope=ObjectScope.ALL) as result:
+                assert result.groups
+                return np.concatenate([group.tensors[0].numpy() for group in result.groups])
+
+        def write_alternating_disable_gravity():
+            offset = 0
+            with physx.write(SimObjectType.RIGID_BODY, "disableGravity") as session:
+                assert session.groups
+                for group in session.groups:
+                    tensor = group.tensors[0]
+                    values = np.zeros(tensor.shape, dtype=np.uint8)
+                    values.reshape(-1)[(offset % 2)::2] = 1
+                    tensor.assign(values)
+                    session.commit(group)
+                    offset += values.size
+
+        before_velocity = read_velocities()
+        write_alternating_disable_gravity()
+        physx.step_sync(1.0 / 60.0)
+        after_velocity = read_velocities()
+        np.testing.assert_allclose(after_velocity[::2, 2], before_velocity[::2, 2], rtol=0, atol=2e-2)
+        assert np.all(after_velocity[1::2, 2] < before_velocity[1::2, 2] - 0.1)
+        held = read_positions()
+
+        write_uniform("disableGravity", 0, np.uint8)
+        for _ in range(20):
+            physx.step_sync(1.0 / 60.0)
+        released = read_positions()
+        assert np.all(released[:, 2] < held[:, 2] - 0.05)
         print("GPU_NO_DIRECTGPU_OK")
     """)
 
@@ -302,3 +350,68 @@ def test_gpu_mode_without_directgpu():
             pytest.skip("GPU not available in this environment")
         pytest.fail(f"GPU-without-DirectGPU test failed:\n" f"STDOUT: {result.stdout}\nSTDERR: {result.stderr}")
     assert "GPU_NO_DIRECTGPU_OK" in result.stdout
+
+
+def test_prestep_write_applies_without_directgpu():
+    """GPU with readback: a pre-step session write commits and is applied (AC-5a)."""
+    _tests_dir = os.path.dirname(os.path.abspath(__file__))
+    _data_dir = os.path.join(_tests_dir, "..", "data")
+    script = textwrap.dedent(f"""
+        import os, sys
+        sys.path.insert(0, {repr(os.path.dirname(os.path.abspath(__file__)))})
+        import numpy as np
+        import warp as wp
+        from ovphysx import PhysX
+        from ovphysx.types import SimObjectType
+        from test_utils import load_usd_with_ovstage
+
+        usd_path = os.path.join({repr(_data_dir)}, "boxes_falling_on_groundplane.usda")
+        # GPU-with-readback tensors stay on host; do not assert tensor.device.is_cuda.
+        # Fail before PhysX() if this process has no CUDA, so a CPU fallback cannot
+        # print GPU_PRESTEP_WRITE_OK. Parent skip matches "No CUDA devices found".
+        if wp.get_cuda_device_count() == 0:
+            raise RuntimeError("No CUDA devices found")
+        physx = PhysX()
+        assert not PhysX.get_cpu_mode(), "process is hard CPU-only; this case is GPU-with-readback"
+        load_usd_with_ovstage(physx, usd_path)
+        physx.wait_all()
+        with physx.write(SimObjectType.RIGID_BODY, "position") as w:
+            assert w.groups, "expected writable groups before the first step"
+            float_off = 0
+            chunks = []
+            for g in w.groups:
+                n = g.prim_count
+                block = np.arange(n * 3, dtype=np.float32).reshape(n, 3) + 100.0 + float_off
+                g.tensors[0].assign(np.ascontiguousarray(block).reshape(g.tensors[0].shape))
+                cuda = next((t for t in g.tensors if t.size and t.device.is_cuda), None)
+                if cuda is None:
+                    w.commit(g)
+                else:
+                    stream = wp.get_stream(cuda.device)
+                    w.commit(g, cuda_stream=int(stream.cuda_stream or 1))
+                chunks.append(block)
+                float_off += n * 3
+            target = np.concatenate(chunks)
+        with physx.read(SimObjectType.RIGID_BODY, ["position"]) as r:
+            assert r.groups, "GPU-with-readback can read before the first step"
+            got = np.concatenate([g.tensors[0].numpy().reshape(g.prim_count, -1) for g in r.groups])
+        assert got.shape == target.shape
+        assert np.allclose(got, target, rtol=0, atol=1e-3), got
+        print("GPU_PRESTEP_WRITE_OK")
+    """)
+
+    result = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True, timeout=120)
+    if result.returncode != 0:
+        combined = result.stdout + result.stderr
+        # Bare "CUDA" would skip Warp/commit regressions that mention CUDA in the traceback.
+        if any(
+            kw in combined
+            for kw in [
+                "GPU_NOT_AVAILABLE",
+                "CUDA driver not available",
+                "No CUDA devices found",
+            ]
+        ):
+            pytest.skip("GPU not available in this environment")
+        pytest.fail(f"GPU-with-readback pre-step write failed:\nSTDOUT: {result.stdout}\nSTDERR: {result.stderr}")
+    assert "GPU_PRESTEP_WRITE_OK" in result.stdout

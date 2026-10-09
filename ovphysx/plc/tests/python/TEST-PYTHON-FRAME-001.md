@@ -37,6 +37,8 @@ control-input and physics-output loop.
 - An output cache is created before the frame loop and passed to two consecutive
   helper calls.
 - The helper is also called repeatedly without a cache.
+- The same fixed-pose groups are published through the private writer and the
+  public wrapper, recording simulation steps and stage write-floor calls.
 - Fixed poses are composed and written at two increasing output ordinals.
 - Point-instancer local pose arrays are merged with cached OVStage snapshots
   and written at two increasing output ordinals.
@@ -49,6 +51,9 @@ control-input and physics-output loop.
 - The helper stays outside the main `PhysX` class and top-level `ovphysx`
   exports.
 - Invalid configuration fails before `step_sync`.
+- The private writer performs no step or sealing call. The public wrapper
+  steps exactly once before writing and seals exactly once after all writes
+  complete (REQ AC-2, REQ AC-4).
 - Each fixed pose pair produces exactly one float64, 16-lane MATRIX
   `omni:fabric:worldMatrix` write. No helper write targets `omni:xform` or
   `omni:resetXformStack`, and the previously authored reset values remain
@@ -87,5 +92,7 @@ control-input and physics-output loop.
 
 Implemented in:
 
-- `ovphysx/tests/python_tests/test_step_and_write_to_ovstage.py`
+- `ovphysx/tests/python_tests/test_step_and_write_to_ovstage.py`, including
+  `test_fixed_pose_writes_only_world_matrix_and_reuses_buffers` in its
+  `step-and-write` and `write-only` modes.
 - `ovphysx/tests/python_samples/output_read.py`

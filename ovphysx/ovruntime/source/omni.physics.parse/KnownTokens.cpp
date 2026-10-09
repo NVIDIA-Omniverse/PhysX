@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PARSE-NEWTON-JOINT-001
+ * @covers AC-1
+ *
  * @implements REQ-PARSE-CORE-002
  * @covers AC-2
  *
@@ -151,6 +154,9 @@ void KnownTokens::intern(const IPhysicsSource& source)
     physxJointArmature = source.internToken("physxJoint:armature");
     physxJointMaxJointVelocity = source.internToken("physxJoint:maxJointVelocity");
     newtonVelocityLimit = source.internToken("newton:velocityLimit");
+    newtonArmature = source.internToken("newton:armature");
+    newtonFriction = source.internToken("newton:friction");
+    newtonDamping = source.internToken("newton:damping");
 
     // PhysxCollisionAPI extensions (subset routed through parse library)
     physxCollisionAPI = source.internToken("PhysxCollisionAPI");

@@ -42,6 +42,15 @@ wheels = [
 ]
 
 [[package]]
+name = "newton-usd-schemas"
+version = "0.4.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/98/5f/aad1672263880d7e0ee3a7ce9b877ef16e99dba45fb5eb8084181eb7ee1e/newton_usd_schemas-0.4.1.tar.gz", hash = "sha256:1f6946ce2741d7a86ca8e3e84d7b64328c88b42a3b29160a7607b2ce0c837bf4", size = 69561, upload-time = "2026-07-30T17:40:41.505Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9b/24/d1d44f682dbd28392ef0b6f9e6f9e40374c6009af06e494fa6a9308f79e2/newton_usd_schemas-0.4.1-py3-none-any.whl", hash = "sha256:8911e846c65448426609a2945db6d1135d33e84bf4107efd888a62287b1aa93d", size = 19424, upload-time = "2026-07-30T17:40:40.076Z" },
+]
+
+[[package]]
 name = "numpy"
 version = "2.2.6"
 source = { registry = "https://pypi.org/simple" }
@@ -199,7 +208,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "ovstage", specifier = "==0.2.0.377349" },
+    { name = "ovstage", specifier = "==0.2.1.385922" },
     { name = "packaging", specifier = ">=20,<24" },
     { name = "warp-lang", specifier = ">=1.16,<2" },
 ]
@@ -216,6 +225,7 @@ name = "ovphysx-python-tests"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
+    { name = "newton-usd-schemas" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "ovphysx" },
@@ -226,6 +236,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "newton-usd-schemas", specifier = ">=0.4.1" },
     { name = "numpy", specifier = ">=1.20" },
     { name = "ovphysx", editable = "../../python" },
     { name = "pytest", specifier = ">=7" },
@@ -235,12 +246,12 @@ requires-dist = [
 
 [[package]]
 name = "ovstage"
-version = "0.2.0.377349"
+version = "0.2.1.385922"
 source = { registry = "../../_build/target-deps/ovstage_wheel" }
 wheels = [
-    { path = "ovstage-0.2.0.377349-py3-none-manylinux_2_35_aarch64.whl" },
-    { path = "ovstage-0.2.0.377349-py3-none-manylinux_2_35_x86_64.whl" },
-    { path = "ovstage-0.2.0.377349-py3-none-win_amd64.whl" },
+    { path = "ovstage-0.2.1.385922-py3-none-manylinux_2_35_aarch64.whl" },
+    { path = "ovstage-0.2.1.385922-py3-none-manylinux_2_35_x86_64.whl" },
+    { path = "ovstage-0.2.1.385922-py3-none-win_amd64.whl" },
 ]
 
 [[package]]

@@ -3,7 +3,7 @@
 
 /**
  * @implements REQ-INPUT-CORE-001
- * @covers AC-6
+ * @covers AC-6 AC-12
  */
 
 #pragma once
@@ -63,21 +63,18 @@ enum OvxWriteStatus : int32_t
     kOvxWriteStatusError          = 2, //!< bad handle / internal failure; `*outGroup` null.
 };
 
-// PIPELINE SUPPORT. The scatter is device-only today: it runs over the tensor backend's
-// cached superset view, which SimulationBackend builds for the GPU pipeline and returns
-// null for on CPU. A session opened against a CPU scene therefore fails at
-// ovxWriteAttribute rather than emitting groups it cannot publish. The host path is
-// planned and will not change this header's contract -- only which pipelines accept a
-// session. REQ-INPUT-CORE-001 AC-1/AC-2/AC-3 describe the superset-and-rows shape that
-// exists on the device side.
+// PIPELINE SUPPORT. Host scatter serves CPU and GPU-with-readback scenes. DirectGPU
+// (`eENABLE_DIRECT_GPU_API`) scatters through the tensor backend's cached GPU
+// superset view, which PhysX sizes on the first step. REQ-INPUT-CORE-001 AC-1/AC-2/AC-3
+// describe the superset-and-rows shape on the device side.
 //
-// STEP-FIRST PRECONDITION, as on the read: DirectGPU structures are sized during the
-// first step, so a write issued before one has nothing to scatter into -- and is REFUSED,
-// not silently warmed. This mirrors the read, which treats a pre-step scene as a clean
-// omission (ADR-0008 Decision 10). The write never steps the simulation on the caller's
-// behalf; a caller that wants initial state applied first calls ovphysx_step() /
-// ovphysx_warmup() itself. (The tensor-binding write DOES auto-warm; the ovstage write
-// deliberately does not -- see ADR-0012's 2026-08-27 amendment.)
+// NEVER AUTO-WARM. The ovstage write never steps the simulation on the caller's
+// behalf (the tensor-binding write DOES auto-warm). A pre-step write is applied on
+// CPU and on GPU with readback. On DirectGPU, commit is REFUSED until a first step
+// has sized the GPU view -- a DirectGPU caveat, not a universal refusal. A caller
+// that wants one recipe for all modes calls ovphysx_step() / ovphysx_warmup()
+// itself. See ADR-0012's 2026-08-27 (no auto-warm) and 2026-09-14 (mode split)
+// amendments.
 
 extern "C"
 {
@@ -130,9 +127,9 @@ enum OvxCommitFailure : int32_t
     kOvxCommitFailureNone    = 0, //!< the commit succeeded; `outFailure` is only written on false.
     kOvxCommitFailureNotLive = 1, //!< unknown session, or a group unknown, foreign or already
                                   //!< committed. Rejected before any publish, so nothing was written.
-    kOvxCommitFailurePublish = 2, //!< the group WAS live and the publish failed. How much of it
-                                  //!< reached the solver is not reported: a device scatter can fail
-                                  //!< partway. The runtime logs the specific reason.
+    kOvxCommitFailurePublish = 2, //!< the group WAS live and is spent. RuntimeErrorScope captures
+                                  //!< the reason, including a preflight refusal when nothing was written.
+                                  //!< A later scatter failure can have applied only part of the group.
 };
 
 // COMMIT (ovstage `unmap_group` analog): publish `group` and transfer ownership of its

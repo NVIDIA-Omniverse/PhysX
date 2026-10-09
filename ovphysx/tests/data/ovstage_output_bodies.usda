@@ -1,0 +1,54 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "World"
+{
+    def PhysicsScene "SceneA" (apiSchemas = ["PhysxSceneAPI"])
+    {
+        vector3f physics:gravityDirection = (0, 0, -1)
+        float physics:gravityMagnitude = 9.81
+        bool physxScene:enableGPUDynamics = false
+        uniform token physxScene:broadphaseType = "MBP"
+    }
+    def PhysicsScene "SceneB" (apiSchemas = ["PhysxSceneAPI"])
+    {
+        vector3f physics:gravityDirection = (0, 0, -1)
+        float physics:gravityMagnitude = 4
+        bool physxScene:enableGPUDynamics = false
+        uniform token physxScene:broadphaseType = "MBP"
+    }
+    def Cube "Mirrored" (apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"])
+    {
+        rel physics:simulationOwner = </World/SceneA>
+        float physics:mass = 1
+        double3 xformOp:translate = (-10, 0, 20)
+        quatf xformOp:orient = (0.9238795, 0, 0, 0.3826834)
+        float3 xformOp:scale = (-2, 3, 4)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+    def Xform "Parent"
+    {
+        double3 xformOp:translate = (10, 0, 20)
+        float3 xformOp:scale = (2, 3, 4)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        def Cube "Body" (apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"])
+        {
+            rel physics:simulationOwner = </World/SceneA>
+            float physics:mass = 1
+            double3 xformOp:translate = (1, 0, 0)
+            float3 xformOp:scale = (0.5, 2, 0.25)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+    }
+    def Cube "Sheared" (apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"])
+    {
+        rel physics:simulationOwner = </World/SceneB>
+        float physics:mass = 1
+        matrix4d xformOp:transform = ((2, 0.5, 0, 0), (0, 3, 0, 0), (0, 0, 4, 0), (0, 10, 20, 1))
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+    }
+}

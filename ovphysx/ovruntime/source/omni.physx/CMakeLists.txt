@@ -69,6 +69,7 @@ set(PHYSX_PLUGIN_HEADERS
     # tensors
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/ArticulationMetatype.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/CommonTypes.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/ForceComponent.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/GlobalsAreBad.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/PhysicsTypes.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tensors/SimulationBackend.h

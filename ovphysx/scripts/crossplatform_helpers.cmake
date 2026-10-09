@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-PACKAGING-BUILDNUM-001
+# @covers AC-1 AC-2 AC-3
+
 # Cross-platform helpers.
 
 include_guard(GLOBAL)
@@ -163,6 +166,46 @@ endfunction()
 function(semver_to_pep440 SEMVER_VERSION)
     string(REPLACE "-" "." PEP440_RESULT "${SEMVER_VERSION}")
     set(PEP440_VERSION "${PEP440_RESULT}" PARENT_SCOPE)
+endfunction()
+
+# Append the build number as a fourth release component (0.6.3 -> 0.6.3.1234)
+# so every CI artifact names the pipeline that produced it. The output variable
+# is set in the parent scope.
+#
+# Source, first non-empty wins: the OVPHYSX_BUILD_NUMBER CMake variable, the
+# OVPHYSX_BUILD_NUMBER environment variable, then CI_PIPELINE_ID. A developer
+# build has none of them and keeps the bare version.
+#
+# Call this before append_branch_local_version(): PEP 440 requires the local
+# "+" segment to be last, so a build number appended after one is invalid.
+function(apply_build_number BASE_VERSION OUTPUT_VAR)
+    set(BUILD_NUMBER "${OVPHYSX_BUILD_NUMBER}")
+    if(BUILD_NUMBER STREQUAL "")
+        set(BUILD_NUMBER "$ENV{OVPHYSX_BUILD_NUMBER}")
+    endif()
+    if(BUILD_NUMBER STREQUAL "")
+        set(BUILD_NUMBER "$ENV{CI_PIPELINE_ID}")
+    endif()
+    string(STRIP "${BUILD_NUMBER}" BUILD_NUMBER)
+    if(BUILD_NUMBER STREQUAL "")
+        set(${OUTPUT_VAR} "${BASE_VERSION}" PARENT_SCOPE)
+        return()
+    endif()
+    # A version the packaging tools cannot parse is worse than an untraceable
+    # one, so refuse anything that would not be a PEP 440 release component.
+    if(NOT BUILD_NUMBER MATCHES "^[0-9]+$")
+        message(WARNING "Ignoring non-numeric build number '${BUILD_NUMBER}'")
+        set(${OUTPUT_VAR} "${BASE_VERSION}" PARENT_SCOPE)
+        return()
+    endif()
+    # A pre-release version already ends in a non-numeric component; appending a
+    # number after it yields an ordering nobody can predict.
+    if(NOT BASE_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+        message(STATUS "Not appending build number to non-release version '${BASE_VERSION}'")
+        set(${OUTPUT_VAR} "${BASE_VERSION}" PARENT_SCOPE)
+        return()
+    endif()
+    set(${OUTPUT_VAR} "${BASE_VERSION}.${BUILD_NUMBER}" PARENT_SCOPE)
 endfunction()
 
 # Git helpers. CI variables take precedence over git commands.

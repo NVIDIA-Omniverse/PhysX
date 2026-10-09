@@ -2,10 +2,10 @@
 name: ovphysx-session-write
 description: Push caller-owned bulk control inputs and state into an ovphysx simulation with the session write API — Python `PhysX.write()`, C `ovphysx_write()`. Covers writing rigid-body and articulation state and control (poses, velocities, joint positions/velocities and their targets, forces and wrenches, mass properties) by filling borrowed write groups and committing them, then stepping. The successor to the deprecated tensor-binding write; for reading simulation output back, use the ovphysx-output-read skill.
 license: Apache-2.0
-compatibility: "Requires ovphysx >=0.6.0 and an attached ovstage Stage; supports the Python wheel and C SDK."
+compatibility: "Requires ovphysx >=0.6.0 and an attached ovstage Stage; supports the Python wheel and C SDK. Python PhysX.write() creates Warp arrays and needs a writable Warp cache directory. If the default cache location is not writable, set WARP_CACHE_PATH before Warp is initialized."
 metadata:
   author: "NVIDIA Omniverse Physics Team"
-  version: "0.1.0"
+  version: "0.1.1"
   tags: "ovphysx, ovstage, physics-write, control-input"
 ---
 
@@ -39,22 +39,24 @@ warp arrays, ovstage identity, closed-loop write-back), use the
    **Complete when:** the attached Stage owns the shared path dictionary for the
    whole write.
 
-3. Warm up or step BEFORE the first write. A write issued before the scene's
-   first step is REFUSED, not silently advanced: the DirectGPU superset view it
-   scatters into does not exist until the first step, symmetric with the read
-   which omits pre-step rows. Call `warmup()` / `ovphysx_warmup()` or
-   `step_sync()` first; the write never steps for you.
+3. Warm up or step BEFORE the first write if you need a recipe that also works
+   on DirectGPU. On CPU and on GPU-with-readback a write issued before the
+   scene's first step is APPLIED, not refused. On DirectGPU (`suppressReadback`)
+   commit is REFUSED until a first step has sized the GPU scatter view. In every
+   mode the write never auto-warms: it never steps for you. Call `warmup()` /
+   `ovphysx_warmup()` or `step_sync()` first when you want one sequence for all
+   three modes.
 
-   **Complete when:** at least one warmup or step has completed before the write
-   session opens.
+   **Complete when:** the caller has either warmed or stepped, or has accepted
+   that CPU/GPU-with-readback will apply a pre-step write and DirectGPU will not.
 
 4. Open a write session on ONE attribute, fill EVERY entry of every group, then
    commit each group. A session carries exactly one attribute, named when it is
    opened. Group tensors are mutable views onto runtime-owned storage; fill them
    in place. Commit publishes the WHOLE group, so a partially filled group
    publishes whatever its unfilled entries contain -- fill every tensor of every
-   group before committing, or write fewer prims by querying fewer. A group that
-   is never committed is discarded and publishes nothing.
+   group before committing. A group that is never committed is discarded and
+   publishes nothing.
 
    **Complete when:** every group intended to publish is fully filled and
    committed, and any abandoned fill committed nothing.
@@ -83,17 +85,25 @@ warp arrays, ovstage identity, closed-loop write-back), use the
 - One attribute per session. Open a separate session for each attribute you
   write.
 - The writable set is listed by object type in **Writable attributes by object
-  type** below. The writability query (`ovphysx_writability`) is the
+  type** below. The writability query (`ovphysx_writability`) gives the
   authoritative classification of every (object type, attribute) pair as
-  WRITABLE, WRITE_ONLY, READ_ONLY, or CONDITIONAL with no scene or step --
-  consult it rather than guessing whether a name is writable.
+  WRITABLE, WRITE_ONLY, READ_ONLY, or CONDITIONAL with no scene or step -- C
+  callers should consult it rather than guessing whether a name is writable.
+  It has no *public* Python binding (`hasattr(ovphysx, 'writability')` is
+  `False`); `ovphysx._bindings.writability(object_type, attribute)` is a
+  private ctypes wrapper around the same call (used by the project's own
+  `test_writability.py`), not a supported/stable public API -- prefer the
+  table below, or attempt `physx.write(...)`, which raises `RuntimeError`
+  immediately for an attribute that is not
+  writable for the object type, rather than writing nothing silently.
 - Fill EVERY mapped entry before committing. There is no fill mask on the group:
   a committed group publishes every entry, so an unfilled one publishes stale
-  memory. To write fewer prims, query fewer -- do not commit a half-filled
-  group.
-- Uncommitted groups are discarded when the session closes, so a fill that fails
-  or throws midway publishes nothing rather than leaking a half-filled column
-  into the solver.
+  memory. Queries cannot select individual bodies or filter out kinematic bodies;
+  neither `ALL` nor `ACTIVE` scope provides that filter.
+- Uncommitted groups are discarded when the session closes. A failed commit can
+  partially apply its group and consumes it; previously committed groups remain
+  applied. Read the diagnostic before another C API call, including cleanup;
+  Python includes it in the exception.
 - `force` is a vec3 applied at the CENTRE OF MASS. `wrench` is nine wide --
   `[fx,fy,fz, tx,ty,tz, px,py,pz]` = force, torque, and a WORLD application
   point -- so use `wrench` (force at the point, torque zero) for a load away
@@ -140,8 +150,12 @@ is **conditional** -- see the notes under the table.
   per-instance route, so no supported path disables an individual instance -- it
   applies to standalone rigid bodies only.
 - `ovphysx_writability(object_type, attribute)` is the runtime source of truth
-  this table snapshots, and `include/ovphysx/ovphysx_types.h` defines every
-  `OVPHYSX_ATTR_*` string constant.
+  this table snapshots (C API only -- see the note above the table). The
+  `OVPHYSX_ATTR_*` string constants it and `include/ovphysx/ovphysx_types.h`
+  use are a C-only convenience; the wheel ships no `include/` directory and
+  has no Python binding for them. A Python caller passes the same attribute
+  name as a plain string (`physx.write(SimObjectType.RIGID_BODY, "position")`),
+  exactly as shown in the examples in this skill.
 
 ## Installed API Sources
 

@@ -8,6 +8,9 @@
  * @implements REQ-CAPI-STRING-001
  * @covers AC-3
  *
+ * @implements REQ-CAPI-COLLISION-CONFIG-001
+ * @covers AC-1 AC-2
+ *
  * @implements REQ-CAPI-OMNIPVD-001
  * @covers AC-2
  */
@@ -17,6 +20,7 @@
 #include "ovphysx/ovphysx_config.h"
 #include "global_test_environment.h"
 #include "test_utilities.h"
+#include <PxShape.h>
 #include <cstring>
 #include <string>
 #include <iostream>
@@ -57,6 +61,111 @@ static bool wait_gs_op(ovphysx_handle_t handle, ovphysx_op_index_t op_index)
 // ============================================================================
 // Typed Config API Tests
 // ============================================================================
+
+class CollisionGeometryConfigTest : public ::testing::Test
+{
+protected:
+    void SetUp() override
+    {
+        ASSERT_TRUE(ensureSharedCpuInstance());
+        destroySharedCpuInstance();
+        ASSERT_EQ(ovphysx_get_global_config_bool(
+            OVPHYSX_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY, &m_cone).status,
+            OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(ovphysx_get_global_config_bool(
+            OVPHYSX_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY, &m_cylinder).status,
+            OVPHYSX_API_SUCCESS);
+        m_saved = true;
+    }
+
+    void TearDown() override
+    {
+        if (m_handle)
+        {
+            EXPECT_TRUE(destroy_ovstage_test_attachments(m_handle));
+            EXPECT_EQ(ovphysx_destroy_instance(m_handle).status, OVPHYSX_API_SUCCESS);
+        }
+        if (m_saved)
+        {
+            EXPECT_EQ(ovphysx_set_global_config(
+                ovphysx_config_entry_collision_cone_custom_geometry(m_cone)).status,
+                OVPHYSX_API_SUCCESS);
+            EXPECT_EQ(ovphysx_set_global_config(
+                ovphysx_config_entry_collision_cylinder_custom_geometry(m_cylinder)).status,
+                OVPHYSX_API_SUCCESS);
+        }
+    }
+
+    void checkGeometry(bool coneCustom)
+    {
+        ASSERT_TRUE(attach_usd_with_ovstage(m_handle, "tests/data/cone_and_cylinder.usda"));
+        ASSERT_EQ(ovphysx_step_sync(m_handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
+        const char* paths[] = { "/World/Cone", "/World/Cylinder" };
+        const ovphysx_config_bool_t keys[] = {
+            OVPHYSX_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY,
+            OVPHYSX_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY,
+        };
+        for (int index = 0; index < 2; ++index)
+        {
+            SCOPED_TRACE(paths[index]);
+            const bool custom = index == 0 ? coneCustom : !coneCustom;
+            bool value = !custom;
+            ASSERT_EQ(ovphysx_get_global_config_bool(keys[index], &value).status, OVPHYSX_API_SUCCESS);
+            EXPECT_EQ(value, custom);
+            void* pointer = nullptr;
+            ASSERT_EQ(ovphysx_get_physx_ptr(m_handle, ovphysx_cstr(paths[index]),
+                OVPHYSX_PHYSX_TYPE_SHAPE, &pointer).status, OVPHYSX_API_SUCCESS);
+            ASSERT_NE(pointer, nullptr);
+            const physx::PxShape* shape = static_cast<const physx::PxShape*>(pointer);
+            EXPECT_EQ(shape->getGeometry().getType(), custom ?
+                physx::PxGeometryType::eCONVEXCORE : physx::PxGeometryType::eCONVEXMESH);
+        }
+        ASSERT_TRUE(destroy_ovstage_test_attachments(m_handle));
+    }
+
+    void setRawApproximation(bool coneApproximate)
+    {
+        ASSERT_EQ(ovphysx_set_global_config(ovphysx_config_entry_carbonite(
+            OVPHYSX_LITERAL("/physics/collisionApproximateCones"),
+            coneApproximate ? OVPHYSX_LITERAL("true") : OVPHYSX_LITERAL("false"))).status,
+            OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(ovphysx_set_global_config(ovphysx_config_entry_carbonite(
+            OVPHYSX_LITERAL("/physics/collisionApproximateCylinders"),
+            coneApproximate ? OVPHYSX_LITERAL("false") : OVPHYSX_LITERAL("true"))).status,
+            OVPHYSX_API_SUCCESS);
+    }
+
+    ovphysx_handle_t m_handle = OVPHYSX_INVALID_HANDLE;
+
+private:
+    bool m_cone = false;
+    bool m_cylinder = false;
+    bool m_saved = false;
+};
+
+TEST_F(CollisionGeometryConfigTest, CreationEntriesAndRawSettingsSelectShapeGeometry)
+{
+    for (bool coneCustom : { true, false })
+    {
+        SCOPED_TRACE(coneCustom);
+        // Seed opposite runtime values without relying on the typed mapping.
+        ASSERT_NO_FATAL_FAILURE(setRawApproximation(coneCustom));
+        const ovphysx_config_entry_t entries[] = {
+            ovphysx_config_entry_collision_cone_custom_geometry(coneCustom),
+            ovphysx_config_entry_collision_cylinder_custom_geometry(!coneCustom),
+        };
+        ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
+        args.config_entries = entries;
+        args.config_entry_count = 2;
+        ASSERT_EQ(ovphysx_create_instance(&args, &m_handle).status, OVPHYSX_API_SUCCESS);
+        ASSERT_NO_FATAL_FAILURE(checkGeometry(coneCustom));
+
+        ASSERT_NO_FATAL_FAILURE(setRawApproximation(coneCustom));
+        ASSERT_NO_FATAL_FAILURE(checkGeometry(!coneCustom));
+        ASSERT_EQ(ovphysx_destroy_instance(m_handle).status, OVPHYSX_API_SUCCESS);
+        m_handle = OVPHYSX_INVALID_HANDLE;
+    }
+}
 
 // set_global_config with a typed bool entry must succeed.
 TEST(TypedConfig, SetBoolSucceeds)

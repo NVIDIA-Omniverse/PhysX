@@ -15,65 +15,137 @@ A read or a write is always three phases: **select** objects with a *query*, ope
 that query for one or more attributes, then **iterate** the session's groups.
 
 
-A typical control step reads an attribute and writes another back through the **same query** — for
-example, read each articulation joint's `jointPosition`, then write its `jointPositionTarget`:
+A typical control step reads an attribute and writes another back: for example, read each
+articulation joint's `jointPosition`, then set every `jointPositionTarget` to zero.
+The application must already have attached a stage. On DirectGPU, complete the first step before
+calling the Python example. Serialize simulation and structural edits while either example runs.
 
-**C**
+**C (CPU scene)**
+
+This example uses a single query for both sessions. It returns nonzero on failure, releases all
+opened handles, and discards an uncommitted group. On an API failure it reports
+`ovphysx_get_last_error()` on the calling thread before cleanup can clear the diagnostic.
+It requires CPU-resident joint tensors and rejects a device tensor before committing that group.
+Use the Python example below for a complete CPU/CUDA fill, or fill native device tensors and supply the synchronization described in
+[CUDA synchronization](device.md#cuda-synchronization).
 
 ```c
-// One query drives both the read and the write.
-ovphysx_query_handle_t query = 0;
-ovphysx_query(physx, OVPHYSX_OBJECT_ARTICULATION_JOINT, OVPHYSX_SCOPE_ALL, &query);
+#include <ovphysx/ovphysx.h>
+#include <stdio.h>
 
-// READ jointPosition — open a session, fetch each column group, release it.
-const ovx_string_or_token_t read_attrs[] = {
-    { 0, { OVPHYSX_ATTR_JOINT_POSITION, sizeof(OVPHYSX_ATTR_JOINT_POSITION) - 1 } },
-};
-ovphysx_read_handle_t read = 0;
-ovphysx_read(physx, query, read_attrs, 1, &read);
-for (;;) {
-    const ovstage_read_group_t* g = NULL;
-    if (ovphysx_fetch_read_next(physx, read, &g).status == OVPHYSX_API_END_OF_ITERATION)
-        break;
-    // consume g->data.tensors[...] — DLPack tensors on the group's native device
-    ovphysx_release_group(physx, read, g->read_group_id);
+int read_joints_and_zero_targets(ovphysx_handle_t physx)
+{
+    int failed = 1;
+    ovphysx_query_handle_t query = 0;
+    ovphysx_read_handle_t read = 0;
+    ovphysx_write_handle_t write = 0;
+    const ovx_string_or_token_t read_attr = {
+        0, { OVPHYSX_ATTR_JOINT_POSITION, sizeof(OVPHYSX_ATTR_JOINT_POSITION) - 1 }
+    };
+    const ovx_string_or_token_t write_attr = {
+        0, { OVPHYSX_ATTR_JOINT_POSITION_TARGET,
+             sizeof(OVPHYSX_ATTR_JOINT_POSITION_TARGET) - 1 }
+    };
+
+    if (ovphysx_query(physx, OVPHYSX_OBJECT_ARTICULATION_JOINT,
+                     OVPHYSX_SCOPE_ALL, &query).status != OVPHYSX_API_SUCCESS)
+        goto cleanup;
+    if (ovphysx_read(physx, query, &read_attr, 1, &read).status != OVPHYSX_API_SUCCESS)
+        goto cleanup;
+    for (;;) {
+        const ovstage_read_group_t* group = NULL;
+        const ovphysx_result_t result = ovphysx_fetch_read_next(physx, read, &group);
+        if (result.status == OVPHYSX_API_END_OF_ITERATION)
+            break;
+        if (result.status != OVPHYSX_API_SUCCESS || !group)
+            goto cleanup;
+        for (size_t i = 0; i < group->data.tensor_count; ++i) {
+            const DLTensor* tensor = &group->data.tensors[i];
+            if (tensor->device.device_type != kDLCPU)
+                goto cleanup;
+            // jointPosition is contiguous float32, one row per unlocked axis.
+            const float* values = (const float*)((const char*)tensor->data + tensor->byte_offset);
+            for (int64_t axis = 0; axis < tensor->shape[0]; ++axis)
+                printf("joint %zu, axis %lld: %g\n", i, (long long)axis, (double)values[axis]);
+        }
+        if (ovphysx_release_group(physx, read, group->read_group_id).status != OVPHYSX_API_SUCCESS)
+            goto cleanup;
+    }
+    if (ovphysx_release_read(physx, read).status != OVPHYSX_API_SUCCESS)
+        goto cleanup;
+    read = 0;
+
+    if (ovphysx_write(physx, query, &write_attr, &write).status != OVPHYSX_API_SUCCESS)
+        goto cleanup;
+    for (;;) {
+        const ovstage_map_group_t* group = NULL;
+        const ovphysx_result_t result = ovphysx_fetch_write_next(physx, write, &group);
+        if (result.status == OVPHYSX_API_END_OF_ITERATION)
+            break;
+        if (result.status != OVPHYSX_API_SUCCESS || !group)
+            goto cleanup;
+        for (size_t i = 0; i < group->data.tensor_count; ++i) {
+            const DLTensor* tensor = &group->data.tensors[i];
+            if (tensor->device.device_type != kDLCPU)
+                goto cleanup; // Release discards this group without committing it.
+            float* values = (float*)((char*)tensor->data + tensor->byte_offset);
+            for (int64_t axis = 0; axis < tensor->shape[0]; ++axis)
+                values[axis] = 0.0f;
+        }
+        // Every tensor was filled synchronously on the host.
+        if (ovphysx_commit_group(physx, write, group,
+                                (ovstage_cuda_sync_t){ 0, 0 }).status != OVPHYSX_API_SUCCESS)
+            goto cleanup;
+    }
+    failed = 0;
+
+cleanup:
+    if (failed) {
+        const ovphysx_string_t error = ovphysx_get_last_error();
+        if (error.length != 0)
+            fprintf(stderr, "%.*s\n", (int)error.length, error.ptr);
+    }
+    if (write)
+        ovphysx_release_write(physx, write);
+    if (read)
+        ovphysx_release_read(physx, read);
+    if (query)
+        ovphysx_release_query(physx, query);
+    return failed;
 }
-ovphysx_release_read(physx, read);
-
-// WRITE jointPositionTarget — one attribute per session; fill each group, then commit.
-const ovx_string_or_token_t write_attr =
-    { 0, { OVPHYSX_ATTR_JOINT_POSITION_TARGET, sizeof(OVPHYSX_ATTR_JOINT_POSITION_TARGET) - 1 } };
-ovphysx_write_handle_t write = 0;
-ovphysx_write(physx, query, &write_attr, &write);
-for (;;) {
-    const ovstage_map_group_t* g = NULL;
-    if (ovphysx_fetch_write_next(physx, write, &g).status == OVPHYSX_API_END_OF_ITERATION)
-        break;
-    // fill g->data.tensors[...].data; {0, 0} = no outstanding CUDA work to wait on
-    ovphysx_commit_group(physx, write, g, (ovstage_cuda_sync_t){ 0, 0 });
-}
-ovphysx_release_write(physx, write);
-
-ovphysx_release_query(physx, query);
 ```
 
-**Python**
+**Python (CPU or CUDA scene)**
+
+The Python wrappers each create and release their own query. The same object type and `ALL` scope
+select the same joints while the scene's structure is unchanged.
 
 ```python
+import warp as wp
 from ovphysx.types import ObjectScope, SimObjectType
 
-# READ jointPosition — a context-managed session; groups are warp.array columns.
-with physx.read(SimObjectType.ARTICULATION_JOINT, ["jointPosition"],
-                scope=ObjectScope.ALL) as result:
-    for group in result.groups:
-        # group.tensors[i] is a warp.array on the group's native (CPU or CUDA) device
-        ...
 
-# WRITE jointPositionTarget — one attribute per session; fill, then commit each group.
-with physx.write(SimObjectType.ARTICULATION_JOINT, "jointPositionTarget") as session:
-    for group in session.groups:
-        # group.tensors[i] are mutable warp.array views onto the mapped write memory
-        session.commit(group)
+def read_joints_and_zero_targets(physx):
+    with physx.read(
+        SimObjectType.ARTICULATION_JOINT, ["jointPosition"], scope=ObjectScope.ALL
+    ) as result:
+        for group in result.groups:
+            for tensor in group.tensors:
+                print(tensor.numpy())  # Explicit host copy for display.
+
+    with physx.write(
+        SimObjectType.ARTICULATION_JOINT, "jointPositionTarget", scope=ObjectScope.ALL
+    ) as session:
+        for group in session.groups:
+            for tensor in group.tensors:
+                tensor.zero_()  # Fill every mapped element on its native device.
+            cuda = next((t for t in group.tensors if t.size and t.device.is_cuda), None)
+            if cuda is None:
+                session.commit(group)
+            else:
+                # Each native group belongs to one device; order commit after its fill stream.
+                stream = wp.get_stream(cuda.device)
+                session.commit(group, cuda_stream=int(stream.cuda_stream or 1))
 ```
 
 The subsections below cover object selection, object types, and scope. On a

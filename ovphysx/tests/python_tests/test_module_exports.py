@@ -35,6 +35,7 @@ def test_module_all_exports():
         "DLTensor",
         "codeless_schema_paths",
         "codeless_schema_root",
+        "newton_schema_root",
     ]
 
     for export in expected_exports:

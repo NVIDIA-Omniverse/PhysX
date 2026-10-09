@@ -734,7 +734,7 @@ class TestContactBinding:
     a ground plane, providing known contact events after simulation runs.
     """
 
-    def _make_cube_pair_contact_binding(self, physx_sdk_cpu):
+    def _make_cube_pair_contact_binding(self, physx_sdk_cpu, max_contact_data_count=256):
         load_usd_with_ovstage(physx_sdk_cpu, data_path("boxes_falling_on_groundplane.usda"))
         physx_sdk_cpu.wait_all()
 
@@ -759,7 +759,7 @@ class TestContactBinding:
             sensor_patterns=["/World/Cube1"],
             filter_patterns=["/World/Cube2"],
             filters_per_sensor=1,
-            max_contact_data_count=256,
+            max_contact_data_count=max_contact_data_count,
         )
 
         physx_sdk_cpu.step(1.0 / 60.0)
@@ -810,7 +810,7 @@ class TestContactBinding:
         # (C, 2): column 0 sensor actor, column 1 other actor.
         actor_ids = np.zeros((max_c, 2), dtype=np.uint64)
 
-        cb.read_raw_contact_data(
+        required_contact_count = cb.read_raw_contact_data(
             forces, positions, normals, separations, sensor_layout, actor_ids,
         )
 
@@ -822,6 +822,7 @@ class TestContactBinding:
 
         total = int(counts.sum())
         assert total > 0, "expected at least one contact between Cube1 and Cube2"
+        assert required_contact_count == total
 
         start = int(start_indices[0])
         count = int(counts[0])
@@ -844,6 +845,28 @@ class TestContactBinding:
         )
         assert len(sensor_paths) == count
         assert all("Cube1" in p for p in sensor_paths)
+
+        cb.destroy()
+
+    def test_read_raw_contact_data_overflow_returns_required_count_and_prefix(self, physx_sdk_cpu):
+        cb = self._make_cube_pair_contact_binding(physx_sdk_cpu, max_contact_data_count=1)
+
+        forces = np.zeros((1, 1), dtype=np.float32)
+        positions = np.zeros((1, 3), dtype=np.float32)
+        normals = np.zeros((1, 3), dtype=np.float32)
+        separations = np.zeros((1, 1), dtype=np.float32)
+        sensor_layout = np.zeros((cb.sensor_count, 2), dtype=np.int32)
+        actor_ids = np.zeros((1, 2), dtype=np.uint64)
+
+        required_contact_count = cb.read_raw_contact_data(
+            forces, positions, normals, separations, sensor_layout, actor_ids,
+        )
+
+        assert required_contact_count > cb.max_contact_data_count
+        assert int(sensor_layout[:, 0].sum()) == cb.max_contact_data_count
+        assert np.all(sensor_layout[:, 1] + sensor_layout[:, 0] <= cb.max_contact_data_count)
+        assert actor_ids[0, 0] != 0
+        assert actor_ids[0, 1] != 0
 
         cb.destroy()
 
@@ -945,7 +968,7 @@ class TestContactBinding:
         for i in range(sample_frames):
             physx_sdk_cpu.step(1.0 / 60.0)
             physx_sdk_cpu.wait_all()
-            cb.read_net_forces(output=net_forces)
+            cb.read_net_normal_forces(output=net_forces)
             assert np.all(np.isfinite(net_forces[clone_indices])), \
                 "Runtime clone contact forces should be finite"
             max_upward_force = np.maximum(max_upward_force, net_forces[clone_indices, 2])
@@ -979,7 +1002,7 @@ class TestContactBinding:
         physx_sdk_cpu.wait_all()
 
         out = np.zeros((sensor_count, 3), dtype=np.float32)
-        cb.read_net_forces(output=out)
+        cb.read_net_normal_forces(output=out)
         assert out.shape == (sensor_count, 3), f"Expected shape ({sensor_count}, 3), got {out.shape}"
         assert np.all(np.isfinite(out)), "net forces must be finite"
         cb.destroy()
@@ -996,7 +1019,7 @@ class TestContactBinding:
         physx_sdk_cpu.wait_all()
 
         out = np.zeros((sensor_count, 3), dtype=np.float32)
-        cb.read_net_forces(output=out)
+        cb.read_net_normal_forces(output=out)
         assert np.any(np.abs(out) > 0.0), "After landing, contact net forces should be non-zero"
         cb.destroy()
 
@@ -1025,13 +1048,13 @@ class TestContactBinding:
             physx_sdk_cpu.step_n_sync(num_steps, sync_dt)
 
         sync_forces = np.zeros((cb.sensor_count, 3), dtype=np.float32)
-        cb.read_net_forces(output=sync_forces)
+        cb.read_net_normal_forces(output=sync_forces)
 
         # The next async step at the same dt is the documented reference path.
         physx_sdk_cpu.step(sync_dt)
         physx_sdk_cpu.wait_all()
         async_forces = np.zeros_like(sync_forces)
-        cb.read_net_forces(output=async_forces)
+        cb.read_net_normal_forces(output=async_forces)
 
         assert sync_forces[0, 2] > 0.0
         assert async_forces[0, 2] > 0.0
@@ -1055,7 +1078,7 @@ class TestContactBinding:
         physx_sdk_cpu.wait_all()
 
         out = np.zeros((sensor_count, filter_count, 3), dtype=np.float32)
-        cb.read_force_matrix(output=out)
+        cb.read_normal_force_matrix(output=out)
         assert out.shape == (
             sensor_count,
             filter_count,
@@ -1079,7 +1102,7 @@ class TestContactBinding:
         counts = np.zeros((cb.sensor_count, cb.filter_count), dtype=np.int32)
         starts = np.zeros((cb.sensor_count, cb.filter_count), dtype=np.int32)
 
-        cb.read_contact_data(contact_forces, positions, normals, separations, counts, starts)
+        required = cb.read_normal_contact_data(contact_forces, positions, normals, separations, counts, starts)
         assert np.all(np.isfinite(contact_forces))
         assert np.all(np.isfinite(positions))
         assert np.all(np.isfinite(normals))
@@ -1091,12 +1114,33 @@ class TestContactBinding:
         pair_start = int(starts[0, 0])
         assert pair_count > 0, "Overlapped Cube1/Cube2 pair should produce detailed contacts"
         assert pair_start + pair_count <= c
+        assert required == int(counts.sum())
         valid_normals = normals[pair_start : pair_start + pair_count]
         normal_lengths = np.linalg.norm(valid_normals, axis=1)
         assert np.all(normal_lengths > 0.5)
         assert np.any(
             np.abs(valid_normals[:, 2]) > 0.5
         ), "Cube/Cube contacts should have a strong vertical normal component"
+        cb.destroy()
+
+    def test_read_normal_contact_data_overflow_returns_required_count_and_prefix(self, physx_sdk_cpu):
+        cb = self._make_cube_pair_contact_binding(physx_sdk_cpu, max_contact_data_count=1)
+
+        contact_forces = np.zeros((1, 1), dtype=np.float32)
+        positions = np.zeros((1, 3), dtype=np.float32)
+        normals = np.zeros((1, 3), dtype=np.float32)
+        separations = np.zeros((1, 1), dtype=np.float32)
+        counts = np.zeros((cb.sensor_count, cb.filter_count), dtype=np.int32)
+        starts = np.zeros((cb.sensor_count, cb.filter_count), dtype=np.int32)
+
+        required = cb.read_normal_contact_data(contact_forces, positions, normals, separations, counts, starts)
+
+        assert required > cb.max_contact_data_count
+        assert np.all(counts >= 0)
+        assert np.all(starts >= 0)
+        assert int(counts.sum()) == cb.max_contact_data_count
+        assert np.all(starts + counts <= cb.max_contact_data_count)
+
         cb.destroy()
 
     def test_contact_data_requires_positive_capacity(self, physx_sdk_cpu):
@@ -1115,7 +1159,7 @@ class TestContactBinding:
         starts = np.zeros((cb.sensor_count, cb.filter_count), dtype=np.int32)
 
         with pytest.raises(RuntimeError, match="max_contact_data_count"):
-            cb.read_contact_data(contact_forces, positions, normals, separations, counts, starts)
+            cb.read_normal_contact_data(contact_forces, positions, normals, separations, counts, starts)
         cb.destroy()
 
     def test_contact_data_requires_filters(self, physx_sdk_cpu):
@@ -1132,7 +1176,7 @@ class TestContactBinding:
         starts = np.zeros((cb.sensor_count, cb.filter_count), dtype=np.int32)
 
         with pytest.raises(RuntimeError, match="filters_per_sensor"):
-            cb.read_contact_data(contact_forces, positions, normals, separations, counts, starts)
+            cb.read_normal_contact_data(contact_forces, positions, normals, separations, counts, starts)
         cb.destroy()
 
     def test_friction_data_flat_buffers_uint32_counts(self, physx_sdk_cpu):
@@ -1144,7 +1188,7 @@ class TestContactBinding:
         counts = np.zeros((cb.sensor_count, cb.filter_count), dtype=np.uint32)
         starts = np.zeros((cb.sensor_count, cb.filter_count), dtype=np.uint32)
 
-        cb.read_friction_data(friction_forces, friction_points, counts, starts)
+        required = cb.read_friction_contact_data(friction_forces, friction_points, counts, starts)
         assert np.all(np.isfinite(friction_forces))
         assert np.all(np.isfinite(friction_points))
         assert int(counts.sum()) <= c
@@ -1152,6 +1196,25 @@ class TestContactBinding:
         pair_start = int(starts[0, 0])
         assert pair_count > 0, "Overlapped Cube1/Cube2 pair should produce friction anchors"
         assert pair_start + pair_count <= c
+        assert required == int(counts.sum())
+        cb.destroy()
+
+    def test_read_friction_contact_data_overflow_returns_required_count_and_prefix(self, physx_sdk_cpu):
+        cb = self._make_cube_pair_contact_binding(physx_sdk_cpu, max_contact_data_count=1)
+
+        friction_forces = np.zeros((1, 3), dtype=np.float32)
+        friction_points = np.zeros((1, 3), dtype=np.float32)
+        counts = np.zeros((cb.sensor_count, cb.filter_count), dtype=np.int32)
+        starts = np.zeros((cb.sensor_count, cb.filter_count), dtype=np.int32)
+
+        required = cb.read_friction_contact_data(friction_forces, friction_points, counts, starts)
+
+        assert required > cb.max_contact_data_count
+        assert np.all(counts >= 0)
+        assert np.all(starts >= 0)
+        assert int(counts.sum()) == cb.max_contact_data_count
+        assert np.all(starts + counts <= cb.max_contact_data_count)
+
         cb.destroy()
 
     def test_friction_data_requires_filters(self, physx_sdk_cpu):
@@ -1166,7 +1229,7 @@ class TestContactBinding:
         starts = np.zeros((cb.sensor_count, cb.filter_count), dtype=np.int32)
 
         with pytest.raises(RuntimeError, match="filters_per_sensor"):
-            cb.read_friction_data(friction_forces, friction_points, counts, starts)
+            cb.read_friction_contact_data(friction_forces, friction_points, counts, starts)
         cb.destroy()
 
     def test_contact_binding_destroy_idempotent(self, physx_sdk_cpu):
@@ -1184,7 +1247,7 @@ class TestContactBinding:
         cb.destroy()
         out = np.zeros((sc, 3), dtype=np.float32)
         with pytest.raises(RuntimeError, match="(?i)destroyed"):
-            cb.read_net_forces(output=out)
+            cb.read_net_normal_forces(output=out)
 
 
 # ---------------------------------------------------------------------------

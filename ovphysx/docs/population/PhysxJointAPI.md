@@ -20,13 +20,13 @@ Every declared attribute is published at its resolved value. physxJoint:maxJoint
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
-| `physxJoint:jointFriction` | float32 | none | 0.0 | resolved USD value (authored, else raw fallback) | 0.0 | No joint friction. Read for every joint type including fixed, gear, rack and custom. |
-| `physxJoint:armature` | float32 | linear axes: mass; angular axes: mass*length^2 | 0.0 | resolved USD value (authored, else raw fallback) | 0.0 | Zero armature on every axis. The value seeds every axis' armature and is read whether or not PhysxJointAxisAPI is applied; only a strictly positive per-axis armature displaces it. |
+| `physxJoint:jointFriction` | float32 | none | 0.0 | resolved USD value (authored, else raw fallback) | 0.0 | Zero legacy joint-friction coefficient; Newton effort-based friction and damping are independent. Read for every joint type including fixed, gear, rack and custom. |
+| `physxJoint:armature` | float32 | linear axes: mass; angular axes: mass*length^2 | 0.0 | resolved USD value (authored, else raw fallback) | 0.0 | newton:armature, or zero when absent, seeds every axis. Only a strictly positive joint-level PhysX armature replaces it; positive per-axis armature then overrides either seed. Explicit PhysX zero cannot clear a nonzero Newton seed on either backend. |
 | `physxJoint:maxJointVelocity` | float32 | linear axes: length/s; angular axes: deg/s (deg_to_rad) | `inf` | when unauthored: `FLT_MAX` (column created even without the API) | `FLT_MAX` | Unlimited. Precedence per axis is PhysxJointAxisAPI:<inst>:maxJointVelocity, then this column, then newton:velocityLimit, then FLT_MAX. A value >= FLT_MAX (including an explicitly authored inf) counts as no PhysX opinion and loses to newton:velocityLimit. |
 
 ## Interactions
 
-- **[`PhysicsJoint`](PhysicsJoint.md):** Gate is the stage-wide presence of PhysxJointAPI plus usd-schemas CONTAINS PhysxJointAPI on the prim. hasAuthoredAttribute is always true on ovstage, so the resolved value always wins over the parser default.
+- **[`PhysicsJoint`](PhysicsJoint.md):** Gate is the stage-wide presence of PhysxJointAPI plus usd-schemas CONTAINS PhysxJointAPI on the prim. hasAuthoredAttribute is always true on ovstage; armature therefore requires a positive value and maxJointVelocity requires a value below FLT_MAX to override Newton seeds.
 - **[`PhysxJointAxisAPI`](PhysxJointAxisAPI.md):** physxJoint:armature and physxJoint:maxJointVelocity are seeds for every axis; a PhysxJointAxisAPI:<inst> value overrides them per axis (armature only when strictly positive).
 
 ## Known divergences
@@ -38,3 +38,4 @@ Every declared attribute is published at its resolved value. physxJoint:maxJoint
 - physxJoint:enableProjection is declared by older schema versions but is not read anywhere by the parser.
 - newton:velocityLimit (Newton schema, not part of this contract) is seeded before this column and is the fallback when maxJointVelocity is FLT_MAX.
 - Standalone (non-articulation) joints: none of these three columns has a PhysX counterpart; they are parsed and dropped.
+- newton:armature seeds the joint axes before physxJoint:armature; a strictly positive PhysX value overrides it. Newton friction and damping seed the per-axis friction parameters separately from the deprecated jointFriction coefficient.

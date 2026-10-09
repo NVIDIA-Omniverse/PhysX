@@ -20,6 +20,7 @@
 
 #include <cmath>
 #include <cstddef>
+#include <string>
 
 static_assert(sizeof(ovphysx_scene_query_hit_t) == 64,
     "ovphysx_scene_query_hit_t size changed -- update ctypes mirror in _bindings.py");
@@ -522,5 +523,12 @@ OVPHYSX_API ovphysx_result_t ovphysx_scene_query_get_paths_from_ids(
     }
 
     *out_count = id_count; // total needed, only toWrite entries are written
+    if (id_count > max_paths)
+    {
+        return set_error(
+            OVPHYSX_API_BUFFER_TOO_SMALL,
+            "Scene-query path buffer too small: " + std::to_string(id_count) +
+                " paths required but max_paths is " + std::to_string(max_paths));
+    }
     return success();
 }

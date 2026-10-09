@@ -97,12 +97,12 @@ class _InstancerBuffers:
 class _OvStageOutputContext:
     """Short-lived OVStage wrappers used by one output call."""
 
-    def __init__(self, physx: "PhysX"):
+    def __init__(self, physx: "PhysX", caller: str = "OvStageOutputCache"):
         import ovstage
 
         stage = physx._attached_ovstage
         if stage is None:
-            raise RuntimeError("OvStageOutputCache requires an attached OVStage")
+            raise RuntimeError(f"{caller} requires an attached OVStage")
         required = (
             "get_attribute_write_floor",
             "read_attributes",
@@ -112,13 +112,13 @@ class _OvStageOutputContext:
             "advance_write_floor",
         )
         if any(not hasattr(stage, method) for method in required):
-            raise RuntimeError("OvStageOutputCache requires attachment with an ovstage.Stage object")
+            raise RuntimeError(f"{caller} requires attachment with an ovstage.Stage object")
 
         self._physx = physx
         self._stage = stage
         self._attach_handle = physx.get_attach_handle()
         if not self._attach_handle:
-            raise RuntimeError("OvStageOutputCache requires a live ovphysx attachment")
+            raise RuntimeError(f"{caller} requires a live ovphysx attachment")
         self._paths = ovstage.PathDictionary(stage)
         self._closed = False
         self._token_names = {}
@@ -689,9 +689,22 @@ def step_and_write_to_ovstage(
 
     Returns:
         Number of OVStage attributes written.
+
+    Raises:
+        RuntimeError: No OVStage is attached, or ``cache`` is bound to a
+            different ``PhysX`` instance, a different attachment, or is
+            closed.
+        TypeError: ``cache`` is neither ``None`` nor an ``OvStageOutputCache``,
+            or ``outputs`` is not a mapping of ``SimObjectType`` to a sequence
+            of attribute-name strings.
+        ValueError: ``outputs`` selects only one of ``position`` /
+            ``orientation`` for a rigid body, articulation link, or vehicle
+            wheel. Fixed-pose types must select both together, since the
+            helper composes a world matrix from the pair; select neither, or
+            both, to avoid this.
     """
     if cache is None:
-        with _OvStageOutputContext(physx) as context:
+        with _OvStageOutputContext(physx, caller="step_and_write_to_ovstage") as context:
             return _step_and_write_to_ovstage(physx, dt, output_ordinal, context, outputs, retain=False)
     if not isinstance(cache, OvStageOutputCache):
         raise TypeError("cache must be an OvStageOutputCache or None")
@@ -724,12 +737,20 @@ def _step_and_write_to_ovstage(physx, dt, output_ordinal, cache, outputs, *, ret
                 raise ValueError(f"{object_type.name} position and orientation must be selected together")
         validated_outputs.append((object_type, names))
 
+    physx.step_sync(dt)
+    written = _write_to_ovstage(physx, output_ordinal, cache, validated_outputs, retain=retain)
+    stage.advance_write_floor(ordinal=output_ordinal).wait()
+    return written
+
+
+def _write_to_ovstage(physx, output_ordinal, cache, validated_outputs, *, retain):
+    """Publish validated output without stepping or sealing the stage."""
     import ovstage
     import warp as wp
 
     from .._utils_kernels import compose_world_xforms, merge_instancer_poses
 
-    physx.step_sync(dt)
+    stage = cache._stage
     written = 0
     for object_type, attribute_names in validated_outputs:
         with physx.read(object_type, attribute_names, scope=ObjectScope.ALL) as result:
@@ -905,7 +926,6 @@ def _step_and_write_to_ovstage(physx, dt, output_ordinal, cache, outputs, *, ret
                     finally:
                         stage.release_query(query).wait()
 
-    stage.advance_write_floor(ordinal=output_ordinal).wait()
     return written
 
 

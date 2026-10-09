@@ -9,6 +9,8 @@
  * @covers AC-2
  * @implements REQ-CAPI-READPOOL-001
  * @covers AC-1
+ * @implements REQ-CAPI-COLLISION-CONFIG-001
+ * @covers AC-1
  */
 /** @endcond */
 
@@ -108,19 +110,25 @@ static inline ovphysx_config_entry_t ovphysx_config_entry_disable_contact_proces
     return ovphysx_config_entry_bool(OVPHYSX_CONFIG_DISABLE_CONTACT_PROCESSING, value);
 }
 
-/** Enable/disable cone custom geometry for collisions (/physics/collisionConeCustomGeometry). */
+/** Select cone collision geometry before stage attachment.
+ *  true (default) selects a convex core; false selects a convex mesh.
+ *  Inverse of /physics/collisionApproximateCones. Existing shapes are not rebuilt. */
 static inline ovphysx_config_entry_t ovphysx_config_entry_collision_cone_custom_geometry(bool value)
 {
     return ovphysx_config_entry_bool(OVPHYSX_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY, value);
 }
 
-/** Enable/disable cylinder custom geometry for collisions (/physics/collisionCylinderCustomGeometry). */
+/** Select cylinder collision geometry before stage attachment.
+ *  true (default) selects a convex core; false selects a convex mesh.
+ *  Inverse of /physics/collisionApproximateCylinders. Existing shapes are not rebuilt. */
 static inline ovphysx_config_entry_t ovphysx_config_entry_collision_cylinder_custom_geometry(bool value)
 {
     return ovphysx_config_entry_bool(OVPHYSX_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY, value);
 }
 
-/** Set number of worker threads (/physics/numThreads). 0 = auto. */
+/** Set PhysX worker count (/persistent/physics/numThreads) before scene attachment.
+ *  The default dispatcher caps it at the shared tasking pool size. 0 runs tasks inline.
+ *  This setting does not resize supporting worker pools or an already attached dispatcher. */
 static inline ovphysx_config_entry_t ovphysx_config_entry_num_threads(int32_t value)
 {
     return ovphysx_config_entry_int32(OVPHYSX_CONFIG_NUM_THREADS, value);

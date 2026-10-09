@@ -19,7 +19,7 @@ dependencies = [
   # against the population/runtime ABI of the pinned ovstage release. This pin is
   # generated from the OVSTAGE_VERSION constant in scripts/fetch_ovstage_release.py
   # (the version source of truth); do not edit this line by hand.
-  "ovstage==0.2.0.377349",
+  "ovstage==0.2.1.385922",
   # Warp is the public CPU/CUDA array frontend for PhysX.read(). Floor is the tested line,
   # pinned exactly in tests; <2 only guards a major bump (a minor cap collides with IsaacLab).
   "warp-lang>=1.16,<2",

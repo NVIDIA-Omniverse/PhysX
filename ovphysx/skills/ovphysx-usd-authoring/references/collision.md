@@ -42,15 +42,25 @@ ovphysx's shipped codeless `generatedSchema.usda`. Both are rendered in the
 
 | `physics:approximation` | Collision shape | Use for |
 |-------------------------|-----------------|---------|
-| `none`, `meshSimplification` | Full / simplified triangle mesh | **Static or kinematic only** — not valid for dynamic bodies |
+| `none`, `meshSimplification` | Full / simplified triangle mesh | **Static or kinematic only** — not recommended for dynamic bodies |
 | `convexHull` | One convex hull | Dynamic bodies with roughly convex shape |
 | `convexDecomposition` | Several convex hulls | Dynamic bodies with non-convex shape |
 | `boundingSphere`, `boundingCube` | Primitive bound | Coarse, cheap dynamic approximation |
 | `sdf` | Signed distance field | Dynamic bodies needing high-detail non-convex contact (PhysX schema `PhysxSDFMeshCollisionAPI`) |
 
-Key constraint: a **dynamic** rigid body cannot use a plain triangle mesh
-(`none` / `meshSimplification`). Use a convex approximation, convex
+Key constraint: a **dynamic** rigid body should not use a plain triangle mesh
+(`none` / `meshSimplification`) -- use a convex approximation, convex
 decomposition, or SDF instead. Triangle meshes are for static/kinematic geometry.
+As of ovphysx 0.6.3 this is not enforced with an error or a warning: authoring
+`none`/`meshSimplification` on a collider whose rigid body is dynamic
+(`physics:rigidBodyEnabled=true`, `physics:kinematicEnabled=false`) is silently promoted to
+`convexHull` before the PhysX shape descriptor is built, because PhysX itself
+rejects a non-SDF triangle mesh as a dynamic simulation shape. The authored
+`physics:approximation` value is unchanged; only the resulting collision shape
+is -- so the body settles, but against a convex hull of the mesh, not the mesh
+itself. This can be a meaningfully different shape for non-convex geometry.
+Treat the constraint above as a rule the product currently works around rather
+than rejects, not as "the raw mesh still collides, just less stably."
 
 ## What Lives Elsewhere
 

@@ -238,8 +238,8 @@ def test_wait_op_invalid_index(physx_sdk):
         None: Validates invalid operation indices are rejected.
 
     Note:
-        API requires a valid, not-yet-consumed op_index. Invalid indices
-        should raise RuntimeError.
+        API requires a valid, not-yet-consumed op_index. Unknown in-range
+        indices should raise RuntimeError.
     """
     with pytest.raises(RuntimeError, match="op_index not found"):
         physx_sdk.wait_op(999999, timeout_ns=1000000)  # 1ms timeout

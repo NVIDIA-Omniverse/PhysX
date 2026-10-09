@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PROPS-MAT-001
+ * @covers AC-2
+ */
+
+/**
  * @implements REQ-PARSE-UNIFY-001
  * @covers AC-1 AC-2
  *
@@ -31,6 +36,12 @@
  *
  * @implements REQ-WRITE-AUTHORING-001
  * @covers AC-5
+ *
+ * @implements REQ-RUNTIME-ERROR-001
+ * @covers AC-3 AC-4
+ *
+ * @implements REQ-SIM-BODY-INPUT-001
+ * @covers AC-1 AC-2 AC-3
  */
 
 #include "UsdInterface.h"
@@ -67,6 +78,7 @@
 #include <PhysXUpdate.h>
 
 #include <omni/physics/parse/KnownTokens.h>
+#include <omni/physx/RuntimeError.h>
 
 #include <private/omni/physx/PhysxUsd.h>
 #include <omni/log/ILog.h>
@@ -383,6 +395,7 @@ ObjectId createShape(const PxGeometry& geom,
     {
         InternalShape* internalShape =
             ICE_NEW(InternalShape)(physxScene, desc.localScale, intMat ? desc.materials[0] : kInvalidObjectId);
+        internalShape->mSourceGprim = desc.sourceGprim;
         internalShape->mMassInfo = massInfo;
         if (instance)
             internalShape->mInstanceIndex = instance->index;
@@ -2768,6 +2781,7 @@ ObjectId PhysXUsdPhysicsInterface::createShapeOrComputeMass(omni::physics::parse
             {
                 shape = new CompoundShape(physxScene);
                 InternalShape* intShape = ICE_NEW(InternalShape)(physxScene, desc.localScale);
+                intShape->mSourceGprim = desc.sourceGprim;
                 if (desc.materials.size() == 1 && desc.materials[0] != kInvalidObjectId)
                 {
                     InternalDatabase::Record& materialRecord = db->getRecords()[(size_t)desc.materials[0]];
@@ -3116,6 +3130,7 @@ ObjectId PhysXUsdPhysicsInterface::createShapeOrComputeMass(omni::physics::parse
         {
             shape = new CompoundShape(physxScene);
             InternalShape* intShape = ICE_NEW(InternalShape)(physxScene, desc.localScale);
+            intShape->mSourceGprim = desc.sourceGprim;
             if (desc.materials.size() == 1 && desc.materials[0] != kInvalidObjectId)
             {
                 InternalDatabase::Record& materialRecord = db->getRecords()[(size_t)desc.materials[0]];
@@ -5133,7 +5148,6 @@ bool PhysXUsdPhysicsInterface::updateTransform(const AttachedStage& attachedStag
                                                omni::physics::parse::ObjectKey key,
                                                ObjectId objectId,
                                                const Transform& transform,
-                                               bool resetVelocity,
                                                bool scaleProvided)
 {
     OmniPhysX& omniPhysX = OmniPhysX::getInstance();
@@ -5189,11 +5203,6 @@ bool PhysXUsdPhysicsInterface::updateTransform(const AttachedStage& attachedStag
                 pose.q = orientation;
             }
             actor->setGlobalPose(pose);
-            if (resetVelocity && dynamicActor)
-            {
-                dynamicActor->setLinearVelocity(PxVec3(0.0f));
-                dynamicActor->setAngularVelocity(PxVec3(0.0f));
-            }
 
             if (!dynamicActor)
             {
@@ -6757,7 +6766,7 @@ void PhysXUsdPhysicsInterface::reportLoadError(usdparser::ErrorCode::Enum errorC
 {
     if (errorCode == usdparser::ErrorCode::eError)
     {
-        CARB_LOG_ERROR(msg);
+        OVX_RUNTIME_ERROR("%s", msg);
         sendErrorEvent(OmniPhysX::getInstance().getErrorEventStream(), eUsdLoadError, std::make_pair("errorString", msg));
     }
     else if (errorCode == usdparser::ErrorCode::eWarning)

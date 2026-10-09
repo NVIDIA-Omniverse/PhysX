@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PARSE-INSTANCER-DISPATCH-001
+ * @covers AC-1
+ */
+
+/**
  * `ScannedStage` — the source-agnostic snapshot of a scanned physics
  * scene. Owns the parse-library descriptors plus the `IPhysicsSource`
  * that minted their handles.
@@ -40,6 +45,26 @@
 namespace omni::physics::parse
 {
 
+// Load-time particle/instancer dispatch retained independently of descriptor
+// pruning. Keys belong to the scan source, including invalid sampler candidates.
+// Backends emit parent-before-child candidates with contiguous depth-first
+// subtrees, allowing consumers to prune a subtree using its latest root.
+struct ParticleObjectCandidate
+{
+    enum class Kind
+    {
+        eParticleSystem,
+        eParticleSet,
+        eParticleSampler,
+        ePointInstancer,
+        eJointInstancer,
+        eVoxelMap,
+        eCustomInstancer
+    };
+    ObjectKey key;
+    Kind kind;
+};
+
 class ScannedStage;
 
 // Assemble an empty ScannedStage around an abstract backend source (ADR-0002
@@ -64,7 +89,8 @@ ScannedStage makeScannedStageBorrowingSource(IPhysicsSource& source);
 // `ObjectKey` / `TokenId` values on these descriptors are minted by this
 // scan's source and must be resolved through that same source (or, on the USD
 // side, through `omni::physics::usd::ScannedStage`'s `pathFor` / `tfTokenFor`).
-// Handles are not portable across `ScannedStage` instances.
+// Standalone scans have independent identities; attachment scan contexts may
+// share their attachment's object-key namespace.
 class ScannedStage
 {
 public:
@@ -185,6 +211,10 @@ public:
     // True when the walk saw a point-instancer-shaped prim. The load consumer
     // uses this to enable instancer parsing without probing every source prim.
     bool hasPointInstancerPrims = false;
+    // Traversal-ordered candidates within the scan roots/exclusions. Discovery
+    // includes instancer descendants; ordinary body/shape emission still prunes
+    // them so the dedicated prototype scan owns their processing.
+    std::vector<ParticleObjectCandidate> particleObjectCandidates;
 
     std::vector<parse::DescPtr<parse::VehicleDesc>>                          vehicles;
     std::vector<parse::ObjectKey>                                            vehiclePaths;

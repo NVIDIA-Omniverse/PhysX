@@ -35,6 +35,7 @@
 #include "test_utilities.h"
 
 #include <cstring>
+#include <string>
 
 using namespace test_utils;
 
@@ -218,9 +219,16 @@ TEST_F(PhysXTestFixture, UnsealedAttachFailsAndSealedRetrySucceeds)
         FAIL() << "unsealed ovstage attachment unexpectedly succeeded";
     }
     ASSERT_EQ(unsealedAttach.status, OVPHYSX_API_ERROR);
+    const ovphysx_string_t error = ovphysx_get_last_error();
+    ASSERT_NE(error.ptr, nullptr);
+    const std::string message(error.ptr, error.length);
+    EXPECT_NE(message.find("schema scan"), std::string::npos) << message;
+    EXPECT_NE(message.find("ovstage_read_attributes"), std::string::npos) << message;
+    EXPECT_NE(message.find("ordinal 1"), std::string::npos) << message;
     ASSERT_TRUE(advanceWriteFloor(stage, OVSTAGE_SCOPE_ALL));
     ASSERT_EQ(ovphysx_attach_ovstage(m_handle, stage, 1).status, OVPHYSX_API_SUCCESS);
     stageGuard.attachedHandle = m_handle;
+    EXPECT_EQ(ovphysx_get_last_error().length, 0u);
 
     ASSERT_EQ(ovphysx_detach_ovstage(m_handle).status, OVPHYSX_API_SUCCESS);
     stageGuard.attachedHandle = OVPHYSX_INVALID_HANDLE;

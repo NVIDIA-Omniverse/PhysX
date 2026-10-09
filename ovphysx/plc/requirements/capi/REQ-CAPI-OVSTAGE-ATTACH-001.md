@@ -20,7 +20,8 @@ sentinel and is not a valid public attach ordinal.
 
 - AC-1: An unreadable `usd-schemas` query/read during initial articulation and
   joint enumeration returns `OVPHYSX_API_ERROR`, leaves no partial attachment,
-  and permits the same Stage to be retried after sealing.
+  and preserves the schema-scan cause in `ovphysx_get_last_error()`. The same
+  Stage can be retried after sealing; a successful retry clears that error.
 - AC-2: Attachment does not reject solely because the Stage's global minimum
   write floor is below the requested ordinal. A valid attribute-scoped seal
   succeeds when it covers all data selected by the physics scan, even if an
@@ -40,5 +41,6 @@ sentinel and is not a valid public attach ordinal.
 
 ## Dependencies
 
-- REQ-PARSE-SCAN-001 (runtime scan failure detection)
-- REQ-SIM-OVSTAGE-ATTACH-001 (runtime attach-result propagation and rollback)
+- ovphysx/ovruntime/source/omni.physics.parse/ScanBackend.cpp (runtime scan failure detection)
+- ovphysx/ovruntime/source/omni.physx/plugins/usdLoad/LoadUsd.cpp (attach-result propagation and rollback)
+- ovphysx/ovruntime/include/omni/physx/RuntimeError.h (runtime cause captured at the synchronous attach boundary)
