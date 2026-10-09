@@ -358,6 +358,21 @@ struct PxSceneFlag
 		*/
 		eDISABLE_SLEEPING = (1 << 20),
 
+		/**
+		\brief Enables sparse, cached contact generation for pairs of triangle meshes that both carry an SDF.
+
+		Contacts are found by optimizing a handful of cached and stochastic seed points towards the deepest
+		intersection of the two distance fields and refining them on the mesh surfaces (Giles and Andrews 2026),
+		instead of optimizing every triangle overlapping the other mesh's SDF. The manifold is sparse and
+		temporally coherent and its cost does not depend on the triangle count. CPU narrow phase only; GPU
+		dynamics keeps using the per-triangle method. Pairs where only one mesh has an SDF are unaffected.
+
+		\note This flag is not mutable, and must be set in PxSceneDesc at scene creation.
+
+		<b>Default</b> false
+		*/
+		eENABLE_SDF_SDF_CONTACTS = (1 << 21),
+
 		eMUTABLE_FLAGS = eENABLE_ACTIVE_ACTORS|eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS
 	};
 };

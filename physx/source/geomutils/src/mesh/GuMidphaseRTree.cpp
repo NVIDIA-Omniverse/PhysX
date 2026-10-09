@@ -211,7 +211,7 @@ struct RayRTreeCallback : RTree::CallbackRaycast, RTree::Callback
 
 	virtual bool processResults(PxU32 numTouched, PxU32* touched) PX_OVERRIDE
 	{
-		PxF32 dummy;
+		PxF32 dummy = PX_MAX_REAL;
 		return RayRTreeCallback::processResults(numTouched, touched, dummy);
 	}
 

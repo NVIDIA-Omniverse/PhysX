@@ -483,6 +483,7 @@ public:
 		threadContext->mPCM = pcm;
 		threadContext->mCreateAveragePoint = mContext->getCreateAveragePoint();
 		threadContext->mContactCache = mContext->getContactCacheFlag();
+		threadContext->mNarrowPhaseParams.mSDFSDFContacts = mContext->getSDFSDFContacts();
 		threadContext->mTransformCache = &mContext->getTransformCache();
 		threadContext->mContactDistances = mContext->getContactDistances();
 

@@ -141,6 +141,8 @@ public:
 					void						shiftOrigin(const PxVec3& shift);
 
 	PX_FORCE_INLINE	void						setPCM(bool enabled)					{ mPCM = enabled;				}
+	PX_FORCE_INLINE	bool						getSDFSDFContacts()			const	{ return mSDFSDFContacts;		}
+	PX_FORCE_INLINE	void						setSDFSDFContacts(bool enabled)			{ mSDFSDFContacts = enabled;	}
 	PX_FORCE_INLINE	void						setContactCache(bool enabled)			{ mContactCache = enabled;		}
 
 	PX_FORCE_INLINE	PxcScratchAllocator&		getScratchAllocator()					{ return mScratchAllocator;		}
@@ -246,6 +248,7 @@ private:
 						// PX_ENABLE_SIM_STATS
 					PxvSimStats					mSimStats;
 					bool						mPCM;
+					bool						mSDFSDFContacts;
 					bool						mContactCache;
 					const bool					mCreateAveragePoint;
 					const bool					mCCD;

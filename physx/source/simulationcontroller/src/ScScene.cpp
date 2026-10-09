@@ -1003,6 +1003,7 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 	setGravity(desc.gravity);
 
 	setPCM(desc.flags & PxSceneFlag::eENABLE_PCM);
+	setSDFSDFContacts(desc.flags & PxSceneFlag::eENABLE_SDF_SDF_CONTACTS);
 
 	setContactCache(!(desc.flags & PxSceneFlag::eDISABLE_CONTACT_CACHE));
 	setSimulationEventCallback(desc.simulationEventCallback);

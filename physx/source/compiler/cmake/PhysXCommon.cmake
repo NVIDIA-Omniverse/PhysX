@@ -249,6 +249,8 @@ SET(PHYSXCOMMON_GU_CONTACT_SOURCE
 	${GU_SOURCE_DIR}/src/contact/GuContactPolygonPolygon.cpp
 	${GU_SOURCE_DIR}/src/contact/GuContactMeshMesh.cpp
 	${GU_SOURCE_DIR}/src/contact/GuContactMeshMesh.h
+	${GU_SOURCE_DIR}/src/contact/GuContactSDFSDF.cpp
+	${GU_SOURCE_DIR}/src/contact/GuContactSDFSDF.h
 	${GU_SOURCE_DIR}/src/contact/GuContactReduction.h
 	${GU_SOURCE_DIR}/src/contact/GuCollisionSDF.h
 	${GU_SOURCE_DIR}/src/contact/GuContactSphereBox.cpp

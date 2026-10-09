@@ -284,6 +284,7 @@ namespace Sc
 					void						setBodyAccelerationTask(PxLightCpuTask* task)	{ mBodyAccelerationTask = task;		}
 
 	PX_FORCE_INLINE	void						setPCM(bool enabled)							{ mLLContext->setPCM(enabled);			}
+	PX_FORCE_INLINE	void						setSDFSDFContacts(bool enabled)					{ mLLContext->setSDFSDFContacts(enabled); }
 	PX_FORCE_INLINE	void						setContactCache(bool enabled)					{ mLLContext->setContactCache(enabled);	}
 
 	PX_FORCE_INLINE	void						setContactModifyCallback(PxContactModifyCallback* callback)	{ mLLContext->setContactModifyCallback(callback);	}

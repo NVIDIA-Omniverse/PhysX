@@ -18,6 +18,7 @@
 #include "GuCollisionSDF.h"
 #include "GuTriangleMesh.h"
 #include "GuContactMeshMesh.h"
+#include "GuContactSDFSDF.h"
 #include "GuContactMethodImpl.h"
 #include "GuContactReduction.h"
 #include "GuMidphaseInterface.h"
@@ -210,7 +211,6 @@ PxU32 sdfMeshCollision (
 bool Gu::contactMeshMesh(GU_CONTACT_METHOD_ARGS)
 {
 	PX_UNUSED(renderOutput);
-	PX_UNUSED(cache);
 
 	// Get meshes
 	const PxTriangleMeshGeometry& geom0 = checkedCast<PxTriangleMeshGeometry>(shape0),
@@ -238,6 +238,11 @@ bool Gu::contactMeshMesh(GU_CONTACT_METHOD_ARGS)
 	{
 		return false;
 	}
+
+	// Cached, importance-sampled contact search (GuContactSDFSDF.h) instead of optimizing every
+	// overlapping triangle; handles pairs with two SDFs and pairs with one. See sdf-dcd-plan.md.
+	if (params.mSDFSDFContacts)
+		return contactSDFSDF(geom0, transform0, geom1, transform1, params, cache, contactBuffer) != 0;
 
 	if (!(geom0HasSdf && geom1HasSdf))
 	{
