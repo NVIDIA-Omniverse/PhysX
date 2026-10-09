@@ -220,7 +220,8 @@ public:
                                               float damping,
                                               ::physx::PxCombineMode::Enum frictionCombineMode,
                                               ::physx::PxCombineMode::Enum restitutionCombineMode,
-                                              ::physx::PxCombineMode::Enum dampingCombineMode);
+                                              ::physx::PxCombineMode::Enum dampingCombineMode,
+                                              ::physx::PxMaterialFlags flags);
 
     // Build the shared-material pool key for a set of properties. The float
     // components use a representation that round-trips a float32 exactly, so two
@@ -231,7 +232,8 @@ public:
                                        float damping,
                                        ::physx::PxCombineMode::Enum frictionCombineMode,
                                        ::physx::PxCombineMode::Enum restitutionCombineMode,
-                                       ::physx::PxCombineMode::Enum dampingCombineMode);
+                                       ::physx::PxCombineMode::Enum dampingCombineMode,
+                                       ::physx::PxMaterialFlags flags);
 
     // Drop one reference to a pooled material. When the last reference is
     // released, every pool entry that references it is removed (looked up by

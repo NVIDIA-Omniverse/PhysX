@@ -2679,7 +2679,8 @@ PxMaterial* BaseSimulationView::createSharedMaterial(float staticFriction,
                                                      float damping,
                                                      PxCombineMode::Enum frictionCombineMode,
                                                      PxCombineMode::Enum restitutionCombineMode,
-                                                     PxCombineMode::Enum dampingCombineMode)
+                                                     PxCombineMode::Enum dampingCombineMode,
+                                                     PxMaterialFlags flags)
 {
     if (static_cast<int>(frictionCombineMode) >= static_cast<int>(PxCombineMode::Enum::eN_VALUES))
     {
@@ -2697,8 +2698,8 @@ PxMaterial* BaseSimulationView::createSharedMaterial(float staticFriction,
         dampingCombineMode = PxCombineMode::eAVERAGE;
     }
 
-    const std::string key = makeMaterialKey(staticFriction, dynamicFriction, restitution, damping,
-                                            frictionCombineMode, restitutionCombineMode, dampingCombineMode);
+    const std::string key = makeMaterialKey(staticFriction, dynamicFriction, restitution, damping, frictionCombineMode,
+                                            restitutionCombineMode, dampingCombineMode, flags);
 
     std::unordered_map<std::string, PxMaterial*>::const_iterator got = mMaterials.find(key);
 
@@ -2733,6 +2734,7 @@ PxMaterial* BaseSimulationView::createSharedMaterial(float staticFriction,
             material->setFrictionCombineMode(frictionCombineMode);
             material->setRestitutionCombineMode(restitutionCombineMode);
             material->setDampingCombineMode(dampingCombineMode);
+            material->setFlags(flags);
             mMaterials[key] = material;
             mMaterialKeys[material] = key;
         }
@@ -2760,7 +2762,8 @@ std::string BaseSimulationView::makeMaterialKey(float staticFriction,
                                                 float damping,
                                                 PxCombineMode::Enum frictionCombineMode,
                                                 PxCombineMode::Enum restitutionCombineMode,
-                                                PxCombineMode::Enum dampingCombineMode)
+                                                PxCombineMode::Enum dampingCombineMode,
+                                                PxMaterialFlags flags)
 {
     // %.9g round-trips an IEEE-754 single-precision value exactly, so distinct
     // float32 inputs always produce distinct keys (unlike "%.6f", which
@@ -2780,6 +2783,8 @@ std::string BaseSimulationView::makeMaterialKey(float staticFriction,
     snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(restitutionCombineMode));
     key += std::string(keybuffer) + "_";
     snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(dampingCombineMode));
+    key += std::string(keybuffer) + "_";
+    snprintf(keybuffer, 100, "%u", static_cast<uint32_t>(flags));
     key += std::string(keybuffer);
     return key;
 }

@@ -14,7 +14,7 @@ import os
 
 import numpy as np
 import pytest
-from ovphysx.types import TensorType
+from ovphysx.types import ObjectScope, SimObjectType, TensorType
 from test_utils import load_usd_with_ovstage
 
 _TEST_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -290,3 +290,150 @@ class TestArticulationShapeTensors:
         b.read(result)
         np.testing.assert_allclose(result, modified, rtol=1e-5)
         b.destroy()
+
+
+# ---------------------------------------------------------------------------
+# Material writes keep the rest of the material
+# ---------------------------------------------------------------------------
+
+DT = 1.0 / 60.0
+
+# Each case authors one material on 1 kg cubes and the initial velocity that shows it on ground with friction 1:
+#   - friction 0.2 with the "min" combine mode: a slider decelerates at 0.2 g, not the 0.6 g of "average";
+#   - a damped compliant contact: a cube dropped onto the ground comes to rest instead of bouncing;
+#   - the same contact as an acceleration spring: the rigid body sinks about 10 mm, not the 2 mm of a force spring.
+COMPLIANT = [
+    "float physics:staticFriction = 1",
+    "float physics:dynamicFriction = 1",
+    "float physxMaterial:compliantContactStiffness = 1000",
+    "float physxMaterial:compliantContactDamping = 63",
+]
+MATERIAL_CASES = {
+    "friction combine mode": (
+        [
+            "float physics:staticFriction = 0.2",
+            "float physics:dynamicFriction = 0.2",
+            'uniform token physxMaterial:frictionCombineMode = "min"',
+        ],
+        "(2, 0, 0)",
+    ),
+    "compliant contact damping": (COMPLIANT, "(0, 0, -1)"),
+    "compliant acceleration spring": (
+        COMPLIANT + ["bool physxMaterial:compliantContactAccelerationSpring = 1"],
+        "(0, 0, 0)",
+    ),
+}
+
+
+def _material(name, attrs):
+    return [
+        f'    def Material "{name}" (',
+        '        prepend apiSchemas = ["PhysicsMaterialAPI", "PhysxMaterialAPI"]',
+        "    )",
+        "    {",
+        *[f"        {attr}" for attr in attrs],
+        "    }",
+    ]
+
+
+def _cube(name, x, y, velocity):
+    return [
+        f'    def Cube "{name}" (',
+        '        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysicsCollisionAPI",'
+        ' "MaterialBindingAPI"]',
+        "    )",
+        "    {",
+        "        double size = 0.2",
+        "        float physics:mass = 1",
+        f"        vector3f physics:velocity = {velocity}",
+        "        rel material:binding:physics = </World/body_material>",
+        f"        double3 xformOp:translate = ({x}, {y}, 0.1)",
+        '        uniform token[] xformOpOrder = ["xformOp:translate"]',
+        "    }",
+    ]
+
+
+def _material_scene(tmp_path, attrs, velocity):
+    """A rigid body and an articulation of two cubes joined by a fixed joint, resting on a ground box."""
+    lines = [
+        "#usda 1.0",
+        '(\n    defaultPrim = "World"\n    metersPerUnit = 1\n    upAxis = "Z"\n)',
+        'def Xform "World"',
+        "{",
+        '    def PhysicsScene "physicsScene"',
+        "    {",
+        "    }",
+        *_material("ground_material", ["float physics:staticFriction = 1", "float physics:dynamicFriction = 1"]),
+        *_material("body_material", attrs),
+        '    def Cube "ground" (',
+        '        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]',
+        "    )",
+        "    {",
+        "        double size = 1",
+        "        rel material:binding:physics = </World/ground_material>",
+        "        double3 xformOp:translate = (0, 0, -0.5)",
+        "        float3 xformOp:scale = (20, 20, 1)",
+        '        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]',
+        "    }",
+        *_cube("body", 0, 0, velocity),
+        '    def Xform "articulation" (',
+        '        prepend apiSchemas = ["PhysicsArticulationRootAPI"]',
+        "    )",
+        "    {",
+        *["    " + line for line in _cube("link0", 0, 2, velocity) + _cube("link1", 0.25, 2, velocity)],
+        '        def PhysicsFixedJoint "joint"',
+        "        {",
+        "            rel physics:body0 = </World/articulation/link0>",
+        "            rel physics:body1 = </World/articulation/link1>",
+        "            point3f physics:localPos0 = (0.25, 0, 0)",
+        "        }",
+        "    }",
+        "}",
+    ]
+    path = tmp_path / "material_write.usda"
+    path.write_text("\n".join(lines) + "\n")
+    return str(path)
+
+
+def _speeds(sdk, object_type):
+    with sdk.read(object_type, ["linearVelocity"], scope=ObjectScope.ALL) as result:
+        return np.concatenate([np.linalg.norm(g.tensors[0].numpy().reshape(-1, 3), axis=1) for g in result.groups])
+
+
+def _speeds_after(sdk, usda, write_back):
+    """Body and link speeds at each of 30 steps, optionally after writing back the material values read."""
+    load_usd_with_ovstage(sdk, usda)
+    sdk.wait_all()
+    if write_back:
+        for pattern, tensor_type in (
+            ("/World/body", TensorType.RIGID_BODY_SHAPE_FRICTION_AND_RESTITUTION),
+            ("/World/articulation", TensorType.ARTICULATION_SHAPE_FRICTION_AND_RESTITUTION),
+        ):
+            b = sdk.create_tensor_binding(pattern=pattern, tensor_type=tensor_type)
+            values = np.zeros(b.shape, dtype=np.float32)
+            b.read(values)
+            b.write(values)
+            b.destroy()
+    bodies, links = [], []
+    for _ in range(30):
+        sdk.step(DT)
+        sdk.wait_all()
+        bodies.append(_speeds(sdk, SimObjectType.RIGID_BODY))
+        links.append(_speeds(sdk, SimObjectType.ARTICULATION_LINK))
+    return np.array(bodies), np.array(links)
+
+
+@pytest.mark.parametrize("case", MATERIAL_CASES)
+def test_material_write_back_keeps_the_rest_of_the_material(physx_sdk_cpu, tmp_path, case):
+    """Writing back the friction and restitution just read leaves the motion unchanged.
+
+    The write sets friction and restitution only, so the combine modes, the compliant-contact damping and the
+    material flags of the material it replaces must survive it, on rigid-body and articulation-link shapes alike.
+    """
+    usda = _material_scene(tmp_path, *MATERIAL_CASES[case])
+    unchanged = _speeds_after(physx_sdk_cpu, usda, write_back=False)
+    written = _speeds_after(physx_sdk_cpu, usda, write_back=True)
+    for name, expected, actual in zip(("rigid body", "articulation links"), unchanged, written):
+        np.testing.assert_allclose(
+            actual, expected, atol=1e-3, err_msg=f"{case}: the write-back changed the {name} speeds"
+        )

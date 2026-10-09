@@ -2573,9 +2573,12 @@ bool BaseArticulationView::setMaterialProperties(const TensorDesc* srcTensor, co
             const float* src = static_cast<const float*>(srcTensor->data) + idx * mMaxShapes * 3;
             for (PxU32 j = 0; j < mEntries[idx].numShapes; j++)
             {
+                // Only friction and restitution are written; keep the rest of the material.
+                PxMaterial* old;
+                mEntries[idx].shapes[j]->getMaterials(&old, 1);
                 PxMaterial* material = mSim->createSharedMaterial(
-                    src[j * 3], src[j * 3 + 1], src[j * 3 + 2], 0.0, PxCombineMode::Enum::eAVERAGE,
-                    PxCombineMode::Enum::eAVERAGE, PxCombineMode::Enum::eAVERAGE);
+                    src[j * 3], src[j * 3 + 1], src[j * 3 + 2], old->getDamping(), old->getFrictionCombineMode(),
+                    old->getRestitutionCombineMode(), old->getDampingCombineMode(), old->getFlags());
 
                 int nMaterials = mEntries[idx].shapes[j]->getNbMaterials();
                 std::vector<PxMaterial*> extraMats;
@@ -2649,11 +2652,14 @@ bool BaseArticulationView::setCompliantMaterialProperties(const TensorDesc* srcT
 
             for (PxU32 j = 0; j < mEntries[idx].numShapes; j++)
             {
-                PxMaterial* material =
-                    mSim->createSharedMaterial(src[j * 4], src[j * 4 + 1], -src[j * 4 + 2], src[j * 4 + 3],
-                                               static_cast<PxCombineMode::Enum>(srcCombineMode[j * 3]),
-                                               static_cast<PxCombineMode::Enum>(srcCombineMode[j * 3 + 1]),
-                                               static_cast<PxCombineMode::Enum>(srcCombineMode[j * 3 + 2]));
+                // The material flags are not written; keep them.
+                PxMaterial* old;
+                mEntries[idx].shapes[j]->getMaterials(&old, 1);
+                PxMaterial* material = mSim->createSharedMaterial(
+                    src[j * 4], src[j * 4 + 1], -src[j * 4 + 2], src[j * 4 + 3],
+                    static_cast<PxCombineMode::Enum>(srcCombineMode[j * 3]),
+                    static_cast<PxCombineMode::Enum>(srcCombineMode[j * 3 + 1]),
+                    static_cast<PxCombineMode::Enum>(srcCombineMode[j * 3 + 2]), old->getFlags());
 
                 int nMaterials = mEntries[idx].shapes[j]->getNbMaterials();
                 std::vector<PxMaterial*> extraMats;
