@@ -3420,6 +3420,10 @@ extern "C" __global__ void artiComputeDependencies(PxgArticulationCoreDesc* scDe
 		PxU32 oldCommonNode = commonNode;
 
 		bool sharedPathEmpty = true;
+
+		//The paths to root collected so far are consumed by artiPropagateImpulses2 of the next partition that references
+		//this articulation, because only such partitions run it. Reset them only when that partition is reached.
+		bool resetPathToRoot = false;
 		
 		const PxU32 nbArticulationBatchPerPartition = (nbArticulations + 31) / 32;
 
@@ -3443,6 +3447,13 @@ extern "C" __global__ void artiComputeDependencies(PxgArticulationCoreDesc* scDe
 				{
 					if (dirtyIndex != 0xFFFFFFFF)
 					{
+						if (resetPathToRoot)
+						{
+							for (PxU32 j = 0; j < wordSize; ++j)
+								pathToRootBitField[j].bitField[threadIndexInWarp] = 0;
+							resetPathToRoot = false;
+						}
+
 						const PxgArticulationBitFieldStackData* linkPathToRoot = &linkBitFieldBlocks[dirtyIndex * wordSize];
 						PxU32 commonLink = 0;
 						if (sharedPathEmpty)
@@ -3527,9 +3538,8 @@ extern "C" __global__ void artiComputeDependencies(PxgArticulationCoreDesc* scDe
 				PxU64 word = rootBitField[j].bitField[threadIndexInWarp];
 				sharedBitField[j].bitField[threadIndexInWarp] = word;
 				sharedPathEmpty &= (word == 0);
-				//zero pathToRoot
-				pathToRootBitField[j].bitField[threadIndexInWarp] = 0;
 			}
+			resetPathToRoot = true;
 			
 			const PxReal scale = count < 1.f ? 0.f : 1.f/count;
 			dirtyLink[partitionOffset] = commonNode;
