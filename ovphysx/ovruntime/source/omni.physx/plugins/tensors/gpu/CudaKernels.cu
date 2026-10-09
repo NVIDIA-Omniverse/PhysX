@@ -2472,6 +2472,8 @@ __global__ static void submitArtiForcesKernel(PxVec3 *dstLinkForces, PxVec3 *dst
         PxVec3 com = linksComs[srcLinkIdx];
         PxU32 physxLinkIdx = linkRecords[srcLinkIdx].physxLinkIdx;
         PxU32 tensorLinkIdx = srcArtiIdx * simMaxLinks + linkIndex;
+        // setArticulationData reads the data of dirtyArtiGpuIndices[artiIndex] from block artiIndex.
+        PxU32 dstLinkIdx = artiIndex * simMaxLinks + linkIndex;
 
         // printf("i = %d, srcArtiIdx=%d, physxLinkIdx=%d, srcLinkIdx=%d\n", i, srcArtiIdx, physxLinkIdx, srcLinkIdx);
         if (linkIndex == 0)
@@ -2480,7 +2482,7 @@ __global__ static void submitArtiForcesKernel(PxVec3 *dstLinkForces, PxVec3 *dst
         }
         if (physxLinkIdx != 0xffffffff)
         {
-            applyForces<false>(dstLinkForces, dstLinkTorques, nullptr, nullptr, nullptr, srcLinkIdx, tensorLinkIdx, 0,
+            applyForces<false>(dstLinkForces, dstLinkTorques, nullptr, nullptr, nullptr, srcLinkIdx, dstLinkIdx, 0,
                                srcForces, srcTorques, srcPositions, linkTransforms[tensorLinkIdx].p,
                                linkTransforms[tensorLinkIdx].q, com, true, isGlobal, submitForces, submitTorques,
                                applyAtPosition);

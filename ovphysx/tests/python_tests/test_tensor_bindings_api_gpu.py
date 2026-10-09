@@ -104,6 +104,29 @@ def _load_and_step(sdk, scene="two_articulations.usda", n_steps=5):
     sdk.wait_all()
 
 
+def _link_vx_after_wrench(sdk, indices):
+    """Link x velocities [2, 3] of mixed_link_count_articulations.usda one step after a 100 N push on every link."""
+    load_usd_with_ovstage(sdk, data_path("mixed_link_count_articulations.usda"))
+    sdk.wait_all()
+    sdk.warmup()
+    paths = ["/World/articulation_short", "/World/articulation_long"]
+    wrench = sdk.create_tensor_binding(prim_paths=paths, tensor_type=TensorType.ARTICULATION_LINK_WRENCH)
+    velocity = sdk.create_tensor_binding(prim_paths=paths, tensor_type=TensorType.ARTICULATION_LINK_VELOCITY)
+    host = np.zeros(wrench.shape, dtype=np.float32)
+    host[..., 0] = 100.0  # force along x
+    host[..., 8] = 5.0  # applied at (0, 0, 5), on the line through all link centers
+    if indices is None:
+        _gpu_write(wrench, host)
+    else:
+        _gpu_write_with_indices(wrench, host, indices)
+    sdk.step(DT)
+    sdk.wait_all()
+    result = _gpu_read(velocity)
+    wrench.destroy()
+    velocity.destroy()
+    return result[..., 0]
+
+
 def _make_cube_pair_contact_binding(sdk, max_contact_data_count=256):
     load_usd_with_ovstage(sdk, data_path("boxes_falling_on_groundplane.usda"))
     sdk.wait_all()
@@ -941,6 +964,19 @@ class TestLinkWrenchGpu:
         indices = np.array([0], dtype=np.int32)
         _gpu_write_with_indices(b, host, indices)
         b.destroy()
+
+    def test_indexed_write_reaches_only_the_selected_articulations(self, physx_sdk):
+        """An indexed write pushes every link of the selected articulations and no other link.
+
+        The floating articulations of mixed_link_count_articulations.usda have 2 and 3 links. Every link gets 100 N
+        along the x axis through the link centers. Written to the long articulation alone, the wrench must move it as
+        writing it to both articulations does, and leave the short one alone.
+        """
+        moved = _link_vx_after_wrench(physx_sdk, indices=None)
+        np.testing.assert_array_less(0.0, moved[1], err_msg="full write")
+        pushed = _link_vx_after_wrench(physx_sdk, indices=np.array([1], dtype=np.int32))
+        np.testing.assert_allclose(pushed[1], moved[1], rtol=1e-5, err_msg="long articulation")
+        np.testing.assert_allclose(pushed[0], 0.0, atol=1e-6, err_msg="short articulation")
 
 
 # ---------------------------------------------------------------------------

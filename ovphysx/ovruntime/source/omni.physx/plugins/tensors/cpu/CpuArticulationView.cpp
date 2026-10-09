@@ -2659,7 +2659,7 @@ bool CpuArticulationView::applyForcesAndTorquesAtPosition(const TensorDesc* srcF
         if (idx < mEntries.size())
         {
             ArticulationEntry& entry = mEntries[idx];
-            for (PxU32 j = 0; j < mEntries[i].numLinks; j++)
+            for (PxU32 j = 0; j < entry.numLinks; j++)
             {
                 if (validForceTensor)
                 {
