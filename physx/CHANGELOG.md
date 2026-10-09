@@ -17,6 +17,7 @@
 
 ### Added
 
+* `PxSceneFlag::eENABLE_SDF_SDF_CONTACTS`: a new CPU contact generation method for pairs of triangle meshes where at least one carries an SDF. Instead of optimizing every triangle overlapping the other mesh's SDF, a handful of cached and stochastic seed points are minimized towards the deepest intersection of the two distance fields (Giles and Andrews, "Real-Time Collision Handling for Signed Distance Fields via Caching and Importance Sampling", Computer Graphics Forum 2026) and refined on the mesh surfaces. The manifold is sparse and temporally coherent and its cost does not depend on the triangle count. Off by default; see `SnippetSDFContacts` for a comparison with the per-triangle method.
 * Direct-GPU API: friction anchors (eFRICTION_POINT / eFRICTION_NORMAL / eFRICTION_IMPULSE) are now visualized under PxSceneFlag::eENABLE_DIRECT_GPU_API, drawn at fetchResults from the GPU solver's friction patches.
 * `PxCudaContextManager::acquireReference()` increments the reference count of a context manager, pairing with the existing `release()`. An object that has to outlive the application's own reference can take one for as long as it needs it.
 

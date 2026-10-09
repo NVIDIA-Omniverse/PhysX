@@ -24,14 +24,16 @@ namespace Gu
 
 	struct NarrowPhaseParams
 	{
-		PX_FORCE_INLINE	NarrowPhaseParams(PxReal contactDistance, PxReal meshContactMargin, PxReal toleranceLength) :
+		PX_FORCE_INLINE	NarrowPhaseParams(PxReal contactDistance, PxReal meshContactMargin, PxReal toleranceLength, bool sdfSdfContacts = false) :
 				mContactDistance(contactDistance),
 				mMeshContactMargin(meshContactMargin),
-				mToleranceLength(toleranceLength)	{}
+				mToleranceLength(toleranceLength),
+				mSDFSDFContacts(sdfSdfContacts)	{}
 
 		PxReal			mContactDistance;
 		const PxReal	mMeshContactMargin;	// PT: Margin used to generate mesh contacts. Temp & unclear, should be removed once GJK is default path.
 		const PxReal	mToleranceLength;	// PT: copy of PxTolerancesScale::length
+		bool			mSDFSDFContacts;	// PxSceneFlag::eENABLE_SDF_SDF_CONTACTS: cached SDF-SDF contact generation for mesh pairs with two SDFs
 	};
 
 	enum ManifoldFlags

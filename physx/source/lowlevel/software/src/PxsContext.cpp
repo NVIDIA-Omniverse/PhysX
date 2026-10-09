@@ -42,6 +42,7 @@ PxsContext::PxsContext(const PxSceneDesc& desc, PxTaskManager* taskManager, Cm::
 	mTaskPool						(taskPool),
 	mCudaContextManager				(cudaContextManager),
 	mPCM							(desc.flags & PxSceneFlag::eENABLE_PCM),
+	mSDFSDFContacts					(desc.flags & PxSceneFlag::eENABLE_SDF_SDF_CONTACTS),
 	mContactCache					(false),
 	mCreateAveragePoint				(desc.flags & PxSceneFlag::eENABLE_AVERAGE_POINT),
 	mCCD							(desc.flags & PxSceneFlag::eENABLE_CCD),
@@ -196,7 +197,7 @@ namespace physx
 			true,				//eCONVEXMESH
 			false,				//ePARTICLESYSTEM
 			true,				//eSOFTBODY,
-			false,				//eTRIANGLEMESH
+			true,				//eTRIANGLEMESH	// SDF-SDF contacts (GuContactSDFSDF) keep their temporal cache in the multi-manifold
 			false,				//eHEIGHTFIELD
 			true,				//eCUSTOM
 		},
