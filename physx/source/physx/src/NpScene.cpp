@@ -3431,7 +3431,10 @@ PxU32 NpScene::getContactReportStreamBufferSize() const
 void NpScene::checkPositionSanity(const PxRigidActor& a, const PxTransform& pose, const char* fnName) const
 {
 	if(!mSanityBounds.contains(pose.p))
-		PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, PX_FL, "%s: actor pose for %lp is outside sanity bounds\n", fnName, &a);
+	{
+		const char* actorName = a.getName();
+		PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, PX_FL, "%s: actor pose for %s (%lp) is outside sanity bounds\n", fnName, actorName ? actorName : "<unnamed>", &a);
+	}
 }
 #endif
 
