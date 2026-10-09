@@ -60,7 +60,7 @@ void Sc::ArticulationSpatialTendonSim::setLimitStiffness(const PxReal stiffness)
 {
 	mLLTendon.mLimitStiffness = stiffness;
 
-	mArtiSim->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_FIXED_TENDON);
+	mArtiSim->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON);
 }
 
 PxReal Sc::ArticulationSpatialTendonSim::getLimitStiffness() const
