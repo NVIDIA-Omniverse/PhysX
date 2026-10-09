@@ -9381,15 +9381,17 @@ bool PxgGpuNarrowphaseCore::copyContactData(void* PX_RESTRICT data, PxU32* PX_RE
 	
 	bool success = true;
 
+	if (startEvent)
+	{
+		mCudaContext->streamWaitEvent(mStream, startEvent);
+	}
+
+	// also when there are no pairs, so that the count of an earlier call is not reported again
+	CUdeviceptr numPairsd = reinterpret_cast<CUdeviceptr>(numContactPairs);
+	mCudaContext->memsetD32Async(numPairsd, 0, 1, mStream);
+
 	if (mTotalNumPairs)
 	{
-		if (startEvent)
-		{
-			mCudaContext->streamWaitEvent(mStream, startEvent);
-		}
-
-		CUdeviceptr numPairsd = reinterpret_cast<CUdeviceptr>(numContactPairs);
-		mCudaContext->memsetD32Async(numPairsd, 0, 1, mStream);
 		//in fetchNarrowPhaseResults, we append all the contacts inform into a eConvex's list
 		CUdeviceptr cvxInputDeviceptr = mGpuContactManagers[GPU_BUCKET_ID::eConvex]->mContactManagers.mContactManagerInputData.getDevicePtr();
 		CUdeviceptr cvxDeviceptr = mGpuContactManagers[GPU_BUCKET_ID::eConvex]->mContactManagers.mContactManagerOutputData.getDevicePtr();
@@ -9513,6 +9515,17 @@ bool PxgGpuNarrowphaseCore::copyContactData(void* PX_RESTRICT data, PxU32* PX_RE
 		}
 
 		mIntermStackAlloc.reset();
+	}
+	else if (finishEvent)
+	{
+		mCudaContext->eventRecord(finishEvent, mStream);
+	}
+	else
+	{
+		const CUresult result = mCudaContext->streamSynchronize(mStream);
+		if (result != CUDA_SUCCESS)
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "copyContactData: CUDA error, code %u\n", result);
+		success = (result == CUDA_SUCCESS);
 	}
 
 	return success;
