@@ -419,6 +419,9 @@ bool NpAggregate::addArticulation(PxArticulationReducedCoordinate& art)
 
 bool NpAggregate::removeArticulationAndReinsert(PxArticulationReducedCoordinate& art, bool reinsert)
 {
+	if(art.getAggregate()!=this)
+		return outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "PxAggregate: can't remove articulation, articulation doesn't belong to aggregate");
+
 	bool found = false;
 	PxU32 idx = 0;
 	while(idx < mNbActors)
@@ -435,7 +438,8 @@ bool NpAggregate::removeArticulationAndReinsert(PxArticulationReducedCoordinate&
 			idx++;
 	}
 
-	static_cast<NpArticulationReducedCoordinate&>(art).setAggregate(NULL);
+	if(found)
+		static_cast<NpArticulationReducedCoordinate&>(art).setAggregate(NULL);
 
 	if(!found)
 		outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "PxAggregate: can't remove articulation, articulation doesn't belong to aggregate");
