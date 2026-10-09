@@ -2008,6 +2008,11 @@ namespace physx
 						
 						link.childrenOffset = cpuLink.mChildrenStartIndex;
 						link.numChildren = cpuLink.mNumChildren;
+						// the GPU copies the whole record, so write every field as copyToGpuArticulationSim does
+						link.pathToRootOffset = cpuLink.mPathToRootStartIndex;
+						link.numPathToRoot = cpuLink.mPathToRootCount;
+						link.offsetSlop = core.offsetSlop;
+						link.cfmScale = core.cfmScale;
 
 						linkProp.invInertia = core.inverseInertia;
 						linkProp.invMass = core.inverseMass;
