@@ -47,7 +47,9 @@ namespace Gu
 	// Tunables of the method, in units of the pair's size L (the larger extent of the smaller SDF
 	// box in world space) unless noted. Defaults match Sec. 4 of the paper except for the sample
 	// counts: the paper's 4 cached + 1 random points suit its own solver, PhysX's friction patches
-	// need more support; 8 cached + 1 random lets gear towers, bunny piles and cows on spikes come to rest.
+	// need more support; 8 cached + 3 random lets gear towers, bunny piles and cows on spikes come
+	// to rest about as fast as the per-triangle method (with 1 random point a pile of 27 bunnies
+	// takes 1.5-2x longer to sleep and sometimes never does).
 	struct SDFSDFParams
 	{
 		PxU32	nbCached;				// n_cache: points kept in the temporal cache (at most 36)
@@ -66,11 +68,11 @@ namespace Gu
 		bool	surfaceDescent;			// after snapping, descend over the nearby surface towards deeper penetration (trust region)
 		bool	subBoxSeeds;			// draw seed triangles from a random sub-box of the overlap once a cache exists
 		bool	rankByDepth;			// rank points by their polished penetration instead of the objective at x*
-		PxReal	stickiness;				// a cached point keeps its advected position unless re-optimizing improves g by this fraction of `replacement`
+		PxReal	stickiness;				// a cached point keeps its advected position unless re-optimizing improves g by this fraction of `replacement` (0: always re-optimize, as in the paper; 0.3 damps the simplex walk on flat contacts but makes piles settle 2x slower)
 
 		PX_FORCE_INLINE SDFSDFParams() :
-			nbCached(8), nbRandom(1), nbRandomSingle(3), maxIterations(50), tolerance(0.01f), epsilon(0.1f), alpha(0.01f),
-			replacement(0.01f), seedCandidates(4), polishWithTriangles(true), curvatureSeeds(true), normalSource(0), seedSalt(0), surfaceDescent(true), subBoxSeeds(true), rankByDepth(true), stickiness(0.3f) {}
+			nbCached(8), nbRandom(3), nbRandomSingle(3), maxIterations(50), tolerance(0.01f), epsilon(0.1f), alpha(0.01f),
+			replacement(0.01f), seedCandidates(4), polishWithTriangles(true), curvatureSeeds(true), normalSource(0), seedSalt(0), surfaceDescent(true), subBoxSeeds(true), rankByDepth(true), stickiness(0.0f) {}
 	};
 
 	PX_PHYSX_COMMON_API extern SDFSDFParams gSDFSDFParams;
