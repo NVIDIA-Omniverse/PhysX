@@ -1491,6 +1491,7 @@ static __device__ Dy::SpatialMatrix computePropagateSpatialInertia_ZA_ZIc(PxgArt
 				qstZIcIntG[ind2] = qstZicInt;
 				dofData[ind2].mQstZ[threadIndexInWarp] = qstZ;
 				dofData[ind2].mQstZIcInternal[threadIndexInWarp] = qstZicInt;
+				dofData[ind2].mConstraintData.mExternalEffort[threadIndexInWarp] = jF ? jF[ind2] : 0.0f;
 			}
 		}
 
