@@ -55,6 +55,7 @@ namespace physx
 		bool						disableGravity;					//	1	77
 		bool						retainsAccelerations;			//	1	78
 		bool						padding[2];						//	1	80
+		PxReal						maxContactImpulse;				//	4	84
 	};
 
 
