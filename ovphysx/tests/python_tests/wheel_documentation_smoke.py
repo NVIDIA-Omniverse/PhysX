@@ -16,10 +16,20 @@ from urllib.parse import unquote, urlsplit
 
 _PUBLIC_DOC_SUFFIXES = {".jpg", ".md", ".png", ".rst"}
 _MARKDOWN_LINK_RE = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
+_MARKDOWN_FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
 
 # Sphinx publishes the C headers as download artifacts under hashed directories,
 # so they are checked by name rather than by path.
-_RENDERED_DOC_HEADERS = ("ovphysx.h", "ovphysx_types.h", "ovphysx_config.h")
+_RENDERED_DOC_HEADERS = (
+    "ovphysx.h",
+    "ovphysx_attributes.h",
+    "ovphysx_types.h",
+    "ovphysx_config.h",
+    "ovphysx_geometry_query.h",
+    "ovphysx_legacy.h",
+    "ovphysx_legacy_config.h",
+    "ovphysx_legacy_types.h",
+)
 
 
 def _installed_package_root() -> Path:
@@ -69,7 +79,17 @@ def _broken_relative_links(package_root: Path, *, allow_unbundled_header_links: 
     package_include = (package_root / "include").resolve()
     for markdown_path in sorted(package_root.rglob("*.md")):
         relative_markdown = markdown_path.relative_to(package_root)
+        code_fence = ""
         for line_number, line in enumerate(markdown_path.read_text(encoding="utf-8").splitlines(), 1):
+            fence = _MARKDOWN_FENCE_RE.match(line)
+            if code_fence:
+                if (fence and fence.group(1)[0] == code_fence[0]
+                        and len(fence.group(1)) >= len(code_fence) and not fence.group(2).strip()):
+                    code_fence = ""
+                continue
+            if fence and (fence.group(1)[0] == "~" or "`" not in fence.group(2)):
+                code_fence = fence.group(1)
+                continue
             for match in _MARKDOWN_LINK_RE.finditer(line):
                 target = _markdown_destination(match.group(1))
                 parsed_target = urlsplit(target)

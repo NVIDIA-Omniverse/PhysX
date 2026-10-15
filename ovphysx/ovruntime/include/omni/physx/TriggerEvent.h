@@ -43,9 +43,7 @@ struct TriggerEventData
     TriggerEventType::Enum eventType; //!< Type of event(enter / leave)
     uint64_t subscriptionId; //!< The subscription id returned when registering the callback
     AttachHandle attachHandle; //!< The attach where the trigger event happened. Equal to the handle
-                               //!< passed to IPhysxSimulation::subscribePhysicsTriggerReportEvents,
-                               //!< resolved: a subscription made with kActiveAttach reports the
-                               //!< concrete handle it resolved to.
+                               //!< passed to IPhysxSimulation::subscribePhysicsTriggerReportEvents.
     omni::physics::parse::ObjectKey triggerColliderPrimKey; //!< The collider prim source of trigger event
     omni::physics::parse::ObjectKey otherColliderPrimKey; //!< The collider prim entering or leaving the trigger volume
     omni::physics::parse::ObjectKey triggerBodyPrimKey; //!< The body containing the collider that is source of trigger event

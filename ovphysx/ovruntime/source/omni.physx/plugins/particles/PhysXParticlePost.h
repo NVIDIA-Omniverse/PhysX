@@ -45,6 +45,8 @@ namespace omni
 namespace physx
 {
 
+namespace usdparser { class AttachedStage; }
+
 namespace internal
 {
 class InternalPbdParticleSystem;
@@ -99,7 +101,7 @@ public:
 class ParticlePostprocess : public Allocateable
 {
 public:
-    ParticlePostprocess(omni::physics::parse::ObjectKey particleSystemKey);
+    ParticlePostprocess(usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey);
     ~ParticlePostprocess();
 
     uint32_t getPostprocessFlags() const
@@ -165,11 +167,13 @@ private:
 
     std::vector<ParticleSet>& getTmpParticleSets();
 
+    usdparser::AttachedStage& mAttachedStage;
     omni::physics::parse::ObjectKey mParticleSystemKey;
     std::unordered_set<omni::physics::parse::ObjectKey, omni::physics::parse::ObjectKey::Hash> mFluidParticleSetsPreview;
     uint32_t mMaxParticlesCallback = 0;
     uint32_t mFlags = ParticlePostFlag::eNone;
     internal::InternalPbdParticleSystem* mParent = nullptr;
+    ::physx::PxCudaContextManager* mCudaContextManager = nullptr;
     std::vector<ParticleSet> mTmpParticleSets;
     uint32_t mResultNumParticles = 0;
 
@@ -202,21 +206,23 @@ void setIsosurfaceGridFilteringPasses(
     const std::vector<omni::physics::parse::ParticleIsosurfaceDesc::GridFilteringPass::Enum>& passes);
 #endif
 
-void createPostprocess(omni::physics::parse::ObjectKey particleSystemKey,
+void createPostprocess(usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey,
                        uint32_t particlePostFlags,
                        internal::InternalPbdParticleSystem* parent);
-void releasePostprocess(omni::physics::parse::ObjectKey particleSystemKey,
+void releasePostprocess(usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey,
                         internal::InternalPbdParticleSystem* parent);
 
-void updateIsosurfaceMesh(omni::physics::parse::ObjectKey particleSystemKey);
-void getAnisotropy(::physx::PxVec4*& anisotropyQ1,
+void updateIsosurfaceMesh(usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey);
+void getAnisotropy(usdparser::AttachedStage& owner, ::physx::PxVec4*& anisotropyQ1,
                    ::physx::PxVec4*& anisotropyQ2,
                    ::physx::PxVec4*& anisotropyQ3,
                    omni::physics::parse::ObjectKey particleSystemKey);
-::physx::PxVec4* getSmoothedPositions(omni::physics::parse::ObjectKey particleSystemKey);
+::physx::PxVec4* getSmoothedPositions(usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey);
 
-void notifyParticleSystemResize(omni::physics::parse::ObjectKey particleSystemKey);
-void notifyPhysXRelease();
+void notifyParticleSystemResize(const usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey);
+void notifyPhysXRelease(usdparser::AttachedStage& owner);
+void releaseAttachmentPostprocess(usdparser::AttachedStage& owner);
+void notifyAllPhysXRelease();
 
 // IPhysXParticles API -- ObjectKey-typed and USD-postprocess-registry-backed like the
 // rest of this file (see the top-of-file comment); getPostprocessStages/
@@ -224,15 +230,15 @@ void notifyPhysXRelease();
 // unreferenced leftovers of the deleted IPhysxParticlesPrivate ABI mirror (see
 // include/private/omni/physx/IPhysxParticlesPrivate.h's own note) -- kept ObjectKey-typed
 // uniformly rather than singled out.
-void createPostprocess(omni::physics::parse::ObjectKey particleSystemKey, uint32_t particlePostFlags);
-void releasePostprocess(omni::physics::parse::ObjectKey particleSystemKey);
-void setPostprocessStages(omni::physics::parse::ObjectKey particleSystemKey, uint32_t particlePostFlags);
-uint32_t getPostprocessStages(omni::physics::parse::ObjectKey particleSystemKey);
-void addPostprocessParticleSet(omni::physics::parse::ObjectKey particleSystemKey,
+void createPostprocess(usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey, uint32_t particlePostFlags);
+void releasePostprocess(usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey);
+void setPostprocessStages(usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey, uint32_t particlePostFlags);
+uint32_t getPostprocessStages(usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey);
+void addPostprocessParticleSet(usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey,
                                omni::physics::parse::ObjectKey particleSetKey);
-void removePostprocessParticleSet(omni::physics::parse::ObjectKey particleSystemKey,
+void removePostprocessParticleSet(usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey,
                                   omni::physics::parse::ObjectKey particleSetKey);
-void updatePostprocess(omni::physics::parse::ObjectKey particleSystemKey);
+void updatePostprocess(usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey);
 
 
 } // namespace particles

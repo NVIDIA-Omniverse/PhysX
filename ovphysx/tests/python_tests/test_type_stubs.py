@@ -45,7 +45,6 @@ def test_public_api_pyi_stubs_present(pkg_dir: Path):
         "__init__.pyi",
         "api.pyi",
         "dlpack.pyi",
-        "contact_types.pyi",
         "schemas.pyi",
         # ovphysx.utils is a package, so its stub lives inside it. Never as a
         # sibling utils.pyi: see test_utils_package_layout.py.
@@ -123,11 +122,13 @@ def test_write_group_arity_is_pinned():
     """The public write tuple keeps the runtime-owned fields in their shipped order."""
     from ovphysx.api import WriteGroup
 
-    assert WriteGroup._fields == ("prim_list", "prim_offset", "prim_count", "tensors")
+    assert WriteGroup._fields == (
+        "prim_list", "prim_offset", "prim_count", "tensors", "attribute_index", "attribute"
+    )
 
 
 def test_write_surface_stub_matches_runtime(pkg_dir: Path):
-    """The stub exposes the write context manager and uniform Warp tensor type."""
+    """The stub exposes default operations and explicitly waiting conveniences."""
     from ovphysx.api import WriteGroup, WriteSession
 
     text = (pkg_dir / "api.pyi").read_text(encoding="utf-8")
@@ -141,16 +142,19 @@ def test_write_surface_stub_matches_runtime(pkg_dir: Path):
     assert "    tensors: list[wp.array]" in group_body
 
     session_body = text.split("class WriteSession:", 1)[1].split("\nclass ", 1)[0]
-    for method in ("commit", "close", "__enter__", "__exit__"):
+    for method in ("fetch_next", "commit", "commit_sync", "close", "close_sync", "release", "__enter__", "__exit__"):
         assert hasattr(WriteSession, method)
         assert f"    def {method}(" in session_body
     assert "    groups: list[WriteGroup]" in session_body
 
     physx_body = text.split("class PhysX:", 1)[1]
     write_signature = physx_body.split("    def write(", 1)[1].split("    def ", 1)[0]
-    assert "object_type: SimObjectType" in write_signature
-    assert "attribute_name: str" in write_signature
-    assert ") -> WriteSession: ..." in write_signature
+    assert "query: Query" in write_signature
+    assert "attributes: Sequence[str | int]" in write_signature
+    assert ") -> Operation[WriteSession]: ..." in write_signature
+    sync_signature = physx_body.split("    def write_sync(", 1)[1].split("    def ", 1)[0]
+    assert "object_type: SimObjectType" in sync_signature
+    assert ") -> WriteSession: ..." in sync_signature
 
 
 def test_tensor_binding_stub_declares_native_device(pkg_dir: Path):
@@ -162,15 +166,18 @@ def test_tensor_binding_stub_declares_native_device(pkg_dir: Path):
 
 
 def test_wheel_declares_warp_and_not_numpy():
-    """AC-6: the wheel requires one Warp line and does not present NumPy as the read type.
+    """AC-6: declare the Warp frontend without another CUDA Python dependency.
 
     Warp pulls NumPy in transitively, so a direct numpy requirement would advertise an
     output-read contract this package does not have.
     """
     import tomllib
+    from packaging.requirements import Requirement
 
     pyproject = Path(__file__).resolve().parents[2] / "python" / "pyproject.toml"
     deps = tomllib.loads(pyproject.read_text(encoding="utf-8"))["project"]["dependencies"]
-    names = [dep.split(">")[0].split("<")[0].split("=")[0].strip() for dep in deps]
+    requirements = [Requirement(dep) for dep in deps]
+    names = [requirement.name for requirement in requirements]
     assert "warp-lang" in names, deps
     assert "numpy" not in names, deps
+    assert not {"cuda-bindings", "cuda-python", "cuda-pathfinder"}.intersection(names), deps

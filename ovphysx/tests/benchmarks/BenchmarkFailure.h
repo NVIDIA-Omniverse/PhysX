@@ -20,10 +20,7 @@
 //
 // Ordinary device gating is not a failure. A row that does not belong to the
 // current pass returns false from isValid() and is reported Skipped, which is
-// the convention for the Step.*_cpu / Step.*_gpu split. A suite may still fail
-// closed when an explicitly unsupported global mode would make its device
-// label or measured API invalid. ContactReport under DirectGPU is one such
-// negative-control contract.
+// the convention for the Step.*_cpu / Step.*_gpu split.
 
 #ifndef BENCHMARK_FAILURE_H
 #define BENCHMARK_FAILURE_H

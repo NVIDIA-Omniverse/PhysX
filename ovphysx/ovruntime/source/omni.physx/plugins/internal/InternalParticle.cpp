@@ -1,6 +1,14 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-SIM-PARTICLESET-001
+ * @covers AC-1 AC-2
+ *
+ * @implements REQ-SIM-PARTICLESET-002
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6
+ */
+
 // PhysXParticlePost.h defines PostProcessCallback, which mCallback below needs as a
 // complete type for SAFE_DELETE_SINGLE to route through Allocateable::operator delete --
 // deleting it as an incomplete type silently calls plain global operator delete on the
@@ -12,6 +20,7 @@
 #include "InternalParticle.h"
 
 #include <PhysXTools.h>
+#include <extensions/PxCudaHelpersExt.h>
 #include <PhysXSettings.h>
 
 #include <usdLoad/LoadUsd.h>
@@ -33,22 +42,16 @@ using namespace omni::physx::internal;
 using namespace omni::physx::usdparser;
 using namespace carb;
 using namespace ::physx;
+using namespace ::physx::Ext;
 
-extern ObjectId getObjectId(omni::physics::parse::ObjectKey key, PhysXType type);
 
 namespace
 {
-// The one place this TU resolves the live AttachedStage/write-sink pair from, mirroring
-// particles/PhysXParticlePost.cpp's activeAttachedStage(): no active stage, or no write
-// sink, both collapse to a no-op in setDiffuseParticleRenderingEnabledInSink below.
-usdparser::AttachedStage* activeAttachedStage()
+// The native particle system supplies the source owner. A missing write sink
+// makes this rendering update a no-op.
+void setDiffuseParticleRenderingEnabledInSink(usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey, bool enabled)
 {
-    return UsdLoad::getUsdLoad()->getActiveAttachedStage();
-}
-
-void setDiffuseParticleRenderingEnabledInSink(omni::physics::parse::ObjectKey particleSystemKey, bool enabled)
-{
-    usdparser::AttachedStage* as = activeAttachedStage();
+    usdparser::AttachedStage* as = &owner;
     omni::physics::parse::IPhysicsDataWrite* dw = as ? as->getDataWrite() : nullptr;
     if (dw)
         dw->setDiffuseParticleRenderingEnabled(particleSystemKey, enabled);
@@ -80,27 +83,27 @@ void InternalParticleSet::enableParticleSet(bool enable)
 void InternalParticleSet::releasePinnedBuffers()
 {
 #if USE_PHYSX_GPU
-    PxCudaContextManager* cudaContextManager = OmniPhysX::getInstance().getPhysXSetup().getCudaContextManager();
+    PxCudaContextManager* cudaContextManager = mPhysXScene ? mPhysXScene->getScene()->getCudaContextManager() : nullptr;
     if (cudaContextManager)
     {
         if (mPositions)
         {
-            PX_PINNED_HOST_FREE(cudaContextManager, mPositions);
+            PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mPositions);
         }
 
         if (mVelocities)
         {
-            PX_PINNED_HOST_FREE(cudaContextManager, mVelocities);
+            PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mVelocities);
         }
 
         if (mPhases)
         {
-            PX_PINNED_HOST_FREE(cudaContextManager, mPhases);
+            PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mPhases);
         }
 
         if (mDiffuseParticlePositions)
         {
-            PX_PINNED_HOST_FREE(cudaContextManager, mDiffuseParticlePositions);
+            PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mDiffuseParticlePositions);
         }
     }
 #endif
@@ -131,16 +134,14 @@ InternalParticleSet::~InternalParticleSet()
 {
     releasePinnedBuffers();
 
-    if (mParticleBuffer)
-    {
-        SAFE_RELEASE(mParticleBuffer); // will remove from particle system
-    }
+    SAFE_RELEASE(mParticleBuffer); // will remove from particle system
+    SAFE_RELEASE(mReplacementBuffer);
 
     // Remove material reference
-    InternalPBDParticleMaterial* internalMaterial = getInternalPtr<InternalPBDParticleMaterial>(ePTPBDMaterial, mMaterialId);
+    InternalPBDParticleMaterial* internalMaterial = getInternalPtr<InternalPBDParticleMaterial>(mPhysXScene->getAttachedStage().getInternalPhysXDatabase(), ePTPBDMaterial, mMaterialId);
     if (internalMaterial)
     {
-        usdparser::ObjectId id = getObjectId(mKey, ePTParticleSet);
+        usdparser::ObjectId id = getObjectDataOrID<ObjectDataQueryType::eOBJECT_ID>(mKey, ePTParticleSet, mPhysXScene->getAttachedStage().getInternalPhysXDatabase(), mPhysXScene->getAttachedStage());
         internalMaterial->removeParticleId(id);
     }
 }
@@ -152,13 +153,12 @@ uint32_t InternalParticleSet::getMaxDiffuseParticles(uint32_t maxParticles,
 }
 
 PxParticleAndDiffuseBuffer* InternalParticleSet::createUserBuffer(uint32_t maxParticles, uint32_t numParticles,
-    bool diffuseEnabled, float maxDiffuseParticleMultiplier, PxDiffuseParticleParams& diffuseParams, PhysXSetup& physXSetup)
+    bool diffuseEnabled, float maxDiffuseParticleMultiplier, PxDiffuseParticleParams& diffuseParams, PxCudaContextManager* cudaContextManager)
 {
     PxParticleAndDiffuseBuffer* newBuffer = nullptr;
-    PxCudaContextManager* cudaContextManager = physXSetup.getCudaContextManager();
     if (cudaContextManager)
     {
-        PxPhysics* physics = physXSetup.getPhysics();
+        PxPhysics* physics = OmniPhysX::getInstance().getPhysXSetup().getPhysics();
         uint32_t maxDiffuseParticles = InternalParticleSet::getMaxDiffuseParticles(maxParticles, diffuseEnabled, maxDiffuseParticleMultiplier);
         uint32_t maxDiffuseParticlesBuffer = std::max<uint32_t>(maxDiffuseParticles, 1);
         uint32_t maxParticlesBuffer = std::max<uint32_t>(maxParticles, 1);
@@ -179,7 +179,7 @@ void InternalParticleSet::createSharedDiffuseParticles()
 
     if (!mParentParticleSystem->mDiffuseParticleRenderingEnabled)
     {
-        setDiffuseParticleRenderingEnabledInSink(mParentParticleSystem->mKey, true);
+        setDiffuseParticleRenderingEnabledInSink(mParentParticleSystem->mPhysXScene->getAttachedStage(), mParentParticleSystem->mKey, true);
         mParentParticleSystem->mDiffuseParticleRenderingEnabled = true;
     }
 
@@ -196,10 +196,11 @@ void InternalParticleSet::releaseSharedDiffuseParticles()
     {
         if (mParentParticleSystem->mDiffuseParticleInstanceRefCount == 1)
         {
-            setDiffuseParticleRenderingEnabledInSink(mParentParticleSystem->mKey, false);
+            setDiffuseParticleRenderingEnabledInSink(mParentParticleSystem->mPhysXScene->getAttachedStage(), mParentParticleSystem->mKey, false);
             mParentParticleSystem->mDiffuseParticleRenderingEnabled = false;
         }
         mParentParticleSystem->mDiffuseParticleInstanceRefCount--;
+        mHasSharedDiffuseParticles = false;
     }
 }
 
@@ -207,13 +208,15 @@ void InternalParticleSet::changeDiffuseParticles(bool remove)
 {
 #if USE_PHYSX_GPU
     PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
-    PxCudaContextManager* cudaContextManager = physxSetup.getCudaContextManager();
+    PxCudaContextManager* cudaContextManager = mPhysXScene->getScene()->getCudaContextManager();
     if (!cudaContextManager)
         return;
 
-    usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    usdparser::AttachedStage* attachedStage = &mParentParticleSystem->mPhysXScene->getAttachedStage();
     if (!attachedStage)
         return;
+
+    PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mDiffuseParticlePositions);
 
     if (remove)
     {
@@ -245,23 +248,21 @@ void InternalParticleSet::changeDiffuseParticles(bool remove)
                 mDiffuseParticleParams.collisionDecay = particleSetDesc->diffuseParticlesCollisionDecay;
             }
         }
-    }
 
-    if (mDiffuseParticlePositions)
-    {
-        PX_PINNED_HOST_FREE(cudaContextManager, mDiffuseParticlePositions);
-    }
-
-    uint32_t maxDiffuseParticles = getMaxDiffuseParticles(mMaxParticles, mDiffuseParticlesEnabled, mMaxDiffuseParticleMultiplier);
-    if (maxDiffuseParticles > 0)
-    {
-        mDiffuseParticlePositions = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, maxDiffuseParticles);
-        createSharedDiffuseParticles();
+        const uint32_t maxDiffuseParticles = getMaxDiffuseParticles(mMaxParticles, mDiffuseParticlesEnabled, mMaxDiffuseParticleMultiplier);
+        if (maxDiffuseParticles > 0)
+        {
+            mDiffuseParticlePositions = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, maxDiffuseParticles);
+            createSharedDiffuseParticles();
+            // as set creation does, so that a later removal of the API tears this down
+            attachedStage->getObjectDatabase()->addSchemaAPI(mKey, SchemaAPIFlag::eDiffuseParticlesAPI);
+        }
     }
 
     mNumDiffuseParticles = 0;
 
-    mReplacementBuffer = createUserBuffer(mMaxParticles, mNumParticles, mDiffuseParticlesEnabled, mMaxDiffuseParticleMultiplier, mDiffuseParticleParams, physxSetup);
+    SAFE_RELEASE(mReplacementBuffer);
+    mReplacementBuffer = createUserBuffer(mMaxParticles, mNumParticles, mDiffuseParticlesEnabled, mMaxDiffuseParticleMultiplier, mDiffuseParticleParams, cudaContextManager);
 #endif
 }
 
@@ -269,7 +270,20 @@ void InternalParticleSet::enableDiffuseParticles(bool enabled)
 {
     mDiffuseParticlesEnabled = enabled;
     uint32_t maxDiffuseParticles = getMaxDiffuseParticles(mMaxParticles, mDiffuseParticlesEnabled, mMaxDiffuseParticleMultiplier);
-    mParticleBuffer->setMaxActiveDiffuseParticles(maxDiffuseParticles);
+
+    // If diffuse particles were disabled when the set's buffers were last built, the PhysX buffer has room for
+    // only one diffuse particle and mDiffuseParticlePositions was not allocated. Enabling them then rebuilds
+    // the PhysX buffer and allocates mDiffuseParticlePositions, both for the enabled count.
+    const bool physxBufferTooSmall = maxDiffuseParticles > mParticleBuffer->getMaxDiffuseParticles();
+    const bool hostBufferMissing = maxDiffuseParticles > 0 && !mDiffuseParticlePositions;
+    if (physxBufferTooSmall || hostBufferMissing)
+    {
+        changeDiffuseParticles(false);
+    }
+    else
+    {
+        mParticleBuffer->setMaxActiveDiffuseParticles(maxDiffuseParticles);
+    }
 }
 
 void InternalParticleSet::setDiffuseParticleParams()
@@ -306,66 +320,70 @@ void InternalParticleSet::resize(uint32_t newNumParticles)
 #if USE_PHYSX_GPU
     PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
     PxPhysics* physics = physxSetup.getPhysics();
-    PxCudaContextManager* cudaContextManager = physxSetup.getCudaContextManager();
+    PxCudaContextManager* cudaContextManager = mPhysXScene->getScene()->getCudaContextManager();
     if (!cudaContextManager)
         return;
 
     // resize all the pinned buffers: we skip copying the old data because this will be loaded from USD anyway.
-    if (mPositions)
-    {
-        PX_PINNED_HOST_FREE(cudaContextManager, mPositions);
-        mPositions = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, newMaxParticles);
-    }
+    // A set created without points has none yet, so they are allocated here rather than only regrown.
+    PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mPositions);
+    mPositions = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, newMaxParticles);
 
-    if (mVelocities)
-    {
-        PX_PINNED_HOST_FREE(cudaContextManager, mVelocities);
-        mVelocities = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, newMaxParticles);
-    }
+    PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mVelocities);
+    mVelocities = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, newMaxParticles);
 
-    if (mPhases)
-    { 
-        PxU32* newPhases = PX_PINNED_HOST_ALLOC_T(PxU32, cudaContextManager, newMaxParticles);
+    PxU32* newPhases = PxCudaHelpersExt::allocPinnedHostBuffer<PxU32>(*cudaContextManager, newMaxParticles);
 
-        //copy and initialize surplus phases
+    //copy and initialize surplus phases
+    if (mNumParticles > 0)
         std::memcpy(newPhases, mPhases, mNumParticles * sizeof(PxU32));
 
-        for (PxU32 i = mNumParticles; i < newNumParticles; ++i)
-            newPhases[i] = mPhase;
+    for (PxU32 i = mNumParticles; i < newNumParticles; ++i)
+        newPhases[i] = mPhase;
 
-        PX_PINNED_HOST_FREE(cudaContextManager, mPhases);
-        mPhases = newPhases;
-        mUploadDirtyFlags |= ParticleBufferFlags::ePHASES;
-    }
+    PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mPhases);
+    mPhases = newPhases;
+    mUploadDirtyFlags |= ParticleBufferFlags::ePHASES;
 
+    // Sized for the new capacity, like the buffer createUserBuffer() makes below. A set created without points
+    // has no diffuse host buffer yet, so growing it sets up what creation does for a set with diffuse capacity.
+    const uint32_t maxDiffuseParticles = getMaxDiffuseParticles(newMaxParticles, mDiffuseParticlesEnabled, mMaxDiffuseParticleMultiplier);
     if (mDiffuseParticlePositions)
     {
-        uint32_t maxDiffuseParticles = getMaxDiffuseParticles(mMaxParticles, mDiffuseParticlesEnabled, mMaxDiffuseParticleMultiplier);
-        PX_PINNED_HOST_FREE(cudaContextManager, mDiffuseParticlePositions);
-        mDiffuseParticlePositions = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, maxDiffuseParticles);
+        PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mDiffuseParticlePositions);
+        mDiffuseParticlePositions = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, maxDiffuseParticles);
+    }
+    else if (maxDiffuseParticles > 0)
+    {
+        mDiffuseParticlePositions = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, maxDiffuseParticles);
+        createSharedDiffuseParticles();
+        mPhysXScene->getAttachedStage().getObjectDatabase()->addSchemaAPI(mKey, SchemaAPIFlag::eDiffuseParticlesAPI);
     }
 
     mMaxParticles = newMaxParticles;
     mNumParticles = newNumParticles;
     PxParticleAndDiffuseBuffer* newBuffer = createUserBuffer(mMaxParticles, mNumParticles, mDiffuseParticlesEnabled,
-        mMaxDiffuseParticleMultiplier, mDiffuseParticleParams, physxSetup);
+        mMaxDiffuseParticleMultiplier, mDiffuseParticleParams, cudaContextManager);
     newBuffer->raiseFlags(PxParticleBufferFlag::eALL);
 
     mParticleBuffer->release(); // will also remove buffer form particle system
     mParticleBuffer = newBuffer;
+
+    // a replacement queued by changeDiffuseParticles() has the old capacity; the new buffer already has its settings
+    SAFE_RELEASE(mReplacementBuffer);
 
     if (mEnabled && mParentParticleSystem && mParentParticleSystem->mEnabled)
         mParentParticleSystem->mPS->addParticleBuffer(mParticleBuffer);
 
     // Postprocess-generator cache invalidation only; particles::notifyParticleSystemResize is
     // ObjectKey-keyed (a no-op here: the postprocess registry it queries is always empty).
-    particles::notifyParticleSystemResize(mParentParticleSystem->mKey);
+    particles::notifyParticleSystemResize(mPhysXScene->getAttachedStage(), mParentParticleSystem->mKey);
 
     // need to udpate the Physx pointer for the particle set.
     {
         OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-        internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
-        usdparser::ObjectId id = getObjectId(mKey, ePTParticleSet);
+        internal::InternalPhysXDatabase& db = mPhysXScene->getAttachedStage().getInternalPhysXDatabase();
+        usdparser::ObjectId id = getObjectDataOrID<ObjectDataQueryType::eOBJECT_ID>(mKey, ePTParticleSet, mPhysXScene->getAttachedStage().getInternalPhysXDatabase(), mPhysXScene->getAttachedStage());
         InternalDatabase::Record* objectRecord = db.getFullTypedRecord(ePTParticleSet, id);
         if (objectRecord)
         {
@@ -377,7 +395,7 @@ void InternalParticleSet::resize(uint32_t newNumParticles)
 
 void InternalParticleSet::uploadParticles(CUstream stream)
 {
-    PxCudaContextManager* cudaContextManager = OmniPhysX::getInstance().getPhysXSetup().getCudaContextManager();
+    PxCudaContextManager* cudaContextManager = mPhysXScene ? mPhysXScene->getScene()->getCudaContextManager() : nullptr;
     if (!cudaContextManager)
         return;
 
@@ -394,6 +412,10 @@ void InternalParticleSet::uploadParticles(CUstream stream)
 
         mReplacementBuffer->raiseFlags(PxParticleBufferFlag::eALL);
         mReplacementBuffer->setNbActiveParticles(mParticleBuffer->getNbActiveParticles());
+        // Diffuse edits made while the replacement was pending only reached the old buffer.
+        const uint32_t maxDiffuseParticles = getMaxDiffuseParticles(mMaxParticles, mDiffuseParticlesEnabled, mMaxDiffuseParticleMultiplier);
+        mReplacementBuffer->setMaxActiveDiffuseParticles(std::min(maxDiffuseParticles, mReplacementBuffer->getMaxDiffuseParticles()));
+        mReplacementBuffer->setDiffuseParticleParams(mDiffuseParticleParams);
 
         mParticleBuffer->release(); // removes buffer from particle system
 
@@ -406,10 +428,10 @@ void InternalParticleSet::uploadParticles(CUstream stream)
         // need to udpate the Physx pointer for the particle set.
         {
             OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-            internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+            internal::InternalPhysXDatabase& db = mPhysXScene->getAttachedStage().getInternalPhysXDatabase();
 
             PhysXType internalType = ePTRemoved;
-            usdparser::ObjectId id = getObjectId(mKey, ePTParticleSet);
+            usdparser::ObjectId id = getObjectDataOrID<ObjectDataQueryType::eOBJECT_ID>(mKey, ePTParticleSet, mPhysXScene->getAttachedStage().getInternalPhysXDatabase(), mPhysXScene->getAttachedStage());
             InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, id);
             if (objectRecord)
             {
@@ -456,7 +478,7 @@ void InternalParticleSet::fetchParticles(CUstream stream, bool hasIsosurface, bo
 {
     if (mParticleBuffer && mEnabled)
     {
-        PxCudaContextManager* cudaContextManager = OmniPhysX::getInstance().getPhysXSetup().getCudaContextManager();
+        PxCudaContextManager* cudaContextManager = mPhysXScene ? mPhysXScene->getScene()->getCudaContextManager() : nullptr;
         if (!cudaContextManager)
             return;
 
@@ -550,7 +572,7 @@ InternalPbdParticleSystem::~InternalPbdParticleSystem()
 
     if (mDiffuseParticleRenderingEnabled)
     {
-        setDiffuseParticleRenderingEnabledInSink(mKey, false);
+        setDiffuseParticleRenderingEnabledInSink(mPhysXScene->getAttachedStage(), mKey, false);
         mDiffuseParticleRenderingEnabled = false;
     }
 
@@ -613,11 +635,11 @@ void InternalPbdParticleSystem::enableParticleSystem(bool enable)
 void InternalPbdParticleSystem::removeParticleObjectsFromDB()
 {
     OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    internal::InternalPhysXDatabase& db = mPhysXScene->getAttachedStage().getInternalPhysXDatabase();
 
     for (uint32_t i = 0; i < mParticleSets.size(); i++)
     {
-        usdparser::ObjectId id = getObjectId(mParticleSets[i]->mKey, ePTParticleSet);
+        usdparser::ObjectId id = getObjectDataOrID<ObjectDataQueryType::eOBJECT_ID>(mParticleSets[i]->mKey, ePTParticleSet, mPhysXScene->getAttachedStage().getInternalPhysXDatabase(), mPhysXScene->getAttachedStage());
         InternalDatabase::Record* objectRecord = db.getFullTypedRecord(ePTParticleSet, id);
         if (objectRecord)
         {
@@ -652,16 +674,16 @@ void InternalPbdParticleSystem::fetchParticles(CUstream stream)
     // particles::getPostprocessStages is ObjectKey-keyed: the postprocess registry it
     // queries is always empty in OvruntimePhysX (see setPost() below), so postprocessing
     // is always disabled.
-    uint32_t postFlags = particles::getPostprocessStages(mKey);
+    uint32_t postFlags = particles::getPostprocessStages(mPhysXScene->getAttachedStage(), mKey);
     bool hasIsosurface = postFlags & ParticlePostFlag::eIsosurface;
     bool hasSmoothing = postFlags & ParticlePostFlag::eSmoothing;
     bool hasAnisotropy = postFlags & ParticlePostFlag::eAnisotropy;
 
-    carb::settings::ISettings* settings = OmniPhysX::getInstance().getISettings();
-    bool debugVizOn = settings->getAsInt(kSettingDisplayParticles) > 0; // needs everything in USD
-    bool updateParticlesToUsd = settings->getAsBool(kSettingUpdateParticlesToUsd); // force read to save simulation state
-    bool updateVelocities = settings->getAsBool(kSettingUpdateVelocitiesToUsd);
-    bool updateToUsd = settings->getAsBool(kSettingUpdateToUsd);
+    const OmniCachedSettings& settings = mPhysXScene->getAttachedStage().getCachedSettings();
+    const bool debugVizOn = settings.visualizationDisplayParticles > 0;
+    const bool updateParticlesToUsd = settings.updateParticlesToUsd;
+    const bool updateVelocities = settings.updateVelocitiesToUsd;
+    const bool updateToUsd = settings.updateToUsd;
 
     for (int i = 0; i < mParticleSets.size(); ++i)
     {
@@ -681,24 +703,24 @@ void InternalPbdParticleSystem::setPost(const uint32_t postFlags)
     {
         if (mHasPost)
         {
-            particles::releasePostprocess(mKey, this);
+            particles::releasePostprocess(mPhysXScene->getAttachedStage(), mKey, this);
             mHasPost = false;
         }
     }
     else if (mHasPost)
     {
-        particles::setPostprocessStages(mKey, postFlags);
+        particles::setPostprocessStages(mPhysXScene->getAttachedStage(), mKey, postFlags);
     }
     else
     {
-        particles::createPostprocess(mKey, postFlags, this);
+        particles::createPostprocess(mPhysXScene->getAttachedStage(), mKey, postFlags, this);
         mHasPost = true;
     }
 }
 
 void InternalPbdParticleSystem::enablePost(omni::physx::ParticlePostFlag::Enum flag, const bool enable)
 {
-    uint32_t currentPostFlags = particles::getPostprocessStages(mKey);
+    uint32_t currentPostFlags = particles::getPostprocessStages(mPhysXScene->getAttachedStage(), mKey);
     uint32_t newPostFlags = enable ? (currentPostFlags | flag) : (currentPostFlags & ~flag);
     setPost(newPostFlags);
 }

@@ -12,18 +12,14 @@ using namespace Gu;
 
 void TetrahedronMesh::onRefCountZero()
 {
-	if (mMeshFactory)
-	{
-		::onRefCountZero(this, mMeshFactory, false, "PxTetrahedronMesh::release: double deletion detected!");
-	}
+	// If mMeshFactory is NULL the helper will skip the registry lookup, and then delete the mesh directly.
+	::onRefCountZero(this, mMeshFactory, false, "PxTetrahedronMesh::release: double deletion detected!");
 }
 
 void DeformableVolumeMesh::onRefCountZero()
 {
-	if (mMeshFactory)
-	{
-		::onRefCountZero(this, mMeshFactory, false, "PxDeformableVolumeMesh::release: double deletion detected!");
-	}
+	// If mMeshFactory is NULL the helper will skip the registry lookup, and then delete the mesh directly.
+	::onRefCountZero(this, mMeshFactory, false, "PxDeformableVolumeMesh::release: double deletion detected!");
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -204,17 +200,22 @@ DeformableVolumeMesh::DeformableVolumeMesh(MeshFactory* factory, DeformableVolum
 	, mMeshFactory(factory)
 {
 	mDeformableVolumeAuxData = PX_NEW(DeformableVolumeAuxData)(d.mSimulationData, d.mCollisionData, d.mMappingData);
-	mCollisionMesh = PX_NEW(BVTetrahedronMesh)(d.mCollisionMesh, d.mCollisionData, factory);
-	mSimulationMesh = PX_NEW(TetrahedronMesh)(factory, d.mSimulationMesh);
+	// Only this DeformableVolumeMesh is registered with the factory, so the sub-meshes reference no factory:
+	// at ref count zero they delete themselves rather than failing a lookup and reporting a double deletion.
+	mCollisionMesh = PX_NEW(BVTetrahedronMesh)(d.mCollisionMesh, d.mCollisionData, NULL);
+	mSimulationMesh = PX_NEW(TetrahedronMesh)(NULL, d.mSimulationMesh);
 }
 
 DeformableVolumeMesh::~DeformableVolumeMesh()
 {
 	if (getBaseFlags() & PxBaseFlag::eOWNS_MEMORY)
 	{
-		PX_DELETE(mDeformableVolumeAuxData);
-		PX_DELETE(mCollisionMesh);
-		PX_DELETE(mSimulationMesh);
+		// Every shape built on the collision mesh holds a reference of its own, and an attached
+		// PxDeformableVolume holds one on the simulation mesh and the aux data, so give up this
+		// object's reference instead of deleting: the last holder destroys them.
+		Cm::RefCountable_decRefCount(*mCollisionMesh);
+		Cm::RefCountable_decRefCount(*mSimulationMesh);
+		Cm::RefCountable_decRefCount(*mDeformableVolumeAuxData);
 	}
 }
 

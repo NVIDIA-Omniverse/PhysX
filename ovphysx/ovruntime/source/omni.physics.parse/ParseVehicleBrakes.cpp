@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-1 AC-2
+ */
+
 /**
  * @implements REQ-PARSE-VEH-WHEELATTACH-001
  * @covers AC-1 AC-2 AC-3
@@ -18,6 +22,8 @@
 
 #include <omni/physics/parse/IPhysicsSource.h>
 #include <omni/physics/parse/ParseApi.h>
+#include <omni/physics/parse/PreparedVehicle.h>
+#include <stdexcept>
 #include <omni/physics/parse/ParseContext.h>
 
 #include <carb/logging/Log.h>
@@ -30,67 +36,115 @@ namespace omni::physics::parse
 
 // @implements REQ-PARSE-VEH-WHEELATTACH-001
 // @covers AC-1 AC-2 AC-3
-DescPtr<BrakesDesc> parseBrakes(ParseContext& ctx, ObjectKey key,
-                                std::string_view instanceName, uint8_t brakesIndex,
-                                const BrakesInfo& info)
+PreparedBrakes prepareBrakes(ParseContext& ctx, ObjectKey key, std::string_view instanceName, uint8_t brakesIndex, const BrakesInfo& info)
 {
-    IPhysicsSource& src = ctx.source();
-    const std::string ownerName(src.sourceKeyToString(key));
+    PreparedBrakes input;
+    input.key = key;
+    input.instanceName = instanceName;
+    input.brakesIndex = brakesIndex;
+    input.info = info;
+    input.instanceToken = ctx.source().internToken(instanceName);
+    input.reads = prepareVehicleReads(ctx.source(), key, {
+        { "physxVehicleBrakes:maxBrakeTorque", VehicleAttributeType::floating }
+    }, instanceName);
+    return input;
+}
 
-    DescPtr<BrakesDesc> desc = allocateDesc<BrakesDesc>(ctx.descriptorAllocator());
+void prepareBrakesStorage(const PreparedBrakes& input, BrakesDesc& output)
+{
+    output.wheels.resize(input.info.wheels.size());
+    output.torqueMultipliers.resize(input.info.hasTorqueMultipliers ? input.info.torqueMultipliers.size() : 0);
+}
+
+bool fillBrakes(const PreparedBrakes& input, BrakesDesc& output, VehicleFillStatus& status) noexcept
+{
+    PreparedVehicleReader src(input.reads, status);
+    [[maybe_unused]] ObjectKey key = input.key;
+    [[maybe_unused]] const std::string& instanceName = input.instanceName;
+    [[maybe_unused]] uint8_t brakesIndex = input.brakesIndex;
+    [[maybe_unused]] const BrakesInfo& info = input.info;
+    VehicleOutputVector<typename decltype(output.wheels)::value_type> wheelsOut(output.wheels, vehicle_output_slot::wheels, status);
+    VehicleOutputVector<typename decltype(output.torqueMultipliers)::value_type> torqueMultipliersOut(output.torqueMultipliers, vehicle_output_slot::torqueMultipliers, status);
+
+
+    const std::string& ownerName = src.sourceKeyToString(key);
+
+    BrakesDesc* desc = &output;
     desc->brakesIndex = brakesIndex;
     desc->nonlinearCmdResponse = nullptr;  // wired by consumer adapter from multi-apply emit
 
-    const std::string attrBase = std::string("physxVehicleBrakes:") + std::string(instanceName) + ":";
+
 
     float mbt;
-    if (!src.getAttribute(key, src.internToken(attrBase + "maxBrakeTorque"), mbt))
+    if (!src.getAttribute(key, src.attribute("physxVehicleBrakes:maxBrakeTorque"), mbt))
     {
-        CARB_LOG_ERROR("Usd Physics: prim \"%s\" needs to have attribute \"maxBrakeTorque\" defined.", ownerName.c_str());
-        return {};
+        VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\" needs to have attribute \"maxBrakeTorque\" defined.", ownerName.c_str());
+        return false;
     }
     if (!(mbt >= 0.0f) || !(mbt < FLT_MAX))
     {
-        CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"maxBrakeTorque\" out of range.", ownerName.c_str());
-        return {};
+        VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"maxBrakeTorque\" out of range.", ownerName.c_str());
+        return false;
     }
     desc->maxBrakeTorque = mbt;
 
-    desc->wheels.reserve(info.wheels.size());
+    wheelsOut.reserve(info.wheels.size());
     for (int w : info.wheels)
     {
         if (w < 0)
         {
-            CARB_LOG_ERROR("Usd Physics: attribute \"wheels\" of braking system \"%s\" can not hold negative values.",
-                           std::string(instanceName).c_str());
-            return {};
+            VEHICLE_LOG_ERROR(status, "Usd Physics: attribute \"wheels\" of braking system \"%s\" can not hold negative values.",
+                           instanceName.data());
+            return false;
         }
-        desc->wheels.push_back(w);
+        wheelsOut.push_back(w);
     }
 
     if (info.hasTorqueMultipliers)
     {
-        if (info.torqueMultipliers.size() != desc->wheels.size())
+        if (info.torqueMultipliers.size() != wheelsOut.size())
         {
-            CARB_LOG_ERROR("Usd Physics: attribute \"torqueMultipliers\" of braking system \"%s\" needs to have the same "
+            VEHICLE_LOG_ERROR(status, "Usd Physics: attribute \"torqueMultipliers\" of braking system \"%s\" needs to have the same "
                            "number of entries as the \"wheels\" attribute or else should not be defined at all.",
-                           std::string(instanceName).c_str());
-            return {};
+                           instanceName.data());
+            return false;
         }
-        desc->torqueMultipliers.reserve(info.torqueMultipliers.size());
+        torqueMultipliersOut.reserve(info.torqueMultipliers.size());
         for (float m : info.torqueMultipliers)
         {
             if (m < 0.0f)
             {
-                CARB_LOG_ERROR("Usd Physics: attribute \"torqueMultipliers\" of braking system \"%s\" can not hold "
-                               "negative values.", std::string(instanceName).c_str());
-                return {};
+                VEHICLE_LOG_ERROR(status, "Usd Physics: attribute \"torqueMultipliers\" of braking system \"%s\" can not hold "
+                               "negative values.", instanceName.data());
+                return false;
             }
-            desc->torqueMultipliers.push_back(m);
+            torqueMultipliersOut.push_back(m);
         }
     }
 
-    return desc;
+    return true;
 }
+
+void finishBrakesStorage(BrakesDesc& output, const VehicleFillStatus& status)
+{
+    output.wheels.resize(status.written[vehicle_output_slot::wheels]);
+    output.torqueMultipliers.resize(status.written[vehicle_output_slot::torqueMultipliers]);
+}
+
+DescPtr<BrakesDesc> parseBrakes(ParseContext& ctx, ObjectKey key, std::string_view instanceName, uint8_t brakesIndex, const BrakesInfo& info)
+{
+    const PreparedBrakes input = prepareBrakes(ctx, key, instanceName, brakesIndex, info);
+    DescPtr<BrakesDesc> output = allocateDesc<BrakesDesc>(ctx.descriptorAllocator());
+    if (!output) return {};
+    prepareBrakesStorage(input, *output);
+    VehicleFillStatus status;
+    const bool valid = fillBrakes(input, *output, status);
+    status.report();
+    if (status.incomplete) throw std::logic_error("Incomplete prepared vehicle input or storage");
+    if (!valid) return {};
+    finishBrakesStorage(*output, status);
+    return output;
+}
+
 
 } // namespace omni::physics::parse

@@ -1,7 +1,13 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-LIFETIME-001
+// @covers AC-1 AC-2
+
 /**
+ * @implements REQ-RUNTIME-ERROR-001
+ * @covers AC-3
+ *
  * @implements REQ-BUILD-UNIBUILD-001
  * @covers AC-3
  *
@@ -18,6 +24,7 @@
 // (omni::physics::parse::simulationLayerHandleOps(), ADR-0027 seam #3) -- never through a
 // direct USD call from here.
 
+#include <omni/physx/RuntimeError.h>
 #include "OmniPhysX.h"
 #include "Setup.h"
 #include "PhysXReplicator.h"
@@ -26,6 +33,8 @@
 #include <omni/physics/parse/OpaquePxrHandleOps.h> // parse::simulationLayerHandleOps (seam #3)
 #include "usdLoad/LoadUsd.h"
 #include "usdLoad/AttachedStage.h"
+#include "usdLoad/PrimUpdate.h"
+#include "RuntimeExecution.h"
 #include "usdInterface/UsdInterface.h"
 
 #include <omni/physics/parse/IParseBackend.h>   // parseBackend / AttachTarget / SourceBundle
@@ -48,88 +57,59 @@ namespace physx
 // _usd arm's using-directive so those names resolve unqualified here.
 using namespace omni::physx::usdparser;
 
-void OmniPhysX::physXAttach(long int stageId, bool loadPhysics)
+AttachHandle OmniPhysX::physXAttach(long int stageId, bool loadPhysics, const PhysxAttachOptions& options)
 {
-    // Resolve the id through the reparse seam's stage-cache lookup (the USD arm's
-    // UsdUtilsStageCache Find). With no seam installed (production / USD-free) fail closed with the
-    // same message: a USD-free process has no UsdUtilsStageCache at all.
-    omni::physics::parse::IUsdReparse* reparse = omni::physics::parse::usdReparse();
-    if (!reparse)
-    {
-        CARB_LOG_ERROR("PhysX could not find USD stage");
-        return;
-    }
-
-    usdparser::AttachedStageUsdHandle handle; // empty; ctor routes through the ops table
-    if (!stageId || !reparse->resolveStageToHandle(static_cast<uint64_t>(stageId), handle.storage()))
-    {
-        CARB_LOG_ERROR("PhysX could not find USD stage");
-        return;
-    }
-
-    // Ensure the PxPhysics singleton, but ONLY when we can derive its tolerances scale. Read
-    // metersPerUnit through the source abstraction: the AttachedStage is not registered with
-    // UsdLoad until the attach() call below, so the active stage would be empty here on first
-    // physics creation. Build a throwaway source over the resolved handle through the reparse
-    // seam's PRIVATE USD backend (createSourceFromHandle), never through the process-active parse
-    // backend: that one may be a data-plane backend (ovstage) that would read the handle storage
-    // as its own payload. Same rule as AttachedStage::rebuildUsdSource.
-    // A.B. TODO tolerances are per-stage and should move into individual scenes.
-    if (!getPhysXSetup().hasBeenInitiallyCreated())
-    {
-        float metersPerUnit = omni::physics::parse::SourceUnits{}.metersPerUnit;
-        omni::physics::parse::SourceBundle bundle = reparse->createSourceFromHandle(handle.storage());
-        if (bundle.source)
-            metersPerUnit = bundle.source->getSourceUnits().metersPerUnit;
-        getPhysXSetup().createPhysics(getPhysXSetup().getDefaultTolerances(double(metersPerUnit)));
-    }
-    getPhysXSetup().getPhysics();
-
-    physXAttachSession();
-
-    // A replicator that wants to shape *this* attach must have registered before it existed, so
-    // it can only have registered under kActiveAttach -- handles are minted by the attach itself.
-    // Look that key up exactly rather than through getReplicator(): a registration carrying a
-    // real handle names some other, already-live attach, and letting it apply here would be
-    // precisely the stage-id hijack that keying on the attach removes (ADR-0016).
-    ReplicatorMap::iterator pendingReplicator = mReplicatorMap.find(kActiveAttach);
-    PhysXReplicator* replicator = pendingReplicator != mReplicatorMap.end() ? &pendingReplicator->second : nullptr;
-    if (replicator && loadPhysics)
-    {
-        replicator->attach(stageId, &getPhysXUsdPhysicsInterface(), true);
-    }
-    else
-    {
-        UsdLoad::getUsdLoad()->attach(loadPhysics, stageId, &getPhysXUsdPhysicsInterface());
-    }
+    // Resource acquisition belongs to the private candidate, just as on ovstage.
+    // No active database, clock or SDK is prepared through a throwaway source.
+    getPhysXUsdPhysicsInterface().setExposePrimNames(mISettings->getAsBool(kSettingExposePrimPathNames));
+    const char* singleScene = mISettings->getStringBuffer(kSettingForceParseOnlySingleScene);
+    getPhysXUsdPhysicsInterface().setForceParseOnlySingleScene(singleScene ? singleScene : std::string());
+    return UsdLoad::getUsdLoad()->attach(loadPhysics, stageId, &getPhysXUsdPhysicsInterface(), options);
 }
 
-long bridgeLoadTargetStage(const char* path)
+long bridgeLoadTargetStage(const char* path, AttachHandle& attach)
 {
-    // USD-stage lifecycle (Open/Insert/GetId, or erase) routes through the stage-lifecycle seam;
-    // the attach/detach orchestration stays here on the omni.physx side (physXAttach/physXDetach
-    // are pxr-free). With no seam installed (production / USD-free) return 0.
+    RuntimeExecutionScope configuration(kNoAttach);
+    if (!configuration)
+        return 0;
+    std::unique_ptr<RuntimeExecutionScope> ownerOperation;
+    if (attach != kNoAttach)
+    {
+        ownerOperation = std::make_unique<RuntimeExecutionScope>(attach, true);
+        if (!*ownerOperation)
+            return 0;
+    }
     omni::physics::parse::IUsdStageLifecycle* lifecycle = omni::physics::parse::usdStageLifecycle();
     if (!lifecycle)
         return 0;
-
-    if (path)
+    if (AttachedStage* owner = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach))
     {
-        const long stageId = static_cast<long>(lifecycle->loadTargetStage(path));
-        if (stageId)
-            OmniPhysX::getInstance().physXAttach(stageId, true);
-        return stageId;
+        const uint64_t previousStageId = owner->getStageId();
+        if (!OmniPhysX::getInstance().physXDetach(attach))
+            return 0;
+        lifecycle->eraseStage(previousStageId);
     }
-
-    // Detach + erase the currently active stage. Capture its id BEFORE physXDetach clears the
-    // active attach, then erase it from the cache -- mirroring the _usd order (detach, then erase).
-    const uint64_t activeStageId = UsdLoad::getUsdLoad()->getActiveStageId();
-    if (activeStageId)
+    attach = kNoAttach;
+    if (!path)
+        return 0;
+    const long stageId = static_cast<long>(lifecycle->loadTargetStage(path));
+    if (!stageId)
+        return 0;
+    try
     {
-        OmniPhysX::getInstance().physXDetach();
-        lifecycle->eraseStage(activeStageId);
+        attach = OmniPhysX::getInstance().physXAttach(stageId, true);
     }
-    return 0;
+    catch (...)
+    {
+        lifecycle->eraseStage(stageId);
+        return 0;
+    }
+    if (attach == kNoAttach)
+    {
+        lifecycle->eraseStage(stageId);
+        return 0;
+    }
+    return stageId;
 }
 
 long bridgeCreateEmptyStage()
@@ -138,8 +118,23 @@ long bridgeCreateEmptyStage()
     return lifecycle ? static_cast<long>(lifecycle->createEmptyStage()) : 0;
 }
 
-bool bridgeAttachTargetStageId(long stageId)
+bool bridgeAttachTargetStageId(long stageId, AttachHandle& attach)
 {
+    RuntimeExecutionScope configuration(kNoAttach);
+    if (!configuration)
+        return false;
+    std::unique_ptr<RuntimeExecutionScope> ownerOperation;
+    if (attach != kNoAttach)
+    {
+        ownerOperation = std::make_unique<RuntimeExecutionScope>(attach, true);
+        if (!*ownerOperation)
+            return false;
+    }
+    if (attach != kNoAttach && UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach))
+        OmniPhysX::getInstance().physXDetach(attach);
+    attach = kNoAttach;
+    if (!stageId)
+        return true;
     // Residency check via the reparse seam's stage-cache lookup (the USD arm's Find), then the
     // pxr-free physXAttach. With no seam installed a nonzero id can only be a caller error, so
     // fail closed.
@@ -151,52 +146,23 @@ bool bridgeAttachTargetStageId(long stageId)
     if (!stageId || !reparse->resolveStageToHandle(static_cast<uint64_t>(stageId), handle.storage()))
         return false;
 
-    OmniPhysX::getInstance().physXAttach(stageId, true);
-    return true;
+    attach = OmniPhysX::getInstance().physXAttach(stageId, true);
+    return attach != kNoAttach;
 }
 
-void bridgeForceLoadPhysicsFromUSD()
+RuntimeResult bridgeForceLoadPhysicsFromUSD(AttachHandle attach)
 {
-    // "Force load physics FROM USD" only means anything when USD is resident; the reparse seam's
-    // presence is the pxr-free proxy for that. Null (production / USD-free) reports no attach,
-    // matching a USD-loaded process's response to an ovstage-only attach. The body below
-    // names no pxr type -- every call is an omni.physx runtime call.
-    if (!omni::physics::parse::usdReparse())
-    {
-        CARB_LOG_ERROR("No USD stage attached.");
-        return;
-    }
-
-    const uint64_t stageId = UsdLoad::getUsdLoad()->getActiveStageId();
-    if (stageId)
-    {
-        OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-
-        // If physics objects are already loaded, release them first and notify listeners
-        AttachedStage* existingStage = UsdLoad::getUsdLoad()->getAttachedStage(stageId);
-        if (existingStage && !existingStage->getObjectDatabase()->empty())
-        {
-            UsdLoad::getUsdLoad()->releasePhysicsObjects(stageId);
-        }
-
-        omniPhysX.getPhysXSetup().getPhysics(); // make sure we have physics created
-        {
-            const char* forceSingleScene = omniPhysX.getISettings()->getStringBuffer(kSettingForceParseOnlySingleScene);
-            getPhysXUsdPhysicsInterface().setForceParseOnlySingleScene(forceSingleScene ? forceSingleScene : std::string());
-        }
-
-        UsdLoad::getUsdLoad()->update(0.f);
-        AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStage(stageId);
-        if (attachedStage)
-        {
-            attachedStage->getPhysXPhysicsInterface()->finishSetup(*attachedStage);
-            omniPhysX.getInternalPhysXDatabase().updateDirtyMassActors();
-        }
-    }
-    else
-    {
-        CARB_LOG_ERROR("No USD stage attached.");
-    }
+    AttachedStage* owner = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach);
+    if (!owner)
+        return RuntimeResult::eInvalidAttachment;
+    if (!omni::physics::parse::usdReparse() || owner->getOvstageInstance())
+        return RuntimeResult::eInvalidArgument;
+    if (!owner->getObjectDatabase()->empty())
+        UsdLoad::getUsdLoad()->releasePhysicsObjects(attach);
+    processUpdates(*owner, 0.0f);
+    owner->getPhysXPhysicsInterface()->finishSetup(*owner);
+    owner->getInternalPhysXDatabase().updateDirtyMassActors();
+    return RuntimeResult::eSuccess;
 }
 
 bool bridgeResolveBackingStage(uint64_t candidateStageId, AttachOvstageBackingStageHandle& outHandle)
@@ -214,12 +180,12 @@ bool bridgeIsValidClonePath(const char* str, const char* role)
     // pxr-free superset of SdfPath's non-root absolute prim path grammar (utils/PrimPathGrammar.h).
     if (!str || !str[0])
     {
-        CARB_LOG_ERROR("clone: %s is empty.", role);
+        OVX_RUNTIME_ERROR("clone: %s is empty.", role);
         return false;
     }
     if (!omni::physx::looksLikeAbsolutePrimPath(std::string_view(str), /*allowRoot=*/false))
     {
-        CARB_LOG_ERROR("clone: %s '%s' must be a non-root absolute prim path (e.g. '/World/env0') "
+        OVX_RUNTIME_ERROR("clone: %s '%s' must be a non-root absolute prim path (e.g. '/World/env0') "
                        "with identifier-shaped name segments (UTF-8 allowed).", role, str);
         return false;
     }

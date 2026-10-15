@@ -1,16 +1,15 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-# @implements REQ-CAPI-COLLISION-CONFIG-001
-# @covers AC-1
-
 """Init-time typed config tests, ONE create+destroy per file.
 
 Tests that PhysXConfig entries passed during construction are applied correctly.
 Runs in its own subprocess (see test_python_runtime.cmake).
 """
 
-from ovphysx import ConfigBool, ConfigInt32, PhysX, PhysXConfig
+import pytest
+
+from ovphysx import GlobalConfigKey, PhysX, PhysXConfig, get_global_config
 
 
 def test_typed_config_at_init():
@@ -22,19 +21,21 @@ def test_typed_config_at_init():
         - Multiple config entries at once
         - raw Carbonite setting override (non-typed path)
     """
-    physx = PhysX(
-        config=PhysXConfig(
-            disable_contact_processing=True,
-            collision_cone_custom_geometry=False,
-            collision_cylinder_custom_geometry=True,
-            num_threads=4,
-            carbonite_overrides={"/physics/updateToUsd": False},
+    with pytest.warns(DeprecationWarning, match=r"set_global_config\(\) for settings with a GlobalConfigKey") as caught:
+        physx = PhysX(
+            config=PhysXConfig(
+                disable_contact_processing=True,
+                collision_cone_custom_geometry=False,
+                collision_cylinder_custom_geometry=True,
+                num_threads=4,
+                carbonite_overrides={"/physics/updateToUsd": False},
+            )
         )
-    )
     try:
-        assert physx.get_config_bool(ConfigBool.DISABLE_CONTACT_PROCESSING) is True
-        assert physx.get_config_bool(ConfigBool.COLLISION_CONE_CUSTOM_GEOMETRY) is False
-        assert physx.get_config_bool(ConfigBool.COLLISION_CYLINDER_CUSTOM_GEOMETRY) is True
-        assert physx.get_config_int32(ConfigInt32.NUM_THREADS) == 4
+        assert "Carbonite-only settings still use PhysXConfig.carbonite_overrides" in str(caught[0].message)
+        assert get_global_config(GlobalConfigKey.DISABLE_CONTACT_PROCESSING) is True
+        assert get_global_config(GlobalConfigKey.COLLISION_CONE_CUSTOM_GEOMETRY) is False
+        assert get_global_config(GlobalConfigKey.COLLISION_CYLINDER_CUSTOM_GEOMETRY) is True
+        assert get_global_config(GlobalConfigKey.NUM_THREADS) == 4
     finally:
         physx.destroy()

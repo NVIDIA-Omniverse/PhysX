@@ -6,16 +6,16 @@
 
 """``import ovphysx`` must not touch USD: fresh subprocess per scenario.
 
-ovphysx ships its PhysX USD schemas as codeless data and leaves registration to
-the application, which owns the USD runtime. The package therefore must not:
+The application supplies PhysX schema data and owns registration with its USD
+runtime. The ovphysx package therefore must not:
 
   1. publish or modify the USD plugin-path environment variables
      (``OV_PXR_PLUGINPATH_2511`` for the namespaced runtime ovstage uses,
      ``PXR_PLUGINPATH_NAME`` for a stock OpenUSD) at import time;
   2. load the native library or any USD module at import time.
 
-It must still tell the application where the schemas are, through the
-pure-Python ``codeless_schema_root()`` / ``codeless_schema_paths()`` helpers.
+The application metadata-discovery recipe ``physx_schema_paths()`` must also
+leave USD and native bootstrap untouched.
 
 Each scenario runs in its own ``subprocess.run`` so prior test imports (or
 pytest's own startup) cannot pollute the environment being measured.
@@ -63,12 +63,12 @@ for _mod in list(sys.modules):
         del sys.modules[_mod]
 
 import ovphysx
-
+from schema_support import physx_schema_paths
 print("NAMESPACED_ENV:" + os.environ.get("OV_PXR_PLUGINPATH_2511", "<unset>"))
 print("CLASSIC_ENV:" + os.environ.get("PXR_PLUGINPATH_NAME", "<unset>"))
 print("BOOTSTRAPPED:" + str(ovphysx._native_bootstrapped))
 print("PXR_LOADED:" + str("pxr" in sys.modules))
-print("SCHEMA_ROOT:" + str(ovphysx.codeless_schema_root()))
+print("SCHEMA_ROOT:" + str(physx_schema_paths()[0]))
 print("BOOTSTRAPPED_AFTER_QUERY:" + str(ovphysx._native_bootstrapped))
 print("NAMESPACED_ENV_AFTER_QUERY:" + os.environ.get("OV_PXR_PLUGINPATH_2511", "<unset>"))
 print("CLASSIC_ENV_AFTER_QUERY:" + os.environ.get("PXR_PLUGINPATH_NAME", "<unset>"))
@@ -105,10 +105,10 @@ def test_import_leaves_usd_plugin_paths_unset():
     assert lines["NAMESPACED_ENV:"] == "<unset>", f"import ovphysx published {_NAMESPACED_ENV_VAR}: {lines['NAMESPACED_ENV:']!r}"
     assert lines["CLASSIC_ENV:"] == "<unset>", f"import ovphysx published {_CLASSIC_ENV_VAR}: {lines['CLASSIC_ENV:']!r}"
     assert lines["NAMESPACED_ENV_AFTER_QUERY:"] == "<unset>", (
-        f"codeless_schema_root() published {_NAMESPACED_ENV_VAR}: {lines['NAMESPACED_ENV_AFTER_QUERY:']!r}"
+        f"physx_schema_paths() published {_NAMESPACED_ENV_VAR}: {lines['NAMESPACED_ENV_AFTER_QUERY:']!r}"
     )
     assert lines["CLASSIC_ENV_AFTER_QUERY:"] == "<unset>", (
-        f"codeless_schema_root() published {_CLASSIC_ENV_VAR}: {lines['CLASSIC_ENV_AFTER_QUERY:']!r}"
+        f"physx_schema_paths() published {_CLASSIC_ENV_VAR}: {lines['CLASSIC_ENV_AFTER_QUERY:']!r}"
     )
 
 
@@ -118,10 +118,10 @@ def test_import_preserves_application_owned_plugin_paths():
     assert lines["NAMESPACED_ENV:"] == _SENTINEL, f"import ovphysx modified {_NAMESPACED_ENV_VAR}: {lines['NAMESPACED_ENV:']!r}"
     assert lines["CLASSIC_ENV:"] == _SENTINEL, f"import ovphysx modified {_CLASSIC_ENV_VAR}: {lines['CLASSIC_ENV:']!r}"
     assert lines["NAMESPACED_ENV_AFTER_QUERY:"] == _SENTINEL, (
-        f"codeless_schema_root() modified {_NAMESPACED_ENV_VAR}: {lines['NAMESPACED_ENV_AFTER_QUERY:']!r}"
+        f"physx_schema_paths() modified {_NAMESPACED_ENV_VAR}: {lines['NAMESPACED_ENV_AFTER_QUERY:']!r}"
     )
     assert lines["CLASSIC_ENV_AFTER_QUERY:"] == _SENTINEL, (
-        f"codeless_schema_root() modified {_CLASSIC_ENV_VAR}: {lines['CLASSIC_ENV_AFTER_QUERY:']!r}"
+        f"physx_schema_paths() modified {_CLASSIC_ENV_VAR}: {lines['CLASSIC_ENV_AFTER_QUERY:']!r}"
     )
 
 
@@ -130,22 +130,16 @@ def test_import_and_schema_query_load_no_native_or_usd_code():
     lines = _probe_lines()
     assert lines["BOOTSTRAPPED:"] == "False", f"import ovphysx triggered native load: {lines['BOOTSTRAPPED:']!r}"
     assert lines["BOOTSTRAPPED_AFTER_QUERY:"] == "False", (
-        f"codeless_schema_root() triggered native load: {lines['BOOTSTRAPPED_AFTER_QUERY:']!r}"
+        f"physx_schema_paths() triggered native load: {lines['BOOTSTRAPPED_AFTER_QUERY:']!r}"
     )
     assert lines["PXR_LOADED:"] == "False", "import ovphysx imported pxr"
-    assert lines["PXR_LOADED_AFTER_QUERY:"] == "False", "codeless_schema_root() imported pxr"
+    assert lines["PXR_LOADED_AFTER_QUERY:"] == "False", "physx_schema_paths() imported pxr"
 
 
 def test_schema_root_points_at_registrable_codeless_schemas():
-    """The root ovphysx reports is a complete codeless plugin tree the application can register."""
+    """Metadata discovery finds registrable resources in the external provider."""
     lines = _probe_lines()
     root = lines["SCHEMA_ROOT:"]
-    assert os.path.isdir(root), f"codeless_schema_root() is not a directory: {root!r}"
+    assert os.path.isdir(root), f"physx_schema_paths() is not a directory: {root!r}"
     assert os.path.isfile(os.path.join(root, "plugInfo.json")), f"missing root plugInfo.json under {root!r}"
-    modules = [
-        name
-        for name in os.listdir(root)
-        if os.path.isfile(os.path.join(root, name, "resources", "plugInfo.json"))
-        and os.path.isfile(os.path.join(root, name, "resources", "generatedSchema.usda"))
-    ]
-    assert modules, f"no <Module>/resources/{{plugInfo.json,generatedSchema.usda}} under {root!r}"
+    assert os.path.isfile(os.path.join(root, "generatedSchema.usda"))

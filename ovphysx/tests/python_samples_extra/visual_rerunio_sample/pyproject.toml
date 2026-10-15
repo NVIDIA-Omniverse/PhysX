@@ -6,8 +6,17 @@ name = "ovphysx-visual-rerunio-sample"
 version = "0.0.1"
 requires-python = ">=3.10"
 dependencies = [
+  "physx-usd-schemas>=25.11.2",
   "ovphysx",
   "numpy",
   "rerun-sdk>=0.29",
   "newton-usd-schemas>=0.4.1",
 ]
+
+[[tool.uv.index]]
+name = "physx-usd-schemas"
+url = "https://pypi.org/simple"
+explicit = true
+
+[tool.uv.sources]
+physx-usd-schemas = { index = "physx-usd-schemas" }

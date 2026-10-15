@@ -31,7 +31,7 @@ def _fill(t, block):
 
 def _read_positions(physx):
     """Every rigid body's position as one [N, 3] host array, in prim order."""
-    with physx.read(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
+    with physx.read_sync(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
         return np.concatenate([_to_host(g.tensors[0]).reshape(g.prim_count, -1) for g in result.groups])
 
 
@@ -76,10 +76,10 @@ def test_preclone_binding_velocity_reaches_all_envs(physx_sdk):
 
     # Drive every body: linear velocity x = 3.
     groups_written = 0
-    with physx_sdk.write(SimObjectType.RIGID_BODY, "linearVelocity") as w:
+    with physx_sdk.write_sync(SimObjectType.RIGID_BODY, "linearVelocity") as w:
         for grp in w.groups:
             _fill(grp.tensors[0], np.tile(np.array([3, 0, 0], np.float32), (grp.prim_count, 1)))
-            w.commit(grp)
+            w.commit_sync(grp)
             groups_written += 1
     assert groups_written > 0, "write session produced no groups; the velocity drive never happened"
     physx_sdk.wait_all()

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #pragma once
+#include <omni/physx/RuntimeResult.h>
 
 /**
  * @implements REQ-BUILD-BRIDGE-001
@@ -29,20 +30,20 @@ namespace physx
 // report "no stage" rather than silently attaching nothing.
 
 // Opens `path`, inserts it into the process-wide stage cache and attaches it, returning the
-// new cache id. With a null `path`, detaches and erases the currently active stage instead.
+// new cache id. With a null `path`, detaches and erases the attachment supplied by the benchmark instead.
 // Returns 0 with no seam.
-long bridgeLoadTargetStage(const char* path);
+long bridgeLoadTargetStage(const char* path, AttachHandle& attach);
 
 // Creates and caches an empty "default.usd" stage, returning its cache id. 0 with no seam.
 long bridgeCreateEmptyStage();
 
 // Attaches the already-cached stage named by `stageId`. False when it is not resident, and
 // always with no seam, where a nonzero id can only be a caller error.
-bool bridgeAttachTargetStageId(long stageId);
+bool bridgeAttachTargetStageId(long stageId, AttachHandle& attach);
 
-// Re-parses the active USD attach in place (Kit "force load physics"). Requires a live USD
+// Re-parses the selected USD attach in place (Kit "force load physics"). Requires a live USD
 // stage; otherwise reports that none is attached (also the response to an ovstage-only attach).
-void bridgeForceLoadPhysicsFromUSD();
+RuntimeResult bridgeForceLoadPhysicsFromUSD(AttachHandle attach);
 
 // Resolves `candidateStageId` in this runtime's UsdUtilsStageCache through the reparse seam.
 // On success sets `outHandle` to the resident stage and returns true; otherwise leaves it

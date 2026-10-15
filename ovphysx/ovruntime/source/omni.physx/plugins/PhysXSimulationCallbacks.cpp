@@ -1,10 +1,18 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-LIFETIME-001
+// @covers AC-3 AC-4
+
 /**
  * @implements REQ-PUBLICAPI-002
  * @covers AC-7
  */
+/**
+ * @implements REQ-ATTACH-EXECUTION-001
+ * @covers AC-1 AC-2 AC-3 AC-4
+ */
+
 #include "PhysXSimulationCallbacks.h"
 #include "PhysXTools.h"
 #include "PhysXScene.h"
@@ -13,6 +21,7 @@
 #include "usdLoad/LoadUsd.h"
 #include "ObjectDataQuery.h"
 #include "ContactReport.h"
+#include "AttachmentContactLookup.h"
 #include "OmniPhysX.h"
 #include "Trigger.h"
 
@@ -28,72 +37,58 @@ uint32_t getGlobalSimulationFlags(uint32_t type, uint32_t flag)
     return (1 << (16 + type)) | flag;
 }
 
-static SimulationCallbacks* gSimulationCallbacks = nullptr;
-
-SimulationCallbacks* SimulationCallbacks::getSimulationCallbacks()
+static usdparser::AttachedStage* resolveCallbackOwner(AttachHandle attachHandle)
 {
-    if (!gSimulationCallbacks)
-        gSimulationCallbacks = new SimulationCallbacks();
-
-    return gSimulationCallbacks;
+    return usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
 }
 
-SubscriptionId physxSubscribePhysicsContactReportEvents(OnContactReportEventFn onEvent, void* userData)
+
+SubscriptionId physxSubscribePhysicsContactReportEvents(AttachHandle attachHandle, OnContactReportEventFn onEvent, void* userData)
 {
-    return SimulationCallbacks::getSimulationCallbacks()->getContactReportRegistry().addEvent(std::make_pair(onEvent, userData));
+    RuntimeExecutionScope execution(attachHandle, true);
+    if (!execution || !onEvent)
+        return kInvalidSubscriptionId;
+    usdparser::AttachedStage* owner = resolveCallbackOwner(attachHandle);
+    if (!owner)
+        return kInvalidSubscriptionId;
+    return owner->getSimulationCallbacks().getContactReportRegistry().addEvent(std::make_pair(onEvent, userData));
 }
 
-void physxUnsubscribePhysicsContactReportEvents(SubscriptionId id)
+void physxUnsubscribePhysicsContactReportEvents(AttachHandle attachHandle, SubscriptionId id)
 {
-    SimulationCallbacks::getSimulationCallbacks()->getContactReportRegistry().removeEvent(id);
+    if (usdparser::AttachedStage* owner = resolveCallbackOwner(attachHandle))
+    {
+        OwnedContactRegistry& registry = owner->getSimulationCallbacks().getContactReportRegistry();
+        registry.removeEvent(id);
+    }
 }
 
-SubscriptionId physxSubscribePhysicsFullContactReportEvents(OnFullContactReportEventFn onEvent, void* userData)
+SubscriptionId physxSubscribePhysicsFullContactReportEvents(AttachHandle attachHandle, OnFullContactReportEventFn onEvent, void* userData)
 {
-    return SimulationCallbacks::getSimulationCallbacks()->getFullContactReportRegistry().addEvent(std::make_pair(onEvent, userData));
+    RuntimeExecutionScope execution(attachHandle, true);
+    if (!execution || !onEvent)
+        return kInvalidSubscriptionId;
+    usdparser::AttachedStage* owner = resolveCallbackOwner(attachHandle);
+    if (!owner)
+        return kInvalidSubscriptionId;
+    return owner->getSimulationCallbacks().getFullContactReportRegistry().addEvent(std::make_pair(onEvent, userData));
 }
 
-void physxUnsubscribePhysicsFullContactReportEvents(SubscriptionId id)
+void physxUnsubscribePhysicsFullContactReportEvents(AttachHandle attachHandle, SubscriptionId id)
 {
-    SimulationCallbacks::getSimulationCallbacks()->getFullContactReportRegistry().removeEvent(id);
+    if (usdparser::AttachedStage* owner = resolveCallbackOwner(attachHandle))
+    {
+        OwnedFullContactRegistry& registry = owner->getSimulationCallbacks().getFullContactReportRegistry();
+        registry.removeEvent(id);
+    }
 }
 
 SubscriptionId physxSubscribePhysicsTriggerReportEvents(AttachHandle attachHandle, uint64_t path, OnTriggerEventReportEventFn onEvent, void* userData)
 {
-    // kActiveAttach is stored as-is and bound late, at fire time. Resolving it here would be
-    // wrong in the ordinary case: subscribing *before* attaching is a supported pattern, and
-    // there is no attach to resolve against yet. TriggerManager::processNativeEvent therefore
-    // treats a stored kActiveAttach as "whichever attach is live" rather than comparing it as a
-    // literal (ADR-0016 Decision 6). The consequence is deliberate: such a subscription follows
-    // the active attach across a detach/reattach, which is what "the active one" asks for.
-    //
-    // A concrete handle is different -- it names one attach, so it is validated now. Deferring
-    // that would turn a typo into a subscription that silently never fires.
-    if (attachHandle != kActiveAttach && !usdparser::UsdLoad::getUsdLoad()->resolveAttach(attachHandle))
-    {
-        CARB_LOG_ERROR("subscribePhysicsTriggerReportEvents could not resolve attach handle %llu: it is either "
-                       "kNoAttach or stale. Pass kActiveAttach to follow the active attach.",
-                       static_cast<unsigned long long>(attachHandle));
+    RuntimeExecutionScope execution(attachHandle, true);
+    if (!execution || !onEvent || !resolveCallbackOwner(attachHandle))
         return kInvalidSubscriptionId;
-    }
-
-    // path == 0 is the "report from every trigger" sentinel (ADR-0016 Decision 6's wildcard,
-    // expressed via triggerColliderPrimKey's invalid ObjectKey{} rather than a wildcard path).
-    //
-    // a nonzero path is now `ObjectKey::handle` directly, not the legacy
-    // asInt()-encoded-SdfPath-bits wire format -- same pattern as PhysXReplicator's `topKey`
-    // construction. `ObjectKey{ path }` naturally reproduces the path == 0 sentinel too (its
-    // `handle` defaults to 0, same as the invalid ObjectKey{}), so no attach lookup and no
-    // separate zero-check are needed any more: minting used to require an already-live
-    // AttachedStage to decode the bits through; a raw handle needs none.
-    //
-    // Generation-tag caveat (ADR-0021): a handle is only valid against the Source instance that
-    // minted it. A caller that caches a `path` value across a detach/reattach (or a kActiveAttach
-    // subscription that outlives one) will silently stop matching after the reattach, since the
-    // new Source mints a fresh generation for every key -- a resolution failure, not decode
-    // garbage. No consumer attaches twice today (ADR-0016's own multi-attach caveat), so this is
-    // unreached in practice; a future multi-attach or resubscribe-after-reattach consumer would
-    // need to refresh its handle after each reattach.
+    // Zero selects every trigger within this attachment. Other values are local keys.
     const omni::physics::parse::ObjectKey triggerColliderKey{ path };
 
     TriggerSubscriptionEntry sub;
@@ -109,116 +104,106 @@ void physxUnsubscribePhysicsTriggerReportEvents(SubscriptionId id)
    OmniPhysX::getInstance().getTriggerManager()->unregisterNativeCallback(id);
 }
 
-uint32_t physxGetContactReport(const ContactEventHeader** contactEventBuffer, const ContactData** contactDataBuffer, uint32_t& numContactData)
+uint32_t physxGetContactReport(AttachHandle attachHandle, const ContactEventHeader** contactEventBuffer,
+    const ContactData** contactDataBuffer, uint32_t& numContactData)
 {
-    PhysXScene* physxScene = OmniPhysX::getInstance().getPhysXSetup().getPhysXScene(0);
-    if (!physxScene)
+    RuntimeExecutionScope execution(attachHandle);
+    if (!execution || !contactEventBuffer || !contactDataBuffer)
         return 0;
-
-    const ContactReport* cr = physxScene->getContactReport();
-    const ContactHeadersVector& contactHeaderVector = cr->getContactHeaderVector();
-    if (contactHeaderVector.empty())
-    {
+    const usdparser::AttachedStage* owner = resolveCallbackOwner(attachHandle);
+    if (!owner)
         return 0;
-    }
-
-    const ContactDataVector& contactDataVector = cr->getContactDataVector();
-
-    *contactEventBuffer = contactHeaderVector.data();
-    numContactData = uint32_t(contactDataVector.size());
-    if (numContactData)
-    {
-        *contactDataBuffer = contactDataVector.data();
-    }
-
-    return uint32_t(contactHeaderVector.size());
+    const FrictionAnchor* anchors = nullptr;
+    uint32_t numAnchors = 0;
+    return attachmentContact::full(*owner, contactEventBuffer, contactDataBuffer, numContactData,
+        &anchors, numAnchors);
 }
 
-uint32_t physxFullGetContactReport(const ContactEventHeader** contactEventBuffer, const ContactData** contactDataBuffer, uint32_t& numContactData,
+uint32_t physxFullGetContactReport(AttachHandle attachHandle, const ContactEventHeader** contactEventBuffer,
+    const ContactData** contactDataBuffer, uint32_t& numContactData,
     const FrictionAnchor** frictionAnchorsDataBuffer, uint32_t& numFrictionAnchorsData)
 {
-    PhysXScene* physxScene = OmniPhysX::getInstance().getPhysXSetup().getPhysXScene(0);
-    if (!physxScene)
+    RuntimeExecutionScope execution(attachHandle);
+    if (!execution || !contactEventBuffer || !contactDataBuffer || !frictionAnchorsDataBuffer)
         return 0;
-
-    const ContactReport* cr = physxScene->getContactReport();
-    const ContactHeadersVector& contactHeaderVector = cr->getContactHeaderVector();
-    if (contactHeaderVector.empty())
-    {
+    const usdparser::AttachedStage* owner = resolveCallbackOwner(attachHandle);
+    if (!owner)
         return 0;
-    }
-
-    const ContactDataVector& contactDataVector = cr->getContactDataVector();
-
-    *contactEventBuffer = contactHeaderVector.data();
-    numContactData = uint32_t(contactDataVector.size());
-    if (numContactData)
-    {
-        *contactDataBuffer = contactDataVector.data();
-    }
-
-    const FrictionAnchorsDataVector& frictionAnchorsDataVector = cr->getFrictionAnchorsDataVector();
-    numFrictionAnchorsData = uint32_t(frictionAnchorsDataVector.size());
-    if (numFrictionAnchorsData)
-    {
-        *frictionAnchorsDataBuffer = frictionAnchorsDataVector.data();
-    }
-
-    return uint32_t(contactHeaderVector.size());
+    return attachmentContact::full(*owner, contactEventBuffer, contactDataBuffer, numContactData,
+        frictionAnchorsDataBuffer, numFrictionAnchorsData);
 }
 
 
-uint64_t physxGetSimulationTimestamp()
+uint64_t physxGetSimulationTimestamp(AttachHandle attachHandle)
 {
-    return OmniPhysX::getInstance().getSimulationTimestamp();
+    const usdparser::AttachedStage* owner = resolveCallbackOwner(attachHandle);
+    return owner ? owner->simulationTimestamp() : 0;
 }
 
-uint64_t physxGetSimulationStepCount()
+uint64_t physxGetSimulationStepCount(AttachHandle attachHandle)
 {
-    return OmniPhysX::getInstance().getSimulationStepCount();
+    const usdparser::AttachedStage* owner = resolveCallbackOwner(attachHandle);
+    return owner ? owner->simulationStepCount() : 0;
 }
 
-void physxSetSimulationCallback(const omni::physx::ISimulationCallback& cb)
+void physxSetSimulationCallback(AttachHandle attachHandle, const omni::physx::ISimulationCallback& cb)
 {
-    SimulationCallbacks::getSimulationCallbacks()->init(cb);
+    RuntimeExecutionScope operation(attachHandle);
+    if (!operation)
+        return;
+
+    if (usdparser::AttachedStage* owner = resolveCallbackOwner(attachHandle))
+        owner->getSimulationCallbacks().init(cb);
 }
 
-void physxSetSimulationFlags(uint32_t outputType, uint32_t flags)
+void physxSetSimulationFlags(AttachHandle attachHandle, uint32_t outputType, uint32_t flags)
 {
-    const usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    RuntimeExecutionScope operation(attachHandle);
+    if (!operation)
+        return;
+
+    const usdparser::AttachedStage* attachedStage = resolveCallbackOwner(attachHandle);
     if (!attachedStage)
         return;
 
-    SimulationCallbacks* cb = SimulationCallbacks::getSimulationCallbacks();
+    SimulationCallbacks* cb = &attachedStage->getSimulationCallbacks();
     const uint32_t globalSimFlags = getGlobalSimulationFlags(outputType, flags);
     cb->setGlobalSimulationFlags(globalSimFlags);
 }
 
-void physxAddSimulationFlags(uint32_t outputType, uint32_t flags)
+void physxAddSimulationFlags(AttachHandle attachHandle, uint32_t outputType, uint32_t flags)
 {
-    const usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    RuntimeExecutionScope operation(attachHandle);
+    if (!operation)
+        return;
+
+    const usdparser::AttachedStage* attachedStage = resolveCallbackOwner(attachHandle);
     if (!attachedStage)
         return;
 
-    SimulationCallbacks* cb = SimulationCallbacks::getSimulationCallbacks();
+    SimulationCallbacks* cb = &attachedStage->getSimulationCallbacks();
     const uint32_t globalSimFlags = getGlobalSimulationFlags(outputType, flags);
     cb->setGlobalSimulationFlags(cb->getGlobalSimulationFlags() | globalSimFlags);
 }
 
-void physxRemoveSimulationFlags(uint32_t outputType, uint32_t flags)
+void physxRemoveSimulationFlags(AttachHandle attachHandle, uint32_t outputType, uint32_t flags)
 {
-    const usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    RuntimeExecutionScope operation(attachHandle);
+    if (!operation)
+        return;
+
+    const usdparser::AttachedStage* attachedStage = resolveCallbackOwner(attachHandle);
     if (!attachedStage)
         return;
 
-    SimulationCallbacks* cb = SimulationCallbacks::getSimulationCallbacks();
+    SimulationCallbacks* cb = &attachedStage->getSimulationCallbacks();
     const uint32_t globalSimFlags = getGlobalSimulationFlags(outputType, flags);
     cb->setGlobalSimulationFlags(cb->getGlobalSimulationFlags() & ~globalSimFlags);
 }
 
-SimulationCallbacks::SimulationCallbacks()
+SimulationCallbacks::SimulationCallbacks(const usdparser::AttachedStage& attachedStage)
 
-    : mTransformationWriteFn(nullptr), mVelocityWriteFn(nullptr), mTransformUpdateFn(nullptr),
+    : mAttachedStage(attachedStage), mTransformationWriteFn(nullptr), mVelocityWriteFn(nullptr), mTransformUpdateFn(nullptr),
     mUserData(nullptr), mGlobalSimulationFlags(0)
 {
 }
@@ -226,10 +211,7 @@ SimulationCallbacks::SimulationCallbacks()
 SimulationCallbacks::~SimulationCallbacks()
 {
     reset();
-    // gSimulationCallbacks is allocated with `new` and never deleted, so this
-    // destructor is unreachable in practice. Both subscription registries therefore
-    // live until process exit. Client code is responsible for calling unsubscribe
-    // before its userData storage goes away.
+
 }
 
 void SimulationCallbacks::init(const ISimulationCallback& cb)
@@ -268,14 +250,13 @@ bool SimulationCallbacks::checkRequireActiveActors() const
 void SimulationCallbacks::setGlobalSimulationFlags(uint32_t flags)
 {
     mGlobalSimulationFlags = flags;
-    if (checkRequireActiveActors())
+    const bool needActive = checkRequireActiveActors();
+    for (const usdparser::AttachedStage::SceneMap::value_type& entry : mAttachedStage.getPhysXScenes())
     {
-        OmniPhysX::getInstance().getPhysXSetup().enableActiveActors(true);
+        PhysXScene* scene = entry.second;
+        scene->getScene()->setFlag(::physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS,
+                                  needActive && !scene->isReadbackSuppressed());
     }
-    else
-    {
-        OmniPhysX::getInstance().getPhysXSetup().enableActiveActors(false);
-    }    
 }
 
 }

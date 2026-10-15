@@ -1,0 +1,28 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    doc = "Concave mesh cooked as a convex decomposition, the compound-shape pointer kind"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def PhysicsScene "physicsScene"
+    {
+        vector3f physics:gravityDirection = (0, -1, 0)
+        float physics:gravityMagnitude = 9.81
+    }
+
+    def Mesh "Concave" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+    )
+    {
+        uniform token physics:approximation = "convexDecomposition"
+        int[] faceVertexCounts = [4, 5, 4, 4, 4, 4, 5]
+        int[] faceVertexIndices = [0, 1, 2, 3, 1, 7, 8, 5, 2, 3, 2, 5, 4, 4, 5, 8, 9, 9, 8, 7, 6, 0, 6, 7, 1, 0, 3, 4, 9, 6]
+        point3f[] points = [(1, -1, -1), (1, 1, -1), (1, 1, 1), (1, -1, 1), (0, -1, 0.2), (0, 1, 0.2), (-1, -1, -1), (-1, 1, -1), (-1, 1, 1), (-1, -1, 1)]
+        double3 xformOp:translate = (0, 2, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+}

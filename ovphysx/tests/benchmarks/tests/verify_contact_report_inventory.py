@@ -26,8 +26,8 @@ import verify_inventory as shared
 
 
 EXPECTED_REGISTERED_NAMES: Dict[str, str] = {
-    "cpu": "ContactReport.persistent_pairs_512_step_read_cpu",
-    "gpu": "ContactReport.persistent_pairs_512_step_read_gpu",
+    "cpu": "ContactReport.net_force_512_read_cpu",
+    "gpu": "ContactReport.net_force_512_read_gpu",
 }
 
 

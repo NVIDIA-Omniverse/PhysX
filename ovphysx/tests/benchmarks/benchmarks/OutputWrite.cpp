@@ -1,13 +1,18 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-CAPI-BENCHMARK-006
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5
+ */
+
 // DEPRECATED (tensor-binding-deprecation): the binding comparison lanes retire with the binding. Session lanes stay.
 
 // App -> physics write (ADR-0012) at scale, against the equivalent tensor binding.
 //
-// The mirror of OutputRead.cpp, and deliberately its twin: same scene, same clone counts, same
-// warm-up and the same per-sample step, so a write number can be read directly against the read
-// number beside it.
+// The write counterpart to OutputRead.cpp, with matching workloads and clone counts.
+// CPU write fixtures explicitly select CPU dynamics. Compare device configuration and
+// payload widths before interpreting a ratio against another benchmark family.
 //
 // Names are OutputWrite.<operation>_<objects>_<envs>_<device>:
 //
@@ -34,16 +39,15 @@
 //              wrench_link   -> articulation links, `wrench`: the DirectGPU (articulation, link)
 //                               route, a different code path rather than other rows.
 //              arti_dof      -> articulation joint DOFs, jointPosition: the per-axis ARRAY path,
-//                               which no rigid lane has an equivalent of. Its setup PRIMES the
-//                               joint cache with one read, because the joint write derives its
-//                               joint set from the cache the read fills.
+//                               which no rigid lane has an equivalent of.
 //
 // WHAT IS TIMED, and why the fill is inside it. A write session hands the caller the destination
 // buffer, so filling it IS the caller's copy. There is no second one. The binding takes a
 // caller-owned tensor and copies out of it. Each side therefore performs exactly one copy of the
 // payload, and excluding the fill here would hide the ovphysx side's half of that while still
-// charging the binding for its own. One attribute per lane (position), because a session carries
-// one attribute. The binding lane writes the pose tensor, which is the smallest unit it can write.
+// charging the binding for its own. One attribute per lane (position): each lane times a
+// single-attribute session. The binding lane writes the pose tensor, which is the smallest unit it
+// can write.
 //
 // So these lanes are NOT a like-for-like payload comparison the way the read's are: the binding
 // writes [N, 7] where this writes [N, 3]. Read them as "what does each API cost to move one
@@ -65,13 +69,13 @@
 // vehicles are CPU-only so there is no GPU number either. The reason is recorded in the write API rather
 // than left as an absence.
 //
-// The binding lanes inherit objectType() from OutputWriteBase as RIGID_BODY, and the base's
-// startRun does warm-up ovphysx WRITES before the binding is ever exercised. A rigid session asking
-// for tendonStiffness is refused, the warm-up fails, and the lane reports Skipped, which reads
-// like "not applicable here" rather than "this lane is broken". Any new binding lane whose attribute
-// is not a rigid one must override objectType() to match.
+// Binding warm-up uses the paired session's object type and attribute. Setup failures
+// suppress the exact row and fail the process. Pose bindings cover the same objects
+// as position sessions despite their different widths (seven versus three floats).
 //
 #include "framework/UsdPCH.h"
+
+#include "../TaskCompletion.h"
 
 #include "../framework/BmBenchmark.h"
 #include "../framework/BmGlobals.h"
@@ -86,8 +90,10 @@
 #include "ovphysx/dlpack/dlpack.h"
 #include "ovphysx/experimental/TensorBinding.hpp"
 #include <ovphysx/experimental/ovphysx.hpp>
+#include <ovphysx/ovphysx_attributes.h>
 
 #include <chrono>
+#include <cstring>
 #include <cmath>
 #include <stdexcept>
 #include <string>
@@ -150,20 +156,18 @@ public:
         // shape check) only run while this is true, so leaving it false after run 1 would let
         // runs 2+ warm up on an empty write and snapshot the expectation as zero.
         mCountPayload = true;
+        mPayload.clear();
         mPhysX = BmGlobals::getInstance().getPhysX();
         if (!mPhysX) return;
 
         const std::string path = BmGlobals::getInstance().getDataFolder() + sceneAsset();
-        if (!benchmarkLoadUsdWithOvstage(mPhysX, path, mStageAttachment))
+        if (!mStageAttachment.stage && !benchmarkLoadUsdWithOvstage(mPhysX, path, mStageAttachment))
         {
             printFormatted("OutputWrite: ovstage load failed (%s)", path.c_str());
             return;
         }
 
-        // An authored-env asset already holds every env, so cloning it would double the scene. Only
-        // the CLONE is skipped. The step, afterSceneSetup() and the warm-up below all still have
-        // to run, so this is a guarded block and not an early return. Same hook and same name as the
-        // read's AuthoredEnvSceneT, so the two files read alike.
+        // Fully authored assets already contain every environment; clone only templates.
         if (clonesEnvs())
         {
             std::vector<std::string> targets;
@@ -183,24 +187,21 @@ public:
                 t[2] = static_cast<float>(row) * kSpacing;
                 t[6] = 1.0f; // identity quaternion (qw)
             }
-            if (mPhysX->clone(cloneSource(), targets, transforms.data()) != OVPHYSX_API_SUCCESS)
+            const ovphysx_enqueue_result_t clone = mPhysX->clone(cloneSource(), targets, transforms.data());
+            if (clone.status != OVPHYSX_API_SUCCESS || mPhysX->waitAll().status() != OVPHYSX_API_SUCCESS)
             {
                 printFormatted("OutputWrite: clone(N=%u) failed", mEnvCount);
                 return;
             }
-            mPhysX->waitAll();
         }
 
         // DirectGPU refuses reads and writes before the first step.
         mPhysX->step(1.0f / 60.0f);
         mPhysX->waitAll();
 
-        // Here, before ANY write, including the warm-up below. A lane whose write has a
-        // precondition (the joint write needs the read to have enumerated the scene's joints) must
-        // satisfy it before the first write is attempted, or the warm-up fails and the run reports
-        // no timings. It also has to be after the step above, since a read before the first step
-        // enumerates nothing.
-        if (!afterSceneSetup())
+        // Prepare valid input before any write, including warm-up. Readable columns
+        // snapshot the stepped scene, after DirectGPU reads become available.
+        if (!preparePayload())
             return;
 
         // The first session against a fresh scene builds the backend's superset view and its row
@@ -290,7 +291,7 @@ protected:
         mPhases = Phases{};
     }
 
-    void teardown()
+    virtual void teardown()
     {
         if (!mPhysX) return;
         benchmarkClearOvstage(mPhysX, mStageAttachment);
@@ -349,23 +350,22 @@ protected:
 
     virtual const char* sceneAsset() const
     {
-        return mGpu ? "/../benchmarks/data/cubes20_envs_gpu.usda" : "/../benchmarks/data/cubes20_envs.usda";
+        return mGpu ? "/../benchmarks/data/cubes20_envs_gpu.usda" : "/../benchmarks/data/cubes20_write_cpu.usda";
     }
     virtual bool clonesEnvs() const { return true; }
+    virtual uint32_t expectedInstancerCount() const
+    {
+        return 0;
+    }
     virtual const char* cloneSource() const { return "/World/envs/template"; }
     virtual std::string cloneTarget(uint32_t i) const { return "/World/envs/env" + std::to_string(i + 1); }
     virtual float cloneSpacing() const { return 4.0f; }
-    virtual ovphysx_sim_object_type_t objectType() const { return OVPHYSX_OBJECT_RIGID_BODY; }
+    virtual ovphysx_query_target_t objectType() const { return OVPHYSX_QUERY_TARGET_RIGID_BODY; }
 
-    // Runs on the loaded, cloned, stepped scene before the first write of any kind, so nothing it
-    // does lands inside a timed sample. Returning false fails the run rather than reporting untimed
-    // zeros.
-    virtual bool afterSceneSetup() { return true; }
-
-    // The single attribute this session writes. A session carries exactly one, so unlike the read's
-    // attribute array this is one name. That is also why the write's property lanes measure ONE
-    // attribute where the read's measure four: a four-attribute write is four sessions, and timing
-    // them as one would hide the per-session cost the split is there to expose.
+    // The single attribute this session writes. A session may carry several attributes, but these
+    // rows deliberately time a single-attribute session: the write's property lanes measure ONE
+    // attribute where the read's measure four, so each row keeps reporting the per-session cost of
+    // one attribute rather than a multi-attribute plan.
     virtual ovx_string_or_token_t writeAttr() const
     {
         return ovx_string_or_token_t{ 0, { OVPHYSX_ATTR_POSITION, sizeof(OVPHYSX_ATTR_POSITION) - 1 } };
@@ -374,7 +374,7 @@ protected:
     bool openQuery(ovphysx_query_handle_t& query)
     {
         query = 0;
-        if (ovphysx_query(physx()->handle(), objectType(), OVPHYSX_SCOPE_ALL, &query).status !=
+        if (bmCompleteTask(physx()->handle(), ovphysx_query(physx()->handle(), objectType(), OVPHYSX_SCOPE_ALL, &query, nullptr)).status !=
                 OVPHYSX_API_SUCCESS ||
             query == 0)
         {
@@ -393,7 +393,7 @@ protected:
         uint64_t floatCount = 0; // elements the session actually handed over, for the paired-lane check
         const double tOpen = nowMs();
         const bool openOk =
-            ovphysx_write(physx()->handle(), query, &attr, &write).status == OVPHYSX_API_SUCCESS && write != 0;
+            bmCompleteTask(physx()->handle(), ovphysx_write(physx()->handle(), query, &attr, 1, &write, nullptr)).status == OVPHYSX_API_SUCCESS && write != 0;
         mPhases.open += nowMs() - tOpen;
         if (!openOk)
         {
@@ -401,6 +401,7 @@ protected:
             return false;
         }
 
+        ovphysx_fetched_write_group_t fetched{};
         const ovstage_map_group_t* group = nullptr;
         uint32_t groups = 0;
         int64_t rows = 0;
@@ -408,9 +409,10 @@ protected:
         for (;;)
         {
             const double tFetch = nowMs();
-            const ovphysx_api_status_t status = ovphysx_fetch_write_next(physx()->handle(), write, &group).status;
+            const ovphysx_api_status_t status = bmCompleteTask(physx()->handle(), ovphysx_fetch_write_next(physx()->handle(), write, &fetched)).status;
             mPhases.fetch += nowMs() - tFetch;
-            if (status == OVPHYSX_API_END_OF_ITERATION)
+            group = fetched.group;
+            if (status == OVPHYSX_API_SUCCESS && !group)
             {
                 drained = true;
                 break;
@@ -432,6 +434,14 @@ protected:
             // binding, and it must not add a loop to the measured region.
             if (mCountPayload && group->data.tensors)
             {
+                if (expectedInstancerCount() &&
+                    (group->prims.count != 1 || group->data.count != 0 || group->data.tensor_count != 1 ||
+                     !group->data.tensors[0].shape || group->data.tensors[0].ndim != 1 ||
+                     group->data.tensors[0].shape[0] != 20 || group->data.tensors[0].dtype.lanes != 3))
+                {
+                    printFormatted("OutputWrite: expected one instancer with twenty instances in every group");
+                    break;
+                }
                 for (size_t t = 0; t < group->data.tensor_count; ++t)
                 {
                     const DLTensor& dt = group->data.tensors[t];
@@ -445,7 +455,7 @@ protected:
             }
 
             const double tFill = nowMs();
-            const bool filled = fillGroup(*group);
+            const bool filled = fillGroup(*group, groups - 1);
             mPhases.fill += nowMs() - tFill;
             if (!filled)
             {
@@ -458,7 +468,7 @@ protected:
             const ovstage_cuda_sync_t noSync{ 0, 0 };
             const double tCommit = nowMs();
             const bool committed =
-                ovphysx_commit_group(physx()->handle(), write, group, noSync).status == OVPHYSX_API_SUCCESS;
+                bmCompleteTask(physx()->handle(), ovphysx_commit_group(physx()->handle(), write, group, noSync)).status == OVPHYSX_API_SUCCESS;
             mPhases.commit += nowMs() - tCommit;
             if (!committed)
             {
@@ -469,7 +479,8 @@ protected:
         }
 
         const double tRel = nowMs();
-        ovphysx_release_write(physx()->handle(), write);
+        if (bmCompleteTask(physx()->handle(), ovphysx_release_write(physx()->handle(), write)).status != OVPHYSX_API_SUCCESS)
+            drained = false;
         mPhases.releaseWrite += nowMs() - tRel;
         ++mPhases.samples;
         if (!drained)
@@ -504,6 +515,12 @@ protected:
                     groups, static_cast<long long>(rows));
                 return false;
             }
+            if (expectedInstancerCount() && groups != expectedInstancerCount())
+            {
+                printFormatted(
+                    "OutputWrite: expected %u instancers, reached %u groups", expectedInstancerCount(), groups);
+                return false;
+            }
             mExpectedGroupCount = groups;
             mExpectedRowCount = static_cast<uint32_t>(rows);
         }
@@ -534,39 +551,147 @@ protected:
                         mExpectedRowCount);
     }
 
-    // Fill one group's column with the payload the caller would supply. This IS the caller's copy:
-    // the session handed over the destination, so there is no second one to skip.
-    bool fillGroup(const ovstage_map_group_t& group)
+    // Snapshot readable values once, before any writes. In particular, writing the same
+    // position to every body collapses the scene into one contact pile. Owned snapshots
+    // preserve separated poses and valid property values across the timed writes.
+    bool preparePayload()
+    {
+        const ovx_string_or_token_t attr = writeAttr();
+        const std::string name(attr.string.ptr, attr.string.length);
+        if (name == OVPHYSX_ATTR_FORCE || name == OVPHYSX_ATTR_WRENCH)
+            return true;
+        ovphysx_query_handle_t query = 0;
+        if (!openQuery(query))
+            return false;
+        ovphysx_read_handle_t read = 0;
+        bool ok = bmCompleteTask(physx()->handle(), ovphysx_read(physx()->handle(), query, &attr, 1, &read, nullptr)).status == OVPHYSX_API_SUCCESS && read != 0;
+        if (ok)
+        {
+            const ovstage_read_group_t* group = nullptr;
+            for (;;)
+            {
+                const ovphysx_api_status_t status = bmCompleteTask(physx()->handle(), ovphysx_fetch_read_next(physx()->handle(), read, &group)).status;
+                if (status == OVPHYSX_API_SUCCESS && !group)
+                    break;
+                if (status != OVPHYSX_API_SUCCESS || !group || !group->data.tensors)
+                {
+                    ok = false;
+                    break;
+                }
+#if defined(OVPHYSX_BENCHMARK_HAS_CUDA)
+                if (group->data.cuda_sync.wait_event)
+                    ok = cudaEventSynchronize(reinterpret_cast<cudaEvent_t>(group->data.cuda_sync.wait_event)) ==
+                         cudaSuccess;
+                else if (group->data.cuda_sync.stream)
+                {
+                    const cudaStream_t stream = group->data.cuda_sync.stream == 1 ?
+                                                    cudaStream_t{} :
+                                                    reinterpret_cast<cudaStream_t>(group->data.cuda_sync.stream);
+                    ok = cudaStreamSynchronize(stream) == cudaSuccess;
+                }
+#endif
+                std::vector<std::vector<float>> tensors;
+                for (uint32_t i = 0; ok && i < group->data.tensor_count; ++i)
+                {
+                    const DLTensor& tensor = group->data.tensors[i];
+                    const size_t floats = tensorFloats(tensor);
+                    if (floats == 0)
+                    {
+                        ok = false;
+                        break;
+                    }
+                    tensors.emplace_back(floats);
+                    const char* src = static_cast<const char*>(tensor.data) + tensor.byte_offset;
+                    if (tensor.device.device_type == kDLCPU)
+                        std::memcpy(tensors.back().data(), src, floats * sizeof(float));
+#if defined(OVPHYSX_BENCHMARK_HAS_CUDA)
+                    else if (tensor.device.device_type == kDLCUDA)
+                        ok = cudaMemcpy(tensors.back().data(), src, floats * sizeof(float), cudaMemcpyDeviceToHost) ==
+                             cudaSuccess;
+#endif
+                    else
+                        ok = false;
+                }
+                mPayload.push_back(std::move(tensors));
+                const ovstage_read_group_id_t id = group->read_group_id;
+                group = nullptr;
+                if (bmCompleteTask(physx()->handle(), ovphysx_release_group(physx()->handle(), read, id)).status != OVPHYSX_API_SUCCESS)
+                    ok = false;
+                if (!ok)
+                    break;
+            }
+            if (bmCompleteTask(physx()->handle(), ovphysx_release_read(physx()->handle(), read)).status != OVPHYSX_API_SUCCESS)
+                ok = false;
+        }
+        if (bmCompleteTask(physx()->handle(), ovphysx_release_query(physx()->handle(), query)).status != OVPHYSX_API_SUCCESS)
+            ok = false;
+        if (!ok || mPayload.empty())
+        {
+            printFormatted("OutputWrite: initial payload read failed for %s", name.c_str());
+            return false;
+        }
+        return true;
+    }
+
+    // All current write columns are compact float32 tensors. Account for every
+    // dimension and every ARRAY tensor, including per-joint and per-shape data.
+    static size_t tensorFloats(const DLTensor& tensor)
+    {
+        if (!tensor.data || !tensor.shape || tensor.ndim < 1 || tensor.dtype.code != kDLFloat ||
+            tensor.dtype.bits != 32 || tensor.dtype.lanes == 0)
+            return 0;
+        size_t elements = 1;
+        for (int32_t d = tensor.ndim - 1; d >= 0; --d)
+        {
+            if (tensor.shape[d] <= 0 || (tensor.strides && tensor.strides[d] != static_cast<int64_t>(elements)))
+                return 0;
+            elements *= static_cast<size_t>(tensor.shape[d]);
+        }
+        return elements * tensor.dtype.lanes;
+    }
+
+    // The copy into the session destination remains inside the measured region.
+    bool fillGroup(const ovstage_map_group_t& group, uint32_t groupIndex)
     {
         if (!group.data.tensors || group.data.tensor_count == 0)
-            return true;
-        const DLTensor& t = group.data.tensors[0];
-        if (!t.data || !t.shape)
-            return true;
-        const size_t lanes = t.dtype.lanes ? t.dtype.lanes : 1;
-        const size_t floats = static_cast<size_t>(t.shape[0]) * lanes;
-        if (floats == 0)
-            return true;
-
-        if (t.device.device_type == kDLCUDA)
-        {
-#if defined(OVPHYSX_BENCHMARK_HAS_CUDA)
-            // Host->device, which is what a caller with a host-side policy pays. A caller already
-            // producing on device would write in place and pay nothing here (the case this API
-            // exists to enable), so this lane is the PESSIMISTIC one, not the flattering one.
-            if (mHostPayload.size() < floats)
-                mHostPayload.assign(floats, 0.5f);
-            if (cudaMemcpy(t.data, mHostPayload.data(), floats * sizeof(float), cudaMemcpyHostToDevice) !=
-                cudaSuccess)
-                return false;
-            return true;
-#else
             return false;
+        if (!mPayload.empty() && (groupIndex >= mPayload.size() || mPayload[groupIndex].size() != group.data.tensor_count))
+            return false;
+        for (uint32_t i = 0; i < group.data.tensor_count; ++i)
+        {
+            const DLTensor& tensor = group.data.tensors[i];
+            const size_t floats = tensorFloats(tensor);
+            if (floats == 0)
+                return false;
+            const std::vector<float>* payload = nullptr;
+            if (!mPayload.empty())
+            {
+                payload = &mPayload[groupIndex][i];
+                if (payload->size() != floats)
+                    return false;
+            }
+            else
+            {
+                // Force/wrench have no read counterpart. A zero force is valid.
+                if (mHostPayload.size() != floats)
+                    mHostPayload.assign(floats, 0.0f);
+                payload = &mHostPayload;
+            }
+            char* dst = static_cast<char*>(tensor.data) + tensor.byte_offset;
+            if (tensor.device.device_type == kDLCPU)
+                std::memcpy(dst, payload->data(), floats * sizeof(float));
+#if defined(OVPHYSX_BENCHMARK_HAS_CUDA)
+            else if (tensor.device.device_type == kDLCUDA)
+            {
+                // This session lane measures a host-produced payload. A device-side
+                // producer can fill in place; the binding lane uses device input.
+                if (cudaMemcpy(dst, payload->data(), floats * sizeof(float), cudaMemcpyHostToDevice) != cudaSuccess)
+                    return false;
+            }
 #endif
+            else
+                return false;
         }
-        float* dst = static_cast<float*>(t.data);
-        for (size_t i = 0; i < floats; ++i)
-            dst[i] = 0.5f;
         return true;
     }
 
@@ -580,9 +705,10 @@ private:
         mPhases.query += nowMs() - tQuery;
         if (!opened)
             return false;
-        const bool ok = writeWithQuery(query);
+        bool ok = writeWithQuery(query);
         const double tRq = nowMs();
-        ovphysx_release_query(physx()->handle(), query);
+        if (bmCompleteTask(physx()->handle(), ovphysx_release_query(physx()->handle(), query)).status != OVPHYSX_API_SUCCESS)
+            ok = false;
         mPhases.releaseQuery += nowMs() - tRq;
         return ok;
     }
@@ -600,6 +726,7 @@ protected:
     uint64_t lastFloatCount() const { return mLastFloatCount; }
 
 private:
+    std::vector<std::vector<std::vector<float>>> mPayload;
     std::vector<float> mHostPayload; // staging for the device fill; grown once
     uint32_t mFailedWrites = 0;
     uint32_t mAttempts = 0;
@@ -661,7 +788,8 @@ public:
         reportPhases();
         if (mQuery)
         {
-            ovphysx_release_query(physx()->handle(), mQuery);
+            if (bmCompleteTask(physx()->handle(), ovphysx_release_query(physx()->handle(), mQuery)).status != OVPHYSX_API_SUCCESS)
+                bmRecordFailure(registeredRow().c_str(), "query release failed during teardown");
             mQuery = 0;
         }
         teardown();
@@ -845,6 +973,15 @@ private:
         view.shape = shape.data();
         view.strides = nullptr;
         view.byte_offset = 0;
+        if (type == OVPHYSX_TENSOR_RIGID_BODY_POSE_F32 || type == OVPHYSX_TENSOR_ARTICULATION_ROOT_POSE_F32)
+        {
+            if (binding.read(view) != OVPHYSX_API_SUCCESS)
+            {
+                printFormatted("TensorBindingWrite: initial %s read failed", what);
+                return false;
+            }
+            physx()->waitAll();
+        }
         return true;
     }
 
@@ -861,7 +998,9 @@ private:
     {
         const uint64_t bound = bindingFloatCount();
         const uint64_t written = lastFloatCount();
-        if (bound == written)
+        const bool pose = bindingTensorType() == OVPHYSX_TENSOR_RIGID_BODY_POSE_F32 ||
+                          bindingTensorType() == OVPHYSX_TENSOR_ARTICULATION_ROOT_POSE_F32;
+        if (bound > 0 && (pose ? (bound % 7 == 0 && written % 3 == 0 && bound / 7 == written / 3) : bound == written))
             return true;
         printFormatted("TensorBindingWrite: the binding covers %llu floats but the write session covers %llu -- "
                        "the two APIs did not reach the same payload, so no ratio is reported",
@@ -928,6 +1067,10 @@ public:
 protected:
     ovphysx_tensor_type_t bindingTensorType() const override { return OVPHYSX_TENSOR_RIGID_BODY_INERTIA_F32; }
     const char* bindingName() const override { return "inertia"; }
+    ovx_string_or_token_t writeAttr() const override
+    {
+        return ovx_string_or_token_t{ 0, { OVPHYSX_ATTR_INERTIA, sizeof(OVPHYSX_ATTR_INERTIA) - 1 } };
+    }
     uint32_t seedStride() const override { return 9; }
     // A positive diagonal: a singular or zero inertia is not a value PhysX accepts as a body's, and
     // seeding one would change what is being measured into error handling.
@@ -937,8 +1080,7 @@ protected:
 // Per-shape, on the COMPOUND fixture. cubes20_envs.usda is one collider per body, which is the
 // degenerate width for a padded per-shape column: no padding, no bodies x shapes depth, and a lane
 // that would look identical to a per-body one. cubes20_compound_envs.usda is the same twenty bodies
-// with four colliders each, and it is the read's fixture too, which is what keeps the two
-// directions' per-shape numbers comparable.
+// with four colliders each, so the lane exercises the padded per-shape column.
 class ShapeWriteBase : public WriteOnlyBase
 {
 public:
@@ -961,7 +1103,7 @@ protected:
 };
 
 
-// The articulation's ROOT state, through OVPHYSX_OBJECT_ARTICULATION.
+// The articulation's ROOT state, through OVPHYSX_QUERY_TARGET_ARTICULATION.
 //
 // Cartpole rather than the cubes scene, matching OutputRead's articulation lanes exactly (same
 // asset, same clone source, same 4.0 spacing), so a root-write number can be read against the
@@ -981,7 +1123,7 @@ public:
     ArticulationRootWriteBase(uint32_t envCount, bool gpu) : WriteOnlyBase(envCount, gpu) {}
 
 protected:
-    ovphysx_sim_object_type_t objectType() const override { return OVPHYSX_OBJECT_ARTICULATION; }
+    ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_ARTICULATION; }
     ovx_string_or_token_t writeAttr() const override
     {
         return ovx_string_or_token_t{
@@ -993,8 +1135,7 @@ protected:
     // cpu, which is what the _cpu asset exists to prevent.
     const char* sceneAsset() const override
     {
-        return mGpu ? "/../benchmarks/data/cartpole_probe.usda" :
-                      "/../benchmarks/data/cartpole_probe_cpu.usda";
+        return mGpu ? "/../benchmarks/data/cartpole_probe.usda" : "/../benchmarks/data/cartpole_write_cpu.usda";
     }
     // env_0 is the template AND stays in the scene, so N clones cover N+1 articulations.
     const char* cloneSource() const override { return "/World/envs/env_0"; }
@@ -1021,6 +1162,14 @@ protected:
         return OVPHYSX_TENSOR_ARTICULATION_ROOT_POSE_F32;
     }
     const char* bindingName() const override { return "root pose"; }
+    ovphysx_query_target_t objectType() const override
+    {
+        return OVPHYSX_QUERY_TARGET_ARTICULATION;
+    }
+    ovx_string_or_token_t writeAttr() const override
+    {
+        return ovx_string_or_token_t{ 0, { OVPHYSX_ATTR_ROOT_POSITION, sizeof(OVPHYSX_ATTR_ROOT_POSITION) - 1 } };
+    }
     // 7 floats with qw last, same as the rigid pose: seeding zeros would hand PhysX a degenerate
     // quaternion and change what the solver does between samples.
     uint32_t seedStride() const override { return 7; }
@@ -1028,8 +1177,7 @@ protected:
 
     const char* sceneAsset() const override
     {
-        return mGpu ? "/../benchmarks/data/cartpole_probe.usda" :
-                      "/../benchmarks/data/cartpole_probe_cpu.usda";
+        return mGpu ? "/../benchmarks/data/cartpole_probe.usda" : "/../benchmarks/data/cartpole_write_cpu.usda";
     }
     const char* cloneSource() const override { return "/World/envs/env_0"; }
     std::string cloneTarget(uint32_t i) const override
@@ -1043,30 +1191,13 @@ protected:
 // every prim. No rigid lane has that shape, so this has nothing to be compared against on the
 // ovphysx side. The binding lane below is what gives it a facing number.
 //
-// THIS LANE MUST PRIME THE JOINT CACHE, and that is a property of the API rather than of the
-// benchmark. The joint write derives its joint set from the cache the READ fills, and refuses
-// outright when nothing has read the scene's joints yet. The write deliberately does not
-// re-implement the enumeration, so a second copy cannot drift from the first. A caller round-tripping
-// joint state reads first anyway, so priming here measures the same order a real one uses. The prime
-// is in startRun, before the warm-up writes, so it is never inside a timed sample.
 class ArticulationDofWriteBase : public WriteOnlyBase
 {
 public:
     ArticulationDofWriteBase(uint32_t envCount, bool gpu) : WriteOnlyBase(envCount, gpu) {}
 
 protected:
-    // The prime, through the hook rather than by bracketing startRun: the scene has to be the one
-    // the warm-up and the timed writes use. The joint cache is keyed by PxScene, so priming a scene
-    // that is then reloaded caches an entry for a scene nothing will write to.
-    bool afterSceneSetup() override
-    {
-        if (primeJointCache())
-            return true;
-        printFormatted("ArticulationDofWrite: joint-cache prime failed -- run will report no timings");
-        return false;
-    }
-
-    ovphysx_sim_object_type_t objectType() const override { return OVPHYSX_OBJECT_ARTICULATION_JOINT; }
+    ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT; }
     ovx_string_or_token_t writeAttr() const override
     {
         return ovx_string_or_token_t{ 0,
@@ -1074,55 +1205,12 @@ protected:
     }
     const char* sceneAsset() const override
     {
-        return mGpu ? "/../benchmarks/data/cartpole_probe.usda" :
-                      "/../benchmarks/data/cartpole_probe_cpu.usda";
+        return mGpu ? "/../benchmarks/data/cartpole_probe.usda" : "/../benchmarks/data/cartpole_write_cpu.usda";
     }
     const char* cloneSource() const override { return "/World/envs/env_0"; }
     std::string cloneTarget(uint32_t i) const override
     {
         return "/World/envs/env_" + std::to_string(i + 1);
-    }
-
-private:
-    // One read of jointPosition, fully drained. Not timed.
-    bool primeJointCache()
-    {
-        if (!physx())
-            return false;
-        ovphysx_query_handle_t query = 0;
-        if (!openQuery(query))
-            return false;
-
-        const ovx_string_or_token_t attr = writeAttr();
-        ovphysx_read_handle_t read = 0;
-        bool ok = ovphysx_read(physx()->handle(), query, &attr, 1, &read).status == OVPHYSX_API_SUCCESS &&
-                  read != 0;
-        if (ok)
-        {
-            const ovstage_read_group_t* group = nullptr;
-            for (;;)
-            {
-                const ovphysx_api_status_t status =
-                    ovphysx_fetch_read_next(physx()->handle(), read, &group).status;
-                if (status == OVPHYSX_API_END_OF_ITERATION)
-                    break;
-                if (status != OVPHYSX_API_SUCCESS || group == nullptr)
-                {
-                    ok = false;
-                    break;
-                }
-                const ovstage_read_group_id_t groupId = group->read_group_id;
-                group = nullptr;
-                if (ovphysx_release_group(physx()->handle(), read, groupId).status != OVPHYSX_API_SUCCESS)
-                {
-                    ok = false;
-                    break;
-                }
-            }
-            ovphysx_release_read(physx()->handle(), read);
-        }
-        ovphysx_release_query(physx()->handle(), query);
-        return ok;
     }
 };
 
@@ -1142,6 +1230,14 @@ protected:
         return OVPHYSX_TENSOR_ARTICULATION_DOF_POSITION_F32;
     }
     const char* bindingName() const override { return "dof position"; }
+    ovphysx_query_target_t objectType() const override
+    {
+        return OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT;
+    }
+    ovx_string_or_token_t writeAttr() const override
+    {
+        return ovx_string_or_token_t{ 0, { OVPHYSX_ATTR_JOINT_POSITION, sizeof(OVPHYSX_ATTR_JOINT_POSITION) - 1 } };
+    }
     // A DOF position is one scalar with no validity constraint (no quaternion to keep normalized
     // and no matrix to keep non-singular), so a zeroed row is a legitimate value here, unlike the
     // pose and inertia lanes.
@@ -1150,8 +1246,7 @@ protected:
 
     const char* sceneAsset() const override
     {
-        return mGpu ? "/../benchmarks/data/cartpole_probe.usda" :
-                      "/../benchmarks/data/cartpole_probe_cpu.usda";
+        return mGpu ? "/../benchmarks/data/cartpole_probe.usda" : "/../benchmarks/data/cartpole_write_cpu.usda";
     }
     const char* cloneSource() const override { return "/World/envs/env_0"; }
     std::string cloneTarget(uint32_t i) const override
@@ -1161,11 +1256,9 @@ protected:
 };
 
 
-// Tendons (ADR-0012), on the cartpole_tendon scene OutputRead's tendon lanes use (same asset, same
-// clone source, same spacing), so a write number reads directly against the read number beside it.
+// Tendons (ADR-0012), with one fixed and one spatial tendon per Cartpole environment.
 //
-// `tendonStiffness`, matching tendonReadAttrs' first column, so the fixed and spatial write lanes
-// measure identical columns and can be compared with each other and with the read.
+// Both tendon families write tendonStiffness.
 //
 // ONE tendon of each kind per env, against 164k bodies in the rigid lanes: the smallest row count in
 // this file. That is the point rather than a weakness. Tendon properties are authoring-time values,
@@ -1202,7 +1295,7 @@ public:
     FixedTendonWriteBase(uint32_t envCount, bool gpu) : CartpoleTendonWriteSceneT<WriteOnlyBase>(envCount, gpu) {}
 
 protected:
-    ovphysx_sim_object_type_t objectType() const override { return OVPHYSX_OBJECT_FIXED_TENDON; }
+    ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_FIXED_TENDON; }
 };
 
 class SpatialTendonWriteBase : public CartpoleTendonWriteSceneT<WriteOnlyBase>
@@ -1211,10 +1304,10 @@ public:
     SpatialTendonWriteBase(uint32_t envCount, bool gpu) : CartpoleTendonWriteSceneT<WriteOnlyBase>(envCount, gpu) {}
 
 protected:
-    ovphysx_sim_object_type_t objectType() const override { return OVPHYSX_OBJECT_SPATIAL_TENDON; }
+    ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_SPATIAL_TENDON; }
 };
 
-// The binding lanes the two above face, matching OutputRead's tendon binding lanes.
+// Binding comparators for the fixed and spatial tendon sessions.
 class FixedTendonBindingWriteBase : public CartpoleTendonWriteSceneT<TensorBindingWriteBase>
 {
 public:
@@ -1228,7 +1321,7 @@ protected:
     // startRun does warm-up ovphysx WRITES before the binding is exercised, so a rigid session
     // asking for tendonStiffness is refused and the whole lane reports Skipped. The timed work
     // still goes through the binding. This only makes the warm-up coherent.
-    ovphysx_sim_object_type_t objectType() const override { return OVPHYSX_OBJECT_FIXED_TENDON; }
+    ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_FIXED_TENDON; }
     const char* bindingPattern() const override { return kArticulationPattern; }
     ovphysx_tensor_type_t bindingTensorType() const override
     {
@@ -1254,7 +1347,7 @@ protected:
     // startRun does warm-up ovphysx WRITES before the binding is exercised, so a rigid session
     // asking for tendonStiffness is refused and the whole lane reports Skipped. The timed work
     // still goes through the binding. This only makes the warm-up coherent.
-    ovphysx_sim_object_type_t objectType() const override { return OVPHYSX_OBJECT_SPATIAL_TENDON; }
+    ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_SPATIAL_TENDON; }
     const char* bindingPattern() const override { return kArticulationPattern; }
     ovphysx_tensor_type_t bindingTensorType() const override
     {
@@ -1312,15 +1405,14 @@ public:
     LinkWrenchWriteBase(uint32_t envCount, bool gpu) : WriteOnlyBase(envCount, gpu) {}
 
 protected:
-    ovphysx_sim_object_type_t objectType() const override { return OVPHYSX_OBJECT_ARTICULATION_LINK; }
+    ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_ARTICULATION_LINK; }
     ovx_string_or_token_t writeAttr() const override
     {
         return ovx_string_or_token_t{ 0, { OVPHYSX_ATTR_WRENCH, sizeof(OVPHYSX_ATTR_WRENCH) - 1 } };
     }
     const char* sceneAsset() const override
     {
-        return mGpu ? "/../benchmarks/data/cartpole_probe.usda" :
-                      "/../benchmarks/data/cartpole_probe_cpu.usda";
+        return mGpu ? "/../benchmarks/data/cartpole_probe.usda" : "/../benchmarks/data/cartpole_write_cpu.usda";
     }
     const char* cloneSource() const override { return "/World/envs/env_0"; }
     std::string cloneTarget(uint32_t i) const override
@@ -1372,7 +1464,7 @@ public:
     LinkWrenchBindingWriteBase(uint32_t envCount, bool gpu) : TensorBindingWriteBase(envCount, gpu) {}
 
 protected:
-    ovphysx_sim_object_type_t objectType() const override { return OVPHYSX_OBJECT_ARTICULATION_LINK; }
+    ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_ARTICULATION_LINK; }
     ovx_string_or_token_t writeAttr() const override
     {
         return ovx_string_or_token_t{ 0, { OVPHYSX_ATTR_WRENCH, sizeof(OVPHYSX_ATTR_WRENCH) - 1 } };
@@ -1387,8 +1479,7 @@ protected:
     void seedRow(float*) const override {}
     const char* sceneAsset() const override
     {
-        return mGpu ? "/../benchmarks/data/cartpole_probe.usda" :
-                      "/../benchmarks/data/cartpole_probe_cpu.usda";
+        return mGpu ? "/../benchmarks/data/cartpole_probe.usda" : "/../benchmarks/data/cartpole_write_cpu.usda";
     }
     const char* cloneSource() const override { return "/World/envs/env_0"; }
     std::string cloneTarget(uint32_t i) const override
@@ -1398,8 +1489,7 @@ protected:
 };
 
 
-// Point-instancer instances (ADR-0012), on the same asset OutputRead's instancer lanes use, so a
-// write number reads directly against the read number beside it.
+// Point-instancer instances (ADR-0012), twenty instances per authored environment.
 //
 // The one family where the write does MORE work than the read rather than the mirror of it:
 //
@@ -1411,40 +1501,54 @@ protected:
 // per instance. Everywhere else the two directions do comparable work and the gap is session setup.
 // Here there is a real asymmetry, and this lane is what says how much it costs.
 //
-// The read-modify-write is not avoidable: a session carries one attribute, and a pose needs both
+// The read-modify-write is not avoidable: this lane writes position alone, and a pose needs both
 // halves.
-template <typename WriteBase>
-class Cubes20InstancerWriteSceneT : public WriteBase
+// Position writes include the inverse reframe; the velocity subclass measures packed scatter.
+class InstancerWriteBase : public WriteOnlyBase
 {
 public:
-    Cubes20InstancerWriteSceneT(uint32_t envCount, bool gpu) : WriteBase(envCount, gpu) {}
+    InstancerWriteBase(uint32_t envCount, bool gpu)
+        : WriteOnlyBase(envCount, gpu),
+          mAsset("/../benchmarks/data/cubes20_instancer_envs_" + std::to_string(envCount) + (gpu ? "_gpu.usda" : ".usda"))
+    {
+    }
+    ~InstancerWriteBase() override
+    {
+        OutputWriteBase::teardown();
+    }
 
 protected:
+    // Keep the authored scene across runs; each run still rebuilds and warms
+    // its query/write sessions and snapshots current valid input.
+    void teardown() override
+    {
+    }
     const char* sceneAsset() const override
     {
-        return this->mGpu ? "/../benchmarks/data/cubes20_instancer_envs_gpu.usda" :
-                            "/../benchmarks/data/cubes20_instancer_envs.usda";
+        return mAsset.c_str();
     }
-    // cloneSource, cloneTarget and cloneSpacing are the base's, as on the read's mixin: the asset has
-    // the same /World/envs/template layout as cubes20_envs.usda by construction.
-};
+    // The replicator creates standalone actors for cloned instances. Author every
+    // environment so every body retains the point-instancer write path.
+    bool clonesEnvs() const override
+    {
+        return false;
+    }
+    uint32_t expectedInstancerCount() const override
+    {
+        return mEnvCount;
+    }
 
-// `position`, so the lane exercises the reframe inverse. A velocity column would skip it entirely
-// (velocities are world-frame in both directions) and measure only the packed scatter.
-class InstancerWriteBase : public Cubes20InstancerWriteSceneT<WriteOnlyBase>
-{
-public:
-    InstancerWriteBase(uint32_t envCount, bool gpu) : Cubes20InstancerWriteSceneT<WriteOnlyBase>(envCount, gpu) {}
+private:
+    std::string mAsset;
 };
 
 // The velocity column, against the pose one: the difference IS the reframe inverse plus the pose
 // pre-read, over the same instances on the same scene. That subtraction is the number this pair
 // exists to produce.
-class InstancerVelocityWriteBase : public Cubes20InstancerWriteSceneT<WriteOnlyBase>
+class InstancerVelocityWriteBase : public InstancerWriteBase
 {
 public:
-    InstancerVelocityWriteBase(uint32_t envCount, bool gpu)
-        : Cubes20InstancerWriteSceneT<WriteOnlyBase>(envCount, gpu)
+    InstancerVelocityWriteBase(uint32_t envCount, bool gpu) : InstancerWriteBase(envCount, gpu)
     {
     }
 
@@ -1554,7 +1658,7 @@ public:
     }
 
 protected:
-    ovphysx_sim_object_type_t objectType() const override { return OVPHYSX_OBJECT_DEFORMABLE_MATERIAL; }
+    ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_DEFORMABLE_MATERIAL; }
     ovx_string_or_token_t writeAttr() const override
     {
         return ovx_string_or_token_t{
@@ -1579,7 +1683,7 @@ public:
     }
 
 protected:
-    ovphysx_sim_object_type_t objectType() const override { return OVPHYSX_OBJECT_DEFORMABLE_VOLUME; }
+    ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_DEFORMABLE_VOLUME; }
     ovx_string_or_token_t writeAttr() const override
     {
         return ovx_string_or_token_t{ 0, { OVPHYSX_ATTR_POINTS, sizeof(OVPHYSX_ATTR_POINTS) - 1 } };
@@ -1602,7 +1706,7 @@ public:
     }
 
 protected:
-    ovphysx_sim_object_type_t objectType() const override { return OVPHYSX_OBJECT_PARTICLE_SET; }
+    ovphysx_query_target_t objectType() const override { return OVPHYSX_QUERY_TARGET_PARTICLE_SET; }
     ovx_string_or_token_t writeAttr() const override
     {
         return ovx_string_or_token_t{ 0, { OVPHYSX_ATTR_POINTS, sizeof(OVPHYSX_ATTR_POINTS) - 1 } };
@@ -1710,7 +1814,7 @@ DEFINE_ARTI_DOF_PROPERTY_WRITE(8192, cpu, false, false)
 DEFINE_ARTI_DOF_BINDING_WRITE(8192, cpu, false, false)
 DEFINE_ARTI_DOF_BINDING_WRITE(8192, gpu, true, true)
 
-// Tendon lanes, facing OutputRead's on the same asset.
+// Tendon session and binding lanes.
 DEFINE_FIXED_TENDON_WRITE(1024, cpu, false, false)
 DEFINE_FIXED_TENDON_WRITE(8192, cpu, false, false)
 DEFINE_FIXED_TENDON_WRITE(1024, gpu, true, true)
@@ -1743,7 +1847,7 @@ DEFINE_WRENCH_BINDING_WRITE(8192, gpu, true, true)
 DEFINE_LINK_WRENCH_BINDING_WRITE(8192, cpu, false, false)
 DEFINE_LINK_WRENCH_BINDING_WRITE(8192, gpu, true, true)
 
-// Instancer lanes, facing OutputRead's readonly_rb_instancer lanes on the same asset.
+// Instancer position and velocity lanes.
 DEFINE_INSTANCER_WRITE(1024, cpu, false, false)
 DEFINE_INSTANCER_WRITE(8192, cpu, false, false)
 DEFINE_INSTANCER_WRITE(1024, gpu, true, true)

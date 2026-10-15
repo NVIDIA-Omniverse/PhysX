@@ -1,11 +1,11 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-"""Tests for the app -> physics write API (ADR-0012): PhysX.write over an
+"""Tests for the app -> physics write API (ADR-0012): PhysX.write_sync over an
 ovstage-attached scene.
 
 The oracle is the READ. Every value assertion writes a column and reads it back through
-PhysX.read, because that is the check that pins the whole contract at once: the prim
+PhysX.read_sync, because that is the check that pins the whole contract at once: the prim
 ordering, the reframe, and the round trip through the backend. Asserting on the write
 buffer alone would pass even if nothing reached the solver.
 """
@@ -14,17 +14,17 @@ buffer alone would pass even if nothing reached the solver.
 # @covers AC-4 AC-5 AC-5a AC-7 AC-8 AC-9
 # @maps_to TEST-CAPI-WRITE-001
 # @implements REQ-INPUT-DEVICE-001
-# @covers AC-1 AC-4 AC-5
+# @covers AC-1 AC-4 AC-5 AC-13
 # @maps_to TEST-INPUT-DEVICE-001
 
 import ctypes
 import weakref
-from types import SimpleNamespace
 
 import numpy as np
 import ovstage
 import pytest
 import warp as wp
+from ovphysx import TaskError
 from ovphysx.types import ObjectScope, SimObjectType
 from test_utils import attach_usd_with_ovstage, data_path, load_usd_with_ovstage
 
@@ -52,15 +52,15 @@ def _fill(t, block) -> None:
 def _commit_after_fill(session, group) -> None:
     cuda_tensor = next((t for t in group.tensors if t.size and t.device.is_cuda), None)
     if cuda_tensor is None:
-        session.commit(group)
+        session.commit_sync(group)
         return
     stream = wp.get_stream(cuda_tensor.device)
-    session.commit(group, cuda_stream=int(stream.cuda_stream or 1))
+    session.commit_sync(group, cuda_stream=int(stream.cuda_stream or 1))
 
 
 def _read_positions(physx, attr="position"):
     """path-independent: attribute values in prim order, as one host array."""
-    with physx.read(SimObjectType.RIGID_BODY, [attr]) as result:
+    with physx.read_sync(SimObjectType.RIGID_BODY, [attr]) as result:
         assert result.groups, "expected at least one group"
         return np.concatenate([_to_host(g.tensors[0]).reshape(g.prim_count, -1) for g in result.groups])
 
@@ -68,48 +68,29 @@ def _read_positions(physx, attr="position"):
 def test_later_group_conversion_failure_drops_aliases_before_release():
     """A failed second group must not release storage under the first group's alias."""
     from ovphysx import _bindings
-    from ovphysx.api import PhysX
     from ovphysx.dlpack import DLTensor
-    from ovphysx.types import ApiStatus
 
     tensor = DLTensor()
     group = _bindings.ovstage_map_group_t()
     group.data.tensor_count = 1
     group.data.tensors = ctypes.pointer(tensor)
     alias_ref = None
-    fetches = 0
     release_observations = []
 
     class Alias:
         pass
 
-    class FakeLib:
-        def ovphysx_query(self, handle, object_type, scope, out_query):
-            out_query._obj.value = 1
-            return SimpleNamespace(status=ApiStatus.SUCCESS)
-
-        def ovphysx_write(self, handle, query, attribute, out_write):
-            out_write._obj.value = 2
-            return SimpleNamespace(status=ApiStatus.SUCCESS)
-
-        def ovphysx_fetch_write_next(self, handle, write, out_group):
-            nonlocal fetches
-            fetches += 1
-            out_group._obj.contents = group
-            return SimpleNamespace(status=ApiStatus.SUCCESS)
-
-        def ovphysx_release_write(self, handle, write):
-            release_observations.append(("write", alias_ref() is None))
-
-        def ovphysx_release_query(self, handle, query):
-            release_observations.append(("query", alias_ref() is None))
-
-    sdk = object.__new__(PhysX)
-    sdk._lib = FakeLib()
-    sdk._omni_physx_sdk_handle = SimpleNamespace(value=0x1234)
-    sdk._check_valid = lambda: None
-    sdk._drain_pending_read_releases = lambda: None
-    sdk._get_last_error = lambda: "unused"
+    from test_session_operations import make_sdk
+    sdk = make_sdk()
+    sdk._lib.write_groups = [(group, 0), (group, 0)]
+    def release_write(*args):
+        release_observations.append(("write", alias_ref() is None))
+        return sdk._lib.submit("release_write")
+    def release_query(*args):
+        release_observations.append(("query", alias_ref() is None))
+        return sdk._lib.submit("release_query")
+    sdk._lib.ovphysx_release_write = release_write
+    sdk._lib.ovphysx_release_query = release_query
 
     def fake_convert(t, wp_mod, on_release):
         nonlocal alias_ref
@@ -122,9 +103,9 @@ def test_later_group_conversion_failure_drops_aliases_before_release():
     sdk._dltensor_to_warp_array = fake_convert
 
     with pytest.raises(RuntimeError, match="forced conversion failure"):
-        sdk.write(SimObjectType.RIGID_BODY, "position")
+        sdk.write_sync(SimObjectType.RIGID_BODY, [1])
 
-    assert fetches == 2
+    assert sdk._lib.calls.count("fetch_write") == 2
     assert release_observations == [("write", True), ("query", True)]
 
 
@@ -139,7 +120,7 @@ def test_write_position_round_trips(physx_sdk):
     # Values no simulation would produce, so a dropped or duplicated row is visible.
     target = np.arange(before.size, dtype=np.float32).reshape(before.shape) + 100.0
 
-    with physx_sdk.write(SimObjectType.RIGID_BODY, "position") as w:
+    with physx_sdk.write_sync(SimObjectType.RIGID_BODY, "position") as w:
         assert w.groups, "expected at least one writable group"
         row = 0
         for g in w.groups:
@@ -161,8 +142,8 @@ def test_prestep_write_refused_on_directgpu(physx_sdk):
     chunks = []
     # Fill every group first so a first-group commit refusal still yields a full
     # unique target to compare against after the required DirectGPU step.
-    with pytest.raises(RuntimeError, match="commit failed"):
-        with physx_sdk.write(SimObjectType.RIGID_BODY, "position") as w:
+    with pytest.raises(TaskError, match="requires at least one simulation step"):
+        with physx_sdk.write_sync(SimObjectType.RIGID_BODY, "position") as w:
             assert w.groups, "the session opens; DirectGPU refusal is at commit"
             float_off = 0
             for g in w.groups:
@@ -182,7 +163,38 @@ def test_prestep_write_refused_on_directgpu(physx_sdk):
     # which exceeds 1e-3, so a tight not-allclose would pass even if the write
     # landed. The 100-offset target is the witness (authored poses stay near the
     # USDA translates); 1.0 is far above gravity and far below that offset.
-    assert not np.allclose(after, target, rtol=0, atol=1.0), "DirectGPU pre-step write must not land"
+    # Check every element: not-allclose would pass if only some rows landed.
+    assert np.all(np.abs(after - target) > 1.0), "DirectGPU pre-step write must not land on any row"
+
+
+@pytest.mark.parametrize(
+    "scene,object_type,attribute,pattern,value",
+    [
+        ("mixed_base_articulations_gpu.usda", SimObjectType.ARTICULATION, "rootPosition", "/World/articulation2",
+         [2.5, 0.0, 30.0]),
+        ("mixed_base_articulations_gpu.usda", SimObjectType.ARTICULATION_JOINT, "jointPosition",
+         "/World/articulation2/articulatedRevoluteJoint1", [0.05]),
+        ("FixedTendonTest.usda", SimObjectType.FIXED_TENDON, "tendonDamping", "/FixedTendonTest/revJoint01", [30.0]),
+    ],
+    ids=["root", "joint", "tendon"],
+)
+def test_articulation_prestep_write_refused_on_directgpu(physx_sdk, scene, object_type, attribute, pattern, value):
+    """DirectGPU: a pre-step articulation write opens over the inserted articulation, then commit is refused."""
+    load_usd_with_ovstage(physx_sdk, data_path(scene))
+    target = np.asarray(value, dtype=np.float32)
+    with pytest.raises(TaskError, match="requires at least one simulation step"):
+        with physx_sdk.write_sync(object_type, attribute, pattern=pattern) as w:
+            assert len(w.groups) == 1, "the session opens; DirectGPU refusal is at commit"
+            _fill(w.groups[0].tensors[0], target)
+            _commit_after_fill(w, w.groups[0])
+    physx_sdk.step_sync(1.0 / 60.0)
+    with physx_sdk.write_sync(object_type, attribute, pattern=pattern) as w:
+        assert len(w.groups) == 1
+        _fill(w.groups[0].tensors[0], target)
+        _commit_after_fill(w, w.groups[0])
+    with physx_sdk.read_sync(object_type, [attribute], pattern=pattern) as result:
+        assert len(result.groups) == 1
+        np.testing.assert_allclose(_to_host(result.groups[0].tensors[0]).reshape(-1), target, rtol=0, atol=1e-4)
 
 
 def test_write_leaves_orientation_alone(physx_sdk):
@@ -193,7 +205,7 @@ def test_write_leaves_orientation_alone(physx_sdk):
 
     quat_before = _read_positions(physx_sdk, "orientation")
 
-    with physx_sdk.write(SimObjectType.RIGID_BODY, "position") as w:
+    with physx_sdk.write_sync(SimObjectType.RIGID_BODY, "position") as w:
         for g in w.groups:
             _fill(g.tensors[0], np.full((g.prim_count, 3), 42.0, dtype=np.float32))
             _commit_after_fill(w, g)
@@ -209,7 +221,7 @@ def test_uncommitted_group_publishes_nothing(physx_sdk):
 
     before = _read_positions(physx_sdk)
 
-    with physx_sdk.write(SimObjectType.RIGID_BODY, "position") as w:
+    with physx_sdk.write_sync(SimObjectType.RIGID_BODY, "position") as w:
         for g in w.groups:
             _fill(g.tensors[0], np.full((g.prim_count, 3), -12345.0, dtype=np.float32))
             # deliberately NOT committed
@@ -224,11 +236,11 @@ def test_double_commit_raises(physx_sdk):
     load_usd_with_ovstage(physx_sdk, data_path("boxes_falling_on_groundplane.usda"))
     physx_sdk.step_sync(1.0 / 60.0)
 
-    with physx_sdk.write(SimObjectType.RIGID_BODY, "position") as w:
+    with physx_sdk.write_sync(SimObjectType.RIGID_BODY, "position") as w:
         g = w.groups[0]
-        w.commit(g)
+        w.commit_sync(g)
         with pytest.raises(RuntimeError):
-            w.commit(g)
+            w.commit_sync(g)
 
 
 def test_unwritable_attribute_raises(physx_sdk):
@@ -237,9 +249,9 @@ def test_unwritable_attribute_raises(physx_sdk):
     physx_sdk.step_sync(1.0 / 60.0)
 
     # Unknown, readable only on other types, and read-only on this type.
-    for attr in ("notAnAttribute", "points", "inverseMass", "linearAcceleration"):
+    for attr in ("notAnAttribute", "points", "inverseMass", "linearAcceleration", "isSleeping"):
         with pytest.raises(RuntimeError) as exc:
-            physx_sdk.write(SimObjectType.RIGID_BODY, attr)
+            physx_sdk.write_sync(SimObjectType.RIGID_BODY, attr)
         message = str(exc.value)
         assert attr in message
         assert "rigid" in message.lower()
@@ -251,7 +263,7 @@ def test_directgpu_pre_step_write_reports_prerequisite_and_recovers(physx_sdk):
     """A refused pre-step commit names the prerequisite and permits a fresh write after stepping."""
     load_usd_with_ovstage(physx_sdk, data_path("boxes_falling_on_groundplane.usda"))
 
-    with physx_sdk.write(SimObjectType.RIGID_BODY, "linearVelocity") as session:
+    with physx_sdk.write_sync(SimObjectType.RIGID_BODY, "linearVelocity") as session:
         assert len(session.groups) == 1
         group = session.groups[0]
         assert group.prim_count > 0
@@ -267,7 +279,7 @@ def test_directgpu_pre_step_write_reports_prerequisite_and_recovers(physx_sdk):
         assert "unknown error" not in message.lower()
 
     physx_sdk.step_sync(1.0 / 60.0)
-    with physx_sdk.write(SimObjectType.RIGID_BODY, "linearVelocity") as session:
+    with physx_sdk.write_sync(SimObjectType.RIGID_BODY, "linearVelocity") as session:
         assert len(session.groups) == 1
         group = session.groups[0]
         assert group.tensors[0].device.is_cuda
@@ -318,7 +330,7 @@ def PhysicsScene "PhysicsScene" (
             ]
 
         def read_rows():
-            with physx_sdk.read(SimObjectType.RIGID_BODY, [attribute]) as read:
+            with physx_sdk.read_sync(SimObjectType.RIGID_BODY, [attribute]) as read:
                 return {
                     path: value.copy()
                     for group in read.groups
@@ -327,7 +339,7 @@ def PhysicsScene "PhysicsScene" (
 
         before = read_rows()
         assert len(before) == 3
-        with physx_sdk.write(SimObjectType.RIGID_BODY, attribute) as session:
+        with physx_sdk.write_sync(SimObjectType.RIGID_BODY, attribute) as session:
             assert len(session.groups) == 1
             group = session.groups[0]
             assert group.prim_count == 3
@@ -337,7 +349,7 @@ def PhysicsScene "PhysicsScene" (
             assert requested.keys() == before.keys()
             _fill(group.tensors[0], target)
             with pytest.raises(RuntimeError) as exc:
-                session.commit(group)
+                session.commit_sync(group)
             message = str(exc.value).lower()
             assert "set" + attribute.lower() in message
             assert "kinematic" in message
@@ -345,7 +357,7 @@ def PhysicsScene "PhysicsScene" (
             assert "spent" in message
             assert "unknown error" not in message
             with pytest.raises(RuntimeError):
-                session.commit(group)
+                session.commit_sync(group)
 
         after = read_rows()
         assert after.keys() == before.keys()
@@ -365,7 +377,7 @@ def test_write_groups_match_the_read(physx_sdk):
     physx_sdk.step_sync(1.0 / 60.0)
 
     with ovstage.PathDictionary(stage) as paths:
-        with physx_sdk.read(SimObjectType.RIGID_BODY, ["position"]) as r:
+        with physx_sdk.read_sync(SimObjectType.RIGID_BODY, ["position"]) as r:
             read_shape = [
                 (
                     tuple(paths.get_paths(g.prim_list)[g.prim_offset : g.prim_offset + g.prim_count]),
@@ -374,7 +386,7 @@ def test_write_groups_match_the_read(physx_sdk):
                 for g in r.groups
             ]
 
-        with physx_sdk.write(SimObjectType.RIGID_BODY, "position") as w:
+        with physx_sdk.write_sync(SimObjectType.RIGID_BODY, "position") as w:
             assert all(isinstance(t, wp.array) for g in w.groups for t in g.tensors)
             assert any(t.device.is_cuda for g in w.groups for t in g.tensors)
             write_shape = [
@@ -410,7 +422,7 @@ def _read_joint_state(physx, attr="jointPosition"):
     still produce plausible numbers.
     """
     out = {}
-    with physx.read(SimObjectType.ARTICULATION_JOINT, [attr]) as result:
+    with physx.read_sync(SimObjectType.ARTICULATION_JOINT, [attr]) as result:
         for g in result.groups:
             assert len(g.tensors) == g.prim_count, "array group: one tensor per prim"
             for i, t in enumerate(g.tensors):
@@ -434,7 +446,7 @@ def test_joint_position_round_trips(physx_sdk):
     assert before, "expected at least one joint"
 
     target = {}
-    with physx_sdk.write(SimObjectType.ARTICULATION_JOINT, "jointPosition") as w:
+    with physx_sdk.write_sync(SimObjectType.ARTICULATION_JOINT, "jointPosition") as w:
         assert w.groups, "expected a writable joint group"
         for g in w.groups:
             assert len(g.tensors) == g.prim_count
@@ -463,11 +475,11 @@ def test_articulation_link_attributes_are_refused_by_name(physx_sdk):
     physx_sdk.step_sync(1.0 / 60.0)
 
     with pytest.raises(RuntimeError, match="position.*articulation link") as exc:
-        physx_sdk.write(SimObjectType.ARTICULATION_LINK, "position")
+        physx_sdk.write_sync(SimObjectType.ARTICULATION_LINK, "position")
     assert "root pose" in str(exc.value)
     assert "unknown error" not in str(exc.value).lower()
 
-    with physx_sdk.write(SimObjectType.ARTICULATION_LINK, "mass") as w:
+    with physx_sdk.write_sync(SimObjectType.ARTICULATION_LINK, "mass") as w:
         assert w.groups, "link mass is writable -- a link is a rigid body"
         tensors = [t for g in w.groups for t in g.tensors]
         assert tensors and all(t.size > 0 for t in tensors)
@@ -499,12 +511,12 @@ def test_joint_limit_on_a_free_axis_is_refused(physx_sdk):
 
     # A finite limit on every DOF necessarily hits the free axis, so the commit is refused.
     with pytest.raises(RuntimeError):
-        with physx_sdk.write(SimObjectType.ARTICULATION_JOINT, "jointLimit") as w:
+        with physx_sdk.write_sync(SimObjectType.ARTICULATION_JOINT, "jointLimit") as w:
             for g in w.groups:
                 for t in g.tensors:
                     n = int(_to_host(t).reshape(-1).shape[0]) if not isinstance(t, np.ndarray) else t.size
                     _fill(t, np.tile(np.array([-30.0, 45.0], dtype=np.float32), n // 2))
-                w.commit(g)
+                w.commit_sync(g)
 
     # Nothing landed: every axis still reads its baseline (a refusal that half-applied would differ).
     after = _read_joint_state(physx_sdk, "jointLimit")
@@ -515,7 +527,7 @@ def test_joint_limit_on_a_free_axis_is_refused(physx_sdk):
     # The joint type IS writable on the same scene, which is what makes the refusal a statement
     # about a handful of ATTRIBUTES rather than about articulations.
     _read_joint_state(physx_sdk)
-    with physx_sdk.write(SimObjectType.ARTICULATION_JOINT, "jointPosition") as w:
+    with physx_sdk.write_sync(SimObjectType.ARTICULATION_JOINT, "jointPosition") as w:
         assert w.groups
 
 
@@ -544,7 +556,7 @@ def test_articulation_root_columns_have_the_right_shape(physx_sdk):
         ("rootLinearVelocity", 3),
         ("rootAngularVelocity", 3),
     ):
-        with physx_sdk.write(SimObjectType.ARTICULATION, attr) as w:
+        with physx_sdk.write_sync(SimObjectType.ARTICULATION, attr) as w:
             assert w.groups, f"expected a writable articulation group for {attr}"
             for g in w.groups:
                 # FIXED shape: one tensor stacking every articulation, not one tensor per prim.
@@ -566,7 +578,7 @@ def test_articulation_root_column_commits(physx_sdk):
     load_usd_with_ovstage(physx_sdk, data_path("CartPole.usda"))
     physx_sdk.step_sync(1.0 / 60.0)
 
-    with physx_sdk.write(SimObjectType.ARTICULATION, "rootOrientation") as w:
+    with physx_sdk.write_sync(SimObjectType.ARTICULATION, "rootOrientation") as w:
         assert w.groups
         for g in w.groups:
             block = np.zeros((g.prim_count, 4), dtype=np.float32)
@@ -583,7 +595,7 @@ def test_articulation_refuses_names_it_does_not_serve(physx_sdk):
     # "position" is refused too: it is the RIGID spelling, and the articulation takes root* names.
     for attr in ("jointPosition", "mass", "points", "position"):
         with pytest.raises(RuntimeError) as exc:
-            physx_sdk.write(SimObjectType.ARTICULATION, attr)
+            physx_sdk.write_sync(SimObjectType.ARTICULATION, attr)
         message = str(exc.value)
         assert attr in message
         assert "articulation" in message.lower()

@@ -37,11 +37,11 @@ def _cpu_session_instance():
     except Exception:
         pass
     try:
-        physx.reset_stage()
+        physx.detach_ovstage()
         physx.wait_all()
     except RuntimeError:
         logging.getLogger(__name__).warning(
-            "physx CPU session teardown: reset_stage() failed; process shutdown will reclaim remaining resources"
+            "physx CPU session teardown: detach_ovstage() failed; process shutdown will reclaim remaining resources"
         )
 
 
@@ -63,11 +63,11 @@ def physx_sdk(_cpu_session_instance):
     except Exception:
         pass
     try:
-        _cpu_session_instance.reset_stage()
+        _cpu_session_instance.detach_ovstage()
         _cpu_session_instance.wait_all()
     except RuntimeError:
         logging.getLogger(__name__).warning(
-            "physx_sdk teardown: reset_stage() failed — instance may be degraded for subsequent tests"
+            "physx_sdk teardown: detach_ovstage() failed -- instance may be degraded for subsequent tests"
         )
     try:
         from test_utils import destroy_ovstage_test_attachments

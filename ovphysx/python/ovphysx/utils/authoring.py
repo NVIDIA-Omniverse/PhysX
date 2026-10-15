@@ -30,7 +30,7 @@ keep theirs, so a re-approximated collider keeps its contact tuning.
 How schemas are reached here
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 PhysX APIs are applied by identifier and their properties authored by name,
-because ovphysx ships the PhysX schemas codeless. Refer to
+because the PhysX schemas are codeless. Refer to
 :mod:`ovphysx.utils.codeless`. Core ``UsdPhysics`` schemas still use their typed
 bindings, which are part of stock ``usd-core``.
 """
@@ -445,7 +445,23 @@ def set_local_space_velocities(prim: Usd.Prim, value: bool):
     Choose whether a rigid body's authored velocities are read in its own frame.
 
     With this enabled the velocity and angularVelocity attributes are
-    interpreted in the body's local frame instead of world space.
+    interpreted in the body's local frame instead of world space: the linear
+    velocity is scaled by the body's world scale along its local axes and then
+    rotated into world space, and the angular velocity is rotated without being
+    scaled. This holds at load and for supported later edits.
+
+    On a PointInstancer prototype this also governs the instancer's velocities
+    and angularVelocities arrays. Each instance's frame is its own world pose --
+    the instancer's transform composed with the instance's orientations entry
+    and the prototype's local rotation -- read as it is when the value is
+    applied, so an edit that lands after the instance has turned is interpreted
+    in the turned frame.
+
+    After the scene's first DirectGPU step, live ovstage velocity edits do not
+    update dynamic (non-kinematic) bodies; use world-space linearVelocity and
+    angularVelocity session writes instead. Session angularVelocity is in rad/s,
+    while USD physics:angularVelocity is in deg/s; convert by pi / 180 as well
+    as rotating the vector into world space.
 
     Args:
         prim:       The rigid body prim.

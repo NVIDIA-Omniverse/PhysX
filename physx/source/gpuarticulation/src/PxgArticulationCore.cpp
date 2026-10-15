@@ -1709,7 +1709,11 @@ namespace physx
 		//if either root transform or joint position changes, we need to recalculate other link's transform
 		if (mNeedsKinematicUpdate)
 		{
-			mNeedsKinematicUpdate = false;
+			// The flag is scene-wide, so only an update of all articulations (gpuIndices == NULL), such as the one
+			// at the start of simulate(), may clear it. The kernel skips articulations that are not dirty, so
+			// leaving it set costs only a launch.
+			if (gpuIndices == NULL)
+				mNeedsKinematicUpdate = false;
 
 			CUdeviceptr coreDescptr = mArticulationCoreDescd.getDevicePtr();
 			CUfunction updateKinematicKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::ARTI_UPDATE_KINEMATIC);

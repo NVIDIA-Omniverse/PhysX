@@ -110,8 +110,8 @@ _CHILD_SCRIPT = textwrap.dedent(f"""
             # Schema discovery is pure Python: it does not load libovphysx, so
             # the ovstage-first native load order is preserved.
             import ovphysx
-
-            ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+            from schema_support import physx_schema_paths
+            ovstage.population.register_usd_schemas([str(p) for p in physx_schema_paths()])
             stage = ovstage.Stage("ovphysx-runtime-provider-ovstage-first")
             ovstage.population.open_usd(
                 stage,
@@ -126,14 +126,14 @@ _CHILD_SCRIPT = textwrap.dedent(f"""
             snapshots["after_physx"] = collect_runtime_mappings()
         elif order == "physx-first":
             import ovphysx
-
+            from schema_support import physx_schema_paths
             snapshots["before_physx"] = collect_runtime_mappings()
             ovphysx.PhysX.set_cpu_mode(True)
             physx = ovphysx.PhysX()
             snapshots["after_physx"] = collect_runtime_mappings()
             import ovstage
 
-            ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+            ovstage.population.register_usd_schemas([str(p) for p in physx_schema_paths()])
             stage = ovstage.Stage("ovphysx-runtime-provider-physx-first")
             ovstage.population.open_usd(
                 stage,
@@ -145,7 +145,7 @@ _CHILD_SCRIPT = textwrap.dedent(f"""
             raise RuntimeError(f"unknown startup order: {{order}}")
 
         stage.advance_write_floor(ordinal=1).wait()
-        physx.attach_ovstage(stage, read_ordinal=1)
+        physx.wait_task(physx.attach_ovstage(stage, read_ordinal=1))
         physx.step(1.0 / 60.0)
         physx.wait_all()
 
@@ -158,7 +158,7 @@ _CHILD_SCRIPT = textwrap.dedent(f"""
         print("{_RESULT_PREFIX}" + json.dumps(serializable, sort_keys=True), flush=True)
     finally:
         if physx is not None and stage is not None:
-            physx.detach_ovstage()
+            physx.wait_task(physx.detach_ovstage())
         if stage is not None:
             stage.destroy()
         if physx is not None:

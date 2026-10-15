@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-1 AC-2
+ */
+
 /**
  * @implements REQ-PARSE-VEH-COMPONENTS-001
  * @covers AC-1 AC-2 AC-3
@@ -18,6 +22,8 @@
 
 #include <omni/physics/parse/IPhysicsSource.h>
 #include <omni/physics/parse/ParseApi.h>
+#include <omni/physics/parse/PreparedVehicle.h>
+#include <stdexcept>
 #include <omni/physics/parse/ParseContext.h>
 
 #include <carb/logging/Log.h>
@@ -29,12 +35,39 @@ namespace omni::physics::parse
 
 // @implements REQ-PARSE-VEH-COMPONENTS-001
 // @covers AC-1 AC-2 AC-3
-DescPtr<TireDesc> parseTire(ParseContext& ctx, ObjectKey key, const TireInfo& info)
+PreparedTire prepareTire(ParseContext& ctx, ObjectKey key, const TireInfo& info)
 {
-    IPhysicsSource& src = ctx.source();
-    const std::string ownerName(src.sourceKeyToString(key));
+    PreparedTire input;
+    input.key = key;
+    input.info = info;
+    input.reads = prepareVehicleReads(ctx.source(), key, {
+        { "physxVehicleTire:camberStiffness", VehicleAttributeType::floating },
+        { "physxVehicleTire:camberStiffnessPerUnitGravity", VehicleAttributeType::floating },
+        { "physxVehicleTire:latStiffX", VehicleAttributeType::floating },
+        { "physxVehicleTire:latStiffY", VehicleAttributeType::floating },
+        { "physxVehicleTire:lateralStiffnessGraph", VehicleAttributeType::float2 },
+        { "physxVehicleTire:longitudinalStiffness", VehicleAttributeType::floating },
+        { "physxVehicleTire:longitudinalStiffnessPerUnitGravity", VehicleAttributeType::floating },
+        { "physxVehicleTire:restLoad", VehicleAttributeType::floating }
+    });
+    return input;
+}
 
-    DescPtr<TireDesc> desc = allocateDesc<TireDesc>(ctx.descriptorAllocator());
+void prepareTireStorage(const PreparedTire& input, TireDesc& output)
+{
+    (void)input; (void)output;
+}
+
+bool fillTire(const PreparedTire& input, TireDesc& output, VehicleFillStatus& status) noexcept
+{
+    PreparedVehicleReader src(input.reads, status);
+    [[maybe_unused]] ObjectKey key = input.key;
+    [[maybe_unused]] const TireInfo& info = input.info;
+
+
+    const std::string& ownerName = src.sourceKeyToString(key);
+
+    TireDesc* desc = &output;
     desc->key = key;
     desc->latStiffX = 0.0f;
     desc->latStiffY = 0.0f;
@@ -50,52 +83,52 @@ DescPtr<TireDesc> parseTire(ParseContext& ctx, ObjectKey key, const TireInfo& in
     // deprecated latStiffX/latStiffY.
     {
         carb::Float2 graph;
-        if (!src.getAttribute(key, src.internToken("physxVehicleTire:lateralStiffnessGraph"), graph))
+        if (!src.getAttribute(key, src.attribute("physxVehicleTire:lateralStiffnessGraph"), graph))
         {
-            CARB_LOG_ERROR("Usd Physics: prim \"%s\" needs to have attribute \"lateralStiffnessGraph\" defined.",
+            VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\" needs to have attribute \"lateralStiffnessGraph\" defined.",
                            ownerName.c_str());
-            return {};
+            return false;
         }
         desc->lateralStiffnessGraph = graph;
         if (graph.x != 0.0f || graph.y != 0.0f)
         {
             if (graph.x < 0.0f)
             {
-                CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"lateralStiffnessGraph.x\" needs to be non-negative.",
+                VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"lateralStiffnessGraph.x\" needs to be non-negative.",
                                ownerName.c_str());
-                return {};
+                return false;
             }
             if (!(graph.y > 0.0f))
             {
-                CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"lateralStiffnessGraph.y\" needs to be positive.",
+                VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"lateralStiffnessGraph.y\" needs to be positive.",
                                ownerName.c_str());
-                return {};
+                return false;
             }
         }
         else
         {
-            CARB_LOG_WARN("Usd Physics: tire \"%s\": attributes \"latStiffX\" and \"latStiffY\" "
+            VEHICLE_LOG_WARN(status, "Usd Physics: tire \"%s\": attributes \"latStiffX\" and \"latStiffY\" "
                           "are deprecated. Please use lateralStiffnessGraph instead.", ownerName.c_str());
             float lx;
-            if (!src.getAttribute(key, src.internToken("physxVehicleTire:latStiffX"), lx))
+            if (!src.getAttribute(key, src.attribute("physxVehicleTire:latStiffX"), lx))
             {
-                CARB_LOG_ERROR("Usd Physics: prim \"%s\" needs to have attribute \"latStiffX\" defined.",
+                VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\" needs to have attribute \"latStiffX\" defined.",
                                ownerName.c_str());
-                return {};
+                return false;
             }
             if (!(lx >= 0.0f) || !(lx < FLT_MAX))
             {
-                CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"latStiffX\" out of range.", ownerName.c_str());
-                return {};
+                VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"latStiffX\" out of range.", ownerName.c_str());
+                return false;
             }
             desc->latStiffX = lx;
             float ly;
-            if (src.getAttribute(key, src.internToken("physxVehicleTire:latStiffY"), ly))
+            if (src.getAttribute(key, src.attribute("physxVehicleTire:latStiffY"), ly))
             {
                 if (!(ly >= 0.0f) || !(ly < FLT_MAX))
                 {
-                    CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"latStiffY\" out of range.", ownerName.c_str());
-                    return {};
+                    VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"latStiffY\" out of range.", ownerName.c_str());
+                    return false;
                 }
                 desc->latStiffY = ly;
             }
@@ -110,34 +143,34 @@ DescPtr<TireDesc> parseTire(ParseContext& ctx, ObjectKey key, const TireInfo& in
     // longitudinalStiffnessPerUnitGravity (default 500 * massScale).
     {
         float v;
-        if (!src.getAttribute(key, src.internToken("physxVehicleTire:longitudinalStiffness"), v))
+        if (!src.getAttribute(key, src.attribute("physxVehicleTire:longitudinalStiffness"), v))
         {
-            CARB_LOG_ERROR("Usd Physics: prim \"%s\" needs to have attribute \"longitudinalStiffness\" defined.",
+            VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\" needs to have attribute \"longitudinalStiffness\" defined.",
                            ownerName.c_str());
-            return {};
+            return false;
         }
         desc->longitudinalStiffness = v;
         if (v != 0.0f)
         {
             if (!(v > 0.0f))
             {
-                CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"longitudinalStiffness\" needs to be positive.",
+                VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"longitudinalStiffness\" needs to be positive.",
                                ownerName.c_str());
-                return {};
+                return false;
             }
         }
         else
         {
-            CARB_LOG_WARN("Usd Physics: tire \"%s\": attribute \"longitudinalStiffnessPerUnitGravity\" "
+            VEHICLE_LOG_WARN(status, "Usd Physics: tire \"%s\": attribute \"longitudinalStiffnessPerUnitGravity\" "
                           "is deprecated. Please use lateralStiffnessGraph instead.", ownerName.c_str());
             float dv;
-            if (src.getAttribute(key, src.internToken("physxVehicleTire:longitudinalStiffnessPerUnitGravity"), dv))
+            if (src.getAttribute(key, src.attribute("physxVehicleTire:longitudinalStiffnessPerUnitGravity"), dv))
             {
                 if (!(dv >= 0.0f) || !(dv < FLT_MAX))
                 {
-                    CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"longitudinalStiffnessPerUnitGravity\" out of range.",
+                    VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"longitudinalStiffnessPerUnitGravity\" out of range.",
                                    ownerName.c_str());
-                    return {};
+                    return false;
                 }
                 desc->longitudinalStiffnessPerUnitGravity = dv;
             }
@@ -152,38 +185,38 @@ DescPtr<TireDesc> parseTire(ParseContext& ctx, ObjectKey key, const TireInfo& in
     // deprecated camberStiffnessPerUnitGravity.
     {
         float v;
-        if (!src.getAttribute(key, src.internToken("physxVehicleTire:camberStiffness"), v))
+        if (!src.getAttribute(key, src.attribute("physxVehicleTire:camberStiffness"), v))
         {
-            CARB_LOG_ERROR("Usd Physics: prim \"%s\" needs to have attribute \"camberStiffness\" defined.",
+            VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\" needs to have attribute \"camberStiffness\" defined.",
                            ownerName.c_str());
-            return {};
+            return false;
         }
         desc->camberStiffness = v;
         if (v != -1.0f)
         {
             if (v < 0.0f)
             {
-                CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"camberStiffness\" needs to be non-negative.",
+                VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"camberStiffness\" needs to be non-negative.",
                                ownerName.c_str());
-                return {};
+                return false;
             }
         }
         else
         {
-            CARB_LOG_WARN("Usd Physics: tire \"%s\": attribute \"camberStiffnessPerUnitGravity\" "
+            VEHICLE_LOG_WARN(status, "Usd Physics: tire \"%s\": attribute \"camberStiffnessPerUnitGravity\" "
                           "is deprecated. Please use camberStiffness instead.", ownerName.c_str());
             float dv;
-            if (!src.getAttribute(key, src.internToken("physxVehicleTire:camberStiffnessPerUnitGravity"), dv))
+            if (!src.getAttribute(key, src.attribute("physxVehicleTire:camberStiffnessPerUnitGravity"), dv))
             {
-                CARB_LOG_ERROR("Usd Physics: prim \"%s\" needs to have attribute \"camberStiffnessPerUnitGravity\" defined.",
+                VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\" needs to have attribute \"camberStiffnessPerUnitGravity\" defined.",
                                ownerName.c_str());
-                return {};
+                return false;
             }
             if (!(dv >= 0.0f) || !(dv < FLT_MAX))
             {
-                CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"camberStiffnessPerUnitGravity\" out of range.",
+                VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"camberStiffnessPerUnitGravity\" out of range.",
                                ownerName.c_str());
-                return {};
+                return false;
             }
             desc->camberStiffnessPerUnitGravity = dv;
         }
@@ -199,10 +232,10 @@ DescPtr<TireDesc> parseTire(ParseContext& ctx, ObjectKey key, const TireInfo& in
         if (desc->frictionVsSlipGraph[0].x >= desc->frictionVsSlipGraph[1].x ||
             desc->frictionVsSlipGraph[1].x >= desc->frictionVsSlipGraph[2].x)
         {
-            CARB_LOG_ERROR("Usd Physics: attribute \"frictionVsSlipGraph\" of tire \"%s\" has invalid values: "
+            VEHICLE_LOG_ERROR(status, "Usd Physics: attribute \"frictionVsSlipGraph\" of tire \"%s\" has invalid values: "
                            "frictionVsSlipGraph[2].x > frictionVsSlipGraph[1].x > frictionVsSlipGraph[0].x has to hold.",
                            ownerName.c_str());
-            return {};
+            return false;
         }
     }
     else
@@ -216,26 +249,47 @@ DescPtr<TireDesc> parseTire(ParseContext& ctx, ObjectKey key, const TireInfo& in
     // PhysxVehicleTireFrictionTable type. info.frictionTableTooMany is
     // set when multiple targets were authored — reject the whole tire.
     if (info.frictionTableTooMany)
-        return {};
+        return false;
     desc->frictionTableKey = info.frictionTableKey;
 
     // restLoad: required, non-negative.
     {
         float v;
-        if (!src.getAttribute(key, src.internToken("physxVehicleTire:restLoad"), v))
+        if (!src.getAttribute(key, src.attribute("physxVehicleTire:restLoad"), v))
         {
-            CARB_LOG_ERROR("Usd Physics: prim \"%s\" needs to have attribute \"restLoad\" defined.", ownerName.c_str());
-            return {};
+            VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\" needs to have attribute \"restLoad\" defined.", ownerName.c_str());
+            return false;
         }
         if (!(v >= 0.0f) || !(v < FLT_MAX))
         {
-            CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"restLoad\" out of range.", ownerName.c_str());
-            return {};
+            VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"restLoad\" out of range.", ownerName.c_str());
+            return false;
         }
         desc->restLoad = v;
     }
 
-    return desc;
+    return true;
 }
+
+void finishTireStorage(TireDesc& output, const VehicleFillStatus& status)
+{
+    (void)output; (void)status;
+}
+
+DescPtr<TireDesc> parseTire(ParseContext& ctx, ObjectKey key, const TireInfo& info)
+{
+    const PreparedTire input = prepareTire(ctx, key, info);
+    DescPtr<TireDesc> output = allocateDesc<TireDesc>(ctx.descriptorAllocator());
+    if (!output) return {};
+    prepareTireStorage(input, *output);
+    VehicleFillStatus status;
+    const bool valid = fillTire(input, *output, status);
+    status.report();
+    if (status.incomplete) throw std::logic_error("Incomplete prepared vehicle input or storage");
+    if (!valid) return {};
+    finishTireStorage(*output, status);
+    return output;
+}
+
 
 } // namespace omni::physics::parse

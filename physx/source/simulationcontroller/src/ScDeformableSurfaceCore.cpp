@@ -155,97 +155,76 @@ void Sc::DeformableSurfaceCore::setNbCollisionSubsteps(const PxU32 frequency)
 // Internal API
 /////////////////////////////////////////////////////////////////////////////////////////
 
-PxU32 Sc::DeformableSurfaceCore::addRigidAttachment(Sc::BodyCore* core, PxU32 particleId, const PxVec3& actorSpacePose)
+PxU32 Sc::DeformableSurfaceCore::addRigidAttachments(Sc::BodyCore* core, PxDeformableAttachmentTargetType::Enum feature,
+	const PxU32* indices, const PxVec4* barycentrics, const PxTransform& frame, const PxVec4* coords, PxU32 count)
 {
 	Sc::DeformableSurfaceSim* sim = getSim();
-	PxU32 handle = 0xFFFFFFFF;
+	PxU32 handle = PX_INVALID_U32;
 	if (sim)
-	{
-		handle = sim->getScene().addRigidAttachment(core, *sim, particleId, actorSpacePose);
-
-	}
+		handle = sim->getScene().addSurfaceRigidAttachments(core, *sim, feature, indices, barycentrics, frame, coords, count);
 
 	return handle;
 }
 
-void Sc::DeformableSurfaceCore::removeRigidAttachment(Sc::BodyCore* core, PxU32 handle)
+void Sc::DeformableSurfaceCore::removeRigidAttachments(Sc::BodyCore* core, PxU32 handle)
 {
 	Sc::DeformableSurfaceSim* sim = getSim();
 	if (sim)
 	{
-		sim->getScene().removeRigidAttachment(core, *sim, handle);
+		sim->getScene().removeSurfaceRigidAttachments(core, *sim, handle);
 		setWakeCounterInternal(ScInternalWakeCounterResetValue);
 	}
 }
 
-void Sc::DeformableSurfaceCore::addTriRigidFilter(Sc::BodyCore* core, PxU32 triIdx)
+PxU32 Sc::DeformableSurfaceCore::addSurfaceAttachments(Sc::DeformableSurfaceCore* otherCore, PxDeformableAttachmentTargetType::Enum feature0,
+	const PxU32* indices0, const PxVec4* barycentrics0, PxDeformableAttachmentTargetType::Enum feature1,
+	const PxU32* indices1, const PxVec4* barycentrics1, PxU32 count)
 {
 	Sc::DeformableSurfaceSim* sim = getSim();
-	
+	PxU32 handle = PX_INVALID_U32;
 	if (sim)
-		sim->getScene().addTriRigidFilter(core, *sim, triIdx);
-
-}
-
-void Sc::DeformableSurfaceCore::removeTriRigidFilter(Sc::BodyCore* core, PxU32 triIdx)
-{
-	Sc::DeformableSurfaceSim* sim = getSim();
-	if (sim)
-		sim->getScene().removeTriRigidFilter(core, *sim, triIdx);
-}
-
-
-PxU32 Sc::DeformableSurfaceCore::addTriRigidAttachment(Sc::BodyCore* core, PxU32 triIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose)
-{
-	Sc::DeformableSurfaceSim* sim = getSim();
-	PxU32 handle = 0xFFFFFFFF;
-	if (sim)
-		handle = sim->getScene().addTriRigidAttachment(core, *sim, triIdx, barycentric, actorSpacePose);
+		handle = sim->getScene().addSurfaceSurfaceAttachments(*otherCore, feature0, indices0, barycentrics0, *sim,
+			feature1, indices1, barycentrics1, count);
 
 	return handle;
 }
 
-void Sc::DeformableSurfaceCore::removeTriRigidAttachment(Sc::BodyCore* core, PxU32 handle)
-{
-	Sc::DeformableSurfaceSim* sim = getSim();
-	if (sim)
-	{
-		sim->getScene().removeTriRigidAttachment(core, *sim, handle);
-		setWakeCounterInternal(ScInternalWakeCounterResetValue);
-	}
-}
-
-void Sc::DeformableSurfaceCore::addClothFilter(Sc::DeformableSurfaceCore* otherCore, PxU32 otherTriIdx, PxU32 triIdx)
-{
-	Sc::DeformableSurfaceSim* sim = getSim();
-	if (sim)
-		sim->getScene().addClothFilter(*otherCore, otherTriIdx, *sim, triIdx);
-}
-
-void Sc::DeformableSurfaceCore::removeClothFilter(Sc::DeformableSurfaceCore* otherCore, PxU32 otherTriIdx, PxU32 triIdx)
-{
-	Sc::DeformableSurfaceSim* sim = getSim();
-	if (sim)
-		sim->getScene().removeClothFilter(*otherCore, otherTriIdx, *sim, triIdx);
-}
-
-PxU32 Sc::DeformableSurfaceCore::addClothAttachment(Sc::DeformableSurfaceCore* otherCore, PxU32 otherTriIdx, const PxVec4& otherTriBarycentric, PxU32 triIdx, const PxVec4& triBarycentric)
-{
-	Sc::DeformableSurfaceSim* sim = getSim();
-	PxU32 handle = 0xFFFFFFFF;
-	if (sim)
-		handle = sim->getScene().addTriClothAttachment(*otherCore, otherTriIdx, otherTriBarycentric, *sim, triIdx, triBarycentric);
-
-	return handle;
-}
-
-void Sc::DeformableSurfaceCore::removeClothAttachment(Sc::DeformableSurfaceCore* otherCore, PxU32 handle)
+void Sc::DeformableSurfaceCore::removeSurfaceAttachments(Sc::DeformableSurfaceCore* otherCore, PxU32 handle)
 {
 	Sc::DeformableSurfaceSim* sim = getSim();
 	setWakeCounterInternal(ScInternalWakeCounterResetValue);
 	otherCore->setWakeCounterInternal(ScInternalWakeCounterResetValue);
 	if (sim)
-		sim->getScene().removeTriClothAttachment(*otherCore, *sim, handle);
+		sim->getScene().removeSurfaceSurfaceAttachments(*otherCore, *sim, handle);
+}
+
+void Sc::DeformableSurfaceCore::addRigidFilters(Sc::RigidCore* core, PxU32* triIndices, PxU32 triIndicesSize)
+{
+	Sc::DeformableSurfaceSim* sim = getSim();
+
+	if (sim)
+		sim->getScene().addSurfaceRigidFilters(core, *sim, triIndices, triIndicesSize);
+}
+
+void Sc::DeformableSurfaceCore::removeRigidFilters(Sc::RigidCore* core, PxU32* triIndices, PxU32 triIndicesSize)
+{
+	Sc::DeformableSurfaceSim* sim = getSim();
+	if (sim)
+		sim->getScene().removeSurfaceRigidFilters(core, *sim, triIndices, triIndicesSize);
+}
+
+void Sc::DeformableSurfaceCore::addSurfaceFilters(Sc::DeformableSurfaceCore* otherCore, PxU32* otherTriIndices, PxU32* triIndices, PxU32 triIndicesSize)
+{
+	Sc::DeformableSurfaceSim* sim = getSim();
+	if (sim)
+		sim->getScene().addSurfaceSurfaceFilters(*otherCore, otherTriIndices, *sim, triIndices, triIndicesSize);
+}
+
+void Sc::DeformableSurfaceCore::removeSurfaceFilters(Sc::DeformableSurfaceCore* otherCore, PxU32* otherTriIndices, PxU32* triIndices, PxU32 triIndicesSize)
+{
+	Sc::DeformableSurfaceSim* sim = getSim();
+	if (sim)
+		sim->getScene().removeSurfaceSurfaceFilters(*otherCore, otherTriIndices, *sim, triIndices, triIndicesSize);
 }
 
 void Sc::DeformableSurfaceCore::addMaterial(const PxU16 handle)

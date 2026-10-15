@@ -8,165 +8,123 @@
 #include "foundation/PxHashMap.h"
 #include "foundation/PxSimpleTypes.h"
 #include "CmPinnableArray.h"
+#include "PxDeformableAttachment.h"
 #include "PxgSimulationCoreDesc.h"
 
 namespace physx
 {
-	// Per-attachment refcount tracking, dispatched on the attachment type. Default specialization
-	// is empty (zero overhead). Specialize for attachment types that need refcount-derived fields
-	// (e.g. mass-splitting on PxgFEMRigidAttachment). flushTo returns true if it wrote anything,
-	// so AttachmentManager can propagate the content-dirty signal.
-	template <typename Attachment>
-	struct AttachmentRefCount
+	namespace Gu
 	{
-		void onActivate(const Attachment&)   {}
-		void onDeactivate(const Attachment&) {}
-		bool flushTo(Cm::PinnableArray<Attachment>&, const Cm::PinnableArray<PxU32>&) { return false; }
-	};
+		class TriangleMesh;
+	}
 
-	// Specialization for rigid-X attachments: per-rigid count of active attachments, used by the
-	// solver for mass-splitting on the rigid response. Map is updated incrementally on activate /
-	// deactivate; mDirty flips when the map content changes. flushTo is a no-op unless mDirty is
-	// set, so callers can invoke it unconditionally at the DMA-up site without a separate gate.
-	template <>
-	struct AttachmentRefCount<PxgFEMRigidAttachment>
-	{
-		PxHashMap<PxU64, PxU32> mCounts;
-		bool mDirty;
+	class PxsRigidBody;
 
-		AttachmentRefCount() : mDirty(false) {}
-
-		void onActivate(const PxgFEMRigidAttachment& a)
-		{
-			++mCounts[a.index0];
-			mDirty = true;
-		}
-		void onDeactivate(const PxgFEMRigidAttachment& a)
-		{
-			const PxHashMap<PxU64, PxU32>::Entry* entry = mCounts.find(a.index0);
-			if (entry && entry->second > 0)
-			{
-				PxU32& c = mCounts[a.index0];
-				if (--c == 0)
-					mCounts.erase(a.index0);
-			}
-			mDirty = true;
-		}
-		bool flushTo(Cm::PinnableArray<PxgFEMRigidAttachment>& attachments, const Cm::PinnableArray<PxU32>& active)
-		{
-			if (!mDirty)
-				return false;
-			const PxU32 nbActive = active.size();
-			for (PxU32 i = 0; i < nbActive; ++i)
-			{
-				PxgFEMRigidAttachment& a = attachments[active[i]];
-				a.rigidBodyRefCount = mCounts[a.index0];
-			}
-			mDirty = false;
-			return true;
-		}
-	};
-
-	template <typename Attachment>
-	class AttachmentManager
+	class PxgAttachmentManager
 	{
 	public:
-		Cm::PinnableArray<Attachment>	mAttachments;
-		Cm::PinnableArray<PxU32>		mActiveAttachments;
-		PxHashMap<PxU32, PxU32>			mHandleToAttachmentMapping;
-		PxHashMap<PxU32, PxU32>			mHandleToActiveIndex;
-		PxArray<PxU32>					mHandles;
-		AttachmentRefCount<Attachment>	mRefCount;
+		// One entry per attachment, kept in step by addAttachment and removeAttachment.
+		Cm::PinnableArray<PxgDeformableAttachment> mAttachments;
+		PxArray<PxU32> mHandles;
+		PxHashMap<PxU32, PxU32> mHandleToAttachmentIndex;
+
+		// One entry per active attachment, kept in step by activateAttachment and deactivateAttachment.
+		// mActiveRigidRefCounts is the exception, rebuilt by buildRigidRefCounts.
+		Cm::PinnableArray<PxU32> mActiveAttachments;
+		PxHashMap<PxU32, PxU32> mHandleToActiveIndex;
+		Cm::PinnableArray<PxU32> mActiveRigidRefCounts;
 
 		PxU32 mBaseHandle;
 		bool mAttachmentsDirty;
 		bool mActiveAttachmentsDirty;
+		bool mActiveRigidRefCountsDirty;
 
-		AttachmentManager(Cm::VirtualAllocatorCallback& hostAlloc, PxU32 statType) :
+		PxgAttachmentManager(Cm::VirtualAllocatorCallback& hostAlloc, PxU32 statType) :
 			mAttachments(hostAlloc, statType),
 			mActiveAttachments(hostAlloc, statType),
+			mActiveRigidRefCounts(hostAlloc, statType),
 			mBaseHandle(0),
 			mAttachmentsDirty(false),
-			mActiveAttachmentsDirty(false)
+			mActiveAttachmentsDirty(false),
+			mActiveRigidRefCountsDirty(false)
 		{
 		}
 
-		void addAttachment(const Attachment& attachment, const PxU32 handle)
+		// Adds a batch of attachments between one deformable and one rigid, and returns a handle to refer to
+		// the batch. The data is provided as given by the API and converted: the coordinates into the
+		// rigid's own frame, and the elements into encoded pairs.
+
+		PxU32 addVolumeRigidAttachments(const PxU32 volumeId, const PxDeformableAttachmentTargetType::Enum feature,
+			const PxU32* featureIds, const PxVec4* barycentrics, PxsRigidBody* rigidBody,
+			const PxNodeIndex& rigidNodeIndex, const PxTransform& frame, const PxVec4* coords, const PxU32 count,
+			const bool addToActive);
+
+		PxU32 addSurfaceRigidAttachments(const PxU32 surfaceId, const Gu::TriangleMesh& surfaceMesh,
+			const PxDeformableAttachmentTargetType::Enum feature, const PxU32* featureIds, const PxVec4* barycentrics,
+			PxsRigidBody* rigidBody, const PxNodeIndex& rigidNodeIndex, const PxTransform& frame, const PxVec4* coords,
+			const PxU32 count, const bool addToActive);
+
+		// Adds a batch of attachments between two deformables, and returns a handle to refer to the batch.
+		// As above, the feature indices are given as the API numbers them.
+
+		PxU32 addVolumeVolumeAttachments(const PxU32 volumeId0, const PxDeformableAttachmentTargetType::Enum feature0,
+			const PxU32* featureIds0, const PxVec4* barycentrics0, const PxU32 volumeId1,
+			const PxDeformableAttachmentTargetType::Enum feature1, const PxU32* featureIds1,
+			const PxVec4* barycentrics1, const PxU32 count, const bool addToActive);
+
+		PxU32 addVolumeSurfaceAttachments(const PxU32 volumeId, const PxDeformableAttachmentTargetType::Enum feature0,
+			const PxU32* featureIds0, const PxVec4* barycentrics0, const PxU32 surfaceId,
+			const Gu::TriangleMesh& surfaceMesh, const PxDeformableAttachmentTargetType::Enum feature1,
+			const PxU32* featureIds1, const PxVec4* barycentrics1, const PxU32 count, const bool addToActive);
+
+		PxU32 addSurfaceSurfaceAttachments(const PxU32 surfaceId0, const Gu::TriangleMesh& surfaceMesh0,
+			const PxDeformableAttachmentTargetType::Enum feature0, const PxU32* featureIds0,
+			const PxVec4* barycentrics0, const PxU32 surfaceId1, const Gu::TriangleMesh& surfaceMesh1,
+			const PxDeformableAttachmentTargetType::Enum feature1, const PxU32* featureIds1,
+			const PxVec4* barycentrics1, const PxU32 count, const bool addToActive);
+
+		void removeAttachments(const PxU32 batchHandle);
+
+		void activateAttachments(const PxU32 batchHandle);
+
+		void deactivateAttachments(const PxU32 batchHandle);
+
+		// Fills mActiveRigidRefCounts with, for each active attachment, the number of active
+		// attachments sharing its rigid. The solver splits the rigid response by that count. Only
+		// called where ref0 is a rigid.
+		void buildRigidRefCounts();
+
+	private:
+		// One attachment at a time, which is what the batches above are made of.
+		void removeAttachment(const PxU32 handle);
+		void activateAttachment(const PxU32 handle);
+		void deactivateAttachment(const PxU32 handle);
+
+		PxU32 allocateAttachments(const PxU32 count, PxgDeformableAttachment*& dst);
+
+		// What the two above share. featureRemap maps an element to the numbering the GPU mesh uses, and is
+		// NULL where the two numberings agree.
+		PxU32 addRigidAttachmentsInternal(const PxU32 deformableId, const PxgDeformableRef::Enum featureType,
+			const PxU32* featureIds, const PxU32* featureRemap, const PxVec4* barycentrics, PxsRigidBody* rigidBody,
+			const PxNodeIndex& rigidNodeIndex, const PxTransform& frame, const PxVec4* coords, const PxU32 count,
+			const bool addToActive);
+
+		// What the three above share. A remap maps an element to the numbering the GPU mesh uses, and is NULL
+		// where the two numberings agree.
+		PxU32 addDeformableAttachmentsInternal(const PxU32 deformableId0, const PxgDeformableRef::Enum featureType0,
+			const PxU32* featureIds0, const PxU32* featureRemap0, const PxVec4* barycentrics0,
+			const PxU32 deformableId1, const PxgDeformableRef::Enum featureType1, const PxU32* featureIds1,
+			const PxU32* featureRemap1, const PxVec4* barycentrics1, const PxU32 count, const bool addToActive);
+
+		// One entry per batch added at once: the handle of its first attachment maps to how many internal
+		// consecutive handles the batch owns.
+		PxHashMap<PxU32, PxU32> mBatchAttachmentCounts;
+
+		PX_FORCE_INLINE PxU32 getBatchAttachmentCount(const PxU32 batchHandle) const
 		{
-			const PxU32 size = mAttachments.size();
-			mAttachments.pushBack(attachment);
-			mHandles.pushBack(handle);
-			mHandleToAttachmentMapping[handle] = size;
-			mAttachmentsDirty = true;
-		}
-
-		bool removeAttachment(const PxU32 handle)
-		{
-			deactivateAttachment(handle);
-
-			//Now remove this current handle...
-			PxHashMap<PxU32, PxU32>::Entry mapping;
-			bool found = mHandleToAttachmentMapping.erase(handle, mapping);
-			if (found)
-			{
-				mAttachments.replaceWithLast(mapping.second);
-				mHandles.replaceWithLast(mapping.second);
-				if (mapping.second < mAttachments.size())
-				{
-					PxU32 newHandle = mHandles[mapping.second];
-					mHandleToAttachmentMapping[newHandle] = mapping.second;
-					const PxHashMap<PxU32, PxU32>::Entry* activeMapping = mHandleToActiveIndex.find(newHandle);
-					if (activeMapping)
-					{
-						mActiveAttachments[activeMapping->second] = mapping.second;
-					}
-				}
-				mAttachmentsDirty = true;
-			}
-			return found;
-		}
-
-		void activateAttachment(const PxU32 handle)
-		{
-			PX_ASSERT(!mHandleToActiveIndex.find(handle));
-			PxU32 index = mHandleToAttachmentMapping[handle];
-			mHandleToActiveIndex[handle] = mActiveAttachments.size();
-			mActiveAttachments.pushBack(index);
-			mRefCount.onActivate(mAttachments[index]);
-			mActiveAttachmentsDirty = true;
-		}
-
-		void deactivateAttachment(const PxU32 handle)
-		{
-			PxHashMap<PxU32, PxU32>::Entry mapping;
-			bool found = mHandleToActiveIndex.erase(handle, mapping);
-			if (found)
-			{
-				const PxU32 attachIdx = mActiveAttachments[mapping.second];
-				mRefCount.onDeactivate(mAttachments[attachIdx]);
-
-				mActiveAttachments.replaceWithLast(mapping.second);
-
-				if (mapping.second < mActiveAttachments.size())
-				{
-					PxU32 replaceHandle = mHandles[mActiveAttachments[mapping.second]];
-					mHandleToActiveIndex[replaceHandle] = mapping.second;
-				}
-
-				mActiveAttachmentsDirty = true;
-			}
-		}
-
-		// Write the policy's derived per-attachment fields into the staging array. Called
-		// unconditionally once per frame at the DMA-up site; the policy itself decides whether
-		// anything needs to happen (default policy is always a no-op; the rigid-attach
-		// specialization tracks its own dirty bit on mCounts mutations). Marks the master array
-		// dirty if the policy actually wrote anything, so the existing dirtyRigidAttachments
-		// upload path picks up the content change.
-		void flushRefCountsToAttachments()
-		{
-			if (mRefCount.flushTo(mAttachments, mActiveAttachments))
-				mAttachmentsDirty = true;
+			const PxHashMap<PxU32, PxU32>::Entry* entry = mBatchAttachmentCounts.find(batchHandle);
+			PX_ASSERT(entry);
+			return entry ? entry->second : 0;
 		}
 	};
 

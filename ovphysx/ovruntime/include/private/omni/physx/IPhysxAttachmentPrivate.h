@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-1 AC-2
+
 /**
  * @implements REQ-PUBLICAPI-001
  * @covers AC-20 AC-21 AC-22 AC-23
@@ -8,6 +11,7 @@
 
 #pragma once
 
+#include <omni/physics/AttachHandle.h>
 #include <carb/Defines.h>
 #include <carb/Types.h>
 
@@ -26,7 +30,11 @@ struct IPhysxAttachmentPrivate
     ///\param[in] colliderKey ObjectKey of primitive with UsdPhysicsCollisionAPI
     ///\param[in] samplingDistance Distance at which sampling points should be created
     ///\return Handle to surface sampler instance
-    uint64_t(CARB_ABI* createSurfaceSampler)(omni::physics::parse::ObjectKey colliderKey, float samplingDistance);
+    /// attach selects the exact live collider owner. Success returns a nonzero,
+    /// never-reused sampler handle; zero reports invalid input or busy execution.
+    /// Reset/detach invalidates only that owner's samplers. Subsequent operations
+    /// on a retired sampler fail harmlessly; caller-allocated point copies remain valid.
+    uint64_t(CARB_ABI* createSurfaceSampler)(omni::physics::AttachHandle attach, omni::physics::parse::ObjectKey colliderKey, float samplingDistance);
 
     /// Releases surface sampler instance
     ///
@@ -196,7 +204,7 @@ struct IPhysxAttachmentPrivate
     /// strictly positive. \param[out] dists Square distances between the points and the geom object. 0.0 if the point
     /// is inside the object. \param[in] points Input points \param[in] pointsSize Number of input points \param[in]
     /// rigidKey ObjectKey of the rigid prim
-    void(CARB_ABI* getClosestPoints)(carb::Float3* closestPoints,
+    void(CARB_ABI* getClosestPoints)(omni::physics::AttachHandle attach, carb::Float3* closestPoints,
                                      float* dists,
                                      const carb::Float3* points,
                                      const uint32_t pointsSize,
@@ -218,13 +226,13 @@ struct IPhysxAttachmentPrivate
     ///
     ///\param[in] attachmentKey ObjectKey of primitive with PhysxSchemaPhysxAutoDeformableAttachmentAPI
     ///\return Whether the operation was successful
-    bool(CARB_ABI* setupAutoDeformableAttachment)(omni::physics::parse::ObjectKey attachmentKey);
+    bool(CARB_ABI* setupAutoDeformableAttachment)(omni::physics::AttachHandle attach, omni::physics::parse::ObjectKey attachmentKey);
 
     /// Update all attachments and filters for a given auto attachment
     ///
     ///\param[in] attachmentKey ObjectKey of primitive with PhysxSchemaPhysxAutoDeformableAttachmentAPI
     ///\return Whether the operation was successful
-    bool(CARB_ABI* updateAutoDeformableAttachment)(omni::physics::parse::ObjectKey attachmentKey);
+    bool(CARB_ABI* updateAutoDeformableAttachment)(omni::physics::AttachHandle attach, omni::physics::parse::ObjectKey attachmentKey);
 };
 
 } // namespace physx

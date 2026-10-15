@@ -38,27 +38,20 @@ history below names the build that existed when the bug was found):
 1. attach `tests/data/two_articulations.usda` via ovstage,
 2. `ovphysx_detach_ovstage` — no `ovphysx_step` in between,
 3. attach `tests/data/minimal_scene.usda` (no articulations),
-4. `ovphysx_step` + `ovphysx_wait_op`.
+4. `ovphysx_step` + `ovphysx_wait_task` on the returned receipt.
 
 ## Then
 
-- Steps 1-3 each return `OVPHYSX_API_SUCCESS`.
+- Steps 1-3 each return accepted receipts, whose waits succeed before the next step.
 - The step in step 4 enqueues with `OVPHYSX_API_SUCCESS` and its wait reports no
-  operation errors — the process does not fault (REQ-CAPI-DETACH-002 AC-4).
+  task errors — the process does not fault (REQ-CAPI-DETACH-002 AC-4).
 - Green observed directly on the fixed NO_USD build (in isolation and inside the
   full `cpu` pass). The red half was observed on the pre-fix NO_USD binary as the
   same four steps split across two cases —
   `ScopedSealAllowsUnrelatedUnsealedData` (attach `two_articulations.usda`,
-  detach, never step) followed by `StepWaitReportsPriorUserTaskFailure` (attach
-  `minimal_scene.usda`, step), exit 139 in `addArticulationToScene` — not by
+  detach, never step) followed by a case that attached and stepped
+  `minimal_scene.usda`, exit 139 in `addArticulationToScene` — not by
   running this case itself against a re-fenced build.
-- The same ordering is also covered incidentally by the full `cpu` filter pass
-  of `scripts/test_cpp.cmake`
-  (`-*GpuTest*:GlobalLifecycle.*:ActiveCudaGpusAttachTest.*:OmniPvdColdCreation.*`),
-  where `ScopedSealAllowsUnrelatedUnsealedData` /
-  `UnsealedAttachFailsAndSealedRetrySucceeds` precede
-  `StepWaitReportsPriorUserTaskFailure`. That pass is what the `cpp-unit` CTest
-  label runs, and it is green end to end with the fix.
 
 **Coverage note:** AC-2 and AC-3 — that the later attach's first step resolves
 no record minted by the destroyed attach — are verified indirectly, through

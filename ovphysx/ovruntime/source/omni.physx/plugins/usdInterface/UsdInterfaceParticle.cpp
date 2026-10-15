@@ -1,12 +1,18 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-RESOLVE-001
+// @covers AC-9 AC-10
+
 /**
  * @implements REQ-PUBLICAPI-001
  * @covers AC-27
  *
  * @implements REQ-WRITE-AUTHORING-001
  * @covers AC-5
+ *
+ * @implements REQ-SIM-PARTICLESET-001
+ * @covers AC-1
  */
 
 #include <omni/physics/parse/IPhysicsDataWrite.h>
@@ -27,10 +33,12 @@
 
 #if USE_PHYSX_GPU
 #include <extensions/PxParticleExt.h>
+#include <extensions/PxCudaHelpersExt.h>
 #endif
 
 using namespace omni::physx::usdparser;
 using namespace ::physx;
+using namespace ::physx::Ext;
 using namespace omni::physx::internal;
 using namespace omni::physx;
 
@@ -42,7 +50,7 @@ InternalPbdParticleSystem* getParticleSystem(usdparser::AttachedStage& attachedS
     const ObjectId systemId = attachedStage.getObjectDatabase()->findEntry(key, eParticleSystem);
     if (systemId != kInvalidObjectId)
     {
-        void* objectRecord = OmniPhysX::getInstance().getInternalPhysXDatabase().getInternalTypedRecord(ePTParticleSystem, systemId);
+        void* objectRecord = attachedStage.getInternalPhysXDatabase().getInternalTypedRecord(ePTParticleSystem, systemId);
         if (objectRecord)
         {
             return reinterpret_cast<InternalPbdParticleSystem*>(objectRecord);
@@ -50,9 +58,9 @@ InternalPbdParticleSystem* getParticleSystem(usdparser::AttachedStage& attachedS
     }
 
     InternalPbdParticleSystem* internalPS = nullptr;
-    const PhysXScenesMap& physxScenes = OmniPhysX::getInstance().getPhysXSetup().getPhysXScenes();
+    const AttachedStage::SceneMap& physxScenes = attachedStage.getPhysXScenes();
 
-    for (PhysXScenesMap::const_reference ref : physxScenes)
+    for (AttachedStage::SceneMap::const_reference ref : physxScenes)
     {
         const PhysXScene* sc = ref.second;
 
@@ -96,9 +104,9 @@ PxPBDMaterial* getPBDMaterial(InternalPBDParticleMaterial** internalMaterial, co
 {
     if (internalMaterial)
     {
-        *internalMaterial = getInternalPtr<InternalPBDParticleMaterial>(ePTPBDMaterial, materialId);
+        *internalMaterial = getInternalPtr<InternalPBDParticleMaterial>(scene.getAttachedStage().getInternalPhysXDatabase(), ePTPBDMaterial, materialId);
     }
-    PxPBDMaterial* material = getPtr<PxPBDMaterial>(ePTPBDMaterial, materialId);
+    PxPBDMaterial* material = getPtr<PxPBDMaterial>(scene.getAttachedStage().getInternalPhysXDatabase(), ePTPBDMaterial, materialId);
     if (!material)
     {
         // Default material migth not have InternalPBDParticleMaterial wrapper and valid ObjectId
@@ -139,7 +147,7 @@ uint32_t allocatePhase(InternalPbdParticleSystem& particleSystem, physx::PxPBDMa
     return phase;
 }
 
-void getParticleMassDensity(const ParticleDesc* desc, const float materialDensity, float& mass, float& density)
+void getParticleMassDensity(const omni::physics::parse::SourceUnits& sourceUnits, const ParticleDesc* desc, const float materialDensity, float& mass, float& density)
 {
     PBDMaterialDesc materialDesc;
     setToDefault(materialDesc);
@@ -155,7 +163,7 @@ void getParticleMassDensity(const ParticleDesc* desc, const float materialDensit
     if (mass <= 0.0f && density <= 0.0f)
     {
         // set default if no mass specified and both massAPI and material density are invalid/not provided:
-        density = getScaledDensity(usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage()->getSourceUnits(), defaultDensity);
+        density = getScaledDensity(sourceUnits, defaultDensity);
     }
 }
 
@@ -231,14 +239,14 @@ namespace omni
 namespace physx
 {
 
-extern bool checkScenes();
+extern bool checkScenes(const AttachedStage& attachedStage);
 
-float computeParticleInvMass(const ParticleSetDesc& particleSetDesc, const float materialDensity)
+float computeParticleInvMass(const omni::physics::parse::SourceUnits& sourceUnits, const ParticleSetDesc& particleSetDesc, const float materialDensity)
 {
     float computedMass = 0.0f;
     float density;
     float mass;
-    getParticleMassDensity(&particleSetDesc, materialDensity, mass, density);
+    getParticleMassDensity(sourceUnits, &particleSetDesc, materialDensity, mass, density);
     if (mass > 0.0f)
     {
         computedMass = mass / particleSetDesc.points.size();
@@ -263,9 +271,9 @@ float computeParticleInvMass(const ParticleSetDesc& particleSetDesc, const float
     return 1.0f / computedMass;
 }
 
-bool PhysXUsdPhysicsInterface::updateParticleMass(omni::physics::parse::ObjectKey key, ObjectId objectId, const ParticleDesc& particleDesc)
+bool PhysXUsdPhysicsInterface::updateParticleMass(const usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, ObjectId objectId, const ParticleDesc& particleDesc)
 {
-    InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType;
     const InternalDatabase::Record* objectFullRecord = db.getFullRecord(internalType, objectId);
@@ -277,7 +285,7 @@ bool PhysXUsdPhysicsInterface::updateParticleMass(omni::physics::parse::ObjectKe
         return false;
 
     const ObjectId materialId = internalParticle->mParentParticleSystem->mMaterialId;
-    InternalPBDParticleMaterial* internalMaterial = getInternalPtr<InternalPBDParticleMaterial>(ePTPBDMaterial, materialId);
+    InternalPBDParticleMaterial* internalMaterial = getInternalPtr<InternalPBDParticleMaterial>(attachedStage.getInternalPhysXDatabase(), ePTPBDMaterial, materialId);
     const float materialDensity = internalMaterial ? internalMaterial->mDensity : 0.0f;
 
     if (internalType == ePTParticleSet)
@@ -287,7 +295,7 @@ bool PhysXUsdPhysicsInterface::updateParticleMass(omni::physics::parse::ObjectKe
         {
             const ParticleSetDesc& particleSetDesc = (const ParticleSetDesc&)particleDesc;
 
-            internalParticleSet->mParticleInvMass = computeParticleInvMass(particleSetDesc, materialDensity);
+            internalParticleSet->mParticleInvMass = computeParticleInvMass(attachedStage.getSourceUnits(), particleSetDesc, materialDensity);
 
             for (int index = 0; index < particleSetDesc.maxParticles; ++index)
             {
@@ -303,7 +311,7 @@ bool PhysXUsdPhysicsInterface::updateParticleMass(omni::physics::parse::ObjectKe
 
 usdparser::ObjectId PhysXUsdPhysicsInterface::createPbdParticleSystem(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey systemKey, const usdparser::ParticleSystemDesc& desc)
 {
-    if (!checkScenes())
+    if (!checkScenes(attachedStage))
     {
         PhysXUsdPhysicsInterface::reportLoadError(
             usdparser::ErrorCode::eError, "No physics scene created, please add physics scene into stage!");
@@ -314,7 +322,7 @@ usdparser::ObjectId PhysXUsdPhysicsInterface::createPbdParticleSystem(usdparser:
     PxPhysics* physics = physxSetup.getPhysics();
 
     const ObjectId sceneId = attachedStage.getObjectDatabase()->findEntry(desc.sceneKey, eScene);
-    PhysXScene* physxScene = physxSetup.getPhysXScene(sceneId);
+    PhysXScene* physxScene = attachedStage.getPhysXScene(sceneId);
 
     PxCudaContextManager* cudaContextManager = physxScene->getScene()->getCudaContextManager();
     if (!cudaContextManager)
@@ -387,13 +395,13 @@ usdparser::ObjectId PhysXUsdPhysicsInterface::createPbdParticleSystem(usdparser:
     if (!internalPS->mEnabled)
         physxScene->getScene()->removeActor(*particleSystem);
 
-    const ObjectId objectId = OmniPhysX::getInstance().getInternalPhysXDatabase().addRecord(ePTParticleSystem, particleSystem, internalPS, systemKey);
+    const ObjectId objectId = attachedStage.getInternalPhysXDatabase().addRecord(ePTParticleSystem, particleSystem, internalPS, systemKey);
     particleSystem->userData = (void*)(objectId);
-    if (mExposePrimNames)
+    if (attachedStage.getParseOptions().exposePrimNames)
         particleSystem->setName(attachedStage.textFor(systemKey));
 
-    mParticleSystems.push_back(internalPS);
-    mDirty = true;
+    attachedStage.getPendingPhysicsSetup().particleSystems.push_back(internalPS);
+    attachedStage.getPendingPhysicsSetup().dirty = true;
 
     return objectId;
 }
@@ -401,19 +409,19 @@ usdparser::ObjectId PhysXUsdPhysicsInterface::createPbdParticleSystem(usdparser:
 ObjectId PhysXUsdPhysicsInterface::createParticleSet(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey primKey, const ParticleSetDesc& particleDesc)
 {
 #if USE_PHYSX_GPU
-    if (!checkScenes())
+    if (!checkScenes(attachedStage))
     {
         PhysXUsdPhysicsInterface::reportLoadError(
             usdparser::ErrorCode::eError, "No physics scene created, please add physics scene into stage!");
         return kInvalidObjectId;
     }
 
-    InternalPhysXDatabase& internalPhysxDB = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    InternalPhysXDatabase& internalPhysxDB = attachedStage.getInternalPhysXDatabase();
     PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
     PxPhysics* physics = physxSetup.getPhysics();
 
     const ObjectId sceneId = attachedStage.getObjectDatabase()->findEntry(particleDesc.sceneKey, eScene);
-    PhysXScene* physxScene = physxSetup.getPhysXScene(sceneId);
+    PhysXScene* physxScene = attachedStage.getPhysXScene(sceneId);
 
     PxCudaContextManager* cudaContextManager = physxScene->getScene()->getCudaContextManager();
     if (!cudaContextManager)
@@ -467,7 +475,7 @@ ObjectId PhysXUsdPhysicsInterface::createParticleSet(usdparser::AttachedStage& a
     internalParticleSet->mFluid = particleDesc.fluid;
     internalParticleSet->mPhysXScene = physxScene;
     internalParticleSet->mPhase = allocatePhase(*internalPS, *material, particleDesc.particleGroup, particleDesc.selfCollision, false, particleDesc.fluid);
-    internalParticleSet->mParticleInvMass = computeParticleInvMass(particleDesc, materialDensity);
+    internalParticleSet->mParticleInvMass = computeParticleInvMass(attachedStage.getSourceUnits(), particleDesc, materialDensity);
 
     const PxMat44d localToWorld = getWorldTransform(attachedStage, primKey, omni::physics::parse::ReadTime::defaultTime());
     const PxMat44d worldToLocal = omni::physx::affineInverse(localToWorld);
@@ -478,9 +486,9 @@ ObjectId PhysXUsdPhysicsInterface::createParticleSet(usdparser::AttachedStage& a
 
     // allocate some buffers, TODO somehow make InternalParticleSet::resize do all this.
     internalParticleSet->mMaxParticles = particleDesc.maxParticles;
-    internalParticleSet->mPhases = PX_PINNED_HOST_ALLOC_T(PxU32, cudaContextManager, particleDesc.maxParticles);
-    internalParticleSet->mPositions = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, particleDesc.maxParticles);
-    internalParticleSet->mVelocities = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, particleDesc.maxParticles);
+    internalParticleSet->mPhases = PxCudaHelpersExt::allocPinnedHostBuffer<PxU32>(*cudaContextManager, particleDesc.maxParticles);
+    internalParticleSet->mPositions = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, particleDesc.maxParticles);
+    internalParticleSet->mVelocities = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, particleDesc.maxParticles);
 
     const std::vector<carb::Float3>& positionSrc = particleDesc.simulationPoints.empty() ? particleDesc.points : particleDesc.simulationPoints;
 
@@ -519,7 +527,7 @@ ObjectId PhysXUsdPhysicsInterface::createParticleSet(usdparser::AttachedStage& a
 
     if (maxDiffuseParticles > 0)
     {
-        internalParticleSet->mDiffuseParticlePositions = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, maxDiffuseParticles);
+        internalParticleSet->mDiffuseParticlePositions = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, maxDiffuseParticles);
         internalParticleSet->createSharedDiffuseParticles();
         attachedStage.getObjectDatabase()->addSchemaAPI(primKey, SchemaAPIFlag::eDiffuseParticlesAPI);
     }
@@ -529,7 +537,7 @@ ObjectId PhysXUsdPhysicsInterface::createParticleSet(usdparser::AttachedStage& a
     // AD we always use diffuse buffers and just set/update params to 0 if we disable.
     PxParticleAndDiffuseBuffer* userBuffer = InternalParticleSet::createUserBuffer(internalParticleSet->mMaxParticles, internalParticleSet->mNumParticles,
         internalParticleSet->mDiffuseParticlesEnabled, internalParticleSet->mMaxDiffuseParticleMultiplier,
-        internalParticleSet->mDiffuseParticleParams, physxSetup);
+        internalParticleSet->mDiffuseParticleParams, cudaContextManager);
 
     if (internalParticleSet->mEnabled && internalPS->mEnabled)
         internalPS->mPS->addParticleBuffer(userBuffer);
@@ -537,7 +545,7 @@ ObjectId PhysXUsdPhysicsInterface::createParticleSet(usdparser::AttachedStage& a
     // this triggers the DMA in the onBegin() callback
     internalParticleSet->mParticleBuffer = userBuffer;
     internalParticleSet->mUploadDirtyFlags = ParticleBufferFlags::eALL;
-    if (mExposePrimNames)
+    if (attachedStage.getParseOptions().exposePrimNames)
         userBuffer->setName(attachedStage.textFor(primKey));
 
     // Set the phase on the non active particles
@@ -570,8 +578,8 @@ ObjectId PhysXUsdPhysicsInterface::createParticleSet(usdparser::AttachedStage& a
 
     attachedStage.getObjectDatabase()->addSchemaAPI(primKey, SchemaAPIFlag::eParticleSetAPI);
 
-    mParticleSystems.push_back(internalPS);
-    mDirty = true;
+    attachedStage.getPendingPhysicsSetup().particleSystems.push_back(internalPS);
+    attachedStage.getPendingPhysicsSetup().dirty = true;
 
     ObjectId objectId = internalPhysxDB.addRecord(ePTParticleSet, userBuffer, internalParticleSet, primKey);
     if (internalMaterial)
@@ -587,7 +595,7 @@ ObjectId PhysXUsdPhysicsInterface::createParticleSet(usdparser::AttachedStage& a
 void PhysXUsdPhysicsInterface::changeParticlePostProcess(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, bool removed, SchemaAPIFlag::Enum flag)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     const ObjectId id = attachedStage.getObjectDatabase()->findEntry(key, eParticleSystem);
     if (kInvalidObjectId != id)
@@ -630,7 +638,7 @@ void PhysXUsdPhysicsInterface::changeParticlePostProcess(usdparser::AttachedStag
 void PhysXUsdPhysicsInterface::changeParticleDiffuseParticles(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, bool removed)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     const ObjectId id = attachedStage.getObjectDatabase()->findEntry(key, eParticleSet);
     if (kInvalidObjectId != id)

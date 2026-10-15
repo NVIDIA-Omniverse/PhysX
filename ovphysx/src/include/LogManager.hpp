@@ -22,11 +22,22 @@ namespace ovphysx
  */
 void onCarboniteLoggingReady();
 
-/** Flush Carbonite, disable the application callback, and drain its accepted dispatches. */
+/** Reset framework-owned registrations before releasing Carbonite. */
+void onCarboniteLoggingStopped();
+
+/** Flush Carbonite, close logger registration until bootstrap, and disable/drain the callback. */
 ovphysx_result_t shutdownLogCallback();
 
 /** Return whether the calling thread is inside the application log callback. */
 bool isInLogCallback();
+
+/** Scoped-config implementation for the process log threshold. */
+ovphysx_result_t setLogLevel(uint32_t level);
+uint32_t getLogLevel();
+
+/** Scoped-config implementation for Carbonite's default console logger. */
+ovphysx_result_t setDefaultLogOutput(bool enable);
+bool getDefaultLogOutput();
 
 } // namespace ovphysx
 

@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-1 AC-2
+
 /**
  * @implements REQ-PARSE-CONSUMER-001
  * @covers AC-24
@@ -2177,8 +2180,7 @@ void updateDeformableXformableAttachments(
             omni::physics::parse::ScanOptions scanOptions;
             scanOptions.descendantScope = omni::physics::parse::DescendantScope::eActive;
             const std::vector<std::string> scanRoots{ rigidColliderPathText };
-            omni::physics::parse::ScannedStage scanned = omni::physics::parse::scanStage(
-                attachedStage.attachTarget(), scanRoots, kNoExclude, scanOptions,
+            omni::physics::parse::ScannedStage scanned = attachedStage.scanStage(scanRoots, kNoExclude, scanOptions,
                 omni::physx::usdparser::iceDescriptorAllocator());
             usdparser::PhysxShapeDesc* shapeDesc = prepareScannedShapeForAttachment(attachedStage, scanned, rigidColliderPathText);
             if (!shapeDesc)
@@ -2807,57 +2809,51 @@ uint32_t expectedAutoDeformableAttachmentSubPrimCount(usdparser::AttachedStage& 
 * on the AttachedStage, the payload is generated into its generated-data cache, and the runtime
 * objects are created here directly.
 */
-bool setupAutoDeformableAttachment(omni::physics::parse::ObjectKey autoAttachmentKey)
+bool setupAutoDeformableAttachment(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey autoAttachmentKey)
 {
-    usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
-    if (!attachedStage)
-        return false;
 
     AutoAttachmentInputs in;
-    if (!parseAutoAttachmentInputs(*attachedStage, autoAttachmentKey, in, "setupAutoDeformableAttachment"))
+    if (!parseAutoAttachmentInputs(attachedStage, autoAttachmentKey, in, "setupAutoDeformableAttachment"))
         return false;
 
     // Whatever the previous setup produced for this prim goes first: the in-memory layout's
     // objects and the layout itself, then (authoring branch) the authored sub prims. Clearing
     // the layout on the authoring branch matters because the getters and the CRC store prefer
     // a layout whenever one exists; a stale one would shadow the freshly authored prims.
-    releaseGeneratedAutoAttachmentObjects(*attachedStage, autoAttachmentKey);
-    attachedStage->clearGeneratedAutoAttachmentLayout(autoAttachmentKey);
+    releaseGeneratedAutoAttachmentObjects(attachedStage, autoAttachmentKey);
+    attachedStage.clearGeneratedAutoAttachmentLayout(autoAttachmentKey);
 
-    if (!attachmentauthoring::canAuthor(*attachedStage))
+    if (!attachmentauthoring::canAuthor(attachedStage))
     {
-        if (!buildGeneratedLayout(*attachedStage, autoAttachmentKey, in))
+        if (!buildGeneratedLayout(attachedStage, autoAttachmentKey, in))
             return false;
         bool attachmentDataRecomputed = false;
-        if (!updateAutoDeformableAttachment(autoAttachmentKey, attachmentDataRecomputed))
+        if (!updateAutoDeformableAttachment(attachedStage, autoAttachmentKey, attachmentDataRecomputed))
         {
             // No objects: a registered attachment with an empty payload would simulate as
             // nothing while the caller was told setup succeeded.
             CARB_LOG_WARN("setupAutoDeformableAttachment: generating attachment data failed for %s",
-                attachedStage->textFor(autoAttachmentKey));
-            attachedStage->clearGeneratedAutoAttachmentLayout(autoAttachmentKey);
+                attachedStage.textFor(autoAttachmentKey));
+            attachedStage.clearGeneratedAutoAttachmentLayout(autoAttachmentKey);
             return false;
         }
-        createGeneratedAutoAttachmentObjects(*attachedStage, autoAttachmentKey);
+        createGeneratedAutoAttachmentObjects(attachedStage, autoAttachmentKey);
         return true;
     }
 
-    attachmentauthoring::removeAttachmentsAndFilters(*attachedStage, autoAttachmentKey);
+    attachmentauthoring::removeAttachmentsAndFilters(attachedStage, autoAttachmentKey);
 
-    AuthoredSubPrimSink sink(*attachedStage, autoAttachmentKey);
+    AuthoredSubPrimSink sink(attachedStage, autoAttachmentKey);
     defineAutoAttachmentSubPrims(sink, in);
     return true;
 }
 
-bool updateAutoDeformableAttachment(omni::physics::parse::ObjectKey autoAttachmentKey, bool& attachmentDataRecomputed)
+bool updateAutoDeformableAttachment(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey autoAttachmentKey, bool& attachmentDataRecomputed)
 {
     attachmentDataRecomputed = false;
 
-    usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
-    if (!attachedStage)
-        return false;
 
-    const omni::physics::parse::IPhysicsSource* src = attachedStage->getSource();
+    const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
     if (!src)
         return false;
     omni::physics::parse::KnownTokens tok;
@@ -2866,7 +2862,7 @@ bool updateAutoDeformableAttachment(omni::physics::parse::ObjectKey autoAttachme
         return false;
 
     PhysxAutoAttachmentDesc autoAttachmentDesc;
-    parsePhysxAutoAttachment(*attachedStage, autoAttachmentDesc, autoAttachmentKey);
+    parsePhysxAutoAttachment(attachedStage, autoAttachmentDesc, autoAttachmentKey);
 
     CookingDataAsync* cookingDataAsync = omni::physx::OmniPhysX::getInstance().getPhysXSetup().getCookingDataAsync();
     if (!cookingDataAsync)
@@ -2883,7 +2879,7 @@ bool updateAutoDeformableAttachment(omni::physics::parse::ObjectKey autoAttachme
     uint32_t numXformables = 0;
     std::vector<omni::physics::parse::ObjectKey> rigidColliders;
 
-    if (!parseAttachables(*attachedStage, types, attachableKeys, deformableDescs, attachableSlots, numDeformables,
+    if (!parseAttachables(attachedStage, types, attachableKeys, deformableDescs, attachableSlots, numDeformables,
         numXformables, rigidColliders, autoAttachmentKey, *cookingDataAsync))
     {
         CARB_LOG_WARN("updateAutoDeformableAttachment: parsing attachables failed");
@@ -2897,7 +2893,7 @@ bool updateAutoDeformableAttachment(omni::physics::parse::ObjectKey autoAttachme
     MaskShapes maskShapes;
     {
         std::vector<omni::physics::parse::ObjectKey> targets;
-        internal::getRelationshipValue(*attachedStage, autoAttachmentKey, tok.physxAutoDeformableAttachmentMaskShapes, targets);
+        internal::getRelationshipValue(attachedStage, autoAttachmentKey, tok.physxAutoDeformableAttachmentMaskShapes, targets);
 
         for (uint32_t i = 0; i < targets.size(); ++i)
         {
@@ -2906,7 +2902,7 @@ bool updateAutoDeformableAttachment(omni::physics::parse::ObjectKey autoAttachme
             {
                 PxGeometryHolder holder;
                 PxTransform transform;
-                bool success = parseMaskShape(*attachedStage, holder, transform, maskShapeKey);
+                bool success = parseMaskShape(attachedStage, holder, transform, maskShapeKey);
                 if (success)
                 {
                     maskShapes.geometries.push_back(holder);
@@ -2936,15 +2932,15 @@ bool updateAutoDeformableAttachment(omni::physics::parse::ObjectKey autoAttachme
         {
             if (type == AttachmentActorType::eSURFACE_DEFORMABLE)
             {
-                cookingDataAsync->cookSurfaceDeformableBody(*(PhysxSurfaceDeformableBodyDesc*)desc, primKey, *attachedStage, false);
+                cookingDataAsync->cookSurfaceDeformableBody(*(PhysxSurfaceDeformableBodyDesc*)desc, primKey, attachedStage, false);
             }
             else if (type == AttachmentActorType::eVOLUME_DEFORMABLE)
             {
-                cookingDataAsync->cookVolumeDeformableBody(*(PhysxVolumeDeformableBodyDesc*)desc, primKey, *attachedStage, false);
+                cookingDataAsync->cookVolumeDeformableBody(*(PhysxVolumeDeformableBodyDesc*)desc, primKey, attachedStage, false);
             }
         }
 
-        if (!getDeformableMeshInfo(*attachedStage, deformableMeshInfo[d], primKey, *desc))
+        if (!getDeformableMeshInfo(attachedStage, deformableMeshInfo[d], primKey, *desc))
             return false;
 
         inputCrc.setMeshKey(deformableMeshInfo[d].deformableBodyDataCrc);
@@ -2952,7 +2948,7 @@ bool updateAutoDeformableAttachment(omni::physics::parse::ObjectKey autoAttachme
 
     // Cache key of the last generated payload: kept on the in-memory layout when the attach
     // cannot author sub-prims, otherwise as the inputCrc attribute on the prim.
-    GeneratedAutoAttachmentLayout* layout = attachedStage->getGeneratedAutoAttachmentLayout(autoAttachmentKey);
+    GeneratedAutoAttachmentLayout* layout = attachedStage.getGeneratedAutoAttachmentLayout(autoAttachmentKey);
     omni::physx::usdparser::MeshKey storedInputCrc;
     if (layout)
     {
@@ -2961,7 +2957,7 @@ bool updateAutoDeformableAttachment(omni::physics::parse::ObjectKey autoAttachme
     }
     else
     {
-        storedInputCrc = loadMeshKey(*attachedStage, autoAttachmentKey, autoDeformableAttachmentInputCrcToken);
+        storedInputCrc = loadMeshKey(attachedStage, autoAttachmentKey, autoDeformableAttachmentInputCrcToken);
     }
     if (storedInputCrc == inputCrc)
     {
@@ -2975,14 +2971,14 @@ bool updateAutoDeformableAttachment(omni::physics::parse::ObjectKey autoAttachme
     }
     else
     {
-        storeMeshKey(*attachedStage, autoAttachmentKey, autoDeformableAttachmentInputCrcToken, inputCrc);
+        storeMeshKey(attachedStage, autoAttachmentKey, autoDeformableAttachmentInputCrcToken, inputCrc);
     }
     attachmentDataRecomputed = true;
 
-    attachedStage->clearGeneratedDeformableAttachmentDataUnderPath(autoAttachmentKey);
+    attachedStage.clearGeneratedDeformableAttachmentDataUnderPath(autoAttachmentKey);
     // USD-stage mirror of the reset above: disables the previous run's Attachment /
     // ElementCollisionFilter prims on the live stage. No-op without one (in-memory layout).
-    attachmentauthoring::disableAttachmentsAndFilters(*attachedStage, autoAttachmentKey);
+    attachmentauthoring::disableAttachmentsAndFilters(attachedStage, autoAttachmentKey);
 
     if (numXformables == 1)
     {
@@ -2990,14 +2986,14 @@ bool updateAutoDeformableAttachment(omni::physics::parse::ObjectKey autoAttachme
         const omni::physics::parse::ObjectKey xformableKey = attachableKeys[1];
         omni::physics::parse::ObjectKey vtxXformKey;
         std::vector<omni::physics::parse::ObjectKey> filterKeys;
-        bool validAttachment = getVtxXformAttachment(*attachedStage, vtxXformKey, autoAttachmentKey,
+        bool validAttachment = getVtxXformAttachment(attachedStage, vtxXformKey, autoAttachmentKey,
             deformableInfo.simMeshKey, xformableKey);
-        bool validFilters = getElementCollisionFilters(*attachedStage, filterKeys, autoAttachmentKey,
+        bool validFilters = getElementCollisionFilters(attachedStage, filterKeys, autoAttachmentKey,
             rigidColliders, deformableInfo.collMeshKey);
 
         if (validAttachment && validFilters)
         {
-            updateDeformableXformableAttachments(*attachedStage, vtxXformKey, filterKeys, deformableInfo,
+            updateDeformableXformableAttachments(attachedStage, vtxXformKey, filterKeys, deformableInfo,
                 attachableSlots[0], xformableKey, rigidColliders, autoAttachmentDesc, maskShapes);
         }
         else
@@ -3015,17 +3011,17 @@ bool updateAutoDeformableAttachment(omni::physics::parse::ObjectKey autoAttachme
             {
                 omni::physics::parse::ObjectKey vtxTetKeys[2];
                 omni::physics::parse::ObjectKey filterKey;
-                bool validAttachment0 = getVtxTetAttachment(*attachedStage, vtxTetKeys[0], autoAttachmentKey,
+                bool validAttachment0 = getVtxTetAttachment(attachedStage, vtxTetKeys[0], autoAttachmentKey,
                     deformableMeshInfo[0].simMeshKey, deformableMeshInfo[1].simMeshKey);
-                bool validAttachment1 = getVtxTetAttachment(*attachedStage, vtxTetKeys[1], autoAttachmentKey,
+                bool validAttachment1 = getVtxTetAttachment(attachedStage, vtxTetKeys[1], autoAttachmentKey,
                     deformableMeshInfo[1].simMeshKey, deformableMeshInfo[0].simMeshKey);
-                bool validFilter = getElementCollisionFilter(*attachedStage, filterKey, autoAttachmentKey,
+                bool validFilter = getElementCollisionFilter(attachedStage, filterKey, autoAttachmentKey,
                     deformableMeshInfo[0].collMeshKey,
                     deformableMeshInfo[1].collMeshKey);
 
                 if (validAttachment0 && validAttachment1 && validFilter)
                 {
-                    updateDeformableVolumeVolumeAttachments(*attachedStage, vtxTetKeys, filterKey,
+                    updateDeformableVolumeVolumeAttachments(attachedStage, vtxTetKeys, filterKey,
                         deformableMeshInfo, attachableSlots, autoAttachmentDesc, maskShapes);
                 }
                 else
@@ -3039,15 +3035,15 @@ bool updateAutoDeformableAttachment(omni::physics::parse::ObjectKey autoAttachme
             {
                 omni::physics::parse::ObjectKey vtxTetKey;
                 omni::physics::parse::ObjectKey filterKey;
-                bool validAttachment = getVtxTetAttachment(*attachedStage, vtxTetKey, autoAttachmentKey,
+                bool validAttachment = getVtxTetAttachment(attachedStage, vtxTetKey, autoAttachmentKey,
                     deformableMeshInfo[1].simMeshKey, deformableMeshInfo[0].simMeshKey);
-                bool validFilter = getElementCollisionFilter(*attachedStage, filterKey, autoAttachmentKey,
+                bool validFilter = getElementCollisionFilter(attachedStage, filterKey, autoAttachmentKey,
                     deformableMeshInfo[attachableSlots[0]].collMeshKey,
                     deformableMeshInfo[attachableSlots[1]].collMeshKey);
 
                 if (validAttachment && validFilter)
                 {
-                    updateDeformableVolumeSurfaceAttachments(*attachedStage, vtxTetKey, filterKey,
+                    updateDeformableVolumeSurfaceAttachments(attachedStage, vtxTetKey, filterKey,
                         deformableMeshInfo[0], attachableSlots[0],
                         deformableMeshInfo[1], attachableSlots[1],
                         autoAttachmentDesc, maskShapes);

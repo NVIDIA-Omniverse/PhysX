@@ -37,11 +37,13 @@
 // OvstageLoad.h's unbounded-wait helpers out of the dependency graph for the
 // rows below. The sample's own unbounded-wait entry points remain in include
 // scope but are never called from here. Every wait in this header is bounded.
+#include "../TaskCompletion.h"
 #include "../../c_samples/common/ovstage_sample.h"
 #include "../framework/BmUtils.h"
 #include "../BenchmarkFailure.h"
 
 #include <ovphysx/experimental/ovphysx.hpp>
+#include <ovphysx/ovphysx_attributes.h>
 #include <ovx/path_dictionary/path_dictionary.h>
 #include <ovx/path_dictionary/path_dictionary_utils.h>
 
@@ -391,10 +393,10 @@ inline bool recordOvphysxWaitErrors(const ovphysx::physx::WaitResult& wait, cons
     bool operationFailed = false;
     for (size_t i = 0; i < wait.errorCount(); ++i)
     {
-        const ovphysx_op_index_t failed = wait.errorOpIndexAt(i);
-        const ovphysx_string_t detail = ovphysx_get_last_op_error(failed);
+        const ovphysx_enqueue_result_t failed = wait.errorTaskAt(i);
+        const ovphysx_string_t detail = ovphysx_get_last_task_error(failed.instance, failed);
         bmRecordFailure(row, "%s dependency failed: op_index=%llu %.*s", what,
-                        static_cast<unsigned long long>(failed), static_cast<int>(detail.length),
+                        static_cast<unsigned long long>(failed.op_index), static_cast<int>(detail.length),
                         detail.ptr ? detail.ptr : "");
         operationFailed = true;
     }
@@ -402,7 +404,7 @@ inline bool recordOvphysxWaitErrors(const ovphysx::physx::WaitResult& wait, cons
 }
 
 
-// The ovphysx analogue of waitStage(). ovphysx_wait_op() reports failure two
+// The ovphysx analogue of waitStage(). ovphysx_wait_task() reports failure two
 // independent ways: through its own status (OVPHYSX_API_TIMEOUT, NOT_FOUND for
 // an invalid or already-consumed index, ERROR for an internal wait failure)
 // and through the per-operation error list for work that failed after its
@@ -413,10 +415,18 @@ inline bool recordOvphysxWaitErrors(const ovphysx::physx::WaitResult& wait, cons
 // A bounded wait that times out records the failure and then blocks for final
 // completion, so teardown never destroys state a pending operation still
 // references. The outer benchmark-process timeout remains the hard bound.
-inline bool waitOvphysxOpChecked(ovphysx_handle_t handle, ovphysx_op_index_t opIndex, const char* row, const char* what)
+inline bool waitOvphysxTaskChecked(ovphysx_instance_handle_t handle, ovphysx_enqueue_result_t task, const char* row, const char* what, bool all = false)
 {
+    if (!all && task.status != OVPHYSX_API_SUCCESS)
+    {
+        const ovphysx_string_t error = ovphysx_get_last_error();
+        bmRecordFailure(row, "%s rejected: status=%d %.*s", what, static_cast<int>(task.status),
+                        static_cast<int>(error.length), error.ptr ? error.ptr : "");
+        return false;
+    }
     ovphysx::physx::WaitResult wait;
-    ovphysx_result_t result = ovphysx_wait_op(handle, opIndex, kWaitTimeoutNs, wait.get());
+    ovphysx_result_t result{all ? wait.waitAll(handle, kWaitTimeoutNs) :
+        wait.waitTask(handle, task, kWaitTimeoutNs)};
 
     bool operationFailed = recordOvphysxWaitErrors(wait, row, what);
     const bool timedOut = result.status == OVPHYSX_API_TIMEOUT;
@@ -427,11 +437,11 @@ inline bool waitOvphysxOpChecked(ovphysx_handle_t handle, ovphysx_op_index_t opI
                         "%s timed out after %llu s: lowest_pending_op_index=%llu; waiting for final completion "
                         "before teardown",
                         what, static_cast<unsigned long long>(kWaitTimeoutNs / 1000000000ULL),
-                        static_cast<unsigned long long>(wait.lowestPendingOpIndex()));
+                        static_cast<unsigned long long>(wait.pendingTask().op_index));
         // A timed-out index is not consumed, so this re-wait is legal and is
         // the only way to reach a state where teardown is safe.
         ovphysx::physx::WaitResult finalWait;
-        result = ovphysx_wait_op(handle, opIndex, OVPHYSX_TIMEOUT_INFINITE, finalWait.get());
+        result.status = all ? finalWait.waitAll(handle) : finalWait.waitTask(handle, task);
         operationFailed = recordOvphysxWaitErrors(finalWait, row, what) || operationFailed;
     }
 
@@ -448,9 +458,9 @@ inline bool waitOvphysxOpChecked(ovphysx_handle_t handle, ovphysx_op_index_t opI
 }
 
 
-inline bool waitOvphysxAllChecked(ovphysx_handle_t handle, const char* row, const char* what)
+inline bool waitOvphysxAllChecked(ovphysx_instance_handle_t handle, const char* row, const char* what)
 {
-    return waitOvphysxOpChecked(handle, OVPHYSX_OP_INDEX_ALL, row, what);
+    return waitOvphysxTaskChecked(handle, {}, row, what, true);
 }
 
 
@@ -478,7 +488,7 @@ inline bool retireWriteOp(ovstage_instance_t* stage, ovstage_op_id_t opIndex, bo
 
 // Seal the write floor through `ordinal`, then drain the matching interval into
 // physics. Advances *lastDrained on success.
-inline bool sealAndDrain(ovphysx_handle_t handle,
+inline bool sealAndDrain(ovphysx_instance_handle_t handle,
                          ovstage_instance_t* stage,
                          ovstage_ordinal_t* lastDrained,
                          ovstage_ordinal_t ordinal,
@@ -510,10 +520,8 @@ inline bool sealAndDrain(ovphysx_handle_t handle,
     range.has_start_ordinal = true;
     range.start_ordinal = (*lastDrained) + 1;
     range.end_ordinal = ordinal;
-    if (ovphysx_update_from_ovstage(handle, range).status != OVPHYSX_API_SUCCESS)
+    if (!waitOvphysxTaskChecked(handle, ovphysx_update_from_ovstage(handle, range), row, "update_from_ovstage"))
     {
-        const ovphysx_string_t err = ovphysx_get_last_error();
-        bmRecordFailure(row, "update_from_ovstage failed: %.*s", static_cast<int>(err.length), err.ptr ? err.ptr : "");
         return false;
     }
 
@@ -544,7 +552,7 @@ inline bool releaseOvphysxResultChecked(const ovphysx_result_t& release, const c
 // ovphysx_destroy_tensor_binding() documents the handle as invalid after the
 // call whatever it returns, so the caller's copy is always cleared. Retrying a
 // failed destroy would be a second release of a spent handle.
-inline bool destroyTensorBindingChecked(ovphysx_handle_t handle,
+inline bool destroyTensorBindingChecked(ovphysx_instance_handle_t handle,
                                         ovphysx_tensor_binding_handle_t& binding,
                                         const char* row,
                                         const char* what)
@@ -561,12 +569,12 @@ inline bool destroyTensorBindingChecked(ovphysx_handle_t handle,
 
 
 // Counts simulated rigid bodies across the whole stage.
-inline bool countRigidBodies(ovphysx_handle_t handle, uint32_t* outCount, const char* row)
+inline bool countRigidBodies(ovphysx_instance_handle_t handle, uint32_t* outCount, const char* row)
 {
     *outCount = 0;
 
     ovphysx_query_handle_t query = 0;
-    if (ovphysx_query(handle, OVPHYSX_OBJECT_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query).status != OVPHYSX_API_SUCCESS ||
+    if (bmCompleteTask(handle, ovphysx_query(handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query, nullptr)).status != OVPHYSX_API_SUCCESS ||
         query == 0)
     {
         return false;
@@ -574,9 +582,9 @@ inline bool countRigidBodies(ovphysx_handle_t handle, uint32_t* outCount, const 
 
     const ovx_string_or_token_t name = nameString(OVPHYSX_ATTR_POSITION);
     ovphysx_read_handle_t read = 0;
-    if (ovphysx_read(handle, query, &name, 1, &read).status != OVPHYSX_API_SUCCESS || read == 0)
+    if (bmCompleteTask(handle, ovphysx_read(handle, query, &name, 1, &read, nullptr)).status != OVPHYSX_API_SUCCESS || read == 0)
     {
-        releaseOvphysxResultChecked(ovphysx_release_query(handle, query), row, "rigid-body query");
+        releaseOvphysxResultChecked(bmCompleteTask(handle, ovphysx_release_query(handle, query)), row, "rigid-body query");
         return false;
     }
 
@@ -584,8 +592,8 @@ inline bool countRigidBodies(ovphysx_handle_t handle, uint32_t* outCount, const 
     for (;;)
     {
         const ovstage_read_group_t* group = nullptr;
-        const ovphysx_result_t result = ovphysx_fetch_read_next(handle, read, &group);
-        if (result.status == OVPHYSX_API_END_OF_ITERATION)
+        const ovphysx_result_t result = bmCompleteTask(handle, ovphysx_fetch_read_next(handle, read, &group));
+        if (result.status == OVPHYSX_API_SUCCESS && !group)
         {
             break;
         }
@@ -609,7 +617,7 @@ inline bool countRigidBodies(ovphysx_handle_t handle, uint32_t* outCount, const 
             }
         }
         if (!releaseOvphysxResultChecked(
-                ovphysx_release_group(handle, read, group->read_group_id), row, "rigid-body read group"))
+                bmCompleteTask(handle, ovphysx_release_group(handle, read, group->read_group_id)), row, "rigid-body read group"))
         {
             valid = false;
         }
@@ -619,11 +627,11 @@ inline bool countRigidBodies(ovphysx_handle_t handle, uint32_t* outCount, const 
         }
     }
 
-    if (!releaseOvphysxResultChecked(ovphysx_release_read(handle, read), row, "rigid-body read session"))
+    if (!releaseOvphysxResultChecked(bmCompleteTask(handle, ovphysx_release_read(handle, read)), row, "rigid-body read session"))
     {
         valid = false;
     }
-    if (!releaseOvphysxResultChecked(ovphysx_release_query(handle, query), row, "rigid-body query"))
+    if (!releaseOvphysxResultChecked(bmCompleteTask(handle, ovphysx_release_query(handle, query)), row, "rigid-body query"))
     {
         valid = false;
     }
@@ -633,7 +641,7 @@ inline bool countRigidBodies(ovphysx_handle_t handle, uint32_t* outCount, const 
 
 // Pose readback for a single prim path. *outCount is the rigid-body match count
 // (0 when the body is gone). When it is >= 1, *outY is the first body's pose Y.
-inline bool readBodyPoseAt(ovphysx_handle_t handle, const char* path, int64_t* outCount, float* outY, const char* row)
+inline bool readBodyPoseAt(ovphysx_instance_handle_t handle, const char* path, int64_t* outCount, float* outY, const char* row)
 {
     *outCount = 0;
 
@@ -846,15 +854,17 @@ inline bool populateAndAttachChecked(ovphysx::PhysX* physx,
         return false;
     }
 
-    if (physx->attachOvstage(attachment.stage, attachment.ordinal) != OVPHYSX_API_SUCCESS)
+    const ovphysx_enqueue_result_t attach = physx->attachOvstage(attachment.stage, attachment.ordinal);
+    if (attach.status != OVPHYSX_API_SUCCESS)
     {
         const ovphysx_string_t err = ovphysx_get_last_error();
-        bmRecordFailure(row, "attach_ovstage failed: %.*s", static_cast<int>(err.length), err.ptr ? err.ptr : "");
+        bmRecordFailure(row, "attach_ovstage rejected: %.*s", static_cast<int>(err.length), err.ptr ? err.ptr : "");
         destroyStageChecked(attachment, row);
         return false;
     }
+    // An accepted failure may retain Stage ownership; cleanup must attempt detach.
     *outAttached = true;
-    return waitOvphysxAllChecked(physx->handle(), row, "attach_ovstage");
+    return waitOvphysxTaskChecked(physx->handle(), attach, row, "attach_ovstage");
 }
 
 
@@ -871,27 +881,9 @@ inline bool clearOvstageChecked(ovphysx::PhysX* physx, ovphysx_sample_stage_atta
     }
     if (physx)
     {
-        // ovphysx_reset_stage() is asynchronous. Detaching or destroying under
-        // a pending reset would tear the Stage out from under it, so the reset
-        // is waited to completion before either.
-        const ovphysx_enqueue_result_t reset = ovphysx_reset_stage(physx->handle());
-        if (reset.status != OVPHYSX_API_SUCCESS)
+        // Only successful task completion permits releasing the caller-owned Stage.
+        if (!waitOvphysxTaskChecked(physx->handle(), ovphysx_detach_ovstage(physx->handle()), row, "detach_ovstage"))
         {
-            const ovphysx_string_t err = ovphysx_get_last_error();
-            bmRecordFailure(row, "reset_stage enqueue rejected: status=%d %.*s; retaining caller-owned Stage",
-                            static_cast<int>(reset.status), static_cast<int>(err.length), err.ptr ? err.ptr : "");
-            return false;
-        }
-        if (!waitOvphysxOpChecked(physx->handle(), reset.op_index, row, "reset_stage"))
-        {
-            return false;
-        }
-        const ovphysx_result_t detach = ovphysx_detach_ovstage(physx->handle());
-        if (detach.status != OVPHYSX_API_SUCCESS)
-        {
-            const ovphysx_string_t err = ovphysx_get_last_error();
-            bmRecordFailure(row, "detach_ovstage failed: status=%d %.*s; retaining caller-owned Stage",
-                            static_cast<int>(detach.status), static_cast<int>(err.length), err.ptr ? err.ptr : "");
             return false;
         }
     }
@@ -1006,10 +998,9 @@ inline GpuFallbackEvidence& gpuFallbackProbe()
 }
 
 
-// Scoped capture from construction through destruction. Most Authoring rows
-// bound the scope to attach and warmup. ContactReport keeps it through measured
-// steps and stage teardown. The callback may fire from any thread, so the probe
-// is mutex-guarded and unregistration is explicit. ovphysx guarantees the
+// Scoped capture from construction through destruction. Authoring rows
+// bound the scope to attach and warmup. The callback may fire from any thread,
+// so the probe is mutex-guarded and unregistration is explicit. ovphysx guarantees the
 // callback is no longer running once the disabling call returns.
 class GpuFallbackScope
 {
@@ -1083,8 +1074,7 @@ public:
                 mDisableFailureReported = true;
             }
             // Keep the scope unfinished so a later finish() call can retry.
-            // ContactReport's explicit finish is followed by destruction. The
-            // failed call may have left a callback in flight, so do not read
+            // The failed call may have left a callback in flight, so do not read
             // final evidence until a later disable succeeds and drains it.
             return false;
         }
@@ -1158,7 +1148,7 @@ private:
 
 // Runs warmup and rejects a GPU-requested row when a known fallback or capacity
 // signal is observed. `scope` must have been alive across the preceding attach.
-inline bool checkDeviceEvidenceAndWarmup(ovphysx_handle_t handle, bool gpu, GpuFallbackScope& scope, const char* row)
+inline bool checkDeviceEvidenceAndWarmup(ovphysx_instance_handle_t handle, bool gpu, GpuFallbackScope& scope, const char* row)
 {
     const ovphysx_result_t warm = ovphysx_warmup(handle);
     if (warm.status != OVPHYSX_API_SUCCESS && warm.status != OVPHYSX_API_GPU_NOT_AVAILABLE)

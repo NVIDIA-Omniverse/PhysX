@@ -1,6 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-CAPI-LOG-001
+ * @covers AC-7
+ */
+
 // Sidecar module bootstrap. Holds the peer-DSO OmniCore/Carbonite globals and the
 // two setter exports the SDK loader calls right after dlopen to seed them from the
 // main library.
@@ -27,8 +32,8 @@ extern "C" {
 
 // Seeds the sidecar's module-local carb::Framework, the omni::core / omni::log /
 // IStructuredLog runtime globals, and the logging source from the main library's
-// framework. Called once by loadInternalSidecar() on the loader thread, right after
-// the dlopen handshake and before any other entry point resolves.
+// framework. Called during the first load handshake and once per subsequent
+// framework bootstrap, before sidecar operations resume.
 //
 // Unlike the rtx.hydra setter, this registers the logging source, because the
 // sidecar reports diagnostics through CARB_LOG_* in its error and info paths.

@@ -151,17 +151,17 @@
   },
   "tests/benchmarks/benchmarks/ContactReport.cpp": {
     "cases": {
-      "ContactReport.persistent_pairs_512_step_read_cpu": {
+      "ContactReport.net_force_512_read_cpu": {
         "heavy": true,
-        "note": "one 1/60s step plus the public raw contact-report pull, CPU dynamics"
+        "note": "contact-sensor net-force session read over 512 resting sensors, CPU dynamics"
       },
-      "ContactReport.persistent_pairs_512_step_read_gpu": {
+      "ContactReport.net_force_512_read_gpu": {
         "heavy": true,
-        "note": "requires --forceGpu; conventional GPU dynamics, DirectGPU refused"
+        "note": "requires --forceGpu --directGpu; device-resident net-force columns"
       }
     },
     "category": "Contact Report",
-    "description": "One 1/60-second step plus the public raw contact-report pull for 512 persistent isolated reporter/static pairs. A contact is one place where two collision shapes touch; after each physics step the contact report is the list of touching pairs plus the point, normal, separation, and impulse data generated for those touches. The fixture intentionally expects no friction anchors. The `_gpu` row requires conventional GPU dynamics (`--forceGpu`) and explicitly rejects `--directGpu`, which disables the host simulation-state readback path the public raw getter reads from -- the row fails instead of publishing a misleading zero or fallback measurement. Both rows are hidden and run in separate fresh processes.",
+    "description": "Steady-state contact-sensor net-force read through the session read API (replacing the old raw-contact benchmark rows). Raw event/detail consumers of ovphysx_get_contact_report() migrate through the session contact-event/detail attributes described by ADR-0044; these two aggregated net-force columns do not replace event headers, contact points, or friction anchors. The scene rests 512 dynamic boxes on a static ground; each box carries PhysxContactReportAPI and sleepThreshold 0 so a settled body keeps reporting, making it one contact sensor whose net normal force resists its weight. The step is advanced in preStep() (outside the timer); each sample times ovphysx_query(CONTACT_SENSOR) plus ovphysx_read(netNormalContactForce, netFrictionContactForce) and the drain. The `_gpu` row requires DirectGPU (`--forceGpu --directGpu`) because the net-force columns are device-resident on a DirectGPU scene; under `--forceGpu` alone it is selected and skipped without a metric. Both rows are hidden and run in separate fresh processes.",
     "tags": [
       "Contact Report"
     ]
@@ -294,11 +294,11 @@
       },
       "LowLoad.reset": {
         "heavy": false,
-        "note": "RL-style episode reset"
+        "note": "Stage detach and task completion"
       }
     },
     "category": "Low Load",
-    "description": "Per-call floor costs, not throughput. `first_step_after_reload` times one step() after reloading the scene (not true cold-start). `empty_step` is per-step dispatch cost with no scene loaded -- the per-call floor. `noop_ovstage_attach` is per-call cost of ovstage population + attach/update on a 1-prim scene. `reset` is per-call cost of ovphysx_reset on a loaded scene (the RL-style episode-reset path).",
+    "description": "Per-call floor costs, not throughput. `first_step_after_reload` times one step() after reloading the scene (not true cold-start). `empty_step` is per-step dispatch cost with no scene loaded -- the per-call floor. `noop_ovstage_attach` is per-call cost of ovstage population + attach/update on a 1-prim scene. `reset` measures ovphysx_detach_ovstage and task completion on a loaded scene. It tears down the attachment; it does not restore episode poses.",
     "tags": [
       "Low Load"
     ]
@@ -328,6 +328,22 @@
       "OutputRead.readonly_rb_8192_gpu": {
         "heavy": false,
         "note": "requires --forceGpu --directGpu; host-backed output read even on a DirectGPU scene"
+      },
+      "OutputRead.readonly_settled_rb_8192_cpu": {
+        "heavy": false,
+        "note": "TASK-16 same-scene control: SCOPE_ALL read on the settled scene (every body), the baseline readonly_active_rb's subset read is measured against"
+      },
+      "OutputRead.readonly_settled_rb_8192_gpu": {
+        "heavy": false,
+        "note": "requires --forceGpu --directGpu; TASK-16 same-scene control: SCOPE_ALL DirectGPU read on the settled scene (whole-scene fetch), the baseline readonly_active_rb is measured against"
+      },
+      "OutputRead.readonly_active_rb_8192_cpu": {
+        "heavy": false,
+        "note": "TASK-16: SCOPE_ACTIVE subset read on the settled scene -- reads only the falling, non-kinematic fraction of bodies, so the fetch is sized by the subset not the whole scene; readonly_settled_rb (SCOPE_ALL, same scene) is the control"
+      },
+      "OutputRead.readonly_active_rb_8192_gpu": {
+        "heavy": false,
+        "note": "requires --forceGpu --directGpu; TASK-16 SCOPE_ACTIVE subset read on the settled scene -- the DirectGPU copy is sized by the active (non-kinematic) subset, not the whole-scene superset (readonly_settled_rb is the SCOPE_ALL same-scene control)"
       },
       "OutputRead.tensorbinding_rb_8192_cpu": {
         "heavy": false,
@@ -595,10 +611,34 @@
       "WriteScalingHighN.velocity_tensor_16384_cpu": {
         "heavy": true,
         "note": "Diagnostic: the tensor lane at 16384 bodies"
+      },
+      "WriteOnly.velocity_ovstage_4096_cpu": {
+        "heavy": false,
+        "note": "CPU: send movement commands to 4096 bodies via ovstage; completion waits included, simulation excluded"
+      },
+      "WriteOnly.velocity_tensor_4096_cpu": {
+        "heavy": false,
+        "note": "CPU: send movement commands to 4096 bodies via tensor; completion waits included, simulation excluded"
+      },
+      "WriteOnly.velocity_ovstage_8192_cpu": {
+        "heavy": true,
+        "note": "CPU: send movement commands to 8192 bodies via ovstage; completion waits included, simulation excluded"
+      },
+      "WriteOnly.velocity_tensor_8192_cpu": {
+        "heavy": true,
+        "note": "CPU: send movement commands to 8192 bodies via tensor; completion waits included, simulation excluded"
+      },
+      "WriteOnly.velocity_ovstage_16384_cpu": {
+        "heavy": true,
+        "note": "CPU: send movement commands to 16384 bodies via ovstage; completion waits included, simulation excluded"
+      },
+      "WriteOnly.velocity_tensor_16384_cpu": {
+        "heavy": true,
+        "note": "CPU: send movement commands to 16384 bodies via tensor; completion waits included, simulation excluded"
       }
     },
     "category": "Authoring",
-    "description": "`velocity_ovstage_4096_cpu` is the **primary KPI**: a 4,096-body linear-velocity write through OVStage, write completion, query release, velocity-scoped floor, update, and a 1/60s step. `velocity_tensor_4096_cpu` is the comparator: the same step shape but writing a persistent [4096,6] tensor instead. The two use different wait/seal boundaries than the Authoring.* rows above (single-seal-wait vs. separate waits) -- not directly comparable across files; see README's Comparability boundary section. The four hidden `WriteScalingHighN.*` rows are the same fixture at 8,192 and 16,384 bodies with nothing else changed; they carry a separate family prefix so the frozen L1B `WriteScaling.*` selection still returns exactly the two 4,096-body rows, and they are non-paging diagnostics (REQ-CAPI-BENCHMARK-005).",
+    "description": "`velocity_ovstage_4096_cpu` is the **primary KPI**: a 4,096-body linear-velocity write through OVStage, write completion, query release, velocity-scoped floor, update, and a 1/60s step. `velocity_tensor_4096_cpu` is the comparator: the same step shape but writing a persistent [4096,6] tensor instead. The two use different wait/seal boundaries than the Authoring.* rows above (single-seal-wait vs. separate waits) -- not directly comparable across files; see README's Comparability boundary section. The four hidden `WriteScalingHighN.*` rows are the same fixture at 8,192 and 16,384 bodies with nothing else changed; they carry a separate family prefix so the frozen L1B `WriteScaling.*` selection still returns exactly the two 4,096-body rows, and they are non-paging diagnostics (REQ-CAPI-BENCHMARK-005). The six hidden WriteOnly rows reuse the same CPU fixture and command sequence but stop timing before simulation. They have a separate inventory and require independent threshold calibration (REQ-CAPI-BENCHMARK-007).",
     "tags": [
       "Authoring",
       "Property Updates",

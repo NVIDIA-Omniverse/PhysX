@@ -33,7 +33,7 @@ using namespace omni::physx::internal;
 bool omni::physx::updateShapeMaterialBinding(AttachedStage& attachedStage, ObjectId objectId,
     omni::physics::parse::TokenId, omni::physics::parse::ReadTime)
 {
-    InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
     PhysXType type = ePTRemoved;
     const InternalDatabase::Record* record = db.getFullRecord(type, objectId);
     const omni::physics::parse::IPhysicsSource* source = attachedStage.getSource();
@@ -117,8 +117,7 @@ bool omni::physx::updateShapeMaterialBinding(AttachedStage& attachedStage, Objec
 bool omni::physx::updateMaterialFrictionCombineMode(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -154,8 +153,7 @@ bool omni::physx::updateMaterialFrictionCombineMode(AttachedStage& attachedStage
 bool omni::physx::updateMaterialRestitutionCombineMode(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -191,8 +189,7 @@ bool omni::physx::updateMaterialRestitutionCombineMode(AttachedStage& attachedSt
 bool omni::physx::updateMaterialDampingCombineMode(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -229,8 +226,7 @@ bool omni::physx::updateCompliantMaterial(AttachedStage& attachedStage, omni::ph
                                           omni::physics::parse::TokenId property,
                                           omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);

@@ -64,12 +64,16 @@ public:
 	bool isOpen() const;
 
 private:
+	friend class OmniPvdSocketReadStreamTestAccess;
+
 	OmniPvdSocket(const OmniPvdSocket&);
 	OmniPvdSocket& operator=(const OmniPvdSocket&);
 
 	// Apply a bounded SO_SNDTIMEO to the data socket so a wedged/non-reading peer cannot
 	// block a blocking send (and thus the simulation thread) indefinitely.
 	void applySendTimeout();
+	bool beginListenExclusive(uint16_t port);
+	bool beginListenInternal(uint16_t port, bool exclusiveAddressUse);
 
 	uint32_t mSendTimeoutMs; // SO_SNDTIMEO applied to the data socket (0 = leave at the OS default)
 

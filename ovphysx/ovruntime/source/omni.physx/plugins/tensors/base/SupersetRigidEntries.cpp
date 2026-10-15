@@ -4,12 +4,16 @@
 /**
  * @implements REQ-READ-CORE-001
  * @covers AC-1
+ *
+ * @implements REQ-INPUT-COVERAGE-001
+ * @covers AC-6 AC-16
  */
 
 // clang-format off
 // clang-format on
 
 #include "tensors/base/SupersetRigidEntries.h"
+#include "AttachmentObjectLookup.h"
 
 #include <PxPhysicsAPI.h>
 
@@ -22,19 +26,29 @@ namespace physx
 namespace tensors
 {
 
-void collectSupersetRigidEntries(PxScene* const scene, std::vector<RigidBodyEntry>& entries)
+void collectSupersetRigidEntries(PxScene* const scene, const usdparser::AttachedStage* owner,
+                                std::vector<RigidBodyEntry>& entries)
 {
     const PxU32 numRds = scene->getNbActors(PxActorTypeFlag::eRIGID_DYNAMIC);
     std::vector<PxActor*> actors(numRds);
     if (numRds)
         scene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC, actors.data(), numRds);
 
-    auto addBody = [&entries](PxRigidBody* body, RigidBodyType type)
+    auto addBody = [&entries, owner](PxRigidBody* body, RigidBodyType type)
     {
         RigidBodyEntry e;
         e.body = body;
         e.type = type;
         e.subspace = nullptr;
+        if (owner)
+        {
+            const size_t id = reinterpret_cast<size_t>(body->userData);
+            const std::vector<internal::InternalDatabase::Record>& records =
+                owner->getInternalPhysXDatabase().getRecords();
+            // A scene can also contain unmanaged actors. Never label one with another record's path.
+            if (id < records.size() && records[id].mPtr == body)
+                e.path = attachmentLookup::pathFor(owner, attachmentLookup::keyForObject(owner, id));
+        }
         const PxU32 ns = body->getNbShapes();
         if (ns)
         {

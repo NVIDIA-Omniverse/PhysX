@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-1 AC-2
+ */
+
 /**
  * @implements REQ-PARSE-TENDON-001
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5
@@ -15,6 +19,7 @@
 
 #include <omni/physics/parse/IPhysicsSource.h>
 #include <omni/physics/parse/ParseApi.h>
+#include <omni/physics/parse/PreparedTendon.h>
 #include <omni/physics/parse/ParseContext.h>
 
 #include <carb/logging/Log.h>
@@ -28,42 +33,6 @@ namespace omni::physics::parse
 
 namespace
 {
-
-// Read a clamped float from `linkKey.attr`. Returns the unchanged `out`
-// when the attribute is unauthored or wrong-kind; clamps ±inf to the
-// bounds and out-of-range values to the nearest bound.
-void readClampedFloat(IPhysicsSource& src, ObjectKey key, const std::string& attrName,
-                      float minV, float maxV, float& out)
-{
-    float val;
-    if (!src.getAttribute(key, src.internToken(attrName), val))
-        return;
-
-    if (std::isinf(val))
-        val = (val < 0.0f) ? minV : maxV;
-    if (val < minV)      val = minV;
-    else if (val > maxV) val = maxV;
-    out = val;
-}
-
-void readBool(IPhysicsSource& src, ObjectKey key, const std::string& attrName, bool& out)
-{
-    src.getAttribute(key, src.internToken(attrName), out);
-}
-
-// Read `physxTendon:<instance>:localPos`. The authored localPos is
-// multiplied by the link prim's world-space scale (per-axis); the
-// walker pre-resolves that scale and passes it in `info.linkWorldScale`.
-carb::Float3 readLocalPos(IPhysicsSource& src, ObjectKey key, const std::string& base,
-                          const carb::Float3& scale)
-{
-    carb::Float3 result{ 0.0f, 0.0f, 0.0f };
-    src.getAttribute(key, src.internToken(base + "localPos"), result);
-    result.x *= scale.x;
-    result.y *= scale.y;
-    result.z *= scale.z;
-    return result;
-}
 
 // Resolve the single target of `physxTendon:<instance>:parentLink`.
 // Returns invalid ObjectKey when the relationship is missing or empty.
@@ -92,34 +61,45 @@ TokenId readParentAttachmentToken(IPhysicsSource& src, ObjectKey key, const std:
     return TokenId{};
 }
 
-// Apply attachment-common fields (gearing / localPos / link / parent /
-// instanceToken) to `desc`. Used by both the root and the
-// intermediate/leaf paths.
-void fillAttachmentCommon(IPhysicsSource& src, ObjectKey linkKey, const std::string& instance,
-                         const SpatialTendonParseInfo& info,
-                         PhysxTendonAttachmentDesc& desc, bool isRoot)
+PreparedSpatialTendon prepareInstance(ParseContext& ctx, ObjectKey key, const std::string& instance,
+                                      const SpatialTendonParseInfo& info, ObjectType type)
 {
-    const std::string base = std::string("physxTendon:") + instance + ":";
-
-    if (!isRoot)
+    IPhysicsSource& src = ctx.source();
+    PreparedSpatialTendon input;
+    input.key = key;
+    input.instance = src.internToken(instance);
+    input.type = type;
+    input.scale = info.linkWorldScale;
+    const std::string base = "physxTendon:" + instance + ":";
+    if (type != eTendonAttachmentRoot)
+        input.values.gearing = prepareAttribute<float>(src, key, src.internToken(base + "gearing"));
+    input.localPos = prepareAttribute<carb::Float3>(src, key, src.internToken(base + "localPos"));
+    input.parentToken = readParentAttachmentToken(src, key, base);
+    input.parent = readParentLink(src, key, base, src.sourceKeyToString(key));
+    if (type == eTendonAttachmentRoot)
     {
-        // Root attachments force gearing = 1.0 after common fill.
-        readClampedFloat(src, linkKey, base + "gearing", -FLT_MAX, FLT_MAX, desc.gearing);
+        input.values.enabled = prepareAttribute<bool>(src, key, src.internToken(base + "tendonEnabled"));
+        input.values.stiffness = prepareAttribute<float>(src, key, src.internToken(base + "stiffness"));
+        input.values.limitStiffness = prepareAttribute<float>(src, key, src.internToken(base + "limitStiffness"));
+        input.values.damping = prepareAttribute<float>(src, key, src.internToken(base + "damping"));
+        input.values.offset = prepareAttribute<float>(src, key, src.internToken(base + "offset"));
     }
-    desc.localPos      = readLocalPos(src, linkKey, base, info.linkWorldScale);
-    desc.linkKey      = linkKey;
-    desc.instanceToken = src.internToken(instance);
-    desc.parentToken   = readParentAttachmentToken(src, linkKey, base);
-    desc.parentKey    = readParentLink(src, linkKey, base, src.sourceKeyToString(linkKey));
+    else if (type == eTendonAttachmentLeaf)
+    {
+        input.values.restLength = prepareAttribute<float>(src, key, src.internToken(base + "restLength"));
+        input.values.lowerLimit = prepareAttribute<float>(src, key, src.internToken(base + "lowerLimit"));
+        input.values.upperLimit = prepareAttribute<float>(src, key, src.internToken(base + "upperLimit"));
+    }
+    return input;
 }
 
 } // namespace
 
 // @implements REQ-PARSE-TENDON-001
 // @covers AC-1 AC-2 AC-3 AC-4
-void parseSpatialTendons(ParseContext& ctx, ObjectKey linkKey,
+void prepareSpatialTendons(ParseContext& ctx, ObjectKey linkKey,
                          const SpatialTendonParseInfo& info,
-                         std::vector<DescPtr<PhysxTendonAttachmentDesc>>& out)
+                         std::vector<PreparedSpatialTendon>& inputs)
 {
     IPhysicsSource& src = ctx.source();
 
@@ -155,17 +135,7 @@ void parseSpatialTendons(ParseContext& ctx, ObjectKey linkKey,
             const std::string instance(inst);
             const std::string base = std::string("physxTendon:") + instance + ":";
 
-            DescPtr<PhysxTendonSpatialDesc> root =
-                allocateDesc<PhysxTendonSpatialDesc>(ctx.descriptorAllocator());
-            fillAttachmentCommon(src, linkKey, instance, info, *root, /*isRoot=*/true);
-            root->gearing = 1.0f; // root attachments always have gearing 1.0
-            root->isEnabled = true;
-            readBool       (src, linkKey, base + "tendonEnabled",                   root->isEnabled);
-            readClampedFloat(src, linkKey, base + "stiffness",      0.0f, FLT_MAX, root->stiffness);
-            readClampedFloat(src, linkKey, base + "limitStiffness", 0.0f, FLT_MAX, root->limitStiffness);
-            readClampedFloat(src, linkKey, base + "damping",        0.0f, FLT_MAX, root->damping);
-            readClampedFloat(src, linkKey, base + "offset",      -FLT_MAX, FLT_MAX, root->offset);
-            out.push_back(descPtrCast<PhysxTendonAttachmentDesc>(std::move(root)));
+            inputs.push_back(prepareInstance(ctx, linkKey, instance, info, eTendonAttachmentRoot));
         });
 
     // Leaf next. Run before the Attachment iter so it can silently
@@ -177,13 +147,7 @@ void parseSpatialTendons(ParseContext& ctx, ObjectKey linkKey,
             const std::string instance(inst);
             const std::string base = std::string("physxTendon:") + instance + ":";
 
-            DescPtr<PhysxTendonAttachmentLeafDesc> leaf =
-                allocateDesc<PhysxTendonAttachmentLeafDesc>(ctx.descriptorAllocator());
-            fillAttachmentCommon(src, linkKey, instance, info, *leaf, /*isRoot=*/false);
-            readClampedFloat(src, linkKey, base + "restLength",  -FLT_MAX, FLT_MAX, leaf->restLength);
-            readClampedFloat(src, linkKey, base + "lowerLimit",  -FLT_MAX, FLT_MAX, leaf->lowLimit);
-            readClampedFloat(src, linkKey, base + "upperLimit", leaf->lowLimit, FLT_MAX, leaf->highLimit);
-            out.push_back(descPtrCast<PhysxTendonAttachmentDesc>(std::move(leaf)));
+            inputs.push_back(prepareInstance(ctx, linkKey, instance, info, eTendonAttachmentLeaf));
         });
 
     // Intermediate attachments last. Silently skip instances already
@@ -196,11 +160,61 @@ void parseSpatialTendons(ParseContext& ctx, ObjectKey linkKey,
             if (!claim(inst)) return;
             const std::string instance(inst);
 
-            DescPtr<PhysxTendonAttachmentDesc> desc =
-                allocateDesc<PhysxTendonAttachmentDesc>(ctx.descriptorAllocator());
-            fillAttachmentCommon(src, linkKey, instance, info, *desc, /*isRoot=*/false);
-            out.push_back(std::move(desc));
+            inputs.push_back(prepareInstance(ctx, linkKey, instance, info, eTendonAttachment));
         });
+}
+
+bool fillSpatialTendon(const PreparedSpatialTendon& input, PhysxTendonAttachmentDesc& output) noexcept
+{
+    if (output.type != input.type || (input.type != eTendonAttachment && input.type != eTendonAttachmentRoot && input.type != eTendonAttachmentLeaf)) return false;
+    if (input.type == eTendonAttachmentRoot) output.gearing = 1.0f;
+    else fillTendonFloat(input.values.gearing, -FLT_MAX, FLT_MAX, output.gearing);
+    const carb::Float3 position = input.localPos.valueOr({ 0.0f, 0.0f, 0.0f });
+    output.localPos = { position.x * input.scale.x, position.y * input.scale.y, position.z * input.scale.z };
+    output.linkKey = input.key;
+    output.instanceToken = input.instance;
+    output.parentToken = input.parentToken;
+    output.parentKey = input.parent;
+    if (input.type == eTendonAttachmentRoot)
+    {
+        PhysxTendonSpatialDesc& root = static_cast<PhysxTendonSpatialDesc&>(output);
+        root.isEnabled = input.values.enabled.valueOr(true);
+        fillTendonFloat(input.values.stiffness, 0.0f, FLT_MAX, root.stiffness);
+        fillTendonFloat(input.values.limitStiffness, 0.0f, FLT_MAX, root.limitStiffness);
+        fillTendonFloat(input.values.damping, 0.0f, FLT_MAX, root.damping);
+        fillTendonFloat(input.values.offset, -FLT_MAX, FLT_MAX, root.offset);
+    }
+    else if (input.type == eTendonAttachmentLeaf)
+    {
+        PhysxTendonAttachmentLeafDesc& leaf = static_cast<PhysxTendonAttachmentLeafDesc&>(output);
+        fillTendonFloat(input.values.restLength, -FLT_MAX, FLT_MAX, leaf.restLength);
+        fillTendonFloat(input.values.lowerLimit, -FLT_MAX, FLT_MAX, leaf.lowLimit);
+        fillTendonFloat(input.values.upperLimit, leaf.lowLimit, FLT_MAX, leaf.highLimit);
+    }
+    return true;
+}
+void parseSpatialTendons(ParseContext& ctx, ObjectKey key, const SpatialTendonParseInfo& info,
+                         std::vector<DescPtr<PhysxTendonAttachmentDesc>>& out)
+{
+    std::vector<PreparedSpatialTendon> inputs;
+    prepareSpatialTendons(ctx, key, info, inputs);
+    size_t roots = 0, leaves = 0;
+    for (const PreparedSpatialTendon& input : inputs)
+    {
+        roots += input.type == eTendonAttachmentRoot;
+        leaves += input.type == eTendonAttachmentLeaf;
+    }
+    if (!reserveDescriptors<PhysxTendonSpatialDesc>(ctx.descriptorAllocator(), roots) ||
+        !reserveDescriptors<PhysxTendonAttachmentLeafDesc>(ctx.descriptorAllocator(), leaves) ||
+        !reserveDescriptors<PhysxTendonAttachmentDesc>(ctx.descriptorAllocator(), inputs.size() - roots - leaves)) throw std::bad_alloc();
+    for (const PreparedSpatialTendon& input : inputs)
+    {
+        DescPtr<PhysxTendonAttachmentDesc> desc;
+        if (input.type == eTendonAttachmentRoot) desc = allocateDesc<PhysxTendonSpatialDesc, PhysxTendonAttachmentDesc>(ctx.descriptorAllocator());
+        else if (input.type == eTendonAttachmentLeaf) desc = allocateDesc<PhysxTendonAttachmentLeafDesc, PhysxTendonAttachmentDesc>(ctx.descriptorAllocator());
+        else desc = allocateDesc<PhysxTendonAttachmentDesc>(ctx.descriptorAllocator());
+        if (desc && fillSpatialTendon(input, *desc)) out.push_back(std::move(desc));
+    }
 }
 
 } // namespace omni::physics::parse

@@ -45,4 +45,16 @@ ovx_primpath_list_t buildPathListFromHandles(const omni::physics::parse::IPhysic
                                              size_t count,
                                              ovx_path_dictionary_t** outDict);
 
+// The reverse of canonicalisePathHandles: map dictionary-interned prim-path handles (the native
+// `ovx_primpath_t` the caller already holds from a read group's prim list or from ovstage) back to their
+// ObjectKeys, without re-running the string pattern matcher. Each handle is canonicalised to the
+// interned-by-path key so it compares equal to the enumerated key a read/write gates on (see the impl for
+// why this matters). Appends the resolved keys to `outKeys`; a handle that does not resolve to a live key
+// on this source is skipped (a prim-set selection is a superset filter, so an unresolvable entry simply
+// matches nothing). Returns false for a non-ovstage source, leaving `outKeys` untouched.
+bool internHandles(const omni::physics::parse::IPhysicsSource& source,
+                   const ovx_primpath_t* handles,
+                   size_t count,
+                   std::vector<omni::physics::parse::ObjectKey>& outKeys);
+
 } // namespace omni::physics::ovstage

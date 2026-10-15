@@ -1,12 +1,22 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-FEED-006
+ * @covers AC-1 AC-2 AC-3
+ */
+
 /**
+ * @implements REQ-CUSTOM-LIFETIME-001
+ * @covers AC-6
+ *
  * @implements REQ-PARSE-FEED-002
  * @covers AC-3
  *
  * @implements REQ-PARSE-FEED-003
- * @covers AC-6 AC-7
+ * @covers AC-6 AC-7 AC-16
+ *
+ * @implements REQ-PARSE-FEED-004
+ * @covers AC-3
  */
 #pragma once
 
@@ -17,6 +27,7 @@
 #include <ovstage/ovstage.h>
 #include <ovstage/ovx_path_dictionary.h>
 
+#include <algorithm>
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -45,6 +56,7 @@ public:
     void registerGroupComplete(OnGroupCompleteFn cb) override;
     bool drain() override; // no-op for the pull feed; the range comes via drainRange
     void setEnabled(bool enabled) override;
+    void setAddedPrimPropertiesCoveredByResync(bool covered) override { mAddedPropertiesCovered = covered; }
 
     // Read every changed column in the ordinal interval [ord0, ord1] and deliver
     // each as a ChangeBatch to the matching registrations, then fire the
@@ -76,7 +88,7 @@ private:
     // A known-path query kept as an immutable base plus a small delta of the paths added since
     // the last fold, so a structural add costs O(|added|) instead of re-interning n paths. The
     // adds are recorded at the insert site (noteAdded); a wholesale replacement of the set (seed,
-    // rescan) is the only shape that needs the base rebuilt (noteReplaced).
+    // rescan) or removal of a base path needs the base rebuilt (noteReplaced).
     // A path-list query plus the list it wraps. The list is ours and immutable, so its
     // entries are captured once at build time: a read group over `list` (O(1) handle
     // compare), or over ovstage's equally sized copy of it, maps rows to paths by index
@@ -104,6 +116,19 @@ private:
             deltaPaths.push_back(path);
             dirty = true;
         }
+        void noteRemoved(const std::string& path)
+        {
+            if (fold)
+                return; // A pending replacement already rebuilds from the surviving set.
+            const auto it = std::find(deltaPaths.begin(), deltaPaths.end(), path);
+            if (it == deltaPaths.end())
+                noteReplaced(); // A base path left: neither immutable handle may retain it.
+            else
+            {
+                deltaPaths.erase(it);
+                dirty = true;
+            }
+        }
         void noteReplaced()
         {
             deltaPaths.clear();
@@ -120,7 +145,15 @@ private:
     // partial-commit failure (its OnChangeFn returned false) -- the drain must then hold the cursor
     // and redeliver the range. Returns true when every consumer accepted the batch.
     bool dispatch(const ChangeBatch& batch) const;
+    void refreshCustomFamilies();
+    uint64_t mCustomTokenGeneration=UINT64_MAX;
+    std::vector<std::string> mPhysicsTypeNames, mPhysicsSchemaNames;
+    std::vector<ovx_string_t> mPhysicsPrimTypes, mPhysicsSchemas;
     void seedKnownPhysicsPaths();
+    bool collectKnownPathsFromTypes(std::unordered_set<std::string>& physicsPaths,
+                                   std::unordered_set<std::string>& transformPaths,
+                                   std::vector<ObjectKey>* newKeys = nullptr,
+                                   const std::unordered_set<std::string>* oldPhysicsPaths = nullptr);
     bool collectKnownPathsFromFilter(const char* attrName,
                                      ovstage_filter_op_t op,
                                      const ovx_string_t* values,
@@ -164,8 +197,12 @@ private:
             std::string path;
             bool bySchemas = false; // usd-schemas row names a known physics schema
             bool byType = false;    // usd-prim-type row is a known physics type
+            bool hasAuthoredType = false;
             bool physics() const { return bySchemas || byType; }
         };
+        // Count every returned row, including tombstones and undecodable rows. Pure removal
+        // requires an empty live-stage probe, not just an empty vector of decoded live prims.
+        size_t rowCount = 0;
         std::vector<ovx_primpath_t> added; // every live row (hierarchy delta; aliases allowed)
         // Live rows on paths outside mKnownPhysicsPaths. Deduped by path string, not handle:
         // get_paths / intern_path can hand back distinct handles for one path (OvstageSource.h,
@@ -183,6 +220,7 @@ private:
         bool exact = true;
         void clear()
         {
+            rowCount = 0;
             added.clear();
             unfamiliar.clear();
             schemas.clear();
@@ -208,8 +246,8 @@ private:
     // whole-stage query into mStructuralRows. Returns false if the probe could not run
     // (caller falls back to the family count compare).
     bool structuralGrowthProbe(uint64_t ord0, uint64_t ord1);
-    // Whole-stage rebuild of the known sets from the family filters; the only path that
-    // reconciles removals and known-prim edits. Resets the self-heal counter. Drops the
+    // Whole-stage rebuild of the known sets from the family filters; reconciles known-prim
+    // edits and removals that cannot take the exact pure-removal path. Resets the self-heal counter. Drops the
     // source's schema and hierarchy caches unless the known-change read patched them exactly
     // (`exactPatch`) and the rescan found nothing the drained rows did not show: every removed
     // known path was a tombstone that read saw, every new key a live row of the range.
@@ -221,6 +259,9 @@ private:
     // Insert the probe's physics rows into the known sets without a rescan, patching the
     // source's schema memo and hierarchy cache from the same rows.
     bool applyIncrementalGrowth(uint64_t ord0, uint64_t ord1);
+    // Remove proven-dead known prims after the delete batch is accepted. Release their
+    // transform-ancestor references without visiting unrelated surviving physics paths.
+    bool applyIncrementalRemoval(const std::unordered_set<std::string>& deletedPaths);
     // Patch the source's schema / type / hierarchy / existence memos from mStructuralRows (drops
     // the schema caches when a row cannot be applied exactly). Every path that reads the range's
     // structural rows and keeps the caches goes through it, physics family growth or not.
@@ -239,18 +280,19 @@ private:
                                bool knownRowsExpected = false);
     // Discovery over both handles as one union; fails closed (previous set stands) if either fetch fails.
     bool refreshDiscoveryFromQuery(const PathListQuery& query);
-    void setDiscoveredValueAttributes(std::vector<ovx_token_t>& target, const ovx_token_t* attrs, size_t count);
+    bool setDiscoveredValueAttributes(std::vector<ovx_token_t>& target, const ovx_token_t* attrs, size_t count);
     PathListHandle buildPathListQuery(const std::vector<const std::string*>& paths);
     // Bring `query` up to date with `paths`: rebuild only the delta from the recorded adds while
     // it stays small, else fold everything into a new base. False leaves it dirty.
-    bool syncPathListQuery(const std::unordered_set<std::string>& paths, PathListQuery& query);
+    // With allowDeferredAdds, accepted new-only deltas may remain dirty and unbuilt.
+    bool syncPathListQuery(const std::unordered_set<std::string>& paths, PathListQuery& query, bool allowDeferredAdds = false);
     // Runs `read(handle, attrs, err)` over base then delta; a WRITE_FLOOR_VIOLATION /
     // OP_FAILED retries only that handle with the sealed subset (computed once).
     template <class ReadFn>
     bool readPathListQuery(const PathListQuery& query,
                            const std::vector<ovx_token_t>& attrs,
                            uint64_t ord0,
-                           ReadFn read);
+                           ReadFn read, bool omitAdded = false);
     ovx_token_t internOvxToken(std::string_view attrName) const;
     ObjectKey resolveGroupPathKey(ovx_primpath_t raw);
     TokenId propertyTokenFor(ovx_token_t attr);
@@ -275,19 +317,26 @@ private:
     bool structuralAttributesChanged(uint64_t ordinal);
     bool reconcileStructuralChanges(uint64_t ord0, uint64_t ord1);
     // `outExactPatch`: the source's schema / type / existence memos were patched exactly from the
-    // known rows and tombstones (else they were dropped).
+    // known rows and tombstones (else they were dropped). `outPureRemoval` requires that all
+    // known structural groups were tombstones and every affected prim was proved no longer live.
     bool readKnownStructuralChanges(uint64_t ord0,
                                     uint64_t ord1,
                                     bool* sawChange,
                                     std::unordered_set<std::string>& deletedPaths,
                                     bool* outInvalidatedCaches = nullptr,
-                                    bool* outExactPatch = nullptr);
+                                    bool* outExactPatch = nullptr,
+                                    bool* outPureRemoval = nullptr);
+    void rebuildTransformPathRefCounts();
     bool rememberTransformPathAndAncestors(std::string_view path);
-    // With `query`, every path newly inserted into `paths` is reported to it (noteAdded).
     bool rememberTransformPathAndAncestors(std::unordered_set<std::string>& paths,
-                                           std::string_view path,
-                                           PathListQuery* query = nullptr);
+                                           std::string_view path);
     bool readValueChanges(uint64_t ord0, uint64_t ord1);
+    bool mAddedPropertiesCovered = false;
+    bool mCollectAddedPaths = false;
+    // Type memos advance before dispatch; retain notifications until the drain is accepted.
+    std::unordered_set<uint64_t> mPendingAuthoredTypeChanges;
+    std::unordered_set<std::string> mAddedPhysicsPaths;
+    std::unordered_set<std::string> mAddedTransformPaths;
     const std::vector<ovx_token_t>& transformAttrTokens();
     bool readKnownTransformChanges(uint64_t ord0, uint64_t ord1);
 
@@ -303,6 +352,8 @@ private:
     std::vector<ovx_token_t> mValueReadAttrs;
     bool mValueReadAttrsDirty = true;
     std::vector<ovx_token_t> mPathListDiscoveredAttrs;
+    // Raw metadata whose token names were all successfully classified.
+    std::vector<ovx_token_t> mLastPathListAttributes;
     bool mUsePathListDiscovery = false;
     // Read groups are held for the duration of a read and released together (see the
     // definition for why the order matters).
@@ -310,6 +361,9 @@ private:
     // false once a family query reported zero matched prims while its read produced
     // rows; the count compare is then untrustworthy and a floor advance always rescans.
     bool mFamilyPrimCountReliable = true;
+    // Pure removals do not read the old per-column membership, so the family counts are not
+    // comparable until a successful rescan refreshes them. Never compare stale counts.
+    bool mFamilyCountsCurrent = true;
     std::vector<ovx_token_t> mTransformAttrToks;
     std::unordered_map<ovx_token_t, TokenId> mPropertyTokens;
     std::vector<ObjectKey> mGroupKeys;
@@ -330,6 +384,8 @@ private:
     // replacement its noteReplaced, or the base/delta handles silently stop covering the set.
     std::unordered_set<std::string> mKnownPhysicsPaths;
     std::unordered_set<std::string> mKnownTransformPaths;
+    // Number of watched physics paths using each transform path (including itself).
+    std::unordered_map<std::string, size_t> mTransformPathRefCounts;
     PathListQuery              mKnownPhysicsQuery;
     PathListQuery              mKnownTransformQuery;
     CachedFilterQuery          mSchemaFamilyQuery;
@@ -347,7 +403,7 @@ private:
     // it cannot trust.
     bool                      mKnownSetAuthoritative = false;
     // Incremental reconciles since the last full rescan. Every K-th classified structural
-    // drain (one whose probe saw an unfamiliar row, physics or not) rescans instead, so a
+    // drain (an unfamiliar row or an exact pure removal) rescans instead, so a
     // membership change the probe cannot see -- a classifier/filter divergence, or a
     // structural write in an ordinal the caller never passed to updateFromOvStage -- is
     // healed within K classified drains, and never if no further classified drain occurs.

@@ -19,7 +19,7 @@ namespace
 class SolverThreadCount : public ::testing::Test
 {
 protected:
-    ovphysx_handle_t m_handle = OVPHYSX_INVALID_HANDLE;
+    ovphysx_instance_handle_t m_handle = OVPHYSX_INVALID_HANDLE;
 
     void TearDown() override
     {
@@ -40,13 +40,12 @@ protected:
         ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
         args.config_entries = &entry;
         args.config_entry_count = 1;
-        ASSERT_EQ(ovphysx_create_instance(&args, &m_handle).status, OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(ovphysx_create_instance_with_args(&args, &m_handle).status, OVPHYSX_API_SUCCESS);
         ASSERT_TRUE(test_utils::attach_usd_with_ovstage(
             m_handle, "tests/data/boxes_falling_on_groundplane.usda"));
 
-        void* rawScene = nullptr;
-        ASSERT_EQ(ovphysx_get_physx_ptr(m_handle, OVPHYSX_LITERAL("/World/physicsScene"),
-            OVPHYSX_PHYSX_TYPE_SCENE, &rawScene).status, OVPHYSX_API_SUCCESS);
+        void* rawScene = test_utils::read_physx_pointer(
+            m_handle, OVPHYSX_QUERY_TARGET_SCENE, "/World/physicsScene");
         ASSERT_NE(rawScene, nullptr);
         physx::PxScene* scene = static_cast<physx::PxScene*>(rawScene);
         ASSERT_NE(scene->getCpuDispatcher(), nullptr);
@@ -80,17 +79,22 @@ protected:
         ASSERT_EQ(ovstage_release_op(stage, floor.op_index), OVSTAGE_OK);
         ovstage_ordinal_range_t range{};
         range.end_ordinal = 2;
-        ASSERT_EQ(ovphysx_update_from_ovstage(m_handle, range).status, OVPHYSX_API_SUCCESS);
-        void* actor = nullptr;
-        ASSERT_EQ(ovphysx_get_physx_ptr(m_handle, OVPHYSX_LITERAL("/World/InputBox"),
-            OVPHYSX_PHYSX_TYPE_ACTOR, &actor).status, OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_update_from_ovstage(m_handle, range)).status, OVPHYSX_API_SUCCESS);
+        void* actor = test_utils::read_physx_pointer(
+            m_handle, OVPHYSX_QUERY_TARGET_RIGID_ACTOR, "/World/InputBox");
         ASSERT_NE(actor, nullptr);
-        ASSERT_EQ(ovphysx_step_n_sync(m_handle, 10, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
+        for (int step = 0; step < 10; ++step)
+        {
+            ASSERT_EQ(ovphysx_step_sync(m_handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
+        }
         EXPECT_EQ(scene->getCpuDispatcher()->getWorkerCount(), static_cast<uint32_t>(requested));
+
+        // Scoped configuration on trunk requires detaching before changing this setting.
+        ASSERT_TRUE(test_utils::destroy_ovstage_test_attachments(m_handle));
 
         // A round trip alone cannot detect two APIs writing the same wrong key.
         // Write the runtime's canonical key independently, then read the typed key.
-        ASSERT_EQ(ovphysx_set_global_config(ovphysx_config_entry_carbonite(
+        ASSERT_EQ(ovphysx_set_global_config_entry(ovphysx_config_entry_carbonite(
             OVPHYSX_LITERAL("/persistent/physics/numThreads"), OVPHYSX_LITERAL("3"))).status,
             OVPHYSX_API_SUCCESS);
         int32_t configured = 0;

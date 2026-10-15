@@ -20,6 +20,10 @@ set(COOKING_PLUGIN_SOURCE
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/PhysXCookingService.cpp
     # service
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/service/CookingComputeService.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/service/AuthoringMass.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/service/AuthoringGeneralMass.cpp
+    plugins/service/AuthoringPoints.cpp
+    plugins/service/AuthoringElements.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/service/CookingTask.cpp
     # tasks
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/tasks/ConvexDecompositionCookingTask.cpp

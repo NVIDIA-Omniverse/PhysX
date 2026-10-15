@@ -77,7 +77,7 @@ float authoringIterationVelocity(int iteration)
 
 // Reads back linear velocity X for the body under test, the gravity-free axis
 // the control paths write.
-bool authoringReadVelocityX(ovphysx_handle_t handle, const char* row, float* outX)
+bool authoringReadVelocityX(ovphysx_instance_handle_t handle, const char* row, float* outX)
 {
     ovphysx_tensor_binding_handle_t binding = 0;
     ovphysx_tensor_binding_desc_t desc;

@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-1 AC-2
+ */
+
 /**
  * @implements REQ-PARSE-VEH-DRIVE-001
  * @covers AC-1 AC-2 AC-3
@@ -13,6 +17,8 @@
 
 #include <omni/physics/parse/IPhysicsSource.h>
 #include <omni/physics/parse/ParseApi.h>
+#include <omni/physics/parse/PreparedVehicle.h>
+#include <stdexcept>
 #include <omni/physics/parse/ParseContext.h>
 
 #include <carb/logging/Log.h>
@@ -22,27 +28,47 @@
 namespace omni::physics::parse
 {
 
-DescPtr<DriveBasicDesc> parseDriveBasic(ParseContext& ctx, ObjectKey key, float kgmsScale)
+PreparedDriveBasic prepareDriveBasic(ParseContext& ctx, ObjectKey key, float kgmsScale)
 {
-    IPhysicsSource& src = ctx.source();
-    const std::string ownerName(src.sourceKeyToString(key));
+    PreparedDriveBasic input;
+    input.key = key;
+    input.kgmsScale = kgmsScale;
+    input.reads = prepareVehicleReads(ctx.source(), key, {
+        { "physxVehicleDriveBasic:peakTorque", VehicleAttributeType::floating }
+    });
+    return input;
+}
 
-    DescPtr<DriveBasicDesc> desc = allocateDesc<DriveBasicDesc>(ctx.descriptorAllocator());
+void prepareDriveBasicStorage(const PreparedDriveBasic& input, DriveBasicDesc& output)
+{
+    (void)input; (void)output;
+}
+
+bool fillDriveBasic(const PreparedDriveBasic& input, DriveBasicDesc& output, VehicleFillStatus& status) noexcept
+{
+    PreparedVehicleReader src(input.reads, status);
+    [[maybe_unused]] ObjectKey key = input.key;
+    [[maybe_unused]] float kgmsScale = input.kgmsScale;
+
+
+    const std::string& ownerName = src.sourceKeyToString(key);
+
+    DriveBasicDesc* desc = &output;
     desc->key = key;
     desc->nonlinearCmdResponse = nullptr;  // consumer adapter wires this from multi-apply NonlinearCmdResponseAPI
 
     float peakTorque;
-    if (!src.getAttribute(key, src.internToken("physxVehicleDriveBasic:peakTorque"), peakTorque))
+    if (!src.getAttribute(key, src.attribute("physxVehicleDriveBasic:peakTorque"), peakTorque))
     {
-        CARB_LOG_ERROR("Usd Physics: prim \"%s\" needs to have attribute \"peakTorque\" defined.", ownerName.c_str());
-        return {};
+        VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\" needs to have attribute \"peakTorque\" defined.", ownerName.c_str());
+        return false;
     }
     if (peakTorque != -1.0f)
     {
         if (!(peakTorque >= 0.0f) || !(peakTorque < FLT_MAX))
         {
-            CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"peakTorque\" out of range.", ownerName.c_str());
-            return {};
+            VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"peakTorque\" out of range.", ownerName.c_str());
+            return false;
         }
         desc->peakTorque = peakTorque;
     }
@@ -51,7 +77,28 @@ DescPtr<DriveBasicDesc> parseDriveBasic(ParseContext& ctx, ObjectKey key, float 
         desc->peakTorque = 1000.0f * kgmsScale;
     }
 
-    return desc;
+    return true;
 }
+
+void finishDriveBasicStorage(DriveBasicDesc& output, const VehicleFillStatus& status)
+{
+    (void)output; (void)status;
+}
+
+DescPtr<DriveBasicDesc> parseDriveBasic(ParseContext& ctx, ObjectKey key, float kgmsScale)
+{
+    const PreparedDriveBasic input = prepareDriveBasic(ctx, key, kgmsScale);
+    DescPtr<DriveBasicDesc> output = allocateDesc<DriveBasicDesc>(ctx.descriptorAllocator());
+    if (!output) return {};
+    prepareDriveBasicStorage(input, *output);
+    VehicleFillStatus status;
+    const bool valid = fillDriveBasic(input, *output, status);
+    status.report();
+    if (status.incomplete) throw std::logic_error("Incomplete prepared vehicle input or storage");
+    if (!valid) return {};
+    finishDriveBasicStorage(*output, status);
+    return output;
+}
+
 
 } // namespace omni::physics::parse

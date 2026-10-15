@@ -1232,15 +1232,17 @@ namespace
 	static PX_FORCE_INLINE void precomputeRayData(RayParams* PX_RESTRICT rayParams, const PxVec3& rayOrig, const PxVec3& rayDir, float maxDist)
 	{
 	#ifdef USE_SIMD
-		const float Half = 0.5f * maxDist;
-		const __m128 HalfV = _mm_load1_ps(&Half);
-		const __m128 DataV = _mm_mul_ps(_mm_loadu_ps(&rayDir.x), HalfV);
-		const __m128 Data2V = _mm_add_ps(_mm_loadu_ps(&rayOrig.x), DataV);
-		const PxU32 MaskI = 0x7fffffff;
-		const __m128 FDirV = _mm_and_ps(_mm_load1_ps(reinterpret_cast<const float*>(&MaskI)), DataV);
-		_mm_store_ps(&rayParams->mData.x, DataV);
-		_mm_store_ps(&rayParams->mData2.x, Data2V);
-		_mm_store_ps(&rayParams->mFDir.x, FDirV);
+		const float half = 0.5f * maxDist;
+		const __m128 halfV = _mm_load1_ps(&half);
+		const __m128 rayDirV = _mm_set_ps(0.0f, rayDir.z, rayDir.y, rayDir.x);
+		const __m128 rayOrigV = _mm_set_ps(0.0f, rayOrig.z, rayOrig.y, rayOrig.x);
+		const __m128 dataV = _mm_mul_ps(rayDirV, halfV);
+		const __m128 data2V = _mm_add_ps(rayOrigV, dataV);
+		const PxU32 maskI = 0x7fffffff;
+		const __m128 fDirV = _mm_and_ps(_mm_load1_ps(reinterpret_cast<const float*>(&maskI)), dataV);
+		_mm_store_ps(&rayParams->mData.x, dataV);
+		_mm_store_ps(&rayParams->mData2.x, data2V);
+		_mm_store_ps(&rayParams->mFDir.x, fDirV);
 	#else
 		const PxVec3 data = 0.5f * rayDir * maxDist;
 		rayParams->mData = data;

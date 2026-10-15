@@ -51,6 +51,8 @@ void getCollisionShapeLocalTransform(const AttachedStage& attachedStage,
 // already fully defined by the `#include <private/omni/physx/PhysxUsd.h>`
 // above) -- a forward struct-declaration would conflict with the alias.
 
+// Borrowed descriptor views: loadFromRange retains the owning ScannedStage.
+// Articulation passes may copy/reorder these records without transferring ownership.
 struct JointDescAndPath
 {
     bool operator<(const JointDescAndPath& jd) const

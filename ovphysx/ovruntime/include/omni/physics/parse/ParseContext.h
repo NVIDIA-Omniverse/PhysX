@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-1 AC-2 AC-3 AC-5
+ *
  * @implements REQ-PARSE-CORE-001
  * @covers AC-1
  *
@@ -21,6 +24,7 @@
 #include "KnownTokens.h"
 
 #include <map>
+#include <memory>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -141,7 +145,6 @@ struct JointSchemaPresence
 {
     bool physxLimit = true;         // PhysxLimitAPI:<instance>
     bool physxJointAxis = true;     // PhysxJointAxisAPI:<instance>
-    bool physxJointApi = true;      // PhysxJointAPI (concrete)
     bool drivePerfEnvelope = true;  // PhysxDrivePerformanceEnvelopeAPI:<instance>
     bool jointState = true;         // PhysicsJointStateAPI:<instance>
     bool physicsDrive = true;       // PhysicsDriveAPI:<instance> (walker-side)
@@ -153,6 +156,8 @@ struct JointSchemaPresence
 // Owns the ObjectDatabase, collision group maps, deformable history maps,
 // and environment-ID tables. All keyed by ObjectKey/TokenId (USD-free).
 // ---------------------------------------------------------------------------
+
+struct JointReadTokens;
 
 class ParseContext
 {
@@ -169,6 +174,7 @@ public:
     // when IPhysicsSource::knownTokens() provides one (no copy, no intern);
     // otherwise interns once into mKnownTokens (REQ-LOAD-TOKENS-001 AC-5).
     const KnownTokens& knownTokens();
+    const JointReadTokens& jointReadTokens();
 
     // Seed from a batch already interned for the same source (e.g. the attach-scoped
     // AttachedStage::getKnownTokens()) so a per-object short-lived context does not
@@ -259,6 +265,7 @@ private:
     EnvIdMap mEnvIdMap;
     bool mOutputVelocitiesLocalSpaceDefault = false;
     JointSchemaPresence mJointSchemaPresence;
+    std::shared_ptr<JointReadTokens> mJointReadTokens;
     // Fallback storage, used only for sources whose knownTokens() is nullptr.
     KnownTokens mKnownTokens;
     // The resolved batch: mSource.knownTokens() or &mKnownTokens; nullptr until first use.

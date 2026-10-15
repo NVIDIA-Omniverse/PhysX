@@ -21,8 +21,7 @@ using namespace omni::physx::internal;
 
 bool omni::physx::updateFilteredPairs(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);

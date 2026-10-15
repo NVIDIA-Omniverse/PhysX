@@ -5,6 +5,8 @@
 
 # @implements REQ-PYTHON-LIFECYCLE-001
 # @covers AC-1 AC-4
+# @implements REQ-PYTHON-SDFVIEW-001
+# @covers AC-1
 
 import os
 
@@ -13,7 +15,7 @@ import pytest
 from ovphysx.types import ObjectScope, SimObjectType
 from test_utils import load_usd_with_ovstage
 
-from ovphysx import PhysX
+from ovphysx import ApiStatus, PhysX, Task
 
 
 def test_destroy_is_checked_idempotent_and_refcounted():
@@ -29,10 +31,14 @@ def test_destroy_is_checked_idempotent_and_refcounted():
         second = PhysX()
         assert api._PROCESS_LIFECYCLE_REFCOUNT == initial_refcount + 2
 
+        receipt = Task(ApiStatus.SUCCESS, 1, first.handle)
         first.destroy()
         assert api._PROCESS_LIFECYCLE_REFCOUNT == initial_refcount + 1
         with pytest.raises(RuntimeError, match="has been destroyed"):
             _ = first.handle
+        with pytest.warns(DeprecationWarning, match="SDF views are deprecated"):
+            with pytest.raises(RuntimeError, match="has been destroyed"):
+                first.create_sdf_view("/World/Cube", 1)
 
         msg = "has been destroyed"
         with pytest.raises((RuntimeError, AttributeError), match=msg):
@@ -42,20 +48,20 @@ def test_destroy_is_checked_idempotent_and_refcounted():
         with pytest.raises((RuntimeError, AttributeError), match=msg):
             load_usd_with_ovstage(first, "foo.usda")
         with pytest.raises((RuntimeError, AttributeError), match=msg):
-            first.reset_stage()
+            first.wait_task(first.detach_ovstage())
         with pytest.raises((RuntimeError, AttributeError), match=msg):
             first.wait_all()
         with pytest.raises((RuntimeError, AttributeError), match=msg):
-            first.wait_op(0)
+            first.wait_task(receipt)
         with pytest.raises((RuntimeError, AttributeError), match=msg):
             first.warmup()
 
         # A read or write session on the destroyed instance must raise too.
         with pytest.raises((RuntimeError, AttributeError), match=msg):
-            with first.read(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL):
+            with first.read_sync(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL):
                 pass
         with pytest.raises((RuntimeError, AttributeError), match=msg):
-            with first.write(SimObjectType.RIGID_BODY, "position"):
+            with first.write_sync(SimObjectType.RIGID_BODY, "position"):
                 pass
 
         second.wait_all()

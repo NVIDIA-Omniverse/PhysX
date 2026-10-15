@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-PACKAGING-TESTRESULT-001
+# @covers AC-1 AC-2 AC-3
+
 # @implements REQ-CAPI-THREADS-001
 # @covers AC-1 AC-2
 #
@@ -14,7 +17,7 @@
 #   Default GPU dynamics      (filter: DefaultGpuDynamicsTest) readback path
 #   Remaining GPU tests       (filter: *GpuTest*)               GPU lock
 #   Global lifecycle tests    (filter: GlobalLifecycle.*)       clean refs
-#   Non-GPU tests             (filter: -*GpuTest*:GlobalLifecycle.*) CPU lock
+#   Non-GPU tests             (filter: derived from isolate_from_cpu_pass) CPU lock
 #
 # Prerequisite: cmake -P scripts/build.cmake && cmake -P scripts/install.cmake
 
@@ -23,6 +26,7 @@ cmake_minimum_required(VERSION 3.16)
 get_filename_component(SCRIPT_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
 include("${SCRIPT_DIR}/crossplatform_helpers.cmake")
 include("${SCRIPT_DIR}/build_common.cmake")
+include("${SCRIPT_DIR}/fetch_test_schemas.cmake")
 
 set(INSTALL_DIR "${PROJECT_ROOT}/_install")
 set(INSTALL_PLUGINS_DIR "${INSTALL_DIR}/plugins")
@@ -75,11 +79,39 @@ message(STATUS "  Test executable: ${GTEST_EXECUTABLE}")
 set(TEST_RESULTS_DIR "${BUILD_PATH}/test_results")
 file(MAKE_DIRECTORY "${TEST_RESULTS_DIR}")
 
+# Passes with documented fully-skipped outcomes. A test can perform assertions
+# before GTEST_SKIP; zero passed cases does not imply that no assertions ran.
+# Listing an exception preserves the deliberate skip and warns that its full
+# scenario remains unverified; unexpected fully-skipped passes are hard errors.
+# Delete an entry the moment its blocker clears -- an entry outliving its reason
+# is the silence this list exists to prevent.
+#
+#   cpu-no-cuda-context: the current OVStage limitation can cause a late skip
+#   after useful CPU-mode assertions: ovstage_create_instance activates the
+#   CUDA primary context before ovphysx receives the stage. The full CPU-only
+#   no-driver-touch contract remains unverified. This test also deliberately
+#   skips without a usable CUDA device; see test_cpu_no_cuda_context.cpp.
+set(GTEST_PASSES_KNOWN_FULLY_SKIPPED "cpu-no-cuda-context")
+
 function(parse_gtest_results _P_LABEL _P_XML)
     file(READ "${_P_XML}" _P_XML_CONTENT)
 
     foreach(_P_ATTR tests failures disabled skipped)
         string(REGEX MATCH "<testsuites[^>]*${_P_ATTR}=\"([0-9]+)\"" _P_MATCH "${_P_XML_CONTENT}")
+        if(NOT _P_MATCH AND _P_ATTR STREQUAL "skipped")
+            # GoogleTest reports skipped counts on each child suite, rather
+            # than on its aggregate testsuites element. All children contribute:
+            # using only the first can make an all-skipped pass look healthy.
+            set(_P_skipped 0)
+            string(REGEX MATCHALL "<testsuite[ \t\r\n][^>]*>" _P_SUITES "${_P_XML_CONTENT}")
+            foreach(_P_SUITE IN LISTS _P_SUITES)
+                string(REGEX MATCH "[ \t\r\n]skipped=\"([0-9]+)\"" _P_SUITE_SKIPPED "${_P_SUITE}")
+                if(_P_SUITE_SKIPPED)
+                    math(EXPR _P_skipped "${_P_skipped} + ${CMAKE_MATCH_1}")
+                endif()
+            endforeach()
+            continue()
+        endif()
         if(NOT _P_MATCH)
             string(REGEX MATCH "<testsuite[^>]*${_P_ATTR}=\"([0-9]+)\"" _P_MATCH "${_P_XML_CONTENT}")
         endif()
@@ -108,9 +140,83 @@ function(parse_gtest_results _P_LABEL _P_XML)
     if(_P_failures GREATER 0)
         message(FATAL_ERROR "C++ unit tests had failures in ${_P_LABEL} pass")
     endif()
+
+    # No case completed successfully. The zero-tests guard cannot see this:
+    # cases were selected but skipped or disabled. Some assertions may have
+    # run before a skip; the result does not validate the complete scenario.
+    # Qualified full-driver passes must distinguish this from a healthy result,
+    # while preserving the documented exceptions below.
+    if(_P_passed EQUAL 0)
+        # This isolated case intentionally self-skips without two visible CUDA
+        # devices. Match its identity AND exact prerequisite diagnostic, not
+        # just its pass label: unrelated skips must still fail closed.
+        string(REGEX MATCHALL "<testcase[ >]" _P_CASES "${_P_XML_CONTENT}")
+        list(LENGTH _P_CASES _P_CASE_COUNT)
+        string(REGEX MATCH "<testcase[^>]*>" _P_CASE "${_P_XML_CONTENT}")
+        if(_P_LABEL STREQUAL "cuda-selection-nonzero-ordinal"
+           AND _P_tests EQUAL 1 AND _P_skipped EQUAL 1 AND _P_disabled EQUAL 0
+           AND _P_CASE_COUNT EQUAL 1
+           AND _P_CASE MATCHES " name=\"DirectGpuHostReadOnNonZeroOrdinal\""
+           AND _P_CASE MATCHES " classname=\"ActiveCudaGpusAttachTest\""
+           AND _P_XML_CONTENT MATCHES "<skipped message=\"[^\"]*:[0-9]+&#x0A;needs at least two CUDA devices to select a non-zero ordinal&#x0A;\"")
+            message(WARNING
+                "GTest (${_P_LABEL}) skipped for its hardware prerequisite: "
+                "at least two visible CUDA devices are required. "
+                "The non-zero-ordinal scenario was not exercised on this runner.")
+            return()
+        endif()
+        # Solver-count coverage requires a tasking pool large enough for the
+        # requested count (REQ-CAPI-THREADS-001 AC-1). Keep smaller-host skips
+        # limited to the corresponding isolated case and exact diagnostic.
+        if(_P_LABEL MATCHES "^solver-threads-([1248])$")
+            set(_P_WORKERS "${CMAKE_MATCH_1}")
+            if(_P_tests EQUAL 1 AND _P_skipped EQUAL 1 AND _P_disabled EQUAL 0
+               AND _P_CASE_COUNT EQUAL 1
+               AND _P_CASE MATCHES " name=\"Workers${_P_WORKERS}\""
+               AND _P_CASE MATCHES " classname=\"SolverThreadCount\""
+               AND _P_XML_CONTENT MATCHES "<skipped message=\"[^\"]*:[0-9]+&#x0A;Requested count exceeds this host&apos;s default tasking capacity&#x0A;\"")
+                message(WARNING
+                    "GTest (${_P_LABEL}) skipped for its hardware prerequisite: "
+                    "the host's default tasking capacity is below ${_P_WORKERS}. "
+                    "The ${_P_WORKERS}-worker scenario was not exercised on this runner.")
+                return()
+            endif()
+        endif()
+        list(FIND GTEST_PASSES_KNOWN_FULLY_SKIPPED "${_P_LABEL}" _P_KNOWN_HOLE)
+        if(_P_KNOWN_HOLE EQUAL -1)
+            message(FATAL_ERROR
+                "GTest (${_P_LABEL}) passed 0 of ${_P_tests} tests "
+                "(${_P_skipped} skipped, ${_P_disabled} disabled): "
+                "no cases completed successfully. If that is genuinely expected, "
+                "add "
+                "'${_P_LABEL}' to GTEST_PASSES_KNOWN_FULLY_SKIPPED with the reason.")
+        endif()
+        message(WARNING
+            "GTest (${_P_LABEL}) passed 0 of ${_P_tests} tests (${_P_skipped} "
+            "skipped) - known fully-skipped exception, see "
+            "GTEST_PASSES_KNOWN_FULLY_SKIPPED in scripts/test_cpp.cmake. "
+            "The complete test scenario remains unverified.")
+    endif()
 endfunction()
 
+# These passes fail when no CUDA driver is present. OVPHYSX_SKIP_GPU_PASSES
+# leaves them unlaunched. cpu-no-cuda-context stays: it exits 0 without a driver.
+set(OVPHYSX_GTEST_PASSES_REQUIRING_CUDA
+    cuda-selection-attach
+    cuda-selection-nonzero-ordinal
+    default-gpu
+    session-gpu-dynamics
+    gpu
+)
+if(NOT DEFINED OVPHYSX_SKIP_GPU_PASSES AND DEFINED ENV{OVPHYSX_SKIP_GPU_PASSES})
+    set(OVPHYSX_SKIP_GPU_PASSES "$ENV{OVPHYSX_SKIP_GPU_PASSES}")
+endif()
+
 function(run_gtest_pass _P_LABEL _P_FILTER)
+    if(OVPHYSX_SKIP_GPU_PASSES AND "${_P_LABEL}" IN_LIST OVPHYSX_GTEST_PASSES_REQUIRING_CUDA)
+        message(STATUS "Skipping GTest (${_P_LABEL}): no CUDA driver")
+        return()
+    endif()
     set(_P_EXECUTABLE "${GTEST_EXECUTABLE}")
     set(_P_TIMEOUT 300)
     if(ARGC GREATER 2)
@@ -122,6 +228,8 @@ function(run_gtest_pass _P_LABEL _P_FILTER)
     set(_P_XML "${TEST_RESULTS_DIR}/gtest_${_P_LABEL}_results.xml")
     # One combined log with stdout and stderr interleaved, for easier triage.
     set(_P_LOG "${TEST_RESULTS_DIR}/gtest_${_P_LABEL}.log")
+    # GLOBAL so nested cmake function() calls still reach the leak scan.
+    set_property(GLOBAL APPEND PROPERTY OVPHYSX_GTEST_PASS_LABELS "${_P_LABEL}")
     file(REMOVE "${_P_XML}" "${_P_LOG}")
 
     message(STATUS "")
@@ -129,12 +237,13 @@ function(run_gtest_pass _P_LABEL _P_FILTER)
 
     set(_P_ENV)
     set(_P_ORIGINAL_PATH "$ENV{PATH}")
-    if("${_P_LABEL}" STREQUAL "gpu" OR "${_P_LABEL}" STREQUAL "default-gpu")
+    if("${_P_LABEL}" STREQUAL "gpu" OR "${_P_LABEL}" STREQUAL "default-gpu"
+       OR "${_P_LABEL}" STREQUAL "session-gpu-dynamics")
         list(APPEND _P_ENV "OVPHYSX_TEST_REQUIRE_CUDA=1")
     elseif("${_P_LABEL}" MATCHES "^lifecycle")
         list(APPEND _P_ENV "OVPHYSX_DISABLE_GPU=1")
         list(APPEND _P_ENV "OVPHYSX_TEST_LIFECYCLE_OWNS_INIT=1")
-    elseif("${_P_LABEL}" STREQUAL "cpu" OR "${_P_LABEL}" MATCHES "^solver-threads-")
+    elseif("${_P_LABEL}" STREQUAL "cpu" OR "${_P_LABEL}" MATCHES "^(profiler-(trace|backend|bind-)|solver-threads-|omnipvd-)")
         list(APPEND _P_ENV "OVPHYSX_DISABLE_GPU=1")
         if(OS_NAME STREQUAL "windows")
             set(ENV{PATH} "${BASE_TEST_PATH}")
@@ -204,10 +313,57 @@ function(run_gtest_pass _P_LABEL _P_FILTER)
     endif()
 endfunction()
 
+# Register a gtest pattern the shared cpu pass must not run. Call this in the
+# same comment block as the isolated run_gtest_pass that owns the pattern --
+# not on the cpu filter line -- so two MRs adding suites land in disjoint hunks.
+# Do not copy another pass's full filter here: negative sub-patterns would
+# re-include those cases in cpu. Patterns that already match *GpuTest* do not
+# need a second registration.
+function(isolate_from_cpu_pass _PATTERN)
+    get_property(_LATCHED GLOBAL PROPERTY OVPHYSX_CPU_PASS_LATCHED)
+    if(_LATCHED)
+        message(FATAL_ERROR
+            "isolate_from_cpu_pass(\"${_PATTERN}\") must run before the cpu pass; "
+            "a later call would leave the suite in both an isolated process and "
+            "the shared cpu process")
+    endif()
+    if("${_PATTERN}" STREQUAL "")
+        message(FATAL_ERROR "isolate_from_cpu_pass() requires a gtest pattern")
+    endif()
+    set_property(GLOBAL APPEND PROPERTY OVPHYSX_CPU_PASS_EXCLUSIONS "${_PATTERN}")
+endfunction()
+
+# Discover cases so new tests cannot be excluded from every pass. Each case
+# needs its own process; the prefix selects initialization ownership.
+function(run_isolated_gtest_cases _SUITE _PREFIX)
+    execute_process(
+        COMMAND "${GTEST_EXECUTABLE}" --gtest_list_tests "--gtest_filter=${_SUITE}.*"
+        WORKING_DIRECTORY "${PROJECT_ROOT}"
+        TIMEOUT 60
+        RESULT_VARIABLE _LIST_RC
+        OUTPUT_VARIABLE _LIST
+        ERROR_VARIABLE _LIST_ERROR)
+    if(NOT "${_LIST_RC}" STREQUAL "0")
+        message(FATAL_ERROR "Cannot discover ${_SUITE} tests: ${_LIST_RC}: ${_LIST_ERROR}")
+    endif()
+    string(REGEX MATCHALL "\n  [A-Za-z_][A-Za-z0-9_]*" _CASES "${_LIST}")
+    if(NOT _CASES)
+        message(FATAL_ERROR "No ${_SUITE} tests discovered")
+    endif()
+    foreach(_CASE IN LISTS _CASES)
+        string(STRIP "${_CASE}" _CASE)
+        if(_CASE MATCHES "^DISABLED_")
+            continue()
+        endif()
+        run_gtest_pass("${_PREFIX}-${_CASE}" "${_SUITE}.${_CASE}")
+    endforeach()
+endfunction()
+
 # -------------------------------------------------------------------------
 # Attach-time CUDA selection runs in a fresh process so the selector starts at
 # automatic (-1) before the OVStage attach under test.
 # -------------------------------------------------------------------------
+isolate_from_cpu_pass("ActiveCudaGpusAttachTest.*")
 run_gtest_pass(
     "cuda-selection-attach"
     "ActiveCudaGpusAttachTest.*:-ActiveCudaGpusAttachTest.DirectGpuHostReadOnNonZeroOrdinal")
@@ -228,12 +384,23 @@ run_gtest_pass(
 # process because Carbonite settings and the selected simulation path are
 # process-global.
 # -------------------------------------------------------------------------
+isolate_from_cpu_pass("DefaultGpuDynamicsTest.*")
 run_gtest_pass("default-gpu" "DefaultGpuDynamicsTest.*")
 
 # -------------------------------------------------------------------------
-# Remaining GPU tests. The CPU-no-CUDA-context test also requires a fresh
-# process and is routed to its own pass below.
+# Session-API default GPU dynamics (ovphysx_read / ovphysx_write). Same fresh
+# process as DefaultGpuDynamicsTest above: Carbonite settings and the selected
+# simulation path are process-global.
 # -------------------------------------------------------------------------
+isolate_from_cpu_pass("SessionGpuDynamicsTest.*")
+run_gtest_pass("session-gpu-dynamics" "SessionGpuDynamicsTest.*")
+
+# -------------------------------------------------------------------------
+# Remaining GPU tests. The CPU-no-CUDA-context test also requires a fresh
+# process and is routed to its own pass below. *GpuTest* also keeps
+# CpuNoCudaContextGpuTest.* out of the shared cpu process.
+# -------------------------------------------------------------------------
+isolate_from_cpu_pass("*GpuTest*")
 run_gtest_pass("gpu" "*GpuTest*:-CpuNoCudaContextGpuTest.*")
 
 # -------------------------------------------------------------------------
@@ -242,9 +409,19 @@ run_gtest_pass("gpu" "*GpuTest*:-CpuNoCudaContextGpuTest.*")
 # drain or lock hoist would otherwise wedge callback and shutdown threads, so
 # in-process cleanup cannot safely recover.
 # -------------------------------------------------------------------------
+isolate_from_cpu_pass("GlobalLifecycle.*")
+isolate_from_cpu_pass("HostExit.*")
+run_gtest_pass("lifecycle-host-exit" "HostExit.*" "${GTEST_EXECUTABLE}" 60)
 run_gtest_pass(
     "lifecycle"
-    "GlobalLifecycle.*:-GlobalLifecycle.ShutdownDrainsAcceptedCallback:GlobalLifecycle.LiveInstanceShutdownDrainDoesNotHoldInstanceMapLock")
+    "GlobalLifecycle.*:-GlobalLifecycle.ShutdownDrainsAcceptedCallback:GlobalLifecycle.LiveInstanceShutdownDrainDoesNotHoldInstanceMapLock:GlobalLifecycle.PreInitLoggingConfigSurvivesLifecycleCycles")
+# Logging configuration must be stored before the first Carbonite bootstrap,
+# then survive explicit teardown without retaining the old application callback.
+run_gtest_pass(
+    "lifecycle-preinit-logging"
+    "GlobalLifecycle.PreInitLoggingConfigSurvivesLifecycleCycles"
+    "${GTEST_EXECUTABLE}"
+    60)
 run_gtest_pass(
     "lifecycle-lock-drain"
     "GlobalLifecycle.ShutdownDrainsAcceptedCallback:GlobalLifecycle.LiveInstanceShutdownDrainDoesNotHoldInstanceMapLock"
@@ -253,21 +430,93 @@ run_gtest_pass(
 
 # Provider creation is process-latched, so this exclusion regression needs a
 # fresh process before any other test can create PxPhysics.
+isolate_from_cpu_pass("OmniPvdColdCreation.*")
 run_gtest_pass("omnipvd-cold" "OmniPvdColdCreation.*")
+
+# Scoped recording capability is startup-only. Each case needs fresh pending
+# settings and ownership of initialize/shutdown, including before first create.
+isolate_from_cpu_pass("OmniPvdGlobalConfig.*")
+run_isolated_gtest_cases("OmniPvdGlobalConfig" "lifecycle-omnipvd")
+
+# Recording capability cannot change after the first successful create. Each
+# recording case configures the modern flag before its first instance, so run
+# it in a fresh process instead of sharing the CPU pass's frozen default.
+isolate_from_cpu_pass("OmniPvdRecording.*")
+run_isolated_gtest_cases("OmniPvdRecording" "omnipvd-recording")
+
+# The chrome trace is written by the last-loader shutdown, so any other live
+# instance in the process -- the shared CPU one every other case uses -- would
+# defer the write past the end of the test. Own process, nothing else in it.
+isolate_from_cpu_pass("ProfilerTraceBackend.*")
+run_gtest_pass("profiler-trace" "ProfilerTraceBackend.*")
+
+# The side-effect comparison needs one arm with nothing bound. A backend binds at
+# most once per loader epoch and is released only by the last loader, so in the
+# shared process an earlier case's binding would still be live and both arms would
+# be profiled. Own process, nothing else in it.
+isolate_from_cpu_pass("ProfilerSideEffects.*")
+run_gtest_pass("profiler-side-effects" "ProfilerSideEffects.*")
+
+# Carbonite locks the profiler interface on the first successful acquire, and the
+# getter reports that bound backend (or none, when a host-owned profiler won).
+# Each of these cases assumes it is the first bind in the process: one expects
+# trace to win, the other expects NVTX. Earlier ProfilerBackend cases in the
+# shared cpu pass acquire NVTX and would decide the result for both. They also
+# poison each other, so they do not share a process.
+isolate_from_cpu_pass("ProfilerBackend.CarbBackendBindsOnALaterInstance")
+run_gtest_pass(
+    "profiler-bind-later"
+    "ProfilerBackend.CarbBackendBindsOnALaterInstance")
+isolate_from_cpu_pass("ProfilerBackend.CarbBackendBindingIsIdempotent")
+run_gtest_pass(
+    "profiler-bind-idempotent"
+    "ProfilerBackend.CarbBackendBindingIsIdempotent")
+
+# The remaining ProfilerBackend cases read the bound backend. The shared cpu
+# pass keeps an instance alive, so an NVTX bind from an earlier case in this
+# suite stays bound and a later "none" or unknown OVPHYSX_PROFILER value still
+# reads back as NVTX. Own process, with the two first-bind cases above left out
+# because they decide each other's result.
+isolate_from_cpu_pass("ProfilerBackend.*")
+run_gtest_pass(
+    "profiler-backend"
+    "ProfilerBackend.*-ProfilerBackend.CarbBackendBindsOnALaterInstance:ProfilerBackend.CarbBackendBindingIsIdempotent")
+
+# -------------------------------------------------------------------------
+# Worker-pool sizing is decided once, when the first instance starts
+# carb.tasking, and cannot be resized afterwards. Each case therefore needs a
+# process where no earlier test has started the pool: the default case would
+# otherwise observe another test's override, and the override case could not
+# start the pool at all. The "lifecycle" label prefix also hands them
+# OVPHYSX_TEST_LIFECYCLE_OWNS_INIT so the gtest environment does not initialize
+# ovphysx before the case sets its own create-time configuration.
+# -------------------------------------------------------------------------
+isolate_from_cpu_pass("WorkerPoolDefaultTest.*")
+run_gtest_pass("lifecycle-worker-pool-default" "WorkerPoolDefaultTest.*")
+isolate_from_cpu_pass("WorkerPoolOverrideTest.*")
+run_gtest_pass("lifecycle-worker-pool-override" "WorkerPoolOverrideTest.*")
+isolate_from_cpu_pass("WorkerPoolInvalidTest.*")
+run_gtest_pass("lifecycle-worker-pool-invalid" "WorkerPoolInvalidTest.*")
 
 # -------------------------------------------------------------------------
 # Each requested dispatcher count needs a fresh runtime and settings store.
+isolate_from_cpu_pass("SolverThreadCount.*")
 foreach(_THREAD_COUNT 1 2 4 8)
     run_gtest_pass("solver-threads-${_THREAD_COUNT}"
         "SolverThreadCount.Workers${_THREAD_COUNT}" "${GTEST_EXECUTABLE}" 60)
 endforeach()
 
 # -------------------------------------------------------------------------
-# Non-GPU tests
+# Non-GPU tests. Filter is every isolate_from_cpu_pass pattern, joined. Latch
+# so a later isolate_from_cpu_pass cannot silently double-run a suite.
 # -------------------------------------------------------------------------
-run_gtest_pass(
-    "cpu"
-    "-*GpuTest*:DefaultGpuDynamicsTest.*:GlobalLifecycle.*:ActiveCudaGpusAttachTest.*:OmniPvdColdCreation.*:SolverThreadCount.*")
+get_property(_CPU_EXCLUSIONS GLOBAL PROPERTY OVPHYSX_CPU_PASS_EXCLUSIONS)
+if(NOT _CPU_EXCLUSIONS)
+    message(FATAL_ERROR "cpu pass has no isolate_from_cpu_pass() registrations")
+endif()
+list(JOIN _CPU_EXCLUSIONS ":" _CPU_FILTER)
+set_property(GLOBAL PROPERTY OVPHYSX_CPU_PASS_LATCHED TRUE)
+run_gtest_pass("cpu" "-${_CPU_FILTER}")
 
 # -------------------------------------------------------------------------
 # CPU-no-CUDA-context contract. On a GPU box, a cpu_only instance must not open
@@ -285,25 +534,18 @@ run_gtest_pass("sidecar-token-scope" "*" "${SIDECAR_GTEST_EXECUTABLE}")
 # Check for simulation stage leaks across all passes.
 # -------------------------------------------------------------------------
 set(GTEST_ALL_OUTPUT "")
-foreach(_LEAK_LOG
-    "${TEST_RESULTS_DIR}/gtest_cuda-selection-attach.log"
-    "${TEST_RESULTS_DIR}/gtest_cuda-selection-nonzero-ordinal.log"
-    "${TEST_RESULTS_DIR}/gtest_default-gpu.log"
-    "${TEST_RESULTS_DIR}/gtest_gpu.log"
-    "${TEST_RESULTS_DIR}/gtest_lifecycle.log"
-    "${TEST_RESULTS_DIR}/gtest_lifecycle-lock-drain.log"
-    "${TEST_RESULTS_DIR}/gtest_omnipvd-cold.log"
-    "${TEST_RESULTS_DIR}/gtest_solver-threads-1.log"
-    "${TEST_RESULTS_DIR}/gtest_solver-threads-2.log"
-    "${TEST_RESULTS_DIR}/gtest_solver-threads-4.log"
-    "${TEST_RESULTS_DIR}/gtest_solver-threads-8.log"
-    "${TEST_RESULTS_DIR}/gtest_cpu.log"
-    "${TEST_RESULTS_DIR}/gtest_cpu-no-cuda-context.log"
-    "${TEST_RESULTS_DIR}/gtest_sidecar-token-scope.log")
-    if(EXISTS "${_LEAK_LOG}")
-        file(READ "${_LEAK_LOG}" _LEAK_CONTENTS)
-        string(APPEND GTEST_ALL_OUTPUT "${_LEAK_CONTENTS}")
+get_property(_LEAK_LABELS GLOBAL PROPERTY OVPHYSX_GTEST_PASS_LABELS)
+if(NOT _LEAK_LABELS)
+    message(FATAL_ERROR "no gtest pass labels recorded for the leak scan")
+endif()
+foreach(_LABEL IN LISTS _LEAK_LABELS)
+    set(_LEAK_LOG "${TEST_RESULTS_DIR}/gtest_${_LABEL}.log")
+    if(NOT EXISTS "${_LEAK_LOG}")
+        message(FATAL_ERROR
+            "leak scan: missing log for pass '${_LABEL}': ${_LEAK_LOG}")
     endif()
+    file(READ "${_LEAK_LOG}" _LEAK_CONTENTS)
+    string(APPEND GTEST_ALL_OUTPUT "${_LEAK_CONTENTS}")
 endforeach()
 if(GTEST_ALL_OUTPUT MATCHES "outstanding SimStageWithHistory")
     string(REGEX MATCH "had ([0-9]+) outstanding" LEAK_MATCH "${GTEST_ALL_OUTPUT}")

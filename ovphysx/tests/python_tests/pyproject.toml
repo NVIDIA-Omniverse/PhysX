@@ -10,6 +10,7 @@ name = "ovphysx-python-tests"
 version = "0.0.1"
 requires-python = ">=3.10"
 dependencies = [
+  "physx-usd-schemas>=25.11.2",
   "pytest>=7",
   "numpy>=1.20",  # Required for tensor binding tests
   "warp-lang>=1.16,<1.17",  # public read frontend plus DLPack interop smoke tests
@@ -29,6 +30,11 @@ dependencies = [
   # Depend on the local Python package name; source mapping below
   # The ovphysx wheel includes the SDK plus TensorBindingsAPI support.
   "ovphysx",
+  # Imported directly by test_ovstage_runtime_singletons, test_step_and_write_to_ovstage,
+  # test_write_api and test_utils. Deliberately unversioned: ovphysx's own `ovstage==` pin
+  # is what fixes the version, and declaring it here is what lets [tool.uv.sources] route it
+  # to the ovstage index (a source pin does not reach a purely transitive dependency).
+  "ovstage",
 ]
 
 [tool.setuptools]
@@ -49,23 +55,42 @@ filterwarnings = [
     # test_tensor_binding_deprecation.py still asserts the warning via pytest.warns, which records
     # it regardless of the filter.
     "error:ovphysx tensor bindings are deprecated:DeprecationWarning",
+    "error:ovphysx scene queries are deprecated:DeprecationWarning",
+    "error:ovphysx contact bindings are deprecated:DeprecationWarning",
+    "error:ovphysx SDF views are deprecated:DeprecationWarning",
+    "error:ovphysx object-type lookup is deprecated:DeprecationWarning",
 ]
 markers = [
   "cuda: requires a CUDA-capable Warp runtime",
 ]
 
 [tool.uv]
-index-url = "https://pypi.org/simple"
-# Resolve ovstage from build-staged wheels (same as CI UV_FIND_LINKS) so bare
-# `uv run` does not rewrite uv.lock to PyPI URLs for the same version pin.
-find-links = ["../../_build/target-deps/ovstage_wheel"]
-# Keep ovstage wheel resolution aligned with python/pyproject.toml so aarch64 CI
-# can install the locked manylinux_2_35_aarch64 wheel from target-deps.
 required-environments = [
+  # Keep ovstage wheel resolution aligned with python/pyproject.toml so aarch64 CI
+  # can install the locked manylinux_2_35_aarch64 wheel.
   "sys_platform == 'linux' and platform_machine == 'x86_64'",
   "sys_platform == 'linux' and platform_machine == 'aarch64'",
   "sys_platform == 'win32' and platform_machine == 'AMD64'",
 ]
 
+# Resolve OVStage from its explicit index with hashes in uv.lock (ADR-0033).
+
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple"
+default = true
+
+[[tool.uv.index]]
+name = "ovstage"
+url = "https://pypi.org/simple"
+explicit = true
+
+[[tool.uv.index]]
+name = "physx-usd-schemas"
+url = "https://pypi.org/simple"
+explicit = true
+
 [tool.uv.sources]
 "ovphysx" = { path = "../../python", editable = true }
+ovstage = { index = "ovstage" }
+physx-usd-schemas = { index = "physx-usd-schemas" }

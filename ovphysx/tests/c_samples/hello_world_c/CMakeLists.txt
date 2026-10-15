@@ -41,4 +41,7 @@ target_compile_definitions(hello_world_c PRIVATE
 )
 if(WIN32)
     ovphysx_copy_runtime_dlls(hello_world_c)
+    # OVStage is not copied (it loads its plugins relative to itself), so its
+    # directories have to reach the process through PATH.
+    ovphysx_set_ovstage_runtime_env(hello_world_c)
 endif()

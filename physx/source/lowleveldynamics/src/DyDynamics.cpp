@@ -2104,7 +2104,7 @@ void DynamicsContext::integrateCoreParallel(SolverIslandParams& params, Cm::Spat
 	const PxI32 unrollPlusArtics = unrollCount + numArtics;
 
 	PxSolverBody* PX_RESTRICT solverBodies = const_cast<PxSolverBody*>(params.bodyListStart);
-	PxSolverBodyData* PX_RESTRICT solverBodyData = params.bodyDataList + params.solverBodyOffset+1;
+	PxSolverBodyData* PX_RESTRICT solverBodyData = params.bodyDataList + params.solverBodyOffset + 1;
 
 	while(index < numBodies)
 	{
@@ -2123,8 +2123,8 @@ void DynamicsContext::integrateCoreParallel(SolverIslandParams& params, Cm::Spat
 	physx::PxAtomicAdd(&params.numObjectsIntegrated, numIntegrated);
 }
 
-static PxU32 createFinalizeContacts_Parallel(PxSolverBodyData* solverBodyData, ThreadContext& threadContext, DynamicsContext& context,
-									  PxU32 startIndex, PxU32 endIndex, PxsContactManagerOutputIterator& outputs)
+static PxU32 createFinalizeContacts_Parallel(const PxSolverBodyData* solverBodyData, ThreadContext& threadContext, DynamicsContext& context,
+											PxU32 startIndex, PxU32 endIndex, PxsContactManagerOutputIterator& outputs)
 {
 	PX_PROFILE_ZONE("createFinalizeContacts_Parallel", context.getContextId());
 	const PxReal correlationDist = context.getCorrelationDistance();
@@ -2179,8 +2179,8 @@ static PxU32 createFinalizeContacts_Parallel(PxSolverBodyData* solverBodyData, T
 
 				cmOutputs[i] = &outputs.getContactManagerOutput(unit.mNpIndex);
 
-				PxSolverBodyData& data0 = desc.linkIndexA != PxSolverConstraintDesc::RIGID_BODY ? solverBodyData[0] : solverBodyData[desc.bodyADataIndex];
-				PxSolverBodyData& data1 = desc.linkIndexB != PxSolverConstraintDesc::RIGID_BODY ? solverBodyData[0] : solverBodyData[desc.bodyBDataIndex];
+				const PxSolverBodyData& data0 = desc.linkIndexA != PxSolverConstraintDesc::RIGID_BODY ? solverBodyData[0] : solverBodyData[desc.bodyADataIndex];
+				const PxSolverBodyData& data1 = desc.linkIndexB != PxSolverConstraintDesc::RIGID_BODY ? solverBodyData[0] : solverBodyData[desc.bodyBDataIndex];
 
 				blockDesc.data0 = &data0;
 				blockDesc.data1 = &data1;
@@ -2295,8 +2295,8 @@ static PxU32 createFinalizeContacts_Parallel(PxSolverBodyData* solverBodyData, T
 				const PxTransform& pose1 = (constraint->body1 ? constraint->body1->getPose() : idt);
 				const PxSolverBody* sbody0 = desc.bodyA;
 				const PxSolverBody* sbody1 = desc.bodyB;
-				PxSolverBodyData* sbodyData0 = &solverBodyData[desc.linkIndexA == PxSolverConstraintDesc::RIGID_BODY ? desc.bodyADataIndex : 0];
-				PxSolverBodyData* sbodyData1 = &solverBodyData[desc.linkIndexB == PxSolverConstraintDesc::RIGID_BODY ? desc.bodyBDataIndex : 0];
+				const PxSolverBodyData* sbodyData0 = &solverBodyData[desc.linkIndexA == PxSolverConstraintDesc::RIGID_BODY ? desc.bodyADataIndex : 0];
+				const PxSolverBodyData* sbodyData1 = &solverBodyData[desc.linkIndexB == PxSolverConstraintDesc::RIGID_BODY ? desc.bodyBDataIndex : 0];
 
 				shaderPrepDesc.constantBlock = constantBlock;
 				shaderPrepDesc.constantBlockByteSize = constantBlockByteSize;

@@ -23,9 +23,10 @@ PXR_NAMESPACE_OPEN_SCOPE
 
 /// \class PhysxSchemaPhysxJointAxisAPI
 ///
-/// PhysX joint parameters defined per axis. Can be applied to a PhysicsJoint prim or
-/// the derived classes PhysicsRevoluteJoint, PhysicsPrismaticJoint or PhysicsSphericalJoint.
-/// For overlapping parameters with PhysxJointAPI, the parameters of PhysxJointAxisAPI take precedence for that axis.
+/// PhysX joint parameters defined per axis, used only for joints that are part of an articulation
+/// (see PhysicsArticulationRootAPI). Can be applied to a PhysicsJoint prim or the derived classes
+/// PhysicsRevoluteJoint, PhysicsPrismaticJoint or PhysicsSphericalJoint, with the instance name angular
+/// for a revolute joint, linear for a prismatic joint, and rotX, rotY or rotZ for a spherical or generic joint.
 ///
 class PhysxSchemaPhysxJointAxisAPI : public UsdAPISchemaBase
 {

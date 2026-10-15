@@ -48,11 +48,10 @@ harness. Using it unchanged (rather than building a parallel one) means:
 The benchmark-side tests are deliberately ours: the source benchmark cases
 touch internal runtime and raw PhysX scene objects that the ovphysx wrapper
 hides. Timed benchmark operations call the public `ovphysx::PhysX` or
-`ovphysx_*` C ABI. ContactReport has one untimed validation-only exception: the
-public report exposes runtime SdfPath-node identities but no public function
-converts an expected path to that representation, so the benchmark uses the
-internal `sdfPathToInt()` encoder to construct its expected pair set. That
-internal conversion is not part of the measured or supported consumer path.
+`ovphysx_*` C ABI. ContactReport is no exception: it validates and measures
+entirely through the public session C ABI (`ovphysx_query` / `ovphysx_read`),
+so no internal encoder sits between the benchmark and the measured consumer
+path.
 
 ## Architecture at run time
 
@@ -108,8 +107,8 @@ them with "failed to initialize, skipping".
 | `LowLoad.first_step_after_reload` | any | Time to step() once after reloading the scene; not true cold-start. |
 | `LowLoad.empty_step` | any | Per-step dispatch overhead with no scene loaded. |
 | `LowLoad.noop_ovstage_attach` | any | Per-call ovstage population + initial attach cost on a 1-prim USDA. |
-| `LowLoad.reset` | any | Per-call `ovphysx_reset` cost on a loaded scene. |
-| `ContactReport.persistent_pairs_512_step_read_{cpu,gpu}` | hidden cpu/requested conventional gpu | One 1/60-second synchronous step plus the public raw contact-report pull for 512 persistent isolated reporter/static pairs. DirectGPU is refused. |
+| `LowLoad.reset` | any | Stage detach plus task completion on a loaded scene; the row name is retained, but this is not an episode pose reset. |
+| `ContactReport.net_force_512_read_{cpu,gpu}` | hidden cpu/direct gpu | Public session net-force read for 512 resting contact-sensor boxes: one `ovphysx_query` of all contact sensors plus one `ovphysx_read` of the two net-force attributes; the step runs untimed in `preStep()`. The GPU row requires DirectGPU. |
 | `Probe.cartpole_4096_control_step` | hidden direct gpu | Physics-owned stable backend policy step: two 1/120 s substeps with CUDA DOF control writes and state reads. |
 | `Probe.cartpole_4096_tensor_binding_create` | hidden direct gpu | Creation and spec lookup for the five `[4096,2]` bindings used by the Cartpole control row; exact-filter fresh-process runs measure first use. |
 | `Lab.cartpole_<N>_{step,reset,tensor_read,tensor_write}` | gpu | IsaacLab-style cartpole replication: 4 ops × 3 sizes (4096/8192/16384). |
@@ -122,6 +121,7 @@ them with "failed to initialize, skipping".
 | `WriteScaling.velocity_ovstage_4096_cpu` | hidden cpu | Primary KPI. 4,096-body OVStage linear-velocity write and step. |
 | `WriteScaling.velocity_tensor_4096_cpu` | hidden cpu | Comparator. Persistent `[4096,6]` velocity tensor write and step. |
 | `WriteScalingHighN.velocity_{ovstage,tensor}_{8192,16384}_cpu` | hidden cpu | Diagnostic. The WriteScaling pair at 8,192 and 16,384 bodies; separate family so the L1B selection is unchanged. |
+| `WriteOnly.velocity_{ovstage,tensor}_{4096,8192,16384}_cpu` | hidden cpu | Movement command delivery including completion waits; simulation is untimed. |
 | `RuntimeSpawnScaling.collider_heavy_1280_cpu` | hidden cpu | Diagnostic. Seal, structural drain, and first step of one runtime-spawned body into 1,280 existing static colliders. |
 | `Lab.anymal_<N>_{step,reset,tensor_read,tensor_write,clone}` | gpu | IsaacLab-style Anymal replication: 5 ops × 2 sizes (1024/8192). Skip until asset published. |
 
@@ -193,8 +193,8 @@ latencies are primary lower-is-better KPIs:
   synchronous-step cycles.
 - `WriteScaling.velocity_ovstage_4096_cpu`: each of 20 measured step indices
   contains a 4,096-body velocity query/write and completion wait, query
-  release, velocity-scoped floor and completion wait, OVStage update, then a
-  1/60-second asynchronous step and `waitAll()`.
+  release, velocity-scoped floor and completion wait, OVStage update and its
+  task completion, then a 1/60-second asynchronous step and `waitAll()`.
 
 The other CPU rows are diagnostics or comparators. `population_churn` is
 specifically population-reference create/drain/remove plus attribute deletion,
@@ -246,15 +246,17 @@ baselined nor compared with CPU.
 
 Finally, the two families are not timing-compatible. WriteScaling deliberately
 preserves its prototype's write-completion wait, query release, scoped-floor
-wait, and `step()`/`waitAll()` path. Authoring OVStage rows use the later
-single-seal-wait boundary and `ovphysx_step_sync()`, which avoids asynchronous
-operation machinery. Compare WriteScaling only within its pair.
+wait, and `step()`/`waitAll()` path, with task completion after updating physics.
+Authoring OVStage rows use a single seal wait, then update physics and wait for
+its task. Their `ovphysx_step_sync()` avoids task machinery for the simulation
+step. Compare WriteScaling only within its pair.
 
 Even within that pair, the OVStage lane creates and releases a path-list query
-per measured step and waits separately for the write, query release, and
-scoped floor before the common asynchronous step/wait. The tensor lane reuses a
-persistent `[N,6]` binding and has only its write-completion wait before that
-step. Their gap is therefore an end-to-end control-path comparison, including
+per measured step and waits separately for the write, query release, scoped
+floor, and physics-update task before the common asynchronous step/wait. The
+tensor lane reuses a persistent `[N,6]` binding and has only its write-completion
+wait before that step. Their gap is therefore an end-to-end control-path
+comparison, including
 addressing, query lifetime, and synchronization, not a pure write-cost
 difference. Put both rows on one plot only to show that end-to-end comparison;
 do not attribute the delta to the write operation alone. The OVStage lane also
@@ -270,7 +272,7 @@ Five hidden CPU-only diagnostics sit beside L1B without joining it
 `WriteScalingHighN.*` and `RuntimeSpawnScaling.*`, chosen so that neither the
 L1B contract filter `Authoring.*:WriteScaling.*` nor the scheduled L1B filter
 `Authoring.*_cpu:WriteScaling.*_cpu` can select them. The contract proves the
-union of all four inventories (L1B, OutputRead, ContactReport, high-scale) is
+union of the committed inventories (including WriteOnly) is
 free of duplicate and substring-colliding names, and that no name can match
 inside another row's record after the harness appends its `_<N>T` or `_GPU`
 postfix, because every row shares one strstr()-matched baseline lookup.
@@ -294,8 +296,8 @@ needed because ovphysx resolves a created prim's local transform from that
 data-plane matrix rather than from the `xformOp:*` columns; the spawn columns
 alone realize the body at the identity pose.
 The timed sample is exactly the seal (`ovstage_advance_write_floor` plus its
-completion wait), the `ovphysx_update_from_ovstage` drain, and one
-`ovphysx_step_sync(1/60 s)`. The untimed gate requires exactly one dynamic
+completion wait), the `ovphysx_update_from_ovstage` drain and its task completion,
+and one `ovphysx_step_sync(1/60 s)`. The untimed gate requires exactly one dynamic
 rigid body, a rigid-body classification of `/World/Runtime/Body_0000` through
 `ovphysx_get_object_type()`, and a pose readback at the authored height. The
 public API has no realized-static-shape query, so the collider count is a
@@ -306,54 +308,79 @@ lower-is-better non-paging fence, no ratio or slope derived from them is a KPI,
 no GPU variant exists, and they are never compared with the L1B
 `WriteScaling.*` rows as one series.
 
+### Write-only timing boundary
+
+The six `WriteOnly.*_cpu` rows reuse `WriteScalingBase` at 4,096, 8,192 and
+16,384 bodies. `WriteOnlyBase::timedStep()` times `writeOnce()` and runs
+`stepOnce()` after stopping the timer. The base's original timer path is
+unchanged, so existing WriteScaling measurements retain their meaning.
+
+The measured OVStage path includes query creation, write and wait, query
+release and wait, velocity-scoped seal and wait, and update into physics with
+task completion.
+The tensor path includes its persistent binding write and completion wait.
+Setup, warmup, value generation, simulation, readback and teardown are untimed.
+The shared correctness gate must still read the distinctive velocity from
+all bodies after stepping. The 20-step, five-run statistic is unchanged.
+
+`tests/write_only_inventory.json` and the `WriteOnly.*` family isolate these
+rows from existing filters and comparisons. The inventory union, hidden-row
+control, GPU-mode rejection and positive 4,096-body pair always run.
+`OVPHYSX_BENCHMARK_CONTRACT_WRITE_ONLY=1` expands the positive run to all six
+rows; only the larger scenes are opt-in because their construction is costly.
+FrameCore/fpp collects the default measurements through `write_only_hidden`.
+Consumer thresholds require fresh same-build, same-hardware calibration and
+separate alarm activation. Ratios remain descriptive and must pair rows from
+one run at the same body count; never infer step time by subtracting independent
+benchmark means. The query and synchronization differences also prevent direct
+ratio comparisons with persistent-query, all-scope-seal benchmarks.
+
 ### ContactReport measurement policy and fixture
 
 ContactReport is a separate two-row hidden contract. It does not change the
 eighteen-row L1B inventory. Both rows are lower-is-better absolute
 latencies; the CPU registration is emitted unchanged and the GPU harness emits
-`ContactReport.persistent_pairs_512_step_read_gpu_GPU`.
+`ContactReport.net_force_512_read_gpu_GPU`.
 
-The runtime-generated stage places 512 isolated sphere pairs on a fixed grid.
-Each pair consists of one awake dynamic reporting sphere and one overlapping
-static sphere. Four-unit cell spacing prevents cross-pair contacts. Gravity and
-sleeping are disabled, and `physxRigidBody:solveContact = false` keeps the
-overlap stable without charging the row for contact solving. The dynamic actor
-applies `PhysxContactReportAPI` with threshold zero. CPU authors CPU dynamics
-and MBP. GPU authors GPU dynamics and GPU broadphase, with the three capacities
-pinned to the exact schema defaults: 524288 rigid contacts, 81920 rigid
-patches, and 262144 found/lost pairs.
+The runtime-generated stage places 512 dynamic boxes resting on one static
+ground slab. The boxes are spaced so no box touches a neighbour, so every
+contact is a box-on-ground resting contact. Gravity is enabled, and each box
+applies `PhysxContactReportAPI` with threshold zero and
+`physxRigidBody:sleepThreshold = 0` so that a settled body keeps reporting its
+support contact. The ground slab carries no contact-report schema and is not a
+sensor. Each box is therefore one contact sensor whose net normal force resists
+its own weight. CPU authors CPU dynamics and MBP. GPU authors GPU dynamics and
+GPU broadphase, with the three capacities pinned to the exact schema defaults:
+524288 rigid contacts, 81920 rigid patches, and 262144 found/lost pairs.
 
-Scene generation, population, attachment, expected-pair construction, and
-warm-up precede the timer. Warm-up advances at most 32 steps and requires three
-consecutive structurally valid, all-persistent reports with exactly 512 headers,
-512 points, and zero friction anchors. A measured sample times one 1/60-second
-`ovphysx_step_sync()` followed
-immediately by `ovphysx_get_contact_report()`. Semantic validation starts only
-after the timer stops and completes before another simulation step invalidates
-the borrowed views. The default 20 steps by five runs therefore produce 100
-actual timed calls in the diagnostics sidecar.
+Scene generation, population, attachment, and warm-up precede the timer. The
+simulation step is advanced in the harness `preStep()` hook, outside the timed
+region, so the row measures the read path only and not step-plus-read. Warm-up
+advances at most 48 steps and requires three consecutive reads that return the
+full 512-sensor set. A measured sample times one
+`ovphysx_query(OVPHYSX_QUERY_TARGET_CONTACT_SENSOR, OVPHYSX_SCOPE_ALL)`, one
+`ovphysx_read()` of the two attributes `netNormalContactForce` and
+`netFrictionContactForce`, and the fetch/release drain of every group. The
+default 20 measured steps by five runs therefore produce 100 actual timed calls
+in the diagnostics sidecar (`all_steps_count=100`).
 
-The semantic gate requires exactly 512 headers and 512 points, persistent event
-type, the live attach handle, the exact Reporter/Static identity set, valid
-actor/collider and prototype fields, a complete non-overlapping point partition,
-zero global friction anchors, zero per-header friction-anchor offsets and counts,
-and finite point positions, normals, impulses, and separations with sane normal
-length and separation range. A known GPU fallback or contact-capacity warning
-is also a failure. Any operational or semantic failure suppresses the row and
-makes the process nonzero.
+The semantic gate requires that every warm-up and pre-step task, query, read,
+fetch, and release task completes, that the drain reaches the end-of-iteration
+sentinel, and that the net-force group carries exactly 512 contact-sensor rows
+on the expected device (CPU or CUDA). Any operational or semantic failure
+suppresses the row and makes the process nonzero.
 
-The fixture intentionally exercises one contact point per pair/header, zero
-friction anchors from `solveContact=false`, and one default-material case. It
-does not represent multi-point manifolds, friction-anchor report payloads, or
-material-diverse contact reporting.
+The fixture intentionally exercises the two net-force attributes over one
+default-material resting-box scene. It does not represent multi-point manifolds,
+per-contact report payloads, or material-diverse contact reporting.
 
-The GPU row is conventional GPU, selected with `--forceGpu` and without
-`--directGpu`. DirectGPU disables the host simulation-state readback path used
-by the public raw getter and is rejected. Requested GPU plus silence from the
-warning detector is not positive realized-device proof; no public
-realized-device query exists. The rows also exclude initial attach and
-parameter parsing, solver cost, Contact Binding, transport, and application
-scheduling.
+The GPU row is a DirectGPU lane, selected with `--forceGpu --directGpu`, because
+the net-force columns are device-resident only on a DirectGPU scene. Under
+`--forceGpu` alone it is still selected on the GPU pass but skips without a
+metric. The GPU row requires CUDA-backed net-force tensors, so a scene that
+falls back to CPU fails the row. The rows also
+exclude initial attach and parameter parsing, solver cost, Contact Binding,
+transport, and application scheduling.
 
 Qualification noise is calculated from the ordinary report's emitted
 `std_dev / avg` values. The all-sample diagnostics statistics do not define that
@@ -419,22 +446,21 @@ table rather than an error:
   harness then appends `_GPU` to the name it prints, so the reported row does not
   read back as the name you filtered on.
 - `--directGpu` is **not** a third flag every GPU lane takes. It applies to
-  DirectGPU lanes only — the `OutputRead.*_gpu` family. A conventional GPU lane
-  must run without it: `ContactReport.persistent_pairs_512_step_read_gpu` rejects
-  it, because DirectGPU disables the host simulation-state readback path that
-  row's public raw getter measures (see "ContactReport measurement policy" above).
-  The driver's own GPU pass in `scripts/test_benchmarks_cpp.cmake` passes
-  `--forceGpu` alone for the same reason; only the DirectGPU contract steps add
-  `--directGpu`.
+  DirectGPU lanes only — the `OutputRead.*_gpu` family and
+  `ContactReport.net_force_512_read_gpu`, whose net-force columns are
+  device-resident only under DirectGPU (see "ContactReport measurement policy"
+  above). A conventional GPU lane, if any, must run without it. The driver's own
+  GPU pass in `scripts/test_benchmarks_cpp.cmake` passes `--forceGpu` for the
+  conventional lanes; the DirectGPU contract steps add `--directGpu`.
 
 ```
 ovphysx_benchmarks --filter=OutputRead.readonly_arti_link_8192_cpu --runs=3
 
-# DirectGPU lane -- all three
+# DirectGPU lane -- all three flags
 ovphysx_benchmarks --filter=OutputRead.readonly_arti_link_8192_gpu --forceGpu --directGpu --hidden --runs=3
 
-# conventional GPU lane -- no --directGpu
-ovphysx_benchmarks --filter=ContactReport.persistent_pairs_512_step_read_gpu --forceGpu --hidden --runs=3
+# DirectGPU lane -- ContactReport's GPU row also requires --directGpu
+ovphysx_benchmarks --filter=ContactReport.net_force_512_read_gpu --forceGpu --directGpu --hidden --runs=3
 ```
 
 ## Build & CI integration
@@ -450,13 +476,15 @@ ovphysx_benchmarks --filter=ContactReport.persistent_pairs_512_step_read_gpu --f
   the single-threaded pass overrides the user's filter.
 - Dedicated job `ovphysx-linux-x86_64-benchmarks` performs its own
   `./build.sh --benchmarks`, SDK install, regenerated twelve-row CPU L1B
-  contract, the separate CPU/conventional-GPU ContactReport contract, and
+  contract, the separate CPU/DirectGPU ContactReport contract, and
   DirectGPU Cartpole control and binding contracts. Each ContactReport row and
   the Cartpole control row must publish 100 all-sample timings; the binding row
   must publish one. The ContactReport contract also proves reciprocal
-  wrong-device suppression and DirectGPU refusal. The same contract run ends
+  wrong-device suppression and the GPU row's DirectGPU requirement. The same contract run ends
   with the high-scale section: collision-free inventory union, exact hidden
-  five-row list, vacuity without `--hidden`, and one positive five-row run.
+  five-row list and vacuity without `--hidden`; its positive run is opt-in.
+  The separate WriteOnly section always runs the 4,096-body CPU pair and
+  GPU-mode rejection for all six rows; only the larger positive rows are opt-in.
   The job reuses the Linux GPU-test runner/image/setup and credentials but has
   no publish or security consumers; benchmark artifacts are not added to the
   publish-critical `ovphysx-linux` job.

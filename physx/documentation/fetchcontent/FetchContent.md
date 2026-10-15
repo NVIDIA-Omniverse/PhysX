@@ -179,7 +179,7 @@ cmake -DCMAKE_BUILD_TYPE=release ../physx
 
 `FetchContent_MakeAvailable(physx_lib)` creates an INTERFACE target named `physx_lib`. It is an INTERFACE target (not STATIC/SHARED) because PhysX can be built as either — the INTERFACE target abstracts this away. It aggregates:
 
-- **Libraries**: PhysX, PhysXCommon, PhysXFoundation, PhysXCooking, PhysXCharacterKinematic, PhysXVehicle, PhysXExtensions, PhysXPvdSDK (and PhysXGpu when GPU is enabled)
+- **Libraries**: PhysX, PhysXCommon, PhysXFoundation, PhysXCharacterKinematic, PhysXVehicle, PhysXExtensions, PhysXPvdSDK (and PhysXGpu when GPU is enabled)
 - **Include directories**: All public PhysX headers
 - **Compile definitions**: GPU/CPU mode flags, platform defines
 

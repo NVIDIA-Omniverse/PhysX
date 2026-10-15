@@ -2,11 +2,20 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-ATTACH-EXECUTION-001
+ * @covers AC-3, AC-4
+ *
+ * @implements REQ-ATTACH-IO-001
+ * @covers AC-2
+ *
  * @implements REQ-PARSE-UNIFY-001
  * @covers AC-1
  *
  * @implements REQ-SIM-SCENEQUERY-001
  * @covers AC-3
+ *
+ * @implements REQ-SIM-SCENEQUERY-002
+ * @covers AC-1 AC-2 AC-3
  *
  * @implements REQ-MATH-001
  * @covers AC-13
@@ -15,6 +24,7 @@
 #include <omni/physics/parse/KnownTokens.h>
 
 #include "PhysXSceneQuery.h"
+#include "RuntimeExecution.h"
 #include "internal/InternalScene.h"
 #include "PhysXTools.h"
 #include "PhysXScene.h"
@@ -26,7 +36,6 @@
 #include <omni/physx/IPhysx.h>
 #include <omni/physx/PhysxTokens.h>
 
-extern void* getPhysXPtr(omni::physics::parse::ObjectKey key, omni::physx::PhysXType type);
 
 using namespace ::physx;
 using namespace omni::physx;
@@ -180,11 +189,11 @@ static PxConvexMeshGeometry usdCylinderOrConeToPxConvexMeshGeometry(const Attach
     }
 }
 
-static PxConvexMeshGeometry usdToPxConvexMeshGeometry(omni::physics::parse::ObjectKey key, const PxVec3& scale)
+static PxConvexMeshGeometry usdToPxConvexMeshGeometry(AttachedStage& owner, omni::physics::parse::ObjectKey key, const PxVec3& scale)
 {
     usdparser::ConvexMeshPhysxShapeDesc convexMeshDesc;
-    usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
-    const char* primText = attachedStage ? attachedStage->textFor(key) : "";
+    usdparser::AttachedStage* attachedStage = &owner;
+    const char* primText = attachedStage->textFor(key);
     if (fillConvexMeshDesc(attachedStage, key, convexMeshDesc, convexMeshDesc.convexCookingParams))
     {
         const Float3 mesh_scale = toFloat3(scale);
@@ -193,7 +202,7 @@ static PxConvexMeshGeometry usdToPxConvexMeshGeometry(omni::physics::parse::Obje
         PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
         CookingDataAsync* cookingDataAsync = physxSetup.getCookingDataAsync();
 
-        if (!cookingDataAsync || !attachedStage)
+        if (!cookingDataAsync)
         {
             CARB_LOG_ERROR("omni::physx::usdToPxConvexMeshGeometry: Failed to cook convex mesh data for prim: %s - cooking service unavailable", primText);
             return PxConvexMeshGeometry();
@@ -249,18 +258,17 @@ static void computeWorldTransform(const AttachedStage& attachedStage,
 
 using geometrySceneQueryFn = std::function<bool(const PxGeometry& geom, const PxTransform& transform)>;
 
-static bool doShapeSceneQuery(omni::physics::parse::ObjectKey key, geometrySceneQueryFn queryFn)
+static bool doShapeSceneQuery(AttachHandle attach, omni::physics::parse::ObjectKey key, geometrySceneQueryFn queryFn)
 {
-    const PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
-    if (physxSetup.getPhysXScenes().empty())
+    AttachedStage* attachedStagePtr = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach);
+    if (!attachedStagePtr)
+        return false;
+    if (attachedStagePtr->getPhysXScenes().empty())
     {
         CARB_LOG_WARN_ONCE("Physx scene queries can only be performed during simulation.");
         return false;
     }
 
-    const AttachedStage* attachedStagePtr = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
-    if (!attachedStagePtr)
-        return false;
     const AttachedStage& attachedStage = *attachedStagePtr;
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
     if (!src || !src->exists(key))
@@ -318,12 +326,12 @@ static bool doShapeSceneQuery(omni::physics::parse::ObjectKey key, geometryScene
     {
         // Convex cooking is keyed; the residual cooking-input USD read is
         // encapsulated in fillConvexMeshDesc (tracked separately).
-        geom = usdToPxConvexMeshGeometry(key, sc);
+        geom = usdToPxConvexMeshGeometry(*attachedStagePtr, key, sc);
     }
     else if (isMeshMerge)
     {
         // for meshmerge the convex must already exist, lets find it
-        PxShape* shapePrim = (PxShape*)(getPhysXPtr(key, ePTShape));
+        PxShape* shapePrim = (PxShape*)(getObjectDataOrID<ObjectDataQueryType::ePHYSX_PTR>(key, ePTShape, attachedStage.getInternalPhysXDatabase(), attachedStage));
         if (!shapePrim || shapePrim->getGeometry().getType() != PxGeometryType::eCONVEXMESH)
         {
             CARB_LOG_WARN(
@@ -358,10 +366,13 @@ static bool doBoxSceneQuery(const carb::Float3& halfExtent, const carb::Float3& 
     return queryFn(boxGeom, transform);
 }
 
-static bool doMeshSceneQuery(omni::physics::parse::ObjectKey key, geometrySceneQueryFn queryFn)
+static bool doMeshSceneQuery(AttachHandle attach, omni::physics::parse::ObjectKey key, geometrySceneQueryFn queryFn)
 {
+    AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach);
+    if (!attachedStage)
+        return false;
     PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
-    if (physxSetup.getPhysXScenes().empty())
+    if (attachedStage->getPhysXScenes().empty())
     {
         CARB_LOG_WARN_ONCE("Physx scene queries can only be performed during simulation.");
         return false;
@@ -373,11 +384,6 @@ static bool doMeshSceneQuery(omni::physics::parse::ObjectKey key, geometrySceneQ
         return false;
     }
 
-    usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
-    if (!attachedStage)
-    {
-        return false;
-    }
     const omni::physics::parse::IPhysicsSource* src = attachedStage->getSource();
     if (!src || !src->exists(key))
     {
@@ -409,7 +415,7 @@ static bool doMeshSceneQuery(omni::physics::parse::ObjectKey key, geometrySceneQ
     if (meshMergeUsed)
     {
         // for meshmerge the convex must already exist, lets find it
-        PxShape* shapePrim = (PxShape*)(getPhysXPtr(key, ePTShape));
+        PxShape* shapePrim = (PxShape*)(getObjectDataOrID<ObjectDataQueryType::ePHYSX_PTR>(key, ePTShape, attachedStage->getInternalPhysXDatabase(), *attachedStage));
         if (!shapePrim || shapePrim->getGeometry().getType() != PxGeometryType::eCONVEXMESH)
         {
             CARB_LOG_WARN(
@@ -447,12 +453,62 @@ static bool doMeshSceneQuery(omni::physics::parse::ObjectKey key, geometrySceneQ
     return queryFn(PxConvexMeshGeometry(convexMesh, meshScale), transform);
 }
 
-bool raycastClosest(const carb::Float3& origin, const carb::Float3& unitDir, float distance, RaycastHit& outHit, bool bothSides)
+static const PxMaterial* resolveSceneQueryMaterial(const PxShape& shape, PxU32 internalFaceIndex)
 {
-    const InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
-    const PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
+    PxU32 materialIndex = 0;
+    const PxGeometry& geometry = shape.getGeometry();
+    const PxGeometryType::Enum geometryType = geometry.getType();
 
-    if (physxSetup.getPhysXScenes().empty())
+    if (geometryType == PxGeometryType::eTRIANGLEMESH)
+    {
+        const PxTriangleMeshGeometry& meshGeometry = static_cast<const PxTriangleMeshGeometry&>(geometry);
+        if (!meshGeometry.triangleMesh->getSDF())
+        {
+            if (internalFaceIndex == 0xFFFFFFFF)
+                return nullptr;
+            materialIndex = meshGeometry.triangleMesh->getTriangleMaterialIndex(internalFaceIndex);
+            // 0xffff means the mesh has no per-triangle material array. That is a valid
+            // single-material mesh, and the SDK getter uses slot 0.
+            if (materialIndex == 0xffff)
+                materialIndex = 0;
+        }
+    }
+    else if (geometryType == PxGeometryType::eHEIGHTFIELD)
+    {
+        if (internalFaceIndex == 0xFFFFFFFF)
+            return nullptr;
+        const PxHeightFieldGeometry& heightFieldGeometry = static_cast<const PxHeightFieldGeometry&>(geometry);
+        materialIndex = heightFieldGeometry.heightField->getTriangleMaterialIndex(internalFaceIndex);
+        if (materialIndex == PxHeightFieldMaterial::eHOLE)
+            return nullptr;
+    }
+
+    // ### DEFENSIVE (NVBug 6504491): older PhysX SDKs can return a non-null invalid pointer when
+    // a mesh's per-face material index exceeds the shape's material table.
+    if (materialIndex >= shape.getNbMaterials())
+    {
+        CARB_LOG_ERROR_ONCE(
+            "Scene query hit material index %u, but the shape has only %u materials; reporting no material.",
+            materialIndex, shape.getNbMaterials());
+        return nullptr;
+    }
+
+    PxMaterial* material = nullptr;
+    return shape.getMaterials(&material, 1, materialIndex) == 1 ? material : nullptr;
+}
+
+bool raycastClosest(AttachHandle attach, const carb::Float3& origin, const carb::Float3& unitDir, float distance, RaycastHit& outHit, bool bothSides)
+{
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return 0;
+
+    const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach);
+    if (!attachedStage)
+        return false;
+    const InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
+
+    if (attachedStage->getPhysXScenes().empty())
     {
         CARB_LOG_WARN_ONCE("Physx scene queries can only be performed during simulation.");
         return false;
@@ -469,7 +525,7 @@ bool raycastClosest(const carb::Float3& origin, const carb::Float3& unitDir, flo
     hit.distance = FLT_MAX;
 
     bool ret = false;
-    for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+    for (AttachedStage::SceneMap::const_reference ref : attachedStage->getPhysXScenes())
     {
         PxRaycastHit localHit;
         const PxScene* scene = ref.second->getScene();
@@ -510,9 +566,7 @@ bool raycastClosest(const carb::Float3& origin, const carb::Float3& unitDir, flo
             outHit.rigidBody = omni::physics::parse::ObjectKey{};
             outHit.protoIndex = 0xFFFFFFFF;
         }
-        PxBaseMaterial* baseMaterial = hit.shape->getMaterialFromInternalFaceIndex(hit.faceIndex);
-        PX_ASSERT(!baseMaterial || baseMaterial->getConcreteType() == PxConcreteType::eMATERIAL);
-        const PxMaterial* material = (baseMaterial != nullptr) ? baseMaterial->is<PxMaterial>() : nullptr;
+        const PxMaterial* material = resolveSceneQueryMaterial(*hit.shape, hit.faceIndex);
         if (material && material->userData)
         {
             const size_t materialIndex = (size_t)material->userData;
@@ -526,12 +580,18 @@ bool raycastClosest(const carb::Float3& origin, const carb::Float3& unitDir, flo
     return ret;
 }
 
-bool raycastAny(const carb::Float3& origin, const carb::Float3& unitDir, float distance, bool bothSides)
+bool raycastAny(AttachHandle attach, const carb::Float3& origin, const carb::Float3& unitDir, float distance, bool bothSides)
 {
-    const InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
-    const PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return 0;
 
-    if (physxSetup.getPhysXScenes().empty())
+    const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach);
+    if (!attachedStage)
+        return false;
+    const InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
+
+    if (attachedStage->getPhysXScenes().empty())
     {
         CARB_LOG_WARN_ONCE("Physx scene queries can only be performed during simulation.");
         return false;
@@ -548,7 +608,7 @@ bool raycastAny(const carb::Float3& origin, const carb::Float3& unitDir, float d
     PxSceneQueryFilterData fdAny;
     fdAny.flags |= PxQueryFlag::eANY_HIT;
     PxRaycastBuffer buf;
-    for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+    for (AttachedStage::SceneMap::const_reference ref : attachedStage->getPhysXScenes())
     {            
         const PxScene* scene = ref.second->getScene();
         if (!scene)
@@ -589,9 +649,7 @@ bool reportLocationHit(const PxQueryHit& hit, T reportFn, const InternalPhysXDat
     FaceIndexResolve indexResolve(hit.shape);
     queryHit.faceIndex = indexResolve.resolveFaceIndex(hit.faceIndex);
 
-    PxBaseMaterial* baseMaterial = hit.shape->getMaterialFromInternalFaceIndex(hit.faceIndex);
-    PX_ASSERT(!baseMaterial || baseMaterial->getConcreteType() == PxConcreteType::eMATERIAL);
-    const PxMaterial* material = (baseMaterial != nullptr) ? baseMaterial->is<PxMaterial>() : nullptr;
+    const PxMaterial* material = resolveSceneQueryMaterial(*hit.shape, hit.faceIndex);
 
     if (material && material->userData)
     {
@@ -603,6 +661,7 @@ bool reportLocationHit(const PxQueryHit& hit, T reportFn, const InternalPhysXDat
         queryHit.material = omni::physics::parse::ObjectKey{};
     }
 
+    RuntimeCallbackScope callbackScope;
     return reportFn(queryHit);
 }
 
@@ -632,12 +691,18 @@ struct RaycastCallback : PxRaycastCallback
     uint32_t numHits;
 };
 
-bool raycastAll(const carb::Float3& origin, const carb::Float3& unitDir, float distance, RaycastHitReportFn reportFn, bool bothSides)
+bool raycastAll(AttachHandle attach, const carb::Float3& origin, const carb::Float3& unitDir, float distance, RaycastHitReportFn reportFn, bool bothSides)
 {
-    const InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
-    const PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return 0;
 
-    if (physxSetup.getPhysXScenes().empty())
+    const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach);
+    if (!attachedStage)
+        return false;
+    const InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
+
+    if (attachedStage->getPhysXScenes().empty())
     {
         CARB_LOG_WARN_ONCE("Physx scene queries can only be performed during simulation.");
         return false;
@@ -654,7 +719,7 @@ bool raycastAll(const carb::Float3& origin, const carb::Float3& unitDir, float d
     const PxU32 hitBufferSize = 256;
     PxRaycastHit hitBuffer[hitBufferSize];
     RaycastCallback cb(hitBuffer, hitBufferSize, reportFn, db);
-    for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+    for (AttachedStage::SceneMap::const_reference ref : attachedStage->getPhysXScenes())
     {
         const PxScene* scene = ref.second->getScene();
         if (!scene)
@@ -668,9 +733,9 @@ struct SceneQueryFilterCallbackIgnorePrim : PxQueryFilterCallback
 {
     SceneQueryFilterCallbackIgnorePrim() {};
 
-    SceneQueryFilterCallbackIgnorePrim(omni::physics::parse::ObjectKey primKey, bool bMultiple=false) : bMultiple(bMultiple)
+    SceneQueryFilterCallbackIgnorePrim(const AttachedStage& attachedStage, omni::physics::parse::ObjectKey primKey, bool bMultiple=false) : bMultiple(bMultiple)
     {
-        shapePrim = (PxShape *)(getPhysXPtr(primKey, ePTShape));
+        shapePrim = (PxShape *)(getObjectDataOrID<ObjectDataQueryType::ePHYSX_PTR>(primKey, ePTShape, attachedStage.getInternalPhysXDatabase(), attachedStage));
     }
 
     virtual ::physx::PxQueryHitType::Enum preFilter(const ::physx::PxFilterData& filterData0,
@@ -695,16 +760,18 @@ struct SceneQueryFilterCallbackIgnorePrim : PxQueryFilterCallback
         return (bMultiple ? ::physx::PxQueryHitType::eTOUCH : ::physx::PxQueryHitType::eBLOCK);
     }
 
-    const ::physx::PxShape* shapePrim;
-    bool bMultiple;
+    const ::physx::PxShape* shapePrim = nullptr;
+    bool bMultiple = false;
 };
 
-static bool sweepInternalClosest(const PxGeometry& geom, const PxTransform& transform, const carb::Float3& unitDir, float distance, SweepHit& outHit, bool bothSides, omni::physics::parse::ObjectKey primSelf = {})
+static bool sweepInternalClosest(AttachHandle attach, const PxGeometry& geom, const PxTransform& transform, const carb::Float3& unitDir, float distance, SweepHit& outHit, bool bothSides, omni::physics::parse::ObjectKey primSelf = {})
 {
-    const InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
-    const PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
+    const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach);
+    if (!attachedStage)
+        return false;
+    const InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
 
-    if (physxSetup.getPhysXScenes().empty())
+    if (attachedStage->getPhysXScenes().empty())
     {
         CARB_LOG_WARN_ONCE("Physx scene queries can only be performed during simulation.");
         return false;
@@ -723,10 +790,10 @@ static bool sweepInternalClosest(const PxGeometry& geom, const PxTransform& tran
     PxSceneQueryFilterData filterData;
     if (primSelf.valid())
     {
-        filter = SceneQueryFilterCallbackIgnorePrim(primSelf);
+        filter = SceneQueryFilterCallbackIgnorePrim(*attachedStage, primSelf);
         filterData.flags |= PxQueryFlag::ePREFILTER;
     }
-    for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+    for (AttachedStage::SceneMap::const_reference ref : attachedStage->getPhysXScenes())
     {
         PxSweepHit localHit;
         const PxScene* scene = ref.second->getScene();
@@ -768,9 +835,7 @@ static bool sweepInternalClosest(const PxGeometry& geom, const PxTransform& tran
         FaceIndexResolve indexResolve(hit.shape);
         outHit.faceIndex = indexResolve.resolveFaceIndex(hit.faceIndex);
 
-        PxBaseMaterial* baseMaterial = hit.shape->getMaterialFromInternalFaceIndex(hit.faceIndex);
-        PX_ASSERT(!baseMaterial || baseMaterial->getConcreteType() == PxConcreteType::eMATERIAL);
-        const PxMaterial* material = (baseMaterial != nullptr) ? baseMaterial->is<PxMaterial>() : nullptr;
+        const PxMaterial* material = resolveSceneQueryMaterial(*hit.shape, hit.faceIndex);
 
         if (material && material->userData)
         {
@@ -786,51 +851,69 @@ static bool sweepInternalClosest(const PxGeometry& geom, const PxTransform& tran
     return ret;
 }
 
-bool sweepSphereClosest(float radius, const carb::Float3& origin, const carb::Float3& unitDir, float distance, SweepHit& outHit, bool bothSides)
+bool sweepSphereClosest(AttachHandle attach, float radius, const carb::Float3& origin, const carb::Float3& unitDir, float distance, SweepHit& outHit, bool bothSides)
 {
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return 0;
+
     geometrySceneQueryFn sweepFn = [&](const PxGeometry &geom, const PxTransform &transform) {
-        return sweepInternalClosest(geom, transform, unitDir, distance, outHit, bothSides);
+        return sweepInternalClosest(attach, geom, transform, unitDir, distance, outHit, bothSides);
     };
 
     return doSphereSceneQuery(radius, origin, sweepFn);
 }
 
-bool sweepBoxClosest(const carb::Float3& halfExtent, const carb::Float3& pos, const carb::Float4& rot, const carb::Float3& unitDir, float distance, SweepHit& outHit, bool bothSides)
+bool sweepBoxClosest(AttachHandle attach, const carb::Float3& halfExtent, const carb::Float3& pos, const carb::Float4& rot, const carb::Float3& unitDir, float distance, SweepHit& outHit, bool bothSides)
 {
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return 0;
+
     geometrySceneQueryFn sweepFn = [&](const PxGeometry &geom, const PxTransform &transform) {
-        return sweepInternalClosest(geom, transform, unitDir, distance, outHit, bothSides);
+        return sweepInternalClosest(attach, geom, transform, unitDir, distance, outHit, bothSides);
     };
     
     return doBoxSceneQuery(halfExtent, pos, rot, sweepFn);
 }
 
-bool sweepMeshClosest(omni::physics::parse::ObjectKey meshPrimKey, const carb::Float3& unitDir, float distance, SweepHit& outHit, bool bothSides)
+bool sweepMeshClosest(AttachHandle attach, omni::physics::parse::ObjectKey meshPrimKey, const carb::Float3& unitDir, float distance, SweepHit& outHit, bool bothSides)
 {
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return 0;
+
     geometrySceneQueryFn sweepFn = [&](const PxGeometry &geom, const PxTransform &transform) {
-        return sweepInternalClosest(geom, transform, unitDir, distance, outHit, bothSides, meshPrimKey);
+        return sweepInternalClosest(attach, geom, transform, unitDir, distance, outHit, bothSides, meshPrimKey);
     };
 
-    return doMeshSceneQuery(meshPrimKey, sweepFn);
+    return doMeshSceneQuery(attach, meshPrimKey, sweepFn);
 }
 
-bool sweepShapeClosest(omni::physics::parse::ObjectKey rPrimPath, const carb::Float3& unitDir, float distance, SweepHit& outHit, bool bothSides)
+bool sweepShapeClosest(AttachHandle attach, omni::physics::parse::ObjectKey rPrimPath, const carb::Float3& unitDir, float distance, SweepHit& outHit, bool bothSides)
 {
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return 0;
+
     geometrySceneQueryFn sweepFn = [&](const PxGeometry &geom, const PxTransform &transform) {
-        return sweepInternalClosest(geom, transform, unitDir, distance, outHit, bothSides, rPrimPath);
+        return sweepInternalClosest(attach, geom, transform, unitDir, distance, outHit, bothSides, rPrimPath);
     };
 
-    return doShapeSceneQuery(rPrimPath, sweepFn);
+    return doShapeSceneQuery(attach, rPrimPath, sweepFn);
 }
 
-static bool sweepAnyInternal(const PxGeometry& geom, const PxTransform& transform,
+static bool sweepAnyInternal(AttachHandle attach, const PxGeometry& geom, const PxTransform& transform,
                         const carb::Float3& unitDir,
                         float distance,
                         bool bothSides, omni::physics::parse::ObjectKey primSelf = {})
 {
-    const InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
-    const PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
+    const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach);
+    if (!attachedStage)
+        return false;
+    const InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
 
-    if (physxSetup.getPhysXScenes().empty())
+    if (attachedStage->getPhysXScenes().empty())
     {
         CARB_LOG_WARN_ONCE("Physx scene queries can only be performed during simulation.");
         return false;
@@ -848,11 +931,11 @@ static bool sweepAnyInternal(const PxGeometry& geom, const PxTransform& transfor
     SceneQueryFilterCallbackIgnorePrim filter;
     if (primSelf.valid())
     {
-        filter = SceneQueryFilterCallbackIgnorePrim(primSelf);
+        filter = SceneQueryFilterCallbackIgnorePrim(*attachedStage, primSelf);
         fdAny.flags |= PxQueryFlag::ePREFILTER;
     }        
     PxSweepBuffer buf;
-    for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+    for (AttachedStage::SceneMap::const_reference ref : attachedStage->getPhysXScenes())
     {
         const PxScene* scene = ref.second->getScene();
         if (!scene)
@@ -866,44 +949,60 @@ static bool sweepAnyInternal(const PxGeometry& geom, const PxTransform& transfor
     return false;
 }
 
-bool sweepSphereAny(float radius,
+bool sweepSphereAny(AttachHandle attach, float radius,
                         const carb::Float3& origin,
                         const carb::Float3& unitDir,
                         float distance,
                         bool bothSides)
 {
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return 0;
+
     geometrySceneQueryFn sweepFn = [&](const PxGeometry &geom, const PxTransform &transform) {
-        return sweepAnyInternal(geom, transform, unitDir, distance, bothSides);
+        return sweepAnyInternal(attach, geom, transform, unitDir, distance, bothSides);
     };
 
     return doSphereSceneQuery(radius, origin, sweepFn);
 }
 
-bool sweepBoxAny(const carb::Float3& halfExtent, const carb::Float3& pos, const carb::Float4& rot, const carb::Float3& unitDir, float distance, bool bothSides)
+bool sweepBoxAny(AttachHandle attach, const carb::Float3& halfExtent, const carb::Float3& pos, const carb::Float4& rot, const carb::Float3& unitDir, float distance, bool bothSides)
 {
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return 0;
+
     geometrySceneQueryFn sweepFn = [&](const PxGeometry &geom, const PxTransform &transform) {
-        return sweepAnyInternal(geom, transform, unitDir, distance, bothSides);
+        return sweepAnyInternal(attach, geom, transform, unitDir, distance, bothSides);
     };
 
     return doBoxSceneQuery(halfExtent, pos, rot, sweepFn);
 }
 
-bool sweepMeshAny(omni::physics::parse::ObjectKey meshPrimKey, const carb::Float3& unitDir, float distance, bool bothSides)
+bool sweepMeshAny(AttachHandle attach, omni::physics::parse::ObjectKey meshPrimKey, const carb::Float3& unitDir, float distance, bool bothSides)
 {
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return 0;
+
     geometrySceneQueryFn sweepFn = [&](const PxGeometry &geom, const PxTransform &transform) {
-        return sweepAnyInternal(geom, transform, unitDir, distance, bothSides, meshPrimKey);
+        return sweepAnyInternal(attach, geom, transform, unitDir, distance, bothSides, meshPrimKey);
     };
 
-    return doMeshSceneQuery(meshPrimKey, sweepFn);
+    return doMeshSceneQuery(attach, meshPrimKey, sweepFn);
 }
 
-bool sweepShapeAny(omni::physics::parse::ObjectKey rPrimPath, const carb::Float3& unitDir, float distance, bool bothSides)
+bool sweepShapeAny(AttachHandle attach, omni::physics::parse::ObjectKey rPrimPath, const carb::Float3& unitDir, float distance, bool bothSides)
 {
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return 0;
+
     geometrySceneQueryFn sweepFn = [&](const PxGeometry &geom, const PxTransform &transform) {
-        return sweepAnyInternal(geom, transform, unitDir, distance, bothSides, rPrimPath);
+        return sweepAnyInternal(attach, geom, transform, unitDir, distance, bothSides, rPrimPath);
     };
 
-    return doShapeSceneQuery(rPrimPath, sweepFn);
+    return doShapeSceneQuery(attach, rPrimPath, sweepFn);
 }
 
 struct SweepCallback : PxSweepCallback
@@ -933,12 +1032,14 @@ struct SweepCallback : PxSweepCallback
 };
 
 
-bool sweepAllInternal(const PxGeometry& geom, const PxTransform& transform, const carb::Float3& unitDir, float distance, SweepHitReportFn reportFn, bool bothSides, omni::physics::parse::ObjectKey primSelf = {})
+bool sweepAllInternal(AttachHandle attach, const PxGeometry& geom, const PxTransform& transform, const carb::Float3& unitDir, float distance, SweepHitReportFn reportFn, bool bothSides, omni::physics::parse::ObjectKey primSelf = {})
 {
-    const InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
-    const PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
+    const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach);
+    if (!attachedStage)
+        return false;
+    const InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
 
-    if (physxSetup.getPhysXScenes().empty())
+    if (attachedStage->getPhysXScenes().empty())
     {
         CARB_LOG_WARN_ONCE("Physx scene queries can only be performed during simulation.");
         return false;
@@ -958,10 +1059,10 @@ bool sweepAllInternal(const PxGeometry& geom, const PxTransform& transform, cons
     PxSceneQueryFilterData filterData;
     if (primSelf.valid())
     {
-        filter = SceneQueryFilterCallbackIgnorePrim(primSelf, true);
+        filter = SceneQueryFilterCallbackIgnorePrim(*attachedStage, primSelf, true);
         filterData.flags |= PxQueryFlag::ePREFILTER;
     }
-    for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+    for (AttachedStage::SceneMap::const_reference ref : attachedStage->getPhysXScenes())
     {
         const PxScene* scene = ref.second->getScene();
         if (!scene)
@@ -971,40 +1072,56 @@ bool sweepAllInternal(const PxGeometry& geom, const PxTransform& transform, cons
     return cb.numHits ? true : false;
 }
 
-bool sweepSphereAll(float radius, const carb::Float3& origin, const carb::Float3& unitDir, float distance, SweepHitReportFn reportFn, bool bothSides)
+bool sweepSphereAll(AttachHandle attach, float radius, const carb::Float3& origin, const carb::Float3& unitDir, float distance, SweepHitReportFn reportFn, bool bothSides)
 {
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return 0;
+
     geometrySceneQueryFn sweepFn = [&](const PxGeometry &geom, const PxTransform &transform) {
-        return sweepAllInternal(geom, transform, unitDir, distance, reportFn, bothSides);
+        return sweepAllInternal(attach, geom, transform, unitDir, distance, reportFn, bothSides);
     };
 
     return doSphereSceneQuery(radius, origin, sweepFn);
 }
 
-bool sweepBoxAll(const carb::Float3& halfExtent, const carb::Float3& pos, const carb::Float4& rot, const carb::Float3& unitDir, float distance, SweepHitReportFn reportFn, bool bothSides)
+bool sweepBoxAll(AttachHandle attach, const carb::Float3& halfExtent, const carb::Float3& pos, const carb::Float4& rot, const carb::Float3& unitDir, float distance, SweepHitReportFn reportFn, bool bothSides)
 {
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return 0;
+
     geometrySceneQueryFn sweepFn = [&](const PxGeometry &geom, const PxTransform &transform) {
-        return sweepAllInternal(geom, transform, unitDir, distance, reportFn, bothSides);
+        return sweepAllInternal(attach, geom, transform, unitDir, distance, reportFn, bothSides);
     };
 
     return doBoxSceneQuery(halfExtent, pos, rot, sweepFn);
 }
 
-bool sweepMeshAll(omni::physics::parse::ObjectKey meshPrimKey, const carb::Float3& unitDir, float distance, SweepHitReportFn reportFn, bool bothSides)
+bool sweepMeshAll(AttachHandle attach, omni::physics::parse::ObjectKey meshPrimKey, const carb::Float3& unitDir, float distance, SweepHitReportFn reportFn, bool bothSides)
 {
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return 0;
+
     geometrySceneQueryFn sweepFn = [&](const PxGeometry &geom, const PxTransform &transform) {
-        return sweepAllInternal(geom, transform, unitDir, distance, reportFn, bothSides, meshPrimKey);
+        return sweepAllInternal(attach, geom, transform, unitDir, distance, reportFn, bothSides, meshPrimKey);
     };
 
-    return doMeshSceneQuery(meshPrimKey, sweepFn);
+    return doMeshSceneQuery(attach, meshPrimKey, sweepFn);
 }
 
-bool sweepShapeAll(omni::physics::parse::ObjectKey rPrimPath, const carb::Float3& unitDir, float distance, SweepHitReportFn reportFn, bool bothSides)
+bool sweepShapeAll(AttachHandle attach, omni::physics::parse::ObjectKey rPrimPath, const carb::Float3& unitDir, float distance, SweepHitReportFn reportFn, bool bothSides)
 {
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return 0;
+
     geometrySceneQueryFn sweepFn = [&](const PxGeometry &geom, const PxTransform &transform) {
-        return sweepAllInternal(geom, transform, unitDir, distance, reportFn, bothSides, rPrimPath);
+        return sweepAllInternal(attach, geom, transform, unitDir, distance, reportFn, bothSides, rPrimPath);
     };
 
-    return doShapeSceneQuery(rPrimPath, sweepFn);
+    return doShapeSceneQuery(attach, rPrimPath, sweepFn);
 }
 
 static bool reportOverlapHit(const PxOverlapHit& hit, const OverlapHitReportFn& reportFn, const InternalPhysXDatabase& db)
@@ -1029,6 +1146,7 @@ static bool reportOverlapHit(const PxOverlapHit& hit, const OverlapHitReportFn& 
         queryHit.rigidBody = omni::physics::parse::ObjectKey{};
         queryHit.protoIndex = 0xFFFFFFFF;
     }
+    RuntimeCallbackScope callbackScope;
     return reportFn(queryHit);
 }
 
@@ -1058,12 +1176,14 @@ struct OverlapCallback : PxOverlapCallback
     uint32_t numHits;
 };
 
-static uint32_t overlapInternal(const PxGeometry& geometry, const PxTransform& transform, const OverlapHitReportFn& reportFn, bool anyHit)
+static uint32_t overlapInternal(AttachHandle attach, const PxGeometry& geometry, const PxTransform& transform, const OverlapHitReportFn& reportFn, bool anyHit)
 {
-    const InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
-    const PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
+    const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach);
+    if (!attachedStage)
+        return 0;
+    const InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
 
-    if (physxSetup.getPhysXScenes().empty())
+    if (attachedStage->getPhysXScenes().empty())
     {
         CARB_LOG_WARN_ONCE("Physx scene queries can only be performed during simulation.");
         return 0;
@@ -1075,7 +1195,7 @@ static uint32_t overlapInternal(const PxGeometry& geometry, const PxTransform& t
     {
         queryFilterData.flags |= (PxQueryFlag::eANY_HIT | PxQueryFlag::eNO_BLOCK);
         PxOverlapBuffer buf;
-        for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+        for (AttachedStage::SceneMap::const_reference ref : attachedStage->getPhysXScenes())
         {
             const PxScene* scene = ref.second->getScene();
             if (!scene)
@@ -1091,7 +1211,7 @@ static uint32_t overlapInternal(const PxGeometry& geometry, const PxTransform& t
         const PxU32 hitBufferSize = 256;
         PxOverlapHit hitBuffer[hitBufferSize];
         OverlapCallback cb(hitBuffer, hitBufferSize, reportFn, db);
-        for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+        for (AttachedStage::SceneMap::const_reference ref : attachedStage->getPhysXScenes())
         {
             const PxScene* scene = ref.second->getScene();
             if (!scene)
@@ -1104,11 +1224,15 @@ static uint32_t overlapInternal(const PxGeometry& geometry, const PxTransform& t
     return numHits;
 }
 
-uint32_t overlapSphere(float radius, const carb::Float3& pos, OverlapHitReportFn reportFn, bool anyHit)
+uint32_t overlapSphere(AttachHandle attach, float radius, const carb::Float3& pos, OverlapHitReportFn reportFn, bool anyHit)
 {
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return 0;
+
     uint32_t result = 0;    
     geometrySceneQueryFn overlapFn = [&](const PxGeometry &geom, const PxTransform &transform) {
-        result = overlapInternal(geom, transform, reportFn, anyHit);
+        result = overlapInternal(attach, geom, transform, reportFn, anyHit);
         return (result > 0);
     };
 
@@ -1120,16 +1244,20 @@ uint32_t overlapSphere(float radius, const carb::Float3& pos, OverlapHitReportFn
     return result;
 }
 
-bool overlapSphereAny(float radius, const carb::Float3& pos)
+bool overlapSphereAny(AttachHandle attach, float radius, const carb::Float3& pos)
 {
-    return overlapSphere(radius, pos, nullptr, true);
+    return overlapSphere(attach, radius, pos, nullptr, true);
 }
 
-uint32_t overlapBox(const carb::Float3& halfExtent, const carb::Float3& pos, const carb::Float4& rot, OverlapHitReportFn reportFn, bool anyHit)
+uint32_t overlapBox(AttachHandle attach, const carb::Float3& halfExtent, const carb::Float3& pos, const carb::Float4& rot, OverlapHitReportFn reportFn, bool anyHit)
 {
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return 0;
+
     uint32_t result = 0;
     geometrySceneQueryFn overlapFn = [&](const PxGeometry &geom, const PxTransform &transform) {
-        result = overlapInternal(geom, transform, reportFn, anyHit);
+        result = overlapInternal(attach, geom, transform, reportFn, anyHit);
         return (result > 0);
     };
 
@@ -1141,22 +1269,26 @@ uint32_t overlapBox(const carb::Float3& halfExtent, const carb::Float3& pos, con
     return result;
 }
 
-bool overlapBoxAny(const carb::Float3& halfExtent,
+bool overlapBoxAny(AttachHandle attach, const carb::Float3& halfExtent,
                     const carb::Float3& pos,
                     const carb::Float4& rot)
 {
-    return overlapBox(halfExtent, pos, rot, nullptr, true);
+    return overlapBox(attach, halfExtent, pos, rot, nullptr, true);
 }
 
-uint32_t overlapMesh(omni::physics::parse::ObjectKey meshPrimKey, OverlapHitReportFn reportFn, bool anyHit)
+uint32_t overlapMesh(AttachHandle attach, omni::physics::parse::ObjectKey meshPrimKey, OverlapHitReportFn reportFn, bool anyHit)
 {
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return 0;
+
     uint32_t result = 0;
     geometrySceneQueryFn overlapFn = [&](const PxGeometry &geom, const PxTransform &transform) {
-        result = overlapInternal(geom, transform, reportFn, anyHit);
+        result = overlapInternal(attach, geom, transform, reportFn, anyHit);
         return (result > 0);
     };
 
-    if(!doMeshSceneQuery(meshPrimKey, overlapFn))
+    if(!doMeshSceneQuery(attach, meshPrimKey, overlapFn))
     {
         return 0;
     };
@@ -1164,20 +1296,24 @@ uint32_t overlapMesh(omni::physics::parse::ObjectKey meshPrimKey, OverlapHitRepo
     return result;
 }
 
-bool overlapMeshAny(omni::physics::parse::ObjectKey meshPrimKey)
+bool overlapMeshAny(AttachHandle attach, omni::physics::parse::ObjectKey meshPrimKey)
 {
-    return overlapMesh(meshPrimKey, nullptr, true);
+    return overlapMesh(attach, meshPrimKey, nullptr, true);
 }
 
-uint32_t overlapShape(omni::physics::parse::ObjectKey rPrimPath, OverlapHitReportFn reportFn, bool anyHit)
+uint32_t overlapShape(AttachHandle attach, omni::physics::parse::ObjectKey rPrimPath, OverlapHitReportFn reportFn, bool anyHit)
 {
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return 0;
+
     uint32_t result = 0;
     geometrySceneQueryFn overlapFn = [&](const PxGeometry &geom, const PxTransform &transform) {
-        result = overlapInternal(geom, transform, reportFn, anyHit);
+        result = overlapInternal(attach, geom, transform, reportFn, anyHit);
         return (result > 0);
     };
 
-    if(!doShapeSceneQuery(rPrimPath, overlapFn))
+    if(!doShapeSceneQuery(attach, rPrimPath, overlapFn))
     {
         return 0;
     };
@@ -1185,14 +1321,15 @@ uint32_t overlapShape(omni::physics::parse::ObjectKey rPrimPath, OverlapHitRepor
     return result;
 }
 
-bool overlapShapeAny(omni::physics::parse::ObjectKey rPrimPath)
+bool overlapShapeAny(AttachHandle attach, omni::physics::parse::ObjectKey rPrimPath)
 {
-    return overlapShape(rPrimPath, nullptr, true);
+    return overlapShape(attach, rPrimPath, nullptr, true);
 }
 
 void reportCollisionShape(omni::physics::parse::ObjectKey key, const PxRigidActor& actor, const PxShape& shape,
     ICollisionShapeQueryCallback& reportCallback, const InternalPhysXDatabase& db)
 {
+    RuntimeCallbackScope callbackScope;
     const PxTransform globalPose = actor.getGlobalPose() * shape.getLocalPose();
     const PxGeometry& geom = shape.getGeometry();
     switch (geom.getType())
@@ -1410,17 +1547,19 @@ static bool reportSharedShapeActors(const AttachedStage& attachedStage,
     return actorFound;
 }
 
-uint32_t reportCollisionShapes(omni::physics::parse::ObjectKey rootKey, ICollisionShapeQueryCallback& reportCallback)
+uint32_t reportCollisionShapes(AttachHandle attach, omni::physics::parse::ObjectKey rootKey, ICollisionShapeQueryCallback& reportCallback)
 {
-    const InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
-    const PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return 0;
+
+    const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach);
+    if (!attachedStage)
+        return 0;
+    const InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
 
     uint32_t numShapes = 0;
-    if (physxSetup.getPhysXScenes().empty())
-        return numShapes;
-
-    AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
-    if (!attachedStage)
+    if (attachedStage->getPhysXScenes().empty())
         return numShapes;
 
     const omni::physics::parse::IPhysicsSource* source = attachedStage->getSource();

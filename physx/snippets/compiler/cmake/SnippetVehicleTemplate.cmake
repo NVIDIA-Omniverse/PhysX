@@ -63,7 +63,7 @@ SET_TARGET_PROPERTIES(Snippet${SNIPPET_NAME} PROPERTIES
 )
 
 TARGET_LINK_LIBRARIES(Snippet${SNIPPET_NAME} 
-	PUBLIC PhysXExtensions PhysXPvdSDK PhysX PhysXVehicle PhysXCharacterKinematic PhysXCooking PhysXCommon PhysXFoundation SnippetUtils 
+	PUBLIC PhysXExtensions PhysXPvdSDK PhysX PhysXVehicle PhysXCharacterKinematic PhysXCommon PhysXFoundation SnippetUtils 
 	PUBLIC ${SNIPPET_PLATFORM_LINKED_LIBS})
 
 IF(CUSTOM_SNIPPET_TARGET_PROPERTIES)

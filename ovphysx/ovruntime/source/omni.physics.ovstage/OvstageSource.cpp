@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PARSE-MASS-004
+ * @covers AC-1 AC-2 AC-3 AC-4
+ */
+
+/**
  * @implements REQ-PARSE-SUBTREE-001
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6
  */
@@ -9,12 +14,17 @@
 /**
  * @implements REQ-PARSE-BODY-003
  * @covers AC-3
+ */
+
+/**
+ * @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-6 AC-7
  *
  * @implements REQ-PARSE-CORE-003
  * @covers AC-6 AC-7 AC-8 AC-9 AC-10 AC-11 AC-12 AC-13 AC-15 AC-16
  *
  * @implements REQ-PARSE-SCAN-001
- * @covers AC-14 AC-16 AC-18
+ * @covers AC-14 AC-16 AC-18 AC-20
  *
  * @implements REQ-PARSE-MAT-001
  * @covers AC-5 AC-6 AC-7
@@ -23,7 +33,7 @@
  * @covers AC-1 AC-2
  *
  * @implements REQ-PARSE-COL-005
- * @covers AC-1 AC-2 AC-3 AC-4
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5
  *
  * @implements REQ-PARSE-SHAPE-005
  * @covers AC-1 AC-2
@@ -44,7 +54,7 @@
  * @covers AC-1 AC-2 AC-3
  *
  * @implements REQ-PARSE-FEED-003
- * @covers AC-6 AC-7 AC-8 AC-9 AC-10 AC-11 AC-12 AC-13 AC-14
+ * @covers AC-6 AC-7 AC-8 AC-9 AC-10 AC-11 AC-12 AC-13 AC-14 AC-15 AC-17
  *
  * @implements REQ-LOAD-TOKENS-001
  * @covers AC-5
@@ -52,12 +62,15 @@
 
 #include "OvstageSource.h"
 #include "ReadColumn.h"
+#include <omni/physics/parse/DescriptorPipelineStats.h>
+#include <cstdio>
 
 
 #include "OvstageChangeFeed.h"
 
-#include <omni/physics/parse/KnownTokens.h>
 #include <ovstage/ovstage_population.h>
+
+#include <omni/physics/parse/KnownTokens.h>
 
 #include <common/foundation/MatrixTools.h>
 
@@ -108,6 +121,39 @@ struct OvstageInternTable
 
 namespace
 {
+
+// Coordinator-only wall-time attribution for bulk reads. API time includes
+// waits/fetches; row time is consumer-side binding/cache construction.
+struct SourceReadProfile
+{
+    bool enabled;
+    const char* kind;
+    const char* first;
+    size_t keys, attributes, groups = 0, rows = 0, fallbackColumns = 0;
+    double seconds[6]{}, total = 0;
+    DescriptorPhaseTimer totalTimer, phase;
+    static bool requested()
+    {
+        const char* value = std::getenv("OVRUNTIME_DESCRIPTOR_STATS");
+        return value && std::strcmp(value, "1") == 0;
+    }
+    SourceReadProfile(const char* operation, size_t keyCount, size_t attributeCount, const char* firstAttribute = "-")
+        : enabled(keyCount && attributeCount && requested()), kind(operation), first(firstAttribute),
+          keys(keyCount), attributes(attributeCount), totalTimer(enabled ? &total : nullptr),
+          phase(enabled ? &seconds[0] : nullptr) {}
+    void stage(size_t index) { phase.transition(enabled ? &seconds[index] : nullptr); }
+    void group(size_t count) { if (enabled) { ++groups; rows += count; } }
+    ~SourceReadProfile()
+    {
+        phase.finish();
+        totalTimer.finish();
+        if (enabled)
+            std::fprintf(stderr, "Descriptor source read: kind=%s first=%s keys=%zu attributes=%zu groups=%zu rows=%zu fallback_columns=%zu total=%.6f prepare=%.6f api=%.6f rows_time=%.6f fallback_coverage=%.6f tokens=%.6f finish=%.6f\n",
+                kind, first, keys, attributes, groups, rows, fallbackColumns, total,
+                seconds[0], seconds[1], seconds[2], seconds[3], seconds[4], seconds[5]);
+    }
+};
+
 // gInstanceTables refcounts each live instance pointer via the shared_ptr
 // every referencing OvstageSource holds (see acquireOvstageInternTable):
 // the first OvstageSource built over a given ovstage_instance_t* mints a
@@ -188,6 +234,21 @@ private:
     ovx_primpath_list_t mList = OVX_INVALID_PRIMPATH_LIST;
 };
 
+// Test fault is thread-local and checked only once per coordinator schema stream.
+int& schemaReadFaultCounter()
+{
+    static thread_local int count = 0;
+    return count;
+}
+
+// Coordinator-only injection of a failed scalar bulk read; zero in production.
+int& scalarReadFaultCounter()
+{
+    static thread_local int count = 0;
+    return count;
+}
+
+
 // Test-only fault hook. When > 0, buildChildCache()
 // treats its authoritative usd-path read as NOT having completed cleanly — exactly
 // the observable effect of a transient/partial ovstage read — so the completeness
@@ -265,6 +326,12 @@ std::atomic_size_t& isATypeQueryCounter()
     return counter;
 }
 
+std::atomic_size_t& bucketReadCounter()
+{
+    static std::atomic_size_t count{0};
+    return count;
+}
+
 std::atomic_size_t& schemaPresenceQueryCounter()
 {
     static std::atomic_size_t counter{ 0 };
@@ -284,6 +351,12 @@ std::atomic_size_t& structuralSinglePrimReadCounter()
 // the attribute-column vocabulary; and of live single-prim relationship reads, which the
 // vocabulary gate must spare an unauthored relationship.
 std::atomic_size_t& primTypeIndexBuildCounter()
+{
+    static std::atomic_size_t counter{ 0 };
+    return counter;
+}
+
+std::atomic_size_t& schemaVocabularyBuildCounter()
 {
     static std::atomic_size_t counter{ 0 };
     return counter;
@@ -431,7 +504,10 @@ bool canDecodeAttrValue(const DLTensor& t)
 
 bool canDecodeRelationshipTargets(const DLTensor& t)
 {
-    return t.data && t.dtype.code == kDLUInt && t.dtype.bits == 64;
+    // An authored empty relationship is a valid zero-length tensor. The newer
+    // population can omit its storage; keep that authoritative empty in the cache.
+    return t.dtype.code == kDLUInt && t.dtype.bits == 64 &&
+           (t.data || (t.ndim > 0 && t.shape && totalElements(t) == 0));
 }
 
 bool matrixIsFinite(const double values[16])
@@ -616,6 +692,18 @@ bool attrAsQuaternion(const AttrValue& v, carb::Float4& out)
 // that guards the negative-leaf fast path can be exercised deterministically.
 // Not declared in the public header; test translation
 // units forward-declare it. Pass 0 to disarm.
+void setOvstageSchemaReadFaultForTest(int count)
+{
+    schemaReadFaultCounter() = count;
+}
+
+// Internal test hook; pass zero to disarm.
+void setOvstageScalarReadFaultForTest(int count)
+{
+    scalarReadFaultCounter() = count;
+}
+
+
 void setOvstageAuthoritativeReadFaultForTest(int count)
 {
     authoritativeReadFaultCounter() = count;
@@ -699,6 +787,16 @@ size_t getOvstageIsATypeQueryCountForTest()
     return isATypeQueryCounter().load(std::memory_order_relaxed);
 }
 
+void resetOvstageBucketReadCountForTest()
+{
+    bucketReadCounter().store(0, std::memory_order_relaxed);
+}
+
+size_t getOvstageBucketReadCountForTest()
+{
+    return bucketReadCounter().load(std::memory_order_relaxed);
+}
+
 void resetOvstageSchemaPresenceQueryCountForTest()
 {
     schemaPresenceQueryCounter().store(0, std::memory_order_relaxed);
@@ -727,6 +825,16 @@ void resetOvstagePrimTypeIndexBuildCountForTest()
 size_t getOvstagePrimTypeIndexBuildCountForTest()
 {
     return primTypeIndexBuildCounter().load(std::memory_order_relaxed);
+}
+
+void resetOvstageSchemaVocabularyBuildCountForTest()
+{
+    schemaVocabularyBuildCounter().store(0, std::memory_order_relaxed);
+}
+
+size_t getOvstageSchemaVocabularyBuildCountForTest()
+{
+    return schemaVocabularyBuildCounter().load(std::memory_order_relaxed);
 }
 
 void resetOvstageAttributeVocabularyBuildCountForTest()
@@ -970,6 +1078,10 @@ bool OvstageSource::buildPrototypeRootCache() const
     std::lock_guard<std::recursive_mutex> lock(mMutex);
     if (mPrototypeRootCacheInitialized)
         return mPrototypeRootCacheValid;
+    const char* statsEnv = std::getenv("OVRUNTIME_DESCRIPTOR_STATS");
+    const bool reportStats = statsEnv && std::strcmp(statsEnv, "1") == 0;
+    double totalSeconds = 0, apiSeconds = 0;
+    DescriptorPhaseTimer totalTimer(reportStats ? &totalSeconds : nullptr);
     mPrototypeRootCacheInitialized = true;
     mPrototypeRootCacheValid = false;
     mPrototypeRootPaths.clear();
@@ -986,7 +1098,10 @@ bool OvstageSource::buildPrototypeRootCache() const
     // filtered read. Do not eagerly call get_instance_roots() for every root:
     // each call currently rebuilds the complete instancing graph.
     ScopedPathList prototypeList(instancingDict);
-    if (ovstage_instancing_get_prototype_roots(mInstance, prototypeList.receive()) != OVSTAGE_OK)
+    DescriptorPhaseTimer apiTimer(reportStats ? &apiSeconds : nullptr);
+    const auto prototypeStatus = ovstage_instancing_get_prototype_roots(mInstance, prototypeList.receive());
+    apiTimer.finish();
+    if (prototypeStatus != OVSTAGE_OK)
         return false;
 
     const ovx_primpath_t* prototypeData = nullptr;
@@ -1005,6 +1120,10 @@ bool OvstageSource::buildPrototypeRootCache() const
 
     mPrototypeRootPaths = std::move(prototypeRootPaths);
     mPrototypeRootCacheValid = true;
+    totalTimer.finish();
+    if (reportStats)
+        std::fprintf(stderr, "Descriptor prototype roots: roots=%zu total=%.6f api=%.6f\n",
+            mPrototypeRootPaths.size(), totalSeconds, apiSeconds);
     return true;
 }
 
@@ -1013,6 +1132,12 @@ bool OvstageSource::buildPhysicsInstancingCache() const
     std::lock_guard<std::recursive_mutex> lock(mMutex);
     if (mPhysicsInstancingCacheInitialized)
         return mPhysicsInstancingCacheValid;
+    const char* statsEnv = std::getenv("OVRUNTIME_DESCRIPTOR_STATS");
+    const bool reportStats = statsEnv && std::strcmp(statsEnv, "1") == 0;
+    double totalSeconds = 0, selectionSeconds = 0, childSeconds = 0, querySeconds = 0, mapSeconds = 0;
+    DescriptorPhaseTimer totalTimer(reportStats ? &totalSeconds : nullptr);
+    DescriptorPhaseTimer selectionTimer(reportStats ? &selectionSeconds : nullptr);
+    size_t queryCount = 0, instanceCountTotal = 0;
     mPhysicsInstancingCacheInitialized = true;
     mPhysicsInstancingCacheValid = false;
     mPrototypeRootByInstanceRoot.clear();
@@ -1088,7 +1213,10 @@ bool OvstageSource::buildPhysicsInstancingCache() const
     // Many external colliders (e.g. all instance proxies) would mean one live child
     // query per key below; past this point the whole-stage child cache is cheaper.
     if (externalCollisionKeys.size() > 64)
+    {
+        DescriptorPhaseTimer childTimer(reportStats ? &childSeconds : nullptr);
         buildChildCache();
+    }
 
     if (!externalCollisionKeys.empty())
     {
@@ -1138,6 +1266,8 @@ bool OvstageSource::buildPhysicsInstancingCache() const
     if (!instancingDict)
         return false;
 
+    selectionTimer.finish();
+    DescriptorPhaseTimer mapTimer(reportStats ? &mapSeconds : nullptr);
     std::unordered_map<std::string, std::string> prototypeRootByInstanceRoot;
     for (const std::string& prototypePath : relevantPrototypePaths)
     {
@@ -1147,7 +1277,11 @@ bool OvstageSource::buildPhysicsInstancingCache() const
 
         ScopedPathList instanceList(instancingDict);
         instanceRootQueryCounter().fetch_add(1, std::memory_order_relaxed);
-        if (ovstage_instancing_get_instance_roots(mInstance, prototypeRoot, instanceList.receive()) != OVSTAGE_OK)
+        mapTimer.transition(reportStats ? &querySeconds : nullptr);
+        ++queryCount;
+        const auto instanceStatus = ovstage_instancing_get_instance_roots(mInstance, prototypeRoot, instanceList.receive());
+        mapTimer.transition(reportStats ? &mapSeconds : nullptr);
+        if (instanceStatus != OVSTAGE_OK)
             return false;
 
         const ovx_primpath_t* instanceData = nullptr;
@@ -1155,6 +1289,7 @@ bool OvstageSource::buildPhysicsInstancingCache() const
         if (ovx_path_dictionary_get_paths(instancingDict, instanceList.get(), &instanceData, &instanceCount) != OVX_OK)
             return false;
 
+        instanceCountTotal += instanceCount;
         for (size_t i = 0; i < instanceCount; ++i)
         {
             const std::string instancePath = pathOfRaw(instanceData[i]);
@@ -1166,6 +1301,13 @@ bool OvstageSource::buildPhysicsInstancingCache() const
 
     mPrototypeRootByInstanceRoot = std::move(prototypeRootByInstanceRoot);
     mPhysicsInstancingCacheValid = true;
+    mapTimer.finish();
+    totalTimer.finish();
+    if (reportStats)
+        std::fprintf(stderr, "Descriptor physics instancing: all_roots=%zu selected_roots=%zu external_colliders=%zu complete_expansion=%d queries=%zu instances=%zu total=%.6f selection=%.6f child_cache=%.6f query=%.6f map=%.6f\n",
+            mPrototypeRootPaths.size(), relevantPrototypePaths.size(), externalCollisionKeys.size(),
+            int(needsCompleteExpansion), queryCount, instanceCountTotal, totalSeconds, selectionSeconds,
+            childSeconds, querySeconds, mapSeconds);
     return true;
 }
 
@@ -1363,10 +1505,8 @@ uint64_t OvstageSource::geometryBackingKeyRaw(uint64_t key) const
     auto hasPrimType = [this](uint64_t candidate) -> bool
     {
         TokenId primType{};
-        if (!getAttribute(internKey(candidate), doInternToken(conv::kUsdPrimType), primType))
-            return false;
-        const ovx_string_t untyped = ovstage_population_untyped_type_name();
-        return tokenToString(primType) != std::string_view(untyped.ptr, untyped.length);
+        // OVStage population omits usd-prim-type on typeless prims.
+        return primTypeTokenRaw(candidate, primType);
     };
 
     std::string ancestor = logicalPath;
@@ -1429,7 +1569,7 @@ uint64_t OvstageSource::geometryBackingKeyRaw(uint64_t key) const
             // That tag names the prototype root standing in for the whole
             // subtree, so the empty path remainder lands on a typeless container
             // rather than on geometry backing this gprim. Recognize it by the
-            // missing or reserved untyped name and keep climbing to the enclosing instance root,
+            // missing type column and keep climbing to the enclosing instance root,
             // whose prototype does carry the corresponding child. A leaf gprim
             // that is genuinely its own instance root keeps its type, so it still
             // resolves here.
@@ -1592,6 +1732,9 @@ void OvstageSource::buildChildCache(const std::string& rootPath) const
     std::lock_guard<std::recursive_mutex> lock(mMutex);
     if (mChildCacheBuilt)
         return;
+    const bool reportHierarchy = SourceReadProfile::requested();
+    double hierarchySeconds = 0;
+    DescriptorPhaseTimer hierarchyTimer(reportHierarchy ? &hierarchySeconds : nullptr);
     mChildCache.clear();
     mDescendantCache.clear();
     mChildCacheBuilt = true;
@@ -1756,6 +1899,8 @@ void OvstageSource::buildChildCache(const std::string& rootPath) const
                     if (!canDecodeRelationshipTargets(t))
                         continue;
                     const int64_t n = totalElements(t);
+                    if (n == 0)
+                        continue;
                     const uint8_t* base = static_cast<const uint8_t*>(t.data) + t.byte_offset;
                     const uint64_t* children = reinterpret_cast<const uint64_t*>(base);
                     const uint64_t parent = parentPaths[parentIdx];
@@ -2026,6 +2171,10 @@ void OvstageSource::buildChildCache(const std::string& rootPath) const
         mParentHandleCache[canonicalHandleRaw(findByPathRaw(rootPath))] =
             canonicalHandleRaw(findByPathRaw(parentPath));
     }
+    hierarchyTimer.finish();
+    if (reportHierarchy)
+        std::fprintf(stderr, "Descriptor child cache: parents=%zu paths=%zu total=%.6f\n",
+            mChildCache.size(), allPaths.size(), hierarchySeconds);
 }
 
 void OvstageSource::collectDescendantKeys(ObjectKey root, std::vector<ObjectKey>& out) const
@@ -2627,8 +2776,7 @@ bool OvstageSource::existsBatchChecked(const std::vector<ObjectKey>& keys, std::
                 ovstage_api_status_t fetchErr;
                 while ((fetchErr = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g)) == OVSTAGE_OK)
                 {
-                    if (g.attribute == usdPathProbe && !g.is_delete && g.prims.count != 0 &&
-                        g.data.tensor_count > 0)
+                    if (g.attribute == usdPathProbe && !g.is_delete && g.data.tensor_count > 0 && g.prims.count != 0)
                     {
                         const ovx_primpath_t* paths = nullptr;
                         size_t count = 0;
@@ -2683,11 +2831,21 @@ bool OvstageSource::existsBatchChecked(const std::vector<ObjectKey>& keys, std::
 
 bool OvstageSource::withAttributeTensor(uint64_t key,
                                         std::string_view attrName,
-                                        const std::function<void(const DLTensor&, uint32_t)>& fn) const
+                                        const std::function<void(const DLTensor&, uint32_t)>& fn,
+                                        bool* complete) const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
+    if (complete)
+        *complete = false;
     if (!mInstance || !mDict || !key)
         return false;
+    // Population preserves USD prototype targets per prim. A different prim may
+    // still use the ordinary relationship, even on the same stage. An empty
+    // preserved row is authoritative and must not fall through.
+    if (attrName == "prototypes" &&
+        stageHasAttributeColumn(conv::kUsdPrototypes) != std::optional<bool>(false) &&
+        withAttributeTensor(key, conv::kUsdPrototypes, fn))
+        return true;
     if (attrName == conv::kUsdSchemas || attrName == conv::kUsdPrimType)
         structuralSinglePrimReadCounter().fetch_add(1, std::memory_order_relaxed);
     liveAttributeReadCounter().fetch_add(1, std::memory_order_relaxed);
@@ -2708,7 +2866,7 @@ bool OvstageSource::withAttributeTensor(uint64_t key,
     ovstage_query_handle_t q = OVSTAGE_INVALID_QUERY_HANDLE;
     if (ovstage_query_from_path_list(mInstance, list, &q) == OVSTAGE_OK && q != OVSTAGE_INVALID_QUERY_HANDLE)
     {
-        ovx_token_t attrTok = ovxToken(conv::toOvstageColumn(attrName));
+        ovx_token_t attrTok = ovxToken(attributeColumn(attrName));
         // Read the LATEST value: has_start_ordinal=false means "most recent value
         // with ordinal <= end_ordinal" (end_ordinal at the max), so it always
         // resolves current state. Fabric-only attributes have no ovstage ordinal
@@ -2723,11 +2881,10 @@ bool OvstageSource::withAttributeTensor(uint64_t key,
         const ovstage_enqueue_result_t re = ovstage_read_attributes(mInstance, q, &attrTok, 1, range, &rh);
         if (re.status == OVSTAGE_OK)
         {
-            ovstage_wait_op(mInstance, re.op_index, OVSTAGE_TIMEOUT_INFINITE, nullptr);
-            ovstage_release_op(mInstance, re.op_index);
-
+            const bool waited = waitAndRelease(mInstance, re);
             ovstage_read_group_t g{};
-            while (ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g) == OVSTAGE_OK)
+            ovstage_api_status_t status = OVSTAGE_ERROR_OP_FAILED;
+            while (waited && (status = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g)) == OVSTAGE_OK)
             {
                 // Single-path read: logical row 0 is the requested prim. Guard the row
                 // count before indexing the per-logical-element metadata (an empty match
@@ -2745,7 +2902,8 @@ bool OvstageSource::withAttributeTensor(uint64_t key,
                         // Array columns transport one tensor per logical row; select the
                         // MAPPED tensor (a gathered/deduplicated single-path array can map
                         // row 0 to a tensor other than tensors[0]) and pass it through.
-                        if (logical0 < g.data.tensor_count && g.data.tensors[logical0].data)
+                        if (logical0 < g.data.tensor_count &&
+                            (g.data.tensors[logical0].data || canDecodeRelationshipTargets(g.data.tensors[logical0])))
                         {
                             fn(g.data.tensors[logical0], g.prims.count);
                             got = true;
@@ -2794,6 +2952,8 @@ bool OvstageSource::withAttributeTensor(uint64_t key,
                 }
                 ovstage_release_group(mInstance, &g);
             }
+            if (complete)
+                *complete = status == OVSTAGE_ERROR_END_OF_ITERATION;
             waitAndRelease(mInstance, ovstage_release_read(mInstance, rh));
         }
         waitAndRelease(mInstance, ovstage_release_query(mInstance, q));
@@ -2807,17 +2967,30 @@ bool OvstageSource::withAttributeTensor(uint64_t key,
 
 AttrValue OvstageSource::getAttribute(ObjectKey key, TokenId attr) const
 {
-    return getAttributeAtTimeRaw(rawHandle(key), attr, ReadTime::defaultTime());
+    return getAttributeAtTime(key, attr, ReadTime::defaultTime());
 }
 
 AttrValue OvstageSource::getAttributeAtTime(ObjectKey key, TokenId attr, ReadTime time) const
 {
-    return getAttributeAtTimeRaw(rawHandle(key), attr, time);
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
+    AttrValue value = getAttributeAtTimeRaw(rawHandle(key), attr, time);
+    // Density is a collider value even when its authored row is shared. The load
+    // cache resolves it in bulk; later mass recomputes must resolve it again.
+    // A published value (including zero/default) always wins over the backing.
+    if (!value.valid() && !mLoadCacheActive && tokenToString(attr) == "physics:density")
+    {
+        const ObjectKey backing = collisionAttributeBackingKey(key);
+        if (backing.valid() && backing != key)
+            value = getAttributeAtTimeRaw(rawHandle(backing), attr, time);
+    }
+    return value;
 }
 
-AttrValue OvstageSource::getAttributeAtTimeRaw(uint64_t key, TokenId attr, ReadTime time) const
+AttrValue OvstageSource::getAttributeAtTimeRaw(uint64_t key, TokenId attr, ReadTime time, bool* complete) const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
+    if (complete)
+        *complete = true; // Cached values and covered misses are authoritative.
     const std::string_view name = tokenToString(attr);
     if (name.empty())
         return {};
@@ -2902,7 +3075,6 @@ AttrValue OvstageSource::getAttributeAtTimeRaw(uint64_t key, TokenId attr, ReadT
         };
 
         bool inBucket = false;
-        const bool attrCovered = mBucketAttributeIds.count(attr.id) != 0;
         const uint64_t raw = key;
         if (raw)
         {
@@ -2924,12 +3096,13 @@ AttrValue OvstageSource::getAttributeAtTimeRaw(uint64_t key, TokenId attr, ReadT
                     return *v;
             }
         }
-        if (inBucket && attrCovered && mBucketScalarsComplete)
+        if (inBucket && mBucketScalarsComplete &&
+            std::find(mBucketAttributeIds.begin(), mBucketAttributeIds.end(), attr.id) != mBucketAttributeIds.end())
             return {};
     }
 
     AttrValue out;
-    withAttributeTensor(key, name, [&](const DLTensor& t, uint32_t primCount) { out = decodeScalar(t, primCount); });
+    withAttributeTensor(key, name, [&](const DLTensor& t, uint32_t primCount) { out = decodeScalar(t, primCount); }, complete);
     return out;
 }
 
@@ -2996,7 +3169,7 @@ struct OvstageSource::BucketSnapshot
     bool transformsComplete = true;
     std::unordered_set<uint64_t> keys;
     std::unordered_map<uint64_t, uint32_t> rows;
-    std::unordered_set<uint32_t> attributeIds;
+    std::vector<uint32_t> attributeIds;
     std::unordered_map<uint64_t, std::unordered_map<uint32_t, AttrValue>> scalars;
     std::unordered_map<uint64_t, Matrix4d> worldTransforms;
     std::unordered_map<uint64_t, Matrix4d> localTransforms;
@@ -3054,15 +3227,340 @@ void OvstageSource::resumeBucket(BucketSnapshotPtr snapshot) const
     mBucketReadGroupComps = snapshot->readGroupComps;
 }
 
+OvstageSource::RetainedReadGroups::~RetainedReadGroups()
+{
+    for (ovstage_read_group_t& group : groups)
+        ovstage_release_group(instance, &group);
+}
+
+AttrValue FrozenScalarBatch::read(size_t index, ObjectKey key, TokenId attr, bool& complete) const noexcept
+{
+    if (index >= mRows || !key.valid() || key != mKeys[index] || attr.id >= mColumns.size() || mColumns[attr.id] == UINT32_MAX)
+    {
+        complete = false;
+        return {};
+    }
+    const Reference& value = mValues[index * mStride + mColumns[attr.id]];
+    if (value.tensor) return decodeAt(*value.tensor, value.comps, value.row);
+    if (value.comps == -1) return mFallbacks[value.row];
+    return {};
+}
+
+namespace
+{
+bool isFrozenScalarValue(const AttrValue& value)
+{
+    using K = AttrValue::Kind;
+    return value.kind == K::eBool || value.kind == K::eInt || value.kind == K::eFloat ||
+           value.kind == K::eHalf || value.kind == K::eDouble || value.kind == K::eFloat2 ||
+           value.kind == K::eFloat3 || value.kind == K::eFloat4 || value.kind == K::eToken;
+}
+}
+
+FrozenScalarBatch OvstageSource::freezeScalarBatch(const std::vector<ObjectKey>& keys,
+                                                  const TokenId* attributes, size_t attributeCount) const
+{
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
+    FrozenScalarBatch result;
+    if (keys.empty()) return result;
+    result.mOwner = mLoadCacheGroups;
+    if (attributeCount >= UINT32_MAX) throw std::bad_alloc();
+    result.mKeys = keys;
+    result.mRows = keys.size();
+    result.mStride = attributeCount;
+    if (attributeCount && keys.size() > SIZE_MAX / attributeCount) throw std::bad_alloc();
+    result.mValues.resize(keys.size() * attributeCount);
+    uint32_t largest = 0;
+    for (size_t a = 0; a < attributeCount; ++a)
+    {
+        if (!attributes[a].valid() || attributes[a].id >= mTokenToString.size())
+            throw std::invalid_argument("frozen scalar attribute is outside the source token namespace");
+        largest = std::max(largest, attributes[a].id);
+    }
+    result.mColumns.resize(size_t(largest) + 1, UINT32_MAX);
+    for (size_t a = 0; a < attributeCount; ++a) result.mColumns[attributes[a].id] = uint32_t(a);
+    for (size_t i = 0; i < keys.size(); ++i)
+    {
+        const uint64_t raw = rawHandle(keys[i]);
+        if (!raw) result.mKeys[i] = {};
+        for (size_t a = 0; a < attributeCount; ++a)
+        {
+            auto& ref = result.mValues[i * attributeCount + a];
+            const TokenId attr = attributes[a];
+            const LoadCacheCell* cell = loadCacheCell(raw, attr.id);
+            if (cell && cell->scalar.tensor)
+            {
+                const auto& value = cell->scalar;
+                ref = { value.tensor, value.comps, value.row };
+                continue;
+            }
+            if (!raw || (cell && cell->covered)) continue;
+            // Masks, unsupported columns or an undeclared prefetch are resolved
+            // on the coordinator. Preserve ordinary typed-get miss semantics.
+            const AttrValue value = getAttribute(keys[i], attr);
+            if (isFrozenScalarValue(value))
+            {
+                if (result.mFallbacks.size() >= UINT32_MAX) throw std::bad_alloc();
+                ref.comps = -1;
+                ref.row = uint32_t(result.mFallbacks.size());
+                result.mFallbacks.push_back(value);
+            }
+        }
+    }
+    return result;
+}
+
+FrozenScalarBatch OvstageSource::readScalarBatch(const std::vector<ObjectKey>& keys,
+                                                const TokenId* attributes, size_t attributeCount,
+                                                const TokenId* tokenAttributes, size_t tokenCount) const
+{
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
+    SourceReadProfile profile("direct", keys.size(), attributeCount);
+    bool usedCoveredCache = false;
+    auto acquire = [&]() -> FrozenScalarBatch
+    {
+        // The merged body/shape read may already cover every requested cell,
+        // including resolved instance-proxy values and authoritative absence.
+        bool covered = mLoadCacheActive;
+        for (ObjectKey key : keys)
+        {
+            const uint64_t raw = rawHandle(key);
+            for (size_t a = 0; covered && a < attributeCount; ++a)
+                covered = !raw || loadCacheCovers(raw, attributes[a].id);
+            if (!covered) break;
+        }
+        if (covered)
+        {
+            usedCoveredCache = true;
+            return freezeScalarBatch(keys, attributes, attributeCount);
+        }
+        FrozenScalarBatch result;
+        if (keys.empty()) return result;
+        if (attributeCount >= UINT32_MAX || (attributeCount && keys.size() > SIZE_MAX / attributeCount))
+            throw std::bad_alloc();
+        result.mKeys = keys;
+        result.mRows = keys.size();
+        result.mStride = attributeCount;
+        result.mValues.resize(keys.size() * attributeCount);
+        uint32_t largest = 0;
+        for (size_t a = 0; a < attributeCount; ++a)
+        {
+            if (!attributes[a].valid() || attributes[a].id >= mTokenToString.size())
+                throw std::invalid_argument("frozen scalar attribute is outside the source token namespace");
+            largest = std::max(largest, attributes[a].id);
+        }
+        result.mColumns.resize(size_t(largest) + 1, UINT32_MAX);
+        std::unordered_map<ovx_token_t, std::vector<size_t>> columns;
+        std::vector<ovx_token_t> tokens;
+        for (size_t a = 0; a < attributeCount; ++a)
+        {
+            result.mColumns[attributes[a].id] = uint32_t(a);
+            const ovx_token_t token = ovxToken(attributeColumn(mTokenToString[attributes[a].id]));
+            if (token == OVX_INVALID_TOKEN) continue;
+            auto& aliases = columns[token];
+            if (aliases.empty()) tokens.push_back(token);
+            aliases.push_back(a);
+        }
+        // Resolve handles once for the entire row, including duplicate keys and
+        // canonical aliases. There are no per-attribute cache nodes or coverage rows.
+        struct Binding { size_t row, next; };
+        std::unordered_map<uint64_t, size_t> heads;
+        std::vector<Binding> bindings;
+        std::vector<ovx_primpath_t> paths;
+        heads.reserve(keys.size() * 2);
+        bindings.reserve(keys.size() * 2);
+        paths.reserve(keys.size());
+        auto bind = [&](uint64_t handle, size_t row)
+        {
+            auto inserted = heads.emplace(handle, SIZE_MAX);
+            bindings.push_back({row, inserted.first->second});
+            inserted.first->second = bindings.size() - 1;
+        };
+        for (size_t i = 0; i < keys.size(); ++i)
+        {
+            const uint64_t raw = rawHandle(keys[i]);
+            if (!raw) { result.mKeys[i] = {}; continue; }
+            paths.push_back(raw);
+            bind(raw, i);
+            const uint64_t canonical = canonicalHandleRaw(raw);
+            if (canonical && canonical != raw) bind(canonical, i);
+        }
+        if (paths.empty() || tokens.empty()) return result;
+        auto owner = std::make_shared<RetainedReadGroups>(mInstance);
+        result.mOwner = owner;
+        // Every acquired API resource is released on both success and allocation
+        // failure. Retained groups independently own their tensors after read release.
+        struct ReadScope
+        {
+            ovstage_instance_t* instance;
+            ovx_path_dictionary_t* dict;
+            ovx_primpath_list_t list = OVX_INVALID_PRIMPATH_LIST;
+            ovstage_query_handle_t query = OVSTAGE_INVALID_QUERY_HANDLE;
+            ovstage_read_handle_t read = OVSTAGE_INVALID_READ_HANDLE;
+            ~ReadScope()
+            {
+                if (read != OVSTAGE_INVALID_READ_HANDLE) waitAndRelease(instance, ovstage_release_read(instance, read));
+                if (query != OVSTAGE_INVALID_QUERY_HANDLE) waitAndRelease(instance, ovstage_release_query(instance, query));
+                if (list != OVX_INVALID_PRIMPATH_LIST) ovx_path_dictionary_destroy_path_list(dict, list);
+            }
+        } scope{mInstance, mDict};
+        ReadListMemo listMemo(mDict);
+        std::vector<uint8_t> slow(attributeCount, 0);
+        bool cleanRead = false;
+        profile.stage(1);
+        if (ovx_path_dictionary_create_path_list(mDict, paths.data(), paths.size(), &scope.list) == OVX_OK &&
+            ovstage_query_from_path_list(mInstance, scope.list, &scope.query) == OVSTAGE_OK &&
+            scope.query != OVSTAGE_INVALID_QUERY_HANDLE)
+        {
+            ovstage_ordinal_range_t range{};
+            range.end_ordinal = ~ovstage_ordinal_t(0);
+            const auto enqueue = ovstage_read_attributes(mInstance, scope.query, tokens.data(), tokens.size(), range, &scope.read);
+            if (enqueue.status == OVSTAGE_OK)
+            {
+                const bool readOk = waitAndRelease(mInstance, enqueue);
+                ovstage_read_group_t group{};
+                ovstage_api_status_t status;
+                auto fetch = [&]()
+                {
+                    profile.stage(1);
+                    const auto result = ovstage_fetch_read_next(mInstance, scope.read, OVSTAGE_TIMEOUT_INFINITE, &group);
+                    profile.stage(2);
+                    return result;
+                };
+                while ((status = fetch()) == OVSTAGE_OK)
+                {
+                    profile.group(group.prims.count);
+                    try { owner->groups.push_back(group); }
+                    catch (...) { ovstage_release_group(mInstance, &group); throw; }
+                    const auto column = columns.find(group.attribute);
+                    if (column == columns.end()) continue;
+                    auto markSlow = [&]() { for (size_t a : column->second) slow[a] = 1; };
+                    if (group.is_delete) continue;
+                    if (group.is_array || group.data.mask || !group.data.tensor_count || !group.data.tensors)
+                    { markSlow(); continue; }
+                    const DLTensor& tensor = owner->groups.back().data.tensors[0];
+                    if (!tensor.data || !canDecodeAttrValue(tensor)) { markSlow(); continue; }
+                    const ovx_primpath_t* groupPaths = nullptr;
+                    size_t groupCount = 0;
+                    if (!listMemo.paths(group.prims.list, &groupPaths, &groupCount))
+                    { markSlow(); continue; }
+                    int64_t storedRows = group.prims.count;
+                    if (group.data.index_map)
+                    {
+                        if (tensor.ndim >= 1 && tensor.shape && tensor.shape[0] > 0) storedRows = tensor.shape[0];
+                        else
+                        {
+                            storedRows = 0;
+                            for (uint32_t i = 0; i < group.prims.count; ++i)
+                                storedRows = std::max<int64_t>(storedRows, int64_t(group.data.index_map[i]) + 1);
+                        }
+                    }
+                    const int64_t total = totalElements(tensor);
+                    if (storedRows <= 0 || total < 0 || total % storedRows || total / storedRows < 1 || total / storedRows > 4)
+                    { markSlow(); continue; }
+                    const int64_t comps = total / storedRows;
+                    for (uint32_t i = 0; i < group.prims.count; ++i)
+                    {
+                        const size_t primRow = group.prims.index_map ? group.prims.index_map[i] : size_t(group.prims.offset) + i;
+                        const uint32_t dataRow = group.data.index_map ? group.data.index_map[i] : i;
+                        if (primRow >= groupCount || dataRow >= uint64_t(storedRows)) { markSlow(); continue; }
+                        auto head = heads.find(groupPaths[primRow]);
+                        if (head == heads.end()) head = heads.find(canonicalHandleRaw(groupPaths[primRow]));
+                        if (head == heads.end()) continue;
+                        for (size_t b = head->second; b != SIZE_MAX; b = bindings[b].next)
+                            for (size_t a : column->second)
+                                result.mValues[bindings[b].row * attributeCount + a] = {&tensor, comps, dataRow};
+                    }
+                }
+                cleanRead = readOk && status == OVSTAGE_ERROR_END_OF_ITERATION;
+            }
+        }
+        profile.stage(3);
+        if (scalarReadFaultCounter() > 0) { --scalarReadFaultCounter(); cleanRead = false; }
+        // A failed read or unsupported column must retain ordinary source semantics.
+        // Resolve it here; workers can never call the source or grow fallback storage.
+        for (size_t a = 0; a < attributeCount; ++a)
+        {
+            if (cleanRead && !slow[a]) continue;
+            if (profile.enabled) ++profile.fallbackColumns;
+            for (size_t i = 0; i < keys.size(); ++i)
+            {
+                if (!result.mKeys[i].valid()) continue;
+                auto& ref = result.mValues[i * attributeCount + a];
+                ref = {};
+                const AttrValue value = getAttribute(keys[i], attributes[a]);
+                if (isFrozenScalarValue(value))
+                {
+                    if (result.mFallbacks.size() >= UINT32_MAX) throw std::bad_alloc();
+                    ref = {nullptr, -1, uint32_t(result.mFallbacks.size())};
+                    result.mFallbacks.push_back(value);
+                }
+            }
+        }
+        return result;
+    };
+    FrozenScalarBatch result = acquire();
+    if (result.mKeys.empty()) return result;
+    if (mLoadCacheActive && !usedCoveredCache)
+    {
+        // A partially covered batch still honors resolved overrides from the
+        // load cache. Retain both acquisitions for the immutable worker views.
+        using Owners = std::pair<std::shared_ptr<const void>, std::shared_ptr<const void>>;
+        result.mOwner = std::make_shared<Owners>(result.mOwner, mLoadCacheGroups);
+        for (size_t i = 0; i < keys.size(); ++i)
+        {
+            const uint64_t raw = rawHandle(keys[i]);
+            for (size_t a = 0; a < attributeCount; ++a)
+            {
+                const LoadCacheCell* cell = loadCacheCell(raw, attributes[a].id);
+                if (cell && cell->covered)
+                    result.mValues[i * attributeCount + a] =
+                        {cell->scalar.tensor, cell->scalar.comps, cell->scalar.row};
+            }
+        }
+    }
+    profile.stage(4);
+    // Resolve dictionary-valued columns once on the coordinator. Workers see
+    // source-space TokenIds and never intern strings or touch the dictionary.
+    std::unordered_map<uint64_t, uint32_t> resolvedTokens;
+    for (size_t a = 0; a < tokenCount; ++a)
+    {
+        const TokenId attr = tokenAttributes[a];
+        if (attr.id >= result.mColumns.size() || result.mColumns[attr.id] == UINT32_MAX)
+            throw std::invalid_argument("token column was not declared in the frozen batch");
+        for (size_t i = 0; i < keys.size(); ++i)
+        {
+            bool complete = true;
+            const AttrValue value = result.read(i, keys[i], attr, complete);
+            if (value.kind != AttrValue::Kind::eInt) continue;
+            const uint64_t token = uint64_t(value.i);
+            auto found = resolvedTokens.find(token);
+            if (found == resolvedTokens.end())
+            {
+                AttrValue decoded;
+                ovx_string_t name{};
+                if (ovx_path_dictionary_token_to_string(mDict, token, &name) == OVX_OK && name.ptr && name.length)
+                    decoded = AttrValue::makeToken(doInternToken(std::string_view(name.ptr, name.length)));
+                if (result.mFallbacks.size() >= UINT32_MAX) throw std::bad_alloc();
+                const uint32_t index = uint32_t(result.mFallbacks.size());
+                result.mFallbacks.push_back(decoded);
+                found = resolvedTokens.emplace(token, index).first;
+            }
+            result.mValues[i * attributeCount + result.mColumns[attr.id]] = {nullptr, -1, found->second};
+        }
+    }
+    profile.stage(5);
+    return result;
+}
+
 void OvstageSource::beginLoadCache() const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
-    for (ovstage_read_group_t& group : mLoadCacheGroups)
-        ovstage_release_group(mInstance, &group);
-    mLoadCacheActive = true;
-    mLoadCacheGroups.clear();
+    auto groups = std::make_shared<RetainedReadGroups>(mInstance);
+    mLoadCacheGroups = std::move(groups);
     resetLoadCacheTable();
     mLoadCacheComposedWorld.clear();
+    mLoadCacheActive = true;
 }
 
 void OvstageSource::beginHierarchyBulkRead() const
@@ -3080,10 +3578,8 @@ void OvstageSource::endHierarchyBulkRead() const
 void OvstageSource::clearLoadCache() const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
-    for (ovstage_read_group_t& group : mLoadCacheGroups)
-        ovstage_release_group(mInstance, &group);
     mLoadCacheActive = false;
-    mLoadCacheGroups.clear();
+    mLoadCacheGroups.reset();
     resetLoadCacheTable();
     mLoadCacheComposedWorld.clear();
 }
@@ -3107,6 +3603,7 @@ void OvstageSource::resetLoadCacheTable() const
     if (mLoadCacheAttrCount != 0)
         std::fill(mLoadCacheAttrIndex.begin(), mLoadCacheAttrIndex.end(), kNoLoadCacheIndex);
     mLoadCacheAttrCount = 0;
+    mLoadCacheCompleteRelationships.clear();
 }
 
 uint32_t OvstageSource::loadCachePrimIndexFor(uint64_t raw) const
@@ -3165,13 +3662,22 @@ OvstageSource::LoadCacheCell& OvstageSource::loadCacheCellFor(uint32_t primIndex
 
 const OvstageSource::LoadCacheCell* OvstageSource::loadCacheCell(uint64_t handle, uint32_t attrId) const
 {
+    const LoadCacheCell* cell = nullptr;
     const LoadCachePrim* prim = loadCachePrim(handle);
-    if (!prim || attrId >= mLoadCacheAttrIndex.size())
-        return nullptr;
-    const uint32_t attrIndex = mLoadCacheAttrIndex[attrId];
-    if (attrIndex == kNoLoadCacheIndex || attrIndex >= prim->cells.size())
-        return nullptr;
-    return &prim->cells[attrIndex];
+    if (prim && attrId < mLoadCacheAttrIndex.size())
+    {
+        const uint32_t attrIndex = mLoadCacheAttrIndex[attrId];
+        if (attrIndex != kNoLoadCacheIndex && attrIndex < prim->cells.size())
+            cell = &prim->cells[attrIndex];
+    }
+    if (cell && cell->covered)
+        return cell;
+    if (handle && mLoadCacheCompleteRelationships.count(attrId))
+    {
+        static const LoadCacheCell coveredMiss{{}, nullptr, true};
+        return &coveredMiss;
+    }
+    return cell;
 }
 
 bool OvstageSource::loadCacheCovers(uint64_t handle, uint32_t attrId) const
@@ -3206,6 +3712,69 @@ void OvstageSource::clearKnownKeys() const
     mExistsMemo.clear();
 }
 
+bool OvstageSource::takeDiscoveryFrom(const OvstageSource& scan)
+{
+    if (&scan == this)
+        return false;
+    std::scoped_lock lock(mMutex, scan.mMutex);
+    if (!mInstance || mInstance != scan.mInstance || mDict != scan.mDict ||
+        mInternTable != scan.mInternTable || mReadOrdinal != scan.mReadOrdinal ||
+        mLoadCacheMayBeStale || scan.mLoadCacheMayBeStale ||
+        mLoadCacheActive || scan.mLoadCacheActive || mHierarchyBulkRead || scan.mHierarchyBulkRead)
+        return false;
+
+    bool adopted = false;
+    if (scan.mSchemaVocabularyComplete)
+    {
+        // Remap only the distinct schema names, not the per-prim memberships.
+        // Allocate destination map nodes before moving any donor storage.
+        decltype(mSchemaMembershipCache) exact;
+        decltype(mBaseInstanceMembership) bases;
+        using Members = std::unordered_set<uint64_t>;
+        std::vector<std::pair<Members*, Members*>> transfers;
+        transfers.reserve(scan.mSchemaMembershipCache.size() + scan.mBaseInstanceMembership.size());
+        auto prepare = [&](auto& from, auto& to)
+        {
+            to.reserve(from.size());
+            for (auto& entry : from)
+            {
+                const auto target = to.try_emplace(doInternToken(scan.tokenToString(TokenId{entry.first})).id);
+                transfers.emplace_back(&entry.second, &target.first->second);
+            }
+        };
+        prepare(scan.mSchemaMembershipCache, exact);
+        prepare(scan.mBaseInstanceMembership, bases);
+        for (const auto& transfer : transfers)
+            transfer.first->swap(*transfer.second);
+        clearSchemaCache();
+        mSchemaMembershipCache.swap(exact);
+        mBaseInstanceMembership.swap(bases);
+        mSchemaVocabularyBuilt = true;
+        mSchemaVocabularyComplete = true;
+        scan.clearSchemaCache();
+        adopted = true;
+    }
+    if (scan.mChildCacheBuilt && scan.mChildCacheComplete)
+    {
+        // Raw path handles share the instance's dictionary. Keep the donor's
+        // path-string/token storage alive: ScannedStage still resolves descriptors
+        // through that source until consumption finishes.
+        mChildCache = std::move(scan.mChildCache);
+        mParentHandleCache = std::move(scan.mParentHandleCache);
+        mCanonicalHandleCache = std::move(scan.mCanonicalHandleCache);
+        mPathToHandleCache = std::move(scan.mPathToHandleCache);
+        mDescendantCache = std::move(scan.mDescendantCache);
+        mChildCacheBuilt = true;
+        mChildCacheComplete = true;
+        mExistsMemo.clear();
+        scan.mChildCacheBuilt = false;
+        scan.mChildCacheComplete = false;
+        scan.mExistsMemo.clear();
+        adopted = true;
+    }
+    return adopted;
+}
+
 void OvstageSource::clearSchemaCache() const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
@@ -3214,11 +3783,13 @@ void OvstageSource::clearSchemaCache() const
     mSchemaCacheBuilt = false;
     mSchemaCacheComplete = false;
     mSchemaMayExistCache.clear();
+    mExactSchemaPresence.clear();
     mSchemaMembershipCache.clear();
     mSchemasByPrimCache.clear();
     mMultiApplyMembershipCache.clear();
     mMultiApplyInstancesByPrimCache.clear();
     mPrimTypeByRaw.clear();
+    mAuthoredTypeHandles.clear();
     mPrimTypeIndexBuilt = false;
     mPrimTypeIndexComplete = false;
     mPrimTypeIndex.clear();
@@ -3227,6 +3798,8 @@ void OvstageSource::clearSchemaCache() const
     mBaseInstanceMembership.clear();
     mAttributeVocabularyBuilt = false;
     mAttributeVocabulary.clear();
+    mPrefetchPlans.clear();
+    mAuthoredTypeColumnPresent.reset();
 }
 
 void OvstageSource::invalidateAttributeVocabulary() const
@@ -3234,6 +3807,8 @@ void OvstageSource::invalidateAttributeVocabulary() const
     std::lock_guard<std::recursive_mutex> lock(mMutex);
     mAttributeVocabularyBuilt = false;
     mAttributeVocabulary.clear();
+    mPrefetchPlans.clear();
+    mAuthoredTypeColumnPresent.reset();
     // The instance-material cache latched empty on this vocabulary's "no such column" answer;
     // a value-only range can author the column, so the latch goes with the vocabulary.
     mInstanceMaterialCacheBuilt = false;
@@ -3245,6 +3820,43 @@ bool OvstageSource::loadCacheActive() const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
     return mLoadCacheActive;
+}
+
+bool OvstageSource::loadCacheCovers(const std::vector<ObjectKey>& keys,
+                                  const std::vector<std::string>& attrs) const
+{
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
+    if (!mLoadCacheActive || mLoadCacheMayBeStale != 0)
+        return false;
+    // Resolve each handle once. The immutable plan supplies source-local token IDs;
+    // cells and layout indices are always read from the current load window.
+    std::vector<const LoadCachePrim*> prims;
+    prims.reserve(keys.size());
+    for (const ObjectKey key : keys)
+    {
+        const uint64_t raw = rawHandle(key);
+        if (!raw)
+            return false;
+        prims.push_back(loadCachePrim(raw));
+    }
+    if (prims.empty() || attrs.empty())
+        return true;
+    PrefetchPlan temporaryPlan;
+    const PrefetchPlan& plan = prefetchPlan(attrs, temporaryPlan);
+    for (const PrefetchAttribute& attr : plan.attributes)
+    {
+        if (mLoadCacheCompleteRelationships.count(attr.id.id))
+            continue;
+        if (attr.id.id >= mLoadCacheAttrIndex.size())
+            return false;
+        const uint32_t index = mLoadCacheAttrIndex[attr.id.id];
+        if (index == kNoLoadCacheIndex)
+            return false;
+        for (const LoadCachePrim* prim : prims)
+            if (!prim || index >= prim->cells.size() || !prim->cells[index].covered)
+                return false;
+    }
+    return true;
 }
 
 void OvstageSource::resetInstancingCaches() const
@@ -3265,11 +3877,13 @@ void OvstageSource::resetInstancingCaches() const
 bool OvstageSource::applySchemaDelta(const std::vector<SchemaRowDelta>& rows) const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
+    if (!rows.empty())
+        mExactSchemaPresence.clear();
     if (!mInstance || !mDict)
         return false;
     // After a complete whole-stage build every schema has an entry, so a name first seen now
     // needs one too; in memo mode only the entries a consumer already asked for are patched.
-    const bool complete = mSchemaCacheBuilt && mSchemaCacheComplete;
+    const bool complete = (mSchemaCacheBuilt && mSchemaCacheComplete) || mSchemaVocabularyComplete;
     for (const SchemaRowDelta& row : rows)
     {
         if (!row.raw)
@@ -3492,6 +4106,7 @@ void OvstageSource::purgeHandleFromMemos(uint64_t handle) const
     mSchemasByPrimCache.erase(handle);
     mMultiApplyInstancesByPrimCache.erase(handle);
     mPrimTypeByRaw.erase(handle);
+    mAuthoredTypeHandles.erase(handle);
     for (auto& entry : mPrimTypeIndex)
         entry.second.erase(handle);
 }
@@ -3501,6 +4116,7 @@ bool OvstageSource::applyPrimRemoval(const std::vector<ovx_primpath_t>& removedR
     std::lock_guard<std::recursive_mutex> lock(mMutex);
     if (removedRaw.empty())
         return true;
+    mExactSchemaPresence.clear();
     // The cached subtree of a tombstoned prim is known only from a complete hierarchy cache;
     // anything less leaves descendants' memberships behind, so the caller drops instead.
     if (!mInstance || !mDict || !mChildCacheBuilt || !mChildCacheComplete)
@@ -3566,18 +4182,53 @@ bool OvstageSource::applyPrimRemoval(const std::vector<ovx_primpath_t>& removedR
     return true;
 }
 
-bool OvstageSource::applyPrimTypeDelta(const std::vector<PrimTypeRowDelta>& rows) const
+bool OvstageSource::applyPrimTypeDelta(const std::vector<PrimTypeRowDelta>& rows,
+                                      std::unordered_set<uint64_t>* changed) const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
     if (!mInstance || !mDict)
         return false;
+    std::unordered_map<uint64_t, uint64_t> previousTypes;
+    if (changed)
+    {
+        changed->clear();
+        for (const PrimTypeRowDelta& row : rows)
+            for (const uint64_t handle : { row.raw, canonicalHandleRaw(row.raw) })
+            {
+                const auto previous = mPrimTypeByRaw.find(handle);
+                previousTypes.emplace(handle, previous == mPrimTypeByRaw.end() ? 0 : previous->second);
+            }
+    }
     for (const PrimTypeRowDelta& row : rows)
     {
         const uint64_t canonical = canonicalHandleRaw(row.raw);
         if (!row.raw || !canonical)
             return false;
+        // Both columns arrive in the structural batch. Preserve authored precedence
+        // without re-reading each prim, regardless of the groups' delivery order.
+        if (!row.authored && (mAuthoredTypeHandles.count(row.raw) || mAuthoredTypeHandles.count(canonical)))
+            continue;
+        // Resolve only this prim's fallback. A removed override must not discard
+        // unrelated cached types or turn their unchanged population refreshes into resyncs.
+        uint64_t typeToken = row.typeToken;
+        if (row.authored && row.typeToken == 0)
+        {
+            bool complete = false;
+            const AttrValue fallback = getAttributeAtTimeRaw(
+                row.raw, doInternToken(conv::kUsdPrimType), ReadTime::defaultTime(), &complete);
+            if (!complete)
+                return false;
+            if (fallback.kind == AttrValue::Kind::eInt)
+                typeToken = static_cast<uint64_t>(fallback.i);
+            else if (fallback.kind == AttrValue::Kind::eToken)
+                typeToken = ovxToken(tokenToString(fallback.tok));
+        }
         for (const uint64_t handle : { row.raw, canonical })
         {
+            if (row.authored && row.typeToken != 0)
+                mAuthoredTypeHandles.insert(handle);
+            else if (row.authored)
+                mAuthoredTypeHandles.erase(handle);
             // The type index moves the handle: out of its previous type's set (a sweep when the
             // previous type is not memoised), into the new one.
             if (mPrimTypeIndexBuilt)
@@ -3594,16 +4245,56 @@ bool OvstageSource::applyPrimTypeDelta(const std::vector<PrimTypeRowDelta>& rows
                     for (auto& entry : mPrimTypeIndex)
                         entry.second.erase(handle);
                 }
-                if (row.typeToken != 0)
-                    mPrimTypeIndex[row.typeToken].insert(handle);
+                if (typeToken != 0)
+                    mPrimTypeIndex[typeToken].insert(handle);
             }
-            if (row.typeToken == 0)
+            if (typeToken == 0)
                 mPrimTypeByRaw.erase(handle);
             else
-                mPrimTypeByRaw[handle] = row.typeToken;
+                mPrimTypeByRaw[handle] = typeToken;
         }
     }
+    if (changed)
+        for (const auto& previous : previousTypes)
+        {
+            const auto current = mPrimTypeByRaw.find(previous.first);
+            if (!previous.second || current == mPrimTypeByRaw.end() || current->second != previous.second)
+                changed->insert(previous.first);
+        }
     return true;
+}
+
+std::optional<bool> OvstageSource::hasAuthoredTypeColumn() const
+{
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
+    if (mAuthoredTypeColumnPresent.has_value())
+        return *mAuthoredTypeColumnPresent;
+    if (consumeAuthoritativeReadFaultForTest())
+        return std::nullopt;
+    ovstage_predicate_t predicate{};
+    predicate.attribute.string = {conv::kUsdTypeName, sizeof(conv::kUsdTypeName) - 1};
+    predicate.op = OVSTAGE_FILTER_OP_HAS;
+    const ovstage_filter_t filter{&predicate, 1};
+    ovstage_query_handle_t query = OVSTAGE_INVALID_QUERY_HANDLE;
+    if (!waitAndRelease(mInstance, ovstage_query(mInstance, &filter, nullptr, 0, &query)))
+    {
+        if (query != OVSTAGE_INVALID_QUERY_HANDLE)
+            waitAndRelease(mInstance, ovstage_release_query(mInstance, query));
+        return std::nullopt;
+    }
+    ovstage_query_result_t result{};
+    if (ovstage_fetch_query_result(mInstance, query, OVSTAGE_TIMEOUT_INFINITE, &result) == OVSTAGE_OK)
+    {
+        mAuthoredTypeColumnPresent = result.total_prim_count != 0;
+        ovstage_release_query_result(mInstance, &result);
+    }
+    waitAndRelease(mInstance, ovstage_release_query(mInstance, query));
+    return mAuthoredTypeColumnPresent;
+}
+
+std::string_view OvstageSource::attributeColumn(std::string_view name) const
+{
+    return conv::toOvstageColumn(name);
 }
 
 bool OvstageSource::buildPrimTypeIndex() const
@@ -3611,7 +4302,6 @@ bool OvstageSource::buildPrimTypeIndex() const
     std::lock_guard<std::recursive_mutex> lock(mMutex);
     if (mPrimTypeIndexBuilt)
         return mPrimTypeIndexComplete;
-    mPrimTypeIndexBuilt = true;
     mPrimTypeIndexComplete = false;
     mPrimTypeIndex.clear();
     if (!mInstance || !mDict)
@@ -3626,6 +4316,9 @@ bool OvstageSource::buildPrimTypeIndex() const
         {
             if (!handle)
                 continue;
+            const auto previous = typeByHandle.find(handle);
+            if (previous != typeByHandle.end())
+                index[previous->second].erase(handle);
             index[value].insert(handle);
             typeByHandle[handle] = value;
         }
@@ -3633,11 +4326,26 @@ bool OvstageSource::buildPrimTypeIndex() const
     if (!forEachStageTokenValue(conv::kUsdPrimType, add))
         return false;
 
+    const std::optional<bool> authored = hasAuthoredTypeColumn();
+    if (!authored.has_value())
+        return false;
+    std::unordered_set<uint64_t> authoredHandles;
+    auto addAuthored = [&](uint64_t raw, uint64_t canonical, uint64_t value)
+    {
+        add(raw, canonical, value);
+        authoredHandles.insert(raw);
+        if (canonical)
+            authoredHandles.insert(canonical);
+    };
+    if (*authored && !forEachStageTokenValue(conv::kUsdTypeName, addAuthored))
+        return false;
     mPrimTypeIndex = std::move(index);
+    mAuthoredTypeHandles = std::move(authoredHandles);
     // The same rows answer isA()/getTypeName(): no single-prim type read is left to pay.
     for (const auto& entry : typeByHandle)
         mPrimTypeByRaw[entry.first] = entry.second;
     mPrimTypeIndexComplete = true;
+    mPrimTypeIndexBuilt = true;
     return true;
 }
 
@@ -3647,6 +4355,40 @@ bool OvstageSource::collectPrimTypeKeys(std::string_view typeName, std::vector<O
     out.clear();
     if (typeName.empty())
         return true;
+    // Cold negative discovery must not read the type of every render prim merely to
+    // prove a physics family absent. Do not latch this answer: a later ordinal may
+    // introduce the family before any populated query builds the delta-patched index.
+    const std::optional<bool> authored = hasAuthoredTypeColumn();
+    if (!authored.has_value())
+        return false;
+    if (!mPrimTypeIndexBuilt && !*authored)
+    {
+        if (!mInstance || !mDict)
+            return false;
+        const ovx_string_t value{ typeName.data(), typeName.size() };
+        ovstage_predicate_t predicate{};
+        predicate.attribute.string = { conv::kUsdPrimType, std::string_view(conv::kUsdPrimType).size() };
+        predicate.op = OVSTAGE_FILTER_OP_IN;
+        predicate.values = &value;
+        predicate.value_count = 1;
+        const ovstage_filter_t filter{ &predicate, 1 };
+        ovstage_query_handle_t query = OVSTAGE_INVALID_QUERY_HANDLE;
+        const bool complete = waitAndRelease(mInstance, ovstage_query(mInstance, &filter, nullptr, 0, &query));
+        CARB_SCOPE_EXIT
+        {
+            if (query != OVSTAGE_INVALID_QUERY_HANDLE)
+                waitAndRelease(mInstance, ovstage_release_query(mInstance, query));
+        };
+        if (!complete || query == OVSTAGE_INVALID_QUERY_HANDLE)
+            return false;
+        ovstage_query_result_t result{};
+        if (ovstage_fetch_query_result(mInstance, query, OVSTAGE_TIMEOUT_INFINITE, &result) != OVSTAGE_OK)
+            return false;
+        const bool empty = result.total_prim_count == 0;
+        ovstage_release_query_result(mInstance, &result);
+        if (empty)
+            return true;
+    }
     if (!buildPrimTypeIndex())
         return false;
     // Interning a name no prim carries only mints a token nothing is indexed under.
@@ -3680,9 +4422,11 @@ ovstage_ordinal_t OvstageSource::readOrdinal() const
     return mReadOrdinal;
 }
 
-bool OvstageSource::primTypeTokenRaw(uint64_t raw, TokenId& out) const
+bool OvstageSource::primTypeTokenRaw(uint64_t raw, TokenId& out, bool* readComplete) const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
+    if (readComplete)
+        *readComplete = true;
     if (!raw || !mDict)
         return false;
     auto resolve = [&](uint64_t value) -> bool
@@ -3691,7 +4435,12 @@ bool OvstageSource::primTypeTokenRaw(uint64_t raw, TokenId& out) const
         if (ovx_path_dictionary_token_to_string(mDict, static_cast<ovx_token_t>(value), &s) != OVX_OK || !s.ptr ||
             s.length == 0)
             return false;
-        out = doInternToken(std::string_view(s.ptr, s.length));
+        const std::string_view name(s.ptr, s.length);
+        // Renderer proxy types have no USD geometry type of their own.
+        if (!mAuthoredTypeHandles.count(raw) && name.size() >= 8 && name.substr(name.size() - 8) == "Instance" &&
+            hasSchema(internKey(raw), doInternToken("GeomInstanceAPI")))
+            return false;
+        out = doInternToken(name);
         return out.valid();
     };
     const uint64_t canonical = canonicalHandleRaw(raw);
@@ -3703,7 +4452,37 @@ bool OvstageSource::primTypeTokenRaw(uint64_t raw, TokenId& out) const
 
     // Through the load cache / bucket / single-prim read; a type read is memoised (any later
     // type write is a structural row the feed patches in).
-    const AttrValue v = getAttributeAtTimeRaw(raw, doInternToken(conv::kUsdPrimType), ReadTime::defaultTime());
+    AttrValue v;
+    const std::optional<bool> authored = hasAuthoredTypeColumn();
+    if (!authored.has_value())
+    {
+        if (readComplete)
+            *readComplete = false;
+        return false;
+    }
+    bool complete = true;
+    if (*authored)
+        v = getAttributeAtTimeRaw(raw, doInternToken(conv::kUsdTypeName), ReadTime::defaultTime(), &complete);
+    if (!complete)
+    {
+        if (readComplete)
+            *readComplete = false;
+        return false; // A failed authored read cannot establish that the override is absent.
+    }
+    if (v.valid())
+    {
+        mAuthoredTypeHandles.insert(raw);
+        if (canonical)
+            mAuthoredTypeHandles.insert(canonical);
+    }
+    else
+        v = getAttributeAtTimeRaw(raw, doInternToken(conv::kUsdPrimType), ReadTime::defaultTime(), &complete);
+    if (!complete)
+    {
+        if (readComplete)
+            *readComplete = false;
+        return false;
+    }
     if (v.kind == AttrValue::Kind::eInt && v.i != 0 && resolve(static_cast<uint64_t>(v.i)))
     {
         mPrimTypeByRaw[raw] = static_cast<uint64_t>(v.i);
@@ -3713,8 +4492,7 @@ bool OvstageSource::primTypeTokenRaw(uint64_t raw, TokenId& out) const
     }
     if (v.kind == AttrValue::Kind::eToken && v.tok.valid())
     {
-        out = v.tok;
-        return true;
+        return resolve(ovxToken(tokenToString(v.tok)));
     }
     return false;
 }
@@ -3746,15 +4524,18 @@ bool OvstageSource::ensureAttributeVocabulary() const
             {
                 mAttributeVocabulary.clear();
                 mAttributeVocabulary.reserve(qr.attribute_count);
+                bool complete = qr.attribute_count == 0 || qr.attributes != nullptr;
                 for (size_t i = 0; i < qr.attribute_count && qr.attributes; ++i)
                 {
                     ovx_string_t s{};
                     if (ovx_path_dictionary_token_to_string(mDict, qr.attributes[i], &s) == OVX_OK && s.ptr &&
                         s.length > 0)
                         mAttributeVocabulary.emplace(s.ptr, s.length);
+                    else
+                        complete = false;
                 }
                 ovstage_release_query_result(mInstance, &qr);
-                mAttributeVocabularyBuilt = true; // only a fetched result is final; a failed query retries
+                mAttributeVocabularyBuilt = complete; // an incomplete vocabulary cannot prove absence
             }
         }
         if (q != OVSTAGE_INVALID_QUERY_HANDLE)
@@ -3782,7 +4563,8 @@ std::optional<bool> OvstageSource::stageHasAttributeColumn(std::string_view name
     return mAttributeVocabulary.count(std::string(name)) != 0;
 }
 
-std::optional<bool> OvstageSource::stageHasAnySchema(const char* const* schemaNames, size_t nameCount) const
+std::optional<bool> OvstageSource::stageHasAnySchema(const char* const* schemaNames, size_t nameCount,
+                                                     bool includeMultiApplyInstances) const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
     if (!schemaNames || nameCount == 0)
@@ -3790,6 +4572,53 @@ std::optional<bool> OvstageSource::stageHasAnySchema(const char* const* schemaNa
     if (!mInstance || !mDict)
         return std::nullopt;
 
+    std::string exactPresenceKey;
+    if (!includeMultiApplyInstances)
+    {
+        // OVStage stores applied names, not schema kinds. Only these known single-apply
+        // families and qualified instances are safe for an exact negative answer. An
+        // unfamiliar bare name may be a multi-apply base: leave it unknown rather than
+        // silently suppressing its instances. Generic mode supports arbitrary bases.
+        static constexpr std::string_view kSingleApplySchemas[] = {
+            "PhysicsRigidBodyAPI", "PhysicsCollisionAPI",
+            "PhysxVehicleAPI", "PhysxVehicleWheelAPI", "PhysxVehicleTireAPI", "PhysxVehicleSuspensionAPI",
+            "PhysxVehicleEngineAPI", "PhysxVehicleGearsAPI", "PhysxVehicleClutchAPI", "PhysxVehicleDriveBasicAPI",
+            "PhysxVehicleDriveStandardAPI", "PhysxVehicleTankDifferentialAPI", "PhysxVehicleMultiWheelDifferentialAPI",
+            "PhysxVehicleAutoGearBoxAPI", "PhysxVehicleSteeringAPI", "PhysxVehicleAckermannSteeringAPI",
+            "PhysxVehicleWheelAttachmentAPI", "PhysxVehicleSuspensionComplianceAPI" };
+        for (size_t i = 0; i < nameCount; ++i)
+        {
+            if (!schemaNames[i])
+                continue;
+            const std::string_view name(schemaNames[i]);
+            if (name.find(':') == std::string_view::npos &&
+                std::find(std::begin(kSingleApplySchemas), std::end(kSingleApplySchemas), name) ==
+                    std::end(kSingleApplySchemas))
+                return std::nullopt;
+            exactPresenceKey.append(name);
+            exactPresenceKey.push_back('\0');
+        }
+        if (mExactSchemaPresence.count(exactPresenceKey))
+            return true;
+    }
+
+    // A complete discovery pass establishes both positive and negative answers.
+    // Presence must reuse it rather than issue another count-only stage query.
+    if (mSchemaVocabularyComplete)
+    {
+        for (size_t i = 0; i < nameCount; ++i)
+        {
+            if (!schemaNames[i]) continue;
+            const TokenId token = doInternToken(schemaNames[i]);
+            const auto exact = mSchemaMembershipCache.find(token.id);
+            if (exact != mSchemaMembershipCache.end() && !exact->second.empty()) return true;
+            const auto base = mBaseInstanceMembership.find(token.id);
+            if (includeMultiApplyInstances && base != mBaseInstanceMembership.end() && !base->second.empty()) return true;
+        }
+        return false;
+    }
+
+    SourceReadProfile profile("schema_presence", 1, nameCount, schemaNames[0] ? schemaNames[0] : "-");
     // Memo first: a membership entry per name (from a query or a structural delta) answers the
     // exact-name half without a round trip; only names nobody memoised go to ovstage.
     std::vector<ovx_string_t> vals;
@@ -3851,7 +4680,11 @@ std::optional<bool> OvstageSource::stageHasAnySchema(const char* const* schemaNa
         if (!fetched)
             return std::nullopt;
         if (count >= 1)
-            return true; // cannot be attributed to one name: nothing memoised
+        {
+            if (!includeMultiApplyInstances)
+                mExactSchemaPresence.insert(std::move(exactPresenceKey));
+            return true; // cannot be attributed to one name; only the exact OR can be retained
+        }
         // Nobody applies any of them: each unmemoised name's membership is exactly empty. A row
         // later carrying the name inserts into this entry (applySchemaDelta).
         for (const uint32_t id : unmemoisedIds)
@@ -3860,7 +4693,7 @@ std::optional<bool> OvstageSource::stageHasAnySchema(const char* const* schemaNa
             mSchemaMayExistCache.emplace(id, false);
         }
     }
-    if (!anyUnqualified)
+    if (!includeMultiApplyInstances || !anyUnqualified)
         return false;
 
     // Unqualified multi-apply bases: applied iff any "<base>:<instance>" is applied.
@@ -3881,13 +4714,20 @@ bool OvstageSource::ensureSchemaVocabulary() const
 {
     if (mSchemaVocabularyBuilt)
         return mSchemaVocabularyComplete;
+    schemaVocabularyBuildCounter().fetch_add(1, std::memory_order_relaxed);
+    const bool reportVocabulary = SourceReadProfile::requested();
+    double vocabularySeconds = 0;
+    DescriptorPhaseTimer vocabularyTimer(reportVocabulary ? &vocabularySeconds : nullptr);
     mSchemaVocabularyBuilt = true;
     mSchemaVocabularyComplete = false;
     mBaseInstanceMembership.clear();
     if (!mInstance || !mDict)
         return false;
 
-    std::unordered_map<uint64_t, TokenId> baseOfValue; // schema token value -> base (invalid: single-apply)
+    bool namesComplete = true;
+    struct SchemaNames { TokenId exact, base; };
+    std::unordered_map<uint64_t, SchemaNames> baseOfValue;
+    std::unordered_map<uint32_t, std::unordered_set<uint64_t>> exactMembers;
     std::unordered_map<uint32_t, std::unordered_set<uint64_t>> members;
     const bool ok = forEachStageSchemaValue(
         [&](uint64_t raw, uint64_t canonical, uint64_t value)
@@ -3895,43 +4735,59 @@ bool OvstageSource::ensureSchemaVocabulary() const
             auto it = baseOfValue.find(value);
             if (it == baseOfValue.end())
             {
-                TokenId base;
+                SchemaNames tokens;
                 ovx_string_t s{};
                 if (ovx_path_dictionary_token_to_string(mDict, static_cast<ovx_token_t>(value), &s) == OVX_OK &&
                     s.ptr && s.length > 0)
                 {
                     const std::string_view name(s.ptr, s.length);
+                    tokens.exact = doInternToken(name);
                     const size_t colon = name.find(':');
                     if (colon != std::string_view::npos && colon > 0 && colon + 1 < name.size())
-                        base = doInternToken(name.substr(0, colon));
+                        tokens.base = doInternToken(name.substr(0, colon));
                 }
-                it = baseOfValue.emplace(value, base).first;
+                if (!tokens.exact.valid()) namesComplete = false;
+                it = baseOfValue.emplace(value, tokens).first;
             }
-            if (!it->second.valid())
-                return;
-            std::unordered_set<uint64_t>& set = members[it->second.id];
-            set.insert(raw);
-            if (canonical && canonical != raw)
-                set.insert(canonical);
-        });
-    if (!ok)
+            auto add = [&](auto& index, TokenId token)
+            {
+                if (!token.valid()) return;
+                auto& set = index[token.id];
+                set.insert(raw);
+                if (canonical && canonical != raw) set.insert(canonical);
+            };
+            add(exactMembers, it->second.exact);
+            add(members, it->second.base);
+        }, mLoadCacheActive);
+    if (!ok || !namesComplete)
         return false;
     mBaseInstanceMembership = std::move(members);
+    mSchemaMembershipCache = std::move(exactMembers);
+    mSchemaMayExistCache.clear();
+    for (const auto& entry : mSchemaMembershipCache)
+        mSchemaMayExistCache[entry.first] = !entry.second.empty();
     mSchemaVocabularyComplete = true;
+    vocabularyTimer.finish();
+    if (reportVocabulary)
+        std::fprintf(stderr, "Descriptor schema vocabulary: bases=%zu distinct_values=%zu total=%.6f\n",
+            mBaseInstanceMembership.size(), baseOfValue.size(), vocabularySeconds);
     return true;
 }
 
-bool OvstageSource::forEachStageSchemaValue(const std::function<void(uint64_t, uint64_t, uint64_t)>& fn) const
+bool OvstageSource::forEachStageSchemaValue(const std::function<void(uint64_t, uint64_t, uint64_t)>& fn,
+                                           bool prefetchJointRelationships) const
 {
-    return forEachStageTokenValue(conv::kUsdSchemas, fn);
+    return forEachStageTokenValue(conv::kUsdSchemas, fn, prefetchJointRelationships);
 }
 
 bool OvstageSource::forEachStageTokenValue(std::string_view column,
-                                           const std::function<void(uint64_t, uint64_t, uint64_t)>& fn) const
+                                           const std::function<void(uint64_t, uint64_t, uint64_t)>& fn,
+                                           bool prefetchJointRelationships) const
 {
     if (!mInstance || !mDict || !fn || column.empty())
         return false;
 
+    SourceReadProfile profile("token_stream", 1, 1, column.data());
     const ovx_string_t pathVal{ "/", 1 };
     ovstage_predicate_t pred{};
     pred.attribute.token = 0;
@@ -3944,6 +4800,7 @@ bool OvstageSource::forEachStageTokenValue(std::string_view column,
     filter.predicates = &pred;
     filter.count = 1;
 
+    profile.stage(1);
     ovstage_query_handle_t q = OVSTAGE_INVALID_QUERY_HANDLE;
     const ovstage_enqueue_result_t qe = ovstage_query(mInstance, &filter, nullptr, 0, &q);
     const bool queryComplete = waitAndRelease(mInstance, qe);
@@ -3961,6 +4818,7 @@ bool OvstageSource::forEachStageTokenValue(std::string_view column,
         waitAndRelease(mInstance, ovstage_release_query(mInstance, q));
         return false;
     }
+    profile.keys = qr.total_prim_count;
     if (qr.all_handle != OVSTAGE_INVALID_QUERY_HANDLE)
         use = qr.all_handle;
     ovstage_release_query_result(mInstance, &qr);
@@ -3974,13 +4832,48 @@ bool OvstageSource::forEachStageTokenValue(std::string_view column,
         return false;
     }
 
+    struct RelationshipColumn
+    {
+        ovx_token_t attribute;
+        TokenId token;
+        bool complete = true;
+        std::vector<std::pair<uint64_t, const DLTensor*>> rows;
+    };
+    std::vector<RelationshipColumn> relationships;
+    std::vector<ovx_token_t> attributes{schemasAttr};
+    std::shared_ptr<RetainedReadGroups> relationshipGroups;
+    if (prefetchJointRelationships && mLoadCacheActive)
+    {
+        for (const char* name : {"physics:body0", "physics:body1", "physics:hinge0", "physics:hinge1",
+                                 "physics:hinge", "physics:prismatic", "newton:mimicJoint"})
+        {
+            const auto attribute = ovxToken(attributeColumn(name));
+            if (attribute == OVX_INVALID_TOKEN) continue;
+            relationships.push_back({attribute, doInternToken(name), true, {}});
+            attributes.push_back(attribute);
+        }
+        relationshipGroups = std::make_shared<RetainedReadGroups>(mInstance);
+    }
+    profile.attributes = attributes.size();
     ovstage_ordinal_range_t range{};
     range.end_ordinal = mReadOrdinal;
     range.has_start_ordinal = false;
 
     ovstage_read_handle_t rh = OVSTAGE_INVALID_READ_HANDLE;
-    const ovstage_enqueue_result_t re = ovstage_read_attributes(mInstance, use, &schemasAttr, 1, range, &rh);
-    const bool readComplete = waitAndRelease(mInstance, re);
+    const ovstage_enqueue_result_t re = ovstage_read_attributes(mInstance, use, attributes.data(), attributes.size(), range, &rh);
+    bool readComplete = waitAndRelease(mInstance, re);
+    if ((!readComplete || rh == OVSTAGE_INVALID_READ_HANDLE) && attributes.size() > 1)
+    {
+        // Optional relationship prefetch must not veto the schema index. A
+        // relationship can have unsealed writes even when schemas are readable.
+        if (rh != OVSTAGE_INVALID_READ_HANDLE)
+            waitAndRelease(mInstance, ovstage_release_read(mInstance, rh));
+        rh = OVSTAGE_INVALID_READ_HANDLE;
+        relationships.clear();
+        relationshipGroups.reset();
+        readComplete = waitAndRelease(mInstance,
+            ovstage_read_attributes(mInstance, use, &schemasAttr, 1, range, &rh));
+    }
     if (!readComplete || rh == OVSTAGE_INVALID_READ_HANDLE)
     {
         if (rh != OVSTAGE_INVALID_READ_HANDLE)
@@ -3991,11 +4884,17 @@ bool OvstageSource::forEachStageTokenValue(std::string_view column,
 
     auto forEachTokenValue = [&](const DLTensor& t, auto&& visit) -> bool
     {
-        if (!t.data || !(t.dtype.code == kDLUInt && (t.dtype.bits == 64 || t.dtype.bits == 32)))
+        if (!(t.dtype.code == kDLUInt && (t.dtype.bits == 64 || t.dtype.bits == 32)) ||
+            t.ndim < 0 || (t.ndim > 0 && !t.shape))
             return false;
 
         const int64_t count = totalElements(t);
         if (count < 0)
+            return false;
+        // An empty applied-schema set is complete even when its tensor has no storage.
+        if (count == 0)
+            return true;
+        if (!t.data)
             return false;
 
         const auto* bytes = static_cast<const uint8_t*>(t.data) + t.byte_offset;
@@ -4014,11 +4913,61 @@ bool OvstageSource::forEachStageTokenValue(std::string_view column,
     ReadListMemo listMemo(mDict);
     ovstage_read_group_t g{};
     ovstage_api_status_t fetchErr;
-    while ((fetchErr = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g)) == OVSTAGE_OK)
+    auto fetch = [&]()
     {
+        profile.stage(1);
+        const auto result = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g);
+        profile.stage(2);
+        return result;
+    };
+    while ((fetchErr = fetch()) == OVSTAGE_OK)
+    {
+        profile.group(g.prims.count);
+        if (g.attribute != schemasAttr)
+        {
+            auto column = std::find_if(relationships.begin(), relationships.end(),
+                [&](const RelationshipColumn& c) { return c.attribute == g.attribute; });
+            if (column == relationships.end())
+            {
+                ovstage_release_group(mInstance, &g);
+                continue;
+            }
+            // A missing/deleted relationship is empty. Unsupported or partial data
+            // never seals absence: the ordinary bucket read remains the fallback.
+            if (g.is_delete)
+            {
+                ovstage_release_group(mInstance, &g);
+                continue;
+            }
+            const ovx_primpath_t* paths = nullptr;
+            size_t pathCount = 0;
+            if (!g.is_array || g.data.mask || !g.data.tensors ||
+                !listMemo.paths(g.prims.list, &paths, &pathCount))
+            {
+                column->complete = false;
+                ovstage_release_group(mInstance, &g);
+                continue;
+            }
+            try { relationshipGroups->groups.push_back(g); }
+            catch (...) { ovstage_release_group(mInstance, &g); throw; }
+            for (uint32_t row = 0; row < g.prims.count; ++row)
+            {
+                const uint32_t pathIndex = g.prims.index_map ? g.prims.index_map[row] : g.prims.offset + row;
+                const uint32_t dataIndex = g.data.index_map ? g.data.index_map[row] : row;
+                if (pathIndex >= pathCount || dataIndex >= g.data.tensor_count || !paths[pathIndex] ||
+                    !canDecodeRelationshipTargets(g.data.tensors[dataIndex]))
+                {
+                    column->complete = false;
+                    continue;
+                }
+                column->rows.push_back({paths[pathIndex], {&g.data.tensors[dataIndex]}});
+            }
+            continue; // Retained group owns the tensors until the load cache clears.
+        }
         const bool usable = !g.is_delete && g.data.tensor_count > 0 && g.data.tensors && g.data.mask == nullptr;
         if (!usable)
         {
+            if (!g.is_delete) unsupported = true;
             ovstage_release_group(mInstance, &g);
             continue;
         }
@@ -4045,7 +4994,10 @@ bool OvstageSource::forEachStageTokenValue(std::string_view column,
             {
                 const uint32_t idx = g.prims.index_map ? g.prims.index_map[row] : (g.prims.offset + row);
                 if (idx >= pathCount)
+                {
+                    unsupported = true;
                     continue;
+                }
 
                 const uint32_t tensorIndex = g.data.index_map ? g.data.index_map[row] : row;
                 if (tensorIndex >= g.data.tensor_count)
@@ -4087,7 +5039,10 @@ bool OvstageSource::forEachStageTokenValue(std::string_view column,
             {
                 const uint32_t idx = g.prims.index_map ? g.prims.index_map[row] : (g.prims.offset + row);
                 if (idx >= pathCount)
+                {
+                    unsupported = true;
                     continue;
+                }
 
                 const uint32_t dataRow = g.data.index_map ? g.data.index_map[row] : row;
                 if (dataRow >= static_cast<uint32_t>(storedRows))
@@ -4115,9 +5070,38 @@ bool OvstageSource::forEachStageTokenValue(std::string_view column,
         ovstage_release_group(mInstance, &g);
     }
 
+    profile.stage(5);
     waitAndRelease(mInstance, ovstage_release_read(mInstance, rh));
     waitAndRelease(mInstance, ovstage_release_query(mInstance, q));
-    return fetchErr == OVSTAGE_ERROR_END_OF_ITERATION && !unsupported;
+    bool complete = fetchErr == OVSTAGE_ERROR_END_OF_ITERATION && !unsupported;
+    if (column == conv::kUsdSchemas && schemaReadFaultCounter() > 0)
+    {
+        --schemaReadFaultCounter();
+        complete = false;
+    }
+    if (complete && !relationships.empty())
+    {
+        // Commit only after a clean stream. Coverage includes missing columns, so
+        // the later concrete-family prefetch can reuse this acquisition entirely.
+        mLoadCacheGroups->groups.insert(mLoadCacheGroups->groups.end(),
+            relationshipGroups->groups.begin(), relationshipGroups->groups.end());
+        relationshipGroups->groups.clear();
+        for (const auto& column : relationships)
+        {
+            if (!column.complete) continue;
+            const uint32_t attrIndex = loadCacheAttrIndexFor(column.token.id);
+            for (const auto& row : column.rows)
+            {
+                auto& cell = loadCacheCellFor(loadCachePrimIndexFor(row.first), attrIndex);
+                cell.relationship = row.second;
+                cell.covered = true;
+            }
+            // A complete whole-stage column seals missing relationships without
+            // allocating dense cache rows for unrelated schema-bearing prims.
+            mLoadCacheCompleteRelationships.insert(column.token.id);
+        }
+    }
+    return complete;
 }
 
 bool OvstageSource::buildSchemaCache() const
@@ -4128,11 +5112,6 @@ bool OvstageSource::buildSchemaCache() const
 
     mSchemaCacheBuilt = true;
     mSchemaCacheComplete = false;
-    mSchemaMayExistCache.clear();
-    mSchemaMembershipCache.clear();
-    mSchemasByPrimCache.clear();
-    mMultiApplyMembershipCache.clear();
-    mMultiApplyInstancesByPrimCache.clear();
 
     if (!mInstance || !mDict)
         return false;
@@ -4215,15 +5194,9 @@ bool OvstageSource::buildSchemaCache() const
             addSchemaForHandle(canonical, *schema);
     };
 
+    // Preserve existing discovery/memo results if this richer index read fails.
     if (!forEachStageSchemaValue(addSchemaValue))
-    {
-        mSchemaMayExistCache.clear();
-        mSchemaMembershipCache.clear();
-        mSchemasByPrimCache.clear();
-        mMultiApplyMembershipCache.clear();
-        mMultiApplyInstancesByPrimCache.clear();
         return false;
-    }
 
     mSchemaMayExistCache = std::move(mayExist);
     mSchemaMembershipCache = std::move(membership);
@@ -4256,8 +5229,15 @@ bool OvstageSource::collectSchemaKeysRaw(TokenId schemaToken, std::vector<uint64
     if (!mInstance || !mDict)
         return false;
 
+    const std::unordered_set<uint64_t>* members = schemaMembershipFromQuery(schemaToken);
+    if (!members)
+        return false;
+    const std::unordered_set<uint64_t>* baseMembers = multiApplyBaseMembership(schemaToken);
+    if (members->empty() && (!baseMembers || baseMembers->empty()))
+        return true;
+
     std::unordered_set<uint64_t> seen;
-    seen.reserve(out.size() + 32);
+    seen.reserve(out.size() + members->size() + (baseMembers ? baseMembers->size() : 0));
     for (const uint64_t key : out)
     {
         const uint64_t canonical = canonicalHandleRaw(key);
@@ -4275,15 +5255,12 @@ bool OvstageSource::collectSchemaKeysRaw(TokenId schemaToken, std::vector<uint64
     };
 
     // Targeted, memoized per-schema query; exact for concrete schemas and "Base:instance" names.
-    const std::unordered_set<uint64_t>* members = schemaMembershipFromQuery(schemaToken);
-    if (!members)
-        return false;
     for (const uint64_t handle : *members)
         appendKey(handle);
 
-    // A bare joint-axis multi-apply base ("PhysxLimitAPI") additionally matches
-    // every applied instance; nullptr (and a no-op) for anything else.
-    if (const std::unordered_set<uint64_t>* baseMembers = multiApplyBaseMembership(schemaToken))
+    // An unqualified multi-apply base additionally matches its applied instances.
+    // Complete vocabulary covers arbitrary bases; cold queries cover joint axes.
+    if (baseMembers)
         for (const uint64_t handle : *baseMembers)
             appendKey(handle);
     return true;
@@ -4298,10 +5275,18 @@ const std::unordered_set<uint64_t>* OvstageSource::schemaMembershipFromQuery(Tok
     if (cached != mSchemaMembershipCache.end())
         return &cached->second;
 
+    if (mSchemaVocabularyComplete)
+    {
+        // Cache the empty set too; callers may retain this pointer during a probe.
+        return &mSchemaMembershipCache.emplace(schemaToken.id, std::unordered_set<uint64_t>{}).first->second;
+    }
+
     const std::string_view schemaName = tokenToString(schemaToken);
     if (schemaName.empty())
         return nullptr;
 
+    const std::string profileName = SourceReadProfile::requested() ? std::string(schemaName) : std::string{};
+    SourceReadProfile profile("schema_query", 1, 1, profileName.c_str());
     schemaQueryCounter().fetch_add(1, std::memory_order_relaxed);
     const ovx_string_t schemaVal{ schemaName.data(), schemaName.size() };
     ovstage_predicate_t pred{};
@@ -4315,6 +5300,7 @@ const std::unordered_set<uint64_t>* OvstageSource::schemaMembershipFromQuery(Tok
     filter.predicates = &pred;
     filter.count = 1;
 
+    profile.stage(1);
     ovstage_query_handle_t q = OVSTAGE_INVALID_QUERY_HANDLE;
     const ovstage_enqueue_result_t e = ovstage_query(mInstance, &filter, nullptr, 0, &q);
     const bool queryComplete = waitAndRelease(mInstance, e);
@@ -4343,6 +5329,7 @@ const std::unordered_set<uint64_t>* OvstageSource::schemaMembershipFromQuery(Tok
         return nullptr;
     }
 
+    profile.keys = count;
     mSchemaMayExistCache[schemaToken.id] = count >= 1;
     if (count == 0)
     {
@@ -4380,8 +5367,16 @@ const std::unordered_set<uint64_t>* OvstageSource::schemaMembershipFromQuery(Tok
     ReadListMemo listMemo(mDict);
     ovstage_read_group_t g{};
     ovstage_api_status_t fetchErr;
-    while ((fetchErr = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g)) == OVSTAGE_OK)
+    auto fetch = [&]()
     {
+        profile.stage(1);
+        const auto result = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g);
+        profile.stage(2);
+        return result;
+    };
+    while ((fetchErr = fetch()) == OVSTAGE_OK)
+    {
+        profile.group(g.prims.count);
         const ovx_primpath_t* paths = nullptr;
         size_t pathCount = 0;
         if (listMemo.paths(g.prims.list, &paths, &pathCount))
@@ -4401,6 +5396,7 @@ const std::unordered_set<uint64_t>* OvstageSource::schemaMembershipFromQuery(Tok
         }
         ovstage_release_group(mInstance, &g);
     }
+    profile.stage(5);
     waitAndRelease(mInstance, ovstage_release_read(mInstance, rh));
     waitAndRelease(mInstance, ovstage_release_query(mInstance, q));
 
@@ -4432,6 +5428,12 @@ const std::unordered_set<uint64_t>* OvstageSource::multiApplyBaseMembership(Toke
 {
     if (!baseToken.valid())
         return nullptr;
+    if (mSchemaVocabularyComplete)
+    {
+        const auto found = mBaseInstanceMembership.find(baseToken.id);
+        if (found != mBaseInstanceMembership.end()) return &found->second;
+        return nullptr;
+    }
     const auto cached = mMultiApplyMembershipCache.find(baseToken.id);
     if (cached != mMultiApplyMembershipCache.end())
         return &cached->second;
@@ -4551,11 +5553,159 @@ const std::vector<std::string>& OvstageSource::relationshipPrefetchAttrs()
     return kRelationshipAttrs;
 }
 
+void OvstageSource::prefetchResolvedInstanceBucket(
+    const std::vector<ObjectKey>& keys,
+    const std::vector<std::string>& attrNames,
+    const std::vector<ObjectKey>& instanceKeys,
+    const std::vector<std::string>& instanceAttrNames) const
+{
+    std::lock_guard<std::recursive_mutex> lock(mMutex);
+    CARB_ASSERT(mLoadCacheActive);
+    if (!mLoadCacheActive)
+        return;
+
+    struct InstanceRows
+    {
+        uint64_t logical;
+        uint64_t backing;
+    };
+    std::vector<InstanceRows> instanceRows;
+    std::vector<ObjectKey> readKeys = keys;
+    std::unordered_set<uint64_t> readIdentity;
+    for (const ObjectKey key : readKeys)
+        readIdentity.insert(canonicalPath(key));
+    auto addKey = [&](ObjectKey key)
+    {
+        if (key.valid() && readIdentity.insert(canonicalPath(key)).second)
+            readKeys.push_back(key);
+    };
+
+    const bool haveInstancing = !instanceKeys.empty() && !instanceAttrNames.empty() &&
+                               buildPhysicsInstancingCache() && !mPrototypeRootByInstanceRoot.empty();
+    for (const ObjectKey key : instanceKeys)
+    {
+        addKey(key);
+        if (!haveInstancing)
+            continue;
+        const uint64_t logical = rawHandle(key);
+        const std::string logicalPath = pathOfRaw(logical);
+        std::string ancestor = logicalPath;
+        // Start at the parent: an instance root owns its composed opinions. For a
+        // nested root that is itself a proxy, the enclosing prototype stores those
+        // opinions; its own prototype root is only a container for its children.
+        while (true)
+        {
+            const size_t slash = ancestor.rfind('/');
+            if (slash == std::string::npos || slash == 0)
+                break;
+            ancestor.resize(slash);
+            const auto root = mPrototypeRootByInstanceRoot.find(ancestor);
+            if (root == mPrototypeRootByInstanceRoot.end())
+                continue;
+            const uint64_t backing = findByPathRaw(root->second + logicalPath.substr(ancestor.size()));
+            if (backing && backing != logical)
+            {
+                addKey(internKey(backing));
+                instanceRows.push_back({ logical, backing });
+            }
+            break;
+        }
+    }
+
+    std::vector<std::string> extendedAttrs;
+    const std::vector<std::string>* readAttrs = &attrNames;
+    for (const std::string& attr : instanceAttrNames)
+    {
+        if (std::find(readAttrs->begin(), readAttrs->end(), attr) == readAttrs->end())
+        {
+            if (readAttrs != &extendedAttrs)
+            {
+                extendedAttrs = attrNames;
+                readAttrs = &extendedAttrs;
+            }
+            extendedAttrs.push_back(attr);
+        }
+    }
+    // The only attribute acquisition: logical and deduplicated backing rows x all
+    // requested columns. Every operation below is a load-cache lookup or row alias.
+    prefetchBucket(readKeys, *readAttrs);
+
+    std::vector<TokenId> resolvedAttrs;
+    for (const std::string& attr : instanceAttrNames)
+        resolvedAttrs.push_back(doInternToken(attr));
+    for (const InstanceRows& rows : instanceRows)
+    {
+        const uint32_t logicalIndex = loadCachePrimIndexFor(rows.logical);
+        for (const TokenId attr : resolvedAttrs)
+        {
+            const LoadCacheCell* logical = loadCacheCell(rows.logical, attr.id);
+            const LoadCacheCell* backing = loadCacheCell(rows.backing, attr.id);
+            // Only an authoritative empty logical cell can inherit. A returned
+            // default or blocked-value sentinel is a value, not a fallback request.
+            // Never replace incomplete/unsupported reads with guessed prototype data.
+            if (!logical || !logical->covered || logical->scalar.tensor || logical->relationship ||
+                !backing || !backing->covered || !backing->scalar.tensor)
+                continue;
+            const CachedTensorRow row = backing->scalar;
+            loadCacheCellFor(logicalIndex, loadCacheAttrIndexFor(attr.id)).scalar = row;
+        }
+    }
+}
+
+const OvstageSource::PrefetchPlan& OvstageSource::prefetchPlan(const std::vector<std::string>& names,
+                                                          PrefetchPlan& temporary) const
+{
+    // Only dictionary-lifetime identity and classification survive a load window.
+    // Compare owned names: callers may reuse or mutate their vector storage.
+    for (const PrefetchPlan& plan : mPrefetchPlans)
+        if (plan.complete && plan.names == names)
+            return plan;
+
+    const TokenId worldTransformAttr = doInternToken(conv::kFabricWorldMatrix);
+    const TokenId localTransformAttr = doInternToken(conv::kLocalTransform);
+    const TokenId fabricLocalTransformAttr = doInternToken(conv::kFabricLocalMatrix);
+    const TokenId resetXformStackAttr = doInternToken(conv::kResetXformStack);
+    PrefetchPlan fresh;
+    fresh.names = names;
+    fresh.attributes.reserve(names.size());
+    std::vector<std::string> columns = names;
+    if (std::find(names.begin(), names.end(), "prototypes") != names.end() &&
+        std::find(names.begin(), names.end(), conv::kUsdPrototypes) == names.end())
+        columns.emplace_back(conv::kUsdPrototypes);
+    for (const std::string& name : columns)
+    {
+        // Keep both relationship cells: presence, including an empty value, is
+        // decided for each prim when reading the cache.
+        const TokenId id = doInternToken(name == conv::kUsdPrototypes ? name : conv::toUsdAttributeName(name));
+        const std::string column(attributeColumn(name));
+        const ovx_token_t token = ovxToken(column);
+        const bool world = id == worldTransformAttr;
+        const bool local = id == localTransformAttr || id == fabricLocalTransformAttr;
+        const bool reset = id == resetXformStackAttr;
+        const bool computed = world || local || reset || column == conv::kUsdPath ||
+            column == conv::kUsdSchemas || column == conv::kUsdPrimType ||
+            column == conv::kUsdParent || column == conv::kUsdChildren;
+        fresh.attributes.push_back({ id, token, column, world, local, reset, computed });
+        fresh.complete = fresh.complete && token != OVX_INVALID_TOKEN && id.valid();
+    }
+    // A failed mapping is retried next time and must not evict a reusable plan.
+    if (!fresh.complete)
+    {
+        temporary = std::move(fresh);
+        return temporary;
+    }
+    if (mPrefetchPlans.size() == 8)
+        mPrefetchPlans.erase(mPrefetchPlans.begin());
+    mPrefetchPlans.push_back(std::move(fresh));
+    return mPrefetchPlans.back();
+}
+
 void OvstageSource::prefetchBucket(const std::vector<ObjectKey>& keys,
                                    const std::vector<std::string>& attrNames,
                                    bool sealMissing) const
 {
     std::lock_guard<std::recursive_mutex> lock(mMutex);
+    SourceReadProfile profile("prefetch", keys.size(), attrNames.size(), attrNames.empty() ? "-" : attrNames.front().c_str());
     clearBucket();
     if (!mInstance || !mDict || keys.empty() || attrNames.empty())
         return;
@@ -4626,40 +5776,57 @@ void OvstageSource::prefetchBucket(const std::vector<ObjectKey>& keys,
     {
         if (!mLoadCacheActive)
             return false;
+        if (mLoadCacheCompleteRelationships.count(attrId))
+            return true;
+        if (attrId >= mLoadCacheAttrIndex.size())
+            return false;
+        const uint32_t index = mLoadCacheAttrIndex[attrId];
+        if (index == kNoLoadCacheIndex)
+            return false;
+        // The raw/canonical identity lookup was already done once per key above.
         for (const CacheHandlePair& handle : cacheHandles)
-            if (!loadCacheCovers(handle.raw, attrId))
+        {
+            const std::vector<LoadCacheCell>& cells = mLoadCachePrims[handle.prim].cells;
+            if (index >= cells.size() || !cells[index].covered)
                 return false;
+        }
         return true;
     };
-    const TokenId worldTransformAttr = doInternToken(conv::kFabricWorldMatrix);
-    const TokenId localTransformAttr = doInternToken(conv::kLocalTransform);
-    const TokenId fabricLocalTransformAttr = doInternToken(conv::kFabricLocalMatrix);
-    const TokenId resetXformStackAttr = doInternToken(conv::kResetXformStack);
-    for (const std::string& name : attrNames)
+    // An immutable load window can use the required path-list query's vocabulary:
+    // absence is proved only for these rows, without another whole-stage query.
+    // USD-backed windows retain the stage vocabulary gate. Computed and metadata
+    // columns must be requested even when omitted from either vocabulary.
+    const bool queryLocalVocabulary = mLoadCacheActive && sealMissing && mLoadCacheMayBeStale == 0;
+    const bool filterAbsentColumns = !queryLocalVocabulary && mLoadCacheActive && sealMissing && ensureAttributeVocabulary();
+    PrefetchPlan temporaryPlan;
+    const PrefetchPlan& plan = prefetchPlan(attrNames, temporaryPlan);
+    for (const PrefetchAttribute& attribute : plan.attributes)
     {
-        const TokenId tokenId = doInternToken(name);
+        const TokenId tokenId = attribute.id;
         if (loadCacheCoversAll(tokenId.id))
         {
             continue;
         }
-        const ovx_token_t tok = ovxToken(conv::toOvstageColumn(name));
+        const bool absent = filterAbsentColumns && !attribute.computed &&
+                            mAttributeVocabulary.count(attribute.column) == 0;
+        const ovx_token_t tok = absent ? OVX_INVALID_TOKEN : attribute.token;
         if (tok == OVX_INVALID_TOKEN)
         {
             if (mLoadCacheActive && sealMissing)
             {
-                mBucketAttributeIds.insert(tokenId.id);
+                mBucketAttributeIds.push_back(tokenId.id);
                 invalidAttrIds.push_back(tokenId.id);
             }
             continue;
         }
-        mBucketAttributeIds.insert(tokenId.id);
+        mBucketAttributeIds.push_back(tokenId.id);
         attrToks.push_back(tok);
         const AttrMeta meta{ tok,
                              tokenId,
                              mLoadCacheActive ? loadCacheAttrIndexFor(tokenId.id) : kNoLoadCacheIndex,
-                             tokenId == worldTransformAttr,
-                             tokenId == localTransformAttr || tokenId == fabricLocalTransformAttr,
-                             tokenId == resetXformStackAttr };
+                             attribute.world,
+                             attribute.local,
+                             attribute.reset };
         if (AttrMeta* existing = findMeta(tok))
             *existing = meta; // two names on one column: the later one wins, as the map did
         else
@@ -4722,6 +5889,7 @@ void OvstageSource::prefetchBucket(const std::vector<ObjectKey>& keys,
     }
     bool usdPathGroupSeen = false;
 
+    profile.stage(1);
     ovx_primpath_list_t list = OVX_INVALID_PRIMPATH_LIST;
     if (ovx_path_dictionary_create_path_list(mDict, paths.data(), paths.size(), &list) != OVX_OK)
         return;
@@ -4729,6 +5897,54 @@ void OvstageSource::prefetchBucket(const std::vector<ObjectKey>& keys,
     ovstage_query_handle_t q = OVSTAGE_INVALID_QUERY_HANDLE;
     if (ovstage_query_from_path_list(mInstance, list, &q) == OVSTAGE_OK && q != OVSTAGE_INVALID_QUERY_HANDLE)
     {
+        if (queryLocalVocabulary)
+        {
+            ovstage_query_result_t discovery{};
+            if (ovstage_fetch_query_result(mInstance, q, OVSTAGE_TIMEOUT_INFINITE, &discovery) == OVSTAGE_OK)
+            {
+                bool complete = discovery.attribute_count == 0 || discovery.attributes != nullptr;
+                std::unordered_set<ovx_token_t> columns;
+                columns.reserve(discovery.attribute_count);
+                for (size_t i = 0; complete && i < discovery.attribute_count; ++i)
+                {
+                    ovx_string_t name{};
+                    const ovx_token_t token = discovery.attributes[i];
+                    if (ovx_path_dictionary_token_to_string(mDict, token, &name) != OVX_OK ||
+                        !name.ptr || name.length == 0)
+                        complete = false;
+                    else
+                        columns.insert(token);
+                }
+                if (complete)
+                {
+                    const ovx_token_t metadata[] = {
+                        ovxToken(conv::kUsdPath), ovxToken(conv::kUsdSchemas), ovxToken(conv::kUsdPrimType),
+                        ovxToken(conv::kUsdParent), ovxToken(conv::kUsdChildren)
+                    };
+                    attrToks.erase(std::remove_if(attrToks.begin(), attrToks.end(), [&](ovx_token_t tok)
+                    {
+                        const AttrMeta* meta = findMeta(tok);
+                        const bool computed = meta &&
+                            (meta->isWorldTransform || meta->isLocalTransform || meta->isResetXformStack);
+                        if (computed || columns.count(tok) ||
+                            std::find(std::begin(metadata), std::end(metadata), tok) != std::end(metadata))
+                            return false;
+                        if (meta)
+                            markLoadCoverageForBucket(meta->tokenId.id);
+                        return true;
+                    }), attrToks.end());
+                }
+                ovstage_release_query_result(mInstance, &discovery);
+            }
+            if (attrToks.empty())
+            {
+                mBucketScalarsComplete = false;
+                mBucketTransformsComplete = false;
+                waitAndRelease(mInstance, ovstage_release_query(mInstance, q));
+                ovx_path_dictionary_destroy_path_list(mDict, list);
+                return;
+            }
+        }
         // One multi-attribute read over the whole prim set (the columnar bulk read).
         ovstage_ordinal_range_t range{};
         range.end_ordinal = ~ovstage_ordinal_t(0); // latest (see withAttributeTensor)
@@ -4736,6 +5952,7 @@ void OvstageSource::prefetchBucket(const std::vector<ObjectKey>& keys,
 
         ovstage_read_handle_t rh = OVSTAGE_INVALID_READ_HANDLE;
         prefetchBucketReadCounter().fetch_add(1, std::memory_order_relaxed);
+        bucketReadCounter().fetch_add(1, std::memory_order_relaxed);
         const ovstage_enqueue_result_t re =
             ovstage_read_attributes(mInstance, q, attrToks.data(), attrToks.size(), range, &rh);
         if (re.status == OVSTAGE_OK)
@@ -4745,8 +5962,16 @@ void OvstageSource::prefetchBucket(const std::vector<ObjectKey>& keys,
             ReadListMemo listMemo(mDict);
             ovstage_read_group_t g{};
             ovstage_api_status_t fetchStatus;
-            while ((fetchStatus = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g)) == OVSTAGE_OK)
+            auto fetch = [&]()
             {
+                profile.stage(1);
+                const auto result = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g);
+                profile.stage(2);
+                return result;
+            };
+            while ((fetchStatus = fetch()) == OVSTAGE_OK)
+            {
+                profile.group(g.prims.count);
                 if (usdPathTok != OVX_INVALID_TOKEN && g.attribute == usdPathTok && !g.is_delete)
                 {
                     usdPathGroupSeen = true;
@@ -4856,9 +6081,9 @@ void OvstageSource::prefetchBucket(const std::vector<ObjectKey>& keys,
                         const DLTensor* cacheTensor = &t;
                         if (mLoadCacheActive)
                         {
-                            mLoadCacheGroups.push_back(g);
+                            mLoadCacheGroups->groups.push_back(g);
                             groupOwnedByLoadCache = true;
-                            cacheTensor = &mLoadCacheGroups.back().data.tensors[0];
+                            cacheTensor = &mLoadCacheGroups->groups.back().data.tensors[0];
                         }
                         for (uint32_t i = 0; i < rows; ++i)
                         {
@@ -5006,7 +6231,7 @@ void OvstageSource::prefetchBucket(const std::vector<ObjectKey>& keys,
                     meta->cacheable = true;
                     if (mLoadCacheActive)
                     {
-                        mLoadCacheGroups.push_back(g);
+                        mLoadCacheGroups->groups.push_back(g);
                         groupOwnedByLoadCache = true;
                     }
                     for (uint32_t row = 0; mLoadCacheActive && row < g.prims.count; ++row)
@@ -5015,13 +6240,13 @@ void OvstageSource::prefetchBucket(const std::vector<ObjectKey>& keys,
                         if (idx >= gcount)
                             continue;
                         uint32_t tensorIndex = g.data.index_map ? g.data.index_map[row] : row;
-                        if (tensorIndex >= mLoadCacheGroups.back().data.tensor_count)
+                        if (tensorIndex >= mLoadCacheGroups->groups.back().data.tensor_count)
                             continue;
                         const uint64_t raw = gpaths[idx];
                         if (!raw)
                             continue;
                         storeLoadRelationshipRef(loadCachePrimIndexFor(raw), meta->attrIndex,
-                                                 &mLoadCacheGroups.back().data.tensors[tensorIndex]);
+                                                 &mLoadCacheGroups->groups.back().data.tensors[tensorIndex]);
                     }
                     if (!mLoadCacheActive)
                         mBucketScalarsComplete = false;
@@ -5046,6 +6271,9 @@ void OvstageSource::prefetchBucket(const std::vector<ObjectKey>& keys,
                 if (!groupOwnedByLoadCache)
                     ovstage_release_group(mInstance, &g);
             }
+            profile.stage(3);
+            profile.fallbackColumns = std::count_if(metas.begin(), metas.end(),
+                [](const AttrMeta& meta) { return meta.unsupported; });
             // Misses are sealed (served as authoritative empties) only after a clean,
             // complete read; a failed or truncated read leaves them to the live fallback.
             const bool cleanRead = readOk && fetchStatus == OVSTAGE_ERROR_END_OF_ITERATION;
@@ -5082,6 +6310,7 @@ void OvstageSource::prefetchBucket(const std::vector<ObjectKey>& keys,
                 mBucketScalarsComplete = false;
                 mBucketTransformsComplete = false;
             }
+            profile.stage(5);
             waitAndRelease(mInstance, ovstage_release_read(mInstance, rh));
         }
         waitAndRelease(mInstance, ovstage_release_query(mInstance, q));
@@ -5167,7 +6396,8 @@ void OvstageSource::seedBucketFromReadGroup(TokenId attr,
     if (keyOrdinal == 0)
         return;
 
-    mBucketAttributeIds.insert(attr.id);
+    if (mBucketAttributeIds.empty() || mBucketAttributeIds.back() != attr.id)
+        mBucketAttributeIds.push_back(attr.id);
     mBucketActive = true;
     if (!readable)
     {
@@ -5232,7 +6462,8 @@ void OvstageSource::seedBucketFromColumn(
     if (!attr.valid() || count == 0 || !tensor.data || !rawHandles || !keys)
         return;
 
-    mBucketAttributeIds.insert(attr.id);
+    if (mBucketAttributeIds.empty() || mBucketAttributeIds.back() != attr.id)
+        mBucketAttributeIds.push_back(attr.id);
     mBucketRows.reserve(count * 2);
     mBucketKeys.reserve(count * 2);
     for (size_t i = 0; i < count; ++i)
@@ -5354,7 +6585,8 @@ TokenId OvstageSource::getTypeName(ObjectKey key) const
     TokenId primType{};
     // Read on the geometry backing so an instance proxy reports its prototype's
     // authored type, matching what `isA` resolves for the same key.
-    if (!primTypeTokenRaw(rawHandle(key), primType))
+    bool complete = true;
+    if (!primTypeTokenRaw(rawHandle(key), primType, &complete) && complete)
         primTypeTokenRaw(rawHandle(geometryBackingKey(key)), primType);
     return primType;
 }
@@ -5374,8 +6606,11 @@ bool OvstageSource::isA(ObjectKey key, TokenId typeToken) const
     // query, a stage-side predicate evaluation per candidate, remains only for an unreadable column.
     std::string_view ownType;
     TokenId ownTypeToken{};
-    if (primTypeTokenRaw(rawHandle(key), ownTypeToken))
+    bool complete = true;
+    if (primTypeTokenRaw(rawHandle(key), ownTypeToken, &complete))
         ownType = tokenToString(ownTypeToken);
+    if (!complete)
+        return false;
 
     auto hasPrimType = [&](std::string_view primType) -> bool
     {
@@ -5584,7 +6819,8 @@ bool OvstageSource::hasRelationship(ObjectKey key, TokenId rel) const
         return false;
 
     // Same stage-wide column gate as getRelationshipTargets: no column, no round trip.
-    if (stageHasAttributeColumn(conv::toOvstageColumn(relName)) == std::optional<bool>(false))
+    if (stageHasAttributeColumn(attributeColumn(relName)) == std::optional<bool>(false) &&
+        (relName != "prototypes" || stageHasAttributeColumn(conv::kUsdPrototypes) == std::optional<bool>(false)))
         return false;
     bool found = false;
     relationshipReadCounter().fetch_add(1, std::memory_order_relaxed);
@@ -5629,9 +6865,9 @@ void OvstageSource::getRelationshipTargets(ObjectKey key, TokenId rel, std::vect
                     out.push_back(internKey(ids[i]));
             }
         };
-        auto tryHandle = [&](uint64_t handle) -> LoadRelationshipLookup
+        auto tryHandle = [&](uint64_t handle, TokenId attribute) -> LoadRelationshipLookup
         {
-            const LoadCacheCell* cell = loadCacheCell(handle, rel.id);
+            const LoadCacheCell* cell = loadCacheCell(handle, attribute.id);
             if (!cell)
                 return LoadRelationshipLookup::eUnknown;
             if (const DLTensor* t = cell->relationship)
@@ -5639,6 +6875,8 @@ void OvstageSource::getRelationshipTargets(ObjectKey key, TokenId rel, std::vect
                 if (!canDecodeRelationshipTargets(*t))
                     return LoadRelationshipLookup::eUnknown;
                 const int64_t n = totalElements(*t);
+                if (n == 0)
+                    return LoadRelationshipLookup::eValue;
                 const uint8_t* base = static_cast<const uint8_t*>(t->data) + t->byte_offset;
                 appendIds(reinterpret_cast<const uint64_t*>(base), n);
                 return LoadRelationshipLookup::eValue;
@@ -5669,18 +6907,38 @@ void OvstageSource::getRelationshipTargets(ObjectKey key, TokenId rel, std::vect
         // (For an instance with no backing stage, a covered-miss is the authoritative
         // empty and honours an ovstage rel-clear.)
         const uint64_t raw = rawHandle(key);
+        const uint64_t canonical = canonicalHandleRaw(raw);
+        if (relName == "prototypes")
+        {
+            const TokenId preserved = doInternToken(conv::kUsdPrototypes);
+            auto result = tryHandle(raw, preserved);
+            if (result == LoadRelationshipLookup::eUnknown && canonical && canonical != raw)
+                result = tryHandle(canonical, preserved);
+            if (result == LoadRelationshipLookup::eValue)
+                return;
+            // Unknown/stale coverage must consult the live row before taking an
+            // ordinary cached value. The callback also recognizes an empty row.
+            if ((result == LoadRelationshipLookup::eUnknown || mLoadCacheMayBeStale != 0) &&
+                stageHasAttributeColumn(conv::kUsdPrototypes) != std::optional<bool>(false) &&
+                withAttributeTensor(raw, conv::kUsdPrototypes, [&](const DLTensor& t, uint32_t)
+                {
+                    const int64_t count = totalElements(t);
+                    if (count > 0)
+                        appendIds(reinterpret_cast<const uint64_t*>(static_cast<const uint8_t*>(t.data) + t.byte_offset), count);
+                }))
+                return;
+        }
         if (raw)
         {
-            const LoadRelationshipLookup result = tryHandle(raw);
+            const LoadRelationshipLookup result = tryHandle(raw, rel);
             if (result == LoadRelationshipLookup::eValue)
                 return;
             if (result == LoadRelationshipLookup::eCoveredMiss && mLoadCacheMayBeStale == 0)
                 return;
         }
-        const uint64_t canonical = canonicalHandleRaw(raw);
         if (out.empty() && canonical && canonical != raw)
         {
-            const LoadRelationshipLookup result = tryHandle(canonical);
+            const LoadRelationshipLookup result = tryHandle(canonical, rel);
             if (result == LoadRelationshipLookup::eValue)
                 return;
             if (result == LoadRelationshipLookup::eCoveredMiss && mLoadCacheMayBeStale == 0)
@@ -5690,7 +6948,8 @@ void OvstageSource::getRelationshipTargets(ObjectKey key, TokenId rel, std::vect
 
     // No prim on the stage authors this column (stage-wide vocabulary, rebuilt every drain): the
     // live read below could only come back empty, so spare the round trip.
-    if (stageHasAttributeColumn(conv::toOvstageColumn(relName)) == std::optional<bool>(false))
+    if (stageHasAttributeColumn(attributeColumn(relName)) == std::optional<bool>(false) &&
+        (relName != "prototypes" || stageHasAttributeColumn(conv::kUsdPrototypes) == std::optional<bool>(false)))
         return;
 
     // ovpopulation writes each relationship as a ragged uint64 column of
@@ -5849,7 +7108,9 @@ void OvstageSource::getLocalToWorldTransform(ObjectKey key, Matrix4d& outMatrix)
 
     if (mBucketActive && mBucketTransformsComplete)
     {
-        const bool worldTransformCovered = mBucketAttributeIds.count(worldTransformAttr.id) != 0;
+        const bool worldTransformCovered =
+            std::find(mBucketAttributeIds.begin(), mBucketAttributeIds.end(), worldTransformAttr.id) !=
+            mBucketAttributeIds.end();
         const uint64_t raw = rawHandle(key);
         if (applyCachedWorldTransform(raw))
             return;
@@ -6054,9 +7315,13 @@ void OvstageSource::getLocalTransformImpl(ObjectKey keyIn, ReadTime /*time*/, bo
     if (mBucketActive && mBucketTransformsComplete)
     {
         const bool localTransformCovered =
-            mBucketAttributeIds.count(localTransformAttr.id) != 0 ||
-            mBucketAttributeIds.count(fabricLocalTransformAttr.id) != 0;
-        const bool resetXformStackCovered = mBucketAttributeIds.count(resetXformStackAttr.id) != 0;
+            std::find(mBucketAttributeIds.begin(), mBucketAttributeIds.end(), localTransformAttr.id) !=
+                mBucketAttributeIds.end() ||
+            std::find(mBucketAttributeIds.begin(), mBucketAttributeIds.end(), fabricLocalTransformAttr.id) !=
+                mBucketAttributeIds.end();
+        const bool resetXformStackCovered =
+            std::find(mBucketAttributeIds.begin(), mBucketAttributeIds.end(), resetXformStackAttr.id) !=
+            mBucketAttributeIds.end();
         auto materializeCachedTransform = [&](uint64_t handle) -> bool
         {
             if (!handle || !mBucketReadGroupTensor)
@@ -6269,6 +7534,11 @@ void OvstageSource::getLocalToWorldRotationAndScale(ObjectKey key,
     Matrix4d wm;
     getLocalToWorldTransform(key, wm);
 
+    decomposeWorldTransform(wm, outRotation, outScale);
+}
+
+void decomposeWorldTransform(const Matrix4d& wm, Matrix3d& outRotation, carb::Float3& outScale) noexcept
+{
     // omni::physx::decomposeMatrix (common/foundation/MatrixTools.h) reproduces
     // GfTransform::GetRotation()/GetScale() to float precision, including the
     // sign convention on reflections: a mirror scale reports all three scale
@@ -6745,10 +8015,12 @@ ObjectKey OvstageSource::getMaterialBinding(ObjectKey primKey) const
 
     std::vector<ObjectKey> targets;
 
-    // No prim on the stage authors a binding column of any purpose (stage-wide vocabulary,
-    // rebuilt every drain): the two chain walks below have nothing to find, and only the
-    // instance-proxy material can still answer.
-    const bool anyBindingColumn = stageHasAttributeWithPrefix("material:binding") != std::optional<bool>(false);
+    // Under an immutable load window, chain reads use prefetched relationships
+    // and covered misses. Otherwise the stage vocabulary can skip both walks
+    // when no binding column exists anywhere.
+    const bool localBindingRead = mLoadCacheActive && mLoadCacheMayBeStale == 0;
+    const bool anyBindingColumn =
+        localBindingRead || stageHasAttributeWithPrefix("material:binding") != std::optional<bool>(false);
 
     // Purpose ordering is the OUTER loop, the ancestor chain the inner one —
     // UsdShadeMaterialBindingAPI::ComputeBoundMaterial resolves the requested
@@ -6767,6 +8039,24 @@ ObjectKey OvstageSource::getMaterialBinding(ObjectKey primKey) const
         // purpose), then the all-purpose binding inherited from an ancestor.
         if (bindingFor(primKey, "material:binding", targets))
             return targets.front();
+    }
+
+    // The merged read also covers the instance-proxy material. Accept only the
+    // scalar path representation understood by the full instance-material cache;
+    // incomplete or unsupported cells retain that cache's live fallback.
+    if (localBindingRead && primKey.valid())
+    {
+        const TokenId instanceAttr = doInternToken("_instanceMaterialBinding");
+        const LoadCacheCell* cell = loadCacheCell(rawHandle(primKey), instanceAttr.id);
+        if (cell && cell->covered && !cell->relationship &&
+            (!cell->scalar.tensor || (cell->scalar.comps == 1 && cell->scalar.tensor->dtype.lanes == 1 &&
+                                     canDecodeRelationshipTargets(*cell->scalar.tensor))))
+        {
+            getRelationshipTargets(primKey, instanceAttr, targets);
+            if (!targets.empty())
+                return targets.front();
+            return anyBindingColumn ? chainBindingFor("material:binding", targets) : ObjectKey{};
+        }
     }
 
     if (primKey.valid() && buildInstanceMaterialCache())

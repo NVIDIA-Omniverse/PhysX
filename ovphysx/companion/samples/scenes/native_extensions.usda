@@ -1,0 +1,38 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+def Xform "World"
+{
+    def PhysicsScene "Scene"
+    {
+        vector3f physics:gravityDirection = (0, -1, 0)
+        float physics:gravityMagnitude = 9.81
+    }
+    def Plane "Ground" (prepend apiSchemas = ["PhysicsCollisionAPI"])
+    {
+        uniform token axis = "Y"
+    }
+    def Cube "Body" (prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"])
+    {
+        double size = 0.25
+        float physics:mass = 1
+        double3 xformOp:translate = (3, 5, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+    def CompanionSpringJoint "Spring"
+    {
+        rel physics:body1 = </World/Body>
+        point3f physics:localPos0 = (0, 5, 0)
+        float companion:stiffness = 125
+    }
+    def Sphere "Ball" (prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "CompanionBallAPI"])
+    {
+        double radius = 0.25
+        float companion:radius = 0.75
+        double3 xformOp:translate = (5, 2, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+}

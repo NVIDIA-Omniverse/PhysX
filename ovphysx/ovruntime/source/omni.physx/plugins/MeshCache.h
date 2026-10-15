@@ -7,6 +7,8 @@
 #include <PxPhysicsAPI.h>
 #include <private/omni/physx/PhysxUsd.h>
 
+#include <carb/tasking/TaskingUtils.h>
+#include <mutex>
 #include <map>
 #include <unordered_map>
 #include <vector>
@@ -33,6 +35,10 @@ using SphereFillMap = std::unordered_map<omni::physx::usdparser::MeshKey,
                                          omni::physx::usdparser::MeshKeyHash>;
 
 struct CollisionRepresentation;
+// @implements REQ-ATTACH-SERVICES-001
+// @covers AC-3
+// Entries are immutable after publication. Lookup containers are synchronized;
+// returned data stays borrowed until the externally serialized runtime cache reset.
 class MeshCache
 {
 public:
@@ -47,6 +53,7 @@ public:
 
     bool hasConvexMesh(const omni::physx::usdparser::MeshKey& crc) const
     {
+        std::lock_guard<carb::tasking::RecursiveMutexWrapper> lock(mMutex);
         bool ret = false;
 
         ConvexMeshMap::const_iterator it = mConvexMeshMap.find(crc);
@@ -60,6 +67,7 @@ public:
 
     bool hasTriangleMesh(const omni::physx::usdparser::MeshKey& crc) const
     {
+        std::lock_guard<carb::tasking::RecursiveMutexWrapper> lock(mMutex);
         bool ret = false;
         TriangleMeshMap::const_iterator it = mTriangleMeshMap.find(crc);
         if (it != mTriangleMeshMap.end())
@@ -71,6 +79,7 @@ public:
 
     bool hasConvexDecomposition(const omni::physx::usdparser::MeshKey& crc) const
     {
+        std::lock_guard<carb::tasking::RecursiveMutexWrapper> lock(mMutex);
         bool ret = false;
 
         ConvexDecompositionMap::const_iterator found = mConvexDecompositionMap.find(crc);
@@ -84,6 +93,7 @@ public:
 
     ::physx::PxConvexMesh* getConvexMesh(const omni::physx::usdparser::MeshKey& crc) const
     {
+        std::lock_guard<carb::tasking::RecursiveMutexWrapper> lock(mMutex);
         ConvexMeshMap::const_iterator it = mConvexMeshMap.find(crc);
         if (it != mConvexMeshMap.end())
             return it->second;
@@ -96,6 +106,7 @@ public:
 
     ::physx::PxTriangleMesh* getTriangleMesh(const omni::physx::usdparser::MeshKey& crc) const
     {
+        std::lock_guard<carb::tasking::RecursiveMutexWrapper> lock(mMutex);
         TriangleMeshMap::const_iterator it = mTriangleMeshMap.find(crc);
         if (it != mTriangleMeshMap.end())
             return it->second;
@@ -107,6 +118,7 @@ public:
                          gsl::span<const uint32_t>* inputTrianglesFaceMapping,
                          bool computeRemapTable)
     {
+        std::lock_guard<carb::tasking::RecursiveMutexWrapper> lock(mMutex);
         mesh->acquireReference();
         mTriangleMeshMap[crc] = mesh;
         if (inputTrianglesFaceMapping && !inputTrianglesFaceMapping->empty())
@@ -124,34 +136,38 @@ public:
 
     const uint32_t* getTriangleMeshFaceMap(const ::physx::PxTriangleMesh* triMesh) const
     {
+        std::lock_guard<carb::tasking::RecursiveMutexWrapper> lock(mMutex);
         TriMeshRemapTable::const_iterator fit = mTriMeshRemapTable.find(triMesh);
         if (fit != mTriMeshRemapTable.end())
             return fit->second;
         return nullptr;
     }
 
-    const ConvexDecompositionMap& getConvexDecompositionMap() const
+    ConvexMeshVector getConvexDecomposition(const omni::physx::usdparser::MeshKey& crc) const
     {
-        return mConvexDecompositionMap;
+        std::lock_guard<carb::tasking::RecursiveMutexWrapper> lock(mMutex);
+        const auto found = mConvexDecompositionMap.find(crc);
+        return found == mConvexDecompositionMap.end() ? ConvexMeshVector{} : found->second;
     }
 
-    const ConvexMeshDataMap& getConvexMeshDataMap() const
+    bool getConvexMeshData(::physx::PxConvexMesh* mesh, ConvexMeshData& data) const
     {
-        return mConvexMeshDataMap;
+        std::lock_guard<carb::tasking::RecursiveMutexWrapper> lock(mMutex);
+        const auto found = mConvexMeshDataMap.find(mesh);
+        if (found == mConvexMeshDataMap.end())
+            return false;
+        data = found->second;
+        return true;
     }
 
     void addConvexDecomposition(const omni::physx::usdparser::MeshKey& crc, const ConvexMeshVector& meshes);
 
     void release();
 
-    const SphereFillMap& getSphereFillMap() const
-    {
-        return mSphereFillMap;
-    }
-
     const omni::physx::usdparser::SpherePointsPhysxShapeDesc* addSphereFill(
         const omni::physx::usdparser::MeshKey& crc, const omni::physx::usdparser::SpherePointsPhysxShapeDesc& desc)
     {
+        std::lock_guard<carb::tasking::RecursiveMutexWrapper> lock(mMutex);
         omni::physx::usdparser::SpherePointsPhysxShapeDesc* d = new omni::physx::usdparser::SpherePointsPhysxShapeDesc;
         *d = desc;
         mSphereFillMap[crc] = d;
@@ -160,6 +176,7 @@ public:
 
     const omni::physx::usdparser::SpherePointsPhysxShapeDesc* getSphereFill(const omni::physx::usdparser::MeshKey& crc) const
     {
+        std::lock_guard<carb::tasking::RecursiveMutexWrapper> lock(mMutex);
         SphereFillMap::const_iterator it = mSphereFillMap.find(crc);
         if (it != mSphereFillMap.end())
             return it->second;
@@ -193,6 +210,7 @@ public:
                                                                      const omni::physx::usdparser::PhysxShapeDesc& desc);
 
 private:
+    mutable carb::tasking::RecursiveMutexWrapper mMutex;
     ConvexMeshMap mConvexMeshMap;
     TriangleMeshMap mTriangleMeshMap;
     ConvexDecompositionMap mConvexDecompositionMap;

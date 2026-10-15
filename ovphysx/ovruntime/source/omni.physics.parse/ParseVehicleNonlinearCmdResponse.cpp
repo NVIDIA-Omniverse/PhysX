@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-1 AC-2
+ */
+
 /**
  * @implements REQ-PARSE-VEH-ROOT-001
  * @covers AC-1 AC-2 AC-3
@@ -20,6 +24,8 @@
 
 #include <omni/physics/parse/IPhysicsSource.h>
 #include <omni/physics/parse/ParseApi.h>
+#include <omni/physics/parse/PreparedVehicle.h>
+#include <stdexcept>
 #include <omni/physics/parse/ParseContext.h>
 
 #include <carb/logging/Log.h>
@@ -31,43 +37,69 @@ namespace omni::physics::parse
 
 // @implements REQ-PARSE-VEH-ROOT-001
 // @covers AC-1 AC-2 AC-3
-DescPtr<NonlinearCmdResponseDesc> parseNonlinearCmdResponse(
-    ParseContext& ctx, ObjectKey ownerKey,
-    std::string_view instanceName, const NonlinearCmdResponseInfo& info)
+PreparedNonlinearCmdResponse prepareNonlinearCmdResponse(ParseContext& ctx, ObjectKey ownerKey, std::string_view instanceName, const NonlinearCmdResponseInfo& info)
 {
-    IPhysicsSource& src = ctx.source();
-    const std::string ownerName(src.sourceKeyToString(ownerKey));
+    PreparedNonlinearCmdResponse input;
+    input.ownerKey = ownerKey;
+    input.instanceName = instanceName;
+    input.info = info;
+    input.instanceToken = ctx.source().internToken(instanceName);
+    input.reads = prepareVehicleReads(ctx.source(), ownerKey, {
+
+    }, instanceName);
+    return input;
+}
+
+void prepareNonlinearCmdResponseStorage(const PreparedNonlinearCmdResponse& input, NonlinearCmdResponseDesc& output)
+{
+    output.commandValues.resize(input.info.hasCommandValues ? input.info.commandValues.size() : 0);
+    output.speedResponsesPerCommandValue.resize(input.info.hasSpeedResponsesPerCommandValue ? input.info.speedResponsesPerCommandValue.size() : 0);
+    output.speedResponses.resize(input.info.hasSpeedResponses ? input.info.speedResponses.size() : 0);
+}
+
+bool fillNonlinearCmdResponse(const PreparedNonlinearCmdResponse& input, NonlinearCmdResponseDesc& output, VehicleFillStatus& status) noexcept
+{
+    PreparedVehicleReader src(input.reads, status);
+    [[maybe_unused]] ObjectKey ownerKey = input.ownerKey;
+    [[maybe_unused]] const std::string& instanceName = input.instanceName;
+    [[maybe_unused]] const NonlinearCmdResponseInfo& info = input.info;
+    VehicleOutputVector<typename decltype(output.commandValues)::value_type> commandValuesOut(output.commandValues, vehicle_output_slot::commandValues, status);
+    VehicleOutputVector<typename decltype(output.speedResponsesPerCommandValue)::value_type> speedResponsesPerCommandValueOut(output.speedResponsesPerCommandValue, vehicle_output_slot::speedResponsesPerCommandValue, status);
+    VehicleOutputVector<typename decltype(output.speedResponses)::value_type> speedResponsesOut(output.speedResponses, vehicle_output_slot::speedResponses, status);
+
+
+    const std::string& ownerName = src.sourceKeyToString(ownerKey);
     (void)instanceName;  // unused — kept for API symmetry with other parsers
 
-    DescPtr<NonlinearCmdResponseDesc> desc = allocateDesc<NonlinearCmdResponseDesc>(ctx.descriptorAllocator());
+    NonlinearCmdResponseDesc* desc = &output;
 
     // commandValues
     if (info.hasCommandValues)
     {
         if (info.commandValues.size() > NonlinearCmdResponseDesc::maxNumberOfCommandValues)
         {
-            CARB_LOG_ERROR("Usd Physics: attribute \"commandValues\" of nonlinear command response \"%s\" "
+            VEHICLE_LOG_ERROR(status, "Usd Physics: attribute \"commandValues\" of nonlinear command response \"%s\" "
                            "has more than the maximum allowed number of %d entries.",
                            ownerName.c_str(), NonlinearCmdResponseDesc::maxNumberOfCommandValues);
-            return {};
+            return false;
         }
         float lastCommandValue = -1.0f;
-        desc->commandValues.reserve(info.commandValues.size());
+        commandValuesOut.reserve(info.commandValues.size());
         for (float v : info.commandValues)
         {
             if (v < 0.0f || v > 1.0f)
             {
-                CARB_LOG_ERROR("Usd Physics: attribute \"commandValues\" of nonlinear command response \"%s\" "
+                VEHICLE_LOG_ERROR(status, "Usd Physics: attribute \"commandValues\" of nonlinear command response \"%s\" "
                                "expects values in range [0, 1].", ownerName.c_str());
-                return {};
+                return false;
             }
             if (v <= lastCommandValue)
             {
-                CARB_LOG_ERROR("Usd Physics: attribute \"commandValues\" of nonlinear command response \"%s\" "
+                VEHICLE_LOG_ERROR(status, "Usd Physics: attribute \"commandValues\" of nonlinear command response \"%s\" "
                                "expects strictly increasing entries.", ownerName.c_str());
-                return {};
+                return false;
             }
-            desc->commandValues.push_back(v);
+            commandValuesOut.push_back(v);
             lastCommandValue = v;
         }
     }
@@ -76,10 +108,10 @@ DescPtr<NonlinearCmdResponseDesc> parseNonlinearCmdResponse(
     if (info.hasSpeedResponses &&
         info.speedResponses.size() > NonlinearCmdResponseDesc::maxNumberOfSpeedResponses)
     {
-        CARB_LOG_ERROR("Usd Physics: attribute \"speedResponses\" of nonlinear command response \"%s\" "
+        VEHICLE_LOG_ERROR(status, "Usd Physics: attribute \"speedResponses\" of nonlinear command response \"%s\" "
                        "has more than the maximum allowed number of %d entries.",
                        ownerName.c_str(), NonlinearCmdResponseDesc::maxNumberOfSpeedResponses);
-        return {};
+        return false;
     }
 
     // speedResponsesPerCommandValue: length must match commandValues
@@ -87,10 +119,10 @@ DescPtr<NonlinearCmdResponseDesc> parseNonlinearCmdResponse(
     {
         if (info.speedResponsesPerCommandValue.size() != info.commandValues.size())
         {
-            CARB_LOG_ERROR("Usd Physics: attribute \"speedResponsesPerCommandValue\" of nonlinear command response \"%s\" "
+            VEHICLE_LOG_ERROR(status, "Usd Physics: attribute \"speedResponsesPerCommandValue\" of nonlinear command response \"%s\" "
                            "needs to have the same number of entries as the \"commandValues\" attribute.",
                            ownerName.c_str());
-            return {};
+            return false;
         }
     }
 
@@ -98,23 +130,23 @@ DescPtr<NonlinearCmdResponseDesc> parseNonlinearCmdResponse(
     // [0, speedResponses.size()), strictly increasing.
     {
         int lastIndex = -1;
-        desc->speedResponsesPerCommandValue.reserve(info.speedResponsesPerCommandValue.size());
+        speedResponsesPerCommandValueOut.reserve(info.speedResponsesPerCommandValue.size());
         const int srSize = static_cast<int>(info.speedResponses.size());
         for (int idx : info.speedResponsesPerCommandValue)
         {
             if (idx < 0 || (idx + 1) > srSize)
             {
-                CARB_LOG_ERROR("Usd Physics: attribute \"speedResponsesPerCommandValue\" of nonlinear command response \"%s\" "
+                VEHICLE_LOG_ERROR(status, "Usd Physics: attribute \"speedResponsesPerCommandValue\" of nonlinear command response \"%s\" "
                                "expects values in range [0, %d).", ownerName.c_str(), srSize);
-                return {};
+                return false;
             }
             if (idx <= lastIndex)
             {
-                CARB_LOG_ERROR("Usd Physics: attribute \"speedResponsesPerCommandValue\" of nonlinear command response \"%s\" "
+                VEHICLE_LOG_ERROR(status, "Usd Physics: attribute \"speedResponsesPerCommandValue\" of nonlinear command response \"%s\" "
                                "expects strictly increasing entries.", ownerName.c_str());
-                return {};
+                return false;
             }
-            desc->speedResponsesPerCommandValue.push_back(idx);
+            speedResponsesPerCommandValueOut.push_back(idx);
             lastIndex = idx;
         }
     }
@@ -124,24 +156,24 @@ DescPtr<NonlinearCmdResponseDesc> parseNonlinearCmdResponse(
     // indices in `speedResponsesPerCommandValue`.
     {
         float lastSpeedValue = -FLT_MAX;
-        desc->speedResponses.reserve(info.speedResponses.size());
+        speedResponsesOut.reserve(info.speedResponses.size());
         int speedGraphIndex = 1;
         int entryIndex = 0;
         for (const carb::Float2& sp : info.speedResponses)
         {
             if (sp.y < 0.0f || sp.y > 1.0f)
             {
-                CARB_LOG_ERROR("Usd Physics: attribute \"speedResponses\" of nonlinear command response \"%s\" "
+                VEHICLE_LOG_ERROR(status, "Usd Physics: attribute \"speedResponses\" of nonlinear command response \"%s\" "
                                "expects response values in range [0, 1].", ownerName.c_str());
-                return {};
+                return false;
             }
             if (sp.x <= lastSpeedValue)
             {
-                CARB_LOG_ERROR("Usd Physics: attribute \"speedResponses\" of nonlinear command response \"%s\" "
+                VEHICLE_LOG_ERROR(status, "Usd Physics: attribute \"speedResponses\" of nonlinear command response \"%s\" "
                                "expects strictly increasing speed entries.", ownerName.c_str());
-                return {};
+                return false;
             }
-            desc->speedResponses.push_back(sp);
+            speedResponsesOut.push_back(sp);
             ++entryIndex;
 
             if (static_cast<size_t>(speedGraphIndex) >= info.speedResponsesPerCommandValue.size() ||
@@ -157,7 +189,30 @@ DescPtr<NonlinearCmdResponseDesc> parseNonlinearCmdResponse(
         }
     }
 
-    return desc;
+    return true;
 }
+
+void finishNonlinearCmdResponseStorage(NonlinearCmdResponseDesc& output, const VehicleFillStatus& status)
+{
+    output.commandValues.resize(status.written[vehicle_output_slot::commandValues]);
+    output.speedResponsesPerCommandValue.resize(status.written[vehicle_output_slot::speedResponsesPerCommandValue]);
+    output.speedResponses.resize(status.written[vehicle_output_slot::speedResponses]);
+}
+
+DescPtr<NonlinearCmdResponseDesc> parseNonlinearCmdResponse(ParseContext& ctx, ObjectKey ownerKey, std::string_view instanceName, const NonlinearCmdResponseInfo& info)
+{
+    const PreparedNonlinearCmdResponse input = prepareNonlinearCmdResponse(ctx, ownerKey, instanceName, info);
+    DescPtr<NonlinearCmdResponseDesc> output = allocateDesc<NonlinearCmdResponseDesc>(ctx.descriptorAllocator());
+    if (!output) return {};
+    prepareNonlinearCmdResponseStorage(input, *output);
+    VehicleFillStatus status;
+    const bool valid = fillNonlinearCmdResponse(input, *output, status);
+    status.report();
+    if (status.incomplete) throw std::logic_error("Incomplete prepared vehicle input or storage");
+    if (!valid) return {};
+    finishNonlinearCmdResponseStorage(*output, status);
+    return output;
+}
+
 
 } // namespace omni::physics::parse

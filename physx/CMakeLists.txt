@@ -465,7 +465,7 @@ endif()
 
 # Link against PhysX libraries if available
 set(PHYSX_LIBS "")
-foreach(lib IN ITEMS PhysX PhysXCommon PhysXFoundation PhysXExtensions PhysXPvdSDK PhysXCooking PhysXCharacterKinematic PhysXVehicle)
+foreach(lib IN ITEMS PhysX PhysXCommon PhysXFoundation PhysXExtensions PhysXPvdSDK PhysXCharacterKinematic PhysXVehicle)
   if(TARGET ${lib})
     message(STATUS "Linking physx_lib with ${lib}")
     target_link_libraries(physx_lib INTERFACE ${lib})
@@ -644,7 +644,7 @@ else()
 
   # Add core libraries if they're not static
   if(NOT PX_GENERATE_STATIC_LIBRARIES)
-    foreach(lib IN ITEMS PhysX PhysXCommon PhysXCooking PhysXFoundation)
+    foreach(lib IN ITEMS PhysX PhysXCommon PhysXFoundation)
       if(TARGET ${lib})
         list(APPEND SHARED_LIBS_TO_INSTALL ${lib})
       endif()

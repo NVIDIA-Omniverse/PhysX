@@ -61,6 +61,11 @@ namespace physx
 
 						nbDof++;
 					}
+					else
+					{
+						// A slot left from an earlier configuration might belong to another dof now.
+						joint->invDofIds[i] = 0xff;
+					}
 				}
 			
 				return nbDof;

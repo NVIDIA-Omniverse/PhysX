@@ -46,7 +46,7 @@ public:
     uint32_t getMaxCollisionNodesPerBody() const override;
 
     bool check() const override;
-    void release() override;
+    bool release() override;
 
     //
     // helpers

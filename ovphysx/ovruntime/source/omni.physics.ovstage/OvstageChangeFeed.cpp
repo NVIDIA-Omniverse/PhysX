@@ -1,7 +1,14 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-FEED-006
+ * @covers AC-1 AC-2 AC-3 AC-4
+ */
+
 /**
+ * @implements REQ-CUSTOM-LIFETIME-001
+ * @covers AC-6
+ *
  * @implements REQ-PARSE-FEED-001
  * @covers AC-1 AC-2 AC-3 AC-4
  *
@@ -18,21 +25,26 @@
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5
  *
  * @implements REQ-PARSE-FEED-003
- * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7 AC-11 AC-13 AC-14
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7 AC-11 AC-13 AC-14 AC-16
  *
  * @implements REQ-PARSE-FEED-004
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5
+ *
+ * @implements REQ-PARSE-XFORM-001
+ * @covers AC-5
  *
  * @implements REQ-PARSE-FEED-005
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-8 AC-9
  */
 
 #include "OvstageChangeFeed.h"
+#include <omni/physics/parse/CustomTokens.h>
 
 #include "OvstageSource.h"
 #include "ReadGroupUtils.h"
 #include "ReadColumn.h"
 
+#include <ovstage/ovstage_api/ovstage_tensor_utils.h>
 
 #include <carb/profiler/Profile.h>
 
@@ -66,6 +78,13 @@ std::atomic_size_t& hierarchyFallbackCounter()
 {
     static std::atomic_size_t counter{ 0 };
     return counter;
+}
+
+// Test-only failure after an incremental add has been classified.
+std::atomic_int& addedKeyResolutionFault()
+{
+    static std::atomic_int count{ 0 };
+    return count;
 }
 
 // Test-only count of whole-stage rescans of the known physics sets. Steady-state spawning
@@ -133,7 +152,11 @@ int64_t totalElements(const DLTensor& t)
 
 bool isTokenIdTensor(const DLTensor& t)
 {
-    return t.data && t.dtype.code == kDLUInt && (t.dtype.bits == 64 || t.dtype.bits == 32);
+    if (t.ndim < 0 || (t.ndim > 0 && !t.shape) || t.dtype.code != kDLUInt ||
+        (t.dtype.bits != 64 && t.dtype.bits != 32))
+        return false;
+    // Empty schema rows are complete deltas even when the producer omits storage.
+    return t.data || totalElements(t) == 0;
 }
 
 uint64_t tokenIdAt(const DLTensor& t, int64_t i)
@@ -219,7 +242,7 @@ ColumnType columnTypeOf(const DLDataType& dt, int64_t comps)
 // PointInstancer's inactive-id set), so an edit to it must reach the value feed.
 bool isValueAttributeName(std::string_view name)
 {
-    if (name.empty() || name[0] == '_')
+    if (name.empty() || name[0] == '_' || name == conv::kUsdTypeName)
         return false;
     const bool builtInUsdMetadata = name.rfind("usd-", 0) == 0 && name.rfind(conv::kMetadataPrefix, 0) != 0;
     return !builtInUsdMetadata;
@@ -252,8 +275,6 @@ const ovx_string_t kKnownPhysicsPrimTypes[] = {
     ovxStr("PhysxPhysicsRackAndPinionJoint"), ovxStr("PhysicsCollisionGroup"),
     ovxStr("PointInstancer")
 };
-constexpr size_t kKnownPhysicsSchemaCount = sizeof(kKnownPhysicsSchemas) / sizeof(kKnownPhysicsSchemas[0]);
-constexpr size_t kKnownPhysicsPrimTypeCount = sizeof(kKnownPhysicsPrimTypes) / sizeof(kKnownPhysicsPrimTypes[0]);
 
 } // namespace
 
@@ -314,14 +335,61 @@ void setOvstageKnownPathScanFaultForTest(int count)
     knownPathScanFaultCounter().store(count, std::memory_order_relaxed);
 }
 
+void setOvstageAddedKeyResolutionFaultForTest(int count)
+{
+    addedKeyResolutionFault().store(count, std::memory_order_relaxed);
+}
+
 void setOvstageStructuralRowsReadFaultForTest(int count)
 {
     structuralRowsReadFaultCounter().store(count, std::memory_order_relaxed);
 }
 
+void OvstageChangeFeed::refreshCustomFamilies()
+{
+    const uint64_t generation=customTokenGeneration();
+    if (generation==mCustomTokenGeneration && !mPhysicsTypeNames.empty()) return;
+    // Retain discovered names through this feed's lifetime: unregistering code
+    // must not hide pending tombstones. Plugin retirement independently gates
+    // live native state. Rebuild string views only after storage has settled.
+    std::vector<std::string> types = mPhysicsTypeNames;
+    std::vector<std::string> schemas = mPhysicsSchemaNames;
+    if (types.empty())
+        for (const ovx_string_t & name : kKnownPhysicsPrimTypes)
+            types.emplace_back(name.ptr, name.length);
+    if (schemas.empty())
+        for (const ovx_string_t & name : kKnownPhysicsSchemas)
+            schemas.emplace_back(name.ptr, name.length);
+    for (const omni::physics::parse::CustomTokenKind kind : { CustomTokenKind::eJoint, CustomTokenKind::eShape,
+                            CustomTokenKind::ePhysicsInstancer })
+        for (const std::string & name : customTokens(kind))
+        {
+            types.push_back(name);
+            if (kind == CustomTokenKind::eShape)
+                schemas.push_back(name);
+        }
+    void (*const unique)(std::vector<std::string>&) = [](std::vector<std::string>& names) {
+        std::sort(names.begin(), names.end());
+        names.erase(std::unique(names.begin(), names.end()), names.end());
+    };
+    unique(types); unique(schemas);
+    if (types == mPhysicsTypeNames && schemas == mPhysicsSchemaNames) {mCustomTokenGeneration=generation;return;}
+    std::vector<ovx_string_t> primTypes,schemaNames;
+    primTypes.reserve(types.size());schemaNames.reserve(schemas.size());
+    for (const std::string& name:types) primTypes.push_back({name.data(),name.size()});
+    for (const std::string& name:schemas) schemaNames.push_back({name.data(),name.size()});
+    mPhysicsTypeNames=std::move(types);mPhysicsSchemaNames=std::move(schemas);
+    mPhysicsPrimTypes=std::move(primTypes);mPhysicsSchemas=std::move(schemaNames);
+    mKnownFamilyTokensBuilt = false;
+    mKnownSetAuthoritative = false;
+    dirtyCachedFamilyQueries();
+    mCustomTokenGeneration=generation;
+}
+
 OvstageChangeFeed::OvstageChangeFeed(OvstageSource& source, ovstage_instance_t* instance, ovx_path_dictionary_t* dict)
     : mSource(source), mInstance(instance), mDict(dict), mLastDrainedOrd1(source.readOrdinal())
 {
+    refreshCustomFamilies();
     seedKnownPhysicsPaths();
 }
 
@@ -389,20 +457,57 @@ void OvstageChangeFeed::seedKnownPhysicsPaths()
 
     std::unordered_set<std::string> physicsPaths;
     std::unordered_set<std::string> transformPaths;
-    const bool schemaOk = collectKnownPathsFromFilter("usd-schemas", OVSTAGE_FILTER_OP_CONTAINS, kKnownPhysicsSchemas,
-                                                      kKnownPhysicsSchemaCount, mSchemaFamilyQuery,
+    const bool schemaOk = collectKnownPathsFromFilter("usd-schemas", OVSTAGE_FILTER_OP_CONTAINS, mPhysicsSchemas.data(),
+                                                      mPhysicsSchemas.size(), mSchemaFamilyQuery,
                                                       physicsPaths, transformPaths);
-    const bool typeOk = collectKnownPathsFromFilter("usd-prim-type", OVSTAGE_FILTER_OP_IN, kKnownPhysicsPrimTypes,
-                                                    kKnownPhysicsPrimTypeCount, mTypeFamilyQuery,
-                                                    physicsPaths, transformPaths);
+    const bool typeOk = collectKnownPathsFromTypes(physicsPaths, transformPaths);
 
     mKnownPhysicsPaths = std::move(physicsPaths);
     mKnownTransformPaths = std::move(transformPaths);
+    rebuildTransformPathRefCounts();
     mKnownPhysicsQuery.noteReplaced();
     mKnownTransformQuery.noteReplaced();
     // A failed scan leaves the sets partial with no other record; the next drain must then
     // rescan before its value and transform reads rather than extend them.
     mKnownSetAuthoritative = schemaOk && typeOk;
+}
+
+bool OvstageChangeFeed::collectKnownPathsFromTypes(std::unordered_set<std::string>& physicsPaths,
+                                                  std::unordered_set<std::string>& transformPaths,
+                                                  std::vector<ObjectKey>* newKeys,
+                                                  const std::unordered_set<std::string>* oldPhysicsPaths)
+{
+    const std::optional<bool> authored = mSource.hasAuthoredTypeColumn();
+    if (!authored.has_value())
+        return false;
+    if (!*authored)
+        return collectKnownPathsFromFilter(conv::kUsdPrimType, OVSTAGE_FILTER_OP_IN,
+            mPhysicsPrimTypes.data(), mPhysicsPrimTypes.size(), mTypeFamilyQuery,
+            physicsPaths, transformPaths, newKeys, oldPhysicsPaths);
+
+    // Built-in type filters count renderer proxy types, not the authored physics
+    // families. Use the same merged type index as the walker. A recovery rescan
+    // needs a fresh snapshot because its range may have skipped structural rows.
+    mFamilyPrimCountReliable = false;
+    OvstageSource latest(mInstance, mDict, mSource.readOrdinal());
+    const OvstageSource& types = oldPhysicsPaths ? latest : mSource;
+    for (const std::string& type : mPhysicsTypeNames)
+    {
+        std::vector<ObjectKey> keys;
+        if (!types.collectPrimTypeKeys(type, keys))
+            return false;
+        for (const ObjectKey key : keys)
+        {
+            const std::string path(types.sourceKeyToString(key));
+            if (path.empty())
+                return false;
+            const bool inserted = physicsPaths.insert(path).second;
+            rememberTransformPathAndAncestors(transformPaths, path);
+            if (inserted && newKeys && oldPhysicsPaths && !oldPhysicsPaths->count(path))
+                newKeys->push_back(mSource.findByPath(path));
+        }
+    }
+    return true;
 }
 
 bool OvstageChangeFeed::collectKnownPathsFromFilter(const char* attrName,
@@ -510,10 +615,11 @@ void OvstageChangeFeed::dirtyCachedFamilyQueries()
     releaseCachedQuery(mTypeFamilyQuery);
 }
 
-void OvstageChangeFeed::setDiscoveredValueAttributes(std::vector<ovx_token_t>& target,
+bool OvstageChangeFeed::setDiscoveredValueAttributes(std::vector<ovx_token_t>& target,
                                                      const ovx_token_t* attrs,
                                                      size_t count)
 {
+    bool resolved = true;
     std::vector<ovx_token_t> fresh;
     fresh.reserve(count);
     std::unordered_set<ovx_token_t> seen;
@@ -521,8 +627,12 @@ void OvstageChangeFeed::setDiscoveredValueAttributes(std::vector<ovx_token_t>& t
     {
         ovx_string_t s{};
         if (ovx_path_dictionary_token_to_string(mDict, attrs[i], &s) != OVX_OK || !s.ptr || s.length == 0)
+        {
+            resolved = false;
             continue;
-        if (!isValueAttributeName(std::string_view(s.ptr, s.length)))
+        }
+        const std::string_view name(s.ptr, s.length);
+        if (!isValueAttributeName(name))
             continue;
         if (seen.insert(attrs[i]).second)
             fresh.push_back(attrs[i]);
@@ -533,9 +643,10 @@ void OvstageChangeFeed::setDiscoveredValueAttributes(std::vector<ovx_token_t>& t
     for (size_t i = 0; same && i < target.size(); ++i)
         same = seen.count(target[i]) != 0;
     if (same)
-        return;
+        return resolved;
     target.swap(fresh);
     mValueReadAttrsDirty = true;
+    return resolved;
 }
 
 ovstage_query_handle_t OvstageChangeFeed::queryForFilter(const char* attrName,
@@ -639,7 +750,8 @@ bool OvstageChangeFeed::executeFamilyQuery(const char* attrName,
 bool OvstageChangeFeed::familyMembershipUnchanged(bool& unchanged)
 {
     unchanged = false;
-    if (!mFamilyPrimCountReliable || mSchemaFamilyQuery.query == OVSTAGE_INVALID_QUERY_HANDLE ||
+    if (!mFamilyPrimCountReliable || !mFamilyCountsCurrent ||
+        mSchemaFamilyQuery.query == OVSTAGE_INVALID_QUERY_HANDLE ||
         mTypeFamilyQuery.query == OVSTAGE_INVALID_QUERY_HANDLE)
         return true;
 
@@ -647,11 +759,11 @@ bool OvstageChangeFeed::familyMembershipUnchanged(bool& unchanged)
     // Count only: attribute discovery is refreshed per drain from the known-physics
     // path-list query instead (readValueChanges), which is far cheaper than
     // enumerating every attribute of every matched prim here.
-    if (!executeFamilyQuery("usd-schemas", OVSTAGE_FILTER_OP_CONTAINS, kKnownPhysicsSchemas, kKnownPhysicsSchemaCount,
+    if (!executeFamilyQuery("usd-schemas", OVSTAGE_FILTER_OP_CONTAINS, mPhysicsSchemas.data(), mPhysicsSchemas.size(),
                             mSchemaFamilyQuery, /*refreshDiscovery=*/false, count))
         return false;
     const bool schemaSame = count == mSchemaFamilyQuery.primCount;
-    if (!executeFamilyQuery("usd-prim-type", OVSTAGE_FILTER_OP_IN, kKnownPhysicsPrimTypes, kKnownPhysicsPrimTypeCount,
+    if (!executeFamilyQuery(conv::kUsdPrimType, OVSTAGE_FILTER_OP_IN, mPhysicsPrimTypes.data(), mPhysicsPrimTypes.size(),
                             mTypeFamilyQuery, /*refreshDiscovery=*/false, count))
         return false;
     unchanged = schemaSame && count == mTypeFamilyQuery.primCount;
@@ -676,7 +788,14 @@ bool OvstageChangeFeed::refreshDiscoveryFromQuery(const PathListQuery& query)
     }
     if (attrs.empty())
         return false;
-    setDiscoveredValueAttributes(mPathListDiscoveredAttrs, attrs.data(), attrs.size());
+    // Dictionary tokens have immutable names. Reuse classification only after every
+    // token resolved successfully, and only for the identical fresh metadata sequence.
+    if (mUsePathListDiscovery && attrs == mLastPathListAttributes)
+        return true;
+    if (setDiscoveredValueAttributes(mPathListDiscoveredAttrs, attrs.data(), attrs.size()))
+        mLastPathListAttributes = std::move(attrs);
+    else
+        mLastPathListAttributes.clear();
     if (!mUsePathListDiscovery)
     {
         mUsePathListDiscovery = true;
@@ -709,7 +828,7 @@ OvstageChangeFeed::PathListHandle OvstageChangeFeed::buildPathListQuery(const st
     return handle;
 }
 
-bool OvstageChangeFeed::syncPathListQuery(const std::unordered_set<std::string>& paths, PathListQuery& query)
+bool OvstageChangeFeed::syncPathListQuery(const std::unordered_set<std::string>& paths, PathListQuery& query, bool allowDeferredAdds)
 {
     if (!query.dirty)
         return true;
@@ -717,11 +836,27 @@ bool OvstageChangeFeed::syncPathListQuery(const std::unordered_set<std::string>&
         return false;
     // Readers return before syncing an empty set, so `paths` is non-empty here.
 
-    // Fold every ~sqrt(2n) adds: minimises c*(|delta| + n/T) for a per-path build cost c;
-    // the floor keeps small deltas on one cheap query. Removals only ever arrive as a
-    // wholesale replacement (rescan), which folds too, so the base never addresses a
-    // tombstoned path.
     const size_t threshold = std::max<size_t>(8, static_cast<size_t>(std::sqrt(2.0 * paths.size())));
+
+    // A full structural parse owns initial values for accepted adds. Avoid constructing
+    // an unused delta when the base still addresses every older path. Keep the pending
+    // paths dirty: the next structural read must materialize them, even after deletion.
+    if (allowDeferredAdds && mAddedPropertiesCovered &&
+        !query.fold && query.base.valid() && !query.deltaPaths.empty() && query.deltaPaths.size() <= threshold)
+    {
+        const std::unordered_set<std::string>& added =
+            &query == &mKnownPhysicsQuery ? mAddedPhysicsPaths : mAddedTransformPaths;
+        if (std::all_of(query.deltaPaths.begin(), query.deltaPaths.end(),
+                        [&](const std::string& path) { return added.count(path) != 0; }))
+        {
+            releaseCachedQuery(query.delta);
+            return true;
+        }
+    }
+
+    // Fold every ~sqrt(2n) adds: minimises c*(|delta| + n/T) for a per-path build cost c;
+    // the floor keeps small deltas on one cheap query. A base removal or wholesale
+    // replacement folds too; a delta-only removal preserves the base.
     if (query.fold || query.deltaPaths.size() > threshold)
     {
         releaseCachedQuery(query.base);
@@ -759,7 +894,7 @@ template <class ReadFn>
 bool OvstageChangeFeed::readPathListQuery(const PathListQuery& query,
                                           const std::vector<ovx_token_t>& attrs,
                                           uint64_t ord0,
-                                          ReadFn read)
+                                          ReadFn read, bool omitAdded)
 {
     std::vector<ovx_token_t> sealed;
     bool sealedKnown = false;
@@ -767,6 +902,25 @@ bool OvstageChangeFeed::readPathListQuery(const PathListQuery& query,
     {
         if (!h->valid())
             continue;
+        if (omitAdded && mAddedPropertiesCovered)
+        {
+            const std::unordered_set<std::string>& added =
+                &query == &mKnownPhysicsQuery ? mAddedPhysicsPaths : mAddedTransformPaths;
+            bool allAdded = !h->paths.empty() && !added.empty();
+            for (ovx_primpath_t raw : h->paths)
+            {
+                if (!allAdded)
+                    break;
+                const ObjectKey key = mSource.internKey(raw);
+                if (added.count(std::string(mSource.sourceKeyToString(key))) == 0)
+                {
+                    allAdded = false;
+                    break;
+                }
+            }
+            if (allAdded)
+                continue;
+        }
         ovstage_api_status_t err = OVSTAGE_OK;
         if (read(*h, attrs, err))
             continue;
@@ -914,13 +1068,17 @@ void OvstageChangeFeed::rebuildRegisteredAttributeTokens()
 
     mRegisteredAttributeTokens.clear();
     mHasWildcardRegistration = false;
+    if (std::any_of(mRegistrations.begin(), mRegistrations.end(),
+                    [](const Registration& reg) { return !reg.objectType.valid() && !reg.prop.valid(); }))
+    {
+        mHasWildcardRegistration = true;
+        mRegisteredAttributeTokensDirty = false;
+        return;
+    }
 
     std::unordered_set<ovx_token_t> seen;
     for (const Registration& reg : mRegistrations)
     {
-        if (!reg.objectType.valid() && !reg.prop.valid())
-            mHasWildcardRegistration = true;
-
         if (!reg.prop.valid())
             continue;
         const std::string_view propName = mSource.tokenToString(reg.prop);
@@ -938,10 +1096,14 @@ void OvstageChangeFeed::rebuildValueReadAttributes()
 {
     rebuildRegisteredAttributeTokens();
 
-    std::unordered_set<ovx_token_t> registered(mRegisteredAttributeTokens.begin(), mRegisteredAttributeTokens.end());
+    std::unordered_set<ovx_token_t> registered;
+    if (!mHasWildcardRegistration)
+        registered.insert(mRegisteredAttributeTokens.begin(), mRegisteredAttributeTokens.end());
     // Transform columns belong to readKnownTransformChanges, whose path set is a
     // superset of the physics prims; reading them here too delivered each moved body twice.
     std::unordered_set<ovx_token_t> seen(transformAttrTokens().begin(), transformAttrTokens().end());
+    // The resolved world matrix is derived hierarchy output, never a value input.
+    seen.insert(internOvxToken(conv::kFabricWorldMatrix));
     mValueReadAttrs.clear();
     auto addAttr = [&](ovx_token_t tok)
     {
@@ -1032,18 +1194,59 @@ bool OvstageChangeFeed::structuralAttributesChanged(uint64_t ordinal)
 {
     const ovx_token_t schemasTok = internOvxToken(conv::kUsdSchemas);
     const ovx_token_t primTypeTok = internOvxToken(conv::kUsdPrimType);
-    return (schemasTok != OVX_INVALID_TOKEN && hasAttributeFloorAtOrAfter(schemasTok, ordinal)) ||
+    const ovx_token_t authoredTypeTok = internOvxToken(conv::kUsdTypeName);
+    return (authoredTypeTok != OVX_INVALID_TOKEN && hasAttributeFloorAtOrAfter(authoredTypeTok, ordinal)) ||
+           (schemasTok != OVX_INVALID_TOKEN && hasAttributeFloorAtOrAfter(schemasTok, ordinal)) ||
            (primTypeTok != OVX_INVALID_TOKEN && hasAttributeFloorAtOrAfter(primTypeTok, ordinal));
+}
+
+void OvstageChangeFeed::rebuildTransformPathRefCounts()
+{
+    mTransformPathRefCounts.clear();
+    for (const std::string& path : mKnownPhysicsPaths)
+    {
+        std::string current(path);
+        while (!current.empty())
+        {
+            ++mTransformPathRefCounts[current];
+            if (current == "/")
+                break;
+            const size_t slash = current.find_last_of('/');
+            if (slash == std::string::npos || slash == 0)
+                current = "/";
+            else
+                current.resize(slash);
+        }
+    }
 }
 
 bool OvstageChangeFeed::rememberTransformPathAndAncestors(std::string_view path)
 {
-    return rememberTransformPathAndAncestors(mKnownTransformPaths, path, &mKnownTransformQuery);
+    bool changed = false;
+    std::string current(path);
+    while (!current.empty())
+    {
+        if (++mTransformPathRefCounts[current] == 1)
+        {
+            mKnownTransformPaths.insert(current);
+            mKnownTransformQuery.noteAdded(current);
+            if (mCollectAddedPaths)
+                mAddedTransformPaths.insert(current);
+            changed = true;
+        }
+        if (current == "/")
+            break;
+        const size_t slash = current.find_last_of('/');
+        if (slash == std::string::npos || slash == 0)
+            current = "/";
+        else
+            current.resize(slash);
+    }
+    return changed;
 }
 
 bool OvstageChangeFeed::rememberTransformPathAndAncestors(std::unordered_set<std::string>& paths,
-                                                          std::string_view path,
-                                                          PathListQuery* query)
+                                                          std::string_view path)
 {
     if (path.empty())
         return false;
@@ -1055,8 +1258,6 @@ bool OvstageChangeFeed::rememberTransformPathAndAncestors(std::unordered_set<std
         if (paths.insert(cur).second)
         {
             changed = true;
-            if (query)
-                query->noteAdded(cur);
         }
         if (cur == "/")
             break;
@@ -1076,22 +1277,22 @@ bool OvstageChangeFeed::buildKnownFamilyTokens()
         return true;
     mKnownSchemaTokens.clear();
     mKnownTypeTokens.clear();
-    for (size_t i = 0; i < kKnownPhysicsSchemaCount; ++i)
+    for (size_t i = 0; i < mPhysicsSchemas.size(); ++i)
     {
-        const ovx_token_t tok = internOvxToken({ kKnownPhysicsSchemas[i].ptr, kKnownPhysicsSchemas[i].length });
+        const ovx_token_t tok = internOvxToken({ mPhysicsSchemas[i].ptr, mPhysicsSchemas[i].length });
         if (tok != OVX_INVALID_TOKEN)
             mKnownSchemaTokens.push_back(tok);
     }
-    for (size_t i = 0; i < kKnownPhysicsPrimTypeCount; ++i)
+    for (size_t i = 0; i < mPhysicsPrimTypes.size(); ++i)
     {
-        const ovx_token_t tok = internOvxToken({ kKnownPhysicsPrimTypes[i].ptr, kKnownPhysicsPrimTypes[i].length });
+        const ovx_token_t tok = internOvxToken({ mPhysicsPrimTypes[i].ptr, mPhysicsPrimTypes[i].length });
         if (tok != OVX_INVALID_TOKEN)
             mKnownTypeTokens.push_back(tok);
     }
     std::sort(mKnownSchemaTokens.begin(), mKnownSchemaTokens.end());
     std::sort(mKnownTypeTokens.begin(), mKnownTypeTokens.end());
     mKnownFamilyTokensBuilt =
-        mKnownSchemaTokens.size() == kKnownPhysicsSchemaCount && mKnownTypeTokens.size() == kKnownPhysicsPrimTypeCount;
+        mKnownSchemaTokens.size() == mPhysicsSchemas.size() && mKnownTypeTokens.size() == mPhysicsPrimTypes.size();
     return mKnownFamilyTokensBuilt;
 }
 
@@ -1103,6 +1304,7 @@ void OvstageChangeFeed::classifyStructuralGroup(const ovstage_read_group_t& g,
                                                 StructuralRows& out,
                                                 bool knownRowsExpected)
 {
+    const bool authoredType = g.attribute == internOvxToken(conv::kUsdTypeName);
     const ovx_primpath_t* gpaths = nullptr;
     size_t gcount = 0;
     if (!listMemo.paths(g.prims.list, &gpaths, &gcount))
@@ -1137,6 +1339,10 @@ void OvstageChangeFeed::classifyStructuralGroup(const ovstage_read_group_t& g,
             if (path.empty())
                 continue;
             const bool known = mKnownPhysicsPaths.count(std::string(path)) != 0;
+            // Removing an override can reveal a physics type on a previously
+            // unwatched prim. Rebuild membership from the final effective types.
+            if (authoredType && !known)
+                out.exact = false;
             if (known && !knownRowsExpected)
             {
                 out.exact = false;
@@ -1147,7 +1353,7 @@ void OvstageChangeFeed::classifyStructuralGroup(const ovstage_read_group_t& g,
             if (g.attribute != primTypeTok)
                 out.schemas.push_back({ raw, {} });
             if (g.attribute == primTypeTok)
-                out.types.push_back({ raw, 0 });
+                out.types.push_back({ raw, 0, authoredType });
         }
         return;
     }
@@ -1189,7 +1395,7 @@ void OvstageChangeFeed::classifyStructuralGroup(const ovstage_read_group_t& g,
             uint64_t value = 0;
             ok = decodeTypeRow(g, row, value);
             if (ok)
-                out.types.push_back({ raw, value });
+                out.types.push_back({ raw, value, authoredType });
             hit = ok && std::binary_search(mKnownTypeTokens.begin(), mKnownTypeTokens.end(), value);
         }
         else
@@ -1221,7 +1427,11 @@ void OvstageChangeFeed::classifyStructuralGroup(const ovstage_read_group_t& g,
         }
         StructuralRows::Row& r = out.unfamiliar[inserted.first->second];
         if (g.attribute == primTypeTok)
-            r.byType = r.byType || hit;
+        {
+            if (authoredType || !r.hasAuthoredType)
+                r.byType = hit;
+            r.hasAuthoredType = r.hasAuthoredType || authoredType;
+        }
         else
             r.bySchemas = r.bySchemas || hit;
     }
@@ -1235,7 +1445,7 @@ bool OvstageChangeFeed::readStructuralRows(uint64_t ord0, uint64_t ord1, Structu
     if (consumeFault(structuralRowsReadFaultCounter()))
         return false;
 
-    std::array<ovx_token_t, 2> attrToks{};
+    std::array<ovx_token_t, 3> attrToks{};
     size_t attrCount = 0;
     const ovx_token_t schemasTok = internOvxToken(conv::kUsdSchemas);
     const ovx_token_t primTypeTok = internOvxToken(conv::kUsdPrimType);
@@ -1243,6 +1453,9 @@ bool OvstageChangeFeed::readStructuralRows(uint64_t ord0, uint64_t ord1, Structu
         attrToks[attrCount++] = schemasTok;
     if (primTypeTok != OVX_INVALID_TOKEN)
         attrToks[attrCount++] = primTypeTok;
+    const ovx_token_t authoredTypeTok = internOvxToken(conv::kUsdTypeName);
+    if (authoredTypeTok != OVX_INVALID_TOKEN)
+        attrToks[attrCount++] = authoredTypeTok;
     if (attrCount == 0)
         return false;
 
@@ -1290,8 +1503,9 @@ bool OvstageChangeFeed::readStructuralRows(uint64_t ord0, uint64_t ord1, Structu
         ovstage_api_status_t fetchErr;
         while ((fetchErr = ovstage_fetch_read_next(mInstance, rh, OVSTAGE_TIMEOUT_INFINITE, &g)) == OVSTAGE_OK)
         {
+            out.rowCount += g.prims.count;
             structuralRowsReadCounter().fetch_add(g.prims.count, std::memory_order_relaxed);
-            classifyStructuralGroup(g, listMemo, schemasTok, primTypeTok, rowIndex, out, knownRowsExpected);
+            classifyStructuralGroup(g, listMemo, schemasTok, g.attribute == authoredTypeTok ? authoredTypeTok : primTypeTok, rowIndex, out, knownRowsExpected);
             ovstage_release_group(mInstance, &g);
         }
         if (fetchErr != OVSTAGE_ERROR_END_OF_ITERATION)
@@ -1346,13 +1560,26 @@ bool OvstageChangeFeed::reconcileStructuralChanges(uint64_t ord0, uint64_t ord1)
     bool sawKnownStructuralChange = false;
     bool cachesInvalidated = false;
     bool exactPatch = false;
+    bool pureRemoval = false;
     if (!readKnownStructuralChanges(ord0, ord1, &sawKnownStructuralChange, deletedPaths, &cachesInvalidated,
-                                    &exactPatch))
+                                    &exactPatch, &pureRemoval))
         return false;
 
-    // Removals and known-prim edits stay exact: only the whole-stage rescan reconciles them.
     if (sawKnownStructuralChange)
+    {
+        // The known-path read proved every affected prim dead and patched its source caches.
+        // Also require an empty structural probe over live prims: a simultaneous spawn,
+        // recreation or column tombstone on a surviving prim still needs reconciliation.
+        if (pureRemoval && exactPatch && mKnownSetAuthoritative && !mRangeGapSinceDrop)
+        {
+            if (!mStructuralRowsValid)
+                mStructuralRowsValid = readStructuralRows(ord0, ord1, mStructuralRows, /*knownRowsExpected=*/true);
+            if (mStructuralRowsValid && mStructuralRows.exact && mStructuralRows.rowCount == 0 &&
+                ++mIncrementalReconciles < kStructuralSelfHealPeriod)
+                return applyIncrementalRemoval(deletedPaths);
+        }
         return rescanKnownPaths(ord0, ord1, deletedPaths, cachesInvalidated, exactPatch);
+    }
     // A partial known set (a failed seed or rescan scan) would make the value and transform
     // reads below watch a subset: repair it now, whatever this range carries.
     if (!mKnownSetAuthoritative)
@@ -1445,6 +1672,8 @@ bool OvstageChangeFeed::applyIncrementalGrowth(uint64_t ord0, uint64_t ord1)
     patchSourceFromStructuralRows(ord0, ord1);
 
     std::vector<ObjectKey> newKeys;
+    mCollectAddedPaths = mAddedPropertiesCovered;
+    bool allKeysResolved = true;
     size_t schemaMatches = 0;
     size_t typeMatches = 0;
     for (const StructuralRows::Row& r : mStructuralRows.unfamiliar)
@@ -1452,13 +1681,24 @@ bool OvstageChangeFeed::applyIncrementalGrowth(uint64_t ord0, uint64_t ord1)
         if (!r.physics())
             continue;
         if (mKnownPhysicsPaths.insert(r.path).second)
+        {
             mKnownPhysicsQuery.noteAdded(r.path);
-        rememberTransformPathAndAncestors(r.path);
+            if (mAddedPropertiesCovered)
+                mAddedPhysicsPaths.insert(r.path);
+            rememberTransformPathAndAncestors(r.path);
+        }
         schemaMatches += r.bySchemas ? 1 : 0;
         typeMatches += r.byType ? 1 : 0;
-        const ObjectKey key = resolveGroupPathKey(r.raw);
+        ObjectKey key = resolveGroupPathKey(r.raw);
+        if (addedKeyResolutionFault().load(std::memory_order_relaxed) > 0)
+        {
+            addedKeyResolutionFault().fetch_sub(1, std::memory_order_relaxed);
+            key = {};
+        }
         if (key.valid())
             newKeys.push_back(key);
+        else
+            allKeysResolved = false;
     }
     // The frozen family queries stay; keep their recorded counts exact so the count-compare
     // fallback does not read every incremental add as growth (or fail a drain under a
@@ -1468,7 +1708,67 @@ bool OvstageChangeFeed::applyIncrementalGrowth(uint64_t ord0, uint64_t ord1)
     if (mTypeFamilyQuery.query != OVSTAGE_INVALID_QUERY_HANDLE)
         mTypeFamilyQuery.primCount += typeMatches;
 
-    return dispatchStructuralAdds(newKeys);
+    mCollectAddedPaths = false;
+    const bool accepted = dispatchStructuralAdds(newKeys);
+    if (!accepted || !allKeysResolved)
+    {
+        mAddedPhysicsPaths.clear();
+        mAddedTransformPaths.clear();
+    }
+    return accepted;
+}
+
+bool OvstageChangeFeed::applyIncrementalRemoval(const std::unordered_set<std::string>& deletedPaths)
+{
+    // Keep the old membership until the consumer accepts the tombstones. On rejection the
+    // cursor holds, and the next rescan must still find these paths to redeliver the delete.
+    mKnownSetAuthoritative = false;
+    std::vector<ObjectKey> deleteKeys;
+    deleteKeys.reserve(deletedPaths.size());
+    for (const std::string& path : deletedPaths)
+    {
+        const ObjectKey key = mSource.findByPath(path);
+        if (!key.valid())
+            return false;
+        deleteKeys.push_back(key);
+    }
+    ChangeBatch batch;
+    batch.isDelete = true;
+    batch.numChanges = deleteKeys.size();
+    batch.keys = ColumnView{ ColumnType::eObjectKey, -1, deleteKeys.size(), deleteKeys.data() };
+    if (!dispatch(batch))
+        return false;
+
+    for (const std::string& path : deletedPaths)
+    {
+        if (mKnownPhysicsPaths.erase(path) == 0)
+            continue;
+        mKnownPhysicsQuery.noteRemoved(path);
+        // Visit only the deleted path's ancestor chain. Shared ancestors remain
+        // watched until the last surviving physics path releases them.
+        std::string current(path);
+        while (!current.empty())
+        {
+            const auto ref = mTransformPathRefCounts.find(current);
+            if (ref != mTransformPathRefCounts.end() && --ref->second == 0)
+            {
+                mTransformPathRefCounts.erase(ref);
+                mKnownTransformPaths.erase(current);
+                mKnownTransformQuery.noteRemoved(current);
+            }
+            if (current == "/")
+                break;
+            const size_t slash = current.find_last_of('/');
+            if (slash == std::string::npos || slash == 0)
+                current = "/";
+            else
+                current.resize(slash);
+        }
+    }
+    mResolvedPathKeys.clear();
+    mFamilyCountsCurrent = false;
+    mKnownSetAuthoritative = true;
+    return true;
 }
 
 bool OvstageChangeFeed::rescanKnownPaths(uint64_t ord0,
@@ -1498,10 +1798,9 @@ bool OvstageChangeFeed::rescanKnownPaths(uint64_t ord0,
     std::unordered_set<std::string> freshTransformPaths;
     std::vector<ObjectKey> newKeys;
     const bool schemaScanOk = collectKnownPathsFromFilter(
-        "usd-schemas", OVSTAGE_FILTER_OP_CONTAINS, kKnownPhysicsSchemas, kKnownPhysicsSchemaCount,
+        "usd-schemas", OVSTAGE_FILTER_OP_CONTAINS, mPhysicsSchemas.data(), mPhysicsSchemas.size(),
         mSchemaFamilyQuery, freshPhysicsPaths, freshTransformPaths, &newKeys, &oldPhysicsPaths);
-    const bool typeScanOk = collectKnownPathsFromFilter(
-        "usd-prim-type", OVSTAGE_FILTER_OP_IN, kKnownPhysicsPrimTypes, kKnownPhysicsPrimTypeCount, mTypeFamilyQuery,
+    const bool typeScanOk = collectKnownPathsFromTypes(
         freshPhysicsPaths, freshTransformPaths, &newKeys, &oldPhysicsPaths);
     bool ok = schemaScanOk && typeScanOk; // folds in the structural-batch dispatch results below
 
@@ -1570,6 +1869,7 @@ bool OvstageChangeFeed::rescanKnownPaths(uint64_t ord0,
 
     mKnownPhysicsPaths = std::move(freshPhysicsPaths);
     mKnownTransformPaths = std::move(freshTransformPaths);
+    rebuildTransformPathRefCounts();
     mKnownPhysicsQuery.noteReplaced();
     mKnownTransformQuery.noteReplaced();
 
@@ -1584,6 +1884,7 @@ bool OvstageChangeFeed::rescanKnownPaths(uint64_t ord0,
 
     ok = dispatchStructuralAdds(newKeys) && ok;
     mKnownSetAuthoritative = ok;
+    mFamilyCountsCurrent = ok;
     return ok;
 }
 
@@ -1592,19 +1893,22 @@ bool OvstageChangeFeed::readKnownStructuralChanges(uint64_t ord0,
                                                    bool* sawChange,
                                                    std::unordered_set<std::string>& deletedPaths,
                                                    bool* outInvalidatedCaches,
-                                                   bool* outExactPatch)
+                                                   bool* outExactPatch,
+                                                   bool* outPureRemoval)
 {
     if (outInvalidatedCaches)
         *outInvalidatedCaches = false;
     if (outExactPatch)
         *outExactPatch = false;
+    if (outPureRemoval)
+        *outPureRemoval = false;
     if (sawChange)
         *sawChange = false;
     deletedPaths.clear();
     if (mKnownPhysicsPaths.empty())
         return true;
 
-    std::array<ovx_token_t, 2> attrToks{};
+    std::array<ovx_token_t, 3> attrToks{};
     size_t attrCount = 0;
     const ovx_token_t schemasTok = internOvxToken(conv::kUsdSchemas);
     const ovx_token_t primTypeTok = internOvxToken(conv::kUsdPrimType);
@@ -1612,6 +1916,9 @@ bool OvstageChangeFeed::readKnownStructuralChanges(uint64_t ord0,
         attrToks[attrCount++] = schemasTok;
     if (primTypeTok != OVX_INVALID_TOKEN)
         attrToks[attrCount++] = primTypeTok;
+    const ovx_token_t authoredTypeTok = internOvxToken(conv::kUsdTypeName);
+    if (authoredTypeTok != OVX_INVALID_TOKEN)
+        attrToks[attrCount++] = authoredTypeTok;
     if (attrCount == 0)
         return false;
 
@@ -1628,6 +1935,7 @@ bool OvstageChangeFeed::readKnownStructuralChanges(uint64_t ord0,
     {
         std::vector<ObjectKey> keys;
         bool isSchemas;
+        bool isAuthoredType = false;
     };
     std::vector<DeferredStructural> deferred;
     // The same rows as memo patch inputs: complete post-write lists / types of the known prims,
@@ -1678,18 +1986,26 @@ bool OvstageChangeFeed::readKnownStructuralChanges(uint64_t ord0,
                         {
                             const uint32_t idx = g.prims.index_map ? g.prims.index_map[i] : (g.prims.offset + i);
                             if (idx >= groupPathCount)
+                            {
+                                allRowsDecodable = false;
                                 continue;
+                            }
                             const std::string_view path = mSource.sourceKeyToString(mSource.internKey(groupPaths[idx]));
                             if (path.empty())
+                            {
+                                allRowsDecodable = false;
                                 continue;
+                            }
                             if (deletedPaths.insert(std::string(path)).second)
                                 tombstoneRaws.push_back(groupPaths[idx]);
+                            if (g.attribute == authoredTypeTok)
+                                knownTypes.push_back({ groupPaths[idx], 0, true });
                         }
                     }
                     else
                         allRowsDecodable = false;
                 }
-                else if (groupPaths && (g.attribute == schemasTok || g.attribute == primTypeTok))
+                else if (groupPaths && (g.attribute == schemasTok || g.attribute == primTypeTok || g.attribute == authoredTypeTok))
                 {
                     const bool decodable = g.data.mask == nullptr && g.data.tensor_count > 0 && g.data.tensors &&
                                            !(g.data.index_map && g.data.count < g.prims.count);
@@ -1717,13 +2033,13 @@ bool OvstageChangeFeed::readKnownStructuralChanges(uint64_t ord0,
                         {
                             uint64_t value = 0;
                             if (decodeTypeRow(g, i, value))
-                                knownTypes.push_back({ raw, value });
+                                knownTypes.push_back({ raw, value, g.attribute == authoredTypeTok });
                             else
                                 allRowsDecodable = false;
                         }
                     }
                     if (!keys.empty())
-                        deferred.push_back({ std::move(keys), g.attribute == schemasTok });
+                        deferred.push_back({ std::move(keys), g.attribute == schemasTok, g.attribute == authoredTypeTok });
                 }
                 else
                     allRowsDecodable = false;
@@ -1766,8 +2082,19 @@ bool OvstageChangeFeed::readKnownStructuralChanges(uint64_t ord0,
                 if (!live[i])
                     deadRaws.push_back(tombstoneRaws[i]);
         }
+        // Whole-prim tombstones are handled by removal. Only an authored-type
+        // tombstone on a surviving prim needs to invalidate its fallback type.
+        const std::unordered_set<ovx_primpath_t> deadTypes(deadRaws.begin(), deadRaws.end());
+        knownTypes.erase(std::remove_if(knownTypes.begin(), knownTypes.end(),
+                                       [&](const PrimTypeRowDelta& row) { return deadTypes.count(row.raw) != 0; }),
+                         knownTypes.end());
+        for (const PrimTypeRowDelta& row : knownTypes)
+            if (row.authored && row.typeToken == 0)
+                deferred.push_back({ { resolveGroupPathKey(row.raw) }, false, true });
+        std::unordered_set<uint64_t> changedTypes;
         exact = exact && mSource.applyPrimRemoval(deadRaws) && mSource.applySchemaDelta(knownSchemas) &&
-                mSource.applyPrimTypeDelta(knownTypes);
+                mSource.applyPrimTypeDelta(knownTypes, &changedTypes);
+        mPendingAuthoredTypeChanges.insert(changedTypes.begin(), changedTypes.end());
         if (exact)
             mSource.resetInstancingCaches();
         else
@@ -1780,11 +2107,24 @@ bool OvstageChangeFeed::readKnownStructuralChanges(uint64_t ord0,
             *outInvalidatedCaches = true;
         if (outExactPatch)
             *outExactPatch = exact;
+        if (outPureRemoval)
+            *outPureRemoval = exact && deferred.empty() && !deletedPaths.empty() &&
+                              deadRaws.size() == deletedPaths.size();
 
         const TokenId apiSchemasField = mSource.internToken("apiSchemas");
         const TokenId typeNameField = mSource.internToken("typeName");
-        for (const DeferredStructural& d : deferred)
+        for (DeferredStructural& d : deferred)
         {
+            // Population refreshes parent authored metadata without replacing
+            // the prim. Built-in structural writes still signal repopulation:
+            // a range snapshot can fold same-type delete/recreate into one row.
+            if (exact && d.isAuthoredType)
+                d.keys.erase(std::remove_if(d.keys.begin(), d.keys.end(), [&](ObjectKey key)
+                {
+                    return mPendingAuthoredTypeChanges.count(mSource.rawHandle(key)) == 0;
+                }), d.keys.end());
+            if (d.keys.empty())
+                continue;
             const TokenId& field = d.isSchemas ? apiSchemasField : typeNameField;
             ChangeBatch batch;
             batch.isDelete = false;
@@ -1805,7 +2145,7 @@ const std::vector<ovx_token_t>& OvstageChangeFeed::transformAttrTokens()
     {
         std::unordered_set<ovx_token_t> seen;
         for (const char* attrName :
-             { conv::kFabricWorldMatrix, conv::kFabricLocalMatrix, conv::kLocalTransform, conv::kResetXformStack })
+             { conv::kFabricLocalMatrix, conv::kLocalTransform, conv::kResetXformStack })
         {
             const ovx_token_t tok = internOvxToken(attrName);
             if (tok != OVX_INVALID_TOKEN && seen.insert(tok).second)
@@ -1826,10 +2166,14 @@ bool OvstageChangeFeed::readKnownTransformChanges(uint64_t ord0, uint64_t ord1)
     // mKnownTransformPaths is non-empty here (guarded above), so a failed sync or no
     // handle is a construction/API failure, not an empty match set: fail the drain
     // rather than silently skipping the family and advancing the external cursor.
-    if (!syncPathListQuery(mKnownTransformPaths, mKnownTransformQuery) || !mKnownTransformQuery.valid())
+    if (!syncPathListQuery(mKnownTransformPaths, mKnownTransformQuery, true) || !mKnownTransformQuery.valid())
         return false;
 
     const TokenId worldMatrixProperty = mSource.internToken(conv::kFabricWorldMatrix);
+    // Local frames and reset-stack edits drive notifications. Read derived world
+    // matrices alongside them only to cache resolved poses for the transform flush.
+    std::vector<ovx_token_t> readAttrs = mTransformAttrToks;
+    readAttrs.push_back(internOvxToken(conv::kFabricWorldMatrix));
 
     // One bucket for the whole drain: the transform flush at group-complete reads
     // every changed body through it, so each world-matrix group appends to the bucket
@@ -1869,8 +2213,13 @@ bool OvstageChangeFeed::readKnownTransformChanges(uint64_t ord0, uint64_t ord1)
             const TokenId property = propertyTokenFor(g.attribute);
             collectGroupKeys(g, mGroupKeys, &h);
             if (property == worldMatrixProperty)
+            {
                 mSource.seedBucketFromReadGroup(property, g, mGroupKeys.empty() ? nullptr : mGroupKeys.data(),
                                                 mGroupKeys.size(), /*append=*/true, mGroupListPaths, mGroupListCount);
+                // Hierarchy evaluation can rewrite unrelated world rows. Those are
+                // not authored pose edits and must never teleport simulated bodies.
+                continue;
+            }
 
             ChangeBatch batch;
             batch.isDelete = false;
@@ -1885,7 +2234,7 @@ bool OvstageChangeFeed::readKnownTransformChanges(uint64_t ord0, uint64_t ord1)
         return err == OVSTAGE_ERROR_END_OF_ITERATION;
     };
 
-    return readPathListQuery(mKnownTransformQuery, mTransformAttrToks, ord0, runRead) && ok;
+    return readPathListQuery(mKnownTransformQuery, readAttrs, ord0, runRead, true) && ok;
 }
 
 bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
@@ -1895,7 +2244,7 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
 
     // Non-empty path set, so a failed sync or no handle is a construction/API failure:
     // fail the drain instead of silently skipping every value change.
-    if (!syncPathListQuery(mKnownPhysicsPaths, mKnownPhysicsQuery) || !mKnownPhysicsQuery.valid())
+    if (!syncPathListQuery(mKnownPhysicsPaths, mKnownPhysicsQuery, true) || !mKnownPhysicsQuery.valid())
         return false;
 
     {
@@ -2052,6 +2401,30 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
             {
                 const TokenId property = propertyTokenFor(g.attribute);
                 collectGroupKeys(g, mGroupKeys, &h);
+                if (g.attribute == internOvxToken("prototypes") &&
+                    mSource.stageHasAttributeColumn(conv::kUsdPrototypes) != std::optional<bool>(false))
+                {
+                    // Only prims with their own preserved row ignore renderer
+                    // remaps. Direct-authored prims in the same group still edit
+                    // the ordinary relationship. Dispatch keys for source reads;
+                    // the original payload no longer aligns after filtering.
+                    const TokenId preserved = mSource.internToken(conv::kUsdPrototypes);
+                    mGroupKeys.erase(std::remove_if(mGroupKeys.begin(), mGroupKeys.end(), [&](ObjectKey key)
+                    {
+                        return mSource.hasRelationship(key, preserved);
+                    }), mGroupKeys.end());
+                    if (!mGroupKeys.empty())
+                    {
+                        ChangeBatch batch;
+                        batch.numChanges = mGroupKeys.size();
+                        batch.keys = { ColumnType::eObjectKey, -1, mGroupKeys.size(), mGroupKeys.data() };
+                        batch.property = property;
+                        valueBatchDispatchCounter().fetch_add(1, std::memory_order_relaxed);
+                        ok = dispatch(batch) && ok;
+                    }
+                    mDeferredGroups.push_back(g);
+                    continue;
+                }
                 if (tryCoalesce(g, property))
                 {
                     mDeferredGroups.push_back(g);
@@ -2107,23 +2480,36 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
                          g.data.tensors[0].dtype.code == kDLFloat && g.data.tensors[0].dtype.bits == 32 &&
                          g.data.tensors[0].device.device_type == kDLCPU)
                 {
-                    const uint32_t lanes = g.data.tensors[0].dtype.lanes;
-                    const ColumnType ct = columnTypeOf(g.data.tensors[0].dtype, lanes);
-                    bool ragOk = ct != ColumnType::eNone;
+                    // Typed reads put tuple components in trailing shape axes, not dtype.lanes.
+                    // Normalize only the borrowed descriptor; the payload is still gathered below.
+                    DLTensor first = g.data.tensors[0];
+                    int64_t firstLayout[2]{};
+                    bool ragOk = first.dtype.lanes != 1 ||
+                                 ovstage_tensor_to_write(&g.data.tensors[0], &first, firstLayout) == OVSTAGE_OK;
+                    const uint32_t lanes = first.dtype.lanes;
+                    const ColumnType ct = columnTypeOf(first.dtype, lanes);
+                    ragOk = ragOk && ct != ColumnType::eNone;
                     raggedOffsets.reserve(g.prims.count + 1);
                     raggedOffsets.push_back(0);
                     for (uint32_t p = 0; ragOk && p < g.prims.count; ++p)
                     {
-                        const DLTensor& t = g.data.tensors[p];
+                        DLTensor t = g.data.tensors[p];
+                        int64_t layout[2]{};
+                        if (t.dtype.lanes == 1 &&
+                            ovstage_tensor_to_write(&g.data.tensors[p], &t, layout) != OVSTAGE_OK)
+                        {
+                            ragOk = false;
+                            break;
+                        }
                         // Uniform float32 element width across prims, host-resident, and COMPACT (row-major
                         // packed): the gather below copies each row as elems*lanes*sizeof(float) bytes. The
                         // entry check above inspected only tensors[0], but a wildcard family query can surface
                         // the same custom attribute authored as different USD types on different prims (e.g.
                         // float3[] and double3[]) in one group -- so re-check dtype.code/bits per row, not just
                         // lanes: a double3[] row otherwise passes and has half its 8-byte payload copied and
-                        // read as float32, silent corruption the correct CSR offset would not flag. Array /
-                        // ragged tensors are outside OVStage's fixed-size canonical-layout guarantee, so a
-                        // non-compact or shape-malformed row cannot be copied as packed. Explicit compact
+                        // read as float32, silent corruption the correct CSR offset would not flag. Even
+                        // after normalizing tuple axes, a non-compact or shape-malformed row cannot be
+                        // copied as packed. Explicit compact
                         // strides are valid and required by newer DLPack read producers.
                         if (t.dtype.code != kDLFloat || t.dtype.bits != 32 ||
                             t.dtype.lanes != lanes || t.device.device_type != kDLCPU ||
@@ -2184,7 +2570,7 @@ bool OvstageChangeFeed::readValueChanges(uint64_t ord0, uint64_t ord1)
         return err == OVSTAGE_ERROR_END_OF_ITERATION;
     };
 
-    return readPathListQuery(mKnownPhysicsQuery, mValueReadAttrs, ord0, runRead) && ok;
+    return readPathListQuery(mKnownPhysicsQuery, mValueReadAttrs, ord0, runRead, true) && ok;
 }
 
 // release_group's cost depends on order: releasing each group while later ones are still
@@ -2203,6 +2589,11 @@ bool OvstageChangeFeed::drainRange(uint64_t ord0, uint64_t ord1)
 {
     if (!mEnabled || !mInstance || !mDict)
         return true;
+
+    refreshCustomFamilies();
+    mAddedPhysicsPaths.clear();
+    mAddedTransformPaths.clear();
+    mCollectAddedPaths = false;
 
     // The source's ordinal-gated reads (child cache under a load cache, whole-stage schema
     // reads) target the range being drained, not the attach ordinal.
@@ -2234,9 +2625,9 @@ bool OvstageChangeFeed::drainRange(uint64_t ord0, uint64_t ord1)
     }
     {
         CARB_PROFILE_ZONE(0, "OvstageChangeFeed::cachedChangeRead");
-        queryForFilter("usd-schemas", OVSTAGE_FILTER_OP_CONTAINS, kKnownPhysicsSchemas, kKnownPhysicsSchemaCount,
+        queryForFilter("usd-schemas", OVSTAGE_FILTER_OP_CONTAINS, mPhysicsSchemas.data(), mPhysicsSchemas.size(),
                        mSchemaFamilyQuery);
-        queryForFilter("usd-prim-type", OVSTAGE_FILTER_OP_IN, kKnownPhysicsPrimTypes, kKnownPhysicsPrimTypeCount,
+        queryForFilter(conv::kUsdPrimType, OVSTAGE_FILTER_OP_IN, mPhysicsPrimTypes.data(), mPhysicsPrimTypes.size(),
                        mTypeFamilyQuery);
         ok = readValueChanges(ord0, ord1) && ok;
         ok = readKnownTransformChanges(ord0, ord1) && ok;
@@ -2247,7 +2638,10 @@ bool OvstageChangeFeed::drainRange(uint64_t ord0, uint64_t ord1)
     mSource.clearBucket();
     // A failed drain is redelivered from ord0; whatever it half-patched is suspect either way.
     if (ok)
+    {
         mLastDrainedOrd1 = ord1;
+        mPendingAuthoredTypeChanges.clear();
+    }
     else
         mRangeGapSinceDrop = true;
     return ok;

@@ -3,7 +3,7 @@
 
 /**
  * @implements REQ-TENSOR-VIEW-001
- * @covers AC-7 AC-12
+ * @covers AC-7 AC-11 AC-12
  *
  * @implements REQ-READ-CORE-001
  * @covers AC-8
@@ -16,6 +16,12 @@
  *
  * @implements REQ-PUBLICAPI-001
  * @covers AC-40
+ *
+ * @implements REQ-INPUT-COVERAGE-001
+ * @covers AC-6 AC-16
+ *
+ * @implements REQ-READ-CONTACT-001
+ * @covers AC-9
  */
 
 #include "tensors/gpu/GpuSimulationView.h"
@@ -43,9 +49,8 @@ namespace tensors
 
 GpuSimulationView::GpuSimulationView(usdparser::AttachedStage* attachedStage,
                                      PxScene* scene,
-                                     GpuSimulationDataPtr gpuSimData,
-                                     bool notifyWhenSimStopped)
-    : BaseSimulationView(attachedStage, scene, notifyWhenSimStopped), mGpuSimData(gpuSimData)
+                                     GpuSimulationDataPtr gpuSimData)
+    : BaseSimulationView(attachedStage, scene), mGpuSimData(gpuSimData)
 {
     if (mGpuSimData)
     {
@@ -337,6 +342,16 @@ GpuRigidContactView* GpuSimulationView::createRigidContactView(const std::vector
     return rcview;
 }
 
+GpuRigidContactView* GpuSimulationView::createRigidContactViewFromEntries(
+    std::vector<RigidContactSensorEntry>&& entries, uint32_t numFilters, uint32_t maxContactDataCount)
+{
+    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, this, nullptr); // returns nullptr if mGpuSimData is null
+    GpuRigidContactView* rcview =
+        new GpuRigidContactView(this, std::move(entries), numFilters, maxContactDataCount, mDevice);
+    mRcViews.push_back(rcview);
+    return rcview;
+}
+
 GpuSdfShapeView* GpuSimulationView::createSdfShapeView(const char* pattern, uint32_t numSamplePoints)
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, this, nullptr);
@@ -379,11 +394,23 @@ bool GpuSimulationView::flush()
 }
 
 
-void GpuSimulationView::updateArticulationsKinematic()
+bool gpuRefreshArticulationsKinematic(PxScene* scene)
 {
-    CHECK_VALID_DATA_SIM_NO_RETURN(mGpuSimData, this);
+    // Same DirectGPU call as the member below, but straight off the scene -- no view, no GpuSimulationData.
+    // computeArticulationData returns false when the DirectGPU API is uninitialized or the call is
+    // forbidden, and on a synchronous CUDA error; propagate that so the caller does not consume stale
+    // link transforms after an apparently successful refresh.
+    PhysxCudaContextGuard ctxGuard(scene->getCudaContextManager());
+    return scene->getDirectGPUAPI().computeArticulationData(
+        NULL, NULL, PxArticulationGPUAPIComputeType::eUPDATE_KINEMATIC, 0);
+}
+
+bool GpuSimulationView::updateArticulationsKinematic()
+{
+    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, this, false);
     PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
-    mGpuSimData->mScene->getDirectGPUAPI().computeArticulationData(NULL, NULL, PxArticulationGPUAPIComputeType::eUPDATE_KINEMATIC, 0);
+    return mGpuSimData->mScene->getDirectGPUAPI().computeArticulationData(
+        NULL, NULL, PxArticulationGPUAPIComputeType::eUPDATE_KINEMATIC, 0);
 }
 
 void GpuSimulationView::enableGpuUsageWarnings(bool enable)
@@ -402,7 +429,7 @@ GpuRigidBodyView* GpuSimulationView::supersetRigidView(
     if (!mSupersetRigidView)
     {
         std::vector<RigidBodyEntry> entries;
-        collectSupersetRigidEntries(mScene, entries);
+        collectSupersetRigidEntries(mScene, mAttachedStage, entries);
         if (entries.empty())
             return nullptr;
 

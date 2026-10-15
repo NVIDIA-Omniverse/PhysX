@@ -103,7 +103,6 @@ public:
               bool forceGpu,
               bool directGpu,
               bool profile,
-              bool enableTracy,
               const char** kitArguments,
               uint32_t kitArgumentCount);
     ~BmGlobals();
@@ -199,7 +198,6 @@ void bmCreateGlobals(bool sanityCheck,
                      bool forceGpu,
                      bool directGpu,
                      bool profile,
-                     bool enableTracy,
                      const char** kitArguments = NULL,
                      uint32_t kitArgumentCount = 0);
 void bmDestroyGlobals();

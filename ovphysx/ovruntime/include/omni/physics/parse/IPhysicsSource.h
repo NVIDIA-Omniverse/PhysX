@@ -33,6 +33,12 @@
  *
  * @implements REQ-LOAD-TOKENS-001
  * @covers AC-5
+ *
+ * @implements REQ-PARSE-JOINT-006
+ * @covers AC-1 AC-4
+ *
+ * @implements REQ-PARSE-NEWTON-JOINT-001
+ * @covers AC-2
  */
 
 #pragma once
@@ -1080,37 +1086,40 @@ inline bool IPhysicsSource::getAttribute(ObjectKey key, TokenId attr, BufferHand
     return false;
 }
 
-/// @brief Does PhysX have an opinion on a `maxJointVelocity` attribute?
+/// @brief Does a per-axis PhysxJointAxisAPI value have an opinion over the NewtonJointAPI value?
 ///
-/// `attr` is either the joint-level `physxJoint:maxJointVelocity` or a per-axis
-/// `physxJointAxis:<instance>:maxJointVelocity`. Both carry the same "unlimited"
-/// sentinel, which is what separates an authored value from the unauthored one.
+/// A per-axis value has an opinion when it differs from its fallback: zero for the armature, the
+/// friction efforts and the viscous friction coefficient, and the "unlimited" sentinel for the velocity
+/// limit (USD resolves the schema fallback `inf`, ovstage publishes `FLT_MAX`). The parser (`fillAxis`)
+/// and the runtime NewtonJointAPI handlers both decide here, so a NewtonJointAPI edit never produces
+/// values a reparse would not. The runtime PhysxJointAxisAPI handlers write the edited value as it is.
 ///
-/// This deliberately does NOT ask `hasAuthoredAttribute`: a resolved-value backend
-/// answers that `true` for everything it publishes (ADR-0020), so on ovstage the
-/// Newton `newton:velocityLimit` fallback saw PhysX as always-authored — silently
-/// overriding the Newton value at load and dropping every runtime edit. This is the
-/// same shape as `isPhysxOffsetAuthored` for the PhysxCollisionAPI offsets.
-///
-/// Reading the sentinel answers identically on both backends: USD resolves the
-/// schema fallback `inf` (schemas/physx schema.usda), ovstage's population publishes
-/// the descriptor default `FLT_MAX` for the unauthored case, and `>= FLT_MAX` covers
-/// both. A source that publishes no value at all is likewise "no opinion".
-inline bool isPhysxMaxJointVelocityAuthored(const IPhysicsSource& src, ObjectKey key, TokenId attr)
+/// Do not ask `hasAuthoredAttribute` instead: a resolved-value backend answers it `true` for everything
+/// it publishes (ADR-0020), so on ovstage every applied instance would override the Newton values. The
+/// cost is that an explicitly authored fallback value (zero, or an unlimited velocity) cannot clear a
+/// Newton value, uniformly on both backends; only a per-attribute authored bit could tell them apart.
+inline bool hasAxisArmatureOpinion(float armature)
 {
-    float v;
-    if (!src.getAttribute(key, attr, v))
-        return false;
+    return armature > 0.0f;
+}
 
-    // ---- Newton-vs-PhysX tie-break: THE single decision point ----
-    // The unlimited sentinel counts as "no PhysX opinion", so an authored
-    // `newton:velocityLimit` wins over it. The cost is that an *explicitly* authored
-    // `maxJointVelocity = inf` is indistinguishable from an unauthored one, so Newton
-    // wins there too — uniformly on both backends (ADR-0010). To flip that to "an
-    // explicitly authored inf beats Newton" this comparison is the one line to change;
-    // note it can only be done exactly with a real per-attribute authored bit, which
-    // ADR-0020 does not give us on ovstage.
-    return v < FLT_MAX;
+/// @brief The velocity limit check; the fallback is the unlimited sentinel. See hasAxisArmatureOpinion().
+inline bool hasAxisVelocityLimitOpinion(float maxJointVelocity)
+{
+    return maxJointVelocity < FLT_MAX;
+}
+
+/// @brief The friction effort check. Either effort replaces the Newton friction for both, so the parser
+/// and the NewtonJointAPI handlers never mix the two sources on an axis. See hasAxisArmatureOpinion().
+inline bool hasAxisFrictionOpinion(float staticFrictionEffort, float dynamicFrictionEffort)
+{
+    return staticFrictionEffort > 0.0f || dynamicFrictionEffort > 0.0f;
+}
+
+/// @brief The viscous friction coefficient check. See hasAxisArmatureOpinion().
+inline bool hasAxisViscousFrictionOpinion(float viscousFrictionCoefficient)
+{
+    return viscousFrictionCoefficient > 0.0f;
 }
 
 } // namespace omni::physics::parse

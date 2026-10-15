@@ -8,9 +8,6 @@
  * @implements REQ-OMNIPVD-LATE-001
  * @covers AC-1 AC-2
  *
- * @implements REQ-SIM-NVTX-001
- * @covers AC-1
- *
  * @implements REQ-READ-POOL-001
  * @covers AC-2
  */
@@ -56,7 +53,6 @@ static PhysXSettings gPhysXSettings = PhysXSettings(
         { kSettingDisplaySimulationOutput, false },
         { kSettingSuppressReadback, false },
         { kSettingExposeProfilerData, true },
-        { kSettingNvtxEnabled, false },
         { kSettingExposePrimPathNames, true },
         { kOmniPvdOutputEnabled, false },
         { kOmniPvdRecordingCapable, false },

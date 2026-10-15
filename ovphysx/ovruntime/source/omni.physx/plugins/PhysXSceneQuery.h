@@ -11,9 +11,9 @@ namespace omni
 {
 namespace physx
 {
-bool raycastClosest(
+bool raycastClosest(AttachHandle attach,
     const carb::Float3& origin, const carb::Float3& unitDir, float distance, RaycastHit& outHit, bool bothSides);
-bool sweepSphereClosest(float radius,
+bool sweepSphereClosest(AttachHandle attach, float radius,
                         const carb::Float3& origin,
                         const carb::Float3& unitDir,
                         float distance,

@@ -132,7 +132,7 @@ __device__ static inline void femClothMidphaseCore(
 		if (threadIdx.x == 0)
 		{
 			s_warpScratch->meshVerts = femCloth.mPosition_InvMass;
-			s_warpScratch->meshVertsIndices = femCloth.mTriangleVertexIndices;
+			s_warpScratch->meshVertsIndices = femCloth.mTriangleVertexIndices_ownedEdges;
 			
 			Gu::BV32DataPacked* bv32PackedNodes = reinterpret_cast<Gu::BV32DataPacked*>(trimeshGeomPtr);
 			s_warpScratch->bv32PackedNodes = bv32PackedNodes;
@@ -423,7 +423,7 @@ void cloth_psMidphaseGeneratePairsLaunch(
 		if (threadIdx.x == 0)
 		{
 			s_warpScratch->meshVerts = cloth.mPosition_InvMass;
-			s_warpScratch->meshVertsIndices = cloth.mTriangleVertexIndices;
+			s_warpScratch->meshVertsIndices = cloth.mTriangleVertexIndices_ownedEdges;
 
 
 			//const PxU32 & numVerts = nbVerts_nbTets_maxDepth_nbBv32TreeNodes.x;

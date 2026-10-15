@@ -12,6 +12,7 @@
 // usdBridge/StageBridge.cpp. USD behaviour is reached only through the installed seams.
 //
 
+#include <usdLoad/ScannedCollision.h>
 #include <omni/physics/parse/Handles.h>
 #include <omni/physics/parse/IParseBackend.h>
 
@@ -47,7 +48,7 @@ void translateScannedShape(AttachedStage& attachedStage,
 
 // Matches the gprim by `sourceGprim == gPrimKey || primKey == gPrimKey` (latter for
 // shapes where the gprim IS the collider), re-keying each candidate through the scan
-// source's string identity. Transfers ownership of the match out of `scanned`.
+// source's string identity. Borrows the match; the caller must retain `scanned`.
 PhysxShapeDesc* selectScannedCollision(AttachedStage& attachedStage,
                                        ::omni::physics::parse::ScannedStage& scanned,
                                        ::omni::physics::parse::ObjectKey gPrimKey);
@@ -58,28 +59,15 @@ PhysxShapeDesc* selectScannedCollision(AttachedStage& attachedStage,
 // names a resident stage then). Used by attachOvstage's backing-stage consistency check.
 uint64_t bridgeBackingStageCacheId(AttachedStageUsdHandle handle);
 
-// The parse backend an ovstage attach displaces and detach restores: whatever is live in
-// the registry (the USD backend when a test installed it, null otherwise).
-std::unique_ptr<::omni::physics::parse::IParseBackend> bridgeMakeDefaultParseBackend();
-
-// Installs / removes the USD scan backend registration a plain attach() holds, via the
-// reparse seam. No-ops without the seam (plain attach() is refused there). May throw.
-void bridgeInstallDefaultScanBackend();
-void bridgeRemoveDefaultScanBackend();
-
-// Restores the process parse backend after an ovstage detach. `restore` is the backend
-// captured at attach time and may be null (then nothing is installed).
-void bridgeRestoreDefaultParseBackend(std::unique_ptr<::omni::physics::parse::IParseBackend> restore);
-
 // Resolves `stageId` through the reparse seam and builds a fresh AttachedStage over it.
 // Returns false (outAttachedStage untouched) with no seam or a non-resident id. Takes
 // UsdLoad's parsing mutex for the construction.
 bool bridgeAttachStageById(uint64_t stageId, AttachedStage& outAttachedStage);
 
 // Scans the single collision root named by `collisionKey` and returns the shape matching
-// `gPrimKey`, or null. Dispatches through omni::physics::parse::scanStage, i.e. whatever
-// scan backend is installed (USD from the seam on a plain attach, ovstage otherwise).
-PhysxShapeDesc* bridgeScanCollisionRoot(AttachedStage& attachedStage,
+// `gPrimKey` together with its scan owner, or an empty result. Dispatches through
+// the scan backend owned by this attachment (USD or ovstage).
+ScannedCollision bridgeScanCollisionRoot(AttachedStage& attachedStage,
                                         ::omni::physics::parse::ObjectKey collisionKey,
                                         ::omni::physics::parse::ObjectKey gPrimKey);
 
@@ -93,7 +81,7 @@ PhysxShapeDesc* bridgeScanCollisionRoot(AttachedStage& attachedStage,
 // could have minted a real ObjectKey.handle for it. Needs the reparse seam (a live
 // UsdStageCache); without it, logs and returns null.
 //
-PhysxShapeDesc* bridgeParseForeignStageCollision(uint64_t stageId,
+ScannedCollision bridgeParseForeignStageCollision(uint64_t stageId,
                                                  uint64_t collisionPrimId,
                                                  AttachedStage& outStorage,
                                                  ::omni::physics::parse::ObjectKey& outCollisionKey);

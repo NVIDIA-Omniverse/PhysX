@@ -34,8 +34,9 @@ roughly in order:
   `physxRigidBody:solverPositionIterationCount` improves convergence.
 - **Increase friction** (within physically reasonable ranges — few materials
   exceed ~2.0) to help objects come to rest.
-- **Reduce the timestep** (raise `physxScene:timeStepsPerSecond`) — only if the
-  above are insufficient.
+- **Reduce the timestep passed to `step(dt)` or `step_sync(dt)`** if these
+  changes are insufficient. Changing `physxScene:timeStepsPerSecond` alone does
+  not change the step duration supplied by the application.
 
 ## Worked Example
 
@@ -56,10 +57,10 @@ Save the following as `author_sdf_cones.py`, then run
 existing one, so nothing outside the script is required:
 
 ```python
-import ovphysx
+from ovphysx.samples.python_samples.schema_support import physx_schema_paths
 from pxr import Gf, Plug, Sdf, Usd, UsdGeom, UsdPhysics
 
-Plug.Registry().RegisterPlugins([str(p) for p in ovphysx.codeless_schema_paths()])
+Plug.Registry().RegisterPlugins([str(p) for p in physx_schema_paths()])
 
 stage = Usd.Stage.CreateInMemory()
 UsdGeom.Xform.Define(stage, "/World")
@@ -75,7 +76,6 @@ scene_prim = scene.GetPrim()
 scene_prim.ApplyAPI("PhysxSceneAPI")
 scene_prim.CreateAttribute("physxScene:gpuMaxRigidContactCount", Sdf.ValueTypeNames.UInt).Set(1000000)
 scene_prim.CreateAttribute("physxScene:gpuMaxRigidPatchCount", Sdf.ValueTypeNames.UInt).Set(100000)
-scene_prim.CreateAttribute("physxScene:timeStepsPerSecond", Sdf.ValueTypeNames.UInt).Set(120)
 
 # A dynamic cone with an SDF collider, tuned for good contacts.
 cone = UsdGeom.Mesh.Define(stage, "/World/Cone")  # provide cone mesh geometry
@@ -101,6 +101,9 @@ The script succeeds when it writes `sdf_cones.usda` and no
 `Tf.ErrorException: ApplyAPI: Cannot find a valid schema ...` is raised. That
 exception means the codeless schemas were registered too late, not that an
 attribute name is wrong.
+
+When simulating this scene, pass `1.0 / 120.0` to `step()` or `step_sync()` to
+advance it at 120 steps per second of simulation time.
 
 `/World/Cone` is defined as an empty `Mesh`, so supply its point and face data
 (or replace it with the cone mesh from your own asset) before the scene has

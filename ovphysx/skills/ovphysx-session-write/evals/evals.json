@@ -4,13 +4,14 @@
     {
       "id": 1,
       "prompt": "In Python, drive articulation DOF velocity targets, step, then read the joint velocities back.",
-      "expected_output": "Warms up or steps first, opens a PhysX.write session on jointVelocityTarget, fills every tensor of every group and commits, steps, then reads jointVelocity (a state attribute) back; does not use tensor bindings.",
+      "expected_output": "Warms up or steps first, opens a session write (PhysX.write_sync, or PhysX.write over a completed Query) on jointVelocityTarget, fills every tensor of every group and commits, steps, then reads jointVelocity (a state attribute) back; does not use tensor bindings.",
       "files": [],
       "expectations": [
         "Selects ovphysx-session-write",
-        "Uses PhysX.write (session write), not create_tensor_binding",
+        "Uses the session write (PhysX.write_sync or PhysX.write), not create_tensor_binding",
         "Warms up or steps before opening the write session",
         "Fills every tensor of every group before commit, and asserts at least one group committed",
+        "Collects each commit (commit_sync, or wait() on commit) and the session releases",
         "Reads the outcome from a state attribute (jointVelocity), not the target it wrote"
       ]
     },
@@ -49,7 +50,7 @@
     {
       "id": 5,
       "prompt": "I have legacy code that reads and writes simulation state as caller-owned NumPy arrays through create_tensor_binding. What is the non-deprecated replacement for the write side?",
-      "expected_output": "Points at the session write API (PhysX.write / ovphysx_write) covered by ovphysx-session-write as the successor to the deprecated tensor-binding write.",
+      "expected_output": "Points at the session write API (PhysX.write / PhysX.write_sync / ovphysx_write) covered by ovphysx-session-write as the successor to the deprecated tensor-binding write.",
       "files": [],
       "expectations": [
         "Identifies the tensor-binding API as deprecated",
@@ -58,15 +59,44 @@
     },
     {
       "id": 6,
-      "prompt": "My articulation has revolute and prismatic joints. Can I fill every jointPosition tensor with 30 to set all joints to 30 degrees?",
-      "expected_output": "Explains that angular coordinates use degrees and prismatic coordinates use the stage base length unit. Restricts the uniform-degrees helper to an all-angular scene. For mixed scenes, maps authored per-axis metadata to returned joint order and fills every mapped entry with the appropriate units before committing.",
+      "prompt": "Using the ovphysx C API, write rigid-body linear velocities, handle fetch exhaustion and a failed commit, and clean up without losing the error reason.",
+      "expected_output": "Waits each query/write/fetch/commit/release task, fills a caller-owned ovphysx_fetched_write_group_t per fetch and every mapped tensor, commits fetched.group unchanged, treats a successful fetch with a NULL group as exhaustion, and retains the first task diagnostic while reporting cleanup failures.",
       "files": [],
       "expectations": [
-        "Selects ovphysx-session-write",
-        "States jointPosition uses degrees for angular axes and stage base length units for prismatic axes",
-        "Does not apply the all-angular helper or a blanket radian conversion to a mixed articulation",
-        "Does not invent an angular-only query or per-joint filter",
-        "Fills every tensor and every mapped entry before committing the group"
+        "Uses ovphysx_enqueue_result_t and separates rejected submission from accepted execution failure",
+        "Calls ovphysx_write with an attribute array, its count, the output handle, and a NULL or caller-owned ovphysx_write_result_t",
+        "Calls ovphysx_wait_task before reading output handles or group pointers; a successful fetch with fetched.group == NULL is exhaustion",
+        "Passes the fetched.group pointer unchanged to ovphysx_commit_group",
+        "Copies ovphysx_get_last_task_error text before ovphysx_destroy_wait_task_result",
+        "Does not retry an accepted failed commit or release; preserves partial-application semantics",
+        "Collects write/query release tasks and does not use wait_all to collect unrelated outcomes"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "In one write session I want to set every rigid body's linear velocity and angular velocity. Both columns are vec3 float arrays, so how does my code know which group is which, and what happens if the second commit fails?",
+      "expected_output": "Opens one session with both attributes and identifies each fetched group by its attribute_index into the request list (Python WriteGroup.attribute_index, C ovphysx_fetched_write_group_t.attribute_index), never by shape or fetch order; commits each group separately; an earlier successful commit stays applied when a later one fails because writes are not transactional.",
+      "files": [],
+      "expectations": [
+        "Requests both attributes in one session: PhysX.write_sync(SimObjectType.RIGID_BODY, [\"linearVelocity\", \"angularVelocity\"]), PhysX.write(query, [...]), or ovphysx_write with attribute_count 2",
+        "Chooses the fill values from attribute_index, not from tensor shape, tensor count, or fetch order",
+        "Explains that the open validates every name first, so a duplicate, unresolvable token, or read-only attribute fails the whole open",
+        "Explains that commits are not transactional: the first successful commit remains applied if the second fails, and a failed commit is not retried"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "In Python, put every standalone dynamic rigid body to sleep, then wake only a selected subset while leaving the others asleep and check their current sleep state. Does the same command work with CPU simulation, GPU with CPU readback, and DirectGPU?",
+      "expected_output": "Uses a context-managed PhysX.write_sync session on wake, fills every uint8 row with zero to sleep or nonzero to wake, and collects each commit with commit_sync (or wait() on commit). Narrows the wake write with prim_paths or pattern so unselected bodies stay asleep. Explains the mode and body restrictions, then hands the state read to ovphysx-output-read using isSleeping with ALL scope.",
+      "files": [],
+      "expectations": [
+        "Uses PhysX.write_sync(SimObjectType.RIGID_BODY, [\"wake\"]), or a completed Query with PhysX.write(query, [\"wake\"]).wait(); fills every tensor row before commit_sync or commit(...).wait(); zero means sleep, not leave unchanged",
+        "Selects the subset with prim_paths native handles or pattern on write_sync or query using ALL scope (the default); selected sleeping bodies are included, unselected bodies are untouched, and no per-row leave-unchanged mask is claimed",
+        "Explains that wake is a one-time command taking effect at commit and later simulation may change the state",
+        "Supports CPU and GPU-with-CPU-readback scenes but refuses DirectGPU, even after stepping",
+        "Explains that kinematic and simulation-disabled bodies are skipped, sleeping-disabled scenes ignore sleep commands, and articulation-link wake writes are refused",
+        "Routes observation to ovphysx-output-read and PhysX.read_sync(SimObjectType.RIGID_BODY, [\"isSleeping\"], scope=ObjectScope.ALL), or explicit ALL query/read/fetch operations collected by wait(), where 1 means asleep and 0 means awake",
+        "Does not read wake back or infer current state from ACTIVE membership or the last command"
       ]
     }
   ]

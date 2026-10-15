@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-IO-001
+// @covers AC-3
+
 /**
  * @implements REQ-MATH-001
  * @covers AC-8 AC-9
@@ -43,6 +46,7 @@ namespace omni
 {
 namespace physx
 {
+namespace usdparser { class AttachedStage; }
 namespace particles
 {
 
@@ -57,7 +61,7 @@ typedef std::unordered_map<omni::physics::parse::ObjectKey, PhysxParticleSampler
 class PhysxParticleFactory : public Allocateable
 {
 public:
-    PhysxParticleFactory(omni::physics::parse::ObjectKey particleKey);
+    PhysxParticleFactory(usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey particleKey);
     ~PhysxParticleFactory();
 
     void addSampler(omni::physics::parse::ObjectKey samplerKey);
@@ -77,7 +81,7 @@ public:
     PhysxParticleSampler* getParticleSampler(omni::physics::parse::ObjectKey samplerKey);
 
     // static - callback for samplingResults
-    static void processSamplingResults(omni::physics::parse::ObjectKey samplerKey,
+    static void processSamplingResults(usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey samplerKey,
                                        omni::physics::parse::ObjectKey particleSetKey,
                                        const carb::Float3* positions,
                                        size_t numPoints,
@@ -86,7 +90,7 @@ public:
                                        const ::physx::PxMat33d& shearScaleTransform,
                                        bool registerOriginalCount);
 
-    static bool getDecomposedTransform(omni::physics::parse::ObjectKey samplerKey,
+    static bool getDecomposedTransform(const usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey samplerKey,
                                        omni::physics::parse::ObjectKey particleSetKey,
                                        ::physx::PxMat44d& rigidTransform,
                                        ::physx::PxMat33d& shearScaleTransform);
@@ -99,6 +103,7 @@ private:
     void resetStartAndCountForAllSamplers();
     void saveTotalCount();
 
+    usdparser::AttachedStage& mAttachedStage;
     omni::physics::parse::ObjectKey mParticleKey;
     PathToSamplerMap mSamplers;
     bool mInitialized;
@@ -119,7 +124,7 @@ private:
 class PhysxParticleSampler : public Allocateable
 {
 public:
-    PhysxParticleSampler(omni::physics::parse::ObjectKey key, omni::physics::parse::ObjectKey target);
+    PhysxParticleSampler(usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey key, omni::physics::parse::ObjectKey target);
     ~PhysxParticleSampler();
 
     bool update(bool forceResampling);
@@ -167,6 +172,7 @@ public:
 private:
     void transformPoints(::physx::PxMat44d& newRigidTransform);
 
+    usdparser::AttachedStage& mAttachedStage;
     omni::physics::parse::ObjectKey mSamplerKey;
     omni::physics::parse::ObjectKey mTargetKey;
     uint32_t mStartIndex;
@@ -183,12 +189,14 @@ bool decomposeSamplerTransform(const ::physx::PxMat44d& l2w,
                                ::physx::PxMat44d& rigidTransform,
                                ::physx::PxMat33d& shearScaleTransform);
 
+void releaseAttachmentSamplers(usdparser::AttachedStage& owner);
+
 // Particle-sampler entry points (internal, ObjectKey-keyed)
-void createParticleSampler(omni::physics::parse::ObjectKey samplerKey, omni::physics::parse::ObjectKey particlePrimKey);
-void updateParticleSampler(omni::physics::parse::ObjectKey samplerKey,
+void createParticleSampler(usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey samplerKey, omni::physics::parse::ObjectKey particlePrimKey);
+void updateParticleSampler(usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey samplerKey,
                            omni::physics::parse::ObjectKey particlePrimKey,
                            bool forceResampling);
-void removeParticleSampler(omni::physics::parse::ObjectKey samplerKey, omni::physics::parse::ObjectKey particlePrimKey);
+void removeParticleSampler(usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey samplerKey, omni::physics::parse::ObjectKey particlePrimKey);
 
 } // namespace particles
 } // namespace physx

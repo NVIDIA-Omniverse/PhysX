@@ -1,6 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-CUSTOM-LIFETIME-001
+// @covers AC-1 AC-2
+
+// @implements REQ-ATTACH-IO-001
+// @covers AC-3
+
 /**
  * @implements REQ-PUBLICAPI-001
  * @covers AC-9 AC-11
@@ -8,8 +14,8 @@
 
 #pragma once
 
-#include <carb/Defines.h>
-#include <carb/Types.h>
+#include <cstddef>
+#include <cstdint>
 
 #include <omni/physics/AttachHandle.h>
 #include <omni/physics/parse/Handles.h> // ObjectKey
@@ -35,7 +41,7 @@ struct CustomJointFlag
 ///
 /// \param[in] key ObjectKey of the joint prim.
 /// \param[in] attachHandle Attach the joint belongs to (matches @ref
-/// IPhysxSimulation::getAttachHandle()).
+/// IPhysxSimulation::attachOvstage()).
 /// \param[in] actor0 PxRigidActor for the joint.
 /// \param[in] localFrame0 Transformation for local frame 0 for the joint.
 /// \param[in] actor1 PxRigidActor for the joint.
@@ -55,7 +61,7 @@ typedef bool (*CreateJointFn)(omni::physics::parse::ObjectKey key,
 ///
 /// \param[in] key ObjectKey of the joint prim.
 /// \param[in] userData User data passed to ICustomJointCallback struct
-typedef void (*ReleaseJointFn)(omni::physics::parse::ObjectKey key, void* userData);
+typedef void (*ReleaseJointFn)(omni::physics::parse::ObjectKey key, AttachHandle attachHandle, void* userData);
 
 /// Prepare joint data function
 ///
@@ -65,7 +71,7 @@ typedef void (*ReleaseJointFn)(omni::physics::parse::ObjectKey key, void* userDa
 /// \param[in] key ObjectKey of the joint prim.
 /// \param[in] userData User data passed to ICustomJointCallback struct
 /// \return Return the joint data
-typedef void* (*PrepareJointDataFn)(omni::physics::parse::ObjectKey key, void* userData);
+typedef void* (*PrepareJointDataFn)(omni::physics::parse::ObjectKey key, AttachHandle attachHandle, void* userData);
 
 /// On CoM Shift function
 ///
@@ -76,7 +82,7 @@ typedef void* (*PrepareJointDataFn)(omni::physics::parse::ObjectKey key, void* u
 ///
 /// \param[in] key ObjectKey of the joint prim.
 /// \param[in] userData User data passed to ICustomJointCallback struct
-typedef void (*OnComShiftFn)(omni::physics::parse::ObjectKey key, uint32_t actor, void* userData);
+typedef void (*OnComShiftFn)(omni::physics::parse::ObjectKey key, AttachHandle attachHandle, uint32_t actor, void* userData);
 
 /// On Origin Shift function
 ///
@@ -89,7 +95,7 @@ typedef void (*OnComShiftFn)(omni::physics::parse::ObjectKey key, uint32_t actor
 /// \param[in] key ObjectKey of the joint prim.
 /// \param[in] shift Translation vector the origin is shifted by.
 /// \param[in] userData User data passed to ICustomJointCallback struct
-typedef void (*OnOriginShift)(omni::physics::parse::ObjectKey key, const ::physx::PxVec3& shift, void* userData);
+typedef void (*OnOriginShift)(omni::physics::parse::ObjectKey key, AttachHandle attachHandle, const ::physx::PxVec3& shift, void* userData);
 
 /// Constant block data get function
 ///
@@ -98,8 +104,9 @@ typedef void (*OnOriginShift)(omni::physics::parse::ObjectKey key, const ::physx
 /// \param[in] key ObjectKey of the joint prim.
 /// \param[in] userData User data passed to ICustomJointCallback struct
 /// \return Return the constraint data pointer
-typedef const void* (*GetConstantBlockFn)(omni::physics::parse::ObjectKey key, void* userData);
+typedef const void* (*GetConstantBlockFn)(omni::physics::parse::ObjectKey key, AttachHandle attachHandle, void* userData);
 
+/// All object callbacks identify their owning attachment; keys are local to it.
 /// Custom joint strcuture holding function pointers for callbacks
 struct ICustomJointCallback
 {
@@ -125,7 +132,7 @@ struct IPhysxCustomJoint
     /// \param jointSolverPrepFn Joint solver prep function.
     /// \param jointDataSize Joint data size that are provided for the constraint solver prep code.
     /// \return Registration id, used for unregister, return kInvalidCustomJointRegId when failed.
-    size_t(CARB_ABI* registerCustomJoint)(const char* jointPrimType,
+    size_t(* registerCustomJoint)(const char* jointPrimType,
                                           ICustomJointCallback& jointCallback,
                                           ::physx::PxConstraintSolverPrep jointSolverPrepFn,
                                           size_t jointDataSize);
@@ -133,14 +140,14 @@ struct IPhysxCustomJoint
     /// Unregister custom joint
     ///
     /// \param id Registration id
-    void(CARB_ABI* unregisterCustomJoint)(size_t id);
+    void(* unregisterCustomJoint)(size_t id);
 
     /// Mark joint dirty
     ///
     /// Notify the scene that the constraint shader data has been updated by the application
     ///
     /// \param key ObjectKey of the joint to mark dirty
-    void(CARB_ABI* markJointDirty)(omni::physics::parse::ObjectKey key);
+    void(* markJointDirty)(AttachHandle attachHandle, omni::physics::parse::ObjectKey key);
 
     /// Set joint flags
     ///
@@ -148,7 +155,7 @@ struct IPhysxCustomJoint
     ///
     /// \param key ObjectKey of the joint to mark dirty
     /// \param flags New joint flags
-    void(CARB_ABI* setJointFlags)(omni::physics::parse::ObjectKey key, CustomJointFlag::Enum flags);
+    void(* setJointFlags)(AttachHandle attachHandle, omni::physics::parse::ObjectKey key, CustomJointFlag::Enum flags);
 
     /// Get joint flags
     ///
@@ -156,7 +163,13 @@ struct IPhysxCustomJoint
     ///
     /// \param key ObjectKey of the joint to mark dirty
     /// \return Current joint flags
-    CustomJointFlag::Enum(CARB_ABI* getJointFlags)(omni::physics::parse::ObjectKey key);
+    CustomJointFlag::Enum(* getJointFlags)(AttachHandle attachHandle, omni::physics::parse::ObjectKey key);
+
+    /// Remove a registration only after all objects and in-flight registry
+    /// snapshots have released it. False means busy or unknown id. A plugin
+    /// must retain its code/context until this returns true; callbacks cannot
+    /// unregister themselves. The legacy void operation is not an unload gate.
+    bool(* tryUnregisterCustomJoint)(size_t id);
 };
 
 } // namespace physx

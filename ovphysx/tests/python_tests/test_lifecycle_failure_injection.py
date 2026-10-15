@@ -4,7 +4,7 @@
 """Failure-injection tests for the public PhysX destruction contract."""
 
 # @implements REQ-PYTHON-LIFECYCLE-001
-# @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6
+# @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-8
 
 import gc
 import threading
@@ -25,6 +25,12 @@ class _FakeLib:
         self._outcomes = list(outcomes)
         self.destroy_calls = []
 
+    def ovphysx_wait_all(self, handle, timeout, output):
+        return SimpleNamespace(status=ApiStatus.SUCCESS)
+
+    def ovphysx_destroy_wait_task_result(self, output):
+        pass
+
     def ovphysx_destroy_instance(self, handle):
         self.destroy_calls.append(handle)
         outcome = self._outcomes.pop(0)
@@ -40,6 +46,11 @@ def _make_physx(fake_lib, *, handle=17, lifecycle_acquired=True):
     physx._attached_ovstage = object()
     physx._lifecycle_acquired = lifecycle_acquired
     physx._released = False
+    physx._pending_read_lock = threading.Lock()
+    physx._pending_write_lock = threading.Lock()
+    physx._pending_read_releases = []
+    physx._pending_write_releases = []
+    physx._live_read_holders = weakref.WeakSet()
     return physx
 
 
@@ -62,6 +73,23 @@ def test_native_status_failure_commits_terminal_state(monkeypatch):
     physx.destroy()
     assert fake_lib.destroy_calls == [17]
     assert lifecycle_releases == [True]
+
+
+def test_companion_lease_rejection_retains_owner_until_retry(monkeypatch):
+    fake_lib = _FakeLib([ApiStatus.INVALID_STATE, ApiStatus.SUCCESS])
+    physx = _make_physx(fake_lib)
+    stage = physx._attached_ovstage
+    releases = []
+    monkeypatch.setattr(api, "_release_process_lifecycle", lambda: releases.append(True))
+    with pytest.raises(RuntimeError, match="leases.*retry"):
+        physx.destroy()
+    assert physx._omni_physx_sdk_handle.value == 17
+    assert physx._attached_ovstage is stage
+    assert physx._lifecycle_acquired and not physx._released
+    assert not releases
+    physx.destroy()
+    assert physx._omni_physx_sdk_handle is None
+    assert releases == [True]
 
 
 def test_native_call_exception_retains_ownership_until_retry(monkeypatch):
@@ -331,3 +359,183 @@ def test_invalid_partial_handle_releases_lifecycle_once(monkeypatch):
     assert physx._attached_ovstage is None
     assert physx._lifecycle_acquired is False
     assert physx._released is True
+
+
+def test_gc_busy_finalizer_retains_owner_stage_until_native_admission(monkeypatch):
+    admitted=threading.Event();finished=threading.Event();entered=threading.Event()
+    class BusyLib:
+        def ovphysx_destroy_instance(self,handle):
+            entered.set()
+            return SimpleNamespace(status=ApiStatus.SUCCESS if admitted.is_set() else ApiStatus.INVALID_STATE)
+    physx=_make_physx(BusyLib());stage=physx._attached_ovstage
+    reference=weakref.ref(physx)
+    monkeypatch.setattr(api,'_release_process_lifecycle',finished.set)
+    with warnings.catch_warnings(record=True) as reported:
+        warnings.simplefilter('always');del physx;gc.collect()
+        assert entered.wait(5)
+        owner=reference();assert owner is not None
+        assert owner._attached_ovstage is stage and owner._omni_physx_sdk_handle.value==17
+        assert owner._lifecycle_acquired and not finished.is_set()
+        del owner;admitted.set();assert finished.wait(5)
+        assert not any('failed twice' in str(w.message) for w in reported)
+
+
+
+def test_busy_finalizer_worker_start_failure_retains_exit_registry(monkeypatch):
+    physx=_make_physx(_FakeLib([ApiStatus.INVALID_STATE,ApiStatus.SUCCESS]))
+    stage=physx._attached_ovstage;releases=[]
+    monkeypatch.setattr(api,'_release_process_lifecycle',lambda:releases.append(True))
+    def cannot_start(*args,**kwargs):raise RuntimeError('thread start failure')
+    monkeypatch.setattr(api.threading.Thread,'start',cannot_start)
+    with pytest.warns(RuntimeWarning,match='retained for process-exit'):
+        physx._finalize_unreleased()
+    assert api._PROCESS_LIFECYCLE_INSTANCES[id(physx)]() is physx
+    assert physx._attached_ovstage is stage and not releases
+    physx._finalize_unreleased()
+    assert releases==[True] and id(physx) not in api._PROCESS_LIFECYCLE_INSTANCES
+
+
+class _FinalizedStage:
+    """Stands in for ovstage.Stage, whose finalizer destroys the native stage."""
+
+    def __init__(self, events):
+        self._events = events
+
+    def __del__(self):
+        self._events.append("stage finalized")
+
+
+class _CallbackHost:
+    """Registers a bound-method callback on its owner, forming a host/owner cycle."""
+
+    def __init__(self, physx):
+        self.physx = physx
+        physx._host_callback = self.on_event
+
+    def on_event(self):
+        pass
+
+
+@pytest.mark.parametrize("busy", [False, True], ids=["immediate", "deferred"])
+def test_gc_cycle_keeps_attached_stage_until_owner_teardown(monkeypatch, busy):
+    events = []
+    admitted = threading.Event()
+    finished = threading.Event()
+    if not busy:
+        admitted.set()
+
+    class Lib:
+        def ovphysx_destroy_instance(self, handle):
+            if not admitted.is_set():
+                events.append("busy")
+                return SimpleNamespace(status=ApiStatus.INVALID_STATE)
+            events.append("native destroy")
+            return SimpleNamespace(status=ApiStatus.SUCCESS)
+
+    monkeypatch.setattr(api, "_release_process_lifecycle", finished.set)
+    gc.collect()
+    # Allocated before its owner, so a shared collection pass finalizes it first.
+    stage = _FinalizedStage(events)
+    physx = _make_physx(Lib())
+    physx._attached_ovstage = stage
+    _CallbackHost(physx)
+    del stage, physx
+    with warnings.catch_warnings(record=True):
+        warnings.simplefilter("always")
+        gc.collect()
+        if busy:
+            assert events and "stage finalized" not in events, "Stage finalized while its owner's teardown was deferred"
+            admitted.set()
+        assert finished.wait(5)
+    gc.collect()
+    assert events[-2:] == ["native destroy", "stage finalized"]
+
+
+def _exit_registry(monkeypatch, physx):
+    instances = {id(physx): weakref.ref(physx)}
+    shutdowns = []
+    monkeypatch.setattr(api, "_PROCESS_LIFECYCLE_INSTANCES", instances)
+    monkeypatch.setattr(api, "_PROCESS_EXIT_CLEANUP_STARTED", threading.Event(), raising=False)
+    monkeypatch.setattr(api, "_DEFERRED_FINALIZER_THREADS", set(), raising=False)
+    monkeypatch.setattr(api, "_shutdown_remaining_process_lifecycle_at_exit", lambda: shutdowns.append(True))
+    return instances, shutdowns
+
+
+def test_process_exit_waits_for_in_flight_deferred_teardown(monkeypatch):
+    in_native = threading.Event()
+    release_native = threading.Event()
+    calls = []
+    inflight = [0, 0]
+
+    class Lib(_FakeLib):
+        def ovphysx_destroy_instance(self, handle):
+            inflight[0] += 1
+            inflight[1] = max(inflight)
+            try:
+                calls.append(threading.current_thread().name)
+                if len(calls) == 1:
+                    return SimpleNamespace(status=ApiStatus.INVALID_STATE)
+                in_native.set()
+                release_native.wait(5)
+                return SimpleNamespace(status=ApiStatus.SUCCESS)
+            finally:
+                inflight[0] -= 1
+
+    releases = []
+    monkeypatch.setattr(api, "_release_process_lifecycle", lambda: releases.append(True))
+    physx = _make_physx(Lib([]))
+    _, shutdowns = _exit_registry(monkeypatch, physx)
+    with warnings.catch_warnings(record=True):
+        warnings.simplefilter("always")
+        del physx
+    assert in_native.wait(5), "busy finalizer did not defer to a worker"
+    exit_cleanup = threading.Thread(target=api._destroy_process_instances_at_exit)
+    exit_cleanup.start()
+    try:
+        exit_cleanup.join(0.3)
+        assert exit_cleanup.is_alive(), "exit cleanup did not wait for the deferred worker"
+        assert len(calls) == 2 and not shutdowns and not releases
+    finally:
+        release_native.set()
+        exit_cleanup.join(5)
+    assert not exit_cleanup.is_alive()
+    assert len(calls) == 2 and inflight[1] == 1
+    assert releases == [True] and shutdowns == [True]
+
+
+def test_process_exit_takes_over_busy_deferred_finalizer(monkeypatch):
+    admitted = threading.Event()
+    retrying = threading.Event()
+    calls = []
+
+    class Lib(_FakeLib):
+        def ovphysx_destroy_instance(self, handle):
+            calls.append(threading.current_thread().name)
+            if admitted.is_set():
+                return SimpleNamespace(status=ApiStatus.SUCCESS)
+            if len(calls) >= 3:
+                retrying.set()
+            return SimpleNamespace(status=ApiStatus.INVALID_STATE)
+
+    releases = []
+    monkeypatch.setattr(api, "_release_process_lifecycle", lambda: releases.append(True))
+    physx = _make_physx(Lib([]))
+    key = id(physx)
+    instances, shutdowns = _exit_registry(monkeypatch, physx)
+    with warnings.catch_warnings(record=True):
+        warnings.simplefilter("always")
+        del physx
+    assert retrying.wait(5), "busy finalizer worker did not retry"
+    with pytest.warns(RuntimeWarning, match="process exit"):
+        api._destroy_process_instances_at_exit()
+    attempts = len(calls)
+    threading.Event().wait(0.1)
+    assert len(calls) == attempts, "deferred worker kept retrying after exit cleanup"
+    assert calls[-1] == threading.current_thread().name
+    owner = instances[key]()
+    assert owner is not None and owner._omni_physx_sdk_handle.value == 17
+    assert owner._lifecycle_acquired and not owner._released
+    assert not releases and not shutdowns
+    admitted.set()
+    owner.destroy()
+    assert releases == [True]

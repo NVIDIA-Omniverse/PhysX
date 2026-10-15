@@ -4,8 +4,7 @@
 // PARTIALLY DEPRECATED (tensor-binding-deprecation): only TensorBindingNativeDeviceReportsCpuProperty
 // is binding-specific. It exercises createTensorBinding and TensorBinding::nativeDevice (the
 // CPU-property residency query, which has no session-API twin) and retires with the binding. The
-// rest of this suite (lifecycle/RAII, USD load, step, error handling, clone, typed PhysX lookup)
-// stays.
+// rest of this suite (lifecycle/RAII, USD load, step, error handling, clone) stays.
 
 /**
  * Comprehensive C++ Wrapper Test Suite
@@ -29,10 +28,6 @@
 #include <memory>
 #include <cstring>
 
-static_assert(
-    ovphysx::PhysXTypeFor<physx::PxPhysics>::value == OVPHYSX_PHYSX_TYPE_PHYSICS,
-    "PxPhysics must map to OVPHYSX_PHYSX_TYPE_PHYSICS");
-
 // Helper Functions
 namespace {
 
@@ -50,10 +45,8 @@ std::vector<float> createTestData(size_t count) {
 class CppWrapperTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-
-        ovphysx_handle_t handle = 0;
-        ovphysx_result_t result = ovphysx_create_instance(&args, &handle);
+        ovphysx_instance_handle_t handle = 0;
+        ovphysx_result_t result = ovphysx_create_instance(&handle);
         ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
         m_sdk = std::make_unique<ovphysx::PhysX>(handle);
         ASSERT_TRUE(*m_sdk);
@@ -68,21 +61,6 @@ protected:
 
     std::unique_ptr<ovphysx::PhysX> m_sdk;
 };
-
-TEST_F(CppWrapperTest, TypedPxPhysicsLookup) {
-    ASSERT_TRUE(test_utils::attach_usd_with_ovstage(
-        m_sdk->handle(), "tests/data/simple_physics_scene.usda"));
-
-    ovphysx_api_status_t status = m_sdk->step(1.0f / 60.0f);
-    ASSERT_EQ(status, OVPHYSX_API_SUCCESS);
-    ovphysx::physx::WaitResult wait_result = m_sdk->waitAll();
-    ASSERT_FALSE(wait_result.hasErrors());
-
-    physx::PxPhysics* physics = nullptr;
-    status = m_sdk->getPhysXPtr("", physics);
-    EXPECT_EQ(status, OVPHYSX_API_SUCCESS);
-    EXPECT_NE(physics, nullptr);
-}
 
 TEST_F(CppWrapperTest, TensorBindingNativeDeviceReportsCpuProperty) {
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(
@@ -105,10 +83,8 @@ TEST_F(CppWrapperTest, TensorBindingNativeDeviceReportsCpuProperty) {
 //------------------------------------------------------------------------------------------------------------
 
 TEST(CppWrapper, SDKConstruction) {
-    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-
-    ovphysx_handle_t handle = 0;
-    ovphysx_result_t result = ovphysx_create_instance(&args, &handle);
+    ovphysx_instance_handle_t handle = 0;
+    ovphysx_result_t result = ovphysx_create_instance(&handle);
     ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
     
     ovphysx::PhysX sdk(handle);
@@ -166,7 +142,7 @@ TEST(CppWrapper, CreateArgsCreateCpu) {
     // is attached.
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(sdk.handle(), "tests/data/simple_physics_scene.usda"));
 
-    status = sdk.step(0.016f);
+    status = sdk.step(0.016f).status;
     EXPECT_EQ(status, OVPHYSX_API_SUCCESS);
     auto wait = sdk.waitAll();
     EXPECT_FALSE(wait.hasErrors());
@@ -188,8 +164,11 @@ TEST(CppWrapper, CreateArgsWithConfigEntries) {
 }
 
 TEST_F(CppWrapperTest, UpdateArticulationsKinematicRequiresStage) {
-    auto status = m_sdk->updateArticulationsKinematic();
-    EXPECT_EQ(status, OVPHYSX_API_ERROR);
+    const ovphysx_enqueue_result_t task = m_sdk->updateArticulationsKinematic(
+        1, OVPHYSX_ARTICULATION_KINEMATIC_POSITION);
+    EXPECT_EQ(task.status, OVPHYSX_API_NOT_FOUND);
+    EXPECT_EQ(task.op_index, 0u);
+    EXPECT_EQ(task.instance, 0u);
 }
 
 TEST(CppWrapper, CreateArgsValidationRejectsNullConfigEntries) {
@@ -222,7 +201,7 @@ TEST(CppWrapperGpuTest, CreateArgsCreateAuto) {
     // is attached.
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(sdk.handle(), "tests/data/simple_physics_scene.usda"));
 
-    status = sdk.step(0.016f);
+    status = sdk.step(0.016f).status;
     EXPECT_EQ(status, OVPHYSX_API_SUCCESS);
     auto wait = sdk.waitAll();
     EXPECT_FALSE(wait.hasErrors());
@@ -248,7 +227,7 @@ TEST(CppWrapperGpuTest, CreateArgsCreateGpu) {
     // is attached.
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(sdk.handle(), "tests/data/simple_physics_scene.usda"));
 
-    status = sdk.step(0.016f);
+    status = sdk.step(0.016f).status;
     EXPECT_EQ(status, OVPHYSX_API_SUCCESS);
     auto wait = sdk.waitAll();
     EXPECT_FALSE(wait.hasErrors());
@@ -260,10 +239,8 @@ TEST(CppWrapperGpuTest, CreateArgsCreateGpu) {
 
 TEST(CppWrapper, SDKLifecycle) {
     {
-        ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-
-        ovphysx_handle_t handle = 0;
-        ovphysx_result_t result = ovphysx_create_instance(&args, &handle);
+        ovphysx_instance_handle_t handle = 0;
+        ovphysx_result_t result = ovphysx_create_instance(&handle);
         ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
         
         ovphysx::PhysX sdk1(handle);
@@ -271,10 +248,8 @@ TEST(CppWrapper, SDKLifecycle) {
     }
 
     {
-        ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-
-        ovphysx_handle_t handle = 0;
-        ovphysx_result_t result = ovphysx_create_instance(&args, &handle);
+        ovphysx_instance_handle_t handle = 0;
+        ovphysx_result_t result = ovphysx_create_instance(&handle);
         ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
         
         ovphysx::PhysX sdk2(handle);
@@ -312,7 +287,7 @@ TEST_F(CppWrapperTest, SimulationStep) {
 
     float dt = 0.016f;
 
-    ovphysx_api_status_t status = m_sdk->step(dt);
+    ovphysx_api_status_t status = m_sdk->step(dt).status;
     ASSERT_EQ(status, OVPHYSX_API_SUCCESS);
     auto wait_result = m_sdk->waitAll();
     ASSERT_FALSE(wait_result.hasErrors());
@@ -327,8 +302,8 @@ TEST_F(CppWrapperTest, ErrorHandling) {
     ASSERT_NE(m_sdk, nullptr);
     ASSERT_TRUE(*m_sdk);
 
-    ovphysx_api_status_t result = m_sdk->attachOvstage(nullptr, /*read_ordinal=*/1);
-    EXPECT_NE(result, OVPHYSX_API_SUCCESS);
+    const ovphysx_enqueue_result_t result = m_sdk->attachOvstage(nullptr, /*read_ordinal=*/1);
+    EXPECT_NE(result.status, OVPHYSX_API_SUCCESS);
     
     SUCCEED() << "Invalid ovstage handle handled gracefully";
 }
@@ -339,10 +314,8 @@ TEST_F(CppWrapperTest, ErrorHandling) {
 
 TEST_F(CppWrapperTest, ResourceManagement) {
     {
-        ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-
-        ovphysx_handle_t handle = 0;
-        ovphysx_result_t result = ovphysx_create_instance(&args, &handle);
+        ovphysx_instance_handle_t handle = 0;
+        ovphysx_result_t result = ovphysx_create_instance(&handle);
         ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
         
         ovphysx::PhysX sdk(handle);
@@ -369,12 +342,12 @@ TEST_F(CppWrapperTest, CloneBasicFunctionality) {
         "/World/envs/env2",
         "/World/envs/env3"
     };
-    ASSERT_EQ(m_sdk->clone("/World/envs/env0", targets), OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(m_sdk->clone("/World/envs/env0", targets).status, OVPHYSX_API_SUCCESS);
     auto wait = m_sdk->waitAll();
     ASSERT_FALSE(wait.hasErrors());
 
     // The simulation must still step with the clones present.
-    ASSERT_EQ(m_sdk->step(1.0f/60.0f), OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(m_sdk->step(1.0f/60.0f).status, OVPHYSX_API_SUCCESS);
     wait = m_sdk->waitAll();
     ASSERT_FALSE(wait.hasErrors());
 }
@@ -384,16 +357,16 @@ TEST_F(CppWrapperTest, CloneErrorHandling) {
 
     // Empty source path
     std::vector<std::string> targets = {"/World/envs/env1"};
-    EXPECT_EQ(m_sdk->clone("", targets), OVPHYSX_API_INVALID_ARGUMENT) << "Empty source should return error";
+    EXPECT_EQ(m_sdk->clone("", targets).status, OVPHYSX_API_INVALID_ARGUMENT) << "Empty source should return error";
 
     // Empty targets
     std::vector<std::string> empty_targets;
-    EXPECT_EQ(m_sdk->clone("/World/envs/env0", empty_targets), OVPHYSX_API_INVALID_ARGUMENT) << "Empty targets should return error";
+    EXPECT_EQ(m_sdk->clone("/World/envs/env0", empty_targets).status, OVPHYSX_API_INVALID_ARGUMENT) << "Empty targets should return error";
 
-    // Target matching source
+    // No stage loaded.
+    EXPECT_EQ(m_sdk->clone("/World/envs/env0", targets).status, OVPHYSX_API_ERROR);
+
+    ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_sdk->handle(), "tests/data/basic_simulation.usda"));
     std::vector<std::string> same_targets = {"/World/envs/env0"};
-    EXPECT_EQ(m_sdk->clone("/World/envs/env0", same_targets), OVPHYSX_API_INVALID_ARGUMENT) << "Same source/target should return error";
-
-    // No USD loaded
-    EXPECT_EQ(m_sdk->clone("/World/envs/env0", targets), OVPHYSX_API_ERROR) << "Clone without USD should return error";
+    EXPECT_EQ(m_sdk->clone("/World/envs/env0", same_targets).status, OVPHYSX_API_INVALID_ARGUMENT);
 }

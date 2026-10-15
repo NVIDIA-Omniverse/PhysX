@@ -2,10 +2,10 @@
 name: basic-workflow
 description: Create an ovphysx instance, attach an ovstage scene, step simulation, and clean up. Use when starting a new ovphysx project, testing basic integration, or learning the minimal workflow.
 license: Apache-2.0
-compatibility: "ovphysx >=0.6.0 wheel or SDK; Python examples require the ovphysx Python package, and C examples require the OVPhysX SDK plus the matching native OVStage package."
+compatibility: "ovphysx build with the task-completion API; Python examples require the ovphysx Python package, and C examples require the OVPhysX SDK plus the matching native OVStage package."
 allowed-tools: Read Shell
 metadata:
-  version: "0.1.4"
+  version: "0.1.9"
   author: NVIDIA Omniverse Physics
   tags: "ovphysx, physics, quickstart"
 ---
@@ -22,18 +22,28 @@ Use this skill when a caller needs the smallest working ovphysx program, an inst
 
 1. Read the referenced sample for the caller's language before changing code.
 2. Keep the create, populate ovstage, attach, step, and destroy order shown here unless the caller authors later ovstage edits that require an update drain.
-3. Use Shell to run the Python sample or compile the C sample after adapting the paths.
+3. Use Shell to run the Python sample or build and run the C sample after adapting the paths.
+
+For Python, install `physx-usd-schemas` and `newton-usd-schemas` alongside
+`ovphysx`. Register both PhysX and Newton schemas before the first population
+call so authored `newton:*` values are preserved.
+
+Import the PhysX schema recipe from
+`ovphysx.samples.python_samples.schema_support`; for native samples, set
+`PHYSX_USD_SCHEMAS_ROOT` to the extracted wheel. See
+[Physics Schemas](../../docs/physics_schemas.md) for setup.
 
 ## Python
 
 ```bash
-pip install ovphysx
+pip install ovphysx physx-usd-schemas newton-usd-schemas
 ```
 
 ```python
 from pathlib import Path
 
 import ovphysx
+from ovphysx.samples.python_samples.schema_support import physx_schema_paths
 from ovphysx import PhysX
 import ovstage
 
@@ -47,38 +57,45 @@ if not usd_path.is_file():
     raise FileNotFoundError(f"ovphysx sample data is missing: {usd_path}")
 
 physx = PhysX()
-# ovphysx ships its PhysX USD schemas as codeless resources and never registers
-# them itself; register them with ovstage before the first population call.
-ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+# Register external PhysX and Newton schemas before the first population.
+ovstage.population.register_usd_schemas(
+    [*[str(p) for p in physx_schema_paths()], str(ovphysx.newton_schema_root())]
+)
 stage = ovstage.Stage("ovphysx-basic")
 try:
-    ovstage.population.open_usd(stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.PHYSICS)
+    ovstage.population.open_usd(stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.ALL)
     stage.advance_write_floor(ordinal=1).wait()
-    physx.attach_ovstage(stage, read_ordinal=1)
+    physx.wait_task(physx.attach_ovstage(stage, read_ordinal=1))
     physx.step_sync(1.0 / 60.0)
 finally:
-    physx.detach_ovstage()
-    stage.destroy()
-    physx.destroy()
+    try:
+        physx.wait_task(physx.detach_ovstage())
+    finally:
+        physx.destroy()
+        stage.destroy()
 ```
 
 `step_sync()` steps and waits in one call, so step errors surface immediately and
 teardown cannot race the step. Use bare async `step()` + an explicit
-`wait_op()` / `wait_all()` only when overlapping CPU work with the running step.
+`wait_task(task)` / `wait_all()` only when overlapping CPU work with the running
+step; `step()` returns the immutable `Task` receipt that `wait_task()` takes, and an
+accepted step that fails during execution raises `TaskError` from that wait.
+Rejected submissions raise immediately from `step()`.
 
-The physics-only `domains` mask above is fine for this skill's non-instanced
-sample USD. For arbitrary content prefer `ALL` (see
-[Population domains](../../docs/ovstage_integration.md#population-domains)) —
-`PHYSICS` alone can silently omit colliders under native USD scene-graph
-instances.
+Use `ALL` when populating USD so nested world transforms are resolved by the
+rendering domain. `PHYSICS` alone seeds local world matrices in OVStage 0.3;
+see [Population domains](../../docs/ovstage_integration.md#population-domains).
 
 ### Later ovstage edits
 
 The drain only transfers a population change that was authored first. Calling
 it against an unchanged population succeeds as a no-op.
 
-For a wheel-only application, add another USD file with `open_usd()` at a new
-ordinal, then drain that same ordinal:
+For a wheel-only application, add a USD reference at a new absolute prim path
+such as `/World/Spawned`, then apply and drain it at a fresh ordinal. The file
+must have a `defaultPrim` selecting the content to add. Use an asset without a
+`PhysicsScene`, and do not reference onto an existing simulated hierarchy:
+those structural edits can recreate existing physics objects and reset state.
 
 ```python
 import ovstage
@@ -87,32 +104,27 @@ import ovstage
 def drain_population_change(stage, physx, ordinal):
     ovstage.population.apply_usd_changes(stage, ordinal=ordinal)
     stage.advance_write_floor(ordinal=ordinal).wait()
-    physx.update_from_ovstage(ordinal, ordinal)
+    physx.wait_task(physx.update_from_ovstage(ordinal, ordinal))
 
 
-def add_usd_file_and_drain(stage, physx, usd_path, ordinal):
-    ovstage.population.open_usd(
-        stage,
-        str(usd_path),
-        ordinal=ordinal,
-        domains=ovstage.PopulationDomain.PHYSICS,
-    )
+def add_usd_file_and_drain(stage, physx, usd_path, target_path, ordinal):
+    ovstage.population.add_usd_reference(stage, str(usd_path), target_path)
     drain_population_change(stage, physx, ordinal)
 ```
 
-Here `open_usd()` is the operation that adds content; the drain is not an edit
-API. The wheel's `ovstage.Stage` does not expose its backing USD stage for
-direct OpenUSD authoring, and `add_usd_reference()` does not accept an ordinal.
-Use `open_usd()` as above for the public wheel route. Applications with their
-own backing-USD integration may author there instead, then call
-`drain_population_change()` with the edit's ordinal.
+`add_usd_reference()` authors the backing USD change; `apply_usd_changes()`
+publishes it at the supplied ordinal.
+`open_usd()` replaces the backing USD source and repopulates existing paths.
+Use `add_usd_reference()` for the isolated addition shown here.
+Applications with their own backing-USD integration may author there instead,
+then call `drain_population_change()` with the edit's ordinal.
 
 `apply_usd_changes()` waits for population work but does not seal the ordinal.
 Use a fresh ordinal for each later change. Do not drain the initial
-`read_ordinal` again; `attach_ovstage()` already parsed it. For arbitrary USD
-content, use `PopulationDomain.ALL` instead of `PHYSICS`; the latter is
-sufficient for the non-instanced rigid-body files used by this skill. Before a
-structural add or remove, destroy cached tensor bindings when practical, then
+`read_ordinal` again; `attach_ovstage()` already parsed it. The initial `open_usd()`
+call with `PopulationDomain.ALL` selects the domains used by later
+`apply_usd_changes()` calls, including rendering for composed world transforms.
+Before a structural add or remove, destroy cached tensor bindings when practical, then
 create replacements after the update completes. Do not use a pre-update
 binding's membership as the test oracle.
 
@@ -125,28 +137,48 @@ Full sample:
 The C workflow follows one ordering; keep it as-is:
 
 1. `ovphysx_initialize()` (process-wide; no Python analogue).
-2. `ovphysx_create_instance()` with `OVPHYSX_CREATE_ARGS_DEFAULT`.
-3. `ovphysx_get_codeless_schema_root()`, then
-   `ovstage_population_register_usd_schemas(&schema_path, 1)` before the first
-   population call in the process.
+2. `ovphysx_create_instance(&handle)` with no create-args. Set process-global
+   config with `ovphysx_set_global_config` before this call if needed; set
+   `OVPHYSX_CONFIG_ACTIVE_CUDA_GPUS` with `ovphysx_set_config` after create
+   and before attach.
+3. Install the external schema provider, then register its two resource
+   directories before population, using the application sample helper below.
 4. Populate an ovstage from USD, wait for the population op, advance and wait
-   for the write floor, then `ovphysx_attach_ovstage(handle, stage, read_ordinal)`.
+   for the write floor, then submit `ovphysx_attach_ovstage(handle, stage, read_ordinal)`
+   and wait successfully for its task.
 5. `ovphysx_step_sync()` -- steps and waits in one call, so step errors are
    reported and teardown cannot race the step.
-6. Detach and destroy the stage, then `ovphysx_destroy_instance()`.
+6. Submit detach and wait successfully before destroying the Stage. If detach
+   fails, retain the Stage until `ovphysx_destroy_instance()` succeeds.
 7. `ovphysx_shutdown()`.
 
-This program uses only public ovphysx / ovstage API, so it builds against the SDK
-as shown under "Build the C sample" below. Run it from the extracted SDK root so
-the bundled `samples/data/simple_physics_scene.usda` path resolves, or replace
-that relative path with its absolute location:
+This program uses public ovphysx / ovstage API and the SDK's schema-registration
+helper. Follow the build and launch steps below. Run it from the extracted SDK
+root so the bundled `samples/data/simple_physics_scene.usda` path resolves, or
+replace that relative path with its absolute location:
 
 ```c
 #include <ovphysx/ovphysx.h>
+#include "common/ovstage_sample.h"
 #include <ovstage/ovstage.h>
 #include <ovstage/ovstage_population.h>
 #include <stdio.h>
 #include <string.h>
+
+static int complete_task(ovphysx_instance_handle_t handle, ovphysx_enqueue_result_t task)
+{
+    if (task.status != OVPHYSX_API_SUCCESS)
+        return 0;
+    ovphysx_wait_task_result_t waited = {0};
+    ovphysx_result_t result =
+        ovphysx_wait_task(handle, task, OVPHYSX_TIMEOUT_INFINITE, &waited);
+    for (size_t i = 0; i < waited.num_errors; ++i) {
+        ovphysx_string_t error = ovphysx_get_last_task_error(handle, waited.error_tasks[i]);
+        fprintf(stderr, "%.*s\n", (int)error.length, error.ptr);
+    }
+    ovphysx_destroy_wait_task_result(&waited);
+    return result.status == OVPHYSX_API_SUCCESS;
+}
 
 int main(void)
 {
@@ -155,29 +187,14 @@ int main(void)
         return 1;
     }
 
-    ovphysx_create_args create_args = OVPHYSX_CREATE_ARGS_DEFAULT;
-    ovphysx_handle_t handle = 0;
-    if (ovphysx_create_instance(&create_args, &handle).status != OVPHYSX_API_SUCCESS) {
+    ovphysx_instance_handle_t handle = 0;
+    if (ovphysx_create_instance(&handle).status != OVPHYSX_API_SUCCESS) {
         fprintf(stderr, "Failed to create instance\n");
         ovphysx_shutdown();
         return 1;
     }
 
-    // ovphysx ships its PhysX USD schemas as codeless resources and never
-    // registers them itself; register them with ovstage before the first
-    // population call in the process.
-    ovphysx_string_t schema_root;
-    if (ovphysx_get_codeless_schema_root(&schema_root).status != OVPHYSX_API_SUCCESS) {
-        fprintf(stderr, "Failed to locate the ovphysx schemas\n");
-        ovphysx_destroy_instance(handle);
-        ovphysx_shutdown();
-        return 1;
-    }
-    ovx_string_t schema_path;
-    schema_path.ptr = schema_root.ptr;
-    schema_path.length = schema_root.length;
-    if (ovstage_population_register_usd_schemas(&schema_path, 1) != OVSTAGE_OK) {
-        fprintf(stderr, "Failed to register the ovphysx schemas with ovstage\n");
+    if (!ovphysx_sample_register_physx_schemas()) {
         ovphysx_destroy_instance(handle);
         ovphysx_shutdown();
         return 1;
@@ -202,7 +219,7 @@ int main(void)
 
     const uint64_t ordinal = 1;
     ovstage_population_enqueue_result_t open = ovstage_population_open_usd_from_file(
-        stage, path, ordinal, 0.0, OVSTAGE_POPULATION_DOMAIN_PHYSICS);
+        stage, path, ordinal, 0.0, OVSTAGE_POPULATION_DOMAIN_ALL);
     ovstage_population_op_wait_result_t open_wait;
     memset(&open_wait, 0, sizeof(open_wait));
     if (open.status != OVSTAGE_OK ||
@@ -238,10 +255,12 @@ int main(void)
         return 1;
     }
 
-    if (ovphysx_attach_ovstage(handle, stage, ordinal).status != OVPHYSX_API_SUCCESS) {
+    if (!complete_task(handle, ovphysx_attach_ovstage(handle, stage, ordinal))) {
         fprintf(stderr, "Failed to attach ovstage\n");
+        // Failed attach can retain ownership if its rollback fails.
+        if (ovphysx_destroy_instance(handle).status != OVPHYSX_API_SUCCESS)
+            return 1;
         ovstage_destroy_instance(stage);
-        ovphysx_destroy_instance(handle);
         ovphysx_shutdown();
         return 1;
     }
@@ -249,25 +268,30 @@ int main(void)
     // step_sync steps and waits; a nonzero status means the step failed.
     if (ovphysx_step_sync(handle, 1.0f / 60.0f).status != OVPHYSX_API_SUCCESS) {
         fprintf(stderr, "Simulation step failed\n");
-        ovphysx_detach_ovstage(handle);
+        if (ovphysx_destroy_instance(handle).status != OVPHYSX_API_SUCCESS)
+            return 1;
         ovstage_destroy_instance(stage);
-        ovphysx_destroy_instance(handle);
         ovphysx_shutdown();
         return 1;
     }
 
-    ovphysx_detach_ovstage(handle);
+    int detached = complete_task(handle, ovphysx_detach_ovstage(handle));
+    if (ovphysx_destroy_instance(handle).status != OVPHYSX_API_SUCCESS)
+        return 1;
     ovstage_destroy_instance(stage);
-    ovphysx_destroy_instance(handle);
     ovphysx_shutdown();
-    return 0;
+    return detached ? 0 : 1;
 }
 ```
 
 If you step with the async `ovphysx_step()` instead of `ovphysx_step_sync()`,
-you must then call `ovphysx_wait_op()` with the returned operation index and a
-concrete timeout, and check `num_errors` before teardown — the enqueue status
-alone only means *accepted*, not *completed*.
+you must then call `ovphysx_wait_task()` with the returned receipt (the whole
+`ovphysx_enqueue_result_t`), a concrete timeout, and a zero-initialized
+`ovphysx_wait_task_result_t`; check the returned status and `num_errors`, then
+release the result with `ovphysx_destroy_wait_task_result()` before teardown —
+the enqueue status alone only means *accepted*, not *completed*. The same
+receipt/wait rule applies to attach, update and detach, even while they execute
+inline. `is_stage_attached()` is only a synchronous ownership snapshot.
 
 Full sample:
 - `samples/c_samples/hello_world_c/main.c` (SDK)
@@ -279,7 +303,10 @@ stage teardown into local helpers (`ovphysx_sample_attach_usd_with_ovstage()` /
 Those helpers are sample scaffolding, not public API — the sequence above is what
 they wrap.
 
-Build the C sample with CMake:
+### Build and run the C sample
+
+Save the program as `main.c` in the extracted SDK root. Copy
+`samples/c_samples/common/` beside it, and save the following as `CMakeLists.txt`:
 
 ```cmake
 cmake_minimum_required(VERSION 3.16)
@@ -288,22 +315,56 @@ project(ovphysx_example LANGUAGES C)
 find_package(ovphysx REQUIRED)
 add_executable(my_app main.c)
 target_link_libraries(my_app PRIVATE ovphysx::ovphysx ovphysx::ovstage)
-if(WIN32) # copy the ovphysx DLLs, plugins and codeless schemas next to the executable
+if(WIN32)
     ovphysx_copy_runtime_dlls(my_app)
+    ovphysx_set_ovstage_runtime_env(my_app)
 endif()
 ```
 
-Configure and build:
+Configure and build from the SDK root. Use `build-my-app` to keep this project
+separate from the SDK README's `build` directory. For Ninja, add `-G Ninja`.
+On Windows, use Visual Studio Developer PowerShell configured for x64 with
+`-Arch amd64 -HostArch amd64` so the compiler, headers, and libraries are available;
+see Microsoft's [developer shell setup](https://learn.microsoft.com/en-us/visualstudio/ide/reference/command-prompt-powershell#target-architecture-and-host-architecture).
+Use a fresh build directory when changing generators:
 
 ```bash
-cmake -B build \
-  -DCMAKE_PREFIX_PATH="/path/to/ovphysx;/path/to/ovstage"
-cmake --build build
+cmake -B build-my-app -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="/path/to/ovphysx;/path/to/ovstage"
+cmake --build build-my-app --config Release
 ```
 
-For prebuilt SDKs, download OVPhysX and the matching native OVStage archive
-from their GitHub Releases pages and keep the extracted roots separate. Source
-builds fetch OVStage automatically.
+Run from the SDK root so `samples/data/simple_physics_scene.usda` resolves.
+Set `PHYSX_USD_SCHEMAS_ROOT` to the extracted `physx-usd-schemas` wheel directory
+that contains `physx_usd_schemas/`.
+
+Linux:
+
+```bash
+export PHYSX_USD_SCHEMAS_ROOT="/path/to/physx-schemas"
+./build-my-app/my_app
+```
+
+Windows PowerShell: set the variable in the shell that runs the launcher:
+
+```powershell
+$env:PHYSX_USD_SCHEMAS_ROOT = "C:\path\to\physx-schemas"
+```
+
+- Windows, Visual Studio generator: `.\build-my-app\Release\run_my_app.cmd`.
+- Windows, Ninja generator: `.\build-my-app\run_my_app.cmd`.
+
+On Windows, `ovphysx_copy_runtime_dlls()` copies the ovphysx DLLs and plugins
+beside the executable. `ovphysx_set_ovstage_runtime_env()` generates
+`run_my_app.cmd`, which adds
+the resolved OVStage runtime directories to `PATH` before starting the program.
+Use this launcher from a shell. Keep OVStage in its own package so it can find
+its plugins.
+
+`find_package(ovphysx)` uses a compatible OVStage package from `CMAKE_PREFIX_PATH`.
+If none is available, it downloads and caches the pinned package; this requires
+Python 3.8+ and network access on the first configure. To use that bootstrap,
+set `CMAKE_PREFIX_PATH` to the OVPhysX SDK root alone. For offline setup, supply
+OVStage separately and add `-DOVPHYSX_FETCH_OVSTAGE=OFF`.
 
 ## Key APIs
 
@@ -311,6 +372,7 @@ builds fetch OVStage automatically.
 |--------|---|
 | _(none — implicit)_ | `ovphysx_initialize()` / `ovphysx_shutdown()` |
 | `PhysX()` | `ovphysx_create_instance()` |
+| `set_global_config` / `physx.set_config` | `ovphysx_set_global_config` / `ovphysx_set_config` |
 | `physx.attach_ovstage(stage)` | `ovphysx_attach_ovstage()` |
 | `physx.step_sync(dt)` | `ovphysx_step_sync()` |
 | `physx.step(dt)` | `ovphysx_step()` |

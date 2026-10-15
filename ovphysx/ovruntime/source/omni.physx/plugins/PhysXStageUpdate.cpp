@@ -1,177 +1,139 @@
-// SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-#include <carb/logging/Log.h>
-#include <private/omni/physx/IPhysxStageUpdate.h>
-
-#include <optional>
-#include <string>
-
-#include <PhysXSettings.h>
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-1 AC-2 AC-3 AC-4
 
 #include "usdLoad/LoadUsd.h"
+#include "usdLoad/PrimUpdate.h"
 #include "OmniPhysX.h"
 #include "PhysXUpdate.h"
 #include "Raycast.h"
 #include "PhysXStageUpdate.h"
 #include "PhysXPropertyQuery.h"
+#include "RuntimeExecution.h"
+#include <private/omni/physx/IPhysxStageUpdate.h>
+#include <optional>
 
-namespace omni
+namespace omni::physx
 {
-namespace physx
+AttachHandle onPhysXAttach(long stageId)
 {
-void onPhysXAttach(long int stageId)
-{
-    if (!OmniPhysX::getInstanceCheck())
-        return;
-
-    OmniPhysX::getInstance().setSimulationAttachedStage(false);
-    OmniPhysX::getInstance().getStageUpdate().attach(true);
-    OmniPhysX::getInstance().getStageUpdate().setAttachedStage(stageId);
-    OmniPhysX::getInstance().physXAttach(stageId, false);
-    OmniPhysX::getInstance().sendSimulationEvent(eAttachedToStage);
-}
-
-void onPhysXDetach()
-{
-    if (!OmniPhysX::getInstanceCheck())
-        return;
-
-    OmniPhysX::getInstance().setSimulationAttachedStage(false);
-    OmniPhysX::getInstance().getStageUpdate().attach(false);
-    OmniPhysX::getInstance().getStageUpdate().setAttachedStage(0);
-    OmniPhysX::getInstance().physXDetach();
-    OmniPhysX::getInstance().sendSimulationEvent(eDetachedFromStage);
-}
-
-void physXPause()
-{
-    if (!OmniPhysX::getInstanceCheck())
-        return;
-
-    if (OmniPhysX::getInstance().getStageUpdate().isAttached())
+    RuntimeExecutionScope execution(kNoAttach);
+    if (!execution || !OmniPhysX::getInstanceCheck())
+        return kNoAttach;
+    AttachHandle attach = kNoAttach;
+    try
     {
-        OmniPhysX::getInstance().setSimulationRunning(false);
-        OmniPhysX::getInstance().sendSimulationEvent(SimulationEvent::ePaused);
+        attach = OmniPhysX::getInstance().physXAttach(stageId, false);
     }
-}
-
-void physXReset()
-{
-    if (!OmniPhysX::getInstanceCheck())
-        return;
-
-    if (OmniPhysX::getInstance().getStageUpdate().isAttached())
+    catch (...)
     {
-        OmniPhysX::getInstance().resetSimulation();
-
-        OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-        if (omniPhysX.hasTempPhysicsScene())
-        {
-            // The placeholder prim only exists when there was a destination to author it into
-            // (a USD-free source has none, and removeDefaultPhysicsScenePlaceholder() is a
-            // no-op with nothing to remove). Clear the flag either way: with no placeholder
-            // there is nothing left to do, and leaving it set would make every later reset
-            // retry the same removal.
-            if (usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage())
-                attachedStage->removeDefaultPhysicsScenePlaceholder(omniPhysX.getTempPhysicsSceneKey());
-            omniPhysX.setHasTempPhysicsScene(false);
-        }
-
-        omniPhysX.getPhysXSetup().getPhysics();
-        // reset the current simulation timestamp offset
-        omniPhysX.setCurrentTimestampOffset(omniPhysX.getSimulationTimestamp());
+        CARB_LOG_ERROR("Stage-update attachment failed");
+        return kNoAttach;
     }
+    if (attach != kNoAttach)
+        OmniPhysX::getInstance().sendSimulationEvent(eAttachedToStage, attach);
+    return attach;
 }
 
-void physXResume(float currentTime)
+RuntimeResult onPhysXDetach(AttachHandle attach)
 {
-    if (!OmniPhysX::getInstanceCheck())
-        return;
-
-    if (OmniPhysX::getInstance().getStageUpdate().isAttached())
-    {
-        // Refresh CUDA synchronous-launch state if a context was already lazily
-        // created (at the first GPU scene attach). Never create one here -- that
-        // would open a CUDA context on a CPU-only resume.
-        {
-            PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
-            if (physxSetup.getCudaContextManager())
-                physxSetup.setupGPU();
-        }
-
-        // Make sure physics is created before we start to do anything
-        OmniPhysX::getInstance().getPhysXSetup().getPhysics();
-        OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-        const bool wasSimulationStopped = omniPhysX.setSimulationStarted(true);
-
-        omniPhysX.getRaycastManager().clearCommandBuffer();
-
-        getPhysXUsdPhysicsInterface().setExposePrimNames(omniPhysX.getISettings()->getAsBool(kSettingExposePrimPathNames));
-        omniPhysX.setSimulationStarted(true);
-        // Kit-inspector-only debug filter, unreachable from ovphysx's own ovstage attach path
-        // -- see setForceParseOnlySingleScene's declaration comment in UsdInterface.h.
-        {
-            const char* forceSingleScene = omniPhysX.getISettings()->getStringBuffer(kSettingForceParseOnlySingleScene);
-            getPhysXUsdPhysicsInterface().setForceParseOnlySingleScene(forceSingleScene ? forceSingleScene : std::string());
-        }
-        {
-            // On the initial attach (simulation was stopped) suppress
-            // initial-population notifications; the scope restores both gates
-            // even if update() throws.
-            std::optional<InitialStagePopulationScope> populationScope;
-            if (wasSimulationStopped)
-                populationScope.emplace(getPhysXUsdPhysicsInterface());
-
-            usdparser::UsdLoad::getUsdLoad()->update(currentTime);
-        }
-
-        if (wasSimulationStopped)
-        {
-            getPhysXUsdPhysicsInterface().enableObjectChangeNotifications(true);
-            // now the initial load is done and notifications should be sent
-        }
-
-        omniPhysX.setOutputVelocitiesLocalSpace(omniPhysX.getISettings()->getAsBool(kSettingOutputVelocitiesLocalSpace));
-
-        omniPhysX.sendSimulationEvent(SimulationEvent::eResumed);
-        omniPhysX.setSimulationRunning(true);
-        omniPhysX.getPhysXSetup().resetPhysXErrorCounter();
-    }
+    if (attach == kNoAttach || attach == kActiveAttach)
+        return RuntimeResult::eInvalidAttachment;
+    RuntimeExecutionScope configuration(kNoAttach);
+    if (!configuration)
+        return RuntimeResult::eBusy;
+    RuntimeExecutionScope execution(attach, true);
+    if (!execution)
+        return RuntimeResult::eBusy;
+    if (!OmniPhysX::getInstanceCheck() || !OmniPhysX::getInstance().physXDetach(attach))
+        return RuntimeResult::eInvalidAttachment;
+    OmniPhysX::getInstance().sendSimulationEvent(eDetachedFromStage, attach);
+    return RuntimeResult::eSuccess;
 }
 
-void physXStageUpdate(float currentTime, float elapsedSecs, bool enableUpdate)
+RuntimeResult physXPause(AttachHandle attach)
 {
-    if (!OmniPhysX::getInstanceCheck())
-        return;
-
-    const PhysXStageUpdate& su = OmniPhysX::getInstance().getStageUpdate();
-    if (su.isAttached())
-    {
-        physXUpdate(currentTime, elapsedSecs, enableUpdate);
-    }
-    if (su.isPropertyQueryAttached())
-    {
-        OmniPhysX::getInstance().getPropertyQueryManager().updateQueuedRequests();
-    }
+    RuntimeExecutionScope execution(attach);
+    if (!execution)
+        return RuntimeResult::eBusy;
+    usdparser::AttachedStage* owner = usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach);
+    if (!owner)
+        return RuntimeResult::eInvalidAttachment;
+    owner->setSimulationRunning(false);
+    OmniPhysX::getInstance().sendSimulationEvent(SimulationEvent::ePaused, attach);
+    return RuntimeResult::eSuccess;
 }
 
-void PhysXStageUpdate::attachStageUpdate()
+RuntimeResult physXReset(AttachHandle attach)
 {
-    mAttached = true;
-    if (mAttachedStage)
+    RuntimeExecutionScope execution(attach, true);
+    if (!execution)
+        return RuntimeResult::eBusy;
+    usdparser::AttachedStage* owner = usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach);
+    if (!owner)
+        return RuntimeResult::eInvalidAttachment;
+    OmniPhysX::getInstance().resetSimulation(*owner);
+    owner->resetSimulationStepCount();
+    if (owner->hasTempPhysicsScene())
     {
-        onPhysXAttach((long)mAttachedStage);
+        owner->removeDefaultPhysicsScenePlaceholder(owner->getTempPhysicsSceneKey());
+        owner->setTempPhysicsSceneKey({});
     }
+    return RuntimeResult::eSuccess;
 }
 
-void PhysXStageUpdate::detachStageUpdate()
+RuntimeResult physXResume(AttachHandle attach, float currentTime)
 {
-    mAttached = false;
+    RuntimeExecutionScope execution(attach);
+    if (!execution)
+        return RuntimeResult::eBusy;
+    usdparser::AttachedStage* owner = usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach);
+    if (!owner)
+        return RuntimeResult::eInvalidAttachment;
+    OmniPhysX& runtime = OmniPhysX::getInstance();
+    const bool wasStopped = !owner->hasSimulationStarted();
+    owner->getRaycastManager().clearCommandBuffer();
+    owner->setSimulationStarted(true);
+    {
+        std::optional<InitialStagePopulationScope> population;
+        if (wasStopped)
+            population.emplace(getPhysXUsdPhysicsInterface(), *owner);
+        usdparser::processUpdates(*owner, currentTime);
+    }
+    if (wasStopped)
+        getPhysXUsdPhysicsInterface().enableObjectChangeNotifications(*owner, true);
+    owner->setSimulationRunning(true);
+    runtime.sendSimulationEvent(SimulationEvent::eResumed, attach);
+    runtime.getPhysXSetup().resetPhysXErrorCounter();
+    return RuntimeResult::eSuccess;
 }
 
+RuntimeResult physXStageUpdate(AttachHandle attach, float currentTime, float elapsedSecs, bool enableUpdate)
+{
+    RuntimeExecutionScope execution(attach);
+    if (!execution)
+        return RuntimeResult::eBusy;
+    usdparser::AttachedStage* owner = usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach);
+    if (!owner)
+        return RuntimeResult::eInvalidAttachment;
+    physXUpdate(*owner, currentTime, elapsedSecs, enableUpdate && owner->isSimulationRunning());
+    // The adapter is synchronous under the same runtime admission contract.
+    waitForSimulationCompletion(*owner, false);
+    return RuntimeResult::eSuccess;
+}
+
+RuntimeResult updatePropertyQueries()
+{
+    RuntimeExecutionScope execution(kNoAttach);
+    if (!execution)
+        return RuntimeResult::eBusy;
+    OmniPhysX::getInstance().getPropertyQueryManager().updateQueuedRequests();
+    return RuntimeResult::eSuccess;
 }
 }
+
 void fillInterface(omni::physx::IPhysxStageUpdate& iface)
 {
     iface.onAttach = omni::physx::onPhysXAttach;
@@ -181,4 +143,5 @@ void fillInterface(omni::physx::IPhysxStageUpdate& iface)
     iface.onResume = omni::physx::physXResume;
     iface.onUpdate = omni::physx::physXStageUpdate;
     iface.handleRaycast = omni::physx::handleRaycast;
+    iface.updatePropertyQueries = omni::physx::updatePropertyQueries;
 }

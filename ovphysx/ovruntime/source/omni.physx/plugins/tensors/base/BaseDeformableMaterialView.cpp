@@ -85,9 +85,10 @@ bool BaseDeformableMaterialView::check() const
     return result;
 }
 
-void BaseDeformableMaterialView::release()
+bool BaseDeformableMaterialView::release()
 {
     delete this;
+    return true;
 }
 
 void BaseDeformableMaterialView::_onParentRelease()

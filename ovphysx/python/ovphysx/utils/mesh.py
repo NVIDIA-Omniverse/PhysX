@@ -304,10 +304,21 @@ def create_mesh_cone(
     Args:
         stage:      The Usd.Stage to add path.
         path:       The desired path to create.
-        height:     The height of the cone.
-        radius:     The radius of the cone.
-        tesselation:     The tesselation of the cone mesh.
+        height:     The finite, positive height of the cone.
+        radius:     The finite, non-negative radius of the cone.
+        tesselation:     The number of cone segments, at least three.
+
+    Raises:
+        ValueError: If dimensions are invalid or tesselation is below three.
+            Validation occurs before the stage is modified.
     """
+    if not math.isfinite(height) or height <= 0.0:
+        raise ValueError(f"Cone height must be finite and positive, got {height}")
+    if not math.isfinite(radius) or radius < 0.0:
+        raise ValueError(f"Cone radius must be finite and non-negative, got {radius}")
+    if tesselation < 3:
+        raise ValueError(f"Cone tesselation must be at least 3, got {tesselation}")
+
     points = []
     normals = []
     indices = []

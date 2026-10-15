@@ -1,0 +1,141 @@
+#usda 1.0
+(
+    defaultPrim = "envs"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+# The example hierarchy of the "Path patterns" documentation page under /envs, plus same-name nesting
+# cases under /nested. Every Cube is a rigid body; every other prim is a plain transform.
+
+def PhysicsScene "physicsScene"
+{
+    vector3f physics:gravityDirection = (0, 0, -1)
+    float physics:gravityMagnitude = 9.81
+}
+
+def Xform "envs"
+{
+    def Xform "env0"
+    {
+        double3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        def Xform "Robot"
+        {
+            def Cube "base_link" (apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"])
+            {
+                double size = 0.5
+                float physics:mass = 1
+                double3 xformOp:translate = (0, 0, 1)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+            def Xform "arm"
+            {
+                def Cube "link_0" (apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"])
+                {
+                    double size = 0.5
+                    float physics:mass = 1
+                    double3 xformOp:translate = (2, 0, 1)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+                }
+            }
+        }
+        def Xform "Group"
+        {
+            def Xform "Robot"
+            {
+                def Cube "base_link" (apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"])
+                {
+                    double size = 0.5
+                    float physics:mass = 1
+                    double3 xformOp:translate = (0, 2, 1)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+                }
+            }
+        }
+    }
+    def Xform "env1"
+    {
+        double3 xformOp:translate = (6, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        def Xform "Robot"
+        {
+            def Cube "base_link" (apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"])
+            {
+                double size = 0.5
+                float physics:mass = 1
+                double3 xformOp:translate = (0, 0, 1)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+            def Xform "arm"
+            {
+                def Cube "link_0" (apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"])
+                {
+                    double size = 0.5
+                    float physics:mass = 1
+                    double3 xformOp:translate = (2, 0, 1)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+                }
+            }
+        }
+    }
+    def Xform "envA"
+    {
+        double3 xformOp:translate = (12, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        def Xform "Robot"
+        {
+            def Cube "base_link" (apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"])
+            {
+                double size = 0.5
+                float physics:mass = 1
+                double3 xformOp:translate = (0, 0, 1)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+        }
+    }
+}
+
+def Xform "nested"
+{
+    double3 xformOp:translate = (0, 10, 0)
+    uniform token[] xformOpOrder = ["xformOp:translate"]
+
+    # A base_link body nested inside a base_link body. The inner body resets the transform stack, the
+    # authoring rule for a rigid body below another rigid body.
+    def Xform "Robot"
+    {
+        def Cube "base_link" (apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"])
+        {
+            double size = 0.5
+            float physics:mass = 1
+            double3 xformOp:translate = (0, 0, 1)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+            def Xform "tool"
+            {
+                def Cube "base_link" (apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"])
+                {
+                    double size = 0.5
+                    float physics:mass = 1
+                    double3 xformOp:translate = (2, 10, 1)
+                    uniform token[] xformOpOrder = ["!resetXformStack!", "xformOp:translate"]
+                }
+            }
+        }
+    }
+
+    # A base_link body below a base_link transform that is not a body.
+    def Xform "Wrapped"
+    {
+        def Xform "base_link"
+        {
+            def Cube "base_link" (apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"])
+            {
+                double size = 0.5
+                float physics:mass = 1
+                double3 xformOp:translate = (6, 0, 1)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+        }
+    }
+}

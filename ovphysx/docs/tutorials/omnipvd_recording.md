@@ -19,55 +19,36 @@ visualize physics behavior.
 
 ## Required Config
 
-Startup OmniPVD output and late-recording capability are selected at instance
-creation. The default FILE startup transport also uses a recording directory:
+Set `GlobalConfigKey.OVD_RECORDING_CAPABLE` to `True` with module-level
+`set_global_config()` before `PhysX()`. In C, initialize and set
+`OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE` with
+`ovphysx_config_value_bool(true)` before plain `ovphysx_create_instance()`.
+This process-wide BOOL bootstrap option installs the provider and sampler when
+`PxPhysics` is created. It defaults to false; without it, late start fails.
+Capability alone leaves output idle but retains sampler, listener, mutex, and
+scene readback costs. Only the default disabled configuration avoids those costs.
+The scoped setter is rejected after the first successful create until successful
+shutdown with no live instances, including after all native instances are destroyed.
+Python's `PhysX.destroy()` releases its lifecycle owner; releasing the last Python
+owner performs that shutdown, provided no native instances remain, and reopens
+the setter. Its configured value survives shutdown.
+The getter reports the configured bool. Failed creates do not freeze the setter.
 
-**Startup output and late-recording capability fields**
+Attach and initialize the scene, then call `start_recording()` with an
+`OmniPvdDestination`. To capture from the first simulated frame, start before
+the first step. FILE uses one exact path whose parent exists; TCP requires a
+ready listener. Stop finalizes the output and allows a new destination on the
+same instance. TCP is synchronous trusted plaintext.
 
-| Config field (Python) | C builder | Description |
-|---|---|---|
-| `omnipvd_ovd_recording_directory` | `ovphysx_config_entry_omnipvd_ovd_recording_directory()` | Writable directory where `.ovd` files are saved |
-| `omnipvd_output_enabled` | `ovphysx_config_entry_omnipvd_output_enabled()` | Enables OmniPVD data capture |
-| `omnipvd_recording_capable` | `ovphysx_config_entry_omnipvd_recording_capable()` | Permits recording to start later without enabling startup output |
-
-Set `omnipvd_output_enabled` before creating the PhysX instance. For FILE, also set
-`omnipvd_ovd_recording_directory`; TCP does not use it. Pass fields through `PhysXConfig`
-(Python) or `config_entries` in `ovphysx_create_args` (C/C++).
-
-Startup output implicitly installs late-recording capability. The capability is
-process-wide and fixed when the shared runtime is created. With startup output
-and capability both disabled, the default instance deliberately passes a null
-`PxOmniPvd` to PhysX and cannot start recording later; this avoids incremental
-sampler, factory-listener, and sampling-mutex overhead. This is the only
-zero-OmniPVD-overhead configuration. Explicit late-recording capability creates
-the provider and sampler at `PxPhysics` creation and enables OVD and collision
-readback on attached scenes even while recording is idle; DirectGPU scenes
-therefore retain that readback cost.
-
-For FILE, the runtime auto-creates the recording directory if it does not exist.
-FILE is the default startup transport. TCP startup adds four fields:
-
-**TCP startup transport fields**
-
-| Config field (Python) | C builder | Description |
-|---|---|---|
-| `omnipvd_transport` | `ovphysx_config_entry_omnipvd_transport()` | Exact lowercase `"file"` or `"tcp"` |
-| `omnipvd_tcp_address` | `ovphysx_config_entry_omnipvd_tcp_address()` | Ready listener address |
-| `omnipvd_tcp_port` | `ovphysx_config_entry_omnipvd_tcp_port()` | Listener port, 1 through 65535 |
-| `omnipvd_tcp_timeout_ms` | `ovphysx_config_entry_omnipvd_tcp_timeout_ms()` | Blocked-send timeout in milliseconds; 0 leaves it at the OS default and uses a 3000 ms connect window |
-
-With TCP, ovphysx is the client. Start the listener before constructing the
-PhysX instance: the connection is synchronous. TCP is trusted plaintext, so use
-it only on a trusted network.
+Creation, attach, and reattach never start output automatically. Old startup
+configuration is rejected; see the [API migration guide](../ovd_api_migration.md).
 
 ## Code
 
 ### Python
 
-This complete sample enables startup FILE output with a recording directory,
-attaches `links_chain_sample.usda`, steps for two seconds, destroys the instance
-so the runtime finalizes the recording, and then lists the `*_rec.ovd` files it
-produced:
+This sample provisions capability, attaches `links_chain_sample.usda`, records
+to an exact FILE destination before the first step, then stops and tears down:
 
 ```{literalinclude} ../../tests/python_samples/omnipvd_recording.py
 :language: python
@@ -86,40 +67,10 @@ target as every other sample:
 :language: cmake
 ```
 
-### TCP Startup
-
-To stream to a TCP listener from instance creation, pass the transport and
-listener fields together:
-
-```python
-physx = PhysX(config=PhysXConfig(
-    omnipvd_output_enabled=True,
-    omnipvd_transport="tcp",
-    omnipvd_tcp_address="127.0.0.1",
-    omnipvd_tcp_port=5425,
-    omnipvd_tcp_timeout_ms=3000,
-))
-```
-
-The equivalent compact C config is:
-
-```c
-ovphysx_config_entry_t config[] = {
-    ovphysx_config_entry_omnipvd_output_enabled(true),
-    ovphysx_config_entry_omnipvd_transport(OVPHYSX_OMNIPVD_TRANSPORT_TCP_NAME),
-    ovphysx_config_entry_omnipvd_tcp_address(OVPHYSX_LITERAL("127.0.0.1")),
-    ovphysx_config_entry_omnipvd_tcp_port(5425),
-    ovphysx_config_entry_omnipvd_tcp_timeout_ms(3000),
-};
-ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-args.config_entries = config;
-args.config_entry_count = 5;
-```
-
 **Source**
 
-The C++ sample records startup FILE output through the C API, but it attaches
-`simple_physics_scene.usda` and runs 10 steps:
+The C++ sample starts an exact FILE recording after attaching the scene and
+before the first simulation step:
 
 ```{literalinclude} ../../tests/c_samples/omnipvd_recording_cpp/main.cpp
 :language: cpp
@@ -129,7 +80,7 @@ The C++ sample records startup FILE output through the C API, but it attaches
 
 ### Late TCP Recording
 
-Opt in when creating the first instance, before attaching and stepping the
+Opt in before creating the first instance, before attaching and stepping the
 scene. Start the trusted-plaintext TCP listener before calling
 `start_recording()`; the connect is synchronous. This complete sequence
 simulates before recording, records to TCP, stops, continues simulating, and
@@ -139,17 +90,19 @@ prerequisites:
 
 ```python
 import ovstage
-from ovphysx import OmniPvdDestination, PhysX, PhysXConfig, codeless_schema_root, newton_schema_root
+from ovphysx import GlobalConfigKey, OmniPvdDestination, PhysX, newton_schema_root, set_global_config
+from ovphysx.samples.python_samples.schema_support import physx_schema_paths
 
-physx = PhysX(config=PhysXConfig(omnipvd_recording_capable=True))
-# Register the codeless PhysX schemas and the Newton schema before the first population call.
-ovstage.population.register_usd_schemas([str(codeless_schema_root()), str(newton_schema_root())])
+set_global_config(GlobalConfigKey.OVD_RECORDING_CAPABLE, True)
+physx = PhysX()
+# Register PhysX and Newton schemas before the first USD schema read (population or export).
+ovstage.population.register_usd_schemas([*[str(p) for p in physx_schema_paths()], str(newton_schema_root())])
 stage = ovstage.Stage("late-recorded-scene")
 ovstage.population.open_usd(
-    stage, "scene.usda", ordinal=1, domains=ovstage.PopulationDomain.PHYSICS
+    stage, "scene.usda", ordinal=1, domains=ovstage.PopulationDomain.ALL
 )
 stage.advance_write_floor(ordinal=1).wait()
-physx.attach_ovstage(stage, read_ordinal=1)
+physx.wait_task(physx.attach_ovstage(stage, read_ordinal=1))
 
 physx.step_sync(1 / 60)  # work before recording is allowed
 physx.start_recording(
@@ -164,62 +117,77 @@ physx.start_recording(OmniPvdDestination.file("capture.ovd"))
 physx.step_sync(1 / 60)  # written to capture.ovd
 physx.stop_recording()
 
-physx.detach_ovstage()
+physx.wait_task(physx.detach_ovstage())
 physx.destroy()
 stage.destroy()
 ```
 
 #### C and C++
 
-To adapt the complete C++ sample in [Code](#code), reuse its initialization, instance,
-stage-attachment, and cleanup scaffolding. Remove its recording-directory
-setup, startup-FILE comments, and final `*_rec.ovd` file-count check. Replace
-the startup-output config with late-recording capability before creating the
-first instance. After the existing stage, instance, and runtime cleanup, return
-`0` in place of the removed file-count block.
+To adapt the complete C++ sample in [Code](#code), keep its initialization,
+stage attachment, and cleanup. The sample already enables
+recording capability and starts recording explicitly. Keep this configuration
+when replacing its FILE destination and recording loop with the TCP sequence
+below. Use `create_recording_instance()` for instance creation, checking its
+returned status. Remove the sample's final file-count check; a TCP session
+writes no local file:
 
 ```c
-const ovphysx_config_entry_t config[] = {
-    ovphysx_config_entry_omnipvd_recording_capable(true),
-};
-ovphysx_create_args create_args = OVPHYSX_CREATE_ARGS_DEFAULT;
-create_args.config_entries = config;
-create_args.config_entry_count = 1;
+#include <ovphysx/ovphysx.h>
+#include <ovphysx/ovphysx_config.h>
+
+static ovphysx_result_t create_recording_instance(ovphysx_instance_handle_t* handle)
+{
+    const ovphysx_result_t configured = ovphysx_set_global_config(
+        OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE, ovphysx_config_value_bool(true));
+    if (configured.status != OVPHYSX_API_SUCCESS)
+        return configured;
+    return ovphysx_create_instance(handle);
+}
 ```
 
-After creating `handle` with those arguments and attaching a physics stage,
-replace the sample's simulation loop with the following sequence. Its first
-successful step initializes lazy physics before the late start:
+Call this helper after `ovphysx_initialize()` and before creating any instance.
+After it succeeds and a physics stage is attached,
+replace the sample's FILE recording sequence with `record_tcp(handle)`,
+then perform the sample's cleanup and return its result.
+The preliminary step demonstrates starting after simulation has already begun;
+omit it to record from the first simulation frame:
 
 ```c
-const ovphysx_omnipvd_destination_t destination = {
-    OVPHYSX_OMNIPVD_TRANSPORT_TCP,
-    OVPHYSX_LITERAL(""),
-    OVPHYSX_LITERAL("127.0.0.1"),
-    5425,
-    3000,
-};
+#include <ovphysx/ovphysx.h>
 
-ovphysx_result_t result = ovphysx_step_sync(handle, 1.0f / 60.0f);
-if (result.status != OVPHYSX_API_SUCCESS)
-    return 1;
+static int record_tcp(ovphysx_instance_handle_t handle)
+{
+    const ovphysx_omnipvd_destination_t destination = {
+        OVPHYSX_OMNIPVD_TRANSPORT_TCP,
+        OVPHYSX_LITERAL(""),
+        OVPHYSX_LITERAL("127.0.0.1"),
+        5425,
+        3000,
+    };
 
-result = ovphysx_start_recording(handle, &destination);
-if (result.status != OVPHYSX_API_SUCCESS)
-    return 1;
+    ovphysx_result_t result = ovphysx_step_sync(handle, 1.0f / 60.0f);
+    if (result.status != OVPHYSX_API_SUCCESS)
+        return 1;
 
-bool recording = false;
-result = ovphysx_is_recording(handle, &recording);
-if (result.status != OVPHYSX_API_SUCCESS || !recording)
-    return 1;
+    result = ovphysx_ovd_start_recording(handle, &destination);
+    if (result.status != OVPHYSX_API_SUCCESS)
+        return 1;
 
-result = ovphysx_step_sync(handle, 1.0f / 60.0f);
-if (result.status != OVPHYSX_API_SUCCESS)
-    return 1;
+    bool recording = false;
+    result = ovphysx_ovd_is_recording(handle, &recording);
+    if (result.status != OVPHYSX_API_SUCCESS || !recording)
+        return 1;
 
-result = ovphysx_stop_recording(handle);
-if (result.status != OVPHYSX_API_SUCCESS)
-    return 1;
+    result = ovphysx_step_sync(handle, 1.0f / 60.0f);
+    if (result.status != OVPHYSX_API_SUCCESS)
+        return 1;
+
+    result = ovphysx_ovd_stop_recording(handle);
+    if (result.status != OVPHYSX_API_SUCCESS)
+        return 1;
+    return 0;
+}
 ```
 
 If the listener is not ready, `start_recording()` fails without consuming the
@@ -229,52 +197,33 @@ instance can later record to another TCP listener or to an exact FILE path.
 FILE uses the exact requested path, and TCP connects synchronously to an
 already-ready listener. Failed opens can be retried. Only one stream can be
 active in the shared runtime, and an active stream cannot be replaced. After
-stop, the owning instance can start another FILE or TCP session. Startup output
-is owned by the instance whose creation started it: that instance can query and
-publicly stop the startup session and restart to a late destination, while peer
-instances report inactive and cannot stop it. On cold startup the creator's
-ownership is reserved when creation succeeds and becomes observable when the
-first stage attach starts sampling. Detaching the active stage
+stop, the owning instance can start another FILE or TCP session. The instance
+that explicitly starts recording owns it; peers report inactive and cannot stop
+its session. Detaching the active stage
 finalizes the shared session and clears its public owner, including when a peer
-handle started it. After reattach, capability-only recording is dormant and can
-start immediately. Configured startup output instead starts a new startup
-session owned by the reattaching instance; stop it before selecting a late
-destination.
+handle started it. Reattach remains dormant until another explicit start.
 
 These synchronous APIs follow the ovphysx same-thread contract. The caller must
 serialize recording calls on each handle and recording/attach/detach/destroy
 transitions across all handles sharing the runtime; concurrent calls are not
 supported. Recording is supported on Windows x86_64 and Linux x86_64/aarch64.
-Startup, late, and restarted sessions each capture the current core PhysX,
+Initial and restarted sessions each capture the current core PhysX,
 PhysXExtensions (including joints and custom geometry), and PhysXVehicle state.
 Stopping releases only the session's telemetry handles; the next start takes a
 fresh full-state snapshot.
 
 ## What Happens at Runtime
 
-A recording session moves through these stages:
-
-1. Late FILE opens its exact path, and TCP connects its socket, before the runtime binds that stream to the OmniPVD writer. A late FILE path's parent directory must already exist.
-2. Startup FILE output creates `tmp.ovd`; late FILE output opens the exact requested path. TCP connects to the already-ready listener.
-3. Each simulation step writes physics state to the selected stream.
-4. Stop, active detach, or active-owner destruction cleanly finalizes the stream. Only startup FILE output renames `tmp.ovd` to `YYYY_MM_DD_HH_MM_SS_CC_rec.ovd` and updates the Kit import directory; late FILE keeps its exact path.
-
-With FILE startup output, an empty recording directory disables startup
-recording. `omnipvd_output_enabled=false` disables startup capture, but an
-instance created with `omnipvd_recording_capable=true` can still start an exact
-FILE or TCP session later.
+1. FILE opens its exact path or TCP connects before sampling begins.
+2. Start snapshots the current world; each subsequent step records its state.
+3. Stop finalizes output. Another recording can start on the same capable runtime.
 
 ## Inspecting .ovd Files in Kit
 
-Before you begin, confirm two things. First, you need a finalized recording:
-startup FILE output leaves a `YYYY_MM_DD_HH_MM_SS_CC_rec.ovd` file in the
-recording directory after clean shutdown, and late FILE output leaves the exact
-path you requested. A remaining `tmp.ovd` means startup output was not finalized.
-Possible causes include an instance that was not destroyed cleanly, failure to
-create the output directory, or failure to rename the temporary file. Check the
-runtime log for a filesystem error and verify that the destination is writable
-before continuing. Second, you need the compatible Kit-based application with
-the OmniPVD extension named in the prerequisites.
+Before you begin, stop the FILE recording to finalize the exact path you
+requested. If output is missing or incomplete, check the runtime log and verify
+that the parent directory exists and is writable. You also need the compatible
+Kit-based application with the OmniPVD extension named in the prerequisites.
 
 Then inspect the recording:
 
@@ -296,8 +245,7 @@ For more details on the Kit-side OmniPVD workflow, refer to the PhysX Visual Deb
 ## Capture Format and Compatibility
 
 ovphysx OmniPVD capture is optional. When enabled, the runtime writes PhysX OmniPVD
-recordings in the **OVD** binary format (startup FILE output is named
-`*_rec.ovd` after clean finalization; late FILE output keeps its exact path).
+recordings in the **OVD** binary format. FILE output keeps its exact requested path.
 
 **OVD capture format and compatibility policy**
 
@@ -329,10 +277,10 @@ recording from appearing:
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| No `.ovd` file after simulation | FILE directory or output enablement was omitted before instance creation | Pass both FILE fields in `PhysXConfig` / `config_entries` at init |
-| `tmp.ovd` exists but no `*_rec.ovd` | Instance not properly destroyed | Ensure `destroy()` / `ovphysx_destroy_instance` is called |
-| Runtime error about directory | Directory path is invalid or not writable | Use an absolute path to a writable location |
-| TCP start fails | Listener was not ready or address/port was wrong | Start the trusted plaintext listener before creating the instance or calling `start_recording()`, then retry |
+| No `.ovd` file after simulation | Capability or explicit start was omitted | Set `OVD_RECORDING_CAPABLE` before creation, attach the scene, and start a FILE recording |
+| Output is incomplete | Recording was not finalized | Call `stop_recording()` before teardown |
+| FILE `start_recording()` fails ("failed to open the destination or start sampling") | Parent directory is missing or not writable | Create the parent directory first (FILE does not create directories), then retry |
+| TCP start fails | Listener was not ready or address/port was wrong | Start the trusted plaintext listener before calling `start_recording()`, then retry |
 
 ## Result
 

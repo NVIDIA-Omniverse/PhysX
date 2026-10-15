@@ -5,8 +5,12 @@
     upAxis = "Z"
 )
 
-def PhysicsScene "physicsScene"
+def PhysicsScene "physicsScene" (
+    prepend apiSchemas = ["PhysxSceneAPI"]
+)
 {
+    # The ball tests expect external forces applied once per step.
+    bool physxScene:enableExternalForcesEveryIteration = 0
     vector3f physics:gravityDirection = (0, 0, -1)
     float physics:gravityMagnitude = 20.0
 }

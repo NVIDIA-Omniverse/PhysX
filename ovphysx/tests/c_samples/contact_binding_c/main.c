@@ -44,13 +44,13 @@ static int check_enqueue(ovphysx_enqueue_result_t r, const char* ctx)
     return 1;
 }
 
-static int wait_op(ovphysx_handle_t handle, ovphysx_op_index_t op_index, const char* ctx)
+static int wait_task(ovphysx_instance_handle_t handle, ovphysx_enqueue_result_t task, const char* ctx)
 {
-    ovphysx_op_wait_result_t wait_result = {0};
-    ovphysx_result_t r = ovphysx_wait_op(
-        handle, op_index, OVPHYSX_TIMEOUT_INFINITE, &wait_result);
+    ovphysx_wait_task_result_t wait_result = {0};
+    ovphysx_result_t r = ovphysx_wait_task(
+        handle, task, OVPHYSX_TIMEOUT_INFINITE, &wait_result);
     int has_errors = (wait_result.num_errors > 0);
-    ovphysx_destroy_wait_result(&wait_result);
+    ovphysx_destroy_wait_task_result(&wait_result);
     if (has_errors) {
         fprintf(stderr, "ERROR in %s: async operation failed\n", ctx);
         return 0;
@@ -118,10 +118,8 @@ static int run(void)
     r = ovphysx_initialize();
     if (!check_result(r, "ovphysx_initialize")) return 1;
 
-    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-
-    ovphysx_handle_t handle = 0;
-    r = ovphysx_create_instance(&args, &handle);
+    ovphysx_instance_handle_t handle = 0;
+    r = ovphysx_create_instance(&handle);
     if (!check_result(r, "ovphysx_create_instance")) { ovphysx_shutdown(); return 1; }
 
     /* 2. Populate ovstage from USD and attach it */
@@ -175,7 +173,7 @@ static int run(void)
             return 1;
         }
     }
-    if (!wait_op(handle, er.op_index, "step")) {
+    if (!wait_task(handle, er, "step")) {
         ovphysx_destroy_contact_binding(handle, cb);
         ovphysx_sample_destroy_stage(handle, &stage_attachment);
         ovphysx_destroy_instance(handle);

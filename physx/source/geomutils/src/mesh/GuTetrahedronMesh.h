@@ -22,6 +22,7 @@ namespace physx
 	namespace Gu
 	{
 		class MeshFactory;
+		class BVTetrahedronMesh;
 #if PX_VC
 #pragma warning(push)
 #pragma warning(disable: 4324)	// Padding was added at the end of a structure because of a __declspec(align) value.
@@ -116,6 +117,11 @@ namespace physx
 			virtual	PxTetrahedronMeshFlags		getTetrahedronMeshFlags()			const PX_OVERRIDE { return PxTetrahedronMeshFlags(mFlags); }
 			virtual	const PxU32*				getTetrahedraRemap()				const PX_OVERRIDE { return NULL; }
 
+			// A PxDeformableVolumeMesh's collision mesh is the only subclass, and it shares this class's concrete type
+			// with a simulation mesh and with a PxPhysics::createTetrahedronMesh() mesh. This is how a caller that
+			// needs the midphase tree or the GPU data tells them apart instead of downcasting blind.
+			virtual	const BVTetrahedronMesh*	getBVTetrahedronMesh()				const { return NULL; }
+
 			PX_FORCE_INLINE				PxU32					getNbVerticesFast()						const { return mNbVertices; }
 			PX_FORCE_INLINE				PxVec3*					getVerticesFast()						const { return mVertices; }
 			PX_FORCE_INLINE				PxU32					getNbTetrahedronsFast()					const { return mNbTetrahedrons; }
@@ -185,6 +191,7 @@ namespace physx
 			PX_FORCE_INLINE				void*					getGRBTetraFaceRemapInverse()		{ return mGRB_faceRemapInverse; }
 
 			virtual						const PxU32*			getTetrahedraRemap()				const PX_OVERRIDE { return mFaceRemap; }
+			virtual						const BVTetrahedronMesh* getBVTetrahedronMesh()				const PX_OVERRIDE { return this; }
 
 			PX_FORCE_INLINE bool isTetMeshGPUCompatible() const
 			{

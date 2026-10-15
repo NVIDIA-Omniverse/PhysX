@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-REPLICATE-002
+// @covers AC-6
+
 /**
  * @implements REQ-PROPS-MAT-001
  * @covers AC-2
@@ -52,6 +55,8 @@
  * `DrainResult::Failed` (a partial commit -> hold the cursor, AC-12), and on `Applied` runs the
  * per-object parse path for exactly the rows the drain reported as unresolved (the split, AC-13).
  */
+
+#include "ScopedNoticeLock.h"
 
 /**
  * @implements REQ-SIM-BODY-INPUT-001
@@ -341,7 +346,7 @@ void moveBody(AttachedStage& attachedStage, omni::physics::parse::ObjectKey key)
         if (articulationLinkChange)
         {
             // A.B. we could do eventually better, but we might not want to reconstruct the hierarchy here atm
-            UsdLoad::getUsdLoad()->releasePhysicsObjects(attachedStage.getStageId());
+            UsdLoad::getUsdLoad()->releasePhysicsObjects(attachedStage.getAttachHandle());
         }
         else
         {
@@ -486,7 +491,7 @@ void PrimChangeMap::handleTransformChange(AttachedStage& attachedStage, omni::ph
         moveBody(attachedStage, key);
     }
 
-    if (!bodyMoved || OmniPhysX::getInstance().getInternalPhysXDatabase().getNestedBodiesUsed())
+    if (!bodyMoved || attachedStage.getInternalPhysXDatabase().getNestedBodiesUsed())
     {
         if (!src || !src->exists(key) || src->isPrototype(key))
             return;
@@ -957,7 +962,7 @@ void PrimChangeMap::checkPrimChange(AttachedStage& attachedStage,
                                     omni::physics::parse::TokenId propertyTokenId)
 {
     UsdLoad* usdLoad = UsdLoad::getUsdLoad();
-    const bool deferUpdates = usdLoad->getAsyncUSDUpdate();
+    const bool deferUpdates = attachedStage.getAsyncUSDUpdate();
     PropertyChangeMap::const_iterator itChange;
     PropertyChangeMap::const_iterator itChangeEnd;
     bool propertyChangeFound = getPropertyChange(propertyTokenId, itChange, itChangeEnd);
@@ -1199,7 +1204,7 @@ void PrimUpdateMap::addPrim(const AttachedStage& attachedStage, omni::physics::p
         }
         m_primAddMap.insert(key);
         if (needsSceneReset(attachedStage, key))
-            UsdLoad::getUsdLoad()->releasePhysicsObjects(attachedStage.getStageId());
+            UsdLoad::getUsdLoad()->releasePhysicsObjects(attachedStage.getAttachHandle());
     }
 }
 
@@ -1304,37 +1309,9 @@ void flushBufferedChanges(AttachedStage& attachedStage, float currentTime)
         attachedStage.getPrimUpdateMap().clearMap();
         attachedStage.getPrimChangeMap().clearMap();
 
-        if (attachedStage.isReplicatorStage())
-        {
-            // Two identities, deliberately: the replicator is *registered* under an attach handle
-            // (ADR-0016), while PhysXReplicator::attach still takes a stage id because on the USD
-            // path that call performs the attach itself and there is no AttachedStage to name yet.
-            //
-            // The lookup is guarded because it can legitimately miss: isReplicatorStage() records
-            // that this attach was set up by a replicator, but the registration is unregistered
-            // independently (the clone path's RAII guard, or an explicit unregisterReplicator), so
-            // the flag can outlive the entry. Dereferencing unguarded here crashed the flush.
-            if (PhysXReplicator* replicator =
-                    OmniPhysX::getInstance().getReplicator(attachedStage.getAttachHandle()))
-            {
-                replicator->attach(attachedStage.getStageId(), attachedStage.getPhysXPhysicsInterface(), false);
-            }
-            else
-            {
-                CARB_LOG_ERROR(
-                    "flushBufferedChanges: no replicator is registered for this attach; the buffered "
-                    "changes for a replicator stage cannot be flushed.");
-            }
-        }
-        else
-        {
-            // NOTE: deliberately NOT wrapped in InitialStagePopulationScope. This
-            // empty-scene branch also handles re-population after
-            // releasePhysicsObjects() during a running simulation, whose creation
-            // notifications subscribers rely on; the "initial population is not
-            // notified" contract only covers attach/update traversal.
-            loadFromStage(attachedStage);
-        }
+        // Rebuild using this attachment's copied exclusions. Replication is an explicit
+        // operation after loading; callbacks never trigger a recursive attach/scan.
+        loadFromStage(attachedStage);
         attachedStage.getPrimUpdateMap().setEmptyScene(false);
     }
 
@@ -1342,7 +1319,7 @@ void flushBufferedChanges(AttachedStage& attachedStage, float currentTime)
     // that would modify g_PrimUpdateMap while we are iterating over the contents
     if (!attachedStage.getPrimUpdateMap().getMap().empty())
     {
-        UsdLoad::getUsdLoad()->blockUSDUpdate(true);
+        { ScopedNoticeBlock blockNotices(attachedStage, true, false);
 
         attachedStage.getPrimUpdateMap().checkMap(attachedStage);
 
@@ -1354,7 +1331,7 @@ void flushBufferedChanges(AttachedStage& attachedStage, float currentTime)
         loadPhysicsFromPrimitive(attachedStage, updateRoots);
 
         // it is safe to allow updates again
-        UsdLoad::getUsdLoad()->blockUSDUpdate(false);
+        }
 
         attachedStage.getPrimUpdateMap().clearMap();
     }
@@ -1455,7 +1432,7 @@ bool onSourceChange(AttachedStage& attachedStage, const omni::physics::parse::Ch
     CARB_PROFILE_ZONE(0, "physx::usdparser::onSourceChange");
 
     UsdLoad* usdLoad = UsdLoad::getUsdLoad();
-    if (usdLoad->usdUpdateIsBlocked())
+    if (attachedStage.sourceUpdatesBlocked())
         return true;
 
     // Early exit if scene is empty; we will parse the whole scene.
@@ -1538,7 +1515,7 @@ bool onSourceChange(AttachedStage& attachedStage, const omni::physics::parse::Ch
             {
                 if (key == psrc->getRootKey())
                 {
-                    usdLoad->releasePhysicsObjects(static_cast<uint64_t>(attachedStage.getStageId()));
+                    usdLoad->releasePhysicsObjects(attachedStage.getAttachHandle());
                 }
                 else if (!psrc->isPrototype(key))
                 {
@@ -1565,8 +1542,7 @@ bool onSourceChange(AttachedStage& attachedStage, const omni::physics::parse::Ch
     // already off -- the guard just makes that invariant explicit and keeps it should UsdChangeFeed ever
     // start delivering a value column (a USD-fed value batch would then defer correctly rather than apply
     // mid-step).
-    const UsdLoad* ul = UsdLoad::getUsdLoad();
-    if (ul && !ul->getAsyncUSDUpdate())
+    if (!attachedStage.getAsyncUSDUpdate())
     {
         // Passing a sink for the rows the drain skips opts into PARTIAL handling: the drain scatters the
         // keys it can service and reports the rest (a kinematic body, a local-frame velocity, a
@@ -1577,7 +1553,7 @@ bool onSourceChange(AttachedStage& attachedStage, const omni::physics::parse::Ch
         // batch nothing is appended, so the vector makes no heap allocation.
         std::vector<uint32_t> unresolvedRows;
         const omni::physx::DrainResult drained =
-            omni::physx::applyOvstageValueBatch(*psrc, batch, &unresolvedRows);
+            omni::physx::applyOvstageValueBatch(attachedStage, *psrc, batch, &unresolvedRows);
         // A partial commit followed by a scatter failure: the parse-path fallback would re-apply the rows
         // that DID reach the solver (a double-apply), so we must NOT fall through. Signal failure so
         // drainRange holds the cursor and the whole batch is retried on the next drain.
@@ -1607,14 +1583,13 @@ bool onSourceChange(AttachedStage& attachedStage, const omni::physics::parse::Ch
 // flushed when the whole notice would have been skipped.
 void onSourceGroupComplete(AttachedStage& attachedStage)
 {
-    UsdLoad* usdLoad = UsdLoad::getUsdLoad();
-    if (usdLoad->usdUpdateIsBlocked())
+    if (attachedStage.sourceUpdatesBlocked())
         return;
     if (attachedStage.getPrimUpdateMap().isEmptyScene())
         return;
     auto changeSourceBlock = attachedStage.getChangeSourceBlock(ChangeSource::eUsd);
     attachedStage.getPrimChangeMap().processTransformChanges(attachedStage);
-    if (!usdLoad->getAsyncUSDUpdate())
+    if (!attachedStage.getAsyncUSDUpdate())
         attachedStage.getPrimChangeMap().processPostTransformVelocityChanges(attachedStage);
 }
 

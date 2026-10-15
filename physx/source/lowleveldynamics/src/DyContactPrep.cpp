@@ -2,7 +2,6 @@
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // SPDX-FileCopyrightText: Copyright (c) 2008-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
-
      
 #include "DyThreadContext.h"
 #include "DyAllocator.h"
@@ -288,10 +287,13 @@ static void setupFinalizeSolverConstraints(
 
 					targetVel = FSub(targetVel, vrel);
 
-					f0->normalXYZ_appliedForceW = V4ClearW(Vec4V_From_Vec3V(t0));
-					f0->raXnXYZ_velMultiplierW = V4SetW(raXnSqrtInertia, velMultiplier);
-					f0->rbXnXYZ_biasW = V4SetW(rbXnSqrtInertia, FMul(V3Dot(t0, error), invDt));
+					f0->normal = t0;
+					f0->raXn = raXnSqrtInertia;
+					f0->rbXn = rbXnSqrtInertia;
 					FStore(targetVel, &f0->targetVel);
+					f0->appliedForce = 0.0f;
+					FStore(velMultiplier, &f0->velMultiplier);
+					FStore(FMul(V3Dot(t0, error), invDt), &f0->bias);
 				}
 
 				{
@@ -318,10 +320,13 @@ static void setupFinalizeSolverConstraints(
 
 					targetVel = FSub(targetVel, vrel);
 
-					f1->normalXYZ_appliedForceW = V4ClearW(Vec4V_From_Vec3V(t1));
-					f1->raXnXYZ_velMultiplierW = V4SetW(raXnSqrtInertia, velMultiplier);
-					f1->rbXnXYZ_biasW = V4SetW(rbXnSqrtInertia, FMul(V3Dot(t1, error), invDt));
+					f1->normal = t1;
+					f1->raXn = raXnSqrtInertia;
+					f1->rbXn = rbXnSqrtInertia;
 					FStore(targetVel, &f1->targetVel);
+					f1->appliedForce = 0.0f;
+					FStore(velMultiplier, &f1->velMultiplier);
+					FStore(FMul(V3Dot(t1, error), invDt), &f1->bias);
 				}
 			}
 		}

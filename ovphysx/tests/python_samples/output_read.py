@@ -35,6 +35,11 @@ odd "output" lane (never drained).
 """
 
 # [tutorial-start]
+# @implements REQ-CAPI-OVSTAGE-XFORM-001
+# @covers AC-1
+# @implements REQ-PYTHON-SAMPLE-002
+# @covers AC-1 AC-2
+
 from pathlib import Path
 
 import numpy as np
@@ -44,6 +49,7 @@ from ovphysx.types import ObjectScope, SimObjectType
 from ovphysx.utils import OvStageOutputCache, step_and_write_to_ovstage
 
 import ovphysx
+from ovphysx.samples.python_samples.schema_support import physx_schema_paths
 from ovphysx import PhysX
 
 _physx_schemas_registered = False
@@ -54,15 +60,10 @@ def attach_scene(physx, usd_path, read_ordinal):
     if not ovstage.population.available():
         raise RuntimeError("ovstage population bridge is unavailable")
 
-    # ovphysx ships its PhysX USD schemas as codeless resources and does not register
-    # them itself. Register them with ovstage once, before the first population
-    # call in the process. The Newton USD schema (pip package newton-usd-schemas) is
-    # registered alongside when installed, so authored newton:* attributes reach the
-    # parser; this scene has none, and the package is not a wheel dependency, so
-    # don't require it.
+    # Register before population; this scene can omit the Newton provider.
     global _physx_schemas_registered
     if not _physx_schemas_registered:
-        schema_roots = [str(ovphysx.codeless_schema_root())]
+        schema_roots = [str(p) for p in physx_schema_paths()]
         try:
             schema_roots.append(str(ovphysx.newton_schema_root()))
         except FileNotFoundError:
@@ -70,19 +71,17 @@ def attach_scene(physx, usd_path, read_ordinal):
         ovstage.population.register_usd_schemas(schema_roots)
         _physx_schemas_registered = True
     stage = ovstage.Stage("ovphysx-output-read-sample")
-    attached = False
     try:
         ovstage.population.open_usd(
-            stage, str(usd_path), ordinal=read_ordinal, domains=ovstage.PopulationDomain.PHYSICS
+            stage, str(usd_path), ordinal=read_ordinal, domains=ovstage.PopulationDomain.ALL
         )
         stage.advance_write_floor(ordinal=read_ordinal).wait()
-        physx.attach_ovstage(stage, read_ordinal=read_ordinal)
-        attached = True
+        physx.wait_task(physx.attach_ovstage(stage, read_ordinal=read_ordinal))
         return stage
     except Exception as exc:
-        if attached:
+        if physx.is_stage_attached(stage):
             try:
-                physx.detach_ovstage()
+                physx.wait_task(physx.detach_ovstage())
             except Exception as detach_exc:
                 # If native detach fails, keep the Stage alive through PhysX's
                 # attachment reference. Destroying it here would leave a dangling
@@ -132,7 +131,7 @@ def author_velocity(stage, group, ordinal, velocity):
 def read_rigid_body_vectors(physx, attribute):
     """Return all fixed-width rigid-body values for one vector attribute."""
     columns = []
-    with physx.read(SimObjectType.RIGID_BODY, [attribute], scope=ObjectScope.ALL) as result:
+    with physx.read_sync(SimObjectType.RIGID_BODY, [attribute], scope=ObjectScope.ALL) as result:
         for group in result.groups:
             if not group.is_delete and not group.is_array and group.tensors:
                 columns.append(np.asarray(group.tensors[0].numpy(), dtype=np.float32))
@@ -150,9 +149,10 @@ def _read_stage_rows(stage, paths, query, attribute, ordinal):
             try:
                 if group.is_delete:
                     continue
-                tensor = group.tensor(0)
-                lanes = int(tensor.dtype.lanes) or 1
-                values = np.asarray(group.array(0)).reshape(-1, lanes)
+                values = np.asarray(group.array(0))
+                # Typed reads expose matrix/vector components as trailing axes.
+                # Keep the leading data-row axis intact when flattening them.
+                values = values.reshape(values.shape[0], -1)
                 group_paths = paths.get_path_strings(group.prim_list)
                 for local in range(group.prim_count):
                     prim_index = group.prim_index(local)
@@ -168,7 +168,7 @@ def verify_output_xforms(physx, stage, ordinal):
     checked = 0
     with ovstage.PathDictionary(stage) as paths:
         xform = paths.intern_token("omni:fabric:worldMatrix")
-        with physx.read(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
+        with physx.read_sync(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
             for physics_group in result.groups:
                 if physics_group.is_delete or physics_group.is_array or not physics_group.tensors:
                     continue
@@ -202,8 +202,13 @@ def main():
     output_ordinal = 3
 
     try:
-        script_dir = Path(__file__).resolve().parent
-        usd_path = script_dir / ".." / "data" / "boxes_falling_on_groundplane.usda"
+        # Prefer package data so a copied sample works. Fall back to the checked-in
+        # sample's adjacent data directory when package data is absent.
+        usd_path = Path(ovphysx.__file__).resolve().parent / "samples" / "data" / "boxes_falling_on_groundplane.usda"
+        if not usd_path.is_file():
+            usd_path = Path(__file__).resolve().parent.parent / "data" / "boxes_falling_on_groundplane.usda"
+        if not usd_path.is_file():
+            raise FileNotFoundError(f"ovphysx sample data is missing: {usd_path}")
         print(f"Loading USD scene through ovstage: {usd_path}")
         stage = attach_scene(physx, usd_path, read_ordinal=1)
         physx.wait_all()
@@ -219,7 +224,7 @@ def main():
             velocity_before = read_rigid_body_vectors(physx, "linearVelocity")
             position_before = read_rigid_body_vectors(physx, "position")
             authored = False
-            with physx.read(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
+            with physx.read_sync(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
                 for group in result.groups:
                     if not group.is_array:
                         author_velocity(stage, group, control_ordinal, velocity=target_velocity)
@@ -230,8 +235,7 @@ def main():
             # Waiting for write_attribute only completes the write operation. The
             # write floor seals the ordinal so update_from_ovstage can consume it.
             stage.advance_write_floor(ordinal=control_ordinal).wait()
-            physx.update_from_ovstage(control_ordinal, control_ordinal)
-
+            physx.wait_task(physx.update_from_ovstage(control_ordinal, control_ordinal))
             velocity_after = read_rigid_body_vectors(physx, "linearVelocity")
             if velocity_after.shape != velocity_before.shape:
                 raise RuntimeError("Rigid-body count changed while applying the velocity control")
@@ -277,10 +281,12 @@ def main():
 
         print("Closed-loop ovstage output read completed successfully")
     finally:
+        # The closed result and final loop group still retain their read arrays.
+        result = group = None
         if output_cache is not None:
             output_cache.close()
         if stage is not None:
-            physx.detach_ovstage()
+            physx.wait_task(physx.detach_ovstage())
             stage.destroy()
         physx.destroy()
         print("Cleanup complete")

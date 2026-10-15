@@ -3,7 +3,9 @@
 
 /**
  * @implements REQ-READ-VEHICLE-001
- * @covers AC-1, AC-3
+ * @covers AC-1, AC-3, AC-8, AC-9
+ * @implements REQ-INPUT-COVERAGE-001
+ * @covers AC-20, AC-21
  */
 
 #pragma once
@@ -93,6 +95,101 @@ public:
                                    VehicleWheelComponent component,
                                    const TensorDesc* dstTensor) const;
 
+    enum class DriveState : uint32_t
+    {
+        eAccelerator,
+        eBrake0,
+        eBrake1,
+        eSteer,
+        eClutch,
+        eCurrentGear,
+        eTargetGear,
+        eEngineRotationSpeed,
+        eAutomaticTransmission,
+        eGearSwitchTime,
+        eAutoboxTimeSinceLastShift
+    };
+
+    // Shared by column allocation and backend validation. Unknown components return eNone.
+    struct StateColumnInfo
+    {
+        omni::physics::tensors::TensorDataType dtype = omni::physics::tensors::TensorDataType::eNone;
+        uint32_t width = 0;
+        bool engineOnly = false; // Applies to drive state; wheel state has no engine requirement.
+    };
+
+    static StateColumnInfo driveStateColumnInfo(DriveState component);
+
+    struct DriveStateColumn
+    {
+        DriveState component;
+        const TensorDesc* dst;
+    };
+
+    // The caller selects compatible rows; each vehicle is sampled once for all columns.
+    bool getDriveStateColumnsOvStage(omni::physx::internal::InternalScene& scene,
+                                     const uint32_t* vehicleRows,
+                                     uint32_t numOutputs,
+                                     const DriveStateColumn* columns,
+                                     uint32_t numColumns) const;
+
+    enum class WheelState : uint32_t
+    {
+        eRotationSpeed,
+        eRotationAngle,
+        eWheelSteerAngle,
+        eSuspensionJounce,
+        eSuspensionForce,
+        eTireFriction,
+        eTireLongitudinalDirection,
+        eTireLateralDirection,
+        eTireLongitudinalSlip,
+        eTireLateralSlip,
+        eTireForce,
+        eIsOnGround,
+        eGroundPlane,
+        eGroundHitPosition,
+        eGroundActorId,
+        eGroundShapeId,
+        eGroundMaterialId
+    };
+
+    static StateColumnInfo wheelStateColumnInfo(WheelState component);
+
+    struct WheelStateColumn
+    {
+        WheelState component;
+        const TensorDesc* dst;
+    };
+
+    // Identity columns carry private ObjectIds only inside the backend. The generic reader must
+    // resolve them through this scene's owning database and publish canonical path handles.
+    bool getWheelStateColumnsOvStage(omni::physx::internal::InternalScene& scene,
+                                     const VehicleWheelOvStageRecord* records,
+                                     uint32_t numOutputs,
+                                     const WheelStateColumn* columns,
+                                     uint32_t numColumns) const;
+
+    enum class VehicleControl : uint32_t
+    {
+        eAccelerator,
+        eBrake0,
+        eBrake1,
+        eSteer,
+        eRequestedGear,
+        eThrust0,
+        eThrust1,
+        eResetToRestState
+    };
+
+    // Validate every row and value before the first setter. Reset is an immediate 0/1 command;
+    // ordinary controls remain in the runtime until another control update replaces them.
+    bool setVehicleControlOvStage(omni::physx::internal::InternalScene& scene,
+                                  const uint32_t* vehicleRows,
+                                  uint32_t numOutputs,
+                                  VehicleControl control,
+                                  const TensorDesc* srcTensor);
+
     // Which per-wheel CONTROL an ovstage column carries (ADR-0012).
     //
     // These are the controls of a vehicle WITHOUT a drive, where the control surface is per wheel.
@@ -122,7 +219,11 @@ public:
                                 const TensorDesc* srcTensor);
 
 private:
+    bool validateScene(const omni::physx::internal::InternalScene& scene) const;
+    bool validateVehicleRow(uint32_t row) const;
+    bool validateWheelRecord(const VehicleWheelOvStageRecord& record) const;
     std::vector<VehicleEntry> mEntries;
+    const omni::physx::internal::InternalScene* mScene = nullptr;
     uint64_t mBuiltEpoch = 0;
 };
 

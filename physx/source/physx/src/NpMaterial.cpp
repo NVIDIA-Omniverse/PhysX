@@ -26,7 +26,7 @@ NpMaterial::~NpMaterial()
 }
 
 // PX_SERIALIZATION
-void NpMaterial::resolveReferences(PxDeserializationContext&)
+bool NpMaterial::resolveReferences(PxDeserializationContext&)
 {
 	// ### this one could be automated if NpMaterial would inherit from MaterialCore
 	// ### well actually in that case the pointer would not even be needed....
@@ -35,7 +35,9 @@ void NpMaterial::resolveReferences(PxDeserializationContext&)
 	// Maybe not the best place to do it but it has to be done before the shapes resolve material indices
 	// since the material index translation table is needed there. This requires that the materials have
 	// been added to the table already.
-	NpPhysics::getInstance().addMaterial(this);
+	// A rejected material - in practice the 64K limit - has been reported and destroyed in place by
+	// addMaterial(), so on false the caller must fail the load without touching this object again.
+	return NpPhysics::getInstance().addMaterial(this) != NULL;
 }
 
 void NpMaterial::onRefCountZero()
@@ -53,9 +55,17 @@ void NpMaterial::onRefCountZero()
 NpMaterial* NpMaterial::createObject(PxU8*& address, PxDeserializationContext& context)
 {
 	NpMaterial* obj = PX_PLACEMENT_NEW(address, NpMaterial(PxBaseFlag::eIS_RELEASABLE));
-	address += sizeof(NpMaterial);	
+	address += sizeof(NpMaterial);
 	obj->importExtraData(context);
-	obj->resolveReferences(context);
+
+	// A material that could not be registered would leave every shape referencing it resolving to an empty
+	// slot or, once the index is recycled, to an unrelated material (OMPE-109162). Fail the load instead:
+	// the caller (SnBinaryDeserialization) reports it, releases the objects it had already created -
+	// including any material that did register, which would otherwise be left in the table pointing into the
+	// caller's memory block - and returns NULL. obj is already destroyed at this point.
+	if(!obj->resolveReferences(context))
+		return NULL;
+
 	return obj;
 }
 //~PX_SERIALIZATION

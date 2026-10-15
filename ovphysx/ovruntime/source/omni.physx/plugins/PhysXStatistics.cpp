@@ -1,9 +1,13 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-1 AC-2
+
 #include <omni/physx/IPhysxStatistics.h>
 
 #include "OmniPhysX.h"
+#include "RuntimeExecution.h"
 #include "internal/InternalPhysXDatabase.h"
 
 #include "usdLoad/LoadUsd.h"
@@ -18,12 +22,15 @@ namespace physx
 {
 bool getPhysXSceneStatistics(AttachHandle attachHandle, uint64_t path, PhysicsSceneStats& sceneStats)
 {
-    const usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->resolveAttach(attachHandle);
+    RuntimeExecutionScope operation(attachHandle);
+    if (!operation)
+        return false;
+    const usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
     if (!attachedStage)
     {
         CARB_LOG_ERROR("getPhysXSceneStatistics could not resolve attach handle %llu: it is either kNoAttach, or a "
                        "handle whose attach has since been detached (a handle is minted per attach and never reused). "
-                       "Pass IPhysxSimulation::getAttachHandle(), or kActiveAttach for the lone active attach.",
+                       "Pass the exact handle returned by attachment creation.",
                        static_cast<unsigned long long>(attachHandle));
         return false;
     }
@@ -33,7 +40,7 @@ bool getPhysXSceneStatistics(AttachHandle attachHandle, uint64_t path, PhysicsSc
     // updateTransformationsScene) -- no SdfPath decode, unconditional. attachedStage is still
     // needed below, just not for this lookup.
     const omni::physics::parse::ObjectKey sceneKey{ path };
-    PxScene* scene = (PxScene*) getObjectDataOrID<ObjectDataQueryType::ePHYSX_PTR>(sceneKey, ePTScene, OmniPhysX::getInstance().getInternalPhysXDatabase(), *attachedStage);
+    PxScene* scene = (PxScene*) getObjectDataOrID<ObjectDataQueryType::ePHYSX_PTR>(sceneKey, ePTScene, attachedStage->getInternalPhysXDatabase(), *attachedStage);
     if (!scene)
     {
         // This is valid we can have a simulation without PhysX scene, when PhysX is not the default simulator

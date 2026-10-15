@@ -762,14 +762,18 @@ void BVHPartialRefitData::markNodeForRefit(TreeNodeIndex nodeIndex)
 		refitBitmask->resize(mNbNodes);   // PT: AI-suggested fix for https://github.com/NVIDIAGameWorks/PhysX/issues/680
 
 	PX_ASSERT(nodeIndex<mNbNodes);
-#if PX_CHECKED
-	// ### DEFENSIVE against OMPE-105365
+	// ### DEFENSIVE against OMPE-105365 - deliberately not PX_CHECKED-only: setBit() below has no runtime
+	// bounds check, so in a release build an out-of-range index ORs a bit into the heap past the end of the
+	// bitmask and silently corrupts whichever allocation follows it. That damage surfaces much later, in an
+	// unrelated free() (OMPE-109171). Only the message stays checked-only - this runs once per moved or
+	// removed object per frame, and reporting every time would flood the error callback.
 	if(nodeIndex >= mNbNodes)
 	{
+#if PX_CHECKED
 		PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, PX_FL, "BVHPartialRefitData::markNodeForRefit: node index %u out of range (tree has %u nodes) - mark ignored. Tree data is inconsistent.", nodeIndex, mNbNodes);
+#endif
 		return;
 	}
-#endif
 
 	const PxU32* PX_RESTRICT parentIndices = getParentIndices();
 
@@ -854,14 +858,16 @@ void BVHPartialRefitData::refitMarkedNodes(const PxBounds3* boxes)
 	{
 		/*const*/ PxU32* bits = const_cast<PxU32*>(mRefitBitmask.getBits());
 		PxU32 size = mRefitHighestSetWord+1;
-#if PX_CHECKED
-		// ### DEFENSIVE against OMPE-105365
+		// ### DEFENSIVE against OMPE-105365 - unconditional for the same reason: the clamp is what bounds the
+		// bits[] walk below. Still reachable with markNodeForRefit() guarded, because mRefitHighestSetWord
+		// survives a tree switch while init() can hand back a smaller bitmask.
 		if(size > mRefitBitmask.getSize())
 		{
+#if PX_CHECKED
 			PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, PX_FL, "BVHPartialRefitData::refitMarkedNodes: highest set word %u out of range (bitmask has %u words) - clamped. Tree data is corrupted.", mRefitHighestSetWord, mRefitBitmask.getSize());
+#endif
 			size = mRefitBitmask.getSize();
 		}
-#endif
 #if PX_DEBUG
 		if(1)
 		{

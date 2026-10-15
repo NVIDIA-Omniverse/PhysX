@@ -10,6 +10,9 @@
 #include "foundation/PxBounds3.h"
 #include <vector_types.h>
 
+// Defines PxgDeformablePairInfo, used by a member below.
+#include "PxgSimulationCoreDesc.h"
+
 #define MAX_SELF_COLLISION_CONTACTS		1000
 #define NUM_BLOCK_PER_SOFTBODY_SOLVE_TETRA	2
 
@@ -32,7 +35,6 @@ namespace physx
 
 	struct PxgMat33Block;
 	struct PxgSpatialVectorBlock;
-	class PxgNonRigidFilterPair;
 	struct PxgAllocatorDesc;
 
 #if PX_VC 
@@ -118,12 +120,17 @@ namespace physx
 
 		PxBounds3*				mPackedNodeBounds;
 
-		PxU16*					mOrderedMaterialIndices; //indices to global material array ordered by partition, size of mNumVertsGM(simulation mesh)
-		PxU16*					mMaterialIndices; //indices to global material array, size of mNumVertsGM(simulation mesh)
+		PxU16*					mOrderedMaterialIndices; //indices to global material array ordered by partition, size of mNumTetsGM(simulation mesh)
+		PxU16*					mMaterialIndices; //indices to global material array, size of mNumTetsGM(simulation mesh)
 
-		//filter pair for myself and other soft body. Index0 is myself and vertId. Index1 is other soft body and tetId
-		PxgNonRigidFilterPair*	mFilteringPairs; 
-		PxU32					mNumFilterPairs;
+		// Element filter pairs of this volume, one sorted array per pair type. The type order of each
+		// pair matches the type order expected by the find helpers in deformableElementFilter.cuh.
+		PxgDeformablePairInfo*	mRigidVolumeFilterPairs;
+		PxgDeformablePairInfo*	mVolumeVolumeFilterPairs;
+		PxgDeformablePairInfo*	mVolumeSurfaceFilterPairs;
+		PxU32					mNumRigidVolumeFilterPairs;
+		PxU32					mNumVolumeVolumeFilterPairs;
+		PxU32					mNumVolumeSurfaceFilterPairs;
 
 		PxReal					mLinearDamping;
 		PxReal					mMaxLinearVelocity;

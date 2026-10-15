@@ -435,7 +435,7 @@ protected:
             return;
         }
         ovstage_instance_t* stage = mStageAttachment.stage;
-        const ovphysx_handle_t handle = mPhysX->handle();
+        const ovphysx_instance_handle_t handle = mPhysX->handle();
 
         for (int first = 0; first < kAuthoringSpawnCount; first += kAuthoringSpawnBatch)
         {
@@ -915,7 +915,7 @@ protected:
         {
             return;
         }
-        const ovphysx_handle_t handle = mPhysX->handle();
+        const ovphysx_instance_handle_t handle = mPhysX->handle();
         if (!authoringbm::sealAndDrain(handle, mStageAttachment.stage, &mLastDrained, mOrdinal, mRow))
         {
             mStepOk = false;
@@ -946,7 +946,7 @@ private:
             return;
         }
 
-        const ovphysx_handle_t handle = mPhysX->handle();
+        const ovphysx_instance_handle_t handle = mPhysX->handle();
         uint32_t simulated = 0;
         if (!authoringbm::countRigidBodies(handle, &simulated, mRow))
         {

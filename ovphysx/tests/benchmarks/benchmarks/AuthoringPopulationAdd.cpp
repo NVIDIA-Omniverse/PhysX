@@ -282,7 +282,7 @@ protected:
         }
 
         ovstage_instance_t* stage = mStageAttachment.stage;
-        const ovphysx_handle_t handle = mPhysX->handle();
+        const ovphysx_instance_handle_t handle = mPhysX->handle();
 
         for (int first = 0; first < kAuthoringBodyCount; first += mPack)
         {

@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # @implements REQ-CAPI-OVSTAGE-SCHEMA-001
-# @covers AC-6
+# @covers AC-5
 # @maps_to TEST-CAPI-OVSTAGE-SCHEMA-001
 
-"""attach_ovstage warns when the Newton USD schema was not registered (REQ-CAPI-OVSTAGE-SCHEMA-001 AC-6).
+"""attach_ovstage warns when the Newton USD schema was not registered (REQ-CAPI-OVSTAGE-SCHEMA-001 AC-5).
 
-The parser honours newton:velocityLimit as the fallback for physxJoint:maxJointVelocity,
-but population delivers a newton:* attribute only when the Newton schema
-(newton-usd-schemas) was registered with ovstage before the first population. ovphysx
+The parser honours newton:velocityLimit as the joint-level velocity limit, but population
+delivers a newton:* attribute only when the Newton schema (newton-usd-schemas) was
+registered with ovstage before the first USD schema read (population or export). ovphysx
 does not ship that schema (NVBug 6742287: a joint authoring only newton:velocityLimit ran
 unlimited), so attach_ovstage checks the registration of the installed package and warns.
 The registry is process-global, so every case runs in a fresh interpreter.
@@ -67,7 +67,7 @@ def Xform "World"
             point3f physics:localPos0 = (0, 0, 3)
         }
         def PhysicsRevoluteJoint "hinge" (
-            prepend apiSchemas = ["PhysxJointAPI", "NewtonJointAPI"]
+            prepend apiSchemas = ["NewtonJointAPI"]
         )
         {
             float newton:velocityLimit = 111.0
@@ -94,6 +94,7 @@ _CHILD_SCRIPT = textwrap.dedent(
     import numpy as np
     import ovstage
     import ovphysx
+    from schema_support import physx_schema_paths
     from ovphysx.types import ObjectScope, SimObjectType
 
     mode, usd_path = sys.argv[1], sys.argv[2]
@@ -115,7 +116,7 @@ _CHILD_SCRIPT = textwrap.dedent(
     def attach_recording(physx, stage):
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            physx.attach_ovstage(stage, read_ordinal=1)
+            physx.wait_task(physx.attach_ovstage(stage, read_ordinal=1))
         caught.extend(str(x.message) for x in w if issubclass(x.category, RuntimeWarning) and "attach_ovstage" in str(x.message))
 
     def copy_newton_schema(extra_attribute=None):
@@ -150,10 +151,10 @@ _CHILD_SCRIPT = textwrap.dedent(
 
     extra_present = None
     if mode == "procedural-then-usd":
-        # A procedurally authored stage reaches attach before any USD population: the
+        # A procedurally authored stage reaches attach before any USD schema read: the
         # check must not register the installed schema on the application's behalf.
         from ovphysx import population as pop
-        ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+        ovstage.population.register_usd_schemas([str(p) for p in physx_schema_paths()])
         proc_stage = ovstage.Stage("newton-schema-procedural")
         paths = ovstage.PathDictionary(proc_stage)
         batch = pop.PrimBatch(paths, ["/World/Scene"])
@@ -162,7 +163,7 @@ _CHILD_SCRIPT = textwrap.dedent(
         proc_stage.advance_write_floor(ordinal=1).wait()
         proc = ovphysx.PhysX()
         attach_recording(proc, proc_stage)
-        proc.detach_ovstage()
+        proc.wait_task(proc.detach_ovstage())
         proc.destroy()
         paths.destroy() if hasattr(paths, "destroy") else None
         proc_stage.destroy()
@@ -171,7 +172,7 @@ _CHILD_SCRIPT = textwrap.dedent(
         # this family would already be taken and the extra attribute would never populate.
         ovstage.population.register_usd_schemas([copy_newton_schema("newton:ovphysxTestOnly")])
     else:
-        roots = [str(ovphysx.codeless_schema_root())]
+        roots = [str(p) for p in physx_schema_paths()]
         if mode == "registered":
             roots.append(str(ovphysx.newton_schema_root()))
         elif mode == "registered-other-directory":
@@ -204,17 +205,17 @@ _CHILD_SCRIPT = textwrap.dedent(
             with warnings.catch_warnings():
                 warnings.simplefilter("error", RuntimeWarning)
                 try:
-                    physx.attach_ovstage(stage, read_ordinal=1)
+                    physx.wait_task(physx.attach_ovstage(stage, read_ordinal=1))
                 except RuntimeWarning as exc:
                     print("RAISED|" + str(exc).replace("\\n", " "), flush=True)
                 else:
                     print("RAISED|<nothing>", flush=True)
-            physx.attach_ovstage(stage, read_ordinal=1)
+            physx.wait_task(physx.attach_ovstage(stage, read_ordinal=1))
             print("RETRY_ATTACHED|ok", flush=True)
         else:
             attach_recording(physx, stage)
             # A second attach in the same process must not repeat the warning.
-            physx.detach_ovstage()
+            physx.wait_task(physx.detach_ovstage())
             attach_recording(physx, stage)
         for message in caught:
             print("WARN|" + message.replace("\\n", " "), flush=True)
@@ -222,13 +223,14 @@ _CHILD_SCRIPT = textwrap.dedent(
             print("LOG|" + message.replace("\\n", " "), flush=True)
         physx.step(1.0 / 60.0)
         physx.wait_all()
-        with physx.read(SimObjectType.ARTICULATION_JOINT, ["jointMaxVelocity"], scope=ObjectScope.ALL) as result:
+        with physx.read_sync(SimObjectType.ARTICULATION_JOINT, ["jointMaxVelocity"], scope=ObjectScope.ALL) as result:
             values = [float(v) for group in result.groups for tensor in group.tensors for v in np.ravel(tensor.numpy())]
-        physx.detach_ovstage()
+        physx.wait_task(physx.detach_ovstage())
         print("VALUES|" + json.dumps(values), flush=True)
         if extra_present is not None:
             print("EXTRA|" + json.dumps(extra_present), flush=True)
     finally:
+        result = None  # Drop borrowed read arrays before native instance destruction.
         physx.destroy()
         stage.destroy()
     """
@@ -277,7 +279,7 @@ def test_registered_newton_schema_is_honored_without_warning(tmp_path):
 
 def test_newton_schema_registered_from_another_directory_is_recognized(tmp_path):
     """ovstage keys registration on the plugin family: a complete copy registered from a
-    different directory before population satisfies the check."""
+    different directory before the first USD schema read satisfies the check."""
     out = _run_child(tmp_path, "registered-other-directory")
     assert not out["warns"], out["warns"]
     assert abs(out["value"] - 111.0) < 1e-3, out["value"]
@@ -287,7 +289,7 @@ def test_unregistered_newton_schema_warns_once_and_names_the_fix(tmp_path):
     out = _run_child(tmp_path, "unregistered")
     assert len(out["warns"]) == 1, out["warns"]
     message = out["warns"][0]
-    assert "was not registered with ovstage before the first population" in message
+    assert "was not registered with ovstage before the first USD schema read (population or export)" in message
     assert "newton_schema_root" in message
     assert "register_usd_schemas" in message
     assert "warnMissingNewtonSchema" in message
@@ -329,7 +331,7 @@ def test_opt_out_setting_silences_the_check(tmp_path, mode):
 
 
 def test_procedural_attach_does_not_register_a_schema_for_the_application(tmp_path):
-    """A stage authored through ovphysx.population is attached before any USD population.
+    """A stage authored through ovphysx.population is attached before any USD schema read.
     The check must leave the still-open registry alone: the application's later
     registration of its own Newton copy is the one USD uses, so the attribute only that
     copy defines populates, the joint limit is honoured, and no warning is emitted."""

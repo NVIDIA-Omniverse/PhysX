@@ -3,7 +3,12 @@
 
 /**
  * @implements REQ-INPUT-CORE-001
- * @covers AC-6 AC-12
+ * @covers AC-5 AC-6 AC-12 AC-13
+ */
+
+/**
+ * @implements REQ-INPUT-DEVICE-001
+ * @covers AC-3 AC-9 AC-10
  */
 
 #pragma once
@@ -37,30 +42,47 @@ class IPhysicsSource;
 struct ChangeBatch;
 } // namespace omni::physics::parse
 
+namespace omni::physx::usdparser { class AttachedStage; }
+
 namespace omni::physx
 {
 
-// The app -> physics write (ADR-0012), the return direction of IOvxPhysicsRead.h.
-// It reuses that header's query verbatim -- ovxQuery / ovxQueryDictionary /
-// ovxFetchQueryResult / ovxReleaseQuery -- and adds no selection of its own: a write
-// session reaches exactly the set the query matched, for ONE attribute.
-//
-// ONE ATTRIBUTE PER SESSION, unlike ovxReadAttributes which takes an array. Forced by
-// the group type: ovstage_map_group_t is prims/data/meta and carries no `attribute`,
-// `is_array` or `semantic` field, so a group from a multi-attribute session could not
-// say which attribute it represents -- linear and angular velocity would be
-// indistinguishable. ovstage's own map_attribute maps one attribute per session for the
-// same reason. Writing several attributes over one prim set means several sessions.
-
+// One parent write session owns every requested attribute's plans. Each fetched
+// group keeps its original ovstage pointer identity and names its request index.
 typedef uint64_t OvxWriteHandle;
 
-// Three-valued, mirroring OvxReadStatus: a distinct end-of-iteration and a real error
-// can each be forwarded upward. On any non-Ok status `*outGroup` is null.
+struct OvxWriteAttributeResult
+{
+    ovx_token_t attribute = OVX_INVALID_TOKEN;
+    // Planned groups (batches), not objects or tensor rows; no promise of commit success.
+    size_t groupCount = 0;
+};
+
+// Optional write-open summary. The caller owns this struct; attributes borrows
+// attributeCount write-owned rows until ovxReleaseWrite releases the session.
+// Copying this struct copies the attributes pointer, not its rows. Copy the rows before
+// release to retain them longer; their tokens still require the owner's dictionary.
+struct OvxWriteResult
+{
+    size_t totalPrimCount = 0; //!< Matched prim identities, not emitted rows or ready GPU objects.
+    size_t attributeCount = 0; //!< Original request length.
+    const OvxWriteAttributeResult* attributes = nullptr;
+};
+
+struct OvxFetchedWriteGroup
+{
+    const ovstage_map_group_t* group = nullptr;
+    size_t attributeIndex = SIZE_MAX;
+};
+
+// Four results distinguish a group, end of iteration, error and Busy. End/error
+// clear the group and set attributeIndex to SIZE_MAX; Busy preserves output and cursor.
 enum OvxWriteStatus : int32_t
 {
-    kOvxWriteStatusOk             = 0, //!< `*outGroup` points at the next group to fill.
-    kOvxWriteStatusEndOfIteration = 1, //!< all groups consumed (NOT an error); `*outGroup` null.
-    kOvxWriteStatusError          = 2, //!< bad handle / internal failure; `*outGroup` null.
+    kOvxWriteStatusOk             = 0, //!< `outGroup->group` points at the next group to fill.
+    kOvxWriteStatusEndOfIteration = 1, //!< all groups consumed (NOT an error); `outGroup->group` null.
+    kOvxWriteStatusBusy = 3, //!< runtime busy; output and cursor are unchanged.
+    kOvxWriteStatusError          = 2, //!< bad handle / internal failure; `outGroup->group` null.
 };
 
 // PIPELINE SUPPORT. Host scatter serves CPU and GPU-with-readback scenes. DirectGPU
@@ -76,18 +98,24 @@ enum OvxWriteStatus : int32_t
 // itself. See ADR-0012's 2026-08-27 (no auto-warm) and 2026-09-14 (mode split)
 // amendments.
 
+// Writes require idle selected-owner admission. Release is allowed during that
+// owner's pending interval. Callback reentry or concurrent owner entry returns
+// false without dropping ownership; retry outside the conflicting call.
 extern "C"
 {
 
-// WRITE (ovstage `map_attribute` analog): open a session over `query` for ONE attribute,
-// given as a string name (see OvxAttr) or an interned token. The write's attribute
-// vocabulary is its own -- a name accepted here need not be one the read emits, since
-// write-only control inputs such as forces and wrenches have no read counterpart.
-// Returns 0 on a bad query handle, a null attribute, an attribute the queried type does
-// not accept or that is not writable, or a scene whose pipeline the scatter does not
-// serve.
-OMNI_OVX_WRITE_API OvxWriteHandle ovxWriteAttribute(OvxOutputQueryHandle query,
-                                                    const ovx_string_or_token_t* attr);
+// An owner reset/reload that changes its record epoch invalidates existing write
+// sessions. Discard their groups and open a fresh query/session before writing.
+// Open a session for a nonempty attribute array. Token ids take precedence over
+// strings and resolve in the query owner's dictionary. Canonical duplicates and
+// unsupported/read-only attributes reject the entire plan before publication.
+// The optional summary's nested rows belong to the session until release; owner
+// teardown invalidates their tokens. A null outSummary skips optional row allocation,
+// token interning and query membership counting. No output is published on failure.
+OMNI_OVX_WRITE_API OvxWriteHandle ovxWriteAttributes(OvxOutputQueryHandle query,
+                                                    const ovx_string_or_token_t* attributes,
+                                                    size_t attributeCount,
+                                                    OvxWriteResult* outSummary = nullptr);
 
 // ITERATE (ovstage `fetch_map_next` analog): hand back the next group to fill.
 //
@@ -99,8 +127,9 @@ OMNI_OVX_WRITE_API OvxWriteHandle ovxWriteAttribute(OvxOutputQueryHandle query,
 // caller FILLS through data.tensors[i].data, which const permits since it does not
 // propagate through pointer members. No field of the struct is the caller's to assign.
 //
-// The group and its borrowed storage stay valid until that group is committed,
-// independent of further fetches; an intervening step does not invalidate a live group.
+// The group and its borrowed storage stay valid until that group's commit is
+// accepted or the session is released, independent of further fetches. Owner
+// teardown invalidates the session. An intervening step does not invalidate a live group.
 // DISABLING a body the group holds does, however, for a DEVICE-BACKED group: membership is fixed when
 // the group is handed out, so a disable landing before the commit leaves that body's now-invalid
 // DirectGPU row in the set and that commit is refused as a whole -- enabled peers included. Host-only
@@ -112,18 +141,18 @@ OMNI_OVX_WRITE_API OvxWriteHandle ovxWriteAttribute(OvxOutputQueryHandle query,
 // DirectGPU scene a disabled rigid dynamic has no device state and is omitted, exactly as
 // the read omits it (`disableSimulation` excepted). End-of-iteration with no group is
 // therefore indistinguishable HERE from "no matching body". To tell the two apart,
-// cross-check the SAME query this write was opened over: `ovxFetchQueryResult`'s
-// `total_prim_count` counts every matching prim regardless of disabled state (see
-// IOvxPhysicsRead.h), so a nonzero count with no group means the matches were filtered
-// out, not absent.
+// request the write-open summary: `totalPrimCount` counts every matching prim
+// regardless of disabled state, so a nonzero count with no group means the matches
+// were filtered out, not absent.
 OMNI_OVX_WRITE_API OvxWriteStatus ovxFetchWriteNext(OvxWriteHandle write,
-                                                    const ovstage_map_group_t** outGroup);
+                                                    OvxFetchedWriteGroup* outGroup);
 
 // Why a commit returned false. The bool alone cannot separate the two, and they call for
 // different things from a caller: a group this session never handed out was rejected before
 // anything ran, while a live group whose publish failed is spent either way.
 enum OvxCommitFailure : int32_t
 {
+    kOvxCommitFailureBusy    = 3, //!< retryable; the live group remains uncommitted.
     kOvxCommitFailureNone    = 0, //!< the commit succeeded; `outFailure` is only written on false.
     kOvxCommitFailureNotLive = 1, //!< unknown session, or a group unknown, foreign or already
                                   //!< committed. Rejected before any publish, so nothing was written.
@@ -135,14 +164,26 @@ enum OvxCommitFailure : int32_t
 // COMMIT (ovstage `unmap_group` analog): publish `group` and transfer ownership of its
 // buffers to physics. The caller must have filled EVERY mapped entry; there is no
 // fill-mask, so a partially filled group publishes whatever its unfilled entries hold.
-// After this the mapped pointers belong to physics and dereferencing them is undefined
-// behavior -- a raw data.tensors[i].data access makes no call this could reject.
+// Once a live group is accepted, its mapped pointers belong to physics even if
+// publication fails. Dereferencing them is undefined behavior -- a raw
+// data.tensors[i].data access makes no call this could reject. Busy and NotLive
+// refusals do not accept a group or consume a producer handoff.
 //
-// `writeDoneSync` is ovstage's own handoff: a non-zero `wait_event` is waited on, and
-// `{stream, 0}` -- queued work with no event -- still drains that stream. Only `{0, 0}`
-// asserts nothing is outstanding; a host-resident group does not imply it, since the
-// caller may have staged on its own stream. The runtime additionally orders the write
-// against an in-flight step.
+// `writeDoneSync` hands off producer completion; it does not select the engine's
+// consumer stream. Every nonzero field is honored before any backend preflight:
+// this call drains `stream`, then waits for `wait_event`, observing completion on
+// the host for both host and device groups. Only `{0, 0}` asserts nothing is
+// outstanding and makes no CUDA call. Host-resident storage alone does not imply it.
+// Context-relative stream sentinels resolve in the caller's current producer
+// context; this handoff does not push the engine context. Keep both supplied
+// handles valid until this call returns. A failed wait spends the group with
+// kOvxCommitFailurePublish, reads and publishes nothing, and makes release retain
+// its unsafe storage. The runtime additionally rejects a commit as Busy while
+// an owner step is in flight.
+//
+// The current inline handoff releases the process-wide output-cache mutex while
+// waiting, so independent owners can progress. It retains this owner's admission:
+// conflicting operations on the same owner return Busy until the commit returns.
 //
 // Returns false for a handle or group pointer it does not recognise as LIVE. Commit is
 // the mutation itself, so reporting success for a stale pointer would tell the caller
@@ -158,14 +199,19 @@ OMNI_OVX_WRITE_API bool ovxCommitGroup(OvxWriteHandle write,
                                        ovstage_cuda_sync_t writeDoneSync,
                                        OvxCommitFailure* outFailure = nullptr);
 
-// Release the session. Every group that was never committed is DISCARDED, not published,
-// which is why this takes no sync token -- there is nothing left to order against. A
-// caller that fails or throws mid-fill therefore publishes nothing from the group it was
-// filling, and forgetting to commit is a silent no-op rather than uninitialized data
-// reaching the solver. Committed groups are NOT rolled back.
+// Release the session. Every group that was never committed is discarded, not
+// published. Finish external CPU and CUDA work filling uncommitted groups before
+// release: this call has no producer completion token. Committed groups are not
+// rolled back; their storage belongs to the runtime, including after a failed
+// producer handoff. An accepted release ends all session borrows.
+// Direct runtime callers must release write sessions before detaching their
+// owner, while its dictionary is alive, to retire their prim-list references.
+// The public ovphysx facade performs this cleanup before detach, reset and destroy.
 //
 // Idempotent for an already-released or unknown handle, matching ovxReleaseRead.
-OMNI_OVX_WRITE_API void ovxReleaseWrite(OvxWriteHandle write);
+// False reports rejected admission (the session remains live) or a terminal release failure
+// (unsafe device buffers or any group with unproven producer completion are quarantined).
+OMNI_OVX_WRITE_API bool ovxReleaseWrite(OvxWriteHandle write);
 
 } // extern "C"
 
@@ -196,7 +242,7 @@ enum class DrainResult : int32_t
 // all-or-nothing holds: a batch with any skipped key is NotHandled as a whole. When NO key resolves the
 // batch is NotHandled either way.
 // Not a C entry: it takes references.
-OMNI_OVX_WRITE_API DrainResult applyOvstageValueBatch(::omni::physics::parse::IPhysicsSource& source,
+OMNI_OVX_WRITE_API DrainResult applyOvstageValueBatch(usdparser::AttachedStage& owner, omni::physics::parse::IPhysicsSource& source,
                                                       const ::omni::physics::parse::ChangeBatch& batch,
                                                       ::std::vector<uint32_t>* unresolvedRows = nullptr);
 

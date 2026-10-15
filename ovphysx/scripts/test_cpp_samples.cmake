@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-PACKAGING-OVSTAGE-001
+# @covers AC-5
+
 # ovphysx C++ sample tests.
 # Runs all C/C++ sample applications against the installed SDK (_install/).
 # Usage: cmake -P scripts/test_cpp_samples.cmake
@@ -12,6 +15,7 @@ cmake_minimum_required(VERSION 3.16)
 get_filename_component(SCRIPT_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
 include("${SCRIPT_DIR}/crossplatform_helpers.cmake")
 include("${SCRIPT_DIR}/build_common.cmake")
+include("${SCRIPT_DIR}/fetch_test_schemas.cmake")
 
 set(INSTALL_PATH "${PROJECT_ROOT}/_install")
 
@@ -62,7 +66,7 @@ if(NOT SKIP_STALENESS_CHECK)
         message(STATUS "CMake config not found, full install needed")
     else()
         set(LIB_NAME "${SHARED_LIB_PREFIX}ovphysx${SHARED_LIB_SUFFIX}")
-        set(BUILT_LIB "${PROJECT_ROOT}/_build/${PLATFORM_NAME}/${BUILD_TYPE_LOWER}/${LIB_NAME}")
+        set(BUILT_LIB "${STANDARD_OUTPUT_DIR}/${LIB_NAME}")
         set(INSTALLED_LIB "${PROJECT_ROOT}/_install/${INSTALL_RUNTIME_SUBDIR}/${LIB_NAME}")
         
         if(EXISTS "${BUILT_LIB}")
@@ -108,6 +112,14 @@ set(SAMPLES_EXCLUDED_ALWAYS
     articulation_chain_with_viewer
     hello_world_source_link    # uses add_subdirectory, tested separately by test_source_link.cmake
 )
+if(NOT DEFINED OVPHYSX_SKIP_GPU_PASSES AND DEFINED ENV{OVPHYSX_SKIP_GPU_PASSES})
+    set(OVPHYSX_SKIP_GPU_PASSES "$ENV{OVPHYSX_SKIP_GPU_PASSES}")
+endif()
+# The builder image has the CUDA toolkit. Without a driver, cudaSetDevice fails
+# and this sample exits 1. Skip it instead of failing the no-CUDA run.
+if(OVPHYSX_SKIP_GPU_PASSES)
+    list(APPEND SAMPLES_EXCLUDED_ALWAYS tensor_bindings_gpu_c)
+endif()
 
 set(C_SAMPLES_DIR "${PROJECT_ROOT}/tests/c_samples")
 set(C_SAMPLES_INTERNAL_DIR "${PROJECT_ROOT}/tests/c_samples_internal")
@@ -126,6 +138,25 @@ endif()
 set(SAMPLE_TOOLCHAIN_ARGS "")
 if(NOT SAMPLES_RUN_ONLY)
     ovphysx_pin_packaged_host_toolchain(SAMPLE_TOOLCHAIN_ARGS)
+endif()
+
+if(BASIC_WORKFLOW_SMOKE)
+    find_package(Python3 3.10 COMPONENTS Interpreter REQUIRED)
+    set(_WORKFLOW_MODE "")
+    if(SAMPLES_BUILD_ONLY)
+        set(_WORKFLOW_MODE --build-only)
+    elseif(SAMPLES_RUN_ONLY)
+        set(_WORKFLOW_MODE --run-only)
+    endif()
+    execute_process(
+        COMMAND "${Python3_EXECUTABLE}" "${SCRIPT_DIR}/test_basic_workflow.py"
+            --sdk-root "${INSTALL_PATH}" --ovstage-root "${OVPHYSX_OVSTAGE_ROOT}"
+            --build-root "${BUILD_PATH}" --cmake "${CMAKE_COMMAND}" ${_WORKFLOW_MODE}
+        RESULT_VARIABLE _WORKFLOW_RESULT
+    )
+    if(NOT _WORKFLOW_RESULT STREQUAL "0")
+        message(FATAL_ERROR "basic-workflow C sample failed")
+    endif()
 endif()
 
 set(SAMPLES_RUN 0)
@@ -221,6 +252,19 @@ foreach(SAMPLE_DIR ${SAMPLE_DIRS})
     endif()
     list(GET SAMPLE_EXECUTABLE_LIST 0 SAMPLE_EXECUTABLE)
     message(STATUS "  Found executable: ${SAMPLE_EXECUTABLE}")
+
+    # Exercise the generated Windows launcher.
+    set(SAMPLE_LAUNCH_COMMAND "${SAMPLE_EXECUTABLE}")
+    if(WIN32)
+        get_filename_component(_sample_exe_dir "${SAMPLE_EXECUTABLE}" DIRECTORY)
+        set(_sample_launcher "${_sample_exe_dir}/run_${SAMPLE_NAME}.cmd")
+        if(NOT EXISTS "${_sample_launcher}")
+            message(FATAL_ERROR
+                "${SAMPLE_NAME}: ${_sample_launcher} was not generated. The sample must call "
+                "ovphysx_set_ovstage_runtime_env(<target>) so it can find OVStage at run time.")
+        endif()
+        set(SAMPLE_LAUNCH_COMMAND "${_sample_launcher}")
+    endif()
     
     # Run with a minimal PATH of system directories plus the CUDA Toolkit, if
     # installed. This verifies the SDK does not depend on DLLs from the build
@@ -236,12 +280,7 @@ foreach(SAMPLE_DIR ${SAMPLE_DIRS})
             "${INSTALL_PATH}/${INSTALL_RUNTIME_SUBDIR}"
             "${INSTALL_PATH}/plugins"
             "${INSTALL_PATH}/plugins/bin/deps"
-            "${OVPHYSX_OVSTAGE_RUNTIME_DIR}"
-            # ovstage.dll statically imports the USD monolith, which lives in
-            # OVStage's plugins/ dir and which the SDK does not ship
-            # (REQ-PACKAGING-USDFREE-001 AC-4). Linux resolves it via ovstage's
-            # RUNPATH ($ORIGIN/plugins). Windows needs it on PATH.
-            "${OVPHYSX_OVSTAGE_RUNTIME_DIR}/plugins"
+            # The generated launcher must supply the OVStage paths.
             "$ENV{SystemRoot}\\System32"
             "$ENV{SystemRoot}"
         )
@@ -270,7 +309,7 @@ foreach(SAMPLE_DIR ${SAMPLE_DIRS})
     endif()
 
     execute_process(
-        COMMAND ${CMAKE_COMMAND} -E env ${_ENV_OVERRIDE} "${SAMPLE_EXECUTABLE}"
+        COMMAND ${CMAKE_COMMAND} -E env ${_ENV_OVERRIDE} "${SAMPLE_LAUNCH_COMMAND}"
         WORKING_DIRECTORY "${SAMPLE_WORKING_DIRECTORY}"
         TIMEOUT 60
         RESULT_VARIABLE SAMPLE_RESULT

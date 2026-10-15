@@ -7,7 +7,7 @@ ovphysx's own code touches no driver under CPU mode. TWO dependencies outside ov
 open it, and this file is scoped to that boundary: it asserts what ovphysx controls and records
 what it does not.
 
-1. **Warp** (Python read and write paths). ``read()`` and ``write()`` expose ``warp.array``, and
+1. **Warp** (Python read and write paths). ``read_sync()`` and ``write_sync()`` expose ``warp.array``, and
    BUILDING an array, on any device including ``cpu``, initializes the Warp runtime, which
    loads the driver on a CUDA-enabled Warp build. Importing Warp is not what does it; constructing
    the first array is. There is no runtime switch: ``WARP_DISABLE_CUDA`` does not exist, and
@@ -145,7 +145,7 @@ def test_startup_and_instance_creation_are_driverless():
 def test_cpu_mode_read_that_resolves_nothing_never_opens_the_cuda_driver():
     """The guarantee holds as long as the read has no array to build.
 
-    A read that drains to END_OF_ITERATION with no group never reaches array construction, so the
+    A read that drains to successful null-group EOF never reaches array construction, so the
     Warp runtime is never initialized and the READ opens no driver.
 
     Scoped to the read: the stage load before it may already have opened the driver via ovstage's
@@ -153,9 +153,9 @@ def test_cpu_mode_read_that_resolves_nothing_never_opens_the_cuda_driver():
     on that load, before this case reaches the step it exists to cover.
     """
     # An articulation-joint read on a scene holding only rigid bodies: the session drains to
-    # END_OF_ITERATION with no group, which is the shape that must stay driverless.
+    # successful null-group EOF, which is the shape that must stay driverless.
     out = _run_child(
-        'with sdk.read(SimObjectType.ARTICULATION_JOINT, ["jointPosition"],\n'
+        'with sdk.read_sync(SimObjectType.ARTICULATION_JOINT, ["jointPosition"],\n'
         '               scope=ObjectScope.ALL) as r:\n'
         "    assert not r.groups, r.groups\n"
     )
@@ -165,6 +165,25 @@ def test_cpu_mode_read_that_resolves_nothing_never_opens_the_cuda_driver():
         "an empty read must not change whether the CUDA driver is loaded "
         f"(before={out['DRIVER_BEFORE_READ']}, after={out['DRIVER_AFTER_READ']})"
     )
+
+
+def _libcuda_loadable():
+    """Whether the dynamic linker can map the CUDA driver.
+
+    Distinct from "not mapped yet": /proc/self/maps can be clean because nothing
+    has opened the driver, while the library is still on the loader path. Both
+    sonames count. Warp and ovstage open ``libcuda.so.1``; the maps needle is the
+    ``libcuda.so`` prefix of either name.
+    """
+    import ctypes
+
+    for name in ("libcuda.so.1", "libcuda.so"):
+        try:
+            ctypes.CDLL(name)
+        except OSError:
+            continue
+        return True
+    return False
 
 
 def test_cpu_mode_non_empty_read_is_driverless_exactly_when_warp_is_built_without_cuda():
@@ -177,13 +196,16 @@ def test_cpu_mode_non_empty_read_is_driverless_exactly_when_warp_is_built_withou
         is the case that must never regress.
       - Warp built WITH CUDA -> the driver opens when the first array is built. ovphysx cannot
         prevent it, so its obligation is to SAY so rather than let it be found in a trace.
+        That observation needs a loadable libcuda.so. If the linker cannot map one, the
+        "driver becomes mapped" assertion is skipped. A library that loads and stays
+        unmapped is still a failure.
 
     Pinning "the driver loads" unconditionally would have encoded the defect as the contract:
     a Warp fix, or a CI runner switching to the conda CPU-only build, would fail the test for
     doing the right thing.
     """
     out = _run_child(
-        'with sdk.read(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as r:\n'
+        'with sdk.read_sync(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as r:\n'
         "    assert r.groups and r.groups[0].tensors\n"
     )
     assert out["WARP_IMPORTED"] == "True"
@@ -200,6 +222,10 @@ def test_cpu_mode_non_empty_read_is_driverless_exactly_when_warp_is_built_withou
             # contribution is no longer observable. Skipped rather than asserted: "still loaded"
             # would pass whatever Warp did, which is worse than admitting the arm did not run.
             pytest.skip("driver already loaded before the read (ovstage); Warp's effect not observable")
+        if not _libcuda_loadable():
+            pytest.skip(
+                "libcuda.so is not available to load, so Warp mapping the driver is not observable"
+            )
         assert out["DRIVER_AFTER_READ"] == "True", (
             "Warp is built with CUDA but building the first array did not open the driver -- Warp "
             "may have gained a driverless path. Re-check ADR-0023 and the ovphysx_set_cpu_mode "
@@ -210,10 +236,14 @@ def test_cpu_mode_non_empty_read_is_driverless_exactly_when_warp_is_built_withou
 
 
 def test_cpu_mode_non_empty_write_is_driverless_exactly_when_warp_is_built_without_cuda():
-    """Building the first CPU write array has the same Warp-build boundary as read."""
+    """Building the first CPU write array has the same Warp-build boundary as read.
+
+    The CUDA-enabled arm skips only when libcuda.so cannot be loaded. A loadable
+    library that stays unmapped still fails.
+    """
     out = _run_child(
         "import warp as wp\n"
-        'with sdk.write(SimObjectType.RIGID_BODY, "position", scope=ObjectScope.ALL) as w:\n'
+        'with sdk.write_sync(SimObjectType.RIGID_BODY, "position", scope=ObjectScope.ALL) as w:\n'
         "    tensors = [t for g in w.groups for t in g.tensors]\n"
         "    assert tensors and all(t.size > 0 for t in tensors)\n"
         "    assert all(isinstance(t, wp.array) and t.device.is_cpu for t in tensors)\n"
@@ -229,6 +259,10 @@ def test_cpu_mode_non_empty_write_is_driverless_exactly_when_warp_is_built_witho
     elif has_cuda == "True":
         if out["DRIVER_BEFORE_READ"] == "True":
             pytest.skip("driver already loaded before the write (ovstage); Warp's effect not observable")
+        if not _libcuda_loadable():
+            pytest.skip(
+                "libcuda.so is not available to load, so Warp mapping the driver is not observable"
+            )
         assert out["DRIVER_AFTER_READ"] == "True", (
             "Warp is built with CUDA but building the first write array did not open the driver -- "
             "Warp may have gained a driverless path. Re-check the CPU-mode wording."

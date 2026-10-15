@@ -140,12 +140,10 @@ set(PHYSX_PLUGIN_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/usdLoad/SpatialTendon.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/usdLoad/Vehicle.h
     # utils
-    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/utils/Nvtx.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/utils/OmniRenderBuffer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/utils/Pair.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/utils/PrimPathGrammar.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/utils/Profile.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/utils/ProfileZoneBalance.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/utils/SplinesCurve.h
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/utils/Time.h
 )
@@ -165,17 +163,32 @@ set(PHYSX_PLUGIN_SOURCE
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/ContactReport.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/CookingDataAsync.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/MeshCache.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/NativeParameters.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/NativeJointControl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/NativeCct.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/NativeEvents.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/NativeCooking.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/NativeSampling.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/NativeInspection.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/NativeInteraction.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/NativeQueries.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/NativeConfiguration.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/NativeVehicle.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/NativeDebug.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/OvdDecode.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/OmniPhysX.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/PhysX.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/PhysXCooking.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/PhysXCustomGeometry.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/PhysXCustomJoint.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/PhysXDebugVisualization.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/DebugRenderSession.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/PhysxJoint.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/PhysXMirror.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/PhysXPrivate.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/OvxPhysicsShared.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/OvxPhysicsRead.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/ContactReadReduction.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/OvxPhysicsWrite.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/PhysXReplicator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/plugins/PhysXScene.cpp
@@ -424,10 +437,6 @@ target_compile_definitions(OvruntimePhysX PRIVATE
 # OvruntimePhysX is a static archive. Its consumers must reference the standalone
 # ovstage output-read entry points directly rather than through MSVC import thunks.
 target_compile_definitions(OvruntimePhysX PUBLIC "OMNI_PHYSX_OVX_STATIC")
-
-if(OVRUNTIME_NVTX_AVAILABLE)
-    target_compile_definitions(OvruntimePhysX PRIVATE "OMNI_PHYSX_NVTX_ENABLED=1")
-endif()
 
 # Link dependencies
 target_link_libraries(OvruntimePhysX

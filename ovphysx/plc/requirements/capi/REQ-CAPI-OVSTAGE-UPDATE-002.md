@@ -10,21 +10,20 @@ owner: ovphysx
 
 ## Description
 
-`ovphysx_update_from_ovstage()` preserves available synchronous runtime error
+`ovphysx_update_from_ovstage()` preserves available runtime error
 detail when the native update fails. The native result remains authoritative;
 capturing a diagnostic alone does not make an update fail.
 
 ## Acceptance Criteria
 
 - AC-1: **Failure cause.** When `IPhysxSimulation::updateFromOvStage()` returns
-  false, the C API returns `OVPHYSX_API_ERROR` and `ovphysx_get_last_error()`
-  contains the update context and the first available runtime error captured
-  during that call.
+  false, the accepted task fails. Its collected error contains the update
+  context and the first available runtime error captured during execution.
 - AC-2: **Context fallback.** If the failed native update records no detail,
   the public error contains the update context without reusing an earlier
   operation's diagnostic.
 - AC-3: **Successful update.** When the native update returns true, the C API
-  returns `OVPHYSX_API_SUCCESS` and clears the public error, including when a
+  task completes successfully, including when a
   recoverable runtime diagnostic was captured during the call.
 
 ## Test References
@@ -36,8 +35,7 @@ capturing a diagnostic alone does not make an update fail.
 ## Code References
 
 - ovphysx/src/ovphysx/ovphysx.cpp (`ovphysx_update_from_ovstage`; AC-1, AC-2, AC-3)
-- ovphysx/src/include/internal/sdk/ovphysxSDK.hpp (shared `set_runtime_error`
-  and `success` helpers used by the update boundary)
+- ovphysx/src/include/internal/sdk/TaskContext.hpp (retained execution errors)
 
 ## Dependencies
 

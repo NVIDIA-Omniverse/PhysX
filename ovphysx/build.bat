@@ -103,14 +103,11 @@ echo   -g, --generate     Configure only (no build)
 echo.
 echo Project-specific flags:
 echo   --devphysx         Build PhysX SDK from source
-echo   --devschema        Use locally-built physics schema
+echo   --devschema        Build and select a local schema provider wheel
 echo   --benchmarks       Build the opt-in benchmark suite (tests/benchmarks/)
 echo   --require-benchmark-cuda
 echo                      Reject a CPU-only benchmark configuration
 echo   -DOVPHYSX_USE_RELEASE_RUNTIME_DEPS=ON  Use release runtime deps for Debug builds
 echo.
-echo Changing --devphysx or --devschema needs a clean rebuild:
-echo the flag combination selects a build flavor, and incremental
-echo builds across a flavor change are not supported. Add --rebuild
-echo whenever the flags differ from the previous build.
+echo Add --rebuild when changing --devphysx.
 goto :eof

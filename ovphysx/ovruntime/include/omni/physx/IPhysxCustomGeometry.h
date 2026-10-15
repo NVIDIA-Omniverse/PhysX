@@ -1,6 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-CUSTOM-LIFETIME-001
+// @covers AC-1 AC-2 AC-3
+
+// @implements REQ-ATTACH-IO-001
+// @covers AC-3
+
 /**
  * @implements REQ-PUBLICAPI-001
  * @covers AC-10 AC-11
@@ -8,8 +14,8 @@
 
 #pragma once
 
-#include <carb/Defines.h>
-#include <carb/Types.h>
+#include <cstddef>
+#include <cstdint>
 
 #include <omni/physics/AttachHandle.h>
 #include <omni/physics/parse/Handles.h> // ObjectKey
@@ -27,7 +33,7 @@ static const size_t kInvalidCustomGeometryRegId = 0;
 ///
 /// \param[in] key ObjectKey of the UsdGeomGPrim prim.
 /// \param[in] attachHandle Attach the geometry belongs to (matches @ref
-/// IPhysxSimulation::getAttachHandle()).
+/// IPhysxSimulation::attachOvstage()).
 /// \param[in] typeId Custom geometry typeId
 /// \param[in] userData User data passed to ICustomGeometryCallback struct
 /// \return  User pointer that gets provided for each implementation function.
@@ -40,7 +46,13 @@ typedef void* (*CreateCustomGeometryFn)(omni::physics::parse::ObjectKey key,
 ///
 /// \param[in] key ObjectKey of the geom prim.
 /// \param[in] userData User data passed to ICustomGeometryCallback struct
-typedef void (*ReleaseCustomGeometryFn)(omni::physics::parse::ObjectKey key, void* userData);
+typedef void (*ReleaseCustomGeometryFn)(omni::physics::parse::ObjectKey key, AttachHandle attachHandle, void* userData);
+
+/// Release the exact state returned by create. Unlike the legacy key-only
+/// callback, this distinguishes several shapes created for one source prim.
+/// When provided, this callback replaces releaseCustomGeometryFn.
+typedef void (*ReleaseCustomGeometryObjectFn)(omni::physics::parse::ObjectKey key,
+    AttachHandle attachHandle, void* userObject, void* userData);
 
 /// Compute local bounds function
 ///
@@ -191,6 +203,7 @@ struct ICustomGeometryCallback
     ComputeCustomGeometryMassPropertiesFn computeCustomGeometryMassPropertiesFn = { nullptr };
     UseCustomGeometryPersistentContactManifoldFn useCustomGeometryPersistentContactManifoldFn = { nullptr };
     void* userData = { nullptr };
+    ReleaseCustomGeometryObjectFn releaseCustomGeometryObjectFn = { nullptr };
 };
 
 struct IPhysxCustomGeometry
@@ -204,13 +217,18 @@ struct IPhysxCustomGeometry
     /// \param[in] geometrySchemaAPIToken SchemaAPI applied to the UsdGeomGPrim together with the
     /// UsdPhysicsCollisionAPI. \param[in] geometryCallback Custom geomtry callbacks that will get fired. \return
     /// Registration id, used for unregister. Returns kInvalidCustomGeometryRegId on failure.
-    size_t(CARB_ABI* registerCustomGeometry)(const char* geometrySchemaAPIToken,
+    size_t(* registerCustomGeometry)(const char* geometrySchemaAPIToken,
                                              ICustomGeometryCallback& geometryCallback);
 
     /// Unregister custom geometry
     ///
     /// \param[in] id Registration id
-    void(CARB_ABI* unregisterCustomGeometry)(size_t id);
+    void(* unregisterCustomGeometry)(size_t id);
+
+    /// Remove only when no object, callback or registry snapshot can use this
+    /// type. False means busy or unknown id. Keep plugin code/context loaded
+    /// until success. The legacy void operation is not a safe unload gate.
+    bool(* tryUnregisterCustomGeometry)(size_t id);
 };
 
 } // namespace physx

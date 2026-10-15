@@ -4,24 +4,28 @@
 # Rendering Handoff
 
 ovphysx is a headless simulation SDK — it has no built-in renderer.
-To visualize simulation state, you read data back through the session read API (`PhysX.read`) and hand it to an external tool such as [Rerun](https://rerun.io) or the ovrtx renderer.
+To visualize simulation state, you read data back through the session read API (`PhysX.read_sync` in this sample) and hand it to an external tool such as [Rerun](https://rerun.io) or the ovrtx renderer.
 
 This tutorial shows the pattern using Rerun: populate an ovstage scene from USD and attach it, step the simulation, and stream rigid body transforms to a browser-based viewer.
 
 ## Key Idea
 
 Rerun does not read USD.
-The sample explicitly logs all visual geometry to Rerun from the simulation data returned by `PhysX.read`:
+The sample explicitly logs all visual geometry to Rerun from the simulation data returned by `PhysX.read_sync`:
 
-- **Falling cubes** — logged each frame as `rr.Boxes3D` with positions and quaternions from `PhysX.read` on the rigid-body `position` and `orientation` attributes.
+- **Falling cubes** — logged each frame as `rr.Boxes3D` with positions and quaternions from `PhysX.read_sync` on the rigid-body `position` and `orientation` attributes.
 - **Ground plane** — logged once as a static flat box for visual context.
 
 This is the core of the render handoff pattern: ovphysx owns the simulation, you log what you need to your visualization tool.
 
+For scaled content, pair the read orientation with the decomposed world scale,
+not the authored scale. See [Signed scale and body orientation](../read_write/data_model.md#signed-scale-and-body-orientation)
+for the reconstruction rule and orientation-write convention.
+
 ## Two Ways to Hand Off, and What Each Populates
 
 - **Tensor handoff (this tutorial).** The viewer never reads the Stage — Rerun
-  receives transforms from `PhysX.read` and the sample supplies its own
+  receives transforms from `PhysX.read_sync` and the sample supplies its own
   geometry. The sample USD is non-instanced, so `domains=PopulationDomain.PHYSICS`
   is enough here; for arbitrary content prefer `ALL`.
 - **Shared Stage.** A renderer such as ovrtx draws from the same Stage, so
@@ -39,7 +43,7 @@ This is the core of the render handoff pattern: ovphysx owns the simulation, you
 
 This complete sample starts a Rerun web viewer, attaches a USD scene, logs the
 static ground plane once, then steps the simulation and logs the rigid-body
-transforms from `PhysX.read` as `rr.Boxes3D` on every frame:
+transforms from `PhysX.read_sync` as `rr.Boxes3D` on every frame:
 
 ```{literalinclude} ../../tests/python_samples_extra/visual_rerunio_sample/visualize_rigid_bodies.py
 :language: python

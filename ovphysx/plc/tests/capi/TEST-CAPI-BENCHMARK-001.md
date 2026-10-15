@@ -89,6 +89,11 @@ operations, semantic gates, or row cardinality are wrong.
   preserves the exact process return value for both success and failure. An
   external classifier can consume that value without parsing the driver log
   (REQ AC-4).
+- Windows benchmark smoke must exit zero after writing its complete report.
+  The executable releases its own static Carbonite framework before CRT
+  destruction. The smoke runner test supplies a complete report followed by
+  an access-violation status and requires failure, so report completeness cannot
+  conceal a shutdown crash (REQ AC-4).
 - A failed ovphysx bootstrap leaves no instance for any row to measure, so the
   harness records the fault, runs no row, publishes nothing, and exits nonzero
   rather than emitting a report of zeroes. There is no supported way to make
@@ -131,5 +136,6 @@ operations, semantic gates, or row cardinality are wrong.
   the attachment and warm-up window. **Coverage limitation:** all six
   requested-GPU Authoring rows reuse the same detector by inspection; this
   contract does not separately inject a capacity warning into each row.
-  TEST-CAPI-BENCHMARK-004's temporary warning mutations exercise the shared
-  detector's fallback and capacity paths (REQ AC-4, AC-5).
+  `BenchmarkFailureTest` checks capacity-string classification only; it does
+  not exercise the armed callback or warning-to-row failure path. That shared
+  detector integration remains unvalidated by these tests (REQ AC-4, AC-5).

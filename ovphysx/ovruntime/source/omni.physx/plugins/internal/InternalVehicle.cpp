@@ -1,6 +1,14 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-VEHICLE-CONTROL-001
+// @covers AC-2 AC-3
+
+// @implements REQ-READ-VEHICLE-001
+// @covers AC-9
+// @implements REQ-INPUT-COVERAGE-001
+// @covers AC-20
+
 /**
  * @implements REQ-PUBLICAPI-001
  * @covers AC-27
@@ -21,9 +29,9 @@ namespace
 {
 // Local scale for `key` through the source, for the no-prim case in
 // WheelTransformManagementEntry::init -- pxr-free; it is the no-backing-stage fallback.
-carb::Float3 localScaleFromSource(omni::physics::parse::ObjectKey key)
+carb::Float3 localScaleFromSource(const AttachedStage& attachedStage, omni::physics::parse::ObjectKey key)
 {
-    AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    const AttachedStage* as = &attachedStage;
     if (!as || !key.valid())
         return { 1.0f, 1.0f, 1.0f };
     bool resetsXformStack = false;
@@ -35,9 +43,9 @@ carb::Float3 localScaleFromSource(omni::physics::parse::ObjectKey key)
 // Diagnostic-only path text for a material key (never for identity/lookup) -- routes through
 // AttachedStage::textFor(), which works for every source
 // (InternalTireFrictionTable::create()'s "material not found" log below is not itself USD-only).
-const char* textOf(omni::physics::parse::ObjectKey key)
+const char* textOf(const AttachedStage& attachedStage, omni::physics::parse::ObjectKey key)
 {
-    AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    const AttachedStage* as = &attachedStage;
     return as ? as->textFor(key) : "";
 }
 } // namespace
@@ -188,7 +196,7 @@ InternalVehicle::~InternalVehicle()
     }
 }
 
-void InternalVehicle::WheelTransformManagementEntry::init(omni::physics::parse::ObjectKey wheelRootKey_,
+void InternalVehicle::WheelTransformManagementEntry::init(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey wheelRootKey_,
                                                           omni::physics::parse::ObjectKey shapeKey_,
                                                           const PxShape* shape_,
                                                           usdparser::ObjectId shapeId)
@@ -208,7 +216,7 @@ void InternalVehicle::WheelTransformManagementEntry::init(omni::physics::parse::
 
         if (geom.getType() == PxGeometryType::eCONVEXCORE)
         {
-            omni::physx::internal::InternalPhysXDatabase& db = omni::physx::OmniPhysX::getInstance().getInternalPhysXDatabase();
+            omni::physx::internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
             const omni::physx::internal::InternalDatabase::Record& shapeRecord = db.getRecords()[shapeId];
             if (shapeRecord.mType == omni::physx::PhysXType::ePTShape)
             {
@@ -221,7 +229,7 @@ void InternalVehicle::WheelTransformManagementEntry::init(omni::physics::parse::
     // Normalize the destination's xform-op stack and read back its local scale
     // through the write sink (no destination, e.g. an ovstage attach, just means an
     // absent/null sink, same as eNoDestination below).
-    AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    AttachedStage* as = &attachedStage;
     omni::physics::parse::IPhysicsDataWrite* dw = as ? as->getDataWrite() : nullptr;
 
     bool wheelScaleFromPrim = false;
@@ -232,7 +240,7 @@ void InternalVehicle::WheelTransformManagementEntry::init(omni::physics::parse::
         if (result == omni::physics::parse::WheelScaleReadResult::eScaleMissing)
         {
             CARB_LOG_ERROR("PhysX Vehicle: wheel attachment prim transform has no scale (\"%s\"). Make sure the transform is writable.\n",
-                textOf(wheelRootKey));
+                textOf(attachedStage, wheelRootKey));
         }
     }
     // wheelRootParentXformKey is consumed only by InternalScene.cpp's per-frame
@@ -246,7 +254,7 @@ void InternalVehicle::WheelTransformManagementEntry::init(omni::physics::parse::
     {
         // No destination to sanitize or author into; the scale still has to be right
         // because it travels with the wheel pose.
-        scale = localScaleFromSource(wheelRootKey);
+        scale = localScaleFromSource(attachedStage, wheelRootKey);
     }
 
     if (shape_ && (wheelRootKey != shapeKey))
@@ -261,12 +269,12 @@ void InternalVehicle::WheelTransformManagementEntry::init(omni::physics::parse::
             if (result == omni::physics::parse::WheelScaleReadResult::eScaleMissing)
             {
                 CARB_LOG_ERROR("PhysX Vehicle: wheel attachment collision prim transform has no scale (\"%s\"). Make sure the transform is writable.\n",
-                    textOf(shapeKey));
+                    textOf(attachedStage, shapeKey));
             }
         }
         if (!shapeScaleFromPrim)
         {
-            shapeScale = localScaleFromSource(shapeKey);
+            shapeScale = localScaleFromSource(attachedStage, shapeKey);
         }
     }
 }
@@ -283,7 +291,7 @@ void InternalVehicle::restoreInitialProperties()
         // Controller restore authors back through the write sink. A non-USD/ovstage
         // attach (or one with no active source/write sink) has nothing to restore
         // into, and every write*Attribute call below is a no-op in that case.
-        AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+        AttachedStage* as = &mInternalScene.getAttachedStage();
         omni::physics::parse::IPhysicsDataWrite* dw = as ? as->getDataWrite() : nullptr;
         if (!dw)
             return;
@@ -677,6 +685,22 @@ bool InternalVehicle::isRawWheelControl() const
     return mPhysXVehicle && mPhysXVehicle->getType() == PhysXVehicleType::eRAW_WHEEL_CONTROL;
 }
 
+bool InternalVehicle::hasDrive() const
+{
+    return mPhysXVehicle && (mPhysXVehicle->getType() == PhysXVehicleType::eDIRECT_DRIVE ||
+                             mPhysXVehicle->getType() == PhysXVehicleType::eENGINE_DRIVE);
+}
+
+bool InternalVehicle::hasEngineDrive() const
+{
+    return mPhysXVehicle && mPhysXVehicle->getType() == PhysXVehicleType::eENGINE_DRIVE;
+}
+
+bool InternalVehicle::isTank() const
+{
+    return hasEngineDrive() && static_cast<const PhysXVehicleEngineDrive*>(mPhysXVehicle)->isTank();
+}
+
 void InternalVehicle::setDriveTorque(const uint32_t wheelIndex, const float driveTorque)
 {
     CARB_ASSERT(mPhysXVehicle->getType() == PhysXVehicleType::eRAW_WHEEL_CONTROL);
@@ -813,7 +837,13 @@ void InternalVehicle::getWheelState(const uint32_t wheelIndex, omni::physx::Vehi
     state.tireForce = fromPhysX(mPhysXVehicle->getTireForce(wheelIndex));
 
     const bool isSleeping = mPhysXVehicle->isSleeping();
-    const bool isOnGround = mPhysXVehicle->isWheelOnGround(wheelIndex) && (!isSleeping);
+    // @implements REQ-VEHICLE-CONTROL-001
+    // @covers AC-2 AC-3
+    // Source updates can delete ground after the last step. Test the record epoch before touching
+    // cached actor/shape/material pointers, including when an allocator reuses an object's address.
+    const bool groundRecordsCurrent =
+        mGroundQueryRecordEpoch == mInternalScene.getAttachedStage().getInternalPhysXDatabase().recordEpoch();
+    const bool isOnGround = groundRecordsCurrent && mPhysXVehicle->isWheelOnGround(wheelIndex) && (!isSleeping);
 
     state.isOnGround = isOnGround;
 
@@ -865,7 +895,7 @@ void InternalVehicle::getWheelState(const uint32_t wheelIndex, omni::physx::Vehi
 ::physx::PxVehiclePhysXMaterialFrictionParams InternalTireFrictionTable::sDefaultMaterialFrictionTable;
 InternalTireFrictionTable::DefaultInitializer InternalTireFrictionTable::sDefaultInitializer;
 
-InternalTireFrictionTable* InternalTireFrictionTable::create(const TireFrictionTableDesc& tireFrictionTableDesc,
+InternalTireFrictionTable* InternalTireFrictionTable::create(const AttachedStage& attachedStage, const TireFrictionTableDesc& tireFrictionTableDesc,
     InternalPhysXDatabase& internalDatabase)
 {
     CARB_ASSERT(tireFrictionTableDesc.frictionValues.size() == tireFrictionTableDesc.materialIds.size());
@@ -899,14 +929,14 @@ InternalTireFrictionTable* InternalTireFrictionTable::create(const TireFrictionT
                         {
                             CARB_LOG_ERROR(
                                 "PhysX Vehicle: tire friction table: referenced material \"%s\" could not be found (most likely it has not been created).\n",
-                                textOf(tireFrictionTableDesc.materialPaths[i]));
+                                textOf(attachedStage, tireFrictionTableDesc.materialPaths[i]));
                         }
                     }
                     else
                     {
                         CARB_LOG_ERROR(
                             "PhysX Vehicle: tire friction table: referenced material \"%s\" could not be found (most likely it has not been created).\n",
-                            textOf(tireFrictionTableDesc.materialPaths[i]));
+                            textOf(attachedStage, tireFrictionTableDesc.materialPaths[i]));
                     }
 
                     materialFrictionPairs[i].material = material;
@@ -983,10 +1013,12 @@ void InternalVehicleWheelAttachment::release(const bool disableWheel)
 
 void InternalVehicleWheelAttachment::restoreInitialProperties()
 {
+    if (!mVehicle)
+        return;
     // Controller restore authors back through the write sink; a non-USD/ovstage attach
     // (or one with no active write sink) has nothing to restore into, and every
     // write*Attribute call below is a no-op in that case.
-    AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    AttachedStage* as = &mVehicle->mInternalScene.getAttachedStage();
     omni::physics::parse::IPhysicsDataWrite* dw = as ? as->getDataWrite() : nullptr;
     if (!dw)
         return;

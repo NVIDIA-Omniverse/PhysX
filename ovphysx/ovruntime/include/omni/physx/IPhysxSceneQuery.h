@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-ATTACH-IO-001
+ * @covers AC-2
+ *
  * @implements REQ-PUBLICAPI-001
  * @covers AC-41
  */
@@ -11,6 +14,7 @@
 #include <carb/Defines.h>
 #include <carb/Types.h>
 
+#include <omni/physics/AttachHandle.h>
 #include <omni/physics/parse/Handles.h> // ObjectKey
 
 #include "PhysxConvexMesh.h"
@@ -195,7 +199,12 @@ using RaycastHitReportFn = std::function<bool(const RaycastHit& hit)>; // return
 using SweepHitReportFn = std::function<bool(const SweepHit& hit)>; // return True to continue traversal, False to stop
                                                                    // traversal
 
-/// Scene query interface
+/// Scene query interface. Every query selects exactly one live attachment.
+/// Calls made during an outstanding simulation interval or from a runtime callback
+/// return false/zero, leave hit outputs unchanged and invoke no report callbacks.
+/// Query report callbacks run under execution admission and cannot re-enter physics.
+/// Zero, stale, and reserved handles return no hits and never fall back to another
+/// attachment. Object keys and hit identities are local to the supplied owner.
 struct IPhysxSceneQuery
 {
     // Raycast physics scene, return the closest hit found
@@ -205,7 +214,7 @@ struct IPhysxSceneQuery
     //\param[out] hit	    Raycast hit report
     //\param[in] bothSides	If mesh both triangle sides should be checked.
     //\return True if hit was found
-    bool(CARB_ABI* raycastClosest)(
+    bool(CARB_ABI* raycastClosest)(AttachHandle attach,
         const carb::Float3& origin, const carb::Float3& unitDir, float distance, RaycastHit& hit, bool bothSides);
 
     // Raycast physics scene, returns all hits found in a raycast callback
@@ -215,7 +224,7 @@ struct IPhysxSceneQuery
     //\param[in] reportFn   Scene query hit report function, return True to continue traversal, False to stop traversal
     //\param[in] bothSides	If mesh both triangle sides should be checked.
     //\return True if hit was found
-    bool(CARB_ABI* raycastAll)(const carb::Float3& origin,
+    bool(CARB_ABI* raycastAll)(AttachHandle attach, const carb::Float3& origin,
                                const carb::Float3& unitDir,
                                float distance,
                                RaycastHitReportFn reportFn,
@@ -229,7 +238,7 @@ struct IPhysxSceneQuery
     //\param[out] hit	    Sweep hit report
     //\param[in] bothSides	If mesh both triangle sides should be checked.
     //\return True if hit was found
-    bool(CARB_ABI* sweepSphereClosest)(float radius,
+    bool(CARB_ABI* sweepSphereClosest)(AttachHandle attach, float radius,
                                        const carb::Float3& origin,
                                        const carb::Float3& unitDir,
                                        float distance,
@@ -244,7 +253,7 @@ struct IPhysxSceneQuery
     //\param[in] reportFn   Scene query hit report function, return True to continue traversal, False to stop traversal
     //\param[in] bothSides	If mesh both triangle sides should be checked.
     //\return True if hit was found
-    bool(CARB_ABI* sweepSphereAll)(float radius,
+    bool(CARB_ABI* sweepSphereAll)(AttachHandle attach, float radius,
                                    const carb::Float3& origin,
                                    const carb::Float3& unitDir,
                                    float distance,
@@ -257,7 +266,7 @@ struct IPhysxSceneQuery
     //\param[in] reportFn   Scene query hit report function, return True to continue traversal, False to stop traversal
     //\param[in] anyHit	    If true, the query will not report individual overlaps in reportFn but return 1 if there is
     // any overlap or 0 if there is no overlap at all. \return Number of overlaps found
-    uint32_t(CARB_ABI* overlapSphere)(float radius, const carb::Float3& pos, OverlapHitReportFn reportFn, bool anyHit);
+    uint32_t(CARB_ABI* overlapSphere)(AttachHandle attach, float radius, const carb::Float3& pos, OverlapHitReportFn reportFn, bool anyHit);
 
     // Overlap test of a box against objects in the physics scene
     //\param[in] halfExtent Box half extent
@@ -266,7 +275,7 @@ struct IPhysxSceneQuery
     //\param[in] reportFn   Scene query hit report function, return True to continue traversal, False to stop traversal
     //\param[in] anyHit	    If true, the query will not report individual overlaps in reportFn but return 1 if there is
     // any overlap or 0 if there is no overlap at all. \return Number of overlaps found
-    uint32_t(CARB_ABI* overlapBox)(const carb::Float3& halfExtent,
+    uint32_t(CARB_ABI* overlapBox)(AttachHandle attach, const carb::Float3& halfExtent,
                                    const carb::Float3& pos,
                                    const carb::Float4& rot,
                                    OverlapHitReportFn reportFn,
@@ -281,7 +290,7 @@ struct IPhysxSceneQuery
     //\param[in] reportFn   Scene query hit report function, return True to continue traversal, False to stop traversal
     //\param[in] anyHit	    If true, the query will not report individual overlaps in reportFn but return 1 if there is
     // any overlap or 0 if there is no overlap at all. \return Number of overlaps found
-    uint32_t(CARB_ABI* overlapMesh)(omni::physics::parse::ObjectKey meshPath, OverlapHitReportFn reportFn, bool anyHit);
+    uint32_t(CARB_ABI* overlapMesh)(AttachHandle attach, omni::physics::parse::ObjectKey meshPath, OverlapHitReportFn reportFn, bool anyHit);
 
     // Raycast any physics scene, returns only boolean if hit was found or not
     //\param[in] origin		Origin of the ray.
@@ -289,7 +298,7 @@ struct IPhysxSceneQuery
     //\param[in] distance	Length of the ray. Has to be in the[0, inf) range.
     //\param[in] bothSides	If mesh both triangle sides should be checked.
     //\return True if hit was found
-    bool(CARB_ABI* raycastAny)(const carb::Float3& origin, const carb::Float3& unitDir, float distance, bool bothSides);
+    bool(CARB_ABI* raycastAny)(AttachHandle attach, const carb::Float3& origin, const carb::Float3& unitDir, float distance, bool bothSides);
 
     // Sweep test of a sphere against all objects in the physics scene, returning whether any hit was found.
     //\param[in] radius		Sphere radius.
@@ -298,21 +307,21 @@ struct IPhysxSceneQuery
     //\param[in] distance	Length of the ray. Has to be in the[0, inf) range.
     //\param[in] bothSides	If mesh both triangle sides should be checked.
     //\return True if hit was found
-    bool(CARB_ABI* sweepSphereAny)(
+    bool(CARB_ABI* sweepSphereAny)(AttachHandle attach,
         float radius, const carb::Float3& origin, const carb::Float3& unitDir, float distance, bool bothSides);
 
     // Overlap test of a sphere against objects in the physics scene, reports only boolean
     //\param[in] pos	    Sphere position
     //\param[in] radius	    Sphere radius
     //\return True if overlap found
-    bool(CARB_ABI* overlapSphereAny)(float radius, const carb::Float3& pos);
+    bool(CARB_ABI* overlapSphereAny)(AttachHandle attach, float radius, const carb::Float3& pos);
 
     // Overlap test of a box against objects in the physics scene, reports only boolean
     //\param[in] halfExtent Box half extent
     //\param[in] pos	    Box position
     //\param[in] rot	    Box rotation (quaternion x, y, z, w)
     //\return True if overlap found
-    bool(CARB_ABI* overlapBoxAny)(const carb::Float3& halfExtent, const carb::Float3& pos, const carb::Float4& rot);
+    bool(CARB_ABI* overlapBoxAny)(AttachHandle attach, const carb::Float3& halfExtent, const carb::Float3& pos, const carb::Float4& rot);
 
     // Overlap test of a mesh against objects in the physics scene, reports only boolean
     //
@@ -321,14 +330,14 @@ struct IPhysxSceneQuery
     //
     //\param[in] meshPath   Mesh's ObjectKey
     //\return True if overlap found
-    bool(CARB_ABI* overlapMeshAny)(omni::physics::parse::ObjectKey meshPath);
+    bool(CARB_ABI* overlapMeshAny)(AttachHandle attach, omni::physics::parse::ObjectKey meshPath);
 
     // Report collision shapes created on given path and its children
     //
     //\param[in] path               ObjectKey to start traversal
     //\param[in] reportCallback     Report callback to send collision shape information
     //\return Number of shapes reported
-    uint32_t(CARB_ABI* reportCollisionShapes)(omni::physics::parse::ObjectKey path, ICollisionShapeQueryCallback& reportCallback);
+    uint32_t(CARB_ABI* reportCollisionShapes)(AttachHandle attach, omni::physics::parse::ObjectKey path, ICollisionShapeQueryCallback& reportCallback);
 
     // Overlap test of a UsdGeomGPrim against objects in the physics scene
     //
@@ -339,7 +348,7 @@ struct IPhysxSceneQuery
     //\param[in] reportFn   Scene query hit report function, return True to continue traversal, False to stop traversal
     //\param[in] anyHit	    If true, the query will not report individual overlaps in reportFn but return 1 if there is
     // any overlap or 0 if there is no overlap at all. \return Number of overlaps found
-    uint32_t(CARB_ABI* overlapShape)(omni::physics::parse::ObjectKey gPrimPath, OverlapHitReportFn reportFn, bool anyHit);
+    uint32_t(CARB_ABI* overlapShape)(AttachHandle attach, omni::physics::parse::ObjectKey gPrimPath, OverlapHitReportFn reportFn, bool anyHit);
 
     // Overlap test of a mesh against objects in the physics scene, reports only boolean
     //
@@ -348,7 +357,7 @@ struct IPhysxSceneQuery
     //
     //\param[in] gPrimPath   UsdGeomGPrim's ObjectKey
     //\return True if overlap found
-    bool(CARB_ABI* overlapShapeAny)(omni::physics::parse::ObjectKey gPrimPath);
+    bool(CARB_ABI* overlapShapeAny)(AttachHandle attach, omni::physics::parse::ObjectKey gPrimPath);
 
     // Sweep test of a box against all objects in the physics scene, returning the closest hit found.
     //\param[in] halfExtent Box half extent
@@ -359,7 +368,7 @@ struct IPhysxSceneQuery
     //\param[out] hit	    Sweep hit report
     //\param[in] bothSides	If mesh both triangle sides should be checked.
     //\return True if hit was found
-    bool(CARB_ABI* sweepBoxClosest)(const carb::Float3& halfExtent,
+    bool(CARB_ABI* sweepBoxClosest)(AttachHandle attach, const carb::Float3& halfExtent,
                                     const carb::Float3& pos,
                                     const carb::Float4& rot,
                                     const carb::Float3& unitDir,
@@ -378,7 +387,7 @@ struct IPhysxSceneQuery
     //\param[out] hit	    Sweep hit report
     //\param[in] bothSides	If mesh both triangle sides should be checked.
     //\return True if hit was found
-    bool(CARB_ABI* sweepMeshClosest)(
+    bool(CARB_ABI* sweepMeshClosest)(AttachHandle attach,
         omni::physics::parse::ObjectKey meshPath, const carb::Float3& unitDir, float distance, SweepHit& hit, bool bothSides);
 
     // Sweep test of a UsdGeomGPrim against all objects in the physics scene, returning the closest hit found.
@@ -392,7 +401,7 @@ struct IPhysxSceneQuery
     //\param[out] hit	    Sweep hit report
     //\param[in] bothSides	If mesh both triangle sides should be checked.
     //\return True if hit was found
-    bool(CARB_ABI* sweepShapeClosest)(
+    bool(CARB_ABI* sweepShapeClosest)(AttachHandle attach,
         omni::physics::parse::ObjectKey gPrimPath, const carb::Float3& unitDir, float distance, SweepHit& hit, bool bothSides);
 
     // Sweep test of a box against all objects in the physics scene, returning whether any hit was found.
@@ -403,7 +412,7 @@ struct IPhysxSceneQuery
     //\param[in] distance	Length of the ray. Has to be in the[0, inf) range.
     //\param[in] bothSides	If mesh both triangle sides should be checked.
     //\return True if hit was found
-    bool(CARB_ABI* sweepBoxAny)(const carb::Float3& halfExtent,
+    bool(CARB_ABI* sweepBoxAny)(AttachHandle attach, const carb::Float3& halfExtent,
                                 const carb::Float3& pos,
                                 const carb::Float4& rot,
                                 const carb::Float3& unitDir,
@@ -420,7 +429,7 @@ struct IPhysxSceneQuery
     //\param[in] distance	Length of the ray. Has to be in the[0, inf) range.
     //\param[in] bothSides	If mesh both triangle sides should be checked.
     //\return True if hit was found
-    bool(CARB_ABI* sweepMeshAny)(omni::physics::parse::ObjectKey meshPath, const carb::Float3& unitDir, float distance, bool bothSides);
+    bool(CARB_ABI* sweepMeshAny)(AttachHandle attach, omni::physics::parse::ObjectKey meshPath, const carb::Float3& unitDir, float distance, bool bothSides);
 
     // Sweep test of a UsdGeomGPrim against all objects in the physics scene, returning whether any hit was found.
     //
@@ -432,7 +441,7 @@ struct IPhysxSceneQuery
     //\param[in] distance	Length of the ray. Has to be in the[0, inf) range.
     //\param[in] bothSides	If mesh both triangle sides should be checked.
     //\return True if hit was found
-    bool(CARB_ABI* sweepShapeAny)(omni::physics::parse::ObjectKey gPrimPath, const carb::Float3& unitDir, float distance, bool bothSides);
+    bool(CARB_ABI* sweepShapeAny)(AttachHandle attach, omni::physics::parse::ObjectKey gPrimPath, const carb::Float3& unitDir, float distance, bool bothSides);
 
     // Sweep test of a box against all objects in the physics scene, returning all the hits found.
     //\param[in] halfExtent Box half extent
@@ -443,7 +452,7 @@ struct IPhysxSceneQuery
     //\param[in] reportFn   Scene query hit report function, return True to continue traversal, False to stop traversal
     //\param[in] bothSides	If mesh both triangle sides should be checked.
     //\return True if hit was found
-    bool(CARB_ABI* sweepBoxAll)(const carb::Float3& halfExtent,
+    bool(CARB_ABI* sweepBoxAll)(AttachHandle attach, const carb::Float3& halfExtent,
                                 const carb::Float3& pos,
                                 const carb::Float4& rot,
                                 const carb::Float3& unitDir,
@@ -462,7 +471,7 @@ struct IPhysxSceneQuery
     //\param[in] reportFn   Scene query hit report function, return True to continue traversal, False to stop traversal
     //\param[in] bothSides	If mesh both triangle sides should be checked.
     //\return True if hit was found
-    bool(CARB_ABI* sweepMeshAll)(omni::physics::parse::ObjectKey meshPath,
+    bool(CARB_ABI* sweepMeshAll)(AttachHandle attach, omni::physics::parse::ObjectKey meshPath,
                                  const carb::Float3& unitDir,
                                  float distance,
                                  SweepHitReportFn reportFn,
@@ -479,7 +488,7 @@ struct IPhysxSceneQuery
     //\param[in] reportFn   Scene query hit report function, return True to continue traversal, False to stop traversal
     //\param[in] bothSides	If mesh both triangle sides should be checked.
     //\return True if hit was found
-    bool(CARB_ABI* sweepShapeAll)(omni::physics::parse::ObjectKey gPrimPath,
+    bool(CARB_ABI* sweepShapeAll)(AttachHandle attach, omni::physics::parse::ObjectKey gPrimPath,
                                   const carb::Float3& unitDir,
                                   float distance,
                                   SweepHitReportFn reportFn,

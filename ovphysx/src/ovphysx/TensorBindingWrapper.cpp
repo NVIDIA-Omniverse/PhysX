@@ -32,7 +32,7 @@ inline bool ensureBinding(ovphysx_tensor_binding_handle_t h, const char* fn) {
 TensorBinding::TensorBinding()
     : m_instanceHandle(0), m_bindingHandle(0) {}
 
-TensorBinding::TensorBinding(ovphysx_handle_t instanceHandle, ovphysx_tensor_binding_handle_t bindingHandle)
+TensorBinding::TensorBinding(ovphysx_instance_handle_t instanceHandle, ovphysx_tensor_binding_handle_t bindingHandle)
     : m_instanceHandle(instanceHandle), m_bindingHandle(bindingHandle) {}
 
 TensorBinding::~TensorBinding() {

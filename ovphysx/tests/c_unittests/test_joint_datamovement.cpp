@@ -9,6 +9,7 @@
 
 #include <gtest/gtest.h>
 #include "ovphysx/ovphysx.h"
+#include "ovphysx/ovphysx_attributes.h"
 #include "global_test_environment.h"
 #include "test_utilities.h"
 #include <vector>
@@ -33,7 +34,7 @@ TEST_F(PhysXTestFixture, JointDataMovement_ArticulationDofSessionRW) {
         // before the first step. A velocity target written after a step drives the following one.
         ovphysx_enqueue_result_t step_result = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step_result.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(waitForOperationSuccess(m_handle, step_result.op_index));
+        ASSERT_TRUE(waitForTaskSuccess(m_handle, step_result));
 
         if (i % 5 == 0)
         {
@@ -43,18 +44,21 @@ TEST_F(PhysXTestFixture, JointDataMovement_ArticulationDofSessionRW) {
             // 360 deg/s equals 2*pi rad/s.
             const float target = 360.0f * std::sin(i * 2.0f * 3.14159f / 60.0f);
             ovphysx_query_handle_t writeQuery = 0;
-            ASSERT_EQ(ovphysx_query(m_handle, OVPHYSX_OBJECT_ARTICULATION_JOINT, OVPHYSX_SCOPE_ALL, &writeQuery).status,
+            ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT, OVPHYSX_SCOPE_ALL, &writeQuery, nullptr)).status,
                       OVPHYSX_API_SUCCESS);
             ovphysx_write_handle_t writeSession = 0;
-            ASSERT_EQ(ovphysx_write(m_handle, writeQuery, &velTargetAttr, &writeSession).status, OVPHYSX_API_SUCCESS);
+            ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_write(m_handle, writeQuery, &velTargetAttr, 1, &writeSession, nullptr)).status, OVPHYSX_API_SUCCESS);
 
-            const ovstage_map_group_t* group = nullptr;
+            ovphysx_fetched_write_group_t fetched{};
             int groups_written = 0;
             for (ovphysx_result_t fw;
-                 (fw = ovphysx_fetch_write_next(m_handle, writeSession, &group)).status != OVPHYSX_API_END_OF_ITERATION;)
+                 (fw = test_utils::complete_task(m_handle, ovphysx_fetch_write_next(m_handle, writeSession, &fetched))).status !=
+                     OVPHYSX_API_SUCCESS ||
+                 fetched.group;)
             {
-                // Any status other than END_OF_ITERATION is a real error, not exhaustion.
+                // Exhaustion is successful null output; execution failure remains an error.
                 ASSERT_EQ(fw.status, OVPHYSX_API_SUCCESS);
+                const ovstage_map_group_t* group = fetched.group;
                 for (uint32_t ti = 0; group->data.tensors && ti < group->data.tensor_count; ++ti)
                 {
                     const DLTensor& t = group->data.tensors[ti];
@@ -67,30 +71,30 @@ TEST_F(PhysXTestFixture, JointDataMovement_ArticulationDofSessionRW) {
                     for (size_t j = 0; j < count; ++j)
                         dst[j] = target;
                 }
-                ASSERT_EQ(ovphysx_commit_group(m_handle, writeSession, group, ovstage_cuda_sync_t{}).status,
+                ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_commit_group(m_handle, writeSession, group, ovstage_cuda_sync_t{})).status,
                           OVPHYSX_API_SUCCESS);
                 ++groups_written;
             }
             ASSERT_GT(groups_written, 0) << "write session produced no groups";
-            ovphysx_release_write(m_handle, writeSession);
-            ovphysx_release_query(m_handle, writeQuery);
+            test_utils::complete_task(m_handle, ovphysx_release_write(m_handle, writeSession));
+            test_utils::complete_task(m_handle, ovphysx_release_query(m_handle, writeQuery));
         }
 
         // Read joint velocities back through the read session and verify the drive took.
         if (i % 10 == 0 && i > 0)
         {
             ovphysx_query_handle_t readQuery = 0;
-            ASSERT_EQ(ovphysx_query(m_handle, OVPHYSX_OBJECT_ARTICULATION_JOINT, OVPHYSX_SCOPE_ALL, &readQuery).status,
+            ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT, OVPHYSX_SCOPE_ALL, &readQuery, nullptr)).status,
                       OVPHYSX_API_SUCCESS);
             ovphysx_read_handle_t readSession = 0;
-            ASSERT_EQ(ovphysx_read(m_handle, readQuery, &velAttr, 1, &readSession).status, OVPHYSX_API_SUCCESS);
+            ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, readQuery, &velAttr, 1, &readSession, nullptr)).status, OVPHYSX_API_SUCCESS);
 
             bool has_nonzero_velocity = false;
             const ovstage_read_group_t* group = nullptr;
             for (;;)
             {
-                const ovphysx_result_t fr = ovphysx_fetch_read_next(m_handle, readSession, &group);
-                if (fr.status == OVPHYSX_API_END_OF_ITERATION)
+                const ovphysx_result_t fr = test_utils::complete_task(m_handle, ovphysx_fetch_read_next(m_handle, readSession, &group));
+                if (fr.status == OVPHYSX_API_SUCCESS && !group)
                     break;
                 ASSERT_EQ(fr.status, OVPHYSX_API_SUCCESS);
                 for (uint32_t ti = 0; !group->is_delete && group->data.tensors && ti < group->data.tensor_count; ++ti)
@@ -108,10 +112,10 @@ TEST_F(PhysXTestFixture, JointDataMovement_ArticulationDofSessionRW) {
                         if (std::abs(d[j]) > 0.573f)
                             has_nonzero_velocity = true;
                 }
-                ovphysx_release_group(m_handle, readSession, group->read_group_id);
+                test_utils::complete_task(m_handle, ovphysx_release_group(m_handle, readSession, group->read_group_id));
             }
-            ovphysx_release_read(m_handle, readSession);
-            ovphysx_release_query(m_handle, readQuery);
+            test_utils::complete_task(m_handle, ovphysx_release_read(m_handle, readSession));
+            test_utils::complete_task(m_handle, ovphysx_release_query(m_handle, readQuery));
             EXPECT_TRUE(has_nonzero_velocity) << "Expected non-zero velocities after " << i << " steps";
         }
     }
@@ -121,16 +125,16 @@ TEST_F(PhysXTestFixture, JointDataMovement_ArticulationDofSessionRW) {
     {
         const ovx_string_or_token_t posAttr = { 0, { OVPHYSX_ATTR_JOINT_POSITION, sizeof(OVPHYSX_ATTR_JOINT_POSITION) - 1 } };
         ovphysx_query_handle_t posQuery = 0;
-        ASSERT_EQ(ovphysx_query(m_handle, OVPHYSX_OBJECT_ARTICULATION_JOINT, OVPHYSX_SCOPE_ALL, &posQuery).status,
+        ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT, OVPHYSX_SCOPE_ALL, &posQuery, nullptr)).status,
                   OVPHYSX_API_SUCCESS);
         ovphysx_read_handle_t posSession = 0;
-        ASSERT_EQ(ovphysx_read(m_handle, posQuery, &posAttr, 1, &posSession).status, OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, posQuery, &posAttr, 1, &posSession, nullptr)).status, OVPHYSX_API_SUCCESS);
         float max_abs_pos = 0.0f;
         const ovstage_read_group_t* group = nullptr;
         for (;;)
         {
-            const ovphysx_result_t fr = ovphysx_fetch_read_next(m_handle, posSession, &group);
-            if (fr.status == OVPHYSX_API_END_OF_ITERATION)
+            const ovphysx_result_t fr = test_utils::complete_task(m_handle, ovphysx_fetch_read_next(m_handle, posSession, &group));
+            if (fr.status == OVPHYSX_API_SUCCESS && !group)
                 break;
             ASSERT_EQ(fr.status, OVPHYSX_API_SUCCESS);
             for (uint32_t ti = 0; !group->is_delete && group->data.tensors && ti < group->data.tensor_count; ++ti)
@@ -145,16 +149,16 @@ TEST_F(PhysXTestFixture, JointDataMovement_ArticulationDofSessionRW) {
                     if (std::abs(d[j]) > max_abs_pos)
                         max_abs_pos = std::abs(d[j]);
             }
-            ovphysx_release_group(m_handle, posSession, group->read_group_id);
+            test_utils::complete_task(m_handle, ovphysx_release_group(m_handle, posSession, group->read_group_id));
         }
-        ovphysx_release_read(m_handle, posSession);
-        ovphysx_release_query(m_handle, posQuery);
+        test_utils::complete_task(m_handle, ovphysx_release_read(m_handle, posSession));
+        test_utils::complete_task(m_handle, ovphysx_release_query(m_handle, posQuery));
         EXPECT_GT(max_abs_pos, 0.5f)
             << "jointPosition read back ~0 (max " << max_abs_pos << " deg); the driven joints should have displaced";
     }
 
     // Reset to clear the USD stage.
-    ovphysx_enqueue_result_t reset_result = ovphysx_reset_stage(m_handle);
+    ovphysx_enqueue_result_t reset_result = ovphysx_detach_ovstage(m_handle);
     ASSERT_EQ(reset_result.status, OVPHYSX_API_SUCCESS);
-    ASSERT_TRUE(waitForOperationSuccess(m_handle, reset_result.op_index));
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, reset_result));
 }

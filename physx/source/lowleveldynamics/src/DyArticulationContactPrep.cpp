@@ -563,9 +563,12 @@ void setupFinalizeExtSolverContacts(
 					else if(b1.mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
 						targetVel = FAdd(targetVel, b1.projectVelocity(t0, rbXn));
 
-					f0->normalXYZ_appliedForceW = V4ClearW(Vec4V_From_Vec3V(t0));
-					f0->raXnXYZ_velMultiplierW = V4SetW(Vec4V_From_Vec3V(resp0.angular), velMultiplier);
-					f0->rbXnXYZ_biasW = V4SetW(V4Neg(Vec4V_From_Vec3V(resp1.angular)), FMul(V3Dot(t0, error), invDt));
+					f0->normal = t0;
+					f0->raXn = resp0.angular;
+					f0->rbXn = V3Neg(resp1.angular);
+					f0->appliedForce = 0.0f;
+					FStore(velMultiplier, &f0->velMultiplier);
+					FStore(FMul(V3Dot(t0, error), invDt), &f0->bias);
 					f0->linDeltaVA = deltaV0.linear;
 					f0->angDeltaVA = deltaV0.angular;
 					f0->linDeltaVB = deltaV1.linear;
@@ -597,9 +600,12 @@ void setupFinalizeExtSolverContacts(
 					else if(b1.mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
 						targetVel = FAdd(targetVel, b1.projectVelocity(t1, rbXn));
 
-					f1->normalXYZ_appliedForceW = V4ClearW(Vec4V_From_Vec3V(t1));
-					f1->raXnXYZ_velMultiplierW = V4SetW(Vec4V_From_Vec3V(resp0.angular), velMultiplier);
-					f1->rbXnXYZ_biasW = V4SetW(V4Neg(Vec4V_From_Vec3V(resp1.angular)), FMul(V3Dot(t1, error), invDt));
+					f1->normal = t1;
+					f1->raXn = resp0.angular;
+					f1->rbXn = V3Neg(resp1.angular);
+					f1->appliedForce = 0.0f;
+					FStore(velMultiplier, &f1->velMultiplier);
+					FStore(FMul(V3Dot(t1, error), invDt), &f1->bias);
 					f1->linDeltaVA = deltaV0.linear;
 					f1->angDeltaVA = deltaV0.angular;
 					f1->linDeltaVB = deltaV1.linear;

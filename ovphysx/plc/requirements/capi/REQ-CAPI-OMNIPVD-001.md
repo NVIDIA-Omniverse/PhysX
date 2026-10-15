@@ -3,21 +3,21 @@
 
 ---
 id: REQ-CAPI-OMNIPVD-001
-title: OmniPVD Startup Transport Configuration
+title: Retired OmniPVD Startup Configuration
 status: implemented
 owner: ovphysx
 ---
 
 ## Description
 
-The typed C configuration selects the OmniPVD destination when an instance is
-created while preserving existing FILE recording behavior.
+Standalone ovphysx rejects retired OVD startup configuration. Recording uses the
+global capability and an explicit FILE or TCP destination after attachment.
 
 ## Acceptance Criteria
 
-- AC-1: Transport, TCP address, TCP port, and millisecond timeout keys and named builders are appended without changing existing config-key values.
-- AC-2: Invalid destinations return `OVPHYSX_API_INVALID_ARGUMENT`; startup-only keys return an error instead of mutating a live runtime.
-- AC-3: Omitting transport selects FILE and preserves existing file capture behavior.
+- AC-1: Public config enums and builders expose no OVD startup keys or legacy capability helper. The legacy OVD config header is removed. Retired bool slots 3/4, int32 slots 2/3, and string slots 0/2/3 remain reserved; unrelated values and COUNT sentinels do not change.
+- AC-2: Retired typed numeric keys and raw Carbonite OVD startup keys, with or without a leading slash, return `OVPHYSX_API_INVALID_ARGUMENT` at create and post-create configuration, with a diagnostic directing callers to `OVD_RECORDING_CAPABLE` and explicit recording start. Legacy typed getters reject retired slots with the same result and migration guidance.
+- AC-3: Rejection does not change configured capability or start output. Plain creation and attachment remain dormant; unrelated legacy configuration keeps its existing behavior.
 
 ## Test References
 
@@ -26,7 +26,9 @@ created while preserving existing FILE recording behavior.
 ## Code References
 
 - ovphysx/include/ovphysx/ovphysx_types.h
-- ovphysx/include/ovphysx/ovphysx_config.h
+- ovphysx/include/ovphysx/ovphysx_legacy_types.h
+- ovphysx/include/ovphysx/ovphysx_legacy.h
+- ovphysx/include/ovphysx/ovphysx_legacy_config.h
 - ovphysx/src/ovphysx/ovphysx.cpp
 - ovphysx/tests/c_unittests/test_global_settings.cpp
 - ovphysx/tests/c_unittests/test_omnipvd_recording.cpp
@@ -34,4 +36,4 @@ created while preserving existing FILE recording behavior.
 
 ## Dependencies
 
-- REQ-OMNIPVD-TRANSPORT-001
+- REQ-CAPI-OMNIPVD-LATE-001

@@ -105,7 +105,7 @@ static void createArticulation()
 	PxArticulationDrive driveConfiguration;
 	driveConfiguration.damping = driveDamping;
 	driveConfiguration.stiffness = driveStiffness;
-	driveConfiguration.maxForce = PX_MAX_F32;
+	driveConfiguration.envelope = PxPerformanceEnvelope(PX_MAX_F32);
 	driveConfiguration.driveType = PxArticulationDriveType::eFORCE;
 	gDriveJoint->setDriveParams(PxArticulationAxis::eSWING2, driveConfiguration);
 	gDriveJoint->setDriveVelocity(PxArticulationAxis::eSWING2, 0.0f);

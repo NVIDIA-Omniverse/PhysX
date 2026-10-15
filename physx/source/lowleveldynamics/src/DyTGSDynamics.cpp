@@ -1113,7 +1113,7 @@ void DynamicsTGSContext::writebackConstraintsIteration(const PxConstraintBatchHe
 	{
 		const PxConstraintBatchHeader& hdr = hdrs[h];
 
-		g_WritebackTGSMethods[hdr.constraintType](hdr, contactDescPtr);	
+		g_WritebackTGSMethods[hdr.constraintType](hdr, contactDescPtr, mSolverBodyTxInertiaPool.begin());
 	}
 }
 
@@ -1123,7 +1123,7 @@ void DynamicsTGSContext::parallelWritebackConstraintsIteration(const PxSolverCon
 	{
 		const PxConstraintBatchHeader& hdr = batchHeaders[h];
 
-		g_WritebackTGSMethods[hdr.constraintType](hdr, contactDescPtr);
+		g_WritebackTGSMethods[hdr.constraintType](hdr, contactDescPtr, mSolverBodyTxInertiaPool.begin());
 	}
 }
 
@@ -1868,9 +1868,11 @@ class PartitionTask : public Cm::Task
 
 public:
 
-	PartitionTask(IslandContextStep& islandContext, PxSolverConstraintDesc* contactDescPtr, PxTGSSolverBodyVel* solverBodyData,
-		DynamicsTGSContext& context) : Cm::Task(context.getContextId()),
-		mIslandContext(islandContext), mContactDescPtr(contactDescPtr), mSolverBodyData(solverBodyData),
+	PartitionTask(IslandContextStep& islandContext, PxSolverConstraintDesc* contactDescPtr, PxTGSSolverBodyVel* solverBodyData, DynamicsTGSContext& context) :
+		Cm::Task(context.getContextId()),
+		mIslandContext(islandContext),
+		mContactDescPtr(contactDescPtr),
+		mSolverBodyData(solverBodyData),
 		mContext(context)
 	{
 	}

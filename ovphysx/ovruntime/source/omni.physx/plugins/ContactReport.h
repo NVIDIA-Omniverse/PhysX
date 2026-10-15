@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-RESOLVE-001
+// @covers AC-5
+
 #pragma once
 
 #include "PhysXTools.h"
@@ -18,6 +21,8 @@ namespace omni
 {
 namespace physx
 {
+namespace usdparser { class AttachedStage; }
+
 struct ContactPoint
 {
     const PhysXScene* mScene;
@@ -66,7 +71,7 @@ using PairContactDataMap = std::map<Pair<uint64_t>, ContactEventStruct>;
 class ContactReport
 {
 public:
-    ContactReport();
+    explicit ContactReport(usdparser::AttachedStage& attachedStage);
 
     ~ContactReport();
 
@@ -252,6 +257,8 @@ public:
     void resolvePairs();
 
 private:
+    usdparser::AttachedStage& mAttachedStage;
+
     UnresolvedContactPairsMap mUnresolvedContactPairsMap;
     ContactPairsMap mContactPairsMap;
     ReleasedObjectsMap mReleaseActorsMap;

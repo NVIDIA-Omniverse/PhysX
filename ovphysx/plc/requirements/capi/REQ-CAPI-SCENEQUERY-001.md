@@ -86,7 +86,7 @@ resolver inherits rather than re-implements.
 
 ## Code References
 
-- ovphysx/include/ovphysx/ovphysx.h (`ovphysx_scene_query_get_paths_from_ids` declaration, `ovphysx_scene_query` group)
+- ovphysx/include/ovphysx/ovphysx_legacy.h (`ovphysx_scene_query_get_paths_from_ids` declaration, `ovphysx_scene_query` group)
 - ovphysx/src/ovphysx/ovphysxSceneQuery.cpp (`ovphysx_scene_query_get_paths_from_ids` implementation)
 - ovphysx/ovruntime/include/omni/physx/IPhysx.h (`objectKeyToPath` declaration/contract)
 - ovphysx/ovruntime/source/omni.physx/plugins/PhysX.cpp (`objectKeyToPath` implementation, liveness gate)

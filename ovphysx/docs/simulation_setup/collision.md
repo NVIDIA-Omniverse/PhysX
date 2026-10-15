@@ -78,18 +78,17 @@ cylinder_prim.CreateAttribute("physxConvexGeometry:margin", Sdf.ValueTypeNames.F
 
 Cones and cylinders can also be approximated with convex meshes, which ignores
 the margin but is often faster (prefer it unless you need smooth rolling
-behavior). In ovphysx these process-global settings are configured through
-`PhysXConfig` before stage attachment. `True` (the default) selects convex-core
-geometry; `False` selects a convex mesh. Existing shapes are not rebuilt:
+behavior). In ovphysx the process-global custom-geometry switches default to
+`True` (convex-core geometry). Set them to `False` for convex-mesh approximation
+while no stage is attached:
 
 ```python
-from ovphysx import PhysX, PhysXConfig
+from ovphysx import GlobalConfigKey, PhysX, set_global_config
 
 # Approximate cylinders/cones with convex meshes instead of exact custom geometry.
-physx = PhysX(config=PhysXConfig(
-    collision_cylinder_custom_geometry=False,
-    collision_cone_custom_geometry=False,
-))
+set_global_config(GlobalConfigKey.COLLISION_CYLINDER_CUSTOM_GEOMETRY, False)
+set_global_config(GlobalConfigKey.COLLISION_CONE_CUSTOM_GEOMETRY, False)
+physx = PhysX()
 ```
 
 ## Mesh Colliders
@@ -171,10 +170,9 @@ with high-resolution subgrids near the surface:
 ![A sparse SDF: a background SDF plus high-resolution subgrids near surfaces](images/sdf_subgrids.png)
 
 For high-throughput, on-GPU access to SDF samples and gradients at runtime, use
-ovphysx's SDF view: `PhysX.create_sdf_view()` in Python or
-`ovphysx_create_sdf_view()` in C (GPU instances only). SDF views are tied to the
-attached USD stage; after `reset_stage()` or `detach_ovstage()`, destroy existing
-views and create replacements after re-attaching a stage.
+`PhysX.evaluate_sdf_shapes()` in Python or `ovphysx_evaluate_sdf_shapes()` in C
+(GPU instances only); see [SDF shapes](../read_write/index.md#sdf-shapes). It
+replaces the deprecated SDF view (`create_sdf_view()` / `ovphysx_create_sdf_view()`).
 
 ## Cooking Mesh Colliders
 
@@ -182,7 +180,7 @@ Generating a collision approximation from mesh data is called **cooking**, and
 its output is **cooking data**. ovphysx cooks colliders that need it when a stage
 is attached, blocking until the required data is available (from cache or freshly
 computed). To persist cooked results across runs, configure a cooked-collider
-cache directory through `PhysXConfig(cooked_collider_cache_dir=...)` — refer to the
+cache directory through `set_global_config(GlobalConfigKey.COOKED_COLLIDER_CACHE_DIRECTORY, ...)` before create — refer to the
 cooked-collider cache (UJITSO) section of the
 [Developer Guide](../developer_guide.md) for details.
 

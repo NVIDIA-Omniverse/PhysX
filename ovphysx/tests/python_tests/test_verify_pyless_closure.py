@@ -16,8 +16,8 @@ The verifier is a packaging gate. It scans the staged SDK/wheel native files
 and rejects files or binary imports that would make the package depend on
 Python runtime libraries, any OpenUSD library (namespaced monolith or classic
 modular), USD's dependency closure, or core Carbonite, and it rejects a shipped
-USD plugin registry. With --require-schemas it also demands the codeless PhysX
-schema tree ovphysx ships as data.
+USD plugin registry or bundled schema resources. The application supplies
+its schema provider separately.
 """
 
 import subprocess
@@ -171,11 +171,11 @@ def _write_codeless_schema_tree(root):
     return schema_root
 
 
-def test_verify_require_schemas_accepts_complete_codeless_tree(tmp_path, monkeypatch):
+def test_verify_rejects_bundled_codeless_schemas(tmp_path, monkeypatch):
     _write_codeless_schema_tree(tmp_path)
     monkeypatch.setattr(verify_pyless_closure, "_check_elf_dynamic_linux", lambda root: [])
-
-    assert verify_pyless_closure.verify(tmp_path, require_schemas=True) == []
+    violations = verify_pyless_closure.verify(tmp_path)
+    assert "bundled USD schema resource: schemas/physx/PhysxSchema/resources/generatedSchema.usda" in violations
 
 
 def test_verify_rejects_upstream_modular_usd_library_names(tmp_path, monkeypatch):
@@ -202,42 +202,12 @@ def test_verify_rejects_usd_runtime_config_file(tmp_path, monkeypatch):
     assert verify_pyless_closure.verify(tmp_path) == ["USD runtime configuration shipped: lib/config.toml"]
 
 
-def test_verify_require_schemas_rejects_nonfunctional_registry_and_module(tmp_path, monkeypatch):
-    schema_root = _write_codeless_schema_tree(tmp_path)
+def test_verify_rejects_provider_copied_under_another_directory(tmp_path, monkeypatch):
+    resource = tmp_path / "physx_usd_schemas" / "PhysxSchema" / "resources" / "generatedSchema.usda"
+    resource.parent.mkdir(parents=True)
+    resource.write_text("#usda 1.0")
     monkeypatch.setattr(verify_pyless_closure, "_check_elf_dynamic_linux", lambda root: [])
-
-    (schema_root / "plugInfo.json").write_text("{}\n")
-    module_plug_info = schema_root / "PhysxSchema" / "resources" / "plugInfo.json"
-    module_plug_info.write_text("{}\n")
-    violations = verify_pyless_closure.verify(tmp_path, require_schemas=True)
-    assert any(v.startswith("codeless schema root registry does not include the module resources:") for v in violations)
-    assert "codeless schema module without a Plugins entry: schemas/physx/PhysxSchema/resources/plugInfo.json" in violations
-
-    (schema_root / "plugInfo.json").write_text('{"Includes": ["*/resources/"]}\n')
-    compiled = json.loads(json.dumps(_MODULE_PLUG_INFO))
-    compiled["Plugins"][0]["Type"] = "library"
-    compiled["Plugins"][0]["LibraryPath"] = "../../libphysxSchema.so"
-    module_plug_info.write_text(json.dumps(compiled) + "\n")
-    violations = verify_pyless_closure.verify(tmp_path, require_schemas=True)
-    assert (
-        "codeless schema module is not a resource plugin: schemas/physx/PhysxSchema/resources/plugInfo.json (Type 'library')"
-        in violations
-    )
-    assert "codeless schema module names a LibraryPath: schemas/physx/PhysxSchema/resources/plugInfo.json" in violations
-
-
-def test_verify_require_schemas_rejects_missing_root_registry_and_module_payload(tmp_path, monkeypatch):
-    schema_root = _write_codeless_schema_tree(tmp_path)
-    (schema_root / "plugInfo.json").unlink()
-    (schema_root / "PhysxSchema" / "resources" / "generatedSchema.usda").unlink()
-    monkeypatch.setattr(verify_pyless_closure, "_check_elf_dynamic_linux", lambda root: [])
-
-    violations = verify_pyless_closure.verify(tmp_path, require_schemas=True)
-
-    assert "missing codeless schema root registry: schemas/physx/plugInfo.json" in violations
-    assert any("without generatedSchema.usda" in v for v in violations)
-    # Without the flag the schema tree is optional (a wheel staging tree is checked with it).
-    assert verify_pyless_closure.verify(tmp_path) == []
+    assert any("bundled USD schema resource" in v for v in verify_pyless_closure.verify(tmp_path))
 
 
 def test_verify_rejects_obsolete_runtime_plugin_artifacts(tmp_path, monkeypatch):

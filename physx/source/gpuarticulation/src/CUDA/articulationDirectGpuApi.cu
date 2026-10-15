@@ -297,6 +297,12 @@ extern "C" __global__ void artiUpdateKinematic(
 		const PxU32 articulationIndex = gpuIndices ? gpuIndices[i] : i;
 
 		PxgArticulation& articulation = scDesc->articulations[articulationIndex];
+
+		// An uploaded articulation stores its slot in data.index. A slot that no articulation was uploaded to, for
+		// example the slot of an articulation removed before its upload, keeps the 0xFFFFFFFF fill and is skipped.
+		if (!gpuIndices && articulation.data.index != articulationIndex)
+			continue;
+
 		if (articulation.data.gpuDirtyFlag & ArticulationDirtyFlag::eNEEDS_KINEMATIC_UPDATE)
 		{
 			// reset while in cache.

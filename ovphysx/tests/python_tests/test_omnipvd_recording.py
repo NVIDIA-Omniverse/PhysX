@@ -6,17 +6,10 @@
 # @implements REQ-PYTHON-OMNIPVD-LATE-001
 # @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7 AC-8
 
-"""End-to-end tests for OmniPVD OVD recording via ovphysx config.
-
-Verifies that configuring the OmniPVD recording directory and enabling
-OmniPVD output produces timestamped .ovd files after simulation, and
-that misconfigured settings produce expected failure behavior.
-"""
+"""End-to-end OVD recording through modern capability and explicit sessions."""
 
 import ctypes
 import gc
-import glob
-import os
 import socket
 import subprocess
 import sys
@@ -48,23 +41,29 @@ def _run_ovphysx_subprocess(script_body: str) -> None:
     assert result.returncode == 0, result.stdout + result.stderr
 
 
-def _run_omnipvd_recording_subprocess(output_dir: str, steps: int, *, enabled: bool = True) -> None:
-    """Run recording checks before process-global settings are initialized."""
+def _run_ovd_recording_subprocess(output_path: str, steps: int, *, start: bool = True) -> None:
+    """Create and attach dormant, then optionally start before the first step."""
     _run_ovphysx_subprocess(f"""
-        from ovphysx import PhysX, PhysXConfig
+        from pathlib import Path
+        from ovphysx import GlobalConfigKey, OmniPvdDestination, PhysX, set_global_config
         from test_utils import load_usd_with_ovstage
 
-        physx = PhysX(
-            config=PhysXConfig(
-                omnipvd_ovd_recording_directory={repr(output_dir)},
-                omnipvd_output_enabled={enabled!r},
-            )
-        )
+        set_global_config(GlobalConfigKey.OVD_RECORDING_CAPABLE, True)
+        physx = PhysX()
         try:
+            assert not physx.is_recording()
             load_usd_with_ovstage(physx, {repr(_USD_SCENE)})
             physx.wait_all()
+            assert not physx.is_recording()
+            assert not Path({output_path!r}).exists()
+            if {start!r}:
+                physx.start_recording(OmniPvdDestination.file({output_path!r}))
+                assert physx.is_recording()
             for _ in range({steps}):
                 physx.step_sync(1.0 / 60.0)
+            if {start!r}:
+                physx.stop_recording()
+            assert not physx.is_recording()
         finally:
             physx.destroy()
         """)
@@ -93,7 +92,7 @@ def test_start_recording_keeps_destination_strings_alive_through_native_call():
         def __init__(self):
             self.destinations = []
 
-        def ovphysx_start_recording(self, handle, destination):
+        def ovphysx_ovd_start_recording(self, handle, destination):
             assert handle == 17
             gc.collect()
             native_destination = ctypes.cast(
@@ -144,7 +143,7 @@ def test_late_start_requires_creation_capability():
                 raise AssertionError("default instance unexpectedly became recording-capable")
             except RuntimeError as exc:
                 assert "INVALID_STATE" in str(exc)
-                assert "omnipvd_recording_capable" in str(exc)
+                assert "OVD_RECORDING_CAPABLE" in str(exc)
         finally:
             physx.destroy()
     """)
@@ -156,10 +155,11 @@ def test_late_file_recording_retries_rejects_takeover_and_restarts():
         first_path = str(Path(output_dir) / "first.ovd")
         second_path = str(Path(output_dir) / "second.ovd")
         _run_ovphysx_subprocess(f"""
-            from ovphysx import OmniPvdDestination, PhysX, PhysXConfig
+            from ovphysx import GlobalConfigKey, OmniPvdDestination, PhysX, set_global_config
             from test_utils import load_usd_with_ovstage
 
-            physx = PhysX(config=PhysXConfig(omnipvd_recording_capable=True))
+            set_global_config(GlobalConfigKey.OVD_RECORDING_CAPABLE, True)
+            physx = PhysX()
             try:
                 load_usd_with_ovstage(physx, {repr(_USD_SCENE)})
                 physx.wait_all()
@@ -197,68 +197,74 @@ def test_late_file_recording_retries_rejects_takeover_and_restarts():
         assert Path(second_path).stat().st_size > 12
 
 
-def test_cold_startup_owner_can_stop_and_restart_late():
-    """Startup output restarts on reattach before another late FILE session."""
-    with tempfile.TemporaryDirectory(prefix="ovphysx_pvd_startup_owner_") as output_dir:
-        late_path = str(Path(output_dir) / "late.ovd")
-        reattach_late_path = str(Path(output_dir) / "reattach_late.ovd")
+def test_explicit_recording_owner_and_reattach_stay_dormant():
+    """Only explicit starts record; peer attachment never changes ownership."""
+    with tempfile.TemporaryDirectory(prefix="ovphysx_ovd_owner_") as output_dir:
+        first_path = str(Path(output_dir) / "owner.ovd")
+        second_path = str(Path(output_dir) / "peer.ovd")
         _run_ovphysx_subprocess(f"""
-            from ovphysx import OmniPvdDestination, PhysX, PhysXConfig
+            from ovphysx import GlobalConfigKey, OmniPvdDestination, PhysX, set_global_config
             from test_utils import attach_usd_with_ovstage
 
-            physx = PhysX(config=PhysXConfig(
-                omnipvd_output_enabled=True,
-                omnipvd_ovd_recording_directory={output_dir!r},
-            ))
+            set_global_config(GlobalConfigKey.OVD_RECORDING_CAPABLE, True)
+            physx = PhysX()
             peer = None
             try:
+                assert not physx.is_recording()
+                owner_stage = attach_usd_with_ovstage(physx, {repr(_USD_SCENE)})
+                physx.wait_all()
                 peer = PhysX()
                 stage = attach_usd_with_ovstage(peer, {repr(_USD_SCENE)})
                 peer.wait_all()
-                peer.step_sync(1.0 / 60.0)
+                assert not physx.is_recording()
+                assert not peer.is_recording()
+                physx.start_recording(OmniPvdDestination.file({first_path!r}))
                 assert physx.is_recording()
                 assert not peer.is_recording()
                 try:
                     peer.stop_recording()
-                    raise AssertionError("peer stopped the creator's startup session")
+                    raise AssertionError("peer stopped another owner's session")
                 except RuntimeError as exc:
                     assert "INVALID_STATE" in str(exc)
-
-                physx.stop_recording()
-                assert not physx.is_recording()
-                physx.start_recording(OmniPvdDestination.file({late_path!r}))
-                peer.step_sync(1.0 / 60.0)
-                physx.stop_recording()
-
-                peer.detach_ovstage()
-                peer.attach_ovstage(stage, read_ordinal=1)
-                assert peer.is_recording()
                 try:
-                    physx.start_recording(OmniPvdDestination.file({reattach_late_path!r}))
-                    raise AssertionError("late start replaced the restarted startup session")
+                    peer.start_recording(OmniPvdDestination.file({second_path!r}))
+                    raise AssertionError("peer replaced another owner's session")
                 except RuntimeError as exc:
                     assert "INVALID_STATE" in str(exc)
-                peer.stop_recording()
-                physx.start_recording(OmniPvdDestination.file({reattach_late_path!r}))
+                peer.wait_task(peer.detach_ovstage())
+                peer.wait_task(peer.attach_ovstage(stage, read_ordinal=1))
+                assert physx.is_recording()
+                assert not peer.is_recording()
+                physx.step_sync(1.0 / 60.0)
+                physx.wait_task(physx.detach_ovstage())
+                assert not physx.is_recording()
+                physx.wait_task(physx.attach_ovstage(owner_stage, read_ordinal=1))
+                assert not physx.is_recording()
+                assert not peer.is_recording()
                 peer.step_sync(1.0 / 60.0)
-                physx.stop_recording()
+                assert not peer.is_recording()
+                peer.start_recording(OmniPvdDestination.file({second_path!r}))
+                peer.step_sync(1.0 / 60.0)
+                peer.stop_recording()
             finally:
                 if peer is not None:
                     peer.destroy()
                 physx.destroy()
         """)
-        assert Path(late_path).stat().st_size > 12
-        assert Path(reattach_late_path).stat().st_size > 12
-        assert glob.glob(os.path.join(output_dir, "*_rec.ovd"))
+        assert Path(first_path).stat().st_size > 12
+        assert Path(second_path).stat().st_size > 12
+        assert {path.name for path in Path(output_dir).iterdir()} == {"owner.ovd", "peer.ovd"}
 
 
-@pytest.mark.parametrize("late_start", [False, True], ids=["startup", "late"])
-def test_tcp_streams_to_ready_listener(late_start, tmp_path):
-    """TCP startup and late start emit payload through their public Python paths."""
+@pytest.mark.parametrize("step_before_start", [False, True], ids=["before-first-step", "after-first-step"])
+def test_tcp_streams_to_ready_listener(step_before_start, tmp_path):
+    """Explicit TCP start emits payload before or after the first simulation step."""
     listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     listener.bind(("127.0.0.1", 0))
     port = listener.getsockname()[1]
     ready = threading.Event()
+    stop_reader = threading.Event()
+    clean_eof = threading.Event()
     received = bytearray()
     reader_error = []
 
@@ -266,11 +272,27 @@ def test_tcp_streams_to_ready_listener(late_start, tmp_path):
         peer = None
         try:
             listener.listen(1)
-            listener.settimeout(10)
+            # The child may spend its full subprocess budget importing and attaching.
+            # Poll cancellation instead of expiring before it reaches TCP start.
+            listener.settimeout(0.25)
             ready.set()
-            peer, _ = listener.accept()
-            peer.settimeout(10)
-            while chunk := peer.recv(64 * 1024):
+            while not stop_reader.is_set():
+                try:
+                    peer, _ = listener.accept()
+                    break
+                except socket.timeout:
+                    continue
+            if peer is None:
+                return
+            peer.settimeout(0.25)
+            while not stop_reader.is_set():
+                try:
+                    chunk = peer.recv(64 * 1024)
+                except socket.timeout:
+                    continue
+                if not chunk:
+                    clean_eof.set()
+                    break
                 received.extend(chunk)
         except Exception as exc:
             reader_error.append(exc)
@@ -282,149 +304,152 @@ def test_tcp_streams_to_ready_listener(late_start, tmp_path):
 
     reader = threading.Thread(target=read_stream, daemon=True)
     reader.start()
-    assert ready.wait(timeout=5), "TCP listener did not become ready"
 
-    if late_start:
-        late_file_path = tmp_path / "after_late_tcp.ovd"
-        physx_constructor = "PhysX(config=PhysXConfig(omnipvd_recording_capable=True))"
-        before_recording = "physx.step_sync(1.0 / 60.0)"
-        start_recording = f'physx.start_recording(OmniPvdDestination.tcp("127.0.0.1", {port}, timeout_ms=3000))'
-        stop_recording = "physx.stop_recording()"
-        after_recording = "\n            ".join((
-            "physx.step_sync(1.0 / 60.0)",
-            f"physx.start_recording(OmniPvdDestination.file({str(late_file_path)!r}))",
-            "physx.step_sync(1.0 / 60.0)",
-            "physx.stop_recording()",
-        ))
-    else:
-        physx_constructor = (
-            "PhysX(config=PhysXConfig("
-            "omnipvd_output_enabled=True, "
-            'omnipvd_transport="tcp", '
-            'omnipvd_tcp_address="127.0.0.1", '
-            f"omnipvd_tcp_port={port}, omnipvd_tcp_timeout_ms=3000))"
-        )
-        before_recording = start_recording = stop_recording = after_recording = ""
-
+    file_path = tmp_path / "after_tcp.ovd"
     script = textwrap.dedent(f"""
         import sys
 
         sys.path.insert(0, {repr(str(Path(__file__).resolve().parent))})
 
-        from ovphysx import OmniPvdDestination, PhysX, PhysXConfig
+        from ovphysx import GlobalConfigKey, OmniPvdDestination, PhysX, set_global_config
         from test_utils import load_usd_with_ovstage
 
-        physx = {physx_constructor}
+        set_global_config(GlobalConfigKey.OVD_RECORDING_CAPABLE, True)
+        physx = PhysX()
         try:
             load_usd_with_ovstage(physx, {repr(_USD_SCENE)})
             physx.wait_all()
-            {before_recording}
-            {start_recording}
+            assert not physx.is_recording()
+            if {step_before_start!r}:
+                physx.step_sync(1.0 / 60.0)
+            assert not physx.is_recording()
+            physx.start_recording(OmniPvdDestination.tcp("127.0.0.1", {port}, timeout_ms=3000))
+            assert physx.is_recording()
             physx.step_sync(1.0 / 60.0)
-            {stop_recording}
-            {after_recording}
+            physx.stop_recording()
+            assert not physx.is_recording()
+            physx.step_sync(1.0 / 60.0)
+            physx.start_recording(OmniPvdDestination.file({str(file_path)!r}))
+            physx.step_sync(1.0 / 60.0)
+            physx.stop_recording()
         finally:
             physx.destroy()
         """)
-    result = subprocess.run(
-        [sys.executable, "-c", script],
-        cwd=Path(__file__).resolve().parent,
-        text=True,
-        capture_output=True,
-        timeout=120,
-    )
-    reader.join(timeout=15)
-    if reader.is_alive():
-        listener.close()
+    try:
+        assert ready.wait(timeout=5), "TCP listener did not become ready"
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=Path(__file__).resolve().parent,
+            text=True,
+            capture_output=True,
+            timeout=120,
+        )
+        if result.returncode == 0:
+            reader.join(timeout=15)  # Drain through EOF before cancelling.
+    finally:
+        stop_reader.set()
         reader.join(timeout=2)
 
     assert result.returncode == 0, result.stdout + result.stderr
     assert not reader.is_alive(), "TCP reader did not finish within its bounded timeout"
     assert not reader_error, f"TCP reader failed: {reader_error[0]!r}"
-    assert len(received) > 20, "Expected OmniPVD commands after the socket handshake and version header"
-    if late_start:
-        assert late_file_path.stat().st_size > 12
+    assert clean_eof.is_set(), "TCP recording did not reach clean EOF before listener cancellation"
+    assert len(received) > 20, "Expected OVD commands after the socket handshake and version header"
+    assert file_path.stat().st_size > 12
 
 
-class TestOmniPvdRecording:
-    """End-to-end OmniPVD .ovd recording tests."""
+class TestOvdRecording:
+    """Exact-path output requires an explicit recording start."""
 
-    def test_ovd_file_produced(self):
-        """Positive path: recording directory + enable produces an .ovd file."""
-        with tempfile.TemporaryDirectory(prefix="ovphysx_pvd_") as output_dir:
-            _run_omnipvd_recording_subprocess(output_dir, steps=5)
+    def test_ovd_file_produced_before_first_step(self, tmp_path):
+        output = tmp_path / "capture.ovd"
+        _run_ovd_recording_subprocess(str(output), steps=5)
+        assert output.stat().st_size > 12
+        assert list(tmp_path.iterdir()) == [output]
 
-            ovd_files = glob.glob(os.path.join(output_dir, "*_rec.ovd"))
-            assert len(ovd_files) >= 1, (
-                f"Expected at least one *_rec.ovd file in {output_dir}, " f"found: {os.listdir(output_dir)}"
-            )
-            for file_path in ovd_files:
-                size = os.path.getsize(file_path)
-                assert size > 0, f"OVD file {file_path} is empty"
+    def test_ovd_not_produced_until_explicit_start(self, tmp_path):
+        output = tmp_path / "capture.ovd"
+        _run_ovd_recording_subprocess(str(output), steps=1, start=False)
+        assert not list(tmp_path.iterdir())
 
-    def test_ovd_not_produced_when_disabled(self):
-        """Recording disabled by default produces no .ovd files."""
-        with tempfile.TemporaryDirectory(prefix="ovphysx_pvd_") as output_dir:
-            _run_omnipvd_recording_subprocess(output_dir, steps=1, enabled=False)
-
-            ovd_files = glob.glob(os.path.join(output_dir, "*.ovd"))
-            assert len(ovd_files) == 0, f"Expected no .ovd files when recording is disabled, found: {ovd_files}"
-
-    def test_ovd_not_produced_without_directory(self):
-        """Enable without a valid directory produces no .ovd file and does not crash."""
-        _run_omnipvd_recording_subprocess("", steps=1)
-
-    def test_ovd_directory_created_if_missing(self):
-        """Recording directory that does not exist yet is auto-created."""
-        with tempfile.TemporaryDirectory(prefix="ovphysx_pvd_") as base_dir:
-            nested_dir = os.path.join(base_dir, "sub", "recordings")
-            assert not os.path.exists(nested_dir)
-
-            _run_omnipvd_recording_subprocess(nested_dir, steps=3)
-
-            assert os.path.isdir(nested_dir), f"Expected recording directory to be auto-created: {nested_dir}"
-            ovd_files = glob.glob(os.path.join(nested_dir, "*_rec.ovd"))
-            assert len(ovd_files) >= 1, (
-                f"Expected at least one *_rec.ovd in auto-created dir {nested_dir}, " f"found: {os.listdir(nested_dir)}"
-            )
-
-
-class TestOmniPvdConfigRoundTrip:
-    """Verify the typed config entries round-trip correctly."""
-
-    def test_omnipvd_config_bool_round_trip(self):
-        """Setting omnipvd_output_enabled via PhysXConfig is readable via get_config_bool."""
-        _run_ovphysx_subprocess("""
-            from ovphysx import ConfigBool, PhysX, PhysXConfig
-
-            physx = PhysX(config=PhysXConfig(omnipvd_output_enabled=True))
+    def test_ovd_missing_parent_fails_without_starting(self, tmp_path):
+        output = tmp_path / "missing" / "capture.ovd"
+        _run_ovphysx_subprocess(f"""
+            from ovphysx import GlobalConfigKey, OmniPvdDestination, PhysX, set_global_config
+            from test_utils import load_usd_with_ovstage
+            set_global_config(GlobalConfigKey.OVD_RECORDING_CAPABLE, True)
+            physx = PhysX()
             try:
-                value = physx.get_config_bool(ConfigBool.OMNIPVD_OUTPUT_ENABLED)
-                assert value is True, f"Expected True, got {value}"
-            finally:
-                physx.destroy()
-            """)
-
-    def test_omnipvd_recording_capable_round_trip(self):
-        _run_ovphysx_subprocess("""
-            from ovphysx import ConfigBool, PhysX, PhysXConfig
-            physx = PhysX(config=PhysXConfig(omnipvd_recording_capable=True))
-            try:
-                assert physx.get_config_bool(ConfigBool.OMNIPVD_RECORDING_CAPABLE) is True
+                load_usd_with_ovstage(physx, {_USD_SCENE!r})
+                physx.wait_all()
+                try:
+                    physx.start_recording(OmniPvdDestination.file({str(output)!r}))
+                except RuntimeError:
+                    pass
+                else:
+                    raise AssertionError("missing parent directory unexpectedly accepted")
+                assert not physx.is_recording()
+                physx.step_sync(1.0 / 60.0)
             finally:
                 physx.destroy()
         """)
+        assert not output.exists()
 
-    def test_omnipvd_config_string_round_trip(self):
-        """Setting omnipvd_ovd_recording_directory via PhysXConfig is readable via get_config_string."""
-        test_path = tempfile.gettempdir() + "/pvd_roundtrip_test"
-        _run_ovphysx_subprocess(f"""
-            from ovphysx import ConfigString, PhysX, PhysXConfig
 
-            physx = PhysX(config=PhysXConfig(omnipvd_ovd_recording_directory={test_path!r}))
+def test_retired_ovd_carbonite_overrides_rejected_without_freezing_capability():
+    """The raw escape hatch cannot silently reintroduce startup OVD config."""
+    _run_ovphysx_subprocess("""
+        from ovphysx import GlobalConfigKey, PhysX, PhysXConfig, get_global_config, set_global_config
+        retired = {
+            '/physics/omniPvdOutputEnabled': True,
+            '/physics/omniPvdRecordingCapable': True,
+            '/persistent/physics/omniPvdOvdRecordingDirectory': 'captures',
+            '/physics/omniPvdTransport': 'file',
+            '/physics/omniPvdTcpAddress': '127.0.0.1',
+            '/physics/omniPvdTcpPort': 5425,
+            '/physics/omniPvdTcpTimeoutMs': 100,
+        }
+        for path, value in retired.items():
             try:
-                value = physx.get_config_string(ConfigString.OMNIPVD_OVD_RECORDING_DIRECTORY)
-                assert value == {test_path!r}, f"Expected {test_path!r}, got {{value}}"
-            finally:
-                physx.destroy()
-            """)
+                unexpected = PhysX(config=PhysXConfig(carbonite_overrides={path: value}))
+            except RuntimeError as error:
+                assert 'OVD' in str(error), str(error)
+            else:
+                unexpected.destroy()
+                raise AssertionError(f'retired OVD path accepted: {path}')
+            assert get_global_config(GlobalConfigKey.OVD_RECORDING_CAPABLE) is False
+            set_global_config(GlobalConfigKey.OVD_RECORDING_CAPABLE, True)
+            set_global_config(GlobalConfigKey.OVD_RECORDING_CAPABLE, False)
+        set_global_config(GlobalConfigKey.OVD_RECORDING_CAPABLE, True)
+        physx = PhysX()
+        try:
+            assert not physx.is_recording()
+        finally:
+            physx.destroy()
+    """)
+
+
+def test_global_ovd_capability_rejects_instance_scope_without_mutation():
+    """An instance setter cannot write the global capability or its local configuration."""
+    _run_ovphysx_subprocess("""
+        import pytest
+        from ovphysx import ConfigKey, GlobalConfigKey, PhysX, get_global_config, set_global_config
+
+        key = GlobalConfigKey.OVD_RECORDING_CAPABLE
+        set_global_config(key, True)
+        PhysX.set_cpu_mode(True)
+        physx = PhysX()
+        try:
+            local_key = ConfigKey.ACTIVE_CUDA_GPUS
+            before = physx.get_config(local_key)
+            for value in (False, True):
+                with pytest.raises(ValueError):
+                    physx.set_config(key, value)
+                assert get_global_config(key) is True
+                assert physx.get_config(local_key) == before
+                assert not physx.is_recording()
+        finally:
+            physx.destroy()
+        set_global_config(key, False)
+        assert get_global_config(key) is False
+    """)

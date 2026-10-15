@@ -38,13 +38,16 @@ namespace physx
 	class PxCudaContextManager;
 	class PxCudaContext;
 	struct PxgBodySimVelocities;
-	struct PxgDbRigidAttachmentBlock;
+	struct PxgRigidDbAttachmentBlock;
 	struct PxgDbDbAttachmentBlock;
 	struct PxsCachedTransform;
 	class PxgCudaKernelWranglerManager;
 	class PxgArticulationBuffer;
 	class PxgSoftBodyBuffer;
 	class PxgFEMClothBuffer;
+	class PxgDeformableFilterManager;
+	class PxgDeformableSurfaceTopology;
+	class PxgAttachmentManager;
 	class PxgBodySimManager;
 	class PxgGpuContext;
 	
@@ -60,28 +63,6 @@ namespace physx
 		PxReal	_padAngular;	// Padding to maintain 32-byte struct size
 	}
 	PX_ALIGN_SUFFIX(16);
-
-	struct SoftBodyAttachmentAndFilterData
-	{
-	public:
-		Cm::PinnableArray<PxgFEMRigidAttachment>* rigidAttachments;
-		Cm::PinnableArray<PxgRigidFilterPair>* rigidFilterPairs;
-		bool dirtyRigidAttachments;
-		bool dirtyRigidFilterPairs;
-		Cm::PinnableArray<PxU32>* activeRigidAttachments;
-		bool dirtyActiveRigidAttachments;
-		Cm::PinnableArray<PxgFEMFEMAttachment>* softBodyAttachments;
-		bool dirtySoftBodyAttachments;
-		Cm::PinnableArray<PxU32>* activeSoftBodyAttachments;
-		bool dirtyActiveSoftBodyAttachments;
-		PxArray<Dy::DeformableVolume*>* dirtyDeformableVolumeForFilterPairs;
-		Cm::PinnableArray<PxgFEMFEMAttachment>* clothAttachments;
-		Cm::PinnableArray<PxgNonRigidFilterPair>* clothFilterPairs;
-		bool dirtyClothAttachments;
-		bool dirtyClothFilterPairs;
-		Cm::PinnableArray<PxU32>* activeClothAttachments;
-		bool dirtyActiveClothAttachments;
-	};
 
 	class PxgSimulationCore : public PxUserAllocated
 	{
@@ -137,7 +118,12 @@ namespace physx
 			Cm::PinnableArray<PxU32>& softBodyElementIndexPool,
 			PxArray<PxU32>& softBodyNodeIndexPool,
 			PxgBodySimManager& bodySimManager,
-			SoftBodyAttachmentAndFilterData& data);
+			PxgAttachmentManager& rigidAttachments,
+			PxgAttachmentManager& softBodyAttachments,
+			PxgAttachmentManager& clothAttachments,
+			const PxgDeformableFilterManager& rigidVolumeFilters,
+			const PxgDeformableFilterManager& volumeVolumeFilters,
+			const PxgDeformableFilterManager& volumeSurfaceFilters);
 
 		void gpuMemDmaUpFEMCloths(Cm::PinnableArray<PxgFEMCloth>& newFEMClothPool,
 			PxU32* newTriangleMeshByteSizePool,
@@ -149,19 +135,11 @@ namespace physx
 			Cm::PinnableArray<PxU32>& femClothElementIndexPool,
 			PxArray<PxU32>& femClothNodeIndexPool,
 			PxgBodySimManager& bodySimManager,
-			Cm::PinnableArray<PxgFEMRigidAttachment>& rigidAttachments,
-			Cm::PinnableArray<PxgRigidFilterPair>& rigidAttachmentIds,
-			bool dirtyRigidAttachments,
-			bool dirtyRigidFilterPairs,
-			Cm::PinnableArray<PxU32>& activeRigidAttachments,
-			bool dirtyActiveRigidAttachments,
-			Cm::PinnableArray<PxgFEMFEMAttachment>& clothAttachments,
-			Cm::PinnableArray<PxgNonRigidFilterPair>& clothVertTriFilterIds,
-			bool dirtyClothAttachments,
-			bool dirtyClothFilterPairs,
-			Cm::PinnableArray<PxU32>& activeClothAttachments,
-			bool dirtyActiveClothAttachments
-		);
+			PxgAttachmentManager& rigidAttachments,
+			PxgAttachmentManager& clothAttachments,
+			const PxgDeformableFilterManager& rigidSurfaceFilters,
+			const PxgDeformableFilterManager& surfaceSurfaceFilters,
+			const PxArray<PxgDeformableSurfaceTopology*>& surfaceTopologies);
 
 		void gpuMemDmaUpParticleSystem(PxgBodySimManager& bodySimManager);
 
@@ -287,7 +265,7 @@ namespace physx
 		// FEM-cloth
 		PX_FORCE_INLINE PxU32 getMaxClothVerts() { return mMaxNbClothVerts; }
 		PX_FORCE_INLINE PxU32 getMaxClothTriangles() { return mMaxNbClothTriangles; }
-		PX_FORCE_INLINE PxU32 getMaxClothTrianglesWithActiveEdges() { return mMaxNbClothTrianglesWithActiveEdges; }
+		PX_FORCE_INLINE PxU32 getMaxClothTrianglesWithOwnedEdges() { return mMaxNbClothTrianglesWithOwnedEdges; }
 
 		PX_FORCE_INLINE PxU32 getMaxNonSharedTrianglePartitions() { return mMaxNbNonSharedTriPartitions; }
 		PX_FORCE_INLINE PxU32 getMaxNonSharedTrianglesPerPartition() { return mMaxNbNonSharedTrianglesPerPartition; }
@@ -317,47 +295,40 @@ namespace physx
 		PX_FORCE_INLINE PxU32 getNumTotalSoftbodies() { return mNbTotalSoftBodies; }
 
 		PX_FORCE_INLINE PxU32 getNbRigidSoftBodyAttachments() const { return mNbRigidSoftBodyAttachments; }
-		PX_FORCE_INLINE PxU32 getNbRigidSoftBodyFilters() const { return mNbRigidSoftBodyFilters; }
-		PX_FORCE_INLINE PxgDevicePointer<PxgFEMRigidAttachment> getRigidSoftBodyAttachments() { return mSoftBodyRigidAttachments.getTypedDevicePtr(); }
+		PX_FORCE_INLINE PxgDevicePointer<PxgDeformableAttachment> getRigidSoftBodyAttachments() { return mSoftBodyRigidAttachments.getTypedDevicePtr(); }
 		PX_FORCE_INLINE PxgDevicePointer<PxU32> getActiveRigidSoftBodyAttachments() { return mActiveSoftBodyRigidConstraints.getTypedDevicePtr(); }
-		PX_FORCE_INLINE PxgDevicePointer<PxgDbRigidAttachmentBlock> getSoftBodyRigidAttachmentBlocks() { return mSoftBodyRigidAttachmentBlocks.getTypedDevicePtr(); }
+		PX_FORCE_INLINE PxgDevicePointer<PxU32> getRigidSoftBodyAttachmentRigidRefCounts() { return mSoftBodyRigidAttachmentRigidRefCounts.getTypedDevicePtr(); }
+		PX_FORCE_INLINE PxgDevicePointer<PxgRigidDbAttachmentBlock> getSoftBodyRigidAttachmentBlocks() { return mSoftBodyRigidAttachmentBlocks.getTypedDevicePtr(); }
 		PX_FORCE_INLINE PxgDevicePointer<PxU32> getGpuSoftBodyRigidCounter() { return mNumSoftBodyRigidAttachments.getTypedDevicePtr(); }
 		PX_FORCE_INLINE PxgDevicePointer<PxNodeIndex> getSoftBodyRigidAttachmentIds() { return mSoftBodyRigidAttachmentIds.getTypedDevicePtr(); }
-		PX_FORCE_INLINE PxgDevicePointer<PxgRigidFilterPair> getRigidSoftBodyFilters() { return mSoftBodyRigidFilterPairs.getTypedDevicePtr(); }
 
 		PX_FORCE_INLINE PxU32 getNbSoftBodySoftBodyAttachments() const { return mNbSoftBodySoftBodyAttachments; }
-		PX_FORCE_INLINE PxgDevicePointer<PxgFEMFEMAttachment> getSoftBodySoftBodyAttachments() { return mSoftBodySoftBodyAttachments.getTypedDevicePtr(); }
+		PX_FORCE_INLINE PxgDevicePointer<PxgDeformableAttachment> getSoftBodySoftBodyAttachments() { return mSoftBodySoftBodyAttachments.getTypedDevicePtr(); }
 		PX_FORCE_INLINE PxgDevicePointer<PxU32> getActiveSoftBodySoftAttachments() { return mActiveSoftBodySoftBodyConstraints.getTypedDevicePtr(); }
 		PX_FORCE_INLINE PxgDevicePointer<PxgDbDbAttachmentBlock> getSoftBodySoftBodyAttachmentBlocks() { return mSoftBodySoftBodyAttachmentBlocks.getTypedDevicePtr(); }
 		PX_FORCE_INLINE PxgDevicePointer<PxU32> getGpuSoftBodySoftBodyCounter() { return mNumSoftBodySoftBodyAttachments.getTypedDevicePtr(); }
 
 		PX_FORCE_INLINE PxU32 getNbClothSoftBodyAttachments() const { return mNbClothSoftBodyAttachments; }
-		PX_FORCE_INLINE PxU32 getNbClothSoftBodyFilters() const { return mNbClothSoftBodyFilters; }
-		PX_FORCE_INLINE PxgDevicePointer<PxgFEMFEMAttachment> getClothSoftBodyAttachments() { return mSoftBodyClothAttachments.getTypedDevicePtr(); }
+		PX_FORCE_INLINE PxgDevicePointer<PxgDeformableAttachment> getClothSoftBodyAttachments() { return mSoftBodyClothAttachments.getTypedDevicePtr(); }
 		PX_FORCE_INLINE PxgDevicePointer<PxU32> getActiveClothSoftBodyAttachments() { return mActiveSoftBodyClothConstraints.getTypedDevicePtr(); }
 		PX_FORCE_INLINE PxgDevicePointer<PxgDbDbAttachmentBlock> getSoftBodyClothAttachmentBlocks() { return mSoftBodyClothAttachmentBlocks.getTypedDevicePtr(); }
 		PX_FORCE_INLINE PxgDevicePointer<PxU32> getGpuSoftBodyClothCounter() { return mNumSoftBodyClothAttachments.getTypedDevicePtr(); }
-		PX_FORCE_INLINE PxgDevicePointer<PxgNonRigidFilterPair> getClothSoftBodyFilters() { return mSoftBodyClothFilterPairs.getTypedDevicePtr(); }
 
 
 		PX_FORCE_INLINE PxU32 getNbActiveRigidClothAttachments() const { return mNbRigidClothAttachments; }
-		PX_FORCE_INLINE PxU32 getNbRigidClothFilters() const { return mNbRigidClothFilters; }
-		PX_FORCE_INLINE PxgDevicePointer<PxgFEMRigidAttachment> getRigidClothAttachments() { return mClothRigidAttachments.getTypedDevicePtr(); }
+		PX_FORCE_INLINE PxgDevicePointer<PxgDeformableAttachment> getRigidClothAttachments() { return mClothRigidAttachments.getTypedDevicePtr(); }
 		PX_FORCE_INLINE PxgDevicePointer<PxU32> getActiveRigidClothAttachments() { return mActiveClothRigidAttachments.getTypedDevicePtr(); }
-		PX_FORCE_INLINE PxgDevicePointer<PxgDbRigidAttachmentBlock> getClothRigidAttachmentBlocks() { return mClothRigidAttachmentBlocks.getTypedDevicePtr(); }
+		PX_FORCE_INLINE PxgDevicePointer<PxU32> getRigidClothAttachmentRigidRefCounts() { return mClothRigidAttachmentRigidRefCounts.getTypedDevicePtr(); }
+		PX_FORCE_INLINE PxgDevicePointer<PxgRigidDbAttachmentBlock> getClothRigidAttachmentBlocks() { return mClothRigidAttachmentBlocks.getTypedDevicePtr(); }
 		PX_FORCE_INLINE PxgDevicePointer<PxU32> getGpuClothRigidCounter() { return mNumClothRigidAttachments.getTypedDevicePtr(); }
 		PX_FORCE_INLINE PxgDevicePointer<PxNodeIndex> getClothRigidAttachmentIds() { return mClothRigidAttachmentIds.getTypedDevicePtr(); }
-		PX_FORCE_INLINE PxgDevicePointer<PxgRigidFilterPair> getRigidClothFilters() { return mClothRigidFilterPairs.getTypedDevicePtr(); }
 
 
 		PX_FORCE_INLINE PxU32 getNbActiveClothClothAttachments() const { return mNbClothClothAttachments; }
-		PX_FORCE_INLINE PxU32 getNbClothClothVertTriFilters() const { return mNbClothClothVertTriFilters; }
-		PX_FORCE_INLINE PxgDevicePointer<PxgFEMFEMAttachment> getClothClothAttachments() { return mClothClothAttachments.getTypedDevicePtr(); }
+		PX_FORCE_INLINE PxgDevicePointer<PxgDeformableAttachment> getClothClothAttachments() { return mClothClothAttachments.getTypedDevicePtr(); }
 		PX_FORCE_INLINE PxgDevicePointer<PxU32> getActiveClothClothAttachments() { return mActiveClothClothAttachments.getTypedDevicePtr(); }
 		PX_FORCE_INLINE PxgDevicePointer<PxgDbDbAttachmentBlock> getClothClothAttachmentBlocks() { return mClothClothAttachmentBlocks.getTypedDevicePtr(); }
 		PX_FORCE_INLINE PxgDevicePointer<PxU32> getGpuClothClothCounter() { return mNumClothClothAttachments.getTypedDevicePtr(); }
-
-		PX_FORCE_INLINE PxgDevicePointer<PxgNonRigidFilterPair> getClothClothVertTriFilters() { return mClothClothVertTriFilterPairs.getTypedDevicePtr(); }
 
 		PX_FORCE_INLINE Cm::PinnableBitMap& getActiveClothStateChangedMap() { return mActiveFEMClothStateChangedMap; }
 		PX_FORCE_INLINE PxReal* getActiveClothWakeCountsCPU() { return mFEMClothWakeCounts.begin(); }
@@ -513,53 +484,47 @@ namespace physx
 		PxgTypedCudaBuffer<PxBounds3>	mBoundsBuffer;					//Bp in CPU so we can't use the BoundsBuffer in the GPU BP
 		PxgTypedCudaBuffer<PxU32>   mChangedAABBMgrHandlesBuffer;  //Bp in CPU so we can't use the changedAABBMgrHandlesBuffer in the GPU AABBManager
 
-		PxgTypedCudaBuffer<PxgFEMRigidAttachment>		mSoftBodyRigidAttachments;
-		PxgTypedCudaBuffer<PxgRigidFilterPair>			mSoftBodyRigidFilterPairs;
-		PxgTypedCudaBuffer<PxgDbRigidAttachmentBlock>	mSoftBodyRigidAttachmentBlocks;
+		PxgTypedCudaBuffer<PxgDeformableAttachment>		mSoftBodyRigidAttachments;
+		PxgTypedCudaBuffer<PxgRigidDbAttachmentBlock>	mSoftBodyRigidAttachmentBlocks;
 		PxgTypedCudaBuffer<PxU32>						mActiveSoftBodyRigidConstraints;
 		PxgTypedCudaBuffer<PxU32>						mNumSoftBodyRigidAttachments;
+		PxgTypedCudaBuffer<PxU32>						mSoftBodyRigidAttachmentRigidRefCounts;
 		PxgTypedCudaBuffer<PxNodeIndex>					mSoftBodyRigidAttachmentIds;
 
 
-		PxgTypedCudaBuffer<PxgFEMFEMAttachment>			mSoftBodySoftBodyAttachments;
+		PxgTypedCudaBuffer<PxgDeformableAttachment>		mSoftBodySoftBodyAttachments;
 		PxgTypedCudaBuffer<PxgDbDbAttachmentBlock>		mSoftBodySoftBodyAttachmentBlocks;
 		PxgTypedCudaBuffer<PxU32>						mActiveSoftBodySoftBodyConstraints;
 		PxgTypedCudaBuffer<PxU32>						mNumSoftBodySoftBodyAttachments;
 
-		PxgTypedCudaBuffer<PxgFEMFEMAttachment>			mSoftBodyClothAttachments;
-		PxgTypedCudaBuffer<PxgNonRigidFilterPair>		mSoftBodyClothFilterPairs;
+		PxgTypedCudaBuffer<PxgDeformableAttachment>		mSoftBodyClothAttachments;
 		PxgTypedCudaBuffer<PxgDbDbAttachmentBlock>		mSoftBodyClothAttachmentBlocks;
 		PxgTypedCudaBuffer<PxU32>						mActiveSoftBodyClothConstraints;
 		PxgTypedCudaBuffer<PxU32>						mNumSoftBodyClothAttachments;
 
-		PxgTypedCudaBuffer<PxgFEMRigidAttachment>		mClothRigidAttachments;
+		PxgTypedCudaBuffer<PxgDeformableAttachment>		mClothRigidAttachments;
 		PxgTypedCudaBuffer<PxU32>						mActiveClothRigidAttachments;
-		PxgTypedCudaBuffer<PxgRigidFilterPair>			mClothRigidFilterPairs;
-		PxgTypedCudaBuffer<PxgDbRigidAttachmentBlock>	mClothRigidAttachmentBlocks;
+		PxgTypedCudaBuffer<PxgRigidDbAttachmentBlock>	mClothRigidAttachmentBlocks;
 		PxgTypedCudaBuffer<PxU32>						mNumClothRigidAttachments;
+		PxgTypedCudaBuffer<PxU32>						mClothRigidAttachmentRigidRefCounts;
 		PxgTypedCudaBuffer<PxNodeIndex>					mClothRigidAttachmentIds;
 
-		PxgTypedCudaBuffer<PxgFEMFEMAttachment>			mClothClothAttachments;
+		PxgTypedCudaBuffer<PxgDeformableAttachment>		mClothClothAttachments;
 		PxgTypedCudaBuffer<PxU32>						mActiveClothClothAttachments;
-		PxgTypedCudaBuffer<PxgNonRigidFilterPair>		mClothClothVertTriFilterPairs;
 		PxgTypedCudaBuffer<PxgDbDbAttachmentBlock>		mClothClothAttachmentBlocks;
 		PxgTypedCudaBuffer<PxU32>						mNumClothClothAttachments;
 
 		PxU32*			mEventMapped;
 
 		PxU32			mNbRigidSoftBodyAttachments;
-		PxU32			mNbRigidSoftBodyFilters;
 
 		PxU32			mNbSoftBodySoftBodyAttachments;
 
 		PxU32			mNbClothSoftBodyAttachments;
-		PxU32			mNbClothSoftBodyFilters;
 
 		PxU32			mNbRigidClothAttachments;
-		PxU32			mNbRigidClothFilters;
 
 		PxU32			mNbClothClothAttachments;
-		PxU32			mNbClothClothVertTriFilters;
 
 		PxU32			mNbTotalBodySim;
 		PxU32			mNbTotalArticulations; //this is used for articulation
@@ -578,7 +543,7 @@ namespace physx
 
 		PxU32			mMaxNbClothVerts;
 		PxU32			mMaxNbClothTriangles;
-		PxU32			mMaxNbClothTrianglesWithActiveEdges;
+		PxU32			mMaxNbClothTrianglesWithOwnedEdges;
 		PxU32			mMaxNbNonSharedTriangles;
 
 		PxU32			mMaxNbNonSharedTriPartitions;

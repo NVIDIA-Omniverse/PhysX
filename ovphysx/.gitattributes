@@ -28,3 +28,4 @@ tools/packman/packman text eol=lf
 **/data/**/*.py filter=text diff=text merge=text
 **/data/**/*.yaml !filter diff=text merge=text text eol=lf
 *.usda !filter diff=text merge=text text eol=lf
+tests/benchmarks/data/cubes20_instancer_envs_8192.usda filter=lfs diff=lfs merge=lfs -text

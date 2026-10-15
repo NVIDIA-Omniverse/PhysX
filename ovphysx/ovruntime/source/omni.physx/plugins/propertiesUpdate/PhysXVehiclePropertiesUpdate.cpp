@@ -18,7 +18,6 @@ using namespace omni::physx;
 using namespace omni::physx::usdparser;
 using namespace omni::physx::internal;
 
-extern ObjectId getObjectId(omni::physics::parse::ObjectKey key, PhysXType type);
 
 
 // The readAttribute<T>/readArrayAttribute<T> carb-typed shims that used to live here
@@ -235,11 +234,10 @@ static bool attrRangeCheck(const float value, const float min, const float max,
     }
 }
 
-static const InternalDatabase::Record* getObjectRecord(omni::physx::PhysXType type,
+static const InternalDatabase::Record* getObjectRecord(const AttachedStage& attachedStage, omni::physx::PhysXType type,
     omni::physx::usdparser::ObjectId objectId)
 {
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    omni::physx::internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    omni::physx::internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     return db.getFullTypedRecord(type, objectId);
 }
@@ -271,7 +269,7 @@ bool omni::physx::updateVehicleContextLongitudinalAxis(AttachedStage& attachedSt
 static bool updateVehicleEngineData(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode, const EngineParam::Enum engineParam)
 {
-    const InternalDatabase::Record* objectRecord = getObjectRecord(ePTVehicleEngine, objectId);
+    const InternalDatabase::Record* objectRecord = getObjectRecord(attachedStage, ePTVehicleEngine, objectId);
     if (!objectRecord)
         return true;
 
@@ -409,7 +407,7 @@ bool omni::physx::updateVehicleEngineDampingRateZeroThrottleClutchDisengaged(Att
 bool omni::physx::updateVehicleTireFrictionTableFrictionValues(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const InternalDatabase::Record* objectRecord = getObjectRecord(ePTVehicleTireFrictionTable, objectId);
+    const InternalDatabase::Record* objectRecord = getObjectRecord(attachedStage, ePTVehicleTireFrictionTable, objectId);
     if (!objectRecord)
         return true;
 
@@ -433,7 +431,7 @@ bool omni::physx::updateVehicleTireFrictionTableGroundMaterials(AttachedStage& a
 bool omni::physx::updateVehicleTireFrictionTableDefaultFrictionValue(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const InternalDatabase::Record* objectRecord = getObjectRecord(ePTVehicleTireFrictionTable, objectId);
+    const InternalDatabase::Record* objectRecord = getObjectRecord(attachedStage, ePTVehicleTireFrictionTable, objectId);
     if (!objectRecord)
         return true;
 
@@ -587,7 +585,7 @@ static bool getWheelReferenceProperty(AttachedStage& attachedStage, omni::physx:
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode, omni::physx::PhysXType type,
     T& value, InternalVehicleWheelReferenceList*& vehicleWheelRefList)
 {
-    const InternalDatabase::Record* objectRecord = getObjectRecord(type, objectId);
+    const InternalDatabase::Record* objectRecord = getObjectRecord(attachedStage, type, objectId);
     if (!objectRecord)
         return false;
 
@@ -1036,7 +1034,7 @@ bool omni::physx::updateVehicleTireFrictionVsSlip(AttachedStage& attachedStage, 
 bool omni::physx::updateVehicleTireFrictionTableRel(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const InternalDatabase::Record* objectRecord = getObjectRecord(ePTVehicleTire, objectId);
+    const InternalDatabase::Record* objectRecord = getObjectRecord(attachedStage, ePTVehicleTire, objectId);
     if (!objectRecord)
         return true;
 
@@ -1059,8 +1057,8 @@ bool omni::physx::updateVehicleTireFrictionTableRel(AttachedStage& attachedStage
         CARB_LOG_ERROR("Relationship \"%s\" needs to have exactly 1 entry.\n", relationshipPath.c_str());
     if (single)
     {
-        InternalTireFrictionTable* tireFrictionTable = omni::physx::getInternalPtr<InternalTireFrictionTable>(
-            ePTVehicleTireFrictionTable, getObjectId(key, ePTVehicleTireFrictionTable));
+        InternalTireFrictionTable* tireFrictionTable = omni::physx::getInternalPtr<InternalTireFrictionTable>(attachedStage.getInternalPhysXDatabase(),
+            ePTVehicleTireFrictionTable, getObjectDataOrID<ObjectDataQueryType::eOBJECT_ID>(key, ePTVehicleTireFrictionTable, attachedStage.getInternalPhysXDatabase(), attachedStage));
         if (tireFrictionTable)
         {
             return updateVehicleTireData(vehicleTireRefList, nullptr, tireFrictionTable->getMaterialFrictionTable(),
@@ -1530,7 +1528,7 @@ static bool updateVehicleWheelAttachmentData(InternalVehicleWheelAttachment* whe
 static InternalVehicleWheelAttachment* getWheelAttachment(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::ObjectKey& key)
 {
-    const InternalDatabase::Record* objectRecord = getObjectRecord(ePTVehicleWheelAttachment, objectId);
+    const InternalDatabase::Record* objectRecord = getObjectRecord(attachedStage, ePTVehicleWheelAttachment, objectId);
     if (objectRecord)
     {
         key = objectRecord->mKey;
@@ -1745,7 +1743,7 @@ bool omni::physx::updateVehicleWheelAttachmentCollisionGroup(AttachedStage& atta
         const size_t targetCount = targets.size();
         if (targetCount == 1)
         {
-            const ObjectId collisionGroupId = getObjectId(targets[0], ePTCollisionGroup);
+            const ObjectId collisionGroupId = getObjectDataOrID<ObjectDataQueryType::eOBJECT_ID>(targets[0], ePTCollisionGroup, attachedStage.getInternalPhysXDatabase(), attachedStage);
             if (collisionGroupId != kInvalidObjectId)
             {
                 return updateVehicleWheelAttachmentData(wheelAttachment, nullptr, nullptr, &collisionGroupId, nullptr,
@@ -1931,7 +1929,7 @@ bool omni::physx::updateVehicleSuspensionComplTireForceAppPoint(AttachedStage& a
 static InternalVehicle* getInternalVehicle(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::ObjectKey& key)
 {
-    const InternalDatabase::Record* objectRecord = getObjectRecord(ePTVehicle, objectId);
+    const InternalDatabase::Record* objectRecord = getObjectRecord(attachedStage, ePTVehicle, objectId);
     if (objectRecord)
     {
         key = objectRecord->mKey;
@@ -2135,7 +2133,7 @@ bool omni::physx::updateVehicleLateralStickyTireDamping(AttachedStage& attachedS
 static InternalVehicle* getInternalVehicleFromController(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::ObjectKey& key)
 {
-    const InternalDatabase::Record* objectRecord = getObjectRecord(ePTVehicleController, objectId);
+    const InternalDatabase::Record* objectRecord = getObjectRecord(attachedStage, ePTVehicleController, objectId);
     if (objectRecord)
     {
         key = objectRecord->mKey;
@@ -2358,7 +2356,7 @@ bool omni::physx::updateVehicleTankControllerThrust1(AttachedStage& attachedStag
 bool omni::physx::updateVehicleDriveBasicPeakTorque(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const InternalDatabase::Record* objectRecord = getObjectRecord(ePTVehicleDriveBasic, objectId);
+    const InternalDatabase::Record* objectRecord = getObjectRecord(attachedStage, ePTVehicleDriveBasic, objectId);
     if (!objectRecord)
         return true;
 
@@ -2416,7 +2414,7 @@ static bool getWheelControllerProperty(AttachedStage& attachedStage, omni::physx
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode,
     T& value, InternalVehicleWheelAttachment*& wheelAttachment)
 {
-    const InternalDatabase::Record* objectRecord = getObjectRecord(ePTVehicleWheelController, objectId);
+    const InternalDatabase::Record* objectRecord = getObjectRecord(attachedStage, ePTVehicleWheelController, objectId);
     if (!objectRecord)
         return false;
 

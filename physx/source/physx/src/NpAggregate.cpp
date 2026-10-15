@@ -98,7 +98,11 @@ void NpAggregate::scRemoveActor(NpActor& actor, bool reinsert)
 	ac.setAggregateID(PX_INVALID_U32);
 		
 	if(getNpScene() && reinsert)
+	{
+		detachStaticElementFilters(actor);
 		ac.reinsertShapes();
+		attachStaticElementFilters(actor);
+	}
 
 	//Update pvd status
 	PvdDetachActorFromAggregate( this, &actor );
@@ -110,7 +114,7 @@ void NpAggregate::removeAndReinsert(PxActor& actor, bool reinsert)
 	NpActor& np = NpActor::getFromPxActor(actor);
 
 	np.setAggregate(NULL, actor);
-	
+
 	scRemoveActor(np, reinsert);
 }
 

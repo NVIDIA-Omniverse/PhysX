@@ -5,14 +5,20 @@
 name = "ovphysx-codeless-schemas-sample"
 version = "0.0.1"
 requires-python = ">=3.10"
-# ovphysx is intentionally NOT listed as a PyPI dependency: the regression test
-# runs against the locally built ovphysx wheel (installed separately by the
-# sample test harness), so it always exercises the schemas shipped by the
-# version under test rather than a release pulled from PyPI. Only the stock
-# OpenUSD runtime is fetched from PyPI.
+# The harness installs the local ovphysx wheel separately. Schema data comes
+# from the independently installed provider; usd-core is only for this sample.
 dependencies = [
+  "physx-usd-schemas>=25.11.2",
   # usd-core has no linux-aarch64 wheel on PyPI, so exclude that platform; the
   # sample skips itself there (see register_codeless_schemas.py). Wheels exist
   # for linux x86_64, macOS (universal2), and Windows.
   "usd-core; platform_machine != 'aarch64'",
 ]
+
+[[tool.uv.index]]
+name = "physx-usd-schemas"
+url = "https://pypi.org/simple"
+explicit = true
+
+[tool.uv.sources]
+physx-usd-schemas = { index = "physx-usd-schemas" }

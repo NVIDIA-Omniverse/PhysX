@@ -1,6 +1,16 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-FEED-006
+ * @covers AC-6
+ */
+
+// @implements REQ-COOK-CUDACTX-001
+// @covers AC-1
+
+// @implements REQ-ATTACH-RESOLVE-001
+// @covers AC-4 AC-6 AC-8
+
 /**
  * @implements REQ-PARSE-BACKEND-001
  * @covers AC-6 AC-10
@@ -12,6 +22,9 @@
  */
 
 /**
+ * @implements REQ-SDK-INIT-001
+ * @covers AC-1 AC-2 AC-3
+ *
  * @implements REQ-SDK-LIFECYCLE-001
  * @covers AC-1 AC-2 AC-3
  *
@@ -21,19 +34,32 @@
  * @implements REQ-OMNIPVD-LATE-001
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7 AC-8 AC-9 AC-10
  *
- * @implements REQ-SIM-NVTX-001
- * @covers AC-1 AC-2 AC-3 AC-4
+ * @implements REQ-SIM-PROFILER-001
+ * @covers AC-1 AC-2 AC-3 AC-5 AC-6
  *
  * @implements REQ-COOK-LIFETIME-001
  * @covers AC-5
  */
 
+/**
+ * @implements REQ-ATTACH-SERVICES-001
+ * @covers AC-1 AC-2 AC-3
+ * @implements REQ-ATTACH-EXECUTION-001
+ * @covers AC-4
+ */
+
+// @implements REQ-CUSTOM-LIFETIME-001
+// @covers AC-2 AC-3
+
 #include <carb/Defines.h>
-#include <cudamanager/PxCudaContextManager.h> // acquireReference() in acquireCudaContextManager()
+#include <cudamanager/PxCudaContextManager.h>
 #include "PhysXTools.h"
 #include "Setup.h"
+#include "RuntimeExecution.h"
+#include <cmath>
 #include <common/utilities/PhysXErrorCallback.h>
 #include <common/utilities/MemoryMacros.h>
+#include <algorithm>
 #include <cstring>
 #include <string>
 #include <filesystem>
@@ -48,6 +74,7 @@
 #include "PhysXDefines.h"
 #include "PhysXUSDProperties.h"
 #include "OmniPhysX.h"
+#include "PhysXCustomGeometry.h"
 #include "usdLoad/LoadUsd.h"
 #include "ContactReport.h"
 #include "SceneMultiGPUMode.h"
@@ -63,11 +90,19 @@
 #include "service/CookingComputeService.h"
 #include "service/CookingTask.h"
 #include "utility/MeshSimplifyInternal.h"
-#include "utils/Nvtx.h"
-#include "utils/ProfileZoneBalance.h"
 
 #include <carb/logging/Log.h>
 #include <carb/profiler/Profile.h>
+
+#if CARB_PLATFORM_WINDOWS
+// SYSTEMTIME and GetLocalTime, for the OmniPVD recording timestamp below. NOMINMAX
+// first: <Windows.h> defines min/max as macros otherwise, which breaks the
+// std::numeric_limits uses further down.
+#    ifndef NOMINMAX
+#        define NOMINMAX
+#    endif
+#    include <Windows.h>
+#endif
 
 #include <omni/physx/IPhysxSettings.h>
 #include <private/omni/physx/IPhysxCookingServicePrivate.h>
@@ -100,6 +135,18 @@ using namespace omni::physx::usdparser;
 namespace
 {
 
+// Keep runtime admission out of the shared error utility. Both ordinary errors
+// and abort/too-many-errors push subscribers execute inside this task-aware scope.
+class RuntimePhysXErrorCallback final : public CarbPhysXErrorCallback
+{
+public:
+    void reportError(PxErrorCode::Enum code, const char* message, const char* file, int line) override
+    {
+        RuntimeCallbackScope callbackScope;
+        CarbPhysXErrorCallback::reportError(code, message, file, line);
+    }
+};
+
 bool isOmniPvdRecordingCapable(carb::settings::ISettings& settings)
 {
     return (settings.getAsBool(kOmniPvdOutputEnabled) && !settings.getAsBool(kOmniPvdIsOVDStage)) ||
@@ -109,17 +156,6 @@ bool isOmniPvdRecordingCapable(carb::settings::ISettings& settings)
 omni::physx::ICookingComputeService* getOwnedCookingService()
 {
     return omni::physx::OmniPhysX::getInstance().getPhysXSetup().getCookingComputeService();
-}
-
-// Handed to the cooking service as its AcquireSharedCudaContextManagerFn: returns the manager with
-// a reference already taken, so a cooking job on a UJITSO worker can never end up holding a
-// manager that setupGPU()/clearCudaContextManagers() destroyed on the main thread meanwhile.
-//
-// @implements REQ-COOK-CUDACTX-001
-// @covers AC-1
-::physx::PxCudaContextManager* acquireOwnedCudaContextManager()
-{
-    return omni::physx::OmniPhysX::getInstance().getPhysXSetup().acquireCudaContextManager();
 }
 
 uint32_t CARB_ABI cookingPumpAsyncContext(omni::physx::PhysxCookingAsyncContext context)
@@ -427,57 +463,44 @@ static const ::physx::PxU32 tCylinderNumCirclePoints = 30;  // with 32 it crashe
 static const ::physx::PxU32 tConeNumCirclePoints = 30;
 
 
-// Bridges the PhysX SDK profile zones to the Carbonite profiler and to NVTX. The
-// two sinks are gated independently, so either, both, or neither can be active;
-// the SDK allows only one PxProfilerCallback, which is why they share one object.
+// Bridges the PhysX SDK profile zones to carb::profiler, which is the only sink:
+// whichever backend the process bound decides where they land.
 //
-// Detached zones may end on a different thread than they started on and do not
-// close in LIFO order, so NVTX publishes them as explicit start/end ranges keyed by
-// name and context id rather than through the per-thread push/pop stack. profilerData
-// is deliberately unused for that: PX_PROFILE_STOP_CROSSTHREAD always passes NULL.
+// The SDK's cross-thread ("detached") zones are dropped rather than published.
+// carb::profiler cannot express them -- its zones are a per-thread begin/end pair,
+// and a detached zone may close on a different thread than it opened on, with
+// sibling phases that do not close in LIFO order. Publishing them as ordinary zones
+// would begin on one thread and end on another, corrupting that thread's stack, so
+// the branch below discards them and must stay: deleting it would let them fall
+// through to the sink they cannot use.
 //
-// The NVTX gate is read once per non-detached zone, when it opens, and the answer is
-// recorded for the matching close. It is mutable -- creating a second PhysX SDK
-// writes it, and that may happen while another thread is mid-step -- so a second
-// read at close time could pop a range that was never pushed, closing the enclosing
-// range instead.
+// The zone id rides back to zoneEnd in profilerData, which the SDK round-trips for
+// non-detached zones (PxProfileScoped). Handing it to CARB_PROFILE_END is what lets
+// Carbonite verify that the zone being closed is the one that was opened, and it
+// makes an end whose begin never ran a no-op: with no profiler bound the begin
+// yields kNoZoneId and the end skips itself, so a backend that binds midway through
+// a zone cannot produce an unmatched close.
 class OmniPhysxProfileCallback : public PxProfilerCallback
 {
-    virtual void* zoneStart(const char* eventName, bool detached, uint64_t contextId)
+    virtual void* zoneStart(const char* eventName, bool detached, uint64_t /*contextId*/)
     {
         if (detached)
         {
-            // Gated inside, on the same map that pairs the range ids.
-            nvtx::startDetachedZone(eventName, contextId);
             return nullptr;
         }
 
-        const bool pushNvtx = profilebalance::onZoneStart(nvtx::isEnabled());
-        CARB_PROFILE_BEGIN(kPhysicsProfilerMask, "%s",eventName);
-        if (pushNvtx)
-            nvtx::pushZone(eventName);
-        return nullptr;
+        const carb::profiler::ZoneId zone = CARB_PROFILE_BEGIN(kPhysicsProfilerMask, "%s",eventName);
+        return reinterpret_cast<void*>(zone);
     }
 
-    virtual void zoneEnd(void* profilerData, const char* eventName, bool detached, uint64_t contextId)
+    virtual void zoneEnd(void* profilerData, const char* /*eventName*/, bool detached, uint64_t /*contextId*/)
     {
         if (detached)
         {
-            nvtx::endDetachedZone(eventName, contextId);
             return;
         }
 
-        // Both sinks below are per-thread stacks, so an unmatched close has to be
-        // dropped rather than published: popping would close a zone this thread
-        // does not own. onZoneEnd() reports the first occurrence, and hands back the
-        // NVTX decision this zone was opened with.
-        bool popNvtx = false;
-        if (!profilebalance::onZoneEnd(popNvtx))
-            return;
-
-        CARB_PROFILE_END(kPhysicsProfilerMask);
-        if (popNvtx)
-            nvtx::popZone();
+        CARB_PROFILE_END(kPhysicsProfilerMask, reinterpret_cast<carb::profiler::ZoneId>(profilerData));
     }
 
     virtual void recordData(int32_t value, const char* valueName, uint64_t contextId)
@@ -496,6 +519,31 @@ class OmniPhysxProfileCallback : public PxProfilerCallback
     }
 
 } gProfilerCallback;
+
+// Reads the sink gate and installs (or clears) the SDK profiler callback to match.
+//
+// Called when the PhysX SDK is created and again whenever a host asks for the zones,
+// which can happen later: the SDK is created once per process, so a decision taken
+// only at creation goes stale the moment a later instance turns profiling on, and an
+// uninstalled callback drops every SDK zone.
+void installProfilerCallback(carb::settings::ISettings* iSettings)
+{
+    if (!iSettings)
+    {
+        return;
+    }
+
+    // Idempotent: PxSetProfilerCallback replaces whatever was installed, so turning
+    // the sink back off also uninstalls.
+    if (iSettings->getAsBool(kSettingExposeProfilerData))
+    {
+        PxSetProfilerCallback(&gProfilerCallback);
+    }
+    else
+    {
+        PxSetProfilerCallback(nullptr);
+    }
+}
 
 
 struct OmniPvdRecordingTime
@@ -607,12 +655,12 @@ namespace omni
 {
     namespace physx
     {
-        PhysXSetup::PhysXSetup() : mDefaultScene(nullptr)
+        PhysXSetup::PhysXSetup()
         {
             mPhysxFoundation = &omni::physx::foundation::getInterface();
             initializeCookingServiceInterfaces();
 
-            mErrorCallback = new CarbPhysXErrorCallback();
+            mErrorCallback = new RuntimePhysXErrorCallback();
 
 
             // Subscribe to changes to both kSettingPVDEnabled and kOmniPvdOutputEnabled so we can regenerate the SDK
@@ -672,7 +720,6 @@ namespace omni
 
             }
 
-            clearCudaContextManagersAndRefillWithNull(1);
         }
 
         PhysXSetup::~PhysXSetup()
@@ -698,10 +745,10 @@ namespace omni
             }
             // PxScene instances are owned by the current PxPhysics instance even when their steppers are complete.
             // Recreating PxPhysics while a scene is alive leaves PhysXScene::mScene dangling.
-            if (!mPhysXScenes.empty())
+            if (hasResourceBorrowers())
             {
                 CARB_LOG_WARN(
-                    "PVD settings change deferred until next attach; one or more PhysX scenes are still alive");
+                    "PVD settings change deferred until next attach; shared SDK borrowers are still alive");
                 return;
             }
             cleanupPhysics();
@@ -718,213 +765,22 @@ namespace omni
             mErrorCallback->setMaxNumErrors(maxNumberOfPhysXErrors);
         }
 
-        void PhysXSetup::clearCudaContextManagersLocked()
-        {
-            for (auto& cudaContextManager : mCudaContextManagers)
-            {
-                // Drops our reference only. A manager an in-flight cooking task still uses
-                // survives on that task's own reference (REQ-COOK-CUDACTX-001) and is destroyed
-                // when the last holder releases it.
-                SAFE_RELEASE(cudaContextManager);
-            }
-            mCudaContextManagers.clear();
-        }
-
-        void PhysXSetup::clearCudaContextManagers()
-        {
-            std::lock_guard<std::mutex> lock(mCudaContextManagerMutex);
-            clearCudaContextManagersLocked();
-        }
-
-        void PhysXSetup::clearCudaContextManagersAndRefillWithNull(int numToFill)
-        {
-            std::lock_guard<std::mutex> lock(mCudaContextManagerMutex);
-            clearCudaContextManagersLocked();
-
-            for (int ord = 0; ord < numToFill; ++ord)
-            {
-                mCudaContextManagers.push_back(nullptr);
-            }
-        }
-
-        void PhysXSetup::setupGPU()
-        {
-#if USE_PHYSX_GPU
-            if (mPhysxFoundation && mPhysxFoundation->isCpuMode && mPhysxFoundation->isCpuMode())
-            {
-                // CPU-only mode: never call into the CUDA driver API.
-                return;
-            }
-            // AD: OM-117654 - the code in this function can throw a PhysX error, and the callback might access an outdated cuda context in that case.
-            mErrorCallback->setCudaContextManager(nullptr);
-
-            // OMPE-95128: NpScene caches the PxCudaContextManager* at construction; releasing or replacing it
-            // while scenes are alive leaves dangling vtable pointers. Defer all manager changes to the next attach.
-            // OMPE-102199: mPhysXScenes is emptied before releasePhysXScenes() destroys the scenes, so consult
-            // the teardown flag too - the scenes in that window still hold the manager.
-            const bool hasLiveScenes = !mPhysXScenes.empty() || mReleasingPhysXScenes;
-
-            // When a refresh is deferred under live scenes, still mirror createOrRefreshPxCudaContextManager's
-            // abort-mode reset so resume can recover from a prior GPU error.
-            // Call only while scenes are quiesced - setAbortMode() writes non-atomic state shared with GPU
-            // worker threads, so it would race with a live simulate().
-            auto clearAbortMode = [](PxCudaContextManager* mgr)
-            {
-                if (!mgr)
-                    return;
-                PxCudaContext* ctx = mgr->getCudaContext();
-                if (ctx && ctx->isInAbortMode())
-                    ctx->setAbortMode(false);
-            };
-
-            // Keep the getNextCudaContextManager() round-robin cursor while the manager vector is unchanged;
-            // reset it only when the vector is rebuilt.
-            if (!hasLiveScenes)
-                mNextCudaContextManagerId = 0;
-            const bool enableSynchronousKernelLaunches = OmniPhysX::getInstance().getCachedSettings().enableSynchronousKernelLaunches;
-            const int multiGPUMode = OmniPhysX::getInstance().getISettings()->getAsInt(kSettingSceneMultiGPUMode);
-
-            if ((mCudaLaunchSynchronous != enableSynchronousKernelLaunches) || (mSceneMultiGPUMode != multiGPUMode))
-            {
-                if (hasLiveScenes)
-                {
-                    // Sticky: warn once per deferral; flag cleared on rebuild or in releasePhysXScenes.
-                    if (!mCudaSettingsDeferralWarned)
-                    {
-                        CARB_LOG_WARN("PhysX: enableSynchronousKernelLaunches/sceneMultiGPUMode change deferred until next attach; "
-                                      "live scenes still reference the current PxCudaContextManager. "
-                                      "Stop the simulation for the new setting to take effect.");
-                        mCudaSettingsDeferralWarned = true;
-                    }
-                }
-                else
-                {
-                    // clear cuda context managers so they can be recreated with correct params with one default space
-                    clearCudaContextManagersAndRefillWithNull(1);
-                    mCudaLaunchSynchronous = enableSynchronousKernelLaunches;
-                    mSceneMultiGPUMode = multiGPUMode;
-                    mCudaSettingsDeferralWarned = false;
-                }
-            }
-
-            // check MultiGPU mode settings
-            int availableDeviceCount = 0;
-            omni::physx::foundation::getOptionalCudaInterface().deviceGetCount(&availableDeviceCount, nullptr);
-            if ((mSceneMultiGPUMode != (int)SceneMultiGPUMode::eDisabled) && availableDeviceCount < 2)
-            {
-                CARB_LOG_WARN("Warning: MultiGpuMode set to %d, but less than 2 CUDA devices found. Reverting to default!", mSceneMultiGPUMode);
-                OmniPhysX::getInstance().getISettings()->setInt(kSettingSceneMultiGPUMode, (int)SceneMultiGPUMode::eDisabled);
-                mSceneMultiGPUMode = 0;
-            }
-
-            if (mSceneMultiGPUMode)
-            {
-                int32_t firstOrdinal = 0;
-
-                // skip the first device
-                if (mSceneMultiGPUMode == 2)
-                {
-                    firstOrdinal = 1;
-                    availableDeviceCount--;
-                }
-
-                if (mCudaContextManagers.size() != availableDeviceCount)
-                {
-                    if (hasLiveScenes)
-                    {
-                        // Sticky: log once per deferral; re-armed on rebuild or in releasePhysXScenes.
-                        if (!mCudaDeviceCountDeferralWarned)
-                        {
-                            CARB_LOG_INFO("PhysX: CUDA device count change deferred until next attach; "
-                                          "live scenes still reference the current PxCudaContextManager.");
-                            mCudaDeviceCountDeferralWarned = true;
-                        }
-                    }
-                    else
-                    {
-                        clearCudaContextManagersAndRefillWithNull(availableDeviceCount);
-                        mCudaDeviceCountDeferralWarned = false;
-                    }
-                }
-
-                for (int32_t off = 0, ord = firstOrdinal; off < availableDeviceCount; ++off, ++ord)
-                {
-                    // Resize was skipped under hasLiveScenes; the vector may be smaller than availableDeviceCount.
-                    if (off >= (int32_t)mCudaContextManagers.size())
-                        break;
-
-                    if (hasLiveScenes && mCudaContextManagers[off] != nullptr)
-                    {
-                        // Recover the OOM/abort case in place; a non-OOM sticky error can only be cleared by
-                        // recreating the manager (unsafe with live scenes), so warn and defer it to next attach.
-                        clearAbortMode(mCudaContextManagers[off]);
-                        PxCudaContext* ctx = mCudaContextManagers[off]->getCudaContext();
-                        if (ctx && ctx->getLastError() != CUDA_SUCCESS)
-                            CARB_LOG_WARN("PhysX: PxCudaContextManager for device ordinal %d has a sticky CUDA error "
-                                          "that cannot be cleared while scenes are live; stop and restart the "
-                                          "simulation to recover.", ord);
-                        continue;
-                    }
-
-                    // spawn a separate context and a context manager for each available cuda device
-                    omni::physx::PhysxFoundationDeviceOrdinal ordinal;
-                    ordinal.mode = omni::physx::PhysxFoundationDeviceOrdinal::eMODE_DEVICE_ORDINAL;
-                    ordinal.deviceOrdinal = ord;
-                    // createOrRefreshPxCudaContextManager() may release and replace the entry, so it
-                    // mutates mCudaContextManagers and has to be serialized against
-                    // acquireCudaContextManager() on the cooking worker threads.
-                    {
-                        std::lock_guard<std::mutex> lock(mCudaContextManagerMutex);
-                        if(!mPhysxFoundation->createOrRefreshPxCudaContextManager(ordinal, mFoundation, mCudaContextManagers[off], enableSynchronousKernelLaunches))
-                        {
-                            SAFE_RELEASE(mCudaContextManagers[off]);
-                            CARB_LOG_ERROR("Unable to create PxCudaContextManager for device with ordinal %d!", ord);
-                        }
-                    }
-                }
-
-                // set the first device as default
-                mPhysxFoundation->setCudaDevice(0);
-            }
-            else
-            {
-                omni::physx::PhysxFoundationDeviceOrdinal ordinal;
-                mPhysxFoundation->getSingleCudaContextManagerOrdinal(ordinal);
-                if (hasLiveScenes && !mCudaContextManagers.empty() && mCudaContextManagers[0] != nullptr)
-                {
-                    // Recover the OOM/abort case in place; a non-OOM sticky error can only be cleared by
-                    // recreating the manager (unsafe with live scenes), so warn and defer it to next attach.
-                    clearAbortMode(mCudaContextManagers[0]);
-                    PxCudaContext* ctx = mCudaContextManagers[0]->getCudaContext();
-                    if (ctx && ctx->getLastError() != CUDA_SUCCESS)
-                        CARB_LOG_WARN("PhysX: PxCudaContextManager has a sticky CUDA error that cannot be cleared "
-                                      "while scenes are live; stop and restart the simulation to recover.");
-                }
-                else
-                {
-                    // Mutates mCudaContextManagers (release + replace); serialize against
-                    // acquireCudaContextManager() on the cooking worker threads.
-                    std::lock_guard<std::mutex> lock(mCudaContextManagerMutex);
-                    if (!mPhysxFoundation->createOrRefreshPxCudaContextManager(ordinal, mFoundation, mCudaContextManagers[0], enableSynchronousKernelLaunches))
-                    {
-                        SAFE_RELEASE(mCudaContextManagers[0]);
-                        CARB_LOG_ERROR("Unable to create PxCudaContextManager!");
-                    }
-                }
-            }
-
-            mErrorCallback->setCudaContextManager(getCudaContextManager());
-#endif
-        }
-
         void PhysXSetup::createPhysics(const PxTolerancesScale& tolerances)
         {
+            if (mPhysics && hasResourceBorrowers())
+                return;
+            if (!tolerances.isValid() || !std::isfinite(tolerances.length) ||
+                !std::isfinite(tolerances.speed) || tolerances.speed <= 0.0f)
+            {
+                CARB_LOG_ERROR("PhysX SDK initialization failed: invalid tolerance scale.");
+                return;
+            }
             releaseCookingAsyncContext();
 
             // ### DEFENSIVE OMPE-102186
             // createPhysics() returns without creating a foundation if PxCreateFoundation fails,
             // and CARB_ASSERT compiles out in release, so everything below - PxCreatePvd,
-            // PxCreatePhysics, setupGPU - would dereference a null foundation. Bail out with an
+            // PxCreatePhysics - would dereference a null foundation. Bail out with an
             // error instead; the underlying failure is already reported by createPhysics().
             CARB_ASSERT(mFoundation);
             if (!mFoundation)
@@ -937,6 +793,7 @@ namespace omni
             unregisterVehiclePvdCallback();
             releaseVehiclePvdTelemetry();
             SAFE_RELEASE(mPhysics);
+            mAttachmentCudaResources.clear();
             carb::settings::ISettings* iSettings = OmniPhysX::getInstance().getISettings();
             OmniPhysX& omniPhysX = OmniPhysX::getInstance();
 
@@ -954,119 +811,9 @@ namespace omni
             const bool writeStreamClosedOk = releaseOmniPvdWriteStream();
             writeOutOmniPVDFile(omniPVDWasActive && omniPVDFileWasActive, writeStreamClosedOk);
 
-            const bool omniPVDOutputEnabled = iSettings->getAsBool(kOmniPvdOutputEnabled);
-            const bool omniPVDIsOVDStage = iSettings->getAsBool(kOmniPvdIsOVDStage);
-            bool isOmniPVDRecording = false;
-            std::string ovdRecordingFileName;
-            if (omniPVDOutputEnabled && !omniPVDIsOVDStage)
-            {
-                carb::settings::ScopedRead settingsRead(iSettings);
-                size_t transportLength = 0;
-                size_t outputDirectoryLength = 0;
-                size_t tcpAddressLength = 0;
-                const char* transport = iSettings->getStringBuffer(kOmniPvdTransport, &transportLength);
-                const char* outputDirectory =
-                    iSettings->getStringBuffer(kOmniPvdOvdRecordingDirectory, &outputDirectoryLength);
-                const char* tcpAddress = iSettings->getStringBuffer(kOmniPvdTcpAddress, &tcpAddressLength);
-                OmniPvdDestination destination;
-                const char* destinationError = nullptr;
-                const bool destinationValid = normalizeOmniPvdDestination(
-                    transport, transportLength,
-                    outputDirectory, outputDirectoryLength,
-                    tcpAddress, tcpAddressLength,
-                    iSettings->getAsInt(kOmniPvdTcpPort), iSettings->getAsInt(kOmniPvdTcpTimeoutMs),
-                    destination, destinationError);
-                if (!destinationValid)
-                {
-                    CARB_LOG_ERROR("OmniPvd: invalid startup destination: %s", destinationError);
-                }
-                else
-                {
-                    mOmniPvd = PxCreateOmniPvd(*mFoundation);
-                    OmniPvdWriter* omniWriter = mOmniPvd ? mOmniPvd->getWriter() : nullptr;
-                    if (!omniWriter)
-                    {
-                        CARB_LOG_ERROR("OmniPvd writer not created");
-                        SAFE_RELEASE(mOmniPvd);
-                    }
-                    else if (destination.transport == OmniPvdTransport::eTcp)
-                    {
-                        OmniPvdSocketWriteStream* socketStream = createOmniPvdSocketWriteStream(
-                            destination.tcpAddress.c_str(), destination.tcpPort, destination.tcpTimeoutMs);
-                        if (socketStream && socketStream->openStream())
-                        {
-                            mOmniPvdWriteStream = socketStream;
-                            mOmniPvdStreamKind = OmniPvdStreamKind::eTcp;
-                            omniWriter->setWriteStream(*socketStream);
-                        }
-                        else
-                        {
-                            CARB_LOG_ERROR("OmniPvd: failed to connect TCP startup stream to %s:%u",
-                                destination.tcpAddress.c_str(), static_cast<unsigned>(destination.tcpPort));
-                            if (socketStream)
-                            {
-                                socketStream->closeStream();
-                                destroyOmniPvdSocketWriteStream(*socketStream);
-                            }
-                            SAFE_RELEASE(mOmniPvd);
-                        }
-                    }
-                    else
-                    {
-                        OmniPvdFileWriteStream* fileStream = createOmniPvdFileWriteStream();
-                        if (fileStream)
-                        {
-                            mOmniPvdWriteStream = fileStream;
-                            mOmniPvdStreamKind = OmniPvdStreamKind::eStartupFile;
-                            omniWriter->setWriteStream(*fileStream);
-                        }
-                        if (fileStream && !destination.fileTarget.empty())
-                        {
-                            std::string formattedOutputDir = destination.fileTarget;
-                            addLastSlash(formattedOutputDir);
-                            bool directoryCreationOk = true;
-                            try
-                            {
-                                std::filesystem::create_directories(formattedOutputDir);
-                            }
-                            catch (const std::filesystem::filesystem_error& e)
-                            {
-                                directoryCreationOk = false;
-                                CARB_LOG_ERROR("Failed to create output directory: %s", e.what());
-                            }
-                            if (directoryCreationOk)
-                            {
-                                OmniPvdRecordingTime nowTs;
-                                getLocalOmniPvdTime(nowTs);
-                                gLastOmniPvdTime.setWithDiffCounterIncreaseIfSame(nowTs);
-                                char buffer[200];
-                                sprintf_s(buffer, 200, "%04d_%02d_%02d_%02d_%02d_%02d_%02d",
-                                    gLastOmniPvdTime.year, gLastOmniPvdTime.month, gLastOmniPvdTime.day,
-                                    gLastOmniPvdTime.hour, gLastOmniPvdTime.minute, gLastOmniPvdTime.second,
-                                    gLastOmniPvdTime.diffCounter);
-                                ovdRecordingFileName = formattedOutputDir + "tmp.ovd";
-                                setOmniPVDoutputDirectory(formattedOutputDir.c_str());
-                                setOmniPVDTimeStampedFileName(buffer);
-                                fileStream->setFileName(ovdRecordingFileName.c_str());
-                            }
-                            else
-                            {
-                                SAFE_RELEASE(mOmniPvd);
-                                releaseOmniPvdWriteStream();
-                            }
-                        }
-                        else if (!fileStream)
-                            CARB_LOG_ERROR("OmniPvd writeStream not set!");
-                        else
-                            CARB_LOG_ERROR("OmniPvd: reading output directory failed!");
-                        if (!fileStream || destination.fileTarget.empty())
-                        {
-                            SAFE_RELEASE(mOmniPvd);
-                            releaseOmniPvdWriteStream();
-                        }
-                    }
-                }
-            }
+            // SDK creation installs producers only. Start configured output after
+            // attachment publication, so a failed candidate cannot start a stream
+            // or pin the SDK to its uncommitted tolerance scale.
             const bool omniPVDRecordingCapable = isOmniPvdRecordingCapable(*iSettings);
             if (omniPVDRecordingCapable && !mOmniPvd)
             {
@@ -1087,48 +834,30 @@ namespace omni
             mPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *mFoundation, tolerances, true, mVisualDebugger, mOmniPvd);
             if (!mPhysics)
             {
-                CARB_LOG_ERROR("Unable to create PhysX SDK.");
-                releaseVehiclePvdRegistrationHandles();
-                SAFE_RELEASE(mOmniPvd);
-                releaseOmniPvdWriteStream();
-                iSettings->setBool(kOmniPvdIsRecording, false);
+                CARB_LOG_ERROR("PhysX SDK creation failed (length=%g, speed=%g). See the preceding PhysX errors.",
+                    tolerances.length, tolerances.speed);
+                cleanupPhysics();
                 return;
             }
 
+            mPhysics->registerDeletionListener(OmniPhysX::getInstance().getCustomGeometryManager(),
+                PxDeletionEventFlag::eMEMORY_RELEASE, false);
+
             if (!mExtensionsInitialized)
             {
-                PxInitExtensions(*mPhysics, mVisualDebugger);
+                if (!PxInitExtensions(*mPhysics, mVisualDebugger))
+                {
+                    CARB_LOG_ERROR("PhysX extension initialization failed.");
+                    cleanupPhysics();
+                    return;
+                }
                 mExtensionsInitialized = true;
             }
 
             if (mOmniPvd)
                 registerVehiclePvdCallback();
 
-            if (mOmniPvd && mOmniPvdWriteStream)
-            {
-                // PxInitExtensions and the Vehicle callback must be registered before the first
-                // full-state snapshot so startup recordings include every producer.
-                mVehiclePvdSnapshotSucceeded = false;
-                OmniPvdWriter* omniWriter = mOmniPvd->getWriter();
-                const bool samplingStarted = mOmniPvd->startSampling();
-                const bool writerSucceeded =
-                    !(omniWriter->getStatus() & OmniPvdWriterStatusFlag::eSTREAM_WRITE_FAILURE);
-                if (samplingStarted && mVehiclePvdSnapshotSucceeded && writerSucceeded)
-                {
-                    isOmniPVDRecording = true;
-                }
-                else
-                {
-                    CARB_LOG_ERROR("OmniPvd error starting recording");
-                    releaseVehiclePvdTelemetry();
-                    if (mOmniPvd->isSampling())
-                        mOmniPvd->stopSampling();
-                    // A failed startup capture is finalized but not published as
-                    // a completed recording. Do not retain it for a later start.
-                    releaseOmniPvdWriteStream();
-                }
-            }
-            iSettings->setBool(kOmniPvdIsRecording, isOmniPVDRecording);
+            iSettings->setBool(kOmniPvdIsRecording, false);
 
             mDefaultCookingParams = getCookingParams(tolerances);
             createCookingAsyncContext();
@@ -1139,35 +868,17 @@ namespace omni
                 mCookingDataAsync = cookingdataasync::createCookingDataAsync(
                     *mPhysics, *cookingServicePrivate, *cookingService, mCookingServiceContext);
 
-                // The change feed holds a WEAK reference to whichever cooking driver registered
-                // its interest (ADR-0003), and this function releases the previous driver above,
-                // so after a mid-attach PxPhysics recreate (createPhysXScene's tolerances check
-                // does exactly that) the old registration is inert and cooking would never see
-                // another source change -- no recook scheduling, and no mesh-key cache
-                // invalidation, leaving a re-authored mesh cooking off its stale CRC. The feed
-                // outlives the swap, so re-register the new driver here.
-                if (mCookingDataAsync)
-                {
-                    if (AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getActiveAttachedStage())
-                        mCookingDataAsync->registerOnChangeFeed(*attachedStage);
-                }
+
             }
             else
             {
                 CARB_LOG_ERROR("Unable to create PhysX asynchronous cooking data.");
             }
 
-            // profiler callback: one callback object feeds both the Carbonite
-            // profiler and NVTX, so install it when either sink is asked for.
-            nvtx::setEnabled(iSettings->getAsBool(kSettingNvtxEnabled));
-            if (iSettings->getAsBool(kSettingExposeProfilerData) || nvtx::isEnabled())
-            {
-                PxSetProfilerCallback(&gProfilerCallback);
-            }
-            else
-            {
-                PxSetProfilerCallback(nullptr);
-            }
+            // Profiler callback, installed when the sink is asked for. A host that
+            // turns it on later calls refreshProfilerCallback(), which repeats
+            // this step.
+            installProfilerCallback(iSettings);
 
             disconnectPVD();
             connectPVD();
@@ -1217,7 +928,7 @@ namespace omni
                     CARB_LOG_ERROR("PhysX foundation is not initialized for the cooking compute service.");
                     return nullptr;
                 }
-                mCookingComputeService = createDefaultCookingComputingService(*mFoundation, acquireOwnedCudaContextManager);
+                mCookingComputeService = createDefaultCookingComputingService(*mFoundation);
                 if (!mCookingComputeService)
                 {
                     CARB_LOG_ERROR("Unable to create PhysX cooking compute service.");
@@ -1266,23 +977,16 @@ namespace omni
                 return;
             }
 
-            if (omniPVDWasActive && (OmniPhysX::getInstance().getSimulationStepCount() > 0) && iSettings->getAsBool(kOmniPvdIsRecording))
+            // The session owns its destination and contains a valid start snapshot
+            // even without a simulation frame. Peer clocks and future settings
+            // cannot suppress finalization or move this capture elsewhere.
+            if (omniPVDWasActive)
             {
                 // Rename mOmniPVDOutputDirectory + tmp.ovd into outputDirFinal + mOmniPVDTimeStampedFileName.
                 std::string outputDirFinal = mOmniPVDOutputDirectory;
                 if (addLastSlash(outputDirFinal))
                 {
                     setOmniPVDoutputDirectory(outputDirFinal.c_str());
-                }
-
-                // The output directory could have been changed by the user since the tmp file was
-                // created, so adjust if necessary.
-                const char* outputDirectory = iSettings->getStringBuffer(kOmniPvdOvdRecordingDirectory);                
-                if ((*outputDirectory) != 0)
-                {
-                    std::string formattedOutputDir = outputDirectory;
-                    addLastSlash(formattedOutputDir);
-                    outputDirFinal = formattedOutputDir;
                 }
 
                 bool directoryCreationOk = true;
@@ -1299,7 +1003,11 @@ namespace omni
                 {
                     std::string tmpFilePath = mOmniPVDOutputDirectory + "tmp.ovd";
                     std::string finalFilePath = outputDirFinal + mOmniPVDTimeStampedFileName + "_rec.ovd";
-                    rename(tmpFilePath.c_str(), finalFilePath.c_str());
+                    if (rename(tmpFilePath.c_str(), finalFilePath.c_str()) != 0)
+                    {
+                        CARB_LOG_ERROR("OmniPvd: failed to finalize startup file '%s'", finalFilePath.c_str());
+                        return;
+                    }
 
                     if (fileWriteStreamClosedOk)
                     {
@@ -1320,9 +1028,89 @@ namespace omni
             }
         }
 
-        OmniPvdRecordingResult PhysXSetup::startOmniPvdRecording(const OmniPvdDestination& destination)
+        void PhysXSetup::startConfiguredOmniPvdRecording()
         {
-            if (!mPhysics)
+            carb::settings::ISettings* settings = OmniPhysX::getInstance().getISettings();
+            if (!settings->getAsBool(kOmniPvdOutputEnabled) || settings->getAsBool(kOmniPvdIsOVDStage))
+                return;
+            // Attach already owns configuration admission; do not nest the full
+            // recording scope. A nonblocking authoring barrier still excludes
+            // copied-data cooks/sampling before touching the shared transport.
+            std::unique_lock<std::shared_mutex> authoring(runtimeAuthoringMutex(),std::try_to_lock);
+            if (!authoring.owns_lock())
+            {
+                CARB_LOG_WARN("OmniPvd: startup recording was not started because of a concurrent authoring operation; retry start_recording after the operation completes");
+                return;
+            }
+            if (isOmniPvdRecording())
+                return;
+            std::vector<std::unique_ptr<RuntimeExecutionScope>> owners;
+            if (!admitIdleRecordingOwners(owners))
+            {
+                CARB_LOG_WARN("OmniPvd: startup recording was not started because of a busy attachment; retry start_recording after fetchResults");
+                return;
+            }
+            // Recording failure does not roll back a published attachment. The
+            // application may fix its destination and start a late session.
+            try
+            {
+                OmniPvdDestination destination;
+                {
+                    carb::settings::ScopedRead settingsRead(settings);
+                    size_t transportLength = 0;
+                    size_t directoryLength = 0;
+                    size_t addressLength = 0;
+                    const char* transport = settings->getStringBuffer(kOmniPvdTransport, &transportLength);
+                    const char* directory = settings->getStringBuffer(kOmniPvdOvdRecordingDirectory, &directoryLength);
+                    const char* address = settings->getStringBuffer(kOmniPvdTcpAddress, &addressLength);
+                    const char* error = nullptr;
+                    if (!normalizeOmniPvdDestination(transport, transportLength, directory, directoryLength,
+                        address, addressLength, settings->getAsInt(kOmniPvdTcpPort),
+                        settings->getAsInt(kOmniPvdTcpTimeoutMs), destination, error))
+                    {
+                        CARB_LOG_ERROR("OmniPvd: invalid startup destination: %s", error);
+                        return;
+                    }
+                }
+                const bool startupFile = destination.transport == OmniPvdTransport::eFile;
+                if (startupFile)
+                {
+                    std::string directory = destination.fileTarget;
+                    if (directory.empty())
+                    {
+                        CARB_LOG_ERROR("OmniPvd: startup recording directory is empty");
+                        return;
+                    }
+                    addLastSlash(directory);
+                    std::filesystem::create_directories(directory);
+                    OmniPvdRecordingTime now;
+                    getLocalOmniPvdTime(now);
+                    gLastOmniPvdTime.setWithDiffCounterIncreaseIfSame(now);
+                    char timestamp[200];
+                    sprintf_s(timestamp, 200, "%04d_%02d_%02d_%02d_%02d_%02d_%02d",
+                        gLastOmniPvdTime.year, gLastOmniPvdTime.month, gLastOmniPvdTime.day,
+                        gLastOmniPvdTime.hour, gLastOmniPvdTime.minute, gLastOmniPvdTime.second,
+                        gLastOmniPvdTime.diffCounter);
+                    setOmniPVDoutputDirectory(directory.c_str());
+                    setOmniPVDTimeStampedFileName(timestamp);
+                    destination.fileTarget = directory + "tmp.ovd";
+                }
+                if (startOmniPvdRecording(destination, startupFile) != OmniPvdRecordingResult::eSuccess)
+                    CARB_LOG_ERROR("OmniPvd: failed to start configured recording after attach");
+            }
+            catch (const std::exception& error)
+            {
+                CARB_LOG_ERROR("OmniPvd: failed to start configured recording: %s", error.what());
+            }
+            catch (...)
+            {
+                CARB_LOG_ERROR("OmniPvd: failed to start configured recording");
+            }
+        }
+
+        OmniPvdRecordingResult PhysXSetup::startOmniPvdRecording(const OmniPvdDestination& destination, bool startupFile)
+        {
+            if (!mPhysics || UsdLoad::getUsdLoad()->getAttachedStages().empty())
             {
                 carb::settings::ISettings* settings = OmniPhysX::getInstance().getISettings();
                 return isOmniPvdRecordingCapable(*settings) ? OmniPvdRecordingResult::eInvalidState :
@@ -1368,7 +1156,7 @@ namespace omni
                     return OmniPvdRecordingResult::eError;
                 }
                 stream = fileStream;
-                streamKind = OmniPvdStreamKind::eFile;
+                streamKind = startupFile ? OmniPvdStreamKind::eStartupFile : OmniPvdStreamKind::eFile;
             }
 
             OmniPvdWriter* writer = mOmniPvd->getWriter();
@@ -1556,6 +1344,8 @@ namespace omni
 
         void PhysXSetup::cleanupPhysics()
         {
+            if (hasResourceBorrowers())
+                return;
             releaseCookingAsyncContext();
             getMeshCache()->release();
             SAFE_RELEASE(mCylinderMeshX);
@@ -1564,6 +1354,11 @@ namespace omni
             SAFE_RELEASE(mConeMeshX);
             SAFE_RELEASE(mConeMeshY);
             SAFE_RELEASE(mConeMeshZ);
+            // These meshes borrow this SDK too. Tolerance-driven recreation can
+            // reach cleanup without the process-wide scene-release wrapper.
+            SAFE_RELEASE(mVehicleWheelCylinderMeshX);
+            SAFE_RELEASE(mVehicleWheelCylinderMeshY);
+            SAFE_RELEASE(mVehicleWheelCylinderMeshZ);
 
             if (mExtensionsInitialized)
             {
@@ -1576,6 +1371,7 @@ namespace omni
             releaseVehiclePvdTelemetry();
             SAFE_RELEASE(mSerializationRegistry)
             SAFE_RELEASE(mPhysics)
+            mAttachmentCudaResources.clear();
 
             SAFE_RELEASE(mOmniPvd)
             const bool omniPVDFileWasActive = mOmniPvdStreamKind == OmniPvdStreamKind::eStartupFile;
@@ -1605,7 +1401,6 @@ namespace omni
                 return;
             }
 
-            createCpuDispatcher(mThreadCount);
 
             // Initialize the vehicle SDK.
             if (!mVehicleSDKInitialized)
@@ -1619,7 +1414,7 @@ namespace omni
         {
             mPhysicsReleased = true;
             omni::sampling::notifyPhysXSceneRelease();
-            omni::physx::particles::notifyPhysXRelease();
+            omni::physx::particles::notifyAllPhysXRelease();
             releaseCookingService();
 
             // Wait for all stepper tasks to complete before destroying scenes
@@ -1637,15 +1432,14 @@ namespace omni
 
             for (PhysXScenesMap::reference ref : mPhysXScenes)
             {
+                ref.second->getAttachedStage().getFilteredPairs().clear();
+                ref.second->getAttachedStage().getCollisionGroupFilteredPairs().clear();
+                ref.second->getAttachedStage().unregisterPhysXScene(ref.second);
                 delete ref.second;
             }
             mPhysXScenes.clear();
 
-            releaseCpuDispatcher();
-#if USE_PHYSX_GPU
-            mErrorCallback->setCudaContextManager(nullptr); //OM-111223 - crash because we dereference stale pointer if we output an error during shutdown.
-            clearCudaContextManagers();
-#endif
+
 
             if (mVehicleSDKInitialized)
             {
@@ -1662,6 +1456,7 @@ namespace omni
             const bool omniPVDWasActive = mOmniPvd && mOmniPvd->isSampling();
             SAFE_RELEASE(mSerializationRegistry)
             SAFE_RELEASE(mPhysics)
+            mAttachmentCudaResources.clear();
             SAFE_RELEASE(mVisualDebugger)
 
             SAFE_RELEASE(mOmniPvd)
@@ -1676,73 +1471,235 @@ namespace omni
             mErrorCallback->invalidateEventStream();
         }
 
+        bool PhysXSetup::hasResourceBorrowers() const
+        {
+            std::lock_guard<carb::tasking::RecursiveMutexWrapper> resources(mResourceMutex);
+            std::lock_guard<carb::tasking::MutexWrapper> scenes(mSceneRegistryMutex);
+            return isOmniPvdRecording() || !mAttachmentBorrowers.empty() || !mPhysXScenes.empty() || mReleasingPhysXScenes ||
+                (mCookingDataAsync && mCookingDataAsync->getActiveTaskCount() != 0);
+        }
+
+        PhysxSharedSettings PhysXSetup::getSharedSettingsDefaults() const
+        {
+            carb::settings::ISettings* settings = OmniPhysX::getInstance().getISettings();
+            PhysxSharedSettings result;
+            result.threadCount = settings->isAccessibleAs(carb::dictionary::ItemType::eInt, kSettingNumThreads) ?
+                settings->getAsInt(kSettingNumThreads) : mThreadCount;
+            result.usePhysxDispatcher = settings->getAsBool(kSettingPhysxDispatcher);
+            result.cudaDevice = settings->isAccessibleAs(carb::dictionary::ItemType::eInt, kSettingCudaDevice) ?
+                settings->getAsInt(kSettingCudaDevice) : -1;
+            result.useActiveCudaContext = settings->getAsBool(kSettingUseActiveCudaContext);
+            result.synchronousCudaLaunches = settings->getAsBool(kSettingSynchronousKernelLaunches);
+            result.sceneMultiGpuMode = settings->getAsInt(kSettingSceneMultiGPUMode);
+            return result;
+        }
+
+
+
+        bool PhysXSetup::acquireAttachmentResources(usdparser::AttachedStage& attachment)
+        {
+            std::lock_guard<carb::tasking::RecursiveMutexWrapper> resources(mResourceMutex);
+            const double metersPerUnit = attachment.getSourceUnits().metersPerUnit;
+            const double kilogramsPerUnit = attachment.getSourceUnits().kilogramsPerUnit;
+            if (!std::isfinite(metersPerUnit) || metersPerUnit <= 0.0 ||
+                !std::isfinite(kilogramsPerUnit) || kilogramsPerUnit <= 0.0)
+            {
+                CARB_LOG_ERROR("Attachment units must be finite and positive.");
+                return false;
+            }
+            const PxTolerancesScale required = getDefaultTolerances(metersPerUnit);
+            if (!required.isValid() || !std::isfinite(required.length) || !std::isfinite(required.speed))
+            {
+                CARB_LOG_ERROR("Attachment units cannot be represented by a valid tolerance scale.");
+                return false;
+            }
+            const PhysxSharedSettings& requested = attachment.getSharedSettings();
+            if (requested.threadCount >= 256 || requested.cudaDevice < -1 ||
+                requested.sceneMultiGpuMode < 0 || requested.sceneMultiGpuMode > 2)
+                return false;
+            carb::settings::ISettings* settings = OmniPhysX::getInstance().getISettings();
+            const bool providerChanged = mPhysics &&
+                (isOmniPvdRecordingCapable(*settings) != (mOmniPvd != nullptr) ||
+                 settings->getAsBool(kSettingPVDEnabled) != (mVisualDebugger != nullptr));
+            if (providerChanged)
+            {
+                if (hasResourceBorrowers())
+                {
+                    CARB_LOG_ERROR("Attachment diagnostic providers are incompatible with shared SDK borrowers.");
+                    return false;
+                }
+                cleanupPhysics();
+            }
+            if (mPhysics)
+            {
+                const PxTolerancesScale existing = mPhysics->getTolerancesScale();
+                if (existing.length != required.length || existing.speed != required.speed)
+                {
+                    if (hasResourceBorrowers())
+                    {
+                        CARB_LOG_ERROR("Attachment tolerance scale is incompatible with shared SDK borrowers "
+                            "(attachments=%zu, scenes=%zu, releasing=%d, cooking=%u, recording=%d).",
+                            mAttachmentBorrowers.size(), mPhysXScenes.size(), int(mReleasingPhysXScenes),
+                            mCookingDataAsync ? mCookingDataAsync->getActiveTaskCount() : 0u, int(isOmniPvdRecording()));
+                        return false;
+                    }
+                    cleanupPhysics();
+                }
+            }
+            if (requested.usePhysxDispatcher)
+            {
+                auto* dispatcher = PxDefaultCpuDispatcherCreate(requested.threadCount);
+                if (!dispatcher)
+                    return false;
+                dispatcher->setRunProfiled(true);
+                attachment.cpuDispatcher = std::shared_ptr<PxCpuDispatcher>(dispatcher,
+                    [](PxCpuDispatcher* value) { static_cast<PxDefaultCpuDispatcher*>(value)->release(); });
+            }
+            else
+            {
+                attachment.cpuDispatcher = std::shared_ptr<PxCpuDispatcher>(new PhysXCarbCpuDispatcher(requested.threadCount),
+                    [](PxCpuDispatcher* value) { static_cast<PhysXCarbCpuDispatcher*>(value)->release(); delete value; });
+            }
+            if (!mPhysics)
+                createPhysics(required);
+            if (!mPhysics)
+                return false;
+            mAttachmentBorrowers.insert(&attachment);
+            return true;
+        }
+
+        void PhysXSetup::releaseAttachmentResources(const usdparser::AttachedStage& attachment)
+        {
+            std::lock_guard<carb::tasking::RecursiveMutexWrapper> resources(mResourceMutex);
+            mAttachmentBorrowers.erase(&attachment);
+        }
+
+        PxCudaContextManager* PhysXSetup::acquireAttachmentCudaContext(usdparser::AttachedStage& owner)
+        {
+#if USE_PHYSX_GPU
+            std::lock_guard<carb::tasking::RecursiveMutexWrapper> resources(mResourceMutex);
+            if (owner.cudaContextManagers.empty())
+            {
+                const PhysxSharedSettings& settings = owner.getSharedSettings();
+                int deviceCount = 0;
+                omni::physx::foundation::getOptionalCudaInterface().deviceGetCount(&deviceCount, nullptr);
+                const bool multi = settings.sceneMultiGpuMode != 0 && deviceCount > 1;
+                const int first = multi && settings.sceneMultiGpuMode == 2 ? 1 : 0;
+                const int count = multi ? deviceCount : 1;
+                std::vector<std::shared_ptr<PxCudaContextManager>> managers;
+                for (int device = first; device < count; ++device)
+                {
+                    PhysxFoundationDeviceOrdinal ordinal;
+                    ordinal.deviceOrdinal = multi ? device : settings.cudaDevice;
+                    ordinal.mode = !multi && settings.useActiveCudaContext ?
+                        PhysxFoundationDeviceOrdinal::eMODE_ACTIVE_CONTEXT :
+                        (ordinal.deviceOrdinal >= 0 ? PhysxFoundationDeviceOrdinal::eMODE_DEVICE_ORDINAL :
+                                                     PhysxFoundationDeviceOrdinal::eMODE_PHYSX_DEFAULTS);
+                    uintptr_t externalContext = 0;
+                    if (ordinal.mode == PhysxFoundationDeviceOrdinal::eMODE_ACTIVE_CONTEXT &&
+                        (!omni::physx::foundation::getOptionalCudaInterface().ctxGetCurrent(&externalContext, nullptr) ||
+                         externalContext == 0))
+                        return nullptr;
+                    auto compatible = std::find_if(mAttachmentCudaResources.begin(), mAttachmentCudaResources.end(),
+                        [&](const AttachmentCudaResource& resource) {
+                            if (resource.mode != int(ordinal.mode) || resource.ordinal != ordinal.deviceOrdinal ||
+                                resource.externalContext != externalContext ||
+                                resource.synchronous != settings.synchronousCudaLaunches)
+                                return false;
+                            PxScopedCudaLock contextLock(*resource.manager);
+                            PxCudaContext* context = resource.manager->getCudaContext();
+                            if (!context)
+                                return false;
+                            const bool aborted = context->isInAbortMode();
+                            if (aborted)
+                            {
+                                // Only the SDK pool may retain it: every owner/candidate
+                                // lease must have retired before clearing an allocation abort.
+                                if (resource.manager.use_count() != 1)
+                                    return false;
+                                // SDK getLastError masks the underlying result with OOM
+                                // while aborted. Clearing the latch also resets recoverable
+                                // OOM, but preserves a fatal underlying CUDA error.
+                                context->setAbortMode(false);
+                            }
+                            if (context->getLastError() != 0)
+                            {
+                                if (aborted)
+                                    context->setAbortMode(true);
+                                // Keep faulted managers alive for SDK caches, but do not reuse.
+                                return false;
+                            }
+                            return true;
+                        });
+                    if (compatible != mAttachmentCudaResources.end())
+                    {
+                        managers.push_back(compatible->manager);
+                        continue;
+                    }
+                    PxCudaContextManager* manager = nullptr;
+                    if (!mPhysxFoundation->createOrRefreshPxCudaContextManager(
+                            ordinal, mFoundation, manager, settings.synchronousCudaLaunches))
+                    {
+                        if (manager)
+                            manager->release();
+                        return nullptr;
+                    }
+                    std::shared_ptr<PxCudaContextManager> retained = std::shared_ptr<PxCudaContextManager>(manager,
+                        [](PxCudaContextManager* value) { value->release(); });
+                    mAttachmentCudaResources.push_back({int(ordinal.mode), ordinal.deviceOrdinal, externalContext,
+                        settings.synchronousCudaLaunches, retained});
+                    managers.push_back(std::move(retained));
+                }
+                owner.cudaContextManagers = std::move(managers);
+            }
+            return owner.cudaContextManagers[owner.nextCudaContext++ % owner.cudaContextManagers.size()].get();
+#else
+            return nullptr;
+#endif
+        }
+
+        void PhysXSetup::reportCudaContextError(const usdparser::AttachedStage& owner, PxCudaContextManager* manager)
+        {
+#if USE_PHYSX_GPU
+            if (!manager || !manager->getCudaContext())
+                return;
+            const PxCUresult error = manager->getCudaContext()->getLastError();
+            // Allocation failures may legitimately trigger CPU fallback during scene creation.
+            if (error == 0 || error == CUDA_OUT_OF_MEMORY)
+                return;
+            const char* message = "CUDA context error while fetching attachment simulation results";
+            recordRuntimeError(message);
+            CARB_LOG_ERROR("%s (attachment=%llu, CUDA error=%d)", message,
+                static_cast<unsigned long long>(owner.getAttachHandle()), int(error));
+            RuntimeCallbackScope callbackScope;
+            sendErrorEvent(OmniPhysX::getInstance().getErrorEventStream(), ePhysxCudaError,
+                std::make_pair("errorString", message),
+                std::make_pair("attachHandle", int64_t(owner.getAttachHandle())));
+#endif
+        }
+
         PxPhysics* PhysXSetup::getPhysics()
         {
-            // Units come from the attached SOURCE, not from a USD stage. A stageless
-            // attach has no stage, and resolving units through one there silently
-            // yields the 1.0 default -- while the scene is later built from the
-            // source's real metersPerUnit. PhysX then rejects the scene outright
-            // ("PxTolerancesScale must be the same as used for creation of
-            // PxPhysics"), so on non-metre content a USD-free consumer could not
-            // create a scene at all.
-            if (const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getActiveAttachedStage())
-            {
-                if (!mPhysics)
-                    createPhysics(getDefaultTolerances(double(attachedStage->getSourceUnits().metersPerUnit)));
-                return mPhysics;
-            }
-
-            // Nothing is attached, so there is no source to read units from. Create at the
-            // default tolerances rather than routing the null through a source that cannot
-            // answer.
-            // createPhysXScene re-derives them from the scene's real metersPerUnit while
-            // no scene exists yet.
+            // Realized attachments prepare the shared SDK from their source units
+            // before loading. Source-free clients use the process default scale.
             if (!mPhysics)
                 createPhysics(getDefaultTolerances(1.0));
             return mPhysics;
         }
 
-        ::physx::PxCudaContextManager* PhysXSetup::getCudaContextManager(size_t id) const
-        {
-            if (id >= mCudaContextManagers.size())
-                return nullptr;
-            return mCudaContextManagers[id];
-        }
+
 
         /**
          * @implements REQ-COOK-CUDACTX-001
          * @covers AC-1
          */
-        ::physx::PxCudaContextManager* PhysXSetup::acquireCudaContextManager(size_t id)
-        {
-            std::lock_guard<std::mutex> lock(mCudaContextManagerMutex);
-            if (id >= mCudaContextManagers.size())
-                return nullptr;
-            ::physx::PxCudaContextManager* cudaContextManager = mCudaContextManagers[id];
-            if (cudaContextManager)
-            {
-                // Taken under the same lock that guards every release below, so the manager cannot
-                // be destroyed between the read above and this increment.
-                cudaContextManager->acquireReference();
-            }
-            return cudaContextManager;
-        }
 
-        ::physx::PxCudaContextManager* PhysXSetup::getNextCudaContextManager()
-        {
-            if (mCudaContextManagers.empty())
-                return nullptr;
-            // OMPE-102199: reduce the cursor itself, not just its successor. If the vector ever shrinks while the
-            // cursor sits past the new end, indexing it raw reads heap bytes from beyond the vector and returns a
-            // non-null garbage pointer. That passes the null check in createPhysXScene(), reaches
-            // PxSceneDesc::cudaContextManager, and is virtual-called as a PxCudaContextManager.
-            const size_t id = mNextCudaContextManagerId % mCudaContextManagers.size();
-            mNextCudaContextManagerId = (id + 1) % mCudaContextManagers.size();
-            return mCudaContextManagers[id];
-        }
+
+
 
         void PhysXSetup::connectPVD()
         {
+            mPvdHasSimulation.store(false);
             static bool wasPVDFileOutput = false;
             if (mVisualDebugger)
             {
@@ -1801,7 +1758,7 @@ namespace omni
                 {
                     mPvdTransport->release();
                     mPvdTransport = nullptr;
-                    if (OmniPhysX::getInstance().getSimulationStepCount() > 0)
+                    if (mPvdHasSimulation.load())
                     {
                         carb::settings::ISettings* iSettings = OmniPhysX::getInstance().getISettings();
                         if (iSettings->getAsBool(kSettingPVDStreamToFile))
@@ -1839,50 +1796,55 @@ namespace omni
 
         ::physx::PxTolerancesScale    PhysXSetup::getDefaultTolerances(double metersPerUnit)
         {
-            return ::physx::PxTolerancesScale(float(1.0 / metersPerUnit), float(10.0 / metersPerUnit));
-        }
-
-        void PhysXSetup::createCpuDispatcher(uint32_t numThreads)
-        {
-            releaseCpuDispatcher();
-            if (!mPhysXDispatcher)
-                mDispatcher = new PhysXCarbCpuDispatcher(mThreadCount);
-            else
+            if (std::isfinite(metersPerUnit) && metersPerUnit > 0.0)
             {
-                PxDefaultCpuDispatcher* physxDispatcher = PxDefaultCpuDispatcherCreate(mThreadCount);
-                physxDispatcher->setRunProfiled(true);
-                mDispatcher = physxDispatcher;
-            }
-        }
-
-        void PhysXSetup::releaseCpuDispatcher()
-        {
-            if (!mPhysXDispatcher)
-            {
-                if (mDispatcher)
+                const double length = 1.0 / metersPerUnit;
+                const double speed = 10.0 / metersPerUnit;
+                // Check before narrowing: a finite double can exceed the float range.
+                if (std::isfinite(length) && std::isfinite(speed) && length <= PX_MAX_F32 && speed <= PX_MAX_F32)
                 {
-                    ((PhysXCarbCpuDispatcher*)mDispatcher)->release();
-                    delete mDispatcher;
-                    mDispatcher = nullptr;
+                    const ::physx::PxTolerancesScale tolerances{ float(length), float(speed) };
+                    if (tolerances.isValid() && tolerances.speed > 0.0f)
+                        return tolerances;
                 }
             }
-            else
+            CARB_LOG_ERROR("Invalid stage metersPerUnit (%g): expected a finite positive value producing "
+                "finite positive PhysX tolerance scales.", metersPerUnit);
+            return ::physx::PxTolerancesScale(0.0f, 0.0f);
+        }
+
+
+
+
+
+        void PhysXSetup::releasePhysXScenes(usdparser::AttachedStage& attachedStage)
+        {
+            std::vector<PhysXScene*> retiring;
+            retiring.reserve(attachedStage.getPhysXScenes().size());
+            for (usdparser::AttachedStage::SceneMap::const_reference entry : attachedStage.getPhysXScenes())
+                retiring.push_back(entry.second);
+            for (PhysXScene* scene : retiring)
+                scene->waitForCompletion(false);
+
+            // Remove every retiring scene from global iteration before any destructor
+            // can wait on peers. The attachment and its source remain alive throughout.
             {
-                if (mDispatcher)
-                {
-                    ((PxDefaultCpuDispatcher*)mDispatcher)->release();
-                    mDispatcher = nullptr;
-                }
+                std::lock_guard<carb::tasking::MutexWrapper> registry(mSceneRegistryMutex);
+                for (PhysXScene* scene : retiring)
+                    mPhysXScenes.erase(scene->getScene());
+            }
+            attachedStage.getFilteredPairs().clear();
+            attachedStage.getCollisionGroupFilteredPairs().clear();
+            for (PhysXScene* scene : retiring)
+            {
+                attachedStage.unregisterPhysXScene(scene);
+                delete scene;
             }
         }
 
         void PhysXSetup::releasePhysXScenes()
         {
-            mFilteredPairs.clear();
-            mCollisionsGroupFilteredPairs.clear();
             // Re-arm the sticky deferral logs; live references are gone.
-            mCudaSettingsDeferralWarned = false;
-            mCudaDeviceCountDeferralWarned = false;
 
             disconnectPVD();
 
@@ -1899,79 +1861,83 @@ namespace omni
             PhysXScenesMap physxScenes = std::move(mPhysXScenes);
             {
                 // OMPE-102199: the move above empties mPhysXScenes, but the scenes below are still alive and
-                // still cache the PxCudaContextManager they were created with. setupGPU() derives hasLiveScenes
-                // from that map, so without this flag a setupGPU() reaching us from a scene destructor (carb
-                // event dispatch re-entering physXResume) would see "no live scenes" and be free to release and
-                // recreate the manager underneath them.
+                // still retain their attachment CUDA resources until native teardown finishes.
                 mReleasingPhysXScenes = true;
                 for (PhysXScenesMap::reference ref : physxScenes)
                 {
+                    ref.second->getAttachedStage().getFilteredPairs().clear();
+                    ref.second->getAttachedStage().getCollisionGroupFilteredPairs().clear();
+                    ref.second->getAttachedStage().unregisterPhysXScene(ref.second);
                     delete ref.second;
                 }
                 mReleasingPhysXScenes = false;
             }
-            SAFE_RELEASE(mVehicleWheelCylinderMeshX);
-            SAFE_RELEASE(mVehicleWheelCylinderMeshY);
-            SAFE_RELEASE(mVehicleWheelCylinderMeshZ);
 
             cleanupPhysics();
 
-            mDefaultScene = nullptr;
         }
 
-        PhysXScene* PhysXSetup::createPhysXScene(const usdparser::AttachedStage& attachedStage, size_t sceneId, double metersPerUnit, double kilogramsPerUnit, const usdparser::PhysxSceneDesc& sceneDesc)
+        PhysXScene* PhysXSetup::createPhysXScene(usdparser::AttachedStage& attachedStage, size_t sceneId, double metersPerUnit, double kilogramsPerUnit, const usdparser::PhysxSceneDesc& sceneDesc)
         {
-            OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-            carb::settings::ISettings* iSettings = omniPhysX.getISettings();
-            PxPhysics* physics = getPhysics();
-
-            if (mPhysXScenes.empty())
+            std::lock_guard<carb::tasking::RecursiveMutexWrapper> resources(mResourceMutex);
+            // Validate before SDK/dispatcher changes or native scene allocation. A peer
+            // keeps the exact shared scale it was constructed against.
+            if (!std::isfinite(metersPerUnit) || metersPerUnit <= 0.0 ||
+                !std::isfinite(kilogramsPerUnit) || kilogramsPerUnit <= 0.0)
             {
-                const uint32_t numThreads = iSettings->isAccessibleAs(carb::dictionary::ItemType::eInt, (kSettingNumThreads)) ?
-                    iSettings->getAsInt(kSettingNumThreads) :
-                    mThreadCount;
-
-                const bool newDispatcher = iSettings->isAccessibleAs(carb::dictionary::ItemType::eBool, (kSettingPhysxDispatcher)) ? iSettings->getAsBool(kSettingPhysxDispatcher) : false;
-                if ((mThreadCount != numThreads || newDispatcher != mPhysXDispatcher) && numThreads < 256)
-                {
-                    releaseCpuDispatcher();
-                    mPhysXDispatcher = newDispatcher;
-                    mThreadCount = numThreads;
-                    createCpuDispatcher(numThreads);
-                }
-
-                omniPhysX.setGpuPipelineOverride(iSettings->isAccessibleAs(carb::dictionary::ItemType::eInt, (kSettingOverrideGPU)) ?
-                    iSettings->getAsInt(kSettingOverrideGPU) :
-                    omniPhysX.getGpuPipelineOverride());
+                CARB_LOG_ERROR("Physics scene units must be finite and positive.");
+                return nullptr;
             }
-
-            // tolerances check, they could have changed
-            PxTolerancesScale physicsTolerances = physics->getTolerancesScale();
-            PxTolerancesScale sceneTol = getDefaultTolerances(metersPerUnit);
-            if (fabsf(physicsTolerances.length - sceneTol.length) > 0.001f)
+            const PxTolerancesScale sceneTol = getDefaultTolerances(metersPerUnit);
+            if (!sceneTol.isValid() || !std::isfinite(sceneTol.length) || !std::isfinite(sceneTol.speed))
             {
-                // tolerances changed recreate physics
-                if (mPhysXScenes.empty())
+                CARB_LOG_ERROR("Physics scene units cannot be represented by a valid tolerance scale.");
+                return nullptr;
+            }
+            if (attachedStage.getPhysXScenes().find(sceneId) != attachedStage.getPhysXScenes().end())
+            {
+                CARB_LOG_ERROR("Duplicate physics scene ID in attachment.");
+                return nullptr;
+            }
+            const PhysxSharedSettings& requested = attachedStage.getSharedSettings();
+            if (mPhysics)
+            {
+                const PxTolerancesScale existing = mPhysics->getTolerancesScale();
+                if (existing.length != sceneTol.length || existing.speed != sceneTol.speed)
                 {
+                    if (hasResourceBorrowers())
+                    {
+                        CARB_LOG_ERROR("Physics scene tolerance scale is incompatible with shared SDK borrowers.");
+                        return nullptr;
+                    }
+                    // All attachment, native-scene and pending cooking borrowers are gone.
                     cleanupPhysics();
-                    getPhysics();
-                }
-                else
-                {
-                    CARB_LOG_ERROR("Cant change metersPerUnit for existing scenes.");
-                    metersPerUnit = 1.0f / physicsTolerances.length;
+                    createPhysics(sceneTol);
                 }
             }
+            else
+                createPhysics(sceneTol);
+            if (!mPhysics)
+                return nullptr;
+            if (mCookingDataAsync)
+                mCookingDataAsync->registerOnChangeFeed(attachedStage);
 
             PhysXScene* scene = PhysXScene::createPhysXScene(attachedStage, sceneId, *this, metersPerUnit, kilogramsPerUnit, sceneDesc);
             CARB_ASSERT(scene);
             if (scene)
             {
-                if (mPhysXScenes.empty())
+                try
                 {
-                    mDefaultScene = scene;
+                    attachedStage.registerPhysXScene(sceneId, scene);
+                    std::lock_guard<carb::tasking::MutexWrapper> registry(mSceneRegistryMutex);
+                    mPhysXScenes.emplace(scene->getScene(), scene);
                 }
-                mPhysXScenes[sceneId] = scene;
+                catch (...)
+                {
+                    attachedStage.unregisterPhysXScene(scene);
+                    delete scene;
+                    throw;
+                }
 
                 getCylinderConvexMesh(omni::physx::usdparser::eX);
                 getCylinderConvexMesh(omni::physx::usdparser::eY);
@@ -2078,4 +2044,22 @@ namespace omni
             }
         }
     } // namespace physx
+} // namespace omni
+
+namespace omni
+{
+namespace physx
+{
+namespace runtime
+{
+
+// Defined here rather than beside the other runtime entry points in PhysX.cpp: the
+// decisions it refreshes live in this file, next to the callback that reads them.
+void refreshProfilerCallback()
+{
+    installProfilerCallback(carb::getCachedInterface<carb::settings::ISettings>());
+}
+
+} // namespace runtime
+} // namespace physx
 } // namespace omni

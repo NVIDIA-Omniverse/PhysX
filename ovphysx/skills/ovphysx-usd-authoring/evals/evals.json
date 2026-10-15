@@ -39,12 +39,13 @@
     {
       "id": 4,
       "prompt": "How do I enable CCD on a rigid body when authoring a USD scene for ovphysx in Python?",
-      "expected_output": "Registers the codeless PhysX schemas from ovphysx.codeless_schema_paths(), then applies PhysxRigidBodyAPI generically via prim.ApplyAPI rather than a typed Python class.",
+      "expected_output": "Registers the codeless PhysX schemas from the sample metadata-discovery recipe physx_schema_paths(), then applies PhysxRigidBodyAPI generically via prim.ApplyAPI rather than a typed Python class.",
       "files": [],
       "expectations": [
-        "Explains PhysX schemas are codeless in ovphysx (no typed Python class)",
-        "Registers them via Plug.Registry().RegisterPlugins([str(p) for p in ovphysx.codeless_schema_paths()])",
-        "Applies the schema generically with prim.ApplyAPI(\"PhysxRigidBodyAPI\")"
+        "Uses generic USD APIs with codeless PhysX resources, without compiled schema bindings",
+        "Registers both external provider resource directories with Plug.Registry().RegisterPlugins before opening a stage or using the schema registry",
+        "Applies the schema generically with prim.ApplyAPI(\"PhysxRigidBodyAPI\")",
+        "Installs physx-usd-schemas separately, checks provider metadata without importing USD, and registers both resource directories before population or stock-USD schema-registry access; does not use a core ovphysx schema-location API"
       ]
     },
     {

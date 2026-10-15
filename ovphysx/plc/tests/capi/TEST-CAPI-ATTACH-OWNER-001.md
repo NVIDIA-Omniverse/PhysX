@@ -9,79 +9,83 @@ type: integration
 
 ## Scenario (AC-1, AC-2, AC-4)
 
-A second `ovphysx` instance's `ovphysx_attach_ovstage()` call is rejected,
-not silently allowed to displace another instance's live attach, and
-neither the rejected attach nor a no-op detach on the second instance can
-disturb the first instance's live attach or an existing tensor binding.
+Two ovphysx instances attach separate ovstage Stages loaded from the same USD
+file. Each keeps its own runtime attachment. Stepping and detaching one does
+not displace the other, and an existing GPU pose read on the survivor stays
+finite.
 
 ## Given
 
-- Instance A attaches an ovstage Stage and holds the one live process-wide
-  PhysX attach.
-- Instance A creates a nonempty GPU rigid-body-pose tensor binding and reads
-  it into a CPU buffer.
-- Instance B is created separately and builds its own ovstage Stage from
-  the same USD scene.
+- Instance A attaches an ovstage Stage and reads a nonempty GPU rigid-body-pose
+  binding.
+- Instance B is a separate instance with its own ovstage Stage from the same
+  USD scene.
 
 ## When
 
-- Instance B calls `ovphysx_attach_ovstage()` directly while A's attach is
-  still live.
+- Instance B calls `ovphysx_attach_ovstage()` while A's attach is still live,
+  warms up, and reads its own poses.
 - Instance A reads through the same tensor binding again.
-- Instance B then calls `ovphysx_detach_ovstage()` (never having validly
-  attached).
-- Instance A reads through the same tensor binding once more.
-- After A destroys its binding and releases the live attach, B retries the
-  attach and reads its own nonempty GPU rigid-body-pose binding.
+- Instance B calls `ovphysx_detach_ovstage()`.
+- Instance A reads through the same tensor binding once more and steps.
+- On the C path, both instances step, A detaches, and B steps
+  again. A's all-objects-destroyed subscription fires; B's does not.
+- On the C path, both instances also alternate steps, then A calls
+  `ovphysx_detach_ovstage()` and is destroyed. B's attachment and a later step
+  survive.
+- Separately on the C path, attaching A's already-attached ovstage instance to
+  B is rejected while A remains attached, and A still steps afterward.
+- On the GPU path, stepping B does not change A's pose read, and stepping A
+  does not change B's pose read.
 
 ## Then
 
-- B's `ovphysx_attach_ovstage()` call returns `OVPHYSX_API_ERROR` and B's
-  own attach handle remains 0 (REQ AC-1).
-- A's attach handle (read via `ovphysx_get_attach_handle()`) is unchanged
-  before and after B's rejected attempt, and `ovphysx_step_sync()` on A
-  still succeeds afterward, proving A's runtime attach was never displaced.
-- The same A tensor binding rewrites a poisoned CPU buffer with the original
-  finite poses after B's rejected attach, proving the binding still reaches
-  A's live GPU scene.
-- B's `ovphysx_detach_ovstage()` call succeeds as a harmless no-op (REQ
-  AC-2) and does not disturb A's attach handle, tensor binding, or ability
-  to step.
-- Once A releases the live attach, B can attach normally and read its own
-  binding, proving the earlier rejection left B reusable (REQ AC-4).
-- `test_multi_instance.cpp`: `SecondInstanceAttachRejectedWhileFirstOwnsLiveAttach`.
+- B's attach task completes successfully. `ovphysx_is_stage_attached` confirms each instance
+  owns its stage, and A's retained query remains valid (REQ AC-1).
+- Both instances can step while both are attached (REQ AC-1).
+- A's pose read after B attaches matches the read taken before B attached
+  (REQ AC-4).
+- B's detach leaves B unattached and A attached. A's retained query and pose
+  read remain valid, and A can still step (REQ AC-2, AC-4).
+- Detaching A notifies only A's object-change subscription and leaves B
+  steppable.
+- `test_multi_instance.cpp`: `TwoInstancesRemainAttachedAndStepIndependently`,
+  `DetachAndDestroyOneLiveInstanceLeavesPeerSteppable`,
+  `SecondAttachOfSameOvstageIsRejected`.
 - `lifecycle_tests/test_multi_instance.py`:
-  `test_rejected_second_attach_keeps_first_gpu_binding_readable`.
+  `test_second_attach_leaves_first_gpu_binding_readable`.
 
 ## Scenario (AC-3)
 
-Destroying an attached instance whose pending-op wait is permanently failing
-must still release the process-wide attach owner latch, so a later instance
-can attach -- across both a same-process next instance and a full
-`ovphysx_shutdown()` / `ovphysx_initialize()` cycle.
+Destroying an attached instance with an uncollected task failure must release
+that instance's runtime attachment, so a later instance can attach -- across
+both a same-process next instance and a full `ovphysx_shutdown()` /
+`ovphysx_initialize()` cycle.
 
 ### Given
 
-- Instance A attaches an ovstage Stage and holds the one live process-wide
-  PhysX attach.
-- A user task added to A returns `OVPHYSX_API_ERROR`, leaving a permanently
-  unconsumed failed op in A's pending-op tracking (never observed via
-  `ovphysx_wait_op()`).
+- Instance A attaches an ovstage Stage.
+- A clone submitted to A with a missing source is accepted and fails inline,
+  leaving an uncollected failed task in A's task tracking (never collected via
+  `ovphysx_wait_task()` or `ovphysx_wait_all()`).
 
 ### When
 
-- `ovphysx_destroy_instance()` is called on A. Its internal
-  `wait_for_all_pending_ops()` and the `ovphysx_detach_ovstage()` call it
-  makes both fail because of the still-pending failed op.
+- `ovphysx_destroy_instance()` is called on A. Its internal execution drain
+  preserves the task failure without treating it as a prerequisite for teardown.
 
 ### Then
 
-- Instance A is fully destroyed despite the detach failure.
-- A newly created instance B can call `ovphysx_attach_ovstage()`
-  successfully and step -- the latch was not left attributed to A's
-  now-invalid handle (REQ AC-3).
-- After destroying B, `ovphysx_shutdown()` and a fresh
-  `ovphysx_initialize()` also leave the runtime in a clean state: a new
-  instance C can attach and step normally.
+- Instance A is fully destroyed and destruction succeeds.
+- A newly created instance B can call `ovphysx_attach_ovstage()` successfully
+  and step (REQ AC-3).
+- After destroying B, `ovphysx_shutdown()` and a fresh `ovphysx_initialize()`
+  also leave the runtime in a clean state: a new instance C can attach and
+  step normally.
 - `test_global_lifecycle.cpp`:
   `DestroyAfterFailedPendingOpReleasesLiveAttachOwnerAcrossInstancesAndShutdown`.
+
+This scenario verifies release with uncollected failures. The defensive
+attachment release after a separate detach error remains a source-inspected
+part of AC-3; this test no longer injects a detach error. That fallback resets
+the attachment's tensor stage before `detachStage`, then clears the handle.

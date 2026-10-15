@@ -159,24 +159,6 @@ PxArticulationMotion::Enum NpArticulationJointReducedCoordinate::getMotion(PxArt
 	return mCore.getMotion(axis);
 }
 
-void NpArticulationJointReducedCoordinate::setFrictionCoefficient(const PxReal coefficient)
-{
-	NP_WRITE_CHECK(getNpScene());
-
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationJointReducedCoordinate::setFrictionCoefficient() not allowed while simulation is running. Call will be ignored.")
-
-	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, frictionCoefficient, static_cast<PxArticulationJointReducedCoordinate&>(*this), coefficient);
-
-	scSetFrictionCoefficient(coefficient);
-}
-
-PxReal NpArticulationJointReducedCoordinate::getFrictionCoefficient() const
-{
-	NP_READ_CHECK(getNpScene());
-
-	return mCore.getFrictionCoefficient();
-}
-
 void NpArticulationJointReducedCoordinate::setFrictionParams(PxArticulationAxis::Enum axis, const PxJointFrictionParams& jointFrictionParams)
 {
 	NP_WRITE_CHECK(getNpScene());
@@ -217,24 +199,6 @@ PxJointFrictionParams NpArticulationJointReducedCoordinate::getFrictionParams(Px
 	return mCore.getFrictionParams(axis);
 }
 
-void NpArticulationJointReducedCoordinate::setMaxJointVelocity(const PxReal maxJointV)
-{
-	NP_WRITE_CHECK(getNpScene());
-
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationJointReducedCoordinate::setMaxJointVelocity() not allowed while simulation is running. Call will be ignored.")
-
-	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, maxJointVelocity, static_cast<PxArticulationJointReducedCoordinate&>(*this), maxJointV);
-
-	scSetMaxJointVelocity(maxJointV);
-}
-
-PxReal NpArticulationJointReducedCoordinate::getMaxJointVelocity() const
-{
-	NP_READ_CHECK(getNpScene());
-
-	return mCore.getMaxJointVelocity();
-}
-
 void NpArticulationJointReducedCoordinate::setMaxJointVelocity(PxArticulationAxis::Enum axis, const PxReal maxJointV)
 {
 	NP_WRITE_CHECK(getNpScene());
@@ -251,8 +215,6 @@ void NpArticulationJointReducedCoordinate::setMaxJointVelocity(PxArticulationAxi
 		maxJointVs[ax] = mCore.getMaxJointVelocity(static_cast<PxArticulationAxis::Enum>(ax));
 	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, maxJointDofVelocity,
 								joint, maxJointVs, PxArticulationAxis::eCOUNT);
-	PxReal maxJointVScalar = mCore.getMaxJointVelocity();
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, maxJointVelocity, joint, maxJointVScalar);
 
 	OMNI_PVD_WRITE_SCOPE_END
 #endif
@@ -326,10 +288,6 @@ void NpArticulationJointReducedCoordinate::setDriveParams(PxArticulationAxis::En
 	for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
 		dampings[ax] = mCore.getDrive(static_cast<PxArticulationAxis::Enum>(ax)).damping;
 	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, driveDamping, joint, dampings, PxArticulationAxis::eCOUNT);
-	PxReal maxforces[PxArticulationAxis::eCOUNT];
-	for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
-		maxforces[ax] = mCore.getDrive(static_cast<PxArticulationAxis::Enum>(ax)).maxForce;
-	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, driveMaxForce, joint, maxforces, PxArticulationAxis::eCOUNT);
 	PxReal maxefforts[PxArticulationAxis::eCOUNT];
 	for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
 		maxefforts[ax] = mCore.getDrive(static_cast<PxArticulationAxis::Enum>(ax)).envelope.maxEffort;

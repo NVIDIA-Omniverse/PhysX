@@ -32,8 +32,7 @@ using namespace omni::physx::internal;
 // shape
 bool omni::physx::updateShapeEnabled(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -41,13 +40,13 @@ bool omni::physx::updateShapeEnabled(AttachedStage& attachedStage, ObjectId obje
         return true;
 
 
-    auto setCollisionsEnabledForShape = [&omniPhysX](PxShape* shape, bool enabled) {
+    auto setCollisionsEnabledForShape = [&attachedStage](PxShape* shape, bool enabled) {
         if (!shape)
             return;
 
         shape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, enabled);
         shape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, enabled);
-        if (enabled && omniPhysX.isDebugVisualizationEnabled()) {
+        if (enabled && attachedStage.isDebugVisualizationEnabled()) {
             shape->setFlag(PxShapeFlag::eVISUALIZATION, true);
         } else {
             shape->setFlag(PxShapeFlag::eVISUALIZATION, false);
@@ -91,8 +90,7 @@ bool omni::physx::updateShapeEnabled(AttachedStage& attachedStage, ObjectId obje
 
 bool omni::physx::updateShapeDensity(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -115,8 +113,7 @@ bool omni::physx::updateShapeDensity(AttachedStage& attachedStage, ObjectId obje
 bool omni::physx::updateShapeContactOffset(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -166,8 +163,7 @@ bool omni::physx::updateShapeContactOffset(AttachedStage& attachedStage, omni::p
 
 bool omni::physx::updateShapeRestOffset(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -278,7 +274,7 @@ static bool getCurrentRestOffset(const InternalDatabase::Record* objectRecord,
 bool omni::physx::updateNewtonShapeContactMargin(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const internal::InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
     if (!objectRecord)
@@ -357,7 +353,7 @@ bool omni::physx::updateNewtonShapeContactMargin(AttachedStage& attachedStage, o
 bool omni::physx::updateNewtonShapeContactGap(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const internal::InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
     if (!objectRecord)
@@ -413,8 +409,7 @@ bool omni::physx::updateNewtonShapeContactGap(AttachedStage& attachedStage, omni
 bool omni::physx::updateShapeTorsionalPatchRadius(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -448,8 +443,7 @@ bool omni::physx::updateShapeTorsionalPatchRadius(AttachedStage& attachedStage, 
 bool omni::physx::updateShapeMinTorsionalPatchRadius(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -484,8 +478,7 @@ bool omni::physx::updateShapeMinTorsionalPatchRadius(AttachedStage& attachedStag
 // material
 bool omni::physx::updateMaterialDynamicFriction(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -507,8 +500,7 @@ bool omni::physx::updateMaterialDynamicFriction(AttachedStage& attachedStage, Ob
 
 bool omni::physx::updateMaterialStaticFriction(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -533,8 +525,7 @@ bool omni::physx::updateMaterialStaticFriction(AttachedStage& attachedStage, Obj
 
 bool omni::physx::updateMaterialRestitution(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);

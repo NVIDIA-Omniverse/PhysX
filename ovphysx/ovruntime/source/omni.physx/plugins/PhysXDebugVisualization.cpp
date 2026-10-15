@@ -1,6 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-IO-001
+// @covers AC-2 AC-3
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-1 AC-3 AC-4
+
 /**
  * @implements REQ-PUBLICAPI-001
  * @covers AC-14
@@ -12,6 +17,7 @@
 #include <omni/physics/parse/KnownTokens.h>
 
 #include "PhysXDebugVisualization.h"
+#include "RuntimeExecution.h"
 
 #include "PhysXScene.h"
 #include "PhysXTools.h"
@@ -37,22 +43,7 @@
 #include <OvstageOutput.h> // buildPathList (checks for the source dictionary); private to omni.physics.ovstage
 #include <OvstageSource.h> // OvstageSource::canonicalPath -- see vizScopeContains
 
-namespace
-{
-// Per-parameter visualization values (a magnitude multiplied by eSCALE, e.g. contact-
-// normal length or axis size). Lets hosts scale gizmo groups independently while the
-// bool setter keeps its on/off contract. Enabled params apply their cached value, else 0.
-struct VizParamValues
-{
-    float v[omni::physx::ePhysXNumValues];
-    VizParamValues()
-    {
-        for (float& x : v)
-            x = 1.0f;
-    }
-};
-VizParamValues g_vizParamValues;
-} // namespace
+
 
 
 using namespace ::physx;
@@ -68,7 +59,7 @@ PX_COMPILE_TIME_ASSERT(PxVisualizationParameter::eWORLD_AXES == eWorldAxes);
 PX_COMPILE_TIME_ASSERT(PxVisualizationParameter::eNUM_VALUES == ePhysXNumValues);
 PX_COMPILE_TIME_ASSERT(PxVisualizationParameter::eNUM_VALUES <= 64);
 
-static DebugVisualizationCache gDebugVisualizationCache;
+
 
 // DebugVis Shape colors
 static constexpr uint32_t gStaticShapeColor = PxU32(PxDebugColor::eARGB_MAGENTA);
@@ -76,14 +67,14 @@ static constexpr uint32_t gDynamicShapeColor = PxU32(PxDebugColor::eARGB_GREEN);
 static constexpr uint32_t gKinematicShapeColor = PxU32(PxDebugColor::eARGB_YELLOW);
 static constexpr uint32_t gDynamicTriMeshShapeColor = PxU32(PxDebugColor::eARGB_DARKRED);
 
-uint32_t omni::physx::getDebugDrawCollShapeColor(omni::physics::parse::ObjectKey key)
+uint32_t omni::physx::getDebugDrawCollShapeColor(usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey key)
 {
     uint32_t collColor = gStaticShapeColor;
 
     // All schema/attribute/structural reads (schema gates, approximation read, ancestor
     // walk) route through IPhysicsSource by ObjectKey, so no UsdPrim is materialized here.
     // Without an attached stage there is no source to consult.
-    const usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    const usdparser::AttachedStage* attachedStage = &owner;
     const omni::physics::parse::IPhysicsSource* src = attachedStage ? attachedStage->getSource() : nullptr;
     if (!src)
         return collColor;
@@ -147,25 +138,13 @@ uint32_t omni::physx::getDebugDrawCollShapeColor(omni::physics::parse::ObjectKey
 
 // Visualization scope: exact OVStage prim-path membership limiting which objects
 // get eVISUALIZATION flags (empty = every object).
-struct VizScope
-{
-    std::unordered_set<ovx_primpath_t> paths;
 
-    bool contains(ovx_primpath_t path) const
-    {
-        if (paths.empty())
-            return true;
-        return path != OVX_INVALID_PRIMPATH && paths.find(path) != paths.end();
-    }
-};
-static VizScope g_vizScope;
 
 // Returns the active source only when it is OVStage-backed. A non-OVStage
 // ObjectKey is not comparable to dictionary-specific ovx_primpath_t handles.
-static const omni::physics::parse::IPhysicsSource* vizOvstageSource()
+static const omni::physics::parse::IPhysicsSource* vizOvstageSource(const usdparser::AttachedStage& owner)
 {
-    const usdparser::AttachedStage* stage =
-        usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    const usdparser::AttachedStage* stage = &owner;
     const omni::physics::parse::IPhysicsSource* src = stage ? stage->getSource() : nullptr;
     if (!src)
         return nullptr;
@@ -174,12 +153,12 @@ static const omni::physics::parse::IPhysicsSource* vizOvstageSource()
     return dict ? src : nullptr;
 }
 
-static omni::physics::parse::ObjectKey vizActorKey(const PxActor* actor)
+static omni::physics::parse::ObjectKey vizActorKey(const usdparser::AttachedStage& owner, const PxActor* actor)
 {
     if (!actor)
         return {};
     const std::vector<omni::physx::internal::InternalDatabase::Record>& records =
-        OmniPhysX::getInstance().getInternalPhysXDatabase().getRecords();
+        owner.getInternalPhysXDatabase().getRecords();
     const size_t recordIndex = reinterpret_cast<size_t>(actor->userData);
     if (recordIndex >= records.size())
         return {};
@@ -217,12 +196,12 @@ static omni::physics::parse::ObjectKey vizActorKey(const PxActor* actor)
     return record.mKey;
 }
 
-static omni::physics::parse::ObjectKey vizShapeKey(const PxShape* shape)
+static omni::physics::parse::ObjectKey vizShapeKey(const usdparser::AttachedStage& owner, const PxShape* shape)
 {
     if (!shape)
         return {};
     const std::vector<omni::physx::internal::InternalDatabase::Record>& records =
-        OmniPhysX::getInstance().getInternalPhysXDatabase().getRecords();
+        owner.getInternalPhysXDatabase().getRecords();
     const size_t recordIndex = reinterpret_cast<size_t>(shape->userData);
     if (recordIndex >= records.size())
         return {};
@@ -232,10 +211,10 @@ static omni::physics::parse::ObjectKey vizShapeKey(const PxShape* shape)
     return record.mKey;
 }
 
-static bool vizScopeContains(const omni::physics::parse::IPhysicsSource* source,
+static bool vizScopeContains(const usdparser::AttachedStage& owner, const omni::physics::parse::IPhysicsSource* source,
                              omni::physics::parse::ObjectKey primKey)
 {
-    if (g_vizScope.paths.empty())
+    if (owner.getDebugVisualizationCache().mScopePaths.empty())
         return true;
     if (!source || !primKey.valid())
         return false;
@@ -244,32 +223,32 @@ static bool vizScopeContains(const omni::physics::parse::IPhysicsSource* source,
     // UsdSource's own private index). canonicalPath() is the one public,
     // still-raw-returning translation point -- use it explicitly instead of
     // reading canonicalKey(...).handle as if it were still the dictionary
-    // handle. vizOvstageSource() already gates this path to an OVStage-backed
+    // handle. vizOvstageSource(owner) already gates this path to an OVStage-backed
     // source, but guard defensively with a dynamic_cast rather than assuming.
-    const auto* ovstageSource = dynamic_cast<const omni::physics::ovstage::OvstageSource*>(source);
+    const omni::physics::ovstage::OvstageSource* ovstageSource = dynamic_cast<const omni::physics::ovstage::OvstageSource*>(source);
     if (!ovstageSource)
         return false;
     const ovx_primpath_t canonical = ovstageSource->canonicalPath(primKey);
-    return canonical != OVX_INVALID_PRIMPATH && g_vizScope.contains(canonical);
+    return canonical != OVX_INVALID_PRIMPATH && (owner.getDebugVisualizationCache().mScopePaths.count(canonical) != 0);
 }
 
-static bool vizActorInScope(const omni::physics::parse::IPhysicsSource* source,
+static bool vizActorInScope(const usdparser::AttachedStage& owner, const omni::physics::parse::IPhysicsSource* source,
                             const ::physx::PxActor* actor)
 {
-    return vizScopeContains(source, vizActorKey(actor));
+    return vizScopeContains(owner, source, vizActorKey(owner, actor));
 }
 
-static bool vizShapeInScope(const omni::physics::parse::IPhysicsSource* source,
+static bool vizShapeInScope(const usdparser::AttachedStage& owner, const omni::physics::parse::IPhysicsSource* source,
                             const ::physx::PxShape* shape)
 {
-    return vizScopeContains(source, vizShapeKey(shape));
+    return vizScopeContains(owner, source, vizShapeKey(owner, shape));
 }
 
-static void enableActorVisualization(PxActor* actor,
+static void enableActorVisualization(const usdparser::AttachedStage& owner, PxActor* actor,
                                      bool enableVis,
                                      const omni::physics::parse::IPhysicsSource* source)
 {
-    const bool actorInScope = enableVis && vizActorInScope(source, actor);
+    const bool actorInScope = enableVis && vizActorInScope(owner, source, actor);
     bool shapeInScope = false;
     const PxRigidActor* rigidActor = actor->is<PxRigidActor>();
     if (rigidActor)
@@ -281,7 +260,7 @@ static void enableActorVisualization(PxActor* actor,
             rigidActor->getShapes(&shape, 1, j);
             if (shape)
             {
-                const bool enabled = enableVis && vizShapeInScope(source, shape);
+                const bool enabled = enableVis && vizShapeInScope(owner, source, shape);
                 shapeInScope = shapeInScope || enabled;
                 if (shape->isExclusive())
                     shape->setFlag(PxShapeFlag::eVISUALIZATION, enabled);
@@ -291,16 +270,13 @@ static void enableActorVisualization(PxActor* actor,
     actor->setActorFlag(PxActorFlag::eVISUALIZATION, actorInScope || shapeInScope);
 }
 
-void omni::physx::enableVisualization(bool enableVis)
+void omni::physx::enableVisualization(usdparser::AttachedStage& owner, bool enableVis)
 {
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const PhysXSetup& physxSetup = omniPhysX.getPhysXSetup();
-    omniPhysX.setDebugVisualizationEnabled(enableVis);
-    waitForSimulationCompletion(false);
+    owner.setDebugVisualizationEnabled(enableVis);
     const omni::physics::parse::IPhysicsSource* scopeSource =
-        g_vizScope.paths.empty() ? nullptr : vizOvstageSource();
+        owner.getDebugVisualizationCache().mScopePaths.empty() ? nullptr : vizOvstageSource(owner);
 
-    for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+    for (AttachedStage::SceneMap::const_reference ref : owner.getPhysXScenes())
     {        
         PxScene* scene = ref.second->getScene();
         if (!scene)
@@ -314,7 +290,7 @@ void omni::physx::enableVisualization(bool enableVis)
             scene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC, &actor, 1, i);
             if (!actor)
                 break;
-            enableActorVisualization(actor, enableVis, scopeSource);
+            enableActorVisualization(owner, actor, enableVis, scopeSource);
         }
 
         // articulations
@@ -332,7 +308,7 @@ void omni::physx::enableVisualization(bool enableVis)
                 articulation->getLinks(&link, 1, j);
                 if (!link)
                     break;
-                enableActorVisualization(link, enableVis, scopeSource);
+                enableActorVisualization(owner, link, enableVis, scopeSource);
             }
         }
 
@@ -347,15 +323,15 @@ void omni::physx::enableVisualization(bool enableVis)
             // A joint is in scope when EITHER attached actor is: selecting a
             // body shows the joints hanging off it. When disabling, the flag
             // is cleared regardless, so skip the per-joint scope match.
-            bool jointInScope = !enableVis || g_vizScope.paths.empty();
+            bool jointInScope = !enableVis || owner.getDebugVisualizationCache().mScopePaths.empty();
             if (!jointInScope)
             {
                 PxRigidActor* a0 = nullptr;
                 PxRigidActor* a1 = nullptr;
                 constraint->getActors(a0, a1);
                 jointInScope =
-                    (a0 && vizActorInScope(scopeSource, a0)) ||
-                    (a1 && vizActorInScope(scopeSource, a1));
+                    (a0 && vizActorInScope(owner, scopeSource, a0)) ||
+                    (a1 && vizActorInScope(owner, scopeSource, a1));
             }
             constraint->setFlag(PxConstraintFlag::eVISUALIZATION,
                                 enableVis && jointInScope);
@@ -363,16 +339,16 @@ void omni::physx::enableVisualization(bool enableVis)
 
         if (enableVis)
         {
-            const float gizmoScale = omniPhysX.getCachedSettings().viewportGizmoScale;
+            const float gizmoScale = owner.getCachedSettings().viewportGizmoScale;
             scene->setVisualizationParameter(
-                PxVisualizationParameter::eSCALE, gizmoScale * omniPhysX.getVisualizationScale());
+                PxVisualizationParameter::eSCALE, gizmoScale * owner.getVisualizationScale());
 
-            const uint32_t visMask = omniPhysX.getVisualizationBitMask();
+            const uint64_t visMask = owner.getVisualizationBitMask();
             for (uint32_t i = 0; i < ePhysXNumValues; i++)
             {
-                if (visMask & (1 << i))
+                if (visMask & (1ull << i))
                 {
-                    scene->setVisualizationParameter(PxVisualizationParameter::Enum(i), g_vizParamValues.v[i]);
+                    scene->setVisualizationParameter(PxVisualizationParameter::Enum(i), owner.getDebugVisualizationCache().mParamValues[i]);
                 }
             }
         }
@@ -383,24 +359,21 @@ void omni::physx::enableVisualization(bool enableVis)
     }
 }
 
-void omni::physx::enableNormalsVisualization(bool enableNormalsVis)
+void omni::physx::enableNormalsVisualization(usdparser::AttachedStage& owner, bool enableNormalsVis)
 {
-    OmniPhysX::getInstance().setNormalsVisualizationEnabled(enableNormalsVis);
+    owner.setNormalsVisualizationEnabled(enableNormalsVis);
 }
 
-void omni::physx::setVisualizationScale(float scale)
+void omni::physx::setVisualizationScale(usdparser::AttachedStage& owner, float scale)
 {
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const PhysXSetup& physxSetup = omniPhysX.getPhysXSetup();
 
-    omniPhysX.setVisualizationScale(scale);
-    const float gizmoScale = omniPhysX.getCachedSettings().viewportGizmoScale;
+    owner.setVisualizationScale(scale);
+    const float gizmoScale = owner.getCachedSettings().viewportGizmoScale;
 
-    if (omniPhysX.isDebugVisualizationEnabled())
+    if (owner.isDebugVisualizationEnabled())
     {
-        waitForSimulationCompletion(false);
 
-        for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+        for (AttachedStage::SceneMap::const_reference ref : owner.getPhysXScenes())
         {
             PxScene* scene = ref.second->getScene();
             if (scene)
@@ -409,10 +382,8 @@ void omni::physx::setVisualizationScale(float scale)
     }
 }
 
-void omni::physx::setVisualizationCullingBox(const carb::Float3& min, const carb::Float3& max)
+void omni::physx::setVisualizationCullingBox(usdparser::AttachedStage& owner, const carb::Float3& min, const carb::Float3& max)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const PhysXSetup& physxSetup = omniPhysX.getPhysXSetup();
 
     PxBounds3 bounds;
     bounds.minimum = (const PxVec3&)min;
@@ -420,9 +391,8 @@ void omni::physx::setVisualizationCullingBox(const carb::Float3& min, const carb
 
     if (bounds.isValid())
     {
-        waitForSimulationCompletion(false);
 
-        for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+        for (AttachedStage::SceneMap::const_reference ref : owner.getPhysXScenes())
         {
             PxScene* scene = ref.second->getScene();
             if (scene)
@@ -431,38 +401,226 @@ void omni::physx::setVisualizationCullingBox(const carb::Float3& min, const carb
     }
 }
 
-void omni::physx::setVisualizationParameter(PhysXVisualizationParameter par, bool val)
+/**
+ * @implements REQ-PUBLICAPI-004
+ * @covers AC-1 AC-2 AC-3
+ */
+void omni::physx::applyDebugRenderForAttach(uint64_t attachHandle,
+                                           bool enabled,
+                                           float scale,
+                                           const float* params,
+                                           uint32_t paramCount,
+                                           bool hasCull,
+                                           const float cullMin[3],
+                                           const float cullMax[3],
+                                           const ovx_primpath_t* scopeTokens,
+                                           uint32_t scopeCount)
 {
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const PhysXSetup& physxSetup = omniPhysX.getPhysXSetup();
+    if (attachHandle == 0)
+        return;
+    // Lease first. getAttachedStageByHandle borrows the owner and requires it.
+    RuntimeExecutionScope execution(static_cast<omni::physics::AttachHandle>(attachHandle));
+    if (!execution)
+        return;
+    usdparser::AttachedStage* owner = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
+    if (!owner)
+        return;
+    applyDebugRenderToOwner(*owner, enabled, scale, params, paramCount, hasCull, cullMin, cullMax, scopeTokens, scopeCount);
+}
 
-    uint64_t visMask = omniPhysX.getVisualizationBitMask();
+void omni::physx::applyDebugRenderToOwner(usdparser::AttachedStage& owner,
+                                         bool enabled,
+                                         float scale,
+                                         const float* params,
+                                         uint32_t paramCount,
+                                         bool hasCull,
+                                         const float cullMin[3],
+                                         const float cullMax[3],
+                                         const ovx_primpath_t* scopeTokens,
+                                         uint32_t scopeCount)
+{
+    const uint32_t limit = paramCount < static_cast<uint32_t>(ePhysXNumValues)
+                               ? paramCount
+                               : static_cast<uint32_t>(ePhysXNumValues);
+    for (uint32_t i = 1; i < limit; ++i)
+    {
+        const float value = params && params[i] > 0.0f ? params[i] : 0.0f;
+        const PhysXVisualizationParameter parameter = static_cast<PhysXVisualizationParameter>(i);
+        setVisualizationParameterValue(owner, parameter, value);
+        setVisualizationParameter(owner, parameter, value > 0.0f);
+    }
+
+    setVisualizationScale(owner, scale);
+    (void)setVisualizationScopeTokens(owner, scopeCount > 0 ? scopeTokens : nullptr, scopeCount);
+    if (hasCull && cullMin && cullMax)
+    {
+        setVisualizationCullingBox(owner,
+                                   carb::Float3{ cullMin[0], cullMin[1], cullMin[2] },
+                                   carb::Float3{ cullMax[0], cullMax[1], cullMax[2] });
+    }
+    else
+    {
+        const PxBounds3 empty = PxBounds3::empty();
+        for (AttachedStage::SceneMap::const_reference ref : owner.getPhysXScenes())
+        {
+            PxScene* scene = ref.second ? ref.second->getScene() : nullptr;
+            if (scene)
+                scene->setVisualizationCullingBox(empty);
+        }
+    }
+
+    // Authors flags from this attach's scope and records the enable flag new
+    // actors on this attach read at creation.
+    enableVisualization(owner, enabled);
+}
+
+void omni::physx::copyDebugPrimitivesFromOwner(usdparser::AttachedStage& owner,
+                                              std::vector<DebugPoint>& points,
+                                              std::vector<DebugLine>& lines,
+                                              std::vector<DebugTriangle>& triangles)
+{
+    points.clear();
+    lines.clear();
+    triangles.clear();
+    for (AttachedStage::SceneMap::const_reference ref : owner.getPhysXScenes())
+    {
+        PhysXScene* physxScene = ref.second;
+        if (!physxScene || !physxScene->getScene())
+            continue;
+        PxScene* scene = physxScene->getScene();
+        const PxRenderBuffer& buffer = scene->getRenderBuffer();
+        const PxU32 nPoints = buffer.getNbPoints();
+        const PxU32 nLines = buffer.getNbLines();
+        const PxU32 nTris = buffer.getNbTriangles();
+        if (nPoints && buffer.getPoints())
+        {
+            const auto* src = reinterpret_cast<const DebugPoint*>(buffer.getPoints());
+            points.insert(points.end(), src, src + nPoints);
+        }
+        if (nLines && buffer.getLines())
+        {
+            const auto* src = reinterpret_cast<const DebugLine*>(buffer.getLines());
+            lines.insert(lines.end(), src, src + nLines);
+        }
+        if (nTris && buffer.getTriangles())
+        {
+            const auto* src = reinterpret_cast<const DebugTriangle*>(buffer.getTriangles());
+            triangles.insert(triangles.end(), src, src + nTris);
+        }
+    }
+
+    // Spline debug lines are stored on this attach's database.
+    const PxRenderBuffer& extra = owner.getInternalPhysXDatabase().getDebugRenderBuffer();
+    const PxU32 nLines = extra.getNbLines();
+    if (nLines && extra.getLines())
+    {
+        const auto* src = reinterpret_cast<const DebugLine*>(extra.getLines());
+        lines.insert(lines.end(), src, src + nLines);
+    }
+}
+
+/**
+ * @implements REQ-PUBLICAPI-004
+ * @covers AC-2 AC-3 AC-4
+ */
+bool omni::physx::copyDebugPrimitivesForAttach(uint64_t attachHandle,
+                                              std::vector<DebugPoint>& points,
+                                              std::vector<DebugLine>& lines,
+                                              std::vector<DebugTriangle>& triangles)
+{
+    if (attachHandle == 0)
+    {
+        points.clear();
+        lines.clear();
+        triangles.clear();
+        return true;
+    }
+    RuntimeExecutionScope execution(static_cast<omni::physics::AttachHandle>(attachHandle));
+    if (!execution)
+        return false;
+    usdparser::AttachedStage* owner = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
+    if (!owner)
+        return false;
+    copyDebugPrimitivesFromOwner(*owner, points, lines, triangles);
+    return true;
+}
+
+void omni::physx::applyDebugRenderForAttachRequest(const DebugRenderAttachRequest* request)
+{
+    if (!request)
+        return;
+    applyDebugRenderForAttach(request->attachHandle,
+                              request->enabled,
+                              request->scale,
+                              request->params,
+                              request->paramCount,
+                              request->hasCullingBox,
+                              request->hasCullingBox ? request->cullMin : nullptr,
+                              request->hasCullingBox ? request->cullMax : nullptr,
+                              request->scopeTokens,
+                              request->scopeCount);
+}
+
+void omni::physx::copyDebugPrimitivesForAttachBuffers(uint64_t attachHandle,
+                                                     DebugPoint* points,
+                                                     uint32_t* pointCount,
+                                                     DebugLine* lines,
+                                                     uint32_t* lineCount,
+                                                     DebugTriangle* triangles,
+                                                     uint32_t* triangleCount)
+{
+    std::vector<DebugPoint> copiedPoints;
+    std::vector<DebugLine> copiedLines;
+    std::vector<DebugTriangle> copiedTriangles;
+    if (!copyDebugPrimitivesForAttach(attachHandle, copiedPoints, copiedLines, copiedTriangles))
+        return;
+
+    const auto publish = [](auto* destination, uint32_t* count, const auto& source) {
+        const uint32_t full = static_cast<uint32_t>(source.size());
+        if (destination && count && *count > 0 && full > 0)
+        {
+            const uint32_t n = *count < full ? *count : full;
+            std::memcpy(destination, source.data(), sizeof(*destination) * n);
+        }
+        if (count)
+            *count = full;
+    };
+    publish(points, pointCount, copiedPoints);
+    publish(lines, lineCount, copiedLines);
+    publish(triangles, triangleCount, copiedTriangles);
+}
+
+void omni::physx::setVisualizationParameter(usdparser::AttachedStage& owner, PhysXVisualizationParameter par, bool val)
+{
+    if (par <= eNone || par >= eNumValues)
+        return;
+
+    uint64_t visMask = owner.getVisualizationBitMask();
 
     if (val)
         visMask |= (1ull << (uint64_t)par);
     else
         visMask &= ~(1ull << (uint64_t)par);
 
-    omniPhysX.setVisualizationBitMask(visMask);
+    owner.setVisualizationBitMask(visMask);
 
-    waitForSimulationCompletion(false);
 
     if (par != eNone && par < ePhysXNumValues)
     {
-        for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+        for (AttachedStage::SceneMap::const_reference ref : owner.getPhysXScenes())
         {
             PxScene* scene = ref.second->getScene();
             if (scene)
-                scene->setVisualizationParameter(PxVisualizationParameter::Enum(par), val ? g_vizParamValues.v[par] : 0.0f);
+                scene->setVisualizationParameter(PxVisualizationParameter::Enum(par), val ? owner.getDebugVisualizationCache().mParamValues[par] : 0.0f);
         }
     }
     else
     {
-        omniPhysX.getInternalPhysXDatabase().setVisualizationParameter(par, val);
+        owner.getInternalPhysXDatabase().setVisualizationParameter(par, val);
     }
 }
 
-void omni::physx::setVisualizationParameterValue(PhysXVisualizationParameter par, float value)
+void omni::physx::setVisualizationParameterValue(usdparser::AttachedStage& owner, PhysXVisualizationParameter par, float value)
 {
     // Records the magnitude this parameter applies when enabled and re-applies it live
     // if currently on. Does not change the enabled state. Values must be finite and >= 0.
@@ -471,17 +629,14 @@ void omni::physx::setVisualizationParameterValue(PhysXVisualizationParameter par
     if (!(value >= 0.0f) || !std::isfinite(value))
         return;
 
-    g_vizParamValues.v[par] = value;
+    owner.getDebugVisualizationCache().mParamValues[par] = value;
 
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const PhysXSetup& physxSetup = omniPhysX.getPhysXSetup();
-    const uint64_t visMask = omniPhysX.getVisualizationBitMask();
+    const uint64_t visMask = owner.getVisualizationBitMask();
     if ((visMask & (1ull << (uint64_t)par)) == 0)
         return; // parameter is off: the value applies on the next enable
 
-    waitForSimulationCompletion(false);
 
-    for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+    for (AttachedStage::SceneMap::const_reference ref : owner.getPhysXScenes())
     {
         PxScene* scene = ref.second->getScene();
         if (scene)
@@ -489,13 +644,12 @@ void omni::physx::setVisualizationParameterValue(PhysXVisualizationParameter par
     }
 }
 
-bool omni::physx::setVisualizationScopeTokens(const ovx_primpath_t* tokens, uint32_t count)
+bool omni::physx::setVisualizationScopeTokens(usdparser::AttachedStage& owner, const ovx_primpath_t* tokens, uint32_t count)
 {
     // Restrict eVISUALIZATION flag authoring to a set of interned prim paths, exact
     // membership (empty = every object). The caller expanded any hierarchy into its
     // object set and interned it against this instance's source dictionary; matching an
     // object canonicalizes its source key through that same dictionary.
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
     if (count > 0u && !tokens)
         return false;
     std::unordered_set<ovx_primpath_t> pending;
@@ -505,26 +659,23 @@ bool omni::physx::setVisualizationScopeTokens(const ovx_primpath_t* tokens, uint
             return false;
         pending.insert(tokens[i]);
     }
-    if (count > 0u && vizOvstageSource() == nullptr)
+    if (count > 0u && vizOvstageSource(owner) == nullptr)
         return false;
 
-    g_vizScope.paths.swap(pending);
+    owner.getDebugVisualizationCache().mScopePaths.swap(pending);
     // Re-author the flags live so a scope change applies without a disable/enable
     // cycle, drawn on the next step. enableVisualization waits for completion itself.
-    if (omniPhysX.isDebugVisualizationEnabled())
-        omni::physx::enableVisualization(true);
+    if (owner.isDebugVisualizationEnabled())
+        omni::physx::enableVisualization(owner, true);
     return true;
 }
 
-uint32_t omni::physx::getNbPoints()
+uint32_t omni::physx::getNbPoints(usdparser::AttachedStage& owner)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const PhysXSetup& physxSetup = omniPhysX.getPhysXSetup();
     uint32_t numPoints = 0;
 
-    waitForSimulationCompletion(false);
 
-    for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+    for (AttachedStage::SceneMap::const_reference ref : owner.getPhysXScenes())
     {
         PxScene* scene = ref.second->getScene();
         if (scene)
@@ -533,98 +684,86 @@ uint32_t omni::physx::getNbPoints()
     return numPoints;
 }
 
-const DebugPoint* omni::physx::getPoints()
+const DebugPoint* omni::physx::getPoints(usdparser::AttachedStage& owner)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const PhysXSetup& physxSetup = omniPhysX.getPhysXSetup();
 
-    if (physxSetup.getPhysXScenes().empty())
+    if (owner.getPhysXScenes().empty())
         return nullptr;
 
-    waitForSimulationCompletion(false);
 
-    if (physxSetup.getPhysXScenes().size() == 1)
-        return (const DebugPoint*)physxSetup.getPhysXScenes().begin()->second->getScene()->getRenderBuffer().getPoints();
+    if (owner.getPhysXScenes().size() == 1)
+        return (const DebugPoint*)owner.getPhysXScenes().begin()->second->getScene()->getRenderBuffer().getPoints();
     else
     {
-        gDebugVisualizationCache.mPointsBuffer.resize(getNbPoints());
+        owner.getDebugVisualizationCache().mPointsBuffer.resize(getNbPoints(owner));
         uint32_t offset = 0;
-        for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+        for (AttachedStage::SceneMap::const_reference ref : owner.getPhysXScenes())
         {
             PxScene* scene = ref.second->getScene();
             const uint32_t numPoints = scene->getRenderBuffer().getNbPoints();
-            memcpy(gDebugVisualizationCache.mPointsBuffer.data() + offset, scene->getRenderBuffer().getPoints(), sizeof(DebugPoint)*numPoints);
+            memcpy(owner.getDebugVisualizationCache().mPointsBuffer.data() + offset, scene->getRenderBuffer().getPoints(), sizeof(DebugPoint)*numPoints);
             offset += numPoints;
         }
     }
 
-    return gDebugVisualizationCache.mPointsBuffer.data();
+    return owner.getDebugVisualizationCache().mPointsBuffer.data();
 }
 
-uint32_t omni::physx::getNbLines()
+uint32_t omni::physx::getNbLines(usdparser::AttachedStage& owner)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const PhysXSetup& physxSetup = omniPhysX.getPhysXSetup();
     uint32_t numLines = 0;
 
-    waitForSimulationCompletion(false);
 
-    for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+    for (AttachedStage::SceneMap::const_reference ref : owner.getPhysXScenes())
     {
         PxScene* scene = ref.second->getScene();
         if (scene)
             numLines += scene->getRenderBuffer().getNbLines();
     }
-    numLines += omniPhysX.getInternalPhysXDatabase().getDebugRenderBuffer().getNbLines();
+    numLines += owner.getInternalPhysXDatabase().getDebugRenderBuffer().getNbLines();
     return numLines;
 }
 
-const DebugLine* omni::physx::getLines()
+const DebugLine* omni::physx::getLines(usdparser::AttachedStage& owner)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const PhysXSetup& physxSetup = omniPhysX.getPhysXSetup();
 
-    if (physxSetup.getPhysXScenes().empty())
+    if (owner.getPhysXScenes().empty())
         return nullptr;
 
-    waitForSimulationCompletion(false);
 
-    if (physxSetup.getPhysXScenes().size() == 1 &&
-        omniPhysX.getInternalPhysXDatabase().getDebugRenderBuffer().getNbLines() == 0)
-        return (const DebugLine*)physxSetup.getPhysXScenes().begin()->second->getScene()->getRenderBuffer().getLines();
+    if (owner.getPhysXScenes().size() == 1 &&
+        owner.getInternalPhysXDatabase().getDebugRenderBuffer().getNbLines() == 0)
+        return (const DebugLine*)owner.getPhysXScenes().begin()->second->getScene()->getRenderBuffer().getLines();
     else
     {
-        gDebugVisualizationCache.mLinesBuffer.resize(getNbLines());
+        owner.getDebugVisualizationCache().mLinesBuffer.resize(getNbLines(owner));
         uint32_t offset = 0;
-        for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+        for (AttachedStage::SceneMap::const_reference ref : owner.getPhysXScenes())
         {
             PxScene* scene = ref.second->getScene();
             const uint32_t numLines = scene->getRenderBuffer().getNbLines();
-            memcpy(gDebugVisualizationCache.mLinesBuffer.data() + offset, scene->getRenderBuffer().getLines(), sizeof(DebugLine) * numLines);
+            memcpy(owner.getDebugVisualizationCache().mLinesBuffer.data() + offset, scene->getRenderBuffer().getLines(), sizeof(DebugLine) * numLines);
             offset += numLines;
         }
 
-        if (omniPhysX.getInternalPhysXDatabase().getDebugRenderBuffer().getNbLines() > 0)
+        if (owner.getInternalPhysXDatabase().getDebugRenderBuffer().getNbLines() > 0)
         {
-            const uint32_t numLines = omniPhysX.getInternalPhysXDatabase().getDebugRenderBuffer().getNbLines();
-            memcpy(gDebugVisualizationCache.mLinesBuffer.data() + offset,
-                   omniPhysX.getInternalPhysXDatabase().getDebugRenderBuffer().getLines(),
+            const uint32_t numLines = owner.getInternalPhysXDatabase().getDebugRenderBuffer().getNbLines();
+            memcpy(owner.getDebugVisualizationCache().mLinesBuffer.data() + offset,
+                   owner.getInternalPhysXDatabase().getDebugRenderBuffer().getLines(),
                    sizeof(PxDebugLine) * numLines);
         }
     }
 
-    return gDebugVisualizationCache.mLinesBuffer.data();
+    return owner.getDebugVisualizationCache().mLinesBuffer.data();
 }
 
-uint32_t omni::physx::getNbTriangles()
+uint32_t omni::physx::getNbTriangles(usdparser::AttachedStage& owner)
 {    
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const PhysXSetup& physxSetup = omniPhysX.getPhysXSetup();
     uint32_t numTris = 0;
 
-    waitForSimulationCompletion(false);
 
-    for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+    for (AttachedStage::SceneMap::const_reference ref : owner.getPhysXScenes())
     {
         PxScene* scene = ref.second->getScene();
         if (scene)
@@ -633,32 +772,29 @@ uint32_t omni::physx::getNbTriangles()
     return numTris;
 }
 
-const DebugTriangle* omni::physx::getTriangles()
+const DebugTriangle* omni::physx::getTriangles(usdparser::AttachedStage& owner)
 {    
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const PhysXSetup& physxSetup = omniPhysX.getPhysXSetup();
 
-    if (physxSetup.getPhysXScenes().empty())
+    if (owner.getPhysXScenes().empty())
         return nullptr;
 
-    waitForSimulationCompletion(false);
 
-    if (physxSetup.getPhysXScenes().size() == 1)
-        return (const DebugTriangle*)physxSetup.getPhysXScenes().begin()->second->getScene()->getRenderBuffer().getTriangles();
+    if (owner.getPhysXScenes().size() == 1)
+        return (const DebugTriangle*)owner.getPhysXScenes().begin()->second->getScene()->getRenderBuffer().getTriangles();
     else
     {
-        gDebugVisualizationCache.mTriangleBuffer.resize(getNbTriangles());
+        owner.getDebugVisualizationCache().mTriangleBuffer.resize(getNbTriangles(owner));
         uint32_t offset = 0;
-        for (PhysXScenesMap::const_reference ref : physxSetup.getPhysXScenes())
+        for (AttachedStage::SceneMap::const_reference ref : owner.getPhysXScenes())
         {
             PxScene* scene = ref.second->getScene();
             const uint32_t numTris = scene->getRenderBuffer().getNbTriangles();
-            memcpy(gDebugVisualizationCache.mTriangleBuffer.data() + offset, scene->getRenderBuffer().getTriangles(), sizeof(DebugTriangle) * numTris);
+            memcpy(owner.getDebugVisualizationCache().mTriangleBuffer.data() + offset, scene->getRenderBuffer().getTriangles(), sizeof(DebugTriangle) * numTris);
             offset += numTris;
         }
     }
 
-    return gDebugVisualizationCache.mTriangleBuffer.data();
+    return owner.getDebugVisualizationCache().mTriangleBuffer.data();
 }
 
 namespace debugrender
@@ -869,18 +1005,18 @@ void drawConvexMesh(debugrender::RenderOutput& out, const PxConvexMesh* convexMe
     }
 }
 
-void drawTriMesh(debugrender::RenderOutput& out, const PxTriangleMesh* triMesh, const PxVec3& scale)
+void drawTriMesh(const usdparser::AttachedStage& owner, debugrender::RenderOutput& out, const PxTriangleMesh* triMesh, const PxVec3& scale)
 {
     if ( !triMesh )
         return;
 
-    const usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    const usdparser::AttachedStage* attachedStage = &owner;
     if (!attachedStage)
     {
         return;
     }
 
-    const bool renderNormals = OmniPhysX::getInstance().isNormalsVisualizationEnabled();
+    const bool renderNormals = owner.isNormalsVisualizationEnabled();
     const float maxSize = 0.05f / attachedStage->getSourceUnits().metersPerUnit;
     const float size = 0.05f;
 
@@ -1000,7 +1136,7 @@ void drawTriMesh(debugrender::RenderOutput& out, const PxTriangleMesh* triMesh, 
     }
 }
 
-static debugrender::RenderBuffer gRenderBuffer(64);
+
 
 
 void DebugVisualizationCache::release()
@@ -1020,6 +1156,7 @@ void DebugVisualizationCache::release()
     mPointsBuffer.clear();
     mLinesBuffer.clear();
     mTriangleBuffer.clear();
+    mShapeBuffer.clear();
 }
 
 void DebugVisualizationCache::releaseKey(omni::physics::parse::ObjectKey key)
@@ -1116,11 +1253,11 @@ namespace
     };
 }
 
-const DebugLine* omni::physx::getShapeDebugDraw(omni::physics::parse::ObjectKey key,
+const DebugLine* omni::physx::getShapeDebugDraw(usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey key,
                                                 const usdparser::PhysxShapeDesc* desc,
                                                 uint32_t& numLines)
 {
-    gRenderBuffer.clear();
+    debugrender::RenderBuffer gRenderBuffer(64);
     const DebugLine* outLines = nullptr;
     numLines = 0;
 
@@ -1130,13 +1267,13 @@ const DebugLine* omni::physx::getShapeDebugDraw(omni::physics::parse::ObjectKey 
         return outLines;
     }
 
-    usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    usdparser::AttachedStage* attachedStage = &owner;
     if (!attachedStage)
     {
         return outLines;
     }
 
-    uint32_t collShapeColor = getDebugDrawCollShapeColor(key);
+    uint32_t collShapeColor = getDebugDrawCollShapeColor(owner, key);
     PxTransform transform = toPhysX(desc->localPos, desc->localRot);
 
     switch (desc->type)
@@ -1386,7 +1523,7 @@ const DebugLine* omni::physx::getShapeDebugDraw(omni::physics::parse::ObjectKey 
     {
         CylinderPhysxShapeDesc* cylinderDesc = (CylinderPhysxShapeDesc*)desc;
 
-        if (OmniPhysX::getInstance().getISettings()->getAsBool(kSettingCollisionApproximateCylinders))
+        if (attachedStage->getCachedSettings().approximateCylinders)
         {
             const PxVec3 scale = getConeOrCylinderScale(cylinderDesc->halfHeight, cylinderDesc->radius,
                 cylinderDesc->axis);
@@ -1417,7 +1554,7 @@ const DebugLine* omni::physx::getShapeDebugDraw(omni::physics::parse::ObjectKey 
     {
         ConePhysxShapeDesc* coneDesc = (ConePhysxShapeDesc*)desc;
 
-        if (OmniPhysX::getInstance().getISettings()->getAsBool(kSettingCollisionApproximateCones))
+        if (attachedStage->getCachedSettings().approximateCones)
         {
             const PxVec3 scale = getConeOrCylinderScale(coneDesc->halfHeight, coneDesc->radius,
                 coneDesc->axis);
@@ -1492,7 +1629,7 @@ const DebugLine* omni::physx::getShapeDebugDraw(omni::physics::parse::ObjectKey 
     break;
     case eTriangleMeshShape:
     {
-        outLines = gDebugVisualizationCache.getLines(key, transform, numLines);
+        outLines = owner.getDebugVisualizationCache().getLines(key, transform, numLines);
         if (!outLines)
         {
             TriangleMeshPhysxShapeDesc* meshDesc = (TriangleMeshPhysxShapeDesc*)desc;
@@ -1506,13 +1643,13 @@ const DebugLine* omni::physx::getShapeDebugDraw(omni::physics::parse::ObjectKey 
             PxTriangleMesh* triMesh = cookingDataAsync->getTriangleMesh(*meshDesc, key, *attachedStage, true);
             if ( triMesh )
             {
-                drawTriMesh(out, triMesh, toPhysX(meshDesc->meshScale));
+                drawTriMesh(owner, out, triMesh, toPhysX(meshDesc->meshScale));
                 if (!gRenderBuffer.empty())
                 {
                     const size_t nLines = gRenderBuffer.getNbLines();
                     DebugLine* cachedLines = new DebugLine[nLines];
                     memcpy(cachedLines, gRenderBuffer.getLines(), sizeof(DebugLine) * nLines);
-                    gDebugVisualizationCache.addLines(key, transform, cachedLines, (uint32_t)nLines);
+                    owner.getDebugVisualizationCache().addLines(key, transform, cachedLines, (uint32_t)nLines);
                 }
             }
         }
@@ -1524,7 +1661,7 @@ const DebugLine* omni::physx::getShapeDebugDraw(omni::physics::parse::ObjectKey 
 
         const float hRt2 = sqrt(2.0f) / 2.0f;
         PxQuat fixupQ(PxIdentity);
-        const float normalLength = 0.5f / usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage()->getSourceUnits().metersPerUnit;
+        const float normalLength = 0.5f / owner.getSourceUnits().metersPerUnit;
         PxVec3 normal(0.0f, 0.0f, normalLength);
         if (planeDesc->axis == eY)
         {
@@ -1560,19 +1697,21 @@ const DebugLine* omni::physx::getShapeDebugDraw(omni::physics::parse::ObjectKey 
     if (!gRenderBuffer.empty())
     {
         numLines = (uint32_t)gRenderBuffer.getNbLines();
-        outLines = (const DebugLine*)(gRenderBuffer.getLines());
+        std::vector<DebugLine>& output = owner.getDebugVisualizationCache().mShapeBuffer;
+        output.resize(numLines);
+        memcpy(output.data(), gRenderBuffer.getLines(), sizeof(DebugLine) * numLines);
+        outLines = output.data();
     }
 
     return outLines;
 }
 
-void omni::physx::clearDebugVisualizationData()
+void omni::physx::clearDebugVisualizationData(usdparser::AttachedStage& owner)
 {
-    gRenderBuffer.clear();
-    gDebugVisualizationCache.release();
+    owner.getDebugVisualizationCache().release();
 }
 
-const omni::physx::CollisionRepresentation* omni::physx::getCollisionRepresentation(omni::physics::parse::ObjectKey key,const usdparser::PhysxShapeDesc* desc)
+const omni::physx::CollisionRepresentation* omni::physx::getCollisionRepresentation(usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey key,const usdparser::PhysxShapeDesc* desc)
 {
     const CollisionRepresentation *ret = nullptr;
 
@@ -1584,17 +1723,26 @@ const omni::physx::CollisionRepresentation* omni::physx::getCollisionRepresentat
 
     return ret;
 }
-void omni::physx::releaseCollisionRepresentation(const CollisionRepresentation *cr)
+void omni::physx::releaseCollisionRepresentation(const CollisionRepresentation* cr)
 {
-    CookingDataAsync* cookingDataAsync = OmniPhysX::getInstance().getPhysXSetup().getCookingDataAsync();
-    if (cookingDataAsync)
+    // A representation is an independent heap copy. Its release neither resolves
+    // physics nor requires the SDK/cooking service to remain alive.
+    if (!cr)
+        return;
+    for (uint32_t i = 0; i < cr->meshCount; ++i)
     {
-        cookingDataAsync->releaseCollisionRepresentation(cr);
+        delete[] cr->meshes[i].vertices;
+        delete[] cr->meshes[i].indices;
     }
+    delete[] cr->meshes;
+    delete cr;
 }
 
 bool omni::physx::getMeshKey(const omni::physx::usdparser::PhysxShapeDesc &desc,omni::physx::usdparser::MeshKey &meshKey)
 {
+    RuntimeExecutionScope execution(kNoAttach);
+    if (!execution)
+        return false;
     bool ret = false;
 
     CookingDataAsync* cookingDataAsync = OmniPhysX::getInstance().getPhysXSetup().getCookingDataAsync();
@@ -1620,4 +1768,194 @@ void addTriangleMesh(EdgeSet& edgeSet, const T* triangles, uint32_t nbTriangles)
         edgeSet.insert(Pair<uint32_t>(v1, v2));
         edgeSet.insert(Pair<uint32_t>(v2, v0));
     }
+}
+
+// Public admission boundaries. Private overloads above never acquire nested admission.
+void omni::physx::enableVisualization(AttachHandle attachHandle, bool enableVis)
+{
+    RuntimeExecutionScope execution(attachHandle);
+    if (!execution)
+        return;
+    usdparser::AttachedStage* owner = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
+    if (!owner)
+        return;
+    enableVisualization(*owner, enableVis);
+}
+
+void omni::physx::enableNormalsVisualization(AttachHandle attachHandle, bool enableNormalsVis)
+{
+    RuntimeExecutionScope execution(attachHandle);
+    if (!execution)
+        return;
+    usdparser::AttachedStage* owner = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
+    if (!owner)
+        return;
+    enableNormalsVisualization(*owner, enableNormalsVis);
+}
+
+void omni::physx::setVisualizationScale(AttachHandle attachHandle, float scale)
+{
+    RuntimeExecutionScope execution(attachHandle);
+    if (!execution)
+        return;
+    usdparser::AttachedStage* owner = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
+    if (!owner)
+        return;
+    setVisualizationScale(*owner, scale);
+}
+
+void omni::physx::setVisualizationCullingBox(AttachHandle attachHandle, const carb::Float3& min, const carb::Float3& max)
+{
+    RuntimeExecutionScope execution(attachHandle);
+    if (!execution)
+        return;
+    usdparser::AttachedStage* owner = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
+    if (!owner)
+        return;
+    setVisualizationCullingBox(*owner, min, max);
+}
+
+void omni::physx::setVisualizationParameter(AttachHandle attachHandle, PhysXVisualizationParameter par, bool val)
+{
+    RuntimeExecutionScope execution(attachHandle);
+    if (!execution)
+        return;
+    usdparser::AttachedStage* owner = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
+    if (!owner)
+        return;
+    setVisualizationParameter(*owner, par, val);
+}
+
+void omni::physx::setVisualizationParameterValue(AttachHandle attachHandle, PhysXVisualizationParameter par, float value)
+{
+    RuntimeExecutionScope execution(attachHandle);
+    if (!execution)
+        return;
+    usdparser::AttachedStage* owner = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
+    if (!owner)
+        return;
+    setVisualizationParameterValue(*owner, par, value);
+}
+
+bool omni::physx::setVisualizationScopeTokens(AttachHandle attachHandle, const ovx_primpath_t* tokens, uint32_t count)
+{
+    RuntimeExecutionScope execution(attachHandle);
+    if (!execution)
+        return false;
+    usdparser::AttachedStage* owner = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
+    if (!owner)
+        return false;
+    return setVisualizationScopeTokens(*owner, tokens, count);
+}
+
+uint32_t omni::physx::getNbPoints(AttachHandle attachHandle)
+{
+    RuntimeExecutionScope execution(attachHandle);
+    if (!execution)
+        return 0;
+    usdparser::AttachedStage* owner = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
+    if (!owner)
+        return 0;
+    return getNbPoints(*owner);
+}
+
+const DebugPoint* omni::physx::getPoints(AttachHandle attachHandle)
+{
+    RuntimeExecutionScope execution(attachHandle);
+    if (!execution)
+        return nullptr;
+    usdparser::AttachedStage* owner = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
+    if (!owner)
+        return nullptr;
+    return getPoints(*owner);
+}
+
+uint32_t omni::physx::getNbLines(AttachHandle attachHandle)
+{
+    RuntimeExecutionScope execution(attachHandle);
+    if (!execution)
+        return 0;
+    usdparser::AttachedStage* owner = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
+    if (!owner)
+        return 0;
+    return getNbLines(*owner);
+}
+
+const DebugLine* omni::physx::getLines(AttachHandle attachHandle)
+{
+    RuntimeExecutionScope execution(attachHandle);
+    if (!execution)
+        return nullptr;
+    usdparser::AttachedStage* owner = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
+    if (!owner)
+        return nullptr;
+    return getLines(*owner);
+}
+
+uint32_t omni::physx::getNbTriangles(AttachHandle attachHandle)
+{
+    RuntimeExecutionScope execution(attachHandle);
+    if (!execution)
+        return 0;
+    usdparser::AttachedStage* owner = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
+    if (!owner)
+        return 0;
+    return getNbTriangles(*owner);
+}
+
+const DebugTriangle* omni::physx::getTriangles(AttachHandle attachHandle)
+{
+    RuntimeExecutionScope execution(attachHandle);
+    if (!execution)
+        return nullptr;
+    usdparser::AttachedStage* owner = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
+    if (!owner)
+        return nullptr;
+    return getTriangles(*owner);
+}
+
+const DebugLine* omni::physx::getShapeDebugDraw(AttachHandle attachHandle, omni::physics::parse::ObjectKey key,
+                                                const usdparser::PhysxShapeDesc* desc,
+                                                uint32_t& numLines)
+{
+    RuntimeExecutionScope execution(attachHandle);
+    if (!execution)
+        return nullptr;
+    usdparser::AttachedStage* owner = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
+    if (!owner)
+        return nullptr;
+    return getShapeDebugDraw(*owner, key, desc, numLines);
+}
+
+void omni::physx::clearDebugVisualizationData(AttachHandle attachHandle)
+{
+    RuntimeExecutionScope execution(attachHandle);
+    if (!execution)
+        return;
+    usdparser::AttachedStage* owner = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
+    if (!owner)
+        return;
+    clearDebugVisualizationData(*owner);
+}
+
+uint32_t omni::physx::getDebugDrawCollShapeColor(AttachHandle attachHandle, omni::physics::parse::ObjectKey key)
+{
+    RuntimeExecutionScope execution(attachHandle);
+    if (!execution)
+        return 0;
+    usdparser::AttachedStage* owner = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
+    if (!owner)
+        return 0;
+    return getDebugDrawCollShapeColor(*owner, key);
+}
+
+const omni::physx::CollisionRepresentation* omni::physx::getCollisionRepresentation(AttachHandle attachHandle, omni::physics::parse::ObjectKey key,const usdparser::PhysxShapeDesc* desc)
+{
+    RuntimeExecutionScope execution(attachHandle);
+    if (!execution)
+        return nullptr;
+    usdparser::AttachedStage* owner = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
+    if (!owner)
+        return nullptr;
+    return getCollisionRepresentation(*owner, key, desc);
 }

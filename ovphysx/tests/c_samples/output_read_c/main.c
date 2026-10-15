@@ -24,9 +24,8 @@
 // The destination attribute name is also an interned token. The sample renames
 // the output to "sim:<name>" and resolves and interns that token once per
 // attribute (sim_token_cache_t) rather than once per group per frame. The
-// dictionary used for that is ovstage's own shared source dictionary, fetched
-// via ovphysx_query_shared_dictionary. There is no separate ovphysx-owned
-// dictionary.
+// dictionary used for that is the attached Stage's own path dictionary, from its
+// get_path_dictionary slot. There is no separate ovphysx-owned dictionary.
 //
 // Physics must not re-ingest its own output (see the ovstage Integration guide).
 // Control edits flow through ovphysx_update_from_ovstage, and physics output is
@@ -35,6 +34,7 @@
 // that never is.
 
 #include <ovphysx/ovphysx.h>
+#include <ovphysx/ovphysx_attributes.h>
 #include <ovphysx/ovphysx_types.h>
 
 #include "ovstage_sample.h"                       // pulls in ovstage.h (write API + DLTensor)
@@ -56,25 +56,25 @@
 // yields no groups, so iterating this table is safe on any scene.
 typedef struct
 {
-    ovphysx_sim_object_type_t type;
+    ovphysx_query_target_t type;
     const char* attrs[4];
     size_t attr_count;
 } output_spec_t;
 
 static const output_spec_t OUTPUT_SPECS[] = {
-    { OVPHYSX_OBJECT_RIGID_BODY,
+    { OVPHYSX_QUERY_TARGET_RIGID_BODY,
       { OVPHYSX_ATTR_POSITION, OVPHYSX_ATTR_ORIENTATION, OVPHYSX_ATTR_LINEAR_VELOCITY, OVPHYSX_ATTR_ANGULAR_VELOCITY }, 4 },
-    { OVPHYSX_OBJECT_ARTICULATION_LINK,
+    { OVPHYSX_QUERY_TARGET_ARTICULATION_LINK,
       { OVPHYSX_ATTR_POSITION, OVPHYSX_ATTR_ORIENTATION, OVPHYSX_ATTR_LINEAR_VELOCITY, OVPHYSX_ATTR_ANGULAR_VELOCITY }, 4 },
-    { OVPHYSX_OBJECT_ARTICULATION,
+    { OVPHYSX_QUERY_TARGET_ARTICULATION,
       { OVPHYSX_ATTR_ROOT_POSITION, OVPHYSX_ATTR_ROOT_ORIENTATION, OVPHYSX_ATTR_ROOT_LINEAR_VELOCITY,
         OVPHYSX_ATTR_ROOT_ANGULAR_VELOCITY },
       4 },
-    { OVPHYSX_OBJECT_ARTICULATION_JOINT, { OVPHYSX_ATTR_JOINT_POSITION, OVPHYSX_ATTR_JOINT_VELOCITY }, 2 },
-    { OVPHYSX_OBJECT_VEHICLE_WHEEL, { OVPHYSX_ATTR_POSITION, OVPHYSX_ATTR_ORIENTATION }, 2 },
-    { OVPHYSX_OBJECT_DEFORMABLE_VOLUME, { OVPHYSX_ATTR_POINTS, OVPHYSX_ATTR_VELOCITIES }, 2 },
-    { OVPHYSX_OBJECT_DEFORMABLE_SURFACE, { OVPHYSX_ATTR_POINTS, OVPHYSX_ATTR_VELOCITIES }, 2 },
-    { OVPHYSX_OBJECT_PARTICLE_SET, { OVPHYSX_ATTR_POINTS, OVPHYSX_ATTR_VELOCITIES }, 2 },
+    { OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT, { OVPHYSX_ATTR_JOINT_POSITION, OVPHYSX_ATTR_JOINT_VELOCITY }, 2 },
+    { OVPHYSX_QUERY_TARGET_VEHICLE_WHEEL, { OVPHYSX_ATTR_POSITION, OVPHYSX_ATTR_ORIENTATION }, 2 },
+    { OVPHYSX_QUERY_TARGET_DEFORMABLE_VOLUME, { OVPHYSX_ATTR_POINTS, OVPHYSX_ATTR_VELOCITIES }, 2 },
+    { OVPHYSX_QUERY_TARGET_DEFORMABLE_SURFACE, { OVPHYSX_ATTR_POINTS, OVPHYSX_ATTR_VELOCITIES }, 2 },
+    { OVPHYSX_QUERY_TARGET_PARTICLE_SET, { OVPHYSX_ATTR_POINTS, OVPHYSX_ATTR_VELOCITIES }, 2 },
 };
 enum { NUM_OUTPUT_SPECS = (int)(sizeof(OUTPUT_SPECS) / sizeof(OUTPUT_SPECS[0])) };
 
@@ -413,25 +413,22 @@ static int dump_group(ovstage_instance_t* inst,
 // tracked separately so that a fetch or release failure after a successfully authored group
 // is not reported as a healthy control update that the caller then drains.
 static int author_rigid_body_velocity(
-    ovphysx_handle_t handle, ovstage_instance_t* inst, ovstage_ordinal_t ordinal, const float vel[3])
+    ovphysx_instance_handle_t handle, ovstage_instance_t* inst, ovstage_ordinal_t ordinal, const float vel[3])
 {
     int authored = 0;
     int failed = 0;
     ovphysx_query_handle_t query = 0;
-    const ovphysx_result_t qr = ovphysx_query(handle, OVPHYSX_OBJECT_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query);
-    if (qr.status != OVPHYSX_API_SUCCESS)
+    const ovphysx_result_t qr = ovphysx_sample_complete_task(handle, ovphysx_query(handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query, NULL));
+    if (qr.status != OVPHYSX_API_SUCCESS || query == 0)
     {
         // A query error is not "no rigid bodies". Conflating them would let a broken read path
         // pass as an empty scene.
         fprintf(stderr, "ovphysx_query(RIGID_BODY) failed (status %d)\n", (int)qr.status);
         return -1;
     }
-    if (query == 0)
-        return 0; // genuinely no rigid bodies
-
     const ovx_string_or_token_t names[] = { name_str(OVPHYSX_ATTR_POSITION) };
     ovphysx_read_handle_t read = 0;
-    const ovphysx_result_t rr = ovphysx_read(handle, query, names, 1, &read);
+    const ovphysx_result_t rr = ovphysx_sample_complete_task(handle, ovphysx_read(handle, query, names, 1, &read, NULL));
     if (rr.status != OVPHYSX_API_SUCCESS || read == 0)
     {
         fprintf(stderr, "ovphysx_read(RIGID_BODY) failed (status %d)\n", (int)rr.status);
@@ -443,8 +440,8 @@ static int author_rigid_body_velocity(
         {
             // Producer-owned: fetch hands back a borrowed ovstage_read_group_t*.
             const ovstage_read_group_t* g = NULL;
-            const ovphysx_result_t r = ovphysx_fetch_read_next(handle, read, &g);
-            if (r.status == OVPHYSX_API_END_OF_ITERATION)
+            const ovphysx_result_t r = ovphysx_sample_complete_task(handle, ovphysx_fetch_read_next(handle, read, &g));
+            if (r.status == OVPHYSX_API_SUCCESS && !g)
                 break; // exhausted. The only exit that is not a failure
             if (r.status != OVPHYSX_API_SUCCESS)
             {
@@ -462,7 +459,7 @@ static int author_rigid_body_velocity(
                 else
                     failed = 1;
             }
-            if (ovphysx_release_group(handle, read, g->read_group_id).status != OVPHYSX_API_SUCCESS)
+            if (ovphysx_sample_complete_task(handle, ovphysx_release_group(handle, read, g->read_group_id)).status != OVPHYSX_API_SUCCESS)
             {
                 fprintf(stderr, "ovphysx_release_group(RIGID_BODY) failed\n");
                 failed = 1;
@@ -470,13 +467,13 @@ static int author_rigid_body_velocity(
             if (failed)
                 break;
         }
-        if (ovphysx_release_read(handle, read).status != OVPHYSX_API_SUCCESS)
+        if (ovphysx_sample_complete_task(handle, ovphysx_release_read(handle, read)).status != OVPHYSX_API_SUCCESS)
         {
             fprintf(stderr, "ovphysx_release_read(RIGID_BODY) failed\n");
             failed = 1;
         }
     }
-    if (ovphysx_release_query(handle, query).status != OVPHYSX_API_SUCCESS)
+    if (ovphysx_sample_complete_task(handle, ovphysx_release_query(handle, query)).status != OVPHYSX_API_SUCCESS)
     {
         fprintf(stderr, "ovphysx_release_query(RIGID_BODY) failed\n");
         failed = 1;
@@ -504,14 +501,14 @@ static double absolute_double(double value)
 
 // Read one fixed-width rigid-body vector column and summarize its x component.
 // The sample runs in CPU mode, so the borrowed DLTensor data is directly readable.
-static int read_rigid_body_vector_stats(ovphysx_handle_t handle, const char* attribute, vector_stats_t* stats)
+static int read_rigid_body_vector_stats(ovphysx_instance_handle_t handle, const char* attribute, vector_stats_t* stats)
 {
     memset(stats, 0, sizeof(*stats));
     stats->min_x = FLT_MAX;
     stats->max_x = -FLT_MAX;
 
     ovphysx_query_handle_t query = 0;
-    if (ovphysx_query(handle, OVPHYSX_OBJECT_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query).status
+    if (ovphysx_sample_complete_task(handle, ovphysx_query(handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query, NULL)).status
             != OVPHYSX_API_SUCCESS
         || query == 0)
         return 0;
@@ -519,17 +516,18 @@ static int read_rigid_body_vector_stats(ovphysx_handle_t handle, const char* att
     int valid = 1;
     const ovx_string_or_token_t name = name_str(attribute);
     ovphysx_read_handle_t read = 0;
-    if (ovphysx_read(handle, query, &name, 1, &read).status != OVPHYSX_API_SUCCESS || read == 0)
+    if (ovphysx_sample_complete_task(handle, ovphysx_read(handle, query, &name, 1, &read, NULL)).status != OVPHYSX_API_SUCCESS || read == 0)
     {
-        ovphysx_release_query(handle, query);
+        if (ovphysx_sample_complete_task(handle, ovphysx_release_query(handle, query)).status != OVPHYSX_API_SUCCESS)
+            valid = 0;
         return 0;
     }
 
     for (;;)
     {
         const ovstage_read_group_t* g = NULL;
-        const ovphysx_result_t r = ovphysx_fetch_read_next(handle, read, &g);
-        if (r.status == OVPHYSX_API_END_OF_ITERATION)
+        const ovphysx_result_t r = ovphysx_sample_complete_task(handle, ovphysx_fetch_read_next(handle, read, &g));
+        if (r.status == OVPHYSX_API_SUCCESS && !g)
             break;
         if (r.status != OVPHYSX_API_SUCCESS || !g)
         {
@@ -561,13 +559,16 @@ static int read_rigid_body_vector_stats(ovphysx_handle_t handle, const char* att
                 }
             }
         }
-        ovphysx_release_group(handle, read, g->read_group_id);
+        if (ovphysx_sample_complete_task(handle, ovphysx_release_group(handle, read, g->read_group_id)).status != OVPHYSX_API_SUCCESS)
+            valid = 0;
         if (!valid)
             break;
     }
 
-    ovphysx_release_read(handle, read);
-    ovphysx_release_query(handle, query);
+    if (ovphysx_sample_complete_task(handle, ovphysx_release_read(handle, read)).status != OVPHYSX_API_SUCCESS)
+        valid = 0;
+    if (ovphysx_sample_complete_task(handle, ovphysx_release_query(handle, query)).status != OVPHYSX_API_SUCCESS)
+        valid = 0;
     return valid && stats->count > 0;
 }
 
@@ -576,7 +577,7 @@ static int read_rigid_body_vector_stats(ovphysx_handle_t handle, const char* att
 // types and frames. Returns the number of groups written back, or -1 if any step
 // failed. The count is incremented on a successful write rather than per fetched
 // group, so a frame whose writes all failed cannot report a healthy number.
-static int read_and_dump_all(ovphysx_handle_t handle,
+static int read_and_dump_all(ovphysx_instance_handle_t handle,
                              ovstage_instance_t* inst,
                              sim_token_cache_t* tokens,
                              ovstage_ordinal_t ordinal,
@@ -587,34 +588,35 @@ static int read_and_dump_all(ovphysx_handle_t handle,
     {
         const output_spec_t* spec = &OUTPUT_SPECS[s];
         ovphysx_query_handle_t query = 0;
-        const ovphysx_result_t qr = ovphysx_query(handle, spec->type, OVPHYSX_SCOPE_ALL, &query);
-        if (qr.status != OVPHYSX_API_SUCCESS)
+        const ovphysx_result_t qr = ovphysx_sample_complete_task(handle, ovphysx_query(handle, spec->type, OVPHYSX_SCOPE_ALL, &query, NULL));
+        if (qr.status != OVPHYSX_API_SUCCESS || query == 0)
         {
             // A query error is not "no objects of this type". Conflating them would let a broken
             // read path pass as an empty scene.
             fprintf(stderr, "ovphysx_query failed for output spec %d (status %d)\n", s, (int)qr.status);
             return -1;
         }
-        if (query == 0)
-            continue; // genuinely no objects of this type in the scene
-
-        // ovstage's own shared source dictionary, the same one that interned this
+        // The attached Stage's own path dictionary, the same one that interned this
         // query's prim lists and attribute tokens and that the ovstage write path
-        // interns into. It is not an ovphysx-private dictionary.
-        void* dictVoid = NULL;
-        ovphysx_query_shared_dictionary(handle, query, &dictVoid);
-        path_dictionary_instance_t* dict = (path_dictionary_instance_t*)dictVoid;
+        // interns into. ovphysx has no dictionary of its own.
+        path_dictionary_instance_t* dict = inst->vtable->get_path_dictionary(inst->context);
+        if (!dict)
+        {
+            fprintf(stderr, "the attached Stage published no path dictionary\n");
+            ovphysx_sample_complete_task(handle, ovphysx_release_query(handle, query));
+            return -1;
+        }
 
         ovx_string_or_token_t attrs[4];
         for (size_t i = 0; i < spec->attr_count; ++i)
             attrs[i] = name_str(spec->attrs[i]);
 
         ovphysx_read_handle_t read = 0;
-        const ovphysx_result_t rr = ovphysx_read(handle, query, attrs, spec->attr_count, &read);
+        const ovphysx_result_t rr = ovphysx_sample_complete_task(handle, ovphysx_read(handle, query, attrs, spec->attr_count, &read, NULL));
         if (rr.status != OVPHYSX_API_SUCCESS || read == 0)
         {
             fprintf(stderr, "ovphysx_read failed for output spec %d (status %d)\n", s, (int)rr.status);
-            ovphysx_release_query(handle, query);
+            ovphysx_sample_complete_task(handle, ovphysx_release_query(handle, query));
             return -1;
         }
 
@@ -623,8 +625,8 @@ static int read_and_dump_all(ovphysx_handle_t handle,
         {
             // Producer-owned: fetch hands back a borrowed ovstage_read_group_t*.
             const ovstage_read_group_t* g = NULL;
-            const ovphysx_result_t r = ovphysx_fetch_read_next(handle, read, &g);
-            if (r.status == OVPHYSX_API_END_OF_ITERATION)
+            const ovphysx_result_t r = ovphysx_sample_complete_task(handle, ovphysx_fetch_read_next(handle, read, &g));
+            if (r.status == OVPHYSX_API_SUCCESS && !g)
                 break; // exhausted. The normal exit, not an error
             if (r.status != OVPHYSX_API_SUCCESS)
             {
@@ -634,7 +636,7 @@ static int read_and_dump_all(ovphysx_handle_t handle,
             }
             if (!dump_group(inst, tokens, dict, g, ordinal, &dumped, out_pending))
                 failed = 1;
-            if (ovphysx_release_group(handle, read, g->read_group_id).status != OVPHYSX_API_SUCCESS)
+            if (ovphysx_sample_complete_task(handle, ovphysx_release_group(handle, read, g->read_group_id)).status != OVPHYSX_API_SUCCESS)
             {
                 fprintf(stderr, "ovphysx_release_group failed\n");
                 failed = 1;
@@ -643,12 +645,12 @@ static int read_and_dump_all(ovphysx_handle_t handle,
                 break;
         }
 
-        if (ovphysx_release_read(handle, read).status != OVPHYSX_API_SUCCESS)
+        if (ovphysx_sample_complete_task(handle, ovphysx_release_read(handle, read)).status != OVPHYSX_API_SUCCESS)
         {
             fprintf(stderr, "ovphysx_release_read failed\n");
             failed = 1;
         }
-        if (ovphysx_release_query(handle, query).status != OVPHYSX_API_SUCCESS)
+        if (ovphysx_sample_complete_task(handle, ovphysx_release_query(handle, query)).status != OVPHYSX_API_SUCCESS)
         {
             fprintf(stderr, "ovphysx_release_query failed\n");
             failed = 1;
@@ -678,9 +680,8 @@ static int run(void)
         return 1;
     }
 
-    ovphysx_create_args create_args = OVPHYSX_CREATE_ARGS_DEFAULT;
-    ovphysx_handle_t handle = 0;
-    if (ovphysx_create_instance(&create_args, &handle).status != OVPHYSX_API_SUCCESS)
+    ovphysx_instance_handle_t handle = 0;
+    if (ovphysx_create_instance(&handle).status != OVPHYSX_API_SUCCESS)
     {
         fprintf(stderr, "Failed to create PhysX instance\n");
         ovphysx_shutdown();
@@ -753,7 +754,7 @@ static int run(void)
 
         advance_floor(stage, control_ordinal);
         ovstage_ordinal_range_t ctrl_range = { control_ordinal, control_ordinal, true };
-        if (ovphysx_update_from_ovstage(handle, ctrl_range).status != OVPHYSX_API_SUCCESS)
+        if (ovphysx_sample_complete_task(handle, ovphysx_update_from_ovstage(handle, ctrl_range)).status != OVPHYSX_API_SUCCESS)
         {
             ovphysx_string_t err = ovphysx_get_last_error();
             fprintf(stderr, "update_from_ovstage failed: %.*s\n", (int)err.length, err.ptr ? err.ptr : "");

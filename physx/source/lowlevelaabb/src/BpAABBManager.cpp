@@ -30,6 +30,8 @@ using namespace Bp;
 using namespace Cm;
 using namespace aos;
 
+PX_IMPLEMENT_OUTPUT_ERROR
+
 static const bool gSingleThreaded = false;
 #if PX_INTEL_FAMILY && !defined(PX_SIMD_DISABLED)
 	#define ABP_SIMD_OVERLAP
@@ -181,8 +183,8 @@ class PersistentPairs : public PxUserAllocated
 	virtual			bool			update(AABBManager& /*manager*/, BpCacheData* /*data*/ = NULL) { return false; }
 
 	PX_FORCE_INLINE	void			updatePairs(PxU32 timestamp, const PxBounds3* bounds, const float* contactDistances, const Bp::FilterGroup::Enum* groups,
-												const bool* lut, VolumeData* volumeData, PxArray<AABBOverlap>* createdOverlaps, PxArray<AABBOverlap>* destroyedOverlaps);
-					void			outputDeletedOverlaps(PxArray<AABBOverlap>* overlaps, const VolumeData* volumeData);
+												const bool* lut, VolumeData* volumeData, PxU32 nbVolumes, PxArray<AABBOverlap>* createdOverlaps, PxArray<AABBOverlap>* destroyedOverlaps);
+					void			outputDeletedOverlaps(PxArray<AABBOverlap>* overlaps, const VolumeData* volumeData, PxU32 nbVolumes);
 	private:
 	virtual			void			findOverlaps(MBP_PairManager& pairs, const PxBounds3* PX_RESTRICT bounds, const float* PX_RESTRICT contactDistances, const Bp::FilterGroup::Enum* PX_RESTRICT groups, const bool* PX_RESTRICT lut)	= 0;
 	protected:
@@ -716,7 +718,7 @@ bool AABBManager::addBounds(BoundsIndex index, PxReal contactDistance, Bp::Filte
 	if(envID!=PX_INVALID_U32)
 	{
 		envID = PX_INVALID_U32;
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "AABBManager::addBounds - environment ID is not supported in CPU broadphases\n");
+		outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "AABBManager::addBounds - environment ID is not supported in CPU broadphases\n");
 	}
 
 //	PX_ASSERT(checkID(index));
@@ -733,7 +735,7 @@ bool AABBManager::addBounds(BoundsIndex index, PxReal contactDistance, Bp::Filte
 	{
 #if PX_CHECKED
 		if(aggregateHandle>=mAggregates.size())
-			return PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "AABBManager::addBounds - aggregateId out of bounds\n");
+			return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "AABBManager::addBounds - aggregateId out of bounds\n");
 
 /*		{
 			PxU32 firstFreeAggregate = mFirstFreeAggregate;
@@ -809,7 +811,7 @@ AggregateHandle AABBManager::createAggregate(BoundsIndex index, Bp::FilterGroup:
 	if(envID!=PX_INVALID_U32)
 	{
 		envID = PX_INVALID_U32;
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "AABBManager::createAggregate - environment ID is not supported in CPU broadphases\n");
+		outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "AABBManager::createAggregate - environment ID is not supported in CPU broadphases\n");
 	}
 
 	Aggregate* aggregate = PX_NEW(Aggregate)(index, filterHint);
@@ -855,14 +857,14 @@ bool AABBManager::destroyAggregate(BoundsIndex& index_, Bp::FilterGroup::Enum& g
 {
 #if PX_CHECKED
 	if(aggregateHandle>=mAggregates.size())
-		return PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "AABBManager::destroyAggregate - aggregateId out of bounds\n");
+		return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "AABBManager::destroyAggregate - aggregateId out of bounds\n");
 
 	{
 		PxU32 firstFreeAggregate = mFirstFreeAggregate;
 		while(firstFreeAggregate!=PX_INVALID_U32)
 		{
 			if(firstFreeAggregate==aggregateHandle)
-				return PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "AABBManager::destroyAggregate - aggregate has already been removed\n");
+				return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "AABBManager::destroyAggregate - aggregate has already been removed\n");
 
 			firstFreeAggregate = PxU32(size_t(mAggregates[firstFreeAggregate]));
 		}
@@ -873,7 +875,7 @@ bool AABBManager::destroyAggregate(BoundsIndex& index_, Bp::FilterGroup::Enum& g
 
 #if PX_CHECKED
 	if(aggregate->getNbAggregated())
-		return PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "AABBManager::destroyAggregate - aggregate still has bounds that needs removed\n");
+		return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "AABBManager::destroyAggregate - aggregate still has bounds that needs removed\n");
 #endif
 
 	const BoundsIndex index = aggregate->mIndex;
@@ -986,6 +988,13 @@ void AABBManager::startAggregateBoundsComputationTasks(PxU32 nbToGo, PxU32 numCp
 		T->setContinuation(&mPreBpUpdateTask);
 		T->removeReference();
 	}
+}
+
+void AABBManager::markAggregateAsDirty(AggregateHandle aggregateHandle)
+{
+	Aggregate* aggregate = getAggregateFromHandle(aggregateHandle);
+	if(aggregate->getNbAggregated())
+		aggregate->markAsDirty(mDirtyAggregates);
 }
 
 void AABBManager::updateBPFirstPass(PxU32 numCpuTasks, Cm::FlushPool& flushPool, bool /*hasContactDistanceUpdated*/, PxBaseTask* continuation)
@@ -1216,31 +1225,62 @@ static PX_FORCE_INLINE void outputOverlap(PxArray<AABBOverlap>* overlaps, const 
 	// PT: note that overlap->mPairUserData remains uninitialized here
 }
 
-static PX_FORCE_INLINE void createOverlap(PxArray<AABBOverlap>* overlaps, const VolumeData* volumeData, PxU32 id0, PxU32 id1)
+// ### DEFENSIVE: OMPE-103063
+// The broadphase has been seen handing back a volume id past the end of mVolumeData. Indexing it
+// reads an arbitrary heap word, and getUserData() hands that back as an ElementSim*: the consumers
+// in ScPipeline.cpp (finishBroadPhaseStage2 / processLostContacts3) dereference it unvalidated and
+// fault on a non-canonical address. Note a NULL check is not enough - the observed bad value was
+// float-shaped data whose low bits survived getUserData()'s &~3 mask, so it arrives non-NULL and
+// its getVolumeType() even routes the pair into a plausible-looking bucket.
+// Dropping the pair loses one overlap, which the simulation recovers from; a wild ElementSim* it
+// does not. Reaching here means broadphase bookkeeping is already corrupt, so it is reported.
+// PT: reporting kept out-of-line so the inlined fast path is just the range test.
+static PX_NOINLINE bool reportInvalidOverlapIds(PxU32 nbVolumes, PxU32 id0, PxU32 id1)
 {
+	PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "AABBManager: out-of-range broadphase volume id (%u, %u with %u volumes) - dropping overlap pair.\n", id0, id1, nbVolumes);
+	return false;
+}
+
+static PX_FORCE_INLINE bool validOverlapIds(PxU32 nbVolumes, PxU32 id0, PxU32 id1)
+{
+	if(id0 < nbVolumes && id1 < nbVolumes)
+		return true;
+	return reportInvalidOverlapIds(nbVolumes, id0, id1);
+}
+
+static PX_FORCE_INLINE void createOverlap(PxArray<AABBOverlap>* overlaps, const VolumeData* volumeData, PxU32 nbVolumes, PxU32 id0, PxU32 id1)
+{
+	if(!validOverlapIds(nbVolumes, id0, id1))	// ### DEFENSIVE: OMPE-103063
+		return;
+
 	outputOverlap(overlaps, volumeData, id0, id1);
 }
 
-static PX_FORCE_INLINE void deleteOverlap(PxArray<AABBOverlap>* overlaps, const VolumeData* volumeData, PxU32 id0, PxU32 id1)
+static PX_FORCE_INLINE void deleteOverlap(PxArray<AABBOverlap>* overlaps, const VolumeData* volumeData, PxU32 nbVolumes, PxU32 id0, PxU32 id1)
 {
 //	PX_ASSERT(volumeData[id0].getUserData());
 //	PX_ASSERT(volumeData[id1].getUserData());
+	// ### DEFENSIVE: OMPE-103063 - must precede the getUserData() reads below, which would
+	// otherwise index out of bounds themselves.
+	if(!validOverlapIds(nbVolumes, id0, id1))
+		return;
+
 	if (volumeData[id0].getUserData() && volumeData[id1].getUserData())	// PT: TODO: no idea if this is the right thing to do or if it's normal to get null ptrs here
 		outputOverlap(overlaps, volumeData, id0, id1);
 }
 
-void PersistentPairs::outputDeletedOverlaps(PxArray<AABBOverlap>* overlaps, const VolumeData* volumeData)
+void PersistentPairs::outputDeletedOverlaps(PxArray<AABBOverlap>* overlaps, const VolumeData* volumeData, PxU32 nbVolumes)
 {
 	const PxU32 nbActivePairs = mPM.mNbActivePairs;
 	for(PxU32 i=0;i<nbActivePairs;i++)
 	{
 		const InternalPair& p = mPM.mActivePairs[i];
-		deleteOverlap(overlaps, volumeData, p.getId0(), p.getId1());
+		deleteOverlap(overlaps, volumeData, nbVolumes, p.getId0(), p.getId1());
 	}
 }
 
 PX_FORCE_INLINE void PersistentPairs::updatePairs(	PxU32 timestamp, const PxBounds3* bounds, const float* contactDistances, const Bp::FilterGroup::Enum* groups,
-													const bool* lut, VolumeData* volumeData, PxArray<AABBOverlap>* createdOverlaps, PxArray<AABBOverlap>* destroyedOverlaps)
+													const bool* lut, VolumeData* volumeData, PxU32 nbVolumes, PxArray<AABBOverlap>* createdOverlaps, PxArray<AABBOverlap>* destroyedOverlaps)
 {
 	if(mTimestamp==timestamp)
 		return;
@@ -1259,7 +1299,7 @@ PX_FORCE_INLINE void PersistentPairs::updatePairs(	PxU32 timestamp, const PxBoun
 
 		if(p.isNew())
 		{
-			createOverlap(createdOverlaps, volumeData, id0, id1);
+			createOverlap(createdOverlaps, volumeData, nbVolumes, id0, id1);
 
 			p.clearNew();
 			p.clearUpdated();
@@ -1273,7 +1313,7 @@ PX_FORCE_INLINE void PersistentPairs::updatePairs(	PxU32 timestamp, const PxBoun
 		}
 		else
 		{
-			deleteOverlap(destroyedOverlaps, volumeData, id0, id1);
+			deleteOverlap(destroyedOverlaps, volumeData, nbVolumes, id0, id1);
 
 			const PxU32 hashValue = hash(id0, id1) & mPM.mMask;
 			mPM.removePair(id0, id1, hashValue, i);
@@ -1286,9 +1326,9 @@ PX_FORCE_INLINE void PersistentPairs::updatePairs(	PxU32 timestamp, const PxBoun
 void AABBManager::updatePairs(PersistentPairs& p, BpCacheData* data)
 {
 	if (data)
-		p.updatePairs(mTimestamp, mBoundsArray.begin(), mContactDistance.begin(), mGroups.begin(), mFilters.getLUT(), mVolumeData.begin(), data->mCreatedPairs, data->mDeletedPairs);
+		p.updatePairs(mTimestamp, mBoundsArray.begin(), mContactDistance.begin(), mGroups.begin(), mFilters.getLUT(), mVolumeData.begin(), mVolumeData.size(), data->mCreatedPairs, data->mDeletedPairs);
 	else
-		p.updatePairs(mTimestamp, mBoundsArray.begin(), mContactDistance.begin(), mGroups.begin(), mFilters.getLUT(), mVolumeData.begin(), mCreatedOverlaps, mDestroyedOverlaps);
+		p.updatePairs(mTimestamp, mBoundsArray.begin(), mContactDistance.begin(), mGroups.begin(), mFilters.getLUT(), mVolumeData.begin(), mVolumeData.size(), mCreatedOverlaps, mDestroyedOverlaps);
 }
 
 static PX_FORCE_INLINE Bp::FilterType::Enum convertFilterType(PxAggregateType::Enum	agType)
@@ -1359,6 +1399,13 @@ PersistentAggregateAggregatePair* AABBManager::createPersistentAggregateAggregat
 
 void AABBManager::processBPCreatedPair(const BroadPhasePair& pair)
 {
+	// ### DEFENSIVE: OMPE-103063 - must come first: isSingleActor() below already indexes
+	// mVolumeData, and on an out-of-range slot mAggregate holds foreign data that is essentially
+	// never PX_INVALID_U32, so the pair would take the aggregate path and dereference a wild
+	// Aggregate* long before ever reaching the createOverlap/deleteOverlap guards.
+	if(!validOverlapIds(mVolumeData.size(), pair.mVolA, pair.mVolB))
+		return;
+
 	PX_ASSERT(!mVolumeData[pair.mVolA].isAggregated());
 	PX_ASSERT(!mVolumeData[pair.mVolB].isAggregated());
 	const bool isSingleActorA = mVolumeData[pair.mVolA].isSingleActor();
@@ -1366,7 +1413,7 @@ void AABBManager::processBPCreatedPair(const BroadPhasePair& pair)
 
 	if(isSingleActorA && isSingleActorB)
 	{
-		createOverlap(mCreatedOverlaps, mVolumeData.begin(), pair.mVolA, pair.mVolB);	// PT: regular actor-actor pair
+		createOverlap(mCreatedOverlaps, mVolumeData.begin(), mVolumeData.size(), pair.mVolA, pair.mVolB);	// PT: regular actor-actor pair
 		return;
 	}
 
@@ -1400,6 +1447,13 @@ void AABBManager::processBPCreatedPair(const BroadPhasePair& pair)
 
 void AABBManager::processBPDeletedPair(const BroadPhasePair& pair)
 {
+	// ### DEFENSIVE: OMPE-103063 - must come first: isSingleActor() below already indexes
+	// mVolumeData, and on an out-of-range slot mAggregate holds foreign data that is essentially
+	// never PX_INVALID_U32, so the pair would take the aggregate path and dereference a wild
+	// Aggregate* long before ever reaching the createOverlap/deleteOverlap guards.
+	if(!validOverlapIds(mVolumeData.size(), pair.mVolA, pair.mVolB))
+		return;
+
 	PX_ASSERT(!mVolumeData[pair.mVolA].isAggregated());
 	PX_ASSERT(!mVolumeData[pair.mVolB].isAggregated());
 	const bool isSingleActorA = mVolumeData[pair.mVolA].isSingleActor();
@@ -1407,7 +1461,7 @@ void AABBManager::processBPDeletedPair(const BroadPhasePair& pair)
 
 	if(isSingleActorA && isSingleActorB)
 	{
-		deleteOverlap(mDestroyedOverlaps, mVolumeData.begin(), pair.mVolA, pair.mVolB);	// PT: regular actor-actor pair
+		deleteOverlap(mDestroyedOverlaps, mVolumeData.begin(), mVolumeData.size(), pair.mVolA, pair.mVolB);	// PT: regular actor-actor pair
 		return;
 	}
 
@@ -1427,7 +1481,7 @@ void AABBManager::processBPDeletedPair(const BroadPhasePair& pair)
 	if(e && e->second)
 	{
 		PersistentPairs* p = e->second;
-		p->outputDeletedOverlaps(mDestroyedOverlaps, mVolumeData.begin());
+		p->outputDeletedOverlaps(mDestroyedOverlaps, mVolumeData.begin(), mVolumeData.size());
 		p->mShouldBeDeleted = true;
 	}
 }
@@ -1981,7 +2035,6 @@ void AABBManager::postBpStage3(PxBaseTask*)
 		
 		// PT: so this is where we convert the userData IDs to pointers
 		// I don't remember why we need the mCreatedPairs hashset / this filtering pass
-		// PT: TODO: why do we need to convert to ptrs at all anyway?
 		for(PxU32 idx=0; idx<ElementType::eCOUNT; idx++)
 		{
 			{
@@ -2032,6 +2085,15 @@ void AABBManager::postBpStage3(PxBaseTask*)
 		while(nbObjects--)
 		{
 			const PxU32 index = *objects++;
+
+			// ### DEFENSIVE: OMPE-103063 - same producer, same hazard: the index comes straight from
+			// the broadphase and is used unchecked by both mRemovedHandleMap.test() and mVolumeData[].
+			if(index >= mVolumeData.size())
+			{
+				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "AABBManager: out-of-range out-of-bounds object index (%u with %u volumes) - skipping.\n", index, mVolumeData.size());
+				continue;
+			}
+
 			if(!mRemovedHandleMap.test(index))
 			{
 				if(mVolumeData[index].isSingleActor())

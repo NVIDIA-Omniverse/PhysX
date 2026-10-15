@@ -23,7 +23,6 @@ set(PhysX_LIBRARIES
     PhysX::PhysX
     PhysX::PhysXCommon
     PhysX::PhysXFoundation
-    PhysX::PhysXCooking
     PhysX::PhysXCharacterKinematic
     PhysX::PhysXVehicle
     PhysX::PhysXExtensions

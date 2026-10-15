@@ -1,12 +1,18 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-VIEWS-001
+// @covers AC-1 AC-2 AC-3
+
+// @implements REQ-ATTACH-RESOLVE-001
+// @covers AC-4
+
 /**
  * @implements REQ-READ-CORE-001
  * @covers AC-3 AC-7
  *
  * @implements REQ-TENSOR-VIEW-001
- * @covers AC-6 AC-8 AC-9
+ * @covers AC-6 AC-8 AC-9 AC-11
  *
  * @implements REQ-TENSOR-ATTACH-001
  * @covers AC-1
@@ -15,14 +21,22 @@
  * @covers AC-1 AC-2
  */
 
+/**
+ * @implements REQ-ATTACH-VIEWS-001
+ * @covers AC-2
+ */
+
 #include "internal/Internal.h" // recordLifetimeEpoch
 #include "tensors/GlobalsAreBad.h"
 #include "tensors/SimulationBackend.h"
+#include <OmniPhysX.h>
+#include <PhysXScene.h>
 #include "tensors/cpu/CpuSimulationView.h"
 #include "tensors/gpu/GpuSimulationView.h"
 #include "tensors/gpu/CudaCommon.h"
 
 #include "usdLoad/AttachedStage.h"
+#include "usdInterface/UsdInterface.h"
 #include "usdLoad/LoadTools.h"
 #include "usdLoad/LoadUsd.h"
 
@@ -56,18 +70,16 @@ namespace
 // Backend-level destruction hook. Distinct from the per-view subscriptions, which only invalidate
 // the view that owns them: this one exists so the per-stage data is dropped even when no view is
 // alive to observe the deletion.
-void onPhysXObjectDestroyedCallback(omni::physics::parse::ObjectKey key,
-                                    usdparser::ObjectId objectId,
-                                    omni::physx::PhysXType type,
-                                    void* userData)
+void onPhysXObjectDestroyedCallback(const omni::physx::PhysicsObjectChangeEvent& event, void* userData)
 {
+    const omni::physx::PhysXType type = event.type;
     if (!userData || !g_physx)
         return;
 
     SimulationBackend* backend = static_cast<SimulationBackend*>(userData);
     if (type == omni::physx::ePTScene)
     {
-        backend->onSceneDestroyed(static_cast<PxScene*>(g_physx->getPhysXPtrFast(objectId)));
+        backend->onSceneDestroyed(static_cast<PxScene*>(event.nativeObject));
     }
 
 }
@@ -79,8 +91,12 @@ SimulationBackend::SimulationBackend()
     {
         omni::physx::IPhysicsObjectChangeCallback callback;
         callback.objectDestructionNotifyFn = onPhysXObjectDestroyedCallback;
+        callback.allObjectsDestructionNotifyFn = [](omni::physics::AttachHandle attach, void* userData) {
+            static_cast<SimulationBackend*>(userData)->resetStage(attach);
+        };
+        callback.stopCallbackWhenSimStopped = false;
         callback.userData = this;
-        mObjectChangeSubscriptionId = g_physx->subscribeObjectChangeNotifications(callback);
+        mObjectChangeSubscriptionId = getPhysXUsdPhysicsInterface().subscribeToObjectChangeNotifications(callback);
     }
 
     if (mObjectChangeSubscriptionId == omni::physx::kInvalidSubscriptionId)
@@ -164,16 +180,6 @@ ISimulationView* SimulationBackend::createSimulationView(AttachHandle attachHand
         return nullptr;
     }
 
-    if (attachHandle == omni::physics::tensors::kActiveAttach)
-    {
-        if (!g_physxSimulation)
-        {
-            CARB_LOG_ERROR("Failed to resolve the active attach: PhysX simulation interface is not available");
-            return nullptr;
-        }
-        attachHandle = g_physxSimulation->getAttachHandle();
-    }
-
     // ADR-0013: the handle identifies an attach, not a USD stage. Resolve it to the
     // AttachedStage that owns the physics objects; a null USD stage behind it is legal
     // (a stageless ovstage attach), an unresolvable handle is not.
@@ -225,6 +231,53 @@ ISimulationView* SimulationBackend::createSimulationView(AttachHandle attachHand
         mViewsByAttach[attachHandle].push_back(simView);
         return simView;
     }
+}
+
+bool SimulationBackend::updateArticulationsKinematic(AttachHandle attachHandle)
+{
+    if (!g_physx)
+    {
+        CARB_LOG_ERROR("Failed to update articulation kinematics: physics interface is not available");
+        return false;
+    }
+
+    usdparser::AttachedStage* attachedStage =
+        usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
+    if (!attachedStage)
+    {
+        CARB_LOG_ERROR("Failed to update articulation kinematics: attach handle %llu does not identify a live attach",
+                       static_cast<unsigned long long>(attachHandle));
+        return false;
+    }
+
+    PxScene* scene = findPhysicsScene(*attachedStage);
+    if (!scene)
+    {
+        CARB_LOG_ERROR("Failed to update articulation kinematics: no active physics scene found");
+        return false;
+    }
+
+    // FK refresh is DirectGPU-only, exactly as the former GpuSimulationView path was; a no-op elsewhere.
+    // Deliberately NO createSimulationView here: the op needs only the scene and its CUDA context. A
+    // per-call createSimulationView does NOT rebuild the GPU simulation data -- ensureGpuSimDataLocked
+    // reuses the cached buffers whenever gpuSimDataShapeMatches (the steady state) -- but it still pays,
+    // every call, the cache-validation topology walk plus the view object's construction, its
+    // registration in mViewsByAttach, and its later removal. That is the overhead this path avoids.
+    if (scene->getFlags().isSet(PxSceneFlag::eENABLE_DIRECT_GPU_API))
+    {
+        // Propagate the DirectGPU result: computeArticulationData returns false when the API is
+        // uninitialized/forbidden or a synchronous CUDA error occurs. Reporting success here would let a
+        // caller read link transforms this refresh did not actually recompute.
+        if (!gpuRefreshArticulationsKinematic(scene))
+        {
+            CARB_LOG_ERROR("Failed to update articulation kinematics: the DirectGPU FK refresh did not complete");
+            return false;
+        }
+    }
+
+    // A non-DirectGPU scene keeps its articulation FK on the host, so there is nothing to refresh --
+    // trivially successful.
+    return true;
 }
 
 // Topology the simulation data is sized and indexed by. Recomputed on every cache hit and compared
@@ -279,16 +332,11 @@ usdparser::AttachedStage* SimulationBackend::attachedStageFor(const ::physx::PxS
                usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(handle);
 }
 
-// The attach that owns `scene`; every cache key carries one (ADR-0013). ovruntime holds one attach
-// at a time, so this is the active attach -- a multi-attach process needs a reverse index. That
-// limit is on the ATTACH axis only: an attach with several scenes is keyed correctly, because
-// SceneKey pairs this handle with the scene itself.
+// A scene's actual owner supplies the cache identity. Foreign native scenes have none.
 AttachHandle SimulationBackend::attachOwning(const ::physx::PxScene* scene) const
 {
-    if (!scene)
-        return omni::physics::kNoAttach;
-    const usdparser::AttachedStage* attached = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
-    return attached ? attached->getAttachHandle() : omni::physics::kNoAttach;
+    const PhysXScene* owner = OmniPhysX::getInstance().getPhysXSetup().findPhysXScene(scene);
+    return owner ? owner->getAttachedStage().getAttachHandle() : omni::physics::kNoAttach;
 }
 
 GpuSimulationDataPtr SimulationBackend::ensureGpuSimDataLocked(AttachHandle attachHandle, ::physx::PxScene* scene)
@@ -353,7 +401,7 @@ bool SimulationBackend::sceneCacheEntryValid(const SceneCacheEntry& entry, ::phy
     // an unchanged actor and articulation set. The O(articulations) walk otherwise runs on EVERY
     // acquire. The epoch is the one fact that comes from outside the snapshot -- a cached structural
     // property (homogeneity, prim paths, metatype set) describes the scene as it WAS.
-    if (entry.dbEpoch != 0 && entry.dbEpoch == internal::recordLifetimeEpoch())
+    if (entry.dbEpoch != 0 && entry.dbEpoch == internal::recordLifetimeEpoch(scene))
         return true;
 
     SceneTopology now;
@@ -453,7 +501,7 @@ SimulationBackend::SceneCacheEntry* SimulationBackend::ensureSceneCacheEntryLock
         // Sampled before the walk: taking it after would seal in an epoch that a mutation racing
         // the walk had already invalidated, so the entry would claim to describe a scene it never
         // measured. Sampling first can only cost an extra rebuild.
-        entry.dbEpoch = internal::recordLifetimeEpoch();
+        entry.dbEpoch = internal::recordLifetimeEpoch(scene);
         sceneTopology(scene, entry.topology);
 
         // This scene's simulation data, NOT a copy of it: every consumer of the scene shares the
@@ -548,8 +596,7 @@ CpuSimulationView* SimulationBackend::acquireCpuSceneView(PxScene* scene, uint64
 
         if (!entry.supersetView)
         {
-            CpuSimulationView* sv = new CpuSimulationView(attachedStageFor(scene), scene, entry.cpuData,
-                                                         /*notifyWhenSimStopped=*/true);
+            CpuSimulationView* sv = new CpuSimulationView(attachedStageFor(scene), scene, entry.cpuData);
             mViewsByAttach[attachOwning(scene)].push_back(sv);
             entry.supersetView = sv;
         }
@@ -586,8 +633,7 @@ GpuSimulationView* SimulationBackend::acquireSceneView(PxScene* scene, uint64_t*
 
         if (!entry.supersetView)
         {
-            GpuSimulationView* sv = new GpuSimulationView(attachedStageFor(scene), scene, entry.gpuData,
-                                                         /*notifyWhenSimStopped=*/true);
+            GpuSimulationView* sv = new GpuSimulationView(attachedStageFor(scene), scene, entry.gpuData);
             mViewsByAttach[attachOwning(scene)].push_back(sv);
             entry.supersetView = sv;
         }
@@ -653,7 +699,6 @@ void SimulationBackend::reset()
                 view->invalidate();
         mViewsByAttach.clear();
 
-        mManualStepCount = 0;
     }
     // Outside the lock: ~BaseSimulationView calls back into removeSimulationView().
     for (ISimulationView* v : pendingRelease)
@@ -664,15 +709,6 @@ void SimulationBackend::resetStage(AttachHandle attachHandle)
 {
     if (attachHandle == omni::physics::tensors::kNoAttach)
         return;
-
-    if (attachHandle == omni::physics::tensors::kActiveAttach)
-    {
-        if (!g_physxSimulation)
-            return;
-        attachHandle = g_physxSimulation->getAttachHandle();
-        if (attachHandle == omni::physics::tensors::kNoAttach)
-            return;
-    }
 
     std::vector<ISimulationView*> pendingRelease;
     {
@@ -720,10 +756,8 @@ void SimulationBackend::resetStage(AttachHandle attachHandle)
                 ++it;
             }
         }
-        // mManualStepCount intentionally NOT cleared here: it is a process-wide
-        // accumulator for steps driven outside the Kit event loop (incremented via
-        // BaseSimulationView::incrementStepCount). It offsets getTimestamp()/getStepCount()
-        // for ALL attaches and must remain monotonic across per-attach resets.
+        // Tensor cache invalidation does not reset the attachment's clock.
+
     }
     // Outside the lock: ~BaseSimulationView calls back into removeSimulationView().
     for (ISimulationView* v : pendingRelease)
@@ -732,111 +766,29 @@ void SimulationBackend::resetStage(AttachHandle attachHandle)
 
 PxScene* SimulationBackend::findPhysicsScene(const usdparser::AttachedStage& attachedStage) const
 {
-    // try our private backdoor first...
-    if (g_physxPrivate)
-    {
-        return g_physxPrivate->getPhysXScene();
-    }
-
-    if (!g_physx)
-    {
-        return nullptr;
-    }
-
-    // Plain strings + the pxr-free keyFor(std::string_view) overload (byte-identical
-    // behavior to keyFor(SdfPath) under a real USD backend -- see AttachedStage.h), so this
-    // tier is pxr-free.
-    static const std::vector<std::string> quickPaths
-    {
-        "/physicsScene",
-        "/World/physicsScene",
-        "/World/PhysicsScene", // Isaac Sim authoring convention (capital P)
-    };
-
-    // check low-hanging fruit before full blown search
-    for (const std::string& path : quickPaths)
-    {
-        PxScene* scene = static_cast<PxScene*>(BaseSimulationView::resolvePhysXPtr(&attachedStage, attachedStage.keyFor(path), omni::physx::ePTScene));
-        if (scene)
-        {
-            return scene;
-        }
-    }
-
-    // Ask the internal object DB which paths carry a scene, instead of traversing the
-    // whole stage looking for UsdPhysicsScene prims. It answers under any parse backend
-    // (including a stageless attach) and only visits paths that actually produced a
-    // scene, so it is also cheaper than the traversal it replaces.
-    const usdparser::ObjectDb* objectDb = attachedStage.getObjectDatabase();
-    if (!objectDb)
-    {
-        return nullptr;
-    }
-
-    const usdparser::ObjectCategory sceneCategory(usdparser::eScene);
-    // getKeyMap() is ObjectDb's ObjectKey-keyed enumeration, populated via
-    // findOrCreateEntry (see LoadTools.h). Iteration order is unspecified (backed by an
-    // unordered_map), so sort by display text (AttachedStage::textViewFor) so that
-    // when more than one scene is attached and none is at a quick path, the
-    // lexicographically smallest scene path wins, deterministically, under either
-    // backend.
-    std::vector<omni::physics::parse::ObjectKey> sceneKeys;
-    for (const auto& [key, entries] : objectDb->getKeyMap())
-    {
-        if (entries.find(sceneCategory) != entries.end())
-        {
-            sceneKeys.push_back(key);
-        }
-    }
-    std::sort(sceneKeys.begin(), sceneKeys.end(),
-             [&attachedStage](omni::physics::parse::ObjectKey a, omni::physics::parse::ObjectKey b)
-             {
-                 return attachedStage.textViewFor(a) < attachedStage.textViewFor(b);
-             });
-
-    for (omni::physics::parse::ObjectKey key : sceneKeys)
-    {
-        PxScene* scene = static_cast<PxScene*>(BaseSimulationView::resolvePhysXPtr(&attachedStage, key, omni::physx::ePTScene));
-        if (scene)
-        {
-            return scene;
-        }
-    }
-
-    return nullptr;
+    const PhysXScene* scene = attachedStage.getDefaultPhysXScene();
+    return scene ? scene->getScene() : nullptr;
 }
 
-void SimulationBackend::prePhysicsUpdate()
+int64_t SimulationBackend::getTimestamp(AttachHandle attachHandle) const
 {
-    // TODO: make it a setting
-    bool enableAutoFlush = false;
-    if (!enableAutoFlush)
-        return;
-
-    std::lock_guard<std::mutex> lock(mStageDataMutex);
-    for (auto& kv : mGpuSimDataByScene)
-    {
-        if (kv.second)
-            kv.second->flush();
-    }
+    const usdparser::AttachedStage* stage =
+        usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
+    return stage ? static_cast<int64_t>(stage->simulationTimestamp()) : 0;
 }
 
-int64_t SimulationBackend::getTimestamp() const
+int64_t SimulationBackend::getStepCount(AttachHandle attachHandle) const
 {
-    if (g_physxSimulation)
-    {
-        return static_cast<int64_t>(g_physxSimulation->getSimulationTimestamp() + mManualStepCount);
-    }
-    return 0;
+    const usdparser::AttachedStage* stage =
+        usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
+    return stage ? static_cast<int64_t>(stage->simulationStepCount()) : 0;
 }
 
-int64_t SimulationBackend::getStepCount() const
+void SimulationBackend::incrementStepCount(AttachHandle attachHandle)
 {
-    if (g_physxSimulation)
-    {
-        return static_cast<int64_t>(g_physxSimulation->getSimulationStepCount() + mManualStepCount);
-    }
-    return 0;
+    if (usdparser::AttachedStage* stage =
+            usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle))
+        stage->recordManualStep();
 }
 
 }

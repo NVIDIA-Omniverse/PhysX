@@ -25,11 +25,13 @@ redundantly updates the ordinal already consumed by attachment.
 
 ## Then
 
-- The update returns `OVPHYSX_API_SUCCESS` (AC-1).
+- The update returns an accepted task whose wait succeeds (AC-1).
 - No object-created or object-destroyed callbacks are delivered for the attach
   snapshot (AC-1).
 - Runtime coverage additionally drains an overlapping range, observes a
   post-attach creation, and verifies replay does not repeat it (AC-2).
+- An update without an attachment is rejected without a task; a valid consumed
+  range produces a separately collectible successful task (AC-3).
 
 ## Test locations
 
@@ -37,3 +39,10 @@ redundantly updates the ordinal already consumed by attachment.
   `InitialPopulationDeliversNoCreatedCallbacks`.
 - `ovphysx/ovruntime/source/omni.physx/tests/test.unit/physics/TestOvstageChange.cpp`:
   `Ovstage update skips consumed ordinals and delivers later population`.
+- `ovphysx/tests/c_unittests/test_usd_loading.cpp`:
+  `AttachAndUpdateReturnCollectableTasks` (accepted update identity and
+  collect-once completion for AC-3).
+- `ovphysx/tests/c_unittests/test_task_completion.cpp`:
+  `LifecycleInvalidArgumentsAndMissingAttachmentRejectWithoutTaskIdentity`
+  (invalid range, missing attachment and invalid instance reject without a task
+  for AC-3).

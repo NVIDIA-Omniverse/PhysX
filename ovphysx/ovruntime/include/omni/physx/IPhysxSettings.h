@@ -85,9 +85,6 @@ DEFINE_PHYSX_SETTING(kSettingPhysxDispatcher, "/physxDispatcher");
     (bool) See :ref:`Expose PhysX SDK Profiler Data<Expose PhysX SDK Profiler Data>`. Changeable through :ref:`Physics Preferences`.
     @endrst */
 DEFINE_PHYSX_SETTING(kSettingExposeProfilerData, "/exposeProfilerData");
-/// (bool) Emit the PhysX SDK profile zones as NVTX ranges, for capture with Nsight Systems.
-/// Independent of kSettingExposeProfilerData: either, both, or neither sink can be active.
-DEFINE_PHYSX_SETTING(kSettingNvtxEnabled, "/nvtxEnabled");
 /// (bool) Expose the prim path names in PhysX SDK name, this will set the string name for the PhysX SDK objects.
 DEFINE_PHYSX_SETTING(kSettingExposePrimPathNames, "/exposePrimPathNames");
 /// @private

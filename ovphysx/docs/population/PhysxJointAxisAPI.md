@@ -21,27 +21,30 @@ All five declared attributes of every applied instance are published at their re
 
 | Column | Type | Units | Raw fallback | Producer writes | Parser default | If absent |
 |---|---|---|---|---|---|---|
-| `physxJointAxis:<inst>:armature` | float32 | linear/transX..Z: mass; angular/rotX..Z: mass*length^2 | 0.0 | resolved USD value (authored, else raw fallback) | 0.0 | Positive joint-level physxJoint:armature, then newton:armature, then 0 survives on this axis. Only a strictly positive per-axis value displaces that seed, including on USD; an explicit PhysX zero cannot clear a nonzero seed. |
-| `physxJointAxis:<inst>:maxJointVelocity` | float32 | linear: length/s; angular/rotX..Z: deg/s (deg_to_rad) | `inf` | when unauthored: `FLT_MAX` | `FLT_MAX` | The joint-level physxJoint:maxJointVelocity, then newton:velocityLimit, then FLT_MAX survive on this axis. A value >= FLT_MAX counts as unauthored. |
+| `physxJointAxis:<inst>:armature` | float32 | linear/transX..Z: mass; angular/rotX..Z: mass*length^2 | 0.0 | resolved USD value (authored, else raw fallback) | 0.0 | newton:armature, then 0 survives on this axis. Only a strictly positive per-axis value displaces that seed, including on USD; an explicit PhysX zero cannot clear a nonzero Newton seed. |
+| `physxJointAxis:<inst>:maxJointVelocity` | float32 | linear: length/s; angular/rotX..Z: deg/s (deg_to_rad) | `inf` | when unauthored: `FLT_MAX` | `FLT_MAX` | newton:velocityLimit, then FLT_MAX survives on this axis. A value >= FLT_MAX counts as unauthored. |
 | `physxJointAxis:<inst>:staticFrictionEffort` | float32 | linear: force; angular: torque | 0.0 | resolved USD value (authored, else raw fallback) | 0.0 | newton:friction seeds both friction efforts, or zero when absent. If either per-axis PhysX effort is strictly positive, both efforts come from PhysX (zero for a missing effort), so the parser never mixes the two sources. |
 | `physxJointAxis:<inst>:dynamicFrictionEffort` | float32 | linear: force; angular: torque | 0.0 | resolved USD value (authored, else raw fallback) | 0.0 | newton:friction seeds both friction efforts, or zero when absent. If either per-axis PhysX effort is strictly positive, both efforts come from PhysX (zero for a missing effort), so the parser never mixes the two sources. |
 | `physxJointAxis:<inst>:viscousFrictionCoefficient` | float32 | linear: force*s/length; angular: torque*s/deg | 0.0 | resolved USD value (authored, else raw fallback) | 0.0 | newton:damping, or zero when absent, survives unless the per-axis PhysX coefficient is strictly positive. Explicit PhysX zero also preserves the Newton seed. |
 
 ## Interactions
 
-- **[`PhysxJointAPI`](PhysxJointAPI.md):** physxJoint:armature and physxJoint:maxJointVelocity are the seeds this API overrides per axis; the joint-level armature is read even when no instance is applied.
 - **[`PhysicsJoint`](PhysicsJoint.md):** On a standalone joint every applied instance is removed from the prim with a 'supported only for joints that are part of an articulation' warning.
 
 ## Known divergences
 
-- **fragile** (consumer) `physxJointAxis:<inst>:armature`: Only strictly positive PhysX armature values displace the seed (joint-level PhysX, then Newton, then zero), because zero is both the fallback and a legal authored value and ovstage has no authored bit. Explicit PhysX zero therefore cannot clear a nonzero seed on either backend.
+- **fragile** (consumer) `physxJointAxis:<inst>:armature`: Only strictly positive PhysX armature values displace the seed (newton:armature, then zero), because zero is both the fallback and a legal authored value and ovstage has no authored bit. Explicit PhysX zero therefore cannot clear a nonzero seed on either backend.
+- **fragile** (consumer) `physxJointAxis:<inst>:maxJointVelocity`: Only a PhysX value below FLT_MAX displaces the seed (newton:velocityLimit, then FLT_MAX), because unlimited is both the fallback and a legal authored value and ovstage has no authored bit. An explicitly unlimited PhysX value therefore cannot clear a finite Newton limit on either backend.
+- **fragile** (consumer) `physxJointAxis:<inst>:staticFrictionEffort`: The PhysX friction efforts displace the seed (newton:friction for both, then zero) only when either of them is strictly positive, because zero is both the fallback and a legal authored value and ovstage has no authored bit. Explicit PhysX zeros for both efforts therefore cannot clear a nonzero seed on either backend.
+- **fragile** (consumer) `physxJointAxis:<inst>:dynamicFrictionEffort`: The PhysX friction efforts displace the seed (newton:friction for both, then zero) only when either of them is strictly positive, because zero is both the fallback and a legal authored value and ovstage has no authored bit. Explicit PhysX zeros for both efforts therefore cannot clear a nonzero seed on either backend.
+- **fragile** (consumer) `physxJointAxis:<inst>:viscousFrictionCoefficient`: Only strictly positive PhysX coefficients displace the seed (newton:damping, then zero), because zero is both the fallback and a legal authored value and ovstage has no authored bit. Explicit PhysX zero therefore cannot clear a nonzero seed on either backend.
 
 ## Notes
 
 - Per-joint-type instance matrix: Fixed none; Revolute angular; Prismatic linear (no rotational conversion); Spherical rotX, rotY, rotZ (all three, each with rotational conversions); Distance none; D6 (PhysicsJoint) rotX, rotY, rotZ only, translational axes are never read; Gear, Rack, Custom none.
 - Articulation axis mapping: angular and rotX -> PxArticulationAxis::eTWIST; rotY -> eSWING1; rotZ -> eSWING2; linear -> eX.
-- The D6 descriptor's jointProperties always has exactly three entries (rotX, rotY, rotZ) even when no instance is applied; unapplied entries carry the joint-level seeds.
+- The D6 descriptor's jointProperties always has exactly three entries (rotX, rotY, rotZ) even when no instance is applied; unapplied entries have the Newton seeds or the defaults.
 - Unrecognised instance names fall back to a runtime internToken('PhysxJointAxisAPI:' + inst) and are read the same way.
-- At attachment, newton:armature seeds armature, newton:friction seeds both friction efforts, and newton:damping seeds viscous friction on each supported axis. Newton values use the same units and conversions as their PhysX counterparts. The Newton schema must be registered before USD population.
+- At attachment, newton:armature seeds armature, newton:friction seeds both friction efforts, and newton:damping seeds viscous friction on each supported axis. Newton values use the same units and conversions as their PhysX counterparts. Register the Newton schema before the first USD schema read, including population or export.
 - PhysX friction efforts override the Newton pair together if either is positive; positive PhysX viscous friction overrides Newton damping. Applying an API only for another property preserves these seeds. Explicit PhysX zeros cannot clear the Newton seeds.
-- The passive Newton mappings are attachment-time only: edits are not forwarded and updateJointAxis does not reseed them. The legacy physxJoint:jointFriction coefficient is bypassed by the solver on axes with nonzero static effort or viscous friction.
+- Edits of the NewtonJointAPI values are forwarded to every axis without a per-axis opinion on the same quantity, and removing a PhysxJointAxisAPI instance at runtime reseeds the axis from them.

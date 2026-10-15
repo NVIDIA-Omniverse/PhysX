@@ -1,9 +1,18 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-1 AC-2 AC-4
+
+// @implements REQ-ATTACH-RESOLVE-001
+// @covers AC-4
+
 /**
  * @implements REQ-SIM-MULTISCENE-001
  * @covers AC-2
+ *
+ * @implements REQ-READ-SDF-001
+ * @covers AC-7
  */
 
 #pragma once
@@ -235,6 +244,7 @@ private:
     int mNbSubsteps;
     float mStepSize;
     PhysXScene* mPhysXScene;
+    AttachHandle mStepAttach = omni::physics::kNoAttach;
     bool mUpdateVelocities;
     bool mForceAsync;
     bool mSendStepping;
@@ -416,7 +426,7 @@ public:
         return mSceneQueryUpdateMode;
     }
 
-    static PhysXScene* createPhysXScene(const usdparser::AttachedStage& attachedStage,
+    static PhysXScene* createPhysXScene(usdparser::AttachedStage& attachedStage,
                                         size_t sceneId,
                                         PhysXSetup&,
                                         double metersPerUnit,
@@ -428,10 +438,20 @@ public:
         return mNewScene;
     }
 
-    const usdparser::AttachedStage& getAttachedStage() const
+    usdparser::AttachedStage& getAttachedStage() const
     {
         return mAttachedStage;
     }
+
+    // The attachment's record version as of this scene's latest PxScene::simulate(), 0 before the first. PhysX
+    // uploads an object to the GPU only in the simulate that follows its insertion, so a later version means
+    // objects the device has not seen yet. The stepper and a simulation view's step both note it just before
+    // they simulate.
+    uint64_t recordVersionAtLastSimulate() const
+    {
+        return mRecordVersionAtLastSimulate.load(std::memory_order_relaxed);
+    }
+    void noteSimulateLaunch();
 
     bool isFullGpuPipelineAvailable()
     {
@@ -445,10 +465,10 @@ public:
 
 private:
     friend class PhysXSetup;
-    PhysXScene(const usdparser::AttachedStage& attachedStage);
+    PhysXScene(usdparser::AttachedStage& attachedStage);
     ~PhysXScene();
 
-    const usdparser::AttachedStage& mAttachedStage;
+    usdparser::AttachedStage& mAttachedStage;
     ::physx::PxScene* mScene;
     ::physx::PxControllerManager* mControllerManager;
     internal::InternalScene* mInternalScene;
@@ -480,12 +500,13 @@ private:
     float mCurrentTimeStep;
     PhysXStepper mPhysXStepper;
     bool mNewScene;
+    std::atomic<uint64_t> mRecordVersionAtLastSimulate{ 0 };
 
     // Contact report
     ContactReport* mContactReport;
 };
 
-bool isRigidBodyDynamic(omni::physx::usdparser::ObjectId id);
+bool isRigidBodyDynamic(const omni::physx::usdparser::AttachedStage& attachedStage, omni::physx::usdparser::ObjectId id);
 
 
 } // namespace physx

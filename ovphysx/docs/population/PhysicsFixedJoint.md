@@ -9,7 +9,7 @@ Welds two bodies (or a body and the world) with no degrees of freedom. Owns no c
 
 - **Type chain:** `Imageable`, `Typed`, `PhysicsJoint`
 - **Extends:** [`PhysicsJoint`](PhysicsJoint.md); its columns, derived values, interactions and findings are inherited and listed here.
-- **Applicable APIs:** [`PhysicsArticulationRootAPI`](PhysicsArticulationRootAPI.md), [`PhysicsDriveAPI`](PhysicsDriveAPI.md), [`PhysicsJointStateAPI`](PhysicsJointStateAPI.md), [`PhysicsLimitAPI`](PhysicsLimitAPI.md), [`PhysicsMaterialAPI`](PhysicsMaterialAPI.md), [`PhysxArticulationAPI`](PhysxArticulationAPI.md), [`PhysxDrivePerformanceEnvelopeAPI`](PhysxDrivePerformanceEnvelopeAPI.md), [`PhysxJointAPI`](PhysxJointAPI.md), [`PhysxJointAxisAPI`](PhysxJointAxisAPI.md), [`PhysxLimitAPI`](PhysxLimitAPI.md), [`PhysxMaterialAPI`](PhysxMaterialAPI.md), [`PhysxPhysicsDistanceJointAPI`](PhysxPhysicsDistanceJointAPI.md), [`PhysxSceneAPI`](PhysxSceneAPI.md)
+- **Applicable APIs:** [`PhysicsArticulationRootAPI`](PhysicsArticulationRootAPI.md), [`PhysicsDriveAPI`](PhysicsDriveAPI.md), [`PhysicsJointStateAPI`](PhysicsJointStateAPI.md), [`PhysicsLimitAPI`](PhysicsLimitAPI.md), [`PhysicsMaterialAPI`](PhysicsMaterialAPI.md), [`PhysxArticulationAPI`](PhysxArticulationAPI.md), [`PhysxDrivePerformanceEnvelopeAPI`](PhysxDrivePerformanceEnvelopeAPI.md), [`PhysxJointAxisAPI`](PhysxJointAxisAPI.md), [`PhysxLimitAPI`](PhysxLimitAPI.md), [`PhysxMaterialAPI`](PhysxMaterialAPI.md), [`PhysxPhysicsDistanceJointAPI`](PhysxPhysicsDistanceJointAPI.md), [`PhysxSceneAPI`](PhysxSceneAPI.md)
 - **Discovery:** by prim_type, probe `physics:localPos0`
 - **Transform columns:** none, not `Xformable`
 - **Uses blocks:** [`prim`](prim.md)
@@ -41,10 +41,8 @@ As PhysicsJoint. The type declares no properties of its own.
 - **[`prim`](prim.md):** When a body relationship is absent (or its target resolves to no enabled dynamic body) that side of the joint is anchored to the world: the authored local frame is used verbatim in world space and no body scale is baked into it. When a body resolves, its world scale, decomposed from the composed transform, is multiplied component-wise into localPos on that side.
 - **[`PhysicsRigidBodyAPI`](PhysicsRigidBodyAPI.md):** body0/body1 are resolved to the nearest enclosing prim with an enabling rigid body. Without an actor on at least one side no PhysX joint is created.
 - **[`PhysicsArticulationRootAPI`](PhysicsArticulationRootAPI.md):** A joint with one side anchored to the world (absent relationship, or a static, disabled or kinematic body) and excludeFromArticulation false becomes the fixed-base anchor of an articulation that contains its other body; the joint prim itself is elected root and fixBase is set.
-- **[`PhysxJointAPI`](PhysxJointAPI.md):** The producer creates physxJoint:maxJointVelocity = FLT_MAX on every joint-typed prim when unauthored, even without PhysxJointAPI in usd-schemas; the consumer ignores it unless the API is listed.
 - **[`PhysicsLimitAPI`](PhysicsLimitAPI.md):** Only a prim typed exactly PhysicsJoint (the D6) reads PhysicsLimitAPI:<inst>; typed joints read their own limit columns.
 - **[`PhysicsDriveAPI`](PhysicsDriveAPI.md):** The D6 reads PhysicsDriveAPI:transX..rotZ and :distance; revolute reads :angular, prismatic reads :linear; the other subtypes read no drive.
-- **[`PhysxJointAPI`](PhysxJointAPI.md):** physxJoint:jointFriction is still read and applied on an articulation fixed joint; armature and maxJointVelocity have no axis to land on.
 - **[`PhysicsArticulationRootAPI`](PhysicsArticulationRootAPI.md):** A fixed joint from a link to the world (absent body relationship, or a static or kinematic body) is the canonical fixed-base anchor; the elected root is then the joint prim and fixBase is set.
 
 ## Known divergences

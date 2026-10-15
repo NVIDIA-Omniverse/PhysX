@@ -46,6 +46,34 @@
             "purpose": "Rigid control: held query, read only. Separates read cost from query construction."
         },
         {
+            "name": "OutputRead.readonly_settled_rb_8192_cpu",
+            "device": "cpu",
+            "hidden": false,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Same-scene control on the settled scene (kinematic + falling bodies): SCOPE_ALL read over every body. The baseline the readonly_active_rb subset read is measured against."
+        },
+        {
+            "name": "OutputRead.readonly_settled_rb_8192_gpu",
+            "device": "gpu",
+            "hidden": true,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "Same-scene control on the settled scene: SCOPE_ALL DirectGPU read over every body, the baseline readonly_active_rb is measured against."
+        },
+        {
+            "name": "OutputRead.readonly_active_rb_8192_cpu",
+            "device": "cpu",
+            "hidden": false,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "SCOPE_ACTIVE subset read on the settled scene: only the non-kinematic (active) fraction of bodies; readonly_settled_rb (SCOPE_ALL, same scene) is the control."
+        },
+        {
+            "name": "OutputRead.readonly_active_rb_8192_gpu",
+            "device": "gpu",
+            "hidden": true,
+            "owner": "kvilella@nvidia.com",
+            "purpose": "SCOPE_ACTIVE subset read on the settled scene: the DirectGPU active-read cache win, sized by the non-kinematic subset rather than the whole scene (readonly_settled_rb is the SCOPE_ALL control)."
+        },
+        {
             "name": "OutputRead.tensorbinding_rb_8192_cpu",
             "device": "cpu",
             "hidden": false,

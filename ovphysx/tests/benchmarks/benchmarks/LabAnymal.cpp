@@ -20,6 +20,7 @@
 #include "../framework/BmGlobals.h"
 #include "../framework/BmUtils.h"
 #include "../OvstageLoad.h"
+#include "../TaskCompletion.h"
 
 #include "ovphysx/dlpack/dlpack.h"
 #include "ovphysx/experimental/TensorBinding.hpp"
@@ -29,6 +30,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <string>
+#include <stdexcept>
 #include <vector>
 
 
@@ -215,8 +217,8 @@ protected:
                 mPhysX->waitAll();
                 break;
             case Op::Reset:
-                (void)ovphysx_reset_stage(mPhysX->handle());
-                mPhysX->waitAll();
+                if (bmCompleteTask(mPhysX->handle(), ovphysx_detach_ovstage(mPhysX->handle())).status != OVPHYSX_API_SUCCESS)
+                    throw std::runtime_error("Stage detach task failed");
                 break;
             case Op::TensorRead:
                 (void)mBinding.read(mView);
@@ -228,7 +230,6 @@ protected:
                 break;
             case Op::Clone:
                 cloneOnly();
-                mPhysX->waitAll();
                 break;
         }
     }
@@ -276,8 +277,11 @@ private:
         // Hot path for Op::Clone. mTargets / mTransforms were built once in
         // startRun() via buildCloneInputs(), so this is only the timed
         // clone() call plus its waitAll.
-        ovphysx_api_status_t st = mPhysX->clone("/World/envs/template",
+        const ovphysx_enqueue_result_t clone = mPhysX->clone("/World/envs/template",
                                                 mTargets, mTransforms.data());
+        ovphysx_api_status_t st = clone.status;
+        if (st == OVPHYSX_API_SUCCESS)
+            st = mPhysX->waitAll().status();
         if (st != OVPHYSX_API_SUCCESS)
         {
             printFormatted("LabAnymal: clone(N=%u) failed: %d",
@@ -307,14 +311,16 @@ private:
         // binding pattern /World/envs/env*/anymal/* matches the N clones
         // (env1..envN) and not the source: exactly N envs, not N+1.
         buildCloneInputs();
-        ovphysx_api_status_t st = physx->clone("/World/envs/template", mTargets, mTransforms.data());
+        const ovphysx_enqueue_result_t clone = physx->clone("/World/envs/template", mTargets, mTransforms.data());
+        ovphysx_api_status_t st = clone.status;
+        if (st == OVPHYSX_API_SUCCESS)
+            st = physx->waitAll().status();
         if (st != OVPHYSX_API_SUCCESS)
         {
             printFormatted("LabAnymal: clone(N=%u) failed: %d",
                            mEnvCount, static_cast<int>(st));
             return;
         }
-        physx->waitAll();
     }
 
     Op mOp;

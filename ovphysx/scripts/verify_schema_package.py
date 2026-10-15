@@ -2,55 +2,14 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-"""
-Verify that a physics schema tree is a valid codeless schema package.
+"""Validate the generated schema tree before packaging a --devschema wheel.
 
-What problem this solves
-------------------------
-ovphysx depends on a "physics schema" package (`usd_ext_physics`). The schema
-is codeless: it ships USD plugin data (`plugInfo.json` as `Type=resource` plus
-`generatedSchema.usda`) and Python, but NO native library. Because the schema
-carries no compiled code, it is platform- and USD-ABI-independent. There is
-nothing to link and no per-library USD ABI to get wrong.
+Reject native binaries, non-resource plugins, LibraryPath declarations, and
+missing metadata or generatedSchema.usda. Like USD, accept generated '#' headers
+in plugInfo.json but reject '//' comments.
 
-This check guards against a regression to a codefull layout (any native
-artifact in the tree, or a `plugInfo.json` declaring `Type=library` with a
-`LibraryPath`), which would silently reintroduce the ABI hazard.
-
-What this script does
----------------------
-Given a path to an unpacked schema package tree, it:
-
-  1. Fails if any native binary artifact exists anywhere in the tree
-     (.so/.so.*, .dll, .pyd, .dylib, .a, .lib). The package is
-     platform-independent and must ship no compiled code.
-  2. Finds the schema plugInfo.json files under <dir>/share/usd/plugins,
-     parsing each with only the generated `#` header tolerated ('//' is not,
-     since PXR rejects it at RegisterPlugins() time).
-  3. Fails if any plugin declares a non-resource type or a LibraryPath, and
-     requires at least one Type=resource plugin with Name/Info/Info.Types and a
-     matching generatedSchema.usda.
-  4. Exits 0 when the tree is a clean codeless schema, or 1 with a
-     human-readable explanation.
-
-Where this is called from
--------------------------
-  - scripts/build.cmake, right after the schema package is fetched from
-    packman (and after a local --devschema build), so a bad package fails the
-    build before a single source file is compiled.
-  - scripts/package_deps.py, right before the schema data is staged into
-    _install/ or the wheel, so a direct install/wheel invocation (which may
-    skip build.cmake) still refuses bad input.
-
-Usage
------
-    python scripts/verify_schema_package.py \\
-        --dir <path to usd_ext_physics/>
-
-Exit status
------------
-    0  the package is a clean codeless schema
-    1  a native lib is present, a plugInfo is not codeless, or data is missing
+Usage: python scripts/verify_schema_package.py --dir schemas/physx/_build/schema
+Exit 0 on success, or 1 with diagnostics.
 """
 
 from __future__ import annotations
@@ -180,7 +139,7 @@ def verify_schema_package(schema_dir: Path) -> list[str]:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Verify physics schema package is codeless.")
     parser.add_argument("--dir", type=Path, required=True,
-                        help="Path to the schema package tree (e.g. _build/target-deps/usd_ext_physics)")
+                        help="Path to the generated schema tree (e.g. schemas/physx/_build/schema)")
     args = parser.parse_args()
 
     if not args.dir.is_dir():

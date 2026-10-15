@@ -30,12 +30,15 @@ class _FakeLib:
 
     def ovphysx_release_group(self, *args):
         self.calls.append("group")
+        return SimpleNamespace(status=0, op_index=len(self.calls), instance=0x1234)
 
     def ovphysx_release_read(self, *args):
         self.calls.append("read")
+        return SimpleNamespace(status=0, op_index=len(self.calls), instance=0x1234)
 
     def ovphysx_release_query(self, *args):
         self.calls.append("query")
+        return SimpleNamespace(status=0, op_index=len(self.calls), instance=0x1234)
 
 
 class _FakeSdk:
@@ -49,6 +52,15 @@ class _FakeSdk:
         self._omni_physx_sdk_handle = _FakeSdk._Handle()
         self._pending_read_releases = []
         self._pending_read_lock = threading.Lock()
+        self.waited = []
+
+    def _admit_session_task(self, receipt, operation):
+        from ovphysx.api import Task
+        assert receipt.status == 0
+        return Task._from_native(receipt)
+
+    def wait_task(self, task):
+        self.waited.append(task)
 
     def _enqueue_read_release(self, holder):
         with self._pending_read_lock:
@@ -288,25 +300,43 @@ def _cuda_group(wait_event):
 
 
 def test_failed_stream_wait_raises_before_any_array_is_returned(monkeypatch):
-    """A refused producer-event wait must raise, not hand back an unordered column."""
-    from ovphysx import _bindings
+    """A rejected CUDA dependency must stop materialization before any array is exposed."""
     from ovphysx.api import PhysX
 
-    class _FailedWait:
-        status = 1
-
-    monkeypatch.setattr(
-        _bindings._lib, "ovphysx_cuda_stream_wait_event", lambda *args: _FailedWait()
-    )
-
+    monkeypatch.setattr(wp, "ScopedDevice", _StubWarp.ScopedDevice)
+    monkeypatch.setattr(wp, "get_stream", _StubWarp.get_stream)
     sdk = object.__new__(PhysX)
-    sdk._lib = _bindings._lib
+    sdk._lib = SimpleNamespace(
+        ovphysx_internal_cuda_stream_wait_event=lambda *args: SimpleNamespace(status=1)
+    )
     sdk._get_last_error = lambda: "forced wait failure"
-    # Suppress the real object's ResourceWarning/finalizer path in a pure unit test.
+    sdk._dltensor_to_warp_array = lambda *args: pytest.fail("unordered array materialized")
     sdk._released = True
 
-    with pytest.raises(RuntimeError, match="could not order Warp stream"):
-        sdk._order_warp_stream_after_group(_cuda_group(0xBEEF), _StubWarp)
+    with pytest.raises(RuntimeError, match="could not order Warp stream.*forced wait failure"):
+        sdk._materialize_read_group(_cuda_group(0xBEEF), SimObjectType.RIGID_BODY, None)
+
+
+@pytest.mark.parametrize("has_event,is_cuda", [(False, True), (True, False)])
+def test_stream_wait_skips_cuda_import_for_host_groups_and_zero_events(monkeypatch, has_event, is_cuda):
+    """Host groups and zero events need neither CUDA imports nor stream waits."""
+    import builtins
+    from ovphysx.api import PhysX
+    from ovphysx.dlpack import DLDeviceType
+
+    real_import = builtins.__import__
+
+    def reject_cuda_import(name, *args, **kwargs):
+        assert not name.startswith("cuda"), "a CUDA import is unnecessary for this group"
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", reject_cuda_import)
+    group = _cuda_group(0xBEEF if has_event else 0)
+    if not is_cuda:
+        group.data.tensors[0].device.device_type = DLDeviceType.kDLCPU
+    sdk = object.__new__(PhysX)
+    sdk._released = True
+    sdk._order_warp_stream_after_group(group, _StubWarp)
 
 
 def test_a_borrow_dropped_during_a_lifecycle_transition_still_releases_the_session(monkeypatch):
@@ -373,7 +403,7 @@ def test_a_borrow_dropped_during_a_lifecycle_transition_still_releases_the_sessi
 def test_a_later_group_failure_drops_earlier_arrays_before_native_teardown(monkeypatch):
     """A multi-group read whose SECOND group fails must not free the session under the first.
 
-    `_ReadRelease._free()` bypasses the refcount, so any array still reachable when it runs is
+    Read-build cleanup must respect the refcount; any array still reachable at teardown is
     left aliasing freed CPU or device storage. Anything that formats frame locals while the
     exception propagates (a debugger, a crash reporter, logging with locals) dereferences it.
 
@@ -385,9 +415,8 @@ def test_a_later_group_failure_drops_earlier_arrays_before_native_teardown(monke
     holder, so a surviving array means a non-zero count.
     """
     from ovphysx import _bindings
-    from ovphysx.api import PhysX, _ReadRelease
+    from ovphysx.api import _ReadRelease
     from ovphysx.dlpack import DLTensor
-    from ovphysx.types import ApiStatus
 
     _lifecycle_spies(monkeypatch)
 
@@ -398,24 +427,9 @@ def test_a_later_group_failure_drops_earlier_arrays_before_native_teardown(monke
     group.data.tensor_count = 1
     group.data.tensors = ctypes.pointer(tensor)
 
-    fetches = {"n": 0}
-
-    def fake_fetch(handle, read, out_pp):
-        if fetches["n"] >= 2:
-            return SimpleNamespace(status=ApiStatus.END_OF_ITERATION)
-        fetches["n"] += 1
-        # `byref(gp)._obj` is the caller's POINTER instance. Pointing it at the fake struct is how
-        # a pure-Python stand-in returns a producer-owned group.
-        out_pp._obj.contents = group
-        return SimpleNamespace(status=ApiStatus.SUCCESS)
-
-    sdk = object.__new__(PhysX)
-    sdk._lib = _FakeLib()
-    sdk._lib.ovphysx_fetch_read_next = fake_fetch
-    sdk._omni_physx_sdk_handle = _FakeSdk._Handle()
-    sdk._live_read_holders = set()
-    sdk._get_last_error = lambda: "unused"
-    sdk._released = True
+    from test_session_operations import make_sdk
+    sdk = make_sdk()
+    sdk._lib.groups = [group, group]
 
     kept_storage = []
     converted = {"n": 0}
@@ -440,12 +454,8 @@ def test_a_later_group_failure_drops_earlier_arrays_before_native_teardown(monke
     monkeypatch.setattr(_ReadRelease, "_free_native", spy_free_native)
 
     with pytest.raises(RuntimeError, match="forced conversion failure"):
-        sdk._iterate_read_groups(
-            SimpleNamespace(value=0x1234),
-            SimpleNamespace(value=1),
-            SimpleNamespace(value=2),
-            SimObjectType.RIGID_BODY,
-        )
+        sdk.read_sync(SimObjectType.RIGID_BODY, ["position"])
+
 
     assert converted["n"] == 2, "the second group must have been reached"
     # Zero, not one. A first-group array still held by `groups` (or by the previous iteration's
@@ -456,36 +466,31 @@ def test_a_later_group_failure_drops_earlier_arrays_before_native_teardown(monke
 def test_null_warp_stream_orders_against_the_default_stream(monkeypatch):
     """A caller inside wp.ScopedStream(device.null_stream) must still get its wait.
 
-    Warp's null stream reports cuda_stream as None rather than 0, so reading the handle
-    without normalizing raises TypeError before the wait is ever enqueued.
+    Warp reports cuda_stream as None for the null stream. The private bridge
+    receives the CUDA default-stream handle zero.
     """
-    from ovphysx import _bindings
     from ovphysx.api import PhysX
 
     class _NullStreamWarp(_StubWarp):
-        class _Stream:
+        class _Stream(_StubWarp._Stream):
             cuda_stream = None
 
         @staticmethod
         def get_stream(device=None):
             return _NullStreamWarp._Stream()
 
-    class _Ok:
-        status = 0
-
     calls = []
-    monkeypatch.setattr(
-        _bindings._lib,
-        "ovphysx_cuda_stream_wait_event",
-        lambda stream, event: (calls.append((stream.value or 0, event.value or 0)), _Ok())[1],
-    )
+
+    def record_wait(stream, event):
+        calls.append((stream.value, event.value))
+        return SimpleNamespace(status=0)
 
     sdk = object.__new__(PhysX)
-    sdk._lib = _bindings._lib
+    sdk._lib = SimpleNamespace(ovphysx_internal_cuda_stream_wait_event=record_wait)
     sdk._released = True
 
     sdk._order_warp_stream_after_group(_cuda_group(0xBEEF), _NullStreamWarp)
-    assert calls == [(0, 0xBEEF)]
+    assert calls == [(None, 0xBEEF)]
 
 
 def test_device_column_release_is_deferred_to_the_owning_thread(physx_sdk, monkeypatch):
@@ -510,7 +515,7 @@ def test_device_column_release_is_deferred_to_the_owning_thread(physx_sdk, monke
 
     monkeypatch.setattr(physx_sdk._lib, "ovphysx_release_read", _spy_release_read)
 
-    with physx_sdk.read(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
+    with physx_sdk.read_sync(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
         assert result.groups and result.groups[0].tensors, "expected a device read column"
         held = [t for g in result.groups for t in g.tensors]
         assert held[0].device.is_cuda, "precondition: GPU-resident column"
@@ -533,8 +538,7 @@ def test_a_borrow_deleted_on_a_worker_thread_never_runs_native_shutdown_there(mo
     """The last array borrow must not carry native shutdown onto a foreign thread.
 
     ``release_borrow`` is a Warp deleter: it runs on whatever thread the collector is on. When an
-    array outlives its PhysX instance, a case ``_free_native`` deliberately supports, keeping the
-    buffer readable rather than dangling, that borrow holds the LAST process reference. Handing it
+    borrow holds the LAST process reference during lifecycle teardown, handing it
     back inline, before releasing the session, would run the whole of ``ovphysx_shutdown()`` on a
     GC thread inside a ``__del__`` and only then queue the read holder, against an SDK whose native
     handle is already gone.

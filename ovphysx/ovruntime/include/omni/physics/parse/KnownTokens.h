@@ -201,17 +201,8 @@ struct KnownTokens
     TokenId physicsBreakForce;
     TokenId physicsBreakTorque;
 
-    // PhysxJointAPI extensions
-    TokenId physxJointAPI;
-    TokenId physxJointJointFriction;
-    // Fallback fields read from PhysxJointAPI when PhysxJointAxisAPI is
-    // not applied for the current axis.
-    TokenId physxJointArmature;
-    TokenId physxJointMaxJointVelocity;
-    // NewtonJointAPI fallback for physxJoint:maxJointVelocity.
+    // NewtonJointAPI joint-level values; PhysxJointAxisAPI overrides them per axis.
     TokenId newtonVelocityLimit;
-    // NewtonJointAPI fallbacks for the PhysxJointAxisAPI armature, friction
-    // efforts and viscous friction coefficient.
     TokenId newtonArmature;
     TokenId newtonFriction;
     TokenId newtonDamping;
@@ -818,11 +809,6 @@ struct KnownTokens
     TokenId physicsDriveAPIRotX;
     TokenId physicsDriveAPIRotY;
     TokenId physicsDriveAPIRotZ;
-    TokenId driveMaxForceAngular;
-    TokenId driveMaxForceLinear;
-    TokenId driveMaxForceRotX;
-    TokenId driveMaxForceRotY;
-    TokenId driveMaxForceRotZ;
 
     // NewtonSchemaTokens attributes (schema-generated Newton token table)
     TokenId NewtonMimicAPI;

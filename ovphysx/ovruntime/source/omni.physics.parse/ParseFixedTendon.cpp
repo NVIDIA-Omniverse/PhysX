@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-1 AC-2
+ */
+
 /**
  * @implements REQ-PARSE-TENDON-002
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5
@@ -15,11 +19,13 @@
 
 #include <omni/physics/parse/IPhysicsSource.h>
 #include <omni/physics/parse/ParseApi.h>
+#include <omni/physics/parse/PreparedTendon.h>
 #include <omni/physics/parse/ParseContext.h>
 
 #include <carb/logging/Log.h>
 
 #include <cfloat>
+#include <algorithm>
 #include <cmath>
 #include <string>
 #include <unordered_set>
@@ -32,123 +38,59 @@ namespace
 
 constexpr float kPi = 3.14159265358979323846f;
 constexpr float kRadToDeg = 180.0f / kPi;
+// Largest |gearing| whose deg->rad conversion below still fits in a float; past it the
+// multiply would overflow to +-inf, so the value saturates to +-FLT_MAX instead. This is
+// legacy `parseAxes`' `GfDegreesToRadians(FLT_MAX)` bound, and the same one the runtime
+// gearing updater applies (`degToRad(FLT_MAX)`, PhysXTendonPropertiesUpdate.cpp), so an
+// authored gearing and a gearing set later at runtime agree.
+constexpr float kMaxRevoluteGearing = static_cast<float>(static_cast<double>(FLT_MAX) * (3.14159265358979323846 / 180.0));
 
-// Read a clamped float; clamps ±inf to bounds, out-of-range to nearest.
-void readClampedFloat(IPhysicsSource& src, ObjectKey key, const std::string& attrName,
-                      float minV, float maxV, float& out)
+PreparedFixedTendon prepareInstance(ParseContext& ctx, ObjectKey key, const std::string& instance,
+                                    const FixedTendonParseInfo& info, bool root, const std::string& owner)
 {
-    float val;
-    if (!src.getAttribute(key, src.internToken(attrName), val))
-        return;
-    if (std::isinf(val))
-        val = (val < 0.0f) ? minV : maxV;
-    if (val < minV)      val = minV;
-    else if (val > maxV) val = maxV;
-    out = val;
-}
-
-void readBool(IPhysicsSource& src, ObjectKey key, const std::string& attrName, bool& out)
-{
-    src.getAttribute(key, src.internToken(attrName), out);
-}
-
-// Reads `physxTendon:<inst>:gearing` (float[], first element) and
-// `physxTendon:<inst>:forceCoefficient` (float[], first element).
-// For revolute joints, gearing is converted deg→rad (or clamped to
-// ±FLT_MAX past ±180°); for prismatic, kept verbatim. Axes vector
-// holds the single resolved JointAxis (eRotX or eTransX).
-//
-// `link0` / `link1` come from the walker (joint body0/body1 rel targets).
-void fillAxisFromApi(IPhysicsSource& src, ObjectKey jointKey, const std::string& instance,
-                    const FixedTendonParseInfo& info, PhysxTendonAxisDesc& desc,
-                    std::string_view ownerPath)
-{
-    const std::string base = std::string("physxTendon:") + instance + ":";
-
-    // forceCoefficient: float[] schema; only the first element is
-    // meaningful. UsdSource surfaces single-element VtFloatArray as
-    // Float at the boundary so this scalar read works.
-    src.getAttribute(jointKey, src.internToken(base + "forceCoefficient"), desc.forceCoefficients[0]);
-
-    // gearing: same shape, but per-joint-type deg→rad conversion.
-    float gearing = 1.0f;
-    const bool gearingAuthored = src.getAttribute(jointKey, src.internToken(base + "gearing"), gearing);
-
-    if (info.jointType == eJointRevolute)
+    IPhysicsSource& src = ctx.source();
+    PreparedFixedTendon input;
+    input.key = key;
+    input.instance = src.internToken(instance);
+    input.info = info;
+    input.root = root;
+    const std::string base = "physxTendon:" + instance + ":";
+    input.values.gearing = prepareAttribute<float>(src, key, src.internToken(base + "gearing"));
+    input.values.forceCoefficient = prepareAttribute<float>(src, key, src.internToken(base + "forceCoefficient"));
+    if (info.jointType != eJointRevolute && info.jointType != eJointPrismatic)
+        CARB_LOG_WARN("Tendon axis at %s applied to unsupported joint type. Only revolute and prismatic are currently supported.", owner.c_str());
+    else if (info.jointType == eJointRevolute && std::fabs(input.values.gearing.valueOr(1.0f)) > kMaxRevoluteGearing)
+        CARB_LOG_WARN("The tendon axis %s at %s has a gearing of %g, too large to convert from degrees; it is clamped to +-FLT_MAX.",
+                      instance.c_str(), owner.c_str(), double(input.values.gearing.valueOr(1.0f)));
+    if (root)
     {
-        // User authors coefficient in deg→tendonLength; multiply by rad→deg
-        // so the runtime conversion of joint angle from rad consumes the
-        // same coefficient. Past ±180° → ±FLT_MAX.
-        if (!gearingAuthored)
-            gearing = 1.0f;
-        const float degLimit = kPi; // 180° in rad
-        if (gearing > degLimit) gearing = FLT_MAX;
-        else if (gearing < -degLimit) gearing = -FLT_MAX;
-        else                          gearing *= kRadToDeg;
-
-        desc.gearings[0] = gearing;
-        desc.axes[0]     = eRotX;
+        input.values.stiffness = prepareAttribute<float>(src, key, src.internToken(base + "stiffness"));
+        input.values.limitStiffness = prepareAttribute<float>(src, key, src.internToken(base + "limitStiffness"));
+        input.values.damping = prepareAttribute<float>(src, key, src.internToken(base + "damping"));
+        input.values.offset = prepareAttribute<float>(src, key, src.internToken(base + "offset"));
+        input.values.restLength = prepareAttribute<float>(src, key, src.internToken(base + "restLength"));
+        input.values.lowerLimit = prepareAttribute<float>(src, key, src.internToken(base + "lowerLimit"));
+        input.values.upperLimit = prepareAttribute<float>(src, key, src.internToken(base + "upperLimit"));
+        input.values.enabled = prepareAttribute<bool>(src, key, src.internToken(base + "tendonEnabled"));
+        // Validate diagnostics on the coordinator in original instance order.
+        float stiffness = 0.0f, low = -FLT_MAX, high = FLT_MAX;
+        fillTendonFloat(input.values.limitStiffness, 0.0f, FLT_MAX, stiffness);
+        fillTendonFloat(input.values.lowerLimit, -FLT_MAX, FLT_MAX, low);
+        fillTendonFloat(input.values.upperLimit, low, FLT_MAX, high);
+        if (stiffness != 0.0f && low == -FLT_MAX && high == FLT_MAX)
+            CARB_LOG_WARN("The fixed tendon at %s has a positive limit stiffness but no limits set!", owner.c_str());
     }
-    else if (info.jointType == eJointPrismatic)
-    {
-        desc.gearings[0] = gearingAuthored ? gearing : 1.0f;
-        desc.axes[0]     = eTransX;
-    }
-    else
-    {
-        CARB_LOG_WARN(
-            "Tendon axis at %s applied to unsupported joint type. Only revolute and prismatic are currently supported.",
-            std::string(ownerPath).c_str());
-        // Still push the desc into the map but with unset axis.
-        desc.gearings[0] = gearingAuthored ? gearing : 1.0f;
-    }
-
-    desc.link0         = info.body0;
-    desc.link1         = info.body1;
-    desc.instanceToken = src.internToken(instance);
-    desc.jointKey     = jointKey;
-}
-
-// Fill PhysxTendonFixedDesc from PhysxTendonAxisRootAPI:<inst>.
-void fillFixedTendonFromApi(IPhysicsSource& src, ObjectKey jointKey, const std::string& instance,
-                            PhysxTendonFixedDesc& desc, std::string_view ownerPath)
-{
-    const std::string base = std::string("physxTendon:") + instance + ":";
-
-    readClampedFloat(src, jointKey, base + "stiffness",      0.0f, FLT_MAX, desc.stiffness);
-    readClampedFloat(src, jointKey, base + "limitStiffness", 0.0f, FLT_MAX, desc.limitStiffness);
-    readClampedFloat(src, jointKey, base + "damping",        0.0f, FLT_MAX, desc.damping);
-    readClampedFloat(src, jointKey, base + "offset",      -FLT_MAX, FLT_MAX, desc.offset);
-    desc.isEnabled = true;
-    readBool       (src, jointKey, base + "tendonEnabled",                  desc.isEnabled);
-
-    desc.restLength = -FLT_MAX;
-    desc.lowLimit   = -FLT_MAX;
-    desc.highLimit  =  FLT_MAX;
-    readClampedFloat(src, jointKey, base + "restLength", -FLT_MAX, FLT_MAX, desc.restLength);
-    readClampedFloat(src, jointKey, base + "lowerLimit", -FLT_MAX, FLT_MAX, desc.lowLimit);
-    readClampedFloat(src, jointKey, base + "upperLimit", desc.lowLimit, FLT_MAX, desc.highLimit);
-
-    if (desc.limitStiffness != 0.0f && desc.lowLimit == -FLT_MAX && desc.highLimit == FLT_MAX)
-    {
-        CARB_LOG_WARN(
-            "The fixed tendon at %s has a positive limit stiffness but no limits set!",
-            std::string(ownerPath).c_str());
-    }
-
-    desc.instanceToken = src.internToken(instance);
-    desc.jointKey     = jointKey;
-    desc.rootAxis      = nullptr; // consumer wires
+    input.prepared = true;
+    return input;
 }
 
 } // namespace
 
 // @implements REQ-PARSE-TENDON-002
 // @covers AC-1 AC-2 AC-3 AC-4
-void parseFixedTendons(ParseContext& ctx, ObjectKey jointKey,
+void prepareFixedTendons(ParseContext& ctx, ObjectKey jointKey,
                        const FixedTendonParseInfo& info,
-                       std::vector<DescPtr<PhysxTendonAxisDesc>>& outAxes,
-                       std::vector<DescPtr<PhysxTendonFixedDesc>>& outTendons)
+                       std::vector<PreparedFixedTendon>& inputs)
 {
     IPhysicsSource& src = ctx.source();
     const std::string ownerPathStr(src.sourceKeyToString(jointKey));
@@ -178,14 +120,7 @@ void parseFixedTendons(ParseContext& ctx, ObjectKey jointKey,
             claimedByRoot.insert(std::string(inst));
             const std::string instance(inst);
 
-            DescPtr<PhysxTendonAxisDesc> axis = allocateDesc<PhysxTendonAxisDesc>(ctx.descriptorAllocator());
-            fillAxisFromApi(src, jointKey, instance, info, *axis, ownerPathStr);
-
-            DescPtr<PhysxTendonFixedDesc> tendon = allocateDesc<PhysxTendonFixedDesc>(ctx.descriptorAllocator());
-            fillFixedTendonFromApi(src, jointKey, instance, *tendon, ownerPathStr);
-
-            outAxes.push_back(std::move(axis));
-            outTendons.push_back(std::move(tendon));
+            inputs.push_back(prepareInstance(ctx, jointKey, instance, info, true, ownerPathStr));
         });
 
     // Intermediate axes. Silently skip Root-claimed instances; that
@@ -197,10 +132,67 @@ void parseFixedTendons(ParseContext& ctx, ObjectKey jointKey,
             if (!claim(inst)) return;
             const std::string instance(inst);
 
-            DescPtr<PhysxTendonAxisDesc> axis = allocateDesc<PhysxTendonAxisDesc>(ctx.descriptorAllocator());
-            fillAxisFromApi(src, jointKey, instance, info, *axis, ownerPathStr);
-            outAxes.push_back(std::move(axis));
+            inputs.push_back(prepareInstance(ctx, jointKey, instance, info, false, ownerPathStr));
         });
+}
+
+bool fillFixedTendonAxis(const PreparedFixedTendon& input, PhysxTendonAxisDesc& output) noexcept
+{
+    if (!input.prepared || output.gearings.size() != 1 || output.forceCoefficients.size() != 1 || output.axes.size() != 1) return false;
+    input.values.forceCoefficient.read(output.forceCoefficients[0]);
+    float gearing = input.values.gearing.valueOr(1.0f);
+    if (input.info.jointType == eJointRevolute)
+    {
+        if (gearing > kMaxRevoluteGearing) gearing = FLT_MAX;
+        else if (gearing < -kMaxRevoluteGearing) gearing = -FLT_MAX;
+        else gearing *= kRadToDeg;
+        output.axes[0] = eRotX;
+    }
+    else if (input.info.jointType == eJointPrismatic) output.axes[0] = eTransX;
+    output.gearings[0] = gearing;
+    output.link0 = input.info.body0;
+    output.link1 = input.info.body1;
+    output.instanceToken = input.instance;
+    output.jointKey = input.key;
+    return true;
+}
+bool fillFixedTendonRoot(const PreparedFixedTendon& input, PhysxTendonFixedDesc& output) noexcept
+{
+    if (!input.prepared || !input.root) return false;
+    fillTendonFloat(input.values.stiffness, 0.0f, FLT_MAX, output.stiffness);
+    fillTendonFloat(input.values.limitStiffness, 0.0f, FLT_MAX, output.limitStiffness);
+    fillTendonFloat(input.values.damping, 0.0f, FLT_MAX, output.damping);
+    fillTendonFloat(input.values.offset, -FLT_MAX, FLT_MAX, output.offset);
+    output.isEnabled = input.values.enabled.valueOr(true);
+    output.restLength = -FLT_MAX;
+    output.lowLimit = -FLT_MAX;
+    output.highLimit = FLT_MAX;
+    fillTendonFloat(input.values.restLength, -FLT_MAX, FLT_MAX, output.restLength);
+    fillTendonFloat(input.values.lowerLimit, -FLT_MAX, FLT_MAX, output.lowLimit);
+    fillTendonFloat(input.values.upperLimit, output.lowLimit, FLT_MAX, output.highLimit);
+    output.instanceToken = input.instance;
+    output.jointKey = input.key;
+    output.rootAxis = nullptr;
+    return true;
+}
+void parseFixedTendons(ParseContext& ctx, ObjectKey key, const FixedTendonParseInfo& info,
+                       std::vector<DescPtr<PhysxTendonAxisDesc>>& axes, std::vector<DescPtr<PhysxTendonFixedDesc>>& tendons)
+{
+    std::vector<PreparedFixedTendon> inputs;
+    prepareFixedTendons(ctx, key, info, inputs);
+    const size_t roots = size_t(std::count_if(inputs.begin(), inputs.end(), [](const PreparedFixedTendon& input) { return input.root; }));
+    if (!reserveDescriptors<PhysxTendonAxisDesc>(ctx.descriptorAllocator(), inputs.size()) ||
+        !reserveDescriptors<PhysxTendonFixedDesc>(ctx.descriptorAllocator(), roots)) throw std::bad_alloc();
+    for (const PreparedFixedTendon& input : inputs)
+    {
+        DescPtr<PhysxTendonAxisDesc> axis = allocateDesc<PhysxTendonAxisDesc>(ctx.descriptorAllocator());
+        if (axis && fillFixedTendonAxis(input, *axis)) axes.push_back(std::move(axis));
+        if (input.root)
+        {
+            DescPtr<PhysxTendonFixedDesc> tendon = allocateDesc<PhysxTendonFixedDesc>(ctx.descriptorAllocator());
+            if (tendon && fillFixedTendonRoot(input, *tendon)) tendons.push_back(std::move(tendon));
+        }
+    }
 }
 
 } // namespace omni::physics::parse

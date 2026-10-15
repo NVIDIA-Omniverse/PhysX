@@ -11,7 +11,7 @@ read API (`ovphysx_read`) to confirm the runtime observed the move.
 ## Prerequisites
 
 - Complete the [Hello World](hello_world.md) tutorial.
-- Familiarity with the ovphysx C API (`ovphysx_get_physx_ptr()`).
+- Familiarity with the ovphysx read API (`ovphysx_query` / `ovphysx_read`).
 - A C++17 compiler.
 
 ## Setup
@@ -46,31 +46,28 @@ then proceeds as follows:
 
 1. **Create instance and load USD** — standard ovphysx workflow.
 2. **Step once** — initializes the PhysX scene so rigid body actors exist.
-3. **Get pointer** — `ovphysx_get_physx_ptr()` returns a `void*` for the actor's
-   physics-object path. The process-global `PxPhysics` object instead uses
-   `OVPHYSX_PHYSX_TYPE_PHYSICS` with a zero-length selector (`{ NULL, 0 }` or
-   `{ "", 0 }`).
-4. **Cast and validate** — `OVPHYSX_PHYSX_TYPE_ACTOR` can return either a
-   `PxRigidDynamic*` or `PxRigidStatic*`, so cast to `PxRigidActor*` first, then
+3. **Read the address** — query `OVPHYSX_QUERY_TARGET_RIGID_ACTOR` and read
+   `physxPointer`. The value is a host `uint64`. The process-global
+   `PxPhysics` object is the one-row `OVPHYSX_QUERY_TARGET_PHYSICS` query. Its
+   path-list entry is `/` and is not a USD prim.
+4. **Cast and validate** — a rigid-actor address is a `PxRigidDynamic*` or a
+   `PxRigidStatic*`, so cast to `PxRigidActor*` first, then
    use `is<PxRigidDynamic>()` to validate the concrete type before calling
    `setKinematicTarget()`.
 5. **Step again** — PhysX moves the kinematic body to the target pose.
 6. **Verify** — read rigid-body positions back through ovphysx (`ovphysx_query` + `ovphysx_read`) to confirm the runtime observed the PhysX-pointer-driven move.
 
-## Object Type Compared to PhysX Pointer
+## Query target and PhysX pointer
 
-`ovphysx_get_physx_ptr()` and `ovphysx_get_object_type()` answer different
-questions on the same path. The pointer API returns a live PhysX SDK object;
-the object-type API returns a TensorAPI classification without casting. The two
-taxonomies pair up: `OVPHYSX_PHYSX_TYPE_JOINT` with `OVPHYSX_OBJECT_TYPE_JOINT`,
-`OVPHYSX_PHYSX_TYPE_CUSTOM_JOINT` with `OVPHYSX_OBJECT_TYPE_CUSTOM_JOINT`, and
-`OVPHYSX_PHYSX_TYPE_LINK_JOINT` with `OVPHYSX_OBJECT_TYPE_ARTICULATION_JOINT`.
-Refer to [`ovphysx_object_type_t` in the C API Reference](../api.md) for the full
-taxonomy and `INVALID` semantics.
+`physxPointer` is the borrowed PhysX address for the query target you already
+chose. Standalone joints, custom joints, and articulation joints are separate
+targets: `OVPHYSX_QUERY_TARGET_JOINT`, `OVPHYSX_QUERY_TARGET_CUSTOM_JOINT`,
+and `OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT`. A path of another kind is
+absent from that query.
 
 ## Pointer Lifecycle
 
-- Treat pointers as invalid after stage reset or detachment, or instance destruction.
+- Treat pointers as invalid after stage detachment or instance destruction.
 - `ovphysx_step()` does **not** invalidate pointers.
 - Do not call `release()` on returned pointers -- ovphysx owns them.
 - Objects explicitly created through `PxPhysics` follow PhysX SDK ownership rules.
@@ -78,8 +75,8 @@ taxonomy and `INVALID` semantics.
 
 ## Disabling Simulation
 
-Do not toggle `PxActorFlag::eDISABLE_SIMULATION` on a pointer from
-`ovphysx_get_physx_ptr()`. Use the ovstage `disableSimulation` attribute
+Do not toggle `PxActorFlag::eDISABLE_SIMULATION` on an address from
+`physxPointer`. Use the ovstage `disableSimulation` attribute
 (`ovphysx_write()` / `OVPHYSX_ATTR_DISABLE_SIMULATION`) instead. Refer to
 [PhysX Pointer Interop](../developer_guide.md#disabling-simulation) in the
 developer guide.
@@ -87,7 +84,7 @@ developer guide.
 ## Thread Safety
 
 PhysX APIs on returned pointers must only be called **between** simulation
-steps — after `wait_op()` completes for the preceding step and before the next
+steps — after `wait_task()` completes for the preceding step and before the next
 `ovphysx_step()` call. Refer to the
 [developer guide](../developer_guide.md#thread-safety) for details.
 

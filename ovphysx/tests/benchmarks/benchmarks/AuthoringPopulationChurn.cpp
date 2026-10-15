@@ -231,7 +231,7 @@ private:
     bool cycleOnce(int slot, float y)
     {
         ovstage_instance_t* stage = mStageAttachment.stage;
-        const ovphysx_handle_t handle = mPhysX->handle();
+        const ovphysx_instance_handle_t handle = mPhysX->handle();
 
         const std::string usda = authoringMakeBodyUsda(0.0f, y, 0.0f);
         const std::string target = std::string(kAuthoringChurnParent) + "/box_" + std::to_string(slot);
@@ -405,7 +405,7 @@ private:
     bool removeVerifyActor()
     {
         ovstage_instance_t* stage = mStageAttachment.stage;
-        const ovphysx_handle_t handle = mPhysX->handle();
+        const ovphysx_instance_handle_t handle = mPhysX->handle();
         const std::string target = std::string(kAuthoringChurnParent) + "/box_0";
 
         ++mOrdinal;
@@ -447,7 +447,7 @@ private:
     bool cycleCreateOnlyForVerify()
     {
         ovstage_instance_t* stage = mStageAttachment.stage;
-        const ovphysx_handle_t handle = mPhysX->handle();
+        const ovphysx_instance_handle_t handle = mPhysX->handle();
 
         const std::string usda = authoringMakeBodyUsda(0.0f, kAuthoringChurnVerifyY, 0.0f);
         const std::string target = std::string(kAuthoringChurnParent) + "/box_0";

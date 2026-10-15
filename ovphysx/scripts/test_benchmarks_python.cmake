@@ -26,6 +26,7 @@ cmake_minimum_required(VERSION 3.16)
 get_filename_component(SCRIPT_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
 include("${SCRIPT_DIR}/crossplatform_helpers.cmake")
 include("${SCRIPT_DIR}/build_common.cmake")
+include("${SCRIPT_DIR}/dev_schema_provider.cmake")
 
 set(INSTALL_DIR "${PROJECT_ROOT}/_install")
 set(BENCHMARK_DIR "${PROJECT_ROOT}/tests/python_benchmarks")
@@ -78,24 +79,12 @@ endif()
 
 set(UV_CACHE_DIR_PATH "${PROJECT_ROOT}/_build/.uv_cache")
 file(MAKE_DIRECTORY "${UV_CACHE_DIR_PATH}")
-set(OVSTAGE_WHEEL_DIR "${PROJECT_ROOT}/_build/target-deps/ovstage_wheel")
-file(GLOB OVSTAGE_WHEELS "${OVSTAGE_WHEEL_DIR}/ovstage-*.whl")
-if(NOT OVSTAGE_WHEELS)
-    message(FATAL_ERROR "ovstage wheel not found in ${OVSTAGE_WHEEL_DIR}. Run the ovphysx build first.")
-endif()
-# UV_NO_CONFIG=1 discards uv's configuration settings, pyproject.toml's find-links
-# among them, so the staged wheel dir is passed here. It is spelled relative to uv's
-# working directory, which is also the string uv.lock records as the ovstage registry.
-# On uv 0.12.8 a relative find-links resolving to that directory is accepted, while an
-# absolute path to the same directory makes uv discard the lock and re-resolve. This
-# project declares no required-environments, so that re-resolution succeeds and quietly
-# narrows the lock's ovstage entry to the one staged wheel. Accepting the lock is what
-# keeps the other two platforms' entries.
-file(RELATIVE_PATH OVSTAGE_WHEEL_FIND_LINKS "${BENCHMARK_DIR}" "${OVSTAGE_WHEEL_DIR}")
+include("${CMAKE_CURRENT_LIST_DIR}/ovstage_index.cmake")
+ovphysx_ovstage_index_env(OVSTAGE_INDEX_ENV PROJECT tests/python_benchmarks)
 set(BASE_UV_ENV
     "UV_CACHE_DIR=${UV_CACHE_DIR_PATH}"
     "UV_NO_CONFIG=1"
-    "UV_FIND_LINKS=${OVSTAGE_WHEEL_FIND_LINKS}"
+    ${OVSTAGE_INDEX_ENV}
     "UV_HTTP_TIMEOUT=300"
     "UV_SKIP_WHEEL_FILENAME_CHECK=1"
     # PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 is deliberately absent. It prevents
@@ -104,15 +93,8 @@ set(BASE_UV_ENV
     # pytest-benchmark, numpy and optionally torch via the [gpu] extra, so
     # there are no surprise plugins to guard against.
 )
-# ovstage is not installed, so the configured external package is used.
+# Load native OVStage from the configured package.
 ovphysx_resolve_ovstage_paths()
-set(OVSTAGE_PYTHON_DIR "${OVPHYSX_OVSTAGE_PYTHON_DIR}")
-if(NOT OVSTAGE_PYTHON_DIR OR NOT EXISTS "${OVSTAGE_PYTHON_DIR}/ovstage/__init__.py")
-    message(FATAL_ERROR
-        "ovstage Python package not found under the configured ovstage root "
-        "'${OVPHYSX_OVSTAGE_ROOT}'.\n"
-        "Run scripts/fetch_deps.cmake so the ovstage release is extracted.")
-endif()
 if(WIN32)
     set(OVSTAGE_RUNTIME_DIR "${OVPHYSX_OVSTAGE_RUNTIME_DIR}")
     set(OVSTAGE_RUNTIME_FILE "${OVSTAGE_RUNTIME_DIR}/ovstage.dll")
@@ -125,20 +107,17 @@ if(WIN32)
         # (REQ-PACKAGING-USDFREE-001 AC-4). Linux resolves it via ovstage's
         # RUNPATH ($ORIGIN/plugins). Windows needs it on PATH.
         "${OVSTAGE_RUNTIME_DIR}/plugins"
-        "${OVSTAGE_PYTHON_DIR}/ovstage/bin"
         "$ENV{PATH}"
     )
     list(JOIN _WINDOWS_PATH_SEGMENTS ";" _WINDOWS_PATH_VALUE)
     set(ENV{PATH} "${_WINDOWS_PATH_VALUE}")
     list(APPEND BASE_UV_ENV
-        "PYTHONPATH=${OVSTAGE_PYTHON_DIR}"
         "OVSTAGE_LIBRARY_PATH_HINT=${OVSTAGE_RUNTIME_DIR}"
     )
 else()
-    set(OVSTAGE_RUNTIME_DIR "${OVSTAGE_PYTHON_DIR}/ovstage/bin")
+    set(OVSTAGE_RUNTIME_DIR "${OVPHYSX_OVSTAGE_RUNTIME_DIR}")
     set(OVSTAGE_RUNTIME_FILE "${OVSTAGE_RUNTIME_DIR}/libovstage.so")
     list(APPEND BASE_UV_ENV
-        "PYTHONPATH=${OVSTAGE_PYTHON_DIR}"
         "OVSTAGE_LIBRARY_PATH_HINT=${OVSTAGE_RUNTIME_DIR}"
         "LD_LIBRARY_PATH=${INSTALL_DIR}/lib:${INSTALL_DIR}/plugins:${OVSTAGE_RUNTIME_DIR}:$ENV{LD_LIBRARY_PATH}"
     )

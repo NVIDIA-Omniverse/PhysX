@@ -1,0 +1,111 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+# Two two-link articulations and a standalone body, for pattern selection against the legacy views.
+# RobotA carries the articulation root on a transform above its links and has a fixed base; RobotB
+# carries it on its root link and floats.
+
+def Xform "World"
+{
+    def PhysicsScene "physicsScene"
+    {
+        vector3f physics:gravityDirection = (0, 0, -1)
+        float physics:gravityMagnitude = 9.81
+    }
+
+    def Xform "RobotA" (
+        apiSchemas = ["PhysicsArticulationRootAPI"]
+    )
+    {
+        def PhysicsFixedJoint "rootJoint"
+        {
+            rel physics:body1 = </World/RobotA/base_link>
+            point3f physics:localPos0 = (0, 0, 5)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+        }
+
+        def Capsule "base_link" (
+            apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI"]
+        )
+        {
+            uniform token axis = "X"
+            double height = 0.125
+            double radius = 0.125
+            double3 xformOp:translate = (0, 0, 5)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def PhysicsRevoluteJoint "joint_0"
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/RobotA/base_link>
+            rel physics:body1 = </World/RobotA/link_0>
+            point3f physics:localPos0 = (0.25, 0, 0)
+            point3f physics:localPos1 = (-0.25, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+        }
+
+        def Capsule "link_0" (
+            apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI"]
+        )
+        {
+            uniform token axis = "X"
+            double height = 0.125
+            double radius = 0.125
+            double3 xformOp:translate = (0.5, 0, 5)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+    }
+
+    def Xform "RobotB"
+    {
+        def Capsule "base_link" (
+            apiSchemas = ["PhysicsArticulationRootAPI", "PhysicsCollisionAPI", "PhysicsRigidBodyAPI"]
+        )
+        {
+            uniform token axis = "X"
+            double height = 0.125
+            double radius = 0.125
+            double3 xformOp:translate = (5, 0, 5)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def PhysicsRevoluteJoint "joint_0"
+        {
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </World/RobotB/base_link>
+            rel physics:body1 = </World/RobotB/link_0>
+            point3f physics:localPos0 = (0.25, 0, 0)
+            point3f physics:localPos1 = (-0.25, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+        }
+
+        def Capsule "link_0" (
+            apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI"]
+        )
+        {
+            uniform token axis = "X"
+            double height = 0.125
+            double radius = 0.125
+            double3 xformOp:translate = (5.5, 0, 5)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+    }
+
+    def Cube "box" (
+        apiSchemas = ["PhysicsCollisionAPI", "PhysicsRigidBodyAPI"]
+    )
+    {
+        double size = 0.5
+        double3 xformOp:translate = (10, 0, 5)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+}

@@ -1090,9 +1090,10 @@ extern "C" __global__ void ps_selfCollisionLaunch(
 
 extern "C" __global__ void ps_contactPrepareLaunch(
 	PxgParticleSystem*				particleSystems,
-	PxgParticlePrimitiveContact*	sortedContacts,
+	PxgDeformablePairInfo*			sortedContactInfos,
+	const float4*					sortedContactNormalPens,
 	PxU32*							numContacts,
-	PxgParticleRigidContactBlock*	contactBlocks,
+	PxgRigidParticleContactBlock*	contactBlocks,
 	PxgPrePrepDesc*					preDesc,
 	PxgConstraintPrepareDesc*		prepareDesc,
 	float2*							appliedForces,
@@ -1127,30 +1128,31 @@ extern "C" __global__ void ps_contactPrepareLaunch(
 
 		appliedForces[workIndex] = make_float2(0.f, 0.f);
 
-		PxgParticlePrimitiveContact contact = sortedContacts[workIndex];
-		PxgParticleRigidContactBlock& block = contactBlocks[workIndex/32];
+		const PxgDeformablePairInfo contact = sortedContactInfos[workIndex];
+		PxgRigidParticleContactBlock& block = contactBlocks[workIndex/32];
 
 		PxU32 tIdx = workIndex&31;
 
-		const PxU64 compressedId = contact.particleId;
+		const PxU64 particleRef = contact.ref1;
 
-		const PxU32 particleSystemId = PxGetParticleSystemId(compressedId);
+		const PxU32 particleSystemId = PxgGetParticleSystemId(particleRef);
 
 		
 		PxgParticleSystem& particleSystem = particleSystems[particleSystemId];
 		const float4* const PX_RESTRICT position_invmass = reinterpret_cast<float4*>( particleSystem.mSortedPositions_InvMass);
 
-		const PxU32 particleId = PxGetParticleIndex(compressedId);
+		const PxU32 particleId = PxgGetParticleIndex(particleRef);
 
 		float4 pointInvM = position_invmass[particleId];
 
 		const PxVec3 point(pointInvM.x, pointInvM.y, pointInvM.z);
 
-		const PxVec3 normal(-contact.normal_pen.x, -contact.normal_pen.y, -contact.normal_pen.z);
-		const PxReal pen = contact.normal_pen.w;// +normal.dot(delta);
+		const float4 normalPen = sortedContactNormalPens[workIndex];
+		const PxVec3 normal(-normalPen.x, -normalPen.y, -normalPen.z);
+		const PxReal pen = normalPen.w;// +normal.dot(delta);
 
 		//nodeIndex
-		const PxNodeIndex rigidId = reinterpret_cast<PxNodeIndex&>(contact.rigidId);
+		const PxNodeIndex rigidId = PxgGetRigidNode(contact.ref0);
 		PxU32 idx = 0;
 		if (!rigidId.isStaticBody())
 		{
@@ -1253,14 +1255,14 @@ extern "C" __global__ void ps_contactPrepareLaunch(
 	}
 }
 
-// Per-rigid (per-articulation-link) count of PC contacts: solveRbDbContact down-weights the rigid by
+// Per-rigid (per-articulation-link) count of PC contacts: solveRigidDbContact down-weights the rigid by
 // it, and the rigid writeback re-inflates each rigid delta by it. accumulateRigidDeltas then divides
 // the summed delta by Sigma(count), and that division cancels the inflation only when this count
 // equals the writeback's count -- so both count every contact on a dynamic rigid (the same set).
 extern "C" __global__ void ps_queryPCContactReferenceCountLaunch(
 	PxgParticleSystem*							particleSystems,
-	PxgParticlePrimitiveContact*				sortedContacts,
-	PxgParticleRigidContactBlock*				contactBlocks,
+	PxgDeformablePairInfo*						sortedContactInfos,
+	PxgRigidParticleContactBlock*				contactBlocks,
 	PxU32*										numContacts,
 	PxgPrePrepDesc*								prePrepDesc,
 	PxgSolverCoreDesc*							solverCoreDesc,
@@ -1288,18 +1290,17 @@ extern "C" __global__ void ps_queryPCContactReferenceCountLaunch(
 
 		const PxU32 tIdx = workIndex & 31;
 
-		PxgParticleRigidContactBlock& block = contactBlocks[workIndex / 32];
+		PxgRigidParticleContactBlock& block = contactBlocks[workIndex / 32];
 
-		const PxU64 tRigidId = sortedContacts[workIndex].rigidId;
-		const PxNodeIndex rigidId = reinterpret_cast<const PxNodeIndex&>(tRigidId);
+		const PxNodeIndex rigidId = PxgGetRigidNode(sortedContactInfos[workIndex].ref0);
 
 		PxgRigidPart rigid;
 		rigid.readContactPrep(block, tIdx);
 
-		// Dynamic rigids only (static => id -1). Particle mass is irrelevant: a kinematic (invMass == 0)
-		// particle does not move but still pushes the rigid, so it is counted like any other.
-		const int globalRigidBodyId = rigid.getGlobalRigidBodyId(prePrepDesc, rigidId, numSolverBodies, maxLinksPerArticulation);
-		if (globalRigidBodyId != -1 && rigid.invMass != 0.0f)
+		// The invMass asked about is the rigid's. A kinematic (invMass == 0) particle does not move but
+		// still pushes the rigid, so the particle side is counted like any other.
+		const int globalRigidBodyId = getGlobalRigidBodyId(prePrepDesc, rigidId, numSolverBodies, maxLinksPerArticulation);
+		if (rigidIsRefCounted(globalRigidBodyId, rigid.invMass))
 		{
 			atomicAdd(&rigidRefCount[globalRigidBodyId], 1);
 		}
@@ -1310,8 +1311,8 @@ extern "C" __global__ void ps_queryPCContactReferenceCountLaunch(
 //store new velocity to particle
 extern "C" __global__ void ps_solvePCOutputParticleDeltaVLaunch(
 	PxgParticleSystem*							particleSystems,
-	PxgParticlePrimitiveContact*				sortedContacts,
-	PxgParticleRigidContactBlock*				contactBlocks,
+	PxgDeformablePairInfo*						sortedContactInfos,
+	PxgRigidParticleContactBlock*				contactBlocks,
 	PxU32*										numContacts,
 	PxgPrePrepDesc*								prePrepDesc,
 	PxgSolverCoreDesc*							solverCoreDesc,
@@ -1346,10 +1347,10 @@ extern "C" __global__ void ps_solvePCOutputParticleDeltaVLaunch(
 
 		float2 appliedForce = appliedForces[workIndex];
 
-		PxgParticleRigidContactBlock& block = contactBlocks[workIndex / 32];
-		PxU64 tParticleId = sortedContacts[workIndex].particleId;
-		const PxU32 particleSystemId = PxGetParticleSystemId(tParticleId);
-		const PxU32 particleId = PxGetParticleIndex(tParticleId);
+		PxgRigidParticleContactBlock& block = contactBlocks[workIndex / 32];
+		PxU64 particleRef = sortedContactInfos[workIndex].ref1;
+		const PxU32 particleSystemId = PxgGetParticleSystemId(particleRef);
+		const PxU32 particleId = PxgGetParticleIndex(particleRef);
 
 		PxgParticleSystem& particleSystem = particleSystems[particleSystemId];
 		const float4* PX_RESTRICT sortedDeltaP_invMassW = reinterpret_cast<float4*>( particleSystem.mSortedDeltaP);
@@ -1367,16 +1368,20 @@ extern "C" __global__ void ps_solvePCOutputParticleDeltaVLaunch(
 
 		//If the particle has infinite mass, the particle need not respond to the collision
 		if(invMass1 == 0.f)
+		{
+			// A kinematic particle takes no delta, and the accumulate scan reads every slot, so this
+			// one is cleared for the same reason as the branch below.
+			deltaPos[workIndex] = make_float4(0.f, 0.f, 0.f, 0.f);
 			continue;
+		}
 
-		const PxU64 tRigid = sortedContacts[workIndex].rigidId;
-		const PxNodeIndex rigidId = reinterpret_cast<const PxNodeIndex&>(tRigid);
+		const PxNodeIndex rigidId = PxgGetRigidNode(sortedContactInfos[workIndex].ref0);
 
 		PxgRigidPart rigid;
 		// Symmetric PC mass-split: scale the rigid response by its PC contact count (referenceCount),
 		// exactly as ps_solvePCOutputRigidDeltaVLaunch, so both solve halves compute the identical lambda
 		// and the impulse stays equal-and-opposite.
-		const int globalRigidBodyId = rigid.getGlobalRigidBodyId(prePrepDesc, rigidId, numSolverBodies, maxLinksPerArticulation);
+		const int globalRigidBodyId = getGlobalRigidBodyId(prePrepDesc, rigidId, numSolverBodies, maxLinksPerArticulation);
 		const float rigidInvMass0 = block.fricTan0_invMass0[tIdx].w;
 		rigid.readBodyProperties(rigidId, globalRigidBodyId, rigidInvMass0, rigidRefCount, /*material*/ nullptr);
 		rigid.readContactPrep(block, tIdx);
@@ -1394,21 +1399,30 @@ extern "C" __global__ void ps_solvePCOutputParticleDeltaVLaunch(
 
 		// PC = single-vertex deformable-rigid contact with adhesion. wasActive = true: PC contacts are
 		// regenerated each substep and have no activation mechanism.
-		solveRbDbContact<PxVec3, /*withAdhesion*/ true>(rigid, particle, contactPair, solveOut, appliedForce.x, appliedForce.y, dt,
-			/*wasActive*/ true, /*checkOnlyActivity*/ false, isVelocityIteration);
-		appliedForce.x = solveOut.accumulatedDeltaLambdaN;
-		appliedForce.y += solveOut.deltaLambdaT; // accumulate the tangent impulse across iterations (as solveDbDbContact)
+		const bool hasApplied = solveRigidDbContact<PxVec3, /*withAdhesion*/ true>(rigid, particle, contactPair, solveOut,
+			appliedForce.x, appliedForce.y, dt, /*wasActive*/ true, /*checkOnlyActivity*/ false, isVelocityIteration);
 
-		// delta, the contact impulse, is expressed as a position delta in position iterations
-		// and as velocity * dt in velocity iterations. It is aggregated into mAccumDeltaP
-		// (.w flags a live contact), and ps_updateParticleLaunch writes it to the particle
-		// state at iteration end (velocity always, position only in position iterations).
-		// The rigid half, applied by writeContactDeltas in ps_solvePCOutputRigidDeltaVLaunch,
-		// is equal and opposite.
-		PxVec3 delta;
-		solveOut.computeDelta(contactPair, delta, dt);
-		particle.writeParticle(deltaPos, workIndex, delta, solveOut);
-		appliedForces[workIndex] = appliedForce;
+		if(hasApplied)
+		{
+			appliedForce.x = solveOut.accumulatedDeltaLambdaN;
+			appliedForce.y += solveOut.deltaLambdaT; // accumulate the tangent impulse across iterations (as solveDbDbContact)
+
+			// delta, the contact impulse, is expressed as a position delta in position iterations
+			// and as velocity * dt in velocity iterations. It is aggregated into mAccumDeltaP
+			// (.w flags a live contact), and ps_updateParticleLaunch writes it to the particle
+			// state at iteration end (velocity always, position only in position iterations).
+			// The rigid half, applied by writeContactDeltas in ps_solvePCOutputRigidDeltaVLaunch,
+			// is equal and opposite.
+			PxVec3 delta;
+			solveOut.computeDelta(contactPair, delta, dt);
+			particle.writeParticle(deltaPos, workIndex, delta, solveOut);
+			appliedForces[workIndex] = appliedForce;
+		}
+		else
+		{
+			// The accumulate scan reads every slot, so the slot is cleared even when nothing was applied.
+			deltaPos[workIndex] = make_float4(0.f, 0.f, 0.f, 0.f);
+		}
 	}
 }
 
@@ -1514,7 +1528,7 @@ extern "C" __global__ void ps_solveOneWayContactDeltaVLaunch(
 				contactPair.maxPenBiasClamp = shParticleSystem.mData.mPenBiasClamp;
 
 				// PC = single-vertex deformable-rigid contact with adhesion (see ps_solvePCOutputParticleDeltaVLaunch).
-				solveRbDbContact<PxVec3, /*withAdhesion*/ true>(rigid, particle, contactPair, solveOut, appliedForce.x, appliedForce.y, dt,
+				solveRigidDbContact<PxVec3, /*withAdhesion*/ true>(rigid, particle, contactPair, solveOut, appliedForce.x, appliedForce.y, dt,
 					/*wasActive*/ true, /*checkOnlyActivity*/ false, isVelocityIteration);
 				appliedForce.x = solveOut.accumulatedDeltaLambdaN;
 				appliedForce.y += solveOut.deltaLambdaT; // accumulate the tangent impulse across iterations (as solveDbDbContact)
@@ -1547,10 +1561,13 @@ extern "C" __global__ void ps_solveOneWayContactDeltaVLaunch(
 
 //solve collision between particles and primitives based on the sorted contact by rigid id
 //store new velocity to rigid body buffer
-extern "C" __global__ void ps_solvePCOutputRigidDeltaVLaunch(
+// Caps the register count at what three blocks per SM allow. Without the cap the count exceeds the
+// budget by a few registers, which drops the kernel to two blocks.
+extern "C" __global__ __launch_bounds__(PxgParticleSystemKernelBlockDim::PS_COLLISION, 3)
+void ps_solvePCOutputRigidDeltaVLaunch(
 	PxgParticleSystem*							particleSystems,
-	PxgParticlePrimitiveContact*				sortedContacts,
-	PxgParticleRigidContactBlock*				contactBlocks,
+	PxgDeformablePairInfo*						sortedContactInfos,
+	PxgRigidParticleContactBlock*				contactBlocks,
 	PxU32*										numContacts,
 	PxgPrePrepDesc*								prePrepDesc,
 	PxgSolverCoreDesc*							solverCoreDesc,
@@ -1584,12 +1601,10 @@ extern "C" __global__ void ps_solvePCOutputRigidDeltaVLaunch(
 		if (workIndex >= tNumContacts)
 			return;
 
-		PxgParticleRigidContactBlock& block = contactBlocks[workIndex / 32];
+		PxgRigidParticleContactBlock& block = contactBlocks[workIndex / 32];
 		const PxU32 tIdx = workIndex & 31;
 
-		const PxU64 tRigidId = sortedContacts[workIndex].rigidId;
-
-		const PxNodeIndex rigidId = reinterpret_cast<const PxNodeIndex&>(tRigidId);
+		const PxNodeIndex rigidId = PxgGetRigidNode(sortedContactInfos[workIndex].ref0);
 
 		//TODO - need to figure out how to make this work for articulation links!
 		if (rigidId.isStaticBody())
@@ -1597,8 +1612,8 @@ extern "C" __global__ void ps_solvePCOutputRigidDeltaVLaunch(
 			continue;
 		}
 
-		const float4 fricTan0_invMass0 = block.fricTan0_invMass0[tIdx];
-		if (fricTan0_invMass0.w == 0.f)
+		const PxReal rigidInvMass = block.fricTan0_invMass0[tIdx].w;
+		if (rigidInvMass == 0.f)
 		{
 			deltaVel[workIndex] = make_float4(0.0f);
 			deltaVel[workIndex + tNumContacts] = make_float4(0.0f);
@@ -1606,10 +1621,10 @@ extern "C" __global__ void ps_solvePCOutputRigidDeltaVLaunch(
 			continue;
 		}
 
-		const PxU64 tParticleId = sortedContacts[workIndex].particleId;
+		const PxU64 particleRef = sortedContactInfos[workIndex].ref1;
 
-		const PxU32 particleSystemId = PxGetParticleSystemId(tParticleId);
-		const PxU32 particleId = PxGetParticleIndex(tParticleId);
+		const PxU32 particleSystemId = PxgGetParticleSystemId(particleRef);
+		const PxU32 particleId = PxgGetParticleIndex(particleRef);
 
 		const PxgParticleSystem& particleSystem = particleSystems[particleSystemId];
 		const float4* const PX_RESTRICT sortedDeltaP_invMassW = reinterpret_cast<float4*>(particleSystem.mSortedDeltaP);
@@ -1630,14 +1645,14 @@ extern "C" __global__ void ps_solvePCOutputRigidDeltaVLaunch(
 		// Real id + refcount buffer so readBodyProperties populates referenceCount (the PC contact
 		// count for this rigid, from ps_queryPCContactReferenceCountLaunch). It is 1 for static or kinematic.
 		// PC friction is particle-material based (set on particle.friction; rigid material null), so combineScalars eMAX returns it.
-		const int globalRigidBodyId = rigid.getGlobalRigidBodyId(prePrepDesc, rigidId, numSolverBodies, maxLinksPerArticulation);
-		rigid.readBodyProperties(rigidId, globalRigidBodyId, fricTan0_invMass0.w, rigidRefCount, /*material*/ nullptr);
+		const int globalRigidBodyId = getGlobalRigidBodyId(prePrepDesc, rigidId, numSolverBodies, maxLinksPerArticulation);
+		rigid.readBodyProperties(rigidId, globalRigidBodyId, rigidInvMass, rigidRefCount, /*material*/ nullptr);
 		rigid.readContactPrep(block, tIdx);
 		rigid.readVelocity(velocityReader, rigidId, isTGS);
 
 		PxgDeformablePart<PxVec3> particle;
 		// Raw particle invMass on the rigid side (no inflation): the rigid side's mass-split is the
-		// rigid referenceCount applied to the unit responses in solveRbDbContact + the integer-count
+		// rigid referenceCount applied to the unit responses in solveRigidDbContact + the integer-count
 		// writeback below.
 		particle.readParticle(particleSystem, particleId, delta4, &mat,
 							  /*inflateByRefCount*/ false, dt, isVelocityIteration);
@@ -1647,27 +1662,33 @@ extern "C" __global__ void ps_solvePCOutputRigidDeltaVLaunch(
 		contactPair.readContactPrep(block, particleSystem.mData.mPenBiasClamp, tIdx);
 
 		// PC = single-vertex deformable-rigid contact with adhesion (see ps_solvePCOutputParticleDeltaVLaunch).
-		solveRbDbContact<PxVec3, /*withAdhesion*/ true>(rigid, particle, contactPair, solveOut, appliedForce.x, appliedForce.y, dt,
-			/*wasActive*/ true, /*checkOnlyActivity*/ false, isVelocityIteration);
-		appliedForce.x = solveOut.accumulatedDeltaLambdaN;
-		appliedForce.y += solveOut.deltaLambdaT; // accumulate the tangent impulse across iterations (as solveDbDbContact)
+		const bool hasApplied = solveRigidDbContact<PxVec3, /*withAdhesion*/ true>(rigid, particle, contactPair, solveOut,
+			appliedForce.x, appliedForce.y, dt, /*wasActive*/ true, /*checkOnlyActivity*/ false, isVelocityIteration);
 
-		// Rigid feedback through the shared writeContactDeltas, the same path as cloth and softbody. Static and kinematic
-		// rigids no-op inside.
+		if(hasApplied)
+		{
+			appliedForce.x = solveOut.accumulatedDeltaLambdaN;
+			appliedForce.y += solveOut.deltaLambdaT; // accumulate the tangent impulse across iterations (as solveDbDbContact)
+			appliedForces[workIndex] = appliedForce;
+		}
+
+		// Applies rigid response, same path as implemented for cloth and softbody.
+		// accumulateDeltaVRigidFirstLaunch sums the whole range of a dynamic rigid, so every slot in it
+		// is written even when nothing was applied. Rigid statics are omitted from the write back, while
+		// kinematics are handled inside writeContactDeltas.
 		rigid.writeContactDeltas(deltaVel, rigidId, contactPair, solveOut, workIndex, workIndex + tNumContacts);
-		appliedForces[workIndex] = appliedForce;
 	}
 }
 
 extern "C" __global__ void ps_findStartEndParticleFirstLaunch(
 	PxgParticleSystem*							particleSystems,
-	PxgParticlePrimitiveContact*				sortedContacts,
+	PxgDeformablePairInfo*						sortedContactInfos,
 	PxU32*										numContacts,
 	PxU32*										blockOffsets,
 	PxU32*										offsets
 )
 {
-	__shared__ PxU64 sParticleId[PxgParticleSystemKernelBlockDim::ACCUMULATE_DELTA + 1];
+	__shared__ PxU64 sParticleRef[PxgParticleSystemKernelBlockDim::ACCUMULATE_DELTA + 1];
 
 	//numWarpsPerBlock can't be larger than 32
 	const PxU32 numWarpsPerBlock = PxgParticleSystemKernelBlockDim::ACCUMULATE_DELTA / WARP_SIZE;
@@ -1698,24 +1719,23 @@ extern "C" __global__ void ps_findStartEndParticleFirstLaunch(
 		const PxU32 workIndex = i * blockDim.x + idx + nbIterationsPerBlock * blockIdx.x * blockDim.x;
 
 		
-		PxU64 particleId = 0xffffffffffffffff;
+		PxU64 particleRef = 0xffffffffffffffff;
 		if (workIndex < tNumContacts)
 		{
-			PxgParticlePrimitiveContact& contact = sortedContacts[workIndex];
-			particleId = contact.particleId; //include particle system id
+			const PxgDeformablePairInfo& contact = sortedContactInfos[workIndex];
+			particleRef = contact.ref1;
 
-			//printf("%i: particleId = %i\n", workIndex, particleId);
+			//printf("%i: particleRef = %i\n", workIndex, particleRef);
 
-			// Load particle id into shared memory so that we can look
-			// at neighboring particle id without loading
-			// two particle id per thread
-			sParticleId[threadIdx.x + 1] = particleId;
+			// Staged in shared memory so that each thread reads its neighbor's reference
+			// without a second load.
+			sParticleRef[threadIdx.x + 1] = particleRef;
 
 			if (workIndex > 0 && threadIdx.x == 0)
 			{
-				// first thread in block must load neighbor particle 
-				PxgParticlePrimitiveContact& contact = sortedContacts[workIndex - 1];
-				sParticleId[0] = contact.particleId;
+				// The first thread has no predecessor in shared memory, so it loads that reference.
+				const PxgDeformablePairInfo& contact = sortedContactInfos[workIndex - 1];
+				sParticleRef[0] = contact.ref1;
 			}
 		}
 
@@ -1729,7 +1749,7 @@ extern "C" __global__ void ps_findStartEndParticleFirstLaunch(
 			// so store the index of this particle in the cell.
 			// As it isn't the first particle, it must also be the cell end of
 			// the previous particle's cell
-			if (workIndex == 0 || particleId != sParticleId[threadIdx.x])
+			if (workIndex == 0 || particleRef != sParticleRef[threadIdx.x])
 				isRangeStart = 1;
 		}
 
@@ -1785,7 +1805,7 @@ extern "C" __global__ void ps_findStartEndParticleFirstLaunch(
 
 //32 blocks. Each block compute the exclusive ransum for the blockOffset
 extern "C" __global__ void ps_findStartEndParticleSecondLaunch(
-	PxgParticlePrimitiveContact*	sortedContacts,			//input
+	PxgDeformablePairInfo*			sortedContactInfos,		//input
 	PxU32*							numContacts,			//input
 	PxU32*							blockOffsets,			//input
 	PxU32*							offsets,				//input
@@ -1795,7 +1815,7 @@ extern "C" __global__ void ps_findStartEndParticleSecondLaunch(
 )
 {
 	__shared__ PxU32 sBlockAccum[PxgParticleSystemKernelGridDim::ACCUMULATE_DELTA];
-	__shared__ PxU64 sParticleId[PxgParticleSystemKernelBlockDim::ACCUMULATE_DELTA + 1];
+	__shared__ PxU64 sParticleRef[PxgParticleSystemKernelBlockDim::ACCUMULATE_DELTA + 1];
 	__shared__ PxU32 sTotalPairs;
 
 	const PxU32 tNumContacts = *numContacts;
@@ -1826,24 +1846,23 @@ extern "C" __global__ void ps_findStartEndParticleSecondLaunch(
 	{
 		const PxU32 workIndex = i * PxgParticleSystemKernelBlockDim::ACCUMULATE_DELTA + idx + numIterationPerBlock * blockIdx.x * blockDim.x;
 
-		PxU64 particleId;
+		PxU64 particleRef;
 		if (workIndex < tNumContacts)
 		{
 			//printf("tNumContacts %i\n", tNumContacts);
 
-			PxgParticlePrimitiveContact& contact = sortedContacts[workIndex];
-			particleId = contact.particleId; //include particle system id
+			const PxgDeformablePairInfo& contact = sortedContactInfos[workIndex];
+			particleRef = contact.ref1;
 
-			// Load particle id into shared memory so that we can look
-			// at neighboring particle id without loading
-			// two particle id per thread
-			sParticleId[threadIdx.x + 1] = particleId;
+			// Staged in shared memory so that each thread reads its neighbor's reference
+			// without a second load.
+			sParticleRef[threadIdx.x + 1] = particleRef;
 
 			if (workIndex > 0 && threadIdx.x == 0)
 			{
-				// first thread in block must load neighbor particle 
-				PxgParticlePrimitiveContact& contact = sortedContacts[workIndex - 1];
-				sParticleId[0] = contact.particleId;
+				// The first thread has no predecessor in shared memory, so it loads that reference.
+				const PxgDeformablePairInfo& contact = sortedContactInfos[workIndex - 1];
+				sParticleRef[0] = contact.ref1;
 			}
 		}
 
@@ -1856,7 +1875,7 @@ extern "C" __global__ void ps_findStartEndParticleSecondLaunch(
 			// so store the index of this particle in the cell.
 			// As it isn't the first particle, it must also be the cell end of
 			// the previous particle's cell
-			if (workIndex == 0 || particleId != sParticleId[threadIdx.x])
+			if (workIndex == 0 || particleRef != sParticleRef[threadIdx.x])
 			{
 				
 				const PxU32 startOffset = offsets[workIndex] + blockAccum;
@@ -1891,7 +1910,7 @@ extern "C" __global__ void ps_findStartEndParticleSecondLaunch(
 			}
 		}
 
-		__syncthreads(); //sParticleId (shared memory) is read and written in the same loop - read and write must be separated with syncs
+		__syncthreads(); //sParticleRef (shared memory) is read and written in the same loop - read and write must be separated with syncs
 	}
 
 	if (blockIdx.x == 0 && idx == 0)
@@ -1902,14 +1921,14 @@ extern "C" __global__ void ps_findStartEndParticleSecondLaunch(
 }
 
 extern "C" __global__ void ps_findStartEndFEMFirstLaunch(
-	PxgParticleSystem*							particleSystems,
-	PxgFemOtherContactInfo*						sortedContactsInfo,
-	PxU32*										numContacts,
-	PxU32*										blockOffsets,
-	PxU32*										offsets
+	PxgParticleSystem*		particleSystems,
+	PxgDeformablePairInfo*	sortedContactInfos,
+	PxU32*					numContacts,
+	PxU32*					blockOffsets,
+	PxU32*					offsets
 )
 {
-	__shared__ PxU64 sParticleId[PxgParticleSystemKernelBlockDim::ACCUMULATE_DELTA + 1];
+	__shared__ PxU64 sParticleRef[PxgParticleSystemKernelBlockDim::ACCUMULATE_DELTA + 1];
 
 	//numWarpsPerBlock can't be larger than 32
 	const PxU32 numWarpsPerBlock = PxgParticleSystemKernelBlockDim::ACCUMULATE_DELTA / WARP_SIZE;
@@ -1940,24 +1959,22 @@ extern "C" __global__ void ps_findStartEndFEMFirstLaunch(
 		const PxU32 workIndex = i * blockDim.x + idx + nbIterationsPerBlock * blockIdx.x * blockDim.x;
 
 
-		PxU64 particleId;
+		PxU64 particleRef;
 		if (workIndex < tNumContacts)
 		{
-			PxgFemOtherContactInfo& contactInfo = sortedContactsInfo[workIndex];
+			const PxgDeformablePairInfo& contactInfo = sortedContactInfos[workIndex];
 
-			//first pairInd is particle system
-			particleId = contactInfo.pairInd0; //include particle system id
+			particleRef = contactInfo.ref0;
 
-			// Load particle id into shared memory so that we can look
-			// at neighboring particle id without loading
-			// two particle id per thread
-			sParticleId[threadIdx.x + 1] = particleId;
+			// Staged in shared memory so that each thread reads its neighbor's reference
+			// without a second load.
+			sParticleRef[threadIdx.x + 1] = particleRef;
 
 			if (workIndex > 0 && threadIdx.x == 0)
 			{
-				// first thread in block must load neighbor particle 
-				PxgFemOtherContactInfo& contactInfo2 = sortedContactsInfo[workIndex - 1];
-				sParticleId[0] = contactInfo2.pairInd0;
+				// The first thread has no predecessor in shared memory, so it loads that reference.
+				const PxgDeformablePairInfo& contactInfo2 = sortedContactInfos[workIndex - 1];
+				sParticleRef[0] = contactInfo2.ref0;
 			}
 		}
 
@@ -1971,7 +1988,7 @@ extern "C" __global__ void ps_findStartEndFEMFirstLaunch(
 			// so store the index of this particle in the cell.
 			// As it isn't the first particle, it must also be the cell end of
 			// the previous particle's cell
-			if (workIndex == 0 || particleId != sParticleId[threadIdx.x])
+			if (workIndex == 0 || particleRef != sParticleRef[threadIdx.x])
 				isRangeStart = 1;
 		}
 
@@ -2027,17 +2044,17 @@ extern "C" __global__ void ps_findStartEndFEMFirstLaunch(
 }
 
 extern "C" __global__ void ps_findStartEndFEMSecondLaunch(
-	PxgFemOtherContactInfo*			sortedContactInfo,		//input
-	PxU32*							numContacts,			//input
-	PxU32*							blockOffsets,			//input
-	PxU32*							offsets,				//input
-	PxU32*							totalNumPairs,			//output
-	PxU32*							rangeStart,				//output
-	PxU32*							rangeEnd				//output
+	PxgDeformablePairInfo*	sortedContactInfo,	//input
+	PxU32*					numContacts,		//input
+	PxU32*					blockOffsets,		//input
+	PxU32*					offsets,			//input
+	PxU32*					totalNumPairs,		//output
+	PxU32*					rangeStart,			//output
+	PxU32*					rangeEnd			//output
 )
 {
 	__shared__ PxU32 sBlockAccum[PxgParticleSystemKernelGridDim::ACCUMULATE_DELTA];
-	__shared__ PxU64 sParticleId[PxgParticleSystemKernelBlockDim::ACCUMULATE_DELTA + 1];
+	__shared__ PxU64 sParticleRef[PxgParticleSystemKernelBlockDim::ACCUMULATE_DELTA + 1];
 	__shared__ PxU32 sTotalPairs;
 
 	const PxU32 tNumContacts = *numContacts;
@@ -2068,25 +2085,23 @@ extern "C" __global__ void ps_findStartEndFEMSecondLaunch(
 	{
 		const PxU32 workIndex = i * PxgParticleSystemKernelBlockDim::ACCUMULATE_DELTA + idx + numIterationPerBlock * blockIdx.x * blockDim.x;
 
-		PxU64 particleId;
+		PxU64 particleRef;
 		if (workIndex < tNumContacts)
 		{
 			//printf("tNumContacts %i\n", tNumContacts);
 
-			PxgFemOtherContactInfo& contact = sortedContactInfo[workIndex];
-			//first pairInd is particle system
-			particleId = contact.pairInd0; //include particle system id
+			const PxgDeformablePairInfo& contact = sortedContactInfo[workIndex];
+			particleRef = contact.ref0;
 
-			// Load particle id into shared memory so that we can look
-			// at neighboring particle id without loading
-			// two particle id per thread
-			sParticleId[threadIdx.x + 1] = particleId;
+			// Staged in shared memory so that each thread reads its neighbor's reference
+			// without a second load.
+			sParticleRef[threadIdx.x + 1] = particleRef;
 
 			if (workIndex > 0 && threadIdx.x == 0)
 			{
-				// first thread in block must load neighbor particle 
-				PxgFemOtherContactInfo& contact = sortedContactInfo[workIndex - 1];
-				sParticleId[0] = contact.pairInd0;
+				// The first thread has no predecessor in shared memory, so it loads that reference.
+				const PxgDeformablePairInfo& contact = sortedContactInfo[workIndex - 1];
+				sParticleRef[0] = contact.ref0;
 			}
 		}
 
@@ -2099,7 +2114,7 @@ extern "C" __global__ void ps_findStartEndFEMSecondLaunch(
 			// so store the index of this particle in the cell.
 			// As it isn't the first particle, it must also be the cell end of
 			// the previous particle's cell
-			if (workIndex == 0 || particleId != sParticleId[threadIdx.x])
+			if (workIndex == 0 || particleRef != sParticleRef[threadIdx.x])
 			{
 
 				const PxU32 startOffset = offsets[workIndex] + blockAccum;
@@ -2144,13 +2159,12 @@ extern "C" __global__ void ps_findStartEndFEMSecondLaunch(
 }
 
 extern "C" __global__ void ps_accumulateFEMParticleDeltaVLaunch(
-	PxgParticleSystem*				particleSystems,		//output
-	PxgFemOtherContactInfo*			sortedContactInfo,		//input
-	PxU32*							totalNumPairs,			//input
-	PxU32*							rangeStart,				//input
-	PxU32*							rangeEnd,				//input
-	float4*							deltaP					//input
-
+	PxgParticleSystem*		particleSystems,	//output
+	PxgDeformablePairInfo*	sortedContactInfo,	//input
+	PxU32*					totalNumPairs,		//input
+	PxU32*					rangeStart,			//input
+	PxU32*					rangeEnd,			//input
+	float4*					deltaP				//input
 )
 {
 	const PxU32 numTests = *totalNumPairs;
@@ -2193,10 +2207,10 @@ extern "C" __global__ void ps_accumulateFEMParticleDeltaVLaunch(
 		accumulatedDeltaP.y *= recipCount;
 		accumulatedDeltaP.z *= recipCount;
 
-		PxgFemOtherContactInfo& contactInfo = sortedContactInfo[startIndex];
-		PxU64 pairInd0 = contactInfo.pairInd0;
-		const PxU32 tParticleSystemId = PxGetParticleSystemId(pairInd0);
-		const PxU32 tParticleId = PxGetParticleIndex(pairInd0);
+		const PxgDeformablePairInfo& contactInfo = sortedContactInfo[startIndex];
+		PxU64 particleRef = contactInfo.ref0;
+		const PxU32 tParticleSystemId = PxgGetParticleSystemId(particleRef);
+		const PxU32 tParticleId = PxgGetParticleIndex(particleRef);
 
 		PxgParticleSystem& particleSystem = particleSystems[tParticleSystemId];
 
@@ -2216,7 +2230,7 @@ extern "C" __global__ void ps_accumulateFEMParticleDeltaVLaunch(
 
 extern "C" __global__ void ps_accumulateDeltaVParticleLaunch(
 	PxgParticleSystem*				particleSystems,		//output
-	PxgParticlePrimitiveContact*	sortedContacts,			//input
+	PxgDeformablePairInfo*			sortedContactInfos,		//input
 	PxU32*							totalNumPairs,			//input
 	PxU32*							rangeStart,				//input
 	PxU32*							rangeEnd,				//input
@@ -2261,14 +2275,11 @@ extern "C" __global__ void ps_accumulateDeltaVParticleLaunch(
 		accumulatedDeltaP.y *= recipCount;
 		accumulatedDeltaP.z *= recipCount;
 		
-		PxgParticlePrimitiveContact& contact = sortedContacts[startIndex];
-		const PxU64 combinedParticleId = contact.particleId;
+		const PxgDeformablePairInfo& contact = sortedContactInfos[startIndex];
+		const PxU64 particleRef = contact.ref1;
 
-		const PxU32 tParticleSystemId = PxGetParticleSystemId(combinedParticleId);
-		const PxU32 tParticleId = PxGetParticleIndex(combinedParticleId);
-
-		/*const PxU32 tParticleSystemId = getParticleSystemIdFromCombinedId(combinedParticleId);
-		const PxU32 tParticleId = getParticleIdFromCombinedId(combinedParticleId);*/
+		const PxU32 tParticleSystemId = PxgGetParticleSystemId(particleRef);
+		const PxU32 tParticleId = PxgGetParticleIndex(particleRef);
 
 		PxgParticleSystem& particleSystem = particleSystems[tParticleSystemId];
 		
@@ -2332,7 +2343,8 @@ extern "C" __global__ void ps_accumulateStaticDensity(
 
 extern "C" __global__ void ps_accumulateRigidDensity(
 	PxgParticleSystem*				particleSystems,		//output
-	PxgParticlePrimitiveContact*	sortedContacts,			//input
+	PxgDeformablePairInfo*			sortedContactInfos,		//input
+	const float4*					sortedContactNormalPens,//input
 	PxU32*							totalNumPairs,			//input
 	PxU32*							rangeStart,				//input
 	PxU32*							rangeEnd				//input
@@ -2356,14 +2368,11 @@ extern "C" __global__ void ps_accumulateRigidDensity(
 		const PxU32 startIndex = rangeStart[workIndex];
 		const PxU32 endIndex = rangeEnd[workIndex];
 
-		PxgParticlePrimitiveContact& contact = sortedContacts[startIndex];
-		const PxU64 combinedParticleId = contact.particleId;
+		const PxgDeformablePairInfo& contact = sortedContactInfos[startIndex];
+		const PxU64 particleRef = contact.ref1;
 
-		const PxU32 tParticleSystemId = PxGetParticleSystemId(combinedParticleId);
-		const PxU32 tParticleId = PxGetParticleIndex(combinedParticleId);
-
-		/*const PxU32 tParticleSystemId = getParticleSystemIdFromCombinedId(combinedParticleId);
-		const PxU32 tParticleId = getParticleIdFromCombinedId(combinedParticleId);*/
+		const PxU32 tParticleSystemId = PxgGetParticleSystemId(particleRef);
+		const PxU32 tParticleId = PxgGetParticleIndex(particleRef);
 
 		PxgParticleSystem& particleSystem = particleSystems[tParticleSystemId];
 		const PxReal restDensityBoundary = particleSystem.mData.mRestDensityBoundary;
@@ -2381,9 +2390,7 @@ extern "C" __global__ void ps_accumulateRigidDensity(
 
 			for (PxU32 i = startIndex; i < endIndex; ++i)
 			{
-				PxgParticlePrimitiveContact& contact = sortedContacts[i];
-
-				rho += W(PxMax(0.f, contact.normal_pen.w + restDistance), spiky1, particleContactDistanceInv);
+				rho += W(PxMax(0.f, sortedContactNormalPens[i].w + restDistance), spiky1, particleContactDistanceInv);
 			}
 
 			//sortedVelocity1 should have selfCollision deltaV and the final result will store in sortedVelocity1

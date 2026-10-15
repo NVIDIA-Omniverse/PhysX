@@ -4,6 +4,12 @@
 # @implements REQ-PYTHON-BINDING-DEVICE-001
 # @covers AC-1 AC-2 AC-4
 # @maps_to TEST-PYTHON-BINDING-DEVICE-001
+# @implements REQ-REPLICATE-001
+# @covers AC-7
+# @maps_to TEST-REPLICATE-001
+# @implements REQ-CAPI-TIMESTEP-002
+# @covers AC-2
+# @maps_to TEST-CAPI-TIMESTEP-002
 # PARTIALLY DEPRECATED (tensor-binding-deprecation): the tensor-binding tests here retire with the binding. The ContactBinding tests stay.
 
 """Comprehensive tests for TensorBindingsAPI features.
@@ -23,13 +29,15 @@ Scene used for contact tests: boxes_falling_on_groundplane.usda
   - GroundPlane has two children: CollisionMesh (a plain visual Mesh, no physics
     schema at all) and CollisionPlane (a Plane with PhysicsCollisionAPI applied,
     the actual physics collider). Contact-filter patterns must reference
-    CollisionPlane. CollisionMesh matches no physics object.
+    CollisionPlane. PHYSICS-only population omits CollisionMesh; ALL population
+    includes its source path even though it has no physics object.
 """
 
 import os
 
 import numpy as np
 import pytest
+import ovstage
 from ovphysx.dlpack import DLDataTypeCode, DLDeviceType
 from ovphysx.types import TensorType
 from test_utils import load_usd_with_ovstage
@@ -63,6 +71,29 @@ def _load_and_step(sdk, n_steps=5, dt=1.0 / 60.0):
     for _ in range(n_steps):
         sdk.step(dt)
     sdk.wait_all()
+
+
+def _link_vx_after_wrench(sdk, indices, reverse_paths=False):
+    """Read padded link x velocities after distinct per-articulation pushes on a fresh scene."""
+    load_usd_with_ovstage(sdk, data_path("mixed_link_count_articulations.usda"))
+    sdk.wait_all()
+    paths = ["/World/articulation_short", "/World/articulation_long"]
+    if reverse_paths:
+        paths.reverse()
+    wrench = sdk.create_tensor_binding(prim_paths=paths, tensor_type=TensorType.ARTICULATION_LINK_WRENCH)
+    velocity = sdk.create_tensor_binding(prim_paths=paths, tensor_type=TensorType.ARTICULATION_LINK_VELOCITY)
+    buf = np.zeros(wrench.shape, dtype=np.float32)
+    buf[0, :, 0] = 100.0
+    buf[1, :, 0] = 200.0  # distinct forces expose swapped rows in reordered writes
+    buf[..., 8] = 5.0  # applied at (0, 0, 5), on the line through all link centers
+    wrench.write(buf, indices=indices)
+    sdk.step(1.0 / 60.0)
+    sdk.wait_all()
+    result = np.zeros(velocity.shape, dtype=np.float32)
+    velocity.read(result)
+    wrench.destroy()
+    velocity.destroy()
+    return result[..., 0]
 
 
 # ---------------------------------------------------------------------------
@@ -590,7 +621,7 @@ class TestTensorBindingSpec:
     def test_native_device_rejects_reset_stale_binding_after_prior_query(self, physx_sdk_cpu):
         b = self._make_rigid_body_binding(physx_sdk_cpu, TensorType.RIGID_BODY_POSE)
         assert b.native_device.device_type.value == DLDeviceType.kDLCPU
-        physx_sdk_cpu.reset_stage()
+        physx_sdk_cpu.wait_task(physx_sdk_cpu.detach_ovstage())
         with pytest.raises(RuntimeError, match="(?i)invalidat|stale|recreate"):
             _ = b.native_device
         b.destroy()
@@ -870,20 +901,20 @@ class TestContactBinding:
 
         cb.destroy()
 
-    def test_contact_binding_filter_pattern_matching_non_physics_prim_fails(self, physx_sdk_cpu):
-        """A filter pattern naming a prim with no physics registration matches nothing.
+    def test_contact_binding_filter_pattern_matching_unpopulated_visual_prim_fails(self, physx_sdk_cpu):
+        """A filter pattern naming a prim omitted from population matches nothing.
 
-        Contact filter patterns resolve through the physics ObjectKey registry
-        (BaseSimulationView::findMatchingPaths), not raw USD traversal, so a
-        pattern naming an arbitrary non-physics prim (here CollisionMesh, the
-        plain visual Mesh sibling of the real collider CollisionPlane, see the
-        module docstring) matches zero objects. With a single sensor and a
-        filter pattern that resolves to zero rather than one entry, filter
-        expansion fails outright (BaseSimulationView.cpp's "did not match the
-        correct number of entries" path), so contact-view creation itself fails
-        rather than silently producing an unfiltered binding.
+        PHYSICS-only population omits the visual CollisionMesh, while keeping
+        the CollisionPlane collider. Contact filters resolve source ObjectKeys,
+        so ALL population would include the visual path even though it has no
+        physics object. Keep this missing-filter test on the narrower domain;
+        the scene's parents have identity transforms.
         """
-        load_usd_with_ovstage(physx_sdk_cpu, data_path("boxes_falling_on_groundplane.usda"))
+        load_usd_with_ovstage(
+            physx_sdk_cpu,
+            data_path("boxes_falling_on_groundplane.usda"),
+            domains=ovstage.PopulationDomain.PHYSICS,
+        )
         physx_sdk_cpu.wait_all()
         with pytest.raises(RuntimeError, match="no sensor entries were produced"):
             physx_sdk_cpu.create_contact_binding(
@@ -903,6 +934,54 @@ class TestContactBinding:
         assert len(filter_paths) == cb.sensor_count
         assert all(paths == [] for paths in filter_paths)
         cb.destroy()
+
+    @pytest.mark.parametrize("body_reports, child_reports", [(True, False), (True, True), (False, False), (False, True)])
+    def test_contact_binding_clone_sensor_schema_parity(self, physx_sdk_cpu, tmp_path, body_reports, child_reports):
+        """Cloning preserves eligibility of the exact sensor object, including child colliders."""
+        body_schema = ', "PhysxContactReportAPI"' if body_reports else ""
+        child_schema = ', "PhysxContactReportAPI"' if child_reports else ""
+        scene = tmp_path / "contact_sensor_schema.usda"
+        scene.write_text(
+            f'''#usda 1.0
+(metersPerUnit = 1)
+def Xform "World" {{
+    def PhysicsScene "Scene" {{}}
+    def Xform "Env0" {{
+        def Xform "Cube" (prepend apiSchemas = ["PhysicsRigidBodyAPI"{body_schema}]) {{
+            def Cube "CubeGeom" (prepend apiSchemas = ["PhysicsCollisionAPI"{child_schema}]) {{
+                double size = 0.5
+            }}
+        }}
+    }}
+}}
+''',
+            encoding="utf-8",
+        )
+        load_usd_with_ovstage(physx_sdk_cpu, str(scene))
+        physx_sdk_cpu.clone("/World/Env0", ["/World/Env1"],
+                            anchor_transforms=[(2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0)])
+        physx_sdk_cpu.wait_all()
+
+        for env in ("Env0", "Env1"):
+            expected_paths = []
+            for suffix, reports in (("Cube", body_reports), ("Cube/CubeGeom", child_reports)):
+                path = f"/World/{env}/{suffix}"
+                if reports:
+                    with physx_sdk_cpu.create_contact_binding(sensor_patterns=[path]) as binding:
+                        assert binding.sensor_paths == [path]
+                    expected_paths.append(path)
+                else:
+                    with pytest.raises(RuntimeError, match="no sensor entries were produced"):
+                        physx_sdk_cpu.create_contact_binding(sensor_patterns=[path])
+
+            # A C-prefixed child is also a wildcard candidate, but may not bypass the schema gate.
+            pattern = f"/World/{env}/C*"
+            if expected_paths:
+                with physx_sdk_cpu.create_contact_binding(sensor_patterns=[pattern]) as binding:
+                    assert sorted(binding.sensor_paths) == sorted(expected_paths)
+            else:
+                with pytest.raises(RuntimeError, match="no sensor entries were produced"):
+                    physx_sdk_cpu.create_contact_binding(sensor_patterns=[pattern])
 
     def test_contact_binding_matches_runtime_clones(self, physx_sdk_cpu):
         """Check contact binding sees cloned bodies and their contact events.
@@ -1023,8 +1102,7 @@ class TestContactBinding:
         assert np.any(np.abs(out) > 0.0), "After landing, contact net forces should be non-zero"
         cb.destroy()
 
-    @pytest.mark.parametrize("sync_api", ["step_sync", "step_n_sync"])
-    def test_sync_contact_force_uses_current_dt(self, physx_sdk_cpu, sync_api):
+    def test_sync_contact_force_uses_current_dt(self, physx_sdk_cpu):
         """Synchronous stepping must convert contact impulse with its own dt."""
         load_usd_with_ovstage(physx_sdk_cpu, data_path("boxes_falling_on_groundplane.usda"))
         physx_sdk_cpu.wait_all()
@@ -1041,11 +1119,8 @@ class TestContactBinding:
 
         # Three simulated seconds lets Cube1 land and settle on the ground.
         num_steps = 720
-        if sync_api == "step_sync":
-            for _ in range(num_steps):
-                physx_sdk_cpu.step_sync(sync_dt)
-        else:
-            physx_sdk_cpu.step_n_sync(num_steps, sync_dt)
+        for _ in range(num_steps):
+            physx_sdk_cpu.step_sync(sync_dt)
 
         sync_forces = np.zeros((cb.sensor_count, 3), dtype=np.float32)
         cb.read_net_normal_forces(output=sync_forces)
@@ -1059,6 +1134,73 @@ class TestContactBinding:
         assert sync_forces[0, 2] > 0.0
         assert async_forces[0, 2] > 0.0
         np.testing.assert_allclose(sync_forces, async_forces, rtol=0.05, atol=1.0)
+        cb.destroy()
+
+    @pytest.mark.parametrize("zero_step", ["sync", "async"])
+    def test_contact_reads_unchanged_across_zero_dt_step(self, physx_sdk_cpu, zero_step):
+        """A zero-dt step simulates nothing, so it must not change any contact read.
+
+        Regression for NVBug 6904332: both step paths used to overwrite the cached
+        impulse-to-force divisor with 1.0 on a zero-dt step. The step leaves the
+        previous step's impulses in place (it never reaches the simulate path), so the
+        forces came back a factor of dt too small -- 240x here -- on every read.
+        """
+        load_usd_with_ovstage(physx_sdk_cpu, data_path("boxes_falling_on_groundplane.usda"))
+        physx_sdk_cpu.wait_all()
+
+        cb = physx_sdk_cpu.create_contact_binding(
+            sensor_patterns=["/World/Cube1"], filter_patterns=["/World/BigBase"],
+            filters_per_sensor=1, max_contact_data_count=256,  # the detailed read needs capacity
+        )
+        assert cb.sensor_count == 1 and cb.filter_count == 1
+
+        # Settle Cube1 on BigBase at a dt far from the 1.0 the bug substituted, so a
+        # clobbered divisor shows up as a large factor rather than rounding.
+        settle_dt = 1.0 / 240.0
+        for _ in range(720):
+            physx_sdk_cpu.step_sync(settle_dt)
+
+        def read_all():
+            """The net, matrix and detailed normal reads, which all load the same cached divisor."""
+            net = np.zeros((cb.sensor_count, 3), dtype=np.float32)
+            cb.read_net_normal_forces(output=net)
+            matrix = np.zeros((cb.sensor_count, cb.filter_count, 3), dtype=np.float32)
+            cb.read_normal_force_matrix(output=matrix)
+            c = cb.max_contact_data_count
+            detail = np.zeros((c, 1), dtype=np.float32)
+            counts = np.zeros((cb.sensor_count, cb.filter_count), dtype=np.int32)
+            starts = np.zeros((cb.sensor_count, cb.filter_count), dtype=np.int32)
+            cb.read_normal_contact_data(
+                detail, np.zeros((c, 3), dtype=np.float32), np.zeros((c, 3), dtype=np.float32),
+                np.zeros((c, 1), dtype=np.float32), counts, starts,
+            )
+            n, start = int(counts[0, 0]), int(starts[0, 0])
+            return net, matrix, float(detail[start : start + n].sum())
+
+        before_net, before_matrix, before_detail = read_all()
+        # Guard: a vacuous all-zero baseline would make every comparison below pass.
+        assert before_net[0, 2] > 1.0, f"Cube1 should rest on BigBase before the zero-dt step: {before_net}"
+        assert before_detail > 1.0, f"detailed normal forces should be non-zero: {before_detail}"
+
+        if zero_step == "sync":
+            physx_sdk_cpu.step_sync(0.0)
+        else:
+            physx_sdk_cpu.step(0.0)
+            physx_sdk_cpu.wait_all()
+
+        after_net, after_matrix, after_detail = read_all()
+        np.testing.assert_allclose(after_net, before_net, rtol=1e-5, atol=1e-5)
+        np.testing.assert_allclose(after_matrix, before_matrix, rtol=1e-5, atol=1e-5)
+        assert after_detail == pytest.approx(before_detail, rel=1e-5, abs=1e-5)
+
+        # Anchor the value to a step that really simulated: "unchanged" alone would also
+        # hold if both reads had moved to the same wrong number.
+        physx_sdk_cpu.step_sync(settle_dt)
+        resumed_net, resumed_matrix, resumed_detail = read_all()
+        np.testing.assert_allclose(after_net, resumed_net, rtol=0.05, atol=1.0)
+        np.testing.assert_allclose(after_matrix, resumed_matrix, rtol=0.05, atol=1.0)
+        assert after_detail == pytest.approx(resumed_detail, rel=0.05, abs=1.0)
+
         cb.destroy()
 
     def test_contact_force_matrix_shape(self, physx_sdk_cpu):
@@ -1853,175 +1995,21 @@ class TestLinkWrench:
         b.write(buf, mask=mask)
         b.destroy()
 
-
-class TestContactReport:
-    """Tests for the pull-based contact report API (get_contact_report).
-
-    Uses boxes_falling_on_groundplane.usda: boxes drop onto a ground plane,
-    generating contact events after enough simulation steps.
-    """
-
-    def test_no_contacts_before_collision(self, physx_sdk_cpu):
-        """Before any collision happens, contact report should be empty."""
-        load_usd_with_ovstage(physx_sdk_cpu, data_path("boxes_falling_on_groundplane.usda"))
-        physx_sdk_cpu.wait_all()
-        physx_sdk_cpu.step(1.0 / 60.0)
-        physx_sdk_cpu.wait_all()
-        report = physx_sdk_cpu.get_contact_report()
-        assert report["num_headers"] >= 0
-        assert report["num_points"] >= 0
-
-    def test_contacts_after_falling(self, physx_sdk_cpu):
-        """After enough steps for boxes to hit the ground, expect contacts."""
-        load_usd_with_ovstage(physx_sdk_cpu, data_path("boxes_falling_on_groundplane.usda"))
-        physx_sdk_cpu.wait_all()
-        report = {"num_headers": 0, "num_points": 0}
-        for _ in range(240):
-            physx_sdk_cpu.step_sync(1.0 / 60.0)
-            report = physx_sdk_cpu.get_contact_report()
-            if report["num_headers"] > 0 and report["num_points"] > 0:
-                break
-        assert report["num_headers"] > 0, "Should have contact events after boxes fall onto ground"
-        assert report["num_points"] > 0, "Should have contact data points"
-
-    def test_contact_report_works_after_reset_stage(self, physx_sdk_cpu):
-        """reset_stage() tears down physics and must not leave a broken contact report path."""
-        load_usd_with_ovstage(physx_sdk_cpu, data_path("boxes_falling_on_groundplane.usda"))
-        physx_sdk_cpu.wait_all()
-        for _ in range(240):
-            physx_sdk_cpu.step_sync(1.0 / 60.0)
-            report = physx_sdk_cpu.get_contact_report()
-            if report["num_headers"] > 0 and report["num_points"] > 0:
-                break
-        assert report["num_headers"] > 0
-        assert report["num_points"] > 0
-
-        physx_sdk_cpu.reset_stage()
-        physx_sdk_cpu.wait_all()
-
-        load_usd_with_ovstage(physx_sdk_cpu, data_path("boxes_falling_on_groundplane.usda"))
-        physx_sdk_cpu.wait_all()
-        report_after_reset = {"num_headers": 0, "num_points": 0}
-        for _ in range(240):
-            physx_sdk_cpu.step_sync(1.0 / 60.0)
-            report_after_reset = physx_sdk_cpu.get_contact_report()
-            if report_after_reset["num_headers"] > 0 and report_after_reset["num_points"] > 0:
-                break
-        assert report_after_reset["num_headers"] > 0
-        assert report_after_reset["num_points"] > 0
-
-    def test_contact_report_struct_fields_accessible(self, physx_sdk_cpu):
-        """When contacts exist, typed struct fields should be readable."""
-        load_usd_with_ovstage(physx_sdk_cpu, data_path("boxes_falling_on_groundplane.usda"))
-        physx_sdk_cpu.wait_all()
-        for _ in range(60):
-            physx_sdk_cpu.step(1.0 / 60.0)
-        physx_sdk_cpu.wait_all()
-        report = physx_sdk_cpu.get_contact_report()
-        if report["num_headers"] > 0:
-            h = report["headers"][0]
-            assert hasattr(h, "actor0")
-            assert hasattr(h, "numContactData")
-            assert h.numContactData >= 0
-        if report["num_points"] > 0:
-            p = report["points"][0]
-            assert hasattr(p, "position")
-            assert hasattr(p, "normal")
-            assert hasattr(p, "impulse")
-            assert len(p.position) == 3
-            assert len(p.normal) == 3
-
-    def test_friction_anchors_returned_when_requested(self, physx_sdk_cpu):
-        """With include_friction_anchors=True, dict should contain anchor fields."""
-        load_usd_with_ovstage(physx_sdk_cpu, data_path("boxes_falling_on_groundplane.usda"))
-        physx_sdk_cpu.wait_all()
-        for _ in range(60):
-            physx_sdk_cpu.step(1.0 / 60.0)
-        physx_sdk_cpu.wait_all()
-        report = physx_sdk_cpu.get_contact_report(include_friction_anchors=True)
-        assert "num_anchors" in report
-        assert "anchors" in report
-        assert isinstance(report["num_anchors"], int)
-
-    def test_friction_anchors_not_returned_by_default(self, physx_sdk_cpu):
-        """Without include_friction_anchors, dict should not have anchor fields."""
-        load_usd_with_ovstage(physx_sdk_cpu, data_path("boxes_falling_on_groundplane.usda"))
-        physx_sdk_cpu.wait_all()
-        physx_sdk_cpu.step(1.0 / 60.0)
-        physx_sdk_cpu.wait_all()
-        report = physx_sdk_cpu.get_contact_report()
-        assert "num_anchors" not in report
-        assert "anchors" not in report
-
-    def test_copy_true_returns_python_owned_dicts(self, physx_sdk_cpu):
-        """With copy=True, headers/points/anchors must be lists of dicts."""
-        load_usd_with_ovstage(physx_sdk_cpu, data_path("boxes_falling_on_groundplane.usda"))
-        physx_sdk_cpu.wait_all()
-        for _ in range(60):
-            physx_sdk_cpu.step(1.0 / 60.0)
-        physx_sdk_cpu.wait_all()
-        report = physx_sdk_cpu.get_contact_report(include_friction_anchors=True, copy=True)
-        assert isinstance(report["headers"], list)
-        assert isinstance(report["points"], list)
-        assert isinstance(report["anchors"], list)
-        assert len(report["headers"]) == report["num_headers"]
-        assert len(report["points"]) == report["num_points"]
-        assert len(report["anchors"]) == report["num_anchors"]
-        if report["num_headers"] > 0:
-            h = report["headers"][0]
-            assert isinstance(h, dict)
-            assert "actor0" in h and "actor1" in h and "numContactData" in h
-            assert isinstance(h["actor0"], int)
-        if report["num_points"] > 0:
-            p = report["points"][0]
-            assert isinstance(p, dict)
-            assert "position" in p and "normal" in p and "impulse" in p
-            assert isinstance(p["position"], tuple)
-            assert len(p["position"]) == 3
-            assert all(isinstance(x, float) for x in p["position"])
-
-    def test_copy_true_safe_across_steps(self, physx_sdk_cpu):
-        """copy=True data must survive subsequent step() calls unchanged.
-
-        Regression test for NVBug 6172700: zero-copy ctypes views silently
-        corrupt after the next step. copy=True must return Python-owned data
-        that does not depend on the internal C buffer's lifetime. Covers all
-        three buffers (headers, points, anchors) since the hazard is
-        symmetric across them.
-
-        Snapshot via ``[dict(h) for h in ...]`` rather than ``list(...)``: the
-        snapshot needs *independent* dict objects so that if a future change
-        ever lets the returned dicts alias C memory (lazy field reads, etc.)
-        the assertion catches it. ``list()`` would just hold the same dict
-        refs and pass trivially.
-        """
-        load_usd_with_ovstage(physx_sdk_cpu, data_path("boxes_falling_on_groundplane.usda"))
-        physx_sdk_cpu.wait_all()
-        for _ in range(60):
-            physx_sdk_cpu.step(1.0 / 60.0)
-        physx_sdk_cpu.wait_all()
-        report = physx_sdk_cpu.get_contact_report(include_friction_anchors=True, copy=True)
-        if report["num_headers"] == 0:
-            pytest.skip("No contact events generated; cannot test cross-step retention.")
-        snapshot_headers = [dict(h) for h in report["headers"]]
-        snapshot_points = [dict(p) for p in report["points"]]
-        snapshot_anchors = [dict(a) for a in report["anchors"]]
-        # Stepping reallocates or overwrites the internal C buffers backing a zero-copy view.
-        for _ in range(10):
-            physx_sdk_cpu.step(1.0 / 60.0)
-        physx_sdk_cpu.wait_all()
-        # The snapshots must remain identical. If the dicts ever alias the C buffer, this fails.
-        assert report["headers"] == snapshot_headers
-        assert report["points"] == snapshot_points
-        assert report["anchors"] == snapshot_anchors
-
-    def test_copy_false_default_returns_ctypes_views(self, physx_sdk_cpu):
-        """Default copy=False must keep returning ctypes array views (back-compat)."""
-        load_usd_with_ovstage(physx_sdk_cpu, data_path("boxes_falling_on_groundplane.usda"))
-        physx_sdk_cpu.wait_all()
-        physx_sdk_cpu.step(1.0 / 60.0)
-        physx_sdk_cpu.wait_all()
-        report = physx_sdk_cpu.get_contact_report()
-        # ctypes arrays expose typed-struct attribute access, not __getitem__-of-dict.
-        assert not isinstance(report["headers"], list)
-        assert not isinstance(report["points"], list)
+    @pytest.mark.parametrize(
+        "reverse_paths, selected",
+        [(False, [1]), (True, [1]), (False, [1, 0])],
+        ids=["long-subset", "short-subset", "reordered"],
+    )
+    def test_indexed_write_reaches_only_the_selected_articulations(self, physx_sdk_cpu, reverse_paths, selected):
+        """Selected links match a full write, including mixed link counts and reordered indices."""
+        moved = _link_vx_after_wrench(physx_sdk_cpu, indices=None, reverse_paths=reverse_paths)
+        link_counts = [3, 2] if reverse_paths else [2, 3]
+        for row, count in enumerate(link_counts):
+            np.testing.assert_array_less(0.0, moved[row, :count], err_msg="full write")
+        indices = np.array(selected, dtype=np.int32)
+        pushed = _link_vx_after_wrench(physx_sdk_cpu, indices=indices, reverse_paths=reverse_paths)
+        for row, count in enumerate(link_counts):
+            expected = moved[row, :count] if row in selected else 0.0
+            np.testing.assert_allclose(
+                pushed[row, :count], expected, rtol=1e-5, atol=1e-6, err_msg=f"articulation row {row}"
+            )

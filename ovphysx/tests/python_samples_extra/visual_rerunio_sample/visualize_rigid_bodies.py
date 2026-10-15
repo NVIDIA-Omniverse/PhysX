@@ -24,6 +24,7 @@ import rerun as rr
 from ovphysx.types import ObjectScope, SimObjectType
 
 import ovphysx
+from ovphysx.samples.python_samples.schema_support import physx_schema_paths
 from ovphysx import PhysX
 
 
@@ -33,7 +34,7 @@ _physx_schemas_registered = False
 def read_rigid_body_poses(sdk):
     """Read every dynamic rigid body's pose as an ``[N, 7]`` array: xyz + quaternion (xyzw).
 
-    PhysX.read emits one group per scene partition per attribute (a position column arrives as
+    PhysX.read_sync emits one group per scene partition per attribute (a position column arrives as
     ``[N, 3]`` and an orientation column as ``[N, 4]``), but it does NOT guarantee the position and
     orientation groups arrive in the same partition order. Pair the two columns per partition by the
     interned ``group.prim_list`` handle before joining: concatenating each attribute independently and
@@ -45,7 +46,7 @@ def read_rigid_body_poses(sdk):
     # groups of one partition share it, so it is the key that pairs them. dict insertion order keeps
     # the partitions in first-seen order.
     by_partition = {}
-    with sdk.read(SimObjectType.RIGID_BODY, ["position", "orientation"], scope=ObjectScope.ALL) as result:
+    with sdk.read_sync(SimObjectType.RIGID_BODY, ["position", "orientation"], scope=ObjectScope.ALL) as result:
         for group in result.groups:
             # This sample assumes each group's rows are already in prim order. index_map would
             # permute them, and a multi-scene stage that used one would need it honoured per group.
@@ -79,14 +80,11 @@ def attach_scene(physx, usd_path, stage_name):
     if not ovstage.population.available():
         raise RuntimeError("ovstage population bridge is unavailable")
 
-    # ovphysx ships its PhysX USD schemas as codeless resources and does not register
-    # them itself. Register them with ovstage once, before the first population
-    # call in the process. The Newton USD schema (pip package newton-usd-schemas)
-    # is registered alongside so authored newton:* attributes reach the parser.
+    # Register external PhysX and Newton schemas before the first population.
     global _physx_schemas_registered
     if not _physx_schemas_registered:
         ovstage.population.register_usd_schemas(
-            [str(ovphysx.codeless_schema_root()), str(ovphysx.newton_schema_root())]
+            [*[str(p) for p in physx_schema_paths()], str(ovphysx.newton_schema_root())]
         )
         _physx_schemas_registered = True
     stage = ovstage.Stage(stage_name)
@@ -94,9 +92,11 @@ def attach_scene(physx, usd_path, stage_name):
     try:
         ovstage.population.open_usd(stage, str(usd_path), ordinal=ordinal, domains=ovstage.PopulationDomain.PHYSICS)
         stage.advance_write_floor(ordinal=ordinal).wait()
-        physx.attach_ovstage(stage, read_ordinal=ordinal)
+        physx.wait_task(physx.attach_ovstage(stage, read_ordinal=ordinal))
         return stage
     except Exception:
+        if physx.is_stage_attached(stage):
+            physx.wait_task(physx.detach_ovstage())
         stage.destroy()
         raise
 
@@ -136,12 +136,12 @@ def main():
     stage = attach_scene(sdk, usd_path, "ovphysx-rerun-sample")
     sdk.wait_all()
 
-    # PhysX.read streams simulation output. The scene's only dynamic rigid bodies are the cubes
+    # PhysX.read_sync streams simulation output. The scene's only dynamic rigid bodies are the cubes
     # (the ground plane and base are static), so reading RIGID_BODY covers exactly them. Warm up
     # first. On a DirectGPU scene the read yields nothing until the first step.
     sdk.warmup()
     sdk.wait_all()
-    print(f"Streaming {len(read_rigid_body_poses(sdk))} rigid bodies via PhysX.read")
+    print(f"Streaming {len(read_rigid_body_poses(sdk))} rigid bodies via PhysX.read_sync")
 
     # --- Log static geometry ---
     # Rerun does not read USD, so the colliders are logged explicitly for visual context.
@@ -201,7 +201,7 @@ def main():
 
     print(f"Visualization sample completed successfully ({num_steps} steps)")
 
-    sdk.detach_ovstage()
+    sdk.wait_task(sdk.detach_ovstage())
     stage.destroy()
     sdk.destroy()
     print("Cleanup complete")

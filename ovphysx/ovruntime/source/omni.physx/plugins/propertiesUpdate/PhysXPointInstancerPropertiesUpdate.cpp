@@ -7,6 +7,9 @@
  *
  * @implements REQ-PARSE-INSTANCER-003
  * @covers AC-2 AC-3
+ *
+ * @implements REQ-SIM-LOCALVELOCITY-001
+ * @covers AC-5 AC-6 AC-7
  */
 
 #include "PhysXPropertiesUpdate.h"
@@ -34,8 +37,7 @@ using namespace omni::physx::internal;
 // point instancer
 bool updateBodyInstancedTransform(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode, bool positionUpdate)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -279,8 +281,7 @@ bool omni::physx::updateBodyInstancedOrientations(AttachedStage& attachedStage, 
 
 bool updateBodyInstancedVelocitiesInternal(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode, bool linearVelocity)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -328,12 +329,36 @@ bool updateBodyInstancedVelocitiesInternal(AttachedStage& attachedStage, ObjectI
 
                                     if (dynamicActor && !((dynamicActor->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)))
                                     {
+                                        // With `physics:localSpaceVelocities` on the prototype the
+                                        // array value is authored in the instance's own frame, so it
+                                        // is mapped here the same way the load path maps it
+                                        // (PointInstancer.cpp) and the same way an ordinary body's
+                                        // physics:velocity edit is mapped
+                                        // (PhysXRigidBodyPropertiesUpdate.cpp). Without the opt-in the
+                                        // array is already a world-space value and is applied as
+                                        // authored. Reading the live pose means the mapping follows
+                                        // the instance once it has turned (NVBug 6904619).
+                                        const bool localSpace =
+                                            (internalActor->mFlags & InternalActorFlag::eLOCALSPACE_VELOCITIES) != 0;
+                                        const PxQuat worldRotation = dynamicActor->getGlobalPose().q;
+
                                         if (linearVelocity)
-                                            dynamicActor->setLinearVelocity(toPhysX(velocities[internalActor->mInstanceIndex]));
+                                        {
+                                            PxVec3 value = toPhysX(velocities[internalActor->mInstanceIndex]);
+                                            if (localSpace)
+                                                value = localToWorldLinearVelocity(
+                                                    worldRotation, internalActor->mScale, value);
+                                            dynamicActor->setLinearVelocity(value);
+                                        }
                                         else
+                                        {
                                             // degToRad(PxVec3) applies the same float scalar
                                             // as the GfVec3f overload it replaces.
-                                            dynamicActor->setAngularVelocity(degToRad(toPhysX(velocities[internalActor->mInstanceIndex])));
+                                            PxVec3 value = degToRad(toPhysX(velocities[internalActor->mInstanceIndex]));
+                                            if (localSpace)
+                                                value = localToWorldAngularVelocity(worldRotation, value);
+                                            dynamicActor->setAngularVelocity(value);
+                                        }
                                     }
                                 }
                             }

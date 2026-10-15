@@ -9,10 +9,10 @@ from ovphysx._bindings import (
     DLDevice,
     DLTensor,
     ovphysx_config_entry_t,
+    ovphysx_config_value_t,
     ovphysx_create_args,
     ovphysx_omnipvd_destination_t,
 )
-from ovphysx.contact_types import ContactEventHeader, ContactPoint, FrictionAnchor
 
 from ovphysx import _bindings as physx_bindings
 
@@ -67,6 +67,17 @@ def test_config_entry_layout_matches():
         c_off = int(offset_fn(idx))
         py_off = getattr(ovphysx_config_entry_t, name).offset
         assert c_off == py_off, f"config_entry_t field {name} offset mismatch: C={c_off}, Python={py_off}"
+
+
+def test_config_value_layout_matches():
+    """Verify ovphysx_config_value_t structure layout matches the C library."""
+    _check_struct_layout(
+        "ovphysx_config_value_t",
+        ovphysx_config_value_t,
+        "ovphysx_internal_config_value_sizeof",
+        "ovphysx_internal_config_value_alignof",
+        "ovphysx_internal_config_value_offset",
+    )
 
 
 def test_omnipvd_destination_layout_matches():
@@ -198,36 +209,3 @@ def _check_struct_layout(label, struct, sizeof_name, alignof_name, offset_name):
         c_off = int(offset_fn(idx))
         py_off = getattr(struct, name).offset
         assert c_off == py_off, f"{label} field {name} offset mismatch: C={c_off}, Python={py_off}"
-
-
-def test_contact_event_header_layout_matches():
-    """Verify ContactEventHeader matches ovphysx_contact_event_header_t."""
-    _check_struct_layout(
-        "ContactEventHeader",
-        ContactEventHeader,
-        "ovphysx_internal_contact_event_header_sizeof",
-        "ovphysx_internal_contact_event_header_alignof",
-        "ovphysx_internal_contact_event_header_offset",
-    )
-
-
-def test_contact_point_layout_matches():
-    """Verify ContactPoint matches ovphysx_contact_point_t."""
-    _check_struct_layout(
-        "ContactPoint",
-        ContactPoint,
-        "ovphysx_internal_contact_point_sizeof",
-        "ovphysx_internal_contact_point_alignof",
-        "ovphysx_internal_contact_point_offset",
-    )
-
-
-def test_friction_anchor_layout_matches():
-    """Verify FrictionAnchor matches ovphysx_friction_anchor_t."""
-    _check_struct_layout(
-        "FrictionAnchor",
-        FrictionAnchor,
-        "ovphysx_internal_friction_anchor_sizeof",
-        "ovphysx_internal_friction_anchor_alignof",
-        "ovphysx_internal_friction_anchor_offset",
-    )

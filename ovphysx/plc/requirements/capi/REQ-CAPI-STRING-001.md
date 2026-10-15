@@ -45,7 +45,7 @@ pointer and `ptr[length] == '\0'`.
 - ovphysx/src/ovphysx/ovphysxContactBinding.cpp
 - ovphysx/src/include/internal/sidecar/ovphysxInternalObjectChange.h
 - ovphysx/src/ovphysxInternal/ovphysxInternalObjectChange.cpp
-- ovphysx/tests/c_unittests/test_user_task.cpp
+- ovphysx/tests/c_unittests/test_task_completion.cpp
 - ovphysx/tests/c_unittests/test_global_settings.cpp
 - ovphysx/tests/c_unittests/test_articulation_metadata.cpp
 - ovphysx/tests/c_unittests/test_contact_binding.cpp

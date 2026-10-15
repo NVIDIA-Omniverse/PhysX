@@ -2,10 +2,10 @@
 name: ovphysx-usd-authoring
 description: Author USD physics content for ovstage to populate and ovphysx to simulate (rigid bodies, colliders, mass, physics scene). Use when creating or editing .usda or USD scenes for ovstage and ovphysx, not when calling the runtime step or tensor API. Keywords USD authoring, UsdPhysics, PhysxSchema, RigidBodyAPI, CollisionAPI, MassAPI, PhysicsScene, .usda, simulate scene.
 license: Apache-2.0
-compatibility: "Core UsdPhysics-authored scenes can be populated through ovstage and simulated by ovphysx 0.4.1+ (wheel or SDK). The bundled codeless PhysX schemas and ovphysx.codeless_schema_paths() require ovphysx 0.5.1+. This skill first shipped in 0.5.2. Authoring needs a text editor (.usda route) or Python with a USD runtime (Python route); core UsdPhysics works with stock usd-core, and PhysX-specific schema attributes require registering the codeless schemas."
+compatibility: "Core UsdPhysics-authored scenes can be populated through ovstage and simulated by ovphysx 0.4.1+ (wheel or SDK). PhysX schema resources come from separately installed physx-usd-schemas. This skill first shipped in 0.5.2. Authoring needs a text editor (.usda route) or Python with a USD runtime (Python route); core UsdPhysics works with stock usd-core, and PhysX-specific schema attributes require registering the codeless schemas."
 allowed-tools: Read Write Shell
 metadata:
-  version: "0.1.1"
+  version: "0.1.2"
   author: NVIDIA Omniverse Physics
   tags: "ovphysx, physics, usd, authoring"
 ---
@@ -17,7 +17,9 @@ ovphysx to simulate. ovphysx consumes an attached `ovstage.Stage`, not USD or
 the authoring tool's USD runtime directly. Build and save the scene first, use
 ovstage to populate an `ovstage.Stage`, call `advance_write_floor()` to seal the
 ordinal, and attach with `attach_ovstage()`. Drain later edits with
-`update_from_ovstage()`, and clear the stage with `reset_stage()`. See
+`update_from_ovstage()`, and tear down its physics attachment with
+`detach_ovstage()`. Collect each lifecycle task with `wait_task()` before using
+its result or destroying the Stage. See
 `basic-workflow` and `docs/ovstage_integration.md` for the populate/seal/attach
 sequence.
 
@@ -50,6 +52,9 @@ currently provides no Linux aarch64 `usd-core` wheel or source distribution; on
 that platform, use the `.usda` text route, author on a supported host, or supply
 a compatible OpenUSD Python build.
 
+Install `physx-usd-schemas` for PhysX-specific attributes. See
+[Physics Schemas](../../docs/physics_schemas.md) for setup and discovery.
+
 ## Authoring Routes
 
 There are two ways to author the same USD content. Both produce a `.usda` (or
@@ -64,15 +69,15 @@ There are two ways to author the same USD content. Both produce a `.usda` (or
      `Scene`, `MaterialAPI`) are part of stock `usd-core` and have typed
      bindings: `UsdPhysics.RigidBodyAPI.Apply(prim)`.
    - PhysX-specific schemas (for example `PhysxSceneAPI`, `PhysxRigidBodyAPI`,
-     CCD attributes) ship with ovphysx as *codeless* schemas: no typed Python
-     class. `codeless_schema_paths()` only returns the resource directories; you
-     must register them, then apply by identifier:
+     CCD attributes) come from the external *codeless* schema provider. The sample
+     recipe `physx_schema_paths()` discovers its resource directories through
+     metadata without importing USD. Register them, then apply by identifier:
 
      ```python
-     import ovphysx
+     from ovphysx.samples.python_samples.schema_support import physx_schema_paths
      from pxr import Plug, Sdf, Usd, UsdPhysics
 
-     Plug.Registry().RegisterPlugins([str(p) for p in ovphysx.codeless_schema_paths()])
+     Plug.Registry().RegisterPlugins([str(p) for p in physx_schema_paths()])
      stage = Usd.Stage.CreateInMemory()
      prim = stage.DefinePrim("/World/Box", "Cube")
      UsdPhysics.RigidBodyAPI.Apply(prim)

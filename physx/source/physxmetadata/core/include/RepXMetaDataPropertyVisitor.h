@@ -189,7 +189,7 @@ namespace physx {
 		DEFINE_REPX_PROPERTY_NOP( const PxArticulationLink * )
 		DEFINE_REPX_PROPERTY_NOP( const PxRigidDynamic * )
 		DEFINE_REPX_PROPERTY_NOP( const PxRigidStatic * )
-		DEFINE_REPX_PROPERTY_NOP( PxStridedData ) //These are handled in a custom fasion.
+		DEFINE_REPX_PROPERTY_NOP( PxBoundedData ) //These are handled in a custom fasion.
 	};
 }
 

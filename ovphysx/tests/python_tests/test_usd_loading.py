@@ -10,8 +10,8 @@ def test_attach_reset_workflow(physx_sdk):
     load_usd_with_ovstage(physx_sdk, data_path("basic_simulation.usda"))
 
     destroy_ovstage_test_attachments(physx_sdk)
-    reset_op = physx_sdk.reset_stage()
-    physx_sdk.wait_op(reset_op)
+    detach_op = physx_sdk.detach_ovstage()
+    physx_sdk.wait_task(detach_op)
     physx_sdk.wait_all()
 
 
@@ -25,7 +25,7 @@ def test_attach_multiple_files_sequentially(physx_sdk, usd_filenames):
     for filename in usd_filenames:
         load_usd_with_ovstage(physx_sdk, data_path(filename))
         destroy_ovstage_test_attachments(physx_sdk)
-        physx_sdk.reset_stage()
+        physx_sdk.detach_ovstage()
         physx_sdk.wait_all()
 
 
@@ -43,12 +43,12 @@ def test_ovstage_attach_allows_immediate_read(physx_sdk):
     # A read session must open immediately after attach, with no step. On this DirectGPU scene the
     # superset view does not exist until the first step, so the pre-step read is a clean omission:
     # zero groups, not an error (symmetric with the write's step-first rule).
-    with physx_sdk.read(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
+    with physx_sdk.read_sync(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
         assert result.groups == []
 
     # After warmup the same read resolves the bodies, proving the pre-step emptiness was the
     # step-first contract and not a silently broken read.
     physx_sdk.warmup()
     physx_sdk.wait_all()
-    with physx_sdk.read(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
+    with physx_sdk.read_sync(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
         assert len(result.groups) > 0

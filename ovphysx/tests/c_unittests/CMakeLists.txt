@@ -50,6 +50,27 @@ target_link_libraries(c_unittests
         OvruntimeCommon
 )
 
+# Worker-pool tests query oneTBB's effective process-wide limit rather than
+# merely rereading the requested ISettings value.
+set(USD_DIR "${OVRUNTIME_TARGET_DEPS}/usd")
+find_path(_OVPHYSX_TEST_TBB_INCLUDE_DIR
+    NAMES tbb/global_control.h
+    PATHS "${USD_DIR}/release/include" "${USD_DIR}/debug/include"
+    NO_DEFAULT_PATH)
+if(NOT _OVPHYSX_TEST_TBB_INCLUDE_DIR)
+    message(FATAL_ERROR "c_unittests requires tbb/global_control.h from ${USD_DIR}")
+endif()
+target_include_directories(c_unittests SYSTEM PRIVATE "${_OVPHYSX_TEST_TBB_INCLUDE_DIR}")
+_ovruntime_add_usd_link_dirs(c_unittests)
+_ovruntime_link_tbb(c_unittests)
+# MSVC TBB headers auto-link tbb12[_debug].lib. ovphysx Windows debug CI
+# stages USD release TBB only (tbb.lib), which _ovruntime_link_tbb already
+# links. Suppress the pragma so Debug does not demand tbb12_debug.lib.
+target_compile_definitions(c_unittests PRIVATE
+    __TBB_NO_IMPLICIT_LINKAGE=1
+    __TBBMALLOC_NO_IMPLICIT_LINKAGE=1
+)
+
 # Parse produced captures with the same OmniPVD reader that owns the format.
 get_filename_component(_OVPHYSX_TEST_PHYSX_ROOT "${_OVPHYSX_PHYSX_INCLUDE_SOURCE}" DIRECTORY)
 target_include_directories(c_unittests PRIVATE "${_OVPHYSX_TEST_PHYSX_ROOT}/pvdruntime/include")
@@ -65,7 +86,12 @@ if(WIN32)
 endif()
 
 # Tests consume ovphysx through the C API. ovphysx owns the static Carbonite framework.
-target_compile_definitions(c_unittests PRIVATE CARB_STATIC_PLUGIN_BUILD=1)
+# Optional native SDK consumers must use the same Debug build metadata as the
+# library; otherwise Compatibility rejects a matching Debug test executable.
+target_compile_definitions(c_unittests PRIVATE
+    CARB_STATIC_PLUGIN_BUILD=1
+    $<$<CONFIG:Debug>:_DEBUG>
+)
 
 # Feature-gated tests call GTEST_SKIP() inside #ifndef guards on the SDK/GPU
 # capability defines. When a define is absent the body after GTEST_SKIP is
@@ -290,6 +316,12 @@ endif()
 if(NOT WIN32)
     add_executable(c_api_compatibility_test
         test_c_api_compatibility.c
+        test_legacy_header_include_primary.c
+        test_legacy_header_include_legacy_only.c
+        test_legacy_header_include_legacy_then_primary.c
+        test_legacy_header_include_primary_then_legacy.c
+        test_geometry_query_header_include_only.c
+        test_geometry_query_after_primary.c
     )
 
     # The C standard (not C++) is what makes this test meaningful.
@@ -326,3 +358,63 @@ if(NOT WIN32)
 else()
     message(STATUS "C API compatibility test skipped on Windows (MSVC C compiler limitation - validated on Linux)")
 endif()
+
+# Include-only public headers with deprecated-declaration diagnostics as errors.
+# Do not use ovphysx_apply_compiler_defaults: that helper disables those
+# diagnostics. The C++ target also covers REQ-CAPI-LEGACY-001 AC-7 (inline
+# deprecated wrappers must not leak C deprecation at include time).
+
+add_library(public_header_c_no_deprecated_test OBJECT
+    test_public_header_no_deprecated.c
+    test_companion_header.c
+)
+set_target_properties(public_header_c_no_deprecated_test PROPERTIES
+    C_STANDARD 11
+    C_STANDARD_REQUIRED ON
+)
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(public_header_c_no_deprecated_test PRIVATE
+        -Werror=deprecated-declarations
+    )
+elseif(MSVC)
+    target_compile_options(public_header_c_no_deprecated_test PRIVATE
+        /we4996
+    )
+endif()
+target_include_directories(public_header_c_no_deprecated_test
+    PRIVATE
+        ${PROJECT_SOURCE_DIR}/companion/include
+        ${PROJECT_SOURCE_DIR}/include
+        ${PROJECT_SOURCE_DIR}/src/include
+)
+target_include_directories(public_header_c_no_deprecated_test SYSTEM PRIVATE
+    ${OVSTAGE_INCLUDE_DIRS}
+)
+add_dependencies(ovphysx public_header_c_no_deprecated_test)
+
+add_library(public_header_no_deprecated_test OBJECT
+    test_public_header_no_deprecated.cpp
+)
+set_target_properties(public_header_no_deprecated_test PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+)
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(public_header_no_deprecated_test PRIVATE
+        -Werror=deprecated-declarations
+    )
+elseif(MSVC)
+    target_compile_options(public_header_no_deprecated_test PRIVATE
+        /we4996
+    )
+endif()
+target_include_directories(public_header_no_deprecated_test
+    PRIVATE
+        ${PROJECT_SOURCE_DIR}/include
+        ${PROJECT_SOURCE_DIR}/companion/include
+        ${PROJECT_SOURCE_DIR}/src/include
+)
+target_include_directories(public_header_no_deprecated_test SYSTEM PRIVATE
+    ${OVSTAGE_INCLUDE_DIRS}
+)
+add_dependencies(ovphysx public_header_no_deprecated_test)

@@ -1,0 +1,11 @@
+{
+    "_comment": "Six hidden CPU velocity-write rows. Completion waits and the OVStage drain are timed; simulation advances outside the timer. Separate from all write-plus-step inventories. See REQ-CAPI-BENCHMARK-007.",
+    "rows": [
+        { "name": "WriteOnly.velocity_ovstage_4096_cpu", "device": "cpu" },
+        { "name": "WriteOnly.velocity_tensor_4096_cpu", "device": "cpu" },
+        { "name": "WriteOnly.velocity_ovstage_8192_cpu", "device": "cpu" },
+        { "name": "WriteOnly.velocity_tensor_8192_cpu", "device": "cpu" },
+        { "name": "WriteOnly.velocity_ovstage_16384_cpu", "device": "cpu" },
+        { "name": "WriteOnly.velocity_tensor_16384_cpu", "device": "cpu" }
+    ]
+}

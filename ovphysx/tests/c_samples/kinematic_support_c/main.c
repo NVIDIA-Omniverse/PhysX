@@ -9,6 +9,7 @@
 // Kinematic support sample: transform motion, surface velocity, and both.
 
 #include <ovphysx/ovphysx.h>
+#include <ovphysx/ovphysx_attributes.h>
 #include <ovphysx/ovphysx_types.h>
 #include <ovx/path_dictionary/path_dictionary.h>
 #include "ovstage_sample.h"
@@ -102,17 +103,17 @@ static int check_result(ovphysx_result_t result, const char* operation)
     return 0;
 }
 
-static int wait_step(ovphysx_handle_t handle, float dt)
+static int wait_step(ovphysx_instance_handle_t handle, float dt)
 {
     const ovphysx_enqueue_result_t step = ovphysx_step(handle, dt);
     if (step.status != OVPHYSX_API_SUCCESS)
         return 0;
 
-    ovphysx_op_wait_result_t wait_result = { 0 };
+    ovphysx_wait_task_result_t wait_result = { 0 };
     const ovphysx_result_t waited =
-        ovphysx_wait_op(handle, step.op_index, OVPHYSX_TIMEOUT_INFINITE, &wait_result);
+        ovphysx_wait_task(handle, step, OVPHYSX_TIMEOUT_INFINITE, &wait_result);
     const int ok = waited.status == OVPHYSX_API_SUCCESS && wait_result.num_errors == 0;
-    ovphysx_destroy_wait_result(&wait_result);
+    ovphysx_destroy_wait_task_result(&wait_result);
     return ok;
 }
 
@@ -251,7 +252,7 @@ static int destroy_path_query(
 }
 
 static int publish_control_ordinal(
-    ovphysx_handle_t handle,
+    ovphysx_instance_handle_t handle,
     ovstage_instance_t* stage,
     ovstage_ordinal_t ordinal)
 {
@@ -264,70 +265,65 @@ static int publish_control_ordinal(
 
     const ovstage_ordinal_range_t range = { ordinal, ordinal, true };
     return check_result(
-        ovphysx_update_from_ovstage(handle, range),
+        ovphysx_sample_complete_task(handle, ovphysx_update_from_ovstage(handle, range)),
         "update from ovstage");
 }
 
-static int create_binding(
-    ovphysx_handle_t handle,
-    const char* path,
-    ovphysx_tensor_type_t type,
-    ovphysx_tensor_binding_handle_t* binding)
-{
-    ovphysx_tensor_binding_desc_t desc;
-    memset(&desc, 0, sizeof(desc));
-    desc.pattern.ptr = path;
-    desc.pattern.length = strnlen(path, 256);
-    desc.tensor_type = type;
-    if (!check_result(ovphysx_create_tensor_binding(handle, &desc, binding), "create tensor binding"))
-        return 0;
-
-    ovphysx_tensor_spec_t spec;
-    memset(&spec, 0, sizeof(spec));
-    if (!check_result(ovphysx_get_tensor_binding_spec(handle, *binding, &spec), "get tensor binding spec"))
-        return 0;
-    if (spec.ndim != 2 || spec.shape[0] != 1 || spec.shape[1] != 7)
-    {
-        fprintf(stderr, "Unexpected binding shape for %s\n", path);
-        return 0;
-    }
-    return 1;
-}
-
-static DLTensor make_pose_tensor(float data[7], int64_t shape[2])
-{
-    DLTensor tensor;
-    memset(&tensor, 0, sizeof(tensor));
-    tensor.data = data;
-    tensor.device.device_type = kDLCPU;
-    tensor.ndim = 2;
-    tensor.dtype.code = kDLFloat;
-    tensor.dtype.bits = 32;
-    tensor.dtype.lanes = 1;
-    tensor.shape = shape;
-    return tensor;
-}
-
-// NOTE: this sample uses the deprecated tensor-binding API. New code should use the session
-// read/write API (ovphysx_read / ovphysx_write).
+// Reads the world x of the rider at `path` through a session read selected by the rider's path.
 static int read_x(
-    ovphysx_handle_t handle,
-    ovphysx_tensor_binding_handle_t binding,
+    ovphysx_instance_handle_t handle,
+    const char* path,
     float* x)
 {
-    float data[7] = { 0 };
-    int64_t shape[2] = { 1, 7 };
-    DLTensor tensor = make_pose_tensor(data, shape);
-    if (!check_result(ovphysx_read_tensor_binding(handle, binding, &tensor), "read rider pose"))
+    ovphysx_query_selection_t selection;
+    memset(&selection, 0, sizeof(selection));
+    selection.pattern.ptr = path;
+    selection.pattern.length = strnlen(path, 256);
+    ovphysx_query_handle_t query = 0;
+    if (!check_result(
+            ovphysx_sample_complete_task(
+                handle, ovphysx_query_selection(handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, &selection, &query, NULL)),
+            "open rider query"))
         return 0;
-    *x = data[0];
-    return 1;
+
+    ovx_string_or_token_t position;
+    memset(&position, 0, sizeof(position));
+    position.string.ptr = OVPHYSX_ATTR_POSITION;
+    position.string.length = strlen(OVPHYSX_ATTR_POSITION);
+    ovphysx_read_handle_t read = 0;
+    const ovstage_read_group_t* group = NULL;
+    int ok = check_result(
+        ovphysx_sample_complete_task(handle, ovphysx_read(handle, query, &position, 1, &read, NULL)), "read rider pose");
+    if (ok)
+        ok = check_result(
+            ovphysx_sample_complete_task(handle, ovphysx_fetch_read_next(handle, read, &group)), "fetch rider pose");
+    if (ok && (!group || group->prims.count != 1 || group->data.tensor_count != 1 || !group->data.tensors[0].data))
+    {
+        fprintf(stderr, "Expected one rigid body at %s\n", path);
+        ok = 0;
+    }
+    if (ok)
+    {
+        // The sample runs in CPU mode, so the position column is host memory.
+        const DLTensor* tensor = &group->data.tensors[0];
+        *x = ((const float*)((const char*)tensor->data + tensor->byte_offset))[0];
+    }
+
+    if (group)
+        ok = check_result(
+                 ovphysx_sample_complete_task(handle, ovphysx_release_group(handle, read, group->read_group_id)),
+                 "release rider group") && ok;
+    if (read)
+        ok = check_result(
+                 ovphysx_sample_complete_task(handle, ovphysx_release_read(handle, read)), "release rider read") && ok;
+    return check_result(
+               ovphysx_sample_complete_task(handle, ovphysx_release_query(handle, query)), "release rider query") && ok;
 }
 
 int main(void)
 {
     int exit_code = 1;
-    ovphysx_handle_t handle = 0;
+    ovphysx_instance_handle_t handle = 0;
     ovphysx_sample_stage_attachment_t attachment;
     path_query_t target_platform = {
         OVSTAGE_INVALID_QUERY_HANDLE, OVX_INVALID_PRIMPATH_LIST
@@ -338,9 +334,6 @@ int main(void)
     object_change_counts_t object_changes;
     ovphysx_subscription_id_t object_change_subscription =
         OVPHYSX_INVALID_SUBSCRIPTION_ID;
-    ovphysx_tensor_binding_handle_t target_rider = 0;
-    ovphysx_tensor_binding_handle_t conveyor_rider = 0;
-    ovphysx_tensor_binding_handle_t combined_rider = 0;
     memset(&attachment, 0, sizeof(attachment));
     object_change_counter_init(&object_changes.created);
     object_change_counter_init(&object_changes.destroyed);
@@ -349,8 +342,7 @@ int main(void)
     if (!check_result(ovphysx_initialize(), "initialize"))
         return exit_code;
 
-    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-    if (!check_result(ovphysx_create_instance(&args, &handle), "create instance"))
+    if (!check_result(ovphysx_create_instance(&handle), "create instance"))
         goto cleanup;
     if (!ovphysx_sample_attach_usd_with_ovstage(
             handle, OVPHYSX_TEST_DATA "/kinematic_support.usda", &attachment))
@@ -363,18 +355,12 @@ int main(void)
     callbacks.user_data = &object_changes;
     if (!check_result(
             ovphysx_subscribe_object_changes(
-                &callbacks, &object_change_subscription),
+                handle, &callbacks, &object_change_subscription),
             "subscribe to object changes"))
         goto cleanup;
 
     if (!create_path_query(attachment.stage, "/World/TargetPlatform", &target_platform) ||
-        !create_path_query(attachment.stage, "/World/CombinedPlatform", &combined_platform) ||
-        !create_binding(handle, "/World/TargetRider",
-                        OVPHYSX_TENSOR_RIGID_BODY_POSE_F32, &target_rider) ||
-        !create_binding(handle, "/World/ConveyorRider",
-                        OVPHYSX_TENSOR_RIGID_BODY_POSE_F32, &conveyor_rider) ||
-        !create_binding(handle, "/World/CombinedRider",
-                        OVPHYSX_TENSOR_RIGID_BODY_POSE_F32, &combined_rider))
+        !create_path_query(attachment.stage, "/World/CombinedPlatform", &combined_platform))
         goto cleanup;
 
     const float dt = 1.0f / 60.0f;
@@ -387,9 +373,9 @@ int main(void)
     float target_start = 0.0f;
     float conveyor_start = 0.0f;
     float combined_start = 0.0f;
-    if (!read_x(handle, target_rider, &target_start) ||
-        !read_x(handle, conveyor_rider, &conveyor_start) ||
-        !read_x(handle, combined_rider, &combined_start))
+    if (!read_x(handle, "/World/TargetRider", &target_start) ||
+        !read_x(handle, "/World/ConveyorRider", &conveyor_start) ||
+        !read_x(handle, "/World/CombinedRider", &combined_start))
         goto cleanup;
 
     for (int frame = 1; frame <= 120; ++frame)
@@ -406,9 +392,9 @@ int main(void)
     float target_end = 0.0f;
     float conveyor_end = 0.0f;
     float combined_end = 0.0f;
-    if (!read_x(handle, target_rider, &target_end) ||
-        !read_x(handle, conveyor_rider, &conveyor_end) ||
-        !read_x(handle, combined_rider, &combined_end))
+    if (!read_x(handle, "/World/TargetRider", &target_end) ||
+        !read_x(handle, "/World/ConveyorRider", &conveyor_end) ||
+        !read_x(handle, "/World/CombinedRider", &combined_end))
         goto cleanup;
 
     const float target_dx = target_end - target_start;
@@ -438,19 +424,13 @@ int main(void)
 cleanup:
     if (object_change_subscription != OVPHYSX_INVALID_SUBSCRIPTION_ID)
         check_result(
-            ovphysx_unsubscribe_object_changes(object_change_subscription),
+            ovphysx_unsubscribe_object_changes(handle, object_change_subscription),
             "unsubscribe from object changes");
     if (attachment.stage)
     {
         destroy_path_query(attachment.stage, &target_platform);
         destroy_path_query(attachment.stage, &combined_platform);
     }
-    if (target_rider)
-        ovphysx_destroy_tensor_binding(handle, target_rider);
-    if (conveyor_rider)
-        ovphysx_destroy_tensor_binding(handle, conveyor_rider);
-    if (combined_rider)
-        ovphysx_destroy_tensor_binding(handle, combined_rider);
     if (handle)
     {
         ovphysx_sample_destroy_stage(handle, &attachment);

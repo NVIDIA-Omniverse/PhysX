@@ -3,43 +3,47 @@
 Read this file when using `ACTIVE` scope, consuming discovery counts for an
 `ACTIVE` query, or caching prim order and tensor shapes across structural edits.
 
-A *prim* is a named scene element. A query selects a simulated object type;
-refer to [C Query/Read Lifecycle](c_api.md) or [Python Output Reads](python.md)
-for its lifetime. DirectGPU means GPU simulation with
-`/physics/suppressReadback` enabled.
-
 ## `ACTIVE` Support
 
 `ACTIVE` has two independently implemented behaviors: filtering the groups
-returned by a read, and filtering the `total_prim_count` returned by discovery.
-The ovphysx 0.6.0 baseline supports them as follows:
+returned by a read, and filtering the `total_prim_count` returned by discovery
+(the optional query or read result).
+The current implementation supports them as follows:
 
 | Simulated object type | Read filters `ACTIVE` | Discovery filters `ACTIVE` |
 | --- | --- | --- |
 | rigid body | yes | yes |
-| articulation link | yes | no |
+| articulation link | yes | yes |
 | whole articulation | yes | yes |
 | articulation joint | no | no |
+| whole vehicle | yes | yes |
 | vehicle wheel | yes | yes |
-| deformable volume or surface | yes | no |
+| deformable volume or surface | yes | yes |
 | deformable material | n/a | n/a |
 | particle set | n/a | n/a |
 | fixed tendon | no | no |
 | spatial tendon | no | no |
+| character controller | n/a (no readable columns) | yes |
 
 Route scope choices conservatively:
 
-- Use `ACTIVE` normally for rigid bodies and vehicle wheels, reopening the query
-  after every completed step.
+- Use `ACTIVE` normally for rigid bodies, articulation links, vehicles and vehicle wheels,
+  which follow the scene's most recent active-actor report when available.
+  Without reporting, rigid bodies use current awake, non-kinematic state;
+  links use articulation awake state; vehicles and wheels use chassis awake state.
+  Deformables use current awake state. The query can be reused; open a new
+  read session after every completed step, since each session evaluates the
+  active set when it opens. The query's own discovery result stays a
+  creation-time count.
 - Whole-articulation `ACTIVE` includes a root when any link is active, and its
   discovery count uses the same filter. Availability is checked per scene; a
   scene without active-actor reporting falls back to articulation awake state.
   DirectGPU currently disables sleeping, so ACTIVE is equivalent to ALL there.
-- For articulation links and deformables, an `ACTIVE` read is filtered but its
-  discovery count is not. Use it only when the caller does not rely on
-  `total_prim_count`; otherwise use `ALL`.
+- Character-controller `ACTIVE` follows its proxy actor's active-actor membership
+  when reported, otherwise that actor's awake state. The type has no readable
+  columns; read its pose through `RIGID_BODY` instead.
 - Use `ALL` for articulation joints because their read path currently ignores
-  `ACTIVE`. That is an implementation limitation, unlike the two `n/a` rows above.
+  `ACTIVE`. That is an implementation limitation, unlike the material and particle-set cases.
 - Use `ALL` for tendons. Their properties are authoring-time values that a step
   never changes, so there is no active set to filter by and `ACTIVE` reads as `ALL`.
 - Deformable materials have no active set at all — a material is not a simulated
@@ -75,3 +79,25 @@ structural edit can change how many groups a read returns and which rows each co
 not just their contents. Cohort membership is re-derived every read, so the data is
 never stale -- but a cached group index is. Identify a cohort by its prim list rather
 than by position, and do not assume a group count carries across a structural edit.
+
+## Names → prim paths
+
+There is no names read. The deprecated `ovphysx_articulation_get_{dof,body,joint}_names` are replaced
+by prim-path identity already carried by the read:
+
+- **Link and joint names** are the leaf of each `ARTICULATION_LINK` / `ARTICULATION_JOINT` prim.
+  Resolve a group's `prims.list` entry through the attached Stage's path dictionary (the same round-trip
+  you use for any group's prim list) and take its leaf. Prim paths are the unique identity the legacy leaf-name
+  strings only approximated: those were de-duplicated with a fabricated `_N` suffix on collision, which
+  resolves back to no prim.
+
+- **DOF identity** is `(joint prim, axis index)`, carried per DOF column by the whole-articulation
+  `dofJointPath` / `dofAxisIndex` attributes. Entry `k` names the joint prim and axis that inverse
+  dynamics matrix column `(isFixedBase ? 0 : 6) + k` belongs to, so a `jacobian` / `massMatrix` column
+  is joinable to its joint. `dofJointPath` is a `uint64` interned prim-path handle, resolved the same
+  way as `prims.list`; `0` (`OVX_INVALID_PRIMPATH`) is the trailing pad past `dofCount`.
+
+Unlike the inverse dynamics matrices above, these two columns are emitted as ONE scene-wide group -- one
+row per articulation, the per-DOF array padded to the widest selected articulation's `dofCount` -- like
+the topology-metadata columns. So read them alongside `dofCount` / `isFixedBase` from that one group,
+not per cohort, and use `dofCount` as each row's real length.

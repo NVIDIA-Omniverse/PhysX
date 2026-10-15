@@ -136,7 +136,6 @@ BmGlobals::BmGlobals(bool sanityCheck,
                      bool forceGpu,
                      bool directGpu,
                      bool profile,
-                     bool /*enableTracy*/,
                      const char** /*kitArguments*/,
                      uint32_t /*kitArgumentCount*/)
     : mSanityCheck(sanityCheck),
@@ -224,12 +223,8 @@ BmGlobals::BmGlobals(bool sanityCheck,
     // has performed Carbonite bootstrap. BmOutput.cpp uses these to write
     // its report and baseline files.
     //
-    // carb::getFramework() reads a module-local pointer. ovphysx initialized
-    // its own inside libovphysx.so, but the one in the benchmark binary is
-    // still null at this point. carb::acquireFramework() rather than
-    // acquireFrameworkAndRegisterBuiltins only sets the local pointer, without
-    // registering atexit handlers that would conflict with ovphysx's own
-    // teardown on process exit.
+    // The executable statically links its own Carbonite framework, separate
+    // from the SDK's framework. Release it before CRT static destruction.
     mFramework = carb::getFramework();
     if (!mFramework)
     {
@@ -248,15 +243,11 @@ BmGlobals::BmGlobals(bool sanityCheck,
 
 BmGlobals::~BmGlobals()
 {
-    // mFramework / mFileSystem are borrowed. ovphysx owns them, so dropping the
-    // copies here is free.
+    // Drop the borrowed interface pointers before releasing their framework.
     mFileSystem = nullptr;
     mFramework = nullptr;
 
-    // g_carbFramework is not borrowed. CARB_GLOBALS gives this binary its own module-local
-    // pointer, and every CARB_LOG_* and carb::getFramework() in the process reads it. Both
-    // steps below log on their way down, so it has to outlive them. Clearing it first
-    // faults the teardown after the report file is already written and closed.
+    // Keep this executable's framework alive while instance and SDK shutdown log.
     delete mPhysX;
     mPhysX = nullptr;
     if (mLifecycleInitialized)
@@ -265,11 +256,10 @@ BmGlobals::~BmGlobals()
         mLifecycleInitialized = false;
     }
 
-    // Only cleared when this object set it. When carb::getFramework() already had a
-    // pointer, clearing it would strand a framework another module still owns.
+    // Release only the framework acquired here, while its static state is alive.
     if (mOwnsCarbFramework)
     {
-        g_carbFramework = nullptr;
+        carb::releaseFramework();
         mOwnsCarbFramework = false;
     }
 }
@@ -301,11 +291,10 @@ void bmCreateGlobals(bool sanityCheck,
                      bool forceGpu,
                      bool directGpu,
                      bool profile,
-                     bool enableTracy,
                      const char** kitArguments,
                      uint32_t kitArgumentCount)
 {
-    new BmGlobals(sanityCheck, dataFolder, numThreads, forceGpu, directGpu, profile, enableTracy,
+    new BmGlobals(sanityCheck, dataFolder, numThreads, forceGpu, directGpu, profile,
         kitArguments, kitArgumentCount);
 }
 

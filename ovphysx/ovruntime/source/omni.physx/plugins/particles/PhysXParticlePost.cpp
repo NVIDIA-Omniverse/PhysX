@@ -18,9 +18,14 @@
  *     (getWorldTransform) only feeds sink writes that already no-op without a stage.
  */
 
+// @implements REQ-ATTACH-IO-001
+// @covers AC-3
+
+#include "ScopedNoticeLock.h"
 #include "PhysXParticlePost.h"
 
 #include <PhysXTools.h>
+#include <extensions/PxCudaHelpersExt.h>
 #include <common/foundation/MatrixTools.h>
 #include <common/utilities/MemoryMacros.h>
 
@@ -48,6 +53,7 @@
 
 using namespace carb;
 using namespace ::physx;
+using namespace ::physx::Ext;
 using namespace omni::physx;
 using namespace omni::physx::internal;
 using namespace omni::physx::particles;
@@ -63,38 +69,31 @@ using omni::physics::parse::KnownTokens;
 using omni::physics::parse::ObjectKey;
 using omni::physics::parse::ReadTime;
 
-// The one place every helper below resolves the live source/sink pair from: no active
-// stage, no source, or no write sink all collapse to the same "nothing to publish" no-op.
-AttachedStage* activeAttachedStage()
-{
-    return UsdLoad::getUsdLoad()->getActiveAttachedStage();
-}
-
 // Toggle the purpose=proxy visibility hint the isosurface pipeline uses to
 // hide raw fluid particles behind its substitute render.
-void writeProxyPurposeToSink(ObjectKey key, bool proxy)
+void writeProxyPurposeToSink(AttachedStage& owner, ObjectKey key, bool proxy)
 {
-    AttachedStage* as = activeAttachedStage();
+    AttachedStage* as = &owner;
     IPhysicsDataWrite* dw = as ? as->getDataWrite() : nullptr;
     if (dw)
         dw->writeProxyPurpose(key, proxy);
 }
 
-void setIsosurfaceMeshEnabledInSink(ObjectKey particleSystemKey, bool enabled)
+void setIsosurfaceMeshEnabledInSink(AttachedStage& owner, ObjectKey particleSystemKey, bool enabled)
 {
-    AttachedStage* as = activeAttachedStage();
+    AttachedStage* as = &owner;
     IPhysicsDataWrite* dw = as ? as->getDataWrite() : nullptr;
     if (dw)
         dw->setIsosurfaceMeshEnabled(particleSystemKey, enabled);
 }
 
-void writeIsosurfaceMeshToSink(ObjectKey particleSystemKey,
+void writeIsosurfaceMeshToSink(AttachedStage& owner, ObjectKey particleSystemKey,
                                const carb::Float3* points, size_t numPoints,
                                const carb::Float3* normals, size_t numNormals,
                                const int32_t* faceVertexCounts, size_t numFaces,
                                const int32_t* faceVertexIndices, size_t numIndices)
 {
-    AttachedStage* as = activeAttachedStage();
+    AttachedStage* as = &owner;
     IPhysicsDataWrite* dw = as ? as->getDataWrite() : nullptr;
     if (dw)
         dw->writeIsosurfaceMesh(particleSystemKey, points, numPoints, normals, numNormals,
@@ -103,9 +102,9 @@ void writeIsosurfaceMeshToSink(ObjectKey particleSystemKey,
 
 // Writes a particle set's whole points/positions array (point-based vs.
 // point-instancer resolved from the destination prim's type).
-void writePointsToSink(ObjectKey key, const carb::Float3* data, size_t count)
+void writePointsToSink(AttachedStage& owner, ObjectKey key, const carb::Float3* data, size_t count)
 {
-    AttachedStage* as = activeAttachedStage();
+    AttachedStage* as = &owner;
     const IPhysicsSource* src = as ? as->getSource() : nullptr;
     IPhysicsDataWrite* dw = as ? as->getDataWrite() : nullptr;
     if (!src || !dw)
@@ -120,9 +119,9 @@ void writePointsToSink(ObjectKey key, const carb::Float3* data, size_t count)
 // Backs up a particle set's current points/positions into the
 // physxParticle:simulationPoints attribute, once (skipped once a backup is
 // already authored -- matches HasAuthoredValue()'s "already backed up" gate).
-void backupSimulationPointsToSink(ObjectKey key)
+void backupSimulationPointsToSink(AttachedStage& owner, ObjectKey key)
 {
-    AttachedStage* as = activeAttachedStage();
+    AttachedStage* as = &owner;
     const IPhysicsSource* src = as ? as->getSource() : nullptr;
     IPhysicsDataWrite* dw = as ? as->getDataWrite() : nullptr;
     if (!src || !dw)
@@ -141,9 +140,9 @@ void backupSimulationPointsToSink(ObjectKey key)
 // Restores a particle set's points/positions from its physxParticle:simulationPoints
 // backup (if any) and drops the backup opinion, so a later backup call sees
 // "not yet backed up" again.
-void restorePointsToSink(ObjectKey key)
+void restorePointsToSink(AttachedStage& owner, ObjectKey key)
 {
-    AttachedStage* as = activeAttachedStage();
+    AttachedStage* as = &owner;
     const IPhysicsSource* src = as ? as->getSource() : nullptr;
     IPhysicsDataWrite* dw = as ? as->getDataWrite() : nullptr;
     if (!src || !dw)
@@ -155,7 +154,7 @@ void restorePointsToSink(ObjectKey key)
     if (!src->hasAuthoredAttribute(key, tok.physxParticleSimulationPoints))
         return;
 
-    UsdLoad::getUsdLoad()->blockUSDUpdate(true);
+    { ScopedNoticeBlock blockNotices(owner, true, false);
 
     std::vector<carb::Float3> srcPoints;
     getArrayValue(*as, key, tok.physxParticleSimulationPoints, ReadTime::defaultTime(), srcPoints);
@@ -165,19 +164,19 @@ void restorePointsToSink(ObjectKey key)
                    DataWriteView{ srcPoints.data(), srcPoints.size(), 0, -1, DataType::e32Bit });
     dw->clearArray(key, tok.physxParticleSimulationPoints);
 
-    UsdLoad::getUsdLoad()->blockUSDUpdate(false);
+    }
 }
 
 // Writes anisotropy-derived scale/orientation for a fluid particle set's
 // point instancer prototypes; no-op on a non-instancer particle set.
-void writePointInstancerScaleOrientToSink(ObjectKey key,
+void writePointInstancerScaleOrientToSink(AttachedStage& owner, ObjectKey key,
                                           const PxVec4* anisotropyQ1,
                                           const PxVec4* anisotropyQ2,
                                           const PxVec4* anisotropyQ3,
                                           size_t count,
                                           float contactDistanceInv)
 {
-    AttachedStage* as = activeAttachedStage();
+    AttachedStage* as = &owner;
     const IPhysicsSource* src = as ? as->getSource() : nullptr;
     IPhysicsDataWrite* dw = as ? as->getDataWrite() : nullptr;
     if (!src || !dw)
@@ -208,9 +207,9 @@ void writePointInstancerScaleOrientToSink(ObjectKey key,
 // Resets a fluid particle set's point-instancer scale/orientation to
 // identity, at whatever count is currently authored; no-op on a
 // non-instancer particle set.
-void restorePointInstancerScaleOrientToSink(ObjectKey key)
+void restorePointInstancerScaleOrientToSink(AttachedStage& owner, ObjectKey key)
 {
-    AttachedStage* as = activeAttachedStage();
+    AttachedStage* as = &owner;
     const IPhysicsSource* src = as ? as->getSource() : nullptr;
     IPhysicsDataWrite* dw = as ? as->getDataWrite() : nullptr;
     if (!src || !dw)
@@ -235,9 +234,9 @@ void restorePointInstancerScaleOrientToSink(ObjectKey key)
 // Reads a particle set's current points (preferring an authored
 // physxParticle:simulationPoints backup), world-transforms them, and appends
 // to dstPoints -- the "no live simulation" preview data source.
-void appendParticleSetPointsFromSink(std::vector<PxVec4>& dstPoints, ObjectKey key)
+void appendParticleSetPointsFromSink(AttachedStage& owner, std::vector<PxVec4>& dstPoints, ObjectKey key)
 {
-    AttachedStage* as = activeAttachedStage();
+    AttachedStage* as = &owner;
     const IPhysicsSource* src = as ? as->getSource() : nullptr;
     if (!src)
         return;
@@ -339,8 +338,8 @@ void PostProcessCallback::onBegin(const PxGpuMirroredPointer<PxGpuParticleSystem
 
 #endif
 
-ParticlePostprocess::ParticlePostprocess(omni::physics::parse::ObjectKey particleSystemKey)
-    : mParticleSystemKey(particleSystemKey)
+ParticlePostprocess::ParticlePostprocess(AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey)
+    : mAttachedStage(owner), mParticleSystemKey(particleSystemKey)
 #if USE_PHYSX_GPU
     , mParticlesPreview(NULL)
     , mAnisotropyQ1(NULL)
@@ -363,10 +362,10 @@ ParticlePostprocess::~ParticlePostprocess()
 #if USE_PHYSX_GPU
     if (mParticlesPreview)
     {
-        PxCudaContextManager* cudaContextManager = OmniPhysX::getInstance().getPhysXSetup().getCudaContextManager();
+        PxCudaContextManager* cudaContextManager = mCudaContextManager;
         if (cudaContextManager)
         {
-            PX_DEVICE_FREE(cudaContextManager, mParticlesPreview);
+            PxCudaHelpersExt::freeDeviceBuffer(*cudaContextManager, mParticlesPreview);
         }
     }
     mMaxParticlesPreview = 0;
@@ -459,6 +458,8 @@ void ParticlePostprocess::setParent(omni::physx::internal::InternalPbdParticleSy
         mParent = nullptr;
     }
     mParent = parent;
+    if (parent && parent->mPhysXScene)
+        mCudaContextManager = parent->mPhysXScene->getScene()->getCudaContextManager();
 #endif
 }
 
@@ -466,7 +467,7 @@ bool ParticlePostprocess::parseParticleContactOffset(float& particleContactOffse
 {
     // Post-processing has no scanned stage; re-read the system descriptor on
     // demand through the parse library (source-backed, no direct USD).
-    AttachedStage* attachedStage = activeAttachedStage();
+    AttachedStage* attachedStage = &mAttachedStage;
     const omni::physics::parse::IPhysicsSource* src = attachedStage ? attachedStage->getSource() : nullptr;
     if (!src)
         return false;
@@ -486,7 +487,7 @@ void ParticlePostprocess::createNeighborhoodProvider(float cellSize, const PxU32
 #if USE_PHYSX_GPU
     if (!mNeighborhoodProvider && maxParticles > 0)
     {
-        PxCudaContextManager* cudaContextManager = OmniPhysX::getInstance().getPhysXSetup().getCudaContextManager();
+        PxCudaContextManager* cudaContextManager = mCudaContextManager;
         if (cudaContextManager)
         {
             mNeighborhoodProvider = PxGetPhysicsGpu()->createParticleNeighborhoodProvider(cudaContextManager, maxParticles, cellSize);
@@ -498,14 +499,14 @@ void ParticlePostprocess::createNeighborhoodProvider(float cellSize, const PxU32
 void ParticlePostprocess::updateAnisotropyGenerator(const PxU32 maxParticles)
 {
 #if USE_PHYSX_GPU
-    AttachedStage* attachedStage = activeAttachedStage();
+    AttachedStage* attachedStage = &mAttachedStage;
     const omni::physics::parse::IPhysicsSource* src = attachedStage ? attachedStage->getSource() : nullptr;
     if (!src)
     {
         return;
     }
 
-    PxCudaContextManager* cudaContextManager = OmniPhysX::getInstance().getPhysXSetup().getCudaContextManager();
+    PxCudaContextManager* cudaContextManager = mCudaContextManager;
     if (!cudaContextManager)
     {
         return;
@@ -545,12 +546,12 @@ void ParticlePostprocess::updateAnisotropyGenerator(const PxU32 maxParticles)
         PxU32 generatorMaxParticles = mAnisotropyGenerator->getMaxParticles();
         if (needNew || maxParticles != generatorMaxParticles)
         {
-            PX_PINNED_HOST_FREE(cudaContextManager, mAnisotropyQ1);
-            PX_PINNED_HOST_FREE(cudaContextManager, mAnisotropyQ2);
-            PX_PINNED_HOST_FREE(cudaContextManager, mAnisotropyQ3);
-            mAnisotropyQ1 = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, maxParticles);
-            mAnisotropyQ2 = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, maxParticles);
-            mAnisotropyQ3 = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, maxParticles);
+            PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mAnisotropyQ1);
+            PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mAnisotropyQ2);
+            PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mAnisotropyQ3);
+            mAnisotropyQ1 = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, maxParticles);
+            mAnisotropyQ2 = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, maxParticles);
+            mAnisotropyQ3 = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, maxParticles);
             mAnisotropyGenerator->setResultBufferHost(mAnisotropyQ1, mAnisotropyQ2, mAnisotropyQ3);
             mAnisotropyGenerator->setMaxParticles(maxParticles);
         }
@@ -563,14 +564,14 @@ void ParticlePostprocess::releaseAnisotropyGenerator()
 #if USE_PHYSX_GPU
     if (mAnisotropyGenerator)
     {
-        PxCudaContextManager* cudaContextManager = OmniPhysX::getInstance().getPhysXSetup().getCudaContextManager();
+        PxCudaContextManager* cudaContextManager = mCudaContextManager;
         if (cudaContextManager)
         {
             if (mAnisotropyQ1 || mAnisotropyQ2 || mAnisotropyQ3)
             {
-                PX_PINNED_HOST_FREE(cudaContextManager, mAnisotropyQ1);
-                PX_PINNED_HOST_FREE(cudaContextManager, mAnisotropyQ2);
-                PX_PINNED_HOST_FREE(cudaContextManager, mAnisotropyQ3);
+                PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mAnisotropyQ1);
+                PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mAnisotropyQ2);
+                PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mAnisotropyQ3);
             }
         }
         SAFE_RELEASE(mAnisotropyGenerator);
@@ -592,14 +593,14 @@ void ParticlePostprocess::releaseAnisotropyGenerator()
 void ParticlePostprocess::updateSmoothedPositionGenerator(const PxU32 maxParticles)
 {
 #if USE_PHYSX_GPU
-    AttachedStage* attachedStage = activeAttachedStage();
+    AttachedStage* attachedStage = &mAttachedStage;
     const omni::physics::parse::IPhysicsSource* src = attachedStage ? attachedStage->getSource() : nullptr;
     if (!src)
     {
         return;
     }
 
-    PxCudaContextManager* cudaContextManager = OmniPhysX::getInstance().getPhysXSetup().getCudaContextManager();
+    PxCudaContextManager* cudaContextManager = mCudaContextManager;
     if (!cudaContextManager)
     {
         return;
@@ -637,8 +638,8 @@ void ParticlePostprocess::updateSmoothedPositionGenerator(const PxU32 maxParticl
         PxU32 generatorMaxParticles = mSmoothedPositionGenerator->getMaxParticles();
         if (needNew || maxParticles != generatorMaxParticles)
         {
-            PX_PINNED_HOST_FREE(cudaContextManager, mSmoothedPositions);
-            mSmoothedPositions = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, maxParticles);
+            PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mSmoothedPositions);
+            mSmoothedPositions = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, maxParticles);
             mSmoothedPositionGenerator->setResultBufferHost(mSmoothedPositions);
             mSmoothedPositionGenerator->setMaxParticles(maxParticles);
         }
@@ -651,10 +652,10 @@ void ParticlePostprocess::releaseSmoothedPositionGenerator()
 #if USE_PHYSX_GPU
     if (mSmoothedPositionGenerator)
     {
-        PxCudaContextManager* cudaContextManager = OmniPhysX::getInstance().getPhysXSetup().getCudaContextManager();
+        PxCudaContextManager* cudaContextManager = mCudaContextManager;
         if (cudaContextManager)
         {
-            PX_PINNED_HOST_FREE(cudaContextManager, mSmoothedPositions);
+            PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mSmoothedPositions);
         }
         SAFE_RELEASE(mSmoothedPositionGenerator);
 
@@ -675,14 +676,14 @@ void ParticlePostprocess::releaseSmoothedPositionGenerator()
 void ParticlePostprocess::updateIsosurfaceExtractor(const PxU32 maxParticles)
 {
 #if USE_PHYSX_GPU
-    AttachedStage* attachedStage = activeAttachedStage();
+    AttachedStage* attachedStage = &mAttachedStage;
     const omni::physics::parse::IPhysicsSource* src = attachedStage ? attachedStage->getSource() : nullptr;
     if (!src)
     {
         return;
     }
 
-    PxCudaContextManager* cudaContextManager = OmniPhysX::getInstance().getPhysXSetup().getCudaContextManager();
+    PxCudaContextManager* cudaContextManager = mCudaContextManager;
     if (!cudaContextManager)
     {
         return;
@@ -763,12 +764,12 @@ void ParticlePostprocess::updateIsosurfaceExtractor(const PxU32 maxParticles)
         PxU32 extractorMaxTriangles = mIsosurfaceExtractor->getMaxTriangles();
         if (needNew || extractorMaxVertices < PxU32(desc->maxIsosurfaceVertices) || extractorMaxTriangles < PxU32(desc->maxIsosurfaceTriangles))
         {
-            PX_PINNED_HOST_FREE(cudaContextManager, mIsosurfaceVertices);
-            PX_PINNED_HOST_FREE(cudaContextManager, mIsosurfaceTriangleIndices);
-            PX_PINNED_HOST_FREE(cudaContextManager, mIsosurfaceNormals);
-            mIsosurfaceVertices = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, desc->maxIsosurfaceVertices);
-            mIsosurfaceTriangleIndices = PX_PINNED_HOST_ALLOC_T(PxU32, cudaContextManager, desc->maxIsosurfaceTriangles * 3);
-            mIsosurfaceNormals = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, desc->maxIsosurfaceVertices);
+            PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mIsosurfaceVertices);
+            PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mIsosurfaceTriangleIndices);
+            PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mIsosurfaceNormals);
+            mIsosurfaceVertices = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, desc->maxIsosurfaceVertices);
+            mIsosurfaceTriangleIndices = PxCudaHelpersExt::allocPinnedHostBuffer<PxU32>(*cudaContextManager, desc->maxIsosurfaceTriangles * 3);
+            mIsosurfaceNormals = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, desc->maxIsosurfaceVertices);
             mIsosurfaceExtractor->setResultBufferHost(mIsosurfaceVertices, mIsosurfaceTriangleIndices, mIsosurfaceNormals);
             mIsosurfaceExtractor->setMaxVerticesAndTriangles(desc->maxIsosurfaceVertices, desc->maxIsosurfaceTriangles);
         }
@@ -783,12 +784,12 @@ void ParticlePostprocess::releaseIsosurfaceExtractor()
     {
         if (mIsosurfaceVertices)
         {
-            PxCudaContextManager* cudaContextManager = OmniPhysX::getInstance().getPhysXSetup().getCudaContextManager();
+            PxCudaContextManager* cudaContextManager = mCudaContextManager;
             if (cudaContextManager)
             {
-                PX_PINNED_HOST_FREE(cudaContextManager, mIsosurfaceVertices);
-                PX_PINNED_HOST_FREE(cudaContextManager, mIsosurfaceTriangleIndices);
-                PX_PINNED_HOST_FREE(cudaContextManager, mIsosurfaceNormals);
+                PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mIsosurfaceVertices);
+                PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mIsosurfaceTriangleIndices);
+                PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mIsosurfaceNormals);
             }
         }
         SAFE_RELEASE(mIsosurfaceExtractor);
@@ -811,14 +812,14 @@ void ParticlePostprocess::updateFromPoints(const PxVec4* points, PxU32 numPoints
     // no backing source there is nothing to check and the post-processing below still
     // runs. Skipping it here would silently disable anisotropy, smoothing and
     // isosurface extraction rather than protect anything.
-    AttachedStage* attachedStage = activeAttachedStage();
+    AttachedStage* attachedStage = &mAttachedStage;
     const omni::physics::parse::IPhysicsSource* src = attachedStage ? attachedStage->getSource() : nullptr;
     if (src && !src->exists(mParticleSystemKey))
     {
         return;
     }
 
-    PxCudaContextManager* cudaContextManager = OmniPhysX::getInstance().getPhysXSetup().getCudaContextManager();
+    PxCudaContextManager* cudaContextManager = mCudaContextManager;
     if (!cudaContextManager)
     {
         return;
@@ -865,8 +866,8 @@ void ParticlePostprocess::updateFromPoints(const PxVec4* points, PxU32 numPoints
     // adjust preview particle capacity
     if (mMaxParticlesPreview != maxParticles)
     {
-        PX_DEVICE_FREE(cudaContextManager, mParticlesPreview);
-        mParticlesPreview = PX_DEVICE_ALLOC_T(PxVec4, cudaContextManager, maxParticles);
+        PxCudaHelpersExt::freeDeviceBuffer(*cudaContextManager, mParticlesPreview);
+        mParticlesPreview = PxCudaHelpersExt::allocDeviceBuffer<PxVec4>(*cudaContextManager, maxParticles);
         mMaxParticlesPreview = maxParticles;
     }
 
@@ -942,7 +943,7 @@ void ParticlePostprocess::updateFromPoints(const PxVec4* points, PxU32 numPoints
 
 void ParticlePostprocess::addParticleSet(omni::physics::parse::ObjectKey particleSetKey)
 {
-    AttachedStage* attachedStage = activeAttachedStage();
+    AttachedStage* attachedStage = &mAttachedStage;
     const omni::physics::parse::IPhysicsSource* src = attachedStage ? attachedStage->getSource() : nullptr;
     if (!src)
     {
@@ -965,7 +966,7 @@ void ParticlePostprocess::addParticleSet(omni::physics::parse::ObjectKey particl
             // make particle set invisible on the session layer -- we don't need to
             // store this to file, and retain visibility attribute for user (e.g. to
             // selectively allow for disabling of particle visualization)
-            writeProxyPurposeToSink(particleSetKey, true);
+            writeProxyPurposeToSink(mAttachedStage, particleSetKey, true);
         }
     }
 }
@@ -978,17 +979,17 @@ void ParticlePostprocess::removeParticleSet(omni::physics::parse::ObjectKey part
         if (hasIsosurface())
         {
             // make particles visible again by removing proxy purpose on the session layer
-            writeProxyPurposeToSink(particleSetKey, false);
+            writeProxyPurposeToSink(mAttachedStage, particleSetKey, false);
         }
 
         if (hasAnisotropy())
         {
-            restorePointInstancerScaleOrientToSink(particleSetKey);
+            restorePointInstancerScaleOrientToSink(mAttachedStage, particleSetKey);
         }
 
         if (hasSmoothing())
         {
-            restorePointsToSink(particleSetKey);
+            restorePointsToSink(mAttachedStage, particleSetKey);
         }
 
         mFluidParticleSetsPreview.erase(fit);
@@ -1016,7 +1017,7 @@ std::vector<ParticlePostprocess::ParticleSet>& ParticlePostprocess::getTmpPartic
     }
     else
     {
-        AttachedStage* attachedStage = activeAttachedStage();
+        AttachedStage* attachedStage = &mAttachedStage;
         const omni::physics::parse::IPhysicsSource* src = attachedStage ? attachedStage->getSource() : nullptr;
         if (src)
         {
@@ -1068,7 +1069,7 @@ void ParticlePostprocess::updatePreview()
         }
         else
         {
-            appendParticleSetPointsFromSink(points, particleSet.key);
+            appendParticleSetPointsFromSink(mAttachedStage, points, particleSet.key);
         }
     }
 
@@ -1080,7 +1081,7 @@ void ParticlePostprocess::updatePreview()
 
     //update the geometry
     {
-        UsdLoad::getUsdLoad()->blockUSDUpdate(true);
+        { ScopedNoticeBlock blockNotices(mAttachedStage, true, false);
 
         if (hasIsosurface())
         {
@@ -1099,7 +1100,7 @@ void ParticlePostprocess::updatePreview()
             }
         }
 
-        UsdLoad::getUsdLoad()->blockUSDUpdate(false);
+        }
     }
 #endif
 }
@@ -1188,7 +1189,7 @@ void ParticlePostprocess::updateMesh()
             tmpVertexIndices[i] = int32_t(tris[i]);
         }
 
-        writeIsosurfaceMeshToSink(mParticleSystemKey, tmpPoints.data(), tmpPoints.size(), tmpNormals.data(),
+        writeIsosurfaceMeshToSink(mAttachedStage, mParticleSystemKey, tmpPoints.data(), tmpPoints.size(), tmpNormals.data(),
                                   tmpNormals.size(), tmpVertexCounts.data(), tmpVertexCounts.size(),
                                   tmpVertexIndices.data(), tmpVertexIndices.size());
         return;
@@ -1198,7 +1199,7 @@ void ParticlePostprocess::updateMesh()
         const std::vector<int32_t> tmpVertexCounts = { 3 };
         const std::vector<int32_t> tmpVertexIndices = { 0, 0, 0 };
         const std::vector<carb::Float3> tmpVec3 = { carb::Float3{ 0.0f, 0.0f, 0.0f } };
-        writeIsosurfaceMeshToSink(mParticleSystemKey, tmpVec3.data(), tmpVec3.size(), tmpVec3.data(), tmpVec3.size(),
+        writeIsosurfaceMeshToSink(mAttachedStage, mParticleSystemKey, tmpVec3.data(), tmpVec3.size(), tmpVec3.data(), tmpVec3.size(),
                                   tmpVertexCounts.data(), tmpVertexCounts.size(), tmpVertexIndices.data(),
                                   tmpVertexIndices.size());
     }
@@ -1237,7 +1238,7 @@ void ParticlePostprocess::updateScaleOrient()
     for (size_t s = 0; s < particleSets.size(); ++s)
     {
         ParticleSet& particleSet = particleSets[s];
-        writePointInstancerScaleOrientToSink(particleSet.key,
+        writePointInstancerScaleOrientToSink(mAttachedStage, particleSet.key,
             srcAnisotropyQ1 + particleSet.srcOffset,
             srcAnisotropyQ2 + particleSet.srcOffset,
             srcAnisotropyQ3 + particleSet.srcOffset,
@@ -1262,7 +1263,7 @@ void ParticlePostprocess::updatePoints()
     // Every write below goes through a sink helper that already no-ops without an
     // attached stage, so with no stage there is nothing to publish -- return before
     // the getWorldTransform() read rather than dereferencing a null stage.
-    AttachedStage* as = activeAttachedStage();
+    AttachedStage* as = &mAttachedStage;
     if (!as)
         return;
 
@@ -1273,7 +1274,7 @@ void ParticlePostprocess::updatePoints()
         if (!mParent)
         {
             //backup simulation points
-            backupSimulationPointsToSink(particleSet.key);
+            backupSimulationPointsToSink(mAttachedStage, particleSet.key);
         }
 
         const omni::physics::parse::ObjectKey particleSetKey = particleSet.internal
@@ -1290,7 +1291,7 @@ void ParticlePostprocess::updatePoints()
             dstPoints[i] = { float(dst.x), float(dst.y), float(dst.z) };
         }
 
-        writePointsToSink(particleSet.key, dstPoints.data(), dstPoints.size());
+        writePointsToSink(mAttachedStage, particleSet.key, dstPoints.data(), dstPoints.size());
     }
 
 #endif
@@ -1301,7 +1302,7 @@ void ParticlePostprocess::restorePoints()
     std::vector<ParticleSet>& particleSets = getTmpParticleSets();
     for (size_t s = 0; s < particleSets.size(); ++s)
     {
-        restorePointsToSink(particleSets[s].key);
+        restorePointsToSink(mAttachedStage, particleSets[s].key);
     }
 }
 
@@ -1310,13 +1311,13 @@ void ParticlePostprocess::restoreScaleOrient()
     std::vector<ParticleSet>& particleSets = getTmpParticleSets();
     for (size_t s = 0; s < particleSets.size(); ++s)
     {
-        restorePointInstancerScaleOrientToSink(particleSets[s].key);
+        restorePointInstancerScaleOrientToSink(mAttachedStage, particleSets[s].key);
     }
 }
 
 void ParticlePostprocess::createSessionIsosurfaceMesh()
 {
-    setIsosurfaceMeshEnabledInSink(mParticleSystemKey, true);
+    setIsosurfaceMeshEnabledInSink(mAttachedStage, mParticleSystemKey, true);
 
     // make particle sets invisible by setting purpose = proxy on the session
     // layer -- we don't need to store this to file, and retain visibility
@@ -1325,37 +1326,32 @@ void ParticlePostprocess::createSessionIsosurfaceMesh()
     std::vector<ParticleSet>& particleSets = getTmpParticleSets();
     for (size_t s = 0; s < particleSets.size(); ++s)
     {
-        writeProxyPurposeToSink(particleSets[s].key, true);
+        writeProxyPurposeToSink(mAttachedStage, particleSets[s].key, true);
     }
 }
 
 void ParticlePostprocess::releaseSessionIsosurfaceMesh()
 {
-    setIsosurfaceMeshEnabledInSink(mParticleSystemKey, false);
+    setIsosurfaceMeshEnabledInSink(mAttachedStage, mParticleSystemKey, false);
 
     // make particles visible again by removing proxy purpose from the session layer
     std::vector<ParticleSet>& particleSets = getTmpParticleSets();
     for (size_t s = 0; s < particleSets.size(); ++s)
     {
-        writeProxyPurposeToSink(particleSets[s].key, false);
+        writeProxyPurposeToSink(mAttachedStage, particleSets[s].key, false);
     }
 }
 
 namespace
 {
-struct PostprocessRef
-{
-    uint32_t refCount = 0;
-    ParticlePostprocess* postprocess = nullptr;
-};
+using omni::physx::particles::PostprocessRef;
+using omni::physx::particles::PostprocessRefMap;
 
-typedef std::unordered_map<omni::physics::parse::ObjectKey, PostprocessRef, omni::physics::parse::ObjectKey::Hash> PostprocessRefMap;
-PostprocessRefMap gPostprocessRefMap;
-
-PostprocessRef* getPostprocessRef(omni::physics::parse::ObjectKey particleSystemKey)
+PostprocessRef* getPostprocessRef(const AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey)
 {
-    auto it = gPostprocessRefMap.find(particleSystemKey);
-    return (it != gPostprocessRefMap.end()) ? &it->second : nullptr;
+    PostprocessRefMap& refs = owner.particlePostprocess;
+    auto it = refs.find(particleSystemKey);
+    return (it != refs.end()) ? &it->second : nullptr;
 }
 } // namespace
 
@@ -1390,34 +1386,26 @@ namespace particles
     }
 #endif
 
-    // createPostprocess only needs an active attached stage: the GPU generator setup is
+    // createPostprocess binds the supplied attachment: the GPU generator setup is
     // source-backed and runs regardless of write-sink availability. Only the final
     // USD-authoring writes are sink-gated, each no-op-ing internally with no live sink.
 
-    void createPostprocess(omni::physics::parse::ObjectKey particleSystemKey, uint32_t particlePostFlags, omni::physx::internal::InternalPbdParticleSystem* parent)
+    void createPostprocess(AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey, uint32_t particlePostFlags, omni::physx::internal::InternalPbdParticleSystem* parent)
     {
-        AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getActiveAttachedStage();
-        if (!attachedStage)
+        PostprocessRefMap& registry = owner.particlePostprocess;
+        auto entry = registry.find(particleSystemKey);
+        if (entry == registry.end())
         {
-            return;
-        }
-
-        PostprocessRef newRef = {0, nullptr};
-        auto res = gPostprocessRefMap.insert({particleSystemKey, newRef});
-        if (res.second)
-        {
-            ParticlePostprocess* newPostprocess = ICE_NEW(ParticlePostprocess)(particleSystemKey);
-            newPostprocess->setPostprocessFlags(particlePostFlags);
-            // with the current setup, parent needs to be set after enabling stages.
+            std::unique_ptr<ParticlePostprocess> pending(ICE_NEW(ParticlePostprocess)(owner, particleSystemKey));
+            pending->setPostprocessFlags(particlePostFlags);
             if (parent)
-            {
-                newPostprocess->setParent(parent);
-            }
-            res.first->second.postprocess = newPostprocess;
+                pending->setParent(parent);
+            entry = registry.emplace(particleSystemKey, PostprocessRef{ 0, pending.get() }).first;
+            pending.release();
         }
         else
         {
-            ParticlePostprocess* oldPostprocess = res.first->second.postprocess;
+            ParticlePostprocess* oldPostprocess = entry->second.postprocess;
             uint32_t currentPostFlags = oldPostprocess->getPostprocessFlags();
             if (particlePostFlags != currentPostFlags)
             {
@@ -1429,12 +1417,12 @@ namespace particles
                 oldPostprocess->setParent(parent);
             }
         }
-        res.first->second.refCount++;
+        entry->second.refCount++;
     }
 
-    void releasePostprocess(omni::physics::parse::ObjectKey particleSystemKey, omni::physx::internal::InternalPbdParticleSystem* parent)
+    void releasePostprocess(AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey, omni::physx::internal::InternalPbdParticleSystem* parent)
     {
-        PostprocessRef* postprocessRef = getPostprocessRef(particleSystemKey);
+        PostprocessRef* postprocessRef = getPostprocessRef(owner, particleSystemKey);
         if (postprocessRef && postprocessRef->postprocess)
         {
             if (parent)
@@ -1448,14 +1436,14 @@ namespace particles
             if (postprocessRef->refCount == 0)
             {
                 SAFE_DELETE_SINGLE(postprocessRef->postprocess);
-                gPostprocessRefMap.erase(particleSystemKey);
+                owner.particlePostprocess.erase(particleSystemKey);
             }
         }
     }
 
-    void getAnisotropy(::physx::PxVec4*& anisotropyQ1, ::physx::PxVec4*& anisotropyQ2, ::physx::PxVec4*& anisotropyQ3, omni::physics::parse::ObjectKey particleSystemKey)
+    void getAnisotropy(AttachedStage& owner, ::physx::PxVec4*& anisotropyQ1, ::physx::PxVec4*& anisotropyQ2, ::physx::PxVec4*& anisotropyQ3, omni::physics::parse::ObjectKey particleSystemKey)
     {
-        PostprocessRef* postprocessRef = getPostprocessRef(particleSystemKey);
+        PostprocessRef* postprocessRef = getPostprocessRef(owner, particleSystemKey);
         if (postprocessRef && postprocessRef->postprocess)
         {
             postprocessRef->postprocess->getAnisotropy(anisotropyQ1, anisotropyQ2, anisotropyQ3);
@@ -1464,9 +1452,9 @@ namespace particles
         anisotropyQ1 = anisotropyQ2 = anisotropyQ3 = nullptr;
     }
 
-    ::physx::PxVec4* getSmoothedPositions(omni::physics::parse::ObjectKey particleSystemKey)
+    ::physx::PxVec4* getSmoothedPositions(AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey)
     {
-        PostprocessRef* postprocessRef = getPostprocessRef(particleSystemKey);
+        PostprocessRef* postprocessRef = getPostprocessRef(owner, particleSystemKey);
         if (postprocessRef && postprocessRef->postprocess)
         {
             return postprocessRef->postprocess->getSmoothedPositions();
@@ -1474,58 +1462,62 @@ namespace particles
         return nullptr;
     }
 
-    void updateIsosurfaceMesh(omni::physics::parse::ObjectKey particleSystemKey)
+    void updateIsosurfaceMesh(AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey)
     {
-        PostprocessRef* postprocessRef = getPostprocessRef(particleSystemKey);
+        PostprocessRef* postprocessRef = getPostprocessRef(owner, particleSystemKey);
         if (postprocessRef && postprocessRef->postprocess)
         {
             postprocessRef->postprocess->updateMesh();
         }
     }
 
-    void notifyParticleSystemResize(omni::physics::parse::ObjectKey particleSystemKey)
+    void notifyParticleSystemResize(const AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey)
     {
-        PostprocessRef* postprocessRef = getPostprocessRef(particleSystemKey);
+        PostprocessRef* postprocessRef = getPostprocessRef(owner, particleSystemKey);
         if (postprocessRef && postprocessRef->postprocess)
         {
             postprocessRef->postprocess->updateGeneratorsCallback();
         }
     }
 
-    // Called unconditionally from OmniPhysX.cpp/Setup.cpp's backend-agnostic shutdown path.
-    // gPostprocessRefMap is only ever populated when createPostprocess() found an active
-    // attached stage, so with none (e.g. no stage was ever attached) it stays empty and
-    // draining it is a no-op.
-    void notifyPhysXRelease()
+    void notifyPhysXRelease(AttachedStage& owner)
     {
-        for (auto it = gPostprocessRefMap.begin(); it != gPostprocessRefMap.end(); ++it)
-        {
-            PostprocessRef& postprocessRef = it->second;
-            if (postprocessRef.postprocess)
-            {
-                //disable all postprocesses
-                postprocessRef.postprocess->setPostprocessFlags(0);
-            }
-        }
+        for (PostprocessRefMap::reference item : owner.particlePostprocess)
+            if (item.second.postprocess)
+                item.second.postprocess->setPostprocessFlags(0);
+    }
+
+    void releaseAttachmentPostprocess(AttachedStage& owner)
+    {
+        for (PostprocessRefMap::reference item : owner.particlePostprocess)
+            SAFE_DELETE_SINGLE(item.second.postprocess);
+        owner.particlePostprocess.clear();
+    }
+
+    // Explicit process shutdown operation. Local teardown uses the overload above.
+    void notifyAllPhysXRelease()
+    {
+        for (const usdparser::AttachedStageMap::value_type& entry : usdparser::UsdLoad::getUsdLoad()->getAttachedStages())
+            notifyPhysXRelease(*entry.second);
     }
 
     ///////////////////////////////
     /// IPhysXParticles interface
     ///////////////////////////////
 
-    void createPostprocess(omni::physics::parse::ObjectKey particleSystemKey, uint32_t particlePostFlags)
+    void createPostprocess(AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey, uint32_t particlePostFlags)
     {
-        createPostprocess(particleSystemKey, particlePostFlags, nullptr);
+        createPostprocess(owner, particleSystemKey, particlePostFlags, nullptr);
     }
 
-    void releasePostprocess(omni::physics::parse::ObjectKey particleSystemKey)
+    void releasePostprocess(AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey)
     {
-        releasePostprocess(particleSystemKey, nullptr);
+        releasePostprocess(owner, particleSystemKey, nullptr);
     }
 
-    uint32_t getPostprocessStages(omni::physics::parse::ObjectKey particleSystemKey)
+    uint32_t getPostprocessStages(AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey)
     {
-        PostprocessRef* postprocessRef = getPostprocessRef(particleSystemKey);
+        PostprocessRef* postprocessRef = getPostprocessRef(owner, particleSystemKey);
         if (postprocessRef && postprocessRef->postprocess)
         {
             return postprocessRef->postprocess->getPostprocessFlags();
@@ -1533,36 +1525,36 @@ namespace particles
         return ParticlePostFlag::eNone;
     }
 
-    void setPostprocessStages(omni::physics::parse::ObjectKey particleSystemKey, uint32_t particlePostFlags)
+    void setPostprocessStages(AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey, uint32_t particlePostFlags)
     {
-        PostprocessRef* postprocessRef = getPostprocessRef(particleSystemKey);
+        PostprocessRef* postprocessRef = getPostprocessRef(owner, particleSystemKey);
         if (postprocessRef && postprocessRef->postprocess)
         {
             postprocessRef->postprocess->setPostprocessFlags(particlePostFlags);
         }
     }
 
-    void addPostprocessParticleSet(omni::physics::parse::ObjectKey particleSystemKey, omni::physics::parse::ObjectKey particleSetKey)
+    void addPostprocessParticleSet(AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey, omni::physics::parse::ObjectKey particleSetKey)
     {
-        PostprocessRef* postprocessRef = getPostprocessRef(particleSystemKey);
+        PostprocessRef* postprocessRef = getPostprocessRef(owner, particleSystemKey);
         if (postprocessRef && postprocessRef->postprocess)
         {
             postprocessRef->postprocess->addParticleSet(particleSetKey);
         }
     }
 
-    void removePostprocessParticleSet(omni::physics::parse::ObjectKey particleSystemKey, omni::physics::parse::ObjectKey particleSetKey)
+    void removePostprocessParticleSet(AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey, omni::physics::parse::ObjectKey particleSetKey)
     {
-        PostprocessRef* postprocessRef = getPostprocessRef(particleSystemKey);
+        PostprocessRef* postprocessRef = getPostprocessRef(owner, particleSystemKey);
         if (postprocessRef && postprocessRef->postprocess)
         {
             postprocessRef->postprocess->removeParticleSet(particleSetKey);
         }
     }
 
-    void updatePostprocess(omni::physics::parse::ObjectKey particleSystemKey)
+    void updatePostprocess(AttachedStage& owner, omni::physics::parse::ObjectKey particleSystemKey)
     {
-        PostprocessRef* postprocessRef = getPostprocessRef(particleSystemKey);
+        PostprocessRef* postprocessRef = getPostprocessRef(owner, particleSystemKey);
         if (postprocessRef && postprocessRef->postprocess)
         {
             postprocessRef->postprocess->updatePreview();

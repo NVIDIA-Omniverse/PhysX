@@ -38,7 +38,14 @@ struct IPhysxVisualization;
 // 9 -> 10: added the checked tokenized visualization-scope sidecar export.
 // 10 -> 11: removed the USD-linked SdfPath encoder and UsdUtilsStageCache erase exports.
 //           The sidecar no longer links OpenUSD.
-#define OVPHYSX_INTERNAL_INTERFACE_VERSION 11
+// 11 -> 12: replaced path-based articulation FK with query-selected FK.
+// 12 -> 13: explicit attachment ownership in runtime sidecar calls.
+// 13 -> 14: debug-render apply and copy sidecar exports.
+// 14 -> 15: added the contact query export and its owner-side accessor setter.
+// 15 -> 16: session creation summaries and multi-attribute write ABI.
+// 16 -> 17: object-change subscribe takes a lifetime_keep so unsubscribe can
+//           wait out a dispatch snapshot.
+#define OVPHYSX_INTERNAL_INTERFACE_VERSION 17
 
 // Filename of the sidecar shared object (no path). The SDK loader passes this
 // to dlopen/LoadLibrary. Secondary call sites that dlsym into the already-loaded
@@ -72,7 +79,14 @@ OVPHYSX_INTERNAL_API void ovphysx_internal_set_physx_runtime_accessors(
 // addresses here at load time, as void* to keep this header free of the ovx/ovstage
 // read types. Mirrors ovphysx_internal_set_physx_runtime_accessors().
 OVPHYSX_INTERNAL_API void ovphysx_internal_set_ovx_read_accessors(
-    void* query, void* fetchQueryResult, void* dict, void* read,
+    void* query, void* querySelected, void* read,
     void* fetch, void* releaseGroup, void* releaseRead, void* releaseQuery);
+
+OVPHYSX_INTERNAL_API void ovphysx_internal_set_ovx_write_accessors(
+    void* write, void* fetch, void* commit, void* releaseWrite);
+
+// The contact query entry point (omni::physx::ovxQueryContacts), injected by the same handshake. A setter of
+// its own, so the read setter's positional ABI is unchanged.
+OVPHYSX_INTERNAL_API void ovphysx_internal_set_ovx_contact_accessors(void* queryContacts);
 
 } // extern "C"

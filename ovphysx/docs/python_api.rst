@@ -25,15 +25,98 @@ Core Classes
    :undoc-members:
    :show-inheritance:
 
-Codeless Schema Discovery
--------------------------
+Task Completion
+---------------
 
-ovphysx ships its PhysX USD schemas as codeless resources and never registers
-them itself; these helpers tell the application where they are so it can
-register them with the USD runtime it owns (see :doc:`physics_schemas`).
+``PhysX.step()``, ``PhysX.clone()``, ``PhysX.attach_ovstage()``,
+``PhysX.update_from_ovstage()`` and ``PhysX.detach_ovstage()`` return an
+immutable :class:`~ovphysx.api.Task` receipt. Collect one task's outcome with
+:meth:`ovphysx.api.PhysX.wait_task` or every uncollected task with
+:meth:`ovphysx.api.PhysX.wait_all`; both return ``None`` on success and raise
+the exceptions below on failure or timeout.
 
-.. autofunction:: ovphysx.codeless_schema_root
-.. autofunction:: ovphysx.codeless_schema_paths
+Stage lifecycle tasks currently execute inline, but a returned receipt reports
+admission only. Keep the Stage alive until successful detach or instance
+destruction, and wait before consuming the result of attach or update.
+``PhysX.is_stage_attached()`` is a synchronous ownership snapshot, not a
+completion or readiness check. ``PhysX.reset_stage()`` has been removed; use
+``PhysX.detach_ovstage()`` for teardown. Neither operation restores initial poses.
+
+The session API (``query()``, ``read()``, ``write()``, ``fetch_next()``,
+``commit()`` and ``close()``) returns an :class:`~ovphysx.api.Operation` without
+waiting. ``Operation.wait()`` collects its native tasks and returns the typed
+result; ``Operation.result`` never waits. ``wait_all()`` also collects
+outstanding operations and caches their outcomes. ``read_sync()``,
+``read_tokens_sync()``, ``write_sync()``, ``commit_sync()``, ``close_sync()``,
+``update_articulations_kinematic()`` and ``evaluate_sdf_shapes()`` wait for their
+native tasks internally. Waiting raises ``TaskError`` for accepted execution
+failures. ctypes exposes the complete native receipts. CUDA producer-event and consumer-stream dependencies
+remain necessary; a completed host task does not imply all GPU work is finished.
+
+Run custom application code directly after the relevant task wait succeeds.
+``wait_task(task)`` collects only that task; ``wait_all()`` also collects and
+acknowledges earlier uncollected outcomes, including failures.
+
+.. autoclass:: ovphysx.api.Task
+   :members:
+   :show-inheritance:
+
+.. autoexception:: ovphysx.api.TaskError
+   :members:
+   :show-inheritance:
+
+.. autoexception:: ovphysx.api.TaskTimeoutError
+   :members:
+   :show-inheritance:
+
+Session Read/Write
+------------------
+
+:meth:`ovphysx.api.PhysX.query`, :meth:`ovphysx.api.PhysX.read` and
+:meth:`ovphysx.api.PhysX.write` return operations whose results are the types
+below. The :doc:`read_write/index` pages describe the data contract.
+
+.. autoclass:: ovphysx.api.Operation
+   :members:
+
+.. autoclass:: ovphysx.api.Query
+   :members:
+
+.. autoclass:: ovphysx.api.ReadResult
+   :members:
+
+.. autoclass:: ovphysx.api.ReadGroup
+
+.. autoclass:: ovphysx.api.WriteSession
+   :members:
+
+.. autoclass:: ovphysx.api.WriteGroup
+   :members:
+
+.. autoclass:: ovphysx.api.QueryMetadata
+   :members:
+
+.. autoclass:: ovphysx.api.ReadMetadata
+   :members:
+
+.. autoclass:: ovphysx.api.ReadAttributeResult
+   :members:
+
+.. autoclass:: ovphysx.api.ReadOmission
+   :members:
+
+.. autoclass:: ovphysx.api.WriteMetadata
+   :members:
+
+.. autoclass:: ovphysx.api.WriteAttributeResult
+   :members:
+
+Schema Providers
+----------------
+
+Applications install ``physx-usd-schemas`` independently and register
+its two resource directories before population. See :doc:`physics_schemas`
+for metadata-based discovery and native deployment recipes.
 
 The Newton USD schema (``pip install newton-usd-schemas``) is a separate package
 whose ``newton:*`` attributes ovphysx reads as fallbacks for the PhysX spellings;
@@ -54,10 +137,39 @@ Logging
 Configuration
 -------------
 
+Process-global keys use :func:`ovphysx.api.set_global_config` /
+:func:`ovphysx.api.get_global_config`; startup-only keys must be set before the
+first ``PhysX()``. Configure every setting with a ``GlobalConfigKey`` through
+``set_global_config``, and create the instance with no config args for those
+settings. Set
+:attr:`ovphysx.types.ConfigKey.ACTIVE_CUDA_GPUS`
+with :meth:`ovphysx.api.PhysX.set_config` after create and before attach.
+Environment variables remain authoritative over the matching global setter.
+
+``PhysXConfig``, ``config=`` on ``PhysX()``, and the typed ``ConfigBool`` /
+``ConfigInt32`` / ``ConfigString`` enums are the legacy path.
+Carbonite-only settings, such as DirectGPU and tasking/TBB pool sizes, still
+use ``PhysXConfig.carbonite_overrides``. Passing ``config=`` emits a
+``DeprecationWarning`` for this legacy path.
+
+.. autofunction:: ovphysx.api.set_global_config
+.. autofunction:: ovphysx.api.get_global_config
+
 .. automodule:: ovphysx.config
    :members:
    :undoc-members:
    :show-inheritance:
+
+OVD recording
+~~~~~~~~~~~~~
+
+Set recording capability with
+``set_global_config(GlobalConfigKey.OVD_RECORDING_CAPABLE, True)`` before the
+first ``PhysX()``, attach a scene, then use ``start_recording()`` with an
+explicit FILE or TCP destination. Start before the first simulation step to
+capture it. Creation and attachment leave output dormant. Startup config fields,
+including ``PhysXConfig.omnipvd_recording_capable``, and the legacy OVD config
+module are removed. See :doc:`ovd_api_migration`.
 
 Types and Enums
 ---------------
@@ -71,18 +183,6 @@ DLPack Tensor Structures
 ------------------------
 
 .. automodule:: ovphysx.dlpack
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Contact Report Structures
--------------------------
-
-ctypes mirrors of the C ABI structs returned by
-:py:meth:`ovphysx.api.PhysX.get_contact_report`; see the :doc:`C API Reference <api>`
-for full field semantics.
-
-.. automodule:: ovphysx.contact_types
    :members:
    :undoc-members:
    :show-inheritance:
@@ -191,13 +291,3 @@ Metadata keys and naming constants
 
 .. automodule:: ovphysx.utils.constants
    :members:
-
-Constants
----------
-
-.. currentmodule:: ovphysx
-
-.. py:data:: OP_INDEX_ALL
-
-   Sentinel value (``0xFFFFFFFFFFFFFFFF``) passed to ``wait_op()`` to wait for
-   all outstanding operations. Equivalent to ``OVPHYSX_OP_INDEX_ALL`` in the C API.

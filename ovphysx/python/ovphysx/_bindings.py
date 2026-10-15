@@ -1,8 +1,22 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-CAPI-DETACH-001
+# @covers AC-3 AC-4 AC-6
+# @implements REQ-PYTHON-READ-001
+# @covers AC-4
+# @implements REQ-PYTHON-FRAME-001
+# @covers AC-1
 # @implements REQ-CAPI-CONTACT-003
 # @covers AC-1 AC-2 AC-3
+#
+# @implements REQ-CAPI-READ-CONTACT-002
+# @covers AC-3
+
+# @implements REQ-PYTHON-TASK-001
+# @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6
+# @implements REQ-CAPI-OVD-NAMES-001
+# @covers AC-1 AC-2 AC-3 AC-4
 
 # @implements REQ-PYTHON-BINDING-DEVICE-001
 # @covers AC-1
@@ -12,10 +26,12 @@
 
 # @implements REQ-PACKAGING-CLOSURE-001
 # @covers AC-2
-# @implements REQ-CAPI-CONTACT-001
-# @covers AC-5 AC-6 AC-7
 # @implements REQ-CAPI-CONTACT-002
 # @covers AC-2 AC-3
+# @implements REQ-CAPI-CONTACT-001
+# @covers AC-5 AC-6 AC-7
+# @implements REQ-CAPI-SDF-001
+# @covers AC-4
 
 """Low-level ctypes bindings for the ovphysx library.
 
@@ -160,9 +176,6 @@ from .dlpack import (
 
 # Invalid handle sentinel (matches OVPHYSX_INVALID_HANDLE in ovphysx_types.h)
 OVPHYSX_INVALID_HANDLE = 0
-
-# Operation index sentinel for wait_op (wait for all pending operations)
-OP_INDEX_ALL = 0xFFFFFFFFFFFFFFFF
 
 
 def _platform_lib_names() -> list[str]:
@@ -379,10 +392,10 @@ OVPHYSX_CONFIG_KEY_TYPE_CARBONITE = 4
 # Key union for ovphysx_config_entry_t
 class _config_key_union(ctypes.Union):
     _fields_ = [
-        ("bool_key", c_int),         # ovphysx_config_bool_t enum
-        ("int32_key", c_int),        # ovphysx_config_int32_t enum
-        ("float_key", c_int),        # ovphysx_config_float_t enum
-        ("string_key", c_int),       # ovphysx_config_string_t enum
+        ("bool_key", c_int),  # ovphysx_config_bool_t enum
+        ("int32_key", c_int),  # ovphysx_config_int32_t enum
+        ("float_key", c_int),  # ovphysx_config_float_t enum
+        ("string_key", c_int),  # ovphysx_config_string_t enum
         ("carbonite_key", ovphysx_string_t),  # for KEY_TYPE_CARBONITE
     ]
 
@@ -401,9 +414,33 @@ class ovphysx_config_entry_t(ctypes.Structure):
     """Typed config entry (matches ovphysx_config_entry_t in C API)."""
 
     _fields_ = [
-        ("key_type", c_int),         # ovphysx_config_key_type_t enum
+        ("key_type", c_int),  # ovphysx_config_key_type_t enum
         ("key", _config_key_union),
         ("value", _config_value_union),
+    ]
+
+
+OVPHYSX_CONFIG_VALUE_BOOL = 0
+OVPHYSX_CONFIG_VALUE_INT64 = 1
+OVPHYSX_CONFIG_VALUE_DOUBLE = 2
+OVPHYSX_CONFIG_VALUE_STRING = 3
+
+
+class _scoped_config_value_union(ctypes.Union):
+    _fields_ = [
+        ("bool_value", ctypes.c_bool),
+        ("int64_value", ctypes.c_int64),
+        ("double_value", ctypes.c_double),
+        ("string_value", ovphysx_string_t),
+    ]
+
+
+class ovphysx_config_value_t(ctypes.Structure):
+    """Tagged value shared by instance and global configuration."""
+
+    _fields_ = [
+        ("type", c_int),
+        ("value", _scoped_config_value_union),
     ]
 
 
@@ -429,21 +466,22 @@ class ovphysx_result_t(ctypes.Structure):
 
 
 class ovphysx_enqueue_result_t(ctypes.Structure):
-    """Result returned by asynchronous API functions."""
+    """Admission status and copyable task receipt returned by task producers."""
 
     _fields_ = [
         ("status", c_int),
         ("op_index", c_uint64),
+        ("instance", c_uint64),
     ]
 
 
-class ovphysx_op_wait_result_t(ctypes.Structure):
-    """Result from ovphysx_wait_op() containing failed op indices and pending operation status."""
+class ovphysx_wait_task_result_t(ctypes.Structure):
+    """Owned task failures and the earliest pending receipt returned by a wait."""
 
     _fields_ = [
-        ("error_op_indices", POINTER(c_uint64)),
+        ("error_tasks", POINTER(ovphysx_enqueue_result_t)),
         ("num_errors", c_size_t),
-        ("lowest_pending_op_index", c_uint64),
+        ("pending_task", ovphysx_enqueue_result_t),
     ]
 
 
@@ -475,6 +513,24 @@ class ovphysx_tensor_binding_desc_t(ctypes.Structure):
         ("prim_paths", POINTER(ovphysx_string_t)),  # Exact object paths (NULL = use pattern)
         ("prim_paths_count", c_uint32),  # Number of object paths (0 = use pattern)
         ("tensor_type", c_int),  # ovphysx_tensor_type_t enum
+    ]
+
+
+class ovphysx_query_selection_t(ctypes.Structure):
+    """Prim-set selection for ovphysx_query_selection (matches ovphysx_query_selection_t in C API).
+
+    An explicit list of native ovx_primpath_t handles OR a glob pattern, applied to BOTH the read and a
+    write opened over the query (ADR-0025). A selected query has no scope: it covers every selected object
+    of its type, sleeping ones included. prim_paths wins over pattern when both are set; they are never
+    combined. prim_paths are interned prim-path handles the
+    caller already holds (a read group's ``prim_list`` or ``ovstage.PathDictionary.intern_path``), NOT
+    strings; pattern stays a glob string.
+    """
+
+    _fields_ = [
+        ("pattern", ovphysx_string_t),  # Physics-object path glob (ignored if prim_paths is set)
+        ("prim_paths", POINTER(c_uint64)),  # Native ovx_primpath_t handles (NULL = use pattern)
+        ("prim_paths_count", c_uint32),  # Number of handles (0 = use pattern)
     ]
 
 
@@ -537,7 +593,7 @@ class ovx_string_or_token_t(ctypes.Structure):
     """
 
     _fields_ = [
-        ("token", c_uint64),   # ovx_token_t
+        ("token", c_uint64),  # ovx_token_t
         ("string", ovx_string_t),
     ]
 
@@ -550,7 +606,7 @@ class ovstage_ordinal_range_t(ctypes.Structure):
     """
 
     _fields_ = [
-        ("start_ordinal", c_uint64),       # ovstage_ordinal_t
+        ("start_ordinal", c_uint64),  # ovstage_ordinal_t
         ("end_ordinal", c_uint64),
         ("has_start_ordinal", ctypes.c_bool),
     ]
@@ -560,7 +616,7 @@ class ovstage_prim_group_t(ctypes.Structure):
     """ovstage_prim_group_t: which prims a group covers."""
 
     _fields_ = [
-        ("list", c_uint64),                # ovx_primpath_list_t
+        ("list", c_uint64),  # ovx_primpath_list_t
         ("offset", c_uint32),
         ("count", c_uint32),
         ("index_map", POINTER(c_uint32)),
@@ -584,7 +640,7 @@ class ovstage_data_t(ctypes.Structure):
         ("tensor_count", c_uint32),
         ("count", c_uint32),
         ("index_map", POINTER(c_uint32)),
-        ("mask", c_void_p),                # ovstage_mask_t (const uint64_t*)
+        ("mask", c_void_p),  # ovstage_mask_t (const uint64_t*)
         ("cuda_sync", ovstage_cuda_sync_t),
     ]
 
@@ -603,7 +659,7 @@ class ovstage_read_group_t(ctypes.Structure):
 
     The ovphysx output read returns these verbatim (producer-owned borrowed pointer
     from :func:`ovphysx_fetch_read_next`). ``attribute`` and ``prims.list`` are
-    interned handles (resolve via :meth:`PhysX.query_shared_dictionary`). ``data.tensors``
+    interned handles (resolve through the owning attached Stage dictionary). ``data.tensors``
     is a borrowed array of ``data.tensor_count`` DLTensors with tuple width in each
     tensor's ``dtype.lanes``. The group struct and ``prims.list`` stay valid until
     ``read_group_id`` is released. Numeric tensor, prim-index-map, data-index-map,
@@ -612,12 +668,12 @@ class ovstage_read_group_t(ctypes.Structure):
     """
 
     _fields_ = [
-        ("read_group_id", c_uint64),       # ovstage_read_group_id_t
-        ("attribute", c_uint64),           # ovx_token_t
-        ("ordinal", c_uint64),             # ovstage_ordinal_t
+        ("read_group_id", c_uint64),  # ovstage_read_group_id_t
+        ("attribute", c_uint64),  # ovx_token_t
+        ("ordinal", c_uint64),  # ovstage_ordinal_t
         ("is_delete", ctypes.c_bool),
         ("is_array", ctypes.c_bool),
-        ("semantic", c_int32),             # ovstage_attribute_semantic_t
+        ("semantic", c_int32),  # ovstage_attribute_semantic_t
         ("prims", ovstage_prim_group_t),
         ("data", ovstage_data_t),
         ("meta", ovstage_attribute_meta_t),
@@ -630,8 +686,8 @@ class ovstage_map_group_t(ctypes.Structure):
     The mirror of :class:`ovstage_read_group_t`, minus the fields a write cannot carry: no
     ``read_group_id`` (a committed group is identified by its ADDRESS, which is why the
     pointer from :func:`ovphysx_fetch_write_next` must be passed back to
-    :func:`ovphysx_commit_group` unchanged), and no ``attribute`` (a session carries exactly
-    one, named when it is opened).
+    :func:`ovphysx_commit_group` unchanged), and no ``attribute``. The enclosing fetched-write result supplies the original
+    attribute request index.
 
     ``data.tensors`` is a borrowed array of ``data.tensor_count`` DLTensors pointing at
     storage the CALLER fills. Valid until the write session is released. Field
@@ -654,12 +710,34 @@ class ovstage_query_result_t(ctypes.Structure):
     """
 
     _fields_ = [
-        ("query_result_id", c_uint64),     # ovstage_query_result_id_t
-        ("attributes", POINTER(c_uint64)), # const ovx_token_t*
+        ("query_result_id", c_uint64),  # ovstage_query_result_id_t
+        ("attributes", POINTER(c_uint64)),  # const ovx_token_t*
         ("attribute_count", c_size_t),
-        ("all_handle", c_uint64),          # ovstage_query_handle_t
+        ("all_handle", c_uint64),  # ovstage_query_handle_t
         ("total_prim_count", c_size_t),
     ]
+
+
+class ovphysx_read_attribute_result_t(ctypes.Structure):
+    _fields_ = [("attribute", c_uint64), ("group_count", c_size_t), ("omission_reasons", c_uint32)]
+
+
+class ovphysx_read_result_t(ctypes.Structure):
+    _fields_ = [("total_prim_count", c_size_t), ("attribute_count", c_size_t),
+                ("attributes", POINTER(ovphysx_read_attribute_result_t))]
+
+
+class ovphysx_write_attribute_result_t(ctypes.Structure):
+    _fields_ = [("attribute", c_uint64), ("group_count", c_size_t)]
+
+
+class ovphysx_write_result_t(ctypes.Structure):
+    _fields_ = [("total_prim_count", c_size_t), ("attribute_count", c_size_t),
+                ("attributes", POINTER(ovphysx_write_attribute_result_t))]
+
+
+class ovphysx_fetched_write_group_t(ctypes.Structure):
+    _fields_ = [("group", POINTER(ovstage_map_group_t)), ("attribute_index", c_size_t)]
 
 
 # Core API function prototypes
@@ -670,7 +748,10 @@ _lib.ovphysx_shutdown.restype = ovphysx_result_t
 _lib.ovphysx_shutdown.argtypes = []
 
 _lib.ovphysx_create_instance.restype = ovphysx_result_t
-_lib.ovphysx_create_instance.argtypes = [POINTER(ovphysx_create_args), POINTER(c_uint64)]
+_lib.ovphysx_create_instance.argtypes = [POINTER(c_uint64)]
+
+_lib.ovphysx_create_instance_with_args.restype = ovphysx_result_t
+_lib.ovphysx_create_instance_with_args.argtypes = [POINTER(ovphysx_create_args), POINTER(c_uint64)]
 
 _lib.ovphysx_set_cpu_mode.restype = ovphysx_result_t
 _lib.ovphysx_set_cpu_mode.argtypes = [ctypes.c_bool]
@@ -681,17 +762,14 @@ _lib.ovphysx_get_cpu_mode.argtypes = [POINTER(ctypes.c_bool)]
 _lib.ovphysx_destroy_instance.restype = ovphysx_result_t
 _lib.ovphysx_destroy_instance.argtypes = [c_uint64]
 
-_lib.ovphysx_start_recording.restype = ovphysx_result_t
-_lib.ovphysx_start_recording.argtypes = [c_uint64, POINTER(ovphysx_omnipvd_destination_t)]
+_lib.ovphysx_ovd_start_recording.restype = ovphysx_result_t
+_lib.ovphysx_ovd_start_recording.argtypes = [c_uint64, POINTER(ovphysx_omnipvd_destination_t)]
 
-_lib.ovphysx_stop_recording.restype = ovphysx_result_t
-_lib.ovphysx_stop_recording.argtypes = [c_uint64]
+_lib.ovphysx_ovd_stop_recording.restype = ovphysx_result_t
+_lib.ovphysx_ovd_stop_recording.argtypes = [c_uint64]
 
-_lib.ovphysx_is_recording.restype = ovphysx_result_t
-_lib.ovphysx_is_recording.argtypes = [c_uint64, POINTER(ctypes.c_bool)]
-
-_lib.ovphysx_reset_stage.restype = ovphysx_enqueue_result_t
-_lib.ovphysx_reset_stage.argtypes = [c_uint64]
+_lib.ovphysx_ovd_is_recording.restype = ovphysx_result_t
+_lib.ovphysx_ovd_is_recording.argtypes = [c_uint64, POINTER(ctypes.c_bool)]
 
 _lib.ovphysx_step.restype = ovphysx_enqueue_result_t
 _lib.ovphysx_step.argtypes = [c_uint64, c_float]
@@ -699,50 +777,61 @@ _lib.ovphysx_step.argtypes = [c_uint64, c_float]
 _lib.ovphysx_step_sync.restype = ovphysx_result_t
 _lib.ovphysx_step_sync.argtypes = [c_uint64, c_float]
 
-_lib.ovphysx_step_n_sync.restype = ovphysx_result_t
-_lib.ovphysx_step_n_sync.argtypes = [c_uint64, c_int32, c_float]
+_lib.ovphysx_update_articulations_kinematic.restype = ovphysx_enqueue_result_t
+_lib.ovphysx_update_articulations_kinematic.argtypes = [c_uint64, c_uint64, c_uint32]
 
-_lib.ovphysx_update_articulations_kinematic.restype = ovphysx_result_t
-_lib.ovphysx_update_articulations_kinematic.argtypes = [c_uint64]
+_lib.ovphysx_evaluate_sdf_shapes.restype = ovphysx_enqueue_result_t
+_lib.ovphysx_evaluate_sdf_shapes.argtypes = [c_uint64, c_uint64, c_void_p, c_void_p, ovstage_cuda_sync_t]
 
-_lib.ovphysx_attach_ovstage.restype = ovphysx_result_t
+_lib.ovphysx_attach_ovstage.restype = ovphysx_enqueue_result_t
 # stage is an opaque ovstage_instance_t*, passed as c_void_p.
 _lib.ovphysx_attach_ovstage.argtypes = [c_uint64, ctypes.c_void_p, c_uint64]
 
-_lib.ovphysx_update_from_ovstage.restype = ovphysx_result_t
+_lib.ovphysx_update_from_ovstage.restype = ovphysx_enqueue_result_t
 _lib.ovphysx_update_from_ovstage.argtypes = [c_uint64, ovstage_ordinal_range_t]
 
+class ovphysx_contact_sensor_selection_t(ctypes.Structure):
+    """One contact-sensor selection and its filters for ovphysx_query_contacts (matches the C struct, ADR-0044)."""
+
+    _fields_ = [
+        ("sensors", ovphysx_query_selection_t),  # The sensor bodies
+        ("filters", POINTER(ovphysx_query_selection_t)),  # filters_per_sensor filter selections, or NULL
+    ]
+
+
 # Physics output read (ADR-0007), using ovstage-native types.
-_lib.ovphysx_query.restype = ovphysx_result_t
-_lib.ovphysx_query.argtypes = [c_uint64, c_int32, c_int32, POINTER(c_uint64)]
+_lib.ovphysx_query.restype = ovphysx_enqueue_result_t
+_lib.ovphysx_query.argtypes = [c_uint64, c_int32, c_int32, POINTER(c_uint64), POINTER(ovstage_query_result_t)]
 
-_lib.ovphysx_fetch_query_result.restype = ovphysx_result_t
-_lib.ovphysx_fetch_query_result.argtypes = [c_uint64, c_uint64, POINTER(ovstage_query_result_t)]
+_lib.ovphysx_query_selection.restype = ovphysx_enqueue_result_t
+_lib.ovphysx_query_selection.argtypes = [
+    c_uint64, c_int32, POINTER(ovphysx_query_selection_t), POINTER(c_uint64), POINTER(ovstage_query_result_t)]
 
-_lib.ovphysx_query_shared_dictionary.restype = ovphysx_result_t
-_lib.ovphysx_query_shared_dictionary.argtypes = [c_uint64, c_uint64, POINTER(c_void_p)]
+_lib.ovphysx_query_contacts.restype = ovphysx_enqueue_result_t
+_lib.ovphysx_query_contacts.argtypes = [
+    c_uint64, POINTER(ovphysx_contact_sensor_selection_t), c_uint32, c_uint32,
+    POINTER(c_uint64), POINTER(ovstage_query_result_t)]
 
 # attributes are ovx_string_or_token_t (string name or interned token per entry).
-_lib.ovphysx_read.restype = ovphysx_result_t
-_lib.ovphysx_read.argtypes = [c_uint64, c_uint64, POINTER(ovx_string_or_token_t), c_size_t, POINTER(c_uint64)]
+_lib.ovphysx_read.restype = ovphysx_enqueue_result_t
+_lib.ovphysx_read.argtypes = [c_uint64, c_uint64, POINTER(ovx_string_or_token_t), c_size_t, POINTER(c_uint64), POINTER(ovphysx_read_result_t)]
 
 # Producer-owned group: fetch returns a borrowed ovstage_read_group_t* (POINTER(POINTER(...))).
-_lib.ovphysx_fetch_read_next.restype = ovphysx_result_t
+_lib.ovphysx_fetch_read_next.restype = ovphysx_enqueue_result_t
 _lib.ovphysx_fetch_read_next.argtypes = [c_uint64, c_uint64, POINTER(POINTER(ovstage_read_group_t))]
 
-# App -> physics write (ADR-0012). One attribute per session, so `attribute` is a single
-# ovx_string_or_token_t rather than an array + count.
-_lib.ovphysx_write.restype = ovphysx_result_t
-_lib.ovphysx_write.argtypes = [c_uint64, c_uint64, POINTER(ovx_string_or_token_t), POINTER(c_uint64)]
+# App -> physics write: attributes retain their original request indices.
+_lib.ovphysx_write.restype = ovphysx_enqueue_result_t
+_lib.ovphysx_write.argtypes = [c_uint64, c_uint64, POINTER(ovx_string_or_token_t), c_size_t, POINTER(c_uint64), POINTER(ovphysx_write_result_t)]
 
 # Producer-owned group, and the pointer IS the commit identity: hand it back verbatim.
-_lib.ovphysx_fetch_write_next.restype = ovphysx_result_t
-_lib.ovphysx_fetch_write_next.argtypes = [c_uint64, c_uint64, POINTER(POINTER(ovstage_map_group_t))]
+_lib.ovphysx_fetch_write_next.restype = ovphysx_enqueue_result_t
+_lib.ovphysx_fetch_write_next.argtypes = [c_uint64, c_uint64, POINTER(ovphysx_fetched_write_group_t)]
 
-_lib.ovphysx_commit_group.restype = ovphysx_result_t
+_lib.ovphysx_commit_group.restype = ovphysx_enqueue_result_t
 _lib.ovphysx_commit_group.argtypes = [c_uint64, c_uint64, POINTER(ovstage_map_group_t), ovstage_cuda_sync_t]
 
-_lib.ovphysx_release_write.restype = ovphysx_result_t
+_lib.ovphysx_release_write.restype = ovphysx_enqueue_result_t
 _lib.ovphysx_release_write.argtypes = [c_uint64, c_uint64]
 
 # (object type, attribute) writability classification (REQ-INPUT-COVERAGE-001 AC-2). Global, not
@@ -750,35 +839,59 @@ _lib.ovphysx_release_write.argtypes = [c_uint64, c_uint64]
 _lib.ovphysx_writability.restype = ovphysx_result_t
 _lib.ovphysx_writability.argtypes = [c_int32, POINTER(ovx_string_or_token_t), POINTER(c_int32)]
 
-_lib.ovphysx_release_group.restype = ovphysx_result_t
+_lib.ovphysx_release_group.restype = ovphysx_enqueue_result_t
 _lib.ovphysx_release_group.argtypes = [c_uint64, c_uint64, c_uint64]
 
-_lib.ovphysx_release_read.restype = ovphysx_result_t
+_lib.ovphysx_release_read.restype = ovphysx_enqueue_result_t
 _lib.ovphysx_release_read.argtypes = [c_uint64, c_uint64]
 
-_lib.ovphysx_release_query.restype = ovphysx_result_t
+_lib.ovphysx_release_query.restype = ovphysx_enqueue_result_t
 _lib.ovphysx_release_query.argtypes = [c_uint64, c_uint64]
 
-# Stream and event are CUDA driver handles passed as uintptr_t. c_void_p is the ctypes
-# type that is pointer-width on every platform (c_ulong is 32-bit on Windows).
-_lib.ovphysx_cuda_stream_wait_event.restype = ovphysx_result_t
-_lib.ovphysx_cuda_stream_wait_event.argtypes = [c_void_p, c_void_p]
-
-_lib.ovphysx_detach_ovstage.restype = ovphysx_result_t
+_lib.ovphysx_detach_ovstage.restype = ovphysx_enqueue_result_t
 _lib.ovphysx_detach_ovstage.argtypes = [c_uint64]
 
-# Attach identity (ADR-0016): out param is the attach handle, 0 = no attach.
-_lib.ovphysx_get_attach_handle.restype = ovphysx_result_t
-_lib.ovphysx_get_attach_handle.argtypes = [c_uint64, POINTER(c_uint64)]
+_lib.ovphysx_is_stage_attached.restype = ovphysx_result_t
+_lib.ovphysx_is_stage_attached.argtypes = [c_uint64, c_void_p, POINTER(ctypes.c_bool)]
+
+# Private checked CUDA wait for the Python read handoff; not a public C API.
+_lib.ovphysx_internal_cuda_stream_wait_event.restype = ovphysx_result_t
+_lib.ovphysx_internal_cuda_stream_wait_event.argtypes = [c_void_p, c_void_p]
+
+# Private session ownership check; not part of the public C API.
+_lib.ovphysx_internal_get_attach_handle.restype = ovphysx_result_t
+_lib.ovphysx_internal_get_attach_handle.argtypes = [c_uint64, POINTER(c_uint64)]
+
+# Private output-cache validity check; never exposes the borrowed dictionary.
+_lib.ovphysx_internal_is_query_valid.restype = ovphysx_result_t
+_lib.ovphysx_internal_is_query_valid.argtypes = [c_uint64, c_uint64, POINTER(ctypes.c_bool)]
 
 _lib.ovphysx_clone.restype = ovphysx_enqueue_result_t
 _lib.ovphysx_clone.argtypes = [
-    c_uint64, ovphysx_string_t, POINTER(ovphysx_string_t), c_uint32, POINTER(c_float), POINTER(c_uint32)
+    c_uint64,
+    ovphysx_string_t,
+    POINTER(ovphysx_string_t),
+    c_uint32,
+    POINTER(c_float),
+    POINTER(c_uint32),
 ]
 
-# Typed config API
+# Scoped config API
 _lib.ovphysx_set_global_config.restype = ovphysx_result_t
-_lib.ovphysx_set_global_config.argtypes = [ovphysx_config_entry_t]
+_lib.ovphysx_set_global_config.argtypes = [c_int, ovphysx_config_value_t]
+
+_lib.ovphysx_get_global_config.restype = ovphysx_result_t
+_lib.ovphysx_get_global_config.argtypes = [c_int, POINTER(ovphysx_config_value_t)]
+
+_lib.ovphysx_set_config.restype = ovphysx_result_t
+_lib.ovphysx_set_config.argtypes = [c_uint64, c_int, ovphysx_config_value_t]
+
+_lib.ovphysx_get_config.restype = ovphysx_result_t
+_lib.ovphysx_get_config.argtypes = [c_uint64, c_int, POINTER(ovphysx_config_value_t)]
+
+# Legacy typed config API
+_lib.ovphysx_set_global_config_entry.restype = ovphysx_result_t
+_lib.ovphysx_set_global_config_entry.argtypes = [ovphysx_config_entry_t]
 
 _lib.ovphysx_get_global_config_bool.restype = ovphysx_result_t
 _lib.ovphysx_get_global_config_bool.argtypes = [c_int, POINTER(ctypes.c_bool)]
@@ -793,17 +906,44 @@ _lib.ovphysx_get_global_config_string.restype = ovphysx_result_t
 _lib.ovphysx_get_global_config_string.argtypes = [c_int, POINTER(ovphysx_string_t), POINTER(c_size_t)]
 
 # Async operations
-_lib.ovphysx_wait_op.restype = ovphysx_result_t
-_lib.ovphysx_wait_op.argtypes = [c_uint64, c_uint64, c_uint64, POINTER(ovphysx_op_wait_result_t)]
+_lib.ovphysx_wait_task.restype = ovphysx_result_t
+_lib.ovphysx_wait_task.argtypes = [c_uint64, ovphysx_enqueue_result_t, c_uint64, POINTER(ovphysx_wait_task_result_t)]
+
+_lib.ovphysx_wait_all.restype = ovphysx_result_t
+_lib.ovphysx_wait_all.argtypes = [c_uint64, c_uint64, POINTER(ovphysx_wait_task_result_t)]
 
 _lib.ovphysx_get_last_error.restype = ovphysx_string_t
 _lib.ovphysx_get_last_error.argtypes = []
 
-_lib.ovphysx_get_last_op_error.restype = ovphysx_string_t
-_lib.ovphysx_get_last_op_error.argtypes = [c_uint64]
+_lib.ovphysx_get_last_task_error.restype = ovphysx_string_t
+_lib.ovphysx_get_last_task_error.argtypes = [c_uint64, ovphysx_enqueue_result_t]
 
-_lib.ovphysx_destroy_wait_result.restype = None
-_lib.ovphysx_destroy_wait_result.argtypes = [POINTER(ovphysx_op_wait_result_t)]
+_lib.ovphysx_destroy_wait_task_result.restype = None
+_lib.ovphysx_destroy_wait_task_result.argtypes = [POINTER(ovphysx_wait_task_result_t)]
+
+ovphysx_object_created_fn = ctypes.CFUNCTYPE(None, ovphysx_string_t, c_int32, c_void_p)
+ovphysx_object_destroyed_fn = ovphysx_object_created_fn
+ovphysx_all_objects_destroyed_fn = ctypes.CFUNCTYPE(None, c_void_p)
+
+
+class ovphysx_object_change_callbacks_t(ctypes.Structure):
+    _fields_ = [
+        ("on_object_created", ovphysx_object_created_fn),
+        ("on_object_destroyed", ovphysx_object_destroyed_fn),
+        ("on_all_objects_destroyed", ovphysx_all_objects_destroyed_fn),
+        ("user_data", c_void_p),
+    ]
+
+
+_lib.ovphysx_subscribe_object_changes.restype = ovphysx_result_t
+_lib.ovphysx_subscribe_object_changes.argtypes = [
+    c_uint64,
+    POINTER(ovphysx_object_change_callbacks_t),
+    POINTER(c_uint64),
+]
+
+_lib.ovphysx_unsubscribe_object_changes.restype = ovphysx_result_t
+_lib.ovphysx_unsubscribe_object_changes.argtypes = [c_uint64, c_uint64]
 
 # Version query
 _lib.ovphysx_get_version_string.restype = c_char_p
@@ -812,9 +952,7 @@ _lib.ovphysx_get_version_string.argtypes = []
 # Logging configuration API
 # ovphysx_log_callback_t:
 # void (*)(level, message, channel, timestamp_seconds_since_epoch, user_data)
-ovphysx_log_callback_t = ctypes.CFUNCTYPE(
-    None, c_int, ovphysx_string_t, ovphysx_string_t, ctypes.c_double, c_void_p
-)
+ovphysx_log_callback_t = ctypes.CFUNCTYPE(None, c_int, ovphysx_string_t, ovphysx_string_t, ctypes.c_double, c_void_p)
 
 _lib.ovphysx_set_log_level.restype = ovphysx_result_t
 _lib.ovphysx_set_log_level.argtypes = [c_uint32]
@@ -907,13 +1045,6 @@ _lib.ovphysx_rigid_body_view_sleep.argtypes = [
     c_uint64,  # handle
     c_uint64,  # binding_handle
     POINTER(DLTensor),  # indices (optional, can be NULL)
-]
-
-_lib.ovphysx_articulation_update_kinematic.restype = ovphysx_result_t
-_lib.ovphysx_articulation_update_kinematic.argtypes = [
-    c_uint64,  # handle
-    c_uint64,  # binding_handle
-    c_uint32,  # flags (ovphysx_articulation_kinematic_flag_t bitmask)
 ]
 
 _lib.ovphysx_shutdown.restype = ovphysx_result_t
@@ -1095,24 +1226,10 @@ _lib.ovphysx_contact_binding_get_other_actor_paths_from_ids.argtypes = [
 ]
 
 
-# Contact report struct mirrors live in contact_types so they can be imported
-# without triggering native-library load (and rendered via Sphinx automodule).
-from .contact_types import ContactEventHeader, ContactPoint, FrictionAnchor
-
-
-_lib.ovphysx_get_contact_report.restype = ovphysx_result_t
-_lib.ovphysx_get_contact_report.argtypes = [
-    c_uint64,
-    POINTER(POINTER(ContactEventHeader)),
-    POINTER(c_uint32),
-    POINTER(POINTER(ContactPoint)),
-    POINTER(c_uint32),
-    POINTER(POINTER(FrictionAnchor)),  # out_friction_anchors (optional, can be None)
-    POINTER(c_uint32),                 # out_num_friction_anchors (optional, can be None)
-]
 
 
 # Scene query types (match ovphysx_types.h)
+
 
 class _SphereGeom(ctypes.Structure):
     _fields_ = [("radius", ctypes.c_float), ("position", ctypes.c_float * 3)]
@@ -1136,11 +1253,13 @@ class _GeomUnion(ctypes.Union):
 
 class ovphysx_scene_query_geometry_desc_t(ctypes.Structure):
     """Geometry descriptor for sweep/overlap queries (matches C API)."""
+
     _fields_ = [("type", c_int), ("_geom", _GeomUnion)]
 
 
 class ovphysx_scene_query_hit_t(ctypes.Structure):
     """Scene query hit result (matches C API)."""
+
     _fields_ = [
         ("collision", c_uint64),
         ("rigid_body", c_uint64),
@@ -1156,45 +1275,45 @@ class ovphysx_scene_query_hit_t(ctypes.Structure):
 # Scene query function prototypes
 _lib.ovphysx_raycast.restype = ovphysx_result_t
 _lib.ovphysx_raycast.argtypes = [
-    c_uint64,                                              # handle
-    ctypes.c_float * 3,                                    # origin
-    ctypes.c_float * 3,                                    # direction
-    ctypes.c_float,                                        # distance
-    ctypes.c_bool,                                         # both_sides
-    c_int,                                                 # mode
-    POINTER(POINTER(ovphysx_scene_query_hit_t)),           # out_hits
-    POINTER(c_uint32),                                     # out_count
+    c_uint64,  # handle
+    ctypes.c_float * 3,  # origin
+    ctypes.c_float * 3,  # direction
+    ctypes.c_float,  # distance
+    ctypes.c_bool,  # both_sides
+    c_int,  # mode
+    POINTER(POINTER(ovphysx_scene_query_hit_t)),  # out_hits
+    POINTER(c_uint32),  # out_count
 ]
 
 _lib.ovphysx_sweep.restype = ovphysx_result_t
 _lib.ovphysx_sweep.argtypes = [
-    c_uint64,                                              # handle
-    POINTER(ovphysx_scene_query_geometry_desc_t),          # geometry
-    ctypes.c_float * 3,                                    # direction
-    ctypes.c_float,                                        # distance
-    ctypes.c_bool,                                         # both_sides
-    c_int,                                                 # mode
-    POINTER(POINTER(ovphysx_scene_query_hit_t)),           # out_hits
-    POINTER(c_uint32),                                     # out_count
+    c_uint64,  # handle
+    POINTER(ovphysx_scene_query_geometry_desc_t),  # geometry
+    ctypes.c_float * 3,  # direction
+    ctypes.c_float,  # distance
+    ctypes.c_bool,  # both_sides
+    c_int,  # mode
+    POINTER(POINTER(ovphysx_scene_query_hit_t)),  # out_hits
+    POINTER(c_uint32),  # out_count
 ]
 
 _lib.ovphysx_overlap.restype = ovphysx_result_t
 _lib.ovphysx_overlap.argtypes = [
-    c_uint64,                                              # handle
-    POINTER(ovphysx_scene_query_geometry_desc_t),          # geometry
-    c_int,                                                 # mode
-    POINTER(POINTER(ovphysx_scene_query_hit_t)),           # out_hits
-    POINTER(c_uint32),                                     # out_count
+    c_uint64,  # handle
+    POINTER(ovphysx_scene_query_geometry_desc_t),  # geometry
+    c_int,  # mode
+    POINTER(POINTER(ovphysx_scene_query_hit_t)),  # out_hits
+    POINTER(c_uint32),  # out_count
 ]
 
 _lib.ovphysx_scene_query_get_paths_from_ids.restype = ovphysx_result_t
 _lib.ovphysx_scene_query_get_paths_from_ids.argtypes = [
-    c_uint64,                    # handle
-    POINTER(c_uint64),           # ids
-    c_uint32,                    # id_count
-    POINTER(ovphysx_string_t),   # out_paths
-    c_uint32,                    # max_paths
-    POINTER(c_uint32),           # out_count
+    c_uint64,  # handle
+    POINTER(c_uint64),  # ids
+    c_uint32,  # id_count
+    POINTER(ovphysx_string_t),  # out_paths
+    c_uint32,  # max_paths
+    POINTER(c_uint32),  # out_count
 ]
 
 
@@ -1204,9 +1323,9 @@ _lib.ovphysx_scene_query_get_paths_from_ids.argtypes = [
 
 _lib.ovphysx_create_sdf_view.restype = ovphysx_result_t
 _lib.ovphysx_create_sdf_view.argtypes = [
-    c_uint64,           # handle
-    ovphysx_string_t,   # pattern
-    c_uint32,           # max_query_points
+    c_uint64,  # handle
+    ovphysx_string_t,  # pattern
+    c_uint32,  # max_query_points
     POINTER(c_uint64),  # out_handle
 ]
 
@@ -1218,10 +1337,10 @@ _lib.ovphysx_sdf_view_get_max_query_points.argtypes = [c_uint64, c_uint64, POINT
 
 _lib.ovphysx_evaluate_sdf.restype = ovphysx_result_t
 _lib.ovphysx_evaluate_sdf.argtypes = [
-    c_uint64,                  # handle
-    c_uint64,                  # sdf_handle
-    ctypes.c_void_p,           # query_points (DLTensor*)
-    ctypes.c_void_p,           # out_distances_and_gradients (DLTensor*)
+    c_uint64,  # handle
+    c_uint64,  # sdf_handle
+    ctypes.c_void_p,  # query_points (DLTensor*)
+    ctypes.c_void_p,  # out_distances_and_gradients (DLTensor*)
 ]
 
 _lib.ovphysx_destroy_sdf_view.restype = ovphysx_result_t
@@ -1246,8 +1365,7 @@ def writability(object_type: int, attribute: str) -> int:
     result = _lib.ovphysx_writability(c_int32(int(object_type)), ctypes.byref(attr), ctypes.byref(out))
     if result.status != 0:  # OVPHYSX_API_SUCCESS
         err = _lib.ovphysx_get_last_error()
-        msg = (ctypes.string_at(err.ptr, err.length).decode("utf-8", "replace")
-               if err and err.ptr else "unknown error")
+        msg = ctypes.string_at(err.ptr, err.length).decode("utf-8", "replace") if err and err.ptr else "unknown error"
         raise ValueError(f"ovphysx_writability({int(object_type)}, {attribute!r}) failed: {msg}")
     return int(out.value)
 

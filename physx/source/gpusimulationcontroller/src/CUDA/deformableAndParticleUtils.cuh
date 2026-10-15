@@ -7,12 +7,10 @@
 #define __DEFORMABLE_AND_PARTICLE_UTILS_CUH__
 
 #include "foundation/PxMathUtils.h"
-#include "PxDeformableSurface.h" // for PX_MAX_NB_DEFORMABLE_SURFACE_TRI
-#include "PxDeformableVolume.h" // for PX_MAX_NB_DEFORMABLE_VOLUME_TET
 #include "PxsMaterialCombiner.h"
 #include "PxsDeformableVolumeMaterialCore.h"
 #include "PxsDeformableSurfaceMaterialCore.h"
-#include "PxgDeformableContactInfo.h"
+#include "PxgDeformableContactWriters.h"
 #include "PxgDeformableConstraints.h"
 #include "PxgFEMCloth.h"
 #include "PxgSoftBody.h"
@@ -56,6 +54,49 @@ PX_FORCE_INLINE __device__ void bumpDbRefCountTet(float4* PX_RESTRICT deltaBuf, 
 	if(PxAbs(w1) > 1e-3f) atomicAdd(&deltaBuf[tetVertIndices.y].w, 1.0f);
 	if(PxAbs(w2) > 1e-3f) atomicAdd(&deltaBuf[tetVertIndices.z].w, 1.0f);
 	if(PxAbs(w3) > 1e-3f) atomicAdd(&deltaBuf[tetVertIndices.w].w, 1.0f);
+}
+
+// Bumps the reference count of every vertex the referenced feature is built from.
+PX_FORCE_INLINE __device__ void bumpClothRefCount(PxgFEMCloth& cloth, PxU64 ref, const PxVec3& w)
+{
+	const PxU32 elementId = PxgGetDeformableFeatureId(ref);
+	if(PxgGetDeformableFeatureType(ref) == PxgDeformableRef::eVERTEX)
+		bumpDbRefCountVtx(cloth.mDeltaPos, elementId);
+	else
+		bumpDbRefCountTri(cloth.mDeltaPos, cloth.mTriangleVertexIndices_ownedEdges[elementId], w.x, w.y, w.z);
+}
+
+PX_FORCE_INLINE __device__ void bumpClothRefCount(PxgFEMCloth& cloth, PxU64 ref,
+                                                  const float4* bcCoords, PxU32 bcIndex)
+{
+	if(PxgGetDeformableFeatureType(ref) == PxgDeformableRef::eVERTEX)
+		bumpDbRefCountVtx(cloth.mDeltaPos, PxgGetDeformableFeatureId(ref));
+	else
+	{
+		const float4 bary = bcCoords[bcIndex];
+		bumpClothRefCount(cloth, ref, PxVec3(bary.x, bary.y, bary.z));
+	}
+}
+
+PX_FORCE_INLINE __device__ void bumpSoftBodyRefCount(const PxgSoftBody& softbody, PxU64 ref, const PxVec4& w)
+{
+	const PxU32 elementId = PxgGetDeformableFeatureId(ref);
+	if(PxgGetDeformableFeatureType(ref) == PxgDeformableRef::eVERTEX)
+		bumpDbRefCountVtx(softbody.mSimDelta, elementId);
+	else
+		bumpDbRefCountTet(softbody.mSimDelta, softbody.mSimTetIndices[elementId], w.x, w.y, w.z, w.w);
+}
+
+PX_FORCE_INLINE __device__ void bumpSoftBodyRefCount(const PxgSoftBody& softbody, PxU64 ref,
+                                                     const float4* bcCoords, PxU32 bcIndex)
+{
+	if(PxgGetDeformableFeatureType(ref) == PxgDeformableRef::eVERTEX)
+		bumpDbRefCountVtx(softbody.mSimDelta, PxgGetDeformableFeatureId(ref));
+	else
+	{
+		const float4 bary = bcCoords[bcIndex];
+		bumpSoftBodyRefCount(softbody, ref, PxVec4(bary.x, bary.y, bary.z, bary.w));
+	}
 }
 
 // Accumulate a per-vertex solve delta (a position delta in position iterations,
@@ -102,27 +143,10 @@ static __device__ void updateDeltaTet(float4* outputDeltas, const uint4& tetVert
 		AtomicAdd(outputDeltas[tetVertIndices.w], delta*invMassBary.w);
 }
 
-// Convert the prep-time barycentric float4 to the solver-side Vec form.
-// SB (PxVec4): all four components pass through (bc.{x,y,z,w} are the four
-// tet baries). Cloth (PxVec3): bc.w is the triangle-vs-vertex marker
-// (0 = triangle/edge, 1 = vertex marker; the PxVec3 overload below
-// dispatches on bc.w != 0, so any nonzero counts as vertex). Triangle keeps
-// the bary; vertex collapses to (1, 0, 0), which the solver pairs with a
-// matching vertexInvMasses = (perVertexInvMass, 0, 0) so the bc^2*invMass dot
-// product reduces to the single vertex's invMass.
-PX_FORCE_INLINE __device__ static void toSolverBc(PxVec4& out, const float4& bc)
-{
-	out = PxVec4(bc.x, bc.y, bc.z, bc.w);
-}
-PX_FORCE_INLINE __device__ static void toSolverBc(PxVec3& out, const float4& bc)
-{
-	out = (bc.w == 0.0f) ? PxVec3(bc.x, bc.y, bc.z) : PxVec3(1.0f, 0.0f, 0.0f);
-}
-
 // Pair-level state for a deformable contact: normal / tangent, rigid
 // angular-jacobian rows raXn / raXt (= ra x normal, ra x tangent), and the
 // accumulated + per-iter Lagrange multipliers.
-// Operated on by solveRbDbContact and solveDbDbContact. Both also cover particle
+// Operated on by solveRigidDbContact and solveDbDbContact. Both also cover particle
 // contacts, where a particle is represented as a single-vertex PxgDeformablePart.
 // Pair-level contact geometry and prep inputs, read-only during the solve.
 // Populated by readContactPrep (RB-DB / particle-rigid) or readContactPrepDbDb
@@ -158,7 +182,7 @@ struct PxgDbContactPair
 
 	// Overload for the particle-rigid block: it carries only the rigid side's clamp
 	// (penBiasClampRigid), so the caller passes the particle's clamp and the pair max is taken here.
-	PX_FORCE_INLINE __device__ void readContactPrep(const PxgParticleRigidContactBlock& block,
+	PX_FORCE_INLINE __device__ void readContactPrep(const PxgRigidParticleContactBlock& block,
 													PxReal particlePenBiasClamp, PxU32 lane)
 	{
 		const float4 normal_errorW = block.normal_errorW[lane];
@@ -212,10 +236,43 @@ struct PxgDbSolveOutput
 	}
 };
 
+PX_FORCE_INLINE __device__ int getGlobalRigidBodyId(const PxgPrePrepDesc* const prePrepDesc,
+													const PxNodeIndex& rigidId, PxU32 numSolverBodies,
+													PxU32 maxLinksPerArticulation)
+{
+	// Following PxgVelocityReader style to read rigid body indices.
+	if(rigidId.isStaticBody())
+	{
+		return -1;
+	}
+
+	const PxU32 solverBodyIdx = prePrepDesc->solverBodyIndices[rigidId.index()];
+
+	// Articulation buckets are keyed per-LINK (not per-articulation),
+	// so that the reference count matches the per-link grouping used by
+	// accumulateRigidDeltas. Otherwise, when multiple links of the same
+	// articulation contact the same deformable, rigidRefCount double-counts
+	// against the per-link averaging and the chain receives 2x the correct
+	// per-iter impulse.
+	// Layout: [0..numSolverBodies)        = rigid-body slots
+	//         [numSolverBodies..end)      = numArticulations * maxLinksPerArticulation slots
+	return rigidId.isArticulation()
+			 ? static_cast<int>(numSolverBodies + solverBodyIdx * maxLinksPerArticulation + rigidId.articulationLinkId())
+			 : static_cast<int>(solverBodyIdx);
+}
+
+// A static rigid (id -1) and a kinematic (invMass 0) are not reference counted: nothing divides
+// their response. Asked by readBodyProperties before the read and by every bump site before the
+// increment.
+PX_FORCE_INLINE __device__ bool rigidIsRefCounted(int globalRigidBodyId, PxReal rigidInvMass)
+{
+	return globalRigidBodyId != -1 && rigidInvMass != 0.0f;
+}
+
 // The rigid side of a deformable contact/attachment (or particle contact)
 // constraint. Carries the rigid body properties, the prep-time block reads, and
 // the live rigid state.
-// Operated on by solveRbDbContact, solveRbDbAttachment.
+// Operated on by solveRigidDbContact, solveRigidDbAttachment.
 struct PxgRigidPart
 {
 	// Body properties (populated by readBodyProperties)
@@ -264,29 +321,6 @@ struct PxgRigidPart
 	PxVec3 linDelta;
 	PxVec3 angDelta;
 
-	PX_FORCE_INLINE __device__ int getGlobalRigidBodyId(const PxgPrePrepDesc* const prePrepDesc, const PxNodeIndex& rigidId,
-														PxU32 numSolverBodies, PxU32 maxLinksPerArticulation)
-	{
-		// Following PxgVelocityReader style to read rigid body indices.
-		if(rigidId.isStaticBody())
-		{
-			return -1;
-		}
-
-		const PxU32 solverBodyIdx = prePrepDesc->solverBodyIndices[rigidId.index()];
-
-		// Articulation buckets are keyed per-LINK (not per-articulation),
-		// so that the reference count matches the per-link grouping used by
-		// accumulateRigidDeltas. Otherwise, when multiple links of the same
-		// articulation contact the same deformable, rigidRefCount double-counts
-		// against the per-link averaging and the chain receives 2x the correct
-		// per-iter impulse.
-		// Layout: [0..numSolverBodies)        = rigid-body slots
-		//         [numSolverBodies..end)      = numArticulations * maxLinksPerArticulation slots
-		return rigidId.isArticulation()
-				 ? static_cast<int>(numSolverBodies + solverBodyIdx * maxLinksPerArticulation + rigidId.articulationLinkId())
-				 : static_cast<int>(solverBodyIdx);
-	}
 
 	PX_FORCE_INLINE __device__ void readBodyProperties(const PxNodeIndex& rigidId, int globalRigidBodyId, PxReal rigidInvMass,
 										 const PxU32* const rigidBodyRefCounts, const PxsMaterialData* rigidMaterial)
@@ -294,7 +328,7 @@ struct PxgRigidPart
 		referenceCount = 1;
 
 		// Query the reference count for the rigid body.
-		if(rigidBodyRefCounts && globalRigidBodyId != -1 && rigidInvMass != 0.0f)
+		if(rigidBodyRefCounts && rigidIsRefCounted(globalRigidBodyId, rigidInvMass))
 		{
 			referenceCount = rigidBodyRefCounts[globalRigidBodyId];
 		}
@@ -455,7 +489,7 @@ PX_FORCE_INLINE __device__ PxVec3 readParticleLinDelta(const PxgParticleSystem& 
 // helpers: cloth (PxVec3, triangle or single vertex), soft body (PxVec4, tet),
 // particle (PxVec3, a single vertex with bc = (1,0,0), contacts only). An
 // instantiation only ever calls the helpers of its own body type.
-// Operated on by solveRbDbContact, solveDbDbContact, solveRbDbAttachment,
+// Operated on by solveRigidDbContact, solveDbDbContact, solveRigidDbAttachment,
 // solveDbDbAttachment.
 template <typename Vec>
 struct PxgDeformablePart
@@ -480,16 +514,18 @@ struct PxgDeformablePart
 	PxVec3 posDelta = PxVec3(0.0f);
 	Vec vertexInvMasses; // refCount-inflated. TODO: rename to vertexInvMassesSplit
 
-	// Contact-prep cache (populated by readContactPrep)
-	// `bc` is the solver-side bary (cloth-vertex collapses to (1,0,0) via
-	// toSolverBc); used in solveRbDbContact for the bc^2*invMass denominator.
+	// Contact-prep cache, populated by readContactPrep. Used in solveRigidDbContact for the bc^2*invMass
+	// denominator.
 	Vec bc;
+
+	// The participant this part resolves, set by every reader. Used to get the feature type and id.
+	PxU64 ref = 0;
 
 	// Attachment-prep cache, populated by readSoftBodyAttachment / readClothAttachment for
 	// RB-DB attachments, or readSoftBodyAttachmentDbDb / readClothAttachmentDbDb for DB-DB
 	// attachments.
 	// attachPointInvMass:      raw bc^2*invMass (no refCount inflation). Used by
-	//                          solveRbDbAttachment in the denomBias formula
+	//                          solveRigidDbAttachment in the denomBias formula
 	//                          (refN * raw - split), and by the RB-DB kernels'
 	//                          isStaticBody kinematic-skip gate. Set by RB-DB
 	//                          readers only. DB-DB readers leave it at 0.
@@ -502,46 +538,27 @@ struct PxgDeformablePart
 	PxReal attachPointInvMass = 0.0f;
 	PxReal attachPointInvMassSplit = 0.0f;
 
-	template <typename Block>
-	PX_FORCE_INLINE __device__ void readContactPrep(const Block& block, PxU32 lane)
-	{
-		toSolverBc(bc, block.barycentric[lane]);
-	}
-
-	// Side-tagged variants for two-sided blocks (PxgDbDbContactBlock), where each
-	// side has its own barycentric slot. (The pair maxPenBiasClamp is read once
-	// into PxgDbContactPair by readContactPrepDbDb.)
-	template <typename Block>
-	PX_FORCE_INLINE __device__ void readContactPrepDbSide0(const Block& block, PxU32 lane)
-	{
-		toSolverBc(bc, block.barycentric0[lane]);
-	}
-
-	template <typename Block>
-	PX_FORCE_INLINE __device__ void readContactPrepDbSide1(const Block& block, PxU32 lane)
-	{
-		toSolverBc(bc, block.barycentric1[lane]);
-	}
-
 	// linDelta is the accumulated position delta, or in velocity mode the velocity
 	// (mVelocity_InvMass) scaled by dt so the solve's invDt recovers the point velocity.
-	PX_FORCE_INLINE __device__ PxVec3 readCloth(const PxgFEMCloth& cloth, PxU32 elementId, const float4& bc,
-												const PxsDeformableSurfaceMaterialData* const materials, bool countReferenceOnly,
-												PxReal dt, bool isVelocityIteration)
+	PX_FORCE_INLINE __device__ PxVec3 readCloth(const PxgFEMCloth& cloth, PxU64 ref, const float4* bcCoords,
+												PxU32 bcIndex, const PxsDeformableSurfaceMaterialData* const materials,
+												bool countReferenceOnly, PxReal dt, bool isVelocityIteration)
 	{
-		// Note: PX_MAX_NB_DEFORMABLE_SURFACE_TRI == PX_MAX_NB_DEFORMABLE_SURFACE_VTX
-		if(elementId == PX_MAX_NB_DEFORMABLE_SURFACE_TRI)
-		{
-			vertexInvMasses = PxVec3(0.0f);
-			return vertexInvMasses;
-		}
+		this->ref = ref;
+		const PxU32 elementId = PxgGetDeformableFeatureId(ref);
+		const bool elemIsVertex = PxgGetDeformableFeatureType(ref) == PxgDeformableRef::eVERTEX;
 
 		const float4* const PX_RESTRICT posDeltasOrVelocities = isVelocityIteration ? cloth.mVelocity_InvMass : cloth.mAccumulatedDeltaPos;
 		float4 posDeltaOrVelocity;
 
-		if(bc.w == 0) // Cloth triangle
+		if(!elemIsVertex) // Cloth triangle
 		{
-			const uint4 triVertId = cloth.mTriangleVertexIndices[elementId];
+			PX_ASSERT(bcCoords);
+			const float4 bary = bcCoords[bcIndex];
+			PX_ASSERT(bary.x + bary.y + bary.z + bary.w > 0.99f);
+			bc = PxVec3(bary.x, bary.y, bary.z);
+
+			const uint4 triVertId = cloth.mTriangleVertexIndices_ownedEdges[elementId];
 			const float4 pdv0 = posDeltasOrVelocities[triVertId.x];
 			const float4 pdv1 = posDeltasOrVelocities[triVertId.y];
 			const float4 pdv2 = posDeltasOrVelocities[triVertId.z];
@@ -576,6 +593,8 @@ struct PxgDeformablePart
 		}
 		else // Cloth vertex
 		{
+			bc = PxVec3(1.0f, 0.0f, 0.0f);
+
 			posDeltaOrVelocity = posDeltasOrVelocities[elementId];
 			vertexInvMasses = PxVec3(posDeltaOrVelocity.w, 0.0f, 0.0f);
 
@@ -610,15 +629,21 @@ struct PxgDeformablePart
 
 	// linDelta is the accumulated position delta, or in velocity mode the velocity
 	// (mSimVelocity_InvMass) scaled by dt so the solve's invDt recovers the point velocity.
-	PX_FORCE_INLINE __device__ PxVec4 readSoftBody(const PxgSoftBody& softbody, PxU32 tetId, const float4& bc,
-												 const PxsDeformableVolumeMaterialData* const materials, bool checkOnlyActivity,
-												 PxReal dt, bool isVelocityIteration)
+	PX_FORCE_INLINE __device__ PxVec4 readSoftBody(const PxgSoftBody& softbody, PxU64 ref, const float4* bcCoords,
+												 PxU32 bcIndex, const PxsDeformableVolumeMaterialData* const materials,
+												 bool checkOnlyActivity, PxReal dt, bool isVelocityIteration)
 	{
-		if(tetId == PX_MAX_NB_DEFORMABLE_VOLUME_TET)
-		{
-			vertexInvMasses = PxVec4(0.0f);
-			return vertexInvMasses;
-		}
+		// No producer emits a vertex-typed volume CONTACT yet. Contacts remap from the collision mesh
+		// to a simulation tetrahedron, which keeps the vertex only where the two meshes coincide.
+		// Attachments are unaffected: readSoftBodyAttachment handles a volume vertex.
+		PX_ASSERT(PxgGetDeformableFeatureType(ref) == PxgDeformableRef::eTETRAHEDRON);
+
+		this->ref = ref;
+		const PxU32 tetId = PxgGetDeformableFeatureId(ref);
+		PX_ASSERT(bcCoords);
+		const float4 bary = bcCoords[bcIndex];
+		PX_ASSERT(bary.x + bary.y + bary.z + bary.w > 0.99f);
+		bc = PxLoad4(bary);
 
 		const float4* const PX_RESTRICT posDeltasOrVelocities = isVelocityIteration ? softbody.mSimVelocity_InvMass : softbody.mSimDeltaPos;
 
@@ -700,23 +725,24 @@ struct PxgDeformablePart
 	// Attachment-side reads. Differ from readSoftBody / readCloth in:
 	//  - Source buffer is PGS velocity (mSimVelocity_InvMass / mVelocity_InvMass)
 	//    or TGS accumulated delta-pos (mSimDeltaPos / mAccumulatedDeltaPos).
-	//  - `bary` and `elemIsVertex` MUST be derived from the same source.
-	//    Callers compute `elemIsVertex = PxGetIsVertexType(bary)`, which
-	//    tests bary == (0,0,0,0), the all-zeros sentinel that marks a vertex
-	//    attachment, and pass both. `bary` is then either consulted as the
-	//    element-side barycentric (element branch) or unread (vertex branch).
-	//    Passing inconsistent values silently produces zero-effect reads
-	//    (`elemIsVertex=false` + zeros bary) or drops the bary
-	//    (`elemIsVertex=true` + non-zero bary).
+	//  - `elemIsVertex` comes from the attachment's feature type, and `bary` is
+	//    then either consulted as the element-side barycentric (element branch)
+	//    or unread (vertex branch). Passing inconsistent values silently
+	//    produces zero-effect reads (`elemIsVertex=false` + zeros bary) or drops
+	//    the bary (`elemIsVertex=true` + non-zero bary).
 	//  - vertexInvMasses are refCount-inflated from .w (pre-counted), so the
 	//    scatter pairs with the finalize-time /.w divide.
 	//  - attachPointInvMass      = raw bc^2*invM (D in denomBias formula).
 	//    attachPointInvMassSplit = refCount-inflated bc^2*invM (D' in denomBias).
 
-	PX_FORCE_INLINE __device__ void readSoftBodyAttachment(const PxgSoftBody& softbody, PxU32 elemIdx,
-														   const float4& bary, bool elemIsVertex, bool isTGS,
+	PX_FORCE_INLINE __device__ void readSoftBodyAttachment(const PxgSoftBody& softbody, PxU64 ref,
+														   const float4* bcCoords, PxU32 bcIndex, bool isTGS,
 														   PxReal dt, bool isVelocityIteration)
 	{
+		this->ref = ref;
+		const PxU32 elemIdx = PxgGetDeformableFeatureId(ref);
+		const bool elemIsVertex = PxgGetDeformableFeatureType(ref) == PxgDeformableRef::eVERTEX;
+
 		// Source: PGS always the velocity buffer; TGS the accumulated delta, except
 		// in velocity iterations where it reads the velocity buffer (scaled by dt below).
 		const float4* const PX_RESTRICT posDeltasOrVelocities = (isTGS && !isVelocityIteration) ? softbody.mSimDeltaPos : softbody.mSimVelocity_InvMass;
@@ -730,10 +756,13 @@ struct PxgDeformablePart
 			vertexInvMasses = PxVec4(posDeltaOrVelocity.w * refCount_v, 0.0f, 0.0f, 0.0f);
 			attachPointInvMass      = posDeltaOrVelocity.w;
 			attachPointInvMassSplit = posDeltaOrVelocity.w * refCount_v;
-			bc = PxVec4(1.0f, 0.0f, 0.0f, 0.0f);
+			bc = PxVec4(0.0f);
 		}
 		else
 		{
+			PX_ASSERT(bcCoords);
+			const float4 bary = bcCoords[bcIndex];
+
 			const uint4 tetVertId = softbody.mSimTetIndices[elemIdx];
 			const float4 pdv0 = posDeltasOrVelocities[tetVertId.x];
 			const float4 pdv1 = posDeltasOrVelocities[tetVertId.y];
@@ -755,17 +784,21 @@ struct PxgDeformablePart
 			const PxReal bw2 = bary.w * bary.w;
 			attachPointInvMass      = bx2 * pdv0.w      + by2 * pdv1.w      + bz2 * pdv2.w      + bw2 * pdv3.w;
 			attachPointInvMassSplit = bx2 * pdv0.w * r0 + by2 * pdv1.w * r1 + bz2 * pdv2.w * r2 + bw2 * pdv3.w * r3;
-			bc = PxVec4(bary.x, bary.y, bary.z, bary.w);
+			bc = PxLoad4(bary);
 		}
 
 		if(isTGS && isVelocityIteration)
 			linDelta *= dt;
 	}
 
-	PX_FORCE_INLINE __device__ void readClothAttachment(const PxgFEMCloth& cloth, PxU32 elemIdx,
-														const float4& bary, bool elemIsVertex, bool isTGS,
+	PX_FORCE_INLINE __device__ void readClothAttachment(const PxgFEMCloth& cloth, PxU64 ref,
+														const float4* bcCoords, PxU32 bcIndex, bool isTGS,
 														PxReal dt, bool isVelocityIteration)
 	{
+		this->ref = ref;
+		const PxU32 elemIdx = PxgGetDeformableFeatureId(ref);
+		const bool elemIsVertex = PxgGetDeformableFeatureType(ref) == PxgDeformableRef::eVERTEX;
+
 		const float4* const PX_RESTRICT posDeltasOrVelocities = (isTGS && !isVelocityIteration) ? cloth.mAccumulatedDeltaPos : cloth.mVelocity_InvMass;
 		const float4* const PX_RESTRICT delta = cloth.mDeltaPos;
 
@@ -777,11 +810,14 @@ struct PxgDeformablePart
 			vertexInvMasses = PxVec3(posDeltaOrVelocity.w * refCount_v, 0.0f, 0.0f);
 			attachPointInvMass      = posDeltaOrVelocity.w;
 			attachPointInvMassSplit = posDeltaOrVelocity.w * refCount_v;
-			bc = PxVec3(1.0f, 0.0f, 0.0f);
+			bc = PxVec3(0.0f);
 		}
 		else
 		{
-			const uint4 triVertId = cloth.mTriangleVertexIndices[elemIdx];
+			PX_ASSERT(bcCoords);
+			const float4 bary = bcCoords[bcIndex];
+
+			const uint4 triVertId = cloth.mTriangleVertexIndices_ownedEdges[elemIdx];
 			const float4 pdv0 = posDeltasOrVelocities[triVertId.x];
 			const float4 pdv1 = posDeltasOrVelocities[triVertId.y];
 			const float4 pdv2 = posDeltasOrVelocities[triVertId.z];
@@ -822,11 +858,39 @@ struct PxgDeformablePart
 	// (which applies the delta and zeroes .w).
 	//
 	// attachPointInvMass (raw) is left at 0, because DB-DB attachments do not need it.
-	PX_FORCE_INLINE __device__ PxVec3 readSoftBodyAttachmentDbDb(const PxgSoftBody& softbody, PxU32 tetId, const float4& bary,
+	//
+	// elemIsVertex selects the side's feature the way readSoftBodyAttachment / readClothAttachment do:
+	// a vertex reads one position and one reference count and leaves bary unread.
+	PX_FORCE_INLINE __device__ PxVec3 readSoftBodyAttachmentDbDb(const PxgSoftBody& softbody, PxU64 ref,
+																 const float4* bcCoords, PxU32 bcIndex,
 																 PxReal dt, bool isVelocityIteration)
 	{
+		this->ref = ref;
+		const PxU32 elemIdx = PxgGetDeformableFeatureId(ref);
+		const bool elemIsVertex = PxgGetDeformableFeatureType(ref) == PxgDeformableRef::eVERTEX;
+
 		const float4* const PX_RESTRICT positionsOrVelocities = isVelocityIteration ? softbody.mSimVelocity_InvMass : softbody.mSimPosition_InvMass;
 		const float4* const PX_RESTRICT simDelta = softbody.mSimDelta;
+
+		if(elemIsVertex)
+		{
+			const float4 positionOrVelocity = positionsOrVelocities[elemIdx];
+			const PxReal r = simDelta[elemIdx].w;
+
+			vertexInvMasses = PxVec4(positionOrVelocity.w * r, 0.0f, 0.0f, 0.0f);
+			bc = PxVec4(0.0f);
+			attachPointInvMassSplit = positionOrVelocity.w * r;
+
+			PxVec3 vertexResult(positionOrVelocity.x, positionOrVelocity.y, positionOrVelocity.z);
+			if(isVelocityIteration)
+				vertexResult *= dt;
+			return vertexResult;
+		}
+
+		PX_ASSERT(bcCoords);
+		const float4 bary = bcCoords[bcIndex];
+
+		const PxU32 tetId = elemIdx;
 		const uint4 tetVertId = softbody.mSimTetIndices[tetId];
 		const float4 pv0 = positionsOrVelocities[tetVertId.x];
 		const float4 pv1 = positionsOrVelocities[tetVertId.y];
@@ -840,7 +904,7 @@ struct PxgDeformablePart
 		const PxReal r3 = simDelta[tetVertId.w].w;
 
 		vertexInvMasses = PxVec4(pv0.w * r0, pv1.w * r1, pv2.w * r2, pv3.w * r3);
-		bc = PxVec4(bary.x, bary.y, bary.z, bary.w);
+		bc = PxLoad4(bary);
 
 		const PxReal bx2 = bary.x * bary.x;
 		const PxReal by2 = bary.y * bary.y;
@@ -854,12 +918,36 @@ struct PxgDeformablePart
 		return result;
 	}
 
-	PX_FORCE_INLINE __device__ PxVec3 readClothAttachmentDbDb(const PxgFEMCloth& cloth, PxU32 elementId, const float4& bary,
+	PX_FORCE_INLINE __device__ PxVec3 readClothAttachmentDbDb(const PxgFEMCloth& cloth, PxU64 ref,
+															 const float4* bcCoords, PxU32 bcIndex,
 															 PxReal dt, bool isVelocityIteration)
 	{
+		this->ref = ref;
+		const PxU32 elementId = PxgGetDeformableFeatureId(ref);
+		const bool elemIsVertex = PxgGetDeformableFeatureType(ref) == PxgDeformableRef::eVERTEX;
+
 		const float4* const PX_RESTRICT positionsOrVelocities = isVelocityIteration ? cloth.mVelocity_InvMass : cloth.mPosition_InvMass;
 		const float4* const PX_RESTRICT delta = cloth.mDeltaPos;
-		const uint4 triVertId = cloth.mTriangleVertexIndices[elementId];
+
+		if(elemIsVertex)
+		{
+			const float4 positionOrVelocity = positionsOrVelocities[elementId];
+			const PxReal r = delta[elementId].w;
+
+			vertexInvMasses = PxVec3(positionOrVelocity.w * r, 0.0f, 0.0f);
+			bc = PxVec3(0.0f);
+			attachPointInvMassSplit = positionOrVelocity.w * r;
+
+			PxVec3 vertexResult(positionOrVelocity.x, positionOrVelocity.y, positionOrVelocity.z);
+			if(isVelocityIteration)
+				vertexResult *= dt;
+			return vertexResult;
+		}
+
+		PX_ASSERT(bcCoords);
+		const float4 bary = bcCoords[bcIndex];
+
+		const uint4 triVertId = cloth.mTriangleVertexIndices_ownedEdges[elementId];
 		const float4 pv0 = positionsOrVelocities[triVertId.x];
 		const float4 pv1 = positionsOrVelocities[triVertId.y];
 		const float4 pv2 = positionsOrVelocities[triVertId.z];
@@ -886,17 +974,26 @@ struct PxgDeformablePart
 	// Writebacks, shared by the contact and attachment solves.
 
 	// Cloth-side writeback: scatter the solve delta into the cloth's per-iteration
-	// scratch (mDeltaPos), weighted per vertex by bary * vertexInvMasses.
-	// elemIsVertex selects the scatter: a single vertex (elementId is the vertex
-	// index, bc unread) or a triangle (elementId indexes mTriangleVertexIndices,
-	// bc.xyz are the barycentric weights).
-	PX_FORCE_INLINE __device__ void writeCloth(PxgFEMCloth& cloth, PxU32 elementId, const float4& bc, bool elemIsVertex, PxVec3 delta)
+	// scratch (mDeltaPos), weighted per vertex by bc * vertexInvMasses.
+	PX_FORCE_INLINE __device__ void writeCloth(PxgFEMCloth& cloth, PxVec3 delta)
 	{
-		if(elemIsVertex)
+		const PxU32 elementId = PxgGetDeformableFeatureId(ref);
+		if(PxgGetDeformableFeatureType(ref) == PxgDeformableRef::eVERTEX)
 			updateDeltaVtx(cloth.mDeltaPos, elementId, delta, vertexInvMasses.x);
 		else
-			updateDeltaTri(cloth.mDeltaPos, cloth.mTriangleVertexIndices[elementId], delta,
+			updateDeltaTri(cloth.mDeltaPos, cloth.mTriangleVertexIndices_ownedEdges[elementId], delta,
 				make_float4(vertexInvMasses.x * bc.x, vertexInvMasses.y * bc.y, vertexInvMasses.z * bc.z, 0.0f));
+	}
+
+	// The weights are already resolved on this part, so these do not touch the block.
+	PX_FORCE_INLINE __device__ void bumpClothRefCount(PxgFEMCloth& cloth) const
+	{
+		::physx::bumpClothRefCount(cloth, ref, bc);
+	}
+
+	PX_FORCE_INLINE __device__ void bumpSoftBodyRefCount(const PxgSoftBody& softbody) const
+	{
+		::physx::bumpSoftBodyRefCount(softbody, ref, bc);
 	}
 
 	// Edge variant for the CC EE solver, where each side is a cloth edge.
@@ -908,12 +1005,11 @@ struct PxgDeformablePart
 
 	// Softbody-side writeback: scatter the solve delta into the softbody's
 	// per-iteration scratch (mSimDelta), weighted per vertex by bary *
-	// vertexInvMasses. elemIsVertex selects the scatter: a single vertex
-	// (elementId is the vertex index, bc unread) or a tet (elementId indexes
-	// mSimTetIndices, bc.xyzw are the barycentric weights).
-	PX_FORCE_INLINE __device__ void writeSoftBody(const PxgSoftBody& softbody, PxU32 elementId, const float4& bc, bool elemIsVertex, PxVec3 delta)
+	// vertexInvMasses.
+	PX_FORCE_INLINE __device__ void writeSoftBody(const PxgSoftBody& softbody, PxVec3 delta)
 	{
-		if(elemIsVertex)
+		const PxU32 elementId = PxgGetDeformableFeatureId(ref);
+		if(PxgGetDeformableFeatureType(ref) == PxgDeformableRef::eVERTEX)
 			updateDeltaVtx(softbody.mSimDelta, elementId, delta, vertexInvMasses.x);
 		else
 			updateDeltaTet(softbody.mSimDelta, softbody.mSimTetIndices[elementId], delta,
@@ -937,7 +1033,7 @@ struct PxgDeformablePart
 
 // Particle adhesion as an attractive normal impulse (<= 0): within the adhesion radius it holds the
 // particle to the collider. Returns 0 in velocity iterations or when the material has no adhesion. Used
-// by solveRbDbContact's withAdhesion instantiation (particle-rigid and particle-static). Deformable pairs
+// by solveRigidDbContact's withAdhesion instantiation (particle-rigid and particle-static). Deformable pairs
 // compile it out (withAdhesion == false).
 PX_FORCE_INLINE __device__ PxReal particleAdhesionImpulse(
 	PxReal separation, PxReal adhesion, PxReal adhesionRadius,
@@ -995,7 +1091,7 @@ to the particle invMass, and friction comes from db.friction (the rigid material
 returns the particle coefficient).
 */
 template <typename Vec, bool withAdhesion = false>
-PX_FORCE_INLINE __device__ bool solveRbDbContact(PxgRigidPart& rigid, PxgDeformablePart<Vec>& db,
+PX_FORCE_INLINE __device__ bool solveRigidDbContact(PxgRigidPart& rigid, PxgDeformablePart<Vec>& db,
 												 const PxgDbContactPair& contactPair, PxgDbSolveOutput& solveOut,
 												 PxReal appliedForceRef, PxReal appliedTanLambdaRef, PxReal dt,
 												 bool wasActive, bool checkOnlyActivity, bool isVelocityIteration)
@@ -1137,7 +1233,7 @@ PX_FORCE_INLINE __device__ bool solveRbDbContact(PxgRigidPart& rigid, PxgDeforma
 		solveOut.deltaLambdaT = targetAccumLambdaT - appliedTanRef;
 	}
 
-	return true;
+	return solveOut.deltaLambdaN != 0.0f || solveOut.deltaLambdaT != 0.0f;
 }
 
 /**
@@ -1164,14 +1260,12 @@ PX_FORCE_INLINE __device__ bool solveRbDbContact(PxgRigidPart& rigid, PxgDeforma
 										budget and friction is two-sided, releasing impulse when the cone shrinks.
 \param[in]		frictionCoefficient		Combined friction coefficient for the pair.
 \param[in]		dt						Substep time.
-\param[in]		wasActive				Activity from a prior iteration. Currently every caller passes false, so
-										activity reduces to CN < 0.
 \param[in]		checkOnlyActivity		If true, compute CN and return activity without writing any other outputs.
 \param[in]		isVelocityIteration		Velocity- vs position-iteration mode. In velocity iterations CN is the
 										predicted end-of-step separation over dt and the projection removes
 										velocity only by the amount of predicted penetration.
 
-\return In checkOnlyActivity mode, whether the contact is active, which is wasActive or CN < 0. Otherwise whether an
+\return In checkOnlyActivity mode, whether the contact is active, which is CN < 0. Otherwise whether an
 impulse was applied.
 
 A particle enters as db1, a single-vertex participant (bc = (1,0,0), so its bc^2*invMass term collapses to the
@@ -1188,7 +1282,6 @@ PX_FORCE_INLINE __device__ bool solveDbDbContact(PxgDeformablePart<Vec0>& db0, P
 												   PxReal appliedNormalLambdaRef, PxReal appliedTanLambdaRef,
 												   PxReal frictionCoefficient,
 												   PxReal dt,
-												   bool wasActive,
 												   bool checkOnlyActivity,
 												   bool isVelocityIteration)
 {
@@ -1227,13 +1320,8 @@ PX_FORCE_INLINE __device__ bool solveDbDbContact(PxgDeformablePart<Vec0>& db0, P
 		CN = PxMax(contactPair.maxPenBiasClamp, separation * invDt);
 	}
 
-	// Currently every caller passes wasActive = false, so activity is CN < 0 and a pair that depenetrates stops
-	// contributing. That keeps the pre-count in step with the solves, since both then count the same pairs.
-	// The parameter stays for a caller that has to remain active while separated, which is what adhesion needs
-	// and what solveRbDbContact uses it for. It cannot be sourced from the isInCollision flag, because that bit
-	// is shared with the mass-splitting reference count at auxInd bit 29, and persisting it would double-count
-	// deformable pairs.
-	const bool isActive = wasActive || CN < 0.0f;
+	// A pair that depenetrates stops contributing, which keeps the pre-count in step with the solves.
+	const bool isActive = CN < 0.0f;
 	if(checkOnlyActivity || !isActive)
 	{
 		return isActive;
@@ -1250,7 +1338,7 @@ PX_FORCE_INLINE __device__ bool solveDbDbContact(PxgDeformablePart<Vec0>& db0, P
 	solveOut.accumulatedDeltaLambdaN += solveOut.deltaLambdaN;
 
 	// Friction: solve-time tangent from the tangential component of
-	// relLinDelta. (Differs from solveRbDbContact, which uses a prep-time
+	// relLinDelta. (Differs from solveRigidDbContact, which uses a prep-time
 	// tangent0 with rigid ra x tangent jacobian rows. contactPair.tangent0 is
 	// unused here.)
 	const PxReal normalProj = relLinDelta.dot(contactPair.normal);
@@ -1267,7 +1355,7 @@ PX_FORCE_INLINE __device__ bool solveDbDbContact(PxgDeformablePart<Vec0>& db0, P
 	const PxReal targetAccumLambdaT = PxMax(appliedTanRef + requiredLambdaTNeg, -frictionLimit);
 	solveOut.deltaLambdaT = targetAccumLambdaT - appliedTanRef;
 
-	return true;
+	return solveOut.deltaLambdaN != 0.0f || solveOut.deltaLambdaT != 0.0f;
 }
 
 // Solves a single rigid-vs-deformable attachment for the per-axis impulse.
@@ -1287,7 +1375,7 @@ PX_FORCE_INLINE __device__ bool solveDbDbContact(PxgDeformablePart<Vec0>& db0, P
 // biasCoefficient = 0). The isTGS branch separates the units: PGS works in
 // velocity, TGS in position deltas scaled by invDt at the end.
 template <typename Vec>
-PX_FORCE_INLINE __device__ PxVec3 solveRbDbAttachment(
+PX_FORCE_INLINE __device__ PxVec3 solveRigidDbAttachment(
 	const PxgRigidPart& rigid,
 	const PxgDeformablePart<Vec>& db,
 	PxReal dt, PxReal biasCoefficient,

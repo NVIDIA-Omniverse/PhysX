@@ -1,11 +1,11 @@
 ---
 name: tensor-bindings-gpu
-description: Exchange GPU simulation state as caller-owned CUDA tensors (DLPack, GPU-to-GPU with no CPU staging) through tensor bindings. The tensor-binding CODE API is deprecated in ovphysx 0.6 in favor of the session read/write API (Python PhysX.read / PhysX.write, C ovphysx_read / ovphysx_write); use the ovphysx-session-write skill to write control inputs and state, and the ovphysx-output-read skill (ovstage-native identity-preserving reads and write-back) to read output back. Tensor bindings are kept only for maintaining existing caller-owned bulk-CUDA binding code during the deprecation period.
+description: Exchange GPU simulation state as caller-owned CUDA tensors (DLPack, GPU-to-GPU with no CPU staging) through tensor bindings. The tensor-binding CODE API is deprecated in ovphysx 0.6 in favor of the session read/write API (Python PhysX.read / PhysX.write, C ovphysx_read / ovphysx_write); use ovphysx-session-write for control inputs and state, and the ovphysx-output-read skill (ovstage-native identity-preserving reads and write-back) to read output back. Tensor bindings are kept only for maintaining existing caller-owned bulk-CUDA binding code during the deprecation period.
 license: Apache-2.0
 compatibility: "ovphysx >=0.6.0 GPU mode with CUDA device memory; C examples require the SDK headers, libraries, CUDA runtime, and an NVIDIA GPU; Python examples require PyTorch with CUDA."
 allowed-tools: Read Shell
 metadata:
-  version: "0.1.5"
+  version: "0.1.8"
   author: NVIDIA Omniverse Physics
   tags: "ovphysx, physics, tensor-bindings, gpu, cuda"
 ---
@@ -81,7 +81,7 @@ static DLTensor make_cuda_tensor_f32_2d(
 }
 
 static int read_and_write_gpu_tensor(
-    ovphysx_handle_t handle,
+    ovphysx_instance_handle_t handle,
     ovphysx_tensor_binding_handle_t binding,
     // CUDA device memory, for example from cudaMalloc(); caller frees it.
     void* device_buffer,
@@ -119,32 +119,46 @@ This helper wraps an existing CUDA allocation; it does not allocate memory.
 `device_buffer`, `shape_storage`, and optional `strides` storage must stay valid until the synchronous read or write call returns.
 The snippet uses `strides = NULL` for C-contiguous tensors, matching the ovphysx C samples.
 
+For Python, install `physx-usd-schemas` and `newton-usd-schemas` alongside
+`ovphysx`. Register both PhysX and Newton schemas before the first population
+call so authored `newton:*` values are preserved.
+
+Import the PhysX schema recipe from
+`ovphysx.samples.python_samples.schema_support`; for native samples, set
+`PHYSX_USD_SCHEMAS_ROOT` to the extracted wheel. See
+[Physics Schemas](../../docs/physics_schemas.md) for setup.
+
 ## Python with PyTorch
 
 ```python
 from pathlib import Path
 
 import ovphysx
+from ovphysx.samples.python_samples.schema_support import physx_schema_paths
 import torch
-from ovphysx import DLDeviceType, PhysX, PhysXConfig, codeless_schema_root
+from ovphysx import ConfigKey, DLDeviceType, PhysX, PhysXConfig
 from ovphysx.types import TensorType
 import ovstage
 
 cuda_device = 0
+# DirectGPU (`/physics/suppressReadback`) still uses the legacy PhysXConfig
+# carbonite path; GPU ordinal is per-instance after create.
 physx = PhysX(
-    active_cuda_gpus=str(cuda_device),
     config=PhysXConfig(
         carbonite_overrides={"/physics/suppressReadback": True},
     ),
 )
-# Register the codeless PhysX schemas before the first population call.
-ovstage.population.register_usd_schemas([str(codeless_schema_root())])
+physx.set_config(ConfigKey.ACTIVE_CUDA_GPUS, str(cuda_device))
+# Register external PhysX and Newton schemas before the first population.
+ovstage.population.register_usd_schemas(
+    [*[str(p) for p in physx_schema_paths()], str(ovphysx.newton_schema_root())]
+)
 stage = ovstage.Stage("ovphysx-gpu-tensors")
 usd_path = Path(ovphysx.__file__).resolve().parent / "samples" / "data" / "basic_simulation.usda"
-ovstage.population.open_usd(stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.PHYSICS)
+ovstage.population.open_usd(stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.ALL)
 # attach_ovstage() reads at a sealed ordinal.
 stage.advance_write_floor(ordinal=1).wait()
-physx.attach_ovstage(stage, read_ordinal=1)
+physx.wait_task(physx.attach_ovstage(stage, read_ordinal=1))
 
 # /World/envs/env* is a clone pattern: env1..env3 exist only after clone + wait.
 # clone-environments owns the full clone contract (wait_all, CPU isolation).
@@ -186,14 +200,14 @@ output = torch.zeros(
 binding.read(output)
 
 binding.destroy()
-physx.detach_ovstage()
+physx.wait_task(physx.detach_ovstage())
 stage.destroy()
 physx.destroy()
 ```
 
-The physics-only `domains` mask above is fine for this skill's non-instanced
-sample USD. For arbitrary content prefer `ALL` — see
-[Population domains](../../docs/ovstage_integration.md#population-domains).
+Use `ALL` when populating USD so nested world transforms are resolved by the
+rendering domain. `PHYSICS` alone seeds local world matrices in OVStage 0.3;
+see [Population domains](../../docs/ovstage_integration.md#population-domains).
 
 ## Important notes
 

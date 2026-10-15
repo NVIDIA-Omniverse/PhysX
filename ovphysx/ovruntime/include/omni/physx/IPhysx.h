@@ -1,6 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-1 AC-2 AC-3 AC-4
+
+// @implements REQ-ATTACH-LIFETIME-001
+// @covers AC-3 AC-4
+
 /**
  * @implements REQ-PUBLICAPI-001
  * @covers AC-1 AC-2 AC-3 AC-4 AC-6 AC-7 AC-8
@@ -11,9 +17,11 @@
 #include <carb/Defines.h>
 #include <carb/Types.h>
 #include <carb/events/IEvents.h>
+#include <omni/physics/AttachHandle.h>
 #include <omni/physics/parse/Handles.h> // ObjectKey
 #include "EventSubscriptionRegistry.h"
 #include "ObjectId.h"
+#include "RuntimeResult.h"
 
 namespace omni
 {
@@ -77,7 +85,9 @@ enum ForceMode
                   //!< except the mass is not divided out before integration.
 };
 
-/// Simulation events received through simulation event stream
+/// Simulation events received through the process event stream. Lifecycle and
+/// interaction events include an int64 `attachHandle` payload (cast to uint64
+/// to recover identity); zero denotes a process-scoped event.
 enum SimulationEvent
 {
     eResumed, //!< When simulation is resumed
@@ -126,6 +136,19 @@ enum struct PhysicsInteractionEvent
 typedef void (*OnPhysicsStepEventFn)(float elapsedTime, void* userData);
 typedef void (*OnPhysicsSimulationEventFn)(SimulationStatusEvent eventStatus, void* userData);
 
+/// Owner-qualified object change. Path and nativeObject are borrowed for the callback duration.
+/// A creation may refer to a private attachment candidate; destruction may refer to a retiring
+/// attachment. Neither requires the attachment to remain publicly resolvable.
+struct PhysicsObjectChangeEvent
+{
+    omni::physics::AttachHandle attach;
+    omni::physics::parse::ObjectKey key;
+    usdparser::ObjectId objectId;
+    PhysXType type;
+    const char* path;
+    void* nativeObject;
+};
+
 /// Notification when a physics object gets created during simulation.
 ///
 /// Whenever a USD operation triggers the creation of a physics object, this notification
@@ -137,13 +160,10 @@ typedef void (*OnPhysicsSimulationEventFn)(SimulationStatusEvent eventStatus, vo
 ///
 /// \note The notification happens after the object has been created.
 ///
-/// \param[in] key ObjectKey of the object that triggered the object creation.
-/// \param[in] objectId The internal object ID that can be used to directly access PhysX objects.
-/// \param[in] type The type of the created object.
+/// \param[in] event Owner-qualified identity and borrowed object data.
 /// \param[in] userData The user data provided by the user when registering the IPhysicsObjectChangeCallback
 ///            structure.
-using ObjectCreationNotificationFn = std::function<void(
-    omni::physics::parse::ObjectKey key, usdparser::ObjectId objectId, PhysXType type, void* userData)>;
+using ObjectCreationNotificationFn = std::function<void(const PhysicsObjectChangeEvent& event, void* userData)>;
 
 /// Notification when a physics object gets destroyed during simulation.
 ///
@@ -157,13 +177,10 @@ using ObjectCreationNotificationFn = std::function<void(
 ///
 /// \note The notification happens before the object gets destroyed.
 ///
-/// \param[in] key ObjectKey of the object that triggered the object destruction.
-/// \param[in] objectId The internal object ID that can be used to directly access PhysX objects.
-/// \param[in] type The type of the object that is going to get destroyed.
+/// \param[in] event Owner-qualified identity and borrowed object data.
 /// \param[in] userData The user data provided by the user when registering the IPhysicsObjectChangeCallback
 ///            structure.
-using ObjectDestructionNotificationFn = std::function<void(
-    omni::physics::parse::ObjectKey key, usdparser::ObjectId objectId, PhysXType type, void* userData)>;
+using ObjectDestructionNotificationFn = std::function<void(const PhysicsObjectChangeEvent& event, void* userData)>;
 
 /// Notification when all physics objects get destroyed during simulation.
 ///
@@ -174,7 +191,7 @@ using ObjectDestructionNotificationFn = std::function<void(
 ///
 /// \param[in] userData The user data provided by the user when registering the IPhysicsObjectChangeCallback
 ///            structure.
-using AllObjectsDestructionNotificationFn = std::function<void(void* userData)>;
+using AllObjectsDestructionNotificationFn = std::function<void(omni::physics::AttachHandle attach, void* userData)>;
 
 /// Structure to specify callbacks to send notifications when physics objects get created or
 /// destroyed during simulation.
@@ -385,6 +402,10 @@ struct VehicleWheelState
 /// General omni.physx interface
 struct IPhysx
 {
+    /// Object lookup entries require an exact live attachment. Zero, reserved and
+    /// retired handles return each entry's invalid result; no active fallback is used.
+    /// Local object IDs and ObjectKeys must always be paired with their owner.
+
     /// Get the internal objectId, this is index to an array of
     /// internal physics representation. This index can be used for direct access.
     ///
@@ -393,7 +414,7 @@ struct IPhysx
     /// correct result
     ///
     /// \returns the index of the physics object in the internal array
-    usdparser::ObjectId(CARB_ABI* getObjectId)(omni::physics::parse::ObjectKey key, PhysXType type);
+    usdparser::ObjectId(CARB_ABI* getObjectId)(omni::physics::AttachHandle attach, omni::physics::parse::ObjectKey key, PhysXType type);
 
     /// Get the PhysX pointer
     ///
@@ -402,7 +423,7 @@ struct IPhysx
     /// correct result
     ///
     /// \returns the pointer to a PhysX representation
-    void*(CARB_ABI* getPhysXPtr)(omni::physics::parse::ObjectKey key, PhysXType type);
+    void*(CARB_ABI* getPhysXPtr)(omni::physics::AttachHandle attach, omni::physics::parse::ObjectKey key, PhysXType type);
 
     /// Get the PhysX pointer
     ///
@@ -410,7 +431,7 @@ struct IPhysx
     ///
     /// \returns the pointer to a PhysX representation (or nullptr if there is no directly
     ///          accessible object)
-    void*(CARB_ABI* getPhysXPtrFast)(usdparser::ObjectId objectId);
+    void*(CARB_ABI* getPhysXPtrFast)(omni::physics::AttachHandle attach, usdparser::ObjectId objectId);
 
     /// Get the ObjectKey for given objectId
     ///
@@ -418,7 +439,7 @@ struct IPhysx
     ///
     /// \returns the ObjectKey for given objectId index, or the invalid sentinel when objectId does
     ///          not resolve to a live record
-    omni::physics::parse::ObjectKey(CARB_ABI* getObjectKeyForId)(usdparser::ObjectId objectId);
+    omni::physics::parse::ObjectKey(CARB_ABI* getObjectKeyForId)(omni::physics::AttachHandle attach, usdparser::ObjectId objectId);
 
     /// Resolves a source-native path string to this runtime's opaque object-identity handle,
     /// for an object that already exists.
@@ -427,40 +448,40 @@ struct IPhysx
     /// the boundary (ADR-0019 decision 3), alongside objectKeyToPath (the lookup-side
     /// counterpart) and createD6JointAtPath (a narrower, create-shaped crossing that cannot
     /// use this function's existence gate). Every other public function names an object via
-    /// ObjectKey alone.
+    /// an attachment-qualified ObjectKey.
     ///
-    /// \param path Source-native path string naming an object in the currently attached source
+    /// \param path Source-native path string naming an object in the selected attachment source
     ///        (USD: an SdfPath string; ovstage: the backend's own path vocabulary -- the source
     ///        decides what it accepts).
     ///
     /// \returns the object's ObjectKey, or the invalid sentinel (ObjectKey{}, .valid() == false)
-    ///          when path does not resolve against the active attach, path is null, or there is
-    ///          no active attach
-    omni::physics::parse::ObjectKey(CARB_ABI* resolveObjectKey)(const char* path);
+    ///          when path does not resolve against the selected attachment, path is null, or there is
+    ///          no live selected attachment
+    omni::physics::parse::ObjectKey(CARB_ABI* resolveObjectKey)(omni::physics::AttachHandle attach, const char* path);
 
     /// Renders the opaque object-identity handle back to a human-readable path string, for
     /// display, logging, or lookup by name.
     ///
     /// This is the lookup-side counterpart of resolveObjectKey among the functions on the
     /// public API that may still cross a path string at the boundary (ADR-0019 decision 3).
-    /// Every other public function names an object via ObjectKey alone.
+    /// Every other public function names an object via an attachment-qualified ObjectKey.
     ///
     /// \param key ObjectKey to render.
     ///
-    /// \returns a string owned by the currently attached IPhysicsSource, valid only until the
+    /// \returns a string owned by the selected attachment's IPhysicsSource, valid only until the
     ///          next detach or source rebuild (AttachedStage::rebuildSource) -- callers that need
     ///          it to outlive that must copy it. Empty when key is the invalid sentinel, key does
     ///          not name a live source object, a live ObjectDb record, or a live
-    ///          InternalPhysXDatabase record, or there is no active attach or source.
-    const char*(CARB_ABI* objectKeyToPath)(omni::physics::parse::ObjectKey key);
+    ///          InternalPhysXDatabase record, or there is no live selected attachment or source.
+    const char*(CARB_ABI* objectKeyToPath)(omni::physics::AttachHandle attach, omni::physics::parse::ObjectKey key);
 
     /// Forces load physics objects from USD into PhysX
     ///
-    void(CARB_ABI* forceLoadPhysicsFromUSD)();
+    RuntimeResult(CARB_ABI* forceLoadPhysicsFromUSD)(AttachHandle attach);
 
     /// Release physics objects from PhysX
     ///
-    void(CARB_ABI* releasePhysicsObjects)();
+    RuntimeResult(CARB_ABI* releasePhysicsObjects)(omni::physics::AttachHandle attach);
 
     /// Create a D6 joint at jointPath (temp until we support D6 through schema).
     ///
@@ -477,47 +498,49 @@ struct IPhysx
     /// \param body1 ObjectKey of the second body (same contract as body0).
     ///
     /// \returns the created joint (as an opaque PxJoint*), or nullptr on failure
-    const void*(CARB_ABI* createD6JointAtPath)(const char* jointPath,
+    const void*(CARB_ABI* createD6JointAtPath)(omni::physics::AttachHandle attach, const char* jointPath,
                                                omni::physics::parse::ObjectKey body0,
                                                omni::physics::parse::ObjectKey body1);
 
     /// release D6 joint
-    void(CARB_ABI* releaseD6Joint)(void* jointPtr);
+    void(CARB_ABI* releaseD6Joint)(omni::physics::AttachHandle attach, void* jointPtr);
 
 
-    /// set num threads for simulation
-    /// \param threadCount num Threads
+    /// Set the thread-count default for future attachments. Live owners retain their dispatchers.
+    /// \param threadCount Number of simulation threads; values of 256 or greater are rejected.
     void(CARB_ABI* setThreadCount)(uint32_t threadCount);
 
     /// -1: use setting from schema, 0: force CPU, 1: force GPU
+    /// Sets the GPU override default for future attachments. Live owners retain their settings.
     void(CARB_ABI* overwriteGPUSetting)(int val);
     int(CARB_ABI* getOverwriteGPUSetting)();
 
     /// -1: use setting from schema, 0: force PGS, 1: force TGS
+    /// Sets the solver override default for future attachments. Live owners retain their settings.
     void(CARB_ABI* overwriteSolverType)(int val);
 
     /// Update the physics simulation. All scenes, except the ones marked as 'Disabled', are updated and stepped.
     ///
     /// \param[in] elapsedStep Simulation time.
     /// \param[in] currentTime Current time, might be used for time sampled transformations to apply.
-    void(CARB_ABI* updateSimulation)(float elapsedStep, float currentTime);
+    RuntimeResult(CARB_ABI* updateSimulation)(omni::physics::AttachHandle attach, float elapsedStep, float currentTime);
 
-    /// Update all the transformations. All scenes, except the ones marked as 'Disabled', are updated and stepped.
-    /// Note: the 'outputVelocitiesLocalSpace' parameter has no effect and will be removed in a future version.
+    /// Publish transformations from the selected attachment's enabled scenes.
+    /// This does not advance simulation.
     ///
     /// \param[in] updateToFastCache            Update transforms to fast cache. DEPRECATED, fast cache is not used
     /// anymore \param[in] updateToUsd                  Update transforms to USD. \param[in] updateVelocitiesToUsd
     /// Update velocities to USD.
-    void(CARB_ABI* updateTransformations)(bool updateToFastCache,
+    RuntimeResult(CARB_ABI* updateTransformations)(omni::physics::AttachHandle attach, bool updateToFastCache,
                                           bool updateToUsd,
                                           bool updateVelocitiesToUsd,
                                           bool outputVelocitiesLocalSpace);
 
     /// Start simulation, store initial USD data
-    void(CARB_ABI* startSimulation)();
+    RuntimeResult(CARB_ABI* startSimulation)(omni::physics::AttachHandle attach);
 
     /// Reset simulation, set back USD start data
-    void(CARB_ABI* resetSimulation)();
+    RuntimeResult(CARB_ABI* resetSimulation)(omni::physics::AttachHandle attach);
 
     /// Reconnect PVD
     void(CARB_ABI* reconnectPVD)();
@@ -553,7 +576,7 @@ struct IPhysx
     ///
     /// \param[in] wheelKey       Wheel attachment ObjectKey.
     /// \return Index of the wheel or -1 if there is no wheel matching the given key.
-    int(CARB_ABI* getWheelIndex)(omni::physics::parse::ObjectKey wheelKey);
+    int(CARB_ABI* getWheelIndex)(omni::physics::AttachHandle attach, omni::physics::parse::ObjectKey wheelKey);
 
     /// Error event stream
     /// \return a pointer to the error event stream.
@@ -563,18 +586,21 @@ struct IPhysx
     /// \param[in] layerIdentifier Sdf layer string identifier.
     void(CARB_ABI* setSimulationLayer)(const char* layerIdentifier);
 
-    /// Subscribe to physics simulation status events.
+    /// Subscribe to physics simulation status events for an exact live attachment.
+    /// Subscriptions survive reset and retire on detach. Worker callbacks can run
+    /// concurrently; synchronize userData. Removal is idempotent and permitted in
+    /// callbacks, but an already admitted callback may finish after removal.
     ///
-    /// \note Subscription cannot be changed in the onEvent callback
+    /// \note Registration is rejected in callbacks; removal is allowed.
     ///
     /// \param onEvent The callback function to be called on simulation change.
     /// \param userData The userData to be passed back in the callback function.
     /// \return Subscription Id for release, kInvalidSubscriptionId is returned if the opetation failed
-    SubscriptionId(CARB_ABI* subscribePhysicsSimulationEvents)(OnPhysicsSimulationEventFn onEvent, void* userData);
+    SubscriptionId(CARB_ABI* subscribePhysicsSimulationEvents)(omni::physics::AttachHandle attach, OnPhysicsSimulationEventFn onEvent, void* userData);
 
     /// Unsubscribes to simulation events.
     ///
-    /// \note Subscription cannot be changed in the onEvent callback
+    /// \note Registration is rejected in callbacks; removal is allowed.
     ///
     /// subscriptionId SubscriptionId obtained via @ref subscribePhysicsSimulationEvents.
     void(CARB_ABI* unsubscribePhysicsSimulationEvents)(SubscriptionId subscriptionId);
@@ -585,7 +611,7 @@ struct IPhysx
     /// \param[out] pos Rigid body position.
     /// \param[out] rot Rigid body rotation in quaternion (x,y,z,w).
     /// \return True if rigid body was found.
-    bool(CARB_ABI* getRigidBodyTransformation)(omni::physics::parse::ObjectKey key, carb::Float3& pos, carb::Float4& rot);
+    bool(CARB_ABI* getRigidBodyTransformation)(omni::physics::AttachHandle attach, omni::physics::parse::ObjectKey key, carb::Float3& pos, carb::Float4& rot);
 
     /// Run backwards compatibility on currently attached USD stage
     /// DEPRECATED, use asset validator instead
@@ -613,29 +639,29 @@ struct IPhysx
     ///
     /// \param[in] colliderKey Collider ObjectKey.
     /// \return Valid ObjectKey if CollisionGroup was found
-    omni::physics::parse::ObjectKey(CARB_ABI* getCollisionGroupFromCollider)(omni::physics::parse::ObjectKey colliderKey);
+    omni::physics::parse::ObjectKey(CARB_ABI* getCollisionGroupFromCollider)(omni::physics::AttachHandle attach, omni::physics::parse::ObjectKey colliderKey);
 
     /// Check if simulation loop is running
     ///
     /// Note that this function returns true if play was pressed or if
     /// IPhysxSimulation was attached.
     /// \return True if simulation running/attached.
-    bool(CARB_ABI* isRunning)();
+    bool(CARB_ABI* isRunning)(omni::physics::AttachHandle attach);
 
     /// Reset all physics settings to default
     void(CARB_ABI* resetSettings)();
 
-    /// Check if GPU readback is suppressed for currently running simulation.
+    /// Check whether the selected attachment's default scene uses Direct GPU API.
     ///
-    /// Always returns false when the simulation is not running.
-    /// \return True if simulation is running with suppressed readback.
-    bool(CARB_ABI* isReadbackSuppressed)();
+    /// Returns false for invalid attachments, missing scenes, or busy execution.
+    /// \return True if the selected scene suppresses readback.
+    bool(CARB_ABI* isReadbackSuppressed)(omni::physics::AttachHandle attach);
 
     /// Set the internal dynamics state of a vehicle back to the rest state. Should only be called after the simulation
     /// has been started.
     ///
     /// \param[in] vehicleId      Vehicle object ID (see getObjectId() to get the ID from a USD path)
-    void(CARB_ABI* setVehicleToRestState)(const usdparser::ObjectId vehicleId);
+    void(CARB_ABI* setVehicleToRestState)(omni::physics::AttachHandle attach, const usdparser::ObjectId vehicleId);
 
     /// Get the transformations of wheels. Should only be called after the simulation has been
     /// started.
@@ -651,25 +677,33 @@ struct IPhysx
     /// \param[out] positions           The positions of the wheels. Needs space for at least wheelIndexCount entries.
     /// \param[out] orientations        The orientations of the wheels as a quaternion (x,y,z,w). Needs space for at
     ///                                 least wheelIndexCount entries.
+    /// Requires idle selected-owner admission. Pending simulation, callback reentry or
+    /// concurrent owner entry returns false and preserves the output arguments.
     /// \return True on success, else false.
-    bool(CARB_ABI* getWheelTransformations)(const usdparser::ObjectId vehicleId,
+    bool(CARB_ABI* getWheelTransformations)(omni::physics::AttachHandle attach, const usdparser::ObjectId vehicleId,
                                             const int* wheelIndices,
                                             const unsigned int wheelIndexCount,
                                             const bool addVehicleTransform,
                                             carb::Float3* positions,
                                             carb::Float4* orientations);
 
-    /// Save current scene state to repX, if scene is empty parse scene save it and release it.
+    /// Save one attachment's current native scene state to RepX.
     ///
     /// \param[in] filepath            RepX file path
     /// \return True on success, else false.
-    bool(CARB_ABI* saveSceneToRepX)(const char* filepath);
+    /// Exports current native objects and their dependencies for exactly one live attachment.
+    /// Does not reload its source or collect unrelated SDK objects; returns false if empty or busy.
+    bool(CARB_ABI* saveSceneToRepX)(omni::physics::AttachHandle attach, const char* filepath);
 
-    /// Subscribe to physics object change notifications.
+    /// Subscribe to one live attachment's physics object change notifications.
+    /// Returns kInvalidSubscriptionId for an invalid owner or busy runtime.
+    /// Reset keeps the subscription; detach retires it after final notification.
+    /// Cancellation is allowed during dispatch; already-admitted callbacks may finish.
     ///
     /// \param[in] callback The callback structure with the notification functions.
     /// \return Subscription Id to unsubscribe
-    SubscriptionId(CARB_ABI* subscribeObjectChangeNotifications)(const IPhysicsObjectChangeCallback& callback);
+    SubscriptionId(CARB_ABI* subscribeObjectChangeNotifications)(omni::physics::AttachHandle attach,
+                                                               const IPhysicsObjectChangeCallback& callback);
 
     /// Unsubscribe to physics object change notifications.
     ///
@@ -700,16 +734,18 @@ struct IPhysx
     ///                                 computed. The vector is considered to be relative to the center of
     ///                                 mass frame of the vehicle. If a nullptr is passed in, then the local
     ///                                 forward direction of the vehicle will be used.
+    /// Requires idle selected-owner admission. Pending simulation, callback reentry or
+    /// concurrent owner entry returns zero.
     /// \return The velocity along the provided direction vector.
-    float(CARB_ABI* computeVehicleVelocity)(const usdparser::ObjectId vehicleId, const carb::Float3* direction);
+    float(CARB_ABI* computeVehicleVelocity)(omni::physics::AttachHandle attach, const usdparser::ObjectId vehicleId, const carb::Float3* direction);
 
     /// Check if a raycast hits an interactive actor (i.e. rigid/deformable body, articulation link)
     ///
     /// \param[in] origin            World-space origin of raycast
     /// \param[in] direction         Unit-length direction vector of raycast
     /// \return True if an interactive actor is in the raycast defined by origin and direction
-    ///         False if no interactive actor is in the raycast or simulation is not running
-    bool(CARB_ABI* isInteractiveActorRaycast)(const carb::Float3* origin, const carb::Float3* direction);
+    ///         False if no interactive actor is hit, the attachment is invalid, or execution is busy
+    bool(CARB_ABI* isInteractiveActorRaycast)(omni::physics::AttachHandle attach, const carb::Float3* origin, const carb::Float3* direction);
 
     /// Updates actor interaction based on user input and raycast origin and direction
     /// Call repeatedly from a stage update callback or similar
@@ -717,7 +753,7 @@ struct IPhysx
     /// \param[in] origin                   World-space origin of interaction
     /// \param[in] direction                Unit-length direction vector of interaction
     /// \param[in] interactionEvent         User input event to update interaction accordingly
-    void(CARB_ABI* updateInteraction)(const carb::Float3* origin,
+    void(CARB_ABI* updateInteraction)(omni::physics::AttachHandle attach, const carb::Float3* origin,
                                       const carb::Float3* direction,
                                       PhysicsInteractionEvent interactionEvent);
 
@@ -730,7 +766,7 @@ struct IPhysx
     ///            ADR-0018: breaking change). A handle is only valid against the Source instance that minted it.
     /// \param[in] elapsedStep            Simulation time.
     /// \param[in] currentTime            Current time, might be used for time sampled transformations to apply.
-    void(CARB_ABI* updateSimulationScene)(uint64_t scenePath, float elapsedStep, float currentTime);
+    RuntimeResult(CARB_ABI* updateSimulationScene)(omni::physics::AttachHandle attach, uint64_t scenePath, float elapsedStep, float currentTime);
 
     /// Update the transformations for a specific scene in the physics simulation. The specific scene specified in
     /// scenePath has its transformations updated *even if it is marked as 'Disabled'*. If scenePath is 0, it
@@ -741,7 +777,7 @@ struct IPhysx
     ///            ADR-0018: breaking change). A handle is only valid against the Source instance that minted it.
     /// \param[in] updateToUsd                  Update transforms to USD.
     /// \param[in] updateVelocitiesToUsd        Update velocities to USD.
-    void(CARB_ABI* updateTransformationsScene)(uint64_t scenePath, bool updateToUsd, bool updateVelocitiesToUsd);
+    RuntimeResult(CARB_ABI* updateTransformationsScene)(omni::physics::AttachHandle attach, uint64_t scenePath, bool updateToUsd, bool updateVelocitiesToUsd);
 
 
     /// Get vehicle drive state (vehicle prim needs to have vehicle controller API applied).
@@ -750,8 +786,10 @@ struct IPhysx
     ///
     /// \param[in] vehicleControllerId  Vehicle controller object ID (see getObjectId() to get the ID from a USD path)
     /// \param[out] driveState          Structure to write drive state to.
+    /// Requires idle selected-owner admission. Pending simulation, callback reentry or
+    /// concurrent owner entry returns false and preserves the output arguments.
     /// \return True on success, else false.
-    bool(CARB_ABI* getVehicleDriveState)(const usdparser::ObjectId vehicleControllerId, VehicleDriveState& driveState);
+    bool(CARB_ABI* getVehicleDriveState)(omni::physics::AttachHandle attach, const usdparser::ObjectId vehicleControllerId, VehicleDriveState& driveState);
 
     /// Get the state for the specified wheels. Should only be called after the simulation has been
     /// started.
@@ -761,8 +799,10 @@ struct IPhysx
     /// \param[in] wheelAttachmentIdCount  Number of wheel attachment object IDs provided
     /// \param[out] wheelStates            State structures to be filled for each specified wheel. The array needs to
     ///                                    have size wheelAttachmentIdCount.
+    /// Requires idle selected-owner admission. Pending simulation, callback reentry or
+    /// concurrent owner entry returns false and preserves the output arguments.
     /// \return True on success, else false.
-    bool(CARB_ABI* getWheelState)(const usdparser::ObjectId* wheelAttachmentIds,
+    bool(CARB_ABI* getWheelState)(omni::physics::AttachHandle attach, const usdparser::ObjectId* wheelAttachmentIds,
                                   const uint32_t wheelAttachmentIdCount,
                                   VehicleWheelState* states);
 
@@ -774,7 +814,7 @@ struct IPhysx
     /// \param[in] wheelAttachmentIdCount  Number of wheel attachment object IDs provided
     /// \param[in] rotationSpeeds          Rotation speed of the wheel in radians per second. The array needs to have
     ///                                    size wheelAttachmentIdCount.
-    void(CARB_ABI* setWheelRotationSpeed)(const usdparser::ObjectId* wheelAttachmentIds,
+    void(CARB_ABI* setWheelRotationSpeed)(omni::physics::AttachHandle attach, const usdparser::ObjectId* wheelAttachmentIds,
                                           const uint32_t wheelAttachmentIdCount,
                                           const float* rotationSpeeds);
 
@@ -786,18 +826,25 @@ struct IPhysx
     /// \param[in] wheelAttachmentIdCount  Number of wheel attachment object IDs provided
     /// \param[in] rotationAngles          Rotation angle of the wheel in radians. The array needs to have size
     ///                                    wheelAttachmentIdCount.
-    void(CARB_ABI* setWheelRotationAngle)(const usdparser::ObjectId* wheelAttachmentIds,
+    void(CARB_ABI* setWheelRotationAngle)(omni::physics::AttachHandle attach, const usdparser::ObjectId* wheelAttachmentIds,
                                           const uint32_t wheelAttachmentIdCount,
                                           const float* rotationAngles);
 
-    /// Overrides the behavior of the ResetOnStop setting.
-    ///
-    /// \param[in] disable      Disable/enable the reset on stop override.
-    void(CARB_ABI* disableResetOnStop)(bool disable);
+    /// Override reset-on-stop for one exact live attachment. The override survives
+    /// reset and does not change factory defaults or peer attachments. Invalid
+    /// owners return eInvalidAttachment; callbacks and pending simulation return eBusy.
+    /// @implements REQ-ATTACH-SERVICES-001
+    /// @covers AC-3
+    RuntimeResult(CARB_ABI* disableResetOnStop)(omni::physics::AttachHandle attach, bool disable);
 
-    /// Subscribe to physics pre/post step events.
+    /// Subscribe to physics pre/post step events for an exact live attachment.
+    /// The subscription survives reset and is retired on detach. Invalid owners,
+    /// callback reentry and conflicting owner entry reject registration.
+    /// Registration is allowed between this owner's simulate and fetch calls.
+    /// Removal is idempotent and permitted in callbacks. A callback already admitted
+    /// on another thread may finish; keep userData alive until that dispatch drains.
     ///
-    /// \note Subscriptions cannot be changed in the onUpdate callback
+    /// \note New subscriptions are rejected in callbacks; removal is allowed.
     ///
     /// \param onUpdate The callback function to be called on update.
     /// \param userData The userData to be passed back in the callback function.
@@ -805,14 +852,14 @@ struct IPhysx
     ///                 callback will be executed right *after* the physics step event.
     /// \param order    An integer value used to order the callbacks: 0 means "highest priority", 1 is "less priority"
     /// and so on. \return Subscription Id for release, returns kInvalidSubscriptionId if failed
-    SubscriptionId(CARB_ABI* subscribePhysicsOnStepEvents)(bool preStep,
+    SubscriptionId(CARB_ABI* subscribePhysicsOnStepEvents)(omni::physics::AttachHandle attach, bool preStep,
                                                            int order,
                                                            OnPhysicsStepEventFn onUpdate,
                                                            void* userData);
 
     /// Unsubscribes to pre/post update events.
     ///
-    /// \note Subscription cannot be changed in the onUpdate callback
+    /// \note Removal is allowed in callbacks; an already admitted callback may finish.
     ///
     /// subscriptionId SubscriptionId obtained via @ref subscribePhysicsOnStepEvents.
     void(CARB_ABI* unsubscribePhysicsOnStepEvents)(SubscriptionId subscriptionId);

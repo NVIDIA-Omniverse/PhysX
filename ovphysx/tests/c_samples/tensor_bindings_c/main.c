@@ -95,12 +95,12 @@ static TensorBuffer make_tensor_f32_3d(size_t dim0, size_t dim1, size_t dim2) {
     return t;
 }
 
-static int wait_op(ovphysx_handle_t handle, ovphysx_op_index_t op_index, const char* context) {
-    ovphysx_op_wait_result_t wait_result = {0};
-    ovphysx_result_t result = ovphysx_wait_op(handle, op_index, 10ULL * 1000 * 1000 * 1000, &wait_result);
+static int wait_task(ovphysx_instance_handle_t handle, ovphysx_enqueue_result_t task, const char* context) {
+    ovphysx_wait_task_result_t wait_result = {0};
+    ovphysx_result_t result = ovphysx_wait_task(handle, task, 10ULL * 1000 * 1000 * 1000, &wait_result);
 
     int has_errors = (wait_result.num_errors > 0);
-    ovphysx_destroy_wait_result(&wait_result);
+    ovphysx_destroy_wait_task_result(&wait_result);
     if (has_errors) {
         fprintf(stderr, "ERROR in %s: async operation failed\n", context);
         return 0;
@@ -112,7 +112,7 @@ static int wait_op(ovphysx_handle_t handle, ovphysx_op_index_t op_index, const c
     return 1;
 }
 
-static int destroy_instance_and_shutdown(ovphysx_handle_t handle) {
+static int destroy_instance_and_shutdown(ovphysx_instance_handle_t handle) {
     ovphysx_sample_destroy_stage(handle, &g_stage_attachment);
     ovphysx_destroy_instance(handle);
     ovphysx_shutdown();
@@ -128,10 +128,8 @@ static int run(void) {
     }
 
     // 1. Create instance
-    ovphysx_handle_t handle = 0;
-    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-
-    result = ovphysx_create_instance(&args, &handle);
+    ovphysx_instance_handle_t handle = 0;
+    result = ovphysx_create_instance(&handle);
     if (!check_result(result, "create_instance")) {
         ovphysx_shutdown();
         return 1;
@@ -258,7 +256,7 @@ static int run(void) {
             destroy_tensor(&link_pose_tensor);
             return destroy_instance_and_shutdown(handle);
         }
-        if (!wait_op(handle, step_result.op_index, "step")) {
+        if (!wait_task(handle, step_result, "step")) {
             destroy_tensor(&dof_target_tensor);
             destroy_tensor(&link_pose_tensor);
             return destroy_instance_and_shutdown(handle);

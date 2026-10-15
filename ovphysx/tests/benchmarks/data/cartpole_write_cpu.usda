@@ -1,0 +1,14 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    subLayers = [@cartpole_probe_cpu.usda@]
+)
+
+over "World"
+{
+    over "physicsScene"
+    {
+        bool physxScene:enableGPUDynamics = false
+        token physxScene:broadphaseType = "MBP"
+    }
+}

@@ -1,6 +1,27 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-FEED-006
+ * @covers AC-5
+ */
+
+// @implements REQ-PARSE-BATCH-001
+// @covers AC-3
+
+// @implements REQ-ATTACH-LIFETIME-001
+// @covers AC-3 AC-4
+
+// @implements REQ-ATTACH-IO-001
+// @covers AC-3
+
+// @implements REQ-ATTACH-RESOLVE-001
+// @covers AC-6 AC-7 AC-9 AC-10
+
+/**
+ * @implements REQ-ATTACH-BACKENDS-001
+ * @covers AC-1 AC-2 AC-3 AC-4
+ */
+
 /**
  * @implements REQ-SIM-OVSTAGE-UPDATE-001
  * @covers AC-1 AC-2 AC-3
@@ -27,9 +48,28 @@
  * @covers AC-1 AC-6
  */
 
-#pragma once
+/**
+ * @implements REQ-ATTACH-VIEWS-001
+ * @covers AC-2
+ */
 
+// @implements REQ-NATIVE-INTERACTION-001
+// @covers AC-2
+#pragma once
+#include <carb/tasking/TaskingUtils.h>
+#include "RuntimeExecution.h"
+#include "AttachmentEvents.h"
+
+#include <stdexcept>
+#include <omni/physics/AttachHandle.h>
+#include <omni/physx/AttachOptions.h>
+#include "../CachedSettings.h"
 #include <cstddef>
+#include "utils/Pair.h"
+#include "Trigger.h"
+#include "PhysXSimulationCallbacks.h"
+#include <omni/physics/ovstage/OvstageParseBackend.h>
+#include <omni/physics/parse/ScanBackend.h>
 
 #include <private/omni/physx/PhysxUsd.h>
 #include <usdInterface/UsdInterface.h>
@@ -46,9 +86,11 @@
 #include <carb/logging/Log.h> // CARB_LOG_WARN in getEnvIdFromToken
 
 #include <algorithm>
+#include <atomic>
 #include <cstdint>
 #include <iterator>
 #include <memory>
+#include <mutex>
 #include <set>
 #include <string>
 #include <string_view>
@@ -60,12 +102,35 @@
 // interfaces (ADR-0005) — it never names a concrete backend type. Consumers
 // that need USD specifics down-cast the abstraction on demand (asUsdSource /
 // asUsdDataWrite), which yields null under a non-USD backend.
-namespace omni { namespace physics { namespace parse { class IPhysicsSource; class IPhysicsDataWrite; class IChangeFeed; struct AttachTarget; } } }
+namespace physx { class PxCpuDispatcher; class PxCudaContextManager; }
+namespace omni::sampling { struct SurfaceSampler; }
+namespace omni::physx::native { class Drag; }
+namespace omni::physx { class CustomPhysXJoint; class CustomPhysXGeometryCallback; }
+namespace omni::physx::particles
+{
+class PhysxParticleFactory;
+class ParticlePostprocess;
+struct PostprocessRef
+{
+    uint32_t refCount = 0;
+    ParticlePostprocess* postprocess = nullptr;
+};
+using PostprocessRefMap = std::unordered_map<omni::physics::parse::ObjectKey, PostprocessRef,
+    omni::physics::parse::ObjectKey::Hash>;
+}
+namespace omni { namespace physics { namespace parse { class DescriptorBatchAllocator; struct ScanOptions; class IPhysicsSource; class IPhysicsDataWrite; class IChangeFeed; struct AttachTarget; } } }
 
 namespace omni
 {
 namespace physx
 {
+void retireCollisionRepresentationTasks(omni::physics::AttachHandle attach);
+class PhysXScene;
+class DebugVisualizationCache;
+class RaycastManager;
+using FilteredPairsSet = std::unordered_map<Pair<uint32_t>, uint32_t, PairHash>;
+using CollisionGroupsPairsSet = std::unordered_set<Pair<uint32_t>, PairHash>;
+
 namespace usdparser
 {
 // Compound (prim, attribute) key for mTimeSampledAttributes; the backend-agnostic
@@ -237,9 +302,79 @@ static_assert(sizeof(AttachedStageUsdHandle) == 2 * sizeof(void*) &&
 class AttachedStage
 {
 public:
+    RuntimeExecutionState execution;
+    // Access under this attachment's execution admission or destruction callback.
+    std::unordered_map<uint64_t, std::weak_ptr<native::Drag>> interactionDrags;
+    mutable std::unordered_map<omni::physics::parse::ObjectKey, CustomPhysXJoint*, omni::physics::parse::ObjectKey::Hash> customJoints;
+    mutable std::unordered_multimap<omni::physics::parse::ObjectKey, CustomPhysXGeometryCallback*, omni::physics::parse::ObjectKey::Hash> customGeometries;
+    std::shared_ptr<::physx::PxCpuDispatcher> cpuDispatcher;
+    std::vector<std::shared_ptr<::physx::PxCudaContextManager>> cudaContextManagers;
+    size_t nextCudaContext = 0;
+    std::unordered_map<uint64_t, std::shared_ptr<omni::sampling::SurfaceSampler>> surfaceSamplers;
+    mutable std::unordered_map<omni::physics::parse::ObjectKey, particles::PhysxParticleFactory*,
+        omni::physics::parse::ObjectKey::Hash> particleFactories;
+    mutable particles::PostprocessRefMap particlePostprocess;
+    mutable carb::tasking::MutexWrapper eventMutex;
+    StepEventMap preStepSubscriptions;
+    StepEventMap postStepSubscriptions;
+    SimulationEventMap simulationSubscriptions;
+    mutable std::atomic<uint64_t> recordVersion{1};
+    mutable std::atomic<uint64_t> kinematicVersion{1};
+
+    using WeakLifetime = std::weak_ptr<AttachedStage*>;
+    WeakLifetime getWeakLifetime() const { return mLifetime; }
+    static AttachedStage* resolveLifetime(const WeakLifetime& lifetime)
+    {
+        const std::shared_ptr<AttachedStage*> state = lifetime.lock();
+        return state ? *state : nullptr;
+    }
+
+    const std::weak_ptr<bool>& getCookingObserverDriver() const { return mCookingObserverDriver; }
+    void setCookingObserverDriver(const std::shared_ptr<bool>& driver) { mCookingObserverDriver = driver; }
+
+    void setCookingRetirement(std::function<void()> retire) const { mRetireCooking = std::move(retire); }
+    void retireCooking() const
+    {
+        omni::physx::retireCollisionRepresentationTasks(getAttachHandle());
+        std::function<void()> retire = std::move(mRetireCooking);
+        if (retire)
+            retire();
+    }
+
+    struct NoticeBlockState
+    {
+        std::atomic_int32_t source{ 0 };
+        std::atomic_int32_t cooking{ 0 };
+    };
+    const std::shared_ptr<NoticeBlockState>& getNoticeBlockState() const { return mNoticeBlockState; }
+    bool sourceUpdatesBlocked() const { return mNoticeBlockState->source.load() != 0; }
+    bool cookingUpdatesBlocked() const { return mNoticeBlockState->cooking.load() != 0; }
+
+    using MeshKeyCache = std::unordered_map<omni::physics::parse::ObjectKey, MeshKey,
+        omni::physics::parse::ObjectKey::Hash>;
+    struct CookingRefreshState
+    {
+        using KeySet = std::unordered_set<omni::physics::parse::ObjectKey, omni::physics::parse::ObjectKey::Hash>;
+        KeySet prims;
+        KeySet transforms;
+        KeySet schemas;
+        KeySet parents;
+        std::unordered_set<omni::physics::parse::TokenId, omni::physics::parse::TokenId::Hash> collisionTokens;
+        omni::physics::parse::KnownTokens tokens;
+        bool tokensInitialized = false;
+    };
+    MeshKeyCache& getMeshKeyCache() const { return mMeshKeyCache; }
+    CookingRefreshState& getCookingRefreshState() const { return mCookingRefreshState; }
+    // Observers read this count without traversing another owner's mutable sets.
+    mutable std::atomic<uint32_t> pendingCookingRefreshCount{0};
+    uint64_t profileUpdateStart = 0;
+
     AttachedStage();
     AttachedStage(AttachedStageUsdHandle stage, PhysXUsdPhysicsInterface* iface);
     ~AttachedStage();
+
+    // Reuse descriptor blocks across scans; each returned scan retains the pool.
+    omni::physics::parse::ScanOptions descriptorScanOptions();
 
     PhysXUsdPhysicsInterface* getPhysXPhysicsInterface()
     {
@@ -290,6 +425,12 @@ public:
         return mExternalAttachPayload != nullptr;
     }
 
+    // Physical ovstage identity, independent of dictionary keys or backing USD metadata.
+    const void* getOvstageInstance() const
+    {
+        return hasExternalSource() ? mOwnedAttachPayload.instance : nullptr;
+    }
+
     // Identity of this *attach*, minted by UsdLoad and unique for the process
     // lifetime. Distinct from getStageId(): a stageless attach has stage id 0 but
     // still gets a nonzero handle, and reattaching the same USD stage yields the
@@ -305,6 +446,14 @@ public:
         mAttachHandle = handle;
     }
 
+
+    struct ObjectNotificationState
+    {
+        bool enabled = false;
+        bool initialPopulation = false;
+    };
+    ObjectNotificationState& objectNotificationState() { return mObjectNotificationState; }
+    const ObjectNotificationState& objectNotificationState() const { return mObjectNotificationState; }
     // The handle comes from the reparse seam (IUsdReparse::resolveStageToHandle).
     void setStage(AttachedStageUsdHandle stage)
     {
@@ -318,19 +467,10 @@ public:
         rebuildSource();
     }
 
-    // Attach a consumer-provided, backend-opaque source payload (ADR-0002 M2c).
-    // Sets the source trio from the *active* parse backend, which interprets
-    // `attachPayload` as its own `AttachTarget::nativeStage` (for ovstage, a
-    // `const OvstageAttach*` = instance + dictionary). This is the runtime switch
-    // — whichever backend is registered handles it; nothing here names a concrete
-    // backend. `attachPayload` is consumer-owned and must outlive the attach.
-    //
-    // `backingStage` is the USD stage the source mirrors (a Fabric-backed ovstage
-    // exposes one via ovstage_get_usd_stage_id). It is kept as mStage so the
-    // engine's prim-coupled paths (GetPrimAtPath, stage units) keep working while
-    // the (ovstage) source drives parsing. Pass an empty handle when there is no
-    // backing stage. Pass nullptr `attachPayload` to clear and return to the USD
-    // path.
+    // Copy the ovstage descriptor into stable attachment-owned storage and build
+    // private parse/scan backends. The caller retains the referenced instance and
+    // dictionary through detach; the descriptor itself may be released after this call.
+    // `backingStage` is optional developer-adapter metadata, not attach identity.
     //
     // `backingStageId` is the caller's already-classified stage-cache id for
     // `backingStage`. It is an *input* to the attach rather than a redundant copy
@@ -349,9 +489,186 @@ public:
     // The backend-opaque attach handle for the current source: the live USD
     // stage for a USD attach, or the consumer-provided payload otherwise. Fed to
     // both the parse backend (createSource) and the scan dispatch
-    // (scanStage(AttachTarget, ...)) — the single switch point lives there, not
+    // (scanStage) -- the per-attachment dispatch lives here, not
     // at call sites. Valid while this AttachedStage lives.
     omni::physics::parse::AttachTarget attachTarget() const;
+
+    // Dense object IDs are local to this attachment's owned record database.
+    internal::InternalPhysXDatabase& getInternalPhysXDatabase() const;
+    void releaseInternalPhysXDatabase();
+    void releaseNativePhysics();
+
+    FilteredPairsSet& getFilteredPairs() const
+    {
+        return mFilteredPairs;
+    }
+    FilteredPairsSet& getFilteredPairs()
+    {
+        return mFilteredPairs;
+    }
+    void addFilteredPair(const Pair<uint32_t>& pair)
+    {
+        FilteredPairsSet::iterator fit = mFilteredPairs.find(pair);
+        if (fit != mFilteredPairs.end())
+        {
+            fit->second++;
+        }
+        else
+        {
+            mFilteredPairs[pair] = 1;
+        }
+    }
+    void removeFilteredPair(const Pair<uint32_t>& pair)
+    {
+        FilteredPairsSet::iterator fit = mFilteredPairs.find(pair);
+        if (fit != mFilteredPairs.end())
+        {
+            if (fit->second <= 1)
+            {
+                mFilteredPairs.erase(fit);
+            }
+            else
+            {
+                fit->second--;
+            }
+        }
+    }
+    CollisionGroupsPairsSet& getCollisionGroupFilteredPairs() const
+    {
+        return mCollisionsGroupFilteredPairs;
+    }
+    CollisionGroupsPairsSet& getCollisionGroupFilteredPairs()
+    {
+        return mCollisionsGroupFilteredPairs;
+    }
+    struct ParseOptions
+    {
+        bool exposePrimNames = true;
+        std::string forceSingleScenePath;
+        ObjectId forcedSceneId = kInvalidObjectId;
+    };
+    ParseOptions& getParseOptions() const { return mParseOptions; }
+    void setAttachOptions(const PhysxAttachOptions& options);
+    bool isDebugVisualizationEnabled() const
+    {
+        return mEnableVisualization;
+    }
+    void setDebugVisualizationEnabled(bool val)
+    {
+        mEnableVisualization = val;
+        mDebugVisualizationDirty = true;
+    }
+    bool isNormalsVisualizationEnabled() const
+    {
+        return mEnableNormalsVisualization;
+    }
+    bool isDebugVisualizationDirty() const
+    {
+        return mEnableVisualization && mDebugVisualizationDirty;
+    }
+    void setDebugVisualizationDirty(bool val)
+    {
+        mDebugVisualizationDirty = val;
+    }
+    void setNormalsVisualizationEnabled(bool val)
+    {
+        mEnableNormalsVisualization = val;
+    }
+    float getVisualizationScale() const
+    {
+        return mVisualizationScale;
+    }
+    void setVisualizationScale(float val)
+    {
+        mVisualizationScale = val;
+        mDebugVisualizationDirty = true;
+    }
+    uint64_t getVisualizationBitMask() const
+    {
+        return mVisualizationBitMask;
+    }
+    void setVisualizationBitMask(uint64_t val)
+    {
+        mVisualizationBitMask = val;
+    }
+
+    DebugVisualizationCache& getDebugVisualizationCache() const;
+
+    const OmniCachedSettings& getCachedSettings() const { return mCachedSettings; }
+    void setContactProcessingDisabled(bool disabled) { mCachedSettings.disableContactProcessing = disabled; }
+    const PhysxSharedSettings& getSharedSettings() const { return mSharedSettings; }
+    const std::vector<std::string>& getExcludedPaths() const { return mExcludedPaths; }
+
+    bool isSimulationRunning() const { return mSimulationRunning; }
+    void setSimulationRunning(bool running) { mSimulationRunning = running; }
+    bool hasSimulationStarted() const { return mSimulationStarted; }
+    void setSimulationStarted(bool started) { mSimulationStarted = started; }
+    void recordSimulationStep() { ++mSimulationSteps; }
+    void recordManualStep() { ++mManualSteps; }
+    uint64_t simulationTimestamp() const { return mSimulationSteps.load() + mManualSteps.load(); }
+    uint64_t simulationStepCount() const { return simulationTimestamp() - mSimulationStepOffset; }
+    void resetSimulationStepCount() { mSimulationStepOffset = simulationTimestamp(); }
+
+    void setAsyncUSDUpdate(bool value) { mAsyncUpdate.store(value); }
+    bool getAsyncUSDUpdate() const { return mAsyncUpdate.load(); }
+
+    SimulationCallbacks& getSimulationCallbacks() const { return mSimulationCallbacks; }
+    RaycastManager& getRaycastManager() const;
+
+    AttachmentTriggerState& getTriggerState() const { return mTriggerState; }
+
+    bool hasTempPhysicsScene() const { return mTempPhysicsSceneKey.valid(); }
+    omni::physics::parse::ObjectKey getTempPhysicsSceneKey() const { return mTempPhysicsSceneKey; }
+    void setTempPhysicsSceneKey(omni::physics::parse::ObjectKey key) { mTempPhysicsSceneKey = key; }
+
+    struct PendingPhysicsSetup
+    {
+        bool dirty = true;
+        std::vector<ObjectId> articulations;
+        std::vector<internal::InternalPbdParticleSystem*> particleSystems;
+    };
+    PendingPhysicsSetup& getPendingPhysicsSetup() const { return mPendingPhysicsSetup; }
+
+    using SceneMap = std::unordered_map<size_t, PhysXScene*>;
+    const SceneMap& getPhysXScenes() const { return mScenes; }
+    PhysXScene* getPhysXScene(size_t id) const
+    {
+        if (id == 0 || id == kInvalidObjectId)
+            return mDefaultPhysXScene;
+        const auto it = mScenes.find(id);
+        return it == mScenes.end() ? nullptr : it->second;
+    }
+    void registerPhysXScene(size_t id, PhysXScene* scene)
+    {
+        if (!mScenes.emplace(id, scene).second)
+            throw std::logic_error("duplicate scene ID in attachment");
+        if (!mDefaultPhysXScene)
+            mDefaultPhysXScene = scene;
+    }
+    void unregisterPhysXScene(PhysXScene* scene)
+    {
+        for (auto it = mScenes.begin(); it != mScenes.end(); ++it)
+        {
+            if (it->second == scene)
+            {
+                mScenes.erase(it);
+                if (mDefaultPhysXScene == scene)
+                    mDefaultPhysXScene = mScenes.empty() ? nullptr : mScenes.begin()->second;
+                return;
+            }
+        }
+    }
+    PhysXScene* getDefaultPhysXScene() const { return mDefaultPhysXScene; }
+    void setDefaultPhysXScene(PhysXScene* scene) { mDefaultPhysXScene = scene; }
+
+
+    omni::physics::parse::IScanBackend* getScanBackend() const { return mScanBackend.get(); }
+
+    omni::physics::parse::ScannedStage scanStage(
+        const std::vector<std::string>& roots, const std::vector<std::string>& excludes,
+        const omni::physics::parse::ScanOptions& options,
+        omni::physics::parse::IDescriptorAllocator& allocator) const;
+
 
     // ------------------------------------------------------------------
     // Path / ObjectKey resolution. AttachedStage owns a UsdSource keyed
@@ -518,12 +835,12 @@ public:
 
     bool isPhysXDefaultSimulator() const
     {
-        return mPhysXDefaultSim;
+        return mCachedSettings.physxDefaultSimulator;
     }
 
-    void setIsPhysXDefaultSimulator(bool val)
+    void setDisableResetOnStop(bool disable)
     {
-        mPhysXDefaultSim = val;
+        mCachedSettings.disableResetOnStop = disable;
     }
 
     // Release engine objects and clear per-attach state. Reset paths prebuild a
@@ -868,15 +1185,7 @@ void bufferRequestRigidBodyMassUpdate(omni::physics::parse::ObjectKey key)
         }
     }
 
-    bool isReplicatorStage() const
-    {
-        return mReplicatorStage;
-    }
 
-    void setReplicatorStage(bool val)
-    {
-        mReplicatorStage = val;
-    }
 
     void addReplicatorMemoryBlock(void* memory)
     {
@@ -993,6 +1302,7 @@ void bufferRequestRigidBodyMassUpdate(omni::physics::parse::ObjectKey key)
     }
 
 private:
+    ObjectNotificationState mObjectNotificationState;
     // Normalize `key` to the source's canonical handle before it touches a
     // carrier map keyed by ObjectKey (mCookedGeometry, and the analogous
     // mGeneratedDeformable* maps). Some backends (ovstage) can mint distinct
@@ -1010,6 +1320,38 @@ private:
         return src ? src->canonicalKey(key) : key;
     }
 
+    bool mEnableVisualization{ false };
+    bool mEnableNormalsVisualization{ false };
+    bool mDebugVisualizationDirty{ true };
+    float mVisualizationScale{ 1.0f };
+    uint64_t mVisualizationBitMask{ 0ul };
+    mutable std::unique_ptr<DebugVisualizationCache> mDebugVisualizationCache;
+    mutable internal::InternalPhysXDatabase* mInternalPhysXDatabase{ nullptr };
+    mutable FilteredPairsSet mFilteredPairs;
+    mutable CollisionGroupsPairsSet mCollisionsGroupFilteredPairs;
+    bool mSimulationRunning = false;
+    bool mSimulationStarted = false;
+    std::atomic_uint64_t mSimulationSteps{ 0 };
+    std::atomic_uint64_t mManualSteps{ 0 };
+    uint64_t mSimulationStepOffset = 0;
+    std::atomic_bool mAsyncUpdate{ false };
+    mutable SimulationCallbacks mSimulationCallbacks{ *this };
+    mutable std::unique_ptr<RaycastManager> mRaycastManager;
+    mutable AttachmentTriggerState mTriggerState;
+    mutable ParseOptions mParseOptions;
+    OmniCachedSettings mCachedSettings;
+    PhysxSharedSettings mSharedSettings;
+    std::vector<std::string> mExcludedPaths;
+    omni::physics::parse::ObjectKey mTempPhysicsSceneKey;
+    mutable PendingPhysicsSetup mPendingPhysicsSetup;
+    SceneMap mScenes;
+    PhysXScene* mDefaultPhysXScene{ nullptr };
+    std::shared_ptr<AttachedStage*> mLifetime;
+    std::weak_ptr<bool> mCookingObserverDriver;
+    mutable std::function<void()> mRetireCooking;
+    std::shared_ptr<NoticeBlockState> mNoticeBlockState = std::make_shared<NoticeBlockState>();
+    mutable MeshKeyCache mMeshKeyCache;
+    mutable CookingRefreshState mCookingRefreshState;
     PhysXUsdPhysicsInterface* mPhysicsInterface;
     AttachedStageUsdHandle mStage;
     uint64_t mAttachHandle = 0;
@@ -1033,8 +1375,6 @@ private:
     // whenever the source trio is rebuilt and on releasePhysicsObjects, so it
     // never outlives its source's token/key vocabulary.
     CookedGeometryMap mCookedGeometry;
-    bool mReplicatorStage;
-    bool mPhysXDefaultSim;
 
     bool mUseReplicatorEnvIds;
     uint32_t mEnvIdCounter;
@@ -1049,6 +1389,13 @@ private:
     // in rebuildSource() when setStage is called. Owned and exposed purely
     // through the backend-neutral interfaces — no concrete backend type leaks
     // into this consumer.
+    // Declared before the source bundle so backends and payload outlive all readers.
+    omni::physics::ovstage::OvstageAttach mOwnedAttachPayload;
+    std::unique_ptr<omni::physics::parse::IParseBackend> mParseBackend;
+    std::unique_ptr<omni::physics::parse::IScanBackend> mScanBackend;
+    // Protect publication/reset across coordinator entry points; never used by fill workers.
+    std::mutex mDescriptorPoolMutex;
+    std::shared_ptr<omni::physics::parse::DescriptorBatchAllocator> mDescriptorPool;
     std::unique_ptr<omni::physics::parse::IPhysicsSource> mSource;
     // Stage units cached from mSource in rebuildSource() — see getSourceUnits().
     omni::physics::parse::SourceUnits mUnits;

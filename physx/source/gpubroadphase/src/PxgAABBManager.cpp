@@ -209,7 +209,7 @@ AggregateHandle PxgAABBManager::createAggregate(BoundsIndex index, FilterGroup::
 #if PX_CHECKED || PX_DEBUG
 	if (mMaxAggPairs == 0)
 	{
-		PxGetFoundation().getErrorCallback().reportError(PxErrorCode::eINVALID_OPERATION, "PxgAABBManager::createAggregate() : Attempting to create an aggregate without reserving space for aggregate pairs. Please make sure you assign a suitable value to PxSceneDesc::gpuDynamicsConfig::foundLostAggregatePairsCapacity and PxSceneDesc::gpuDynamicsConfig::totalAggregatePairsCapacity.", PX_FL);
+		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxgAABBManager::createAggregate() : Attempting to create an aggregate without reserving space for aggregate pairs. Please make sure you assign a suitable value to PxSceneDesc::gpuDynamicsConfig::foundLostAggregatePairsCapacity and PxSceneDesc::gpuDynamicsConfig::totalAggregatePairsCapacity.");
 		return 0xFFFFFFFF;
 	}
 #endif
@@ -862,6 +862,26 @@ void PxgAABBManager::reallocateChangedAABBMgActorHandleMap(const PxU32 size)
 	mChangedAABBMgrHandlesBuf.allocate(size * sizeof(PxU32), PX_FL);
 }
 
+// ### DEFENSIVE: OMPE-103063
+// The broadphase has been seen handing back a volume id past the end of mVolumeData. Indexing it
+// reads an arbitrary heap word, and getUserData() hands that back as an ElementSim*, which the
+// simulation controller then dereferences. The existing null checks cannot catch this: an
+// out-of-range read usually returns something non-NULL. Drop the pair instead, and report the ids
+// so the next occurrence tells us whether the id really was out of range.
+// PT: reporting kept out-of-line so the inlined fast path is just the range test.
+static PX_NOINLINE bool reportInvalidOverlapIds(const char* context, PxU32 nbVolumes, PxU32 id0, PxU32 id1)
+{
+	PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "%s: out-of-range broadphase volume id (%u, %u with %u volumes) - dropping overlap pair.\n", context, id0, id1, nbVolumes);
+	return false;
+}
+
+static PX_FORCE_INLINE bool validOverlapIds(const char* context, PxU32 nbVolumes, PxU32 id0, PxU32 id1)
+{
+	if(id0 < nbVolumes && id1 < nbVolumes)
+		return true;
+	return reportInvalidOverlapIds(context, nbVolumes, id0, id1);
+}
+
 void PxgAABBManager::processFoundPairs()
 {
 	if (mCudaContext->isInAbortMode())
@@ -885,6 +905,9 @@ void PxgAABBManager::processFoundPairs()
 		for (PxU32 i = 0; i < nbCreatePairs; i++)
 		{
 			const BroadPhasePair& pair = createdPairs[i];
+			// ### DEFENSIVE: OMPE-103063 - see validOverlapIds() above.
+			if(!validOverlapIds("PxgAABBManager::processFoundPairs", mVolumeData.size(), pair.mVolA, pair.mVolB))
+				continue;
 
 			PX_ASSERT(!mVolumeData[pair.mVolA].isAggregated());
 			PX_ASSERT(!mVolumeData[pair.mVolB].isAggregated());
@@ -905,6 +928,9 @@ void PxgAABBManager::processFoundPairs()
 		for(PxU32 i = 0; i < mFoundPairsMapped.size(); ++i)
 		{
 			const PxgBroadPhasePair& pair = mFoundPairsMapped[i];
+			// ### DEFENSIVE: OMPE-103063 - see validOverlapIds() above.
+			if(!validOverlapIds("PxgAABBManager::processFoundPairs", mVolumeData.size(), pair.mVolA, pair.mVolB))
+				continue;
 
 			void* userDataA = mVolumeData[pair.mVolA].getUserData();
 			void* userDataB = mVolumeData[pair.mVolB].getUserData();
@@ -975,6 +1001,9 @@ void PxgAABBManager::processLostPairs()
 		for (PxU32 i = 0; i < nbDeletedPairs; i++)
 		{
 			const BroadPhasePair& pair = deletedPairs[i];
+			// ### DEFENSIVE: OMPE-103063 - see validOverlapIds() above.
+			if(!validOverlapIds("PxgAABBManager::processLostPairs", mVolumeData.size(), pair.mVolA, pair.mVolB))
+				continue;
 
 			PX_ASSERT(!mVolumeData[pair.mVolA].isAggregated());
 			PX_ASSERT(!mVolumeData[pair.mVolB].isAggregated());
@@ -1001,6 +1030,9 @@ void PxgAABBManager::processLostPairs()
 		for(PxU32 i = 0; i < mLostPairsMapped.size(); ++i)
 		{
 			PxgBroadPhasePair& pair = mLostPairsMapped[i];
+			// ### DEFENSIVE: OMPE-103063 - see validOverlapIds() above.
+			if(!validOverlapIds("PxgAABBManager::processLostPairs", mVolumeData.size(), pair.mVolA, pair.mVolB))
+				continue;
 
 			// AD: a deleted pair should not generate a lost pair as per our specs.
 			// so we shouldn't have null here.

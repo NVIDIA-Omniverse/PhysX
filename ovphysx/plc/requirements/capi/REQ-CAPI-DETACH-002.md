@@ -33,8 +33,7 @@ Bootstrapped from a bug: under `OVPHYSX_NO_USD=ON` the
 `AttachedStage::releasePhysicsObjects()` behind
 `#if !defined(OVRUNTIME_PHYSX_NO_USD)`, so no detach released engine objects at
 all in that configuration. The installed-SDK `c_unittests` `cpu` pass then
-segfaulted (exit 139) in `addArticulationToScene` at
-`PhysXTestFixture.StepWaitReportsPriorUserTaskFailure` — the first case to attach
+segfaulted (exit 139) in `addArticulationToScene` in the first case to attach
 and step after `PhysXTestFixture.ScopedSealAllowsUnrelatedUnsealedData` attaches
 `two_articulations.usda` and detaches it without stepping — which blocked the
 `cpp-unit` CTest label end to end. The default (USD) configuration was never
@@ -57,7 +56,7 @@ side of the same contract is
   the `OVPHYSX_NO_USD=ON` wheel" differential is moot — there is no second
   wheel.)*
 - **AC-2: No pending articulation survives a detach.** After
-  `ovphysx_detach_ovstage` returns, a subsequent `ovphysx_attach_ovstage` +
+  `ovphysx_detach_ovstage` completes successfully, a subsequent `ovphysx_attach_ovstage` +
   `ovphysx_step` never resolves an articulation record minted by the destroyed
   attach — whether or not that attach was ever stepped.
 - **AC-3: No pending particle system survives a detach.** The same holds for

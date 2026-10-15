@@ -4,11 +4,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "common/PxSerializer.h"
+#include "foundation/PxArray.h"
 #include "foundation/PxHash.h"
 #include "foundation/PxHashMap.h"
 #include "foundation/PxString.h"
 #include "extensions/PxSerialization.h"
 #include "PxPhysics.h"
+#include "PxRigidActor.h"
+#include "PxShape.h"
+#include "common/PxTypeInfo.h"
 #include "PxPhysicsSerialization.h"
 
 #include "SnFile.h"
@@ -37,6 +41,124 @@ namespace
 		const PxU32 value = *reinterpret_cast<PxU32*>(address);
 		address += sizeof(PxU32);
 		return value;
+	}
+
+	//Only the material types whose resolveReferences() actually calls NpPhysics::addMaterial. Releasing a
+	//deserialized copy of a type that did *not* register would destroy it with the index it still carries from
+	//the stream - the source material's - and unregister that live material, which is the OMPE-109162
+	//corruption itself. NpDeformableSurfaceMaterial::resolveReferences and NpPBDMaterial::resolveReferences
+	//both have a "PT: TODO" where their registration should be; whoever resolves one of those has to add the
+	//type here too. Unreachable today either way: only eMATERIAL has a serializer adapter.
+	PX_INLINE bool registersOnDeserialization(const PxBase& obj)
+	{
+		const PxU32 type = PxU32(obj.getConcreteType());
+		return type == PxConcreteType::eMATERIAL || type == PxConcreteType::eDEFORMABLE_VOLUME_MATERIAL;
+	}
+
+	//Abandon a collection that could not be fully deserialized.
+	//
+	//Dropping the collection on its own is not enough. Cm::Collection::release() is PX_DELETE_THIS and touches
+	//none of the objects, and a deserialized material has already claimed a slot in PxPhysics' material table
+	//and queued a MATERIAL_ADD to every scene, while the shapes created before the failure hold references on
+	//their materials and meshes - which can live outside the caller's block, in externalRefs. That slot and
+	//those references would outlive the block, which the caller is free to reuse the moment this returns NULL.
+	//
+	//Exactly two things have to be undone - the references the shapes took, and the materials' registration -
+	//and nothing else. Actors, aggregates, constraints and articulations register themselves only in
+	//PxAddCollectionToPhysics() -> NpFactory::addCollection(), which runs on success only, so abandoning them in
+	//the caller's block is correct, and releasing them is not safe:
+	// - NpActor::resolveReferences() translates every connector pointer through the manifest table, which yields
+	//   an address whether or not that object has been constructed. Aggregates and constraints sort after the
+	//   actors that reference them, so a created actor can hold the buffer address of an aggregate or joint that
+	//   is still raw bytes, and its release path would run NpActor::removeConstraints() on them.
+	// - A deserialized NpArticulationLink is constructed with PxBaseFlags(0), so it is not releasable at all and
+	//   any generic teardown skips it, leaving its shape's references and its material's registration in place.
+	//   The articulation that would release it sorts after all of its links, so on a failure inside a link's
+	//   subtree it does not exist.
+	//Meshes are never released either: they are registered with the mesh factory only on success, so here they
+	//hold nothing to undo, and releasing one makes Gu::MeshFactory::onRefCountZero() report
+	//"double deletion detected" and refuse to delete it.
+	//
+	//Known and tolerated: detachShape() decrements the shape count of the shape's owner - NpAggregate for an
+	//actor in an aggregate, the articulation root for a link - through the same translated pointer, so on a
+	//partial load that decrement can land in the owner's not-yet-constructed image. It is a non-virtual field
+	//decrement into the caller's block, which the failed load has given up on, and the value it adjusts is the
+	//source object's own count. If decShapeCount() ever gains the scene reporting incShapeCount() already has,
+	//or either helper becomes virtual, this has to move behind an SDK-internal detach instead.
+	void abandonPartialCollection(Cm::Collection* collection)
+	{
+		const PxU32 nb = collection->getNbObjects();
+
+		//0. A pruning structure in the collection holds a back-pointer on each of its actors, and
+		//NpRigidActorTemplate::detachShape() reads that field, reports an operation the user never performed and
+		//calls invalidate() through it. Releasing the structure first clears those pointers - and it is the only
+		//object here that is safe to release besides shapes and materials. For a *valid* structure that is the
+		//sort order: it requires its actors, so if it exists at all they are all constructed. An *invalid* one
+		//reports no children and can therefore be emitted first, before its actors exist - it is safe because
+		//PruningStructure::importExtraData() empties such a structure on the way in, so release() walks nothing.
+		//An actor whose pruning structure was *not* reached by the load carries no pointer at all: the shape
+		//manager's deserialization constructor clears the field and PruningStructure::resolveReferences is what
+		//sets it.
+		for(PxU32 i=0; i<nb; i++)
+		{
+			PxBase& obj = collection->getObject(i);
+			if(obj.getConcreteType() == PxConcreteType::ePRUNING_STRUCTURE)
+				obj.release();
+		}
+
+		//1. Give back the reference each actor took on its shapes when it attached them
+		//(NpRigidActorTemplate::resolveReferences -> onActorAttach). PxArticulationLink is a PxRigidActor, so
+		//this reaches the links a generic teardown would skip.
+		for(PxU32 i=0; i<nb; i++)
+		{
+			PxBase& entry = collection->getObject(i);
+
+			//Step 0 destroyed this one in place and left the entry behind. is<PxRigidActor>() would answer
+			//through isKindOf(), a virtual call, because PxRigidActor's PxTypeInfo is eUNDEFINED - and a virtual
+			//call on an object whose destructor has run is undefined even when the vptr happens to survive.
+			//getConcreteType() below is a plain field read, which is why steps 2 and 3 can skip this dance.
+			if(entry.getConcreteType() == PxConcreteType::ePRUNING_STRUCTURE)
+				continue;
+
+			PxRigidActor* actor = entry.is<PxRigidActor>();
+			if(!actor)
+				continue;
+
+			const PxU32 nbShapes = actor->getNbShapes();
+			if(!nbShapes)
+				continue;
+
+			PxArray<PxShape*> shapes;
+			shapes.resize(nbShapes);
+			actor->getShapes(shapes.begin(), nbShapes);
+
+			for(PxU32 j=0; j<nbShapes; j++)
+			{
+				if(shapes[j])
+					actor->detachShape(*shapes[j], false);
+			}
+		}
+
+		//2. The shapes are now back at the reference count the stream gave them, so releasing them runs
+		//~NpShape, which returns the mesh and material references they took - including on objects in
+		//externalRefs.
+		for(PxU32 i=0; i<nb; i++)
+		{
+			PxBase& obj = collection->getObject(i);
+			if(obj.getConcreteType() == PxConcreteType::eSHAPE)
+				obj.release();
+		}
+
+		//3. Materials last, for the same reason: only now is their reference count back to the stream's, so
+		//release() reaches ~NpMaterial, which unregisters the slot and tells the scenes.
+		for(PxU32 i=0; i<nb; i++)
+		{
+			PxBase& obj = collection->getObject(i);
+			if(registersOnDeserialization(obj))
+				obj.release();
+		}
+
+		collection->release();
 	}
 
 	bool readHeader(PxU8*& address)
@@ -230,9 +352,9 @@ PxCollection* PxSerialization::createCollectionFromBinary(void* memBlock, PxSeri
 			PxBase* instance = serializer->createObject(address, context);
 			if (!instance)
 			{
-				PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL, 
+				PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL,
 					"Cannot create class instance for concrete type %d.", classType);
-				collection->release();
+				abandonPartialCollection(collection);
 				return NULL;
 			}
 
@@ -267,7 +389,7 @@ PxCollection* PxSerialization::createCollectionFromBinary(void* memBlock, PxSeri
 		if (manifestTableAccessError)
 		{
 			PxGetFoundation().error(physx::PxErrorCode::eINTERNAL_ERROR, PX_FL, "Manifest table access error");
-			collection->release();
+			abandonPartialCollection(collection);
 			return NULL;
 		}
 	}

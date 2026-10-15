@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-1 AC-2
+ */
+
 /**
  * @implements REQ-PARSE-VEH-WHEELATTACH-001
  * @covers AC-1 AC-2 AC-3
@@ -19,6 +23,8 @@
 
 #include <omni/physics/parse/IPhysicsSource.h>
 #include <omni/physics/parse/ParseApi.h>
+#include <omni/physics/parse/PreparedVehicle.h>
+#include <stdexcept>
 #include <omni/physics/parse/ParseContext.h>
 
 #include <carb/logging/Log.h>
@@ -37,13 +43,32 @@ constexpr int kMaxNumberOfWheels = 20;  // mirrors VehicleDesc::maxNumberOfWheel
 
 // @implements REQ-PARSE-VEH-WHEELATTACH-001
 // @covers AC-1 AC-2 AC-3
-DescPtr<WheelAttachmentDesc> parseWheelAttachment(
-    ParseContext& ctx, ObjectKey key, const WheelAttachmentInfo& info)
+PreparedWheelAttachment prepareWheelAttachment(ParseContext& ctx, ObjectKey key, const WheelAttachmentInfo& info)
 {
-    IPhysicsSource& src = ctx.source();
-    const std::string ownerName(src.sourceKeyToString(key));
+    PreparedWheelAttachment input;
+    input.key = key;
+    input.info = info;
+    input.reads = prepareVehicleReads(ctx.source(), key, {
 
-    DescPtr<WheelAttachmentDesc> desc = allocateDesc<WheelAttachmentDesc>(ctx.descriptorAllocator());
+    });
+    return input;
+}
+
+void prepareWheelAttachmentStorage(const PreparedWheelAttachment& input, WheelAttachmentDesc& output)
+{
+    (void)input; (void)output;
+}
+
+bool fillWheelAttachment(const PreparedWheelAttachment& input, WheelAttachmentDesc& output, VehicleFillStatus& status) noexcept
+{
+    PreparedVehicleReader src(input.reads, status);
+    [[maybe_unused]] ObjectKey key = input.key;
+    [[maybe_unused]] const WheelAttachmentInfo& info = input.info;
+
+
+    const std::string& ownerName = src.sourceKeyToString(key);
+
+    WheelAttachmentDesc* desc = &output;
     desc->key = key;
     desc->id = kInvalidObjectId;
     desc->state = info.state;  // walker-resolved (eMANAGE_TRANSFORMS / eHAS_SHAPE / eHAS_WHEEL_COM_OFFSET etc.)
@@ -73,13 +98,34 @@ DescPtr<WheelAttachmentDesc> parseWheelAttachment(
     // index must be in [-1, maxNumberOfWheels)
     if (info.index < -1 || info.index >= kMaxNumberOfWheels)
     {
-        CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"index\" needs to be in [-1, %d).",
+        VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"index\" needs to be in [-1, %d).",
                        ownerName.c_str(), kMaxNumberOfWheels);
-        return {};
+        return false;
     }
     desc->index = info.index;
 
-    return desc;
+    return true;
 }
+
+void finishWheelAttachmentStorage(WheelAttachmentDesc& output, const VehicleFillStatus& status)
+{
+    (void)output; (void)status;
+}
+
+DescPtr<WheelAttachmentDesc> parseWheelAttachment(ParseContext& ctx, ObjectKey key, const WheelAttachmentInfo& info)
+{
+    const PreparedWheelAttachment input = prepareWheelAttachment(ctx, key, info);
+    DescPtr<WheelAttachmentDesc> output = allocateDesc<WheelAttachmentDesc>(ctx.descriptorAllocator());
+    if (!output) return {};
+    prepareWheelAttachmentStorage(input, *output);
+    VehicleFillStatus status;
+    const bool valid = fillWheelAttachment(input, *output, status);
+    status.report();
+    if (status.incomplete) throw std::logic_error("Incomplete prepared vehicle input or storage");
+    if (!valid) return {};
+    finishWheelAttachmentStorage(*output, status);
+    return output;
+}
+
 
 } // namespace omni::physics::parse

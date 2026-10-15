@@ -4,7 +4,7 @@
 # @implements REQ-CAPI-OVSTAGE-SCHEMA-001
 # @covers AC-1
 
-"""Unit tests for the codeless USD schema exposure API (OMPE-86833).
+"""Tests for independently installed codeless USD schemas.
 
 These are pure-Python path/packaging checks and do not require usd-core. The
 end-to-end registration of the codeless schemas against a stock usd-core
@@ -20,63 +20,30 @@ import sys
 import pytest
 
 import ovphysx
-
-
-def _schema_paths_or_skip():
-    try:
-        return ovphysx.codeless_schema_paths()
-    except FileNotFoundError as exc:
-        pytest.skip(f"codeless schemas not staged in this layout: {exc}")
-
-
-def test_codeless_schema_root_is_dir():
-    try:
-        root = ovphysx.codeless_schema_root()
-    except FileNotFoundError as exc:
-        pytest.skip(f"codeless schemas not staged in this layout: {exc}")
-    assert root.is_dir()
-    assert root.name == "physx"
-
-
-def test_codeless_schema_root_is_a_registrable_plugin_root():
-    """The root carries an include registry, so registering the root alone
-    (with ovstage or a stock USD PlugRegistry) registers every module."""
-    try:
-        root = ovphysx.codeless_schema_root()
-    except FileNotFoundError as exc:
-        pytest.skip(f"codeless schemas not staged in this layout: {exc}")
-    root_plug_info = json.loads((root / "plugInfo.json").read_text())
-    includes = root_plug_info.get("Includes", [])
-    assert includes, f"root plugInfo.json under {root} has no Includes"
-    assert any(entry.rstrip("/").endswith("resources") for entry in includes), includes
-    assert not root_plug_info.get("Plugins"), "the root registry must only include the module registries"
+from schema_support import physx_schema_paths
 
 
 def test_codeless_schema_paths_contain_expected_modules():
-    paths = _schema_paths_or_skip()
+    paths = physx_schema_paths()
     assert paths, "expected at least one codeless schema package"
-    # Module directory names mirror the packaged runtime schema (derived from
-    # _install/plugins/usd), matched case-insensitively. Require each PhysX
-    # schema module ovphysx ships; the set may grow, so this is a subset check
-    # rather than an equality check.
     module_names = {path.parent.name.lower() for path in paths}
     for expected in ("physxschema", "omniusdphysicsdeformableschema"):
         assert expected in module_names, (expected, module_names)
 
 
 def test_codeless_schema_packages_have_required_files():
-    paths = _schema_paths_or_skip()
+    paths = physx_schema_paths()
     for path in paths:
         assert path.name == "resources", f"expected a resources/ dir, got {path}"
         assert (path / "plugInfo.json").is_file(), f"missing plugInfo.json in {path}"
         assert (path / "generatedSchema.usda").is_file(), f"missing generatedSchema.usda in {path}"
 
 
-def test_shipped_pluginfo_is_codeless():
-    """Each shipped plugInfo.json must satisfy the codeless resource-plugin contract."""
-    paths = _schema_paths_or_skip()
+def test_external_provider_pluginfo_is_codeless():
+    """Each provider plugInfo.json must satisfy the codeless resource-plugin contract."""
+    paths = physx_schema_paths()
     for path in paths:
-        plug_info = json.loads((path / "plugInfo.json").read_text())
+        plug_info = json.loads("\n".join(line for line in (path / "plugInfo.json").read_text().splitlines() if not line.lstrip().startswith("#")))
         plugins = plug_info.get("Plugins", [])
         assert plugins, f"no Plugins in {path}"
         for plugin in plugins:
@@ -120,47 +87,17 @@ def test_newton_schema_root_reports_a_missing_package_with_the_install_hint(monk
     assert "register_usd_schemas" in message
 
 
-def _fake_layout(base, lib_dir, schema_parent):
-    lib = base / lib_dir / "libovphysx.so"
-    lib.parent.mkdir(parents=True, exist_ok=True)
-    lib.write_text("")
-    registry = base / schema_parent / "schemas" / "physx" / "plugInfo.json"
-    registry.parent.mkdir(parents=True, exist_ok=True)
-    registry.write_text('{"Includes": ["*/resources/"]}\n')
-    return lib, registry.parent
-
-
-def test_codeless_schema_root_honors_ovphysx_lib_in_sdk_layout(tmp_path, monkeypatch):
-    """OVPHYSX_LIB selects the native library. The schemas that match it win
-    over the wheel-local tree, whether the override names the file or its
-    directory (the same rule the native helper applies)."""
-    lib, expected = _fake_layout(tmp_path / "sdk", "lib", ".")
-    monkeypatch.setenv("OVPHYSX_LIB", str(lib))
-    assert ovphysx.codeless_schema_root().resolve() == expected.resolve()
-    monkeypatch.setenv("OVPHYSX_LIB", str(lib.parent))
-    assert ovphysx.codeless_schema_root().resolve() == expected.resolve()
-
-
-def test_codeless_schema_root_honors_ovphysx_lib_in_copied_runtime_layout(tmp_path, monkeypatch):
-    """A runtime copied beside an application keeps schemas next to the library.
-    An unrelated but complete schemas/physx tree one level up must not win."""
-    lib, expected = _fake_layout(tmp_path / "app", ".", ".")
-    _fake_layout(tmp_path, "unused", ".")
-    monkeypatch.setenv("OVPHYSX_LIB", str(lib))
-    assert ovphysx.codeless_schema_root().resolve() == expected.resolve()
-
-
-def test_codeless_schema_api_does_not_trigger_native_bootstrap():
-    """The discovery helpers must never load the native runtime."""
+def test_schema_discovery_does_not_trigger_usd_or_native_bootstrap():
     script = """
 import sys
 import ovphysx
-try:
-    ovphysx.codeless_schema_root()
-    ovphysx.codeless_schema_paths()
-except FileNotFoundError:
-    pass
+from schema_support import physx_schema_paths
+assert len(physx_schema_paths()) == 2
+assert "physx_usd_schemas" not in sys.modules
+assert "pxr" not in sys.modules
 assert "ovphysx._bindings" not in sys.modules
 assert getattr(ovphysx, "_native_bootstrapped") is False
+assert not hasattr(ovphysx, "codeless_schema_root")
+assert not hasattr(ovphysx, "codeless_schema_paths")
 """
     subprocess.run([sys.executable, "-c", script], env=os.environ.copy(), check=True)

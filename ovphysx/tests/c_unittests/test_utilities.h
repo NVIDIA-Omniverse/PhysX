@@ -6,37 +6,58 @@
  * @covers AC-4
  */
 
+// @implements REQ-CAPI-OVSTAGE-XFORM-001
+// @covers AC-1
+
 #pragma once
 
-#include "AsyncEventManager/AsyncEventManager.h"
 #include "ovphysx/ovphysx.h"
+#include "../c_samples/common/ovstage_sample.h"
+#include "ovphysx/ovphysx_attributes.h"
+#include "ovphysx/experimental/Helpers.hpp"
 #include "ovphysx/ovphysx_types.h"
 #include <ovstage/ovstage.h>
 #include <ovstage/ovstage_population.h>
-#include <chrono>
+#include <ovstage/ovx_path_dictionary.h>
 #include <cstring>
 #include <iostream>
 #include <map>
 #include <mutex>
 #include <string>
-#include <thread>
 #include <vector>
 
 namespace test_utils {
 
-// Blocks on an async event until it completes or fails, with a timeout.
-inline bool poll_event_blocking(async_event_handle_t evt, int timeout_ms = 10000)
+inline std::string& last_task_error()
 {
-    const auto start = std::chrono::steady_clock::now();
-    while (true)
+    static thread_local std::string error;
+    return error;
+}
+
+// Complete only this receipt; keep its diagnostic after the wait storage is released.
+inline ovphysx_result_t complete_task(ovphysx_instance_handle_t handle, ovphysx_enqueue_result_t task)
+{
+    std::string& message = last_task_error();
+    message.clear();
+    if (task.status != OVPHYSX_API_SUCCESS)
     {
-        async_status_t s = async_poll_event(evt);
-        if (s == ASYNC_STATUS_COMPLETED) return true;
-        if (s == ASYNC_STATUS_FAILED) return false;
-        if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count() > timeout_ms)
-            return false;
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        const ovphysx_string_t error = ovphysx_get_last_error();
+        message.assign(error.ptr ? error.ptr : "", error.length);
+        return { task.status };
     }
+    ovphysx::physx::WaitResult result;
+    const ovphysx_result_t status{ result.waitTask(handle, task) };
+    for (size_t index = 0; index < result.errorCount(); ++index)
+    {
+        const ovphysx_string_t error = ovphysx_get_last_task_error(handle, result.errorTaskAt(index));
+        message.append(error.ptr ? error.ptr : "", error.length);
+    }
+    if (status.status != OVPHYSX_API_SUCCESS && message.empty())
+    {
+        const ovphysx_string_t error = ovphysx_get_last_error();
+        message.assign(error.ptr ? error.ptr : "", error.length);
+    }
+    return status;
 }
 
 // Helper to build ovphysx_string_t without hand-maintaining lengths.
@@ -69,9 +90,9 @@ inline std::mutex& ovstage_test_attachments_mutex()
     return m;
 }
 
-inline std::map<ovphysx_handle_t, std::vector<OvstageTestAttachment>>& ovstage_test_attachments()
+inline std::map<ovphysx_instance_handle_t, std::vector<OvstageTestAttachment>>& ovstage_test_attachments()
 {
-    static std::map<ovphysx_handle_t, std::vector<OvstageTestAttachment>> attachments;
+    static std::map<ovphysx_instance_handle_t, std::vector<OvstageTestAttachment>> attachments;
     return attachments;
 }
 
@@ -81,7 +102,21 @@ inline std::string ovx_to_string(ovx_string_t s)
     return std::string(s.ptr, s.length);
 }
 
-inline void destroy_ovstage_test_stages(ovphysx_handle_t handle)
+// The path dictionary of the Stage most recently attached to `handle` through
+// attach_usd_with_ovstage, or nullptr when there is none. Query prim lists and
+// tokens belong to that owning Stage; ovphysx exposes no dictionary of its own.
+// Valid only while that Stage is attached and alive.
+inline path_dictionary_instance_t* attached_ovstage_dictionary(ovphysx_instance_handle_t handle)
+{
+    std::lock_guard<std::mutex> lock(ovstage_test_attachments_mutex());
+    auto it = ovstage_test_attachments().find(handle);
+    if (it == ovstage_test_attachments().end() || it->second.empty() || !it->second.back().stage)
+        return nullptr;
+    ovstage_instance_t* stage = it->second.back().stage;
+    return stage->vtable->get_path_dictionary(stage->context);
+}
+
+inline void destroy_ovstage_test_stages(ovphysx_instance_handle_t handle)
 {
     std::vector<OvstageTestAttachment> attachments;
     {
@@ -101,16 +136,14 @@ inline void destroy_ovstage_test_stages(ovphysx_handle_t handle)
     }
 }
 
-inline bool destroy_ovstage_test_attachments(ovphysx_handle_t handle)
+inline bool destroy_ovstage_test_attachments(ovphysx_instance_handle_t handle)
 {
     if (handle == 0) return true;
-    const ovphysx_result_t detach = ovphysx_detach_ovstage(handle);
+    const ovphysx_result_t detach = complete_task(handle, ovphysx_detach_ovstage(handle));
     if (detach.status != OVPHYSX_API_SUCCESS)
     {
-        const ovphysx_string_t err = ovphysx_get_last_error();
         std::cerr << "ovphysx_detach_ovstage failed; retaining caller-owned Stage: "
-                  << static_cast<int>(detach.status) << " "
-                  << std::string(err.ptr ? err.ptr : "", err.length) << std::endl;
+                  << static_cast<int>(detach.status) << " " << last_task_error() << std::endl;
         return false;
     }
 
@@ -118,43 +151,17 @@ inline bool destroy_ovstage_test_attachments(ovphysx_handle_t handle)
     return true;
 }
 
-// ovphysx ships its PhysX USD schemas as codeless resources and never registers
-// them itself: the application owns the USD runtime. Register them with ovstage
-// once per process, before the first population call, exactly as a consumer
-// would. USD's schema registry is assembled once, so a late registration is not
-// recoverable and the first call must happen before any population.
+// Register external schemas before the first population.
 inline bool register_physx_schemas_with_ovstage()
 {
-    static bool s_registered = false;
-    if (s_registered)
-        return true;
-
-    ovphysx_string_t root{};
-    const ovphysx_result_t rootResult = ovphysx_get_codeless_schema_root(&root);
-    if (rootResult.status != OVPHYSX_API_SUCCESS)
-    {
-        const ovphysx_string_t err = ovphysx_get_last_error();
-        std::cerr << "ovphysx_get_codeless_schema_root failed: " << static_cast<int>(rootResult.status) << " "
-                  << std::string(err.ptr ? err.ptr : "", err.length) << std::endl;
-        return false;
-    }
-
-    const ovx_string_t schemaRoot{ root.ptr, root.length };
-    const ovstage_api_status_t status = ovstage_population_register_usd_schemas(&schemaRoot, 1);
-    if (status != OVSTAGE_OK)
-    {
-        std::cerr << "ovstage_population_register_usd_schemas failed: " << static_cast<int>(status) << " "
-                  << ovx_to_string(ovstage_population_get_last_error()) << std::endl;
-        return false;
-    }
-    s_registered = true;
-    return true;
+    return ovphysx_sample_register_physx_schemas() != 0;
 }
 
 inline bool attach_usd_with_ovstage(
-    ovphysx_handle_t handle,
+    ovphysx_instance_handle_t handle,
     const char* usd_path,
-    uint64_t ordinal = 1)
+    uint64_t ordinal = 1,
+    const char* stage_name = "ovphysx-test-stage")
 {
     if (handle == 0 || !usd_path)
     {
@@ -167,7 +174,7 @@ inline bool attach_usd_with_ovstage(
     }
 
     ovstage_instance_desc_t desc{};
-    desc.name = "ovphysx-test-stage";
+    desc.name = stage_name ? stage_name : "ovphysx-test-stage";
 
     ovstage_instance_t* stage = nullptr;
     ovstage_api_status_t create_status = ovstage_create_instance(&desc, &stage);
@@ -186,7 +193,7 @@ inline bool attach_usd_with_ovstage(
         path,
         ordinal,
         0.0,
-        OVSTAGE_POPULATION_DOMAIN_PHYSICS);
+        OVSTAGE_POPULATION_DOMAIN_ALL);
     if (enqueue.status != OVSTAGE_OK)
     {
         ovx_string_t err = ovstage_population_get_last_error();
@@ -240,14 +247,21 @@ inline bool attach_usd_with_ovstage(
         return false;
     }
 
-    ovphysx_result_t attach_status = ovphysx_attach_ovstage(handle, stage, ordinal);
+    const ovphysx_result_t attach_status = complete_task(handle, ovphysx_attach_ovstage(handle, stage, ordinal));
     if (attach_status.status != OVPHYSX_API_SUCCESS)
     {
-        ovphysx_string_t err = ovphysx_get_last_error();
         std::cerr << "ovphysx_attach_ovstage failed: "
-                  << static_cast<int>(attach_status.status) << " "
-                  << std::string(err.ptr ? err.ptr : "", err.length) << std::endl;
-        ovstage_destroy_instance(stage);
+                  << static_cast<int>(attach_status.status) << " " << last_task_error() << std::endl;
+        bool attached = false;
+        if (ovphysx_is_stage_attached(handle, stage, &attached).status != OVPHYSX_API_SUCCESS || attached)
+        {
+            std::lock_guard<std::mutex> lock(ovstage_test_attachments_mutex());
+            ovstage_test_attachments()[handle].push_back({stage, ordinal});
+        }
+        else
+        {
+            ovstage_destroy_instance(stage);
+        }
         return false;
     }
 
@@ -385,6 +399,77 @@ inline void free_tensor(DLTensor* t)
     }
     delete[] t->shape;
     delete t;
+}
+
+// Read the borrowed physxPointer column. Keys are prim paths. The PxPhysics
+// singleton is the "/" entry. An empty map means the query matched nothing
+// or the read failed; callers that need a failure reason should check last_task_error().
+inline std::map<std::string, void*> read_physx_pointers(ovphysx_instance_handle_t handle,
+                                                        ovphysx_query_target_t type)
+{
+    std::map<std::string, void*> out;
+    ovphysx_query_handle_t query = 0;
+    if (complete_task(handle, ovphysx_query(handle, type, OVPHYSX_SCOPE_ALL, &query, nullptr)).status != OVPHYSX_API_SUCCESS)
+        return out;
+    ovx_path_dictionary_t* dict = attached_ovstage_dictionary(handle);
+    if (!dict)
+    {
+        complete_task(handle, ovphysx_release_query(handle, query));
+        return out;
+    }
+    ovx_string_or_token_t name{};
+    name.string.ptr = OVPHYSX_ATTR_PHYSX_POINTER;
+    name.string.length = std::strlen(OVPHYSX_ATTR_PHYSX_POINTER);
+    ovphysx_read_handle_t read = 0;
+    if (complete_task(handle, ovphysx_read(handle, query, &name, 1, &read, nullptr)).status != OVPHYSX_API_SUCCESS)
+    {
+        complete_task(handle, ovphysx_release_query(handle, query));
+        return out;
+    }
+    for (;;)
+    {
+        const ovstage_read_group_t* group = nullptr;
+        const ovphysx_result_t fetched = complete_task(handle, ovphysx_fetch_read_next(handle, read, &group));
+        if (fetched.status != OVPHYSX_API_SUCCESS || !group || !group->data.tensors)
+            break;
+        const DLTensor& tensor = group->data.tensors[0];
+        const ovx_primpath_t* paths = nullptr;
+        size_t pathCount = 0;
+        if (tensor.data && tensor.dtype.code == kDLUInt && tensor.dtype.bits == 64 &&
+            tensor.device.device_type == kDLCPU &&
+            ovx_path_dictionary_get_paths(dict, group->prims.list, &paths, &pathCount) == OVX_OK)
+        {
+            const uint64_t* values = static_cast<const uint64_t*>(tensor.data);
+            for (uint32_t row = 0; row < group->prims.count; ++row)
+            {
+                const size_t index = group->prims.index_map ? group->prims.index_map[row] : group->prims.offset + row;
+                if (index >= pathCount || values[row] == 0)
+                    continue;
+                ovx_string_t text{};
+                if (ovx_path_dictionary_path_to_string(dict, paths[index], &text) != OVX_OK || !text.ptr)
+                    continue;
+                out[std::string(text.ptr, text.length)] = reinterpret_cast<void*>(values[row]);
+            }
+        }
+        complete_task(handle, ovphysx_release_group(handle, read, group->read_group_id));
+    }
+    complete_task(handle, ovphysx_release_read(handle, read));
+    complete_task(handle, ovphysx_release_query(handle, query));
+    return out;
+}
+
+inline void* read_physx_pointer(ovphysx_instance_handle_t handle,
+                                ovphysx_query_target_t type,
+                                const char* path)
+{
+    const std::map<std::string, void*> pointers = read_physx_pointers(handle, type);
+    const auto found = pointers.find(path ? path : "");
+    return found == pointers.end() ? nullptr : found->second;
+}
+
+inline void* read_physics_singleton(ovphysx_instance_handle_t handle)
+{
+    return read_physx_pointer(handle, OVPHYSX_QUERY_TARGET_PHYSICS, "/");
 }
 
 } // namespace test_utils

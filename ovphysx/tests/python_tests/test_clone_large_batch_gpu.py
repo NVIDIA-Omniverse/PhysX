@@ -17,7 +17,7 @@ from test_utils import data_path, load_usd_with_ovstage
     ],
 )
 def test_large_clone_batch_survives_reset_cycle(physx_sdk, num_targets, scene, source, object_type, attribute, source_count):
-    """DirectGPU large clone batches must survive reset_stage() -> reload -> clone."""
+    """DirectGPU large clone batches must survive detach_ovstage() -> reload -> clone."""
     usd_path = data_path(scene)
     expected = num_targets + source_count
 
@@ -33,11 +33,11 @@ def test_large_clone_batch_survives_reset_cycle(physx_sdk, num_targets, scene, s
         physx_sdk.wait_all()
 
         # Read every original and clone after rebuilding the scene's views and stepping.
-        with physx_sdk.read(object_type, [attribute], scope=ObjectScope.ALL) as result:
+        with physx_sdk.read_sync(object_type, [attribute], scope=ObjectScope.ALL) as result:
             body_count = sum(g.prim_count for g in result.groups)
         assert body_count == expected, f"{label}: expected {expected} objects, got {body_count}"
 
     run_cycle("first")
-    physx_sdk.reset_stage()
+    physx_sdk.detach_ovstage()
     physx_sdk.wait_all()
     run_cycle("second")

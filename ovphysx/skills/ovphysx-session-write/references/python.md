@@ -1,25 +1,23 @@
 # Python Session Writes
 
-Read this file for the Python `PhysX.write()` branch.
-
-Before running either helper, attach a populated `ovstage.Stage` to `PhysX`
-using [Basic Workflow](../../basic-workflow/SKILL.md). Keep both alive until
-the helper returns. DirectGPU means GPU simulation with
-`/physics/suppressReadback` enabled; it needs warmup before the first write.
+Read this file for the Python `PhysX.write_sync()` / `PhysX.write()` branch.
 
 ## The write session
 
-`PhysX.write(object_type, attribute)` returns a context-managed `WriteSession`
-carrying exactly ONE attribute. Its `groups` are the mirror of a `ReadResult`:
-the same prims in the same order. Each `WriteGroup.tensors[i]` is a `warp.array`
-that is a MUTABLE VIEW onto runtime-owned storage -- fill it in place, then hand
-the group to `commit()`. Anything not committed when the block exits is
-discarded.
+`PhysX.write_sync(object_type, attributes)` creates its own query, opens a
+context-managed `WriteSession` for one or more attributes (a single name is also
+accepted), fetches every group into `groups`, and waits for its releases when the
+`with` block exits. The default `PhysX.write(query, attributes)` instead returns an
+`Operation` for the session open over an explicit, completed `Query`; the session's
+`fetch_next()`, `commit()` and `close()` return operations too, and `wait()` collects
+each one.
 
-Create `examples/session_write.py` with this helper and its imports. Call
-`drive_all_bodies_x(physx, 2.0)` from your attached simulation before its next
-step. Use a scene whose queried rigid bodies are dynamic; the kinematic-body
-limitation is described after the example.
+Identify mapped objects through each write group's own prim list; read and write
+partitions and fetch order need not match. Each `WriteGroup.tensors[i]` is a `warp.array` that is a MUTABLE
+VIEW onto runtime-owned storage -- fill it in place, then hand the group to
+`commit()` / `commit_sync()`. `WriteGroup.attribute_index` is the group's position
+in the request list and `WriteGroup.attribute` its canonical token. Anything not
+committed when the session closes is discarded.
 
 ```python
 import numpy as np
@@ -32,56 +30,69 @@ def drive_all_bodies_x(physx, vx: float):
     physx.warmup()          # portable: DirectGPU refuses a pre-step write; CPU/GPU apply it
     physx.wait_all()
     committed = 0
-    with physx.write(SimObjectType.RIGID_BODY, "linearVelocity") as w:
+    with physx.write_sync(SimObjectType.RIGID_BODY, ["linearVelocity"]) as w:
         for g in w.groups:
             # Fill EVERY tensor of the group: commit publishes the whole group,
             # so an unfilled tensor drives its prims with stale memory.
+            device = None
             for tensor in g.tensors:
+                device = tensor.device
+                assert device is not None
                 buf = np.zeros(tuple(tensor.shape), dtype=np.float32)
                 buf[:, 0] = vx
                 tensor.assign(buf)          # numpy source, host or device tensor
-            if g.tensors and g.tensors[0].device.is_cuda:
-                stream = wp.get_stream(g.tensors[0].device)
-                w.commit(g, cuda_stream=int(stream.cuda_stream or 1))
+            if device is not None and device.is_cuda:
+                # The device scope makes the fill's CUDA context current for the value 1.
+                with wp.ScopedDevice(device):
+                    stream = wp.get_stream(device)
+                    w.commit_sync(g, cuda_stream=int(stream.cuda_stream or 1))
             else:
-                w.commit(g)
+                w.commit_sync(g)
             committed += 1
     assert committed > 0, "write produced no groups; nothing was driven"
-    physx.wait_all()
 ```
 
 The default rigid-body query includes kinematic bodies. On CPU or GPU-with-readback
-scenes, PhysX rejects this velocity setter on standalone kinematic bodies, and
-commit raises with the SDK error. Valid dynamic rows in the same group can still be
-written, including rows after the rejected body; the kinematic body's velocity stays
+scenes, PhysX rejects this velocity setter on standalone kinematic bodies, and the
+commit raises `TaskError` with the SDK error -- from `commit_sync()`, or from `wait()`
+on a default `commit()`. Valid dynamic rows in the same group can still be written,
+including rows after the rejected body; the kinematic body's velocity stays
 unchanged. The failed group is spent, with no rollback or applied/rejected row count.
-There is no per-body selection or kinematic-body filter.
+There is no kinematic-body filter; to write only some bodies, select their prims
+with `prim_paths=` or `pattern=` on `write_sync()` or `query()`.
+A selected write includes sleeping members and uses `scope=ALL` (the default).
 
 `tensor.assign(src)` copies a NumPy / Warp / DLPack source shaped like
 `tensor.shape`, staging host->device as needed, so one code path serves CPU and
 CUDA. Inspect `tensor.device` to decide the commit stream, not to choose how to
 fill.
 
+The commit stream and event name your PRODUCER work; they do not select the
+stream PhysX consumes on. Both are honored when both are nonzero, and only two
+zeros assert that nothing is outstanding. A Warp stream's `cuda_stream` is `None`
+for a device's null stream, which the examples pass as the legacy default stream `1`;
+that value refers to the CUDA context current during the commit, which is why the
+commit runs inside `wp.ScopedDevice`. The current native implementation can block
+the host while it completes these dependencies, so an `Operation` returned
+without collection is not a promise of host-nonblocking execution. A failed
+handoff fails the commit task and spends the group. During the wait, the public
+ovphysx API rejects overlapping query/read/write/fetch/commit/release submissions
+with `OVPHYSX_API_INVALID_STATE`, surfaced as a Python `RuntimeError`. Producer
+work must not depend on code (such as a CUDA host callback) that needs one of those
+calls to succeed or waits for this commit to finish -- that cyclic dependency can
+deadlock. Keep public API calls serialized.
+
 ## Fill every mapped entry
 
 A group has no fill mask; never commit a group with some tensors unfilled. A
 mid-fill exception that abandons the `with` block discards the uncommitted group.
-Previously committed groups remain applied.
+Previously committed groups remain applied: commits are not transactional, and they
+run in the order you issue them.
 
-For an array object type, `ARTICULATION_JOINT` carries one tensor per joint.
-Fill every tensor in the group, not just `tensors[0]`.
-
-Add this helper to `examples/session_write.py` alongside `drive_all_bodies_x`.
-Use it only when **every selected joint axis is angular**, for example in an
-all-revolute articulation. Each degree of freedom (DOF) is one independently
-movable joint axis. This helper sets joint state directly; it does not set a
-drive target.
-
-A prismatic coordinate uses the stage's base length unit, not degrees. For mixed
-angular and prismatic joints, build per-axis values from your authored joint
-metadata and match them to the returned joint order. The type query cannot
-filter to angular joints. Do not call this uniform-degrees helper for that scene.
-The unit rules are listed in [Shared Contracts](../SKILL.md#shared-contracts).
+For an array object type -- `ARTICULATION_JOINT` carries one tensor per joint --
+fill every tensor in the group, not just `tensors[0]`. One session can carry several
+attributes; identify each group's attribute by `attribute_index`, never by shape.
+This example uses the default operations with an explicit query:
 
 ```python
 import numpy as np
@@ -89,24 +100,33 @@ import warp as wp
 from ovphysx.types import SimObjectType
 
 
-def set_all_angular_joint_positions(physx, degrees: float):
-    """Set joint state in degrees; requires an all-angular articulation scene."""
+def set_every_dof_state(physx, degrees: float, degrees_per_second: float):
     physx.warmup()
     physx.wait_all()
-    committed = 0
-    with physx.write(SimObjectType.ARTICULATION_JOINT, "jointPosition") as w:
-        for g in w.groups:
-            # Angular DOF columns are DEGREES, per axis -- no radian conversion.
-            for tensor in g.tensors:
-                tensor.assign(np.full(tuple(tensor.shape), degrees, dtype=np.float32))
-            # Commit with the group's stream on a GPU scene, as in drive_all_bodies_x.
-            if g.tensors and g.tensors[0].device.is_cuda:
-                w.commit(g, cuda_stream=int(wp.get_stream(g.tensors[0].device).cuda_stream or 1))
-            else:
-                w.commit(g)
-            committed += 1
-    assert committed > 0, "write produced no groups; no angular joint was set"
+    values = (degrees, degrees_per_second)  # indexed like the request list below
+    with physx.query(SimObjectType.ARTICULATION_JOINT).wait() as query:
+        with physx.write(query, ["jointPosition", "jointVelocity"]).wait() as w:
+            while (g := w.fetch_next().wait()) is not None:
+                # Angular DOF columns are DEGREES, per axis -- no radian conversion.
+                # Both attributes have the same shape; attribute_index says which one this is.
+                device = None
+                for tensor in g.tensors:
+                    device = tensor.device
+                    assert device is not None
+                    tensor.assign(np.full(tuple(tensor.shape), values[g.attribute_index], dtype=np.float32))
+                # Commit with the group's stream on a GPU scene, as in drive_all_bodies_x.
+                if device is not None and device.is_cuda:
+                    with wp.ScopedDevice(device):
+                        stream = wp.get_stream(device)
+                        w.commit(g, cuda_stream=int(stream.cuda_stream or 1)).wait()
+                else:
+                    w.commit(g).wait()
+    physx.wait_all()  # collect the releases submitted when the blocks exited
 ```
+
+Opening the session validates every requested name first: an unsupported,
+read-only or duplicate attribute fails the open and exposes no group. A token in
+the list must come from the attached Stage's dictionary.
 
 ## Forces and wrenches
 
@@ -121,28 +141,8 @@ column), never the load itself.
 
 A control-target write reads back the target you wrote, not the physics result.
 After stepping, read a STATE attribute -- for example write `jointVelocityTarget`,
-`step_sync()`, then read `jointVelocity` -- through the [Output Read](../../ovphysx-output-read/SKILL.md)
+`step_sync()`, then read `jointVelocity` -- through the `ovphysx-output-read`
 skill.
-
-## Input and Group Contracts
-
-The [Python API Reference](../../../docs/python_api.rst) defines the full API.
-The fields used by these helpers have this contract:
-
-| Field | Type | Required | Valid Values and Meaning |
-|---|---|---|---|
-| `object_type` | `SimObjectType` | Yes | One simulated type, such as `RIGID_BODY` or `ARTICULATION_JOINT`. |
-| `attribute_name` | `str` | Yes | One attribute writable for that type; refer to [Writable Attributes](../SKILL.md#writable-attributes-by-object-type). |
-| `scope` | `ObjectScope` | No | `ALL` by default or `ACTIVE`, subject to [Scope Constraints](../../ovphysx-output-read/references/scope_and_layout.md). Neither filters by joint axis or individual body. |
-| `WriteSession.groups` | `list[WriteGroup]` | Returned | May be empty. Fill and commit each intended group once. |
-| `WriteGroup.prim_list` | `int` | Returned | Opaque prim-list handle in the attached Stage dictionary, valid while the session is open. |
-| `WriteGroup.prim_offset`, `prim_count` | `int` | Returned | Offset and row count in the group's prim list. Use the returned mapping. |
-| `WriteGroup.tensors` | `list[warp.array]` | Returned | Fixed group: one stacked tensor. Array group: one tensor per prim. Preserve shape, dtype, and device; fill every entry before commit. |
-| `cuda_stream`, `cuda_wait_event` | `int` | No | Commit synchronization handles, default `0`. `cuda_stream=0` means no synchronization; `1` denotes the default stream. Pass the stream used for a CUDA fill. |
-
-A non-empty write tensor is valid only until its group commits or its session
-closes. Do not retain or use it afterward. Unlike read arrays, write arrays do
-not extend the session lifetime.
 
 ## Validation
 
@@ -151,13 +151,16 @@ not extend the session lifetime.
   refused. The write never auto-warms.
 - Every group intended to publish is fully filled and committed; abandoned fills
   publish nothing.
+- Each group's attribute is identified by `attribute_index`, never by tensor
+  shape or fetch order.
 - CUDA groups commit with their Warp stream; inspect `tensor.device` rather than
   assuming the write device equals the read device.
 - The test asserts a physical consequence (motion, pose change), not the
   write-only input read back.
-- Every `WriteSession` closes (its `with` block exits) before `PhysX.destroy()`.
+- Every `WriteSession` and `Query` closes before `PhysX.destroy()`; with the
+  default operations, collect the submitted releases with `wait_all()`.
 
-Worked example: `samples/python_samples/session_write.py` inside the installed
-`ovphysx` package opens a `PhysX.write()` session for `linearVelocity`, commits it, steps, and
-verifies the consequence by reading `position` back -- the pattern above,
-end to end.
+Worked example: `samples/python_samples/session_write.py` in the installed
+wheel (`tests/python_samples/session_write.py` in a source checkout)
+writes `linearVelocity` through a session, commits it, steps, and verifies the
+consequence by reading `position` back -- the pattern above, end to end.

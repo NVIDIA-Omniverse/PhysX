@@ -1,18 +1,30 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-CAPI-SESSION-001
+// @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7
+
+/**
+ * @implements REQ-CAPI-ASYNC-002
+ * @covers AC-3 AC-5 AC-7
+ *
+ * @implements REQ-CAPI-READ-CONTACT-002
+ * @covers AC-1 AC-2
+ */
+
 /**
  * @implements REQ-CAPI-OBJECTKEY-001
- * @covers AC-1 AC-2 AC-4
+ * @covers AC-1 AC-4
  *
- * @implements REQ-CAPI-PHYSXPTR-001
- * @covers AC-1 AC-2
+ * The public pointer contract is the physxPointer column (REQ-CAPI-PHYSXPTR-001).
+ * This file keeps the sidecar resolver for object-key lookup.
  */
 
 // Sidecar interop: raw PhysX object lookup and ObjectKey resolution.
 // Bridges omni::physx types into C-ABI values usable by the main lib.
 
 #include "internal/sidecar/ovphysxInternalInterop.h"
+#include "ovphysx/ovphysx_legacy_types.h"
 #include "ovphysx/ovphysx_types.h"
 #include "ovphysxInternalPhysXAccess.hpp"
 
@@ -27,6 +39,8 @@
 #include <type_traits>  // is_same (debug-render per-field type guards)
 #include <exception>
 #include <mutex>
+#include <stdexcept>
+#include <vector>
 #include <string>
 #include <unordered_map>
 
@@ -52,6 +66,20 @@ static_assert(OVPHYSX_PHYSX_TYPE_LINK_JOINT      == omni::physx::ePTLinkJoint,  
 static_assert(OVPHYSX_PHYSX_TYPE_PARTICLE_SYSTEM == omni::physx::ePTParticleSystem, "ovphysx_physx_type_t / PhysXType drift: PARTICLE_SYSTEM");
 static_assert(OVPHYSX_PHYSX_TYPE_PARTICLE_SET    == omni::physx::ePTParticleSet,    "ovphysx_physx_type_t / PhysXType drift: PARTICLE_SET");
 static_assert(OVPHYSX_PHYSX_TYPE_PHYSICS         == omni::physx::ePTPhysics,        "ovphysx_physx_type_t / PhysXType drift: PHYSICS");
+
+static_assert(OVPHYSX_QUERY_TARGET_ARTICULATION_LINK  == omni::physx::kOvxArticulationLink,  "sim object / OvxObjectType drift: LINK");
+static_assert(OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT == omni::physx::kOvxArticulationJoint, "sim object / OvxObjectType drift: JOINT");
+static_assert(OVPHYSX_QUERY_TARGET_PARTICLE_SET       == omni::physx::kOvxParticleSet,       "sim object / OvxObjectType drift: PARTICLE_SET");
+static_assert(OVPHYSX_QUERY_TARGET_ARTICULATION       == omni::physx::kOvxArticulation,      "sim object / OvxObjectType drift: ARTICULATION");
+static_assert(OVPHYSX_QUERY_TARGET_SCENE              == omni::physx::kOvxScene,             "sim object / OvxObjectType drift: SCENE");
+static_assert(OVPHYSX_QUERY_TARGET_PHYSX_MATERIAL     == omni::physx::kOvxPhysxMaterial,     "sim object / OvxObjectType drift: MATERIAL");
+static_assert(OVPHYSX_QUERY_TARGET_SHAPE              == omni::physx::kOvxShape,             "sim object / OvxObjectType drift: SHAPE");
+static_assert(OVPHYSX_QUERY_TARGET_COMPOUND_SHAPE     == omni::physx::kOvxCompoundShape,     "sim object / OvxObjectType drift: COMPOUND_SHAPE");
+static_assert(OVPHYSX_QUERY_TARGET_RIGID_ACTOR        == omni::physx::kOvxRigidActor,        "sim object / OvxObjectType drift: ACTOR");
+static_assert(OVPHYSX_QUERY_TARGET_JOINT              == omni::physx::kOvxJoint,             "sim object / OvxObjectType drift: STANDALONE_JOINT");
+static_assert(OVPHYSX_QUERY_TARGET_CUSTOM_JOINT       == omni::physx::kOvxCustomJoint,       "sim object / OvxObjectType drift: CUSTOM_JOINT");
+static_assert(OVPHYSX_QUERY_TARGET_PARTICLE_SYSTEM    == omni::physx::kOvxParticleSystem,    "sim object / OvxObjectType drift: PARTICLE_SYSTEM");
+static_assert(OVPHYSX_QUERY_TARGET_PHYSICS            == omni::physx::kOvxPhysics,           "sim object / OvxObjectType drift: PHYSICS");
 
 // Compile-time guards: the ovphysx_debug_*_t C structs must stay byte-for-byte
 // layout-compatible with omni::physx::DebugPoint / DebugLine / DebugTriangle because
@@ -81,6 +109,9 @@ static_assert(offsetof(ovphysx_debug_triangle_t, color2) == offsetof(omni::physx
 // (which size/offset checks cannot see) fails the build. carb::Float3 is itself pinned
 // to three floats so a Float3 component flip (float -> int) is caught too.
 static_assert(std::is_same<decltype(carb::Float3::x), float>::value, "carb::Float3 component is no longer float");
+static_assert(sizeof(omni::physx::DebugPoint) == sizeof(ovphysx_debug_point_t), "DebugPoint layout drift");
+static_assert(sizeof(omni::physx::DebugLine) == sizeof(ovphysx_debug_line_t), "DebugLine layout drift");
+static_assert(sizeof(omni::physx::DebugTriangle) == sizeof(ovphysx_debug_triangle_t), "DebugTriangle layout drift");
 static_assert(std::is_same<decltype(omni::physx::DebugPoint::mPos), carb::Float3>::value,     "DebugPoint::mPos type drift");
 static_assert(std::is_same<decltype(omni::physx::DebugPoint::mColor), uint32_t>::value,       "DebugPoint::mColor type drift");
 static_assert(std::is_same<decltype(omni::physx::DebugLine::mPos0), carb::Float3>::value,     "DebugLine::mPos0 type drift");
@@ -141,8 +172,7 @@ static_assert((int)omni::physx::kOvxReadStatusError != (int)omni::physx::kOvxRea
 // try/catch guards the extern "C" boundary so C++ exceptions do not escape into C callers.
 // The enum range is not validated here because PhysX returns nullptr for unknown types.
 // The selector/type relationship is validated below as defense in depth.
-OVPHYSX_INTERNAL_API void* ovphysx_internal_get_physx_ptr(
-    const char* prim_path, int physx_type)
+OVPHYSX_INTERNAL_API void* ovphysx_internal_get_physx_ptr(uint64_t attach, const char* prim_path, int physx_type)
 {
     if (!prim_path)
     {
@@ -171,7 +201,7 @@ OVPHYSX_INTERNAL_API void* ovphysx_internal_get_physx_ptr(
         omni::physics::parse::ObjectKey key{};
         if (!physics_lookup)
         {
-            key = physx->resolveObjectKey(prim_path);
+            key = physx->resolveObjectKey(attach, prim_path);
             if (!key.valid())
             {
                 CARB_LOG_ERROR("Internal sidecar: ovphysx_internal_get_physx_ptr could not resolve ObjectKey for '%s'", prim_path);
@@ -179,7 +209,7 @@ OVPHYSX_INTERNAL_API void* ovphysx_internal_get_physx_ptr(
             }
         }
 
-        return physx->getPhysXPtr(key, static_cast<omni::physx::PhysXType>(physx_type));
+        return physx->getPhysXPtr(attach, key, static_cast<omni::physx::PhysXType>(physx_type));
     }
     catch (const std::exception& e)
     {
@@ -204,7 +234,7 @@ OVPHYSX_INTERNAL_API void* ovphysx_internal_get_physx_ptr(
 // sidecar therefore does not seed the persistent /persistent/app/viewport/gizmo/scale
 // setting, which is a process-global side effect ovphysx should not own.
 
-OVPHYSX_INTERNAL_API void ovphysx_internal_enable_visualization(bool enable)
+OVPHYSX_INTERNAL_API void ovphysx_internal_enable_visualization(uint64_t attach, bool enable)
 {
     try
     {
@@ -212,7 +242,7 @@ OVPHYSX_INTERNAL_API void ovphysx_internal_enable_visualization(bool enable)
             ovphysx::internal::sidecar::tryGetInjectedPhysxVisualizationInterface();
         if (visualization)
         {
-            visualization->enableVisualization(enable);
+            visualization->enableVisualization(attach, enable);
         }
     }
     catch (...)
@@ -221,7 +251,7 @@ OVPHYSX_INTERNAL_API void ovphysx_internal_enable_visualization(bool enable)
     }
 }
 
-OVPHYSX_INTERNAL_API void ovphysx_internal_set_visualization_parameter(uint32_t param, bool on)
+OVPHYSX_INTERNAL_API void ovphysx_internal_set_visualization_parameter(uint64_t attach, uint32_t param, bool on)
 {
     try
     {
@@ -229,8 +259,7 @@ OVPHYSX_INTERNAL_API void ovphysx_internal_set_visualization_parameter(uint32_t 
             ovphysx::internal::sidecar::tryGetInjectedPhysxVisualizationInterface();
         if (visualization)
         {
-            visualization->setVisualizationParameter(
-                static_cast<omni::physx::PhysXVisualizationParameter>(param), on);
+            visualization->setVisualizationParameter(attach, static_cast<omni::physx::PhysXVisualizationParameter>(param), on);
         }
     }
     catch (...)
@@ -239,7 +268,7 @@ OVPHYSX_INTERNAL_API void ovphysx_internal_set_visualization_parameter(uint32_t 
     }
 }
 
-OVPHYSX_INTERNAL_API void ovphysx_internal_set_visualization_parameter_value(uint32_t param, float value)
+OVPHYSX_INTERNAL_API void ovphysx_internal_set_visualization_parameter_value(uint64_t attach, uint32_t param, float value)
 {
     try
     {
@@ -249,8 +278,7 @@ OVPHYSX_INTERNAL_API void ovphysx_internal_set_visualization_parameter_value(uin
         // the pointer unset, same guard as the scope setter.
         if (visualization && visualization->setVisualizationParameterValue)
         {
-            visualization->setVisualizationParameterValue(
-                static_cast<omni::physx::PhysXVisualizationParameter>(param), value);
+            visualization->setVisualizationParameterValue(attach, static_cast<omni::physx::PhysXVisualizationParameter>(param), value);
         }
     }
     catch (...)
@@ -259,8 +287,7 @@ OVPHYSX_INTERNAL_API void ovphysx_internal_set_visualization_parameter_value(uin
     }
 }
 
-OVPHYSX_INTERNAL_API bool ovphysx_internal_set_visualization_scope_tokens(
-    const ovx_primpath_t* tokens, uint32_t count)
+OVPHYSX_INTERNAL_API bool ovphysx_internal_set_visualization_scope_tokens(uint64_t attach, const ovx_primpath_t* tokens, uint32_t count)
 {
     try
     {
@@ -268,7 +295,7 @@ OVPHYSX_INTERNAL_API bool ovphysx_internal_set_visualization_scope_tokens(
             ovphysx::internal::sidecar::tryGetInjectedPhysxVisualizationInterface();
         if (!visualization || !visualization->setVisualizationScopeTokens)
             return false;
-        return visualization->setVisualizationScopeTokens(tokens, count);
+        return visualization->setVisualizationScopeTokens(attach, tokens, count);
     }
     catch (...)
     {
@@ -277,7 +304,7 @@ OVPHYSX_INTERNAL_API bool ovphysx_internal_set_visualization_scope_tokens(
     }
 }
 
-OVPHYSX_INTERNAL_API void ovphysx_internal_set_visualization_scale(float scale)
+OVPHYSX_INTERNAL_API void ovphysx_internal_set_visualization_scale(uint64_t attach, float scale)
 {
     try
     {
@@ -285,7 +312,7 @@ OVPHYSX_INTERNAL_API void ovphysx_internal_set_visualization_scale(float scale)
             ovphysx::internal::sidecar::tryGetInjectedPhysxVisualizationInterface();
         if (visualization)
         {
-            visualization->setVisualizationScale(scale);
+            visualization->setVisualizationScale(attach, scale);
         }
     }
     catch (...)
@@ -294,8 +321,7 @@ OVPHYSX_INTERNAL_API void ovphysx_internal_set_visualization_scale(float scale)
     }
 }
 
-OVPHYSX_INTERNAL_API void ovphysx_internal_set_visualization_culling_box(
-    const float* min3, const float* max3)
+OVPHYSX_INTERNAL_API void ovphysx_internal_set_visualization_culling_box(uint64_t attach, const float* min3, const float* max3)
 {
     if (!min3 || !max3)
         return;
@@ -305,7 +331,7 @@ OVPHYSX_INTERNAL_API void ovphysx_internal_set_visualization_culling_box(
             ovphysx::internal::sidecar::tryGetInjectedPhysxVisualizationInterface();
         if (visualization)
         {
-            visualization->setVisualizationCullingBox(carb::Float3{ min3[0], min3[1], min3[2] },
+            visualization->setVisualizationCullingBox(attach, carb::Float3{ min3[0], min3[1], min3[2] },
                                                         carb::Float3{ max3[0], max3[1], max3[2] });
         }
     }
@@ -315,7 +341,7 @@ OVPHYSX_INTERNAL_API void ovphysx_internal_set_visualization_culling_box(
     }
 }
 
-OVPHYSX_INTERNAL_API void ovphysx_internal_get_debug_points(const void** out, uint32_t* count)
+OVPHYSX_INTERNAL_API void ovphysx_internal_get_debug_points(uint64_t attach, const void** out, uint32_t* count)
 {
     if (out) *out = nullptr;
     if (count) *count = 0;
@@ -325,8 +351,8 @@ OVPHYSX_INTERNAL_API void ovphysx_internal_get_debug_points(const void** out, ui
             ovphysx::internal::sidecar::tryGetInjectedPhysxVisualizationInterface();
         if (visualization)
         {
-            if (out) *out = visualization->getPoints();
-            if (count) *count = visualization->getNbPoints();
+            if (out) *out = visualization->getPoints(attach);
+            if (count) *count = visualization->getNbPoints(attach);
         }
     }
     catch (...)
@@ -335,7 +361,7 @@ OVPHYSX_INTERNAL_API void ovphysx_internal_get_debug_points(const void** out, ui
     }
 }
 
-OVPHYSX_INTERNAL_API void ovphysx_internal_get_debug_lines(const void** out, uint32_t* count)
+OVPHYSX_INTERNAL_API void ovphysx_internal_get_debug_lines(uint64_t attach, const void** out, uint32_t* count)
 {
     if (out) *out = nullptr;
     if (count) *count = 0;
@@ -345,8 +371,8 @@ OVPHYSX_INTERNAL_API void ovphysx_internal_get_debug_lines(const void** out, uin
             ovphysx::internal::sidecar::tryGetInjectedPhysxVisualizationInterface();
         if (visualization)
         {
-            if (out) *out = visualization->getLines();
-            if (count) *count = visualization->getNbLines();
+            if (out) *out = visualization->getLines(attach);
+            if (count) *count = visualization->getNbLines(attach);
         }
     }
     catch (...)
@@ -355,7 +381,7 @@ OVPHYSX_INTERNAL_API void ovphysx_internal_get_debug_lines(const void** out, uin
     }
 }
 
-OVPHYSX_INTERNAL_API void ovphysx_internal_get_debug_triangles(const void** out, uint32_t* count)
+OVPHYSX_INTERNAL_API void ovphysx_internal_get_debug_triangles(uint64_t attach, const void** out, uint32_t* count)
 {
     if (out) *out = nullptr;
     if (count) *count = 0;
@@ -365,8 +391,8 @@ OVPHYSX_INTERNAL_API void ovphysx_internal_get_debug_triangles(const void** out,
             ovphysx::internal::sidecar::tryGetInjectedPhysxVisualizationInterface();
         if (visualization)
         {
-            if (out) *out = visualization->getTriangles();
-            if (count) *count = visualization->getNbTriangles();
+            if (out) *out = visualization->getTriangles(attach);
+            if (count) *count = visualization->getNbTriangles(attach);
         }
     }
     catch (...)
@@ -375,42 +401,68 @@ OVPHYSX_INTERNAL_API void ovphysx_internal_get_debug_triangles(const void** out,
     }
 }
 
-// OMPE-94459: calls PxArticulationReducedCoordinate::updateKinematic on the
-// articulation at the given prim path. The flags bitmask matches
-// ovphysx_articulation_kinematic_flag_t (POSITION=1, VELOCITY=2).
-OVPHYSX_INTERNAL_API bool ovphysx_internal_update_kinematic(
-    const char* prim_path, uint32_t flags)
+OVPHYSX_INTERNAL_API void ovphysx_internal_debug_render_apply(
+    const ovphysx_internal_debug_render_state_t* state)
 {
-    if (!prim_path || prim_path[0] == '\0')
-        return false;
+    if (!state)
+        return;
     try
     {
-        omni::physx::IPhysx* physx = ovphysx::internal::sidecar::tryGetInjectedPhysxInterface();
-        if (!physx)
-            return false;
-        omni::physics::parse::ObjectKey key = physx->resolveObjectKey(prim_path);
-        if (!key.valid())
-            return false;
-        void* p = physx->getPhysXPtr(key, omni::physx::ePTArticulation);
-        if (!p)
-            return false;
-        auto* arti = static_cast<::physx::PxArticulationReducedCoordinate*>(p);
-        ::physx::PxArticulationKinematicFlags pxFlags;
-        if (flags & OVPHYSX_ARTICULATION_KINEMATIC_POSITION) pxFlags |= ::physx::PxArticulationKinematicFlag::ePOSITION;
-        if (flags & OVPHYSX_ARTICULATION_KINEMATIC_VELOCITY) pxFlags |= ::physx::PxArticulationKinematicFlag::eVELOCITY;
-        if (!pxFlags)
-            return true;  // nothing to do, but path resolved
-        arti->updateKinematic(pxFlags);
-        return true;
-    }
-    catch (const std::exception& e)
-    {
-        CARB_LOG_ERROR("Internal sidecar: ovphysx_internal_update_kinematic exception: %s", e.what());
-        return false;
+        omni::physx::IPhysxVisualization* visualization =
+            ovphysx::internal::sidecar::tryGetInjectedPhysxVisualizationInterface();
+        if (!visualization || !visualization->applyDebugRenderForAttach)
+            return;
+        omni::physx::DebugRenderAttachRequest request{};
+        request.attachHandle = state->attach_handle;
+        request.enabled = state->enabled != 0;
+        request.scale = state->scale;
+        request.params = state->params;
+        request.paramCount = OVPHYSX_DEBUG_RENDER_PARAM_COUNT;
+        request.hasCullingBox = state->has_culling_box != 0;
+        for (int axis = 0; axis < 3; ++axis)
+        {
+            request.cullMin[axis] = state->cull_min[axis];
+            request.cullMax[axis] = state->cull_max[axis];
+        }
+        request.scopeTokens = reinterpret_cast<const ovx_primpath_t*>(state->scope_tokens);
+        request.scopeCount = state->scope_count;
+        visualization->applyDebugRenderForAttach(&request);
     }
     catch (...)
     {
-        return false;
+        CARB_LOG_ERROR("Internal sidecar: debug_render_apply threw");
+    }
+}
+
+OVPHYSX_INTERNAL_API void ovphysx_internal_debug_render_copy(
+    uint64_t attach_handle,
+    void* points, uint32_t* point_count,
+    void* lines, uint32_t* line_count,
+    void* triangles, uint32_t* triangle_count)
+{
+    try
+    {
+        omni::physx::IPhysxVisualization* visualization =
+            ovphysx::internal::sidecar::tryGetInjectedPhysxVisualizationInterface();
+        if (!visualization || !visualization->copyDebugPrimitivesForAttach)
+        {
+            if (point_count) *point_count = 0;
+            if (line_count) *line_count = 0;
+            if (triangle_count) *triangle_count = 0;
+            return;
+        }
+        visualization->copyDebugPrimitivesForAttach(
+            attach_handle,
+            static_cast<omni::physx::DebugPoint*>(points), point_count,
+            static_cast<omni::physx::DebugLine*>(lines), line_count,
+            static_cast<omni::physx::DebugTriangle*>(triangles), triangle_count);
+    }
+    catch (...)
+    {
+        CARB_LOG_ERROR("Internal sidecar: debug_render_copy threw");
+        if (point_count) *point_count = 0;
+        if (line_count) *line_count = 0;
+        if (triangle_count) *triangle_count = 0;
     }
 }
 
@@ -430,8 +482,7 @@ namespace
 struct OvxReadFns
 {
     decltype(&omni::physx::ovxQuery)            query = nullptr;
-    decltype(&omni::physx::ovxFetchQueryResult) fetchQueryResult = nullptr;
-    decltype(&omni::physx::ovxQueryDictionary)  dict = nullptr;
+    decltype(&omni::physx::ovxQuerySelected)    querySelected = nullptr;
     decltype(&omni::physx::ovxReadAttributes)   read = nullptr;
     decltype(&omni::physx::ovxFetchReadNext)    fetch = nullptr;
     decltype(&omni::physx::ovxReleaseGroup)     releaseGroup = nullptr;
@@ -439,7 +490,8 @@ struct OvxReadFns
     decltype(&omni::physx::ovxReleaseQuery)     releaseQuery = nullptr;
     bool ready() const
     {
-        return query && fetchQueryResult && dict && read && fetch && releaseGroup && releaseRead && releaseQuery;
+        return query && querySelected && read && fetch && releaseGroup &&
+               releaseRead && releaseQuery;
     }
 };
 
@@ -459,13 +511,17 @@ OvxReadFns& ovxReadFns()
 // The write half (ADR-0012), injected by the same handshake and for the same reason.
 struct OvxWriteFns
 {
-    decltype(&omni::physx::ovxWriteAttribute) write = nullptr;
+    decltype(&omni::physx::ovxWriteAttributes) write = nullptr;
     decltype(&omni::physx::ovxFetchWriteNext) fetch = nullptr;
     decltype(&omni::physx::ovxCommitGroup)    commit = nullptr;
     decltype(&omni::physx::ovxReleaseWrite)   releaseWrite = nullptr;
 };
 
 OvxWriteFns g_ovxWrite;
+
+// The contact query (ADR-0044), injected by its own setter. Not part of OvxReadFns::ready(): an owner that
+// predates it still serves every other read.
+decltype(&omni::physx::ovxQueryContacts) g_ovxQueryContacts = nullptr;
 
 OvxWriteFns& ovxWriteFns()
 {
@@ -479,18 +535,14 @@ OvxWriteFns& ovxWriteFns()
 struct ReadSession
 {
     std::unordered_map<uint64_t, ovstage_read_group_t> liveGroups; // read_group_id -> group
+    std::vector<ovphysx_read_attribute_result_t> attributes;
 };
 
 std::mutex g_readMutex;
 std::unordered_map<uint64_t, ReadSession> g_readSessions; // read -> session
+std::mutex g_writeMutex;
+std::unordered_map<uint64_t, std::vector<ovphysx_write_attribute_result_t>> g_writeResults;
 
-void registerReadSession(uint64_t read)
-{
-    if (!read)
-        return;
-    std::lock_guard<std::mutex> lk(g_readMutex);
-    g_readSessions[read] = ReadSession{};
-}
 } // namespace
 
 // Owner-injected addresses of the statically linked omni::physx::ovx* read entry
@@ -500,17 +552,21 @@ void registerReadSession(uint64_t read)
 // This file includes ovphysxInternalInterop.h rather than ovphysxInternal.h, where the
 // C declaration lives, so the linkage has to be stated here too.
 extern "C" OVPHYSX_INTERNAL_API void ovphysx_internal_set_ovx_read_accessors(
-    void* query, void* fetchQueryResult, void* dict, void* read,
+    void* query, void* querySelected, void* read,
     void* fetch, void* releaseGroup, void* releaseRead, void* releaseQuery)
 {
     g_ovxRead.query            = reinterpret_cast<decltype(g_ovxRead.query)>(query);
-    g_ovxRead.fetchQueryResult = reinterpret_cast<decltype(g_ovxRead.fetchQueryResult)>(fetchQueryResult);
-    g_ovxRead.dict             = reinterpret_cast<decltype(g_ovxRead.dict)>(dict);
+    g_ovxRead.querySelected    = reinterpret_cast<decltype(g_ovxRead.querySelected)>(querySelected);
     g_ovxRead.read             = reinterpret_cast<decltype(g_ovxRead.read)>(read);
     g_ovxRead.fetch            = reinterpret_cast<decltype(g_ovxRead.fetch)>(fetch);
     g_ovxRead.releaseGroup     = reinterpret_cast<decltype(g_ovxRead.releaseGroup)>(releaseGroup);
     g_ovxRead.releaseRead      = reinterpret_cast<decltype(g_ovxRead.releaseRead)>(releaseRead);
     g_ovxRead.releaseQuery     = reinterpret_cast<decltype(g_ovxRead.releaseQuery)>(releaseQuery);
+}
+
+extern "C" OVPHYSX_INTERNAL_API void ovphysx_internal_set_ovx_contact_accessors(void* queryContacts)
+{
+    g_ovxQueryContacts = reinterpret_cast<decltype(g_ovxQueryContacts)>(queryContacts);
 }
 
 extern "C" OVPHYSX_INTERNAL_API void ovphysx_internal_set_ovx_write_accessors(
@@ -523,40 +579,83 @@ extern "C" OVPHYSX_INTERNAL_API void ovphysx_internal_set_ovx_write_accessors(
 }
 
 OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_write_attribute(uint64_t query,
-                                                               const ovx_string_or_token_t* attribute)
+    const ovx_string_or_token_t* attributes, size_t attribute_count, ovphysx_write_result_t* out_summary)
 {
+    if (out_summary)
+        *out_summary = {};
+    uint64_t opened = 0;
     try
     {
         OvxWriteFns& f = ovxWriteFns();
-        if (!f.write)
+        if (!f.write || !f.releaseWrite)
             return 0;
-        return f.write(query, attribute);
+        std::unordered_map<uint64_t, std::vector<ovphysx_write_attribute_result_t>>::node_type ownership;
+        if (out_summary)
+        {
+            std::lock_guard<std::mutex> lock(g_writeMutex);
+            g_writeResults.try_emplace(0);
+            ownership = g_writeResults.extract(0);
+            ownership.mapped().resize(attribute_count);
+        }
+        omni::physx::OvxWriteResult result{};
+        opened = f.write(query, attributes, attribute_count, out_summary ? &result : nullptr);
+        if (!opened)
+            return 0;
+        if (out_summary)
+        {
+            if (result.attributeCount != attribute_count || (attribute_count && !result.attributes))
+                throw std::runtime_error("Write summary disagrees with the request");
+            for (size_t i = 0; i < attribute_count; ++i)
+                ownership.mapped()[i] = {result.attributes[i].attribute, result.attributes[i].groupCount};
+            ownership.key() = opened;
+            std::lock_guard<std::mutex> lock(g_writeMutex);
+            const std::unordered_map<uint64_t, std::vector<ovphysx_write_attribute_result_t>>::insert_return_type inserted =
+                g_writeResults.insert(std::move(ownership));
+            if (!inserted.inserted)
+            {
+                opened = 0; // The existing session owns this identity and must not be unwound.
+                throw std::runtime_error("Duplicate write session identity");
+            }
+            *out_summary = {result.totalPrimCount, attribute_count, inserted.position->second.data()};
+        }
+        return opened;
+    }
+    catch (const std::exception& error)
+    {
+        CARB_LOG_ERROR("Write creation failed: %s", error.what());
     }
     catch (...)
     {
-        return 0;
+        CARB_LOG_ERROR("Write creation failed with an exception");
     }
+    if (opened)
+    {
+        try { ovxWriteFns().releaseWrite(opened); } catch (...) {}
+        std::lock_guard<std::mutex> lock(g_writeMutex);
+        g_writeResults.erase(opened);
+    }
+    return 0;
 }
 
-OVPHYSX_INTERNAL_API int ovphysx_internal_fetch_write_next(uint64_t write, const ovstage_map_group_t** out_group)
+OVPHYSX_INTERNAL_API int ovphysx_internal_fetch_write_next(uint64_t write, ovphysx_fetched_write_group_t* out_group)
 {
     if (!out_group)
         return -1;
-    *out_group = nullptr;
+    *out_group = {nullptr, SIZE_MAX};
     try
     {
         OvxWriteFns& f = ovxWriteFns();
         if (!f.fetch)
             return -1;
-        // The group pointer is handed back unchanged. A map group carries no id, so its address is
-        // the commit identity. Copying it into sidecar-side storage, as the read does with its
-        // groups, would hand the caller an address the runtime cannot recognise on commit.
-        const omni::physx::OvxWriteStatus st = f.fetch(write, out_group);
-        if (st == omni::physx::kOvxWriteStatusOk)
+        // Preserve the original producer address: it is the commit identity.
+        omni::physx::OvxFetchedWriteGroup fetched{};
+        const omni::physx::OvxWriteStatus status = f.fetch(write, &fetched);
+        if (status == omni::physx::kOvxWriteStatusOk)
+        {
+            *out_group = {fetched.group, fetched.attributeIndex};
             return 1;
-        if (st == omni::physx::kOvxWriteStatusEndOfIteration)
-            return 0;
-        return -1;
+        }
+        return status == omni::physx::kOvxWriteStatusEndOfIteration ? 0 : -1;
     }
     catch (...)
     {
@@ -589,27 +688,41 @@ OVPHYSX_INTERNAL_API int ovphysx_internal_commit_group(uint64_t write,
     }
 }
 
-OVPHYSX_INTERNAL_API void ovphysx_internal_release_write(uint64_t write)
+OVPHYSX_INTERNAL_API int ovphysx_internal_release_write(uint64_t write)
 {
     try
     {
-        OvxWriteFns& f = ovxWriteFns();
-        if (f.releaseWrite)
-            f.releaseWrite(write);
+        OvxWriteFns& functions = ovxWriteFns();
+        if (!functions.releaseWrite)
+        {
+            CARB_LOG_ERROR("Write release API is unavailable");
+            return -1;
+        }
+        const bool released = functions.releaseWrite(write);
+        std::lock_guard<std::mutex> lock(g_writeMutex);
+        g_writeResults.erase(write);
+        return released ? 1 : 0;
+    }
+    catch (const std::exception& error)
+    {
+        CARB_LOG_ERROR("Write release failed: %s", error.what());
     }
     catch (...)
     {
+        CARB_LOG_ERROR("Write release failed with an exception");
     }
+    return -1;
 }
 
-OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_output_query(uint32_t object_type, uint32_t scope)
+OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_output_query(uint64_t attach, uint32_t object_type, uint32_t scope,
+                                                                  ovstage_query_result_t* out_summary)
 {
     try
     {
         OvxReadFns& f = ovxReadFns();
         if (!f.query)
             return 0;
-        return f.query(object_type, scope);
+        return f.query(attach, object_type, scope, out_summary);
     }
     catch (...)
     {
@@ -617,61 +730,104 @@ OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_output_query(uint32_t object_type
     }
 }
 
-OVPHYSX_INTERNAL_API int ovphysx_internal_fetch_query_result(uint64_t query, ovstage_query_result_t* out_result)
+OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_output_query_selected(uint64_t attach, uint32_t object_type,
+                                                                     const ovx_primpath_t* primPaths,
+                                                                     size_t primPathCount,
+                                                                     const ovx_string_t* pattern,
+                                                                     ovstage_query_result_t* out_summary)
 {
-    if (!out_result)
-        return -1;
     try
     {
         OvxReadFns& f = ovxReadFns();
-        if (!f.fetchQueryResult)
-            return -1;
-        // ovxFetchQueryResult fills ovstage's own type, so it is passed straight through.
-        // The attributes array is owned by the query and valid until release_query.
-        *out_result = ovstage_query_result_t{};
-        if (!f.fetchQueryResult(query, out_result))
+        if (!f.querySelected)
             return 0;
-        return 1;
+        return f.querySelected(attach, object_type, primPaths, primPathCount, pattern, out_summary);
     }
     catch (...)
     {
-        return -1;
+        return 0;
     }
 }
 
-OVPHYSX_INTERNAL_API void* ovphysx_internal_query_dictionary(uint64_t query)
+OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_output_query_contacts(uint64_t attach,
+                                                                     const void* selections,
+                                                                     size_t selectionCount,
+                                                                     uint32_t filterCount,
+                                                                     ovstage_query_result_t* out_summary)
 {
     try
     {
-        OvxReadFns& f = ovxReadFns();
-        if (!f.dict)
-            return nullptr;
-        return reinterpret_cast<void*>(f.dict(query));
+        if (!g_ovxQueryContacts)
+            return 0;
+        return g_ovxQueryContacts(attach, static_cast<const omni::physx::OvxContactSensorSelection*>(selections),
+                                  selectionCount, filterCount, out_summary);
     }
     catch (...)
     {
-        return nullptr;
+        return 0;
     }
 }
 
 OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_read_outputs(uint64_t query,
-                                                            const ovx_string_or_token_t* attributes,
-                                                            size_t attribute_count)
+    const ovx_string_or_token_t* attributes, size_t attribute_count, ovphysx_read_result_t* out_summary)
 {
+    if (out_summary)
+        *out_summary = {};
+    uint64_t opened = 0;
     try
     {
         OvxReadFns& f = ovxReadFns();
-        if (!f.read)
+        if (!f.read || !f.releaseRead)
             return 0;
-        // Attributes are already ovstage's ovx_string_or_token_t and are forwarded verbatim.
-        const uint64_t r = f.read(query, attribute_count ? attributes : nullptr, attribute_count);
-        registerReadSession(r);
-        return r;
+        std::unordered_map<uint64_t, ReadSession>::node_type ownership;
+        {
+            std::lock_guard<std::mutex> lock(g_readMutex);
+            g_readSessions.try_emplace(0);
+            ownership = g_readSessions.extract(0);
+        }
+        if (out_summary)
+            ownership.mapped().attributes.resize(attribute_count);
+        omni::physx::OvxReadResult result{};
+        opened = f.read(query, attribute_count ? attributes : nullptr, attribute_count,
+                        out_summary ? &result : nullptr);
+        if (!opened)
+            return 0;
+        if (out_summary)
+        {
+            if (result.attributeCount != attribute_count || (attribute_count && !result.attributes))
+                throw std::runtime_error("Read summary disagrees with the request");
+            for (size_t i = 0; i < attribute_count; ++i)
+                ownership.mapped().attributes[i] = {result.attributes[i].attribute,
+                    result.attributes[i].groupCount, result.attributes[i].omissionReasons};
+        }
+        ownership.key() = opened;
+        std::lock_guard<std::mutex> lock(g_readMutex);
+        const std::unordered_map<uint64_t, ReadSession>::insert_return_type inserted =
+            g_readSessions.insert(std::move(ownership));
+        if (!inserted.inserted)
+        {
+            opened = 0; // The existing session owns this identity and must not be unwound.
+            throw std::runtime_error("Duplicate read session identity");
+        }
+        if (out_summary)
+            *out_summary = {result.totalPrimCount, attribute_count, inserted.position->second.attributes.data()};
+        return opened;
+    }
+    catch (const std::exception& error)
+    {
+        CARB_LOG_ERROR("Read creation failed: %s", error.what());
     }
     catch (...)
     {
-        return 0;
+        CARB_LOG_ERROR("Read creation failed with an exception");
     }
+    if (opened)
+    {
+        try { ovxReadFns().releaseRead(opened); } catch (...) {}
+        std::lock_guard<std::mutex> lock(g_readMutex);
+        g_readSessions.erase(opened);
+    }
+    return 0;
 }
 
 OVPHYSX_INTERNAL_API int ovphysx_internal_fetch_read_next(uint64_t read, const ovstage_read_group_t** out_group)
@@ -709,54 +865,86 @@ OVPHYSX_INTERNAL_API int ovphysx_internal_fetch_read_next(uint64_t read, const o
     }
 }
 
-OVPHYSX_INTERNAL_API void ovphysx_internal_release_group(uint64_t read, ovstage_read_group_id_t group_id)
+OVPHYSX_INTERNAL_API int ovphysx_internal_release_group(uint64_t read, ovstage_read_group_id_t group_id)
 {
     try
     {
-        OvxReadFns& f = ovxReadFns();
-        std::lock_guard<std::mutex> lk(g_readMutex);
-        const auto it = g_readSessions.find(read);
-        if (it == g_readSessions.end())
-            return;
-        auto& live = it->second.liveGroups;
-        const auto gi = live.find(group_id);
-        if (gi == live.end())
-            return; // already released or unknown, idempotent
-        if (f.releaseGroup)
-            f.releaseGroup(read, &gi->second);
-        live.erase(gi);
+        OvxReadFns& functions = ovxReadFns();
+        std::lock_guard<std::mutex> lock(g_readMutex);
+        const auto session = g_readSessions.find(read);
+        if (session == g_readSessions.end())
+            return 1;
+        const auto group = session->second.liveGroups.find(group_id);
+        if (group == session->second.liveGroups.end())
+            return 1;
+        if (!functions.releaseGroup)
+        {
+            CARB_LOG_ERROR("Read group release API is unavailable");
+            return -1;
+        }
+        if (!functions.releaseGroup(read, &group->second))
+            return -1;
+        session->second.liveGroups.erase(group);
+        return 1;
+    }
+    catch (const std::exception& error)
+    {
+        CARB_LOG_ERROR("Read group release failed: %s", error.what());
     }
     catch (...)
     {
+        CARB_LOG_ERROR("Read group release failed with an exception");
     }
+    return -1;
 }
 
-OVPHYSX_INTERNAL_API void ovphysx_internal_release_read(uint64_t read)
+OVPHYSX_INTERNAL_API int ovphysx_internal_release_read(uint64_t read)
 {
     try
     {
-        OvxReadFns& f = ovxReadFns();
-        // ovxReleaseRead tears down the whole read session including any groups it
-        // still owns, so retained groups need no individual release.
-        if (f.releaseRead)
-            f.releaseRead(read);
-        std::lock_guard<std::mutex> lk(g_readMutex);
+        OvxReadFns& functions = ovxReadFns();
+        if (!functions.releaseRead)
+        {
+            CARB_LOG_ERROR("Read release API is unavailable");
+            return -1;
+        }
+        const bool released = functions.releaseRead(read);
+        // A reported runtime failure may quarantine storage, but still ends
+        // the session and every descriptor borrowed from it.
+        std::lock_guard<std::mutex> lock(g_readMutex);
         g_readSessions.erase(read);
+        return released ? 1 : 0;
+    }
+    catch (const std::exception& error)
+    {
+        CARB_LOG_ERROR("Read release failed: %s", error.what());
     }
     catch (...)
     {
+        CARB_LOG_ERROR("Read release failed with an exception");
     }
+    return -1;
 }
 
-OVPHYSX_INTERNAL_API void ovphysx_internal_release_query(uint64_t query)
+OVPHYSX_INTERNAL_API int ovphysx_internal_release_query(uint64_t query)
 {
     try
     {
-        OvxReadFns& f = ovxReadFns();
-        if (f.releaseQuery)
-            f.releaseQuery(query);
+        OvxReadFns& functions = ovxReadFns();
+        if (!functions.releaseQuery)
+        {
+            CARB_LOG_ERROR("Query release API is unavailable");
+            return -1;
+        }
+        return functions.releaseQuery(query) ? 1 : -1;
+    }
+    catch (const std::exception& error)
+    {
+        CARB_LOG_ERROR("Query release failed: %s", error.what());
     }
     catch (...)
     {
+        CARB_LOG_ERROR("Query release failed with an exception");
     }
+    return -1;
 }

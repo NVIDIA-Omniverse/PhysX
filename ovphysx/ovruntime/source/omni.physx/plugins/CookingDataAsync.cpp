@@ -1,6 +1,21 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-FEED-006
+ * @covers AC-6
+ */
+
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-1 AC-3 AC-4
+
+// @implements REQ-ATTACH-LIFETIME-001
+// @covers AC-3 AC-4
+
+// @implements REQ-ATTACH-IO-001
+// @covers AC-3
+// @implements REQ-PARSE-CORE-006
+// @covers AC-9
+
 /**
  * @implements REQ-PARSE-UNIFY-001
  * @covers AC-2
@@ -33,6 +48,7 @@
  * @covers AC-10
  */
 
+#include "RuntimeExecution.h"
 #include <omni/physics/parse/KnownTokens.h>
 
 #include <carb/logging/Log.h>
@@ -52,6 +68,7 @@
 #include <common/foundation/DeformableCookingTransform.h>
 
 #include "CookingDataAsync.h"
+#include "ScopedNoticeLock.h"
 #include "MeshCache.h"
 
 #include <private/omni/physx/IPhysxCookingServicePrivate.h>
@@ -184,7 +201,7 @@ namespace
 
     // All cooking-input reads/gates below are keyed by the object's USD path and
     // routed through AttachedStage's IPhysicsSource (the normal cooking-pump case,
-    // run main-thread inside ScopedBlockUSDUpdates) — no UsdPrim is materialized.
+    // run main-thread inside ScopedNoticeBlock) -- no UsdPrim is materialized.
     // Cooking only runs with an attached source, so a null AttachedStage yields the
     // empty result (identity / false / no read).
 
@@ -440,25 +457,6 @@ using MeshKeySet = std::unordered_set< omni::physx::usdparser::MeshKey, omni::ph
 // active source instance changes, see ensureCollisionTokens().
 using TokenSet = std::unordered_set< omni::physics::parse::TokenId, omni::physics::parse::TokenId::Hash >;
 
-// This is a small helper class to manage blocking USD update events
-// when we are finalizing a cooking task. The finalize step of a cooking
-// task usually involves writing some of the cooked data back out to the UsdPrim
-// it is associated with. When we write out these cooked data attributes we don't
-// want to be triggering other USD notice handlers to react to those changes.
-class ScopedBlockUSDUpdates
-{
-public:
-    ScopedBlockUSDUpdates(CookingDataAsync *cda) : m_cookingDataAsync(cda)
-    {
-        m_cookingDataAsync->blockUSDUpdate(true);
-    }
-    ~ScopedBlockUSDUpdates(void)
-    {
-        m_cookingDataAsync->blockUSDUpdate(false);
-    }
-    CookingDataAsync *m_cookingDataAsync{nullptr};
-};
-
 class CookingDataAsyncImpl;
 
 // pxr-free replacement for TfWeakPtr<CookingDataAsyncImpl>/TfCreateWeakPtr/TfWeakBase:
@@ -498,7 +496,7 @@ public:
     {
         m_settings = carb::getCachedInterface<carb::settings::ISettings>();
         // Change detection is driven by the attached stage's IChangeFeed (ADR-0003),
-        // registered at feed creation by AttachedStage via registerOnChangeFeed().
+        // registered during scene creation via registerOnChangeFeed().
         // No global USD notice listener.
 
         // Collision-related attributes that may require a recook when changed:
@@ -507,78 +505,72 @@ public:
         // former TfToken, has to be minted BY a source).
     }
 
-    // (Re)builds m_collisionTokens and m_changeTokens from `src`'s vocabulary. A TokenId is only
-    // valid for comparison against the Source that minted it, so this rebuilds
-    // whenever the active source instance changes (attach/reattach) rather than
-    // once at construction, when no source exists yet. Per-instance deformable-
-    // pose tokens registered during a source's lifetime (handleSourceChange,
-    // below) are intentionally dropped on rebuild: they name prim/instance
-    // combinations specific to the previous source and are meaningless -- unsafe
-    // to compare, per internToken's own contract -- against a new one.
-    //
-    // Keyed by attachHandle, not by `&src`: this cache (m_collisionTokens) lives
-    // on the singleton CookingDataAsyncImpl, which survives detach, while `src`
-    // is destroyed with its AttachedStage. A later attach's allocator can reuse
-    // the freed source's address, which would make `m_collisionTokensSource ==
-    // &src` a false positive and retain TokenIds minted by the previous source.
-    // attachHandle (AttachHandle.h) is process-unique and never reused.
-    void ensureCollisionTokens(omni::physx::AttachHandle attachHandle, const omni::physics::parse::IPhysicsSource& src)
+    // Tokens and refresh queues are owned by the source attachment.
+    void ensureCollisionTokens(const omni::physx::usdparser::AttachedStage& attachedStage, const omni::physics::parse::IPhysicsSource& src)
     {
-        if (m_collisionTokensAttachHandle == attachHandle)
+        omni::physx::usdparser::AttachedStage::CookingRefreshState& state = attachedStage.getCookingRefreshState();
+        if (state.tokensInitialized)
             return;
-        m_collisionTokensAttachHandle = attachHandle;
-        m_collisionTokens.clear();
+        state.collisionTokens.clear();
 
         // The one KnownTokens::intern() this driver pays per attach. Retained in
-        // m_changeTokens so handleSourceChange's structural branch can read its
+        // state.tokens so handleSourceChange's structural branch can read its
         // TokenIds without re-interning the whole vocabulary per change batch.
-        omni::physics::parse::KnownTokens& tok = m_changeTokens;
+        omni::physics::parse::KnownTokens& tok = state.tokens;
         tok = omni::physics::parse::KnownTokens{};
         tok.intern(src);
-        m_collisionTokens.insert(tok.points);
-        m_collisionTokens.insert(tok.indices);
-        m_collisionTokens.insert(tok.faceVertexCounts);
-        m_collisionTokens.insert(tok.faceVertexIndices);
-        m_collisionTokens.insert(tok.orientation);
-        m_collisionTokens.insert(tok.holeIndices);
-        m_collisionTokens.insert(tok.physicsCollisionEnabled);
-        m_collisionTokens.insert(tok.physicsApproximation);
-        m_collisionTokens.insert(tok.physxConvexHullCollisionHullVertexLimit);
-        m_collisionTokens.insert(tok.physxConvexHullCollisionMinThickness);
-        m_collisionTokens.insert(tok.physxConvexDecompositionCollisionErrorPercentage);
-        m_collisionTokens.insert(tok.physxConvexDecompositionCollisionHullVertexLimit);
-        m_collisionTokens.insert(tok.physxConvexDecompositionCollisionMaxConvexHulls);
-        m_collisionTokens.insert(tok.physxConvexDecompositionCollisionMinThickness);
-        m_collisionTokens.insert(tok.physxConvexDecompositionCollisionVoxelResolution);
-        m_collisionTokens.insert(tok.physxConvexDecompositionCollisionShrinkWrap);
-        m_collisionTokens.insert(tok.physxTriangleMeshSimplificationCollisionMetric);
-        m_collisionTokens.insert(tok.physxSDFMeshCollisionSdfResolution);
-        m_collisionTokens.insert(tok.physxSDFMeshCollisionSdfSubgridResolution);
-        m_collisionTokens.insert(tok.physxSDFMeshCollisionSdfNarrowBandThickness);
-        m_collisionTokens.insert(tok.physxSDFMeshCollisionSdfMargin);
-        m_collisionTokens.insert(tok.physxSDFMeshCollisionSdfBitsPerSubgridPixel);
-        m_collisionTokens.insert(tok.physxSDFMeshCollisionSdfEnableRemeshing);
-        m_collisionTokens.insert(tok.physxSDFMeshCollisionSdfTriangleCountReductionFactor);
-        m_collisionTokens.insert(tok.physxSphereFillCollisionFillMode);
-        m_collisionTokens.insert(tok.physxSphereFillCollisionMaxSpheres);
-        m_collisionTokens.insert(tok.physxSphereFillCollisionSeedCount);
-        m_collisionTokens.insert(tok.physxSphereFillCollisionVoxelResolution);
-        m_collisionTokens.insert(tok.physxDeformableBodyAutoDeformableBodyEnabled);
-        m_collisionTokens.insert(tok.physxDeformableBodyResolution);
-        m_collisionTokens.insert(tok.physxDeformableBodyAutoDeformableMeshSimplificationEnabled);
-        m_collisionTokens.insert(tok.physxDeformableBodyRemeshingEnabled);
-        m_collisionTokens.insert(tok.physxDeformableBodyRemeshingResolution);
-        m_collisionTokens.insert(tok.physxDeformableBodyTargetTriangleCount);
-        m_collisionTokens.insert(tok.physxDeformableBodyForceConforming);
+        state.collisionTokens.insert(tok.points);
+        state.collisionTokens.insert(tok.indices);
+        state.collisionTokens.insert(tok.faceVertexCounts);
+        state.collisionTokens.insert(tok.faceVertexIndices);
+        state.collisionTokens.insert(tok.orientation);
+        state.collisionTokens.insert(tok.holeIndices);
+        state.collisionTokens.insert(tok.physicsCollisionEnabled);
+        state.collisionTokens.insert(tok.physicsApproximation);
+        state.collisionTokens.insert(tok.physxConvexHullCollisionHullVertexLimit);
+        state.collisionTokens.insert(tok.physxConvexHullCollisionMinThickness);
+        state.collisionTokens.insert(tok.physxConvexDecompositionCollisionErrorPercentage);
+        state.collisionTokens.insert(tok.physxConvexDecompositionCollisionHullVertexLimit);
+        state.collisionTokens.insert(tok.physxConvexDecompositionCollisionMaxConvexHulls);
+        state.collisionTokens.insert(tok.physxConvexDecompositionCollisionMinThickness);
+        state.collisionTokens.insert(tok.physxConvexDecompositionCollisionVoxelResolution);
+        state.collisionTokens.insert(tok.physxConvexDecompositionCollisionShrinkWrap);
+        state.collisionTokens.insert(tok.physxTriangleMeshSimplificationCollisionMetric);
+        state.collisionTokens.insert(tok.physxSDFMeshCollisionSdfResolution);
+        state.collisionTokens.insert(tok.physxSDFMeshCollisionSdfSubgridResolution);
+        state.collisionTokens.insert(tok.physxSDFMeshCollisionSdfNarrowBandThickness);
+        state.collisionTokens.insert(tok.physxSDFMeshCollisionSdfMargin);
+        state.collisionTokens.insert(tok.physxSDFMeshCollisionSdfBitsPerSubgridPixel);
+        state.collisionTokens.insert(tok.physxSDFMeshCollisionSdfEnableRemeshing);
+        state.collisionTokens.insert(tok.physxSDFMeshCollisionSdfTriangleCountReductionFactor);
+        state.collisionTokens.insert(tok.physxSphereFillCollisionFillMode);
+        state.collisionTokens.insert(tok.physxSphereFillCollisionMaxSpheres);
+        state.collisionTokens.insert(tok.physxSphereFillCollisionSeedCount);
+        state.collisionTokens.insert(tok.physxSphereFillCollisionVoxelResolution);
+        state.collisionTokens.insert(tok.physxDeformableBodyAutoDeformableBodyEnabled);
+        state.collisionTokens.insert(tok.physxDeformableBodyResolution);
+        state.collisionTokens.insert(tok.physxDeformableBodyAutoDeformableMeshSimplificationEnabled);
+        state.collisionTokens.insert(tok.physxDeformableBodyRemeshingEnabled);
+        state.collisionTokens.insert(tok.physxDeformableBodyRemeshingResolution);
+        state.collisionTokens.insert(tok.physxDeformableBodyTargetTriangleCount);
+        state.collisionTokens.insert(tok.physxDeformableBodyForceConforming);
         // File-local cooking markers (not schema-registered attributes, so not in
         // KnownTokens): interned straight from their plain-string names.
-        m_collisionTokens.insert(src.internToken(kDeformableBodyDataCrcTokenName));
-        m_collisionTokens.insert(src.internToken(kSimMeshNumTetsPerElementTokenName));
-        m_collisionTokens.insert(src.internToken(kSimMeshHexCrcTokenName));
+        state.collisionTokens.insert(src.internToken(kDeformableBodyDataCrcTokenName));
+        state.collisionTokens.insert(src.internToken(kSimMeshNumTetsPerElementTokenName));
+        state.collisionTokens.insert(src.internToken(kSimMeshHexCrcTokenName));
+        state.tokensInitialized = true;
     }
 
     virtual ~CookingDataAsyncImpl(void)
     {
+        m_aliveFlag.reset();
+        ContextMap retiring;
+        {
+            std::lock_guard<carb::tasking::MutexWrapper> lock(m_contextMutex);
+            retiring.swap(m_attachmentContexts);
+        }
+        retiring.clear();
         m_asyncContext = nullptr;
         m_settings->setBool(PROGRESS_BAR_ENABLED, false);
         {
@@ -597,9 +589,30 @@ public:
     */
     virtual uint32_t pump(void) final
     {
+        uint32_t remaining = m_asyncContext ? getComputeService().pumpAsyncContext(m_asyncContext) : 0;
+        for (const auto& entry : omni::physx::usdparser::UsdLoad::getUsdLoad()->getAttachedStages())
+        {
+            omni::physx::RuntimeExecutionScope operation(entry.first);
+            if (operation)
+                remaining += pumpContexts(entry.second.get());
+        }
+        // Process-wide UI telemetry is refreshed once by the global pump, never
+        // by an attachment's simulation path.
+        {
+            lock_guard lock(m_mutex);
+            refreshProgressBarStatus();
+        }
+        return remaining;
+    }
+    virtual uint32_t pump(omni::physx::usdparser::AttachedStage& owner) final { return pumpContexts(&owner); }
+
+    uint32_t pumpContexts(omni::physx::usdparser::AttachedStage* selectedOwner)
+    {
         carb::extras::Timer timer;
         timer.start();
-        const uint32_t pumpResult = m_asyncContext ? getComputeService().pumpAsyncContext(m_asyncContext) : 0;
+        CARB_ASSERT(selectedOwner);
+        const std::shared_ptr<OwnedContext> context = contextFor(*selectedOwner);
+        const uint32_t pumpResult = context ? getComputeService().pumpAsyncContext(context->context) : 0;
         if (timer.getElapsedTime<int64_t>(carb::extras::Timer::Scale::eMilliseconds) >= 16) // never take more than 16 ms on the main thread
         {
             return pumpResult;
@@ -608,11 +621,10 @@ public:
         CARB_PROFILE_ZONE(0, "CookingDataAsync::pump");
         // We block USD notice handlers here. Any finalized results being written to usd primitives
         // should not trigger other notice handlers, including our own. All classification below is
-        // source-routed by ObjectKey; the active attached stage is resolved inside the lock block.
+        // source-routed by attachment and ObjectKey inside the lock block.
 
         {
             lock_guard _lock(m_mutex);
-            ScopedBlockUSDUpdates _block(this);
 
             // For each changed prim, find the nearest descendant (incl. self) that
             // carries a cooking-relevant schema and schedule it for a possible
@@ -621,184 +633,187 @@ public:
             // authored/applied schema by name; for the directly-applied physics
             // APIs checked here that is equivalent to HasAPI<>. Falls back to the
             // direct USD walk when no attached source is available.
-            omni::physx::usdparser::AttachedStage* changeAttached =
-                omni::physx::usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
-            omni::physics::parse::IPhysicsSource* changeSrc =
-                changeAttached ? changeAttached->getSource() : nullptr;
-
-            // Intern the cooking-relevant schema tokens once for the whole pump
-            // (shared by every refresh-set loop below). Without an attached source
-            // the pump cannot cook (parse + dispatch both key off it), so the loops
-            // are guarded on `changeSrc` and otherwise just drain their input sets.
-            omni::physics::parse::KnownTokens changeTok;
-            if (changeSrc)
-                changeTok.intern(*changeSrc);
-            const omni::physics::parse::TokenId collToken =
-                changeSrc ? changeTok.physicsCollisionAPI : omni::physics::parse::TokenId{};
-            const omni::physics::parse::TokenId dbToken =
-                changeSrc ? changeTok.omniphysicsDeformableBodyAPI : omni::physics::parse::TokenId{};
-            const omni::physics::parse::TokenId dpToken =
-                changeSrc ? changeTok.OmniPhysicsDeformablePoseAPI : omni::physics::parse::TokenId{};
-            const omni::physics::parse::TokenId rigidBodyToken =
-                changeSrc ? changeTok.physicsRigidBodyAPI : omni::physics::parse::TokenId{};
-
-            if (changeSrc)
             {
-                // For each api-schema change, find the nearest descendant (incl.
-                // self) carrying a cooking-relevant schema and schedule a recook.
-                for (const auto& rootKey : m_primApiSchemasChangeRefreshSet)
+                omni::physx::usdparser::AttachedStage* changeAttached = selectedOwner;
+                RefreshCountScope refreshCount{*changeAttached};
+                omni::physx::ScopedNoticeBlock blockNotices(*changeAttached, false, true);
+                omni::physx::usdparser::AttachedStage::CookingRefreshState& state = changeAttached->getCookingRefreshState();
+                omni::physics::parse::IPhysicsSource* changeSrc =
+                    changeAttached ? changeAttached->getSource() : nullptr;
+
+                // Intern the cooking-relevant schema tokens once for the whole pump
+                // (shared by every refresh-set loop below). Without an attached source
+                // the pump cannot cook (parse + dispatch both key off it), so the loops
+                // are guarded on `changeSrc` and otherwise just drain their input sets.
+                omni::physics::parse::KnownTokens changeTok;
+                if (changeSrc)
+                    changeTok.intern(*changeSrc);
+                const omni::physics::parse::TokenId collToken =
+                    changeSrc ? changeTok.physicsCollisionAPI : omni::physics::parse::TokenId{};
+                const omni::physics::parse::TokenId dbToken =
+                    changeSrc ? changeTok.omniphysicsDeformableBodyAPI : omni::physics::parse::TokenId{};
+                const omni::physics::parse::TokenId dpToken =
+                    changeSrc ? changeTok.OmniPhysicsDeformablePoseAPI : omni::physics::parse::TokenId{};
+                const omni::physics::parse::TokenId rigidBodyToken =
+                    changeSrc ? changeTok.physicsRigidBodyAPI : omni::physics::parse::TokenId{};
+
+                if (changeSrc)
                 {
-                    if (!rootKey.valid())
-                        continue;
-
-                    bool found = false;
-                    changeSrc->forEachDescendantPruned(
-                        rootKey,
-                        [&](omni::physics::parse::ObjectKey k) -> bool
-                        {
-                            if (found)
-                                return true; // already scheduled one; prune the rest
-                            if (changeSrc->hasSchema(k, collToken) || changeSrc->hasSchema(k, dbToken) ||
-                                changeSrc->hasSchema(k, dpToken))
-                            {
-                                addPrimRefreshSet(k, *changeAttached);
-                                found = true;
-                                return true; // prune this match's descendants
-                            }
-                            return false;
-                        });
-                }
-
-                // For added/removed prims, schedule the owning deformable body. The
-                // set already holds the still-existing PARENT key (resolved by
-                // handleSourceChange, at a point where it was guaranteed valid) --
-                // not the added/removed child's own key, which may no longer
-                // resolve by the time pump() drains this set.
-                for (const auto& parentKey : m_primAddedRemovedRefreshSet)
-                {
-                    if (!parentKey.valid())
-                        continue;
-                    const omni::physics::parse::ObjectKey bodyKey =
-                        findDeformableBodyAncestorKey(*changeSrc, parentKey, dbToken, rigidBodyToken);
-                    if (bodyKey.valid())
-                        addPrimRefreshSet(bodyKey, *changeAttached);
-                }
-            }
-
-            m_primApiSchemasChangeRefreshSet.clear();
-            m_primAddedRemovedRefreshSet.clear();
-
-            // Check the primitives which *may* have had collision property changes to see if they
-            // actually require a recook.
-            //
-            // Re-derives a fresh PhysxShapeDesc from a live USD change notification (collision
-            // branch via parseCollision(), deformable branch via
-            // cookDeformableBodyInternalAsync()->parseDeformableBody()). Known gap without USD:
-            // parseDeformableBody re-keys through omni::physics::usd::ScannedStage, so editing a
-            // collision/pose property on an already-loaded deformable body does not auto-recook
-            // there; the caller must re-request cooking explicitly.
-#if USE_ASYNC_COOKING
-            // Time-box this loop; local disk cache hits make it fast, but we still bail after 16ms.
-            timer.start();
-            bool endedPrematurely = false;
-            for(auto it = m_primRefreshSet.begin(); it != m_primRefreshSet.end(); )
-            {
-                CARB_PROFILE_ZONE(0, "CookingDataAsync::pump primRefreshSet");
-                const omni::physics::parse::ObjectKey key = *it;
-                if (changeSrc && key.valid() && cookingKeyResolves(changeAttached, key))
-                {
-                    const bool hasCollisionAPI = changeSrc->hasSchema(key, collToken);
-                    const bool hasDeformablePoseAPI = changeSrc->hasSchema(key, dpToken);
-                    const bool hasDeformableBodyAPI = changeSrc->hasSchema(key, dbToken);
-                    omni::physics::parse::ObjectKey deformableBodyKey;
-                    if (hasDeformableBodyAPI)
-                        deformableBodyKey = key;
-                    else if (hasCollisionAPI || hasDeformablePoseAPI)
-                        deformableBodyKey = findDeformableBodyAncestorKey(*changeSrc, key, dbToken, rigidBodyToken);
-
-                    if (hasCollisionAPI && !deformableBodyKey.valid())
+                    // For each api-schema change, find the nearest descendant (incl.
+                    // self) carrying a cooking-relevant schema and schedule a recook.
+                    for (const omni::physics::parse::ObjectKey& rootKey : state.schemas)
                     {
-                        // Parse the fully digested PhysXShapeDesc for this prim; if it is a cookable
-                        // shape, spawn a background cooking task. parseCollision keys off the stage
-                        // id; the cook dispatch resolves `key` back to a path at the service boundary.
-                        omni::physx::usdparser::PhysxShapeDesc* shapeDesc =
-                            omni::physx::usdparser::parseCollision(*changeAttached, key, key);
-                        if (shapeDesc)
+                        if (!rootKey.valid())
+                            continue;
+
+                        bool found = false;
+                        changeSrc->forEachDescendantPruned(
+                            rootKey,
+                            [&](omni::physics::parse::ObjectKey k) -> bool
+                            {
+                                if (found)
+                                    return true; // already scheduled one; prune the rest
+                                if (changeSrc->hasSchema(k, collToken) || changeSrc->hasSchema(k, dbToken) ||
+                                    changeSrc->hasSchema(k, dpToken))
+                                {
+                                    addPrimRefreshSet(k, *changeAttached);
+                                    found = true;
+                                    return true; // prune this match's descendants
+                                }
+                                return false;
+                            });
+                    }
+
+                    // For added/removed prims, schedule the owning deformable body. The
+                    // set already holds the still-existing PARENT key (resolved by
+                    // handleSourceChange, at a point where it was guaranteed valid) --
+                    // not the added/removed child's own key, which may no longer
+                    // resolve by the time pump() drains this set.
+                    for (const omni::physics::parse::ObjectKey& parentKey : state.parents)
+                    {
+                        if (!parentKey.valid())
+                            continue;
+                        const omni::physics::parse::ObjectKey bodyKey =
+                            findDeformableBodyAncestorKey(*changeSrc, parentKey, dbToken, rigidBodyToken);
+                        if (bodyKey.valid())
+                            addPrimRefreshSet(bodyKey, *changeAttached);
+                    }
+                }
+
+                state.schemas.clear();
+                state.parents.clear();
+
+                // Check the primitives which *may* have had collision property changes to see if they
+                // actually require a recook.
+                //
+                // Re-derives a fresh PhysxShapeDesc from a live USD change notification (collision
+                // branch via parseCollision(), deformable branch via
+                // cookDeformableBodyInternalAsync()->parseDeformableBody()). Known gap without USD:
+                // parseDeformableBody re-keys through omni::physics::usd::ScannedStage, so editing a
+                // collision/pose property on an already-loaded deformable body does not auto-recook
+                // there; the caller must re-request cooking explicitly.
+#if USE_ASYNC_COOKING
+                // Time-box this loop; local disk cache hits make it fast, but we still bail after 16ms.
+                timer.start();
+                bool endedPrematurely = false;
+                for(auto it = state.prims.begin(); it != state.prims.end(); )
+                {
+                    CARB_PROFILE_ZONE(0, "CookingDataAsync::pump primRefreshSet");
+                    const omni::physics::parse::ObjectKey key = *it;
+                    if (changeSrc && key.valid() && cookingKeyResolves(changeAttached, key))
+                    {
+                        const bool hasCollisionAPI = changeSrc->hasSchema(key, collToken);
+                        const bool hasDeformablePoseAPI = changeSrc->hasSchema(key, dpToken);
+                        const bool hasDeformableBodyAPI = changeSrc->hasSchema(key, dbToken);
+                        omni::physics::parse::ObjectKey deformableBodyKey;
+                        if (hasDeformableBodyAPI)
+                            deformableBodyKey = key;
+                        else if (hasCollisionAPI || hasDeformablePoseAPI)
+                            deformableBodyKey = findDeformableBodyAncestorKey(*changeSrc, key, dbToken, rigidBodyToken);
+
+                        if (hasCollisionAPI && !deformableBodyKey.valid())
                         {
-                            switch (shapeDesc->type)
+                            // Parse the fully digested PhysXShapeDesc for this prim; if it is a cookable
+                            // shape, spawn a background cooking task. parseCollision keys off the stage
+                            // id; the cook dispatch resolves `key` back to a path at the service boundary.
+                            omni::physx::usdparser::ScannedCollision collision =
+                                omni::physx::usdparser::parseCollision(*changeAttached, key, key);
+                            omni::physx::usdparser::PhysxShapeDesc* shapeDesc = collision.get();
+                            if (shapeDesc)
                             {
-                            case omni::physx::usdparser::ObjectType::eConvexMeshShape:
-                            {
-                                omni::physx::usdparser::ConvexMeshPhysxShapeDesc* desc = static_cast<omni::physx::usdparser::ConvexMeshPhysxShapeDesc*>(shapeDesc);
-                                getConvexMeshInternal(*desc, key, *changeAttached, true, nullptr);
-                            }
-                            break;
-                            case omni::physx::usdparser::ObjectType::eSpherePointsShape:
-                            {
-                                omni::physx::usdparser::SpherePointsPhysxShapeDesc* desc = static_cast<omni::physx::usdparser::SpherePointsPhysxShapeDesc*>(shapeDesc);
-                                getSpherePointsInternal(*desc, key, *changeAttached, true, nullptr);
-                            }
-                            break;
-                            case omni::physx::usdparser::ObjectType::eConvexMeshDecompositionShape:
-                            {
-                                omni::physx::usdparser::ConvexMeshDecompositionPhysxShapeDesc* desc = static_cast<omni::physx::usdparser::ConvexMeshDecompositionPhysxShapeDesc*>(shapeDesc);
-                                getConvexMeshDecompositionInternal(*desc, key, *changeAttached, true, nullptr);
-                            }
-                            break;
-                            case omni::physx::usdparser::ObjectType::eTriangleMeshShape:
-                            {
-                                omni::physx::usdparser::TriangleMeshPhysxShapeDesc* desc = static_cast<omni::physx::usdparser::TriangleMeshPhysxShapeDesc*>(shapeDesc);
-                                getTriangleMeshInternal(*desc, key, *changeAttached, true, nullptr, nullptr);
-                            }
-                            break;
-                            default:
+                                switch (shapeDesc->type)
+                                {
+                                case omni::physx::usdparser::ObjectType::eConvexMeshShape:
+                                {
+                                    omni::physx::usdparser::ConvexMeshPhysxShapeDesc* desc = static_cast<omni::physx::usdparser::ConvexMeshPhysxShapeDesc*>(shapeDesc);
+                                    getConvexMeshInternal(*desc, key, *changeAttached, true, nullptr);
+                                }
                                 break;
+                                case omni::physx::usdparser::ObjectType::eSpherePointsShape:
+                                {
+                                    omni::physx::usdparser::SpherePointsPhysxShapeDesc* desc = static_cast<omni::physx::usdparser::SpherePointsPhysxShapeDesc*>(shapeDesc);
+                                    getSpherePointsInternal(*desc, key, *changeAttached, true, nullptr);
+                                }
+                                break;
+                                case omni::physx::usdparser::ObjectType::eConvexMeshDecompositionShape:
+                                {
+                                    omni::physx::usdparser::ConvexMeshDecompositionPhysxShapeDesc* desc = static_cast<omni::physx::usdparser::ConvexMeshDecompositionPhysxShapeDesc*>(shapeDesc);
+                                    getConvexMeshDecompositionInternal(*desc, key, *changeAttached, true, nullptr);
+                                }
+                                break;
+                                case omni::physx::usdparser::ObjectType::eTriangleMeshShape:
+                                {
+                                    omni::physx::usdparser::TriangleMeshPhysxShapeDesc* desc = static_cast<omni::physx::usdparser::TriangleMeshPhysxShapeDesc*>(shapeDesc);
+                                    getTriangleMeshInternal(*desc, key, *changeAttached, true, nullptr, nullptr);
+                                }
+                                break;
+                                default:
+                                    break;
+                                }
                             }
-                            omni::physx::usdparser::releaseDesc(shapeDesc);
+                        }
+                        else if (deformableBodyKey.valid())
+                        {
+                            cookDeformableBodyInternalAsync(deformableBodyKey, *changeAttached, false);
                         }
                     }
-                    else if (deformableBodyKey.valid())
+                    it = state.prims.erase(it); // remove processed item and advance to next
+                    // Make sure state.transforms only contains updates that are exclusive to
+                    // tranformation changes
+                    state.transforms.erase(key);
+                    if (timer.getElapsedTime<int64_t>(carb::extras::Timer::Scale::eMilliseconds) >= 16) // never take more than 16 ms on the main thread
                     {
-                        cookDeformableBodyInternalAsync(deformableBodyKey, *changeAttached, false);
+                        endedPrematurely = true;
+                        break;
                     }
                 }
-                it = m_primRefreshSet.erase(it); // remove processed item and advance to next
-                // Make sure m_primXformRefreshSet only contains updates that are exclusive to
-                // tranformation changes
-                m_primXformRefreshSet.erase(key);
-                if (timer.getElapsedTime<int64_t>(carb::extras::Timer::Scale::eMilliseconds) >= 16) // never take more than 16 ms on the main thread
+                if(!endedPrematurely)
                 {
-                    endedPrematurely = true;
-                    break;
-                }
-            }
-            if(!endedPrematurely)
-            {
-                for (auto &key : m_primXformRefreshSet)
-                {
-                    //TODO we also need to search children to catch transforms
-                    //that have an impact to deformable cooking, which might be expensive
-                    //without maintaining a SdfPathTable
-                    if (!changeSrc || !key.valid())
-                        continue;
-
-                    omni::physics::parse::ObjectKey deformableBodyKey;
-                    if (changeSrc->hasSchema(key, dbToken))
-                        deformableBodyKey = key;
-                    else if (changeSrc->hasSchema(key, collToken) || changeSrc->hasSchema(key, dpToken))
-                        deformableBodyKey = findDeformableBodyAncestorKey(*changeSrc, key, dbToken, rigidBodyToken);
-
-                    if (deformableBodyKey.valid())
+                    for (const omni::physics::parse::ObjectKey& key : state.transforms)
                     {
-                        cookDeformableBodyInternalAsync(deformableBodyKey, *changeAttached, true);
-                    }
-                }
+                        //TODO we also need to search children to catch transforms
+                        //that have an impact to deformable cooking, which might be expensive
+                        //without maintaining a SdfPathTable
+                        if (!changeSrc || !key.valid())
+                            continue;
 
-                m_primRefreshSet.clear();
-                m_primXformRefreshSet.clear();
-            }
+                        omni::physics::parse::ObjectKey deformableBodyKey;
+                        if (changeSrc->hasSchema(key, dbToken))
+                            deformableBodyKey = key;
+                        else if (changeSrc->hasSchema(key, collToken) || changeSrc->hasSchema(key, dpToken))
+                            deformableBodyKey = findDeformableBodyAncestorKey(*changeSrc, key, dbToken, rigidBodyToken);
+
+                        if (deformableBodyKey.valid())
+                        {
+                            cookDeformableBodyInternalAsync(deformableBodyKey, *changeAttached, true);
+                        }
+                    }
+
+                    state.prims.clear();
+                    state.transforms.clear();
+                }
 #endif
-            refreshProgressBarStatus();
+            }
             return pumpResult;
         }
     }
@@ -820,7 +835,7 @@ public:
 
         // Block USD notice handlers in case we write out any results during this call
         lock_guard _lock(m_mutex);
-        ScopedBlockUSDUpdates _block(this);
+        omni::physx::ScopedNoticeBlock blockNotices(attachedStage, false, true);
         return getConvexMeshInternal(desc, primKey, attachedStage, asynchronous, cb);
     }
 
@@ -832,6 +847,7 @@ public:
                                       const uint64_t primId,
                                       omni::physx::IPhysxCookingCallback* cb)
     {
+        omni::physx::RuntimeCallbackScope callbackScope;
         if (cb && cb->cookingFinishedCallback)
         {
             cb->cookingFinishedCallback(attachHandle, primId, omni::physx::PhysxCookingResult::eVALID, cb->userData);
@@ -840,6 +856,7 @@ public:
 
     static void reportLegacyCookingFinishedCallbackAndResult(omni::physx::IPhysxCookingCallback* cb, const omni::physx::PhysxCookingComputeResult& result)
     {
+        omni::physx::RuntimeCallbackScope callbackScope;
         if(cb && cb->cookingResultCallback)
         {
             cb->cookingResultCallback(result.cookedDataCRC, result.cookedData, result.cookedDataNumElements, cb->userData);
@@ -960,7 +977,7 @@ public:
                                   static_cast<unsigned long long>(result.request->primId));
                 }
             };
-            getComputeService().requestConvexMeshCookedData(m_asyncContext, request, desc.convexCookingParams);
+            getComputeService().requestConvexMeshCookedData(getCookingAsyncContext(attachedStage), request, desc.convexCookingParams);
             return ret;
         }
         else
@@ -992,7 +1009,7 @@ public:
 
         // Disable USD notification handlers in case we should do USD writes in this call
         lock_guard _lock(m_mutex);
-        ScopedBlockUSDUpdates _block(this);
+        omni::physx::ScopedNoticeBlock blockNotices(attachedStage, false, true);
         return getTriangleMeshInternal(desc, primKey, attachedStage, asynchronous, cb, maxMaterialIndex);
     }
 
@@ -1099,11 +1116,9 @@ public:
                     }                    
                 }
             };
-#if USE_PHYSX_GPU
-            PxCudaContextManager* cudaContextManager = omni::physx::OmniPhysX::getInstance().getPhysXSetup().getCudaContextManager();
-#else
+            // Cooking owns its device context independently of simulation attachments.
+            // The compute service creates and retains it for the cooking job lifetime.
             PxCudaContextManager* cudaContextManager = nullptr;
-#endif
             if(desc.sdfMeshCookingParams.sdfResolution > 0)
             {
                 // GPU SDF cooking runs on the ujitso agent, which needs a CUDA context.
@@ -1124,11 +1139,11 @@ public:
                     request.options.setFlag(
                         omni::physx::PhysxCookingComputeRequest::Options::kExecuteCookingOnGPU, false);
                 }
-                m_cookingServicePrivate.requestSdfMeshCookedData(m_asyncContext, request, desc.triangleMeshCookingParams, desc.sdfMeshCookingParams, cudaContextManager);
+                m_cookingServicePrivate.requestSdfMeshCookedData(getCookingAsyncContext(attachedStage), request, desc.triangleMeshCookingParams, desc.sdfMeshCookingParams, cudaContextManager);
             }
             else
             {
-                getComputeService().requestTriangleMeshCookedData(m_asyncContext, request, desc.triangleMeshCookingParams);
+                getComputeService().requestTriangleMeshCookedData(getCookingAsyncContext(attachedStage), request, desc.triangleMeshCookingParams);
             }
             return ret;
         }
@@ -1157,7 +1172,7 @@ public:
 
         // Block any USD notification handlers if we make any USD attribute changes in this method
         lock_guard _lock(m_mutex);
-        ScopedBlockUSDUpdates _block(this);
+        omni::physx::ScopedNoticeBlock blockNotices(attachedStage, false, true);
         return getConvexMeshDecompositionInternal(desc, primKey, attachedStage, asynchronous, cb);
     }
 
@@ -1166,7 +1181,7 @@ public:
     {
         // Block any USD notification handlers if we make any USD attribute changes in this method
         lock_guard _lock(m_mutex);
-        ScopedBlockUSDUpdates _block(this);
+        omni::physx::ScopedNoticeBlock blockNotices(attachedStage, false, true);
         return getSpherePointsInternal(desc, primKey, attachedStage, asynchronous, cb);
     }
 
@@ -1181,18 +1196,14 @@ public:
 
         const omni::physx::usdparser::SpherePointsPhysxShapeDesc *ret = nullptr;
 
-        // Get the convex decomposition STL hash map from the in-memory cache
-        const omni::physx::SphereFillMap& sphereFillMap = omni::physx::getMeshCache()->getSphereFillMap();
-        // Search to see if this CRC has a representation
-        omni::physx::SphereFillMap::const_iterator it = sphereFillMap.find(meshCRC);
+        ret = omni::physx::getMeshCache()->getSphereFill(meshCRC);
         // Resolve the source key to a USD path + stage id only here, at the cooking-service boundary.
         // The stage id is the service's mesh-data input; the handle is the attach identity the
         // finished callback reports (ADR-0016 Decision 6).
         const long stageId = attachedStage.getStageId();
         const omni::physx::AttachHandle attachHandle = attachedStage.getAttachHandle();
-        if ( it != sphereFillMap.end())
+        if (ret)
         {
-            ret = it->second;
             reportCookingFinished(attachHandle, keyToLegacyPathInt(&attachedStage, primKey), cb);
         }
         else
@@ -1252,7 +1263,7 @@ public:
                                   static_cast<unsigned long long>(result.request->primId));
                 }
             };
-            getComputeService().requestSphereFillCookedData(m_asyncContext, request, desc.sphereFillCookingParams);
+            getComputeService().requestSphereFillCookedData(getCookingAsyncContext(attachedStage), request, desc.sphereFillCookingParams);
             return ret;
         }
 
@@ -1287,21 +1298,14 @@ public:
 
         std::vector<::physx::PxConvexMesh*> ret;
 
-        // Get the convex decomposition STL hash map from the in-memory cache
-        const omni::physx::ConvexDecompositionMap& convexDecompositionMap = omni::physx::getMeshCache()->getConvexDecompositionMap();
-        // Search to see if this CRC has a representation
-        omni::physx::ConvexDecompositionMap::const_iterator it = convexDecompositionMap.find(meshCRC);
+        ret = omni::physx::getMeshCache()->getConvexDecomposition(meshCRC);
         // Resolve the source key to a USD path + stage id only here, at the cooking-service boundary.
         // The stage id is the service's mesh-data input; the handle is the attach identity the
         // finished callback reports (ADR-0016 Decision 6).
         const long stageId = attachedStage.getStageId();
         const omni::physx::AttachHandle attachHandle = attachedStage.getAttachHandle();
-        if (it != convexDecompositionMap.end())
+        if (!ret.empty())
         {
-            for (auto &i : it->second)
-            {
-                ret.push_back(i);
-            }
             reportCookingFinished(attachHandle, keyToLegacyPathInt(&attachedStage, primKey), cb);
         }
         else
@@ -1361,7 +1365,7 @@ public:
                         static_cast<unsigned long long>(result.request->primId));
                 }
             };
-            getComputeService().requestConvexMeshDecompositionCookedData(m_asyncContext, request, desc.convexDecompositionCookingParams);
+            getComputeService().requestConvexMeshDecompositionCookedData(getCookingAsyncContext(attachedStage), request, desc.convexDecompositionCookingParams);
             return ret;
         }
 
@@ -1450,8 +1454,7 @@ public:
         static const std::vector<std::string> kNoExclude;
         omni::physics::parse::ScanOptions scanOptions;
         scanOptions.descendantScope = omni::physics::parse::DescendantScope::eAll;
-        omni::physics::parse::ScannedStage scanned = omni::physics::parse::scanStage(
-            attachedStage.attachTarget(), scanRoots, kNoExclude, scanOptions,
+        omni::physics::parse::ScannedStage scanned = attachedStage.scanStage(scanRoots, kNoExclude, scanOptions,
             omni::physx::usdparser::iceDescriptorAllocator());
         if (scanned.deformables.empty())
             return nullptr;
@@ -1467,7 +1470,7 @@ public:
 
         // Block USD notification handlers while in this call
         lock_guard _lock(m_mutex);
-        ScopedBlockUSDUpdates _block(this);
+        omni::physx::ScopedNoticeBlock blockNotices(attachedStage, false, true);
         if (!bodyKey.valid())
             return false;
         // Extra guard beyond bodyKey.valid(): a valid key can still fail to resolve to a live
@@ -1488,7 +1491,7 @@ public:
 
         // Block USD notification handlers while in this call
         lock_guard _lock(m_mutex);
-        ScopedBlockUSDUpdates _block(this);
+        omni::physx::ScopedNoticeBlock blockNotices(attachedStage, false, true);
         if (!bodyKey.valid())
             return false;
         // Extra guard beyond bodyKey.valid(): a valid key can still fail to resolve to a live
@@ -1508,12 +1511,12 @@ public:
     *
     * @return : Returns true if this key is already associated with an active physics object
     */
-    bool checkParsed(uint64_t stageId, omni::physics::parse::ObjectKey key, omni::physx::usdparser::ObjectType objectType)
+    bool checkParsed(const omni::physx::usdparser::AttachedStage& owner, omni::physics::parse::ObjectKey key, omni::physx::usdparser::ObjectType objectType)
     {
-        omni::physx::usdparser::AttachedStage* attachedStage = omni::physx::usdparser::UsdLoad::getUsdLoad()->getAttachedStage(stageId);
+        const omni::physx::usdparser::AttachedStage* attachedStage = &owner;
         if (attachedStage)
         {
-            omni::physx::usdparser::ObjectDb* db = attachedStage->getObjectDatabase();
+            const omni::physx::usdparser::ObjectDb* db = attachedStage->getObjectDatabase();
             if (db)
             {
                 return db->findEntry(key, objectType) != omni::physx::usdparser::kInvalidObjectId;
@@ -1557,7 +1560,7 @@ public:
         // does not land in a layer. A missing SOURCE still is: without one there is no token
         // vocabulary to record against and nothing downstream can resolve.
         //
-        // This runs main-thread during the cooking pump (inside ScopedBlockUSDUpdates), so the
+        // This runs main-thread during the cooking pump (inside ScopedNoticeBlock), so the
         // keyFor intern-table writes and the carrier writes need no synchronization.
         omni::physics::parse::IPhysicsDataWrite* dataWrite = attachedStage.getDataWrite();
         omni::physics::parse::IPhysicsSource* dataSource = attachedStage.getSource();
@@ -1981,7 +1984,7 @@ public:
     {
         ::physx::PxMat33d shearScaleTransform(::physx::PxIdentity);
         if (!omni::physx::particles::PhysxParticleFactory::getDecomposedTransform(
-                samplerKey, desc.particleSetKey, rigidTransform, shearScaleTransform))
+                attachedStage, samplerKey, desc.particleSetKey, rigidTransform, shearScaleTransform))
         {
             return false;
         }
@@ -2146,7 +2149,7 @@ public:
         if (!cookingKeyResolves(&attachedStage, bodyKey))
             return false;
 
-        const bool isSimulated = checkParsed(primStageId, bodyKey, omni::physx::usdparser::eVolumeDeformableBody);
+        const bool isSimulated = checkParsed(attachedStage, bodyKey, omni::physx::usdparser::eVolumeDeformableBody);
         if (isSimulated)
         {
             // this can be triggered while the deformable body is registered for simulation:
@@ -2241,7 +2244,7 @@ public:
             request.onFinished = [&cookedDataCRC](const omni::physx::PhysxCookingComputeResult& result) {
                 cookedDataCRC = result.cookedDataCRC;
             };
-            m_cookingServicePrivate.requestVolumeDeformableBodyCookedData(m_asyncContext, request, params);
+            m_cookingServicePrivate.requestVolumeDeformableBodyCookedData(getCookingAsyncContext(attachedStage), request, params);
             if (cookedDataCRC == originalCrc)
             {
                 // Cached data is still valid - nothing to re-publish, but it is there.
@@ -2272,7 +2275,7 @@ public:
         bool published = false;
         CookingDataAsyncWeakSelf weakPtrToThis(this, m_aliveFlag);
         recordStatisticsRequestFor(request);
-        request.onFinished = [weakPtrToThis, &shouldRecookPhysxMeshTooSynchronously, &published, desc,
+        request.onFinished = [ownerLifetime = attachedStage.getWeakLifetime(), weakPtrToThis, &shouldRecookPhysxMeshTooSynchronously, &published, desc,
                               bodyPrimId](const omni::physx::PhysxCookingComputeResult& result) {
             if (!weakPtrToThis)
             {
@@ -2280,13 +2283,10 @@ public:
             }
             weakPtrToThis->recordStatisticsResultFor(result);
             omni::physx::IPhysxCookingServicePrivate& cookingService = weakPtrToThis->m_cookingServicePrivate;
-            // Resolve the attach by handle, not by primStageId (ADR-0016 Decision 6). The stage-id
-            // lookup only ever worked on a stageless attach because getAttachedStage(0) falls back
-            // to "the lone attach" -- which silently picks the wrong one under multi-attach and
-            // cannot tell a detach/reattach from the original. resolveAttach() returns null for a
-            // stale handle and for kNoAttach, and the null branch below already handles that.
+            // The callback is bound to its constructing owner, including private
+            // candidates. A retired/rebuilt source invalidates this lifetime token.
             omni::physx::usdparser::AttachedStage* as =
-                omni::physx::usdparser::UsdLoad::getUsdLoad()->resolveAttach(result.request->attachHandle);
+                omni::physx::usdparser::AttachedStage::resolveLifetime(ownerLifetime);
             if (as)
             {
                 const omni::physics::parse::ObjectKey bodyKey = legacyPathIntToKey(*as, bodyPrimId);
@@ -2341,7 +2341,7 @@ public:
             }
         };
 
-        m_cookingServicePrivate.requestVolumeDeformableBodyCookedData(m_asyncContext, request, params);
+        m_cookingServicePrivate.requestVolumeDeformableBodyCookedData(getCookingAsyncContext(attachedStage), request, params);
         // An asynchronous submission cannot be judged here - its write-back has not run yet - so it
         // counts as accepted. A synchronous one is judged on what the write-back actually published.
         reportCookedDataAvailable(asynchronous || published);
@@ -2460,7 +2460,7 @@ public:
         if (!cookingKeyResolves(&attachedStage, bodyKey))
             return;
 
-        const bool isSimulated = checkParsed(primStageId, bodyKey, omni::physx::usdparser::eSurfaceDeformableBody);
+        const bool isSimulated = checkParsed(attachedStage, bodyKey, omni::physx::usdparser::eSurfaceDeformableBody);
         if (isSimulated)
         {
             // refer to cookVolumeDeformableBodyInternal why we don't warn here, and why this
@@ -2522,7 +2522,7 @@ public:
             request.onFinished = [&cookedDataCRC](const omni::physx::PhysxCookingComputeResult& result) {
                 cookedDataCRC = result.cookedDataCRC;
             };
-            m_cookingServicePrivate.requestSurfaceDeformableBodyCookedData(m_asyncContext, request, params);
+            m_cookingServicePrivate.requestSurfaceDeformableBodyCookedData(getCookingAsyncContext(attachedStage), request, params);
             if (cookedDataCRC == originalCrc)
             {
                 // Cached data is still valid - nothing to re-publish, but it is there.
@@ -2550,7 +2550,7 @@ public:
         bool published = false;
         CookingDataAsyncWeakSelf weakPtrToThis(this, m_aliveFlag);
         recordStatisticsRequestFor(request);
-        request.onFinished = [weakPtrToThis, &published, desc, bodyPrimId](const omni::physx::PhysxCookingComputeResult& result) {
+        request.onFinished = [ownerLifetime = attachedStage.getWeakLifetime(), weakPtrToThis, &published, desc, bodyPrimId](const omni::physx::PhysxCookingComputeResult& result) {
             if (!weakPtrToThis)
             {
                 return;
@@ -2562,13 +2562,10 @@ public:
             }
 
             omni::physx::IPhysxCookingServicePrivate& cookingService = weakPtrToThis->m_cookingServicePrivate;
-            // Resolve the attach by handle, not by primStageId (ADR-0016 Decision 6). The stage-id
-            // lookup only ever worked on a stageless attach because getAttachedStage(0) falls back
-            // to "the lone attach" -- which silently picks the wrong one under multi-attach and
-            // cannot tell a detach/reattach from the original. resolveAttach() returns null for a
-            // stale handle and for kNoAttach, and the null branch below already handles that.
+            // The callback is bound to its constructing owner, including private
+            // candidates. A retired/rebuilt source invalidates this lifetime token.
             omni::physx::usdparser::AttachedStage* as =
-                omni::physx::usdparser::UsdLoad::getUsdLoad()->resolveAttach(result.request->attachHandle);
+                omni::physx::usdparser::AttachedStage::resolveLifetime(ownerLifetime);
             if (as)
             {
                 const omni::physics::parse::ObjectKey bodyKey = legacyPathIntToKey(*as, bodyPrimId);
@@ -2618,7 +2615,7 @@ public:
             }
         };
 
-        m_cookingServicePrivate.requestSurfaceDeformableBodyCookedData(m_asyncContext, request, params);
+        m_cookingServicePrivate.requestSurfaceDeformableBodyCookedData(getCookingAsyncContext(attachedStage), request, params);
         // @see cookVolumeDeformableBodyInternal: an asynchronous submission counts as accepted, a
         // synchronous one is judged on what the write-back actually published.
         reportCookedDataAvailable(asynchronous || published);
@@ -2631,7 +2628,7 @@ public:
                                           bool asynchronous) final
     {
         lock_guard _lock(m_mutex);
-        ScopedBlockUSDUpdates _block(this);
+        omni::physx::ScopedNoticeBlock blockNotices(attachedStage, false, true);
         if (!bodyKey.valid())
             return false;
         // Extra guard beyond bodyKey.valid(): a valid key can still fail to resolve to a live
@@ -2958,7 +2955,7 @@ public:
                 resultSynchronous = true;
             }
         };
-        m_cookingServicePrivate.requestDeformableVolumeMeshCookedData(m_asyncContext, request, params);
+        m_cookingServicePrivate.requestDeformableVolumeMeshCookedData(getCookingAsyncContext(attachedStage), request, params);
         return resultSynchronous;
     }
 
@@ -3013,7 +3010,7 @@ public:
     {
         // Block USD notification handlers while in this call
         lock_guard _lock(m_mutex);
-        ScopedBlockUSDUpdates _block(this);
+        omni::physx::ScopedNoticeBlock blockNotices(attachedStage, false, true);
         if (!primKey.valid() || !cookingKeyResolves(&attachedStage, primKey))
             return;
         poissonSampleMeshInternal(primKey, attachedStage, desc, forceResampling, asynchronous);
@@ -3071,7 +3068,7 @@ public:
             request.onFinished = [&cookedDataCRC](const omni::physx::PhysxCookingComputeResult& result) {
                 cookedDataCRC = result.cookedDataCRC;
             };
-            m_cookingServicePrivate.requestParticlePoissonSamplingCookedData(m_asyncContext, request, params);
+            m_cookingServicePrivate.requestParticlePoissonSamplingCookedData(getCookingAsyncContext(attachedStage), request, params);
             if (cookedDataCRC == originalCrc)
             {
                 return;
@@ -3100,7 +3097,7 @@ public:
 
         CookingDataAsyncWeakSelf weakPtrToThis(this, m_aliveFlag);
         recordStatisticsRequestFor(request);
-        request.onFinished = [desc, params, rigidTransform,
+        request.onFinished = [ownerLifetime = attachedStage.getWeakLifetime(), desc, params, rigidTransform,
                               originalCrc, weakPtrToThis](const omni::physx::PhysxCookingComputeResult& result) {
             if(!weakPtrToThis)
             {
@@ -3114,13 +3111,10 @@ public:
             }
 
             omni::physx::IPhysxCookingServicePrivate& cookingService = weakPtrToThis->m_cookingServicePrivate;
-            // Resolve the attach by handle, not by primStageId (ADR-0016 Decision 6). The stage-id
-            // lookup only ever worked on a stageless attach because getAttachedStage(0) falls back
-            // to "the lone attach" -- which silently picks the wrong one under multi-attach and
-            // cannot tell a detach/reattach from the original. resolveAttach() returns null for a
-            // stale handle and for kNoAttach, and the null branch below already handles that.
+            // The callback is bound to its constructing owner, including private
+            // candidates. A retired/rebuilt source invalidates this lifetime token.
             omni::physx::usdparser::AttachedStage* as =
-                omni::physx::usdparser::UsdLoad::getUsdLoad()->resolveAttach(result.request->attachHandle);
+                omni::physx::usdparser::AttachedStage::resolveLifetime(ownerLifetime);
             if (!as)
             {
                 return;
@@ -3184,12 +3178,12 @@ public:
                 bool registerOriginalCount = (originalCrc == result.cookedDataCRC);
 
                 omni::physx::particles::PhysxParticleFactory::processSamplingResults(
-                    samplerKey, desc.particleSetKey, samples, samplesSize,
+                    *as, samplerKey, desc.particleSetKey, samples, samplesSize,
                     desc.pointWidth, rigidTransform, shearScaleTransform,
                     registerOriginalCount);
             }
         };
-        m_cookingServicePrivate.requestParticlePoissonSamplingCookedData(m_asyncContext, request, params);
+        m_cookingServicePrivate.requestParticlePoissonSamplingCookedData(getCookingAsyncContext(attachedStage), request, params);
     }
 
     virtual void release(void) final
@@ -3199,8 +3193,8 @@ public:
 
     /**
     * Register this cooking driver's interest on an attached stage's change feed
-    * (ADR-0003). Called by AttachedStage when it (re)creates its feed, so the
-    * registration exists from attach time — no dependency on pump() having run.
+    * (ADR-0003). Called during scene creation after the source/feed are bound,
+    * before the first update — no dependency on pump() having run.
     * The registration is owned by the per-stage feed and dies with it on
     * detach/source-rebuild, so there is nothing to revoke. A single wildcard
     * interest delivers every batch to handleSourceChange.
@@ -3209,7 +3203,7 @@ public:
     {
         omni::physics::parse::IChangeFeed* feed = attachedStage.getChangeFeed();
         omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
-        if (!feed || !src)
+        if (!feed || !src || attachedStage.getCookingObserverDriver().lock() == m_aliveFlag)
             return;
 
         // `as`/`src` stay valid for the feed's lifetime (the feed is owned by the
@@ -3227,14 +3221,14 @@ public:
                 return true;
             },
             0);
+        attachedStage.setCookingObserverDriver(m_aliveFlag);
 
         // Mint this attach's TokenIds now rather than on the first batch: a full
         // KnownTokens intern is a measured cost on the incremental change path.
-        // kNoAttach is not a usable cache key, so that case falls back to the lazy build.
-        if (attachedStage.getAttachHandle() != omni::physx::kNoAttach)
+        // Private candidates have independent token caches before handle publication.
         {
             lock_guard _lock(m_mutex);
-            ensureCollisionTokens(attachedStage.getAttachHandle(), *src);
+            ensureCollisionTokens(attachedStage, *src);
         }
     }
 
@@ -3254,7 +3248,7 @@ public:
         CARB_PROFILE_ZONE(0, "CookingDataAsync::changeFeedHandler");
 
         // Ignore changes we are making ourselves during write-back.
-        if (m_blockUsdUpdate > 0)
+        if (attachedStage.cookingUpdatesBlocked())
             return;
         if (batch.keys.type != omni::physics::parse::ColumnType::eObjectKey || !batch.keys.data ||
             batch.keys.count == 0)
@@ -3264,14 +3258,16 @@ public:
         const size_t keyCount = batch.keys.count;
 
         lock_guard _lock(m_mutex);
-        ensureCollisionTokens(attachedStage.getAttachHandle(), src);
+        RefreshCountScope refreshCount{attachedStage};
+        omni::physx::usdparser::AttachedStage::CookingRefreshState& state = attachedStage.getCookingRefreshState();
+        ensureCollisionTokens(attachedStage, src);
 
         if (!batch.property.valid())
         {
             // Structural change: object removed, or a resync whose changed fields
             // include apiSchemas (vs a plain add / structural edit). Reads the
             // per-attach cache ensureCollisionTokens() just refreshed above.
-            const omni::physics::parse::KnownTokens& tok = m_changeTokens;
+            const omni::physics::parse::KnownTokens& tok = state.tokens;
             bool apiSchemasChanged = false;
             if (!batch.isDelete && batch.values.type == omni::physics::parse::ColumnType::eToken &&
                 batch.values.data)
@@ -3299,15 +3295,15 @@ public:
                     // Schedule the api-schema scan and register the deformable pose
                     // instances' point/purpose attrs as collision tokens (source-
                     // enumerated; replaces prim.GetAppliedSchemas()).
-                    m_primApiSchemasChangeRefreshSet.insert(key);
+                    state.schemas.insert(key);
                     src.forEachMultiApplyInstance(
                         key, src.tokenToString(tok.OmniPhysicsDeformablePoseAPI),
                         [&](std::string_view instance)
                         {
                             const omni::physics::parse::TokenId instTok = src.internToken(instance);
-                            m_collisionTokens.insert(makeMultiApplyAttributeToken(
+                            state.collisionTokens.insert(makeMultiApplyAttributeToken(
                                 &src, tok.deformablePose_MultipleApplyTemplate_OmniphysicsPoints, instTok));
-                            m_collisionTokens.insert(makeMultiApplyAttributeToken(
+                            state.collisionTokens.insert(makeMultiApplyAttributeToken(
                                 &src, tok.deformablePose_MultipleApplyTemplate_OmniphysicsPurposes, instTok));
                         });
                 }
@@ -3321,10 +3317,10 @@ public:
                     // is what the pump()-side deformable-ancestor walk actually needs.
                     const omni::physics::parse::ObjectKey parentKey = src.getParent(key);
                     if (parentKey.valid())
-                        m_primAddedRemovedRefreshSet.insert(parentKey);
+                        state.parents.insert(parentKey);
                     // Be defensive: we don't know exactly what changed, so wipe the
                     // mesh-key cache to keep keys correct.
-                    omni::physx::usdparser::notifyStageReset();
+                    omni::physx::usdparser::notifyStageReset(attachedStage);
                 }
             }
         }
@@ -3332,13 +3328,13 @@ public:
         {
             // Value change on a property: classify by TokenId against the
             // collision-token gate directly (both batch.property and
-            // m_collisionTokens are already scoped to this same `src`), and by
+            // state.collisionTokens are already scoped to this same `src`), and by
             // attribute name (materialized only when needed) against the
             // xform-attr gate via the pxr-free isTransformOpAttributeName below
             // (a pure name predicate, reimplemented rather than linking usdGeom
             // just for this one check -- mirrors usdLoad/PrimUpdate.cpp's own
             // identical reimplementation).
-            const bool isCollision = m_collisionTokens.find(batch.property) != m_collisionTokens.cend();
+            const bool isCollision = state.collisionTokens.find(batch.property) != state.collisionTokens.cend();
             const bool isXform = !isCollision && isTransformOpAttributeName(src.tokenToString(batch.property));
             if (!isCollision && !isXform)
                 return;
@@ -3349,7 +3345,7 @@ public:
                 if (isCollision)
                     addPrimRefreshSet(keys[i], attachedStage);
                 else
-                    m_primXformRefreshSet.insert(keys[i]);
+                    state.transforms.insert(keys[i]);
             }
         }
     }
@@ -3381,17 +3377,30 @@ public:
     * Overload for internal call sites that already hold the AttachedStage& the key was resolved
     * from, so they need not round-trip through an AttachHandle lookup.
     */
+    struct RefreshCountScope
+    {
+        const omni::physx::usdparser::AttachedStage& owner;
+        ~RefreshCountScope()
+        {
+            const omni::physx::usdparser::AttachedStage::CookingRefreshState& state = owner.getCookingRefreshState();
+            owner.pendingCookingRefreshCount = uint32_t(state.prims.size() + state.transforms.size() +
+                                                       state.schemas.size() + state.parents.size());
+        }
+    };
+
     void addPrimRefreshSet(omni::physics::parse::ObjectKey key, omni::physx::usdparser::AttachedStage& attachedStage)
     {
+        RefreshCountScope refreshCount{attachedStage};
         if (!key.valid())
             return;
-        // m_primRefreshSet and invalidateMeshKeyCache are both ObjectKey-keyed
+        // state.prims and invalidateMeshKeyCache are both ObjectKey-keyed
         // (usdLoad/Collision.h/.cpp) -- no path materialization needed. A key that
         // does not resolve on the active attached stage is a safe, pre-existing
         // no-op both here and downstream: pump()'s own consumer loop re-validates
         // `!primKey.IsEmpty()` per entry before doing anything with it.
-        m_primRefreshSet.insert(key);
-        omni::physx::usdparser::invalidateMeshKeyCache(key);
+        omni::physx::usdparser::AttachedStage::CookingRefreshState& state = attachedStage.getCookingRefreshState();
+        state.prims.insert(key);
+        omni::physx::usdparser::invalidateMeshKeyCache(attachedStage, key);
     }
 
     /**
@@ -3404,8 +3413,12 @@ public:
         uint32_t ret = 0;
         lock_guard _lock(m_mutex);
         ret += m_cookingServicePrivate.getActiveTaskCount(m_asyncContext);
-        ret += uint32_t( m_primRefreshSet.size() );
-        ret += uint32_t( m_primXformRefreshSet.size() );
+        for (const auto& entry : contextSnapshot())
+            ret += m_cookingServicePrivate.getActiveTaskCount(entry.second->context);
+        for (const omni::physx::usdparser::AttachedStageMap::value_type& entry : omni::physx::usdparser::UsdLoad::getUsdLoad()->getAttachedStages())
+        {
+            ret += entry.second->pendingCookingRefreshCount.load();
+        }
         return ret;
     }
 
@@ -3417,27 +3430,13 @@ public:
     virtual uint32_t cancelAllTasks(void) final
     {
         uint32_t res = getComputeService().cancelAllTasks(m_asyncContext);
-        m_cookingStatistics = {};
+        for (const auto& entry : contextSnapshot())
+            res += getComputeService().cancelAllTasks(entry.second->context);
+        {
+            std::lock_guard<carb::tasking::MutexWrapper> statistics(m_statisticsMutex);
+            m_cookingStatistics = {};
+        }
         return res;
-    }
-
-    /**
-    * Increment or decrement the block USD update counter.
-    */
-    virtual void blockUSDUpdate(bool blocked) final
-    {
-        if ( blocked )
-        {
-            m_blockUsdUpdate++;
-        }
-        else
-        {
-            CARB_ASSERT(m_blockUsdUpdate);
-            if ( m_blockUsdUpdate > 0 )
-            {
-                m_blockUsdUpdate--;
-            }
-        }
     }
 
     /**
@@ -3553,26 +3552,35 @@ public:
     // shared_ptr (this member) is destroyed, i.e. exactly at ~CookingDataAsyncImpl.
     std::shared_ptr<bool> m_aliveFlag = std::make_shared<bool>(true);
 
-    std::atomic_int32_t m_blockUsdUpdate{0};
 
     carb::settings::ISettings* m_settings = nullptr;
 
-    PrimRefreshSet      m_primRefreshSet;
-    PrimRefreshSet      m_primXformRefreshSet;
-    PrimRefreshSet      m_primApiSchemasChangeRefreshSet;
-    PrimRefreshSet      m_primAddedRemovedRefreshSet;
-    TokenSet            m_collisionTokens;
-    // Full KnownTokens for the same attach as m_collisionTokens, interned once by
-    // ensureCollisionTokens(). Only valid while m_collisionTokensAttachHandle names
-    // a live attach; read only from handleSourceChange, after that call.
-    omni::physics::parse::KnownTokens m_changeTokens;
-    // The attach m_collisionTokens' TokenIds were last interned under; see
-    // ensureCollisionTokens(). Not a raw Source address: this cache outlives
-    // detach (CookingDataAsyncImpl is a singleton), so a pointer key could be
-    // matched against a later, unrelated source that reused the same address.
-    omni::physx::AttachHandle m_collisionTokensAttachHandle = omni::physx::kNoAttach;
     carb::tasking::MutexWrapper  m_mutex; // mutex lock for thread safety
 
+    struct OwnedContext
+    {
+        omni::physx::IPhysxCookingService* service;
+        omni::physx::PhysxCookingAsyncContext context;
+        ~OwnedContext()
+        {
+            service->cancelAllTasks(context);
+            service->destroyAsyncContext(context);
+        }
+    };
+    using ContextMap = std::unordered_map<const omni::physx::usdparser::AttachedStage*, std::shared_ptr<OwnedContext>>;
+    carb::tasking::MutexWrapper m_contextMutex;
+    ContextMap m_attachmentContexts;
+    ContextMap contextSnapshot()
+    {
+        std::lock_guard<carb::tasking::MutexWrapper> lock(m_contextMutex);
+        return m_attachmentContexts;
+    }
+    std::shared_ptr<OwnedContext> contextFor(const omni::physx::usdparser::AttachedStage& owner)
+    {
+        std::lock_guard<carb::tasking::MutexWrapper> lock(m_contextMutex);
+        const auto found = m_attachmentContexts.find(&owner);
+        return found == m_attachmentContexts.end() ? nullptr : found->second;
+    }
     omni::physx::PhysxCookingAsyncContext m_asyncContext = nullptr;
 
     // Progress Bar
@@ -3580,20 +3588,24 @@ public:
     float m_currentProgressBarValue = -1.0f;
     uint32_t m_maxCookingTasks = 0;
 
+    mutable carb::tasking::MutexWrapper m_statisticsMutex;
     omni::physx::PhysxCookingStatistics m_cookingStatistics;
 
     virtual omni::physx::PhysxCookingStatistics getCookingStatistics() const override
     {
+        std::lock_guard<carb::tasking::MutexWrapper> statistics(m_statisticsMutex);
         return m_cookingStatistics;
     }
 
     void recordStatisticsRequestFor(const omni::physx::PhysxCookingComputeRequest& request)
     {
+        std::lock_guard<carb::tasking::MutexWrapper> statistics(m_statisticsMutex);
        m_cookingStatistics.totalScheduledTasks += 1;
     }
 
     void recordStatisticsResultFor(const omni::physx::PhysxCookingComputeResult& result)
     {
+        std::lock_guard<carb::tasking::MutexWrapper> statistics(m_statisticsMutex);
         m_cookingStatistics.totalFinishedTasks += 1;
         if(m_cookingStatistics.totalFinishedTasks > m_cookingStatistics.totalScheduledTasks)
         {
@@ -3627,9 +3639,13 @@ public:
      */
     void refreshProgressBarStatus(void)
     {
-        const uint32_t taskCount = m_cookingServicePrivate.getActiveTaskCount(m_asyncContext);
-        // m_primRefreshSet are tasks that have not yet been submitted to the queue
-        const uint32_t totalTaskCount = taskCount + uint32_t(m_primRefreshSet.size());
+        uint32_t taskCount = m_cookingServicePrivate.getActiveTaskCount(m_asyncContext);
+        for (const auto& entry : contextSnapshot())
+            taskCount += m_cookingServicePrivate.getActiveTaskCount(entry.second->context);
+        // state.prims are tasks that have not yet been submitted to the queue
+        uint32_t totalTaskCount = taskCount;
+        for (const omni::physx::usdparser::AttachedStageMap::value_type& entry : omni::physx::usdparser::UsdLoad::getUsdLoad()->getAttachedStages())
+            totalTaskCount += entry.second->pendingCookingRefreshCount.load();
         if (totalTaskCount)
         {
             if (totalTaskCount > m_maxCookingTasks)
@@ -3665,6 +3681,52 @@ public:
     virtual void resetLocalMeshCacheContents() override final
     {
         m_cookingServicePrivate.resetMeshCacheContents();
+    }
+
+    void retireAttachment(const omni::physx::usdparser::AttachedStage& owner)
+    {
+        std::shared_ptr<OwnedContext> retiring;
+        {
+            std::lock_guard<carb::tasking::MutexWrapper> lock(m_contextMutex);
+            auto it = m_attachmentContexts.find(&owner);
+            if (it == m_attachmentContexts.end())
+                return;
+            retiring = std::move(it->second);
+            m_attachmentContexts.erase(it);
+        }
+        // Owner admission excludes concurrent pumping of this context. Snapshots
+        // used for process statistics may retain its allocation until they return.
+        getComputeService().cancelAllTasks(retiring->context);
+
+    }
+
+    virtual omni::physx::PhysxCookingAsyncContext getCookingAsyncContext(
+        const omni::physx::usdparser::AttachedStage& owner) final
+    {
+        {
+            std::lock_guard<carb::tasking::MutexWrapper> lock(m_contextMutex);
+            auto found = m_attachmentContexts.find(&owner);
+            if (found != m_attachmentContexts.end())
+                return found->second->context;
+        }
+        // Private candidates also need an identity that survives allocator address reuse.
+        static std::atomic<uint64_t> nextContextGeneration{1};
+        const std::string name = "omni.physx.attach." +
+            std::to_string(nextContextGeneration.fetch_add(1, std::memory_order_relaxed));
+        omni::physx::PhysxCookingAsyncContextParameters parameters;
+        parameters.contextName = { name.data(), name.size() };
+        const omni::physx::PhysxCookingAsyncContext context = getComputeService().createAsyncContext(parameters);
+        if (!context)
+            return nullptr;
+        std::shared_ptr<OwnedContext> retained = std::shared_ptr<OwnedContext>(new OwnedContext{ &getComputeService(), context });
+        {
+            CookingDataAsyncWeakSelf self(this, m_aliveFlag);
+            const omni::physx::usdparser::AttachedStage* ownerPtr = &owner;
+            owner.setCookingRetirement([self, ownerPtr] { if (self) self->retireAttachment(*ownerPtr); });
+            std::lock_guard<carb::tasking::MutexWrapper> lock(m_contextMutex);
+            m_attachmentContexts.emplace(&owner, std::move(retained));
+        }
+        return context;
     }
 
     virtual omni::physx::PhysxCookingAsyncContext getCookingAsyncContext()

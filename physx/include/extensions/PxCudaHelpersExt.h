@@ -280,11 +280,11 @@ static void memsetAsync(PxCudaContextManager& cudaContextManager, T* dstDeviceBu
 }
 };
 
-#define PX_EXT_DEVICE_MEMORY_ALLOC(T, cudaContextManager, numElements) physx::Ext::PxCudaHelpersExt::allocDeviceBuffer<T>(cudaContextManager, numElements)
-#define PX_EXT_DEVICE_MEMORY_FREE(cudaContextManager, deviceBuffer) physx::Ext::PxCudaHelpersExt::freeDeviceBuffer(cudaContextManager, deviceBuffer);
+#define PX_EXT_DEVICE_MEMORY_ALLOC(T, cudaContextManager, numElements) ::physx::Ext::PxCudaHelpersExt::allocDeviceBuffer<T>(cudaContextManager, numElements)
+#define PX_EXT_DEVICE_MEMORY_FREE(cudaContextManager, deviceBuffer) ::physx::Ext::PxCudaHelpersExt::freeDeviceBuffer(cudaContextManager, deviceBuffer);
 
-#define PX_EXT_PINNED_MEMORY_ALLOC(T, cudaContextManager, numElements) physx::Ext::PxCudaHelpersExt::allocPinnedHostBuffer<T>(cudaContextManager, numElements)
-#define PX_EXT_PINNED_MEMORY_FREE(cudaContextManager, pinnedHostBuffer) physx::Ext::PxCudaHelpersExt::freePinnedHostBuffer(cudaContextManager, pinnedHostBuffer);
+#define PX_EXT_PINNED_MEMORY_ALLOC(T, cudaContextManager, numElements) ::physx::Ext::PxCudaHelpersExt::allocPinnedHostBuffer<T>(cudaContextManager, numElements)
+#define PX_EXT_PINNED_MEMORY_FREE(cudaContextManager, pinnedHostBuffer) ::physx::Ext::PxCudaHelpersExt::freePinnedHostBuffer(cudaContextManager, pinnedHostBuffer);
 
 }
 }

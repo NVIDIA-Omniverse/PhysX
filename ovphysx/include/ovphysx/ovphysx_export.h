@@ -28,6 +28,7 @@
 //
 // Use compiler-specific attributes before the C++14 fallback. Clang rejects
 // [[deprecated]] after the visibility attribute in OVPHYSX_API.
+// Deprecating typedefs with these macros requires compiler-specific attributes.
 #if defined(_MSC_VER)
     #define OVPHYSX_DEPRECATED __declspec(deprecated)
     #define OVPHYSX_DEPRECATED_MSG(msg) __declspec(deprecated(msg))
@@ -40,6 +41,25 @@
 #else
     #define OVPHYSX_DEPRECATED
     #define OVPHYSX_DEPRECATED_MSG(msg)
+#endif
+
+// Narrowly ignore deprecated-declaration diagnostics around internal forwarding
+// from a deprecated C++ wrapper to the deprecated C function it wraps. Include
+// of a public C++ header must not diagnose those calls; a caller that invokes
+// the deprecated C++ API still gets the warning from the wrapper declaration.
+#if defined(_MSC_VER)
+    #define OVPHYSX_DEPRECATED_CALL_BEGIN \
+        __pragma(warning(push)) \
+        __pragma(warning(disable : 4996))
+    #define OVPHYSX_DEPRECATED_CALL_END __pragma(warning(pop))
+#elif defined(__clang__) || defined(__GNUC__)
+    #define OVPHYSX_DEPRECATED_CALL_BEGIN \
+        _Pragma("GCC diagnostic push") \
+        _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+    #define OVPHYSX_DEPRECATED_CALL_END _Pragma("GCC diagnostic pop")
+#else
+    #define OVPHYSX_DEPRECATED_CALL_BEGIN
+    #define OVPHYSX_DEPRECATED_CALL_END
 #endif
 
 #endif // OVPHYSX_EXPORT_H

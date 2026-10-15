@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-TENSOR-WRENCH-001
+ * @covers AC-1 AC-2 AC-3
+ *
  * @implements REQ-INPUT-CORE-001
  * @covers AC-3 AC-4
  *
@@ -29,8 +32,14 @@
  * @implements REQ-INPUT-COVERAGE-001
  * @covers AC-11
  *
+ * @implements REQ-TENSOR-TENDON-001
+ * @covers AC-1 AC-3
+ *
  * @implements REQ-TENSOR-TENDON-002
  * @covers AC-1 AC-2
+ *
+ * @implements REQ-TENSOR-VIEW-001
+ * @covers AC-7
  */
 
 // clang-format off
@@ -621,240 +630,230 @@ bool CpuArticulationView::getMassCentersLocalOvStage(const TensorDesc* dstTensor
 // row and fails before writing, like the state getters above.
 // ------------------------------------------------------------------------------------------------
 
-bool CpuArticulationView::getJacobiansOvStage(const TensorDesc* dstTensor,
-                                              const PxU32* rows,
-                                              PxU32 count,
-                                              uint64_t) const
+// Every requested inverse dynamics column in one pass, sharing the per-articulation setup each single-column
+// getter below would otherwise redo: one explicit commonInit runs per articulation rather than once per column
+// -- kept unconditional to honour PhysX's documented precondition, so when a jacobian is also asked for
+// computeDenseJacobian re-runs initializeCommonData internally (the second, partial init the detailed comment
+// below weighs). The mass matrix and Coriolis term the centroidal column is defined against are computed once
+// and reused. Each compute writes its own cache array, so a full set leaves every requested column in place.
+bool CpuArticulationView::getInverseDynamicsColumnsOvStage(const InverseDynamicsColumnRequest* columns,
+                                                    PxU32 numColumns,
+                                                    const PxU32* rows,
+                                                    PxU32 count,
+                                                    uint64_t) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-    if (!dstTensor || !dstTensor->data)
+    if (numColumns == 0 || count == 0)
+        return true; // nothing to emit -- not a failure
+    if (!columns)
     {
+        CARB_LOG_ERROR("%s: null columns", __FUNCTION__);
         return false;
     }
 
-    const char* label = "articulation jacobian";
-    PxU32 width = 0;
-    if (!checkTensorDevice(*dstTensor, -1, label, __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, label, __FUNCTION__) ||
-        !checkRecordIndices(rows, count, mEntries.size(), label, __FUNCTION__) ||
-        !ovStageRootRowsResolvable(mEntries, mArticulationCaches, rows, count, true, label, __FUNCTION__) ||
-        !checkInverseDynamicsColumn(*dstTensor, rows, count, InverseDynamicsColumn::eJacobian, width, label,
-                                    __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, count * width, label, __FUNCTION__))
+    // Validate every column and decide the union of computes the requested SET needs, once rather than
+    // per column -- a missing need silently reads a cache array nobody filled. No width table: the
+    // validated width IS dstTensor.dims[1] (checkInverseDynamicsColumn takes widthOut straight from there), so
+    // the payload loop rereads it per column instead of a per-call std::vector -- the single-column
+    // wrappers that forward here allocated nothing on the old path and must not start now.
+    bool needVelocityCopy = false, needJacobian = false, needMassMatrix = false, needGravity = false,
+         needCoriolis = false, needCentroidal = false;
+    for (PxU32 c = 0; c < numColumns; ++c)
     {
-        return false;
+        const InverseDynamicsColumn dc = columns[c].column;
+        const char* label = "articulation inverse dynamics";
+        switch (dc)
+        {
+        case InverseDynamicsColumn::eJacobian:
+            label = "articulation jacobian";
+            needJacobian = true;
+            break;
+        case InverseDynamicsColumn::eMassMatrix:
+            label = "articulation mass matrix";
+            needMassMatrix = true;
+            break;
+        case InverseDynamicsColumn::eCoriolisForce:
+            label = "articulation coriolis force";
+            needCoriolis = true;
+            needVelocityCopy = true;
+            break;
+        case InverseDynamicsColumn::eGravityForce:
+            label = "articulation gravity force";
+            needGravity = true;
+            break;
+        case InverseDynamicsColumn::eCentroidalMomentum:
+            label = "articulation centroidal momentum";
+            needMassMatrix = true;
+            needCoriolis = true;
+            needCentroidal = true;
+            needVelocityCopy = true;
+            break;
+        default:
+            CARB_LOG_ERROR("%s: %d is not a shareable inverse dynamics compute column", __FUNCTION__, static_cast<int>(dc));
+            return false; // eNone / eJacobianShape have no compute
+        }
+
+        const TensorDesc* const dst = columns[c].dst;
+        if (!dst || !dst->data)
+        {
+            CARB_LOG_ERROR("%s: %s null destination", __FUNCTION__, label);
+            return false;
+        }
+        PxU32 width = 0;
+        if (!checkTensorDevice(*dst, -1, label, __FUNCTION__) ||
+            !checkTensorFloat32(*dst, label, __FUNCTION__) ||
+            !checkRecordIndices(rows, count, mEntries.size(), label, __FUNCTION__) ||
+            !ovStageRootRowsResolvable(mEntries, mArticulationCaches, rows, count, true, label, __FUNCTION__) ||
+            !checkInverseDynamicsColumn(*dst, rows, count, dc, width, label, __FUNCTION__) ||
+            !checkTensorSizeExact(*dst, count * width, label, __FUNCTION__))
+        {
+            return false;
+        }
     }
 
-    float* dst = static_cast<float*>(dstTensor->data);
     for (PxU32 i = 0; i < count; i++)
     {
         const PxU32 row = rows ? rows[i] : i;
         PxArticulationReducedCoordinate* const arti = mEntries[row].arti;
         PxArticulationCache* const cache = mArticulationCaches[row];
 
-        PxU32 producedRows = 0, producedCols = 0;
-        arti->commonInit();
-        arti->computeDenseJacobian(*cache, producedRows, producedCols);
-        // The width was agreed above from this row's metatype, so PhysX disagreeing means the
-        // topology moved mid-read.
+        // Order matters: the velocity copy precedes the Coriolis/centroidal computes that read velocity
+        // out of the cache (not off the articulation), and the mass matrix and Coriolis term precede the
+        // centroidal matrix defined against them.
         //
-        // Fails the whole gather rather than zeroing the row and carrying on, unlike the view-wide
-        // getJacobians: this read is atomic, so a zeroed row behind a `true` would surface through
-        // ovxFetchReadNext as kOvxReadStatusOk with an all-zero jacobian indistinguishable from a
-        // real one.
-        const PxU32 rootDofs = mEntries[row].metatype->getFixedBase() ? 0u : 6u;
-        const PxU32 expectedCols = rootDofs + mEntries[row].numDofs;
-        if (producedRows * producedCols != width || producedCols != expectedCols)
+        // commonInit() is the documented precondition for the mass-matrix, gravity, Coriolis and centroidal
+        // getters (PxArticulationReducedCoordinate.h). Call it unconditionally rather than lean on
+        // computeDenseJacobian to stand in for it: getDenseJacobian happens to open with initializeCommonData
+        // today, but that is an internal detail its contract does not promise. Were it to change, each getter
+        // would early-return on the dirty flag WITHOUT writing its cache array, so the gather would return
+        // true and publish the PREVIOUS read's values behind an easily-missed eINVALID_OPERATION log line.
+        // The cost is one initializeCommonData when a jacobian is also requested -- and only its ungated
+        // relative-transform and spatial-inertia half, since the jcalc half stays dirty-gated across the two.
+        arti->commonInit();
+        PxU32 jacRows = 0, jacCols = 0;
+        if (needJacobian)
+            arti->computeDenseJacobian(*cache, jacRows, jacCols);
+        if (needVelocityCopy)
+            arti->copyInternalStateToCache(*cache, PxArticulationCacheFlag::eVELOCITY);
+        if (needMassMatrix)
+            arti->computeMassMatrix(*cache);
+        if (needGravity)
+            arti->computeGravityCompensation(*cache);
+        if (needCoriolis)
+            arti->computeCoriolisCompensation(*cache);
+        if (needCentroidal)
+            arti->computeCentroidalMomentumMatrix(*cache);
+
+        const ArticulationMetatype& metatype = *mEntries[row].metatype;
+        const bool isFixedBase = metatype.getFixedBase();
+        const PxU32 numDofs = mEntries[row].numDofs;
+        // PhysX produces the dense inverse dynamics in its generalized-coordinate basis; the copy*ToAuthoredDofBasis
+        // helpers rewrite them into the authored DOF basis, flipping the sign of every reversed-body-order
+        // DOF (J columns, M rows+columns, the centroidal matrix columns) -- the same transform the
+        // view-wide getters apply. rootDofs is the six root DOFs a floating base leads with.
+        const PxU32 rootDofs = isFixedBase ? 0u : 6u;
+        for (PxU32 c = 0; c < numColumns; ++c)
         {
-            CARB_LOG_ERROR("%s: jacobian row %u produced shape %ux%u; expected %u columns and %u elements",
-                           __FUNCTION__, row, producedRows, producedCols, expectedCols, width);
-            return false;
+            // The validated width, straight from the descriptor checkInverseDynamicsColumn read it from.
+            const PxU32 width = static_cast<PxU32>(columns[c].dst->dims[1]);
+            float* const out = static_cast<float*>(columns[c].dst->data) + size_t(i) * width;
+            switch (columns[c].column)
+            {
+            case InverseDynamicsColumn::eJacobian:
+                // Width and column count agreed from this row's metatype; PhysX disagreeing means the
+                // topology moved mid-read, which fails the whole atomic gather rather than zeroing a row
+                // behind a true.
+                if (jacRows * jacCols != width || jacCols != rootDofs + numDofs)
+                {
+                    CARB_LOG_ERROR("%s: jacobian row %u produced %ux%u against an agreed width of %u",
+                                   __FUNCTION__, row, jacRows, jacCols, width);
+                    return false;
+                }
+                copyJacobianToAuthoredDofBasis(out, cache->denseJacobian, jacRows, jacCols, rootDofs, metatype);
+                break;
+            case InverseDynamicsColumn::eMassMatrix:
+                copyMassMatrixToAuthoredDofBasis(out, cache->massMatrix, rootDofs + numDofs, rootDofs, metatype);
+                break;
+            case InverseDynamicsColumn::eCoriolisForce:
+            case InverseDynamicsColumn::eGravityForce:
+            {
+                // Coriolis and gravity differ only in their cache array, and both take the per-dof sign
+                // flip the single-column getters apply -- a floating base's six leading root entries none.
+                const PxReal* const src = (columns[c].column == InverseDynamicsColumn::eGravityForce) ?
+                                              cache->gravityCompensationForce :
+                                              cache->coriolisForce;
+                for (PxU32 j = 0; j < rootDofs; j++)
+                    out[j] = src[j];
+                for (PxU32 j = 0; j < numDofs; j++)
+                    out[rootDofs + j] =
+                        metatype.isDofBody0Parent(j) ? src[rootDofs + j] : -src[rootDofs + j];
+                break;
+            }
+            case InverseDynamicsColumn::eCentroidalMomentum:
+                copyCentroidalMomentumToAuthoredDofBasis(
+                    out, cache->centroidalMomentumMatrix, cache->centroidalMomentumBias, numDofs, metatype);
+                break;
+            default:
+                break; // eNone / eJacobianShape were rejected in the validation loop above
+            }
         }
-        copyJacobianToAuthoredDofBasis(dst + size_t(i) * width, cache->denseJacobian, producedRows, producedCols,
-                                       rootDofs, *mEntries[row].metatype);
     }
     return true;
+}
+
+// A single inverse dynamics column is the one-column case of the combined gather. Forwarding here keeps the
+// validation, the compute, and the cache-to-column extraction in exactly one place -- the public
+// single-column getters below add nothing but the column identity.
+bool CpuArticulationView::getInverseDynamicsColumnOvStage(InverseDynamicsColumn column,
+                                                   const TensorDesc* dstTensor,
+                                                   const PxU32* rows,
+                                                   PxU32 count,
+                                                   uint64_t rowsToken) const
+{
+    CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
+    PASS_EMPTY_TENSOR(dstTensor);
+    const InverseDynamicsColumnRequest req{ column, dstTensor };
+    return getInverseDynamicsColumnsOvStage(&req, 1, rows, count, rowsToken);
+}
+
+bool CpuArticulationView::getJacobiansOvStage(const TensorDesc* dstTensor,
+                                              const PxU32* rows,
+                                              PxU32 count,
+                                              uint64_t rowsToken) const
+{
+    return getInverseDynamicsColumnOvStage(InverseDynamicsColumn::eJacobian, dstTensor, rows, count, rowsToken);
 }
 
 bool CpuArticulationView::getMassMatricesOvStage(const TensorDesc* dstTensor,
                                                  const PxU32* rows,
                                                  PxU32 count,
-                                                 uint64_t) const
+                                                 uint64_t rowsToken) const
 {
-    CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-    if (!dstTensor || !dstTensor->data)
-    {
-        return false;
-    }
-
-    const char* label = "articulation mass matrix";
-    PxU32 width = 0;
-    if (!checkTensorDevice(*dstTensor, -1, label, __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, label, __FUNCTION__) ||
-        !checkRecordIndices(rows, count, mEntries.size(), label, __FUNCTION__) ||
-        !ovStageRootRowsResolvable(mEntries, mArticulationCaches, rows, count, true, label, __FUNCTION__) ||
-        !checkInverseDynamicsColumn(*dstTensor, rows, count, InverseDynamicsColumn::eMassMatrix, width, label,
-                                    __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, count * width, label, __FUNCTION__))
-    {
-        return false;
-    }
-
-    float* dst = static_cast<float*>(dstTensor->data);
-    for (PxU32 i = 0; i < count; i++)
-    {
-        const PxU32 row = rows ? rows[i] : i;
-        PxArticulationReducedCoordinate* const arti = mEntries[row].arti;
-        PxArticulationCache* const cache = mArticulationCaches[row];
-        arti->commonInit();
-        arti->computeMassMatrix(*cache);
-        const PxU32 rootDofs = mEntries[row].metatype->getFixedBase() ? 0u : 6u;
-        const PxU32 generalizedCoords = rootDofs + mEntries[row].numDofs;
-        copyMassMatrixToAuthoredDofBasis(
-            dst + size_t(i) * width, cache->massMatrix, generalizedCoords, rootDofs, *mEntries[row].metatype);
-    }
-    return true;
-}
-
-// Coriolis and gravity share everything but their compute call and their cache array, including the
-// per-dof sign flip -- a dof whose body0 is not the parent reports the opposite sign, the same
-// convention the view-wide getters apply.
-//
-// The sign flip reads mEntries[row].metatype without a local null check: checkInverseDynamicsColumn rejects
-// the gather unless every selected row agrees with a NONZERO width, and inverseDynamicsColumnWidthForRow
-// answers 0 for a row whose metatype is null, so reaching the loop means every metatype resolved.
-bool CpuArticulationView::getGeneralizedForceColumnOvStage(const TensorDesc* dstTensor,
-                                                           const PxU32* rows,
-                                                           PxU32 count,
-                                                           bool gravity) const
-{
-    CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-    if (!dstTensor || !dstTensor->data)
-    {
-        return false;
-    }
-
-    const char* label = gravity ? "articulation gravity force" : "articulation coriolis force";
-    PxU32 width = 0;
-    if (!checkTensorDevice(*dstTensor, -1, label, __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, label, __FUNCTION__) ||
-        !checkRecordIndices(rows, count, mEntries.size(), label, __FUNCTION__) ||
-        !ovStageRootRowsResolvable(mEntries, mArticulationCaches, rows, count, true, label, __FUNCTION__) ||
-        !checkInverseDynamicsColumn(*dstTensor, rows, count, InverseDynamicsColumn::eGeneralizedForce, width, label,
-                                    __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, count * width, label, __FUNCTION__))
-    {
-        return false;
-    }
-
-    float* dst = static_cast<float*>(dstTensor->data);
-    for (PxU32 i = 0; i < count; i++)
-    {
-        const PxU32 row = rows ? rows[i] : i;
-        PxArticulationReducedCoordinate* const arti = mEntries[row].arti;
-        PxArticulationCache* const cache = mArticulationCaches[row];
-        // computeCoriolisCompensation reads the joint velocities OUT OF THE CACHE, not off the
-        // articulation, so without this refresh the Coriolis force comes out of whatever the cache
-        // happened to hold: the right shape, the wrong size, and no failure reported.
-        //
-        // Gravity compensation needs no copy -- it is a function of configuration, which commonInit
-        // refreshes -- and this runs per articulation per read, so the distinction is worth keeping.
-        arti->commonInit();
-        if (gravity)
-        {
-            arti->computeGravityCompensation(*cache);
-        }
-        else
-        {
-            arti->copyInternalStateToCache(*cache, PxArticulationCacheFlag::eVELOCITY);
-            arti->computeCoriolisCompensation(*cache);
-        }
-
-        const PxReal* const src = gravity ? cache->gravityCompensationForce : cache->coriolisForce;
-        const bool isFixedBase = mEntries[row].metatype->getFixedBase();
-        const PxU32 numDofs = mEntries[row].numDofs;
-        // A floating base contributes six leading root entries, which carry no dof and so take no
-        // sign flip; the dof entries follow.
-        const PxU32 rootDofs = isFixedBase ? 0u : 6u;
-        float* const out = dst + size_t(i) * width;
-        for (PxU32 j = 0; j < rootDofs; j++)
-            out[j] = src[j];
-        for (PxU32 j = 0; j < numDofs; j++)
-            out[rootDofs + j] = mEntries[row].metatype->isDofBody0Parent(j) ? src[rootDofs + j] : -src[rootDofs + j];
-    }
-    return true;
+    return getInverseDynamicsColumnOvStage(InverseDynamicsColumn::eMassMatrix, dstTensor, rows, count, rowsToken);
 }
 
 bool CpuArticulationView::getCoriolisForcesOvStage(const TensorDesc* dstTensor,
                                                    const PxU32* rows,
                                                    PxU32 count,
-                                                   uint64_t) const
+                                                   uint64_t rowsToken) const
 {
-    return getGeneralizedForceColumnOvStage(dstTensor, rows, count, false);
+    return getInverseDynamicsColumnOvStage(InverseDynamicsColumn::eCoriolisForce, dstTensor, rows, count, rowsToken);
 }
 
 bool CpuArticulationView::getGravityForcesOvStage(const TensorDesc* dstTensor,
                                                   const PxU32* rows,
                                                   PxU32 count,
-                                                  uint64_t) const
+                                                  uint64_t rowsToken) const
 {
-    return getGeneralizedForceColumnOvStage(dstTensor, rows, count, true);
+    return getInverseDynamicsColumnOvStage(InverseDynamicsColumn::eGravityForce, dstTensor, rows, count, rowsToken);
 }
 
 bool CpuArticulationView::getCentroidalMomentaOvStage(const TensorDesc* dstTensor,
                                                       const PxU32* rows,
                                                       PxU32 count,
-                                                      uint64_t) const
+                                                      uint64_t rowsToken) const
 {
-    CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-    if (!dstTensor || !dstTensor->data)
-    {
-        return false;
-    }
-
-    // Floating base only. The reader omits the group for a fixed-base cohort, so reaching here with
-    // one is a reader bug rather than a user error -- fail rather than invent rows.
-    const char* label = "articulation centroidal momentum";
-    PxU32 width = 0;
-    if (!checkTensorDevice(*dstTensor, -1, label, __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, label, __FUNCTION__) ||
-        !checkRecordIndices(rows, count, mEntries.size(), label, __FUNCTION__) ||
-        !ovStageRootRowsResolvable(mEntries, mArticulationCaches, rows, count, true, label, __FUNCTION__) ||
-        !checkInverseDynamicsColumn(*dstTensor, rows, count, InverseDynamicsColumn::eCentroidalMomentum, width, label,
-                                    __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, count * width, label, __FUNCTION__))
-    {
-        return false;
-    }
-
-    float* dst = static_cast<float*>(dstTensor->data);
-    for (PxU32 i = 0; i < count; i++)
-    {
-        const PxU32 row = rows ? rows[i] : i;
-        PxArticulationReducedCoordinate* const arti = mEntries[row].arti;
-        PxArticulationCache* const cache = mArticulationCaches[row];
-        // The centroidal matrix is defined against the mass matrix and the Coriolis term, so both
-        // have to be computed into the cache first; PhysX does not do it for us.
-        //
-        // The velocity copy is defensive, kept for symmetry with getArticulationCentroidalMomentum:
-        // computeCentroidalMomentumMatrix appears to take its velocities from the articulation
-        // rather than from the cache, but that is not a documented contract.
-        arti->copyInternalStateToCache(*cache, PxArticulationCacheFlag::eVELOCITY);
-        arti->commonInit();
-        arti->computeMassMatrix(*cache);
-        arti->computeCoriolisCompensation(*cache);
-        arti->computeCentroidalMomentumMatrix(*cache);
-
-        const PxU32 numDofs = mEntries[row].numDofs;
-        float* const out = dst + size_t(i) * width;
-        copyCentroidalMomentumToAuthoredDofBasis(
-            out, cache->centroidalMomentumMatrix, cache->centroidalMomentumBias, numDofs, *mEntries[row].metatype);
-    }
-    return true;
+    return getInverseDynamicsColumnOvStage(InverseDynamicsColumn::eCentroidalMomentum, dstTensor, rows, count, rowsToken);
 }
 
 bool CpuArticulationView::setRootTransforms(const TensorDesc* srcTensor, const TensorDesc* indexTensor)
@@ -2428,6 +2427,7 @@ static void transformToParentFrame(const PxArticulationJointReducedCoordinate* j
 
 bool CpuArticulationView::getLinkIncomingJointForce(const TensorDesc* dstTensor) const
 {
+    CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
     if (!dstTensor || !dstTensor->data)
     {
         return false;
@@ -2659,7 +2659,7 @@ bool CpuArticulationView::applyForcesAndTorquesAtPosition(const TensorDesc* srcF
         if (idx < mEntries.size())
         {
             ArticulationEntry& entry = mEntries[idx];
-            for (PxU32 j = 0; j < mEntries[i].numLinks; j++)
+            for (PxU32 j = 0; j < entry.numLinks; j++)
             {
                 if (validForceTensor)
                 {
@@ -2996,6 +2996,7 @@ bool CpuArticulationView::getFixedTendonStiffnesses(const TensorDesc* dstTensor)
 
 bool CpuArticulationView::getFixedTendonDampings(const TensorDesc* dstTensor) const
 {
+    CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
     PASS_EMPTY_TENSOR(dstTensor);
     if (!dstTensor || !dstTensor->data)
     {
@@ -3171,6 +3172,7 @@ bool CpuArticulationView::getSpatialTendonStiffnesses(const TensorDesc* dstTenso
 
 bool CpuArticulationView::getSpatialTendonDampings(const TensorDesc* dstTensor) const
 {
+    CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
     PASS_EMPTY_TENSOR(dstTensor);
     if (!dstTensor || !dstTensor->data)
     {
@@ -3598,7 +3600,6 @@ CPU_ARTI_MASKED_SETTER(setDofStiffnesses, )
 CPU_ARTI_MASKED_SETTER(setDofDampings, )
 CPU_ARTI_MASKED_SETTER(setDofMaxForces, )
 CPU_ARTI_MASKED_SETTER(setDofDriveModelProperties, )
-CPU_ARTI_MASKED_SETTER(setDofFrictionCoefficients, )
 CPU_ARTI_MASKED_SETTER(setDofFrictionProperties, )
 CPU_ARTI_MASKED_SETTER(setDofMaxVelocities, )
 CPU_ARTI_MASKED_SETTER(setDofArmatures, )

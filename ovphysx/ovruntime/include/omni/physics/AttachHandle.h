@@ -29,18 +29,14 @@ namespace physics
 /// point that names an *attach* takes an `AttachHandle`, and only entry points
 /// that name the USD stage object itself keep a stage id.
 ///
-/// Obtain one from `IPhysxSimulation::getAttachHandle()`.
+/// `IPhysxSimulation::attachOvstage()` returns the new attachment handle directly.
 using AttachHandle = uint64_t;
 
 /// No attach. Never identifies a live attach.
 constexpr AttachHandle kNoAttach = 0;
 
-/// "Whichever attach is currently active" -- resolved at call time. Convenience
-/// for callers that do not track a handle of their own.
-///
-/// \note This resolves only while exactly one attach is live:
-/// `IPhysxSimulation::getAttachHandle()` returns `kNoAttach` under multi-attach,
-/// so a consumer that attaches more than once must track its own handles.
+/// Reserved invalid value retained to detect obsolete callers. Every runtime
+/// entry rejects it; it never selects an attachment (ADR-0042).
 constexpr AttachHandle kActiveAttach = ~AttachHandle(0);
 
 } // namespace physics

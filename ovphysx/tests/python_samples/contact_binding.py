@@ -15,10 +15,16 @@ This sample demonstrates:
 4. Using the context-manager form to ensure proper cleanup
 """
 
+# @implements REQ-CAPI-OVSTAGE-XFORM-001
+# @covers AC-1
+# @implements REQ-PYTHON-SAMPLE-002
+# @covers AC-1 AC-2
+
 import numpy as np
 from pathlib import Path
 
 import ovphysx
+from ovphysx.samples.python_samples.schema_support import physx_schema_paths
 from ovphysx import PhysX
 
 
@@ -31,24 +37,23 @@ def attach_scene(physx, usd_path, stage_name):
     if not ovstage.population.available():
         raise RuntimeError("ovstage population bridge is unavailable")
 
-    # ovphysx ships its PhysX USD schemas as codeless resources and does not register
-    # them itself. Register them with ovstage once, before the first population
-    # call in the process. The Newton USD schema (pip package newton-usd-schemas)
-    # is registered alongside so authored newton:* attributes reach the parser.
+    # Register external PhysX and Newton schemas before the first population.
     global _physx_schemas_registered
     if not _physx_schemas_registered:
         ovstage.population.register_usd_schemas(
-            [str(ovphysx.codeless_schema_root()), str(ovphysx.newton_schema_root())]
+            [*[str(p) for p in physx_schema_paths()], str(ovphysx.newton_schema_root())]
         )
         _physx_schemas_registered = True
     stage = ovstage.Stage(stage_name)
     ordinal = 1
     try:
-        ovstage.population.open_usd(stage, str(usd_path), ordinal=ordinal, domains=ovstage.PopulationDomain.PHYSICS)
+        ovstage.population.open_usd(stage, str(usd_path), ordinal=ordinal, domains=ovstage.PopulationDomain.ALL)
         stage.advance_write_floor(ordinal=ordinal).wait()
-        physx.attach_ovstage(stage, read_ordinal=ordinal)
+        physx.wait_task(physx.attach_ovstage(stage, read_ordinal=ordinal))
         return stage
     except Exception:
+        if physx.is_stage_attached(stage):
+            physx.wait_task(physx.detach_ovstage())
         stage.destroy()
         raise
 
@@ -57,10 +62,20 @@ def main():
     # [tutorial-start]
 
     # --- 1. Initialize SDK and load scene ---
+    # Prefer package data so a copied sample works. Fall back to the checked-in
+    # sample's adjacent data directory when package data is absent. Resolve it
+    # before creating an instance so a missing scene does not skip destroy().
+    scene_name = "boxes_falling_on_groundplane.usda"
+    usd_path = Path(ovphysx.__file__).resolve().parent / "samples" / "data" / scene_name
+    if not usd_path.is_file():
+        usd_path = Path(__file__).resolve().parent.parent / "data" / scene_name
+    if not usd_path.is_file():
+        raise FileNotFoundError(f"ovphysx sample data is missing: {usd_path}")
+    data_dir = usd_path.parent
+
     PhysX.set_cpu_mode(True)
     physx = PhysX()
     stage = None
-    data_dir = Path(__file__).resolve().parent.parent / "data"
 
     try:
         stage = attach_scene(physx, data_dir / "boxes_falling_on_groundplane.usda", "ovphysx-contact-sample")
@@ -125,10 +140,8 @@ def main():
         # [tutorial-end]
 
         # Context-manager usage (alternative to manual destroy):
-        # Reset the stage so the same PhysX instance can be reused.
-        physx.reset_stage()
-        physx.wait_all()
-        physx.detach_ovstage()
+        # Detach the stage so the same PhysX instance can be reused.
+        physx.wait_task(physx.detach_ovstage())
         stage.destroy()
         stage = None
         stage = attach_scene(physx, data_dir / "boxes_falling_on_groundplane.usda", "ovphysx-contact-sample-reload")
@@ -148,7 +161,7 @@ def main():
         print("Contact binding sample completed successfully")
     finally:
         if stage is not None:
-            physx.detach_ovstage()
+            physx.wait_task(physx.detach_ovstage())
             stage.destroy()
         physx.destroy()
         print("Cleanup complete")

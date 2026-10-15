@@ -1,0 +1,51 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "physx-usd-schemas"
+dynamic = ["version"]
+description = "Codeless PhysX USD schemas for authoring and validation with a stock OpenUSD runtime"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+license = "LicenseRef-NVIDIA-Omniverse"
+authors = [{ name = "Omniverse Physics Team" }]
+keywords = ["physics", "usd", "openusd", "nvidia", "physx", "schema", "robotics"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+  "Topic :: Scientific/Engineering :: Physics",
+  "Intended Audience :: Science/Research",
+  "Development Status :: 3 - Alpha",
+]
+
+[project.urls]
+Homepage = "https://github.com/NVIDIA-Omniverse/PhysX/"
+Documentation = "https://nvidia-omniverse.github.io/PhysX/"
+Repository = "https://github.com/NVIDIA-Omniverse/PhysX"
+Issues = "https://github.com/NVIDIA-Omniverse/PhysX/issues"
+
+# Read the version from the generated _version.py literal directly. Pointing at
+# physx_usd_schemas.__version__ would make setuptools import the package to resolve
+# it (the __init__ assigns __version__ via a try/except import, defeating static
+# analysis); that import registers schemas and requires usd-core, which is absent in
+# pip's isolated build env. _version.__version__ is a plain literal, read statically.
+[tool.setuptools.dynamic]
+version = {attr = "physx_usd_schemas._version.__version__"}
+
+[tool.setuptools]
+zip-safe = false
+
+# The schema modules and helpers ship as subpackages of physx_usd_schemas, so a
+# single include pattern discovers physx_usd_schemas and every subpackage.
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["physx_usd_schemas*"]
+
+[tool.setuptools.package-data]
+"physx_usd_schemas.PhysxSchema" = ["resources/*"]
+"physx_usd_schemas.OmniUsdPhysicsDeformableSchema" = ["resources/*"]

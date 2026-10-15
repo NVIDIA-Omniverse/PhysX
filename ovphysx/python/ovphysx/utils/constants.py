@@ -8,7 +8,7 @@
 
 Collected here rather than duplicated per module.
 
-ovphysx ships the PhysX schemas *codeless*, so PhysX schema tokens are spelled
+PhysX schemas are *codeless*, so PhysX schema tokens are spelled
 out here as string literals; refer to :mod:`ovphysx.utils.codeless`.
 """
 

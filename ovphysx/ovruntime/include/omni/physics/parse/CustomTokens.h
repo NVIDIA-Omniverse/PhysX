@@ -45,6 +45,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <cstdint>
 #include <string_view>
 #include <vector>
 
@@ -93,5 +94,8 @@ bool isCustomToken(CustomTokenKind kind, std::string_view token);
 /// registered token. The order is deterministic so the emit order of custom
 /// prims does not depend on registration order.
 std::vector<std::string> customTokens(CustomTokenKind kind);
+
+/// Registry-owned generation; changes only on effective insert/removal.
+uint64_t customTokenGeneration();
 
 } // namespace omni::physics::parse

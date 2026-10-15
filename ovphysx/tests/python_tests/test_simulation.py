@@ -6,10 +6,12 @@ import os
 import pytest
 from test_utils import load_usd_with_ovstage
 
-from ovphysx import OP_INDEX_ALL
+from ovphysx import ApiStatus, Task
+from ovphysx.types import SimObjectType
 
 
 # Parameterized cases for step boundary and nominal values.
+@pytest.mark.parametrize("step_method", ["step", "step_sync"])
 @pytest.mark.parametrize(
     "dt, should_error",
     [
@@ -21,51 +23,77 @@ from ovphysx import OP_INDEX_ALL
         (0.033, False),  # ~30Hz
         (0.001, False),  # Small dt
         (1e-10, False),  # Very small positive dt
-        # Invalid cases: dt must be >= 0.0. The product rejects them with a generic error message.
+        (1.0, False),
+        (1.001, False),
+        (2.0, False),
+        # Invalid cases: dt must be finite and non-negative.
         (-0.016, True),  # Negative dt
         (-1.0, True),  # Another negative dt
         (-0.001, True),  # Negative dt
+        (float("nan"), True),
+        (float("inf"), True),
+        (float("-inf"), True),
     ],
 )
-def test_step_variants(physx_sdk, dt, should_error):
-    """Validate step behavior with both valid and invalid dt values.
-
-    API Requirements (per actual product behavior):
-        - dt must be >= 0.0 (enforced, will raise RuntimeError if violated)
-
-    This test validates both:
-    1. Valid dt values work correctly
-    2. Invalid (negative) dt values raise RuntimeError
-
-    Covered APIs:
-        PhysX.step, PhysX.wait_all
-
-    Args:
-        physx_sdk (PhysX): PhysX SDK fixture providing an initialized instance.
-        dt (float): Simulation delta time for the step call.
-        should_error (bool): Whether this combination should raise an error.
-
-    Returns:
-        None: Ensures valid cases succeed and invalid cases raise exceptions.
-    """
+def test_step_variants(physx_sdk, dt, should_error, step_method):
+    """Both stepping methods require a finite, non-negative timestep."""
+    step = getattr(physx_sdk, step_method)
     if should_error:
-        # The Python error message is the generic "Failed to step: Step failed". The C++
-        # layer logs the detailed reason to stderr.
-        with pytest.raises(RuntimeError):
-            physx_sdk.step(dt)
+        # Argument validation rejects submission before issuing a task.
+        with pytest.raises(RuntimeError, match="finite"):
+            step(dt)
     else:
         # step() rejects stage-less handles (NVBugs 6433668), so a stage is attached first.
         test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         load_usd_with_ovstage(physx_sdk, os.path.join(test_dir, "data", "basic_simulation.usda"))
         physx_sdk.wait_all()
-        physx_sdk.step(dt)
+        step(dt)
         physx_sdk.wait_all()
+
+
+@pytest.mark.parametrize("step_method", ["step", "step_sync"])
+@pytest.mark.parametrize("dt", [1.001, 2.0])
+def test_step_large_dt_advances_full_time(physx_sdk, tmp_path, step_method, dt):
+    """Neither stepping method rejects or clamps a timestep above one second."""
+    scene = tmp_path / "constant_velocity.usda"
+    scene.write_text('''#usda 1.0
+(
+    metersPerUnit = 1
+)
+def PhysicsScene "Scene" (
+    prepend apiSchemas = ["PhysxSceneAPI"]
+)
+{
+    float physics:gravityMagnitude = 0
+    bool physxScene:enableGPUDynamics = true
+    uniform token physxScene:broadphaseType = "GPU"
+}
+def Cube "Body" (
+    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysxRigidBodyAPI"]
+)
+{
+    double size = 1
+    vector3f physics:velocity = (1, 0, 0)
+    float physxRigidBody:linearDamping = 0
+}
+''', encoding="utf-8")
+    load_usd_with_ovstage(physx_sdk, str(scene))
+    physx_sdk.wait_all()
+
+    getattr(physx_sdk, step_method)(dt)
+    physx_sdk.wait_all()
+
+    with physx_sdk.read_sync(SimObjectType.RIGID_BODY, ["position"]) as result:
+        assert len(result.groups) == 1
+        positions = result.groups[0].tensors[0].numpy()
+        assert positions.shape == (1, 3)
+        assert positions[0].tolist() == pytest.approx([dt, 0.0, 0.0], abs=1e-6)
 
 
 def test_step_negative_dt_error(physx_sdk):
     """Validate step raises error for negative dt.
 
-    According to API requirements: dt must be >= 0.0
+    According to API requirements: dt must be finite and non-negative.
 
     Covered APIs:
         PhysX.step (dt validation)
@@ -77,8 +105,7 @@ def test_step_negative_dt_error(physx_sdk):
         None: Ensures negative dt is rejected.
 
     Note:
-        Product correctly validates negative dt and logs detailed error to stderr,
-        but Python wrapper returns generic "Failed to step: Step failed" message.
+        Negative dt is rejected immediately with the native validation cause.
     """
     with pytest.raises(RuntimeError):
         physx_sdk.step(-0.016)
@@ -167,16 +194,16 @@ def test_multiple_step_calls_rapid(physx_sdk):
         ops.append(op)
 
     for i in range(1, len(ops)):
-        assert ops[i] > ops[i - 1], "Op indices should be strictly increasing"
+        assert ops[i].op_index > ops[i - 1].op_index, "Op indices should be strictly increasing"
 
     physx_sdk.wait_all()
 
 
-def test_wait_op_timeout_boundary(physx_sdk):
-    """Check wait_op timeout boundary behavior.
+def test_wait_task_timeout_boundary(physx_sdk):
+    """Check wait_task timeout boundary behavior.
 
     Covered APIs:
-        PhysX.step, PhysX.wait_op
+        PhysX.step, PhysX.wait_task
 
     Args:
         physx_sdk (PhysX): PhysX SDK fixture providing an initialized instance.
@@ -193,17 +220,17 @@ def test_wait_op_timeout_boundary(physx_sdk):
 
     # A zero-timeout poll either consumes a completed op or leaves it pending.
     try:
-        physx_sdk.wait_op(op, timeout_ns=0)
+        physx_sdk.wait_task(op, timeout_ns=0)
     except TimeoutError:
         # The poll did not consume the index, so finish with a blocking wait.
-        physx_sdk.wait_op(op)
+        physx_sdk.wait_task(op)
 
 
-def test_wait_op_with_all_operations(physx_sdk):
-    """Validate wait_op with OP_INDEX_ALL constant.
+def test_wait_all_operations(physx_sdk):
+    """Validate the separate wait_all entrypoint.
 
     Covered APIs:
-        PhysX.wait_op (with ALL operations index)
+        PhysX.wait_all
         PhysX.step
 
     Args:
@@ -220,16 +247,16 @@ def test_wait_op_with_all_operations(physx_sdk):
     physx_sdk.step(0.016)
     physx_sdk.step(0.016)
 
-    physx_sdk.wait_op(OP_INDEX_ALL)
+    physx_sdk.wait_all()
 
     # Completes without raising.
 
 
-def test_wait_op_invalid_index(physx_sdk):
-    """Validate wait_op behavior with invalid operation index.
+def test_wait_task_invalid_index(physx_sdk):
+    """Validate wait_task behavior with invalid operation index.
 
     Covered APIs:
-        PhysX.wait_op (error handling)
+        PhysX.wait_task (error handling)
 
     Args:
         physx_sdk: PhysX SDK fixture
@@ -238,23 +265,17 @@ def test_wait_op_invalid_index(physx_sdk):
         None: Validates invalid operation indices are rejected.
 
     Note:
-        API requires a valid, not-yet-consumed op_index. Unknown in-range
-        indices should raise RuntimeError.
+        API requires a valid, not-yet-consumed op_index. Invalid indices
+        should raise RuntimeError.
     """
-    with pytest.raises(RuntimeError, match="op_index not found"):
-        physx_sdk.wait_op(999999, timeout_ns=1000000)  # 1ms timeout
+    with pytest.raises(RuntimeError, match="never issued"):
+        physx_sdk.wait_task(Task(ApiStatus.SUCCESS, 999999, physx_sdk.handle), timeout_ns=1000000)  # 1ms timeout
 
 
 def test_step_sync_negative_dt_error(physx_sdk):
     """step_sync() rejects negative dt."""
     with pytest.raises(RuntimeError):
         physx_sdk.step_sync(-0.016)
-
-
-def test_step_n_sync_negative_dt_error(physx_sdk):
-    """step_n_sync() rejects negative dt."""
-    with pytest.raises(RuntimeError):
-        physx_sdk.step_n_sync(1, -0.016)
 
 
 def test_step_sync_valid_dt(physx_sdk):
@@ -265,19 +286,11 @@ def test_step_sync_valid_dt(physx_sdk):
     physx_sdk.step_sync(1 / 60)
 
 
-def test_step_n_sync_valid_dt(physx_sdk):
-    """step_n_sync() works with valid n_steps and dt."""
-    test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    load_usd_with_ovstage(physx_sdk, os.path.join(test_dir, "data", "basic_simulation.usda"))
-    physx_sdk.wait_all()
-    physx_sdk.step_n_sync(3, 1 / 60)
-
-
-def test_wait_op_timeout_variants(physx_sdk):
-    """Validate wait_op with different timeout values.
+def test_wait_task_timeout_variants(physx_sdk):
+    """Validate wait_task with different timeout values.
 
     Covered APIs:
-        PhysX.wait_op (timeout_ns parameter variants)
+        PhysX.wait_task (timeout_ns parameter variants)
         PhysX.step
 
     Args:
@@ -293,16 +306,16 @@ def test_wait_op_timeout_variants(physx_sdk):
 
     # Test 1: infinite wait using None.
     op = physx_sdk.step(0.016)
-    physx_sdk.wait_op(op, timeout_ns=None)
+    physx_sdk.wait_task(op, timeout_ns=None)
 
     # Test 2: poll (timeout=0) on an already-consumed operation index.
     op2 = physx_sdk.step(0.016)
     physx_sdk.wait_all()
 
     # wait_all() consumes pending op indices, so waiting on op2 again must fail.
-    with pytest.raises(RuntimeError, match="op_index not found"):
-        physx_sdk.wait_op(op2, timeout_ns=0)
+    with pytest.raises(RuntimeError, match="already collected"):
+        physx_sdk.wait_task(op2, timeout_ns=0)
 
     # Test 3: very long timeout (effectively infinite).
     op3 = physx_sdk.step(0.016)
-    physx_sdk.wait_op(op3, timeout_ns=60_000_000_000)  # 60 seconds. The op completes long before that.
+    physx_sdk.wait_task(op3, timeout_ns=60_000_000_000)  # 60 seconds. The op completes long before that.

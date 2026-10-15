@@ -24,7 +24,7 @@ scene and to a stock `usd-core` when you author or validate offline.
   and rest offsets), `PhysxForceAPI`, joint extensions such as
   `PhysxJointAxisAPI` (refer to
   [Joints](simulation_setup/joints.md#physx-joint-schema)), deformable extensions
-  (refer to [Deformables](simulation_setup/deformables.md)), and more. ovphysx ships
+  (refer to [Deformables](simulation_setup/deformables.md)), and more. The external provider supplies
   this schema as codeless artifacts (`plugInfo.json` plus `generatedSchema.usda`,
   no compiled library).
 - **Omni Physics Deformable Schema (codeless)** — extends `UsdPhysics` with
@@ -43,38 +43,113 @@ and the [OpenUSD UsdPhysics reference](https://openusd.org/release/api/usd_physi
 This guide describes intent, not full attribute definitions, so the two do not
 drift.
 
-## How ovphysx Ships the PhysX Schemas
+## Installing the External PhysX Schemas
 
-ovphysx exposes the PhysX USD schemas (`PhysxSchema` and
-`OmniUsdPhysicsDeformableSchema`) as **codeless** artifacts: a root
-`plugInfo.json` (with `Includes: ["*/resources/"]`) plus, per module, a
-`<Module>/resources/` directory holding a `plugInfo.json` (`Type: resource`) and
-a `generatedSchema.usda`, with no compiled library. They live under
-`schemas/physx/` in the SDK and under `ovphysx/schemas/physx/` in the wheel.
-Codeless schemas carry no typed helper class — there is no
-`PhysxSchema.PhysxRigidBodyAPI` binding. You apply them by identifier and author
-their attributes generically.
+Applications install **`physx-usd-schemas`** separately from ovphysx.
+The same platform-independent wheel supplies Python and native applications on
+Linux x86_64/aarch64 and Windows x64. The SDK and ovphysx wheel contain no schema
+resources and expose no PhysX schema-location API. OVPhysX builds require neither the
+`usd_ext_physics` Packman package nor generated PhysX schema headers.
 
-ovphysx never modifies the environment (`PXR_PLUGINPATH_NAME` or any other
-plugin-path variable) and leaves registration to the application; it verifies at
-`attach_ovstage` that the registration happened before the first population and
-refuses the attach otherwise. It tells the application where the schemas are:
+For Python, install the provider from PyPI:
 
-- **C**: `ovphysx_get_codeless_schema_root(ovphysx_string_t* out_root)` returns
-  the schema root directory. The string is NUL-terminated, owned by ovphysx, and
-  valid until the calling thread calls the function again. It returns
-  `OVPHYSX_API_INVALID_ARGUMENT` for a NULL argument and `OVPHYSX_API_ERROR`
-  (details in `ovphysx_get_last_error()`) when the schema tree is missing. It
-  does not initialize ovphysx, load USD, acquire Carbonite, or modify the
-  environment, and is safe to call before `ovphysx_create_instance()`.
-- **Python**: `ovphysx.codeless_schema_root()` returns the same root as a
-  `pathlib.Path`, and `ovphysx.codeless_schema_paths()` returns the per-module
-  `resources` directories. Both are pure Python and never trigger native
-  loading.
+```bash
+pip install physx-usd-schemas
+```
 
-Because they are codeless, the core `UsdPhysics` typed APIs (rigid body,
-collider, mass, scene) work out of the box with stock `usd-core`, while
-`Physx*` attributes require registering the codeless schemas first.
+The application-side `schema_support/` recipe shipped with the Python samples
+uses `importlib.metadata.distribution("physx-usd-schemas")` and locates both
+modules' `resources/` directories. It verifies
+`plugInfo.json` and `generatedSchema.usda` before registration and reports how to
+repair a missing or incomplete installation. It does not import the
+provider: that package's top-level import registers with stock USD and needs
+`pxr`. Metadata discovery loads neither USD nor the native ovphysx library.
+Copy `schema_support/` alongside a copied sample, or use its installed sample
+namespace as the examples below do. Applications can adapt this recipe to their
+deployment; it is not a core ovphysx API.
+
+For native applications, unpack the same wheel as an external data archive.
+Examples including `common/ovstage_sample.h` require the SDK
+`samples/c_samples/` directory on the compiler include path, or a copy of its
+`common/` directory alongside the application sources.
+The SDK's sample installer reads the artifact URL and SHA-256 from the adjacent
+`common/physx_schemas.lock.json`, verifies the digest, and keeps the wheel's
+distribution metadata:
+
+```bash
+python /path/to/sdk/samples/c_samples/common/fetch_physx_schemas.py --dest /path/to/app-deps/physx-schemas
+export PHYSX_USD_SCHEMAS_ROOT=/path/to/app-deps/physx-schemas
+```
+
+On Windows, set `$env:PHYSX_USD_SCHEMAS_ROOT` to that extracted directory.
+An offline installation can pass `--wheel /path/to/physx_usd_schemas-<version>-py3-none-any.whl`.
+Python is needed only for this installation step; native schema discovery and
+registration use no Python runtime. The directory contains:
+
+```text
+physx_usd_schemas-<version>.dist-info/METADATA
+physx_usd_schemas/PhysxSchema/resources/{plugInfo.json,generatedSchema.usda}
+physx_usd_schemas/OmniUsdPhysicsDeformableSchema/resources/{plugInfo.json,generatedSchema.usda}
+```
+
+Keep the provider outside the ovphysx SDK. After relocating the application and
+provider, resolve its new directory and update `PHYSX_USD_SCHEMAS_ROOT`; Python
+resolves the provider from its current installation metadata. `OVPHYSX_LIB`
+selects the simulation library and never selects schemas.
+
+Version selection follows the same policy as the Newton schema dependency:
+Python applications declare compatibility constraints in `pyproject.toml` and
+record the resolved version and hashes in `uv.lock`. The native sample installer
+uses its artifact lock file for reproducible provisioning. Discovery checks the
+required resource layout without enforcing a release number. Dependency
+resolution reports unsatisfied version constraints; missing modules or resource
+files are reported before registration. Resource discovery alone does not prove
+semantic compatibility with every schema release.
+
+ovphysx leaves schema registration to the application and never changes USD
+plugin-path variables. The application registers the provider's resources with
+its chosen USD runtime. The native attach checks for registration as described
+under [Attach-time registration guard](#attach-time-registration-guard).
+
+## Developing Schemas Locally
+
+`--devschema` keeps the local schema development workflow. It builds the schema
+project's own `physx-usd-schemas` wheel from locally generated data and extracts
+a separate provider under the selected build directory, by default
+`ovphysx/_build/test-deps/physx-usd-schemas-dev/<wheel-sha256>/`. The SDK and
+ovphysx wheel still contain no schema resources.
+
+From `ovphysx/`, select the local wheel with:
+
+```bash
+./build.sh --devschema
+cmake -DDEV_SCHEMA=ON -P scripts/validate_all.cmake
+```
+
+On Windows use `build.bat --devschema`. Each devschema build regenerates the
+local schema data before packaging the wheel. Switching this option changes no
+native compiler inputs and requires no clean rebuild.
+
+The build records the provider directory in `ovphysx_dev_schema.stamp` under
+the selected build directory (`_build` by default). For a custom directory,
+pass `-DBUILD_DIR=<path>` to CMake scripts or set `OVPHYSX_BUILD_DIR` for scripts
+and `run_pytest.sh`/`.bat`; relative paths are resolved from `ovphysx/`.
+Native test/sample/benchmark runners use it as `PHYSX_USD_SCHEMAS_ROOT`. Python
+runtime, sample, and benchmark runners, including `run_pytest.sh`/`.bat`, prepend
+it to `PYTHONPATH`, so metadata discovery and authoring utilities see the local
+data even when a published wheel is installed in the test environment. A
+missing local provider fails with a rebuild instruction instead of falling back
+to published schemas. Rebuilding after local edits selects a new digest-named
+provider even when the schema version has not changed. Normal builds clear the
+selection and use the published provider again.
+
+For an application launched outside these runners, install the separately built
+schema wheel from `schemas/physx/_dist/`, or use the directory recorded in the
+stamp: set `PHYSX_USD_SCHEMAS_ROOT` for a native application, or prepend that
+directory to `PYTHONPATH` for Python. Both routes keep schema resources outside
+ovphysx. Local providers retain package-identity, digest, and completeness checks
+without being forced to match the published artifact's version. Applications
+maintain their supported-version constraints and locks in dependency configuration.
 
 ## Making Schemas Available
 
@@ -86,45 +161,37 @@ on which USD runtime is in play.
 
 ovstage ingests USD scenes through its own internal namespaced OpenUSD runtime,
 and that runtime knows nothing about the PhysX schemas until the application
-registers them. Register them once per process, before the first population call
-(`open_usd`, `apply_usd_changes`, or an export), by passing the schema root to
+registers them. Register them in each process that reads USD schemas, including
+spawned workers, before the first schema read. Population (`open_usd` or
+`apply_usd_changes`) and USD export both read and freeze the schema definitions.
+Pass both provider resource directories to
 `ovstage.population.register_usd_schemas()`:
 
 ```python
-import ovphysx
+from ovphysx.samples.python_samples.schema_support import physx_schema_paths
 import ovstage
 
-ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+ovstage.population.register_usd_schemas([str(p) for p in physx_schema_paths()])
 stage = ovstage.Stage("scene")
 ```
 
-In C, obtain the root with `ovphysx_get_codeless_schema_root()` and pass it to
-`ovstage_population_register_usd_schemas()`:
+In C, the sample's `common/schema_support.h` validates the external root and
+required resources. `common/ovstage_sample.h` registers both returned directories before
+population and reports provider or registration errors:
 
 ```c
-#include <ovphysx/ovphysx.h>
-#include <ovstage/ovstage.h>
-#include <ovstage/ovstage_population.h>
+#include "common/ovstage_sample.h"
 
-static int register_physx_schemas(void)
+static int prepare_schema_registry(void)
 {
-    ovphysx_string_t root;
-    if (ovphysx_get_codeless_schema_root(&root).status != OVPHYSX_API_SUCCESS)
-    {
-        return 0;
-    }
-    ovx_string_t path;
-    path.ptr = root.ptr;
-    path.length = root.length;
-    return ovstage_population_register_usd_schemas(&path, 1) == OVSTAGE_OK;
+    return ovphysx_sample_register_physx_schemas();
 }
 ```
 
-The bundled samples do exactly this: the Python samples call
-`register_usd_schemas()` in their `attach_scene` helper right before creating
-the `ovstage.Stage`, and the C samples call
-`ovphysx_sample_register_physx_schemas()` from
-`tests/c_samples/common/ovstage_sample.h`.
+Call this before the first USD schema read, including population or export.
+The native samples already call it from
+`ovphysx_sample_attach_usd_with_ovstage()`. The helper is application code;
+there is no schema-location call into libovphysx.
 
 The ordering is not advisory. USD assembles its schema registry once, on first
 read, and ignores plugins registered afterwards; a registration that arrives
@@ -133,24 +200,71 @@ and ovstage reports it as an error (`OVSTAGE_ERROR_OP_FAILED`, an
 `ovstage.OvstageError` in Python). A registration that arrives after some other
 USD consumer in the process read the schemas cannot be detected and fails
 silently. No re-registration can repair the registry for the rest of the
-process. Without the registration, population resolves only the properties
-authored in the file rather than each prim's full schema-declared property set.
+process. Without registration, population cannot resolve PhysX APIs and drops
+their attributes, including authored values and schema fallbacks.
 Registration is process-scoped and irreversible; registering the same root
-twice is a no-op.
+twice is a no-op. Restart the process after a late registration and register
+before populating or exporting again; creating another Stage or PhysX instance
+is not enough.
+
+### Attach-time registration guard
+
+By default, native `ovphysx_attach_ovstage()` checks for missing plugin families,
+`physxSchema` and `omniUsdPhysicsDeformableSchema`, through ovstage after its USD
+schema registry has been built. If ovstage reports either family missing, attach
+returns an `OVPHYSX_API_ERROR` admission receipt with no task identity. Python's
+`PhysX.attach_ovstage()` raises `RuntimeError` before returning a Task. The guard
+takes no Stage ownership and does not alter an existing attachment.
+
+This refusal persists for the rest of the process because USD cannot rebuild
+the registry. Restart and register both external resource directories before
+populating or exporting. A late registration or a new instance does not recover
+dropped PhysX settings. The check recognizes the registered plugin families regardless
+of the provider's directory; it does not locate or install the provider.
+
+A procedural Stage attached while USD's schema definitions are still unbuilt
+skips the family check and leaves it active for later attaches. Population and
+export both build the registry. After either operation, the check applies to
+every attach in the process, including procedural Stages.
+It cannot detect schema registration that another USD consumer made
+unobservable to ovstage.
+
+The guard also cannot identify a schema family registered late before its first
+check. For example, populating without the schemas, then calling
+`register_usd_schemas()` and catching its `OVSTAGE_ERROR_OP_FAILED` error can
+make a later attach succeed even though population lost the schema data.
+Always restart after a registration-ordering error; a successful attach is not
+proof that the schemas were available during population.
+
+The legacy Carbonite setting `/ovphysx/schemas/requireRegistration` defaults to
+`true`. Set it to `false` at instance creation only when accepting this missing
+registration, for example in a host whose registration ovstage cannot observe:
+
+```python
+from ovphysx import PhysX, PhysXConfig
+
+physx = PhysX(config=PhysXConfig(carbonite_overrides={
+    "/ovphysx/schemas/requireRegistration": False,
+}))
+```
+
+This downgrades the refusal to a warning and permits attachment; it does not
+register schemas or repair lost data. Native callers use the same key in the
+legacy create-time Carbonite configuration. There is no scoped `GlobalConfigKey`
+for this setting.
 
 ### Registering the Newton USD schema
 
 ovphysx also reads a subset of the
 [Newton USD schema](https://github.com/newton-physics/newton-usd-schemas)
-(`NewtonJointAPI`, `NewtonArticulationRootAPI`, `NewtonSceneAPI`, ...) as
-fallbacks for the PhysX spellings. `newton:velocityLimit`, for example, maps onto
-`physxJoint:maxJointVelocity`: an authored PhysX limit below `FLT_MAX` wins, then
-an authored Newton value, then the PhysX default. An explicitly unlimited PhysX
-value (`inf` or `FLT_MAX`) counts as no PhysX opinion and yields to an authored
-Newton limit; the per-attribute contract is in
-[PhysxJointAPI](population/PhysxJointAPI.md). ovphysx does not ship this schema. It is a
-separate package that the application installs and registers, in the same call
-and under the same ordering rule as the PhysX schemas:
+(`NewtonJointAPI`, `NewtonArticulationRootAPI`, `NewtonSceneAPI`, ...).
+`NewtonJointAPI` sets the velocity limit, armature, friction and damping for all
+degrees of freedom of a joint. `PhysxJointAxisAPI` values take precedence. A
+per-axis `maxJointVelocity` left unlimited (`inf` or `FLT_MAX`) counts as no PhysX
+opinion and yields to an authored Newton limit; the per-attribute contract is in
+[PhysxJointAxisAPI](population/PhysxJointAxisAPI.md). ovphysx does not ship this
+schema. It is a separate package that the application installs and registers, in
+the same call and under the same ordering rule as the PhysX schemas:
 
 ```bash
 pip install newton-usd-schemas
@@ -158,10 +272,11 @@ pip install newton-usd-schemas
 
 ```python
 import ovphysx
+from ovphysx.samples.python_samples.schema_support import physx_schema_paths
 import ovstage
 
 ovstage.population.register_usd_schemas(
-    [str(ovphysx.codeless_schema_root()), str(ovphysx.newton_schema_root())]
+    [*[str(p) for p in physx_schema_paths()], str(ovphysx.newton_schema_root())]
 )
 ```
 
@@ -180,22 +295,27 @@ the directory holding its `plugInfo.json` to `register_usd_schemas()` (in C,
 ovstage populates an attribute only when a registered schema defines it, so a
 scene that authors `newton:*` attributes without this registration loses them
 silently: a joint authoring only `newton:velocityLimit` simulates unlimited.
-`PhysX.attach_ovstage()` therefore checks, once per process and before the
-native attach, that the installed `newton-usd-schemas` package was registered
-before the first population and emits a `RuntimeWarning` otherwise. When the
+`PhysX.attach_ovstage()` therefore checks registration of the installed
+`newton-usd-schemas` package once per process before the native attach and emits
+a `RuntimeWarning` if ovstage reports late registration. When the
 package is not installed at all it logs a warning on the `ovphysx` Python logger
 instead: nothing is wrong for a scene without `newton:*` attributes, and a suite
 that promotes warnings to errors keeps running. ovstage keys registration on the plugin
 family, so a complete copy of the Newton schema registered from any directory
 (a GitHub checkout) is recognized. The check probes only once USD has built its
-schema definitions; a stage authored procedurally through `ovphysx.population`
-and attached before any USD population is left alone, so the check never
-registers a schema on the application's behalf. A
-registration ovstage cannot observe (another USD consumer in the process read
+schema definitions, whether through population or export; a stage authored
+procedurally through `ovphysx.population` and attached while those definitions
+remain unbuilt is left alone, so the check never registers a schema on the
+application's behalf. A registration ovstage cannot observe (another USD
+consumer in the process read
 the schema definitions first) is not detected; silence the check in that case
-with `PhysXConfig(carbonite_overrides={"/ovphysx/schemas/warnMissingNewtonSchema": False})`
-(the string `"false"` is accepted too). The C API cannot locate the package and
+with the legacy `PhysXConfig(carbonite_overrides={"/ovphysx/schemas/warnMissingNewtonSchema": False})`
+(the string `"false"` is accepted too). There is no scoped `GlobalConfigKey` for this check. The C API cannot locate the package and
 performs no such check.
+
+This Newton warning is separate from the native PhysX registration guard above:
+it does not check either PhysX schema family, and silencing it does not bypass
+that guard.
 
 ### Authoring with a stock `usd-core`
 
@@ -217,7 +337,7 @@ PyPI currently provides neither a Linux aarch64 `usd-core` wheel nor a source
 distribution. On Linux aarch64, hand-author `.usda`, author on a supported
 host, or supply a compatible OpenUSD Python build.
 
-The codeless PhysX USD schemas shipped in ovphysx can be registered with any USD
+The separately installed codeless PhysX USD schemas can be registered with any USD
 runtime — including stock `usd-core` from PyPI — without starting the simulator.
 This is useful for offline authoring, validation, and non-interactive tooling:
 
@@ -250,11 +370,11 @@ After registration, apply the PhysX APIs by identifier and set attributes with
 USD's generic attribute API:
 
 ```python
-import ovphysx
+from ovphysx.samples.python_samples.schema_support import physx_schema_paths
 from pxr import Plug, Sdf, Usd, UsdPhysics
 
 Plug.Registry().RegisterPlugins(
-    [str(path) for path in ovphysx.codeless_schema_paths()]
+    [str(path) for path in physx_schema_paths()]
 )
 stage = Usd.Stage.CreateInMemory()
 prim = stage.DefinePrim("/World/Box", "Cube")
@@ -273,11 +393,6 @@ if not stage.GetRootLayer().Export("physx_rigid_body.usda"):
 
 This writes `physx_rigid_body.usda`, ready for ovstage to populate for ovphysx
 simulation.
-
-`codeless_schema_paths()` returns the per-module `resources` directories, and
-`codeless_schema_root()` returns the directory that holds them. Both are
-pure-Python and never trigger native loading, so they are safe to use in an
-authoring-only process.
 
 #### Host processes that already initialised USD
 
@@ -298,12 +413,12 @@ directories **before the host process launches**. USD reads that variable while
 import os
 import subprocess
 
-import ovphysx
+from ovphysx.samples.python_samples.schema_support import physx_schema_paths
 
 env = dict(os.environ)
 # Append rather than replace: the variable may already carry plugin roots that
 # the host or another package needs.
-entries = [str(path) for path in ovphysx.codeless_schema_paths()]
+entries = [str(path) for path in physx_schema_paths()]
 existing = env.get("PXR_PLUGINPATH_NAME")
 if existing:
     entries.append(existing)
@@ -314,7 +429,7 @@ subprocess.run(["blender"], env=env)
 or from a shell, likewise preserving any existing value:
 
 ```bash
-SCHEMA_PATHS="$(python -c 'import os, ovphysx; print(os.pathsep.join(str(p) for p in ovphysx.codeless_schema_paths()))')"
+SCHEMA_PATHS="$(python -c 'import os; from ovphysx.samples.python_samples.schema_support import physx_schema_paths; print(os.pathsep.join(str(p) for p in physx_schema_paths()))')"
 export PXR_PLUGINPATH_NAME="$SCHEMA_PATHS${PXR_PLUGINPATH_NAME:+:$PXR_PLUGINPATH_NAME}"
 blender
 ```

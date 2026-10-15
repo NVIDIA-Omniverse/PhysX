@@ -10,6 +10,9 @@
  *
  * @implements REQ-LOAD-TOKENS-001
  * @covers AC-1
+ *
+ * @implements REQ-PARSE-JOINT-006
+ * @covers AC-1 AC-2
  */
 
 // The requirement-check functions here are ObjectKey/TokenId-keyed, matching
@@ -170,7 +173,7 @@ static bool jointRequirementCheck(AttachedStage& attachedStage, omni::physics::p
         return false;
 
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
     for (ObjectIdMap::const_iterator it = entries->begin(); it != entries->end(); ++it)
     {
         if (it->second >= db.getRecords().size())
@@ -214,7 +217,7 @@ static bool jointEnableDisableRequirementCheck(AttachedStage& attachedStage, omn
         return false;
 
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     const ObjectIdMap* entries = attachedStage.getObjectIds(primKey);
     if (entries && !entries->empty())
@@ -774,8 +777,6 @@ void registerChangeParams(std::vector<usdparser::ChangeParams>& changeParams)
         changeParams, "physics:localPos1", emptyRequirementCheck, updateLocalPos1)
     REGISTER_CHANGE(
         changeParams, "physics:localRot1", emptyRequirementCheck, updateLocalRot1)
-    REGISTER_CHANGE(
-        changeParams, "physxJoint:armature", emptyRequirementCheck, updateArmature)
 
     // revolute joint
     REGISTER_CHANGE(changeParams, "physics:lowerLimit", emptyRequirementCheck, updateLimitLow)
@@ -787,8 +788,8 @@ void registerChangeParams(std::vector<usdparser::ChangeParams>& changeParams)
     REGISTER_CHANGE(changeParams, "physxDrivePerformanceEnvelope:angular:velocityDependentResistance", emptyRequirementCheck, updateDriveVelocityDependentResistance)
     REGISTER_CHANGE(changeParams, "physxDrivePerformanceEnvelope:angular:speedEffortGradient", emptyRequirementCheck, updateDriveSpeedEffortGradient)
     
-    REGISTER_CHANGE(changeParams, "physxJointAxis:angular:armature", emptyRequirementCheck, updateArmaturePerAxis)
-    REGISTER_CHANGE(changeParams, "physxJointAxis:angular:maxJointVelocity", emptyRequirementCheck, updateArticulationMaxJointVelocityPerAxis)
+    REGISTER_CHANGE(changeParams, "physxJointAxis:angular:armature", emptyRequirementCheck, updateArticulationArmature)
+    REGISTER_CHANGE(changeParams, "physxJointAxis:angular:maxJointVelocity", emptyRequirementCheck, updateArticulationMaxJointVelocity)
     REGISTER_CHANGE(changeParams, "physxJointAxis:angular:staticFrictionEffort", emptyRequirementCheck, updateArticulationStaticFrictionEffort)
     REGISTER_CHANGE(changeParams, "physxJointAxis:angular:dynamicFrictionEffort", emptyRequirementCheck, updateArticulationDynamicFrictionEffort)
     REGISTER_CHANGE(changeParams, "physxJointAxis:angular:viscousFrictionCoefficient", emptyRequirementCheck, updateArticulationViscousFrictionCoefficient)
@@ -816,8 +817,8 @@ void registerChangeParams(std::vector<usdparser::ChangeParams>& changeParams)
     REGISTER_CHANGE(changeParams, "physxDrivePerformanceEnvelope:linear:velocityDependentResistance", emptyRequirementCheck, updateDriveVelocityDependentResistance)
     REGISTER_CHANGE(changeParams, "physxDrivePerformanceEnvelope:linear:speedEffortGradient", emptyRequirementCheck, updateDriveSpeedEffortGradient)
     
-    REGISTER_CHANGE(changeParams, "physxJointAxis:linear:armature", emptyRequirementCheck, updateArmaturePerAxis)
-    REGISTER_CHANGE(changeParams, "physxJointAxis:linear:maxJointVelocity", emptyRequirementCheck, updateArticulationMaxJointVelocityPerAxis)
+    REGISTER_CHANGE(changeParams, "physxJointAxis:linear:armature", emptyRequirementCheck, updateArticulationArmature)
+    REGISTER_CHANGE(changeParams, "physxJointAxis:linear:maxJointVelocity", emptyRequirementCheck, updateArticulationMaxJointVelocity)
     REGISTER_CHANGE(changeParams, "physxJointAxis:linear:staticFrictionEffort", emptyRequirementCheck, updateArticulationStaticFrictionEffort)
     REGISTER_CHANGE(changeParams, "physxJointAxis:linear:dynamicFrictionEffort", emptyRequirementCheck, updateArticulationDynamicFrictionEffort)
     REGISTER_CHANGE(changeParams, "physxJointAxis:linear:viscousFrictionCoefficient", emptyRequirementCheck, updateArticulationViscousFrictionCoefficient)
@@ -887,8 +888,8 @@ void registerChangeParams(std::vector<usdparser::ChangeParams>& changeParams)
     std::vector<std::string> physxPropertiesAxis({ "rotX", "rotY", "rotZ"});
     for (uint32_t iAxis = 0; iAxis < physxPropertiesAxis.size(); iAxis++)
     {
-        REGISTER_CHANGE(changeParams, gPhysxJointAxisMaxJointVelocityAttributeNameToken[iAxis], emptyRequirementCheck, updateArticulationMaxJointVelocityPerAxis)
-        REGISTER_CHANGE(changeParams, gPhysxJointAxisArmatureAttributeNameToken[iAxis], emptyRequirementCheck, updateArmaturePerAxis)
+        REGISTER_CHANGE(changeParams, gPhysxJointAxisMaxJointVelocityAttributeNameToken[iAxis], emptyRequirementCheck, updateArticulationMaxJointVelocity)
+        REGISTER_CHANGE(changeParams, gPhysxJointAxisArmatureAttributeNameToken[iAxis], emptyRequirementCheck, updateArticulationArmature)
         REGISTER_CHANGE(changeParams, gPhysxJointAxisStaticFrictionEffortAttributeNameToken[iAxis], emptyRequirementCheck, updateArticulationStaticFrictionEffort)
         REGISTER_CHANGE(changeParams, gPhysxJointAxisDynamicFrictionEffortAttributeNameToken[iAxis], emptyRequirementCheck, updateArticulationDynamicFrictionEffort)
         REGISTER_CHANGE(changeParams, gPhysxJointAxisViscousFrictionCoefficientAttributeNameToken[iAxis], emptyRequirementCheck, updateArticulationViscousFrictionCoefficient)
@@ -923,12 +924,11 @@ void registerChangeParams(std::vector<usdparser::ChangeParams>& changeParams)
         REGISTER_CHANGE(changeParams, jointStateVelocity.c_str(), emptyRequirementCheck, updateJointStateVelocity)
     }
 
-    REGISTER_CHANGE(changeParams, "physxJoint:maxJointVelocity", emptyRequirementCheck,
-        updateArticulationMaxJointVelocity)
     REGISTER_CHANGE(changeParams, "newton:velocityLimit", emptyRequirementCheck,
         updateNewtonJointVelocityLimit)
-    REGISTER_CHANGE(changeParams, "physxJoint:jointFriction", emptyRequirementCheck,
-        updateArticulationFrictionCoefficient)
+    REGISTER_CHANGE(changeParams, "newton:armature", emptyRequirementCheck, updateNewtonJointArmature)
+    REGISTER_CHANGE(changeParams, "newton:friction", emptyRequirementCheck, updateNewtonJointFriction)
+    REGISTER_CHANGE(changeParams, "newton:damping", emptyRequirementCheck, updateNewtonJointDamping)
 
     // articulation    
     REGISTER_CHANGE(changeParams, "physxArticulation:solverPositionIterationCount",

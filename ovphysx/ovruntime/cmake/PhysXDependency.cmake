@@ -383,7 +383,7 @@ if(OVRUNTIME_DEV_PHYSX AND NOT TARGET PhysX)
         # PxsSimulationController.h produce the same vtable layout
         # (PX_SUPPORT_OMNI_PVD guards virtual methods).
         set(_PHYSX_TARGETS
-            PhysX PhysXCommon PhysXFoundation PhysXCooking PhysXExtensions
+            PhysX PhysXCommon PhysXFoundation PhysXExtensions
             PhysXPvdSDK PhysXCharacterKinematic PhysXVehicle PhysXTask
             LowLevel LowLevelAABB LowLevelDynamics SceneQuery SimulationController
             PhysXGpu PhysXGpuDependencies
@@ -445,7 +445,6 @@ function(ovruntime_link_physx_static_libs _target)
                 PhysXExtensions
                 PhysX
                 PhysXPvdSDK
-                PhysXCooking
                 PhysXCommon
                 PhysXFoundation
             )
@@ -463,6 +462,21 @@ function(ovruntime_link_physx_static_libs _target)
         target_link_directories(${_target} PRIVATE
             ${_PHYSX_LIB_DIR}/$<IF:$<CONFIG:Debug>,debug,checked>
         )
+
+        # PhysX SDK packages up to 5.11 ship the cooking API in a separate
+        # PhysXCooking library; from 5.12 on it is part of PhysXCommon and the
+        # library no longer exists. Link it only when the pinned package has it,
+        # so the SDK bump does not need a lockstep edit here. Both configs come
+        # from the same package, so probing the checked layout is sufficient.
+        if(WIN32)
+            set(_PHYSX_COOKING_LIB_FILE "${_PHYSX_LIB_DIR}/checked/PhysXCooking_static_64.lib")
+        else()
+            set(_PHYSX_COOKING_LIB_FILE "${_PHYSX_LIB_DIR}/checked/libPhysXCooking_static_64.a")
+        endif()
+        set(_PHYSX_COOKING_LIB "")
+        if(EXISTS "${_PHYSX_COOKING_LIB_FILE}")
+            set(_PHYSX_COOKING_LIB PhysXCooking_static_64)
+        endif()
 
         if(_mode STREQUAL "MINIMAL")
             if(NOT WIN32)
@@ -493,7 +507,7 @@ function(ovruntime_link_physx_static_libs _target)
                     PhysXPvdSDK_static_64
                     PhysXVehicle_static_64
                     PhysXCharacterKinematic_static_64
-                    PhysXCooking_static_64
+                    ${_PHYSX_COOKING_LIB}
                     PhysXCommon_static_64
                     PhysXFoundation_static_64
                     -Wl,--end-group
@@ -507,7 +521,7 @@ function(ovruntime_link_physx_static_libs _target)
                     PhysX_static_64
                     PVDRuntime_static_64
                     PhysXPvdSDK_static_64
-                    PhysXCooking_static_64
+                    ${_PHYSX_COOKING_LIB}
                     PhysXCommon_static_64
                     PhysXFoundation_static_64
                     Ws2_32

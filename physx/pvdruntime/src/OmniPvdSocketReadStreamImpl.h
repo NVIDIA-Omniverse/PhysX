@@ -28,8 +28,12 @@ public:
 	bool OMNI_PVD_CALL closeStream() override;
 
 private:
+	// Allows tests to establish an exclusive listener before exercising production accept and validation.
+	friend class OmniPvdSocketReadStreamTestAccess;
+
 	bool recvAll(uint8_t* bytes, uint64_t nbrBytes);
 	bool recvAndValidateHandshake();
+	bool acceptAndValidate();
 
 	OmniPvdSocket mSocket;
 	uint16_t      mPort; // port to listen on (fixed at creation)

@@ -4,11 +4,11 @@
 # NOTE: This file is included verbatim in documentation via literalinclude.
 # Tutorial marker comments below define the included range.
 
-"""Register ovphysx's codeless PhysX USD schemas with a stock usd-core runtime.
+"""Register the separately installed PhysX USD schemas with a stock usd-core runtime.
 
 This is the reference example for external authoring and validation tooling
 (OMPE-86833). It uses stock ``usd-core`` from PyPI together with
-``ovphysx``, registers the codeless PhysX USD schemas exposed by ovphysx, and
+``ovphysx``, registers the separately installed codeless PhysX USD schemas, and
 applies a PhysX API schema to a prim on an in-memory stage. It doubles as a CI
 regression test for schema exposure: it asserts on every step and exits
 non-zero on failure.
@@ -23,13 +23,12 @@ instead. ``schema_registry_ordering.py`` covers both orderings (NVBug 6530141).
 import sys
 
 import ovphysx
+from ovphysx.samples.python_samples.schema_support import physx_schema_paths
 
 try:
     from pxr import Plug, Tf, Usd
 except ImportError:
-    # Stock usd-core has no wheel for some platforms (e.g. linux-aarch64). The
-    # codeless schemas still ship in the wheel. Without a stock USD runtime to
-    # register them into, skip rather than fail.
+    # Stock usd-core has no wheel on some platforms, including linux-aarch64.
     print("usd-core is not available on this platform; skipping codeless schema demo.")
     sys.exit(0)
 
@@ -37,10 +36,7 @@ except ImportError:
 def main() -> int:
     print("ovphysx version:", ovphysx.__version__)
 
-    # Discover the codeless PhysX USD schema packages bundled with ovphysx.
-    # Each path is a resources/ directory holding a codeless plugInfo.json
-    # (Type=resource) and generatedSchema.usda, with no compiled library.
-    schema_paths = ovphysx.codeless_schema_paths()
+    schema_paths = physx_schema_paths()
     print("Codeless schema packages:")
     for path in schema_paths:
         print("  ", path)

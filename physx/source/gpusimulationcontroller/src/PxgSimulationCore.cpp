@@ -17,6 +17,7 @@
 #include "PxgParticleSystemBuffer.h"
 #include "PxgSoftBodyBuffer.h"
 #include "PxgFEMClothBuffer.h"
+#include "PxgDeformableFilterManager.h"
 #include "PxgSimulationCoreKernelIndices.h"
 #include "PxgBodySim.h"
 #include "PxsCachedTransform.h"
@@ -254,7 +255,9 @@ PxgSoftBodyBuffer::PxgSoftBodyBuffer(PxgAllocatorDesc& allocDesc) :
 	orderedMaterialIndices(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
 	materialIndices(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
 	packedNodeBounds(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
-	filterPairs(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY)
+	rigidVolumeFilterPairs(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	volumeVolumeFilterPairs(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	volumeSurfaceFilterPairs(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY)
 {
 }
 
@@ -267,7 +270,7 @@ PxgFEMClothBuffer::PxgFEMClothBuffer(PxgAllocatorDesc& allocDesc) :
 	prevPositionInRestOffset(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	materialIndices(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	dynamicfrictions(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	trianglesWithActiveEdges(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	trianglesWithOwnedEdges(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	triangleVertexIndices(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	orderedNonSharedTriangleVertexIndices_triIndex(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	orderedSharedTriangleLambdas(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
@@ -290,7 +293,9 @@ PxgFEMClothBuffer::PxgFEMClothBuffer(PxgAllocatorDesc& allocDesc) :
 	sharedTriPairAccumulatedPartitionsCP(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	nonSharedTriPairAccumulatedPartitionsCP(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	packedNodeBounds(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	numPenetratedTets(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH)
+	numPenetratedTets(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	rigidSurfaceFilterPairs(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	surfaceSurfaceFilterPairs(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH)
 {
 }
 
@@ -395,29 +400,27 @@ PxgSimulationCore::PxgSimulationCore(PxgCudaKernelWranglerManager* gpuKernelWran
 	mBoundsBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
 	mChangedAABBMgrHandlesBuffer(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION),
 	mSoftBodyRigidAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mSoftBodyRigidFilterPairs(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
 	mSoftBodyRigidAttachmentBlocks(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
 	mActiveSoftBodyRigidConstraints(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
 	mNumSoftBodyRigidAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+	mSoftBodyRigidAttachmentRigidRefCounts(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
 	mSoftBodyRigidAttachmentIds(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
 	mSoftBodySoftBodyAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
 	mSoftBodySoftBodyAttachmentBlocks(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
 	mActiveSoftBodySoftBodyConstraints(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
 	mNumSoftBodySoftBodyAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
 	mSoftBodyClothAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
-	mSoftBodyClothFilterPairs(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
 	mSoftBodyClothAttachmentBlocks(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
 	mActiveSoftBodyClothConstraints(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
 	mNumSoftBodyClothAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
 	mClothRigidAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	mActiveClothRigidAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	mClothRigidFilterPairs(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	mClothRigidAttachmentBlocks(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	mNumClothRigidAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+	mClothRigidAttachmentRigidRefCounts(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	mClothRigidAttachmentIds(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	mClothClothAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	mActiveClothClothAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
-	mClothClothVertTriFilterPairs(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	mClothClothAttachmentBlocks(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	mNumClothClothAttachments(allocDesc.deviceAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
 	mNbTotalBodySim(0), mNbTotalArticulations(0),
@@ -430,7 +433,7 @@ PxgSimulationCore::PxgSimulationCore(PxgCudaKernelWranglerManager* gpuKernelWran
 	mGMMaxJacobiVertices(0), 
 	mMaxNbClothVerts(0),
 	mMaxNbClothTriangles(0),
-	mMaxNbClothTrianglesWithActiveEdges(0),
+	mMaxNbClothTrianglesWithOwnedEdges(0),
 	mMaxNbNonSharedTriangles(0),
 	mMaxNbNonSharedTriPartitions(0),
 	mMaxNbNonSharedTrianglesPerPartition(0),
@@ -463,18 +466,14 @@ PxgSimulationCore::PxgSimulationCore(PxgCudaKernelWranglerManager* gpuKernelWran
 	mCudaContextManager->acquireContext();
 
 	mNbRigidSoftBodyAttachments = 0;
-	mNbRigidSoftBodyFilters = 0;
 
 	mNbSoftBodySoftBodyAttachments = 0;
 
 	mNbClothSoftBodyAttachments = 0;
-	mNbClothSoftBodyFilters = 0;
 
 	mNbRigidClothAttachments = 0;
-	mNbRigidClothFilters = 0;
 
 	mNbClothClothAttachments = 0;
-	mNbClothClothVertTriFilters = 0;
 
 	mUpdatedCacheAndBoundsDescBuffer.allocate(sizeof(PxgSimulationCoreDesc), PX_FL);
 	mBodiesDescBuffer.allocate(sizeof(PxgNewBodiesDesc), PX_FL);
@@ -1099,6 +1098,23 @@ void PxgSimulationCore::gpuMemDmaUpBodySim(Cm::PinnableArray<PxgBodySimVelocityU
 	mArticulationTendonJointBatchBuffer.allocate(nbArticulationBatches * sizeof(PxgArticulationBlockTendonJointData) *  maxFixedTendons * maxTendonJoints, PX_FL);
 }
 
+// Uploads the filter pairs of one deformable and returns the location and count.
+static void uploadDeformableFilterPairs(PxCudaContext& cudaContext, CUstream stream, PxgDeformableFilterPairs& filters,
+	PxgTypedCudaBuffer<PxgDeformablePairInfo>& buffer, PxgDeformablePairInfo*& devicePairs, PxU32& nbDevicePairs)
+{
+	const Cm::PinnableArray<PxgDeformablePairInfo>& filterPairs = filters.mPairs;
+	const PxU32 nbFilterPairs = filterPairs.size();
+
+	buffer.allocate(sizeof(PxgDeformablePairInfo) * nbFilterPairs, PX_FL);
+	cudaContext.memcpyHtoDAsync(buffer.getDevicePtr(), filterPairs.begin(), nbFilterPairs * sizeof(PxgDeformablePairInfo), stream);
+
+	devicePairs = reinterpret_cast<PxgDeformablePairInfo*>(buffer.getDevicePtr());
+	nbDevicePairs = nbFilterPairs;
+
+	filters.mDirty = false;
+	filters.mInDirtyList = false;
+}
+
 void PxgSimulationCore::gpuMemDmaUpSoftBodies(Cm::PinnableArray<PxgSoftBody>& newSoftBodyPool,
 	PxU32* newTetMeshByteSizePool,
 	PxArray<PxgSoftBodyData>& newSoftBodyDataPool,
@@ -1109,8 +1125,12 @@ void PxgSimulationCore::gpuMemDmaUpSoftBodies(Cm::PinnableArray<PxgSoftBody>& ne
 	Cm::PinnableArray<PxU32>& softBodyElementIndexPool,
 	PxArray<PxU32>& softBodyNodeIndexPool,
 	PxgBodySimManager& bodySimManager,
-	SoftBodyAttachmentAndFilterData& data
-	)
+	PxgAttachmentManager& rigidAttachments,
+	PxgAttachmentManager& softBodyAttachments,
+	PxgAttachmentManager& clothAttachments,
+	const PxgDeformableFilterManager& rigidVolumeFilters,
+	const PxgDeformableFilterManager& volumeVolumeFilters,
+	const PxgDeformableFilterManager& volumeSurfaceFilters)
 {
 	PX_PROFILE_ZONE("GpuSimulationController.gpuMemDmaUpSoftBodies", 0);
 
@@ -1373,6 +1393,14 @@ void PxgSimulationCore::gpuMemDmaUpSoftBodies(Cm::PinnableArray<PxgSoftBody>& ne
 		softBody.mJacobiScale = newSoftBody.mJacobiScale;
 		softBody.mNumJacobiVertices = newSoftBody.mNumJacobiVertices;
 
+		// Filter pairs are set by the dirty loops further down.
+		softBody.mRigidVolumeFilterPairs = NULL;
+		softBody.mVolumeVolumeFilterPairs = NULL;
+		softBody.mVolumeSurfaceFilterPairs = NULL;
+		softBody.mNumRigidVolumeFilterPairs = 0;
+		softBody.mNumVolumeVolumeFilterPairs = 0;
+		softBody.mNumVolumeSurfaceFilterPairs = 0;
+
 		softBodyData.mRemapOutputSizeGM = newSoftBodyData.mRemapOutputSizeGM;
 		softBodyData.mMaxTetsPerPartitionsGM = newSoftBodyData.mMaxTetsPerPartitionsGM;
 
@@ -1400,43 +1428,54 @@ void PxgSimulationCore::gpuMemDmaUpSoftBodies(Cm::PinnableArray<PxgSoftBody>& ne
 		mSBWakeCounts[gpuRemapIndex] = dySoftbodyCore.wakeCounter;
 	}
 		
-	PxArray<Dy::DeformableVolume*>& dirtyDeformableVolumeForFilterPairs = *data.dirtyDeformableVolumeForFilterPairs;
+	const bool filterPairsDirty = rigidVolumeFilters.isDirty() || volumeVolumeFilters.isDirty() || volumeSurfaceFilters.isDirty();
 
-	const PxU32 nbDirtyFilterPairs = dirtyDeformableVolumeForFilterPairs.size();
-	for (PxU32 i = 0; i < nbDirtyFilterPairs; ++i)
 	{
-		Dy::DeformableVolume* deformableVolume = dirtyDeformableVolumeForFilterPairs[i];
-		if (deformableVolume)
+		const PxArray<PxU32>& dirtyIds = rigidVolumeFilters.getDirtyIds();
+		for (PxU32 i = 0; i < dirtyIds.size(); ++i)
 		{
-			PX_COMPILE_TIME_ASSERT(sizeof(Dy::VolumeVolumeFilter) == sizeof(PxgNonRigidFilterPair));
-			Cm::PinnableArray<PxgNonRigidFilterPair>& filterPairs = reinterpret_cast<Cm::PinnableArray<PxgNonRigidFilterPair>&>(*deformableVolume->mVolumeVolumeFilterPairs);
-
-			const PxU32 gpuRemapIndex = deformableVolume->getGpuRemapId();
-
-			PxgSoftBodyBuffer* buffer = mSoftBodyDataBuffer[gpuRemapIndex];
-
-			const PxU32 nbFilterPairs = filterPairs.size();
-			buffer->filterPairs.allocate(sizeof(PxgNonRigidFilterPair) * nbFilterPairs, PX_FL);
-
-			mCudaContext->memcpyHtoDAsync(buffer->filterPairs.getDevicePtr(), filterPairs.begin(), nbFilterPairs * sizeof(PxgNonRigidFilterPair), bpStream);
-
+			const PxU32 gpuRemapIndex = dirtyIds[i];
 			PxgSoftBody& gpuSoftBody = softBodyPool[gpuRemapIndex];
-			gpuSoftBody.mFilteringPairs = reinterpret_cast<PxgNonRigidFilterPair*>(buffer->filterPairs.getDevicePtr());
-			gpuSoftBody.mNumFilterPairs = nbFilterPairs;
 
-			deformableVolume->mFilterDirty = false;
-			deformableVolume->mFilterInDirtyList = false;
+			uploadDeformableFilterPairs(*mCudaContext, bpStream, *rigidVolumeFilters.getPerActorPairs()[gpuRemapIndex],
+				mSoftBodyDataBuffer[gpuRemapIndex]->rigidVolumeFilterPairs,
+				gpuSoftBody.mRigidVolumeFilterPairs, gpuSoftBody.mNumRigidVolumeFilterPairs);
 		}
 	}
 
-	if (data.dirtyRigidAttachments)
 	{
-		Cm::PinnableArray<PxgFEMRigidAttachment>& rigidAttachments = *data.rigidAttachments;
-		const PxU32 numDirtyAttachments = rigidAttachments.size();
+		const PxArray<PxU32>& dirtyIds = volumeVolumeFilters.getDirtyIds();
+		for (PxU32 i = 0; i < dirtyIds.size(); ++i)
+		{
+			const PxU32 gpuRemapIndex = dirtyIds[i];
+			PxgSoftBody& gpuSoftBody = softBodyPool[gpuRemapIndex];
+
+			uploadDeformableFilterPairs(*mCudaContext, bpStream, *volumeVolumeFilters.getPerActorPairs()[gpuRemapIndex],
+				mSoftBodyDataBuffer[gpuRemapIndex]->volumeVolumeFilterPairs,
+				gpuSoftBody.mVolumeVolumeFilterPairs, gpuSoftBody.mNumVolumeVolumeFilterPairs);
+		}
+	}
+
+	{
+		const PxArray<PxU32>& dirtyIds = volumeSurfaceFilters.getDirtyIds();
+		for (PxU32 i = 0; i < dirtyIds.size(); ++i)
+		{
+			const PxU32 gpuRemapIndex = dirtyIds[i];
+			PxgSoftBody& gpuSoftBody = softBodyPool[gpuRemapIndex];
+
+			uploadDeformableFilterPairs(*mCudaContext, bpStream, *volumeSurfaceFilters.getPerActorPairs()[gpuRemapIndex],
+				mSoftBodyDataBuffer[gpuRemapIndex]->volumeSurfaceFilterPairs,
+				gpuSoftBody.mVolumeSurfaceFilterPairs, gpuSoftBody.mNumVolumeSurfaceFilterPairs);
+		}
+	}
+
+	if (rigidAttachments.mAttachmentsDirty)
+	{
+		const PxU32 numDirtyAttachments = rigidAttachments.mAttachments.size();
 		if (numDirtyAttachments > 0)
 		{
-			mSoftBodyRigidAttachments.allocate(sizeof(PxgFEMRigidAttachment)* numDirtyAttachments, PX_FL);
-			mCudaContext->memcpyHtoDAsync(mSoftBodyRigidAttachments.getDevicePtr(), rigidAttachments.begin(), numDirtyAttachments * sizeof(PxgFEMRigidAttachment), bpStream);
+			mSoftBodyRigidAttachments.allocate(sizeof(PxgDeformableAttachment)* numDirtyAttachments, PX_FL);
+			mCudaContext->memcpyHtoDAsync(mSoftBodyRigidAttachments.getDevicePtr(), rigidAttachments.mAttachments.begin(), numDirtyAttachments * sizeof(PxgDeformableAttachment), bpStream);
 
 			mSoftBodyRigidAttachmentBlocks.allocateElements((numDirtyAttachments + 31) / 32, PX_FL);
 
@@ -1446,93 +1485,76 @@ void PxgSimulationCore::gpuMemDmaUpSoftBodies(Cm::PinnableArray<PxgSoftBody>& ne
 		}
 	}
 
-	if (data.dirtyRigidFilterPairs)
+	if (rigidAttachments.mActiveAttachmentsDirty)
 	{
-		Cm::PinnableArray<PxgRigidFilterPair>& rigidFilterPairs = *data.rigidFilterPairs;
-		const PxU32 numDirtyPairs = rigidFilterPairs.size();
-
-		mSoftBodyRigidFilterPairs.allocate(sizeof(PxgRigidFilterPair)* numDirtyPairs, PX_FL);
-		mCudaContext->memcpyHtoDAsync(mSoftBodyRigidFilterPairs.getDevicePtr(), rigidFilterPairs.begin(), numDirtyPairs * sizeof(PxgRigidFilterPair), bpStream);
-
-		mNbRigidSoftBodyFilters = numDirtyPairs;
-	}
-
-	if (data.dirtyActiveRigidAttachments)
-	{
-		Cm::PinnableArray<PxU32>& activeRigidAttachments = *data.activeRigidAttachments;
-		const PxU32 nbActiveAttachments = activeRigidAttachments.size();
+		const PxU32 nbActiveAttachments = rigidAttachments.mActiveAttachments.size();
 		if (nbActiveAttachments > 0)
 		{
 			mActiveSoftBodyRigidConstraints.allocate(sizeof(PxU32)*nbActiveAttachments, PX_FL);
 
-			mCudaContext->memcpyHtoDAsync(mActiveSoftBodyRigidConstraints.getDevicePtr(), activeRigidAttachments.begin(), nbActiveAttachments * sizeof(PxU32), bpStream);
+			mCudaContext->memcpyHtoDAsync(mActiveSoftBodyRigidConstraints.getDevicePtr(), rigidAttachments.mActiveAttachments.begin(), nbActiveAttachments * sizeof(PxU32), bpStream);
 		}
 
 		mCudaContext->memsetD32Async(mNumSoftBodyRigidAttachments.getDevicePtr(), nbActiveAttachments, 1, bpStream);
 		mNbRigidSoftBodyAttachments = nbActiveAttachments;
 	}
 
-	if (data.dirtySoftBodyAttachments)
+	if (rigidAttachments.mActiveRigidRefCountsDirty)
 	{
-		Cm::PinnableArray<PxgFEMFEMAttachment>& softBodyAttachments = *data.softBodyAttachments;
-		const PxU32 numDirtyAttachments = softBodyAttachments.size();
+		const PxU32 nbRefCounts = rigidAttachments.mActiveRigidRefCounts.size();
+		if (nbRefCounts > 0)
+		{
+			mSoftBodyRigidAttachmentRigidRefCounts.allocate(sizeof(PxU32)*nbRefCounts, PX_FL);
+			mCudaContext->memcpyHtoDAsync(mSoftBodyRigidAttachmentRigidRefCounts.getDevicePtr(), rigidAttachments.mActiveRigidRefCounts.begin(), nbRefCounts * sizeof(PxU32), bpStream);
+		}
+	}
+
+	if (softBodyAttachments.mAttachmentsDirty)
+	{
+		const PxU32 numDirtyAttachments = softBodyAttachments.mAttachments.size();
 		if (numDirtyAttachments > 0)
 		{
-			mSoftBodySoftBodyAttachments.allocate(sizeof(PxgFEMFEMAttachment)* numDirtyAttachments, PX_FL);
-			mCudaContext->memcpyHtoDAsync(mSoftBodySoftBodyAttachments.getDevicePtr(), softBodyAttachments.begin(), numDirtyAttachments * sizeof(PxgFEMFEMAttachment), bpStream);
+			mSoftBodySoftBodyAttachments.allocate(sizeof(PxgDeformableAttachment)* numDirtyAttachments, PX_FL);
+			mCudaContext->memcpyHtoDAsync(mSoftBodySoftBodyAttachments.getDevicePtr(), softBodyAttachments.mAttachments.begin(), numDirtyAttachments * sizeof(PxgDeformableAttachment), bpStream);
 
 			mSoftBodySoftBodyAttachmentBlocks.allocateElements((numDirtyAttachments + 31) / 32, PX_FL);
 		}
 	}
 
-	if (data.dirtyActiveSoftBodyAttachments)
+	if (softBodyAttachments.mActiveAttachmentsDirty)
 	{
-		Cm::PinnableArray<PxU32>& activeSoftBodyAttachments = *data.activeSoftBodyAttachments;
-		const PxU32 nbActiveAttachments = activeSoftBodyAttachments.size();
+		const PxU32 nbActiveAttachments = softBodyAttachments.mActiveAttachments.size();
 		if (nbActiveAttachments > 0)
 		{
 			mActiveSoftBodySoftBodyConstraints.allocate(sizeof(PxU32)*nbActiveAttachments, PX_FL);
 
-			mCudaContext->memcpyHtoDAsync(mActiveSoftBodySoftBodyConstraints.getDevicePtr(), activeSoftBodyAttachments.begin(), nbActiveAttachments * sizeof(PxU32), bpStream);
+			mCudaContext->memcpyHtoDAsync(mActiveSoftBodySoftBodyConstraints.getDevicePtr(), softBodyAttachments.mActiveAttachments.begin(), nbActiveAttachments * sizeof(PxU32), bpStream);
 		}
 
 		mCudaContext->memsetD32Async(mNumSoftBodySoftBodyAttachments.getDevicePtr(), nbActiveAttachments, 1, bpStream);
 		mNbSoftBodySoftBodyAttachments = nbActiveAttachments;
 	}
 
-	if (data.dirtyClothAttachments)
+	if (clothAttachments.mAttachmentsDirty)
 	{
-		Cm::PinnableArray<PxgFEMFEMAttachment>& clothAttachments = *data.clothAttachments;
-		const PxU32 numDirtyAttachments = clothAttachments.size();
+		const PxU32 numDirtyAttachments = clothAttachments.mAttachments.size();
 		if (numDirtyAttachments > 0)
 		{
-			mSoftBodyClothAttachments.allocate(sizeof(PxgFEMFEMAttachment)* numDirtyAttachments, PX_FL);
-			mCudaContext->memcpyHtoDAsync(mSoftBodyClothAttachments.getDevicePtr(), clothAttachments.begin(), numDirtyAttachments * sizeof(PxgFEMFEMAttachment), bpStream);
+			mSoftBodyClothAttachments.allocate(sizeof(PxgDeformableAttachment)* numDirtyAttachments, PX_FL);
+			mCudaContext->memcpyHtoDAsync(mSoftBodyClothAttachments.getDevicePtr(), clothAttachments.mAttachments.begin(), numDirtyAttachments * sizeof(PxgDeformableAttachment), bpStream);
 
 			mSoftBodyClothAttachmentBlocks.allocateElements((numDirtyAttachments + 31) / 32, PX_FL);
 		}
 	}
 
-	if (data.dirtyClothFilterPairs)
+	if (clothAttachments.mActiveAttachmentsDirty)
 	{
-		Cm::PinnableArray<PxgNonRigidFilterPair>& clothFilterPairs = *data.clothFilterPairs;
-		const PxU32 numDirtyPairs = clothFilterPairs.size();
-
-		mSoftBodyClothFilterPairs.allocate(sizeof(PxgNonRigidFilterPair)* numDirtyPairs, PX_FL);
-		mCudaContext->memcpyHtoDAsync(mSoftBodyClothFilterPairs.getDevicePtr(), clothFilterPairs.begin(), numDirtyPairs * sizeof(PxgNonRigidFilterPair), bpStream);
-
-		mNbClothSoftBodyFilters = numDirtyPairs;
-	}
-
-	if (data.dirtyActiveClothAttachments)
-	{
-		Cm::PinnableArray<PxU32>& activeClothAttachments = *data.activeClothAttachments;
-		const PxU32 nbActiveAttachments = activeClothAttachments.size();
+		const PxU32 nbActiveAttachments = clothAttachments.mActiveAttachments.size();
 		if (nbActiveAttachments > 0)
 		{
 			mActiveSoftBodyClothConstraints.allocate(sizeof(PxU32)*nbActiveAttachments, PX_FL);
 
-			mCudaContext->memcpyHtoDAsync(mActiveSoftBodyClothConstraints.getDevicePtr(), activeClothAttachments.begin(), nbActiveAttachments * sizeof(PxU32), bpStream);
+			mCudaContext->memcpyHtoDAsync(mActiveSoftBodyClothConstraints.getDevicePtr(), clothAttachments.mActiveAttachments.begin(), nbActiveAttachments * sizeof(PxU32), bpStream);
 		}
 
 		mCudaContext->memsetD32Async(mNumSoftBodyClothAttachments.getDevicePtr(), nbActiveAttachments, 1, bpStream);
@@ -1579,7 +1601,7 @@ void PxgSimulationCore::gpuMemDmaUpSoftBodies(Cm::PinnableArray<PxgSoftBody>& ne
 
 	bool anyDirty = mGpuContext->mGpuSoftBodyCore->updateUserData(softBodyPool, softBodyNodeIndexPool, 
 		bodySimManager.mActiveSoftbodies.begin(), nbActiveSoftBodies,
-		bodySimsLL) || nbDirtyFilterPairs > 0;
+		bodySimsLL) || filterPairsDirty;
 		
 	if (anyDirty)
 	{
@@ -1599,19 +1621,11 @@ void PxgSimulationCore::gpuMemDmaUpFEMCloths(Cm::PinnableArray<PxgFEMCloth>& new
 	Cm::PinnableArray<PxU32>& femClothElementIndexPool,
 	PxArray<PxU32>& femClothNodeIndexPool,
 	PxgBodySimManager& bodySimManager,
-	Cm::PinnableArray<PxgFEMRigidAttachment>& rigidAttachments,
-	Cm::PinnableArray<PxgRigidFilterPair>& rigidAttachmentIds,
-	bool dirtyRigidAttachments,
-	bool dirtyRigidFilterPairs,
-	Cm::PinnableArray<PxU32>& activeRigidAttachments,
-	bool dirtyActiveRigidAttachments,
-	Cm::PinnableArray<PxgFEMFEMAttachment>& clothAttachments,
-	Cm::PinnableArray<PxgNonRigidFilterPair>& clothVertTriFilterIds,
-	bool dirtyClothAttachments,
-	bool dirtyClothFilterPairs,
-	Cm::PinnableArray<PxU32>& activeClothAttachments,
-	bool dirtyActiveClothAttachments
-)
+	PxgAttachmentManager& rigidAttachments,
+	PxgAttachmentManager& clothAttachments,
+	const PxgDeformableFilterManager& rigidSurfaceFilters,
+	const PxgDeformableFilterManager& surfaceSurfaceFilters,
+	const PxArray<PxgDeformableSurfaceTopology*>& surfaceTopologies)
 {
 	PX_PROFILE_ZONE("GpuSimulationController.gpuMemDmaUpFEMCloths", 0);
 
@@ -1735,7 +1749,7 @@ void PxgSimulationCore::gpuMemDmaUpFEMCloths(Cm::PinnableArray<PxgFEMCloth>& new
 		buffer->prevPositionInRestOffset.allocateElements(numVerts, PX_FL);
 
 		buffer->triangleMeshData.allocate(triangleMeshByteSize, PX_FL);
-		buffer->trianglesWithActiveEdges.allocateElements(newFEMCloth.mNbTrianglesWithActiveEdges, PX_FL);
+		buffer->trianglesWithOwnedEdges.allocateElements(newFEMCloth.mNbTrianglesWithOwnedEdges, PX_FL);
 		buffer->triangleVertexIndices.allocateElements(numTriangles, PX_FL);
 
 		PxU32 remapOutputSize = PxMax(newFEMClothData.mSharedTriPairRemapOutputSize, newFEMClothData.mNonSharedTriPairRemapOutputSize);
@@ -1789,8 +1803,8 @@ void PxgSimulationCore::gpuMemDmaUpFEMCloths(Cm::PinnableArray<PxgFEMCloth>& new
 		}
 
 		mCudaContext->memcpyHtoDAsync(buffer->triangleMeshData.getDevicePtr(), newFEMCloth.mTriMeshData, triangleMeshByteSize, bpStream);
-		mCudaContext->memcpyHtoDAsync(buffer->trianglesWithActiveEdges.getDevicePtr(), newFEMCloth.mTrianglesWithActiveEdges, newFEMCloth.mNbTrianglesWithActiveEdges * sizeof(PxU32), bpStream);
-		mCudaContext->memcpyHtoDAsync(buffer->triangleVertexIndices.getDevicePtr(), newFEMCloth.mTriangleVertexIndices, numTriangles * sizeof(uint4), bpStream);
+		mCudaContext->memcpyHtoDAsync(buffer->trianglesWithOwnedEdges.getDevicePtr(), newFEMCloth.mTrianglesWithOwnedEdges, newFEMCloth.mNbTrianglesWithOwnedEdges * sizeof(PxU32), bpStream);
+		mCudaContext->memcpyHtoDAsync(buffer->triangleVertexIndices.getDevicePtr(), newFEMCloth.mTriangleVertexIndices_ownedEdges, numTriangles * sizeof(uint4), bpStream);
 
 		mCudaContext->memcpyHtoDAsync(buffer->materialIndices.getDevicePtr(), newFEMCloth.mMaterialIndices, numTriangles * sizeof(PxU16), bpStream);
 		mCudaContext->memcpyHtoDAsync(buffer->dynamicfrictions.getDevicePtr(), newFEMCloth.mDynamicFrictions, numVerts * sizeof(float), bpStream);
@@ -1805,8 +1819,12 @@ void PxgSimulationCore::gpuMemDmaUpFEMCloths(Cm::PinnableArray<PxgFEMCloth>& new
 		femCloth.mPrevPositionInContactOffset = buffer->prevPositionInContactOffset.getTypedPtr();
 		femCloth.mPrevPositionInRestOffset = buffer->prevPositionInRestOffset.getTypedPtr();
 
-		femCloth.mTrianglesWithActiveEdges = buffer->trianglesWithActiveEdges.getTypedPtr();
-		femCloth.mTriangleVertexIndices = buffer->triangleVertexIndices.getTypedPtr();
+		femCloth.mTrianglesWithOwnedEdges = buffer->trianglesWithOwnedEdges.getTypedPtr();
+		femCloth.mTriangleVertexIndices_ownedEdges = buffer->triangleVertexIndices.getTypedPtr();
+
+		// The topology has been uploaded. Its edge ownership stays, since the element filters need it for
+		// as long as the surface is in the scene.
+		surfaceTopologies[gpuRemapIndex]->releaseUploadData();
 
 		if (numNonSharedTriangles)
 		{
@@ -1853,6 +1871,12 @@ void PxgSimulationCore::gpuMemDmaUpFEMCloths(Cm::PinnableArray<PxgFEMCloth>& new
 
 		femCloth.mPackedNodeBounds = buffer->packedNodeBounds.getTypedPtr();
 
+		// Filter pairs are set by the dirty loop further down.
+		femCloth.mRigidSurfaceFilterPairs = NULL;
+		femCloth.mSurfaceSurfaceFilterPairs = NULL;
+		femCloth.mNumRigidSurfaceFilterPairs = 0;
+		femCloth.mNumSurfaceSurfaceFilterPairs = 0;
+
 		femCloth.mMaterialIndices = buffer->materialIndices.getTypedPtr();
 		femCloth.mDynamicFrictions = buffer->dynamicfrictions.getTypedPtr();
 
@@ -1868,7 +1892,7 @@ void PxgSimulationCore::gpuMemDmaUpFEMCloths(Cm::PinnableArray<PxgFEMCloth>& new
 		femCloth.mNbVerts = newFEMCloth.mNbVerts;
 		femCloth.mNbTriangles = newFEMCloth.mNbTriangles;
 		femCloth.mNbNonSharedTriangles = newFEMCloth.mNbNonSharedTriangles;
-		femCloth.mNbTrianglesWithActiveEdges = newFEMCloth.mNbTrianglesWithActiveEdges;
+		femCloth.mNbTrianglesWithOwnedEdges = newFEMCloth.mNbTrianglesWithOwnedEdges;
 
 		femCloth.mNbTrianglePairs = newFEMCloth.mNbTrianglePairs;
 		femCloth.mNbSharedTrianglePairs = newFEMCloth.mNbSharedTrianglePairs;
@@ -1909,7 +1933,7 @@ void PxgSimulationCore::gpuMemDmaUpFEMCloths(Cm::PinnableArray<PxgFEMCloth>& new
 
 		mMaxNbClothVerts = PxMax(numVerts, mMaxNbClothVerts);
 		mMaxNbClothTriangles = PxMax(numTriangles, mMaxNbClothTriangles);
-		mMaxNbClothTrianglesWithActiveEdges = PxMax(newFEMCloth.mNbTrianglesWithActiveEdges, mMaxNbClothTrianglesWithActiveEdges);
+		mMaxNbClothTrianglesWithOwnedEdges = PxMax(newFEMCloth.mNbTrianglesWithOwnedEdges, mMaxNbClothTrianglesWithOwnedEdges);
 
 		mMaxNbNonSharedTriPartitions = PxMax(newFEMCloth.mNbNonSharedTriPartitions, mMaxNbNonSharedTriPartitions);
 
@@ -1950,72 +1974,92 @@ void PxgSimulationCore::gpuMemDmaUpFEMCloths(Cm::PinnableArray<PxgFEMCloth>& new
 		mFEMClothWakeCounts[gpuRemapIndex] = dyDeformableSurfaceCore.wakeCounter;
 	}
 
-	if (dirtyRigidAttachments)
+	if (rigidAttachments.mAttachmentsDirty)
 	{
-		const PxU32 numDirtyAttachments = rigidAttachments.size();
+		const PxU32 numDirtyAttachments = rigidAttachments.mAttachments.size();
 		if (numDirtyAttachments > 0)
 		{
-			mClothRigidAttachments.allocate(sizeof(PxgFEMRigidAttachment)*rigidAttachments.size(), PX_FL);
-			mCudaContext->memcpyHtoDAsync(mClothRigidAttachments.getDevicePtr(), rigidAttachments.begin(), rigidAttachments.size() * sizeof(PxgFEMRigidAttachment), bpStream);
+			mClothRigidAttachments.allocate(sizeof(PxgDeformableAttachment)*numDirtyAttachments, PX_FL);
+			mCudaContext->memcpyHtoDAsync(mClothRigidAttachments.getDevicePtr(), rigidAttachments.mAttachments.begin(), numDirtyAttachments * sizeof(PxgDeformableAttachment), bpStream);
 
-			mClothRigidAttachmentBlocks.allocateElements((rigidAttachments.size() + 31) / 32, PX_FL);
+			mClothRigidAttachmentBlocks.allocateElements((numDirtyAttachments + 31) / 32, PX_FL);
 
-			mClothRigidAttachmentIds.allocate(sizeof(PxNodeIndex)*rigidAttachments.size(), PX_FL);
+			mClothRigidAttachmentIds.allocate(sizeof(PxNodeIndex)*numDirtyAttachments, PX_FL);
 
 			mGpuContext->getGpuFEMClothCore()->reserveRigidDeltaVelBuf(numDirtyAttachments);
 		}
 	}
 
-	if (dirtyRigidFilterPairs)
 	{
-		mClothRigidFilterPairs.allocate(sizeof(PxgRigidFilterPair)*rigidAttachmentIds.size(), PX_FL);
-		mCudaContext->memcpyHtoDAsync(mClothRigidFilterPairs.getDevicePtr(), rigidAttachmentIds.begin(), rigidAttachmentIds.size() * sizeof(PxgRigidFilterPair), bpStream);
+		const PxArray<PxU32>& dirtyIds = rigidSurfaceFilters.getDirtyIds();
+		for (PxU32 i = 0; i < dirtyIds.size(); ++i)
+		{
+			const PxU32 gpuRemapIndex = dirtyIds[i];
+			PxgFEMCloth& gpuFEMCloth = femClothPool[gpuRemapIndex];
 
-		mNbRigidClothFilters = rigidAttachmentIds.size();
+			uploadDeformableFilterPairs(*mCudaContext, bpStream, *rigidSurfaceFilters.getPerActorPairs()[gpuRemapIndex],
+				mFEMClothDataBuffer[gpuRemapIndex]->rigidSurfaceFilterPairs,
+				gpuFEMCloth.mRigidSurfaceFilterPairs, gpuFEMCloth.mNumRigidSurfaceFilterPairs);
+		}
 	}
 
-	if (dirtyActiveRigidAttachments)
 	{
-		const PxU32 nbActiveAttachments = activeRigidAttachments.size();
+		const PxArray<PxU32>& dirtyIds = surfaceSurfaceFilters.getDirtyIds();
+		for (PxU32 i = 0; i < dirtyIds.size(); ++i)
+		{
+			const PxU32 gpuRemapIndex = dirtyIds[i];
+			PxgFEMCloth& gpuFEMCloth = femClothPool[gpuRemapIndex];
+
+			uploadDeformableFilterPairs(*mCudaContext, bpStream, *surfaceSurfaceFilters.getPerActorPairs()[gpuRemapIndex],
+				mFEMClothDataBuffer[gpuRemapIndex]->surfaceSurfaceFilterPairs,
+				gpuFEMCloth.mSurfaceSurfaceFilterPairs, gpuFEMCloth.mNumSurfaceSurfaceFilterPairs);
+		}
+	}
+
+	if (rigidAttachments.mActiveAttachmentsDirty)
+	{
+		const PxU32 nbActiveAttachments = rigidAttachments.mActiveAttachments.size();
 
 		if (nbActiveAttachments > 0)
 		{
 			mActiveClothRigidAttachments.allocate(sizeof(PxU32)*nbActiveAttachments, PX_FL);
-			mCudaContext->memcpyHtoDAsync(mActiveClothRigidAttachments.getDevicePtr(), activeRigidAttachments.begin(), nbActiveAttachments * sizeof(PxU32), bpStream);
+			mCudaContext->memcpyHtoDAsync(mActiveClothRigidAttachments.getDevicePtr(), rigidAttachments.mActiveAttachments.begin(), nbActiveAttachments * sizeof(PxU32), bpStream);
 		}
 		mCudaContext->memsetD32Async(mNumClothRigidAttachments.getDevicePtr(), nbActiveAttachments, 1, bpStream);
 		mNbRigidClothAttachments = nbActiveAttachments;
 	}
 
-	//cloth vs cloth attachments
-	if (dirtyClothAttachments)
+	if (rigidAttachments.mActiveRigidRefCountsDirty)
 	{
-		const PxU32 numDirtyAttachments = clothAttachments.size();
-		if (numDirtyAttachments > 0)
+		const PxU32 nbRefCounts = rigidAttachments.mActiveRigidRefCounts.size();
+		if (nbRefCounts > 0)
 		{
-			mClothClothAttachments.allocate(sizeof(PxgFEMFEMAttachment)*clothAttachments.size(), PX_FL);
-			mCudaContext->memcpyHtoDAsync(mClothClothAttachments.getDevicePtr(), clothAttachments.begin(), clothAttachments.size() * sizeof(PxgFEMFEMAttachment), bpStream);
-
-			mClothClothAttachmentBlocks.allocateElements((clothAttachments.size() + 31) / 32, PX_FL);
+			mClothRigidAttachmentRigidRefCounts.allocate(sizeof(PxU32)*nbRefCounts, PX_FL);
+			mCudaContext->memcpyHtoDAsync(mClothRigidAttachmentRigidRefCounts.getDevicePtr(), rigidAttachments.mActiveRigidRefCounts.begin(), nbRefCounts * sizeof(PxU32), bpStream);
 		}
 	}
 
-	if (dirtyClothFilterPairs)
+	//cloth vs cloth attachments
+	if (clothAttachments.mAttachmentsDirty)
 	{
-		mClothClothVertTriFilterPairs.allocate(sizeof(PxgNonRigidFilterPair)*clothVertTriFilterIds.size(), PX_FL);
-		mCudaContext->memcpyHtoDAsync(mClothClothVertTriFilterPairs.getDevicePtr(), clothVertTriFilterIds.begin(), clothVertTriFilterIds.size() * sizeof(PxgNonRigidFilterPair), bpStream);
+		const PxU32 numDirtyAttachments = clothAttachments.mAttachments.size();
+		if (numDirtyAttachments > 0)
+		{
+			mClothClothAttachments.allocate(sizeof(PxgDeformableAttachment)*numDirtyAttachments, PX_FL);
+			mCudaContext->memcpyHtoDAsync(mClothClothAttachments.getDevicePtr(), clothAttachments.mAttachments.begin(), numDirtyAttachments * sizeof(PxgDeformableAttachment), bpStream);
 
-		mNbClothClothVertTriFilters = clothVertTriFilterIds.size();
+			mClothClothAttachmentBlocks.allocateElements((numDirtyAttachments + 31) / 32, PX_FL);
+		}
 	}
 
-	if (dirtyActiveClothAttachments)
+	if (clothAttachments.mActiveAttachmentsDirty)
 	{
-		const PxU32 nbActiveAttachments = activeClothAttachments.size();
+		const PxU32 nbActiveAttachments = clothAttachments.mActiveAttachments.size();
 
 		if (nbActiveAttachments > 0)
 		{
 			mActiveClothClothAttachments.allocate(sizeof(PxU32)*nbActiveAttachments, PX_FL);
-			mCudaContext->memcpyHtoDAsync(mActiveClothClothAttachments.getDevicePtr(), activeClothAttachments.begin(), nbActiveAttachments * sizeof(PxU32), bpStream);
+			mCudaContext->memcpyHtoDAsync(mActiveClothClothAttachments.getDevicePtr(), clothAttachments.mActiveAttachments.begin(), nbActiveAttachments * sizeof(PxU32), bpStream);
 		}
 		mCudaContext->memsetD32Async(mNumClothClothAttachments.getDevicePtr(), nbActiveAttachments, 1, bpStream);
 		mNbClothClothAttachments = nbActiveAttachments;
@@ -2043,7 +2087,7 @@ void PxgSimulationCore::gpuMemDmaUpFEMCloths(Cm::PinnableArray<PxgFEMCloth>& new
 	PxU32* activeFEMCloths = bodySimManager.mActiveFEMCloths.begin();
 
 	bool anyDirty = mGpuContext->mGpuFEMClothCore->updateUserData(femClothPool, femClothNodeIndexPool, activeFEMCloths, nbActiveFEMCloths,
-		bodySimsLL);
+		bodySimsLL) || rigidSurfaceFilters.isDirty() || surfaceSurfaceFilters.isDirty();
 
 	if (anyDirty)
 	{

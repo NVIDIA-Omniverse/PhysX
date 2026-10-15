@@ -39,12 +39,7 @@ Contains information about the pair and the number of contact data.
 struct ContactEventHeader
 {
     ContactEventType::Enum type; //!< Contact event header type.
-    AttachHandle attachHandle; //!< The attach that reported the contact (matches
-                               //!< IPhysxSimulation::getAttachHandle()). Was int64_t stageId, which
-                               //!< reported 0 -- indistinguishable from "nothing attached" -- for a
-                               //!< source with no backing USD stage. Same width, so the mirrored C
-                               //!< struct in ovphysx_types.h keeps its layout; only the signedness
-                               //!< and the meaning change.
+    AttachHandle attachHandle; //!< The attach that reported the contact (matches IPhysxSimulation::attachOvstage()).
     uint64_t actor0; //!< Actor0 of the contact pair. Remains a bare integer identity; must never
                      //!< become SdfPath (ADR-0019).
     uint64_t actor1; //!< Actor1 of the contact pair. Remains a bare integer identity; must never

@@ -13,7 +13,7 @@ enumerate a PhysX API schema's properties, snapshot them, and restore them.
 
 How properties are reached
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-ovphysx ships the PhysX schemas codeless, so ``TfType.pythonClass`` is ``None``
+PhysX schemas are codeless, so ``TfType.pythonClass`` is ``None``
 for them and every property here is reached through the registry:
 
 * :func:`get_schema_attribute` and :func:`get_schema_relationship` return the

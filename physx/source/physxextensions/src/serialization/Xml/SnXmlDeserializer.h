@@ -144,7 +144,7 @@ namespace physx { namespace Sn {
 	}
 	
 	template<typename TDataType>
-	inline void readStridedBufferProperty( XmlReader& ioReader, const char* inPropName, PxStridedData& ioData, PxU64& outCount, XmlMemoryAllocator& inAllocator)
+	inline void readStridedBufferProperty( XmlReader& ioReader, const char* inPropName, PxBoundedData& ioData, PxU64& outCount, XmlMemoryAllocator& inAllocator)
 	{
 		TDataType* tempData = NULL;
 		readStridedBufferProperty<TDataType>( ioReader, inPropName, tempData, ioData.stride, outCount, inAllocator ); 

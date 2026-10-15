@@ -1,9 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-// TODO(tensor-binding-deprecation): the articulation-metadata getters expose structural names and
-// topology the session read does not, and take a binding handle with no non-binding source. Keep
-// the binding until the read API grows a metadata/names path, then convert these tests.
+// DEPRECATED (tensor-binding-deprecation): these test the binding's articulation-metadata getters (their C string
+// fields, capacities, and rejection of a stale or invalid binding) and retire with the binding. The session read
+// serves the counts (dofCount, linkCount, jointCount, isFixedBase) and the names as prim paths (dofJointPath, link
+// and joint rows), except the names of fixed (zero-DOF) joints, which it does not emit.
 
 // Tests for the articulation metadata API:
 //   ovphysx_get_tensor_binding_native_device
@@ -29,11 +30,11 @@
 
 using namespace test_utils;
 
-static bool wait_am_op(ovphysx_handle_t handle, ovphysx_op_index_t op_index)
+static bool wait_am_op(ovphysx_instance_handle_t handle, ovphysx_enqueue_result_t task)
 {
-    ovphysx_op_wait_result_t wr{};
-    ovphysx_result_t r = ovphysx_wait_op(handle, op_index, 10'000'000'000ULL, &wr);
-    ovphysx_destroy_wait_result(&wr);
+    ovphysx_wait_task_result_t wr{};
+    ovphysx_result_t r = ovphysx_wait_task(handle, task, 10'000'000'000ULL, &wr);
+    ovphysx_destroy_wait_task_result(&wr);
     return r.status == OVPHYSX_API_SUCCESS;
 }
 

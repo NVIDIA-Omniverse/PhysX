@@ -1,3 +1,167 @@
+# v5.12.0
+
+## Supported Platforms
+
+### Runtime
+
+* Linux (tested on Ubuntu LTS versions 22.04, and 24.04 using their respective default GCC and Clang compilers).
+* Microsoft Windows 10 or later (64 bit)
+* GPU acceleration: display driver supporting CUDA toolkit 12.8 and Volta GPU or above
+
+### Development
+
+* [Linux Platform Readme](documentation/platformreadme/linux/README_LINUX.md)
+* [Windows Platform Readme](documentation/platformreadme/windows/README_WINDOWS.md)
+
+## General
+
+### Added
+
+### Fixed
+
+* On Windows, releasing a PxThread object triggered an ERROR_INVALID_HANDLE error if the thread was not started.
+* The `PX_EXT_DEVICE_MEMORY_*` and `PX_EXT_PINNED_MEMORY_*` macros in `PxCudaHelpersExt.h` failed to compile from a namespace holding a nested `physx`. They now name `::physx::Ext` explicitly.
+* Fixed a rare crash during simulation when the broadphase reported an overlap referencing an invalid object index. Such overlaps are now discarded and reported through the error callback as `PxErrorCode::eINTERNAL_ERROR`.
+* Fixed the SDK's material table being corrupted when a material could not be registered - in practice, when the limit of 64K materials is reached. Shapes referencing the affected material could silently change material or destroy one that was still in use.
+* Fixed `PxPhysics::getNbMaterials()` climbing past the number of materials that actually exist, once a material has been rejected.
+* Fixed crashes in `PxSerialization::createCollectionFromBinary()` and `PxShape::setMaterials()` on material references that do not resolve. These are now reported through the error callback as `PxErrorCode::eINTERNAL_ERROR`; a shape keeps the materials that did resolve, and a load that cannot resolve any of them fails and returns NULL.
+* Fixed `PxSerialization::createCollectionFromBinary()` leaving materials registered with the SDK after a failed load, pointing into a memory block the caller is free to reuse.
+* Fixed a deserialized `PxRigidActor` keeping the exporting process's `PxPruningStructure` address. Calling `PxRigidActor::detachShape()`, `attachShape()`, `release()`, `setGlobalPose()`, `PxShape::setGeometry()`, `setLocalPose()` or `setFlag()` on such an actor, before its pruning structure had been released, dereferenced that address.
+* Fixed `PxPruningStructure` reading past the end of its actor list when an actor was moved, re-shaped or released while still part of the structure. Releasing the structure afterwards dereferenced that value, and the last actor kept a dangling pointer to the released structure.
+* Fixed a deserialized `PxPruningStructure` that was invalid when exported keeping the exporting process's actor pointers and count: `release()` walked that array and `getNbRigidActors()` reported the count. Such a structure now deserializes empty.
+* Uninitialized data has been fixed (https://github.com/NVIDIA-Omniverse/PhysX/pull/528, https://github.com/NVIDIA-Omniverse/PhysX/pull/527)
+* `aos::isFiniteFloatV()`, `aos::isFiniteVec3V()`, `aos::isFiniteVec4V()` and `aos::isFiniteQuatV()` now return false for NaN and infinite values on Linux x86-64. Previously they returned true for any input there, so debug-build assertions that check only for finite values, such as those in `aos::PxTransformV`, never fired.
+* On Linux, `PxIsFinite(double)` now uses the same bit test as the float overload. Previously it returned true for infinite and NaN values in code compiled with GCC and `-ffast-math`, and raised a floating-point exception for a signaling NaN when invalid-operation exceptions were unmasked.
+
+### Changed
+
+* The cooking functions declared in `cooking/PxCooking.h` (`PxCookTriangleMesh()`, `PxCreateConvexMesh()`, `PxGetStandaloneInsertionCallback()`, ...) are now exported from PhysXCommon. Applications no longer need to link against, or redistribute, a separate cooking library.
+* `PxSceneDesc::flags` now defaults to `PxSceneFlag::eENABLE_PCM | PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS`, so a scene using the TGS solver applies gravity and other external forces in every position iteration unless the flag is cleared. This changes the simulation behavior of TGS scenes that did not raise the flag before. See the migration guide. `PxSceneDesc::isValid()` no longer rejects the flag together with `PxSolverType::ePGS`. A PGS scene retains the flag but ignores it.
+* On Windows, `PxIsFinite()` is now fully inlined instead of calling into the C runtime, which removes a function call per component from the checks built on it, such as `PxVec3::isFinite()` and `PxTransform::isValid()`. Builds that enable finite-math optimizations, such as clang-cl with `/fp:fast`, keep the C runtime call so that these checks are not optimized away.
+
+### Deprecated
+
+* Deprecated `PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS`. The flag is enabled by default, and applying gravity and other external forces in every position iteration will be the only supported behavior of the TGS solver once the flag is removed. Until then, clearing the flag restores the application once per simulation step. See the migration guide.
+
+### Removed
+
+* The PhysXCooking library has been removed (`PhysXCooking_*.dll`, `PhysXCooking_static_*.lib`, `libPhysXCooking_static_*.a`, and the `PhysX::PhysXCooking` CMake target). Its functionality is now part of PhysXCommon; remove `PhysXCooking` from your link line.
+* The `cooking/Pxc.h` header and the `PX_PHYSX_COOKING_API` macro it defined have been removed. `PxPhysicsAPI.h` no longer includes it.
+* `PxSetPhysXCookingDelayLoadHook()` has been removed. `PxSetPhysXDelayLoadHook()` and `PxSetPhysXCommonDelayLoadHook()` cover all remaining delay-loaded DLLs.
+* Removed the deprecated `PxStridedData` and `PxTypedStridedData<T>`. Use `PxBoundedData` and `PxTypedBoundedData<T>` instead.
+* Removed the deprecated helpers in `PxMathUtils.h`: the `Interpolation` struct with `PxLerp()`, `PxBiLerp()`, `PxTriLerp()`, `PxSDFIdx()` and `PxSDFSampleImpl()`, and the two `computeBarycentric()` overloads. Use the free functions `PxLerp()`, `PxBiLerp()`, `PxTriLerp()`, `PxSDFIdx()` and `PxSDFSample()` in the same header, and `PxComputeBarycentric()`.
+* Removed the deprecated `PxSdfSample()`. Use the alternative function `PxSDFSample()` instead, but note that it returns the distance only. The migration guide shows how to compute the gradient the removed function also provided.
+* Removed the deprecated `PxVisualizationParameter::eCONTACT_FORCE`. Use `PxVisualizationParameter::eCONTACT_IMPULSE`, which had the same value.
+* Removed the deprecated `PxBroadPhase::update(PxBroadPhaseResults&, const PxBroadPhaseUpdateData&)` and `PxAABBManager::update(PxBroadPhaseResults&)`. Use `updateAndFetchResults()` instead.
+* Removed the deprecated memory helpers on `PxCudaContextManager`: `allocDeviceBuffer()`, `freeDeviceBuffer()`, `allocPinnedHostBuffer()`, `freePinnedHostBuffer()`, `clearDeviceBufferAsync()`, `copyDToH()`, `copyHToD()`, `copyDToHAsync()`, `copyHToDAsync()`, `copyDToDAsync()` and `memsetAsync()`, together with the `PX_DEVICE_ALLOC`, `PX_DEVICE_ALLOC_T`, `PX_DEVICE_FREE`, `PX_PINNED_HOST_ALLOC`, `PX_PINNED_HOST_ALLOC_T` and `PX_PINNED_HOST_FREE` macros. Use `PxCudaHelpersExt` from `extensions/PxCudaHelpersExt.h`, or `PxCudaContext` directly. See the migration guide for the replacement macros and for zero-size allocations, which now return NULL.
+* Removed the deprecated `PxCudaContext::getAllocatorCallback()`. Use `PxCudaContext::getDeviceAllocatorCallback()`, which returns the same callback.
+
+## Rigid Body
+
+### Fixed
+
+* In a GPU scene with `PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS` or `PxSceneFlag::eENABLE_BODY_ACCELERATIONS` set, a `PxRigidDynamic` with `PxRigidBodyFlag::eRETAIN_ACCELERATIONS` now retains only its forces and torques between steps, as documented. Previously, impulses and velocity changes (`PxForceMode::eIMPULSE`, `PxForceMode::eVELOCITY_CHANGE`) were applied again in every following step.
+* Fixed continuous collision detection (`PxRigidBodyFlag::eENABLE_CCD`) against a `PxTriangleMeshGeometry` letting a fast-moving shape pass through a triangle when an earlier hit on another triangle of the same mesh, such as a grazed edge, was discarded for too little motion along its normal. (https://github.com/NVIDIA-Omniverse/PhysX/issues/505)
+* Fixed illegal memory accesses and invalid contact data when GPU rigid-body contact buffers overflow. Contacts that do not fit are now discarded without exposing invalid data through `PxDirectGPUAPI::copyContactData()`.
+* Fixed an out-of-bounds GPU memory read, reported as a CUDA illegal-address error, when a sphere collided with a `PxHeightFieldGeometry` next to one of its boundary edges under `PxSceneFlag::eENABLE_GPU_DYNAMICS`. (https://github.com/NVIDIA-Omniverse/PhysX/issues/502)
+
+### Changed
+
+* When using the Direct GPU API, pairs for which PxPairFlag::eDETECT_DISCRETE_CONTACT, but not ::eSOLVE_CONTACT was raised triggered a performance warning in PX_CHECKED builds. This was misleading as it is a legitimate setup to extract contact information. The warning is not sent any longer in this case.
+
+### Removed
+
+* Removed the deprecated `PxFrictionType` enum, `PxSceneDesc::frictionType` and `PxScene::getFrictionType()`. Only `PxFrictionType::ePATCH` was left, so the setting had no effect.
+
+## Articulations
+
+### Fixed
+
+* Fixed incorrect motion of CPU `PxArticulationLink` objects using `PxRigidBodyFlag::eRETAIN_ACCELERATIONS` with `PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS`. The solver overwrote stored linear and angular accelerations with computed forces and torques, then incorrectly reused those values as accelerations on the next step. Because the computed forces included scene gravity, the bug also affected freely falling links even when the application called neither `addForce()` nor `addTorque()`.
+* Changes to `PxArticulationFixedTendon` and `PxArticulationSpatialTendon` stiffness, damping, limit stiffness and offset, and to `PxArticulationAttachment` coefficient, relative offset, limit parameters and rest length, now take effect on the next step of a scene with `PxSceneFlag::eENABLE_GPU_DYNAMICS`. Previously such a change read back correctly but was ignored by the GPU solver unless another articulation change in the same step also reached it, and a `PxArticulationSpatialTendon::setLimitStiffness()` change was ignored even then.
+* Fixed incorrect and potentially nondeterministic GPU articulation contact responses caused by overlapping solver data. It affected scenes with more than 32 articulations where an articulation has more than 64 links.
+* Drives with a `PxPerformanceEnvelope` on spherical joints of GPU articulations used an uninitialized value for the joint effort applied through `PxArticulationCache::jointForce`. The drives could miss their targets or not move, and the envelope could apply its limits incorrectly.
+* In immediate mode, each element of `PxArticulationJointDataRC::maxJointVelocity` was passed in turn to the setter for all axes, so every axis ended up with the last element's value. Each axis now receives its own value.
+* Fixed an issue occurring in the following sequence: 1) an articulation was removed from its scene, 2) some of its joint axes were set to `PxArticulationMotion::eLOCKED`, 3) the articulation was added back to the scene. In that case, `PxArticulationJointReducedCoordinate::setDriveTarget()`, `setDriveVelocity()`, `setJointPosition()` and `setJointVelocity()` on a newly locked axis overwrote another degree of freedom or wrote past the end of the articulation's joint data, and `getJointPosition()` and `getJointVelocity()` on that axis returned the value of another degree of freedom. (https://github.com/NVIDIA-Omniverse/PhysX/issues/506)
+* Fixed `PxDirectGPUAPI::computeArticulationData()` called for a subset of articulations preventing the kinematic update of the other articulations. After the root pose, root velocity, joint positions or joint velocities of several articulations had been set, a call for only some of them, with `PxArticulationGPUAPIComputeType::eUPDATE_KINEMATIC` or any other operation, made later kinematic updates skip the rest. This included an update of all articulations and the automatic update at the start of the next `simulate()`. Their link poses and velocities, and the values computed from them such as centers of mass, kept their old values, and the next step could miss their contacts and produce wrong poses.
+* Fixed a CUDA error (illegal or misaligned address) that could stop a scene with `PxSceneFlag::eENABLE_DIRECT_GPU_API` from simulating when an articulation had been removed before the first `PxScene::simulate()` after it was added. It occurred in the kinematic update after a root pose, root velocity, joint position or joint velocity was set with `PxDirectGPUAPI::setArticulationData()`, at the start of the next `simulate()` or in `PxDirectGPUAPI::computeArticulationData()` with `PxArticulationGPUAPIComputeType::eUPDATE_KINEMATIC` and no index list.
+
+### Changed
+
+* `PxPerformanceEnvelope::maxActuatorVelocity` defaults to `PX_MAX_F32`, which sets no actuator velocity limit, instead of zero, at which the actuator could not move the joint. An envelope that only sets `maxEffort` now limits the drive effort and nothing else.
+
+### Removed
+
+* Removed the deprecated `PxArticulationJointReducedCoordinate::setMaxJointVelocity(PxReal)` and `getMaxJointVelocity()`, which applied to every axis at once. Use the per-axis overloads taking a `PxArticulationAxis::Enum`.
+* Removed the deprecated `PxArticulationDrive::maxForce` member, and with it the `PxArticulationDrive` constructor that took a scalar force limit. Use the constructor that takes a `PxPerformanceEnvelope` instead. `PxPerformanceEnvelope::maxEffort` takes the place of `maxForce`, as a force on a linear axis and a torque on a rotational axis. The `PxPerformanceEnvelope` constructor is now marked `explicit`, so calls to the removed `PxArticulationDrive` constructor taking `maxForce` result in a compile error instead of unintended behavior. See the migration guide.
+* Removed the deprecated `PxArticulationFlag::eDRIVE_LIMITS_ARE_FORCES` flag. Drive effort limits are always expressed as forces or torques. If impulse limits were used, they need to be converted, see the migration guide.
+* Removed the deprecated `PxArticulationJointReducedCoordinate::setFrictionCoefficient()` and `getFrictionCoefficient()` methods, and with them the joint friction model behind the coefficient, which limited the friction force on every axis to the coefficient times the spatial force transmitted through the joint. Joint friction is now always computed from the per-axis `PxJointFrictionParams` set with `PxArticulationJointReducedCoordinate::setFrictionParams()`. Its efforts are constant and default to zero, so a joint without friction parameters has no joint friction. In immediate mode, `PxArticulationJointDataRC::frictionCoefficient`, which was not deprecated, is replaced by the per-axis `PxArticulationJointDataRC::frictionParams`. There is no conversion from the coefficient to the per-axis parameters, so assets that relied on it need to be retuned, see the migration guide.
+
+## Scene Queries
+
+### Fixed
+
+* Hardened scene-query tree refitting against inconsistent internal state. An out-of-range refit request could write outside the tree's internal buffer in release builds, corrupting unrelated memory and crashing later at an unrelated allocation. Such requests are now ignored in all build configurations, and are additionally reported through the error callback in checked builds.
+* An out-of-bounds read has been fixed (https://github.com/NVIDIA-Omniverse/PhysX/pull/525)
+
+## Deformables
+
+### Added
+
+* `PX_MAX_NB_DEFORMABLE_VOLUME_VTX`, the maximum number of vertices supported in a deformable volume tetrahedron mesh. `PxDeformableVolume::attachShape()` and `PxDeformableVolume::attachSimulationMesh()` now reject a mesh that exceeds it, as they already did for the tetrahedron count.
+* `PxDeformableAttachment` now supports `PxDeformableAttachmentTargetType::eVERTEX` between two deformables, which was rejected with "No matching actor pairs found for attachment": a vertex against a tetrahedron, a triangle or another vertex, for every combination of `PxDeformableVolume` and `PxDeformableSurface`. A vertex target takes indices alone and no coordinates, as it already did against `eRIGID` and `eWORLD`.
+
+### Fixed
+
+* `PxDeformableVolume` and `PxDeformableSurface` now always simulate with the materials assigned to their shape. Previously, once a `PxDeformableVolumeMaterial` or `PxDeformableSurfaceMaterial` had been released, a deformable using a material created after that, or simulated in a scene created after that, could pick up the stiffness, damping, or friction of a different material.
+* `PxBase::is<PxDeformableBody>()` did not resolve, so a `PxActor` could not be tested for being any deformable body without testing for `PxDeformableSurface` and `PxDeformableVolume` separately.
+* `PxDeformableBody::attachShape()`, `PxDeformableBody::detachShape()`, `PxDeformableVolume::attachSimulationMesh()` and `PxDeformableVolume::detachSimulationMesh()` are now rejected while the deformable is part of a scene. Checked builds only.
+* Various `PxDeformableAttachment` fixes:
+  * Attachments of triangles or tetrahedrons to `eWORLD` were not cleaned up when releasing the attachment or removing the deformable from the scene.
+  * `PxDeformableAttachment::updatePose()` was rejected for attachments of triangles or tetrahedrons to `eWORLD`.
+  * Out of range mesh indices are now rejected and the attachment left inactive, with an error, instead of reading out of bounds. Checked builds only.
+  * Indices for an `eRIGID` or `eWORLD` target are now rejected at creation instead of being accepted and dropped. Such targets are specified by a pose and coordinates exclusively. Checked builds only.
+  * An attachment to a `PxArticulationReducedCoordinate` link was left in place when the articulation was removed from the scene, and crashed when released afterwards. It is now torn down with the articulation, as for a rigid actor.
+* Various `PxDeformableElementFilter` fixes:
+  * Was not, or only partially, implemented for several deformable-rigid collision paths: `PxHeightFieldGeometry` and `PxTriangleMeshGeometry` against `PxDeformableSurface`, `PxHeightFieldGeometry` and `PxConvexCoreGeometry` against `PxDeformableVolume`.
+  * Filtering against a `PxRigidStatic` suppressed contacts with every static in the scene rather than with the one referenced. Only the referenced static is filtered now.
+  * Was unreliable between two `PxDeformableVolume` actors when using a wildcard group, specified with a `groupElementCounts` entry of 0.
+  * Between a `PxDeformableVolume` and a `PxDeformableSurface`, could filter unreferenced triangles of the surface.
+  * Between a rigid actor and a `PxDeformableSurface`, could filter unreferenced triangles of the surface.
+  * Was not implemented for `PxDeformableSurface` against `PxDeformableSurface`, including self collision.
+  * Under some circumstances, releasing a `PxDeformableVolume` could lead to spurious collision filtering between other deformable volumes.
+  * Referencing an actor twice, which is how self collisions are filtered, reported a spurious error. The filter itself was applied correctly. Checked builds only.
+  * Out of range mesh indices are now rejected and the filter left inactive, with an error, instead of reading out of bounds. Checked builds only.
+  * Element indices for a rigid actor are now rejected at creation instead of being accepted and dropped. A rigid is only ever filtered as a whole actor, requiring no indices. Checked builds only.
+  * An element group count above 0 for a rigid actor is now rejected at creation. Element indices are non-existent for rigid actors. Checked builds only.
+  * An element filter between two deformables required both actors to specify the same number of element groups. Leaving one actor's group counts empty, which filters it as a whole against every group of the other, was rejected unless that actor was a rigid, though the documented meaning of an empty group count list is not specific to rigids.
+  * A filter that references no element on either actor is now rejected at creation instead of being accepted and having no effect. This covers both a descriptor where no group on either actor references a specific element, and one with a group pair that references none. To suppress all collisions between two actors, use `PxShape`- or `PxActor`-level collision filtering with a `PxSimulationFilterShader` instead. Checked builds only.
+  * An element filter was left in place when the `PxArticulationReducedCoordinate` it referenced was removed from the scene, and crashed when released afterwards. It is now torn down with the articulation, as for a rigid actor.
+* Various deformable collision fixes:
+  * A `PxDeformableSurface` colliding with a `PxHeightFieldGeometry` shape could result in out of bounds reads, depending on the order the two actors were added to the scene.
+  * For contacts between a `PxDeformableVolume` and a `PxTriangleMeshGeometry` shape with an SDF, the rigid material was never applied, so friction came from an unrelated material.
+  * Contacts between a `PxDeformableVolume` and a `PxDeformableSurface` were mapped onto the volume's simulation mesh at an erroneous position, leading to wrong collision impulses.
+  * Contacts between a `PxDeformableSurface` and a `PxConvexCoreGeometry` shape applied their impulse to the wrong vertices of the contacting triangle.
+* Various `PxDeformableVolume` mesh related fixes:
+  * Releasing a `PxDeformableVolumeMesh` destroyed its collision mesh, simulation mesh and auxiliary data outright, freeing a collision mesh still referenced by a `PxShape`, or a simulation mesh and auxiliary data still referenced by a `PxDeformableVolume`. All three are now reference counted, so the `PxDeformableVolumeMesh` can be released before or after them.
+  * A `PxTetrahedronMesh` or `PxDeformableVolumeMesh` may have been leaked, if created through `PxCreateTetrahedronMesh()` or `PxCreateDeformableVolumeMesh()` when called without specifying a `PxInsertionCallback`. Releasing the last reference now destroys it.
+  * `PxTetrahedronMeshExt::findTetrahedronContainingPoint()` and `PxTetrahedronMeshExt::findTetrahedronClosestToPoint()` crashed on a tetrahedron mesh without a bounding volume hierarchy, such as the simulation mesh of a `PxDeformableVolumeMesh`. Such a mesh is now rejected with an error. `PxTetrahedronMeshExt::createPointsToTetrahedronMap()` builds its own hierarchy and covers that case.
+  * The same two functions did not return the correct tetrahedron in all cases, and `PxTetrahedronMeshExt::findTetrahedronContainingPoint()` crashed on very small meshes.
+  * `PxDeformableBody::attachShape()` accepted a shape whose tetrahedron mesh was not the collision mesh of a `PxDeformableVolumeMesh`, such as its simulation mesh or a mesh from `PxPhysics::createTetrahedronMesh()`, and the mismatch surfaced later as out-of-bounds reads in the GPU pipeline. Such a shape is now rejected. Checked builds only.
+
+### Changed
+
+* `PxDeformableAttachment::updatePose()` is now ignored, with an error, while the simulation is running. Previously the call proceeded, releasing and re-creating the attachment mid-simulation.
+
+## PVD / OVD
+
+### Removed
+
+* Removed the OmniPVD attribute `PxScene::frictionType` and the `PxFrictionType` enum.
+* Removed the OmniPVD attribute `PxArticulationJointReducedCoordinate::maxJointVelocity`. Use the per-axis array `maxJointDofVelocity` instead.
+* Removed the OmniPVD attribute `PxArticulationJointReducedCoordinate::driveMaxForce`. Use the per-axis array `driveMaxEffort` instead.
+* Removed the OmniPVD attribute `PxArticulationJointReducedCoordinate::frictionCoefficient`. Use the per-axis arrays `staticFrictionEffort`, `dynamicFrictionEffort` and `viscousFrictionCoefficient` instead.
+
 # v5.11.0
 
 ## Supported Platforms
@@ -61,6 +225,8 @@
 * Fixed an out of bounds read that crashed when a `PxConvexCoreGeometry` shape touched a multi-material triangle mesh or heightfield. Such contacts now also carry the index of the triangle they came from, so they resolve to the material of the triangle actually touched instead of to an arbitrary one.
 * `PxRigidBody::setMaxContactImpulse()` is now enforced for contact pairs that the CPU solvers batch onto their 4-wide SIMD codepath. Previously the body-level limit only took effect on the scalar codepath (or when a contact modification callback set a per-point limit), so whether the cap applied depended on how pairs happened to be batched.
 * Custom constraints whose rows declare an impulse range that excludes zero (`Px1DConstraint::minImpulse > 0` or `maxImpulse < 0`) could apply the last row's impulse bound again for every padding row — up to the row-count difference within the batch in extra applications, each also counted in the reported constraint force — when the CPU PGS solver batched them onto its 4-wide SIMD codepath together with constraints that have more rows.
+* Most `PxArticulationReducedCoordinate` methods that run articulation computations on the calling thread (`commonInit()`, the inverse-dynamics `compute*()` family, `applyCache()`, `copyInternalStateToCache()`, `updateKinematic()`, `getLinkAcceleration()`) did not set up the SDK floating-point environment the way other entry points do. An application calling them with floating-point exceptions enabled could crash on a benign denormal or invalid intermediate value, and denormal inputs were not flushed to zero.
+* With the TGS solver, `PxConstraint::getForce()` could report a much too small torque, and joint breakage could test that wrong impulse against the break threshold, for joints between rigid bodies that lock rotational axes. The reported values now match the PGS solver, on CPU and GPU. For joints attached to an articulation link, the reported torque no longer contains a spurious moment term that grew with the joint anchor offset (CPU only; the GPU solver did not have this problem).
 
 ### Changed
 

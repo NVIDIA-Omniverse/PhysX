@@ -1,23 +1,43 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-CAPI-COMPANION-001
+// @covers AC-1 AC-2 AC-3 AC-4
+
 /**
  * @implements REQ-CAPI-BINDING-SELECTION-001
  * @covers AC-1 AC-2 AC-3 AC-4
  *
+ * @implements REQ-CAPI-ASYNC-002
+ * @covers AC-1 AC-2 AC-3 AC-5 AC-6
+ *
+ * @implements REQ-CAPI-TIMESTEP-002
+ * @covers AC-1 AC-4
+ */
+
+/**
+ * @implements REQ-CAPI-TASK-001
+ * @covers AC-1 AC-2 AC-5 AC-6 AC-7
+ *
  * @implements REQ-CAPI-STRING-001
  * @covers AC-2
+ *
+ * @implements REQ-CAPI-INSTANCE-SCOPE-001
+ * @covers AC-5
+ *
+ * @implements REQ-CAPI-SDFVIEW-001
+ * @covers AC-1
  */
 
 #pragma once
 
 #include "ovphysx/ovphysx.h"
 #include "CarboniteLoader/CarboniteLoader.hpp"
-#include "AsyncEventManager/AsyncEventManager.hpp" // async_event_handle_t
 #include "internal/sdk/ovphysxObjectHandleAllocator.hpp"
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <map>
 #include <memory>
 #include <string>
 #include <mutex>
@@ -31,6 +51,8 @@
 // brings kMaxPathPatternComponentLength and forward-declares the view classes.
 #include <omni/physics/tensors/TensorApi.h>
 #include <omni/physics/tensors/ISimulationView.h>
+
+struct TaskWaitStorage;
 
 struct TensorBindingState
 {
@@ -86,6 +108,7 @@ struct OvstageAttachPayload
 {
     const void* instance = nullptr;
     void* dict = nullptr; // ovx_path_dictionary_t*
+    // Explicit developer compatibility field in the shared layout; production leaves it zero.
     uint64_t usdStageId = 0;
 };
 
@@ -96,10 +119,9 @@ static_assert(offsetof(OvstageAttachPayload, dict) == 8, "OvstageAttachPayload::
 static_assert(offsetof(OvstageAttachPayload, usdStageId) == 16, "OvstageAttachPayload::usdStageId offset drifted");
 
 // Lock ordering for InstanceData (to prevent deadlocks):
-//   1. g_instances_mutex (global, outermost - shared or exclusive)
-//   2. InstanceData::tensor_binding_mutex (per-instance)
-//   3. InstanceData::op_tracking_mutex (per-instance)
-//   4. InstanceData::simulationMutex (per-instance, innermost)
+//   g_instances_mutex (global, outermost - shared or exclusive)
+//   InstanceData::tensor_binding_mutex (per-instance)
+//   InstanceData::simulationMutex (per-instance, innermost)
 //
 // get_instance() may release g_instances_mutex after pinning the InstanceData
 // lifetime in a shared_ptr. Never acquire the global lock while holding a
@@ -113,8 +135,16 @@ static_assert(offsetof(OvstageAttachPayload, usdStageId) == 16, "OvstageAttachPa
 
 struct InstanceData
 {
-    std::unique_ptr<ovphysx::CarboniteLoader> carbonite;
+    // Companion admission is protected by g_instances_mutex; lease release is
+    // atomic. This does not make general same-instance calls concurrent-safe.
+    std::atomic<uint32_t> companionLeases{0};
+    bool companionDestroying = false;
+    std::shared_ptr<ovphysx::CarboniteLoader> carbonite;
     ovphysx_create_args create_args;
+    // Canonical instance configuration. The string owns the value returned by
+    // ovphysx_get_config; the parsed vector is consumed at stage attach.
+    std::string active_cuda_gpus;
+    bool active_cuda_gpus_configured = false;
     // Parsed active_cuda_gpus ordinals, resolved once at create time. Empty when
     // the caller did not restrict GPU ordinals. create_args.active_cuda_gpus is a
     // non-owning {ptr,length} view into the caller's buffer, which may be freed
@@ -139,38 +169,53 @@ struct InstanceData
     std::unordered_set<std::string> cloned_target_paths;
 
     // Async simulation state
-    float pendingElapsedTime = 0.0f;
-    float pendingCurrentTime = 0.0f;
-    // Last successful step_dt from any stepping entry point, used by contact
+    // dt of the last dispatched step that actually simulated, used by contact
     // read functions (force = impulse / dt). Initialized to 1.0f so pre-step
-    // reads are safe. Clamped to positive on write so that a zero-dt step never
-    // causes division by zero in the contact force conversion. Thread safety
-    // relies on the single-instance serialization contract.
+    // reads are safe. Only positive dts are written: a zero-dt step is a skipped
+    // no-op that leaves the previous step's contact impulses in place, so the
+    // divisor must stay on that step's dt -- overwriting it would scale every
+    // contact force by 1/dt. Never 0, so the conversion cannot divide by zero.
+    // Thread safety relies on the single-instance serialization contract.
     float last_step_dt = 1.0f;
     // Internal simulation-time counter: the simulation time at the start of the
-    // next step. Initialized to 0.0 at construction, advanced by dt per
-    // step/step_sync and by n*dt per step_n_sync. Fed to simulate() for
+    // next step. Initialized to 0.0 at construction and advanced by dt per
+    // step/step_sync. Fed to simulate() for
     // timestamps and not exposed through the public API. Guarded by the same
     // single-instance serialization contract as last_step_dt.
     float sim_time = 0.0f;
-    async_event_handle_t pendingSimulationEvent = 0;
+    // At most one simulation can be in flight. Public steps have a task index;
+    // internal warmup uses index zero and the same fetchResults path.
+    struct PendingSimulation
+    {
+        bool active = false;
+        ovphysx_op_index_t task_index = 0;
+        bool failed = false;
+        std::string error;
+
+        void fail(const char* message) noexcept
+        {
+            if (failed)
+                return;
+            failed = true;
+            try { error = message; } catch (...) { error.clear(); }
+        }
+    } pending_simulation;
     std::mutex simulationMutex;  // Guards simulation state. See lock ordering above.
     
-    // Per-instance async operation tracking. op_to_event holds the
-    // CPU/AsyncEventManager events. Each op_index is single-use: after waiting,
-    // the event is destroyed and removed from the map.
+    // Execution records are retired separately from public acknowledgement.
+    // A pending task reserves its failure slot before execution starts; successful
+    // retirement drops the slot, so completed successes need no per-task payload.
     std::atomic<ovphysx_op_index_t> next_op_index{1};
-    std::unordered_map<ovphysx_op_index_t, async_event_handle_t> op_to_event;
-    // Highest op_index consumed by wait_for_all_pending_ops. A missing index at
-    // or below this watermark can be acknowledged once by a later explicit wait.
-    // Protected by op_tracking_mutex.
-    ovphysx_op_index_t last_internally_synced_op_index = 0;
-    // Highest op_index consumed by an explicit wait_op call. The wait processes
-    // indices in order and stops at the first pending timeout, so consumed
-    // indices always form a prefix. This takes precedence over the internal-sync
-    // watermark. Protected by op_tracking_mutex.
-    ovphysx_op_index_t last_explicitly_consumed_op_index = 0;
-    std::mutex op_tracking_mutex;  // Guards op maps. See lock ordering above.
+    std::map<ovphysx_op_index_t, std::string> task_errors;
+    ovphysx_op_index_t collected_prefix = 0;
+    std::map<ovphysx_op_index_t, ovphysx_op_index_t> collected_ranges;
+    std::vector<std::weak_ptr<TaskWaitStorage>> retained_wait_results;
+    // Output sessions belong to the creating instance. Detach retires writes;
+    // pinned reads remain owned until release or instance destruction.
+    // A true value means release was accepted; only teardown may retry cleanup.
+    std::unordered_map<ovphysx_query_handle_t, bool> output_queries;
+    std::unordered_map<ovphysx_read_handle_t, bool> output_reads;
+    std::unordered_map<ovphysx_write_handle_t, bool> output_writes;
 
     // Tensor binding tracking (TensorAPI-backed)
     std::unordered_map<ovphysx_tensor_binding_handle_t, TensorBindingState> tensor_bindings;
@@ -179,12 +224,15 @@ struct InstanceData
     // Contact binding tracking (IRigidContactView-backed)
     std::unordered_map<ovphysx_contact_binding_handle_t, ContactBindingState> contact_bindings;
 
+
     // SDF view tracking (ISdfShapeView-backed)
     struct SdfViewState {
         // Attach identity, not a USD stage id. See TensorBindingState::attachHandle.
         omni::physics::tensors::AttachHandle attachHandle = omni::physics::tensors::kNoAttach;
         uint32_t maxQueryPoints = 0;
         omni::physics::tensors::ISdfShapeView* view = nullptr;
+        // Keep the runtime admission owner alive until its child view is released.
+        omni::physics::tensors::ISimulationView* simView = nullptr;
     };
     std::unordered_map<ovphysx_sdf_view_handle_t, SdfViewState> sdf_views;
 
@@ -192,6 +240,10 @@ struct InstanceData
     // Not thread-safe: concurrent scene queries on the same instance are a data race.
     // Callers serialize access per the single-threaded instance contract.
     std::vector<ovphysx_scene_query_hit_t> sceneQueryHitBuffer;
+
+    // True after this detach already dropped visualization scope tokens. Destroy's
+    // fallback clear must not call the sidecar again when detachStage then fails.
+    bool visualizationScopeDropped = false;
 
     // Warmup tracking: requires at least one simulate() before tensor reads (CPU or GPU).
     // Reset when stage changes. Atomic for thread-safe double-checked locking in read path.
@@ -202,10 +254,9 @@ struct InstanceData
     std::atomic<omni::physics::tensors::AttachHandle> warmup_attach_handle{
         omni::physics::tensors::kNoAttach};
 
-    // Whether the first step() (any of ovphysx_step/_sync/_n_sync) has run for
-    // the current stage, in any mode (CPU or GPU). Set unconditionally so clone()'s
-    // after-step guard fires even when warmup() was not called explicitly. Reset
-    // alongside warmup_done wherever that flag is cleared.
+    // Async step or warmup dispatched for this attach, including a dispatch that
+    // reported an error. Clone must reject it even if warmup did not succeed.
+    // Reset alongside warmup_done wherever that flag is cleared.
     std::atomic<bool> first_step_done{false};
 
     // Whether physxSim->attachStage() has been called for the current stage.
@@ -232,15 +283,10 @@ struct InstanceData
         physics_attached.store(physicsAttached, std::memory_order_release);
         initial_parse_done.store(false, std::memory_order_release);
     }
-    // Fast-path flag for tensor read/write. Set to true after wait_op/sync
-    // completes with no pending ops. Cleared when a new step is enqueued.
-    // When true, read/write skips wait_all_pending_internal, which acquires
-    // two mutexes and allocates a vector.
-    std::atomic<bool> all_ops_synced{false};
     
     InstanceData() = default;
     
-    ~InstanceData();
+    ~InstanceData() = default;
     
     // Not copyable due to unique_ptr and mutex.
     InstanceData(const InstanceData&) = delete;
@@ -252,7 +298,7 @@ struct InstanceData
     InstanceData& operator=(InstanceData&&) = delete;
 };
 
-extern std::unordered_map<ovphysx_handle_t, std::shared_ptr<InstanceData>> g_instances;
+extern std::unordered_map<ovphysx_instance_handle_t, std::shared_ptr<InstanceData>> g_instances;
 extern std::shared_mutex g_instances_mutex;
 
 // True when this process must never touch the GPU: either ovphysx_set_cpu_mode(true)
@@ -263,16 +309,27 @@ bool isProcessGpuDisabled();
 
 // Waits for all pending operations (stream-ordered execution). Returns
 // OVPHYSX_API_SUCCESS when all operations completed, or an error status.
-ovphysx_api_status_t omni_sdk_physx_wait_all_pending_internal(ovphysx_handle_t handle);
+ovphysx_api_status_t omni_sdk_physx_wait_all_pending_internal(ovphysx_instance_handle_t handle);
+
+// Finishes the internal warmup and propagates its execution error.
+ovphysx_api_status_t omni_sdk_physx_finish_warmup(ovphysx_instance_handle_t handle);
+
+// Called before runtime/dictionary teardown, after simulation completion.
+void cleanup_output_sessions(ovphysx_instance_handle_t handle, InstanceData& instance) noexcept;
+void cleanup_output_writes(InstanceData& instance) noexcept;
 
 // Starts a simulation step and returns without waiting for it. Used by
 // ovphysx_step() and auto-warmup in tensor binding.
-ovphysx_api_status_t omni_sdk_physx_simulate_instance(ovphysx_handle_t handle, float elapsedTime, float currentTime);
+// task_index is the already accepted public receipt's index, used only to
+// associate simulation completion and errors with that task. Pass zero for
+// internal warmup, which creates no public receipt. Public waits take full receipts.
+ovphysx_api_status_t omni_sdk_physx_simulate_instance(ovphysx_instance_handle_t handle, float elapsedTime, float currentTime,
+                                                        ovphysx_op_index_t task_index = 0);
 
 // Looks up an instance by handle, taking g_instances_mutex internally. Returns
 // nullptr if the handle is not found. The returned shared_ptr keeps the instance
 // alive even if another thread calls ovphysx_destroy_instance.
-inline std::shared_ptr<InstanceData> get_instance(ovphysx_handle_t handle) {
+inline std::shared_ptr<InstanceData> get_instance(ovphysx_instance_handle_t handle) {
     std::shared_lock<std::shared_mutex> lock(g_instances_mutex);
     auto it = g_instances.find(handle);
     return (it != g_instances.end()) ? it->second : nullptr;
@@ -280,7 +337,7 @@ inline std::shared_ptr<InstanceData> get_instance(ovphysx_handle_t handle) {
 
 // Raw pointer version for callers that already hold g_instances_mutex. The
 // returned pointer becomes invalid after releasing the lock.
-inline InstanceData* get_instance_ptr(ovphysx_handle_t handle) {
+inline InstanceData* get_instance_ptr(ovphysx_instance_handle_t handle) {
     auto it = g_instances.find(handle);
     return (it != g_instances.end()) ? it->second.get() : nullptr;
 }
@@ -288,7 +345,7 @@ inline InstanceData* get_instance_ptr(ovphysx_handle_t handle) {
 
 // Lazy physics-attach helper (ovphysx.cpp). Triggers attachStage() if not
 // yet done for the current stage.
-ovphysx_api_status_t ovphysx_ensure_physics_attached(ovphysx_handle_t handle);
+ovphysx_api_status_t ovphysx_ensure_physics_attached(ovphysx_instance_handle_t handle);
 
 // Tensor binding cleanup (ovphysxTensorBinding.cpp)
 void ovphysx_tensor_binding_cleanup_instance(InstanceData* instance);
@@ -299,16 +356,21 @@ void ovphysx_contact_binding_cleanup_instance(InstanceData* instance);
 // SDF view cleanup (ovphysxSdfView.cpp)
 void ovphysx_sdf_view_cleanup_instance(InstanceData* instance);
 
+// Object-change subscriptions owned by this handle (ovphysxObjectChangeCallbacks.cpp).
+bool ovphysx_object_change_attach_instance(ovphysx_instance_handle_t handle, uint64_t attach);
+void ovphysx_object_change_detached_instance(ovphysx_instance_handle_t handle);
+void ovphysx_object_change_cleanup_instance(ovphysx_instance_handle_t handle);
+
 // Warmup helper (ovphysxTensorBinding.cpp), also callable from contact/SDF binding.
-ovphysx_result_t ovphysx_warmup_if_needed(ovphysx_handle_t handle, bool is_explicit_call);
+ovphysx_result_t ovphysx_warmup_if_needed(ovphysx_instance_handle_t handle, bool is_explicit_call);
 
 // ============================================================================
 // Thread-local error storage (TLS error model)
 // ============================================================================
 
 struct ThreadLocalError {
-    std::string last_error;                                        // general API error
-    std::unordered_map<ovphysx_op_index_t, std::string> op_errors; // per-op errors from wait_op
+    std::string last_error;
+    ovphysx_string_t fallback_error{};
 };
 
 inline ThreadLocalError& tls_error() {
@@ -316,14 +378,21 @@ inline ThreadLocalError& tls_error() {
     return t_error;
 }
 
-inline ovphysx_result_t set_error(ovphysx_api_status_t status, const char* msg) {
-    tls_error().last_error = msg ? msg : "";
+inline ovphysx_result_t set_error(ovphysx_api_status_t status, const char* msg) noexcept {
+    ThreadLocalError& error = tls_error();
+    error.fallback_error = {};
+    try {
+        error.last_error = msg ? msg : "";
+    } catch (...) {
+        error.last_error.clear();
+        static constexpr char fallback[] = "Unable to store error detail (allocation failed)";
+        error.fallback_error = {fallback, sizeof(fallback) - 1};
+    }
     return {status};
 }
 
-inline ovphysx_result_t set_error(ovphysx_api_status_t status, const std::string& msg) {
-    tls_error().last_error = msg;
-    return {status};
+inline ovphysx_result_t set_error(ovphysx_api_status_t status, const std::string& msg) noexcept {
+    return set_error(status, msg.c_str());
 }
 
 // Both strings are caller-owned, non-null text. Copy the runtime detail before its scope ends.
@@ -332,33 +401,19 @@ inline ovphysx_result_t set_runtime_error(const char* context, const char* detai
                      : set_error(OVPHYSX_API_ERROR, context);
 }
 
-inline ovphysx_result_t success() {
+inline ovphysx_result_t success() noexcept {
     tls_error().last_error.clear();
+    tls_error().fallback_error = {};
     return {OVPHYSX_API_SUCCESS};
 }
 
-inline ovphysx_enqueue_result_t set_enqueue_error(ovphysx_api_status_t status, const char* msg) {
-    tls_error().last_error = msg ? msg : "";
-    return {status, 0};
+inline ovphysx_enqueue_result_t set_enqueue_error(ovphysx_api_status_t status, const char* msg) noexcept {
+    set_error(status, msg);
+    return {status, 0, 0};
 }
 
-inline ovphysx_enqueue_result_t set_enqueue_error(ovphysx_api_status_t status, const std::string& msg) {
-    tls_error().last_error = msg;
-    return {status, 0};
-}
-
-inline ovphysx_enqueue_result_t enqueue_success(ovphysx_op_index_t op_index) {
-    tls_error().last_error.clear();
-    return {OVPHYSX_API_SUCCESS, op_index};
-}
-
-inline ovphysx_string_t make_error(const char* msg) {
-    tls_error().last_error = msg ? msg : "";
-    return {tls_error().last_error.c_str(), tls_error().last_error.size()};
-}
-
-inline ovphysx_string_t make_error(const std::string& msg) {
-    return make_error(msg.c_str());
+inline ovphysx_enqueue_result_t set_enqueue_error(ovphysx_api_status_t status, const std::string& msg) noexcept {
+    return set_enqueue_error(status, msg.c_str());
 }
 
 inline bool isValid(const ovphysx_string_t& s)

@@ -20,6 +20,7 @@
 #include "test_utilities.h"
 
 #include <ovphysx/ovphysx.h>
+#include <ovphysx/ovphysx_attributes.h>
 #include <ovphysx/ovphysx_config.h>
 
 #include <ovstage/ovx_path_dictionary.h>
@@ -54,47 +55,50 @@ ovstage_cuda_sync_t noSync()
     return s;
 }
 
-bool stepOnce(ovphysx_handle_t handle)
+bool stepOnce(ovphysx_instance_handle_t handle)
 {
     return ovphysx_step_sync(handle, 1.0f / 60.0f).status == OVPHYSX_API_SUCCESS;
 }
 
-std::map<std::string, float> readMassByPath(ovphysx_handle_t handle)
+std::map<std::string, float> readMassByPath(ovphysx_instance_handle_t handle)
 {
     std::map<std::string, float> out;
     ovphysx_query_handle_t q = 0;
-    if (ovphysx_query(handle, OVPHYSX_OBJECT_RIGID_BODY, OVPHYSX_SCOPE_ALL, &q).status != OVPHYSX_API_SUCCESS ||
+    if (test_utils::complete_task(handle, ovphysx_query(handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &q, nullptr)).status != OVPHYSX_API_SUCCESS ||
         q == 0)
         return out;
 
-    void* dictVoid = nullptr;
-    if (ovphysx_query_shared_dictionary(handle, q, &dictVoid).status != OVPHYSX_API_SUCCESS || !dictVoid)
+    ovx_path_dictionary_t* dict = attached_ovstage_dictionary(handle);
+    if (!dict)
     {
-        ovphysx_release_query(handle, q);
+        test_utils::complete_task(handle, ovphysx_release_query(handle, q));
         return out;
     }
-    ovx_path_dictionary_t* dict = static_cast<ovx_path_dictionary_t*>(dictVoid);
 
     const ovx_string_or_token_t attr = makeAttr(OVPHYSX_ATTR_MASS);
     ovphysx_read_handle_t rh = 0;
-    if (ovphysx_read(handle, q, &attr, 1, &rh).status != OVPHYSX_API_SUCCESS)
+    if (test_utils::complete_task(handle, ovphysx_read(handle, q, &attr, 1, &rh, nullptr)).status != OVPHYSX_API_SUCCESS)
     {
-        ovphysx_release_query(handle, q);
+        test_utils::complete_task(handle, ovphysx_release_query(handle, q));
         return out;
     }
 
     const ovstage_read_group_t* g = nullptr;
-    while (ovphysx_fetch_read_next(handle, rh, &g).status == OVPHYSX_API_SUCCESS)
+    for (;;)
     {
+        const ovphysx_result_t fetch = test_utils::complete_task(handle, ovphysx_fetch_read_next(handle, rh, &g));
+        EXPECT_EQ(fetch.status, OVPHYSX_API_SUCCESS) << test_utils::last_task_error();
+        if (fetch.status != OVPHYSX_API_SUCCESS || !g)
+            break;
         if (!g || g->data.tensor_count == 0 || !g->data.tensors)
         {
-            ovphysx_release_group(handle, rh, g ? g->read_group_id : 0);
+            test_utils::complete_task(handle, ovphysx_release_group(handle, rh, g ? g->read_group_id : 0));
             continue;
         }
         const DLTensor& t = g->data.tensors[0];
         if (t.device.device_type != kDLCPU || !t.data)
         {
-            ovphysx_release_group(handle, rh, g->read_group_id);
+            test_utils::complete_task(handle, ovphysx_release_group(handle, rh, g->read_group_id));
             continue;
         }
 
@@ -102,7 +106,7 @@ std::map<std::string, float> readMassByPath(ovphysx_handle_t handle)
         size_t pathCount = 0;
         if (ovx_path_dictionary_get_paths(dict, g->prims.list, &paths, &pathCount) != OVX_OK || !paths)
         {
-            ovphysx_release_group(handle, rh, g->read_group_id);
+            test_utils::complete_task(handle, ovphysx_release_group(handle, rh, g->read_group_id));
             continue;
         }
 
@@ -115,56 +119,62 @@ std::map<std::string, float> readMassByPath(ovphysx_handle_t handle)
                 continue;
             out[std::string(ps.ptr, ps.length)] = values[i];
         }
-        ovphysx_release_group(handle, rh, g->read_group_id);
+        test_utils::complete_task(handle, ovphysx_release_group(handle, rh, g->read_group_id));
     }
 
-    ovphysx_release_read(handle, rh);
-    ovphysx_release_query(handle, q);
+    test_utils::complete_task(handle, ovphysx_release_read(handle, rh));
+    test_utils::complete_task(handle, ovphysx_release_query(handle, q));
     return out;
 }
 
-uint32_t queryPrimCount(ovphysx_handle_t handle)
+uint32_t queryPrimCount(ovphysx_instance_handle_t handle)
 {
     ovphysx_query_handle_t q = 0;
-    if (ovphysx_query(handle, OVPHYSX_OBJECT_RIGID_BODY, OVPHYSX_SCOPE_ALL, &q).status != OVPHYSX_API_SUCCESS)
-        return 0;
     ovstage_query_result_t qr{};
-    const ovphysx_api_status_t st = ovphysx_fetch_query_result(handle, q, &qr).status;
-    ovphysx_release_query(handle, q);
-    if (st != OVPHYSX_API_SUCCESS)
+    if (test_utils::complete_task(handle, ovphysx_query(handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &q, &qr)).status != OVPHYSX_API_SUCCESS)
         return 0;
+    test_utils::complete_task(handle, ovphysx_release_query(handle, q));
     return qr.total_prim_count;
 }
 
-bool writeMassByPath(ovphysx_handle_t handle, const std::map<std::string, float>& masses)
+bool writeMassByPath(ovphysx_instance_handle_t handle, const std::map<std::string, float>& masses)
 {
     std::map<std::string, float> merged = readMassByPath(handle);
     for (const std::pair<const std::string, float>& item : masses)
         merged[item.first] = item.second;
     ovphysx_query_handle_t q = 0;
-    if (ovphysx_query(handle, OVPHYSX_OBJECT_RIGID_BODY, OVPHYSX_SCOPE_ALL, &q).status != OVPHYSX_API_SUCCESS)
+    if (test_utils::complete_task(handle, ovphysx_query(handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &q, nullptr)).status != OVPHYSX_API_SUCCESS)
         return false;
 
-    void* dictVoid = nullptr;
-    if (ovphysx_query_shared_dictionary(handle, q, &dictVoid).status != OVPHYSX_API_SUCCESS || !dictVoid)
+    ovx_path_dictionary_t* dict = attached_ovstage_dictionary(handle);
+    if (!dict)
     {
-        ovphysx_release_query(handle, q);
+        test_utils::complete_task(handle, ovphysx_release_query(handle, q));
         return false;
     }
-    ovx_path_dictionary_t* dict = static_cast<ovx_path_dictionary_t*>(dictVoid);
 
     const ovx_string_or_token_t attr = makeAttr(OVPHYSX_ATTR_MASS);
     ovphysx_write_handle_t w = 0;
-    if (ovphysx_write(handle, q, &attr, &w).status != OVPHYSX_API_SUCCESS)
+    if (test_utils::complete_task(handle, ovphysx_write(handle, q, &attr, 1, &w, nullptr)).status != OVPHYSX_API_SUCCESS)
     {
-        ovphysx_release_query(handle, q);
+        test_utils::complete_task(handle, ovphysx_release_query(handle, q));
         return false;
     }
 
     bool ok = true;
-    const ovstage_map_group_t* g = nullptr;
-    while (ovphysx_fetch_write_next(handle, w, &g).status == OVPHYSX_API_SUCCESS)
+    ovphysx_fetched_write_group_t fetched{};
+    for (;;)
     {
+        const ovphysx_result_t fetch = test_utils::complete_task(handle, ovphysx_fetch_write_next(handle, w, &fetched));
+        EXPECT_EQ(fetch.status, OVPHYSX_API_SUCCESS) << test_utils::last_task_error();
+        if (fetch.status != OVPHYSX_API_SUCCESS)
+        {
+            ok = false;
+            break;
+        }
+        const ovstage_map_group_t* g = fetched.group;
+        if (!g)
+            break;
         if (!g || g->data.tensor_count == 0 || !g->data.tensors)
         {
             ok = false;
@@ -195,44 +205,53 @@ bool writeMassByPath(ovphysx_handle_t handle, const std::map<std::string, float>
             if (it != merged.end())
                 values[i] = it->second;
         }
-        if (ovphysx_commit_group(handle, w, g, noSync()).status != OVPHYSX_API_SUCCESS)
+        if (test_utils::complete_task(handle, ovphysx_commit_group(handle, w, g, noSync())).status != OVPHYSX_API_SUCCESS)
         {
             ok = false;
             break;
         }
     }
 
-    ovphysx_release_write(handle, w);
-    ovphysx_release_query(handle, q);
+    test_utils::complete_task(handle, ovphysx_release_write(handle, w));
+    test_utils::complete_task(handle, ovphysx_release_query(handle, q));
     return ok;
 }
 
-bool writeDisableSimulationByPath(ovphysx_handle_t handle, const std::map<std::string, uint8_t>& flags)
+bool writeDisableSimulationByPath(ovphysx_instance_handle_t handle, const std::map<std::string, uint8_t>& flags)
 {
     ovphysx_query_handle_t q = 0;
-    if (ovphysx_query(handle, OVPHYSX_OBJECT_RIGID_BODY, OVPHYSX_SCOPE_ALL, &q).status != OVPHYSX_API_SUCCESS)
+    if (test_utils::complete_task(handle, ovphysx_query(handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &q, nullptr)).status != OVPHYSX_API_SUCCESS)
         return false;
 
-    void* dictVoid = nullptr;
-    if (ovphysx_query_shared_dictionary(handle, q, &dictVoid).status != OVPHYSX_API_SUCCESS || !dictVoid)
+    ovx_path_dictionary_t* dict = attached_ovstage_dictionary(handle);
+    if (!dict)
     {
-        ovphysx_release_query(handle, q);
+        test_utils::complete_task(handle, ovphysx_release_query(handle, q));
         return false;
     }
-    ovx_path_dictionary_t* dict = static_cast<ovx_path_dictionary_t*>(dictVoid);
 
     const ovx_string_or_token_t attr = makeAttr(OVPHYSX_ATTR_DISABLE_SIMULATION);
     ovphysx_write_handle_t w = 0;
-    if (ovphysx_write(handle, q, &attr, &w).status != OVPHYSX_API_SUCCESS)
+    if (test_utils::complete_task(handle, ovphysx_write(handle, q, &attr, 1, &w, nullptr)).status != OVPHYSX_API_SUCCESS)
     {
-        ovphysx_release_query(handle, q);
+        test_utils::complete_task(handle, ovphysx_release_query(handle, q));
         return false;
     }
 
     bool ok = true;
-    const ovstage_map_group_t* g = nullptr;
-    while (ovphysx_fetch_write_next(handle, w, &g).status == OVPHYSX_API_SUCCESS)
+    ovphysx_fetched_write_group_t fetched{};
+    for (;;)
     {
+        const ovphysx_result_t fetch = test_utils::complete_task(handle, ovphysx_fetch_write_next(handle, w, &fetched));
+        EXPECT_EQ(fetch.status, OVPHYSX_API_SUCCESS) << test_utils::last_task_error();
+        if (fetch.status != OVPHYSX_API_SUCCESS)
+        {
+            ok = false;
+            break;
+        }
+        const ovstage_map_group_t* g = fetched.group;
+        if (!g)
+            break;
         if (!g || g->data.tensor_count == 0 || !g->data.tensors)
         {
             ok = false;
@@ -264,15 +283,15 @@ bool writeDisableSimulationByPath(ovphysx_handle_t handle, const std::map<std::s
             if (it != flags.end())
                 values[i] = it->second;
         }
-        if (ovphysx_commit_group(handle, w, g, noSync()).status != OVPHYSX_API_SUCCESS)
+        if (test_utils::complete_task(handle, ovphysx_commit_group(handle, w, g, noSync())).status != OVPHYSX_API_SUCCESS)
         {
             ok = false;
             break;
         }
     }
 
-    ovphysx_release_write(handle, w);
-    ovphysx_release_query(handle, q);
+    test_utils::complete_task(handle, ovphysx_release_write(handle, w));
+    test_utils::complete_task(handle, ovphysx_release_query(handle, q));
     return ok;
 }
 
@@ -308,11 +327,11 @@ TEST_F(PhysXTestFixture, CpuOfficialDisableKeepsDisabledBodyInReadColumns)
 
 class DirectGpuDisabledBodyGpuTest : public ::testing::Test
 {
-    static ovphysx_handle_t s_handle;
+    static ovphysx_instance_handle_t s_handle;
     static std::string s_skipReason;
 
 protected:
-    ovphysx_handle_t m_handle = 0;
+    ovphysx_instance_handle_t m_handle = 0;
 
     static void SetUpTestSuite()
     {
@@ -324,7 +343,7 @@ protected:
         args.config_entries = directGpu;
         args.config_entry_count = sizeof(directGpu) / sizeof(directGpu[0]);
 
-        ovphysx_result_t created = ovphysx_create_instance(&args, &s_handle);
+        ovphysx_result_t created = ovphysx_create_instance_with_args(&args, &s_handle);
         if (created.status != OVPHYSX_API_SUCCESS)
         {
             ovphysx_string_t err = ovphysx_get_last_error();
@@ -365,12 +384,12 @@ protected:
     {
         if (s_handle != 0)
         {
-            ovphysx_enqueue_result_t reset = ovphysx_reset_stage(s_handle);
+            ovphysx_enqueue_result_t reset = ovphysx_detach_ovstage(s_handle);
             if (reset.status == OVPHYSX_API_SUCCESS && reset.op_index != 0)
             {
-                ovphysx_op_wait_result_t wait{};
-                ovphysx_wait_op(s_handle, reset.op_index, 10'000'000'000ULL, &wait);
-                ovphysx_destroy_wait_result(&wait);
+                ovphysx_wait_task_result_t wait{};
+                ovphysx_wait_task(s_handle, reset, 10'000'000'000ULL, &wait);
+                ovphysx_destroy_wait_task_result(&wait);
             }
             test_utils::destroy_ovstage_test_attachments(s_handle);
         }
@@ -384,7 +403,7 @@ protected:
     }
 };
 
-ovphysx_handle_t DirectGpuDisabledBodyGpuTest::s_handle = 0;
+ovphysx_instance_handle_t DirectGpuDisabledBodyGpuTest::s_handle = 0;
 std::string DirectGpuDisabledBodyGpuTest::s_skipReason;
 
 TEST_F(DirectGpuDisabledBodyGpuTest, OfficialDisableOmitsBodyAndWriteLandsOnNamedPeers)

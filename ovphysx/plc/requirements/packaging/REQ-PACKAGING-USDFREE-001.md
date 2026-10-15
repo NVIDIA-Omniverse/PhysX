@@ -27,9 +27,8 @@ incompatibility gate) is gone: there is no OFF arm.
 The payload carries no namespaced monolith (`libov_<ver>usd_ms`), no USD
 dependency closure (TBB, MaterialX, Alembic, Imath, OpenSubdiv, draco, hdStorm),
 no USD plugin registry (`plugins/usd`) and no USD-runtime configuration
-(`config.toml`). The only USD-related artifact ovphysx ships is data: the
-codeless PhysX schema tree `schemas/physx` governed by
-REQ-CAPI-OVSTAGE-SCHEMA-001. USD's namespaced monolith owns process-wide
+(`config.toml`). PhysX schema resources are also excluded: the application provisions the
+external provider governed by REQ-CAPI-OVSTAGE-SCHEMA-001. USD's namespaced monolith owns process-wide
 singletons (`TfType`, `TF_DEBUG`, `UsdUtilsStageCache`), so a process reaching
 two monolith images at two paths registers them twice and aborts. ovstage brings
 its own namespaced USD runtime and the application owns whatever OpenUSD it
@@ -65,10 +64,8 @@ product payload.
   `libMaterialX*`, `libAlembic*`, `libImath*`, `libosd*`, `libdraco*`,
   `hdStorm*` and their Windows names) appears anywhere under the installed SDK
   tree (`_install/`) or inside the built wheel, no `plugins/usd` directory
-  exists in either, and neither tree contains a `config.toml`. The only schema
-  payload is `schemas/physx` (SDK) / `ovphysx/schemas/physx` (wheel): a root
-  `plugInfo.json` plus `<Module>/resources/{plugInfo.json,generatedSchema.usda}`
-  for every shipped module.
+  exists in either, and neither tree contains a `config.toml`. Neither tree contains PhysX schema
+  resources; `generatedSchema.usda` is forbidden anywhere in either payload.
 - AC-5: **The test-only USD parsing library is never packaged.** No file produced
   by the `omni.physics.usd` library (`*OvruntimePhysicsUsd*`) appears under the
   installed SDK tree or in the wheel. It exists only in the ovruntime developer
@@ -79,10 +76,9 @@ product payload.
   `libovstage.so` resolves transitively through its own `RUNPATH`. What the host
   application loads for itself is outside this requirement.
 - AC-7: **Packaging fails closed.** `scripts/install.cmake` and
-  `scripts/build_wheel.cmake` run `scripts/verify_pyless_closure.py
-  --require-schemas` over the complete `_install/` and wheel staging trees and
+  `scripts/build_wheel.cmake` run `scripts/verify_pyless_closure.py` over the complete `_install/` and wheel staging trees and
   fail with a specific error on any AC-4 file, any AC-2 import, a `plugins/usd`
-  directory, or a missing or incomplete `schemas/physx` tree. A payload that
+  directory, or any bundled schema resource. A payload that
   violates AC-2 or AC-4 is not a producible output.
 - AC-8: **No shipped SDK header includes pxr.** No header installed into the SDK
   `include/` tree `#include`s `pxr/`, so the shipped headers are self-contained
@@ -102,10 +98,9 @@ product payload.
 
 - ovphysx/CMakeLists.txt (no `OVPHYSX_NO_USD` option; ovruntime configured USD-free unconditionally; no USD include or link directory on `ovphysx` — AC-1)
 - ovphysx/src/ovphysxInternal/CMakeLists.txt (the sidecar links only `ovphysx`; no USD library, include, or link directory — AC-2, AC-3)
-- ovphysx/scripts/package_deps.py (stages Carbonite and PhysX runtime payloads; exports the codeless schema tree; stages no USD — AC-4, AC-7)
-- ovphysx/scripts/export_codeless_schema.py (the `schemas/physx` tree AC-4 requires)
-- ovphysx/scripts/verify_pyless_closure.py (`FORBIDDEN_FILENAMES`, `FORBIDDEN_DT_NEEDED`, `FORBIDDEN_PE_IMPORTS`, `_check_no_usd_plugin_registry`, `_check_codeless_schemas` — AC-2, AC-4, AC-7)
-- ovphysx/scripts/install.cmake and ovphysx/scripts/build_wheel.cmake (the `--require-schemas` verifier invocations that fail the build — AC-4, AC-5, AC-7)
+- ovphysx/scripts/package_deps.py (stages Carbonite and PhysX runtime payloads; removes the obsolete bundled schema tree; stages no USD — AC-4, AC-7)
+- ovphysx/scripts/verify_pyless_closure.py (`FORBIDDEN_FILENAMES`, `FORBIDDEN_DT_NEEDED`, `FORBIDDEN_PE_IMPORTS`, `_check_no_usd_plugin_registry`, `_check_no_bundled_schemas` — AC-2, AC-4, AC-7)
+- ovphysx/scripts/install.cmake and ovphysx/scripts/build_wheel.cmake (the verifier invocations that fail the build — AC-4, AC-5, AC-7)
 - ovphysx/src/CarboniteLoader/CarboniteLoader.cpp and ovphysx/src/ovphysx/ovphysx.cpp (`createInstanceInternal`: Carbonite and PhysX startup with no USD preload, detection, or version check — AC-6)
 - ovphysx/ovruntime/source/omni.physics.usd/CMakeLists.txt (`STATIC`, tests-only, no `install()` — AC-5)
 - ovphysx/ovruntime/CMakeLists.txt (`add_subdirectory(source/omni.physics.usd)` under `OVRUNTIME_ENABLE_TESTS` — AC-1, AC-5)
@@ -115,5 +110,5 @@ product payload.
 
 - REQ-USDLIB-LOADABLE-001 — the test-only USD library this requirement keeps out of the payload.
 - REQ-BUILD-UNIBUILD-001 — the single USD-free `omni.physx` compilation this payload is built from.
-- REQ-CAPI-OVSTAGE-SCHEMA-001 — the codeless `schemas/physx` tree, the one USD-related artifact that does ship.
+- REQ-CAPI-OVSTAGE-SCHEMA-001 — the external schema provider and application registration contract.
 - Supersedes REQ-PACKAGING-NOUSD-001 (ADR-0027); its durable payload guarantees (AC-10 through AC-14 there) migrate here as AC-2, AC-4, AC-6, AC-7 and AC-8.

@@ -66,6 +66,45 @@ std::string makeAnchoredTokenPattern(const std::string& token)
     return "^(" + token + ")$";
 }
 
+// Simple globs need no regex state. Retry the most recent star iteratively, so
+// stack use does not depend on the name length, including for a failed match.
+bool matchSimpleGlob(std::string_view pattern, std::string_view name)
+{
+    if (pattern.find_first_of("*?") == std::string_view::npos)
+        return pattern == name;
+    if (pattern == "*")
+        return name.find('\0') == std::string_view::npos;
+
+    size_t p = 0;
+    size_t n = 0;
+    size_t star = std::string_view::npos;
+    size_t retry = 0;
+    while (n < name.size())
+    {
+        if (p < pattern.size() && pattern[p] == '*')
+        {
+            star = p++;
+            retry = n;
+        }
+        else if (p < pattern.size() &&
+                 ((pattern[p] == '?' && name[n] != '\0') || pattern[p] == name[n]))
+        {
+            ++p;
+            ++n;
+        }
+        else if (star != std::string_view::npos && retry < name.size() && name[retry] != '\0')
+        {
+            p = star + 1;
+            n = ++retry;
+        }
+        else
+            return false;
+    }
+    while (p < pattern.size() && pattern[p] == '*')
+        ++p;
+    return p == pattern.size();
+}
+
 // Derives a path segment's name from the source's display string for `key`, since
 // IPhysicsSource has no getName -- the trailing component after the last slash.
 std::string lastPathComponent(const IPhysicsSource& source, ObjectKey key)
@@ -118,7 +157,23 @@ GlobRegex::GlobRegex(const std::string& token)
     }
     try
     {
-        mRegex = std::regex(applyGlobTransform(makeAnchoredTokenPattern(token)), std::regex::extended);
+        std::regex::flag_type flags = std::regex::extended;
+#if defined(__GLIBCXX__)
+        // Keep common literals/globs out of the more expensive safe regex executor.
+        // The whitelist excludes ERE operators and escapes; '.' stays a literal.
+        if (token.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.?*") ==
+            std::string::npos)
+        {
+            mSimplePattern = token;
+            mSimple = true;
+            mValid = true;
+            return;
+        }
+        // Use libstdc++'s breadth-first executor: the default recurses per name character.
+        // POSIX extended patterns do not support the back-references this mode rejects.
+        flags |= std::regex_constants::__polynomial;
+#endif
+        mRegex = std::regex(applyGlobTransform(makeAnchoredTokenPattern(token)), flags);
         mValid = true;
     }
     catch (const std::regex_error&)
@@ -129,7 +184,7 @@ GlobRegex::GlobRegex(const std::string& token)
 
 bool GlobRegex::match(const std::string& name) const
 {
-    return mValid && std::regex_match(name, mRegex);
+    return mValid && (mSimple ? matchSimpleGlob(mSimplePattern, name) : std::regex_match(name, mRegex));
 }
 
 std::string trimSlashes(const std::string& s)

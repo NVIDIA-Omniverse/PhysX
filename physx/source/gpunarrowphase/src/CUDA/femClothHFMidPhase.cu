@@ -229,7 +229,7 @@ extern "C" __global__ void cloth_heightfieldMidphaseGeneratePairsLaunch(
 
 			const PxU32 nbIter = (nbTriangles + nbThreadsPerCm - 1) / nbThreadsPerCm;
 
-			const uint4* triVertIndices = cloth.mTriangleVertexIndices;// s_warpScratch->trimeshTriVertIndices;
+			const uint4* triVertIndices = cloth.mTriangleVertexIndices_ownedEdges;// s_warpScratch->trimeshTriVertIndices;
 
 			const float4* positions = cloth.mPosition_InvMass;
 			

@@ -1,6 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-SERVICES-001
+// @covers AC-1 AC-2 AC-3 AC-4
+
+// @implements REQ-ATTACH-RESOLVE-001
+// @covers AC-4 AC-6 AC-8
+
 /**
  * @implements REQ-OMNIPVD-TRANSPORT-001
  * @covers AC-3
@@ -8,7 +14,11 @@
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7 AC-8 AC-9 AC-10
  */
 
+// @implements REQ-SDK-INIT-001
+// @covers AC-1 AC-4
+
 #pragma once
+#include <carb/tasking/TaskingUtils.h>
 
 #include <PxPhysicsAPI.h>
 #include <omnipvd/PxOmniPvd.h>
@@ -20,6 +30,8 @@
 #include "utils/Pair.h"
 
 #include <mutex>
+#include <memory>
+#include <unordered_set>
 
 #include "PhysXScene.h"
 #include "SceneMultiGPUMode.h"
@@ -54,9 +66,7 @@ const uint32_t CONTACT_SOLVE_DISABLE = 1 << 2;
 
 const size_t kDefaultPhysXSceneId = 0;
 
-using PhysXScenesMap = std::unordered_map<size_t, PhysXScene*>;
-using FilteredPairsSet = std::unordered_map<Pair<uint32_t>, uint32_t, PairHash>;
-using CollisionGroupsPairsSet = std::unordered_set<Pair<uint32_t>, PairHash>;
+using PhysXScenesMap = std::unordered_map<const ::physx::PxScene*, PhysXScene*>;
 
 // Class holding and handling PhysX global objects like PxPhysics, PxFoundation
 class PhysXSetup : private ::physx::PxOmniPvdEventCallback
@@ -67,6 +77,7 @@ public:
 
     ///////////////////////////////////////////////////////////////////////////////////////
     // Tolerances scales
+    // Invalid stage units return an invalid scale and log an error; callers must reject it.
     ::physx::PxTolerancesScale getDefaultTolerances(double metersPerUnit);
 
     ///////////////////////////////////////////////////////////////////////////////////////
@@ -79,39 +90,29 @@ public:
 
     ///////////////////////////////////////////////////////////////////////////////////////
     // Pointer acceses
+    // Lazily initializes the SDK; returns nullptr when initialization fails.
     ::physx::PxPhysics* getPhysics();
+    // Acquire before realization, including empty candidates. Release only after
+    // native objects and deferred work are retired, at attachment destruction.
+    bool acquireAttachmentResources(usdparser::AttachedStage& attachment);
+    ::physx::PxCudaContextManager* acquireAttachmentCudaContext(usdparser::AttachedStage& attachment);
+    void releaseAttachmentResources(const usdparser::AttachedStage& attachment);
+    bool hasResourceBorrowers() const;
+    PhysxSharedSettings getSharedSettingsDefaults() const;
     ::physx::PxDefaultAllocator& getAllocator()
     {
         return mAllocator;
     }
-    // Borrowed pointer, no reference taken. Only safe on the main thread and only for code that
-    // cannot outlive the current manager; anything else must use acquireCudaContextManager().
-    ::physx::PxCudaContextManager* getCudaContextManager(size_t id = 0) const;
-    ::physx::PxCudaContextManager* getNextCudaContextManager();
+    void reportCudaContextError(const usdparser::AttachedStage& owner, ::physx::PxCudaContextManager* manager);
 
-    /**
-     * Same as getCudaContextManager(), but returns the manager with a reference already taken (or
-     * null), under the lock that also guards every release of mCudaContextManagers.
-     *
-     * This is what other subsystems must use when they keep the pointer past the call. A consumer
-     * on another thread has no race-free moment in which to call acquireReference() itself: it
-     * borrows the pointer from the getter above, and setupGPU()/clearCudaContextManagers() can
-     * destroy the manager on the main thread between that read and the acquire (OMPE-106105).
-     *
-     * @implements REQ-COOK-CUDACTX-001
-     * @covers AC-1
-     */
-    ::physx::PxCudaContextManager* acquireCudaContextManager(size_t id = 0);
-
-    ::physx::PxCpuDispatcher* getCpuDispatcher() const
-    {
-        return mDispatcher;
-    }
     ::physx::PxSerializationRegistry* getSerializationRegistry()
     {
         if (!mSerializationRegistry)
         {
-            mSerializationRegistry = ::physx::PxSerialization::createSerializationRegistry(*getPhysics());
+            ::physx::PxPhysics* physics = getPhysics();
+            if (!physics)
+                return nullptr;
+            mSerializationRegistry = ::physx::PxSerialization::createSerializationRegistry(*physics);
         }
         return mSerializationRegistry;
     }
@@ -126,71 +127,30 @@ public:
 
     ///////////////////////////////////////////////////////////////////////////////////////
     // PxScene handling
-    PhysXScene* getPhysXScene(size_t id) const
+    // Exact native-scene ownership lookup; foreign and retired scenes return null.
+    PhysXScene* findPhysXScene(const ::physx::PxScene* scene) const
     {
-        if (id == 0)
-        {
-            return mDefaultScene;
-        }
-        PhysXScenesMap::const_iterator fit = mPhysXScenes.find(id);
-        return (fit != mPhysXScenes.end()) ? fit->second : mDefaultScene;
+        std::lock_guard<carb::tasking::MutexWrapper> lock(mSceneRegistryMutex);
+        const auto it = mPhysXScenes.find(scene);
+        return it == mPhysXScenes.end() ? nullptr : it->second;
     }
     void releasePhysXScenes();
-    PhysXScene* createPhysXScene(const usdparser::AttachedStage& attachedStage,
+    // Native scene retirement only. The caller drains attachment services and releases
+    // its records first; shared SDK/CUDA/dispatcher resources remain resident.
+    void releasePhysXScenes(usdparser::AttachedStage& attachedStage);
+    PhysXScene* createPhysXScene(usdparser::AttachedStage& attachedStage,
                                  size_t sceneId,
                                  double metersPerUnit,
                                  double kilogramsPerUnit,
                                  const usdparser::PhysxSceneDesc& sceneDesc);
 
-    const PhysXScenesMap& getPhysXScenes() const
+    PhysXScenesMap getPhysXScenes() const
     {
+        std::lock_guard<carb::tasking::MutexWrapper> lock(mSceneRegistryMutex);
         return mPhysXScenes;
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////
-    const FilteredPairsSet& getFilteredPairs() const
-    {
-        return mFilteredPairs;
-    }
-    FilteredPairsSet& getFilteredPairs()
-    {
-        return mFilteredPairs;
-    }
-    void addFilteredPair(const Pair<uint32_t>& pair)
-    {
-        FilteredPairsSet::iterator fit = mFilteredPairs.find(pair);
-        if (fit != mFilteredPairs.end())
-        {
-            fit->second++;
-        }
-        else
-        {
-            mFilteredPairs[pair] = 1;
-        }
-    }
-    void removeFilteredPair(const Pair<uint32_t>& pair)
-    {
-        FilteredPairsSet::iterator fit = mFilteredPairs.find(pair);
-        if (fit != mFilteredPairs.end())
-        {
-            if (fit->second <= 1)
-            {
-                mFilteredPairs.erase(fit);
-            }
-            else
-            {
-                fit->second--;
-            }
-        }
-    }
-    const CollisionGroupsPairsSet& getCollisionGroupFilteredPairs() const
-    {
-        return mCollisionsGroupFilteredPairs;
-    }
-    CollisionGroupsPairsSet& getCollisionGroupFilteredPairs()
-    {
-        return mCollisionsGroupFilteredPairs;
-    }
     ///////////////////////////////////////////////////////////////////////////////////////
     // Thread count
     uint32_t getThreadCount() const
@@ -201,17 +161,10 @@ public:
     {
         mThreadCount = val;
     }
-    // create/release dispatcher
-    void createCpuDispatcher(uint32_t numThreads);
-    void releaseCpuDispatcher();
-
-    bool isPhysXCpuDispatcher() const
-    {
-        return mPhysXDispatcher;
-    }
-
     ///////////////////////////////////////////////////////////////////////////////////////
     // PVD
+    // Recording state belongs to the shared PVD transport, independent of owner clocks.
+    void notePvdSimulation() { mPvdHasSimulation.store(true); }
     void connectPVD();
     void disconnectPVD();
     ::physx::PxPvd* getPvd()
@@ -226,7 +179,9 @@ public:
     // (no synchronization is provided between post-frame-end pvd flushing and client reconnection)
     void changePVDSettings(bool enableLegacyPVD, bool enableOmniPVD);
 
-    OmniPvdRecordingResult startOmniPvdRecording(const OmniPvdDestination& destination);
+    // Called after successful attachment publication. Never replaces an active session.
+    void startConfiguredOmniPvdRecording();
+    OmniPvdRecordingResult startOmniPvdRecording(const OmniPvdDestination& destination, bool startupFile = false);
     OmniPvdRecordingResult stopOmniPvdRecording();
     bool isOmniPvdRecording() const;
 
@@ -243,33 +198,13 @@ public:
     // If any scene is async return true
     bool isAsyncSimEnabled() const
     {
+        std::lock_guard<carb::tasking::MutexWrapper> registry(mSceneRegistryMutex);
         for (PhysXScenesMap::const_reference ref : mPhysXScenes)
         {
             if (ref.second->getUpdateType() == usdparser::eAsynchronous)
                 return true;
         }
         return false;
-    }
-
-    ///////////////////////////////////////////////////////////////////////////////////////
-    // If any scene has not enabled it return false
-    bool isReadbackSuppressed() const
-    {
-        for (PhysXScenesMap::const_reference ref : mPhysXScenes)
-        {
-            if (!ref.second->isReadbackSuppressed())
-                return false;
-        }
-        return true;
-    }
-
-    ///////////////////////////////////////////////////////////////////////////////////////
-    void enableActiveActors(bool val)
-    {
-        for (PhysXScenesMap::const_reference ref : mPhysXScenes)
-        {
-            ref.second->getScene()->setFlag(::physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS, val);
-        }
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////
@@ -283,7 +218,6 @@ public:
     }
     void createPhysics(); // initial create
     void releasePhysics(); // final release, should be called when app is closing
-    void setupGPU();
 
     void resetPhysXErrorCounter();
     void setMaxNumberOfPhysXErrors(uint32_t maxNumberOfPhysXErrors);
@@ -304,22 +238,9 @@ private:
     void unregisterVehiclePvdCallback();
     void releaseVehiclePvdRegistrationHandles();
     void releaseVehiclePvdTelemetry();
-    void clearCudaContextManagers();
-    void clearCudaContextManagersAndRefillWithNull(int numToFill);
-    // Caller must already hold mCudaContextManagerMutex.
-    void clearCudaContextManagersLocked();
-
     ::physx::PxFoundation* mFoundation{ nullptr };
     ::physx::PxPhysics* mPhysics{ nullptr };
-    std::vector<::physx::PxCudaContextManager*> mCudaContextManagers;
-    // Guards every mutation of mCudaContextManagers (release, replace, resize) against
-    // acquireCudaContextManager(), which cooking calls from UJITSO/carb::tasking worker threads.
-    // std::mutex rather than carb::tasking::MutexWrapper on purpose: the critical sections here
-    // never yield (a vector access plus an atomic refcount bump, or a release loop), so there is
-    // no fiber to reschedule, and this header must not pull in carb tasking.
-    mutable std::mutex mCudaContextManagerMutex;
-    size_t mNextCudaContextManagerId{ 0 };
-    int mSceneMultiGPUMode{ (int)SceneMultiGPUMode::eDisabled };
+    std::unordered_set<const usdparser::AttachedStage*> mAttachmentBorrowers;
     ::physx::PxSerializationRegistry* mSerializationRegistry{ nullptr };
     carb::settings::ISettings* mISettings{ nullptr };
 
@@ -338,6 +259,7 @@ private:
 
     ::physx::PxPvd* mVisualDebugger{ nullptr };
     ::physx::PxPvdTransport* mPvdTransport{ nullptr };
+    std::atomic<bool> mPvdHasSimulation{ false };
     ::physx::PxOmniPvd* mOmniPvd{ nullptr };
     enum class OmniPvdStreamKind : uint8_t
     {
@@ -354,23 +276,28 @@ private:
     std::string mOmniPVDOutputDirectory;
     std::string mOmniPVDTimeStampedFileName;
 
-    ::physx::PxCpuDispatcher* mDispatcher{ nullptr };
     uint32_t mThreadCount{ 8 };
-    bool mPhysXDispatcher{ false };
 
-    bool mCudaLaunchSynchronous{ false };
-    bool mCudaSettingsDeferralWarned{ false };       // sticky-log guard for deferred sync-launch/multiGPU setting change, OMPE-95128
-    bool mCudaDeviceCountDeferralWarned{ false };    // sticky-log guard for deferred device-count change, OMPE-95128
-    // OMPE-102199: releasePhysXScenes() moves mPhysXScenes aside before destroying the scenes, so the map is
-    // empty while live PhysXScenes still cache the PxCudaContextManager. Set for that window so setupGPU()'s
-    // hasLiveScenes check keeps deferring manager changes until the last scene is really gone.
+    struct AttachmentCudaResource
+    {
+        int mode;
+        int ordinal;
+        uintptr_t externalContext;
+        bool synchronous;
+        std::shared_ptr<::physx::PxCudaContextManager> manager;
+    };
+    // PhysX caches GPU kernel wranglers by manager address until PxPhysics dies.
+    // Retain compatible managers for that whole SDK generation, including gaps
+    // between attachments, so an address cannot alias a stale kernel cache entry.
+    std::vector<AttachmentCudaResource> mAttachmentCudaResources;
+    mutable carb::tasking::RecursiveMutexWrapper mResourceMutex;
+    mutable carb::tasking::MutexWrapper mSceneRegistryMutex;
     bool mReleasingPhysXScenes{ false };
     bool mExtensionsInitialized{ false };
     bool mVehicleSDKInitialized{ false }; // guards against multiple de-init, since scene release can be called
                                           // more than once (TODO: investigate why); also guards multiple init,
                                           // though that hasn't been observed.
     PhysXScenesMap mPhysXScenes;
-    PhysXScene* mDefaultScene; // A.B. should be removed once we support multiple scenes everywhere
 
     mutable ::physx::PxConvexMesh* mCylinderMeshX{ nullptr };
     mutable ::physx::PxConvexMesh* mCylinderMeshY{ nullptr };
@@ -382,8 +309,6 @@ private:
     mutable ::physx::PxConvexMesh* mVehicleWheelCylinderMeshY{ nullptr };
     mutable ::physx::PxConvexMesh* mVehicleWheelCylinderMeshZ{ nullptr };
 
-    FilteredPairsSet mFilteredPairs;
-    CollisionGroupsPairsSet mCollisionsGroupFilteredPairs;
     // Subscriptions to settings changes
     std::vector<carb::dictionary::SubscriptionId*> mSubscribedSettings;
 };

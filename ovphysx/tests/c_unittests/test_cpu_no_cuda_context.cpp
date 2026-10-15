@@ -135,9 +135,8 @@ TEST(CpuNoCudaContextGpuTest, CpuOnlyFlagCreatesNoCudaContextOnGpuBox)
     ASSERT_EQ(primaryActive(), 0)
         << "CPU-only TensorBinding rejection activated the primary CUDA context";
 
-    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-    ovphysx_handle_t h = 0;
-    ASSERT_EQ(ovphysx_create_instance(&args, &h).status, OVPHYSX_API_SUCCESS)
+    ovphysx_instance_handle_t h = 0;
+    ASSERT_EQ(ovphysx_create_instance(&h).status, OVPHYSX_API_SUCCESS)
         << "create_instance failed";
     ASSERT_EQ(primaryActive(), 0)
         << "create_instance under CPU-only mode activated the primary CUDA context";
@@ -164,7 +163,7 @@ TEST(CpuNoCudaContextGpuTest, CpuOnlyFlagCreatesNoCudaContextOnGpuBox)
         };
         ScopedLogCapture logCapture;
         ASSERT_EQ(ovphysx_log_capture_start().status, OVPHYSX_API_SUCCESS);
-        ASSERT_EQ(ovphysx_create_instance(&args, &h).status, OVPHYSX_API_SUCCESS)
+        ASSERT_EQ(ovphysx_create_instance(&h).status, OVPHYSX_API_SUCCESS)
             << "recreate_instance failed";
         EXPECT_TRUE(ovphysx_log_capture_find(OVPHYSX_LOG_INFO, "process_cpu_only=true"))
             << "create INFO line must name hard CPU-only policy";
@@ -211,20 +210,20 @@ TEST(CpuNoCudaContextGpuTest, CpuOnlyFlagCreatesNoCudaContextOnGpuBox)
     ASSERT_EQ(floorWait.error_op_id_count, 0u);
     ASSERT_EQ(ovstage_release_op(stage, floor.op_index), OVSTAGE_OK);
 
-    ASSERT_EQ(ovphysx_attach_ovstage(h, stage, 1).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_attach_ovstage(h, stage, 1)).status, OVPHYSX_API_SUCCESS);
 
     for (int s = 0; s < 3; ++s)
     {
         ovphysx_enqueue_result_t st = ovphysx_step(h, 1.f / 60.f);
         ASSERT_EQ(st.status, OVPHYSX_API_SUCCESS);
-        ovphysx_op_wait_result_t sw{};
-        ovphysx_wait_op(h, st.op_index, 60'000'000'000ULL, &sw);
-        ovphysx_destroy_wait_result(&sw);
+        ovphysx_wait_task_result_t sw{};
+        ovphysx_wait_task(h, st, 60'000'000'000ULL, &sw);
+        ovphysx_destroy_wait_task_result(&sw);
     }
 
     const int activeAfter = primaryActive();
 
-    (void)ovphysx_detach_ovstage(h);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_detach_ovstage(h)).status, OVPHYSX_API_SUCCESS);
     ovstage_destroy_instance(stage);
     ovphysx_destroy_instance(h);
 

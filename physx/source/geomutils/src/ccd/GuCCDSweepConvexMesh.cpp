@@ -560,7 +560,9 @@ PxReal SweepAnyShapeMesh(GU_SWEEP_METHOD_ARGS)
 				resultNormal = transform1.rotate(convexPartOfMesh1.getPolygonNormal());			
 			}
 
-			if (res < minTOI)
+			// The caller rejects a hit with too little motion along its normal. Skipping it here keeps such a hit
+			// from hiding a later valid hit on another triangle.
+			if (res < minTOI && relTr.dot(-resultNormal) >= fastMovingThreshold)
 			{
 				tempWorldNormal = resultNormal;//convexPartOfMesh1.getPolygonNormal(0);//transform1.rotate(convexPartOfMesh1.getPolygonNormal(0));
 				tempWorldPoint = resultPoint;

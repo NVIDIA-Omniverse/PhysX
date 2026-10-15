@@ -21,10 +21,19 @@
  * @covers AC-5
  *
  * @implements REQ-READ-ATTRS-001
- * @covers AC-15, AC-16
+ * @covers AC-15, AC-16, AC-22
  *
  * @implements REQ-INPUT-COVERAGE-001
  * @covers AC-10, AC-11
+ *
+ * @implements REQ-TENSOR-MATERIAL-001
+ * @covers AC-2 AC-3
+ *
+ * @implements REQ-TENSOR-MATERIAL-002
+ * @covers AC-1 AC-2 AC-3
+ *
+ * @implements REQ-SIM-ARTJOINTDRIVE-001
+ * @covers AC-2
  */
 
 // clang-format off
@@ -578,15 +587,7 @@ bool BaseArticulationView::getDofMaxForces(const TensorDesc* dstTensor) const
             const DofImpl& dofImpl = mEntries[i].dofImpls[j];
             if (dofImpl.joint)
             {
-                PxArticulationDrive driveProps = dofImpl.joint->getDriveParams(dofImpl.axis);
-                if (driveProps.envelope.maxEffort != 0.0)
-                {
-                    *dst++ = driveProps.envelope.maxEffort;
-                }
-                else
-                {
-                    *dst++ = driveProps.maxForce;
-                }
+                *dst++ = dofImpl.joint->getDriveParams(dofImpl.axis).envelope.maxEffort;
             }
             else
             {
@@ -632,45 +633,6 @@ bool BaseArticulationView::getDofDriveModelProperties(const TensorDesc* dstTenso
                 *dst++ = FLT_MAX;
                 *dst++ = FLT_MAX;
                 *dst++ = FLT_MAX;
-            }
-        }
-    }
-
-    return true;
-}
-
-// DEPRECATED
-bool BaseArticulationView::getDofFrictionCoefficients(const TensorDesc* dstTensor) const
-{
-    CARB_LOG_WARN("DEPRECATED: Please use getDofFrictionProperties instead.");
-    CHECK_VALID_DATA_SIM_RETURN(mSimData, mSim, false);
-    PASS_EMPTY_TENSOR(dstTensor);
-    if (!dstTensor || !dstTensor->data)
-    {
-        return false;
-    }
-
-    if (!checkTensorDevice(*dstTensor, -1, "DOF friction coefficient", __FUNCTION__) ||
-        !checkTensorFloat32(*dstTensor, "DOF friction coefficient", __FUNCTION__) ||
-        !checkTensorSizeExact(*dstTensor, getCount() * mMaxDofs, "DOF friction coefficient", __FUNCTION__))
-    {
-        return false;
-    }
-
-    for (PxU32 i = 0; i < mEntries.size(); i++)
-    {
-        float* dst = static_cast<float*>(dstTensor->data) + i * mMaxDofs;
-        for (PxU32 j = 0; j < mEntries[i].numDofs; j++)
-        {
-            const DofImpl& dofImpl = mEntries[i].dofImpls[j];
-            if (dofImpl.joint)
-            {
-                PxReal friction = dofImpl.joint->getFrictionCoefficient();
-                *dst++ = friction;
-            }
-            else
-            {
-                *dst++ = 0.0f;
             }
         }
     }
@@ -962,10 +924,7 @@ bool BaseArticulationView::getDofPropertiesOvStage(const DofPropertyColumn* colu
                 break;
             }
             case DofProperty::eMaxVelocity: dstF[i] = scaleDofValue(maxVel, fwd); break;
-            case DofProperty::eMaxForce:
-                // Prefer the envelope's max effort when set, matching the dense getDofMaxForces.
-                dstF[i] = (drive.envelope.maxEffort != 0.0f) ? drive.envelope.maxEffort : drive.maxForce;
-                break;
+            case DofProperty::eMaxForce:        dstF[i] = drive.envelope.maxEffort; break;
             case DofProperty::eArmature:        dstF[i] = armature; break;
             case DofProperty::eStaticFriction:  dstF[i] = friction.staticFrictionEffort; break;
             case DofProperty::eDynamicFriction: dstF[i] = friction.dynamicFrictionEffort; break;
@@ -1105,7 +1064,7 @@ bool BaseArticulationView::setDofPropertyOvStage(const DofProperty prop,
         case DofProperty::eMaxForce:
         {
             PxArticulationDrive d = joint->getDriveParams(axis);
-            d.maxForce = scaleDofValue(srcF[i], dofInverseScaleFor(r, DofScalePolicy::eNone));
+            d.envelope.maxEffort = scaleDofValue(srcF[i], dofInverseScaleFor(r, DofScalePolicy::eNone));
             joint->setDriveParams(axis, d);
             break;
         }
@@ -1419,10 +1378,7 @@ bool BaseArticulationView::setDofMaxForces(const TensorDesc* srcTensor, const Te
                 if (dofImpl.joint)
                 {
                     PxArticulationDrive params = dofImpl.joint->getDriveParams(dofImpl.axis);
-                    if (dofImpl.isEnvelopeUsed)
-                        params.envelope.maxEffort = src[j];
-                    else
-                        params.maxForce = src[j];
+                    params.envelope.maxEffort = src[j];
                     dofImpl.joint->setDriveParams(dofImpl.axis, params);
                 }
             }
@@ -1477,8 +1433,8 @@ bool BaseArticulationView::setDofDriveModelProperties(const TensorDesc* srcTenso
                 const DofImpl& dofImpl = mEntries[idx].dofImpls[j];
                 if (dofImpl.joint)
                 {
-                    // isEnvelopeUsed is set at USD load time based on DrivePerformanceEnvelopeAPI.
-                    // It guards which drive model parameters can be applied (envelope vs legacy).
+                    // isEnvelopeUsed is set at USD load time when PhysxDrivePerformanceEnvelopeAPI is applied.
+                    // Only those DOFs take the drive model properties; the others keep a plain effort limit.
                     if (dofImpl.isEnvelopeUsed)
                     {
                         PxArticulationDrive params = dofImpl.joint->getDriveParams(dofImpl.axis);
@@ -1492,63 +1448,6 @@ bool BaseArticulationView::setDofDriveModelProperties(const TensorDesc* srcTenso
                         CARB_LOG_WARN_ONCE("setDofDriveModelProperties - Some DOFs do not have PhysxDrivePerformanceEnvelopeAPI applied; "
                             "non-zero envelope parameters were ignored. The API must be applied in USD before simulation starts.");
                     }
-                }
-            }
-        }
-    }
-
-    return true;
-}
-
-// DEPRECATED
-bool BaseArticulationView::setDofFrictionCoefficients(const TensorDesc* srcTensor, const TensorDesc* indexTensor)
-{
-    CARB_LOG_WARN("DEPRECATED: Please use setDofFrictionProperties instead.");
-    CHECK_VALID_DATA_SIM_RETURN(mSimData, mSim, false);
-    PASS_EMPTY_TENSOR(srcTensor);
-    if (!srcTensor || !srcTensor->data)
-    {
-        return false;
-    }
-
-    if (!checkTensorDevice(*srcTensor, -1, "DOF friction coefficient", __FUNCTION__) ||
-        !checkTensorFloat32(*srcTensor, "DOF friction coefficient", __FUNCTION__) ||
-        !checkTensorSizeExact(*srcTensor, getCount() * mMaxDofs, "DOF friction coefficient", __FUNCTION__))
-    {
-        return false;
-    }
-
-    const PxU32* indices = nullptr;
-    PxU32 numIndices = 0;
-    if (indexTensor && indexTensor->data)
-    {
-        if (!checkTensorDevice(*indexTensor, -1, "index", __FUNCTION__) ||
-            !checkTensorInt32(*indexTensor, "index", __FUNCTION__) ||
-            !checkIndexTensorSize(*indexTensor, getCount(), __FUNCTION__))
-        {
-            return false;
-        }
-        indices = static_cast<const PxU32*>(indexTensor->data);
-        numIndices = PxU32(getTensorTotalSize(*indexTensor));
-    }
-    else
-    {
-        indices = mAllIndices.data();
-        numIndices = PxU32(mAllIndices.size());
-    }
-
-    for (PxU32 i = 0; i < numIndices; i++)
-    {
-        PxU32 idx = indices[i];
-        if (idx < mEntries.size())
-        {
-            const float* src = static_cast<const float*>(srcTensor->data) + idx * mMaxDofs;
-            for (PxU32 j = 0; j < mEntries[idx].numDofs; j++)
-            {
-                const DofImpl& dofImpl = mEntries[idx].dofImpls[j];
-                if (dofImpl.joint)
-                {
-                    dofImpl.joint->setFrictionCoefficient(src[j]);
                 }
             }
         }
@@ -2377,7 +2276,9 @@ PxU32 BaseArticulationView::inverseDynamicsColumnWidthForRow(PxU32 row, InverseD
         const PxU32 m = generalizedCoordinateCountForRow(row);
         return m * m;
     }
-    case InverseDynamicsColumn::eGeneralizedForce:
+    case InverseDynamicsColumn::eCoriolisForce:
+    case InverseDynamicsColumn::eGravityForce:
+        // One case for both: their width rule is identical (M).
         return generalizedCoordinateCountForRow(row);
     case InverseDynamicsColumn::eCentroidalMomentum:
         // Floating base only. Zero is the honest answer for a fixed-base row: the reader omits the
@@ -2514,6 +2415,87 @@ bool BaseArticulationView::getShapeCountsOvStage(const TensorDesc* dstTensor, co
     return true;
 }
 
+// Whole-articulation topology metadata (replaces ovphysx_articulation_metadata_t). One int32 per
+// articulation, host-resident, validated and gathered exactly like getShapeCountsOvStage.
+bool BaseArticulationView::getTopologyMetadataOvStage(TopologyMetadata property, const TensorDesc* dstTensor,
+                                                      const PxU32* rows, PxU32 count) const
+{
+    CHECK_VALID_DATA_SIM_RETURN(mSimData, mSim, false);
+    PASS_EMPTY_TENSOR(dstTensor);
+    if (!dstTensor || !dstTensor->data)
+    {
+        return false;
+    }
+
+    const char* label = "articulation topology metadata";
+    if (!checkTensorDevice(*dstTensor, -1, label, __FUNCTION__) ||
+        !checkTensorInt32(*dstTensor, label, __FUNCTION__) ||
+        !checkTensorSizeExact(*dstTensor, count, label, __FUNCTION__) ||
+        !checkRecordIndices(rows, count, mEntries.size(), label, __FUNCTION__))
+    {
+        return false;
+    }
+
+    int32_t* dst = static_cast<int32_t*>(dstTensor->data);
+    for (PxU32 i = 0; i < count; i++)
+    {
+        const PxU32 row = rows ? rows[i] : i;
+        const ArticulationEntry& entry = mEntries[row];
+        // dof / link and the two tendon counts come from the per-articulation ENTRY (numDofs, numLinks,
+        // numFixedTendons, numSpatialTendons); joint count comes from the metatype. The base flag is read
+        // LIVE from the SDK articulation (entry.arti), NOT the metatype: setArticulationFlag(eFIX_BASE, ...)
+        // can toggle a base between fixed and floating between steps without recreating the articulation,
+        // which would leave the metatype's flag -- captured when the view was built -- stale. The counts
+        // cannot change without a rebuild, so they keep their entry/metatype source. Reading per row is
+        // what lets one group carry a mix of base types. The entry's PER-ARTICULATION tendon counts
+        // deliberately replace the metatype's view-wide getMaxFixedTendons/getMaxSpatialTendons maxima the
+        // legacy path used. metatype and arti are null-guarded (both default nullptr for an unsourced
+        // articulation) exactly as every sibling accessor does -- generalizedCoordinateCountForRow,
+        // jacobianShapeForRow -- defaulting to 0; the entry-field cases are already null-safe.
+        int32_t value = 0;
+        switch (property)
+        {
+        case TopologyMetadata::eDofCount:           value = static_cast<int32_t>(entry.numDofs); break;
+        case TopologyMetadata::eLinkCount:          value = static_cast<int32_t>(entry.numLinks); break;
+        case TopologyMetadata::eJointCount:
+            value = entry.metatype ? static_cast<int32_t>(entry.metatype->getJointCount()) : 0;
+            break;
+        case TopologyMetadata::eFixedTendonCount:   value = static_cast<int32_t>(entry.numFixedTendons); break;
+        case TopologyMetadata::eSpatialTendonCount: value = static_cast<int32_t>(entry.numSpatialTendons); break;
+        case TopologyMetadata::eIsFixedBase:
+            value = (entry.arti && entry.arti->getArticulationFlags().isSet(PxArticulationFlag::eFIX_BASE)) ? 1 : 0;
+            break;
+        }
+        dst[i] = value;
+    }
+    return true;
+}
+
+bool BaseArticulationView::getDofCountsOvStage(const TensorDesc* dstTensor, const PxU32* rows, PxU32 count) const
+{
+    return getTopologyMetadataOvStage(TopologyMetadata::eDofCount, dstTensor, rows, count);
+}
+bool BaseArticulationView::getLinkCountsOvStage(const TensorDesc* dstTensor, const PxU32* rows, PxU32 count) const
+{
+    return getTopologyMetadataOvStage(TopologyMetadata::eLinkCount, dstTensor, rows, count);
+}
+bool BaseArticulationView::getJointCountsOvStage(const TensorDesc* dstTensor, const PxU32* rows, PxU32 count) const
+{
+    return getTopologyMetadataOvStage(TopologyMetadata::eJointCount, dstTensor, rows, count);
+}
+bool BaseArticulationView::getFixedTendonCountsOvStage(const TensorDesc* dstTensor, const PxU32* rows, PxU32 count) const
+{
+    return getTopologyMetadataOvStage(TopologyMetadata::eFixedTendonCount, dstTensor, rows, count);
+}
+bool BaseArticulationView::getSpatialTendonCountsOvStage(const TensorDesc* dstTensor, const PxU32* rows, PxU32 count) const
+{
+    return getTopologyMetadataOvStage(TopologyMetadata::eSpatialTendonCount, dstTensor, rows, count);
+}
+bool BaseArticulationView::getIsFixedBaseOvStage(const TensorDesc* dstTensor, const PxU32* rows, PxU32 count) const
+{
+    return getTopologyMetadataOvStage(TopologyMetadata::eIsFixedBase, dstTensor, rows, count);
+}
+
 uint32_t BaseArticulationView::maxShapesForRows(const PxU32* rows, PxU32 count) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mSimData, mSim, 0);
@@ -2565,6 +2547,7 @@ bool BaseArticulationView::setMaterialProperties(const TensorDesc* srcTensor, co
         numIndices = PxU32(mAllIndices.size());
     }
 
+    bool allApplied = true;
     for (PxU32 i = 0; i < numIndices; i++)
     {
         PxU32 idx = indices[i];
@@ -2573,9 +2556,19 @@ bool BaseArticulationView::setMaterialProperties(const TensorDesc* srcTensor, co
             const float* src = static_cast<const float*>(srcTensor->data) + idx * mMaxShapes * 3;
             for (PxU32 j = 0; j < mEntries[idx].numShapes; j++)
             {
+                // Only friction and restitution are written; keep the rest of the material.
+                PxMaterial* old;
+                mEntries[idx].shapes[j]->getMaterials(&old, 1);
                 PxMaterial* material = mSim->createSharedMaterial(
-                    src[j * 3], src[j * 3 + 1], src[j * 3 + 2], 0.0, PxCombineMode::Enum::eAVERAGE,
-                    PxCombineMode::Enum::eAVERAGE, PxCombineMode::Enum::eAVERAGE);
+                    src[j * 3], src[j * 3 + 1], src[j * 3 + 2], old->getDamping(), old->getFrictionCombineMode(),
+                    old->getRestitutionCombineMode(), old->getDampingCombineMode(), old->getFlags());
+
+                // No material (see createSharedMaterial's warning): keep the current one, report failure.
+                if (!material)
+                {
+                    allApplied = false;
+                    continue;
+                }
 
                 int nMaterials = mEntries[idx].shapes[j]->getNbMaterials();
                 std::vector<PxMaterial*> extraMats;
@@ -2593,7 +2586,7 @@ bool BaseArticulationView::setMaterialProperties(const TensorDesc* srcTensor, co
         }
     }
 
-    return true;
+    return allApplied;
 }
 bool BaseArticulationView::setCompliantMaterialProperties(const TensorDesc* srcTensor,
                                                           const TensorDesc* srcCombineModeTensor,
@@ -2639,6 +2632,7 @@ bool BaseArticulationView::setCompliantMaterialProperties(const TensorDesc* srcT
         numIndices = PxU32(mAllIndices.size());
     }
 
+    bool allApplied = true;
     for (PxU32 i = 0; i < numIndices; i++)
     {
         PxU32 idx = indices[i];
@@ -2649,11 +2643,21 @@ bool BaseArticulationView::setCompliantMaterialProperties(const TensorDesc* srcT
 
             for (PxU32 j = 0; j < mEntries[idx].numShapes; j++)
             {
-                PxMaterial* material =
-                    mSim->createSharedMaterial(src[j * 4], src[j * 4 + 1], -src[j * 4 + 2], src[j * 4 + 3],
-                                               static_cast<PxCombineMode::Enum>(srcCombineMode[j * 3]),
-                                               static_cast<PxCombineMode::Enum>(srcCombineMode[j * 3 + 1]),
-                                               static_cast<PxCombineMode::Enum>(srcCombineMode[j * 3 + 2]));
+                // The material flags are not written; keep them.
+                PxMaterial* old;
+                mEntries[idx].shapes[j]->getMaterials(&old, 1);
+                PxMaterial* material = mSim->createSharedMaterial(
+                    src[j * 4], src[j * 4 + 1], -src[j * 4 + 2], src[j * 4 + 3],
+                    static_cast<PxCombineMode::Enum>(srcCombineMode[j * 3]),
+                    static_cast<PxCombineMode::Enum>(srcCombineMode[j * 3 + 1]),
+                    static_cast<PxCombineMode::Enum>(srcCombineMode[j * 3 + 2]), old->getFlags());
+
+                // No material (see createSharedMaterial's warning): keep the current one, report failure.
+                if (!material)
+                {
+                    allApplied = false;
+                    continue;
+                }
 
                 int nMaterials = mEntries[idx].shapes[j]->getNbMaterials();
                 std::vector<PxMaterial*> extraMats;
@@ -2671,7 +2675,7 @@ bool BaseArticulationView::setCompliantMaterialProperties(const TensorDesc* srcT
         }
     }
 
-    return true;
+    return allApplied;
 }
 
 bool BaseArticulationView::setRestOffsets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) const
@@ -2800,9 +2804,10 @@ bool BaseArticulationView::check() const
     return result;
 }
 
-void BaseArticulationView::release()
+bool BaseArticulationView::release()
 {
     delete this;
+    return true;
 }
 
 void BaseArticulationView::_onParentRelease()

@@ -34,8 +34,7 @@ using namespace omni::physx::internal;
 
 bool omni::physx::updatePhysxForceEnabled(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -56,8 +55,7 @@ bool omni::physx::updatePhysxForceEnabled(AttachedStage& attachedStage, ObjectId
 
 bool omni::physx::updatePhysxForceWorldFrameEnabled(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -78,8 +76,7 @@ bool omni::physx::updatePhysxForceWorldFrameEnabled(AttachedStage& attachedStage
 
 bool omni::physx::updatePhysxForce(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -100,8 +97,7 @@ bool omni::physx::updatePhysxForce(AttachedStage& attachedStage, ObjectId object
 
 bool omni::physx::updatePhysxTorque(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -122,8 +118,7 @@ bool omni::physx::updatePhysxTorque(AttachedStage& attachedStage, ObjectId objec
 
 bool omni::physx::updatePhysxForceMode(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);

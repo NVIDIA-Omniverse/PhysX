@@ -97,9 +97,10 @@ const char* BaseSdfShapeView::getUsdPrimPath(uint32_t sdfIdx) const
     return nullptr;
 }
 
-void BaseSdfShapeView::release()
+bool BaseSdfShapeView::release()
 {
     delete this;
+    return true;
 }
 
 void BaseSdfShapeView::_onParentRelease()

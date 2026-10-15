@@ -1,8 +1,15 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-CAPI-DETACH-001
+# @covers AC-3 AC-4
+# @implements REQ-PYTHON-FRAME-001
+# @covers AC-1
 # @implements REQ-CAPI-CONTACT-003
 # @covers AC-1 AC-2 AC-3 AC-4
+
+# @implements REQ-PYTHON-TASK-001
+# @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-8
 
 # @implements REQ-PYTHON-LIFECYCLE-001
 # @covers AC-1 AC-5
@@ -16,15 +23,21 @@
 # @covers AC-9
 # @implements REQ-PYTHON-BINDING-DEVICE-001
 # @covers AC-1 AC-2 AC-3 AC-4
-# @implements REQ-CAPI-CONTACT-001
-# @covers AC-5 AC-6 AC-7
 # @implements REQ-CAPI-CONTACT-002
 # @covers AC-2 AC-3 AC-4
+# @implements REQ-CAPI-CONTACT-001
+# @covers AC-5 AC-6 AC-7
+# @implements REQ-CAPI-SDF-001
+# @covers AC-4
 
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, NamedTuple, TypedDict
+from dataclasses import dataclass
+from typing import Any, NamedTuple, TypedDict, Generic, TypeVar
+from enum import IntFlag
+# The standalone stub check excludes this pinned runtime dependency.
+from ovstage import PathDictionary, Stage  # pyright: ignore[reportMissingImports]
 
 from typing_extensions import deprecated
 
@@ -33,6 +46,11 @@ import warp as wp
 from .config import OmniPvdDestination, PhysXConfig
 from .dlpack import DLDataType, DLDevice
 from .types import (
+    ApiStatus,
+    ArticulationKinematicFlag,
+    ConfigKey,
+    ContactSelection,
+    GlobalConfigKey,
     LogLevel,
     ObjectScope,
     ObjectType,
@@ -40,6 +58,86 @@ from .types import (
     SceneQueryMode,
     SimObjectType,
 )
+
+
+@dataclass(frozen=True, slots=True)
+class Task:
+    status: ApiStatus
+    op_index: int
+    instance: int
+
+
+class TaskError(RuntimeError):
+    def __init__(self, errors: tuple[tuple[Task, str], ...]) -> None: ...
+    @property
+    def errors(self) -> tuple[tuple[Task, str], ...]: ...
+
+
+class TaskTimeoutError(TimeoutError):
+    def __init__(self, errors: tuple[tuple[Task, str], ...], pending_task: Task) -> None: ...
+    @property
+    def errors(self) -> tuple[tuple[Task, str], ...]: ...
+    @property
+    def pending_task(self) -> Task: ...
+
+
+T = TypeVar("T")
+
+class Operation(Generic[T]):
+    @property
+    def tasks(self) -> tuple[Task, ...]: ...
+    @property
+    def task(self) -> Task: ...
+    @property
+    def done(self) -> bool: ...
+    @property
+    def result(self) -> T: ...
+    def wait(self, *, timeout_ns: int | None = ...) -> T: ...
+
+@dataclass(frozen=True, slots=True)
+class QueryMetadata:
+    total_prim_count: int
+    attributes: tuple[int, ...]
+
+class ReadOmission(IntFlag):
+    NONE = 0
+    UNSUPPORTED_ATTRIBUTE = 1
+    UNSUPPORTED_CONFIGURATION = 2
+    NOT_READY = 4
+
+@dataclass(frozen=True, slots=True)
+class ReadAttributeResult:
+    attribute: int
+    group_count: int
+    omission_reasons: ReadOmission
+
+@dataclass(frozen=True, slots=True)
+class ReadMetadata:
+    total_prim_count: int
+    attributes: tuple[ReadAttributeResult, ...]
+
+@dataclass(frozen=True, slots=True)
+class WriteAttributeResult:
+    attribute: int
+    group_count: int
+
+@dataclass(frozen=True, slots=True)
+class WriteMetadata:
+    total_prim_count: int
+    attributes: tuple[WriteAttributeResult, ...]
+
+class Query:
+    object_type: SimObjectType
+    metadata: QueryMetadata | None
+    @property
+    def handle(self) -> int: ...
+    @property
+    def dictionary(self) -> PathDictionary: ...
+    def close(self) -> Operation[None]: ...
+    def release(self) -> Operation[None]: ...
+    def close_sync(self) -> None: ...
+    def __enter__(self) -> Query: ...
+    def __exit__(self, *exc: object) -> None: ...
 
 
 class SceneQueryHit(TypedDict):
@@ -51,46 +149,6 @@ class SceneQueryHit(TypedDict):
     distance: float
     face_index: int
     material: int
-
-
-class ContactHeaderDict(TypedDict):
-    type: int
-    attachHandle: int
-    actor0: int
-    actor1: int
-    collider0: int
-    collider1: int
-    contactDataOffset: int
-    numContactData: int
-    frictionAnchorsDataOffset: int
-    numfrictionAnchorsData: int
-    protoIndex0: int
-    protoIndex1: int
-
-
-class ContactPointDict(TypedDict):
-    position: tuple[float, float, float]
-    normal: tuple[float, float, float]
-    impulse: tuple[float, float, float]
-    separation: float
-    faceIndex0: int
-    faceIndex1: int
-    material0: int
-    material1: int
-
-
-class FrictionAnchorDict(TypedDict):
-    position: tuple[float, float, float]
-    impulse: tuple[float, float, float]
-
-
-class ContactReportDict(TypedDict, total=False):
-    headers: list[ContactHeaderDict] | Any
-    num_headers: int
-    points: list[ContactPointDict] | Any
-    num_points: int
-    anchors: list[FrictionAnchorDict] | Any
-    num_anchors: int
 
 
 @deprecated("The tensor-binding API is deprecated; use PhysX.read for reads and PhysX.write for writes.")
@@ -126,17 +184,13 @@ class ReadGroup(NamedTuple):
 
 class ReadResult:
     groups: list[ReadGroup]
-    def __init__(
-        self,
-        sdk: PhysX,
-        query: int,
-        read: int,
-        groups: list[ReadGroup],
-        group_ids: list[int],
-    ) -> None: ...
+    metadata: ReadMetadata | None
     @property
-    def dictionary(self) -> int: ...
-    def close(self) -> None: ...
+    def dictionary(self) -> PathDictionary: ...
+    def fetch_next(self) -> Operation[ReadGroup | None]: ...
+    def close(self) -> Operation[None]: ...
+    def release(self) -> Operation[None]: ...
+    def close_sync(self) -> None: ...
     def __enter__(self) -> ReadResult: ...
     def __exit__(self, *exc: object) -> None: ...
 
@@ -146,25 +200,28 @@ class WriteGroup(NamedTuple):
     prim_offset: int
     prim_count: int
     tensors: list[wp.array]
+    attribute_index: int
+    attribute: int
 
 
 class WriteSession:
     groups: list[WriteGroup]
-    def __init__(
-        self,
-        sdk: PhysX,
-        query: int,
-        write: int,
-        groups: list[WriteGroup],
-        native: list[Any],
-    ) -> None: ...
-    def commit(
-        self,
-        group: WriteGroup,
-        cuda_stream: int = ...,
-        cuda_wait_event: int = ...,
-    ) -> None: ...
-    def close(self) -> None: ...
+    metadata: WriteMetadata | None
+    def fetch_next(self) -> Operation[WriteGroup | None]: ...
+    def commit(self, group: WriteGroup, cuda_stream: int = ..., cuda_wait_event: int = ...,
+               *, event_owner: Any = ...) -> Operation[None]:
+        """Publish with producer dependencies; both nonzero handles are honored.
+
+        Keep handles valid through completion. Stream 1 uses the caller's current
+        CUDA context; these handles do not select PhysX's execution stream.
+        event_owner retains Python owners through collection.
+        """
+        ...
+    def commit_sync(self, group: WriteGroup, cuda_stream: int = ..., cuda_wait_event: int = ...,
+                    *, event_owner: Any = ...) -> None: ...
+    def close(self) -> Operation[None]: ...
+    def release(self) -> Operation[None]: ...
+    def close_sync(self) -> None: ...
     def __enter__(self) -> WriteSession: ...
     def __exit__(self, *exc: object) -> None: ...
 
@@ -351,59 +408,79 @@ class PhysX:
     def set_cpu_mode(cpu_only: bool) -> None: ...
     @staticmethod
     def get_cpu_mode() -> bool: ...
-    def reset_stage(self) -> int: ...
     def clone(
         self,
         source_path: str,
         target_paths: list[str],
         anchor_transforms: list[Sequence[float]] | None = ...,
         env_ids: list[int] | None = ...,
-    ) -> int: ...
+    ) -> Task: ...
+    @deprecated("Object-type lookup is deprecated.")
     def get_object_type(self, prim_path: str) -> ObjectType: ...
     def start_recording(self, destination: OmniPvdDestination) -> None: ...
     def stop_recording(self) -> None: ...
     def is_recording(self) -> bool: ...
-    def step(self, dt: float) -> int: ...
+    def step(self, dt: float) -> Task: ...
     def step_sync(self, dt: float) -> None: ...
-    def step_n_sync(self, n: int, dt: float) -> None: ...
-    def update_articulations_kinematic(self) -> None: ...
-    def wait_op(self, op_index: int, *, timeout_ns: int | None = ...) -> None: ...
+    def update_articulations_kinematic(
+        self,
+        *,
+        flags: ArticulationKinematicFlag = ...,
+        scope: ObjectScope = ...,
+        prim_paths: list[int] | None = ...,
+        pattern: str | None = ...,
+    ) -> None:
+        """Wait for the native update task; raise admission or execution failures."""
+        ...
+    def evaluate_sdf_shapes(
+        self,
+        points: Any,
+        out: Any,
+        *,
+        prim_paths: list[int] | None = ...,
+        pattern: str | None = ...,
+        cuda_stream: int = ...,
+        cuda_wait_event: int = ...,
+    ) -> None:
+        """Evaluate SDF_SHAPE query shapes at [N, Q, 3] points into [N, Q, 4] out; wait for the task."""
+        ...
+    def wait_task(self, task: Task, *, timeout_ns: int | None = ...) -> None: ...
     def wait_all(self, *, timeout_ns: int | None = ...) -> None: ...
-    def attach_ovstage(self, stage: Any, *, read_ordinal: int = ...) -> None: ...
-    def update_from_ovstage(self, from_ordinal: int, to_ordinal: int) -> None: ...
-    def detach_ovstage(self) -> None: ...
-    def get_attach_handle(self) -> int: ...
-    def read(
+    def subscribe_object_changes(
         self,
-        object_type: SimObjectType,
-        attribute_names: list[str],
         *,
-        scope: ObjectScope = ...,
-    ) -> ReadResult: ...
-    def read_tokens(
-        self,
-        object_type: SimObjectType,
-        attribute_tokens: list[int],
-        *,
-        scope: ObjectScope = ...,
-    ) -> ReadResult: ...
-    def write(
-        self,
-        object_type: SimObjectType,
-        attribute_name: str,
-        *,
-        scope: ObjectScope = ...,
-    ) -> WriteSession: ...
-    def query_shared_dictionary(self, query: int) -> int: ...
-    def set_config(self, entry: Any) -> None: ...
-    def set_config_bool(self, key: int, value: bool) -> None: ...
-    def set_config_int32(self, key: int, value: int) -> None: ...
-    def set_config_float(self, key: int, value: float) -> None: ...
-    def get_config_bool(self, key: int) -> bool: ...
-    def get_config_int32(self, key: int) -> int: ...
-    def get_config_float(self, key: int) -> float: ...
-    def get_config_string(self, key: int) -> str | None: ...
-    def destroy(self) -> None: ...
+        on_created: Any = ...,
+        on_destroyed: Any = ...,
+        on_all_destroyed: Any = ...,
+    ) -> int: ...
+    def unsubscribe_object_changes(self, subscription_id: int) -> None: ...
+    def attach_ovstage(self, stage: Stage, *, read_ordinal: int = ...) -> Task: ...
+    def update_from_ovstage(self, from_ordinal: int, to_ordinal: int) -> Task: ...
+    def detach_ovstage(self) -> Task: ...
+    def is_stage_attached(self, stage: Any = None) -> bool: ...
+    def query(self, object_type: SimObjectType, *, scope: ObjectScope = ...,
+              prim_paths: Sequence[int] | None = ..., pattern: str | None = ...,
+              contacts: Sequence[ContactSelection] | None = ..., metadata: bool = ...) -> Operation[Query]: ...
+    def read(self, query: Query, attributes: Sequence[str | int], *,
+             metadata: bool = ...) -> Operation[ReadResult]: ...
+    def write(self, query: Query, attributes: Sequence[str | int], *,
+              metadata: bool = ...) -> Operation[WriteSession]: ...
+    def read_sync(self, object_type: SimObjectType, attribute_names: Sequence[str | int], *,
+                  scope: ObjectScope = ..., prim_paths: Sequence[int] | None = ...,
+                  pattern: str | None = ..., contacts: Sequence[ContactSelection] | None = ...,
+                  metadata: bool = ...) -> ReadResult: ...
+    def read_tokens_sync(self, object_type: SimObjectType, attribute_tokens: Sequence[int], *,
+                         scope: ObjectScope = ..., prim_paths: Sequence[int] | None = ...,
+                         pattern: str | None = ..., contacts: Sequence[ContactSelection] | None = ...,
+                         metadata: bool = ...) -> ReadResult: ...
+    def write_sync(self, object_type: SimObjectType, attributes: str | int | Sequence[str | int], *,
+                   scope: ObjectScope = ..., prim_paths: Sequence[int] | None = ...,
+                   pattern: str | None = ..., metadata: bool = ..., values: Sequence[int | float] | None = ...) -> WriteSession: ...
+    def set_config(self, key: ConfigKey, value: bool | int | float | str) -> None: ...
+    def get_config(self, key: ConfigKey) -> bool | int | float | str | None: ...
+    def destroy(self) -> None:
+        """Reject live read-array borrows before teardown; drop aliases and retry."""
+        ...
     @deprecated("The tensor-binding API is deprecated; use PhysX.read for reads and PhysX.write for writes.")
     def create_tensor_binding(
         self,
@@ -414,12 +491,7 @@ class PhysX:
         raise_if_empty: bool = ...,
     ) -> TensorBinding: ...
     def warmup(self) -> None: ...
-    def get_contact_report(
-        self,
-        *,
-        include_friction_anchors: bool = ...,
-        copy: bool = ...,
-    ) -> ContactReportDict: ...
+    @deprecated("Scene queries are deprecated.")
     def raycast(
         self,
         origin: Sequence[float],
@@ -428,6 +500,7 @@ class PhysX:
         mode: SceneQueryMode = ...,
         both_sides: bool = ...,
     ) -> list[SceneQueryHit]: ...
+    @deprecated("Scene queries are deprecated.")
     def sweep(
         self,
         geometry_type: SceneQueryGeometryType,
@@ -437,12 +510,14 @@ class PhysX:
         both_sides: bool = ...,
         **kwargs: float | str | Sequence[float],
     ) -> list[SceneQueryHit]: ...
+    @deprecated("Scene queries are deprecated.")
     def overlap(
         self,
         geometry_type: SceneQueryGeometryType,
         mode: SceneQueryMode = ...,
         **kwargs: float | str | Sequence[float],
     ) -> list[SceneQueryHit]: ...
+    @deprecated("Scene queries are deprecated.")
     def get_scene_query_paths_from_ids(self, ids: Sequence[int]) -> list[str]: ...
     @deprecated("The contact-binding API is deprecated and retained for compatibility.")
     def create_contact_binding(
@@ -452,9 +527,16 @@ class PhysX:
         filters_per_sensor: int = ...,
         max_contact_data_count: int = ...,
     ) -> ContactBinding: ...
+    @deprecated("SDF views are deprecated.")
     def create_sdf_view(self, pattern: str, max_query_points: int) -> SdfView: ...
 
 
+def set_global_config(
+    key: GlobalConfigKey, value: bool | int | float | str
+) -> None: ...
+def get_global_config(
+    key: GlobalConfigKey,
+) -> bool | int | float | str | None: ...
 def set_log_level(level: int | LogLevel) -> None: ...
 def get_log_level() -> int: ...
 def enable_default_log_output(enable: bool = ...) -> None: ...

@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-PACKAGING-TESTRESULT-001
+# @covers AC-1 AC-2 AC-3
+
 # @implements REQ-PACKAGING-TESTDEPS-001
 # @covers AC-1 AC-2 AC-3
 #
@@ -25,16 +28,16 @@ include("${SCRIPT_DIR}/crossplatform_helpers.cmake")
 include("${SCRIPT_DIR}/build_common.cmake")
 include("${SCRIPT_DIR}/parallel_execute.cmake")
 
+if(NOT DEFINED OVPHYSX_SKIP_GPU_PASSES AND DEFINED ENV{OVPHYSX_SKIP_GPU_PASSES})
+    set(OVPHYSX_SKIP_GPU_PASSES "$ENV{OVPHYSX_SKIP_GPU_PASSES}")
+endif()
+
 set(INSTALL_DIR "${PROJECT_ROOT}/_install")
 
-# ovstage is not installed, so the configured external package is used.
+# Load native OVStage from the configured package.
 ovphysx_resolve_ovstage_paths()
-set(OVSTAGE_PYTHON_DIR "${OVPHYSX_OVSTAGE_PYTHON_DIR}")
-if(NOT OVSTAGE_PYTHON_DIR)
-    message(FATAL_ERROR
-        "The configured ovstage root '${OVPHYSX_OVSTAGE_ROOT}' carries no importable "
-        "ovstage Python package; the Python runtime tests need one.")
-endif()
+
+option(OVPHYSX_TEST_UNQUALIFIED_COMPANION "Run companion qualification on additional platforms" OFF)
 
 if(NOT OVPHYSX_PYTHON_RUNTIME_INNER)
     # The python tests resolve python USD from stock pip usd-core in the uv venv
@@ -46,8 +49,10 @@ if(NOT OVPHYSX_PYTHON_RUNTIME_INNER)
     set(_PYTHON_RUNTIME_CHILD_COMMAND
         "${CMAKE_COMMAND}"
         "-DBUILD_TYPE=${BUILD_TYPE}"
+        "-DBUILD_DIR=${BUILD_PATH}"
         "-DOVPHYSX_UV_COMMAND=${OVPHYSX_UV_COMMAND}"
         -DOVPHYSX_PYTHON_RUNTIME_INNER=ON
+        "-DOVPHYSX_TEST_UNQUALIFIED_COMPANION=${OVPHYSX_TEST_UNQUALIFIED_COMPANION}"
         -P "${CMAKE_CURRENT_LIST_FILE}")
     execute_process(
         COMMAND ${_PYTHON_RUNTIME_CHILD_COMMAND}
@@ -58,6 +63,15 @@ if(NOT OVPHYSX_PYTHON_RUNTIME_INNER)
     endif()
     return()
 endif()
+
+include("${SCRIPT_DIR}/dev_schema_provider.cmake")
+
+# Documented fully-skipped exceptions for this full-driver result policy.
+# Empty today. Any future entry needs a reason and must be removed when its
+# blocker clears. A skip can follow useful assertions, but no case completed
+# successfully and the full scenario remains unverified. Mirrors
+# GTEST_PASSES_KNOWN_FULLY_SKIPPED in test_cpp.cmake.
+set(PYTHON_SUITES_KNOWN_FULLY_SKIPPED "")
 
 function(parse_pytest_junit LABEL XML_PATH)
     if(NOT EXISTS "${XML_PATH}")
@@ -96,6 +110,24 @@ function(parse_pytest_junit LABEL XML_PATH)
 
     if(_failures GREATER 0 OR _errors GREATER 0)
         message(FATAL_ERROR "${LABEL} had failures or errors")
+    endif()
+
+    # A qualified suite with no completed cases is not a healthy full-driver
+    # result. This does not change capability-aware skips in direct pytest
+    # invocations; expected fully-skipped outcomes need a documented exception.
+    if(_passed EQUAL 0)
+        list(FIND PYTHON_SUITES_KNOWN_FULLY_SKIPPED "${LABEL}" _KNOWN_HOLE)
+        if(_KNOWN_HOLE EQUAL -1)
+            message(FATAL_ERROR
+                "${LABEL} passed 0 of ${_tests} tests (${_skipped} skipped): "
+                "no cases completed successfully. If that is genuinely expected, "
+                "add "
+                "'${LABEL}' to PYTHON_SUITES_KNOWN_FULLY_SKIPPED with the reason.")
+        endif()
+        message(WARNING
+            "${LABEL} passed 0 of ${_tests} tests (${_skipped} skipped) - known "
+            "fully-skipped exception, see PYTHON_SUITES_KNOWN_FULLY_SKIPPED. "
+            "The complete test scenario remains unverified.")
     endif()
 endfunction()
 
@@ -173,35 +205,15 @@ set(PYTEST_RESULTS_XML "${PYTEST_RESULTS_DIR}/pytest_results.xml")
 
 set(UV_CACHE_DIR_PATH "${PROJECT_ROOT}/_build/.uv_cache")
 file(MAKE_DIRECTORY "${UV_CACHE_DIR_PATH}")
-set(OVSTAGE_WHEEL_DIR "${PROJECT_ROOT}/_build/target-deps/ovstage_wheel")
-file(GLOB OVSTAGE_WHEELS "${OVSTAGE_WHEEL_DIR}/ovstage-*.whl")
-if(NOT OVSTAGE_WHEELS)
-    message(FATAL_ERROR "ovstage wheel not found in ${OVSTAGE_WHEEL_DIR}. Run the ovphysx build first.")
-endif()
-# UV_NO_CONFIG=1 discards uv's configuration settings, pyproject.toml's find-links
-# among them, so the staged wheel dir is passed here. It is spelled relative to uv's
-# working directory, which is also the string uv.lock records as the ovstage registry.
-# On uv 0.12.8 a relative find-links resolving to that directory is accepted, while an
-# absolute path to the same directory makes uv discard the lock and re-resolve, which
-# has no solution against one staged wheel. required-environments is project metadata
-# rather than configuration, so UV_NO_CONFIG leaves it in effect and it is what makes
-# that re-resolution unsatisfiable. An absolute path must not be reintroduced even if
-# the pinned uv happens to tolerate one. That tolerance depends on the checked-in lock,
-# not on the uv version.
-file(RELATIVE_PATH OVSTAGE_WHEEL_FIND_LINKS "${PYTHON_TEST_DIR}" "${OVSTAGE_WHEEL_DIR}")
+include("${CMAKE_CURRENT_LIST_DIR}/ovstage_index.cmake")
+ovphysx_ovstage_index_env(OVSTAGE_INDEX_ENV)
 set(UV_ENV
     "UV_CACHE_DIR=${UV_CACHE_DIR_PATH}"
     "UV_NO_CONFIG=1"
-    "UV_FIND_LINKS=${OVSTAGE_WHEEL_FIND_LINKS}"
+    ${OVSTAGE_INDEX_ENV}
     "UV_HTTP_TIMEOUT=300"
     "UV_SKIP_WHEEL_FILENAME_CHECK=1"
 )
-
-if(NOT EXISTS "${OVSTAGE_PYTHON_DIR}/ovstage/__init__.py")
-    message(FATAL_ERROR
-        "ovstage Python package not found at ${OVSTAGE_PYTHON_DIR}/ovstage.\n"
-        "Run scripts/fetch_deps.cmake so the ovstage release is extracted.")
-endif()
 
 if(WIN32)
     set(OVSTAGE_RUNTIME_DIR "${OVPHYSX_OVSTAGE_RUNTIME_DIR}")
@@ -213,22 +225,19 @@ if(WIN32)
     set(_WINDOWS_PATH_SEGMENTS
         "${INSTALL_DIR}/bin"
         "${OVSTAGE_RUNTIME_DIR}"
-        "${OVSTAGE_PYTHON_DIR}/ovstage/bin/plugins"
-        "${OVSTAGE_PYTHON_DIR}/ovstage/bin/plugins/omni.client.lib"
+        "${OVPHYSX_OVSTAGE_RUNTIME_DIR}/plugins"
+        "${OVPHYSX_OVSTAGE_RUNTIME_DIR}/plugins/omni.client.lib"
         "${INSTALL_DIR}/plugins"
-        "${OVSTAGE_PYTHON_DIR}/ovstage/bin"
         "$ENV{PATH}")
     list(JOIN _WINDOWS_PATH_SEGMENTS ";" _WINDOWS_PATH_VALUE)
     set(ENV{PATH} "${_WINDOWS_PATH_VALUE}")
-    set(ENV{PYTHONPATH} "${OVSTAGE_PYTHON_DIR}")
     set(OVPHYSX_PYTHON_NATIVE_ENV
         "OVSTAGE_LIBRARY_PATH_HINT=${OVSTAGE_RUNTIME_DIR}"
     )
 else()
-    set(OVSTAGE_RUNTIME_DIR "${OVSTAGE_PYTHON_DIR}/ovstage/bin")
+    set(OVSTAGE_RUNTIME_DIR "${OVPHYSX_OVSTAGE_RUNTIME_DIR}")
     set(OVSTAGE_RUNTIME_FILE "${OVSTAGE_RUNTIME_DIR}/libovstage.so")
     set(OVPHYSX_PYTHON_NATIVE_ENV
-        "PYTHONPATH=${OVSTAGE_PYTHON_DIR}"
         "OVSTAGE_LIBRARY_PATH_HINT=${OVSTAGE_RUNTIME_DIR}"
         "LD_LIBRARY_PATH=${INSTALL_DIR}/lib:${INSTALL_DIR}/plugins:${OVSTAGE_RUNTIME_DIR}:$ENV{LD_LIBRARY_PATH}"
     )
@@ -241,7 +250,14 @@ foreach(_OVPHYSX_ENV_ENTRY IN LISTS OVPHYSX_PYTHON_NATIVE_ENV)
 endforeach()
 
 # cpu_tests/, lifecycle_tests/ and utils_tests/ run in separate processes below, so
-# they are excluded from this whole-suite pass.
+# they are excluded from this whole-suite pass. The whole-suite pass uses GPU
+# fixtures and fails when no CUDA driver is present, so the no-CUDA run skips it.
+if(OVPHYSX_SKIP_GPU_PASSES)
+    message(STATUS "Skipping GPU pytest: no CUDA driver")
+    set(PYTEST_RESULT 0)
+    set(PYTEST_STDOUT "")
+    set(PYTEST_STDERR "")
+else()
 message(STATUS "Running pytest...")
 execute_process(
     COMMAND ${CMAKE_COMMAND} -E env ${UV_ENV} "${OVPHYSX_UV_COMMAND}" run pytest --ignore=cpu_tests --ignore=lifecycle_tests --ignore=utils_tests --junit-xml=${PYTEST_RESULTS_XML} -v -s
@@ -263,6 +279,7 @@ if(NOT PYTEST_RESULT EQUAL 0)
 endif()
 
 parse_pytest_junit("Python Tests" "${PYTEST_RESULTS_XML}")
+endif()
 
 # ============================================================================
 # CPU-mode tests (separate pytest invocation)
@@ -359,6 +376,56 @@ else()
 endif()
 
 # ============================================================================
+# Companion tests: native consumers and customer-USD authoring must remain in
+# separate processes. --confcutdir prevents the main suite's native fixtures
+# from loading ovphysx into the customer-USD authoring process.
+if(WIN32)
+    set(_COMPANION_LIBRARY "${INSTALL_DIR}/bin/ovphysx.dll")
+else()
+    set(_COMPANION_LIBRARY "${INSTALL_DIR}/lib/libovphysx.so")
+endif()
+# Full companion qualification currently covers Linux x86_64 only. Other
+# platforms remain opt-in so an unqualified native SDK ABI is not advertised.
+set(_COMPANION_QUALIFIED FALSE)
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux" AND ARCH_NAME STREQUAL "x86_64")
+    set(_COMPANION_QUALIFIED TRUE)
+endif()
+foreach(_COMPANION_SUITE tests_native tests)
+    if(OVPHYSX_SKIP_GPU_PASSES)
+        message(STATUS "Skipping companion ${_COMPANION_SUITE}: no CUDA driver")
+        continue()
+    endif()
+    if(NOT _COMPANION_QUALIFIED AND NOT OVPHYSX_TEST_UNQUALIFIED_COMPANION)
+        message(STATUS "Companion ${_COMPANION_SUITE} unqualified on this platform; use OVPHYSX_TEST_UNQUALIFIED_COMPANION=ON for qualification")
+        continue()
+    endif()
+    set(_COMPANION_DIR "${PROJECT_ROOT}/companion/${_COMPANION_SUITE}")
+    if(NOT EXISTS "${_COMPANION_DIR}")
+        continue()
+    endif()
+    if(_COMPANION_SUITE STREQUAL "tests" AND ARCH_NAME STREQUAL "aarch64")
+        message(STATUS "Skipping companion customer-USD tests: no usd-core wheel for linux-aarch64")
+        continue()
+    endif()
+    set(_COMPANION_XML "${PYTEST_RESULTS_DIR}/pytest_companion_${_COMPANION_SUITE}.xml")
+    file(REMOVE "${_COMPANION_XML}")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E env ${UV_ENV} "OVPHYSX_LIB=${_COMPANION_LIBRARY}"
+            "${OVPHYSX_UV_COMMAND}" run pytest
+            "--confcutdir=${_COMPANION_DIR}" "${_COMPANION_DIR}"
+            "--junit-xml=${_COMPANION_XML}" -v -s
+        WORKING_DIRECTORY "${PYTHON_TEST_DIR}"
+        RESULT_VARIABLE _COMPANION_RESULT
+        ECHO_OUTPUT_VARIABLE ECHO_ERROR_VARIABLE
+        TIMEOUT 300
+    )
+    if(NOT _COMPANION_RESULT EQUAL 0)
+        message(FATAL_ERROR "Companion ${_COMPANION_SUITE} failed (${_COMPANION_RESULT})")
+    endif()
+    parse_pytest_junit("Companion ${_COMPANION_SUITE}" "${_COMPANION_XML}")
+endforeach()
+
+# ============================================================================
 # Lifecycle tests (separate subprocess per test file)
 #
 # These tests exercise the PhysX create/destroy cycle. Carbonite and the
@@ -371,6 +438,21 @@ endif()
 set(LIFECYCLE_TEST_DIR "${PYTHON_TEST_DIR}/lifecycle_tests")
 if(EXISTS "${LIFECYCLE_TEST_DIR}")
     file(GLOB LIFECYCLE_TEST_FILES "${LIFECYCLE_TEST_DIR}/test_*.py")
+    if(OVPHYSX_SKIP_GPU_PASSES)
+        unset(_LIFECYCLE_CPU_FILES)
+        foreach(TEST_FILE ${LIFECYCLE_TEST_FILES})
+            get_filename_component(_LIFECYCLE_FILE_NAME "${TEST_FILE}" NAME)
+            # create_sdf_view requires a GPU instance. CPU SDF evaluation is
+            # not implemented, and the file name does not contain "gpu".
+            if(_LIFECYCLE_FILE_NAME MATCHES "[Gg][Pp][Uu]"
+               OR _LIFECYCLE_FILE_NAME STREQUAL "test_sdf_view_handle_isolation.py")
+                message(STATUS "Skipping ${_LIFECYCLE_FILE_NAME}: no CUDA driver")
+            else()
+                list(APPEND _LIFECYCLE_CPU_FILES "${TEST_FILE}")
+            endif()
+        endforeach()
+        set(LIFECYCLE_TEST_FILES "${_LIFECYCLE_CPU_FILES}")
+    endif()
     list(LENGTH LIFECYCLE_TEST_FILES LIFECYCLE_TEST_COUNT)
     ovphysx_compute_lifecycle_test_jobs(LIFECYCLE_JOBS)
     message(STATUS "")

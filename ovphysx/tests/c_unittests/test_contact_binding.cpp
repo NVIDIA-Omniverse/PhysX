@@ -13,14 +13,12 @@
 //                                              short-buffer demand report
 
 //   ovphysx_get_contact_binding_capacity - invalid-handle rejection
-//   ovphysx_get_contact_report       - zero-count contract before any step and
-//                                      C-struct offset consistency after steps
 //   ovphysx_read_raw_contact_data (with sensor + other actor IDs)
 //                                     - C-ABI wiring happy path (OMPE-104131)
 //
 // NOTE: Happy-path contact binding lifecycle, sensor/filter counts, net-force
 // shapes/values, and force-matrix shapes are already tested by the stricter
-// Python suite (TestContactBinding + TestContactReport in
+// Python suite (TestContactBinding in
 // tests/python_tests/cpu_tests/test_tensor_bindings_api.py). Deterministic
 // per-contact identity association, overflow/truncation, and zero-contacts are
 // covered at the runtime level by TestTensorContacts.cpp
@@ -34,15 +32,15 @@
  * @implements REQ-CAPI-STRING-001
  * @covers AC-3
  *
- * @implements REQ-CAPI-CONTACT-001
- * @covers AC-1 AC-2 AC-3 AC-4 AC-6 AC-7
- *
  * @implements REQ-CAPI-CONTACT-002
  * @covers AC-1 AC-2 AC-3 AC-4
+ * @implements REQ-CAPI-CONTACT-001
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-6 AC-7
  */
 
 #include <gtest/gtest.h>
 #include "ovphysx/ovphysx.h"
+#include "ovphysx/ovphysx_config.h"
 #include "global_test_environment.h"
 #include "test_utilities.h"
 
@@ -56,24 +54,24 @@ using namespace test_utils;
 // Local helpers
 // ---------------------------------------------------------------------------
 
-static bool wait_cb_op(ovphysx_handle_t handle, ovphysx_op_index_t op_index)
+static bool wait_cb_op(ovphysx_instance_handle_t handle, ovphysx_enqueue_result_t task)
 {
-    ovphysx_op_wait_result_t wr{};
-    ovphysx_result_t r = ovphysx_wait_op(handle, op_index, 10'000'000'000ULL, &wr);
-    ovphysx_destroy_wait_result(&wr);
+    ovphysx_wait_task_result_t wr{};
+    ovphysx_result_t r = ovphysx_wait_task(handle, task, 10'000'000'000ULL, &wr);
+    ovphysx_destroy_wait_task_result(&wr);
     return r.status == OVPHYSX_API_SUCCESS;
 }
 
-static bool load_usd_cb(ovphysx_handle_t handle, const char* path, ovphysx_usd_handle_t& out)
+static bool load_usd_cb(ovphysx_instance_handle_t handle, const char* path, ovphysx_usd_handle_t& out)
 {
     out = 1;
     return attach_usd_with_ovstage(handle, path);
 }
 
-static bool step_cb(ovphysx_handle_t handle, float elapsed)
+static bool step_cb(ovphysx_instance_handle_t handle, float elapsed)
 {
     ovphysx_enqueue_result_t r = ovphysx_step(handle, elapsed);
-    return r.status == OVPHYSX_API_SUCCESS && wait_cb_op(handle, r.op_index);
+    return r.status == OVPHYSX_API_SUCCESS && wait_cb_op(handle, r);
 }
 
 // Buffer utilities accept an entry point; they do not depend on deprecated APIs.
@@ -97,7 +95,7 @@ static DLTensor make_contact_tensor(void* data, int64_t* shape, uint8_t code)
 }
 
 static ContactDataBuffers read_normal_contact_buffers(
-    ovphysx_handle_t instance, ovphysx_contact_binding_handle_t binding,
+    ovphysx_instance_handle_t instance, ovphysx_contact_binding_handle_t binding,
     uint32_t capacity, int32_t sensors, int32_t filters, decltype(&ovphysx_read_normal_contact_data) read)
 {
     ContactDataBuffers data;
@@ -122,7 +120,7 @@ static ContactDataBuffers read_normal_contact_buffers(
 }
 
 static ContactDataBuffers read_friction_contact_buffers(
-    ovphysx_handle_t instance, ovphysx_contact_binding_handle_t binding,
+    ovphysx_instance_handle_t instance, ovphysx_contact_binding_handle_t binding,
     uint32_t capacity, int32_t sensors, int32_t filters, decltype(&ovphysx_read_friction_contact_data) read)
 {
     ContactDataBuffers data;
@@ -601,99 +599,6 @@ TEST_F(ContactBindingTest, FilteredReadsOverflowReturnsRequiredCountAndValidPref
 
     ovphysx_destroy_contact_binding(m_handle, small_cb);
     ovphysx_destroy_contact_binding(m_handle, reference_cb);
-}
-
-// ---------------------------------------------------------------------------
-// get_contact_report - contract tests not reachable from Python
-// ---------------------------------------------------------------------------
-
-
-// Before any simulation step the report must be empty (both counts == 0).
-// Python test_no_contacts_before_collision only asserts >= 0. The C ABI
-// must guarantee the tighter contract of exactly 0 at this stage.
-TEST_F(ContactBindingTest, GetContactReportBeforeStep)
-{
-    ovphysx_usd_handle_t usd_handle = 0;
-    ASSERT_TRUE(load_usd_cb(m_handle,
-        "tests/data/boxes_falling_on_groundplane.usda", usd_handle));
-
-    const ovphysx_contact_event_header_t* headers = nullptr;
-    uint32_t num_headers = 0;
-    const ovphysx_contact_point_t* points = nullptr;
-    uint32_t num_points = 0;
-
-    ovphysx_result_t r = ovphysx_get_contact_report(
-        m_handle, &headers, &num_headers, &points, &num_points,
-        nullptr, nullptr);
-    EXPECT_EQ(r.status, OVPHYSX_API_SUCCESS);
-    EXPECT_EQ(num_headers, 0u) << "No contacts expected before any simulation step";
-    EXPECT_EQ(num_points,  0u) << "No contact points expected before any simulation step";
-}
-
-// After stepping the simulation, two things are validated:
-//  1. Contacts were detected (non-empty report). Without this the consistency
-//     loop below is vacuously satisfied and catches nothing.
-//  2. C-struct internal consistency: every header's
-//     (contactDataOffset + numContactData) must not exceed num_points.
-//     This is a C-ABI-level invariant Python cannot check because it works
-//     with the Python wrapper's dict, not the raw structs.
-//
-// NOTE: A contact binding covering the sensor prims must be created before
-// stepping. Without a binding the engine has no sensor list and produces
-// zero contact headers regardless of how many steps are taken.
-TEST_F(ContactBindingTest, GetContactReportStructConsistencyAfterSteps)
-{
-    ovphysx_usd_handle_t usd_handle = 0;
-    ASSERT_TRUE(load_usd_cb(m_handle,
-        "tests/data/boxes_falling_on_groundplane.usda", usd_handle));
-
-    // Register a contact binding so the engine tracks contacts for Cube1..3.
-    ovphysx_string_t sensor = make_ovx_string("/World/Cube*");
-    ovphysx_contact_binding_handle_t cb = 0;
-    ovphysx_result_t cr = ovphysx_create_contact_binding(
-        m_handle, &sensor, 1, nullptr, 0, 256, &cb);
-    ASSERT_EQ(cr.status, OVPHYSX_API_SUCCESS) << "Failed to create contact binding";
-
-    // 60 steps at 1/60 s is one second of simulation. This matches the Python
-    // test_contacts_after_falling step count and is enough for the boxes to
-    // reach the ground plane under gravity.
-    for (int i = 0; i < 60; ++i)
-        ASSERT_TRUE(step_cb(m_handle, 1.0f / 60.0f));
-
-    const ovphysx_contact_event_header_t* headers = nullptr;
-    uint32_t num_headers = 0;
-    const ovphysx_contact_point_t* points = nullptr;
-    uint32_t num_points = 0;
-
-    ovphysx_result_t r = ovphysx_get_contact_report(
-        m_handle, &headers, &num_headers, &points, &num_points,
-        nullptr, nullptr);
-    ASSERT_EQ(r.status, OVPHYSX_API_SUCCESS);
-
-    // Contacts must have been detected. If zero headers are returned the
-    // consistency loop below never runs and the test is vacuous.
-    ASSERT_GT(num_headers, 0u)
-        << "Expected at least one contact pair after boxes fall onto the "
-           "ground plane (60 simulation steps at 1/60 s each)";
-    ASSERT_GT(num_points, 0u)
-        << "Expected at least one contact point after boxes fall onto the "
-           "ground plane (60 simulation steps at 1/60 s each)";
-
-    // The headers pointer must be valid since num_headers > 0.
-    ASSERT_NE(headers, nullptr);
-
-    // Validate every header's contact-data range falls within [0, num_points).
-    for (uint32_t i = 0; i < num_headers; ++i)
-    {
-        uint32_t end = headers[i].contactDataOffset + headers[i].numContactData;
-        EXPECT_LE(end, num_points)
-            << "header[" << i << "].contactDataOffset("
-            << headers[i].contactDataOffset << ") + numContactData("
-            << headers[i].numContactData << ") = " << end
-            << " exceeds num_points(" << num_points << ")";
-    }
-
-    ovphysx_destroy_contact_binding(m_handle, cb);
 }
 
 // ---------------------------------------------------------------------------

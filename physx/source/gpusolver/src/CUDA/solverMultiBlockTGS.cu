@@ -137,6 +137,16 @@ extern "C" __global__ void writebackBlocksTGS(
 		//Get block header
 		const PxgBlockConstraintBatch& batch = batchHeaders[k];
 
+		//The rigid 1D writeback reconstructs the reported impulse with the bodies' sqrt-inverse-inertia
+		//tensors (see writeBack1DBlockTGS). Loaded warp-cooperatively, like the solve kernels do.
+		PxgSolverTxIData iData0, iData1;
+		if(batch.constraintType == PxgSolverConstraintDesc::eCONSTRAINT_1D)
+		{
+			const PxgSolverTxIData* PX_RESTRICT iData = constraintPrepDesc->solverBodyTxIDataPool;
+			loadTxInertia(FULL_MASK, iData, batch.bodyAIndex[threadIndexInWarp], batch.mDescStride, threadIndexInWarp, iData0);
+			loadTxInertia(FULL_MASK, iData, batch.bodyBIndex[threadIndexInWarp], batch.mDescStride, threadIndexInWarp, iData1);
+		}
+
 		if(threadIndexInWarp < batch.mDescStride)
 		{
 			if(batch.constraintType==PxgSolverConstraintDesc::eCONTACT || batch.constraintType == PxgSolverConstraintDesc::eARTICULATION_CONTACT)
@@ -146,8 +156,7 @@ extern "C" __global__ void writebackBlocksTGS(
 			}
 			else
 			{
-				//Do nothing (for now)
-				writeBack1DBlockTGS(batch, threadIndexInWarp, jointHeaders, jointRowsCon, constraintWriteBack);
+				writeBack1DBlockTGS(batch, threadIndexInWarp, jointHeaders, jointRowsCon, constraintWriteBack, iData0, iData1);
 			}
 		}
 

@@ -37,7 +37,10 @@ Key points:
 
 Run these commands from the directory that holds your application's `my_app/`
 source directory, and replace `/path/to/ovphysx` with the `ovphysx` directory in
-your PhysX repository clone:
+your PhysX repository clone. First install the external schema provider and
+set `PHYSX_USD_SCHEMAS_ROOT` as described in
+[Physics Schemas](../physics_schemas.md#installing-the-external-physx-schemas).
+Then build and run:
 
 ```bash
 # Configure (first run fetches dependencies automatically)
@@ -47,7 +50,7 @@ cmake -S my_app -B my_app/_build \
 # Build
 cmake --build my_app/_build --parallel 8
 
-# Run (OVPHYSX_LIB anchors runtime schema/plugin discovery)
+# Run (OVPHYSX_LIB anchors runtime plugin discovery)
 OVPHYSX_LIB=/path/to/ovphysx/_install/lib/libovphysx.so ./my_app/_build/my_app
 ```
 
@@ -73,8 +76,7 @@ The ovphysx runtime uses an embedded static Carbonite framework and loads PhysX
 and bootstrap runtime plugins at startup. These plugins are not part of the
 `add_subdirectory()` build; they come from the installed SDK's flattened runtime
 layout. Build and install the SDK once, then point `OVPHYSX_LIB` at the installed
-ovphysx library so the runtime can find the matching plugins and the codeless
-schema root (`schemas/physx`):
+ovphysx library so the runtime can find the matching plugins:
 
 ```bash
 # One-time setup
@@ -102,7 +104,7 @@ build and its runtime discovery:
 |----------|---------|-------------|
 | `OVPHYSX_SOURCE_DIR` | *(monorepo-relative)* | Path to the `ovphysx` directory |
 | `OVPHYSX_FETCH_DEPS` | `ON` | Auto-fetch packman dependencies at configure time |
-| `OVPHYSX_LIB` | *(env var)* | Path to the ovphysx shared library. Python loads this library directly; native/source-link runs use its directory to find the plugins and the codeless schema root (`schemas/physx`). |
+| `OVPHYSX_LIB` | *(env var)* | Path to the ovphysx shared library. Python loads this library directly; native/source-link runs use its directory to find the plugins; schema resources come from the external provider. |
 
 ## Troubleshooting
 

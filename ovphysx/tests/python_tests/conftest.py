@@ -7,7 +7,7 @@ Provides a session-scoped shared PhysX GPU instance for test isolation.
 Carbonite and the embedded Python interpreter cannot be cleanly finalized and
 re-initialized in the same process (DLL/SO init routines fail on reload), so a
 single long-lived instance is created once per pytest session and reused across
-all tests.  Simulation state is reset between tests via ``PhysX.reset_stage()`` +
+all tests.  Simulation state is reset between tests via ``PhysX.detach_ovstage()`` +
 ``PhysX.wait_all()`` to provide per-test isolation without the costly
 destroy/recreate cycle.
 
@@ -25,6 +25,11 @@ from datetime import datetime
 
 import pytest
 
+# Exercise the application-side schema recipe, including fresh subprocesses.
+_schema_samples = os.path.join(os.path.dirname(__file__), "..", "python_samples")
+sys.path.insert(0, _schema_samples)
+os.environ["PYTHONPATH"] = _schema_samples + os.pathsep + os.environ.get("PYTHONPATH", "")
+
 
 # Tensor-binding deprecation (REQ-CAPI-WRITE-001 AC-11): the compat window keeps the deprecated API
 # working, and pyproject's filterwarnings turns its DeprecationWarning into an ERROR so any NEW test
@@ -35,7 +40,6 @@ import pytest
 _TENSOR_BINDING_COMPAT_FILES = frozenset(
     {
         "test_api_surface.py",
-        "test_clone.py",
         "test_clone_prebinding_gpu.py",
         "test_cross_device_staging_gpu.py",
         "test_deformable_tensor_bindings_gpu.py",
@@ -62,19 +66,67 @@ _TENSOR_BINDING_COMPAT_FILES = frozenset(
 )
 
 
-def pytest_collection_modifyitems(config, items):
-    """Ignore the tensor-binding DeprecationWarning only for the known compat callers.
+_SCENE_QUERY_COMPAT_FILES = frozenset(
+    {
+        "test_scene_query.py",
+        "test_scene_query_advanced.py",
+        "test_scene_query_gpu.py",
+        "test_embedded_nul_paths.py",
+        "test_pattern_component_length.py",
+    }
+)
+_CONTACT_BINDING_COMPAT_FILES = frozenset(
+    {
+        "test_tensor_bindings_api.py",
+        "test_tensor_bindings_api_gpu.py",
+        "test_contact_binding_advanced.py",
+        "test_pattern_component_length.py",
+        "test_embedded_nul_paths.py",
+        "test_clone_prebinding_gpu.py",
+        "test_gpu_lifecycle_advanced.py",
+        "test_lifecycle.py",
+        "test_deformable_tensor_bindings_gpu.py",
+        "test_tensor_warp_smoke_gpu.py",
+    }
+)
+_SDF_VIEW_COMPAT_FILES = frozenset(
+    {
+        "test_sdf_view_lifecycle_gpu.py",
+        "test_sdf_view_handle_isolation.py",
+        "test_pattern_component_length.py",
+        "test_gpu_lifecycle_advanced.py",
+        "test_lifecycle.py",
+    }
+)
+_OBJECT_TYPE_COMPAT_FILES = frozenset(
+    {
+        "test_object_type_joint.py",
+        "test_embedded_nul_paths.py",
+        "test_tensor_bindings_api.py",
+        "test_tensor_bindings_api_gpu.py",
+        "test_api_surface.py",
+    }
+)
 
-    pyproject turns that warning into an error. A per-item filterwarnings marker takes precedence
-    over the ini filter, so only the inventory above opts back into ignoring it. A test outside the
-    inventory that reaches for the deprecated API therefore errors, keeping migration regressions
-    visible instead of hidden by a suite-wide ignore.
+
+def pytest_collection_modifyitems(config, items):
+    """Ignore known-compat DeprecationWarnings only for inventory callers.
+
+    pyproject turns those warnings into errors. A per-item filterwarnings marker
+    takes precedence over the ini filter.
     """
-    ignore = pytest.mark.filterwarnings("ignore:ovphysx tensor bindings are deprecated:DeprecationWarning")
+    markers = (
+        (_TENSOR_BINDING_COMPAT_FILES, "ignore:ovphysx tensor bindings are deprecated:DeprecationWarning"),
+        (_SCENE_QUERY_COMPAT_FILES, "ignore:ovphysx scene queries are deprecated:DeprecationWarning"),
+        (_CONTACT_BINDING_COMPAT_FILES, "ignore:ovphysx contact bindings are deprecated:DeprecationWarning"),
+        (_SDF_VIEW_COMPAT_FILES, "ignore:ovphysx SDF views are deprecated:DeprecationWarning"),
+        (_OBJECT_TYPE_COMPAT_FILES, "ignore:ovphysx object-type lookup is deprecated:DeprecationWarning"),
+    )
     for item in items:
         name = os.path.basename(str(getattr(item, "path", None) or item.fspath))
-        if name in _TENSOR_BINDING_COMPAT_FILES:
-            item.add_marker(ignore)
+        for files, expr in markers:
+            if name in files:
+                item.add_marker(pytest.mark.filterwarnings(expr))
 
 
 def _get_pkg_dir():
@@ -706,11 +758,11 @@ def _gpu_session_instance():
     except Exception:
         pass
     try:
-        physx.reset_stage()
+        physx.detach_ovstage()
         physx.wait_all()
     except RuntimeError:
         logging.getLogger(__name__).warning(
-            "physx session teardown: reset_stage() failed; process shutdown will reclaim remaining resources"
+            "physx session teardown: detach_ovstage() failed; process shutdown will reclaim remaining resources"
         )
 
 
@@ -737,11 +789,11 @@ def physx_sdk(_gpu_session_instance):
     except Exception:
         pass
     try:
-        _gpu_session_instance.reset_stage()
+        _gpu_session_instance.detach_ovstage()
         _gpu_session_instance.wait_all()
     except RuntimeError:
         logging.getLogger(__name__).warning(
-            "physx_sdk teardown: reset_stage() failed — instance may be degraded for subsequent tests"
+            "physx_sdk teardown: detach_ovstage() failed -- instance may be degraded for subsequent tests"
         )
     try:
         from test_utils import destroy_ovstage_test_attachments

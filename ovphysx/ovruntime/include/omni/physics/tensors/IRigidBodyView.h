@@ -3,6 +3,11 @@
 
 #pragma once
 
+// @implements REQ-ATTACH-VIEWS-001
+// @covers AC-4
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-3 AC-4
+
 /**
  * @implements REQ-TENSOR-PATH-001
  * @covers AC-1
@@ -33,6 +38,13 @@ public:
     virtual bool getTransforms(const TensorDesc* dstTensor) const = 0;
     virtual bool getVelocities(const TensorDesc* dstTensor) const = 0;
     virtual bool getAccelerations(const TensorDesc* dstTensor) const = 0;
+
+    // Gathers the pending kinematic target pose (7 floats/body). Kinematic-target is a CPU-only PhysX
+    // API with no device batch. A body with a pending target reads it back fresh on any device; a body
+    // without one falls back to its global pose -- live on CPU, but the LAST-SYNCED host pose under
+    // DirectGPU suppressed readback, so it can lag the live device pose for a body that moves (a
+    // non-kinematic body or an articulation link).
+    virtual bool getKinematicTargets(const TensorDesc* dstTensor) const = 0;
 
     virtual bool setKinematicTargets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
     virtual bool setTransforms(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
@@ -106,7 +118,8 @@ public:
 
     virtual bool check() const = 0;
 
-    virtual void release() = 0;
+    // Returns false while runtime execution is busy; the view remains owned by the caller.
+    virtual bool release() = 0;
 
 protected:
     virtual ~IRigidBodyView() = default;

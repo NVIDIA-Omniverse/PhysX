@@ -6,6 +6,7 @@
 
 // [tutorial-start]
 #include "ovphysx/ovphysx.h"
+#include "ovphysx/ovphysx_attributes.h"
 #include "ovphysx/ovphysx_types.h"
 #include "ovstage_sample.h"
 #include <ovx/path_dictionary/path_dictionary.h>  // path_dictionary_* prim/token/string resolution
@@ -34,22 +35,22 @@ static bool check_result(ovphysx_result_t result, const char* context) {
     return true;
 }
 
-static bool wait_op(ovphysx_handle_t handle, ovphysx_op_index_t op_index, const char* context) {
-    ovphysx_op_wait_result_t wait_result = {};
-    ovphysx_result_t result = ovphysx_wait_op(handle, op_index, 10ULL * 1000 * 1000 * 1000, &wait_result);
+static bool wait_task(ovphysx_instance_handle_t handle, ovphysx_enqueue_result_t task, const char* context) {
+    ovphysx_wait_task_result_t wait_result = {};
+    ovphysx_result_t result = ovphysx_wait_task(handle, task, 10ULL * 1000 * 1000 * 1000, &wait_result);
 
     bool ok = (result.status == OVPHYSX_API_SUCCESS && wait_result.num_errors == 0);
     if (!ok) {
         fprintf(stderr, "ERROR in %s: %s\n", context,
                 wait_result.num_errors > 0 ? "async operation failed" : "wait failed");
     }
-    ovphysx_destroy_wait_result(&wait_result);
+    ovphysx_destroy_wait_task_result(&wait_result);
     return ok;
 }
 
 static ovphysx_sample_stage_attachment_t g_stage_attachment{};
 
-static int destroy_instance_and_shutdown(ovphysx_handle_t handle) {
+static int destroy_instance_and_shutdown(ovphysx_instance_handle_t handle) {
     ovphysx_sample_destroy_stage(handle, &g_stage_attachment);
     ovphysx_destroy_instance(handle);
     ovphysx_shutdown();
@@ -100,6 +101,62 @@ static int find_prim_row(path_dictionary_instance_t* dict, const ovstage_read_gr
     return -1;
 }
 
+// Borrowed PxRigidActor address from the physxPointer column, or NULL.
+static void* read_rigid_actor_pointer(ovphysx_instance_handle_t handle, const char* path) {
+    ovphysx_query_handle_t query = 0;
+    ovphysx_enqueue_result_t opened =
+        ovphysx_query(handle, OVPHYSX_QUERY_TARGET_RIGID_ACTOR, OVPHYSX_SCOPE_ALL, &query, nullptr);
+    if (opened.status != OVPHYSX_API_SUCCESS || !wait_task(handle, opened, "query rigid actor"))
+        return NULL;
+
+    ovstage_instance_t* stage = g_stage_attachment.stage;
+    path_dictionary_instance_t* dict = stage ? stage->vtable->get_path_dictionary(stage->context) : nullptr;
+    if (!dict) {
+        ovphysx_enqueue_result_t released_query = ovphysx_release_query(handle, query);
+        wait_task(handle, released_query, "release rigid-actor query");
+        return NULL;
+    }
+
+    ovx_string_or_token_t name = {};
+    name.string.ptr = OVPHYSX_ATTR_PHYSX_POINTER;
+    name.string.length = std::strlen(OVPHYSX_ATTR_PHYSX_POINTER);
+    ovphysx_read_handle_t read = 0;
+    ovphysx_enqueue_result_t started = ovphysx_read(handle, query, &name, 1, &read, nullptr);
+    if (started.status != OVPHYSX_API_SUCCESS) {
+        ovphysx_enqueue_result_t released_query = ovphysx_release_query(handle, query);
+        wait_task(handle, released_query, "release rigid-actor query");
+        return NULL;
+    }
+    if (!wait_task(handle, started, "read physxPointer")) {
+        ovphysx_enqueue_result_t released_read = ovphysx_release_read(handle, read);
+        wait_task(handle, released_read, "release physxPointer read");
+        ovphysx_enqueue_result_t released_query = ovphysx_release_query(handle, query);
+        wait_task(handle, released_query, "release rigid-actor query");
+        return NULL;
+    }
+
+    void* found = NULL;
+    for (;;) {
+        const ovstage_read_group_t* group = nullptr;
+        ovphysx_enqueue_result_t fetched = ovphysx_fetch_read_next(handle, read, &group);
+        if (fetched.status != OVPHYSX_API_SUCCESS || !wait_task(handle, fetched, "fetch physxPointer") || !group)
+            break;
+        const DLTensor* tensor = group->data.tensors;
+        const int row = find_prim_row(dict, group, path);
+        if (row >= 0 && tensor && tensor->data && tensor->dtype.code == kDLUInt && tensor->dtype.bits == 64)
+            found = reinterpret_cast<void*>(static_cast<uint64_t*>(tensor->data)[row]);
+        ovphysx_enqueue_result_t released = ovphysx_release_group(handle, read, group->read_group_id);
+        wait_task(handle, released, "release physxPointer group");
+        if (found)
+            break;
+    }
+    ovphysx_enqueue_result_t released_read = ovphysx_release_read(handle, read);
+    wait_task(handle, released_read, "release physxPointer read");
+    ovphysx_enqueue_result_t released_query = ovphysx_release_query(handle, query);
+    wait_task(handle, released_query, "release rigid-actor query");
+    return found;
+}
+
 static int run(void)
 {
     printf("=== ovphysx PhysX Interop (C++ API) ===\n");
@@ -109,10 +166,8 @@ static int run(void)
         return 1;
 
     // 1. Create instance
-    ovphysx_handle_t handle = 0;
-    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-
-    result = ovphysx_create_instance(&args, &handle);
+    ovphysx_instance_handle_t handle = 0;
+    result = ovphysx_create_instance(&handle);
     if (!check_result(result, "create_instance")) {
         ovphysx_shutdown();
         return 1;
@@ -134,19 +189,18 @@ static int run(void)
         fprintf(stderr, "Failed to enqueue step\n");
         return destroy_instance_and_shutdown(handle);
     }
-    if (!wait_op(handle, step_result.op_index, "initial step")) {
+    if (!wait_task(handle, step_result, "initial step")) {
         return destroy_instance_and_shutdown(handle);
     }
 
     printf("Initial simulation step completed.\n");
 
-    // 4. Get the PhysX pointer for the kinematic cube.
-    //    OVPHYSX_PHYSX_TYPE_ACTOR returns either PxRigidDynamic* or PxRigidStatic*,
-    //    so cast to PxRigidActor* first, then validate the concrete type.
-    void* actor_ptr = nullptr;
-    result = ovphysx_get_physx_ptr(
-        handle, OVPHYSX_LITERAL("/World/KinematicCube"), OVPHYSX_PHYSX_TYPE_ACTOR, &actor_ptr);
-    if (!check_result(result, "get_physx_ptr")) {
+    // 4. Read the borrowed PhysX address for the kinematic cube.
+    //    A rigid-actor row is PxRigidDynamic or PxRigidStatic, so cast to
+    //    PxRigidActor first, then validate the concrete type.
+    void* actor_ptr = read_rigid_actor_pointer(handle, "/World/KinematicCube");
+    if (!actor_ptr) {
+        fprintf(stderr, "ERROR: physxPointer for /World/KinematicCube was absent\n");
         return destroy_instance_and_shutdown(handle);
     }
 
@@ -169,7 +223,7 @@ static int run(void)
         fprintf(stderr, "Failed to enqueue step\n");
         return destroy_instance_and_shutdown(handle);
     }
-    if (!wait_op(handle, step_result.op_index, "target step")) {
+    if (!wait_task(handle, step_result, "target step")) {
         return destroy_instance_and_shutdown(handle);
     }
 
@@ -178,36 +232,35 @@ static int run(void)
     //    read API (ovphysx_query + ovphysx_read) confirms the ovphysx runtime observed the move.
     //    The kinematic cube is the only body driven to (3, 2, 0). The dynamic ones fall away.
     ovphysx_query_handle_t read_query = 0;
-    result = ovphysx_query(handle, OVPHYSX_OBJECT_RIGID_BODY, OVPHYSX_SCOPE_ALL, &read_query);
+    result = ovphysx_sample_complete_task(handle, ovphysx_query(handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &read_query, nullptr));
     if (!check_result(result, "query") || read_query == 0) {
         return destroy_instance_and_shutdown(handle);
     }
     const ovx_string_or_token_t pos_attr = { 0, { OVPHYSX_ATTR_POSITION, sizeof(OVPHYSX_ATTR_POSITION) - 1 } };
     ovphysx_read_handle_t read_session = 0;
-    result = ovphysx_read(handle, read_query, &pos_attr, 1, &read_session);
+    result = ovphysx_sample_complete_task(handle, ovphysx_read(handle, read_query, &pos_attr, 1, &read_session, nullptr));
     if (!check_result(result, "read")) {
         return destroy_instance_and_shutdown(handle);
     }
 
-    // The shared source dictionary that interned the group prim lists. It resolves each row's prim
+    // The attached Stage's own dictionary interned the group prim lists. It resolves each row's prim
     // path so that /World/KinematicCube specifically is verified, not merely some body that drifted
     // near the target. Matching on x/y alone would false-pass on a future body at the same x/y or
     // a target-z regression.
-    void* dict_void = nullptr;
-    if (!check_result(ovphysx_query_shared_dictionary(handle, read_query, &dict_void),
-                      "query_shared_dictionary") ||
-        !dict_void) {
+    ovstage_instance_t* stage = g_stage_attachment.stage;
+    path_dictionary_instance_t* dict = stage ? stage->vtable->get_path_dictionary(stage->context) : nullptr;
+    if (!dict) {
+        fprintf(stderr, "The attached Stage published no path dictionary\n");
         return destroy_instance_and_shutdown(handle);
     }
-    path_dictionary_instance_t* dict = static_cast<path_dictionary_instance_t*>(dict_void);
 
     const float tolerance = 0.1f;
     bool found_cube = false;
     float obs_x = 0.0f, obs_y = 0.0f, obs_z = 0.0f;
     for (;;) {
         const ovstage_read_group_t* rg = nullptr;
-        const ovphysx_result_t r = ovphysx_fetch_read_next(handle, read_session, &rg);
-        if (r.status == OVPHYSX_API_END_OF_ITERATION)
+        const ovphysx_result_t r = ovphysx_sample_complete_task(handle, ovphysx_fetch_read_next(handle, read_session, &rg));
+        if (r.status == OVPHYSX_API_SUCCESS && !rg)
             break;  // exhausted. The only non-failure exit
         if (r.status != OVPHYSX_API_SUCCESS) {
             fprintf(stderr, "ovphysx_fetch_read_next(RIGID_BODY) failed (status %d)\n", (int)r.status);
@@ -229,10 +282,13 @@ static int run(void)
                 }
             }
         }
-        ovphysx_release_group(handle, read_session, rg->read_group_id);
+        if (ovphysx_sample_complete_task(handle, ovphysx_release_group(handle, read_session, rg->read_group_id)).status != OVPHYSX_API_SUCCESS)
+        return destroy_instance_and_shutdown(handle);
     }
-    ovphysx_release_read(handle, read_session);
-    ovphysx_release_query(handle, read_query);
+    if (ovphysx_sample_complete_task(handle, ovphysx_release_read(handle, read_session)).status != OVPHYSX_API_SUCCESS)
+        return destroy_instance_and_shutdown(handle);
+    if (ovphysx_sample_complete_task(handle, ovphysx_release_query(handle, read_query)).status != OVPHYSX_API_SUCCESS)
+        return destroy_instance_and_shutdown(handle);
 
     if (!found_cube) {
         fprintf(stderr, "FAILED: /World/KinematicCube not present in the ovphysx_read read-back.\n");

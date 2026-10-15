@@ -5,7 +5,8 @@
 #define DY_DEFORMABLE_VOLUME_H
 
 #include "foundation/PxSimpleTypes.h"
-#include "CmPinnableArray.h"
+#include "foundation/PxArray.h"
+#include "foundation/PxUserAllocated.h"
 #include "DyDeformableVolumeCore.h"
 #include "PxvGeometry.h"
 
@@ -21,47 +22,14 @@ namespace Dy
 
 typedef size_t DeformableVolumeHandle;
 struct DeformableVolumeCore;
-struct VolumeVolumeFilter { PxU64 a; PxU64 b; };
-typedef Cm::PinnableArray<VolumeVolumeFilter> VolumeVolumeFilterArray;
 
 class DeformableVolume
 {
 	PX_NOCOPY(DeformableVolume)
 public:
 	DeformableVolume(Sc::DeformableVolumeSim* sim, Dy::DeformableVolumeCore& core) :
-		mVolumeVolumeFilterPairs(NULL), mSim(sim), mCore(core), mElementId(0xffffffff), mGpuRemapId(0xffffffff)
+		mSim(sim), mCore(core), mElementId(0xffffffff), mGpuRemapId(0xffffffff)
 	{
-		mFilterDirty = false;
-		mFilterInDirtyList = false;
-		mDirtyVolumeForFilterPairs = NULL;
-		mVolumeVolumeFilterPairs = NULL;
-	}
-
-	~DeformableVolume()
-	{
-		if (mDirtyVolumeForFilterPairs)
-		{
-			Dy::DeformableVolume** dirtySoftBodies = mDirtyVolumeForFilterPairs->begin();
-
-			const PxU32 size = mDirtyVolumeForFilterPairs->size();
-
-			for (PxU32 i = 0; i < size; ++i)
-			{
-				if (dirtySoftBodies[i] == this)
-				{
-					dirtySoftBodies[i] = NULL;
-				}
-			}
-		}
-
-		if(mVolumeVolumeFilterPairs)
-		{
-			// TODO: Move all Pxg level data into Pxg layer!
-			mVolumeVolumeFilterPairs->clear();
-			mVolumeVolumeFilterPairs->shrink();
-			PX_FREE(mVolumeVolumeFilterPairs);
-			mVolumeVolumeFilterPairs = NULL;
-		}
 	}
 
 	PX_FORCE_INLINE void								setGpuRemapId(const PxU32 remapId) 
@@ -102,17 +70,9 @@ public:
 
 	PX_FORCE_INLINE PxU32								getGpuIndex() const { return mGpuRemapId;  }
 
-	PxArray<PxU32>										mRigidVolumeAttachments;
-	PxArray<PxU32>										mSurfaceVolumeAttachments;
-	PxArray<PxU32>										mVolumeVolumeAttachments;
-
-	//TODO: Move all Pxg level data into Pxg layer!
-	VolumeVolumeFilterArray*							mVolumeVolumeFilterPairs;
-	PxArray <Dy::DeformableVolume*>*					mDirtyVolumeForFilterPairs; //pointer to the array of mDirtyDeformableVolumeForFilterPairs in PxgSimulationController.cpp
-
-	PxArray<PxU32>										mVolumeVolumeAttachmentIdReferences;
-	bool												mFilterDirty;
-	bool												mFilterInDirtyList;
+	PxArray<PxU32>										mRigidAttachments;
+	PxArray<PxU32>										mVolumeAttachments;
+	PxArray<PxU32>										mSurfaceAttachments;
 
 private:
 	Sc::DeformableVolumeSim*							mSim;

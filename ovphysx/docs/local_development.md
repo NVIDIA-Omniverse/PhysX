@@ -24,13 +24,15 @@ cmake --build _build --target install_sdk
 
 # 3. Build your app against the installed SDK
 cmake -S my_app -B my_app/_build \
-    -DCMAKE_PREFIX_PATH="$(pwd)/_install;$(pwd)/ovruntime/_build/target-deps/ovstage/ovstage"
+    -DCMAKE_PREFIX_PATH="$(pwd)/_install;$(pwd)/ovruntime/_build/target-deps/ovstage"
 cmake --build my_app/_build
 ```
 
-The source build fetches the pinned ovstage wheel automatically. The second
-prefix above points CMake at the native package extracted from that wheel. After
-step 2, `_install/lib/libovphysx.so` (Windows: `_install\bin\ovphysx.dll`) and
+The source build fetches the pinned OVStage native package automatically. The
+second prefix reuses the one the build already fetched, so `find_package(ovphysx)`
+resolves it from the prefix path and does not download a second copy.
+
+After step 2, `_install/lib/libovphysx.so` (Windows: `_install\bin\ovphysx.dll`) and
 `_install/lib/cmake/ovphysx/ovphysxConfig.cmake` exist; if they do not, the
 install step did not complete and `find_package()` in step 3 fails.
 
@@ -100,12 +102,13 @@ dependencies.
 **Running the executable:** The ovphysx runtime also needs Carbonite and PhysX
 plugins at runtime (loaded through `dlopen`). The least error-prone approach is to
 build the installed SDK once and point `OVPHYSX_LIB` at the installed ovphysx
-library so the runtime can derive the matching plugin paths and the codeless
-schema root:
+library so the runtime can derive the matching plugin paths. Provision schemas
+separately as described in [Physics Schemas](physics_schemas.md).
 
 ```bash
-# One-time setup: build and install the SDK
-cd ovphysx && ./build.sh && cmake --build _build --target install_sdk
+# Run from the directory containing ovphysx/ and my_app/.
+# One-time setup: build and install the SDK without changing this directory.
+(cd ovphysx && ./build.sh && cmake --build _build --target install_sdk)
 
 # Run with runtime layout from the installed SDK
 OVPHYSX_LIB=ovphysx/_install/lib/libovphysx.so ./my_app/_build/my_app
@@ -158,9 +161,12 @@ Pass any of these at configure time with `-D<variable>=<value>`:
 | `OVPHYSX_FETCH_DEPS` | `ON` | Automatically fetch packman dependencies at configure time |
 | `LOCAL_TARGET_DEPS` | `<ovphysx>/_build/target-deps` | Override the directory where packman dependencies are stored |
 | `OVPHYSX_DEV_PHYSX` | `OFF` | Build PhysX SDK from source instead of using prebuilt binaries |
-| `OVPHYSX_DEV_SCHEMA` | `OFF` | Use locally-built physics schema |
 | `OVPHYSX_WARNINGS_AS_ERRORS` | `ON` in CI, `OFF` otherwise | Treat compiler warnings as errors |
 | `OVPHYSX_BIN_DIR` | *(empty)* | Advanced build-time helper path for Kit/PhysX plugin linkage; not a runtime environment variable |
+
+`build.sh --devschema` (Windows: `build.bat --devschema`) builds and selects a
+local schema provider wheel for test/sample runners. This is a build-script
+option; it changes no C++ schema headers or CMake compiler configuration.
 
 ### Environment Variables
 
@@ -168,7 +174,7 @@ This environment variable controls where ovphysx loads its runtime from:
 
 | Variable | Description |
 |----------|-------------|
-| `OVPHYSX_LIB` | Path to `libovphysx.so` / `ovphysx.dll`. Python loads this library directly; native/source-link runs use its directory to find the plugins and the codeless schema root (`schemas/physx`). |
+| `OVPHYSX_LIB` | Path to `libovphysx.so` / `ovphysx.dll`. Python loads this library directly; native/source-link runs use its directory to find the plugins; schema resources come from the external provider. |
 
 ## Troubleshooting
 
@@ -190,7 +196,7 @@ Common from-source build and first-run failures:
   `_build/` and reconfigure, or `build.sh --rebuild`. Use `--clean` to clean only
   and `--generate` to configure without compiling.
 - **`Error copying file ... PhysXGpu_64.dll ... No such file or directory` after
-  changing `--devphysx` or `--devschema`** — incremental builds across a flavor
+  changing `--devphysx`** — incremental builds across a flavor
   change are not supported. `--devphysx` caches `PHYSX_SDK_DIR` pointing at the
   local `physx/` source tree; a later configure without it keeps that cached
   path, so the copy step looks for `PhysXGpu_64.dll` under the source tree
@@ -205,10 +211,10 @@ Common from-source build and first-run failures:
   `SKIP_GLIBC_CHECK=ON` for local development, for example
   `cmake -DSKIP_GLIBC_CHECK=ON -P scripts/install.cmake` (also accepted as an
   environment variable through `validate_all`).
-- **Install or wheel build fails with `'file' not found` on Linux** — both steps
-  shell out to the OS `file` utility (libmagic) to find unstripped ELF binaries,
-  and to `strip`/`readelf` from `binutils`. Minimal container images ship
-  neither: `apt-get install file binutils`.
+- **Install or wheel build fails with `readelf not found` or `strip not found`
+  on Linux** — both steps use `readelf` to find unstripped ELF binaries and
+  `strip` to remove their symbols. Minimal images need binutils:
+  `apt-get install binutils`.
 - **`No CMAKE_CUDA_COMPILER could be found`** — `nvcc` is not on `PATH`, or the
   CUDA Toolkit does not match the tested version. Install a compatible CUDA Toolkit
   (refer to the PhysX SDK [Linux platform readme](https://github.com/NVIDIA-Omniverse/PhysX/blob/main/physx/documentation/platformreadme/linux/README_LINUX.md))

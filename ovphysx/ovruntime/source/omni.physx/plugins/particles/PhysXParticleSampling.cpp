@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-IO-001
+// @covers AC-3
+
 /**
  * @implements REQ-PUBLICAPI-001
  * @covers AC-27
@@ -38,6 +41,7 @@
 #include <algorithm>
 #include <cstring>
 #include <limits>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -49,15 +53,16 @@ namespace
 
 typedef std::unordered_map<omni::physics::parse::ObjectKey, PhysxParticleFactory*, omni::physics::parse::ObjectKey::Hash>
     PathToFactoryMap;
-PathToFactoryMap gParticlePrimsToFactoryMap;
+using AttachedStage = omni::physx::usdparser::AttachedStage;
 
-PhysxParticleFactory* getParticleFactory(const omni::physics::parse::ObjectKey particlePrimKey)
+
+PhysxParticleFactory* getParticleFactory(const AttachedStage& owner,
+                                         const omni::physics::parse::ObjectKey particlePrimKey)
 {
-    auto it = gParticlePrimsToFactoryMap.find(particlePrimKey);
-    return (it != gParticlePrimsToFactoryMap.end()) ? it->second : nullptr;
+    auto it = owner.particleFactories.find(particlePrimKey);
+    return it != owner.particleFactories.end() ? it->second : nullptr;
 }
 
-using AttachedStage = omni::physx::usdparser::AttachedStage;
 using IPhysicsSource = omni::physics::parse::IPhysicsSource;
 using IPhysicsDataWrite = omni::physics::parse::IPhysicsDataWrite;
 using ObjectKey = omni::physics::parse::ObjectKey;
@@ -66,20 +71,6 @@ using ObjectKey = omni::physics::parse::ObjectKey;
 // KnownTokens entry): used only by the USD-only cosmetic islands below.
 constexpr const char* kOmniRtxSkipAttrName = "omni:rtx:skip";
 constexpr const char* kParticleSamplingCrcAttrName = "physxParticleSampling:crc";
-
-AttachedStage* getActiveAttachedStage()
-{
-    return omni::physx::usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
-}
-
-bool activeSourceUsesExternalPayload()
-{
-    const AttachedStage* attachedStage = getActiveAttachedStage();
-    if (!attachedStage)
-        return false;
-
-    return attachedStage->hasExternalSource();
-}
 
 size_t getSourceArraySize(const IPhysicsSource& src, ObjectKey key, const char* attrName, size_t elementSize)
 {
@@ -482,7 +473,8 @@ void setInstancerProtoRadius(IPhysicsDataWrite* dataWrite, ObjectKey key, bool i
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-PhysxParticleFactory::PhysxParticleFactory(ObjectKey particleKey) :
+PhysxParticleFactory::PhysxParticleFactory(AttachedStage& owner, ObjectKey particleKey) :
+    mAttachedStage(owner),
     mParticleKey(particleKey),
     mSamplers(PathToSamplerMap()),
     mInitialized(false),
@@ -503,8 +495,11 @@ PhysxParticleFactory::~PhysxParticleFactory()
 
 void PhysxParticleFactory::addSampler(ObjectKey samplerKey)
 {
-    PhysxParticleSampler* sampler = ICE_NEW(PhysxParticleSampler)(samplerKey, mParticleKey);
-    mSamplers[samplerKey] = sampler;
+    if (mSamplers.count(samplerKey))
+        return;
+    std::unique_ptr<PhysxParticleSampler> sampler(ICE_NEW(PhysxParticleSampler)(mAttachedStage, samplerKey, mParticleKey));
+    mSamplers.emplace(samplerKey, sampler.get());
+    sampler.release();
 }
 
 bool PhysxParticleFactory::updateSampler(ObjectKey samplerKey, bool forceResampling)
@@ -524,7 +519,7 @@ void PhysxParticleFactory::removeSampler(ObjectKey samplerKey)
     if (samplerIterator != mSamplers.end())
     {
         PhysxParticleSampler* samplerPointer = samplerIterator->second;
-        AttachedStage* attachedStage = getActiveAttachedStage();
+        AttachedStage* attachedStage = &mAttachedStage;
         if (attachedStage)
         {
             const IPhysicsSource* src = attachedStage->getSource();
@@ -629,7 +624,7 @@ void PhysxParticleFactory::processParticleSamplingResults(ObjectKey samplerKey,
 
     if (!consistent)
     {
-        AttachedStage* attachedStage = getActiveAttachedStage();
+        AttachedStage* attachedStage = &mAttachedStage;
         CARB_LOG_WARN("%s: Physx particle sampling - target particle prim has a different point count than expected! Trying to recover..",
                      attachedStage ? attachedStage->textFor(mParticleKey) : "");
 
@@ -662,7 +657,7 @@ void PhysxParticleFactory::processParticleSamplingResults(ObjectKey samplerKey,
             if (topologyChange)
             {
                 moveStartIndices(firstChangedIndex, shiftValue);
-                if (activeSourceUsesExternalPayload())
+                if (mAttachedStage.hasExternalSource())
                     applyTotalCountDelta(shiftValue);
                 else
                     saveTotalCount();
@@ -697,7 +692,7 @@ void PhysxParticleFactory::applyTotalCountDelta(int shiftValue)
 
 bool PhysxParticleFactory::canRegisterOriginalCount(size_t numPoints)
 {
-    AttachedStage* attachedStage = getActiveAttachedStage();
+    AttachedStage* attachedStage = &mAttachedStage;
     if (!attachedStage)
         return false;
 
@@ -722,7 +717,7 @@ bool PhysxParticleFactory::canRegisterOriginalCount(size_t numPoints)
 */
 bool PhysxParticleFactory::checkTargetCountsAndSizes(bool registerOriginalCount)
 {
-    AttachedStage* attachedStage = getActiveAttachedStage();
+    AttachedStage* attachedStage = &mAttachedStage;
     if (!attachedStage)
         return false;
 
@@ -731,7 +726,7 @@ bool PhysxParticleFactory::checkTargetCountsAndSizes(bool registerOriginalCount)
     if (!getSourceParticleData(*attachedStage, mParticleKey, pointCount, sizesMatch))
         return false;
 
-    if (activeSourceUsesExternalPayload() && mHasAuthoredSamplingResults)
+    if (mAttachedStage.hasExternalSource() && mHasAuthoredSamplingResults)
         return sizesMatch;
 
     const bool countsMatch = (pointCount == mTotalParticleCount);
@@ -752,7 +747,7 @@ void PhysxParticleFactory::resetStartAndCountForAllSamplers()
 
 void PhysxParticleFactory::saveTotalCount()
 {
-    AttachedStage* attachedStage = getActiveAttachedStage();
+    AttachedStage* attachedStage = &mAttachedStage;
     if (attachedStage)
     {
         size_t pointCount = 0;
@@ -769,7 +764,7 @@ void PhysxParticleFactory::saveTotalCount()
 }
 
 // STATIC:
-void PhysxParticleFactory::processSamplingResults(ObjectKey samplerKey,
+void PhysxParticleFactory::processSamplingResults(AttachedStage& owner, ObjectKey samplerKey,
                                                   ObjectKey particleSetKey,
                                                   const carb::Float3* positions,
                                                   size_t numPoints,
@@ -778,7 +773,7 @@ void PhysxParticleFactory::processSamplingResults(ObjectKey samplerKey,
                                                   const ::physx::PxMat33d& shearScaleTransform,
                                                   bool registerOriginalCount)
 {
-    PhysxParticleFactory* factory = getParticleFactory(particleSetKey);
+    PhysxParticleFactory* factory = getParticleFactory(owner, particleSetKey);
     if (factory)
     {
         factory->processParticleSamplingResults(samplerKey, positions, numPoints, pointWidth,
@@ -788,7 +783,7 @@ void PhysxParticleFactory::processSamplingResults(ObjectKey samplerKey,
     {
         // factory doesn't exist - means API has been removed etc.
         // we remove the crc + reset the visibility.
-        AttachedStage* attachedStage = getActiveAttachedStage();
+        AttachedStage* attachedStage = &owner;
         if (attachedStage)
         {
             IPhysicsDataWrite* dataWrite = attachedStage->getAuthoringDataWrite();
@@ -799,12 +794,12 @@ void PhysxParticleFactory::processSamplingResults(ObjectKey samplerKey,
 }
 
 // STATIC:
-bool PhysxParticleFactory::getDecomposedTransform(ObjectKey samplerKey,
+bool PhysxParticleFactory::getDecomposedTransform(const AttachedStage& owner, ObjectKey samplerKey,
                                                   ObjectKey particleSetKey,
                                                   ::physx::PxMat44d& rigidTransform,
                                                   ::physx::PxMat33d& shearScaleTransform)
 {
-    PhysxParticleFactory* factory = getParticleFactory(particleSetKey);
+    PhysxParticleFactory* factory = getParticleFactory(owner, particleSetKey);
     if (!factory)
         return false;
 
@@ -818,7 +813,8 @@ bool PhysxParticleFactory::getDecomposedTransform(ObjectKey samplerKey,
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-PhysxParticleSampler::PhysxParticleSampler(ObjectKey key, ObjectKey target) :
+PhysxParticleSampler::PhysxParticleSampler(AttachedStage& owner, ObjectKey key, ObjectKey target) :
+    mAttachedStage(owner),
     mSamplerKey(key),
     mTargetKey(target),
     mStartIndex(0),
@@ -843,7 +839,7 @@ PhysxParticleSampler::~PhysxParticleSampler()
 
 bool PhysxParticleSampler::update(bool forceResampling)
 {
-    AttachedStage* attachedStage = getActiveAttachedStage();
+    AttachedStage* attachedStage = &mAttachedStage;
     if (!attachedStage)
         return false;
 
@@ -890,7 +886,7 @@ bool PhysxParticleSampler::processSamplingRegistration(size_t numPoints,
     mShearScaleTransform = shearScaleTransform;
 
     // hide the source mesh when there is a USD authoring stage.
-    AttachedStage* attachedStage = getActiveAttachedStage();
+    AttachedStage* attachedStage = &mAttachedStage;
     if (attachedStage)
     {
         const IPhysicsSource* src = attachedStage->getSource();
@@ -912,7 +908,7 @@ bool PhysxParticleSampler::processSamplingResults(const carb::Float3* positions,
                                                   int& shiftValue,
                                                   bool& topologyChange)
 {
-    AttachedStage* attachedStage = getActiveAttachedStage();
+    AttachedStage* attachedStage = &mAttachedStage;
     const IPhysicsSource* src = attachedStage ? attachedStage->getSource() : nullptr;
 
     if (src && src->exists(mTargetKey))
@@ -1044,7 +1040,7 @@ void PhysxParticleSampler::moveStartIndex(int firstChangedIndex, int correction)
 bool PhysxParticleSampler::getDecomposedTransform(::physx::PxMat44d& rigidTransform,
                                                   ::physx::PxMat33d& shearScaleTransform) const
 {
-    const AttachedStage* attachedStage = getActiveAttachedStage();
+    const AttachedStage* attachedStage = &mAttachedStage;
     const IPhysicsSource* src = attachedStage ? attachedStage->getSource() : nullptr;
     if (!src)
         return false;
@@ -1076,7 +1072,7 @@ bool PhysxParticleSampler::checkTransforms(bool& resample, ::physx::PxMat44d& ne
 
 void PhysxParticleSampler::transformPoints(::physx::PxMat44d& newRigidTransform)
 {
-    AttachedStage* attachedStage = getActiveAttachedStage();
+    AttachedStage* attachedStage = &mAttachedStage;
     const IPhysicsSource* src = attachedStage ? attachedStage->getSource() : nullptr;
     if (!src || !src->exists(mTargetKey))
         return;
@@ -1149,44 +1145,54 @@ bool decomposeSamplerTransform(const ::physx::PxMat44d& l2w,
     return true;
 }
 
-void createParticleSampler(const ObjectKey samplerKey, const ObjectKey particlePrimKey)
+void releaseAttachmentSamplers(AttachedStage& owner)
 {
-    PhysxParticleFactory* factory = getParticleFactory(particlePrimKey);
+    PathToFactoryMap retired;
+    retired.swap(owner.particleFactories);
+    for (const auto& factory : retired)
+        delete factory.second;
+}
+
+void createParticleSampler(AttachedStage& owner, const ObjectKey samplerKey, const ObjectKey particlePrimKey)
+{
+    PhysxParticleFactory* factory = getParticleFactory(owner, particlePrimKey);
     if (!factory)
     {
-        factory = ICE_NEW(PhysxParticleFactory)(particlePrimKey);
-        gParticlePrimsToFactoryMap.insert({particlePrimKey, factory});
+        std::unique_ptr<PhysxParticleFactory> pending(ICE_NEW(PhysxParticleFactory)(owner, particlePrimKey));
+        owner.particleFactories.emplace(particlePrimKey, pending.get());
+        factory = pending.release();
     }
 
     if (!factory->getParticleSampler(samplerKey))
         factory->addSampler(samplerKey);
 }
 
-void updateParticleSampler(const ObjectKey samplerKey, const ObjectKey particlePrimKey, bool forceResampling)
+void updateParticleSampler(AttachedStage& owner, const ObjectKey samplerKey, const ObjectKey particlePrimKey, bool forceResampling)
 {
     // The tuple (particlePrim, sampler) is treated as a whole: if the particle path changes, the
     // sampler is destroyed and recreated in the new factory since state can't transfer between factories.
 
-    PhysxParticleFactory* factory = getParticleFactory(particlePrimKey);
+    PhysxParticleFactory* factory = getParticleFactory(owner, particlePrimKey);
     if (factory)
     {
         if (!factory->updateSampler(samplerKey, forceResampling))
-            removeParticleSampler(samplerKey, particlePrimKey);
+            removeParticleSampler(owner, samplerKey, particlePrimKey);
     }
 }
 
-void removeParticleSampler(const ObjectKey samplerKey, ObjectKey particlePrimKey)
+void removeParticleSampler(AttachedStage& owner, const ObjectKey samplerKey, ObjectKey particlePrimKey)
 {
+    PathToFactoryMap& factories = owner.particleFactories;
     PhysxParticleFactory* factory = nullptr;
     if (particlePrimKey.valid())
     {
-        factory = getParticleFactory(particlePrimKey);
+        factory = getParticleFactory(owner, particlePrimKey);
     }
     else
     {
         // If the particles relationship was removed from a sampler, particlePrimKey is invalid here,
         // so search all factories for the sampler to still clean it up.
-        for (auto it: gParticlePrimsToFactoryMap)
+        for (const PathToFactoryMap::value_type& it : factories)
         {
             PhysxParticleSampler* sampler = it.second->getParticleSampler(samplerKey);
             if (sampler)
@@ -1204,7 +1210,7 @@ void removeParticleSampler(const ObjectKey samplerKey, ObjectKey particlePrimKey
 
         if (factory->empty())
         {
-            gParticlePrimsToFactoryMap.erase(particlePrimKey);
+            factories.erase(particlePrimKey);
             SAFE_DELETE_SINGLE(factory);
         }
     }

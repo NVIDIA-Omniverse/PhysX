@@ -60,11 +60,9 @@ public:
 
 	PX_FORCE_INLINE PxU16							getIterationCounts() const { return mCore.solverIterationCounts; }
 
-	void											addAttachmentHandle(PxU32 handle);
-	void											removeAttachmentHandle(PxU32 handle);
 
-	PxArray<PxU32>									mAttachmentHandles;
-	PxArray<PxU32>									mSurfaceSurfaceAttachments;
+	PxArray<PxU32>									mRigidAttachments;
+	PxArray<PxU32>									mSurfaceAttachments;
 private:
 			
 	Sc::DeformableSurfaceSim*						mSim;
@@ -78,22 +76,6 @@ private:
 PX_FORCE_INLINE DeformableSurface* getDeformableSurface(DeformableSurfaceHandle handle)
 {
 	return reinterpret_cast<DeformableSurface*>(handle);
-}
-
-PX_FORCE_INLINE void DeformableSurface::addAttachmentHandle(PxU32 handle)
-{
-	mAttachmentHandles.pushBack(handle);
-}
-
-PX_FORCE_INLINE void DeformableSurface::removeAttachmentHandle(PxU32 handle)
-{
-	for (PxU32 i = 0; i < mAttachmentHandles.size(); ++i)
-	{
-		if (mAttachmentHandles[i] == handle)
-		{
-			mAttachmentHandles.replaceWithLast(i);
-		}
-	}
 }
 
 } // namespace Dy

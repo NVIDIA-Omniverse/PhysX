@@ -39,6 +39,10 @@ public:
 	static	bool	parseElementFilter(const PxDeformableElementFilterData& data, ElementFilterInfo& info);
 
 private:
+#if PX_CHECKED
+			bool	checkIndicesInRange() const;
+#endif
+
 	NpInternalAttachmentType::Enum mInternalAttachmentType{ NpInternalAttachmentType::eUNDEFINED };
 
 	PxActor* mActor[2];

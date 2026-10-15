@@ -4,6 +4,9 @@
 /**
  * @implements REQ-READ-CORE-001
  * @covers AC-1
+ *
+ * @implements REQ-INPUT-COVERAGE-001
+ * @covers AC-6 AC-16
  */
 
 #pragma once
@@ -21,6 +24,10 @@ namespace omni
 {
 namespace physx
 {
+namespace usdparser
+{
+class AttachedStage;
+}
 namespace tensors
 {
 
@@ -29,7 +36,9 @@ namespace tensors
 //
 // Shared by the CPU and GPU backends: both must enumerate the same bodies in the same order, or a
 // row index taken against one would silently address a different body in the other.
-void collectSupersetRigidEntries(::physx::PxScene* scene, std::vector<RigidBodyEntry>& entries);
+// Diagnostic paths come from the scene owner's database, independent of optional PhysX actor names.
+void collectSupersetRigidEntries(::physx::PxScene* scene, const usdparser::AttachedStage* owner,
+                                std::vector<RigidBodyEntry>& entries);
 
 } // namespace tensors
 } // namespace physx

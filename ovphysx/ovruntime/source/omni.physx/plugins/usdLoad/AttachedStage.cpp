@@ -2,6 +2,46 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PARSE-MASS-004
+ * @covers AC-4
+ */
+
+/** @implements REQ-PARSE-FEED-006
+ * @covers AC-5 AC-6
+ */
+
+// @implements REQ-ATTACH-SERVICES-001
+// @covers AC-3
+
+// @implements REQ-REPLICATE-002
+// @covers AC-6
+
+// @implements REQ-ATTACH-SERVICES-001
+// @covers AC-1 AC-2 AC-4
+
+// @implements REQ-ATTACH-LIFETIME-001
+// @covers AC-3 AC-4
+
+// @implements REQ-ATTACH-IO-001
+// @covers AC-3
+
+// @implements REQ-ATTACH-RESOLVE-001
+// @covers AC-7 AC-10
+
+/**
+ * @implements REQ-ATTACH-BACKENDS-001
+ * @covers AC-1 AC-2 AC-3 AC-4
+ */
+
+/** @implements REQ-PARSE-BATCH-001
+ * @covers AC-3 AC-4
+ */
+
+/** @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-3 AC-4
+ */
+
+/**
  * @implements REQ-PARSE-BACKEND-001
  * @covers AC-4
  *
@@ -24,11 +64,29 @@
  * @covers AC-7
  */
 
+#include "PhysXDebugVisualization.h"
+#include "../particles/PhysXParticlePost.h"
+#include "../particles/PhysXParticleSampling.h"
+#include "PhysXCustomJoint.h"
+#include "PhysXCustomGeometry.h"
+
+#include <charconv>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
 #include "PrimUpdate.h"
 #include "AttachedStage.h"
+#include "OvxPhysicsShared.h"
+#include <cmath>
+#include "../attachment/PhysXPoissonSampling.h"
 #include "LoadTools.h"
 #include "LoadUsd.h"
 #include "Mass.h"
+#include "IceDescriptorAllocator.h"
+#include "DescriptorTaskExecutor.h"
+#include "DescriptorRuntimeStats.h"
+#include <omni/physics/parse/DescriptorBatchAllocator.h>
+#include <omni/physics/parse/ScanBackend.h>
 
 // Everything USD-specific about AttachedStage -- the source rebuild over a live UsdStage,
 // the SdfPath/TfToken resolution accessors, and the backing-stage authoring fallbacks --
@@ -38,8 +96,14 @@
 
 #include <omni/physics/parse/IParseBackend.h>
 #include <OvstageSource.h>
+#include <omni/physics/ovstage/OvstageScan.h>
+#include <omni/physics/parse/ScannedStage.h>
+#include <stdexcept>
+#include "Raycast.h"
 
 #include <OmniPhysX.h>
+#include "RuntimeExecution.h"
+#include <common/utilities/MemoryMacros.h>
 
 #include <carb/InterfaceUtils.h>
 #include <common/utilities/OmniPhysXUtilities.h>
@@ -66,15 +130,47 @@ ChangeSourceBlock::~ChangeSourceBlock()
     mAttachedStage.setChangeSource(mPrevSource);
 }
 
+void AttachedStage::setAttachOptions(const PhysxAttachOptions& options)
+{
+    if (options.excludedPathCount && !options.excludedPaths)
+        throw std::invalid_argument("Attachment excluded path array is null");
+    std::vector<std::string> paths;
+    paths.reserve(options.excludedPathCount);
+    for (uint32_t i = 0; i != options.excludedPathCount; ++i)
+    {
+        const char* path = options.excludedPaths[i];
+        if (!path || path[0] != '/')
+            throw std::invalid_argument("Attachment exclusions must be absolute source paths");
+        paths.emplace_back(path);
+    }
+    const PhysxAttachmentSettings& settings = options.settings ? *options.settings : mCachedSettings;
+    if (settings.gpuPipelineOverride < -1 || settings.gpuPipelineOverride > 1 ||
+        settings.solverTypeOverride < -1 || settings.solverTypeOverride > 1 ||
+        settings.minFrameRate < 0 || !std::isfinite(settings.viewportGizmoScale) ||
+        settings.viewportGizmoScale < 0.0f || !std::isfinite(settings.jointBodyTransformCheckTolerance) ||
+        settings.jointBodyTransformCheckTolerance < 0.0f)
+        throw std::invalid_argument("Invalid attachment simulation settings");
+    if (options.settings)
+        static_cast<PhysxAttachmentSettings&>(mCachedSettings) = settings;
+    if (options.sharedSettings)
+        mSharedSettings = *options.sharedSettings;
+    mExcludedPaths = std::move(paths);
+}
+
 AttachedStage::AttachedStage(AttachedStageUsdHandle stage, PhysXUsdPhysicsInterface* iface)
     : mPhysicsInterface(iface),
       mStage(stage),
       mObjectDatabase(nullptr),
-      mReplicatorStage(false),
       mUseReplicatorEnvIds(false),
       mEnvIdCounter(0),
-      mReplicatorEnvIdBase(0)
+      mReplicatorEnvIdBase(0),
+      mLifetime(std::make_shared<AttachedStage*>(this))
 {
+    if (OmniPhysX* runtime = OmniPhysX::getInstanceCheck())
+    {
+        mCachedSettings = runtime->getCachedSettings();
+        mSharedSettings = runtime->getPhysXSetup().getSharedSettingsDefaults();
+    }
     initUsdStageBinding(stage);
     mObjectDatabase = new ObjectDb();
     // ADR-0019 decision-2 primitive (canonicalKey(getParent(...))), same body
@@ -86,7 +182,6 @@ AttachedStage::AttachedStage(AttachedStageUsdHandle stage, PhysXUsdPhysicsInterf
             return src ? src->canonicalKey(src->getParent(key)) : omni::physics::parse::ObjectKey{};
         });
     initPrimHierarchyStorage(*mObjectDatabase);
-    mPhysXDefaultSim = omni::physx::isPhysXDefaultSimulator();
 
     // Source-independent, so it belongs in the common ctor, not in a USD-only sliver:
     // registerPrimChange only stages the ChangeParams; interning happens per source in
@@ -95,6 +190,7 @@ AttachedStage::AttachedStage(AttachedStageUsdHandle stage, PhysXUsdPhysicsInterf
     // and every sibling) ever reached PhysX on an ovstage attach.
     if (mPhysicsInterface)
     {
+        mPhysicsInterface->captureParseOptions(*this);
         std::vector<ChangeParams> changesToRegister;
         changesToRegister.reserve(1024);
         mPhysicsInterface->fillChangeParams(changesToRegister);
@@ -109,11 +205,16 @@ AttachedStage::AttachedStage()
     : mPhysicsInterface(nullptr),
       mStage(),
       mObjectDatabase(nullptr),
-      mReplicatorStage(false),
       mUseReplicatorEnvIds(false),
       mEnvIdCounter(0),
-      mReplicatorEnvIdBase(0)
+      mReplicatorEnvIdBase(0),
+      mLifetime(std::make_shared<AttachedStage*>(this))
 {
+    if (OmniPhysX* runtime = OmniPhysX::getInstanceCheck())
+    {
+        mCachedSettings = runtime->getCachedSettings();
+        mSharedSettings = runtime->getPhysXSetup().getSharedSettingsDefaults();
+    }
     mObjectDatabase = new ObjectDb();
     // ADR-0019 decision-2 primitive (canonicalKey(getParent(...))), same body
     // as isAncestorOrSelf() below -- powers ObjectDb::removeEntries(ObjectKey).
@@ -124,7 +225,6 @@ AttachedStage::AttachedStage()
             return src ? src->canonicalKey(src->getParent(key)) : omni::physics::parse::ObjectKey{};
         });
     initPrimHierarchyStorage(*mObjectDatabase);
-    mPhysXDefaultSim = true;
 }
 
 // The prim-hierarchy storage builds its links from the paths it is handed; the predicate is
@@ -141,12 +241,101 @@ void AttachedStage::initPrimHierarchyStorage(ObjectDb& db)
 
 AttachedStage::~AttachedStage()
 {
+    *mLifetime = nullptr;
+    // Also covers legacy owner erasure; explicit retirement has already cleared these lists.
+    ovx::retireAttachmentReadCaches(getAttachHandle(), true);
+    releaseNativePhysics();
+    particles::releaseAttachmentPostprocess(*this);
     freeReplicatorMemory();
     delete mObjectDatabase;
+    retireRuntimeExecution(getAttachHandle());
+    cudaContextManagers.clear();
+    cpuDispatcher.reset();
+    if (OmniPhysX* runtime = OmniPhysX::getInstanceCheck())
+        runtime->getPhysXSetup().releaseAttachmentResources(*this);
+}
+
+void AttachedStage::releaseNativePhysics()
+{
+    omni::sampling::releaseAttachmentSurfaceSamplers(*this);
+    ovx::retireAttachmentReadCaches(getAttachHandle());
+    retireCooking();
+    particles::releaseAttachmentSamplers(*this);
+    particles::notifyPhysXRelease(*this);
+    SAFE_DELETE_SINGLE(mInternalPhysXDatabase);
+    if (OmniPhysX* runtime = OmniPhysX::getInstanceCheck())
+    {
+        runtime->getPhysXSetup().releasePhysXScenes(*this);
+        runtime->getCustomJointManager().clear(*this);
+        runtime->getCustomGeometryManager().clear(*this);
+    }
+    // Scene teardown can lazily recreate the database through particle cleanup.
+    SAFE_DELETE_SINGLE(mInternalPhysXDatabase);
+}
+
+omni::physics::parse::ScanOptions AttachedStage::descriptorScanOptions()
+{
+    omni::physics::parse::ScanOptions options;
+    if (hasExternalSource())
+    {
+        {
+            std::lock_guard<std::mutex> lock(mDescriptorPoolMutex);
+            if (!mDescriptorPool)
+                mDescriptorPool = std::make_shared<omni::physics::parse::DescriptorBatchAllocator>(iceDescriptorAllocator());
+            options.descriptorPool = mDescriptorPool;
+        }
+        static DescriptorTaskExecutor executor;
+        options.descriptorExecution.executor = &executor;
+        // Keep parallel fill opt-in until it demonstrates an attach-time gain.
+        options.descriptorExecution.tasks = 1;
+        // Coordinator-only overrides for controlled serial/parallel benchmarks.
+        auto readCount = [](const char* name, size_t& value)
+        {
+            if (const char* text = std::getenv(name))
+            {
+                size_t parsed = 0;
+                // Decimal size_t values fit in 20 digits on our 64-bit platforms.
+                // Bound diagnostic input reads and reject overlong values, not prefixes.
+                constexpr size_t maxCountLength = 32;
+                const size_t length = strnlen(text, maxCountLength);
+                if (length == maxCountLength)
+                    return;
+                const char* end = text + length;
+                const std::from_chars_result result = std::from_chars(text, end, parsed);
+                if (result.ec == std::errc{} && result.ptr == end) value = parsed;
+            }
+        };
+        readCount("OVRUNTIME_DESCRIPTOR_TASKS", options.descriptorExecution.tasks);
+        readCount("OVRUNTIME_DESCRIPTOR_GRAIN", options.descriptorExecution.grain);
+        if (const char* enabled = std::getenv("OVRUNTIME_DESCRIPTOR_STATS"); enabled && std::strcmp(enabled, "1") == 0)
+        {
+            // Attach/change processing is serialized. Each scan reports before
+            // this coordinator-local record can be reused by a later scan.
+            static thread_local omni::physics::parse::DescriptorPipelineStats stats;
+            stats = {};
+            options.descriptorExecution.statistics = &stats;
+            options.descriptorExecution.reportStatistics = [](const omni::physics::parse::DescriptorPipelineStats& value)
+            {
+                std::fprintf(stderr, "Descriptor pipeline: scan=%.6f prepare=%.6f construct=%.6f fill_join=%.6f finalize=%.6f graph=%.6f coordinator_other=%.6f entries=%zu tasks=%zu prepared_peak=%zu output_members=%zu requests=%zu blocks=%zu live=%zu peak=%zu retained=%zu slack=%zu\n",
+                    value.scanSeconds, value.prepareSeconds, value.constructSeconds, value.fillAndJoinSeconds,
+                    value.finalizeSeconds, value.graphSeconds, value.coordinatorOtherSeconds, value.entries, value.tasks, value.preparedPeakBytes, value.outputMemberCapacityBytes,
+                    value.logicalRequests, value.backingAllocations, value.poolLiveBytes, value.poolPeakBytes,
+                    value.poolRetainedBytes, value.poolSlackBytes);
+            };
+        }
+    }
+    return options;
 }
 
 void AttachedStage::rebuildSource()
 {
+    retireCooking();
+    *mLifetime = nullptr;
+    mLifetime = std::make_shared<AttachedStage*>(this);
+    mCookingObserverDriver.reset();
+    mMeshKeyCache.clear();
+    mCookingRefreshState = {};
+    pendingCookingRefreshCount = 0;
     // The cooked-geometry carrier (ADR-0022) is keyed by this source's ObjectKey
     // and TokenId vocabulary, so it cannot survive the source being replaced.
     // Cleared before any branch below, which also covers the teardown branch
@@ -155,14 +344,11 @@ void AttachedStage::rebuildSource()
     // Holds a raw pointer into mSource, which every branch below replaces.
     mBackingStageDataWrite.reset();
 
-    // Consumer-provided external source (e.g. ovstage). Early-return so the USD
-    // path below stays byte-identical. The *active* parse backend builds the
-    // source from the opaque AttachTarget payload — nothing here names a
-    // concrete backend.
+    // Rebuild through the owning backend; another attachment cannot select it.
     if (mExternalAttachPayload)
     {
         omni::physics::parse::SourceBundle bundle;
-        if (omni::physics::parse::IParseBackend* backend = omni::physics::parse::parseBackend())
+        if (omni::physics::parse::IParseBackend* backend = mParseBackend.get())
             bundle = backend->createSource(attachTarget());
         mSource = std::move(bundle.source);
         mDataWrite = std::move(bundle.write);
@@ -186,11 +372,17 @@ void AttachedStage::rebuildSource()
         // Change feed (ADR-0003 M3): the ovstage feed is pull-based — its deltas
         // are drained over an explicit ordinal range via updateFromOvStage. Register
         // the same wildcard interest + group-complete the USD branch uses so a drain
-        // drives onSourceChange / onSourceGroupComplete (cooking observes the USD
-        // feed only for now).
+        // drives onSourceChange / onSourceGroupComplete. Cooking also registers on
+        // this feed when the scene is created.
         if (mChangeFeed)
         {
             AttachedStage* self = this;
+            // Structural adds queue a full parse before updateFromOvStage returns.
+            // That parse initializes new bodies, joints, materials and articulations.
+            // Cooking observes this same feed for existing-object invalidation; new
+            // mesh shapes read and cook their geometry during structural creation,
+            // so they do not need duplicate initial-property notifications.
+            mChangeFeed->setAddedPrimPropertiesCoveredByResync(true);
             mChangeFeed->registerInterest(omni::physics::parse::ObjectKey{}, omni::physics::parse::TokenId{}, -1,
                                           [self](const omni::physics::parse::ChangeBatch& batch)
                                           { return onSourceChange(*self, batch); },
@@ -256,17 +448,18 @@ void AttachedStage::setOvstageSource(const void* attachPayload,
                                      uint64_t readOrdinal,
                                      uint64_t backingStageId)
 {
-    // Switch to a consumer-provided external source and rebuild the source trio
-    // through the active (e.g. ovstage) parse backend. `attachTarget()` returns
-    // the payload first, so rebuildSource() takes the external branch even though
-    // mStage is set. Runtime parsing and queries continue to go through the
-    // source/scanned-stage path; the backing stage remains a USD attachment detail.
+    // Source/scanner ownership is local even when a developer backing stage exists.
     mStage = backingStage;
     // Caller-classified input, not a cached answer: it seeds the backend so the
     // source it builds can publish the id (see the header for why the caller,
     // not this class, does the classification).
     mExternalBackingStageId = backingStageId;
-    mExternalAttachPayload = attachPayload;
+    if (!attachPayload)
+        throw std::invalid_argument("ovstage attachment requires a payload");
+    mOwnedAttachPayload = *static_cast<const omni::physics::ovstage::OvstageAttach*>(attachPayload);
+    mExternalAttachPayload = &mOwnedAttachPayload;
+    mParseBackend = omni::physics::ovstage::makeOvstageParseBackend();
+    mScanBackend = omni::physics::ovstage::makeOvstageScanBackend(mExternalAttachPayload);
     // Caller-owned sealed read ordinal for the initial parse; updateFromOvStage
     // advances it thereafter. Flows to the backends via AttachTarget::readOrdinal.
     mExternalReadOrdinal = readOrdinal;
@@ -276,6 +469,40 @@ void AttachedStage::setOvstageSource(const void* attachPayload,
     // replacement, in releasePhysicsObjects).
 
     rebuildSource();
+}
+
+RaycastManager& AttachedStage::getRaycastManager() const
+{
+    if (!mRaycastManager)
+        mRaycastManager = std::make_unique<RaycastManager>(*this);
+    return *mRaycastManager;
+}
+
+DebugVisualizationCache& AttachedStage::getDebugVisualizationCache() const
+{
+    if (!mDebugVisualizationCache)
+        mDebugVisualizationCache = std::make_unique<DebugVisualizationCache>();
+    return *mDebugVisualizationCache;
+}
+
+internal::InternalPhysXDatabase& AttachedStage::getInternalPhysXDatabase() const
+{
+    if (!mInternalPhysXDatabase)
+        mInternalPhysXDatabase = ICE_NEW(internal::InternalPhysXDatabase)(this);
+    return *mInternalPhysXDatabase;
+}
+
+void AttachedStage::releaseInternalPhysXDatabase()
+{
+    SAFE_DELETE_SINGLE(mInternalPhysXDatabase);
+}
+
+omni::physics::parse::ScannedStage AttachedStage::scanStage(
+    const std::vector<std::string>& roots, const std::vector<std::string>& excludes,
+    const omni::physics::parse::ScanOptions& options,
+    omni::physics::parse::IDescriptorAllocator& allocator) const
+{
+    return omni::physics::parse::scanStage(mScanBackend.get(), attachTarget(), roots, excludes, options, allocator);
 }
 
 // @implements REQ-PARSE-SCAN-001
@@ -356,6 +583,10 @@ std::string_view AttachedStage::textViewFor(omni::physics::parse::ObjectKey key)
 
 void AttachedStage::releasePhysicsObjects(bool rebuildObjectDatabase)
 {
+    DescriptorRuntimeTimer teardownTimer("release_physics_objects");
+    if (mRaycastManager)
+        mRaycastManager->clearCommandBuffer();
+    retireCooking();
     std::unique_ptr<ObjectDb> replacementObjectDatabase;
     if (rebuildObjectDatabase)
     {
@@ -374,7 +605,10 @@ void AttachedStage::releasePhysicsObjects(bool rebuildObjectDatabase)
     // mArticulations/mParticleSystems, which finishSetup()
     // otherwise consumes on the next attach's first step -- as indices into the
     // records of the attach being destroyed here (REQ-CAPI-DETACH-002).
-    mPhysicsInterface->releaseAllObjects();
+    mMeshKeyCache.clear();
+    mCookingRefreshState = {};
+    pendingCookingRefreshCount = 0;
+    mPhysicsInterface->releaseAllObjects(*this);
 
     delete mObjectDatabase;
     mObjectDatabase = replacementObjectDatabase.release();
@@ -388,6 +622,7 @@ void AttachedStage::releasePhysicsObjects(bool rebuildObjectDatabase)
     // Clear regardless of backend so a stale registration cannot survive an attach reset.
     mTimeSampledAttributes.clear();
     mAnimatedKinematicBodies.clear();
+    mRigidBodyMassUpdateMap.clear();
 
     mCollisionGroupsMap.clear();
     mAdditionalCollisionGroupMaps.clear();
@@ -404,6 +639,11 @@ void AttachedStage::releasePhysicsObjects(bool rebuildObjectDatabase)
     mEnvIdCounter = 0;
     mReplicatorEnvIdBase = 0;
     mRuntimeCloneTargets.clear();
+    // Retained scans keep their pool alive; the next attach starts with fresh storage.
+    {
+        std::lock_guard<std::mutex> lock(mDescriptorPoolMutex);
+        mDescriptorPool.reset();
+    }
 }
 
 void AttachedStage::registerStageSpecificAttribute(ChangeParams& changeParam)
@@ -446,7 +686,7 @@ bool AttachedStage::isKeyLive(omni::physics::parse::ObjectKey key) const
     // Then the InternalPhysXDatabase, for runtime-created objects such as D6 joints;
     // a removed record does not keep a stale key live.
     const std::vector<internal::InternalDatabase::Record>& records =
-        OmniPhysX::getInstance().getInternalPhysXDatabase().getRecords();
+        getInternalPhysXDatabase().getRecords();
     return std::any_of(records.begin(), records.end(),
                        [key](const internal::InternalDatabase::Record& rec)
                        { return rec.mKey == key && rec.mType != ePTRemoved; });
@@ -468,6 +708,7 @@ void AttachedStage::updateRigidBodyMass()
     if (ovstageSource)
     {
         std::vector<omni::physics::parse::ObjectKey> prefetchKeys;
+        std::vector<omni::physics::parse::ObjectKey> shapeKeys;
         std::unordered_set<uint64_t> seenKeys;
         auto addPrefetchKey = [&](omni::physics::parse::ObjectKey key)
         {
@@ -493,7 +734,10 @@ void AttachedStage::updateRigidBodyMass()
                 for (const std::pair<const ObjectId, omni::physics::parse::ObjectKey>& shapePair : shapes)
                 {
                     if (shapePair.second.valid())
+                    {
                         addPrefetchKey(shapePair.second);
+                        shapeKeys.push_back(shapePair.second);
+                    }
                 }
             }
         }
@@ -517,7 +761,7 @@ void AttachedStage::updateRigidBodyMass()
         ownLoadCacheWindow = !ovstageSource->loadCacheActive();
         if (ownLoadCacheWindow)
             ovstageSource->beginLoadCache();
-        ovstageSource->prefetchBucket(prefetchKeys, kMassAttrs);
+        ovstageSource->prefetchResolvedInstanceBucket(prefetchKeys, kMassAttrs, shapeKeys, { "physics:density" });
         ovstageSource->prefetchRelationshipAncestors(prefetchKeys);
     }
 

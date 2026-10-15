@@ -1,20 +1,20 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-"""Boundary condition tests for step/step_n_sync and wait_op semantics.
+"""Boundary condition tests for step/step_sync and wait_task semantics.
 
-Complements test_simulation.py (which covers basic dt validation, rapid queuing,
-and timeout polling) without duplicating those tests.
+Reuses the stepping regressions with the CPU fixture and adds wait boundaries.
 """
 
 import os
 import subprocess
 import sys
 import textwrap
-from unittest.mock import Mock
 
 import pytest
+from test_simulation import test_step_large_dt_advances_full_time, test_step_variants
 from test_utils import load_usd_with_ovstage
+from ovphysx import ApiStatus, Task
 
 _TEST_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -26,57 +26,6 @@ def data_path(filename):
 def _load_basic(sdk):
     load_usd_with_ovstage(sdk, data_path("basic_simulation.usda"))
     sdk.wait_all()
-
-
-# ---------------------------------------------------------------------------
-# step_n_sync boundary: n values
-# ---------------------------------------------------------------------------
-
-
-def test_step_n_sync_n_equals_one(physx_sdk):
-    """step_n_sync(n=1, ...) is the minimum valid call."""
-    _load_basic(physx_sdk)
-    physx_sdk.step_n_sync(n=1, dt=1.0 / 60.0)
-
-
-def test_step_n_sync_n_equals_zero_raises(physx_sdk):
-    """step_n_sync(n=0, ...) must raise RuntimeError (invalid step count)."""
-    _load_basic(physx_sdk)
-    with pytest.raises(RuntimeError):
-        physx_sdk.step_n_sync(n=0, dt=1.0 / 60.0)
-
-
-def test_step_n_sync_negative_n_raises(physx_sdk):
-    """step_n_sync(n=-1, ...) must raise RuntimeError."""
-    _load_basic(physx_sdk)
-    with pytest.raises(RuntimeError):
-        physx_sdk.step_n_sync(n=-1, dt=1.0 / 60.0)
-
-
-def test_step_n_sync_large_n_succeeds(physx_sdk):
-    """step_n_sync(n=50, ...) must complete successfully."""
-    _load_basic(physx_sdk)
-    physx_sdk.step_n_sync(n=50, dt=1.0 / 240.0)
-
-
-@pytest.mark.parametrize("n", [2**31, 2**32, 2**32 + 1, -(2**32) + 1, 2**100, -(2**100)])
-def test_step_n_sync_out_of_range_does_not_call_native(physx_sdk, monkeypatch, n):
-    """Out-of-range counts must not wrap into a different native step count."""
-    native_step = Mock(side_effect=AssertionError("out-of-range count reached native code"))
-    monkeypatch.setattr(physx_sdk._lib, "ovphysx_step_n_sync", native_step)
-    with pytest.raises(RuntimeError, match="n must be in"):
-        physx_sdk.step_n_sync(n, 1.0 / 60.0)
-    native_step.assert_not_called()
-
-
-@pytest.mark.parametrize("n", [1, 2**31 - 1])
-def test_step_n_sync_count_boundaries_reach_native_unchanged(physx_sdk, monkeypatch, n):
-    """Check both valid bounds without actually running billions of steps."""
-    native_step = Mock(return_value=Mock(status=0))
-    monkeypatch.setattr(physx_sdk._lib, "ovphysx_step_n_sync", native_step)
-    physx_sdk.step_n_sync(n, 1.0 / 60.0)
-    native_step.assert_called_once()
-    assert native_step.call_args.args[1].value == n
 
 
 # ---------------------------------------------------------------------------
@@ -92,95 +41,41 @@ def test_step_sync_nan_dt_raises(physx_sdk):
         physx_sdk.step_sync(float("nan"))
 
 
-def test_step_n_sync_nan_dt_raises(physx_sdk):
-    """step_n_sync() must reject a NaN dt."""
-    _load_basic(physx_sdk)
-    with pytest.raises(RuntimeError):
-        physx_sdk.step_n_sync(n=2, dt=float("nan"))
-
-
 # ---------------------------------------------------------------------------
 # Interleaved step / step_sync
 # ---------------------------------------------------------------------------
 
 
 def test_step_and_step_sync_interleaved(physx_sdk):
-    """Mixing async step + wait_op with step_sync on the same instance must work."""
+    """Mixing async step + wait_task with step_sync on the same instance must work."""
     _load_basic(physx_sdk)
     dt = 1.0 / 60.0
 
     op = physx_sdk.step(dt)
-    physx_sdk.wait_op(op)
+    physx_sdk.wait_task(op)
 
     physx_sdk.step_sync(dt)
 
     op2 = physx_sdk.step(dt)
-    physx_sdk.wait_op(op2)
+    physx_sdk.wait_task(op2)
 
 
 # ---------------------------------------------------------------------------
-# wait_op argument ranges and single-use semantics
+# wait_task single-use semantics
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("argument", ["op_index", "timeout_ns"])
-@pytest.mark.parametrize("value", [-1, 2**64, 2**64 + 1, -(2**64) + 1, 2**100, -(2**100)])
-def test_wait_op_out_of_range_does_not_call_native(physx_sdk, monkeypatch, argument, value):
-    """Invalid integers must not alias an operation, wait-all, or a timeout."""
-    native_wait = Mock(side_effect=AssertionError("out-of-range argument reached native code"))
-    monkeypatch.setattr(physx_sdk._lib, "ovphysx_wait_op", native_wait)
-    arguments = {"op_index": 1, "timeout_ns": 0, argument: value}
-    with pytest.raises(ValueError, match=f"{argument} must be in range"):
-        physx_sdk.wait_op(**arguments)
-    native_wait.assert_not_called()
-
-
-@pytest.mark.parametrize("argument", ["op_index", "timeout_ns"])
-@pytest.mark.parametrize("value", [0.5, "1"])
-def test_wait_op_noninteger_does_not_call_native(physx_sdk, monkeypatch, argument, value):
-    """Do not truncate floats or parse strings as operation indices or timeouts."""
-    native_wait = Mock(side_effect=AssertionError("noninteger argument reached native code"))
-    monkeypatch.setattr(physx_sdk._lib, "ovphysx_wait_op", native_wait)
-    with pytest.raises(TypeError):
-        physx_sdk.wait_op(**{"op_index": 1, "timeout_ns": 0, argument: value})
-    native_wait.assert_not_called()
-
-
-@pytest.mark.parametrize("op_index", [0, 1, 2**64 - 1])
-@pytest.mark.parametrize("timeout_ns", [None, 0, 2**64 - 1])
-def test_wait_op_integer_boundaries_reach_native_unchanged(physx_sdk, monkeypatch, op_index, timeout_ns):
-    """Keep the documented uint64 endpoints and the default infinite timeout."""
-    native_wait = Mock(return_value=Mock(status=0))
-    monkeypatch.setattr(physx_sdk._lib, "ovphysx_wait_op", native_wait)
-    physx_sdk.wait_op(op_index, timeout_ns=timeout_ns)
-    native_wait.assert_called_once()
-    assert native_wait.call_args.args[1:3] == (op_index, 2**64 - 1 if timeout_ns is None else timeout_ns)
-
-
-def test_wait_op_rejected_arguments_leave_operation_unconsumed(physx_sdk):
-    """Reject aliases before they can consume a real operation."""
-    _load_basic(physx_sdk)
-    op = physx_sdk.step(1.0 / 60.0)
-    for invalid_op in (-1, op + 2**64):
-        with pytest.raises(ValueError, match="op_index"):
-            physx_sdk.wait_op(invalid_op)
-    for invalid_timeout in (-1, 2**64):
-        with pytest.raises(ValueError, match="timeout_ns"):
-            physx_sdk.wait_all(timeout_ns=invalid_timeout)
-    physx_sdk.wait_op(op)
-
-
-def test_wait_op_rejects_consumed_op(physx_sdk):
+def test_wait_task_rejects_consumed_op(physx_sdk):
     """Waiting on an already-consumed op_index must raise."""
     _load_basic(physx_sdk)
     op = physx_sdk.step(1.0 / 60.0)
-    physx_sdk.wait_op(op)
-    with pytest.raises(RuntimeError, match="op_index not found"):
-        physx_sdk.wait_op(op)
+    physx_sdk.wait_task(op)
+    with pytest.raises(RuntimeError, match="already collected"):
+        physx_sdk.wait_task(op)
 
 
-def test_wait_op_defensively_rejects_competing_simulation_waiter():
-    """Pin defensive single-consumer behavior in a hang-contained subprocess."""
+def test_wait_task_collection_moves_between_serialized_threads():
+    """Serialized waits may move between threads and still collect a task once."""
     script = textwrap.dedent(r"""
         import os
         import sys
@@ -197,14 +92,16 @@ def test_wait_op_defensively_rejects_competing_simulation_waiter():
             op = sdk.step(1.0 / 60.0)
             start = threading.Barrier(2, timeout=10.0)
             outcomes = []
+            instance_lock = threading.Lock()
 
             def wait():
                 start.wait()
-                try:
-                    sdk.wait_op(op)
-                    outcomes.append("success")
-                except RuntimeError as exc:
-                    outcomes.append(str(exc))
+                with instance_lock:
+                    try:
+                        sdk.wait_task(op)
+                        outcomes.append("success")
+                    except RuntimeError as exc:
+                        outcomes.append(str(exc))
 
             threads = [threading.Thread(target=wait, daemon=True) for _ in range(2)]
             for thread in threads:
@@ -213,12 +110,12 @@ def test_wait_op_defensively_rejects_competing_simulation_waiter():
                 thread.join(timeout=10.0)
 
             if any(thread.is_alive() for thread in threads):
-                print("competing wait_op call did not return", file=sys.stderr, flush=True)
+                print("serialized wait_task call did not return", file=sys.stderr, flush=True)
                 os._exit(2)
             assert outcomes.count("success") == 1, outcomes
             errors = [outcome for outcome in outcomes if outcome != "success"]
             assert len(errors) == 1, outcomes
-            assert "op_index not found" in errors[0], outcomes
+            assert "already collected" in errors[0], outcomes
         finally:
             destroy_ovstage_test_attachments(sdk)
             sdk.destroy()
@@ -243,16 +140,16 @@ def test_wait_all_when_no_pending_ops_succeeds(physx_sdk):
     physx_sdk.wait_all()  # must not raise or hang
 
 
-def test_wait_op_rejects_consumed_op_when_polling(physx_sdk):
+def test_wait_task_rejects_consumed_op_when_polling(physx_sdk):
     """Polling a consumed op with timeout=0 raises rather than timing out."""
     _load_basic(physx_sdk)
 
     op = physx_sdk.step(1.0 / 60.0)
-    physx_sdk.wait_op(op, timeout_ns=None)
+    physx_sdk.wait_task(op, timeout_ns=None)
 
     # Consumed op: polling cannot reuse the index
-    with pytest.raises(RuntimeError, match="op_index not found"):
-        physx_sdk.wait_op(op, timeout_ns=0)
+    with pytest.raises(RuntimeError, match="already collected"):
+        physx_sdk.wait_task(op, timeout_ns=0)
 
 
 # ---------------------------------------------------------------------------
@@ -260,24 +157,19 @@ def test_wait_op_rejects_consumed_op_when_polling(physx_sdk):
 # ---------------------------------------------------------------------------
 
 
-def test_step_returns_int_op_index(physx_sdk):
-    """step() must return an integer op_index."""
+def test_step_returns_task(physx_sdk):
+    """step() returns an immutable receipt owned by its submitting instance."""
     _load_basic(physx_sdk)
     op = physx_sdk.step(1.0 / 60.0)
-    assert isinstance(op, int)
-    assert op > 0
-    physx_sdk.wait_op(op)
+    assert isinstance(op, Task)
+    assert op.status == ApiStatus.SUCCESS
+    assert op.op_index > 0
+    assert op.instance == physx_sdk.handle
+    physx_sdk.wait_task(op)
 
 
 def test_step_sync_returns_none(physx_sdk):
     """step_sync() must return None."""
     _load_basic(physx_sdk)
     result = physx_sdk.step_sync(1.0 / 60.0)
-    assert result is None
-
-
-def test_step_n_sync_returns_none(physx_sdk):
-    """step_n_sync() must return None."""
-    _load_basic(physx_sdk)
-    result = physx_sdk.step_n_sync(n=3, dt=1.0 / 60.0)
     assert result is None

@@ -12,6 +12,10 @@ This tutorial shows how to use the clone API to replicate sub-sections of a USD 
   This tutorial uses `basic_simulation.usda`, which ships with every package under
   `ovphysx/samples/data/` in the wheel, `<sdk-root>/samples/data/` in the C/C++ SDK,
   and `tests/data/` in a repository checkout.
+  The source can be any prim subtree that carries physics: an `Xform` environment root
+  such as `/World/envs/env0`, or a single rigid-body prim with no wrapper (for example
+  a `Cube` that itself carries `PhysicsRigidBodyAPI`). Clones are runtime physics only, so
+  no USD prim has to exist at the target paths.
 
 ## Key Concepts
 
@@ -27,7 +31,7 @@ intermediate target path has no authored USD prim. For example, after cloning
 `/World/envs/env0/robot` to `/World/envs/env1/robot`, the pattern
 `/World/envs/env*/robot` resolves both objects.
 
-**Clone before warmup.** All `clone()` calls must happen **before** warmup and before the first `step()`. Cloning after `warmup()` or the first step reallocates physics structures and would corrupt already-initialized solver state, so the runtime rejects it with `OVPHYSX_API_INVALID_ARGUMENT` (surfaced in Python as `RuntimeError`). If you must clone later, call `reset_stage()`, wait for it to complete, then reload the source scene or reattach its ovstage before cloning again. Refer to [Warmup and Determinism](../developer_guide.md#warmup-and-determinism).
+**Clone before warmup.** All `clone()` calls must happen **before** warmup and before the first `step()`. Cloning after `warmup()` or the first step reallocates physics structures and would corrupt already-initialized solver state, so the runtime rejects it with `OVPHYSX_API_INVALID_ARGUMENT` (surfaced in Python as `RuntimeError`). If you must clone later, call `detach_ovstage()`, wait for it to complete, then reload the source scene or reattach its ovstage before cloning again. Refer to [Warmup and Determinism](../developer_guide.md#warmup-and-determinism).
 
 **Grouping copies with `env_ids`.** A single `clone()` call numbers its copies automatically. One logical environment is sometimes assembled from **several** `clone()` calls — for example, first every environment's robot, then every environment's object. In that case, pass the optional per-target `env_ids` with the same ids in every call. Copies sharing an id land in the same runtime environment and can collide, and without `env_ids`, objects cloned by different calls never share an environment.
 

@@ -18,7 +18,7 @@
 2. **CMake version coverage** — Tests run against both the minimum supported version (3.21) and latest (3.28) to catch compatibility regressions at both ends
 3. **Explicit CMake download** — CI downloads a known CMake version rather than relying on system CMake, ensuring reproducible results across runner images
 4. **GPU static + PhysX static excluded** — This combination causes duplicate symbol linker errors; CI enforces `PX_GENERATE_GPU_STATIC_LIBRARIES=OFF` when `PX_GENERATE_STATIC_LIBRARIES=ON`
-5. **Install + find_package validation** — A dedicated job builds, installs, then consumes PhysX via `find_package(PhysX)` to verify the full export/config workflow end-to-end
+5. **Install + find_package validation** — A dedicated job builds, installs, then consumes PhysX via `find_package(PhysX)` to verify the full export/config workflow end-to-end. The consumer simulates a falling box and cooks a convex mesh at runtime, so the installed cooking entry points exported by PhysXCommon are exercised as well
 6. **Windows GPU tests disabled** — No Windows CI runners with CUDA toolkit available; GPU validation relies on Linux runners
 
 ## CI Pipeline Integration

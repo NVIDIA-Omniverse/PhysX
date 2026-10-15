@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-PYTHON-BINDING-SYNC-001
+# @covers AC-1 AC-2 AC-3
+
 # DEPRECATED (tensor-binding-deprecation): a deprecated tensor-binding test. Removed with the binding.
 
 """Smoke tests: ovphysx tensor Python API with warp (``wp.array``) buffers, GPU mode.
@@ -119,6 +122,207 @@ class TestWarpGpuRigidBodyPose:
         # Every unmasked row is unchanged. This fails if the write ignored the mask.
         assert np.allclose(res_np[1:, 0], orig_np[1:, 0], atol=1e-4)
         b.destroy()
+
+
+@wp.kernel
+def _delay_producer(scratch: wp.array(dtype=wp.float32), iterations: int):
+    value = scratch[0]
+    for _ in range(iterations):
+        value = wp.sin(value) + 0.1
+    scratch[0] = value
+
+
+def _queue_delay(scratch):
+    # Compile before measuring pending work. The dependency chain keeps a producer
+    # fill pending while the CPU enters the synchronous binding API.
+    wp.launch(_delay_producer, dim=1, inputs=[scratch, 1], device=_DEVICE)
+    wp.synchronize_stream(_DEVICE)
+    wp.launch(_delay_producer, dim=1, inputs=[scratch, 5_000_000], device=_DEVICE)
+
+
+class _DLPackProducer:
+    """Exercise the foreign-producer protocol without a framework dependency."""
+
+    def __init__(self, array, producer_stream=None):
+        self.array = array
+        self.producer_stream = producer_stream
+        self.handoff_streams = []
+
+    def __dlpack_device__(self):
+        return self.array.__dlpack_device__()
+
+    def __dlpack__(self, stream=None):
+        self.handoff_streams.append(stream)
+        if self.producer_stream is not None:
+            with wp.ScopedStream(self.producer_stream):
+                return self.array.__dlpack__(stream=stream)
+        return self.array.__dlpack__(stream=stream)
+
+
+class _CachedDLPackProducer(_DLPackProducer):
+    # Match the known-owner pointer protocol without depending on Torch.
+    __module__ = "torch"
+
+    def data_ptr(self):
+        return self.array.ptr
+
+
+@pytest.mark.parametrize(
+    "provider", [lambda array: array, _DLPackProducer, _CachedDLPackProducer], ids=["warp", "dlpack", "cached_dlpack"]
+)
+def test_read_waits_for_warp_stream_with_cached_buffer(physx_sdk, provider):
+    _load_boxes(physx_sdk)
+    binding = physx_sdk.create_tensor_binding(
+        raise_if_empty=True, pattern=_RB_PATTERN, tensor_type=TensorType.RIGID_BODY_VELOCITY
+    )
+    try:
+        expected = np.full(binding.shape, 0.25, dtype=np.float32)
+        values = wp.array(expected, device=_DEVICE)
+        wp.synchronize_stream(_DEVICE)
+        binding.write(values)
+        output = wp.zeros(binding.shape, dtype=wp.float32, device=_DEVICE)
+        destination = provider(output)
+        ready = wp.Event(_DEVICE)
+        scratch = wp.zeros(1, dtype=wp.float32, device=_DEVICE)
+        wp.synchronize_stream(_DEVICE)
+        with wp.ScopedStream(wp.Stream(_DEVICE)):
+            for _ in range(2):  # first DLPack acquisition, then the cached descriptor
+                _queue_delay(scratch)
+                output.zero_()
+                wp.record_event(ready)
+                assert not ready.is_complete, "producer delay must still be pending"
+                binding.read(destination)
+                assert np.allclose(output.numpy(), expected)
+    finally:
+        binding.destroy()
+
+
+@pytest.mark.parametrize(
+    "provider", [lambda array: array, _DLPackProducer, _CachedDLPackProducer], ids=["warp", "dlpack", "cached_dlpack"]
+)
+@pytest.mark.parametrize("selection", ["all", "indices", "mask"])
+def test_write_waits_for_warp_stream_with_cached_buffer(physx_sdk, selection, provider):
+    _load_boxes(physx_sdk)
+    binding = physx_sdk.create_tensor_binding(
+        raise_if_empty=True, pattern=_RB_PATTERN, tensor_type=TensorType.RIGID_BODY_VELOCITY
+    )
+    try:
+        source = wp.zeros(binding.shape, dtype=wp.float32, device=_DEVICE)
+        source_tensor = provider(source)
+        output = wp.empty(binding.shape, dtype=wp.float32, device=_DEVICE)
+        indices = wp.zeros(binding.shape[0], dtype=wp.int32, device=_DEVICE)
+        mask = wp.zeros(binding.shape[0], dtype=wp.uint8, device=_DEVICE)
+        index_values = wp.array(np.arange(binding.shape[0], dtype=np.int32), device=_DEVICE)
+        ready = wp.Event(_DEVICE)
+        source.fill_(0.0)  # initialize the fill path before the delayed producer
+        mask.fill_(0)
+        scratch = wp.zeros(1, dtype=wp.float32, device=_DEVICE)
+        wp.synchronize_stream(_DEVICE)
+        with wp.ScopedStream(wp.Stream(_DEVICE)):
+            for value in (0.25, 0.5):
+                _queue_delay(scratch)
+                source.fill_(value)
+                # Select every row so output values must all match, including when
+                # the selection tensor itself is still being produced.
+                kwargs = {}
+                if selection == "indices":
+                    wp.copy(indices, index_values)
+                    kwargs["indices"] = provider(indices)
+                elif selection == "mask":
+                    mask.fill_(1)
+                    kwargs["mask"] = provider(mask)
+                wp.record_event(ready)
+                assert not ready.is_complete, "producer delay must still be pending"
+                binding.write(source_tensor, **kwargs)
+                binding.read(output)
+                assert np.allclose(output.numpy(), value)
+    finally:
+        binding.destroy()
+
+
+@pytest.mark.parametrize("provider", [lambda array: array, _DLPackProducer], ids=["warp", "dlpack"])
+def test_producer_wait_must_complete(provider, monkeypatch):
+    from ovphysx._dlpack_utils import acquire_dltensor
+
+    array = wp.zeros(1, dtype=wp.float32, device=_DEVICE)
+    wp.synchronize_device(_DEVICE)
+    # A logged wait failure must not let native code use unordered storage.
+    monkeypatch.setattr(wp, "synchronize_event", lambda event: None)
+    monkeypatch.setattr(wp.Event, "is_complete", property(lambda event: False))
+    with pytest.raises(RuntimeError, match="CUDA producer work.*did not complete"):
+        acquire_dltensor(provider(array))
+
+
+@pytest.mark.parametrize("provider", [_DLPackProducer, _CachedDLPackProducer], ids=["dlpack", "cached_dlpack"])
+@pytest.mark.parametrize("operation", ["read", "write"])
+def test_binding_handoff_from_separate_producer_stream(physx_sdk, provider, operation):
+    _load_boxes(physx_sdk)
+    binding = physx_sdk.create_tensor_binding(
+        raise_if_empty=True, pattern=_RB_PATTERN, tensor_type=TensorType.RIGID_BODY_VELOCITY
+    )
+    try:
+        expected = np.full(binding.shape, 0.25, dtype=np.float32)
+        initial = wp.array(expected, device=_DEVICE)
+        binding.write(initial)
+        buffer = wp.zeros(binding.shape, dtype=wp.float32, device=_DEVICE)
+        output = wp.empty_like(buffer)
+        scratch = wp.zeros(1, dtype=wp.float32, device=_DEVICE)
+        buffer.fill_(0.0)
+        wp.synchronize_stream(_DEVICE)
+        producer_stream = wp.Stream(_DEVICE)
+        consumer_stream = wp.Stream(_DEVICE)
+        producer = provider(buffer, producer_stream)
+        ready = wp.Event(_DEVICE)
+        for value in (0.5, 0.75):
+            with wp.ScopedStream(producer_stream):
+                _queue_delay(scratch)
+                buffer.fill_(0.0 if operation == "read" else value)
+                wp.record_event(ready)
+            assert not ready.is_complete, "producer delay must still be pending"
+            with wp.ScopedStream(consumer_stream):
+                assert wp.get_stream(_DEVICE) != producer_stream
+                if operation == "read":
+                    binding.read(producer)
+                    assert producer.handoff_streams[-1] == int(consumer_stream.cuda_stream or 1)
+                    wp.synchronize_stream(producer_stream)
+                    assert np.allclose(buffer.numpy(), expected)
+                else:
+                    binding.write(producer)
+                    assert producer.handoff_streams[-1] == int(consumer_stream.cuda_stream or 1)
+                    binding.read(output)
+                    assert np.allclose(output.numpy(), value)
+    finally:
+        binding.destroy()
+
+
+@pytest.mark.parametrize("provider", [lambda array: array, _DLPackProducer], ids=["warp", "dlpack"])
+def test_producer_wait_ignores_later_stream_work(provider, monkeypatch):
+    from ovphysx._dlpack_utils import acquire_dltensor
+
+    array = wp.zeros(1, dtype=wp.float32, device=_DEVICE)
+    scratch = wp.zeros(1, dtype=wp.float32, device=_DEVICE)
+    wp.launch(_delay_producer, dim=1, inputs=[scratch, 1], device=_DEVICE)
+    wp.synchronize_stream(_DEVICE)
+    synchronize_event = wp.synchronize_event
+    synchronize_stream = wp.synchronize_stream
+
+    def wait_then_enqueue(event):
+        synchronize_event(event)
+        wp.launch(_delay_producer, dim=1, inputs=[scratch, 5_000_000], device=_DEVICE)
+
+    def wait_stream_then_enqueue(stream):
+        synchronize_stream(stream)
+        wp.launch(_delay_producer, dim=1, inputs=[scratch, 5_000_000], device=_DEVICE)
+
+    monkeypatch.setattr(wp, "synchronize_event", wait_then_enqueue)
+    monkeypatch.setattr(wp, "synchronize_stream", wait_stream_then_enqueue)
+    try:
+        tensor, capsule = acquire_dltensor(provider(array))
+        assert tensor.data == array.ptr
+        assert capsule is not None
+        assert not wp.get_stream(_DEVICE).is_complete
+    finally:
+        synchronize_stream(_DEVICE)
 
 
 # ---------------------------------------------------------------------------

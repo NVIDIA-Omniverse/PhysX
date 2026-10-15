@@ -3,18 +3,22 @@
 
 /**
  * @implements REQ-CAPI-LOG-001
- * @covers AC-3 AC-6
+ * @covers AC-3 AC-6 AC-7
  *
  * @implements REQ-PYTHON-LIFECYCLE-001
  * @covers AC-3
  *
  * @implements REQ-CAPI-ATTACH-OWNER-001
  * @covers AC-3
+ *
+ * @implements REQ-CAPI-CONFIG-001
+ * @covers AC-4
  */
 
 #include <gtest/gtest.h>
 
 #include "ovphysx/ovphysx.h"
+#include "ovphysx/ovphysx_config.h"
 #include "ovphysx_test_utils.h"
 #include "test_utilities.h"
 
@@ -22,6 +26,7 @@
 #include <condition_variable>
 #include <future>
 #include <mutex>
+#include <string>
 #include <thread>
 
 namespace
@@ -31,10 +36,7 @@ void expectSuccess(ovphysx_result_t result)
     EXPECT_EQ(result.status, OVPHYSX_API_SUCCESS);
 }
 
-ovphysx_result_t successfulPeerTask(ovphysx_handle_t, ovphysx_op_index_t, void*)
-{
-    return { OVPHYSX_API_SUCCESS };
-}
+
 }
 
 TEST(GlobalLifecycle, SecondInitializeBeforeShutdownReturnsError)
@@ -67,10 +69,8 @@ TEST(GlobalLifecycle, ExtraShutdownAfterBalancedInitializeReturnsError)
 
 TEST(GlobalLifecycle, CreateInstanceBeforeInitializeReturnsError)
 {
-    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-
-    ovphysx_handle_t handle = OVPHYSX_INVALID_HANDLE;
-    EXPECT_EQ(ovphysx_create_instance(&args, &handle).status, OVPHYSX_API_ERROR);
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    EXPECT_EQ(ovphysx_create_instance(&handle).status, OVPHYSX_API_ERROR);
     EXPECT_EQ(handle, OVPHYSX_INVALID_HANDLE);
 }
 
@@ -83,19 +83,40 @@ TEST(GlobalLifecycle, InitializeShutdownInitializeAgain)
     expectSuccess(ovphysx_shutdown());
 }
 
+TEST(GlobalLifecycle, StartupConfigUnlocksAfterRuntimeShutdown)
+{
+    expectSuccess(ovphysx_initialize());
+
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    expectSuccess(ovphysx_create_instance(&handle));
+    expectSuccess(ovphysx_destroy_instance(handle));
+
+    EXPECT_EQ(
+        ovphysx_set_global_config(
+            OVPHYSX_GLOBAL_CONFIG_PROFILER_OUTPUT_PATH,
+            ovphysx_config_value_string(OVPHYSX_LITERAL("before-shutdown.json"))).status,
+        OVPHYSX_API_INVALID_STATE);
+
+    expectSuccess(ovphysx_shutdown());
+    expectSuccess(ovphysx_set_global_config(
+        OVPHYSX_GLOBAL_CONFIG_PROFILER_OUTPUT_PATH,
+        ovphysx_config_value_string(OVPHYSX_LITERAL("after-shutdown.json"))));
+
+    expectSuccess(ovphysx_initialize());
+    expectSuccess(ovphysx_shutdown());
+}
+
 TEST(GlobalLifecycle, CreateInstanceAfterShutdownRequiresReinitialize)
 {
     expectSuccess(ovphysx_initialize());
     expectSuccess(ovphysx_shutdown());
 
-    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-
-    ovphysx_handle_t handle = OVPHYSX_INVALID_HANDLE;
-    EXPECT_EQ(ovphysx_create_instance(&args, &handle).status, OVPHYSX_API_ERROR);
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    EXPECT_EQ(ovphysx_create_instance(&handle).status, OVPHYSX_API_ERROR);
     EXPECT_EQ(handle, OVPHYSX_INVALID_HANDLE);
 
     expectSuccess(ovphysx_initialize());
-    expectSuccess(ovphysx_create_instance(&args, &handle));
+    expectSuccess(ovphysx_create_instance(&handle));
     ASSERT_NE(handle, OVPHYSX_INVALID_HANDLE);
 
     expectSuccess(ovphysx_destroy_instance(handle));
@@ -106,10 +127,8 @@ TEST(GlobalLifecycle, InitializeDoesNotCreateInstance)
 {
     expectSuccess(ovphysx_initialize());
 
-    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-
-    ovphysx_handle_t handle = OVPHYSX_INVALID_HANDLE;
-    expectSuccess(ovphysx_create_instance(&args, &handle));
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    expectSuccess(ovphysx_create_instance(&handle));
     ASSERT_NE(handle, OVPHYSX_INVALID_HANDLE);
 
     expectSuccess(ovphysx_destroy_instance(handle));
@@ -120,16 +139,14 @@ TEST(GlobalLifecycle, RecreateInstanceAfterLastDestroySucceeds)
 {
     expectSuccess(ovphysx_initialize());
 
-    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-
-    ovphysx_handle_t firstHandle = OVPHYSX_INVALID_HANDLE;
-    expectSuccess(ovphysx_create_instance(&args, &firstHandle));
+    ovphysx_instance_handle_t firstHandle = OVPHYSX_INVALID_HANDLE;
+    expectSuccess(ovphysx_create_instance(&firstHandle));
     ASSERT_NE(firstHandle, OVPHYSX_INVALID_HANDLE);
 
     expectSuccess(ovphysx_destroy_instance(firstHandle));
 
-    ovphysx_handle_t secondHandle = OVPHYSX_INVALID_HANDLE;
-    expectSuccess(ovphysx_create_instance(&args, &secondHandle));
+    ovphysx_instance_handle_t secondHandle = OVPHYSX_INVALID_HANDLE;
+    expectSuccess(ovphysx_create_instance(&secondHandle));
     ASSERT_NE(secondHandle, OVPHYSX_INVALID_HANDLE);
     expectSuccess(ovphysx_destroy_instance(secondHandle));
 
@@ -140,29 +157,25 @@ TEST(GlobalLifecycle, RepeatedDestroyReturnsErrorAndLeavesLifecycleUsable)
 {
     expectSuccess(ovphysx_initialize());
 
-    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-
-    ovphysx_handle_t firstHandle = OVPHYSX_INVALID_HANDLE;
-    expectSuccess(ovphysx_create_instance(&args, &firstHandle));
+    ovphysx_instance_handle_t firstHandle = OVPHYSX_INVALID_HANDLE;
+    expectSuccess(ovphysx_create_instance(&firstHandle));
     ASSERT_NE(firstHandle, OVPHYSX_INVALID_HANDLE);
 
-    ovphysx_handle_t peerHandle = OVPHYSX_INVALID_HANDLE;
-    expectSuccess(ovphysx_create_instance(&args, &peerHandle));
+    ovphysx_instance_handle_t peerHandle = OVPHYSX_INVALID_HANDLE;
+    expectSuccess(ovphysx_create_instance(&peerHandle));
     ASSERT_NE(peerHandle, OVPHYSX_INVALID_HANDLE);
 
     expectSuccess(ovphysx_destroy_instance(firstHandle));
 
-    ovphysx_user_task_desc_t taskDesc{};
-    taskDesc.run = successfulPeerTask;
-    const ovphysx_enqueue_result_t peerTask = ovphysx_add_user_task(peerHandle, &taskDesc);
+    const ovphysx_enqueue_result_t peerTask = ovphysx_detach_ovstage(peerHandle);
     ASSERT_EQ(peerTask.status, OVPHYSX_API_SUCCESS);
     ASSERT_NE(peerTask.op_index, 0u);
 
     EXPECT_EQ(ovphysx_destroy_instance(firstHandle).status, OVPHYSX_API_ERROR);
 
-    ovphysx_op_wait_result_t waitResult{};
-    expectSuccess(ovphysx_wait_op(peerHandle, peerTask.op_index, UINT64_MAX, &waitResult));
-    ovphysx_destroy_wait_result(&waitResult);
+    ovphysx_wait_task_result_t waitResult{};
+    expectSuccess(ovphysx_wait_task(peerHandle, peerTask, UINT64_MAX, &waitResult));
+    ovphysx_destroy_wait_task_result(&waitResult);
     expectSuccess(ovphysx_destroy_instance(peerHandle));
 
     expectSuccess(ovphysx_shutdown());
@@ -172,10 +185,8 @@ TEST(GlobalLifecycle, ShutdownOnlyClearsInitializeStateWhileInstanceIsLive)
 {
     expectSuccess(ovphysx_initialize());
 
-    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-
-    ovphysx_handle_t handle = OVPHYSX_INVALID_HANDLE;
-    expectSuccess(ovphysx_create_instance(&args, &handle));
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    expectSuccess(ovphysx_create_instance(&handle));
     ASSERT_NE(handle, OVPHYSX_INVALID_HANDLE);
 
     expectSuccess(ovphysx_shutdown());
@@ -215,11 +226,12 @@ struct ReplacementCallbackState
     std::mutex mutex;
     std::condition_variable cv;
     size_t calls = 0;
+    size_t warningTestCalls = 0;
 };
 
 void replacementCallback(
-    ovphysx_log_level_t,
-    ovphysx_string_t,
+    ovphysx_log_level_t level,
+    ovphysx_string_t message,
     ovphysx_string_t,
     double,
     void* userData)
@@ -227,6 +239,11 @@ void replacementCallback(
     ReplacementCallbackState* state = static_cast<ReplacementCallbackState*>(userData);
     std::lock_guard<std::mutex> lock(state->mutex);
     ++state->calls;
+    if (level == OVPHYSX_LOG_WARNING && message.ptr &&
+        std::string(message.ptr, message.length) == "[LogTest] WARNING test message")
+    {
+        ++state->warningTestCalls;
+    }
     state->cv.notify_all();
 }
 
@@ -241,12 +258,97 @@ public:
 };
 }
 
+TEST(GlobalLifecycle, PreInitLoggingConfigSurvivesLifecycleCycles)
+{
+    ovphysx_config_value_t originalOutput{};
+    ASSERT_EQ(ovphysx_get_global_config(
+        OVPHYSX_GLOBAL_CONFIG_DEFAULT_LOG_OUTPUT, &originalOutput).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(originalOutput.type, OVPHYSX_CONFIG_VALUE_BOOL);
+
+    ReplacementCallbackState states[2];
+    const ScopedLogCallbackDisable callbackGuard;
+    struct Cleanup
+    {
+        uint32_t logLevel;
+        bool defaultOutput;
+        bool initialized = false;
+        ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+
+        ~Cleanup()
+        {
+            if (handle != OVPHYSX_INVALID_HANDLE)
+                (void)ovphysx_destroy_instance(handle);
+            if (initialized)
+                (void)ovphysx_shutdown();
+            (void)ovphysx_set_log_level(logLevel);
+            (void)ovphysx_enable_default_log_output(defaultOutput);
+        }
+    } cleanup{ovphysx_get_log_level(), originalOutput.value.bool_value};
+
+    ASSERT_EQ(ovphysx_set_log_level(OVPHYSX_LOG_VERBOSE).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_enable_default_log_output(false).status, OVPHYSX_API_SUCCESS);
+
+    size_t callsAfterShutdown[2] = {};
+    for (size_t epoch = 0; epoch < 2; ++epoch)
+    {
+        ReplacementCallbackState& state = states[epoch];
+        ASSERT_EQ(ovphysx_set_log_callback(
+            OVPHYSX_LOG_VERBOSE, nullptr, replacementCallback, &state).status, OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(ovphysx_initialize().status, OVPHYSX_API_SUCCESS);
+        cleanup.initialized = true;
+        ASSERT_EQ(ovphysx_create_instance(&cleanup.handle).status, OVPHYSX_API_SUCCESS);
+        ASSERT_NE(cleanup.handle, OVPHYSX_INVALID_HANDLE);
+
+        EXPECT_EQ(ovphysx_get_log_level(), static_cast<uint32_t>(OVPHYSX_LOG_VERBOSE));
+        ovphysx_config_value_t output{};
+        ASSERT_EQ(ovphysx_get_global_config(
+            OVPHYSX_GLOBAL_CONFIG_DEFAULT_LOG_OUTPUT, &output).status, OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(output.type, OVPHYSX_CONFIG_VALUE_BOOL);
+        EXPECT_FALSE(output.value.bool_value);
+
+        size_t warningCallsBeforeEmission = 0;
+        {
+            std::lock_guard<std::mutex> lock(state.mutex);
+            warningCallsBeforeEmission = state.warningTestCalls;
+        }
+        ovphysx_log_emit_test_messages();
+        {
+            std::unique_lock<std::mutex> lock(state.mutex);
+            EXPECT_TRUE(state.cv.wait_for(lock, std::chrono::seconds(5),
+                [&state, warningCallsBeforeEmission] { return state.warningTestCalls > warningCallsBeforeEmission; }));
+        }
+        expectSuccess(ovphysx_flush_log(UINT64_MAX));
+
+        ASSERT_EQ(ovphysx_destroy_instance(cleanup.handle).status, OVPHYSX_API_SUCCESS);
+        cleanup.handle = OVPHYSX_INVALID_HANDLE;
+        ASSERT_EQ(ovphysx_shutdown().status, OVPHYSX_API_SUCCESS);
+        cleanup.initialized = false;
+
+        EXPECT_EQ(ovphysx_get_log_level(), static_cast<uint32_t>(OVPHYSX_LOG_VERBOSE));
+        ASSERT_EQ(ovphysx_get_global_config(
+            OVPHYSX_GLOBAL_CONFIG_DEFAULT_LOG_OUTPUT, &output).status, OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(output.type, OVPHYSX_CONFIG_VALUE_BOOL);
+        EXPECT_FALSE(output.value.bool_value);
+        {
+            std::lock_guard<std::mutex> lock(state.mutex);
+            callsAfterShutdown[epoch] = state.calls;
+        }
+        ovphysx_log_emit_test_messages();
+        expectSuccess(ovphysx_flush_log(UINT64_MAX));
+        for (size_t retired = 0; retired <= epoch; ++retired)
+        {
+            std::lock_guard<std::mutex> lock(states[retired].mutex);
+            EXPECT_EQ(states[retired].calls, callsAfterShutdown[retired])
+                << "Shutdown must keep the retired callback disabled across later epochs";
+        }
+    }
+}
+
 TEST(GlobalLifecycle, ShutdownDrainsAcceptedCallback)
 {
     expectSuccess(ovphysx_initialize());
-    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-    ovphysx_handle_t handle = OVPHYSX_INVALID_HANDLE;
-    expectSuccess(ovphysx_create_instance(&args, &handle));
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    expectSuccess(ovphysx_create_instance(&handle));
     ASSERT_NE(handle, OVPHYSX_INVALID_HANDLE);
     expectSuccess(ovphysx_destroy_instance(handle));
 
@@ -362,9 +464,8 @@ TEST(GlobalLifecycle, LiveHandleShutdownEndsCallbackDelivery)
     expectSuccess(ovphysx_set_log_callback(
         OVPHYSX_LOG_VERBOSE, nullptr, replacementCallback, &state));
 
-    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-    ovphysx_handle_t handle = OVPHYSX_INVALID_HANDLE;
-    expectSuccess(ovphysx_create_instance(&args, &handle));
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    expectSuccess(ovphysx_create_instance(&handle));
     ASSERT_NE(handle, OVPHYSX_INVALID_HANDLE);
     ovphysx_log_emit_test_messages();
     expectSuccess(ovphysx_flush_log(UINT64_MAX));
@@ -398,7 +499,7 @@ struct ShutdownDestroyState
 {
     std::mutex mutex;
     std::condition_variable cv;
-    ovphysx_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
     ovphysx_result_t destroyResult = { OVPHYSX_API_ERROR };
     bool entered = false;
     bool destroyRequested = false;
@@ -440,9 +541,8 @@ void shutdownDestroyCallback(
 TEST(GlobalLifecycle, LiveInstanceShutdownDrainDoesNotHoldInstanceMapLock)
 {
     expectSuccess(ovphysx_initialize());
-    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
     ShutdownDestroyState state;
-    expectSuccess(ovphysx_create_instance(&args, &state.handle));
+    expectSuccess(ovphysx_create_instance(&state.handle));
     ASSERT_NE(state.handle, OVPHYSX_INVALID_HANDLE);
     expectSuccess(ovphysx_set_log_level(OVPHYSX_LOG_VERBOSE));
     const ScopedLogCallbackDisable callbackGuard;
@@ -503,47 +603,34 @@ TEST(GlobalLifecycle, LiveInstanceShutdownDrainDoesNotHoldInstanceMapLock)
     expectSuccess(ovphysx_shutdown());
 }
 
-// Regression (MR !8218, REQ-CAPI-ATTACH-OWNER-001 AC-3): a permanently failed
-// pending op (never observed via ovphysx_wait_op(), so
-// wait_for_all_pending_ops() keeps failing) must not make
-// omni_sdk_physx_destroy()'s internal ovphysx_detach_ovstage() call return
-// before releasing g_liveAttachOwner. Otherwise the process-wide live-attach
-// latch stays attributed to the destroyed handle and every later instance's
-// attach_ovstage() is rejected.
+// An uncollected failed task must not prevent instance teardown from releasing
+// that instance's runtime attachment. A later instance must remain able to attach.
 TEST(GlobalLifecycle, DestroyAfterFailedPendingOpReleasesLiveAttachOwnerAcrossInstancesAndShutdown)
 {
     expectSuccess(ovphysx_initialize());
 
     const char* usd_path = OVPHYSX_SOURCE_DIR "/tests/data/minimal_scene.usda";
 
-    // Instance A: attach ovstage, then leave a permanently-failed op in its
-    // pending-op tracking. wait_for_all_pending_ops() never consumes a failed
-    // op, it stays until observed by wait_op(), which this test never does.
-    ovphysx_create_args args_a = OVPHYSX_CREATE_ARGS_DEFAULT;
-    ovphysx_handle_t handle_a = OVPHYSX_INVALID_HANDLE;
-    expectSuccess(ovphysx_create_instance(&args_a, &handle_a));
+    // Leave A's accepted failure uncollected until instance teardown.
+    ovphysx_instance_handle_t handle_a = OVPHYSX_INVALID_HANDLE;
+    expectSuccess(ovphysx_create_instance(&handle_a));
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(handle_a, usd_path));
 
-    ovphysx_user_task_desc_t failing_task{};
-    failing_task.run = [](ovphysx_handle_t, ovphysx_op_index_t, void*) -> ovphysx_result_t {
-        return { OVPHYSX_API_ERROR };
-    };
-    ovphysx_enqueue_result_t failed_task = ovphysx_add_user_task(handle_a, &failing_task);
-    ASSERT_EQ(failed_task.status, OVPHYSX_API_ERROR);
+    ovphysx_string_t target = OVPHYSX_LITERAL("/World/TaskCloneTarget");
+    const ovphysx_enqueue_result_t failed_task = ovphysx_clone(
+        handle_a, OVPHYSX_LITERAL("/World/TaskMissingSource"), &target, 1, nullptr, nullptr);
+    ASSERT_EQ(failed_task.status, OVPHYSX_API_SUCCESS);
     ASSERT_NE(failed_task.op_index, 0u);
 
-    // Destroy A without ever observing the failed op: destroy's own
-    // wait_for_all_pending_ops() and the ovphysx_detach_ovstage() call it
-    // makes both fail. Destroy must still fully release A's ownership.
+    // Destroy A without collecting its failure; its runtime attachment must still be released.
     expectSuccess(ovphysx_destroy_instance(handle_a));
 
     // Instance B must be able to attach: the latch must not still be held by
     // the now-destroyed A.
-    ovphysx_create_args args_b = OVPHYSX_CREATE_ARGS_DEFAULT;
-    ovphysx_handle_t handle_b = OVPHYSX_INVALID_HANDLE;
-    expectSuccess(ovphysx_create_instance(&args_b, &handle_b));
+    ovphysx_instance_handle_t handle_b = OVPHYSX_INVALID_HANDLE;
+    expectSuccess(ovphysx_create_instance(&handle_b));
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(handle_b, usd_path))
-        << "B's attach must succeed once A's failed destroy released the live-attach latch";
+        << "B's attach must succeed once A's failed destroy released A's runtime attachment";
     EXPECT_EQ(ovphysx_step_sync(handle_b, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
 
     test_utils::destroy_ovstage_test_attachments(handle_b);
@@ -555,9 +642,8 @@ TEST(GlobalLifecycle, DestroyAfterFailedPendingOpReleasesLiveAttachOwnerAcrossIn
     expectSuccess(ovphysx_shutdown());
     expectSuccess(ovphysx_initialize());
 
-    ovphysx_create_args args_c = OVPHYSX_CREATE_ARGS_DEFAULT;
-    ovphysx_handle_t handle_c = OVPHYSX_INVALID_HANDLE;
-    expectSuccess(ovphysx_create_instance(&args_c, &handle_c));
+    ovphysx_instance_handle_t handle_c = OVPHYSX_INVALID_HANDLE;
+    expectSuccess(ovphysx_create_instance(&handle_c));
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(handle_c, usd_path))
         << "A fresh instance after shutdown/reinitialize must be able to attach";
     EXPECT_EQ(ovphysx_step_sync(handle_c, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
@@ -566,4 +652,69 @@ TEST(GlobalLifecycle, DestroyAfterFailedPendingOpReleasesLiveAttachOwnerAcrossIn
     expectSuccess(ovphysx_destroy_instance(handle_c));
 
     expectSuccess(ovphysx_shutdown());
+}
+
+// Existing diagnostic from test_log_level.cpp emits a real sidecar error.
+void* unresolvedSidecarPointer();
+
+TEST(GlobalLifecycle, SidecarLogPolicySurvivesFrameworkRestart)
+{
+    const uint32_t previousLevel = ovphysx_get_log_level();
+    const char* diagnostic = "Internal sidecar: ovphysx_internal_get_physx_ptr could not resolve ObjectKey";
+    for (int cycle = 0; cycle < 3; ++cycle)
+    {
+        SCOPED_TRACE(cycle);
+        expectSuccess(ovphysx_set_log_level(OVPHYSX_LOG_NONE));
+        expectSuccess(ovphysx_initialize());
+        ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+        ASSERT_EQ(ovphysx_create_instance(&handle).status, OVPHYSX_API_SUCCESS);
+        for (const uint32_t level : {OVPHYSX_LOG_NONE, OVPHYSX_LOG_INFO, OVPHYSX_LOG_NONE})
+        {
+            SCOPED_TRACE(level);
+            expectSuccess(ovphysx_set_log_level(level));
+            expectSuccess(ovphysx_log_capture_start());
+            EXPECT_EQ(unresolvedSidecarPointer(), nullptr);
+            expectSuccess(ovphysx_flush_log(UINT64_MAX));
+            EXPECT_EQ(ovphysx_log_capture_find(OVPHYSX_LOG_ERROR, diagnostic), level != OVPHYSX_LOG_NONE);
+            ovphysx_log_capture_stop();
+        }
+        expectSuccess(ovphysx_destroy_instance(handle));
+        expectSuccess(ovphysx_shutdown());
+    }
+    expectSuccess(ovphysx_set_log_level(previousLevel));
+}
+
+TEST(GlobalLifecycle, CallbackAfterLiveShutdownWaitsForNextBootstrap)
+{
+    expectSuccess(ovphysx_initialize());
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&handle).status, OVPHYSX_API_SUCCESS);
+    expectSuccess(ovphysx_shutdown());
+
+    ReplacementCallbackState state;
+    const ScopedLogCallbackDisable callbackGuard;
+    const uint32_t previousLevel = ovphysx_get_log_level();
+    expectSuccess(ovphysx_set_log_level(OVPHYSX_LOG_VERBOSE));
+    expectSuccess(ovphysx_set_log_callback(
+        OVPHYSX_LOG_VERBOSE, nullptr, replacementCallback, &state));
+    ovphysx_log_emit_test_messages();
+    expectSuccess(ovphysx_flush_log(UINT64_MAX));
+    {
+        std::lock_guard<std::mutex> lock(state.mutex);
+        EXPECT_EQ(state.calls, 0u) << "A pending callback must not register with stopped SDK logging";
+    }
+    expectSuccess(ovphysx_destroy_instance(handle));
+
+    expectSuccess(ovphysx_initialize());
+    ASSERT_EQ(ovphysx_create_instance(&handle).status, OVPHYSX_API_SUCCESS);
+    ovphysx_log_emit_test_messages();
+    expectSuccess(ovphysx_flush_log(UINT64_MAX));
+    {
+        std::unique_lock<std::mutex> lock(state.mutex);
+        EXPECT_TRUE(state.cv.wait_for(lock, std::chrono::seconds(5),
+            [&state] { return state.warningTestCalls != 0; }));
+    }
+    expectSuccess(ovphysx_destroy_instance(handle));
+    expectSuccess(ovphysx_shutdown());
+    expectSuccess(ovphysx_set_log_level(previousLevel));
 }

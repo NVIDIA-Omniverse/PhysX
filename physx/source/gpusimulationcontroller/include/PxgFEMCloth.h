@@ -10,6 +10,9 @@
 #include "foundation/PxBounds3.h"
 #include <vector_types.h>
 
+#include "foundation/PxUserAllocated.h"
+#include "PxgSimulationCoreDesc.h" // for PxgDeformablePairInfo
+
 namespace physx
 {
 namespace Gu
@@ -27,6 +30,45 @@ struct PxsDeformableSurfaceMaterialData;
 #pragma warning(push)
 #pragma warning(disable : 4324) // padding was added at the end of a structure because of a __declspec(align) value.
 #endif
+
+// The mesh topology of one deformable surface, derived when it joins a scene. Everything but the edge
+// ownership is consumed by the upload and freed by releaseUploadData.
+class PxgDeformableSurfaceTopology : public PxUserAllocated
+{
+  public:
+	PxgDeformableSurfaceTopology(const Gu::TriangleMesh& triangleMesh);
+
+	// Frees what the upload consumed, keeping the edge ownership.
+	void releaseUploadData();
+
+	// Whether the triangle is the one that tests this edge, which is what ownsEdge reads on the device.
+	PX_FORCE_INLINE bool ownsEdge(PxU32 triangleIndex, PxU32 localEdge) const
+	{
+		return (getEdgeOwnershipBits(triangleIndex) & (1u << localEdge)) != 0;
+	}
+
+	// Unpacks the three edge ownership bits for a given triangle.
+	PX_FORCE_INLINE PxU32 getEdgeOwnershipBits(PxU32 triangleIndex) const
+	{
+		return (mEdgeOwnershipNibbles[triangleIndex >> 1] >> (4 * (triangleIndex & 1))) & 7;
+	}
+
+	PX_FORCE_INLINE PxArray<uint2>& getTrianglePairTriangleIndices() { return mTrianglePairTriangleIndices; }
+	PX_FORCE_INLINE PxArray<uint4>& getTrianglePairVertexIndices() { return mTrianglePairVertexIndices; }
+	PX_FORCE_INLINE PxU32 getNbTrianglePairs() const
+	{
+		PX_ASSERT(mTrianglePairTriangleIndices.size() == mTrianglePairVertexIndices.size());
+		return mTrianglePairTriangleIndices.size();
+	}
+
+  private:
+	PxArray<uint2> mTrianglePairTriangleIndices;
+	PxArray<uint4> mTrianglePairVertexIndices;
+
+	// The edge ownership alone, one nibble per triangle, which is all the element filters need and all
+	// that outlives the upload.
+	PxArray<PxU8> mEdgeOwnershipNibbles;
+};
 
 struct PxgFEMClothData
 {
@@ -63,8 +105,10 @@ class PxgFEMCloth
 	float* mDynamicFrictions; // dynamic friction per vertex
 	PxU16* mMaterialIndices;
 
-	PxU32* mTrianglesWithActiveEdges;
-	uint4* mTriangleVertexIndices;
+	PxU32* mTrianglesWithOwnedEdges;
+
+	// The w component holds the three edge owning bits. See ownsEdge in deformableCollision.cuh.
+	uint4* mTriangleVertexIndices_ownedEdges;
 	uint4* mOrderedNonSharedTriangleVertexIndices_triIndex;
 	float2* mOrderedSharedTriangleLambdas; // Two lambdas per triangle: ARAP, area
 	float2* mOrderedNonSharedTriangleLambdas; // Two lambdas per triangle: ARAP, area
@@ -124,6 +168,14 @@ class PxgFEMCloth
 
 	PxBounds3* mPackedNodeBounds;
 
+	// Element filter pairs of this surface, one sorted array per pair type. The type order of each
+	// pair matches the type order expected by the find helpers in deformableElementFilter.cuh. The
+	// pointers are grouped ahead of the counts to keep the struct free of interior padding.
+	PxgDeformablePairInfo* mRigidSurfaceFilterPairs;
+	PxgDeformablePairInfo* mSurfaceSurfaceFilterPairs;
+	PxU32 mNumRigidSurfaceFilterPairs;
+	PxU32 mNumSurfaceSurfaceFilterPairs;
+
 	PxReal mLinearDamping;
 	PxReal mMaxLinearVelocity;
 	PxReal mPenBiasClamp;
@@ -136,7 +188,7 @@ class PxgFEMCloth
 	PxU32 mNbVerts;
 	PxU32 mNbTriangles;
 	PxU32 mNbNonSharedTriangles;
-	PxU32 mNbTrianglesWithActiveEdges;
+	PxU32 mNbTrianglesWithOwnedEdges;
 
 	PxU32 mNbTrianglePairs;
 	PxU32 mNbSharedTrianglePairs;
@@ -173,63 +225,14 @@ class PxgFEMCloth
 #pragma warning(pop)
 #endif
 
-struct EdgeEncoding
-{
-	// TYPE0 layout (lower 16 bits)
-	static constexpr PxU32 TYPE0_EDGE_BASE_POS = 0; // Edge presence bits: 0-2
-
-	static constexpr PxU32 TYPE0_AUTH_COUNT_POS = 3;  // bits 3-4
-	static constexpr PxU32 TYPE0_FIRST_EDGE_POS = 5;  // bits 5-6
-	static constexpr PxU32 TYPE0_SECOND_EDGE_POS = 7; // bits 7-8
-	static constexpr PxU32 TYPE0_THIRD_EDGE_POS = 9;  // bits 9-10
-
-	static constexpr PxU32 TYPE0_VERTEX0_ACTIVE_POS = 11;
-	static constexpr PxU32 TYPE0_VERTEX1_ACTIVE_POS = 12;
-	static constexpr PxU32 TYPE0_VERTEX2_ACTIVE_POS = 13;
-
-	// TYPE1 layout (upper 16 bits)
-	static constexpr PxU32 TYPE1_EDGE_BASE_POS = 16; // edge presence: bits 16-18
-
-	static constexpr PxU32 TYPE1_AUTH_COUNT_POS = 19;  // bits 19-20
-	static constexpr PxU32 TYPE1_FIRST_EDGE_POS = 21;  // bits 21-22
-	static constexpr PxU32 TYPE1_SECOND_EDGE_POS = 23; // bits 23-24
-	static constexpr PxU32 TYPE1_THIRD_EDGE_POS = 25;  // bits 25-26
-
-	static constexpr PxU32 TYPE1_VERTEX0_ACTIVE_POS = 27;
-	static constexpr PxU32 TYPE1_VERTEX1_ACTIVE_POS = 28;
-	static constexpr PxU32 TYPE1_VERTEX2_ACTIVE_POS = 29;
-};
-
-struct EdgeEncodingMask
-{
-	// Type0: minimal triangle set covering all edges and vertices (compact encoding)
-	static constexpr PxU32 TYPE0_AUTH_COUNT_MASK = 0x3 << EdgeEncoding::TYPE0_AUTH_COUNT_POS;
-	static constexpr PxU32 TYPE0_FIRST_EDGE_MASK = 0x3 << EdgeEncoding::TYPE0_FIRST_EDGE_POS;
-	static constexpr PxU32 TYPE0_SECOND_EDGE_MASK = 0x3 << EdgeEncoding::TYPE0_SECOND_EDGE_POS;
-	static constexpr PxU32 TYPE0_THIRD_EDGE_MASK = 0x3 << EdgeEncoding::TYPE0_THIRD_EDGE_POS;
-
-	static constexpr PxU32 TYPE0_VERTEX0_ACTIVE_MASK = 1U << EdgeEncoding::TYPE0_VERTEX0_ACTIVE_POS;
-	static constexpr PxU32 TYPE0_VERTEX1_ACTIVE_MASK = 1U << EdgeEncoding::TYPE0_VERTEX1_ACTIVE_POS;
-	static constexpr PxU32 TYPE0_VERTEX2_ACTIVE_MASK = 1U << EdgeEncoding::TYPE0_VERTEX2_ACTIVE_POS;
-
-	// Type1: more balanced distribution of edges and vertices across triangles (balanced encoding)
-	static constexpr PxU32 TYPE1_FIRST_EDGE_MASK = 0x3 << EdgeEncoding::TYPE1_FIRST_EDGE_POS;
-	static constexpr PxU32 TYPE1_SECOND_EDGE_MASK = 0x3 << EdgeEncoding::TYPE1_SECOND_EDGE_POS;
-	static constexpr PxU32 TYPE1_THIRD_EDGE_MASK = 0x3 << EdgeEncoding::TYPE1_THIRD_EDGE_POS;
-
-	static constexpr PxU32 TYPE1_VERTEX0_ACTIVE_MASK = 1U << EdgeEncoding::TYPE1_VERTEX0_ACTIVE_POS;
-	static constexpr PxU32 TYPE1_VERTEX1_ACTIVE_MASK = 1U << EdgeEncoding::TYPE1_VERTEX1_ACTIVE_POS;
-	static constexpr PxU32 TYPE1_VERTEX2_ACTIVE_MASK = 1U << EdgeEncoding::TYPE1_VERTEX2_ACTIVE_POS;
-};
-
 class PxgFEMClothUtil
 {
   public:
 	static PxU32 computeTriangleMeshByteSize(const Gu::TriangleMesh* triangleMesh);
 	static PxU32 loadOutTriangleMesh(void* mem, const Gu::TriangleMesh* triangleMesh);
 
-	static PxU32 initialTriangleData(PxgFEMCloth& femCloth, PxArray<uint2>& trianglePairTriangleIndices,
-									 PxArray<uint4>& trianglePairVertexIndices, const Gu::TriangleMesh* triangleMesh,
+	static PxU32 initialTriangleData(PxgFEMCloth& femCloth, const Gu::TriangleMesh* triangleMesh,
+									 const PxgDeformableSurfaceTopology& topology,
 									 const PxU16* materialHandles, PxsDeformableSurfaceMaterialData* materials, const PxU32 nbMaterials,
 									 Cm::VirtualAllocatorCallback& hostAlloc);
 

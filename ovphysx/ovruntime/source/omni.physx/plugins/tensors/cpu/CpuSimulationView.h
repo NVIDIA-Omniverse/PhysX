@@ -5,7 +5,7 @@
 
 /**
  * @implements REQ-TENSOR-VIEW-001
- * @covers AC-1
+ * @covers AC-1, AC-11
  *
  * @implements REQ-READ-VEHICLE-001
  * @covers AC-4, AC-5
@@ -35,8 +35,7 @@ class CpuSimulationView : public BaseSimulationView
 public:
     explicit CpuSimulationView(usdparser::AttachedStage* attachedStage,
                                ::physx::PxScene* scene,
-                               CpuSimulationDataPtr cpuSimData,
-                               bool notifyWhenSimStopped = false);
+                               CpuSimulationDataPtr cpuSimData);
 
     ~CpuSimulationView() override;
 
@@ -146,7 +145,11 @@ public:
 
     void enableGpuUsageWarnings(bool enable) override;
 
-    void updateArticulationsKinematic() override{};
+    // A CPU scene keeps articulation FK on the host, so there is nothing to refresh -- always succeeds.
+    bool updateArticulationsKinematic() override
+    {
+        return true;
+    }
 
     //
     // utilities

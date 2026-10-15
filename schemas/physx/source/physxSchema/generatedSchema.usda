@@ -50,9 +50,9 @@ class "PhysxSceneAPI" (
         displayGroup = "Advanced"
         displayName = "Enable Enhanced Determinism"
     )
-    bool physxScene:enableExternalForcesEveryIteration = 0 (
+    bool physxScene:enableExternalForcesEveryIteration = 1 (
         customData = {
-            string userDocBrief = "Enables greater TGS solver stability."
+            string userDocBrief = "Deprecated: applying gravity and other external forces in every TGS solver iteration is the default and will be the only TGS behavior once the attribute is removed."
         }
         displayGroup = "Advanced"
         displayName = "Enable External Forces Every Iteration"
@@ -1112,35 +1112,6 @@ class PhysxPhysicsRackAndPinionJoint "PhysxPhysicsRackAndPinionJoint" (
             string userDocBrief = '''Visibility is meant to be the simplest form of "pruning" 
         visibility that is supported by most DCC apps.'''
         }
-    )
-}
-
-class "PhysxJointAPI" (
-    customData = {
-        string userDocBrief = "PhysX joint extended parameters."
-    }
-)
-{
-    float physxJoint:armature = 0 (
-        customData = {
-            string userDocBrief = "Conceptually, armature represents the inertia of an actuator driving the joint."
-        }
-        displayGroup = "Advanced"
-        displayName = "Armature"
-    )
-    float physxJoint:jointFriction = 0 (
-        customData = {
-            string userDocBrief = "Joint friction."
-        }
-        displayGroup = "Advanced"
-        displayName = "Joint Friction"
-    )
-    float physxJoint:maxJointVelocity = inf (
-        customData = {
-            string userDocBrief = "Maximum joint velocity."
-        }
-        displayGroup = "Advanced"
-        displayName = "Maximum Joint Velocity"
     )
 }
 
@@ -3479,7 +3450,8 @@ class "PhysxParticleSamplingAPI" (
 
 class "PhysxJointAxisAPI" (
     customData = {
-        string userDocBrief = "PhysX joint parameters defined per axis."
+        string userDocBrief = """PhysX joint parameters defined per axis, used only for joints that are part of an articulation
+        (see PhysicsArticulationRootAPI)."""
     }
 )
 {

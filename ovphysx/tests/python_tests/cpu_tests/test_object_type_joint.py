@@ -14,6 +14,8 @@ from ARTICULATION_JOINT.
 
 from __future__ import annotations
 
+import warnings
+
 import pytest
 
 from ovphysx.types import ObjectType
@@ -50,3 +52,18 @@ def test_object_type_joint_enum_values():
     assert int(ObjectType.CUSTOM_JOINT) == 7
     assert ObjectType.CUSTOM_JOINT != ObjectType.JOINT
     assert ObjectType.CUSTOM_JOINT != ObjectType.INVALID
+
+
+def test_get_object_type_deprecation_points_at_caller(physx_sdk_cpu):
+    """`_warn_legacy_api` must report the user call site, not api.py."""
+    load_usd_with_ovstage(physx_sdk_cpu, data_path("revolute_joint_scene.usda"))
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always", DeprecationWarning)
+        physx_sdk_cpu.get_object_type("/World/Does_Not_Exist")
+    hits = [
+        w
+        for w in caught
+        if issubclass(w.category, DeprecationWarning) and "object-type lookup is deprecated" in str(w.message)
+    ]
+    assert len(hits) == 1
+    assert hits[0].filename == __file__

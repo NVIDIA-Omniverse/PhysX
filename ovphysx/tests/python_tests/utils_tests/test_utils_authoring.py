@@ -190,6 +190,130 @@ def test_collider_and_rigid_body_application_and_removal(stage):
     assert not prim.HasAPI(UsdPhysics.RigidBodyAPI)
 
 
+_XFORM_OP_CASES = (
+    (
+        UsdGeom.XformOp.TypeTranslate,
+        physicsUtils.set_or_add_translate_op,
+        Gf.Vec3f(4, 5, 6),
+        Gf.Matrix4d().SetTranslate(Gf.Vec3d(4, 5, 6)),
+    ),
+    (
+        UsdGeom.XformOp.TypeScale,
+        physicsUtils.set_or_add_scale_op,
+        Gf.Vec3f(2, 3, 4),
+        Gf.Matrix4d().SetScale(Gf.Vec3d(2, 3, 4)),
+    ),
+    (
+        UsdGeom.XformOp.TypeOrient,
+        physicsUtils.set_or_add_orient_op,
+        Gf.Quatf(0.5, 0.5, 0.5, 0.5),
+        Gf.Matrix4d().SetRotate(Gf.Quatd(0.5, 0.5, 0.5, 0.5)),
+    ),
+)
+
+
+@pytest.mark.parametrize("op_type, setter, value, expected", _XFORM_OP_CASES)
+@pytest.mark.parametrize(
+    "precision",
+    (
+        UsdGeom.XformOp.PrecisionHalf,
+        UsdGeom.XformOp.PrecisionFloat,
+        UsdGeom.XformOp.PrecisionDouble,
+    ),
+)
+@pytest.mark.parametrize("state", ("new", "active", "attribute_only", "cleared"))
+def test_set_or_add_xform_op_activation(stage, op_type, setter, value, expected, precision, state):
+    xform = UsdGeom.Xform.Define(stage, "/World/xform")
+    if state != "new":
+        original = xform.AddXformOp(op_type, precision)
+        original.Set(original.GetAttr().GetTypeName().type.pythonClass(1))
+        if state == "attribute_only":
+            xform.GetPrim().RemoveProperty("xformOpOrder")
+        elif state == "cleared":
+            xform.ClearXformOpOrder()
+
+    for _ in range(2):
+        op = setter(xform, value)
+        assert op
+        assert op.Get() == type(op.Get())(value)
+        assert op.GetPrecision() == (UsdGeom.XformOp.PrecisionFloat if state == "new" else precision)
+        assert list(xform.GetXformOpOrderAttr().Get()) == [op.GetOpName()]
+        assert Gf.IsClose(xform.GetLocalTransformation(), expected, 1e-6)
+        if state != "new":
+            assert op.GetAttr() == original.GetAttr()
+
+
+@pytest.mark.parametrize("op_type, setter, value, expected", _XFORM_OP_CASES)
+@pytest.mark.parametrize(
+    "state, reset_stack",
+    (
+        ("active", False),
+        ("active", True),
+        ("inactive", False),
+        ("inactive", True),
+        ("inverse", True),
+        ("before_reset", True),
+    ),
+)
+def test_set_or_add_xform_op_preserves_stack(stage, op_type, setter, value, expected, state, reset_stack):
+    xform = UsdGeom.Xform.Define(stage, "/World/xform")
+    pivot = xform.AddTranslateOp(opSuffix="pivot")
+    pivot.Set(Gf.Vec3d(7, 8, 9))
+    original = xform.AddXformOp(op_type, UsdGeom.XformOp.PrecisionDouble)
+    original.Set(original.GetAttr().GetTypeName().type.pythonClass(1))
+    rotation = xform.AddRotateZOp()
+    rotation.Set(30.0)
+    pivot_matrix = Gf.Matrix4d().SetTranslate(Gf.Vec3d(7, 8, 9))
+    rotation_matrix = Gf.Matrix4d().SetRotate(Gf.Rotation(Gf.Vec3d(0, 0, 1), 30))
+
+    if state == "active":
+        ops = [pivot, original, rotation]
+        expected_matrix = rotation_matrix * expected * pivot_matrix
+    elif state == "inverse":
+        inverse = xform.AddXformOp(op_type, original.GetPrecision(), isInverseOp=True)
+        ops = [pivot, inverse, rotation]
+        expected_matrix = expected * rotation_matrix * expected.GetInverse() * pivot_matrix
+    else:
+        ops = [pivot, rotation]
+        expected_matrix = expected * rotation_matrix * pivot_matrix
+    xform.SetXformOpOrder(ops, reset_stack)
+    if state == "before_reset":
+        xform.GetXformOpOrderAttr().Set([original.GetOpName()] + list(xform.GetXformOpOrderAttr().Get()))
+    expected_names = [op.GetOpName() for op in ops]
+    if state != "active":
+        expected_names.append(original.GetOpName())
+
+    for _ in range(2):
+        op = setter(xform, value)
+        assert op.GetAttr() == original.GetAttr()
+        assert op.GetPrecision() == UsdGeom.XformOp.PrecisionDouble
+        assert [item.GetOpName() for item in xform.GetOrderedXformOps()] == expected_names
+        assert xform.GetResetXformStack() == reset_stack
+        assert Gf.IsClose(xform.GetLocalTransformation(), expected_matrix, 1e-6)
+
+
+@pytest.mark.parametrize("reset_stack", (False, True))
+def test_set_or_add_scale_orient_translate_restores_inactive_ops(stage, reset_stack):
+    xform = UsdGeom.Xform.Define(stage, "/World/xform")
+    for op_type, _, _, _ in _XFORM_OP_CASES:
+        op = xform.AddXformOp(op_type, UsdGeom.XformOp.PrecisionDouble)
+        op.Set(op.GetAttr().GetTypeName().type.pythonClass(1))
+    xform.ClearXformOpOrder()
+    xform.SetResetXformStack(reset_stack)
+    translate = Gf.Vec3d(4, 5, 6)
+    scale = Gf.Vec3d(2, 3, 4)
+    orient = Gf.Quatd(0.5, 0.5, 0.5, 0.5)
+    expected = Gf.Matrix4d().SetScale(scale) * Gf.Matrix4d().SetRotate(orient) * Gf.Matrix4d().SetTranslate(translate)
+
+    for _ in range(2):
+        ops = physicsUtils.set_or_add_scale_orient_translate(xform, scale, orient, translate)
+        assert ops == xform.GetOrderedXformOps()
+        assert [op.GetOpName() for op in ops] == ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+        assert all(op.GetPrecision() == UsdGeom.XformOp.PrecisionDouble for op in ops)
+        assert xform.GetResetXformStack() == reset_stack
+        assert Gf.IsClose(xform.GetLocalTransformation(), expected, 1e-6)
+
+
 def test_transform_helpers(stage):
     prim = physicsUtils.add_rigid_xform(stage, "/World/x", position=Gf.Vec3f(1, 2, 3))
     assert physicsUtils.get_translation(prim) == Gf.Vec3f(1, 2, 3)

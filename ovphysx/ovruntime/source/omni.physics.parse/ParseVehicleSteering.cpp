@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-1 AC-2
+ */
+
 /**
  * @implements REQ-PARSE-VEH-WHEELATTACH-001
  * @covers AC-1 AC-2 AC-3
@@ -22,6 +26,8 @@
 
 #include <omni/physics/parse/IPhysicsSource.h>
 #include <omni/physics/parse/ParseApi.h>
+#include <omni/physics/parse/PreparedVehicle.h>
+#include <stdexcept>
 #include <omni/physics/parse/ParseContext.h>
 
 #include <carb/logging/Log.h>
@@ -38,73 +44,140 @@ namespace omni::physics::parse
 
 // @implements REQ-PARSE-VEH-WHEELATTACH-001
 // @covers AC-1 AC-2 AC-3
-DescPtr<SteeringBasicDesc> parseSteeringBasic(ParseContext& ctx, ObjectKey key,
-                                              const SteeringBasicInfo& info)
+PreparedSteeringBasic prepareSteeringBasic(ParseContext& ctx, ObjectKey key, const SteeringBasicInfo& info)
 {
-    IPhysicsSource& src = ctx.source();
-    const std::string ownerName(src.sourceKeyToString(key));
+    PreparedSteeringBasic input;
+    input.key = key;
+    input.info = info;
+    input.reads = prepareVehicleReads(ctx.source(), key, {
+        { "physxVehicleSteering:maxSteerAngle", VehicleAttributeType::floating }
+    });
+    return input;
+}
 
-    DescPtr<SteeringBasicDesc> desc = allocateDesc<SteeringBasicDesc>(ctx.descriptorAllocator());
+void prepareSteeringBasicStorage(const PreparedSteeringBasic& input, SteeringBasicDesc& output)
+{
+    output.wheels.resize(input.info.wheels.size());
+    output.angleMultipliers.resize(input.info.hasAngleMultipliers ? input.info.angleMultipliers.size() : 0);
+}
+
+bool fillSteeringBasic(const PreparedSteeringBasic& input, SteeringBasicDesc& output, VehicleFillStatus& status) noexcept
+{
+    PreparedVehicleReader src(input.reads, status);
+    [[maybe_unused]] ObjectKey key = input.key;
+    [[maybe_unused]] const SteeringBasicInfo& info = input.info;
+    VehicleOutputVector<typename decltype(output.wheels)::value_type> wheelsOut(output.wheels, vehicle_output_slot::wheels, status);
+    VehicleOutputVector<typename decltype(output.angleMultipliers)::value_type> angleMultipliersOut(output.angleMultipliers, vehicle_output_slot::angleMultipliers, status);
+
+
+    const std::string& ownerName = src.sourceKeyToString(key);
+
+    SteeringBasicDesc* desc = &output;
     desc->nonlinearCmdResponse = nullptr;  // wired by consumer adapter from multi-apply emit
 
-    if (!src.getAttribute(key, src.internToken("physxVehicleSteering:maxSteerAngle"), desc->maxSteerAngle))
+    if (!src.getAttribute(key, src.attribute("physxVehicleSteering:maxSteerAngle"), desc->maxSteerAngle))
     {
-        CARB_LOG_ERROR("Usd Physics: prim \"%s\" needs to have attribute \"maxSteerAngle\" defined.", ownerName.c_str());
-        return {};
+        VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\" needs to have attribute \"maxSteerAngle\" defined.", ownerName.c_str());
+        return false;
     }
 
-    desc->wheels.reserve(info.wheels.size());
+    wheelsOut.reserve(info.wheels.size());
     for (int w : info.wheels)
     {
         if (w < 0)
         {
-            CARB_LOG_ERROR("Usd Physics: attribute \"wheels\" of steering system \"%s\" can not hold negative values.",
+            VEHICLE_LOG_ERROR(status, "Usd Physics: attribute \"wheels\" of steering system \"%s\" can not hold negative values.",
                            ownerName.c_str());
-            return {};
+            return false;
         }
-        desc->wheels.push_back(w);
+        wheelsOut.push_back(w);
     }
 
     if (info.hasAngleMultipliers)
     {
-        if (info.angleMultipliers.size() != desc->wheels.size())
+        if (info.angleMultipliers.size() != wheelsOut.size())
         {
-            CARB_LOG_ERROR("Usd Physics: attribute \"angleMultipliers\" of steering system \"%s\" needs to have the same "
+            VEHICLE_LOG_ERROR(status, "Usd Physics: attribute \"angleMultipliers\" of steering system \"%s\" needs to have the same "
                            "number of entries as the \"wheels\" attribute or else should not be defined at all.",
                            ownerName.c_str());
-            return {};
+            return false;
         }
-        desc->angleMultipliers.reserve(info.angleMultipliers.size());
+        angleMultipliersOut.reserve(info.angleMultipliers.size());
         for (float m : info.angleMultipliers)
         {
             const float maxAngle = desc->maxSteerAngle * m;
             if (std::fabs(maxAngle) > static_cast<float>(M_PI))
             {
-                CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"angleMultipliers\": maxSteerAngle * angleMultiplier "
+                VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"angleMultipliers\": maxSteerAngle * angleMultiplier "
                                "has to in range [-pi, pi] for all steered wheels.", ownerName.c_str());
-                return {};
+                return false;
             }
-            desc->angleMultipliers.push_back(m);
+            angleMultipliersOut.push_back(m);
         }
     }
 
-    return desc;
+    return true;
 }
+
+void finishSteeringBasicStorage(SteeringBasicDesc& output, const VehicleFillStatus& status)
+{
+    output.wheels.resize(status.written[vehicle_output_slot::wheels]);
+    output.angleMultipliers.resize(status.written[vehicle_output_slot::angleMultipliers]);
+}
+
+DescPtr<SteeringBasicDesc> parseSteeringBasic(ParseContext& ctx, ObjectKey key, const SteeringBasicInfo& info)
+{
+    const PreparedSteeringBasic input = prepareSteeringBasic(ctx, key, info);
+    DescPtr<SteeringBasicDesc> output = allocateDesc<SteeringBasicDesc>(ctx.descriptorAllocator());
+    if (!output) return {};
+    prepareSteeringBasicStorage(input, *output);
+    VehicleFillStatus status;
+    const bool valid = fillSteeringBasic(input, *output, status);
+    status.report();
+    if (status.incomplete) throw std::logic_error("Incomplete prepared vehicle input or storage");
+    if (!valid) return {};
+    finishSteeringBasicStorage(*output, status);
+    return output;
+}
+
 
 // @implements REQ-PARSE-VEH-WHEELATTACH-001
 // @covers AC-1 AC-2 AC-3
-DescPtr<SteeringAckermannDesc> parseSteeringAckermann(ParseContext& ctx, ObjectKey key)
+PreparedSteeringAckermann prepareSteeringAckermann(ParseContext& ctx, ObjectKey key)
 {
-    IPhysicsSource& src = ctx.source();
-    const std::string ownerName(src.sourceKeyToString(key));
+    PreparedSteeringAckermann input;
+    input.key = key;
+    input.reads = prepareVehicleReads(ctx.source(), key, {
+        { "physxVehicleAckermannSteering:maxSteerAngle", VehicleAttributeType::floating },
+        { "physxVehicleAckermannSteering:strength", VehicleAttributeType::floating },
+        { "physxVehicleAckermannSteering:trackWidth", VehicleAttributeType::floating },
+        { "physxVehicleAckermannSteering:wheel0", VehicleAttributeType::integer },
+        { "physxVehicleAckermannSteering:wheel1", VehicleAttributeType::integer },
+        { "physxVehicleAckermannSteering:wheelBase", VehicleAttributeType::floating }
+    });
+    return input;
+}
 
-    DescPtr<SteeringAckermannDesc> desc = allocateDesc<SteeringAckermannDesc>(ctx.descriptorAllocator());
+void prepareSteeringAckermannStorage(const PreparedSteeringAckermann& input, SteeringAckermannDesc& output)
+{
+    (void)input; (void)output;
+}
+
+bool fillSteeringAckermann(const PreparedSteeringAckermann& input, SteeringAckermannDesc& output, VehicleFillStatus& status) noexcept
+{
+    PreparedVehicleReader src(input.reads, status);
+    [[maybe_unused]] ObjectKey key = input.key;
+
+
+    const std::string& ownerName = src.sourceKeyToString(key);
+
+    SteeringAckermannDesc* desc = &output;
     desc->nonlinearCmdResponse = nullptr;  // wired by consumer adapter from multi-apply emit
 
     auto readRequiredFloat = [&](const char* attrName, float& out) -> bool {
-        if (!src.getAttribute(key, src.internToken(attrName), out))
+        if (!src.getAttribute(key, src.attribute(attrName), out))
         {
-            CARB_LOG_ERROR("Usd Physics: prim \"%s\" needs to have attribute \"%s\" defined.",
+            VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\" needs to have attribute \"%s\" defined.",
                            ownerName.c_str(), attrName);
             return false;
         }
@@ -113,9 +186,9 @@ DescPtr<SteeringAckermannDesc> parseSteeringAckermann(ParseContext& ctx, ObjectK
 
     auto readRequiredInt = [&](const char* attrName, int& out) -> bool {
         int64_t iv;
-        if (!src.getAttribute(key, src.internToken(attrName), iv))
+        if (!src.getAttribute(key, src.attribute(attrName), iv))
         {
-            CARB_LOG_ERROR("Usd Physics: prim \"%s\" needs to have attribute \"%s\" defined.",
+            VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\" needs to have attribute \"%s\" defined.",
                            ownerName.c_str(), attrName);
             return false;
         }
@@ -123,51 +196,51 @@ DescPtr<SteeringAckermannDesc> parseSteeringAckermann(ParseContext& ctx, ObjectK
         return true;
     };
 
-    if (!readRequiredFloat("physxVehicleAckermannSteering:maxSteerAngle", desc->maxSteerAngle)) return {};
+    if (!readRequiredFloat("physxVehicleAckermannSteering:maxSteerAngle", desc->maxSteerAngle)) return false;
 
-    if (!readRequiredInt("physxVehicleAckermannSteering:wheel0", desc->wheel0)) return {};
+    if (!readRequiredInt("physxVehicleAckermannSteering:wheel0", desc->wheel0)) return false;
     if (desc->wheel0 < 0)
     {
-        CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"wheel0\" needs to be non-negative.", ownerName.c_str());
-        return {};
+        VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"wheel0\" needs to be non-negative.", ownerName.c_str());
+        return false;
     }
 
-    if (!readRequiredInt("physxVehicleAckermannSteering:wheel1", desc->wheel1)) return {};
+    if (!readRequiredInt("physxVehicleAckermannSteering:wheel1", desc->wheel1)) return false;
     if (desc->wheel1 < 0)
     {
-        CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"wheel1\" needs to be non-negative.", ownerName.c_str());
-        return {};
+        VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"wheel1\" needs to be non-negative.", ownerName.c_str());
+        return false;
     }
 
     if (desc->wheel0 == desc->wheel1)
     {
-        CARB_LOG_ERROR("Usd Physics: prim \"%s\": attributes \"wheel0\" and \"wheel1\" can not hold the "
+        VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attributes \"wheel0\" and \"wheel1\" can not hold the "
                        "same value.", ownerName.c_str());
-        return {};
+        return false;
     }
 
-    if (!readRequiredFloat("physxVehicleAckermannSteering:wheelBase", desc->wheelBase)) return {};
+    if (!readRequiredFloat("physxVehicleAckermannSteering:wheelBase", desc->wheelBase)) return false;
     if (!(desc->wheelBase > 0.0f))
     {
-        CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"wheelBase\" needs to be positive.", ownerName.c_str());
-        return {};
+        VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"wheelBase\" needs to be positive.", ownerName.c_str());
+        return false;
     }
 
-    if (!readRequiredFloat("physxVehicleAckermannSteering:trackWidth", desc->trackWidth)) return {};
+    if (!readRequiredFloat("physxVehicleAckermannSteering:trackWidth", desc->trackWidth)) return false;
     if (!(desc->trackWidth > 0.0f))
     {
-        CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"trackWidth\" needs to be positive.", ownerName.c_str());
-        return {};
+        VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"trackWidth\" needs to be positive.", ownerName.c_str());
+        return false;
     }
 
     {
         float v;
-        if (src.getAttribute(key, src.internToken("physxVehicleAckermannSteering:strength"), v))
+        if (src.getAttribute(key, src.attribute("physxVehicleAckermannSteering:strength"), v))
         {
             if (!(v >= 0.0f) || !(v < 1.0f + FLT_EPSILON))
             {
-                CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"strength\" out of range.", ownerName.c_str());
-                return {};
+                VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"strength\" out of range.", ownerName.c_str());
+                return false;
             }
             desc->strength = v;
         }
@@ -177,7 +250,28 @@ DescPtr<SteeringAckermannDesc> parseSteeringAckermann(ParseContext& ctx, ObjectK
         }
     }
 
-    return desc;
+    return true;
 }
+
+void finishSteeringAckermannStorage(SteeringAckermannDesc& output, const VehicleFillStatus& status)
+{
+    (void)output; (void)status;
+}
+
+DescPtr<SteeringAckermannDesc> parseSteeringAckermann(ParseContext& ctx, ObjectKey key)
+{
+    const PreparedSteeringAckermann input = prepareSteeringAckermann(ctx, key);
+    DescPtr<SteeringAckermannDesc> output = allocateDesc<SteeringAckermannDesc>(ctx.descriptorAllocator());
+    if (!output) return {};
+    prepareSteeringAckermannStorage(input, *output);
+    VehicleFillStatus status;
+    const bool valid = fillSteeringAckermann(input, *output, status);
+    status.report();
+    if (status.incomplete) throw std::logic_error("Incomplete prepared vehicle input or storage");
+    if (!valid) return {};
+    finishSteeringAckermannStorage(*output, status);
+    return output;
+}
+
 
 } // namespace omni::physics::parse

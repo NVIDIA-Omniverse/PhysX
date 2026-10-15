@@ -62,25 +62,6 @@
 
 using namespace physx;
 
-static PX_FORCE_INLINE void getGRBVertexIndices(PxU32& vref0, PxU32& vref1, PxU32& vref2, PxU32 triIndex, const Gu::TriangleMesh* triangleMesh)
-{
-	const PxU32 offset = triIndex * 3;
-	if(triangleMesh->has16BitIndices())
-	{
-		const PxU16* triInds = reinterpret_cast<PxU16*>(triangleMesh->mGRB_triIndices);
-		vref0 = triInds[offset + 0];
-		vref1 = triInds[offset + 1];
-		vref2 = triInds[offset + 2];
-	}
-	else
-	{
-		const PxU32* triInds = reinterpret_cast<PxU32*>(triangleMesh->mGRB_triIndices);
-		vref0 = triInds[offset + 0];
-		vref1 = triInds[offset + 1];
-		vref2 = triInds[offset + 2];
-	}
-}
-
 namespace physx
 {
 	extern "C" void initSimulationControllerKernels0();
@@ -142,22 +123,19 @@ namespace physx
 		mNewSoftBodyPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
 		mSoftBodyPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
 		mSoftBodyElementIndexPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
-		mRigidSoftBodyAttachments(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
-		mSoftBodyRigidFilterPairs(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
-		mSoftBodyRigidFilterPairsDirty(false),
-		mSoftBodySoftBodyAttachments(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
-		mSoftBodyClothAttachments(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
-		mSoftBodyClothTetVertFilterPairs(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
-		mSoftBodyClothFilterPairsDirty(false),
-		mClothClothAttachments(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
-		mClothClothVertTriFilterPairs(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
-		mClothClothFilterPairsDirty(false),
+		mVolumeRigidAttachments(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+		mVolumeVolumeAttachments(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+		mVolumeSurfaceAttachments(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+		mVolumeRigidFilters(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+		mVolumeVolumeFilters(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
+		mVolumeSurfaceFilters(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_SOFTBODY),
 		mNewFEMClothPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
 		mFEMClothPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
 		mFEMClothElementIndexPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
-		mClothRigidAttachments(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
-		mClothRigidFilterPairs(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
-		mClothRigidFilterPairsDirty(false),
+		mSurfaceRigidAttachments(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+		mSurfaceSurfaceAttachments(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+		mSurfaceRigidFilters(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
+		mSurfaceSurfaceFilters(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION_FEMCLOTH),
 		mFrozenPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
 		mUnfrozenPool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
 		mActivatePool(allocDesc.hostAlloc, PxsHeapStats::eSIMULATION),
@@ -199,6 +177,11 @@ namespace physx
 
 	PxgSimulationController::~PxgSimulationController()
 	{
+		// Deleting all topologies, even though they should already have been deleted by the prior surface
+		// removal.
+		for (PxU32 i = 0; i < mSurfaceTopologies.size(); ++i)
+			PX_DELETE(mSurfaceTopologies[i]);
+
 		PX_DELETE(mSimulationCore);
 
 		if (mPBDParticleSystemCore)
@@ -287,6 +270,12 @@ namespace physx
 
 	void PxgSimulationController::releaseSoftBody(Dy::DeformableVolume* deformableVolume)
 	{
+		const PxU32 remapId = deformableVolume->getGpuRemapId();
+
+		mVolumeRigidFilters.release(remapId);
+		mVolumeVolumeFilters.release(remapId);
+		mVolumeSurfaceFilters.release(remapId);
+
 		mBodySimManager.releaseSoftBody(deformableVolume);
 	}
 
@@ -302,19 +291,19 @@ namespace physx
 			const PxU32 numSoftbodies = mBodySimManager.mTotalNumSoftBodies;
 			mSimulationCore->setSoftBodyWakeCounter(deformableVolume->getGpuRemapId(), deformableVolume->getCore().wakeCounter, numSoftbodies);
 			
-			for (PxU32 i = 0; i < deformableVolume->mRigidVolumeAttachments.size(); ++i)
+			for (PxU32 i = 0; i < deformableVolume->mRigidAttachments.size(); ++i)
 			{
-				mRigidSoftBodyAttachments.activateAttachment(deformableVolume->mRigidVolumeAttachments[i]);
+				mVolumeRigidAttachments.activateAttachments(deformableVolume->mRigidAttachments[i]);
 			}
 
-			for (PxU32 i = 0; i < deformableVolume->mSurfaceVolumeAttachments.size(); ++i)
+			for (PxU32 i = 0; i < deformableVolume->mSurfaceAttachments.size(); ++i)
 			{
-				mSoftBodyClothAttachments.activateAttachment(deformableVolume->mSurfaceVolumeAttachments[i]);
+				mVolumeSurfaceAttachments.activateAttachments(deformableVolume->mSurfaceAttachments[i]);
 			}
 
-			for (PxU32 i = 0; i < deformableVolume->mVolumeVolumeAttachments.size(); ++i)
+			for (PxU32 i = 0; i < deformableVolume->mVolumeAttachments.size(); ++i)
 			{
-				mSoftBodySoftBodyAttachments.activateAttachment(deformableVolume->mVolumeVolumeAttachments[i]);
+				mVolumeVolumeAttachments.activateAttachments(deformableVolume->mVolumeAttachments[i]);
 			}
 		}
 	}
@@ -323,19 +312,19 @@ namespace physx
 	{
 		if (mBodySimManager.deactivateSoftbody(deformableVolume))
 		{
-			for (PxU32 i = 0; i < deformableVolume->mRigidVolumeAttachments.size(); ++i)
+			for (PxU32 i = 0; i < deformableVolume->mRigidAttachments.size(); ++i)
 			{
-				mRigidSoftBodyAttachments.deactivateAttachment(deformableVolume->mRigidVolumeAttachments[i]);
+				mVolumeRigidAttachments.deactivateAttachments(deformableVolume->mRigidAttachments[i]);
 			}
 
-			for (PxU32 i = 0; i < deformableVolume->mSurfaceVolumeAttachments.size(); ++i)
+			for (PxU32 i = 0; i < deformableVolume->mSurfaceAttachments.size(); ++i)
 			{
-				mSoftBodyClothAttachments.deactivateAttachment(deformableVolume->mSurfaceVolumeAttachments[i]);
+				mVolumeSurfaceAttachments.deactivateAttachments(deformableVolume->mSurfaceAttachments[i]);
 			}
 
-			for (PxU32 i = 0; i < deformableVolume->mVolumeVolumeAttachments.size(); ++i)
+			for (PxU32 i = 0; i < deformableVolume->mVolumeAttachments.size(); ++i)
 			{
-				mSoftBodySoftBodyAttachments.deactivateAttachment(deformableVolume->mVolumeVolumeAttachments[i]);
+				mVolumeVolumeAttachments.deactivateAttachments(deformableVolume->mVolumeAttachments[i]);
 			}
 		}
 	}
@@ -380,11 +369,32 @@ namespace physx
 	void PxgSimulationController::addFEMCloth(Dy::DeformableSurface* deformableSurface, const PxNodeIndex& nodeIndex)
 	{
 		createDeformableSurfaceCore();
+
 		mBodySimManager.addFEMCloth(deformableSurface, nodeIndex.index());
+
+		// Compute additional mesh topology information for surface deformables. This is done on adding the surface to the
+		// scene such that then added element collision filters can be setup using that information (specifically triangle
+		// edge ownership).
+		const PxU32 surfaceId = deformableSurface->getGpuRemapId();
+		if (mSurfaceTopologies.size() <= surfaceId)
+			mSurfaceTopologies.resize(surfaceId + 1, NULL);
+
+		PX_ASSERT(mSurfaceTopologies[surfaceId] == NULL);
+		PxsShapeCore& shapeCore = deformableSurface->getShapeCore();
+		const Gu::TriangleMesh* triangleMesh = _getMeshData(shapeCore.mGeometry.get<PxTriangleMeshGeometry>());
+		mSurfaceTopologies[surfaceId] = PX_NEW(PxgDeformableSurfaceTopology)(*triangleMesh);
 	}
 
 	void PxgSimulationController::releaseFEMCloth(Dy::DeformableSurface* deformableSurface)
 	{
+		const PxU32 surfaceId = deformableSurface->getGpuRemapId();
+
+		mSurfaceRigidFilters.release(surfaceId);
+		mSurfaceSurfaceFilters.release(surfaceId);
+
+		if (surfaceId < mSurfaceTopologies.size())
+			PX_DELETE(mSurfaceTopologies[surfaceId]);
+
 		mBodySimManager.releaseFEMCloth(deformableSurface);
 
 		if (mFEMClothCore)
@@ -402,14 +412,14 @@ namespace physx
 		{
 			const PxU32 numClothes = mBodySimManager.mTotalNumFEMCloths;
 			mSimulationCore->setFEMClothWakeCounter(deformableSurface->getGpuRemapId(), deformableSurface->getCore().wakeCounter, numClothes);
-			for (PxU32 i = 0; i < deformableSurface->mAttachmentHandles.size(); ++i)
+			for (PxU32 i = 0; i < deformableSurface->mRigidAttachments.size(); ++i)
 			{
-				mClothRigidAttachments.activateAttachment(deformableSurface->mAttachmentHandles[i]);
+				mSurfaceRigidAttachments.activateAttachments(deformableSurface->mRigidAttachments[i]);
 			}
 
-			for (PxU32 i = 0; i < deformableSurface->mSurfaceSurfaceAttachments.size(); ++i)
+			for (PxU32 i = 0; i < deformableSurface->mSurfaceAttachments.size(); ++i)
 			{
-				mClothClothAttachments.activateAttachment(deformableSurface->mSurfaceSurfaceAttachments[i]);
+				mSurfaceSurfaceAttachments.activateAttachments(deformableSurface->mSurfaceAttachments[i]);
 			}
 		}
 	}
@@ -418,14 +428,14 @@ namespace physx
 	{
 		if (mBodySimManager.deactivateCloth(deformableSurface))
 		{
-			for (PxU32 i = 0; i < deformableSurface->mAttachmentHandles.size(); ++i)
+			for (PxU32 i = 0; i < deformableSurface->mRigidAttachments.size(); ++i)
 			{
-				mClothRigidAttachments.deactivateAttachment(deformableSurface->mAttachmentHandles[i]);
+				mSurfaceRigidAttachments.deactivateAttachments(deformableSurface->mRigidAttachments[i]);
 			}
 
-			for (PxU32 i = 0; i < deformableSurface->mSurfaceSurfaceAttachments.size(); ++i)
+			for (PxU32 i = 0; i < deformableSurface->mSurfaceAttachments.size(); ++i)
 			{
-				mClothClothAttachments.deactivateAttachment(deformableSurface->mSurfaceSurfaceAttachments[i]);
+				mSurfaceSurfaceAttachments.deactivateAttachments(deformableSurface->mSurfaceAttachments[i]);
 			}
 		}
 	}
@@ -1642,9 +1652,13 @@ namespace physx
 			}
 
 			const Dy::DeformableVolumeCore& core = deformableVolume->getCore();
+			// SDK indices can differ after material reuse or across scenes.
+			PxArray<PxU16> gpuMaterialHandles(core.materialHandles.size());
+			mDynamicContext->getNarrowphaseCore()->mapMaterialIndices<PxsDeformableVolumeMaterialData>(
+				gpuMaterialHandles.begin(), core.materialHandles.begin(), core.materialHandles.size());
 
 			PxgSoftBodyUtil::initialTetData(gpuSoftBody, colTetMesh, simTetMesh, softBodyAuxData, 
-				core.materialHandles.begin(), hostAlloc);
+				gpuMaterialHandles.begin(), hostAlloc);
 
 			PxU8* tMem = reinterpret_cast<PxU8*>(hostAlloc.allocate(byteSize, PxsHeapStats::eSIMULATION_SOFTBODY, PX_FL));
 			mNewTetMeshByteSizePool[i] = byteSize;
@@ -1745,7 +1759,7 @@ namespace physx
 			const PxU32 nbTriangles = triangleMesh->getNbTrianglesFast();
 			const PxU32 nbVerts = triangleMesh->getNbVerticesFast();
 
-			gpuFEMCloth.mTriangleVertexIndices =
+			gpuFEMCloth.mTriangleVertexIndices_ownedEdges =
 				reinterpret_cast<uint4*>(hostAlloc.allocate(sizeof(uint4) * nbTriangles, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
 
 			gpuFEMCloth.mMaterialIndices = reinterpret_cast<PxU16*>(
@@ -1753,8 +1767,11 @@ namespace physx
 			gpuFEMCloth.mDynamicFrictions = reinterpret_cast<float*>(
 				hostAlloc.allocate(sizeof(float) * nbVerts, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
 
-			const PxU16* materialHandles = core.materialHandles.begin();
 			const PxU32 nbMaterials = core.materialHandles.size();
+			PxArray<PxU16> gpuMaterialHandles(nbMaterials);
+			npCore->mapMaterialIndices<PxsDeformableSurfaceMaterialData>(
+				gpuMaterialHandles.begin(), core.materialHandles.begin(), nbMaterials);
+			const PxU16* materialHandles = gpuMaterialHandles.begin();
 
 			PxU8* tMem = reinterpret_cast<PxU8*>(
 				hostAlloc.allocate(sizeof(PxU8) * byteSize, PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
@@ -1762,13 +1779,18 @@ namespace physx
 			gpuFEMCloth.mTriMeshData = tMem;
 
 
-			PxArray<uint2> trianglePairTriangleIndices;
-			PxArray<uint4> trianglePairVertexIndices;
 
 			// initial "unordered" triangle and triangle-pair data
+			PxgDeformableSurfaceTopology& topology = *mSurfaceTopologies[deformableSurface->getGpuRemapId()];
+
+			// The topology owns the bending pairs until the upload releases them, so they are used in
+			// place rather than copied out.
+			PxArray<uint2>& trianglePairTriangleIndices = topology.getTrianglePairTriangleIndices();
+			PxArray<uint4>& trianglePairVertexIndices = topology.getTrianglePairVertexIndices();
+
 			const PxU32 nbTrianglePairs =
-				PxgFEMClothUtil::initialTriangleData(gpuFEMCloth, trianglePairTriangleIndices, trianglePairVertexIndices, triangleMesh,
-													 materialHandles, materials, nbMaterials, hostAlloc);
+				PxgFEMClothUtil::initialTriangleData(gpuFEMCloth, triangleMesh, topology, materialHandles, materials, nbMaterials,
+													 hostAlloc);
 
 			PxArray<PxU32> sharedTrianglePairs;
 			PxArray<PxU32> nonSharedTriangles;
@@ -2479,31 +2501,8 @@ namespace physx
 
 		mCudaContextManager->acquireContext();
 
-		// Refresh per-attachment refcounts (mass-splitting) into the staging array before the DMA-up
-		// of mRigidSoftBodyAttachments below. The persistent count map on the manager is kept in
-		// sync at activate/deactivate time; this writes the derived per-attachment field.
-		if (mRigidSoftBodyAttachments.mAttachmentsDirty || mRigidSoftBodyAttachments.mActiveAttachmentsDirty)
-			mRigidSoftBodyAttachments.flushRefCountsToAttachments();
-
-		SoftBodyAttachmentAndFilterData dmaData;
-		dmaData.rigidAttachments = &mRigidSoftBodyAttachments.mAttachments;
-		dmaData.rigidFilterPairs = &mSoftBodyRigidFilterPairs;
-		dmaData.dirtyRigidAttachments = mRigidSoftBodyAttachments.mAttachmentsDirty;
-		dmaData.dirtyRigidFilterPairs = mSoftBodyRigidFilterPairsDirty;
-		dmaData.activeRigidAttachments = &mRigidSoftBodyAttachments.mActiveAttachments;
-		dmaData.dirtyActiveRigidAttachments = mRigidSoftBodyAttachments.mActiveAttachmentsDirty;
-		dmaData.softBodyAttachments = &mSoftBodySoftBodyAttachments.mAttachments;
-		dmaData.dirtySoftBodyAttachments = mSoftBodySoftBodyAttachments.mAttachmentsDirty;
-		dmaData.activeSoftBodyAttachments = &mSoftBodySoftBodyAttachments.mActiveAttachments;
-		dmaData.dirtyActiveSoftBodyAttachments = mSoftBodySoftBodyAttachments.mActiveAttachmentsDirty;
-
-		dmaData.dirtyDeformableVolumeForFilterPairs = &mDirtyDeformableVolumeForFilterPairs;
-		dmaData.clothAttachments = &mSoftBodyClothAttachments.mAttachments;
-		dmaData.clothFilterPairs = &mSoftBodyClothTetVertFilterPairs;
-		dmaData.dirtyClothAttachments = mSoftBodyClothAttachments.mAttachmentsDirty;
-		dmaData.dirtyClothFilterPairs = mSoftBodyClothFilterPairsDirty;
-		dmaData.activeClothAttachments = &mSoftBodyClothAttachments.mActiveAttachments;
-		dmaData.dirtyActiveClothAttachments = mSoftBodyClothAttachments.mActiveAttachmentsDirty;
+		// Rebuild the mass-splitting counts before the DMA-up below.
+		mVolumeRigidAttachments.buildRigidRefCounts();
 
 		mSimulationCore->gpuMemDmaUpSoftBodies(mNewSoftBodyPool,
 			mNewTetMeshByteSizePool.begin(),
@@ -2515,22 +2514,26 @@ namespace physx
 			mSoftBodyElementIndexPool,
 			mSoftBodyNodeIndexPool,
 			mBodySimManager,
-			dmaData
+			mVolumeRigidAttachments,
+			mVolumeVolumeAttachments,
+			mVolumeSurfaceAttachments,
+			mVolumeRigidFilters,
+			mVolumeVolumeFilters,
+			mVolumeSurfaceFilters
 			);
 
-		mRigidSoftBodyAttachments.mAttachmentsDirty = false;
-		mRigidSoftBodyAttachments.mActiveAttachmentsDirty = false;
-		mSoftBodyRigidFilterPairsDirty = false;
+		mVolumeRigidAttachments.mAttachmentsDirty = false;
+		mVolumeRigidAttachments.mActiveAttachmentsDirty = false;
 
-		mSoftBodyClothAttachments.mAttachmentsDirty = false;
-		mSoftBodyClothAttachments.mActiveAttachmentsDirty = false;
-		mSoftBodyClothFilterPairsDirty = false;
+		mVolumeSurfaceAttachments.mAttachmentsDirty = false;
+		mVolumeSurfaceAttachments.mActiveAttachmentsDirty = false;
 
-		mSoftBodySoftBodyAttachments.mAttachmentsDirty = false;
-		mSoftBodySoftBodyAttachments.mActiveAttachmentsDirty = false;
+		mVolumeVolumeAttachments.mAttachmentsDirty = false;
+		mVolumeVolumeAttachments.mActiveAttachmentsDirty = false;
 
-		//clear dirty soft body filter pairs
-		mDirtyDeformableVolumeForFilterPairs.forceSize_Unsafe(0);
+		mVolumeRigidFilters.clearDirtyIds();
+		mVolumeVolumeFilters.clearDirtyIds();
+		mVolumeSurfaceFilters.clearDirtyIds();
 
 		PxU32* activeSoftbodies = mBodySimManager.mActiveSoftbodies.begin();
 
@@ -2557,11 +2560,10 @@ namespace physx
 
 		mCudaContextManager->acquireContext();
 
-		// Refresh per-attachment refcounts (mass-splitting) into the staging array before the DMA-up
-		// of mClothRigidAttachments below; mirror of the SB path.
-		if (mClothRigidAttachments.mAttachmentsDirty || mClothRigidAttachments.mActiveAttachmentsDirty)
-			mClothRigidAttachments.flushRefCountsToAttachments();
+		// Rebuild the mass-splitting counts before the DMA-up below.
+		mSurfaceRigidAttachments.buildRigidRefCounts();
 
+		// Volume-surface attachments and filters are uploaded by gpuMemDmaUpSoftBodies.
 		mSimulationCore->gpuMemDmaUpFEMCloths(
 			mNewFEMClothPool,
 			mNewTriangleMeshByteSizePool.begin(),
@@ -2573,26 +2575,19 @@ namespace physx
 			mFEMClothElementIndexPool,
 			mFEMClothNodeIndexPool,
 			mBodySimManager,
-			mClothRigidAttachments.mAttachments,
-			mClothRigidFilterPairs,
-			mClothRigidAttachments.mAttachmentsDirty,
-			mClothRigidFilterPairsDirty,
-			mClothRigidAttachments.mActiveAttachments,
-			mClothRigidAttachments.mActiveAttachmentsDirty,
-			mClothClothAttachments.mAttachments,
-			mClothClothVertTriFilterPairs,
-			mClothClothAttachments.mAttachmentsDirty,
-			mClothClothFilterPairsDirty,
-			mClothClothAttachments.mActiveAttachments,
-			mClothClothAttachments.mActiveAttachmentsDirty
+			mSurfaceRigidAttachments,
+			mSurfaceSurfaceAttachments,
+			mSurfaceRigidFilters,
+			mSurfaceSurfaceFilters,
+			mSurfaceTopologies
 		);
 
-		mClothRigidAttachments.mAttachmentsDirty = false;
-		mClothRigidAttachments.mActiveAttachmentsDirty = false;
-		mClothRigidFilterPairsDirty = false;
-		mClothClothAttachments.mAttachmentsDirty = false;
-		mClothClothFilterPairsDirty = false;
-		mClothClothAttachments.mActiveAttachmentsDirty = false;
+		mSurfaceRigidAttachments.mAttachmentsDirty = false;
+		mSurfaceRigidAttachments.mActiveAttachmentsDirty = false;
+		mSurfaceRigidFilters.clearDirtyIds();
+		mSurfaceSurfaceFilters.clearDirtyIds();
+		mSurfaceSurfaceAttachments.mAttachmentsDirty = false;
+		mSurfaceSurfaceAttachments.mActiveAttachmentsDirty = false;
 
 		mFEMClothCore->preIntegrateSystems(nbActiveFEMCloths, gravity, dt);
 
@@ -3002,1130 +2997,268 @@ namespace physx
 		mController.copyToGpuBodySim(mNewBodySimOffset, mStartIndex, mNbToProcess);
 	}
 
-	PxU32 PxgSimulationController::addRigidAttachmentInternal(const PxU32 nonRigidId, const PxU32 elemId, const bool isVertex, const PxVec4& barycentric, PxsRigidBody* rigidBody,
-		const PxNodeIndex& rigidNodeIndex, const PxVec3& actorSpacePose, AttachmentManager<PxgFEMRigidAttachment>& attachments, bool addToActive)
+	// Adds a batch of rigid attachments for one deformable, recording the batch handle on the actor so that
+	// the attachments can be activated when the actor is woken up.
+	PxU32 PxgSimulationController::addVolumeRigidAttachments(Dy::DeformableVolume* deformableVolume, PxsRigidBody* rigidBody, const PxNodeIndex& rigidNodeIndex,
+		PxDeformableAttachmentTargetType::Enum feature, const PxU32* indices, const PxVec4* barycentrics,
+		const PxTransform& frame, const PxVec4* coords, PxU32 count, const bool isActive)
 	{
-		PX_ASSERT(isVertex == barycentric.isZero());
+		const PxU32 handle = mVolumeRigidAttachments.addVolumeRigidAttachments(deformableVolume->getGpuRemapId(), feature,
+			indices, barycentrics, rigidBody, rigidNodeIndex, frame, coords, count, isActive);
 
-		PxgFEMRigidAttachment attachment;
-		const PxVec3 localPose = rigidBody ? rigidBody->getCore().getBody2Actor().transformInv(actorSpacePose) : actorSpacePose;
-		attachment.localPose0 = localPose;
-		attachment.index1 = PxEncodeSoftBodyIndex(nonRigidId, elemId);
-		PxU32 handle = attachments.mBaseHandle++;
-		attachment.index2 = handle;
-		attachment.index0 = reinterpret_cast<const PxU64&>(rigidNodeIndex);
-		attachment.baryOrType1.x = isVertex ? 0.0f : barycentric.x;
-		attachment.baryOrType1.y = isVertex ? 0.0f : barycentric.y;
-		attachment.baryOrType1.z = isVertex ? 0.0f : barycentric.z;
-		attachment.baryOrType1.w = isVertex ? 0.0f : barycentric.w;
-
-		attachments.addAttachment(attachment, handle);
-		if (addToActive)
-			attachments.activateAttachment(handle);
+		deformableVolume->mRigidAttachments.pushBack(handle);
 
 		return handle;
 	}
 
-	template<class FilterPair, class FilterPairArray>
-	void addFilterPairInternal(FilterPair& pair, FilterPairArray& filterPairs,
-		PxArray<PxU32>& references, bool& dirtyFlag)
+	void PxgSimulationController::removeVolumeRigidAttachments(Dy::DeformableVolume* deformableVolume, PxU32 handle)
 	{
-		PxI32 left = 0, right = filterPairs.size();
-		while (left < right)
-		{
-			PxI32 mid = (left + right) / 2;
-			PxI32 cmp = pair.compare(filterPairs[mid]);
-			if (cmp < 1)
-				right = mid;
-			else
-				left = mid + 1;
-		}
-
-		if (PxU32(left) == filterPairs.size() || filterPairs[left].compare(pair) != 0)
-		{
-			filterPairs.insert();
-			references.insert();
-
-			for (PxI32 j = filterPairs.size() - 1; j > left; --j)
-			{
-				filterPairs[j] = filterPairs[j - 1];
-				references[j] = references[j - 1];
-			}
-
-			filterPairs[left] = pair;
-			references[left] = 1;
-			dirtyFlag = true;
-		}
-		else
-			references[left]++;
+		mVolumeRigidAttachments.removeAttachments(handle);
+		deformableVolume->mRigidAttachments.findAndReplaceWithLast(handle);
 	}
 
-	template<class FilterPair, class FilterPairArray>
-	void releaseFilterPairInternal(FilterPair& pair, FilterPairArray& filterPairs,
-		PxArray<PxU32>& references, bool& dirtyFlag, PxU32 refCount = 1)
+	PxU32 PxgSimulationController::addVolumeVolumeAttachments(Dy::DeformableVolume* deformableVolume0,
+		PxDeformableAttachmentTargetType::Enum feature0, const PxU32* indices0, const PxVec4* barycentrics0,
+		Dy::DeformableVolume* deformableVolume1, PxDeformableAttachmentTargetType::Enum feature1,
+		const PxU32* indices1, const PxVec4* barycentrics1, PxU32 count, const bool addToActive)
 	{
+		const PxU32 handle = mVolumeVolumeAttachments.addVolumeVolumeAttachments(deformableVolume0->getGpuRemapId(),
+			feature0, indices0, barycentrics0, deformableVolume1->getGpuRemapId(), feature1, indices1, barycentrics1,
+			count, addToActive);
 
-		PxI32 left = 0, right = filterPairs.size();
-		while (left < right)
-		{
-			PxI32 mid = (left + right) / 2;
-			PxI32 cmp = pair.compare(filterPairs[mid]);
-			if (cmp < 0)
-				right = mid - 1;
-			else if (cmp > 0)
-				left = mid + 1;
-			else
-			{
-				left = right = mid;
-				break;
-			}
-		}
-
-		if (PxU32(left) < filterPairs.size() && filterPairs[left].compare(pair) == 0)
-		{
-			if (references[left] == refCount)
-			{
-				//Found so we remove...
-				for (PxI32 j = left, size = PxI32(filterPairs.size() - 1); j < size; ++j)
-				{
-					filterPairs[j] = filterPairs[j + 1];
-					references[j] = references[j + 1];
-				}
-				filterPairs.forceSize_Unsafe(filterPairs.size() - 1);
-				references.forceSize_Unsafe(references.size() - 1);
-				dirtyFlag = true;
-			}
-			else
-				references[left] -= refCount;
-		}
-	}
-
-	void PxgSimulationController::computeSoftBodySimMeshData(Dy::DeformableVolume* deformableVolume, PxU32 tetId, const PxVec4& tetBarycentric, PxU32& outTetId, PxVec4& outTetBarycentric)
-	{
-		//Convert from coll mesh to sim mesh now...
-		const Gu::BVTetrahedronMesh* tetMesh = static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume->getCollisionMesh());
-		const Gu::TetrahedronMesh* simMesh = static_cast<const Gu::TetrahedronMesh*>(deformableVolume->getSimulationMesh());
-		const Gu::DeformableVolumeAuxData* simulationState = static_cast<const Gu::DeformableVolumeAuxData*>(deformableVolume->getAuxData());
-
-		Gu::convertDeformableVolumeCollisionToSimMeshTets(*simMesh, *simulationState, *tetMesh, tetId, tetBarycentric, outTetId, outTetBarycentric, false);
-	}
-
-	void PxgSimulationController::addTetRigidFilter(Dy::DeformableVolume* deformableVolume,
-		const PxNodeIndex& rigidNodeIndex, PxU32 tetId)
-	{
-		if (tetId == PX_MAX_NB_DEFORMABLE_VOLUME_TET)
-		{
-			return;
-		}
-
-		PxU32 softBodyId = deformableVolume->getGpuRemapId();
-
-		//Convert from coll mesh to sim mesh now...
-		const Gu::BVTetrahedronMesh* tetMesh = static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume->getCollisionMesh());
-		//Map from CPU tet ID (corresponds to the ID in the BV4 mesh) to the GPU tet ID (corresponds to the ID in the BV32 mesh)
-		tetId = (tetId == PX_MAX_NB_DEFORMABLE_VOLUME_TET) ? tetId : static_cast<PxU32*>(tetMesh->mGRB_faceRemapInverse)[tetId];
-
-		PxU32 tetHandle = PxEncodeSoftBodyIndex(softBodyId, tetId); //soft body and tet index
-
-		PxgRigidFilterPair pair;
-		pair.index1 = tetHandle;
-		pair.index0 = reinterpret_cast<const PxU64&>(rigidNodeIndex);
-
-		addFilterPairInternal(pair, mSoftBodyRigidFilterPairs, mSoftBodyRigidFilterRefs, mSoftBodyRigidFilterPairsDirty);
-	}
-
-	void PxgSimulationController::removeTetRigidFilter(Dy::DeformableVolume* deformableVolume, const PxNodeIndex& rigidNodeIndex,
-		PxU32 tetId)
-	{
-		if (tetId == PX_MAX_NB_DEFORMABLE_VOLUME_TET)
-		{
-			return;
-		}
-
-		PxU32 softBodyId = deformableVolume->getGpuRemapId();
-		//Convert from coll mesh to sim mesh now...
-		const Gu::BVTetrahedronMesh* tetMesh = static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume->getCollisionMesh());
-		//Map from CPU tet ID (corresponds to the ID in the BV4 mesh) to the GPU tet ID (corresponds to the ID in the BV32 mesh)
-		tetId = (tetId == PX_MAX_NB_DEFORMABLE_VOLUME_TET) ? tetId : static_cast<PxU32*>(tetMesh->mGRB_faceRemapInverse)[tetId];
-
-		PxU32 tetHandle = PxEncodeSoftBodyIndex(softBodyId, tetId); //soft body and tet index
-
-		PxgRigidFilterPair pair;
-		pair.index1 = tetHandle;
-		pair.index0 = reinterpret_cast<const PxU64&>(rigidNodeIndex);
-		releaseFilterPairInternal(pair, mSoftBodyRigidFilterPairs, mSoftBodyRigidFilterRefs, mSoftBodyRigidFilterPairsDirty);
-	}
-
-	PxU32 PxgSimulationController::addTetRigidAttachment(Dy::DeformableVolume* deformableVolume, PxsRigidBody* rigidBody, const PxNodeIndex& rigidNodeIndex, PxU32 tetId, const PxVec4& barycentric,
-		const PxVec3& actorSpacePose, const bool isActive, bool doConversion)
-	{
-		PxU32 simTetIdx = tetId;
-		PxVec4 simBarycentric = barycentric;
-		if (doConversion)
-		{
-			computeSoftBodySimMeshData(deformableVolume, tetId, barycentric, simTetIdx, simBarycentric);
-		}
-
-		const bool isVertex = false;
-		PxU32 handle = addRigidAttachmentInternal(deformableVolume->getGpuRemapId(), simTetIdx, isVertex, simBarycentric, rigidBody, rigidNodeIndex, actorSpacePose, mRigidSoftBodyAttachments, isActive);
-		deformableVolume->mRigidVolumeAttachments.pushBack(handle);
+		deformableVolume0->mVolumeAttachments.pushBack(handle);
 
 		return handle;
 	}
 
-	void PxgSimulationController::addSoftBodyFilter(Dy::DeformableVolume* deformableVolume0, Dy::DeformableVolume* deformableVolume1, PxU32 tetId0,
-		PxU32 tetId1)
+	void PxgSimulationController::removeVolumeVolumeAttachments(Dy::DeformableVolume* deformableVolume0, PxU32 handle)
 	{
-		PX_COMPILE_TIME_ASSERT(sizeof(Dy::VolumeVolumeFilter) == sizeof(PxgNonRigidFilterPair));
-		const PxU32 softBodyId0 = deformableVolume0->getGpuRemapId();
-		const PxU32 softBodyId1 = deformableVolume1->getGpuRemapId();
-
-		if (deformableVolume0->mVolumeVolumeFilterPairs == NULL)
-		{
-			deformableVolume0->mVolumeVolumeFilterPairs = PX_PLACEMENT_NEW(PX_ALLOCATE(Dy::VolumeVolumeFilterArray, 1, "VolumeVolumeFilterArray"), Dy::VolumeVolumeFilterArray)(mAllocDesc.hostAlloc);
-		
-			deformableVolume0->mDirtyVolumeForFilterPairs = &mDirtyDeformableVolumeForFilterPairs;
-		}
-
-		if (deformableVolume1->mVolumeVolumeFilterPairs == NULL)
-		{
-			deformableVolume1->mVolumeVolumeFilterPairs = PX_PLACEMENT_NEW(PX_ALLOCATE(Dy::VolumeVolumeFilterArray, 1, "VolumeVolumeFilterArray"), Dy::VolumeVolumeFilterArray)(mAllocDesc.hostAlloc);
-		
-			deformableVolume1->mDirtyVolumeForFilterPairs = &mDirtyDeformableVolumeForFilterPairs;
-		}
-
-		//Convert from coll mesh to sim mesh now...
-		const Gu::BVTetrahedronMesh* tetMesh0 = static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume0->getCollisionMesh());
-		//Map from CPU tet ID (corresponds to the ID in the BV4 mesh) to the GPU tet ID (corresponds to the ID in the BV32 mesh)
-		tetId0 = (tetId0 == PX_MAX_NB_DEFORMABLE_VOLUME_TET) ? tetId0: static_cast<PxU32*>(tetMesh0->mGRB_faceRemapInverse)[tetId0];
-
-		//Convert from coll mesh to sim mesh now...
-		const Gu::BVTetrahedronMesh* tetMesh1 = static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume1->getCollisionMesh());
-		//Map from CPU tet ID (corresponds to the ID in the BV4 mesh) to the GPU tet ID (corresponds to the ID in the BV32 mesh)
-		tetId1 = (tetId1 == PX_MAX_NB_DEFORMABLE_VOLUME_TET) ? tetId1 : static_cast<PxU32*>(tetMesh1->mGRB_faceRemapInverse)[tetId1];
-
-		const PxU32 colTetHandle0 = PxEncodeSoftBodyIndex(softBodyId0, tetId0);
-		const PxU32 colTetHandle1 = PxEncodeSoftBodyIndex(softBodyId1, tetId1);
-		
-		if (tetId0 != PX_MAX_NB_DEFORMABLE_VOLUME_TET)
-		{
-			uint4* collInds0 = reinterpret_cast<uint4*>(tetMesh0->mGRB_tetraIndices);
-			Cm::PinnableArray<PxgNonRigidFilterPair>* softBody0FilterPairs = reinterpret_cast<Cm::PinnableArray<PxgNonRigidFilterPair>*>(deformableVolume0->mVolumeVolumeFilterPairs);
-			uint4 ind0 = collInds0[tetId0];
-			int* index0 = reinterpret_cast<int*>(&ind0);
-			for (PxU32 i = 0; i < 4; ++i)
-			{
-				const PxU32 colTetVertHandle = PxEncodeSoftBodyIndex(softBodyId0, index0[i]);
-				//create attachment pair for collision filtering
-				PxgNonRigidFilterPair pair;
-				pair.index0 = colTetVertHandle;
-				pair.index1 = colTetHandle1;
-
-				//printf("CPU softbodyId0 %i vertIdx %i softbodyId1 %i, primitiveIdx %i\n", softBodyId0, index0[i], softBodyId1, tetId1);
-				addFilterPairInternal(pair, *softBody0FilterPairs, deformableVolume0->mVolumeVolumeAttachmentIdReferences, deformableVolume0->mFilterDirty);
-			}
-		}
-
-		if (tetId1 != PX_MAX_NB_DEFORMABLE_VOLUME_TET)
-		{
-			uint4* collInds1 = reinterpret_cast<uint4*>(tetMesh1->mGRB_tetraIndices);
-			Cm::PinnableArray<PxgNonRigidFilterPair>* softBody1FilterPairs = reinterpret_cast<Cm::PinnableArray<PxgNonRigidFilterPair>*>(deformableVolume1->mVolumeVolumeFilterPairs);
-			uint4 ind1 = collInds1[tetId1];
-			int* index1 = reinterpret_cast<int*>(&ind1);
-			for (PxU32 i = 0; i < 4; ++i)
-			{
-				const PxU32 colTetVertHandle = PxEncodeSoftBodyIndex(softBodyId1, index1[i]);
-				//create attachment pair for collision filtering
-				PxgNonRigidFilterPair pair;
-				pair.index0 = colTetVertHandle;
-				pair.index1 = colTetHandle0;
-
-				//printf("CPU softbodyId1 %i vertIdx %i softbodyId0 %i, primitiveIdx %i\n", softBodyId1, index1[i], softBodyId0, tetId0);
-				addFilterPairInternal(pair, *softBody1FilterPairs, deformableVolume1->mVolumeVolumeAttachmentIdReferences, deformableVolume1->mFilterDirty);
-			}
-		}
-
-		if (deformableVolume0->mFilterDirty && (!deformableVolume0->mFilterInDirtyList))
-		{
-			mDirtyDeformableVolumeForFilterPairs.pushBack(deformableVolume0);
-			deformableVolume0->mFilterInDirtyList = true;
-		}
-
-		if (deformableVolume1->mFilterDirty && (!deformableVolume1->mFilterInDirtyList))
-		{
-			mDirtyDeformableVolumeForFilterPairs.pushBack(deformableVolume1);
-			deformableVolume1->mFilterInDirtyList = true;
-		}
+		mVolumeVolumeAttachments.removeAttachments(handle);
+		deformableVolume0->mVolumeAttachments.findAndReplaceWithLast(handle);
 	}
 
-	void PxgSimulationController::removeSoftBodyFilter(Dy::DeformableVolume* deformableVolume0, Dy::DeformableVolume* deformableVolume1, PxU32 tetId0, PxU32 tetId1)
+	PxU32 PxgSimulationController::addVolumeSurfaceAttachments(Dy::DeformableVolume* deformableVolume,
+		PxDeformableAttachmentTargetType::Enum feature0, const PxU32* indices0, const PxVec4* barycentrics0,
+		Dy::DeformableSurface* deformableSurface, PxDeformableAttachmentTargetType::Enum feature1,
+		const PxU32* indices1, const PxVec4* barycentrics1, PxU32 count, const bool isActive)
 	{
-		PX_COMPILE_TIME_ASSERT(sizeof(Dy::VolumeVolumeFilter) == sizeof(PxgNonRigidFilterPair));
-		PxU32 softBodyId0 = deformableVolume0->getGpuRemapId();
-		
-		PxU32 softBodyId1 = deformableVolume1->getGpuRemapId();
-		
-		//Convert from coll mesh to sim mesh now...
-		const Gu::BVTetrahedronMesh* tetMesh0 = static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume0->getCollisionMesh());
-		//Map from CPU tet ID (corresponds to the ID in the BV4 mesh) to the GPU tet ID (corresponds to the ID in the BV32 mesh)
-		tetId0 = (tetId0 == PX_MAX_NB_DEFORMABLE_VOLUME_TET) ? tetId0 : static_cast<PxU32*>(tetMesh0->mGRB_faceRemapInverse)[tetId0];
+		const Gu::TriangleMesh& surfaceMesh = *static_cast<const Gu::TriangleMesh*>(deformableSurface->getTriangleMesh());
 
-		//Convert from coll mesh to sim mesh now...
-		const Gu::BVTetrahedronMesh* tetMesh1 = static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume1->getCollisionMesh());
-		//Map from CPU tet ID (corresponds to the ID in the BV4 mesh) to the GPU tet ID (corresponds to the ID in the BV32 mesh)
-		tetId1 = (tetId1 == PX_MAX_NB_DEFORMABLE_VOLUME_TET) ? tetId1 : static_cast<PxU32*>(tetMesh1->mGRB_faceRemapInverse)[tetId1];
-		
-		const PxU32 colTetHandle0 = PxEncodeSoftBodyIndex(softBodyId0, tetId0);
-		const PxU32 colTetHandle1 = PxEncodeSoftBodyIndex(softBodyId1, tetId1);
+		const PxU32 handle = mVolumeSurfaceAttachments.addVolumeSurfaceAttachments(deformableVolume->getGpuRemapId(),
+			feature0, indices0, barycentrics0, deformableSurface->getGpuRemapId(), surfaceMesh, feature1, indices1,
+			barycentrics1, count, isActive);
 
-		if (tetId0 != PX_MAX_NB_DEFORMABLE_VOLUME_TET)
-		{
-			uint4* collInds0 = reinterpret_cast<uint4*>(tetMesh0->mGRB_tetraIndices);
-
-			Cm::PinnableArray<PxgNonRigidFilterPair>* softBody0FilterPairs = reinterpret_cast<Cm::PinnableArray<PxgNonRigidFilterPair>*>(deformableVolume0->mVolumeVolumeFilterPairs);
-			uint4 ind0 = collInds0[tetId0];
-
-			int* index0 = reinterpret_cast<int*>(&ind0);
-			for (PxU32 i = 0; i < 4; ++i)
-			{
-				PxU32 tetHandle = PxEncodeSoftBodyIndex(softBodyId0, index0[i]);
-
-				PxgNonRigidFilterPair pair;
-				pair.index0 = tetHandle;
-				pair.index1 = colTetHandle1;
-
-				releaseFilterPairInternal(pair, *softBody0FilterPairs, deformableVolume0->mVolumeVolumeAttachmentIdReferences, deformableVolume0->mFilterDirty);
-			}
-		}
-
-		if (tetId1 != PX_MAX_NB_DEFORMABLE_VOLUME_TET)
-		{
-			uint4* collInds1 = reinterpret_cast<uint4*>(tetMesh1->mGRB_tetraIndices);
-			Cm::PinnableArray<PxgNonRigidFilterPair>* softBody1FilterPairs = reinterpret_cast<Cm::PinnableArray<PxgNonRigidFilterPair>*>(deformableVolume1->mVolumeVolumeFilterPairs);
-			uint4 ind1 = collInds1[tetId1];
-			int* index1 = reinterpret_cast<int*>(&ind1);
-			for (PxU32 i = 0; i < 4; ++i)
-			{
-				PxU32 tetHandle = PxEncodeSoftBodyIndex(softBodyId1, index1[i]);
-
-				PxgNonRigidFilterPair pair;
-				pair.index0 = tetHandle;
-				pair.index1 = colTetHandle0;
-
-				releaseFilterPairInternal(pair, *softBody1FilterPairs, deformableVolume1->mVolumeVolumeAttachmentIdReferences, deformableVolume1->mFilterDirty);
-			}
-		}
-
-		if (deformableVolume0->mFilterDirty && (!deformableVolume0->mFilterInDirtyList))
-		{
-			mDirtyDeformableVolumeForFilterPairs.pushBack(deformableVolume0);
-			deformableVolume0->mFilterInDirtyList = true;
-		}
-
-		if (deformableVolume1->mFilterDirty && (!deformableVolume1->mFilterInDirtyList))
-		{
-			mDirtyDeformableVolumeForFilterPairs.pushBack(deformableVolume1);
-			deformableVolume1->mFilterInDirtyList = true;
-		}
-	}
-
-	struct SortPxgNonRigidFilterPair
-	{
-		bool operator()(const PxgNonRigidFilterPair& first, const PxgNonRigidFilterPair& second) const
-		{
-			if (((const PxgNonRigidFilterPair&)first).compare(second) < 0)
-				return true;
-			else
-				return false;
-		}
-	};
-
-	void PxgSimulationController::addSoftBodyFiltersInternal(Dy::DeformableVolume* deformableVolume0, Dy::DeformableVolume* deformableVolume1, PxU32* tetIndices, PxU32 size)
-	{
-		PX_COMPILE_TIME_ASSERT(sizeof(Dy::VolumeVolumeFilter) == sizeof(PxgNonRigidFilterPair));
-		const PxU32 softBodyId0 = deformableVolume0->getGpuRemapId();
-		const PxU32 softBodyId1 = deformableVolume1->getGpuRemapId();
-		const PxU32 colTetHandle1 = PxEncodeSoftBodyIndex(softBodyId1, PX_MAX_NB_DEFORMABLE_VOLUME_TET);
-
-		if (deformableVolume0->mVolumeVolumeFilterPairs == NULL)
-		{
-			deformableVolume0->mVolumeVolumeFilterPairs = PX_PLACEMENT_NEW(PX_ALLOCATE(Dy::VolumeVolumeFilterArray, 1, "VolumeVolumeFilterArray"), Dy::VolumeVolumeFilterArray)(mAllocDesc.hostAlloc);
-
-			deformableVolume0->mDirtyVolumeForFilterPairs = &mDirtyDeformableVolumeForFilterPairs;
-
-			Cm::PinnableArray<PxgNonRigidFilterPair>* softBody0FilterPairs = reinterpret_cast<Cm::PinnableArray<PxgNonRigidFilterPair>*>(deformableVolume0->mVolumeVolumeFilterPairs);
-			softBody0FilterPairs->reserve(size * 4);
-			deformableVolume0->mVolumeVolumeAttachmentIdReferences.reserve(size * 4);
-		}
-		else
-		{
-			Cm::PinnableArray<PxgNonRigidFilterPair>* softBody0FilterPairs = reinterpret_cast<Cm::PinnableArray<PxgNonRigidFilterPair>*>(deformableVolume0->mVolumeVolumeFilterPairs);
-			PxU32 maxSize = softBody0FilterPairs->size() + (size * 4);
-			if (softBody0FilterPairs->capacity() < maxSize)
-			{
-				softBody0FilterPairs->reserve(maxSize);
-				deformableVolume0->mVolumeVolumeAttachmentIdReferences.reserve(maxSize);
-			}
-		}
-
-		//Convert from coll mesh to sim mesh now...
-		const Gu::BVTetrahedronMesh* tetMesh0 = static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume0->getCollisionMesh());
-		uint4* collInds0 = reinterpret_cast<uint4*>(tetMesh0->mGRB_tetraIndices);
-		Cm::PinnableArray<PxgNonRigidFilterPair>* softBody0FilterPairs = reinterpret_cast<Cm::PinnableArray<PxgNonRigidFilterPair>*>(deformableVolume0->mVolumeVolumeFilterPairs);
-
-		PxArray<PxgNonRigidFilterPair> sortList;
-		sortList.reserve(softBody0FilterPairs->capacity() * 4);
-
-		for (PxU32 i = 0; i < softBody0FilterPairs->size(); ++i)
-		{
-			for (PxU32 j = 0; j < deformableVolume0->mVolumeVolumeAttachmentIdReferences[i]; ++j)
-				sortList.pushBack((*softBody0FilterPairs)[i]);
-		}
-
-		softBody0FilterPairs->clear();
-		deformableVolume0->mVolumeVolumeAttachmentIdReferences.clear();
-
-		for (PxU32 iter = 0; iter < size; ++iter)
-		{
-			PxU32 tetId0 = tetIndices[iter];
-
-			//Map from CPU tet ID (corresponds to the ID in the BV4 mesh) to the GPU tet ID (corresponds to the ID in the BV32 mesh)
-			tetId0 = (tetId0 == PX_MAX_NB_DEFORMABLE_VOLUME_TET) ? tetId0 : static_cast<PxU32*>(tetMesh0->mGRB_faceRemapInverse)[tetId0];
-
-			if (tetId0 != PX_MAX_NB_DEFORMABLE_VOLUME_TET)
-			{
-				uint4 ind0 = collInds0[tetId0];
-				int* index0 = reinterpret_cast<int*>(&ind0);
-				for (PxU32 i = 0; i < 4; ++i)
-				{
-					const PxU32 colTetVertHandle = PxEncodeSoftBodyIndex(softBodyId0, index0[i]);
-					//create attachment pair for collision filtering
-					PxgNonRigidFilterPair pair;
-					pair.index0 = colTetVertHandle;
-					pair.index1 = colTetHandle1;
-
-					sortList.pushBack(pair);
-				}
-			}
-		}
-
-		if (sortList.size())
-		{
-			SortPxgNonRigidFilterPair predicate;
-			PxSort(sortList.begin(), sortList.size(), predicate);
-
-			deformableVolume0->mFilterDirty = true;
-			mDirtyDeformableVolumeForFilterPairs.pushBack(deformableVolume0);
-			deformableVolume0->mFilterInDirtyList = true;
-		}
-
-		for (PxU32 i = 0; i < sortList.size(); ++i)
-		{
-			PxU32 refCount = 1;
-			softBody0FilterPairs->pushBack(sortList[i]);
-		
-			while (i < (sortList.size() - 1) && sortList[i].compare(sortList[i + 1]) == 0)
-			{
-				refCount++;
-				i++;
-			}
-			deformableVolume0->mVolumeVolumeAttachmentIdReferences.pushBack(refCount);
-		}
-	}
-
-	void PxgSimulationController::addSoftBodyFilters(Dy::DeformableVolume* deformableVolume0, Dy::DeformableVolume* deformableVolume1, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize)
-	{
-		PxArray<unsigned int> tetraFilter0Ids;
-		PxArray<unsigned int> tetraFilter1Ids;
-		tetraFilter0Ids.reserve(tetIndicesSize);
-		tetraFilter1Ids.reserve(tetIndicesSize);
-
-		for (size_t i = 0; i < tetIndicesSize; i++)
-		{
-			PxU32 tetId0 = tetIndices0[i];
-			PxU32 tetId1 = tetIndices1[i];
-
-			if (tetId1 == PX_MAX_NB_DEFORMABLE_VOLUME_TET)
-			{
-				tetraFilter0Ids.pushBack(tetId0);
-			}
-			else if (tetId0 == PX_MAX_NB_DEFORMABLE_VOLUME_TET)
-			{
-				tetraFilter1Ids.pushBack(tetId1);
-			}
-			else
-			{
-				addSoftBodyFilter(deformableVolume0, deformableVolume1, tetId0, tetId1);
-			}
-		}
-
-		if (!tetraFilter0Ids.empty())
-		{
-			addSoftBodyFiltersInternal(deformableVolume0, deformableVolume1, &tetraFilter0Ids[0], tetraFilter0Ids.size());
-		}
-
-		if (!tetraFilter1Ids.empty())
-		{
-			addSoftBodyFiltersInternal(deformableVolume1, deformableVolume0, &tetraFilter1Ids[0], tetraFilter1Ids.size());
-		}
-	}
-
-	void PxgSimulationController::removeSoftBodyFiltersInternal(Dy::DeformableVolume* deformableVolume0, Dy::DeformableVolume* deformableVolume1, PxU32* tetIndices, PxU32 size)
-	{
-		PX_COMPILE_TIME_ASSERT(sizeof(Dy::VolumeVolumeFilter) == sizeof(PxgNonRigidFilterPair));
-		const PxU32 softBodyId0 = deformableVolume0->getGpuRemapId();
-		const PxU32 softBodyId1 = deformableVolume1->getGpuRemapId();
-		const PxU32 colTetHandle1 = PxEncodeSoftBodyIndex(softBodyId1, PX_MAX_NB_DEFORMABLE_VOLUME_TET);
-
-		//Convert from coll mesh to sim mesh now...
-		const Gu::BVTetrahedronMesh* tetMesh0 = static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume0->getCollisionMesh());
-		uint4* collInds0 = reinterpret_cast<uint4*>(tetMesh0->mGRB_tetraIndices);
-		Cm::PinnableArray<PxgNonRigidFilterPair>* softBody0FilterPairs = reinterpret_cast<Cm::PinnableArray<PxgNonRigidFilterPair>*>(deformableVolume0->mVolumeVolumeFilterPairs);
-
-		PxArray<PxgNonRigidFilterPair> sortList;
-		sortList.reserve(softBody0FilterPairs->capacity() * 4);
-
-		for (PxU32 iter = 0; iter < size; ++iter)
-		{
-			PxU32 tetId0 = tetIndices[iter];
-
-			//Map from CPU tet ID (corresponds to the ID in the BV4 mesh) to the GPU tet ID (corresponds to the ID in the BV32 mesh)
-			tetId0 = (tetId0 == PX_MAX_NB_DEFORMABLE_VOLUME_TET) ? tetId0 : static_cast<PxU32*>(tetMesh0->mGRB_faceRemapInverse)[tetId0];
-
-			if (tetId0 != PX_MAX_NB_DEFORMABLE_VOLUME_TET)
-			{
-				uint4 ind0 = collInds0[tetId0];
-				int* index0 = reinterpret_cast<int*>(&ind0);
-				for (PxU32 i = 0; i < 4; ++i)
-				{
-					const PxU32 colTetVertHandle = PxEncodeSoftBodyIndex(softBodyId0, index0[i]);
-					//create attachment pair for collision filtering
-					PxgNonRigidFilterPair pair;
-					pair.index0 = colTetVertHandle;
-					pair.index1 = colTetHandle1;
-
-					sortList.pushBack(pair);
-				}
-			}
-		}
-
-		if (sortList.size())
-		{
-			SortPxgNonRigidFilterPair predicate;
-			PxSort(sortList.begin(), sortList.size(), predicate);
-		}
-
-		PxArray<PxgNonRigidFilterPair> removeList;
-		PxArray<PxU32> refCountList;
-
-		removeList.reserve(softBody0FilterPairs->capacity());
-		refCountList.reserve(softBody0FilterPairs->capacity());
-
-		for (PxU32 i = 0; i < sortList.size(); ++i)
-		{
-			PxU32 refCount = 1;
-			removeList.pushBack(sortList[i]);
-
-			while (i < (sortList.size() - 1) && sortList[i].compare(sortList[i + 1]) == 0)
-			{
-				refCount++;
-				i++;
-			}
-			refCountList.pushBack(refCount);
-		}
-
-		for (PxI32 i = removeList.size() - 1; i >= 0; --i)
-		{
-			releaseFilterPairInternal(removeList[i], *softBody0FilterPairs, deformableVolume0->mVolumeVolumeAttachmentIdReferences, deformableVolume0->mFilterDirty, refCountList[i]);
-		}
-
-		if (deformableVolume0->mFilterDirty && (!deformableVolume0->mFilterInDirtyList))
-		{
-			mDirtyDeformableVolumeForFilterPairs.pushBack(deformableVolume0);
-			deformableVolume0->mFilterInDirtyList = true;
-		}
-	}
-
-	void PxgSimulationController::removeSoftBodyFilters(Dy::DeformableVolume* deformableVolume0, Dy::DeformableVolume* deformableVolume1, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize)
-	{
-		PxArray<unsigned int> tetraFilter0Ids;
-		PxArray<unsigned int> tetraFilter1Ids;
-		tetraFilter0Ids.reserve(tetIndicesSize);
-		tetraFilter1Ids.reserve(tetIndicesSize);
-
-		for (size_t i = 0; i < tetIndicesSize; i++)
-		{
-			PxU32 tetId0 = tetIndices0[i];
-			PxU32 tetId1 = tetIndices1[i];
-
-			if (tetId1 == PX_MAX_NB_DEFORMABLE_VOLUME_TET)
-			{
-				tetraFilter0Ids.pushBack(tetId0);
-			}
-			else if (tetId0 == PX_MAX_NB_DEFORMABLE_VOLUME_TET)
-			{
-				tetraFilter1Ids.pushBack(tetId1);
-			}
-			else
-			{
-				removeSoftBodyFilter(deformableVolume0, deformableVolume1, tetId0, tetId1);
-			}
-		}
-
-		if (!tetraFilter0Ids.empty())
-		{
-			removeSoftBodyFiltersInternal(deformableVolume0, deformableVolume1, &tetraFilter0Ids[0], tetraFilter0Ids.size());
-		}
-
-		if (!tetraFilter1Ids.empty())
-		{
-			removeSoftBodyFiltersInternal(deformableVolume1, deformableVolume0, &tetraFilter1Ids[0], tetraFilter1Ids.size());
-		}
-	}
-
-	PxU32 PxgSimulationController::addSoftBodyAttachment(Dy::DeformableVolume* deformableVolume0, Dy::DeformableVolume* deformableVolume1, PxU32 tetId0, PxU32 tetId1,
-		const PxVec4& tetBarycentric0, const PxVec4& tetBarycentric1, const bool addToActive, bool doConversion)
-	{
-		// Convert from coll mesh to sim mesh now...
-
-		PxU32 outTetIdx0 = 0xFFFFFFFF;
-		PxVec4 outBarycentric0;
-
-		if (doConversion)
-		{
-			computeSoftBodySimMeshData(deformableVolume0, tetId0, tetBarycentric0, outTetIdx0, outBarycentric0);
-		}
-		else
-		{
-			outTetIdx0 = tetId0;
-			outBarycentric0 = tetBarycentric0;
-		}
-
-		PxU32 outTetIdx1 = 0xFFFFFFFF;
-		PxVec4 outBarycentric1;
-
-		if (doConversion)
-		{
-			computeSoftBodySimMeshData(deformableVolume1, tetId1, tetBarycentric1, outTetIdx1, outBarycentric1);
-		}
-		else
-		{
-			outTetIdx1 = tetId1;
-			outBarycentric1 = tetBarycentric1;
-		}
-
-		//create attachment
-		PxgFEMFEMAttachment attachment;
-
-		PxU32 softBodyId0 = deformableVolume0->getGpuRemapId();
-		PxU32 tetHandle0 = PxEncodeSoftBodyIndex(softBodyId0, outTetIdx0);
-
-		PxU32 softBodyId1 = deformableVolume1->getGpuRemapId();
-		PxU32 tetHandle1 = PxEncodeSoftBodyIndex(softBodyId1, outTetIdx1);
-
-		attachment.index0 = tetHandle0;
-		attachment.index1 = tetHandle1;
-		PxU32 handle = mSoftBodySoftBodyAttachments.mBaseHandle++;
-
-		attachment.barycentricCoordinates0 = make_float4(outBarycentric0.x, outBarycentric0.y, outBarycentric0.z, outBarycentric0.w);
-		attachment.barycentricCoordinates1 = make_float4(outBarycentric1.x, outBarycentric1.y, outBarycentric1.z, outBarycentric1.w);
-
-		//These are used for activate and deactivate soft body
-		mSoftBodySoftBodyAttachments.addAttachment(attachment, handle);
-		if (addToActive)
-			mSoftBodySoftBodyAttachments.activateAttachment(handle);
-		
-		deformableVolume0->mVolumeVolumeAttachments.pushBack(handle);
+		deformableVolume->mSurfaceAttachments.pushBack(handle);
 
 		return handle;
 	}
 
-	void PxgSimulationController::removeSoftBodyAttachment(Dy::DeformableVolume* deformableVolume0, PxU32 handle)
+	void PxgSimulationController::removeVolumeSurfaceAttachments(Dy::DeformableVolume* deformableVolume, PxU32 handle)
 	{
-		if (mSoftBodySoftBodyAttachments.removeAttachment(handle))
-			deformableVolume0->mVolumeVolumeAttachments.findAndReplaceWithLast(handle);
+		mVolumeSurfaceAttachments.removeAttachments(handle);
+		deformableVolume->mSurfaceAttachments.findAndReplaceWithLast(handle);
 	}
 
-	void PxgSimulationController::addClothFilter(Dy::DeformableVolume* deformableVolume, Dy::DeformableSurface* deformableSurface, PxU32 triIdx, PxU32 tetId)
+	void PxgSimulationController::addVolumeRigidFilters(Dy::DeformableVolume* deformableVolume,
+		const PxNodeIndex& rigidNodeIndex, PxU32* tetIndices, PxU32 tetIndicesSize)
 	{
-		if (triIdx == PX_MAX_NB_DEFORMABLE_SURFACE_TRI && tetId == PX_MAX_NB_DEFORMABLE_VOLUME_TET)
-		{
-			return;
-		}
-		PxU32 softBodyId = deformableVolume->getGpuRemapId();
-		PxU32 clothId = deformableSurface->getGpuRemapId();
-		const Gu::BVTetrahedronMesh* tetMesh = static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume->getCollisionMesh());
-		//Map from CPU tet ID (corresponds to the ID in the BV4 mesh) to the GPU tet ID (corresponds to the ID in the BV32 mesh)
-		tetId = (tetId == PX_MAX_NB_DEFORMABLE_VOLUME_TET) ? tetId : static_cast<PxU32*>(tetMesh->mGRB_faceRemapInverse)[tetId];
+		const Gu::BVTetrahedronMesh& volumeMesh =
+			*static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume->getCollisionMesh());
 
-		PxsShapeCore& shapeCore = deformableSurface->getShapeCore();
-		const Gu::TriangleMesh* triangleMesh = _getMeshData(shapeCore.mGeometry.get<PxTriangleMeshGeometry>());
-
-		//Map from CPU triangle ID (corresponds to the ID in the BV4 mesh) to GPU triangle ID (corresponds to the ID in the BV32 mesh)
-		triIdx = (triIdx == PX_MAX_NB_DEFORMABLE_SURFACE_TRI) ? triIdx : static_cast<PxU32*>(triangleMesh->mGRB_faceRemapInverse)[triIdx];
-
-		const PxU32 softBodyTetHandle = PxEncodeSoftBodyIndex(softBodyId, tetId);
-
-		if (triIdx != PX_MAX_NB_DEFORMABLE_SURFACE_TRI)
-		{
-			PxU32 triVertInd[3];
-			getGRBVertexIndices(triVertInd[0], triVertInd[1], triVertInd[2], triIdx, triangleMesh);
-
-			for (PxU32 i = 0; i < 3; ++i)
-			{
-				const PxU32 clothTriVertHandle = PxEncodeClothIndex(clothId, triVertInd[i]);
-				PxgNonRigidFilterPair tetVertPair;
-				tetVertPair.index0 = softBodyTetHandle;
-				tetVertPair.index1 = clothTriVertHandle;
-				addFilterPairInternal(tetVertPair, mSoftBodyClothTetVertFilterPairs, mSoftBodyClothTetVertFilterRefs, mSoftBodyClothFilterPairsDirty);
-			}
-		}
-		else
-		{
-			const PxU32 clothVertFullMask = PxEncodeClothIndex(clothId, PX_MAX_NB_DEFORMABLE_SURFACE_VTX);
-			PxgNonRigidFilterPair tetVertPair;
-			tetVertPair.index0 = softBodyTetHandle;
-			tetVertPair.index1 = clothVertFullMask;
-			addFilterPairInternal(tetVertPair, mSoftBodyClothTetVertFilterPairs, mSoftBodyClothTetVertFilterRefs, mSoftBodyClothFilterPairsDirty);
-		}
+		mVolumeRigidFilters.updateVolumeRigid(volumeMesh, deformableVolume->getGpuRemapId(), rigidNodeIndex,
+			tetIndices, tetIndicesSize, /*add*/ true);
 	}
 
-	void PxgSimulationController::removeClothFilter(Dy::DeformableVolume* deformableVolume, Dy::DeformableSurface* deformableSurface, PxU32 triId, PxU32 tetId)
+	void PxgSimulationController::removeVolumeRigidFilters(Dy::DeformableVolume* deformableVolume, const PxNodeIndex& rigidNodeIndex,
+		PxU32* tetIndices, PxU32 tetIndicesSize)
 	{
-		if (triId == PX_MAX_NB_DEFORMABLE_SURFACE_TRI && tetId == PX_MAX_NB_DEFORMABLE_VOLUME_TET)
-		{
-			return;
-		}
-		const Gu::BVTetrahedronMesh* tetMesh = static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume->getCollisionMesh());
-		//Map from CPU tet ID (corresponds to the ID in the BV4 mesh) to the GPU tet ID (corresponds to the ID in the BV32 mesh)
-		tetId = (tetId == PX_MAX_NB_DEFORMABLE_VOLUME_TET) ? tetId : static_cast<PxU32*>(tetMesh->mGRB_faceRemapInverse)[tetId];
+		const Gu::BVTetrahedronMesh& volumeMesh =
+			*static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume->getCollisionMesh());
 
-		PxsShapeCore& shapeCore = deformableSurface->getShapeCore();
-		const Gu::TriangleMesh* triangleMesh = _getMeshData(shapeCore.mGeometry.get<PxTriangleMeshGeometry>());
-
-		//Map from CPU triangle ID (corresponds to the ID in the BV4 mesh) to GPU triangle ID (corresponds to the ID in the BV32 mesh)
-		//PxU32 originalTriIdx = triIdx;
-		triId = (triId == PX_MAX_NB_DEFORMABLE_SURFACE_TRI) ? triId : static_cast<PxU32*>(triangleMesh->mGRB_faceRemapInverse)[triId];
-
-		PxU32 softBodyId = deformableVolume->getGpuRemapId();
-		PxU32 tetHandle = PxEncodeSoftBodyIndex(softBodyId, tetId);
-		PxU32 clothId = deformableSurface->getGpuRemapId();
-
-		if (triId != PX_MAX_NB_DEFORMABLE_SURFACE_TRI)
-		{
-			PxU32 triVertInd[3];
-			getGRBVertexIndices(triVertInd[0], triVertInd[1], triVertInd[2], triId, triangleMesh);
-
-			for (PxU32 i = 0; i < 3; ++i)
-			{
-				const PxU32 triVertHandle = PxEncodeClothIndex(clothId, triVertInd[i]);
-				PxgNonRigidFilterPair tetVertPair;
-				tetVertPair.index0 = tetHandle;
-				tetVertPair.index1 = triVertHandle;
-				releaseFilterPairInternal(tetVertPair, mSoftBodyClothTetVertFilterPairs, mSoftBodyClothTetVertFilterRefs, mSoftBodyClothFilterPairsDirty);
-			}
-		}
-		else
-		{
-			const PxU32 clothVertFullMask = PxEncodeClothIndex(clothId, PX_MAX_NB_DEFORMABLE_SURFACE_VTX);
-			PxgNonRigidFilterPair tetVertPair;
-			tetVertPair.index0 = tetHandle;
-			tetVertPair.index1 = clothVertFullMask;
-			releaseFilterPairInternal(tetVertPair, mSoftBodyClothTetVertFilterPairs, mSoftBodyClothTetVertFilterRefs, mSoftBodyClothFilterPairsDirty);
-		}
+		mVolumeRigidFilters.updateVolumeRigid(volumeMesh, deformableVolume->getGpuRemapId(), rigidNodeIndex,
+			tetIndices, tetIndicesSize, /*add*/ false);
 	}
 
-	PxU32 PxgSimulationController::addClothAttachment(Dy::DeformableVolume* deformableVolume, Dy::DeformableSurface* deformableSurface, PxU32 triIdx,
-		const PxVec4& triBary, PxU32 tetId, const PxVec4& tetBary, const bool isActive, bool doConversion)
+	void PxgSimulationController::addVolumeStaticShapeFilters(Dy::DeformableVolume* deformableVolume,
+		const PxU32* shapeCacheIds, PxU32 nbShapes, PxU32* tetIndices, PxU32 tetIndicesSize)
 	{
-		PxU32 simTetIdx = 0xFFFFFFFF;
-		PxVec4 simTetBary;
+		const Gu::BVTetrahedronMesh& volumeMesh =
+			*static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume->getCollisionMesh());
 
-		if (doConversion)
-		{
-			computeSoftBodySimMeshData(deformableVolume, tetId, tetBary, simTetIdx, simTetBary);
-		}
-		else
-		{
-			simTetIdx = tetId;
-			simTetBary = tetBary;
-		}
-		
-		PxsShapeCore& shapeCore = deformableSurface->getShapeCore();
-		const Gu::TriangleMesh* triangleMesh = _getMeshData(shapeCore.mGeometry.get<PxTriangleMeshGeometry>());
+		mVolumeRigidFilters.updateVolumeStaticShapes(volumeMesh, deformableVolume->getGpuRemapId(), shapeCacheIds, nbShapes,
+			tetIndices, tetIndicesSize, /*add*/ true);
+	}
 
-		//Map from CPU triangle ID (corresponds to the ID in the BV4 mesh) to GPU triangle ID (corresponds to the ID in the BV32 mesh)
-		triIdx = static_cast<PxU32*>(triangleMesh->mGRB_faceRemapInverse)[triIdx];
-		
-		//create attachment
-		PxgFEMFEMAttachment attachment;
+	void PxgSimulationController::removeVolumeStaticShapeFilters(Dy::DeformableVolume* deformableVolume,
+		const PxU32* shapeCacheIds, PxU32 nbShapes, PxU32* tetIndices, PxU32 tetIndicesSize)
+	{
+		const Gu::BVTetrahedronMesh& volumeMesh =
+			*static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume->getCollisionMesh());
 
-		PxU32 softBodyId = deformableVolume->getGpuRemapId();
-		PxU32 tetHandle = PxEncodeSoftBodyIndex(softBodyId, simTetIdx);
+		mVolumeRigidFilters.updateVolumeStaticShapes(volumeMesh, deformableVolume->getGpuRemapId(), shapeCacheIds, nbShapes,
+			tetIndices, tetIndicesSize, /*add*/ false);
+	}
 
-		PxU32 clothId = deformableSurface->getGpuRemapId();
-		PxU32 triHandle = PxEncodeClothIndex(clothId, triIdx);
-		
-		attachment.index0 = triHandle;
-		attachment.index1 = tetHandle;
-		PxU32 handle = mSoftBodyClothAttachments.mBaseHandle++;
+	void PxgSimulationController::addVolumeVolumeFilters(Dy::DeformableVolume* deformableVolume0, Dy::DeformableVolume* deformableVolume1, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize)
+	{
+		const Gu::BVTetrahedronMesh& volumeMesh0 =
+			*static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume0->getCollisionMesh());
+		const Gu::BVTetrahedronMesh& volumeMesh1 =
+			*static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume1->getCollisionMesh());
 
-		attachment.barycentricCoordinates0 = make_float4(triBary.x, triBary.y, triBary.z, 0.f);
-		attachment.barycentricCoordinates1 = make_float4(simTetBary.x, simTetBary.y, simTetBary.z, simTetBary.w);
+		mVolumeVolumeFilters.updateVolumeVolume(volumeMesh0, deformableVolume0->getGpuRemapId(),
+			volumeMesh1, deformableVolume1->getGpuRemapId(), tetIndices0, tetIndices1, tetIndicesSize, /*add*/ true);
+	}
 
-		mSoftBodyClothAttachments.addAttachment(attachment, handle);
-		if(isActive)
-			mSoftBodyClothAttachments.activateAttachment(handle);
+	void PxgSimulationController::removeVolumeVolumeFilters(Dy::DeformableVolume* deformableVolume0, Dy::DeformableVolume* deformableVolume1, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize)
+	{
+		const Gu::BVTetrahedronMesh& volumeMesh0 =
+			*static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume0->getCollisionMesh());
+		const Gu::BVTetrahedronMesh& volumeMesh1 =
+			*static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume1->getCollisionMesh());
 
-		deformableVolume->mSurfaceVolumeAttachments.pushBack(handle);
+		mVolumeVolumeFilters.updateVolumeVolume(volumeMesh0, deformableVolume0->getGpuRemapId(),
+			volumeMesh1, deformableVolume1->getGpuRemapId(), tetIndices0, tetIndices1, tetIndicesSize, /*add*/ false);
+	}
+
+	void PxgSimulationController::addVolumeSurfaceFilters(Dy::DeformableVolume* deformableVolume, Dy::DeformableSurface* deformableSurface,
+		PxU32* triIndices, PxU32* tetIndices, PxU32 indicesSize)
+	{
+		const Gu::BVTetrahedronMesh& volumeMesh =
+			*static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume->getCollisionMesh());
+		const Gu::TriangleMesh& surfaceMesh = *static_cast<const Gu::TriangleMesh*>(deformableSurface->getTriangleMesh());
+
+		mVolumeSurfaceFilters.updateVolumeSurface(volumeMesh, deformableVolume->getGpuRemapId(),
+			surfaceMesh, deformableSurface->getGpuRemapId(), triIndices, tetIndices, indicesSize, /*add*/ true);
+	}
+
+	void PxgSimulationController::removeVolumeSurfaceFilters(Dy::DeformableVolume* deformableVolume, Dy::DeformableSurface* deformableSurface,
+		PxU32* triIndices, PxU32* tetIndices, PxU32 indicesSize)
+	{
+		const Gu::BVTetrahedronMesh& volumeMesh =
+			*static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume->getCollisionMesh());
+		const Gu::TriangleMesh& surfaceMesh = *static_cast<const Gu::TriangleMesh*>(deformableSurface->getTriangleMesh());
+
+		mVolumeSurfaceFilters.updateVolumeSurface(volumeMesh, deformableVolume->getGpuRemapId(),
+			surfaceMesh, deformableSurface->getGpuRemapId(), triIndices, tetIndices, indicesSize, /*add*/ false);
+	}
+
+	PxU32 PxgSimulationController::addSurfaceRigidAttachments(Dy::DeformableSurface* deformableSurface, PxsRigidBody* rigidBody, const PxNodeIndex& rigidNodeIndex,
+		PxDeformableAttachmentTargetType::Enum feature, const PxU32* indices, const PxVec4* barycentrics,
+		const PxTransform& frame, const PxVec4* coords, PxU32 count, const bool isActive)
+	{
+		const Gu::TriangleMesh& surfaceMesh = *static_cast<const Gu::TriangleMesh*>(deformableSurface->getTriangleMesh());
+
+		const PxU32 handle = mSurfaceRigidAttachments.addSurfaceRigidAttachments(deformableSurface->getGpuRemapId(), surfaceMesh,
+			feature, indices, barycentrics, rigidBody, rigidNodeIndex, frame, coords, count, isActive);
+
+		deformableSurface->mRigidAttachments.pushBack(handle);
 
 		return handle;
 	}
 
-	void PxgSimulationController::removeClothAttachment(Dy::DeformableVolume* deformableVolume, PxU32 handle)
+	void PxgSimulationController::removeSurfaceRigidAttachments(Dy::DeformableSurface* deformableSurface, PxU32 handle)
 	{
-		if(mSoftBodyClothAttachments.removeAttachment(handle))
-			deformableVolume->mSurfaceVolumeAttachments.findAndReplaceWithLast(handle);
+		mSurfaceRigidAttachments.removeAttachments(handle);
+		deformableSurface->mRigidAttachments.findAndReplaceWithLast(handle);
 	}
 
-
-	PxU32 PxgSimulationController::addRigidAttachment(Dy::DeformableVolume* deformableVolume, const PxNodeIndex& softBodyNodeIndex,
-		PxsRigidBody* rigidBody, const PxNodeIndex& rigidNodeIndex, PxU32 vertIndex, const PxVec3& actorSpacePose,
-		const bool isActive, bool doConversion)
+	PxU32 PxgSimulationController::addSurfaceSurfaceAttachments(Dy::DeformableSurface* deformableSurface0,
+		PxDeformableAttachmentTargetType::Enum feature0, const PxU32* indices0, const PxVec4* barycentrics0,
+		Dy::DeformableSurface* deformableSurface1, PxDeformableAttachmentTargetType::Enum feature1,
+		const PxU32* indices1, const PxVec4* barycentrics1, PxU32 count, const bool addToActive)
 	{
-		PX_UNUSED(softBodyNodeIndex);
-		//PxU32 softBodyId = deformableVolume->getGpuRemapId();
+		const Gu::TriangleMesh& surfaceMesh0 = *static_cast<const Gu::TriangleMesh*>(deformableSurface0->getTriangleMesh());
+		const Gu::TriangleMesh& surfaceMesh1 = *static_cast<const Gu::TriangleMesh*>(deformableSurface1->getTriangleMesh());
 
-		//const Gu::BVTetrahedronMesh* tetMesh = static_cast<const Gu::BVTetrahedronMesh*>(deformableVolume->getCollisionMesh());
-		const Gu::DeformableVolumeAuxData* softBodyAuxData = static_cast<const Gu::DeformableVolumeAuxData*>(deformableVolume->getAuxData());
+		const PxU32 handle = mSurfaceSurfaceAttachments.addSurfaceSurfaceAttachments(deformableSurface0->getGpuRemapId(),
+			surfaceMesh0, feature0, indices0, barycentrics0, deformableSurface1->getGpuRemapId(), surfaceMesh1, feature1,
+			indices1, barycentrics1, count, addToActive);
 
-		//Now we make sure that the bodies are sorted...
-		PxU32 handle = 0xFFFFFFFF;
+		// The island gen wakes both surfaces, so the batch only has to hang off one of them.
+		deformableSurface0->mSurfaceAttachments.pushBack(handle);
 
-		PxU32 elemIdx = vertIndex;
-		bool isVertex = true;
-		PxVec4 barycentric(0.0f);
-		if (doConversion)
-		{
-			//deprecated code paths only ever uses tets
-			isVertex = false;
-			elemIdx = softBodyAuxData->mVertsRemapInGridModel[vertIndex];
-			barycentric = reinterpret_cast<PxVec4*>(softBodyAuxData->mVertsBarycentricInGridModel)[vertIndex];
-		}
-
-		handle = addRigidAttachmentInternal(deformableVolume->getGpuRemapId(), elemIdx, isVertex, barycentric,
-			rigidBody, rigidNodeIndex, actorSpacePose, mRigidSoftBodyAttachments, isActive);
-
-		deformableVolume->mRigidVolumeAttachments.pushBack(handle);
 		return handle;
 	}
 
-	void PxgSimulationController::removeRigidAttachment(Dy::DeformableVolume* deformableVolume, PxU32 handle)
+	void PxgSimulationController::removeSurfaceSurfaceAttachments(Dy::DeformableSurface* deformableSurface0, PxU32 handle)
 	{
-		if(mRigidSoftBodyAttachments.removeAttachment(handle))
-			deformableVolume->mRigidVolumeAttachments.findAndReplaceWithLast(handle);
+		mSurfaceSurfaceAttachments.removeAttachments(handle);
+
+		// The batch hangs off surface 0, which is where it was added.
+		deformableSurface0->mSurfaceAttachments.findAndReplaceWithLast(handle);
 	}
 
-	PxU32 PxgSimulationController::addRigidAttachment(Dy::DeformableSurface* deformableSurface, const PxNodeIndex& clothNodeIndex,
-		PxsRigidBody* rigidBody, const PxNodeIndex& rigidNodeIndex, PxU32 vertIndex, const PxVec3& actorSpacePose,
-		const bool addToActive)
+	void PxgSimulationController::addSurfaceRigidFilters(Dy::DeformableSurface* deformableSurface, const PxNodeIndex& rigidNodeIndex,
+		PxU32* triIndices, PxU32 triIndicesSize)
 	{
-		PX_UNUSED(clothNodeIndex);
+		const Gu::TriangleMesh& surfaceMesh = *static_cast<const Gu::TriangleMesh*>(deformableSurface->getTriangleMesh());
 
-		const bool isVertex = true;
-		const PxVec4 barycentric(0.0f);
-		PxU32 handle = addRigidAttachmentInternal(deformableSurface->getGpuRemapId(), vertIndex, isVertex, barycentric,
-			rigidBody, rigidNodeIndex, actorSpacePose, mClothRigidAttachments, addToActive);
-
-		deformableSurface->addAttachmentHandle(handle);
-		return handle;
+		mSurfaceRigidFilters.updateSurfaceRigid(surfaceMesh, deformableSurface->getGpuRemapId(), rigidNodeIndex,
+			triIndices, triIndicesSize, /*add*/ true);
 	}
 
-	void PxgSimulationController::removeRigidAttachment(Dy::DeformableSurface* deformableSurface, PxU32 handle)
+	void PxgSimulationController::removeSurfaceRigidFilters(Dy::DeformableSurface* deformableSurface, const PxNodeIndex& rigidNodeIndex,
+		PxU32* triIndices, PxU32 triIndicesSize)
 	{
-		if(mClothRigidAttachments.removeAttachment(handle))
-			deformableSurface->removeAttachmentHandle(handle);
+		const Gu::TriangleMesh& surfaceMesh = *static_cast<const Gu::TriangleMesh*>(deformableSurface->getTriangleMesh());
+
+		mSurfaceRigidFilters.updateSurfaceRigid(surfaceMesh, deformableSurface->getGpuRemapId(), rigidNodeIndex,
+			triIndices, triIndicesSize, /*add*/ false);
 	}
 
-	void PxgSimulationController::addTriRigidFilter(Dy::DeformableSurface* deformableSurface, const PxNodeIndex& rigidNodeIndex, PxU32 triIdx)
+	void PxgSimulationController::addSurfaceStaticShapeFilters(Dy::DeformableSurface* deformableSurface,
+		const PxU32* shapeCacheIds, PxU32 nbShapes, PxU32* triIndices, PxU32 triIndicesSize)
 	{
-		if (triIdx == PX_MAX_NB_DEFORMABLE_SURFACE_TRI)
-		{
-			return;
-		}
+		const Gu::TriangleMesh& surfaceMesh = *static_cast<const Gu::TriangleMesh*>(deformableSurface->getTriangleMesh());
 
-		const PxU32 clothId = deformableSurface->getGpuRemapId();
-
-		PxsShapeCore& shapeCore = deformableSurface->getShapeCore();
-		const Gu::TriangleMesh* triangleMesh = _getMeshData(shapeCore.mGeometry.get<PxTriangleMeshGeometry>());
-
-		//Map from CPU triangle ID (corresponds to the ID in the BV4 mesh) to GPU triangle ID (corresponds to the ID in the BV32 mesh)
-		triIdx = static_cast<PxU32*>(triangleMesh->mGRB_faceRemapInverse)[triIdx];
-
-		const PxU64 rigidIdx = reinterpret_cast<const PxU64&>(rigidNodeIndex);
-
-		PxU32 vInd[3];
-		getGRBVertexIndices(vInd[0], vInd[1], vInd[2], triIdx, triangleMesh);
-
-		for (PxU32 i = 0; i < 3; ++i)
-		{
-			const PxU32 vertHandle = PxEncodeClothIndex(clothId, vInd[i]); //cloth and vert index
-			PxgRigidFilterPair pair;
-			pair.index1 = vertHandle;
-			pair.index0 = rigidIdx;
-			addFilterPairInternal(pair, mClothRigidFilterPairs, mClothRigidFilterRefs, mClothRigidFilterPairsDirty);
-		}
+		mSurfaceRigidFilters.updateSurfaceStaticShapes(surfaceMesh, deformableSurface->getGpuRemapId(), shapeCacheIds, nbShapes,
+			triIndices, triIndicesSize, /*add*/ true);
 	}
 
-	void PxgSimulationController::removeTriRigidFilter(Dy::DeformableSurface* deformableSurface, const PxNodeIndex& rigidNodeIndex, PxU32 triIdx)
+	void PxgSimulationController::removeSurfaceStaticShapeFilters(Dy::DeformableSurface* deformableSurface,
+		const PxU32* shapeCacheIds, PxU32 nbShapes, PxU32* triIndices, PxU32 triIndicesSize)
 	{
-		if (triIdx == PX_MAX_NB_DEFORMABLE_SURFACE_TRI)
-		{
-			return;
-		}
+		const Gu::TriangleMesh& surfaceMesh = *static_cast<const Gu::TriangleMesh*>(deformableSurface->getTriangleMesh());
 
-		PxU32 clothId = deformableSurface->getGpuRemapId();
-
-		PxsShapeCore& shapeCore = deformableSurface->getShapeCore();
-		const Gu::TriangleMesh* triangleMesh = _getMeshData(shapeCore.mGeometry.get<PxTriangleMeshGeometry>());
-
-		//Map from CPU triangle ID (corresponds to the ID in the BV4 mesh) to GPU triangle ID (corresponds to the ID in the BV32 mesh)
-		triIdx = static_cast<PxU32*>(triangleMesh->mGRB_faceRemapInverse)[triIdx];
-		const PxU64 rigidIdx = reinterpret_cast<const PxU64&>(rigidNodeIndex);
-
-		PxU32 vInd[3];
-		getGRBVertexIndices(vInd[0], vInd[1], vInd[2], triIdx, triangleMesh);
-
-		for (PxU32 i = 0; i < 3; ++i)
-		{
-			const PxU32 vertHandle = PxEncodeClothIndex(clothId, vInd[i]); //cloth and vert index
-			PxgRigidFilterPair pair;
-			pair.index1 = vertHandle;
-			pair.index0 = rigidIdx;
-			releaseFilterPairInternal(pair, mClothRigidFilterPairs, mClothRigidFilterRefs, mClothRigidFilterPairsDirty);
-		}
+		mSurfaceRigidFilters.updateSurfaceStaticShapes(surfaceMesh, deformableSurface->getGpuRemapId(), shapeCacheIds, nbShapes,
+			triIndices, triIndicesSize, /*add*/ false);
 	}
 
-	PxU32 PxgSimulationController::addTriRigidAttachment(Dy::DeformableSurface* deformableSurface, PxsRigidBody* rigidBody, const PxNodeIndex& rigidNodeIndex, PxU32 triIdx, const PxVec4& barycentric,
-		const PxVec3& actorSpacePose, const bool isActive)
+	void PxgSimulationController::addSurfaceSurfaceFilters(Dy::DeformableSurface* deformableSurface0, Dy::DeformableSurface* deformableSurface1,
+		PxU32* triIndices0, PxU32* triIndices1, PxU32 triIndicesSize)
 	{
-		PxsShapeCore& shapeCore = deformableSurface->getShapeCore();
-		const Gu::TriangleMesh* triangleMesh = _getMeshData(shapeCore.mGeometry.get<PxTriangleMeshGeometry>());
+		const PxU32 surfaceId0 = deformableSurface0->getGpuRemapId();
+		const PxU32 surfaceId1 = deformableSurface1->getGpuRemapId();
 
-		//Map from CPU triangle ID (corresponds to the ID in the BV4 mesh) to GPU triangle ID (corresponds to the ID in the BV32 mesh)
-		triIdx = static_cast<PxU32*>(triangleMesh->mGRB_faceRemapInverse)[triIdx];
+		// A filter only registers once both surfaces are in the scene, and addFEMCloth builds the
+		// topology as each one enters.
+		PX_ASSERT(mSurfaceTopologies[surfaceId0] && mSurfaceTopologies[surfaceId1]);
 
-		const bool isVertex = false;
-		PxU32 handle = addRigidAttachmentInternal(deformableSurface->getGpuRemapId(), triIdx, isVertex, barycentric,
-			rigidBody, rigidNodeIndex, actorSpacePose, mClothRigidAttachments, isActive);
-		
-		deformableSurface->addAttachmentHandle(handle);
-		return handle;
+		const Gu::TriangleMesh& surfaceMesh0 = *static_cast<const Gu::TriangleMesh*>(deformableSurface0->getTriangleMesh());
+		const Gu::TriangleMesh& surfaceMesh1 = *static_cast<const Gu::TriangleMesh*>(deformableSurface1->getTriangleMesh());
+
+		mSurfaceSurfaceFilters.updateSurfaceSurface(surfaceMesh0, *mSurfaceTopologies[surfaceId0], surfaceId0,
+			surfaceMesh1, *mSurfaceTopologies[surfaceId1], surfaceId1, triIndices0, triIndices1, triIndicesSize,
+			/*add*/ true);
 	}
 
-	void PxgSimulationController::removeTriRigidAttachment(Dy::DeformableSurface* deformableSurface, PxU32 handle)
+	void PxgSimulationController::removeSurfaceSurfaceFilters(Dy::DeformableSurface* deformableSurface0, Dy::DeformableSurface* deformableSurface1,
+		PxU32* triIndices0, PxU32* triIndices1, PxU32 triIndicesSize)
 	{
-		if(mClothRigidAttachments.removeAttachment(handle))
-			deformableSurface->removeAttachmentHandle(handle);
-	 }
+		const PxU32 surfaceId0 = deformableSurface0->getGpuRemapId();
+		const PxU32 surfaceId1 = deformableSurface1->getGpuRemapId();
 
-	void PxgSimulationController::addClothFilter(Dy::DeformableSurface* deformableSurface0, Dy::DeformableSurface* deformableSurface1, PxU32 triIdx0, PxU32 triIdx1)
-	{
-		if (triIdx0 == PX_MAX_NB_DEFORMABLE_SURFACE_TRI && triIdx1 == PX_MAX_NB_DEFORMABLE_SURFACE_TRI)
-		{
-			return;
-		}
+		// A filter only registers once both surfaces are in the scene, and addFEMCloth builds the
+		// topology as each one enters.
+		PX_ASSERT(mSurfaceTopologies[surfaceId0] && mSurfaceTopologies[surfaceId1]);
 
-		PxsShapeCore& shapeCore0 = deformableSurface0->getShapeCore();
-		const Gu::TriangleMesh* triangleMesh0 = _getMeshData(shapeCore0.mGeometry.get<PxTriangleMeshGeometry>());
+		const Gu::TriangleMesh& surfaceMesh0 = *static_cast<const Gu::TriangleMesh*>(deformableSurface0->getTriangleMesh());
+		const Gu::TriangleMesh& surfaceMesh1 = *static_cast<const Gu::TriangleMesh*>(deformableSurface1->getTriangleMesh());
 
-		//Map from CPU triangle ID (corresponds to the ID in the BV4 mesh) to GPU triangle ID (corresponds to the ID in the BV32 mesh)
-		//PxU32 originalTriIdx = triIdx;
-		triIdx0 = (triIdx0 == PX_MAX_NB_DEFORMABLE_SURFACE_TRI) ? triIdx0 : static_cast<PxU32*>(triangleMesh0->mGRB_faceRemapInverse)[triIdx0];
-
-		PxU32 clothId0 = deformableSurface0->getGpuRemapId();
-		PxU32 triHandle0 = PxEncodeClothIndex(clothId0, triIdx0);
-
-		PxsShapeCore& shapeCore1 = deformableSurface1->getShapeCore();
-		const Gu::TriangleMesh* triangleMesh1 = _getMeshData(shapeCore1.mGeometry.get<PxTriangleMeshGeometry>());
-
-		//Map from CPU triangle ID (corresponds to the ID in the BV4 mesh) to GPU triangle ID (corresponds to the ID in the BV32 mesh)
-		//PxU32 originalTriIdx = triIdx;
-		triIdx1 = (triIdx1 == PX_MAX_NB_DEFORMABLE_SURFACE_TRI) ? triIdx1 : static_cast<PxU32*>(triangleMesh1->mGRB_faceRemapInverse)[triIdx1];
-
-		PxU32 clothId1 = deformableSurface1->getGpuRemapId();
-		PxU32 triHandle1 = PxEncodeClothIndex(clothId1, triIdx1);
-
-		//add vert vs triangle pair filter
-		if (triIdx0 != PX_MAX_NB_DEFORMABLE_SURFACE_TRI)
-		{
-			PxU32 triVertInd0[3];
-			getGRBVertexIndices(triVertInd0[0], triVertInd0[1], triVertInd0[2], triIdx0, triangleMesh0);
-
-			for (PxU32 i = 0; i < 3; ++i)
-			{
-				const PxU32 triVertHandle = PxEncodeClothIndex(clothId0, triVertInd0[i]);
-				PxgNonRigidFilterPair pair;
-				pair.index0 = triVertHandle;
-				pair.index1 = triHandle1;
-				addFilterPairInternal(pair, mClothClothVertTriFilterPairs, mClothClothVertTriFilterRefs, mClothClothFilterPairsDirty);
-			}
-
-			if (triIdx1 == PX_MAX_NB_DEFORMABLE_SURFACE_TRI)
-			{
-				PxU32 vtxMaskFull1 = PxEncodeClothIndex(clothId1, PX_MAX_NB_DEFORMABLE_SURFACE_VTX);
-				PxgNonRigidFilterPair pair;
-				pair.index0 = vtxMaskFull1; 
-				pair.index1 = triHandle0;
-				addFilterPairInternal(pair, mClothClothVertTriFilterPairs, mClothClothVertTriFilterRefs, mClothClothFilterPairsDirty);
-			}
-		}
-
-		if (triIdx1 != PX_MAX_NB_DEFORMABLE_SURFACE_TRI)
-		{
-			PxU32 triVertInd1[3];
-			getGRBVertexIndices(triVertInd1[0], triVertInd1[1], triVertInd1[2], triIdx1, triangleMesh1);
-
-			for (PxU32 i = 0; i < 3; ++i)
-			{
-				const PxU32 triVertHandle = PxEncodeClothIndex(clothId1, triVertInd1[i]);
-				PxgNonRigidFilterPair pair;
-				pair.index0 = triVertHandle;
-				pair.index1 = triHandle0;
-				addFilterPairInternal(pair, mClothClothVertTriFilterPairs, mClothClothVertTriFilterRefs, mClothClothFilterPairsDirty);
-			}
-
-			if (triIdx0 == PX_MAX_NB_DEFORMABLE_SURFACE_TRI)
-			{
-				PxU32 vtxMaskFull0 = PxEncodeClothIndex(clothId0, PX_MAX_NB_DEFORMABLE_SURFACE_VTX);
-				PxgNonRigidFilterPair pair;
-				pair.index0 = vtxMaskFull0;
-				pair.index1 = triHandle1;
-				addFilterPairInternal(pair, mClothClothVertTriFilterPairs, mClothClothVertTriFilterRefs, mClothClothFilterPairsDirty);
-			}
-		}
-	}
-
-	void PxgSimulationController::removeClothFilter(Dy::DeformableSurface* deformableSurface0, Dy::DeformableSurface* deformableSurface1, PxU32 triIdx0, PxU32 triIdx1)
-	{
-		PxsShapeCore& shapeCore0 = deformableSurface0->getShapeCore();
-		const Gu::TriangleMesh* triangleMesh0 = _getMeshData(shapeCore0.mGeometry.get<PxTriangleMeshGeometry>());
-
-		//Map from CPU triangle ID (corresponds to the ID in the BV4 mesh) to GPU triangle ID (corresponds to the ID in the BV32 mesh)
-		//PxU32 originalTriIdx = triIdx;
-		triIdx0 = (triIdx0 == PX_MAX_NB_DEFORMABLE_SURFACE_TRI) ? triIdx0 : static_cast<PxU32*>(triangleMesh0->mGRB_faceRemapInverse)[triIdx0];
-
-		PxU32 clothId0 = deformableSurface0->getGpuRemapId();
-		PxU32 triHandle0 = PxEncodeClothIndex(clothId0, triIdx0);
-
-		PxsShapeCore& shapeCore1 = deformableSurface1->getShapeCore();
-		const Gu::TriangleMesh* triangleMesh1 = _getMeshData(shapeCore1.mGeometry.get<PxTriangleMeshGeometry>());
-
-		//Map from CPU triangle ID (corresponds to the ID in the BV4 mesh) to GPU triangle ID (corresponds to the ID in the BV32 mesh)
-		//PxU32 originalTriIdx = triIdx;
-		triIdx1 = (triIdx1 == PX_MAX_NB_DEFORMABLE_SURFACE_TRI) ? triIdx1 : static_cast<PxU32*>(triangleMesh1->mGRB_faceRemapInverse)[triIdx1];
-
-		PxU32 clothId1 = deformableSurface1->getGpuRemapId();
-		PxU32 triHandle1 = PxEncodeClothIndex(clothId1, triIdx1);
-
-		if (triIdx0 != PX_MAX_NB_DEFORMABLE_SURFACE_TRI)
-		{
-			PxU32 triVertInd0[3];
-			getGRBVertexIndices(triVertInd0[0], triVertInd0[1], triVertInd0[2], triIdx0, triangleMesh0);
-
-			for (PxU32 i = 0; i < 3; ++i)
-			{
-				const PxU32 triVertHandle = PxEncodeClothIndex(clothId0, triVertInd0[i]);
-				PxgNonRigidFilterPair pair;
-				pair.index0 = triVertHandle;
-				pair.index1 = triHandle1;
-				releaseFilterPairInternal(pair, mClothClothVertTriFilterPairs, mClothClothVertTriFilterRefs, mClothClothFilterPairsDirty);
-			}
-
-			if (triIdx1 == PX_MAX_NB_DEFORMABLE_SURFACE_TRI)
-			{
-				PxU32 vtxMaskFull1 = PxEncodeClothIndex(clothId1, PX_MAX_NB_DEFORMABLE_SURFACE_VTX);
-				PxgNonRigidFilterPair pair;
-				pair.index0 = vtxMaskFull1;
-				pair.index1 = triHandle0;
-				releaseFilterPairInternal(pair, mClothClothVertTriFilterPairs, mClothClothVertTriFilterRefs, mClothClothFilterPairsDirty);
-			}
-		}
-
-		if (triIdx1 != PX_MAX_NB_DEFORMABLE_SURFACE_TRI)
-		{
-			PxU32 triVertInd1[3];
-			getGRBVertexIndices(triVertInd1[0], triVertInd1[1], triVertInd1[2], triIdx1, triangleMesh1);
-
-			for (PxU32 i = 0; i < 3; ++i)
-			{
-				const PxU32 triVertHandle = PxEncodeClothIndex(clothId1, triVertInd1[i]);
-				PxgNonRigidFilterPair pair;
-				pair.index0 = triVertHandle;
-				pair.index1 = triHandle0;
-				releaseFilterPairInternal(pair, mClothClothVertTriFilterPairs, mClothClothVertTriFilterRefs, mClothClothFilterPairsDirty);
-			}
-
-			if (triIdx0 == PX_MAX_NB_DEFORMABLE_SURFACE_TRI)
-			{
-				PxU32 vtxMaskFull0 = PxEncodeClothIndex(clothId0, PX_MAX_NB_DEFORMABLE_SURFACE_VTX);
-				PxgNonRigidFilterPair pair;
-				pair.index0 = vtxMaskFull0;
-				pair.index1 = triHandle1;
-				releaseFilterPairInternal(pair, mClothClothVertTriFilterPairs, mClothClothVertTriFilterRefs, mClothClothFilterPairsDirty);
-			}
-		}
-	}
-
-	PxU32 PxgSimulationController::addTriClothAttachment(Dy::DeformableSurface* deformableSurface0, Dy::DeformableSurface* deformableSurface1, PxU32 triIdx0, PxU32 triIdx1,
-		const PxVec4& triBarycentric0, const PxVec4& triBarycentric1, const bool addToActive)
-	{
-		PxsShapeCore& shapeCore0 = deformableSurface0->getShapeCore();
-		const Gu::TriangleMesh* triangleMesh0 = _getMeshData(shapeCore0.mGeometry.get<PxTriangleMeshGeometry>());
-
-		//Map from CPU triangle ID (corresponds to the ID in the BV4 mesh) to GPU triangle ID (corresponds to the ID in the BV32 mesh)
-		triIdx0 = static_cast<PxU32*>(triangleMesh0->mGRB_faceRemapInverse)[triIdx0];
-
-		PxU32 clothId0 = deformableSurface0->getGpuRemapId();
-		PxU32 triHandle0 = PxEncodeClothIndex(clothId0, triIdx0);
-
-		PxsShapeCore& shapeCore1 = deformableSurface1->getShapeCore();
-		const Gu::TriangleMesh* triangleMesh1 = _getMeshData(shapeCore1.mGeometry.get<PxTriangleMeshGeometry>());
-
-		//Map from CPU triangle ID (corresponds to the ID in the BV4 mesh) to GPU triangle ID (corresponds to the ID in the BV32 mesh)
-		triIdx1 = static_cast<PxU32*>(triangleMesh1->mGRB_faceRemapInverse)[triIdx1];
-
-		PxU32 clothId1 = deformableSurface1->getGpuRemapId();
-		PxU32 triHandle1 = PxEncodeClothIndex(clothId1, triIdx1);
-
-		//create attachment
-		PxgFEMFEMAttachment attachment;
-		attachment.index0 = triHandle0;
-		attachment.index1 = triHandle1;
-		PxU32 handle = mClothClothAttachments.mBaseHandle++;
-		//attachment.handle = handle;
-		//attachment.referenceCount = 1;
-		attachment.barycentricCoordinates0 = make_float4(triBarycentric0.x, triBarycentric0.y, triBarycentric0.z, 0.f);
-		attachment.barycentricCoordinates1 = make_float4(triBarycentric1.x, triBarycentric1.y, triBarycentric1.z, 0.f);
-
-		mClothClothAttachments.addAttachment(attachment, handle);
-		if (addToActive)
-			mClothClothAttachments.activateAttachment(handle);
-
-		//add the attachments to cloth 0. The island gen will wake up both pieces of cloth
-		//and we just need to add the attchment handle to one of them so we can active the attachment
-		deformableSurface0->mSurfaceSurfaceAttachments.pushBack(handle);
-	
-		return handle;
-	}
-
-	void PxgSimulationController::removeTriClothAttachment(Dy::DeformableSurface* deformableSurface0, PxU32 handle)
-	{
-		if (mClothClothAttachments.removeAttachment(handle))
-		{
-			//because we just add the handle to cloth0's attachment, so we can just remove the handle from cloth0's list
-			deformableSurface0->mSurfaceSurfaceAttachments.findAndReplaceWithLast(handle);
-		}
+		mSurfaceSurfaceFilters.updateSurfaceSurface(surfaceMesh0, *mSurfaceTopologies[surfaceId0], surfaceId0,
+			surfaceMesh1, *mSurfaceTopologies[surfaceId1], surfaceId1, triIndices0, triIndices1, triIndicesSize,
+			/*add*/ false);
 	}
 
 	PxU32 PxgSimulationController::getNbDeactivatedDeformableSurfaces() const
@@ -4171,6 +3304,7 @@ namespace physx
 	{ 
 		return mSimulationCore->getActiveSBWakeCountsCPU();
 	}
+
 	void PxgSimulationController::setEnableOVDReadback(bool enableOVDReadback)
 	{
 		mEnableOVDReadback = enableOVDReadback;

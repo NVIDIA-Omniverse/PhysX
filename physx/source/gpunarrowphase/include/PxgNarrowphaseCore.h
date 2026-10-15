@@ -31,8 +31,7 @@ namespace physx
 	class PxgCudaKernelWranglerManager;
 	class PxgNphaseImplementationContext;
 	class PxgGpuContext;
-	struct PxgFemFemContactInfo;
-	struct PxgFemOtherContactInfo;
+	struct PxgDeformablePairInfo;
 	struct PxgPersistentContactManifold;
 	class PxgParticleSystemCore;
 
@@ -52,7 +51,7 @@ namespace physx
 		struct ConvexHullData;
 		class TriangleMesh;
 		class DeformableVolumeMesh;
-		class BVTetrahedronMesh;
+		class TetrahedronMesh;
 		struct HeightFieldData;
 		class PersistentContactManifold;
 	}
@@ -543,7 +542,7 @@ namespace physx
 
 		bool isClothMeshGPUCompatible(const PxTriangleMeshGeometryLL& meshData); // skipping material counts
 
-		bool isTetMeshGPUCompatible(const Gu::BVTetrahedronMesh* meshData);
+		bool isTetMeshGPUCompatible(const Gu::TetrahedronMesh* meshData);
 
 		void computeRigidsToShapes();
 
@@ -642,16 +641,17 @@ namespace physx
 		void softbodyOtherContactApplyCollisionToSimMeshMapping(
 			PxgDevicePointer<float4> contactsd,
 			PxgDevicePointer<float4> barycentricsd,
-			PxgDevicePointer<PxgFemOtherContactInfo> contactInfosd,
+			PxgDevicePointer<PxgDeformablePairInfo> contactInfosd,
 			PxgDevicePointer<PxU32> totalNumCountsd,
 			PxgDevicePointer<PxU32> prevNumCountsd);
 
 	public:
 
 		void softbodyFemContactApplyCollisionToSimMeshMapping(
+			PxgDevicePointer<float4> contactsd,
 			PxgDevicePointer<float4> barycentrics0d,
 			PxgDevicePointer<float4> barycentrics1d,
-			PxgDevicePointer<PxgFemFemContactInfo> contactInfosd,
+			PxgDevicePointer<PxgDeformablePairInfo> contactInfosd,
 			PxgDevicePointer<PxU32> totalNumCountsd,
 			PxgDevicePointer<PxU32> prevNumCountsd, bool isSelfCollision, bool isCloth);
 
@@ -707,6 +707,22 @@ namespace physx
 	
 		void updateContactDistance(const PxReal* contactDistances, const PxU32 numContactDistance);
 	};
+
+	template <>
+	PX_FORCE_INLINE void PxgGpuNarrowphaseCore::mapMaterialIndices<PxsDeformableSurfaceMaterialData>(PxU16* gpuMaterialIndices,
+		const PxU16* materialIndices, PxU32 numMaterialIndices)
+	{
+		for(PxU32 i = 0; i < numMaterialIndices; ++i)
+			gpuMaterialIndices[i] = mapMaterialIndex<PxsDeformableSurfaceMaterialData>(materialIndices[i], mFEMClothMaterialsMap, mGpuFEMClothMaterialManager);
+	}
+
+	template <>
+	PX_FORCE_INLINE void PxgGpuNarrowphaseCore::mapMaterialIndices<PxsDeformableVolumeMaterialData>(PxU16* gpuMaterialIndices,
+		const PxU16* materialIndices, PxU32 numMaterialIndices)
+	{
+		for(PxU32 i = 0; i < numMaterialIndices; ++i)
+			gpuMaterialIndices[i] = mapMaterialIndex<PxsDeformableVolumeMaterialData>(materialIndices[i], mFEMMaterialsMap, mGpuFEMMaterialManager);
+	}
 
 	template <>
 	PX_FORCE_INLINE void PxgGpuNarrowphaseCore::mapMaterialIndices<PxsPBDMaterialData>(PxU16* gpuMaterialIndices,

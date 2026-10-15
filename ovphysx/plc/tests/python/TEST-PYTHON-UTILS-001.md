@@ -101,11 +101,11 @@ coverage gaps" after that.
 
 Two environments degrade to skips rather than failures, because neither is a defect
 in the subpackage under test. Without `pxr` there is no USD runtime to author into,
-and the whole suite skips at module scope. In a raw source checkout
-`codeless_schema_paths()` finds no staged schema tree, since it resolves the wheel
-or `_install/` layout; there, only the cases that open a stage skip, because the
-schema fixture is deliberately not autouse. The fixture distinguishes both from a
-third case, schemas already registered through ovphysx's own plugin path, in which
+and the whole suite skips at module scope. Without a separately installed
+`physx-usd-schemas` provider, metadata discovery finds no schema resources;
+there, only the cases that open a stage skip, because the schema fixture is
+deliberately not autouse. The fixture distinguishes both from a
+third case, schemas already registered through an application-supplied plugin path, in which
 case everything runs.
 
 That leniency is scoped to a developer checkout, and it is switched off where it
@@ -210,8 +210,8 @@ callable, and fail rather than skip under the switch.
 - A third child registers the half-staged tree in the supported order -- nothing
   is late about it -- and then reports what the registry knows, what
   `schema_is_registered()` answers, and what applying an API from each root
-  does. It reaches the tree by rebinding `ovphysx.codeless_schema_paths`, which
-  `register_schemas()` imports at call time, so the resolver runs as it would
+  does. It reaches the tree by rebinding the private `ovphysx.utils.codeless._schema_paths` discovery seam, which
+  `register_schemas()` calls before registration, so the resolver runs as it would
   against an install with one root missing.
 - Collider removal is exercised over a subtree, not only a single prim: a root
   Xform holding a nested Xform, four meshes carrying the `sdf`, `sphereFill`,
@@ -784,6 +784,15 @@ callable, and fail rather than skip under the switch.
   world and nothing else here would notice. A non-Xformable prim produces a logged
   warning and no exception, observable through `caplog` because `carb.log_warn`
   became standard `logging` (REQ AC-4).
+- `set_or_add_translate_op`, `set_or_add_orient_op` and `set_or_add_scale_op`
+  create or reactivate their ops when `xformOpOrder` is unauthored, cleared or
+  excludes the attribute. Each op affects the composed local matrix. New ops
+  use float precision; reused ops retain float, double or half precision.
+  Repeated calls leave each op present once and preserve active op order.
+  Mixed stacks retain their active ops and reset flag. An inverse-only entry
+  does not count as its forward op, and an op ignored before a reset marker
+  becomes active. `set_or_add_scale_orient_translate` restores all three
+  inactive ops in translate-orient-scale order (REQ AC-4).
 - `setup_transform_as_scale_orient_translate` and
   `copy_transform_as_scale_orient_translate` both execute without entering an
   `Sdf.ChangeBlock`; the raising test double pins that structural rule directly,
@@ -970,11 +979,33 @@ callable, and fail rather than skip under the switch.
 
 ## Test code and coverage map
 
+### Unit metadata and cone input validation (AC-4, AC-6)
+
+Given an in-memory stage, `test_utils_input_validation.py` exercises the real
+authoring helpers with valid and invalid inputs:
+
+- Unit metadata is zero (including negative zero), negative, NaN or either
+  infinity. The scale helper must warn and return `1.0` without changing the
+  layer. Unauthored metadata and positive values retain their reciprocal
+  conversion and do not warn.
+- Cone height is zero, negative or non-finite; radius is negative or
+  non-finite; or integer tessellation is below three. Each call must raise
+  `ValueError` naming the parameter and leave the root layer unchanged, both
+  for a new path and for an existing mesh with authored points.
+- Heights of two, radii of zero and one half, and tessellations of 3, 8 and 32
+  produce the expected point, normal and triangle counts, in-range indices,
+  finite points, unit normals, and the expected tip and first base positions.
+
+These cases cover NVBugs 6117018 and 6117029 (OMPE-91804 and OMPE-91806).
+
+### Coverage map
+
 | File | Covers |
 |---|---|
 | `ovphysx/tests/python_tests/utils_tests/conftest.py` | AC-10 (schema registration), the half-staged tree AC-14's partial-registration case needs, and the shared `stage` fixture |
 | `ovphysx/tests/python_tests/utils_tests/test_utils_surface.py` | AC-1, AC-2's flat-export owner manifest and surface, AC-9, AC-11, AC-13, AC-15's surface half (the bounds of eight names and three parameters, the exclusion from `__all__` / `dir()` / `import *`, the preserved signature, and the absence of camel spellings from the documented surface -- helper names and parameter names alike) |
-| `ovphysx/tests/python_tests/utils_tests/test_utils_authoring.py` | AC-4, including execution and result checks for both transform-stack rewrites, AC-5, AC-6, AC-7, AC-8, AC-10, and AC-12's `Sdf.ChangeBlock` transform regression |
+| `ovphysx/tests/python_tests/utils_tests/test_utils_authoring.py` | AC-4, including both transform-stack rewrites and set-or-add op activation, precision, active order and reset preservation, AC-5, AC-6, AC-7, AC-8, AC-10, and AC-12's `Sdf.ChangeBlock` transform regression |
+| `ovphysx/tests/python_tests/utils_tests/test_utils_input_validation.py` | AC-4's invalid unit metadata fallback and AC-6's cone parameter validation, unchanged-stage guarantees and valid cone geometry checks |
 | `ovphysx/tests/python_tests/utils_tests/test_utils_schema.py` | AC-3, AC-14, AC-10's invalid-prim and remove-side diagnostics, concrete-prim preflight under no and late registration, successful property writes without eager `repr`, and its refusal clause -- the bool a known identifier gets on a layer that is not editable, and the raise a refused property write gets -- AC-12's property-cache clause, and AC-4's world-position clause, which is asserted nowhere else -- and which this file now genuinely carries: the case compares the helper's answer against the position the prim was authored at, where it previously asserted only that the answer was not `None` over a prim with no bound, which the origin satisfies for every input |
 | `ovphysx/tests/python_tests/utils_tests/test_utils_deprecated_aliases.py` | AC-15's behavioral half: each alias and each kept `camelCase` parameter is exercised for real and compared against its renamed counterpart; every alias-plus-parameter warning pair is attributed to the caller |
 | `ovphysx/tests/python_tests/utils_tests/test_utils_bugfixes.py` | AC-12, AC-5's subtree, `omni:no_collision` value, occupied-plane guard and unconditional and pre-applied rigid-body clauses -- the only place the `add_rigid_*` family is asserted at a zero density -- AC-3's ancestor/descendant walk clause, AC-8's hierarchy-visual and single-prim required-geometry preflights and deformable-removal clause below one level of children -- which the deformable case in `test_utils_authoring.py` cannot reach, its hierarchy being one level deep -- and AC-8's collision-API ownership clause, on the removal path and on both `create_auto_*` paths, plus AC-6's `Gf.Vec3f`, empty-bound, non-positive grid and surface-extraction clauses, and AC-4's non-Xformable warning and bare-prim clauses, each of which is asserted nowhere else |
@@ -990,17 +1021,11 @@ registration is first.
 
 ## Known coverage gaps
 
-The measurements below are the authoring-suite snapshot from before
-`OvStageOutputCache` was added. They retain that snapshot's denominators; the
-cache behavior is covered separately by TEST-PYTHON-FRAME-001.
-
-Recorded so the rows above are not read as claiming more than they cover. The
-suite is a breadth sample of each AC's helper family, not a per-helper sweep, and
-the scale of that is worth stating plainly, in two figures restated on
-2026-09-09 against that snapshot, after three names were dropped
-and three privatized. The word-match figure was re-measured directly and the
-profiling figure comes from a fresh run; which is which is said per row, because
-they are not the same standard of evidence.
+The profiling figure below retains the authoring-suite snapshot from before
+`OvStageOutputCache` was added; the cache behavior is covered separately by
+TEST-PYTHON-FRAME-001. The word-match figure was re-measured on 2026-10-01
+against the current flat public surface and tracked Python tests. A name in
+source text does not establish execution or assertions about its behavior.
 
 - **110 of the 126 callable public names in `ovphysx.utils.__all__` are actually
   executed by the suite; 16 are never called at all.** The underlying measurement
@@ -1064,16 +1089,16 @@ they are not the same standard of evidence.
   `remove_static_collider`, `set_static_collider`,
   `set_physics_scene_asyncsimrender`,
   `step_and_write_to_ovstage` and `triangulate_mesh`.
-- **33 of the 137 public helper names are not so much as named anywhere under
+- **30 of the 138 public helper names are not so much as named anywhere under
   `tests/python_tests/`** — word-matched against the concatenated text of every
-  `.py` file there, so a name matched by a comment counts as mentioned. The
+  tracked `.py` file there, so a name matched by a comment counts as mentioned. The
   walk skips `.venv/` and the uv cache: sweeping them in reads a name as
   mentioned because a vendored third-party package happens to contain the same
   identifier, which is how `add_xform` first came back as covered.
   This
   figure covers the eleven non-callable constants that the profiling figure
   cannot see, and it is the backstop for anything the per-AC list below misses.
-  The 33 are eight of the eleven constants -- all but `COOKED_DATA_TOKENS`,
+  The 30 are eight of the eleven constants -- all but `COOKED_DATA_TOKENS`,
   `MESH_APPROXIMATIONS` and
   `METADATA_ATTRIBUTE_NAME_LOCALSPACEVELOCITIES` -- plus
   `add_cube`, `add_cube_ground_plane`, `add_density`,
@@ -1083,8 +1108,7 @@ they are not the same standard of evidence.
   `create_joints`, `create_tetra_voxels`, `cube_tetrahedra`,
   `ensure_material_on_path`,
   `get_aligned_body_transform`, `get_stage_next_free_path`,
-  `remove_static_collider`, `set_collider_subtree`, `set_or_add_orient_op`,
-  `set_or_add_scale_op`, `set_or_add_scale_orient_translate`,
+  `remove_static_collider`, `set_collider_subtree`,
   `set_physics_scene_asyncsimrender`,
   `set_static_collider` and `triangulate_mesh`.
 
@@ -1104,6 +1128,12 @@ they are not the same standard of evidence.
   **The non-positive voxel regression moves this row from 34 to 33.** It names
   `create_triangle_mesh_cube`, which was previously absent from every test
   source. `create_tetra_voxel_sphere` was already named.
+
+  **The transform activation cases move this row from 33 to 30.** They name
+  `set_or_add_orient_op`, `set_or_add_scale_op` and
+  `set_or_add_scale_orient_translate` directly. The current public surface also
+  includes `OvStageOutputCache`, already named in tests, bringing the denominator
+  from the historical 137 to 138.
 
   **The 45 this row used to carry was wrong by one, and the enumeration beside it
   was one name short of its own figure.** Re-running the match at the tip before
@@ -1160,13 +1190,14 @@ subset closed here was chosen for the value of the surface behind it.
   two.** The AC requires correct points, normals, face indices and face vertex
   counts for a square, cube, concave shape, cylinder and cone. Read against the
   suite, it holds for the square and the concave shape: those two have their
-  point values, their per-point normals and their winding asserted. For the cube,
-  cylinder and cone only the *shape* of the result is asserted -- non-empty
+  point values, their per-point normals and their winding asserted. For the cube
+  and cylinder only the *shape* of the result is asserted -- non-empty
   points, non-empty face vertex counts, and index counts that sum consistently --
   so a generator that produced a geometrically wrong but structurally consistent
-  mesh would pass. Nothing here narrows AC-6, which states what the helpers must
-  produce; the mismatch is the suite's, and this is the plain statement of which
-  two of the five it stands behind.
+  mesh would pass. The cone input-validation cases additionally check finite
+  points, unit normals, index bounds and selected tip/base positions, but do
+  not exhaustively check every point, normal or face winding. Nothing here
+  narrows AC-6, which states what the helpers must produce.
 - **AC-6's tetrahedral generators are largely untested.** The square and concave
   mesh paths now run, through the generic `create_mesh`, and
   `create_triangle_mesh_square`'s point and index lists are authored into a real
@@ -1189,14 +1220,9 @@ subset closed here was chosen for the value of the surface behind it.
   and non-`TetMesh` rejections, or its surface-face computation. The row above
   this list carried it as unreferenced until those cases were counted; it is the
   assertions that are partial, not the call.
-- **AC-4's remaining transform helpers are untested.** `get_basis` and
-  `get_forward_vector` now run; `get_aligned_body_transform`,
-  `set_or_add_orient_op`, `set_or_add_scale_op` and
-  `set_or_add_scale_orient_translate` are unreferenced. AC-4's
-  `resetXformStack` and op-precision preservation clauses remain unasserted: the
-  transform-stack case calls both helpers, but its source has no reset flag and
-  only reads the resulting stack and local transform. The `Sdf.ChangeBlock`
-  regression closes only that structural part of this row.
+- **AC-4's remaining transform coverage gaps:** `get_aligned_body_transform`
+  is untested, as is reset-flag preservation by
+  `setup_transform_as_scale_orient_translate`.
 - **The static-collider and remaining bare set/remove helpers lack direct coverage.**
   `remove_static_collider`, `set_collider_subtree` and `set_static_collider` are
   unreferenced by name. `set_collider_subtree` and `remove_physics` are each

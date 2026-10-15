@@ -1,9 +1,25 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-EVENT-QUEUE-001
+// @covers AC-4
+
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-1 AC-2 AC-4
+
+// @implements REQ-ATTACH-LIFETIME-001
+// @covers AC-3 AC-4
+
+/**
+ * @implements REQ-ATTACH-RESOLVE-001
+ * @covers AC-12
+ */
+
 #pragma once
+#include <carb/tasking/TaskingUtils.h>
 
 #include <PxPhysicsAPI.h>
+#include "CallbackRegistry.h"
 #include <omni/physx/TriggerEvent.h>
 #include <omni/physics/parse/Handles.h>
 
@@ -21,6 +37,7 @@ struct InvokedTrigger
     const ::physx::PxShape* mTriggerShape;
     const ::physx::PxShape* mOtherShape;
     TriggerEventType::Enum mTriggerEvent;
+    uint64_t mTriggerActorId = 0, mOtherActorId = 0;
 };
 
 using InvokedTriggers = std::vector<InvokedTrigger>;
@@ -49,19 +66,97 @@ using TriggerUsdOutputMap =
 
 struct TriggerSubscriptionEntry
 {
-    AttachHandle attachHandle; //!< The attach whose trigger events this subscription wants. May be
-                               //!< kActiveAttach, stored unresolved: it is bound late, at fire time,
-                               //!< when the reported handle is compared against this field, not
-                               //!< resolved when the subscription is made (ADR-0016 Decision 6)
+    AttachHandle attachHandle; //!< Immutable exact attachment identity.
     omni::physics::parse::ObjectKey triggerColliderPrimKey; //!< The prim source of trigger event
-    omni::physx::OnTriggerEventReportEventFn reportFn; //!< reporting function
+    std::function<void(const TriggerEventData*, void*)> reportFn; //!< reporting function
     void* userData; //!< User Data passed to reporting function
+    // Internal copied-data consumer; legacy callback layout remains unchanged.
+    std::function<void(const TriggerEventData*, uint32_t, uint32_t)> detailedReport;
 };
 
-using TriggerSubscriptionsMap = std::unordered_multimap<omni::physics::parse::ObjectKey,
-                                                         omni::physx::SubscriptionId,
-                                                         omni::physics::parse::ObjectKey::Hash>;
-using TriggerSubscriptionRegistry = EventSubscriptionRegistry<TriggerSubscriptionEntry>;
+class TriggerSubscriptionRegistry
+{
+public:
+    using EventMap = std::vector<std::pair<SubscriptionId, TriggerSubscriptionEntry>>;
+    using Key = std::pair<AttachHandle, uint64_t>;
+    SubscriptionId addEvent(const TriggerSubscriptionEntry& entry)
+    {
+        SubscriptionId id = mNext.load(std::memory_order_relaxed);
+        for (;;)
+        {
+            if (id == kInvalidSubscriptionId)
+                return kInvalidSubscriptionId;
+            if (mNext.compare_exchange_weak(id, id + 1, std::memory_order_relaxed))
+                break;
+        }
+        std::lock_guard<carb::tasking::MutexWrapper> lock(mMutex);
+        auto position = mByKey.emplace(Key{entry.attachHandle, entry.triggerColliderPrimKey.handle},
+                                      std::make_pair(id, entry));
+        mById.emplace(id, position);
+        return id;
+    }
+    void removeEvent(SubscriptionId id)
+    {
+        decltype(mByKey)::node_type retired;
+        {
+            std::lock_guard<carb::tasking::MutexWrapper> lock(mMutex);
+            auto it = mById.find(id);
+            if (it != mById.end())
+            {
+                retired = mByKey.extract(it->second);
+                mById.erase(it);
+            }
+        }
+    }
+    bool contains(SubscriptionId id) const
+    {
+        std::lock_guard<carb::tasking::MutexWrapper> lock(mMutex);
+        return mById.count(id) != 0;
+    }
+    EventMap snapshot(AttachHandle attach, const omni::physics::parse::ObjectKey* keys, size_t count) const
+    {
+        EventMap selected;
+        std::lock_guard<carb::tasking::MutexWrapper> lock(mMutex);
+        for (size_t i = 0; i < count; ++i)
+        {
+            if (i == 1 && keys[i] == keys[0])
+                continue;
+            if (i + 1 != count && !keys[i].handle)
+                continue;
+            const auto range = mByKey.equal_range({attach, keys[i].handle});
+            for (auto it = range.first; it != range.second; ++it)
+                selected.push_back(it->second);
+        }
+        return selected;
+    }
+    template<class Predicate> void removeIf(Predicate predicate)
+    {
+        std::vector<decltype(mByKey)::node_type> retired;
+        {
+            std::lock_guard<carb::tasking::MutexWrapper> lock(mMutex);
+            for (auto it = mByKey.begin(); it != mByKey.end();)
+                if (predicate(it->second.second))
+                {
+                    mById.erase(it->second.first);
+                    retired.push_back(mByKey.extract(it++));
+                }
+                else
+                    ++it;
+        }
+    }
+    void clear() { removeIf([](const auto&) { return true; }); }
+private:
+    inline static std::atomic<SubscriptionId> mNext{0};
+    mutable carb::tasking::MutexWrapper mMutex;
+    std::multimap<Key, std::pair<SubscriptionId, TriggerSubscriptionEntry>> mByKey;
+    std::unordered_map<SubscriptionId, decltype(mByKey)::iterator> mById;
+};
+
+struct AttachmentTriggerState
+{
+    InvokedTriggers invoked;
+    TriggerUsdOutputMap output;
+};
 
 class TriggerManager
 {
@@ -72,14 +167,17 @@ public:
 
     void onTriggerEnterEvent(const usdparser::AttachedStage& attachedStage,
                              const ::physx::PxShape* triggerShape,
-                             const ::physx::PxShape* otherShape);
+                             const ::physx::PxShape* otherShape,
+                             uint64_t triggerActorId = 0, uint64_t otherActorId = 0);
     void onTriggerLeaveEvent(const usdparser::AttachedStage& attachedStage,
                              const ::physx::PxShape* triggerShape,
-                             const ::physx::PxShape* otherShape);
+                             const ::physx::PxShape* otherShape,
+                             uint64_t triggerActorId = 0, uint64_t otherActorId = 0);
 
-    void bufferTriggerEvent(const ::physx::PxShape* triggerShape,
+    void bufferTriggerEvent(const usdparser::AttachedStage& attachedStage, const ::physx::PxShape* triggerShape,
                             const ::physx::PxShape* otherShape,
-                            TriggerEventType::Enum triggerEvent);
+                            TriggerEventType::Enum triggerEvent,
+                            uint64_t triggerActorId = 0, uint64_t otherActorId = 0);
     void fireTriggerEvents(const usdparser::AttachedStage& attachedStage);
 
     // `usdOutput` requests the trigger-state write-back above; when the attach
@@ -88,12 +186,13 @@ public:
     // there is nothing to author without a prim" call-site comment in
     // UsdInterface.cpp's createShape).
     void preloadTrigger(const usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey triggerKey, bool usdOutput);
-    void clearTriggers();
+    void clearTriggers(const usdparser::AttachedStage& attachedStage);
     
-    void clearBufferedShape(const ::physx::PxShape* shape);
+    void clearBufferedShape(const usdparser::AttachedStage& attachedStage, const ::physx::PxShape* shape);
 
     omni::physx::SubscriptionId registerNativeCallback(TriggerSubscriptionEntry triggerSubscription);
     void unregisterNativeCallback(omni::physx::SubscriptionId subscriptionID);
+    void retireSubscriptions(AttachHandle attach);
 
 private:
     // Still take attachedStage: it resolves the write sink (IPhysicsDataWrite) the
@@ -113,15 +212,11 @@ private:
                             omni::physics::parse::ObjectKey otherColliderKey,
                             TriggerEventType::Enum eventType,
                             omni::physics::parse::ObjectKey triggerBodyKey,
-                            omni::physics::parse::ObjectKey otherBodyKey);
+                            omni::physics::parse::ObjectKey otherBodyKey,
+                            uint32_t triggerInstance, uint32_t otherInstance);
 
 private:
-    InvokedTriggers mInvokedTriggers;
-
-    TriggerUsdOutputMap mTriggerOutputMap;
-
     TriggerSubscriptionRegistry mTriggerSubscriptions;
-    TriggerSubscriptionsMap mTriggerSubscriptionsMap;
 };
 
 } // namespace physx

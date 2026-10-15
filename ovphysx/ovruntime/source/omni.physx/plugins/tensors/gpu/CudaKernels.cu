@@ -1,7 +1,13 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-TENSOR-CONTACT-004
+// @covers AC-1 AC-2
+
 /**
+ * @implements REQ-TENSOR-WRENCH-001
+ * @covers AC-1 AC-2 AC-3
+ *
  * @implements REQ-TENSOR-CONTACT-003
  * @covers AC-1 AC-2 AC-3 AC-4
  *
@@ -15,7 +21,13 @@
  * @covers AC-3 AC-4 AC-9
  *
  * @implements REQ-READ-ATTRS-001
- * @covers AC-15, AC-17
+ * @covers AC-15, AC-17, AC-21
+ *
+ * @implements REQ-READ-CONTACT-001
+ * @covers AC-11
+ *
+ * @implements REQ-READ-CONTACT-005
+ * @covers AC-2
  *
  * @implements REQ-READ-INVDYN-001
  * @covers AC-8, AC-10
@@ -23,8 +35,17 @@
  * @implements REQ-READ-COVERAGE-001
  * @covers AC-4c, AC-4d
  *
+ * @implements REQ-INPUT-COVERAGE-001
+ * @covers AC-16
+ *
+ * @implements REQ-INPUT-CORE-001
+ * @covers AC-3 AC-5
+ *
  * @implements REQ-TENSOR-CONTACT-002
  * @covers AC-2 AC-3
+ *
+ * @implements REQ-READ-SDF-001
+ * @covers AC-3
  */
 
 #include "tensors/gpu/CudaKernels.h"
@@ -54,6 +75,28 @@ namespace physx
 namespace tensors
 {
 
+
+// cudaMemset may reject a caller allocation from another CUDA context on Windows.
+// Contact kernels already access that allocation through its unified device address;
+// initialize it with the same access and stream ordering as those kernels.
+__global__ void clearContactBufferKernel(unsigned char* destination, size_t bytes)
+{
+    for (size_t i = size_t(blockIdx.x) * blockDim.x + threadIdx.x; i < bytes;
+         i += size_t(blockDim.x) * gridDim.x)
+        destination[i] = 0;
+}
+
+bool clearContactBuffer(void* destination, size_t bytes)
+{
+    if (bytes == 0)
+        return true;
+    if (!destination)
+        return false;
+    const size_t blocks = (bytes - 1) / 256 + 1;
+    clearContactBufferKernel<<<static_cast<unsigned>(blocks < 65535 ? blocks : 65535), 256>>>(
+        static_cast<unsigned char*>(destination), bytes);
+    return CHECK_CUDA(cudaGetLastError());
+}
 
 //
 // Articulation dirty indices
@@ -1354,6 +1397,132 @@ bool submitPointSetColumnOvStage(PxVec4* const dst,
     return launchOk(CHECK_CUDA(cudaGetLastError()));
 }
 
+// Kinematic-target scatter: a vec4-per-node column (xyz target + w active-flag) into the runtime-owned
+// PxVec4 buffer PhysX adopts. Same reframe as the point-set scatter above (the target lives in the same
+// sim-mesh frame as points), but the FOURTH lane is SET from the source flag rather than preserved -- for
+// a kinematic-target buffer w selects whether the node is driven (0) or free (non-zero), it is not invmass.
+__global__ static void submitKinematicTargetColumnOvStageKernel(PxVec4* dst,
+                                                                const float* src,
+                                                                const PointSetTransform xf,
+                                                                const PxU32 numNodes,
+                                                                const bool reframe,
+                                                                int* anyActiveOut)
+{
+    const PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= numNodes)
+        return;
+
+    const float p[3] = { src[i * 4 + 0], src[i * 4 + 1], src[i * 4 + 2] };
+    float o[3];
+    if (reframe)
+    {
+        pointSetTransformPoint(xf, p, o);
+    }
+    else
+    {
+        o[0] = p[0];
+        o[1] = p[1];
+        o[2] = p[2];
+    }
+    const float flag = src[i * 4 + 3];
+    dst[i] = PxVec4(o[0], o[1], o[2], flag);
+    // w == 0 marks a node as an ACTIVE kinematic target (PhysX convention). The commit uses this to
+    // decide whether the body is still driven or should be torn down (an all-inactive write).
+    if (anyActiveOut && flag == 0.0f)
+        atomicMax(anyActiveOut, 1);
+}
+
+// `anyActiveOut` (optional, device int, pre-zeroed) is set to 1 if any written node is active (w==0),
+// so the caller can tear a body down when a write leaves every node free.
+bool submitKinematicTargetColumnOvStage(PxVec4* const dst,
+                                        const float* const src,
+                                        const PointSetTransform& localToWorld,
+                                        const PxU32 numNodes,
+                                        const bool reframe,
+                                        int* const anyActiveOut)
+{
+    if (numNodes == 0)
+        return true;
+    submitKinematicTargetColumnOvStageKernel<<<(numNodes + 255) / 256, 256>>>(dst, src, localToWorld, numNodes,
+                                                                             reframe, anyActiveOut);
+    return launchOk(CHECK_CUDA(cudaGetLastError()));
+}
+
+// Kinematic-target gather: read one body's runtime-owned PxVec4 buffer into a four-float-per-node column
+// (xyz + w flag). The inverse of the scatter above: xyz is carried world->sim-mesh by `worldToLocal`
+// exactly as the point-set gather reframes points, and the w flag passes through unchanged.
+__global__ static void fetchKinematicTargetColumnOvStageKernel(float* dst,
+                                                               const PxVec4* src,
+                                                               const PointSetTransform xf,
+                                                               const PxU32 numNodes,
+                                                               const bool reframe)
+{
+    const PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= numNodes)
+        return;
+
+    const PxVec4 v = src[i];
+    const float p[3] = { v.x, v.y, v.z };
+    float o[3];
+    if (reframe)
+    {
+        pointSetTransformPoint(xf, p, o);
+    }
+    else
+    {
+        o[0] = p[0];
+        o[1] = p[1];
+        o[2] = p[2];
+    }
+    dst[i * 4 + 0] = o[0];
+    dst[i * 4 + 1] = o[1];
+    dst[i * 4 + 2] = o[2];
+    dst[i * 4 + 3] = v.w;
+}
+
+bool fetchKinematicTargetColumnOvStage(float* const dst,
+                                       const PxVec4* const src,
+                                       const PointSetTransform& worldToLocal,
+                                       const PxU32 numNodes,
+                                       const bool reframe)
+{
+    if (numNodes == 0)
+        return true;
+    fetchKinematicTargetColumnOvStageKernel<<<(numNodes + 255) / 256, 256>>>(dst, src, worldToLocal, numNodes,
+                                                                           reframe);
+    return launchOk(CHECK_CUDA(cudaGetLastError()));
+}
+
+// Detect a forbidden kinematic->free transition. For each node, flag if it is CURRENTLY driven (the live
+// target buffer's w == 0) but the incoming column marks it free (w != 0). Read-only on `current` and
+// `newColumn` -- nothing is mutated, so the caller can refuse before the scatter touches the live buffer
+// PhysX re-reads. `violationOut` (device int, pre-zeroed) is raised to 1 if any such node exists. Enforces
+// the monotonic rule: a node may go free->driven at any time, but never driven->free (PhysX does not
+// restore the inverse mass it zeroed to pin a driven node).
+__global__ static void detectKinematicUnpinColumnOvStageKernel(const PxVec4* current,
+                                                               const float* newColumn,
+                                                               const PxU32 numNodes,
+                                                               int* violationOut)
+{
+    const PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= numNodes)
+        return;
+    if (current[i].w == 0.0f && newColumn[i * 4 + 3] != 0.0f)
+        atomicMax(violationOut, 1);
+}
+
+bool detectKinematicUnpinColumnOvStage(const PxVec4* const current,
+                                       const float* const newColumn,
+                                       const PxU32 numNodes,
+                                       int* const violationOut)
+{
+    if (numNodes == 0)
+        return true;
+    detectKinematicUnpinColumnOvStageKernel<<<(numNodes + 255) / 256, 256>>>(current, newColumn, numNodes,
+                                                                            violationOut);
+    return launchOk(CHECK_CUDA(cudaGetLastError()));
+}
+
 // The packed write pair. See CudaKernels.h for why this replaces flags-and-compaction: that path
 // derives its element count on the host and therefore cannot be non-blocking, which the read's
 // contract requires.
@@ -1435,6 +1604,7 @@ __global__ static void submitLinkWrenchOvStageKernel(PxVec3* linkForces,
                                                      const PxVec3* comsByRecord,
                                                      const GpuRigidBodyRecord* records,
                                                      const PxU32* rows,
+                                                     const PxU32* rowCompactArti,
                                                      const PxU32 numOutputs,
                                                      const PxU32 simMaxLinks,
                                                      const PxU32 comps)
@@ -1444,32 +1614,37 @@ __global__ static void submitLinkWrenchOvStageKernel(PxVec3* linkForces,
     {
         const PxU32 rec = rows[i];
         const GpuRigidBodyRecord& r = records[rec];
-        // Same addressing the tensor binding's submitArtiForcesKernel uses.
-        const PxU32 slot = r.tensorArtiIdx * simMaxLinks + r.linkIdx;
+        // The link pose INPUT is always read from the whole-view transform buffer (filled in tensorArtiIdx
+        // order). The force/torque OUTPUT lands in a COMPACT block keyed by the written articulation's slot
+        // when the apply is sparse; on the write-ALL fast path (rowCompactArti == nullptr) every articulation
+        // is applied, so the output uses the same whole-view slot as the input.
+        const PxU32 inSlot = r.tensorArtiIdx * simMaxLinks + r.linkIdx;
+        const PxU32 outSlot = rowCompactArti ? (rowCompactArti[i] * simMaxLinks + r.linkIdx) : inSlot;
 
         const float* w = src + static_cast<size_t>(i) * comps;
         const PxVec3 force(w[0], w[1], w[2]);
-        linkForces[slot] = force;
+        linkForces[outSlot] = force;
         if (comps == 9)
         {
             const PxVec3 torque(w[3], w[4], w[5]);
             const PxVec3 point(w[6], w[7], w[8]);
-            const PxTransform& pose = linkTransforms[slot];
+            const PxTransform& pose = linkTransforms[inSlot];
             const PxVec3 comWorld = pose.transform(comsByRecord[rec]);
-            linkTorques[slot] = torque + (point - comWorld).cross(force);
+            linkTorques[outSlot] = torque + (point - comWorld).cross(force);
         }
     }
 }
 
 bool submitLinkWrenchOvStage(PxVec3* linkForces, PxVec3* linkTorques, const float* src,
                               const PxTransform* linkTransforms, const PxVec3* comsByRecord,
-                              const GpuRigidBodyRecord* records, const PxU32* rows, const PxU32 numOutputs,
-                              const PxU32 simMaxLinks, const PxU32 comps)
+                              const GpuRigidBodyRecord* records, const PxU32* rows, const PxU32* rowCompactArti,
+                              const PxU32 numOutputs, const PxU32 simMaxLinks, const PxU32 comps)
 {
     if (numOutputs == 0)
         return true;
     submitLinkWrenchOvStageKernel<<<(numOutputs + 1023) / 1024, 1024>>>(
-        linkForces, linkTorques, src, linkTransforms, comsByRecord, records, rows, numOutputs, simMaxLinks, comps);
+        linkForces, linkTorques, src, linkTransforms, comsByRecord, records, rows, rowCompactArti, numOutputs,
+        simMaxLinks, comps);
     return launchOk(CHECK_CUDA(cudaGetLastError()));
 }
 
@@ -2125,6 +2300,61 @@ bool fetchArtiLinkVectorOvStage(float* dst, const float* src, const PxU32 numOut
     return launchOk(CHECK_CUDA(cudaGetLastError()));
 }
 
+__global__ static void compactContactSensorRowsOvStageKernel(float* dst,
+                                                             const float* src,
+                                                             const PxU32* rowIdx,
+                                                             const PxU32 numRows,
+                                                             const PxU32 comp)
+{
+    PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < numRows)
+    {
+        const PxU32 srcIdx = rowIdx[i] * comp;
+        for (PxU32 c = 0; c < comp; ++c)
+            dst[i * comp + c] = src[srcIdx + c];
+    }
+}
+
+bool compactContactSensorRowsOvStage(
+    float* dst, const float* src, const PxU32* rowIdx, const PxU32 numRows, const PxU32 comp)
+{
+    if (numRows == 0)
+        return true;
+    compactContactSensorRowsOvStageKernel<<<(numRows + 1023) / 1024, 1024>>>(dst, src, rowIdx, numRows, comp);
+    return launchOk(CHECK_CUDA(cudaGetLastError()));
+}
+
+__global__ static void packSdfQueryPointsOvStageKernel(PxVec4* dst, const PxVec3* src, const PxU32 count)
+{
+    const PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < count)
+        dst[i] = PxVec4(src[i].x, src[i].y, src[i].z, 0.0f);
+}
+
+bool packSdfQueryPointsOvStage(PxVec4* dst, const PxVec3* src, const PxU32 count)
+{
+    if (count == 0)
+        return true;
+    // Rounded up without forming count + 1023, which wraps for a count near the PxU32 limit.
+    packSdfQueryPointsOvStageKernel<<<count / 1024 + (count % 1024 != 0 ? 1 : 0), 1024>>>(dst, src, count);
+    return launchOk(CHECK_CUDA(cudaGetLastError()));
+}
+
+__global__ static void fetchRawContactOtherBodyOvStageKernel(uint64_t* dst, const uint64_t* pairs, const PxU32 count)
+{
+    const PxU32 i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < count)
+        dst[i] = pairs[2 * size_t(i) + 1];
+}
+
+bool fetchRawContactOtherBodyOvStage(uint64_t* dst, const uint64_t* pairs, const PxU32 count)
+{
+    if (count == 0)
+        return true;
+    fetchRawContactOtherBodyOvStageKernel<<<(count + 1023) / 1024, 1024>>>(dst, pairs, count);
+    return launchOk(CHECK_CUDA(cudaGetLastError()));
+}
+
 __global__ static void fetchDofProjectionForceKernel(float* dst,
                                                       const PhysxGpuSpatialForces* src,
                                                       const PxTransform* linkTransforms,
@@ -2472,6 +2702,8 @@ __global__ static void submitArtiForcesKernel(PxVec3 *dstLinkForces, PxVec3 *dst
         PxVec3 com = linksComs[srcLinkIdx];
         PxU32 physxLinkIdx = linkRecords[srcLinkIdx].physxLinkIdx;
         PxU32 tensorLinkIdx = srcArtiIdx * simMaxLinks + linkIndex;
+        // setArticulationData reads the data of dirtyArtiGpuIndices[artiIndex] from block artiIndex.
+        PxU32 dstLinkIdx = artiIndex * simMaxLinks + linkIndex;
 
         // printf("i = %d, srcArtiIdx=%d, physxLinkIdx=%d, srcLinkIdx=%d\n", i, srcArtiIdx, physxLinkIdx, srcLinkIdx);
         if (linkIndex == 0)
@@ -2480,7 +2712,7 @@ __global__ static void submitArtiForcesKernel(PxVec3 *dstLinkForces, PxVec3 *dst
         }
         if (physxLinkIdx != 0xffffffff)
         {
-            applyForces<false>(dstLinkForces, dstLinkTorques, nullptr, nullptr, nullptr, srcLinkIdx, tensorLinkIdx, 0,
+            applyForces<false>(dstLinkForces, dstLinkTorques, nullptr, nullptr, nullptr, srcLinkIdx, dstLinkIdx, 0,
                                srcForces, srcTorques, srcPositions, linkTransforms[tensorLinkIdx].p,
                                linkTransforms[tensorLinkIdx].q, com, true, isGlobal, submitForces, submitTorques,
                                applyAtPosition);

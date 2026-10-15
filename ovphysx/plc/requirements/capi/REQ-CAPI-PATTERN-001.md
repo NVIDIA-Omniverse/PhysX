@@ -11,7 +11,8 @@ owner: ovphysx
 ## Description
 
 Every ovphysx entry point that takes a physics-object path pattern or an
-explicit path list (tensor bindings, SDF views, contact bindings) is matched
+explicit path list (tensor bindings, SDF views, contact bindings, the session
+query's prim-set selection) is matched
 one component at a time (the text between `/` separators, a parenthesized
 group counting as one component), and the runtime compiles each component
 to a regular expression whose stack cost grows with the component length. No
@@ -40,10 +41,19 @@ backstop for input that reaches it another way.
 - AC-4: An oversized component that still reaches the runtime matcher never
   matches and logs an error instead of crashing (owned by ovruntime
   [REQ-PUBLICAPI-001](../../../ovruntime/plc/requirements/api/REQ-PUBLICAPI-001.md) AC-49).
+- AC-5: `ovphysx_query_selection` applies the same rejection to the `pattern` glob of its
+  `ovphysx_query_selection_t` descriptor — a `pattern` with a component longer than
+  `kMaxPathPatternComponentLength` returns `OVPHYSX_API_INVALID_ARGUMENT` naming the limit, and no
+  query is created. Its `prim_paths` are native `ovx_primpath_t` handles, not strings, so the
+  component-length check does not apply to them (they are validated as handles instead). Owned in
+  detail by [REQ-CAPI-SELECT-001](REQ-CAPI-SELECT-001.md) AC-3.
 
 ## Test References
 
 - TEST-CAPI-PATTERN-001
+- [TEST-CAPI-SELECT-001](../../tests/capi/TEST-CAPI-SELECT-001.md) — AC-5, the same
+  rejection on the query-selection descriptor (`QuerySelectionRejectsInvalidSelectionsOnTheReceipt`,
+  which also checks that the message names the limit)
 
 ## Code References
 
@@ -52,6 +62,7 @@ backstop for input that reaches it another way.
 - ovphysx/src/ovphysx/ovphysxTensorBinding.cpp (AC-1, AC-3)
 - ovphysx/src/ovphysx/ovphysxSdfView.cpp (AC-2)
 - ovphysx/src/ovphysx/ovphysxContactBinding.cpp (AC-2)
+- ovphysx/src/ovphysx/ovphysxPhysXInterop.cpp (`ovphysx_query_selection` — AC-5)
 - ovphysx/include/ovphysx/ovphysx.h (pattern-matching documentation block)
 - ovphysx/python/ovphysx/api.py (`create_tensor_binding`, `create_sdf_view` and
   `create_contact_binding` docstrings)
@@ -63,3 +74,4 @@ backstop for input that reaches it another way.
 
 - [REQ-PUBLICAPI-001](../../../ovruntime/plc/requirements/api/REQ-PUBLICAPI-001.md)
   AC-49 - the ovruntime matcher's backstop for the same bound
+- [REQ-CAPI-PATTERN-002](REQ-CAPI-PATTERN-002.md) - the grammar the bounded components are matched with

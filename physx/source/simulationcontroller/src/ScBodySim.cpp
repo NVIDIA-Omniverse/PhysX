@@ -655,9 +655,16 @@ bool BodySim::updateForces(PxReal dt, PxsRigidBody** updatedBodySims, PxU32* upd
 
 	bool forceChangeApplied = false;
 
+	// The GPU retains uploaded external accelerations, including any impulse from this step.
+	// Refresh retaining bodies every step so only forces and torques carry over.
+	const bool useExternalAccelerations =
+		(mScene.getSolverType() == PxSolverType::eTGS && (mScene.getFlags() & PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS)) ||
+		(mScene.isUsingGpuDynamics() && (mScene.getFlags() & PxSceneFlag::eENABLE_BODY_ACCELERATIONS));
+	const bool refreshRetainedAcceleration = useExternalAccelerations && externalAccelerations && (mLLBody.mCore->mFlags & PxRigidBodyFlag::eRETAIN_ACCELERATIONS);
+
 	//if we change the logic like this, which means we don't need to have two separate variables in the pxgbodysim to represent linAcc and angAcc. However, this
 	//means angAcc will be always 0
-	if( (accDirty || velDirty) && ((simStateData = getSimStateData(false)) != NULL) )
+	if( (accDirty || velDirty || refreshRetainedAcceleration) && ((simStateData = getSimStateData(false)) != NULL) )
 	{
 		VelocityMod* velmod = simStateData->getVelocityModData();
 
@@ -697,10 +704,6 @@ bool BodySim::updateForces(PxReal dt, PxsRigidBody** updatedBodySims, PxU32* upd
 			//   velocity-delta correctly captures: accel = (curVel - prevVel) / dt = gravity + force/mass
 			// Note: Only enable for GPU when eENABLE_BODY_ACCELERATIONS is set, otherwise use the
 			// original updateVelocities path to avoid breaking eRETAIN_ACCELERATIONS behavior.
-			const bool useExternalAccelerations = 
-				(mScene.getFlags() & PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS) ||
-				(mScene.isUsingGpuDynamics() && (mScene.getFlags() & PxSceneFlag::eENABLE_BODY_ACCELERATIONS));
-			
 			if (useExternalAccelerations)
 			{
 				if (linVelDt != PxVec3(0.0f) || angVelDt != PxVec3(0.0f)) 

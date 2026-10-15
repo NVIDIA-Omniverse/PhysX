@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-1 AC-2
+ */
+
 /**
  * @implements REQ-PARSE-VEH-COMPONENTS-001
  * @covers AC-1 AC-2 AC-3
@@ -13,6 +17,8 @@
 
 #include <omni/physics/parse/IPhysicsSource.h>
 #include <omni/physics/parse/ParseApi.h>
+#include <omni/physics/parse/PreparedVehicle.h>
+#include <stdexcept>
 #include <omni/physics/parse/ParseContext.h>
 
 #include <carb/logging/Log.h>
@@ -30,20 +36,20 @@ namespace omni::physics::parse
 namespace
 {
 
-bool readNonNegFloat(IPhysicsSource& src, ObjectKey key, const char* attrName,
-                     std::string_view ownerName, float& out)
+bool readNonNegFloat(PreparedVehicleReader& src, ObjectKey key, const char* attrName,
+                     std::string_view ownerName, float& out, VehicleFillStatus& status)
 {
     float v;
-    if (!src.getAttribute(key, src.internToken(attrName), v))
+    if (!src.getAttribute(key, src.attribute(attrName), v))
     {
-        CARB_LOG_ERROR("Usd Physics: prim \"%s\" needs to have attribute \"%s\" defined.",
-                       std::string(ownerName).c_str(), attrName);
+        VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\" needs to have attribute \"%s\" defined.",
+                       ownerName.data(), attrName);
         return false;
     }
     if (!(v >= 0.0f) || !(v < FLT_MAX))
     {
-        CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"%s\" needs to be in [0, FLT_MAX).",
-                       std::string(ownerName).c_str(), attrName);
+        VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"%s\" needs to be in [0, FLT_MAX).",
+                       ownerName.data(), attrName);
         return false;
     }
     out = v;
@@ -60,19 +66,19 @@ bool readNonNegFloat(IPhysicsSource& src, ObjectKey key, const char* attrName,
 // unauthored deprecated attribute silently deleting the vehicle that does not use it.
 // `outPresent` reports whether a value was actually read, so the caller only emits the
 // deprecation warning when the user really did author one.
-bool readAngleHalfPi(IPhysicsSource& src, ObjectKey key, const char* attrName,
-                     std::string_view ownerName, float& out, bool& outPresent)
+bool readAngleHalfPi(PreparedVehicleReader& src, ObjectKey key, const char* attrName,
+                     std::string_view ownerName, float& out, bool& outPresent, VehicleFillStatus& status)
 {
     outPresent = false;
     float v;
-    if (!src.getAttribute(key, src.internToken(attrName), v))
+    if (!src.getAttribute(key, src.attribute(attrName), v))
         return true;
     const float lower = static_cast<float>(-M_PI_2) + FLT_MIN;
     const float upper = static_cast<float>(M_PI_2);
     if (!(v >= lower) || !(v < upper))
     {
-        CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"%s\" out of range.",
-                       std::string(ownerName).c_str(), attrName);
+        VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"%s\" out of range.",
+                       ownerName.data(), attrName);
         return false;
     }
     out = v;
@@ -84,76 +90,123 @@ bool readAngleHalfPi(IPhysicsSource& src, ObjectKey key, const char* attrName,
 
 // @implements REQ-PARSE-VEH-COMPONENTS-001
 // @covers AC-1 AC-2 AC-3
-DescPtr<WheelDesc> parseWheel(ParseContext& ctx, ObjectKey key)
+PreparedWheel prepareWheel(ParseContext& ctx, ObjectKey key)
 {
-    IPhysicsSource& src = ctx.source();
-    const std::string ownerName(src.sourceKeyToString(key));
+    PreparedWheel input;
+    input.key = key;
+    input.reads = prepareVehicleReads(ctx.source(), key, {
+        { "physxVehicleWheel:dampingRate", VehicleAttributeType::floating },
+        { "physxVehicleWheel:mass", VehicleAttributeType::floating },
+        { "physxVehicleWheel:maxBrakeTorque", VehicleAttributeType::floating },
+        { "physxVehicleWheel:maxHandBrakeTorque", VehicleAttributeType::floating },
+        { "physxVehicleWheel:maxSteerAngle", VehicleAttributeType::floating, true },
+        { "physxVehicleWheel:moi", VehicleAttributeType::floating },
+        { "physxVehicleWheel:radius", VehicleAttributeType::floating },
+        { "physxVehicleWheel:toeAngle", VehicleAttributeType::floating, true },
+        { "physxVehicleWheel:width", VehicleAttributeType::floating }
+    });
+    return input;
+}
 
-    DescPtr<WheelDesc> desc = allocateDesc<WheelDesc>(ctx.descriptorAllocator());
+void prepareWheelStorage(const PreparedWheel& input, WheelDesc& output)
+{
+    (void)input; (void)output;
+}
+
+bool fillWheel(const PreparedWheel& input, WheelDesc& output, VehicleFillStatus& status) noexcept
+{
+    PreparedVehicleReader src(input.reads, status);
+    [[maybe_unused]] ObjectKey key = input.key;
+
+
+    const std::string& ownerName = src.sourceKeyToString(key);
+
+    WheelDesc* desc = &output;
     desc->key = key;
     desc->maxBrakeTorque = 0.0f;
     desc->maxHandBrakeTorque = 0.0f;
     desc->maxSteerAngle = 0.0f;
     desc->toeAngle = 0.0f;
 
-    if (!readNonNegFloat(src, key, "physxVehicleWheel:radius", ownerName, desc->radius)) return {};
-    if (!readNonNegFloat(src, key, "physxVehicleWheel:width", ownerName, desc->width)) return {};
-    if (!readNonNegFloat(src, key, "physxVehicleWheel:mass", ownerName, desc->mass)) return {};
-    if (!readNonNegFloat(src, key, "physxVehicleWheel:moi", ownerName, desc->moi)) return {};
-    if (!readNonNegFloat(src, key, "physxVehicleWheel:dampingRate", ownerName, desc->dampingRate)) return {};
+    if (!readNonNegFloat(src, key, "physxVehicleWheel:radius", ownerName, desc->radius, status)) return false;
+    if (!readNonNegFloat(src, key, "physxVehicleWheel:width", ownerName, desc->width, status)) return false;
+    if (!readNonNegFloat(src, key, "physxVehicleWheel:mass", ownerName, desc->mass, status)) return false;
+    if (!readNonNegFloat(src, key, "physxVehicleWheel:moi", ownerName, desc->moi, status)) return false;
+    if (!readNonNegFloat(src, key, "physxVehicleWheel:dampingRate", ownerName, desc->dampingRate, status)) return false;
 
     // Deprecated attributes — read only when authored, emit deprecation
     // warning + range check.
     {
         float v;
-        if (src.getAttribute(key, src.internToken("physxVehicleWheel:maxBrakeTorque"), v))
+        if (src.getAttribute(key, src.attribute("physxVehicleWheel:maxBrakeTorque"), v))
         {
-            CARB_LOG_WARN("Usd Physics: wheel \"%s\": attribute \"maxBrakeTorque\" is deprecated. "
+            VEHICLE_LOG_WARN(status, "Usd Physics: wheel \"%s\": attribute \"maxBrakeTorque\" is deprecated. "
                           "Please use PhysxVehicleBrakesAPI instead.", ownerName.c_str());
             if (!(v >= 0.0f) || !(v < FLT_MAX))
             {
-                CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"maxBrakeTorque\" out of range.",
+                VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"maxBrakeTorque\" out of range.",
                                ownerName.c_str());
-                return {};
+                return false;
             }
             desc->maxBrakeTorque = v;
         }
     }
     {
         float v;
-        if (src.getAttribute(key, src.internToken("physxVehicleWheel:maxHandBrakeTorque"), v))
+        if (src.getAttribute(key, src.attribute("physxVehicleWheel:maxHandBrakeTorque"), v))
         {
-            CARB_LOG_WARN("Usd Physics: wheel \"%s\": attribute \"maxHandBrakeTorque\" is deprecated. "
+            VEHICLE_LOG_WARN(status, "Usd Physics: wheel \"%s\": attribute \"maxHandBrakeTorque\" is deprecated. "
                           "Please use PhysxVehicleBrakesAPI instead.", ownerName.c_str());
             if (!(v >= 0.0f) || !(v < FLT_MAX))
             {
-                CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"maxHandBrakeTorque\" out of range.",
+                VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"maxHandBrakeTorque\" out of range.",
                                ownerName.c_str());
-                return {};
+                return false;
             }
             desc->maxHandBrakeTorque = v;
         }
     }
-    if (src.hasAuthoredAttribute(key, src.internToken("physxVehicleWheel:maxSteerAngle")))
+    if (src.hasAuthoredAttribute(key, src.attribute("physxVehicleWheel:maxSteerAngle")))
     {
         bool present = false;
-        if (!readAngleHalfPi(src, key, "physxVehicleWheel:maxSteerAngle", ownerName, desc->maxSteerAngle, present))
-            return {};
+        if (!readAngleHalfPi(src, key, "physxVehicleWheel:maxSteerAngle", ownerName, desc->maxSteerAngle, present, status))
+            return false;
         if (present)
-            CARB_LOG_WARN("Usd Physics: wheel \"%s\": attribute \"maxSteerAngle\" is deprecated. "
+            VEHICLE_LOG_WARN(status, "Usd Physics: wheel \"%s\": attribute \"maxSteerAngle\" is deprecated. "
                           "Please use PhysxVehicleSteeringAPI instead.", ownerName.c_str());
     }
-    if (src.hasAuthoredAttribute(key, src.internToken("physxVehicleWheel:toeAngle")))
+    if (src.hasAuthoredAttribute(key, src.attribute("physxVehicleWheel:toeAngle")))
     {
         bool present = false;
-        if (!readAngleHalfPi(src, key, "physxVehicleWheel:toeAngle", ownerName, desc->toeAngle, present))
-            return {};
+        if (!readAngleHalfPi(src, key, "physxVehicleWheel:toeAngle", ownerName, desc->toeAngle, present, status))
+            return false;
         if (present)
-            CARB_LOG_WARN("Usd Physics: wheel \"%s\": attribute \"toeAngle\" is deprecated. "
+            VEHICLE_LOG_WARN(status, "Usd Physics: wheel \"%s\": attribute \"toeAngle\" is deprecated. "
                           "Please use PhysxVehicleSuspensionComplianceAPI instead.", ownerName.c_str());
     }
 
-    return desc;
+    return true;
 }
+
+void finishWheelStorage(WheelDesc& output, const VehicleFillStatus& status)
+{
+    (void)output; (void)status;
+}
+
+DescPtr<WheelDesc> parseWheel(ParseContext& ctx, ObjectKey key)
+{
+    const PreparedWheel input = prepareWheel(ctx, key);
+    DescPtr<WheelDesc> output = allocateDesc<WheelDesc>(ctx.descriptorAllocator());
+    if (!output) return {};
+    prepareWheelStorage(input, *output);
+    VehicleFillStatus status;
+    const bool valid = fillWheel(input, *output, status);
+    status.report();
+    if (status.incomplete) throw std::logic_error("Incomplete prepared vehicle input or storage");
+    if (!valid) return {};
+    finishWheelStorage(*output, status);
+    return output;
+}
+
 
 } // namespace omni::physics::parse

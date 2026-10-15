@@ -91,11 +91,6 @@ namespace physx
 //PX_STOMP_ALLOCATED_MEMORY is defined in common/PxPhysXCommonConfig.h
 
 
-#if PX_DEBUG
-#include "PxgMemoryTracker.h"
-static MemTracker mMemTracker;
-#endif
-
 PxCudaContext* createCudaContext(CUdevice device, PxDeviceAllocatorCallback* deviceCallback, PxPinnedHostAllocatorCallback* pinnedHostCallback, bool launchSynchronous);
 
 class CudaCtxMgr : public PxCudaContextManager, public PxUserAllocated
@@ -151,25 +146,6 @@ public:
 
 	virtual CUdeviceptr     getMappedDevicePtr(void* pinnedHostBuffer) PX_OVERRIDE;
 
-protected:
-	virtual void* allocDeviceBufferInternal(PxU64 numBytes, const char* filename, PxI32 line) PX_OVERRIDE;
-	virtual void* allocPinnedHostBufferInternal(PxU64 numBytes, const char* filename, PxI32 line) PX_OVERRIDE;
-
-	virtual void freeDeviceBufferInternal(void* deviceBuffer) PX_OVERRIDE;
-	virtual void freePinnedHostBufferInternal(void* pinnedHostBuffer) PX_OVERRIDE;
-
-	virtual void clearDeviceBufferAsyncInternal(void* deviceBuffer, PxU32 numBytes, CUstream stream, PxI32 value) PX_OVERRIDE;
-
-	virtual void copyDToHAsyncInternal(void* hostBuffer, const void* deviceBuffer, PxU32 numBytes, CUstream stream) PX_OVERRIDE;
-	virtual void copyHToDAsyncInternal(void* deviceBuffer, const void* hostBuffer, PxU32 numBytes, CUstream stream) PX_OVERRIDE;
-	virtual void copyDToDAsyncInternal(void* dstDeviceBuffer, const void* srcDeviceBuffer, PxU32 numBytes, CUstream stream) PX_OVERRIDE;
-
-	virtual void copyDToHInternal(void* hostBuffer, const void* deviceBuffer, PxU32 numBytes) PX_OVERRIDE;
-	virtual void copyHToDInternal(void* deviceBuffer, const void* hostBuffer, PxU32 numBytes) PX_OVERRIDE;
-
-	virtual void memsetD8AsyncInternal(void* dstDeviceBuffer, const PxU8& value, PxU32 numBytes, CUstream stream) PX_OVERRIDE;
-	virtual void memsetD32AsyncInternal(void* dstDeviceBuffer, const PxU32& value, PxU32 numIntegers, CUstream stream) PX_OVERRIDE;
-
 private:
 
 	PxArray<CUmodule>	mCuModules;
@@ -208,149 +184,6 @@ CUdeviceptr CudaCtxMgr::getMappedDevicePtr(void* pinnedHostBuffer)
 	if (result != CUDA_SUCCESS)
 		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Getting mapped device pointer failed with error code %i!\n", PxI32(result));
 	return dPtr;
-}
-
-
-void* CudaCtxMgr::allocDeviceBufferInternal(PxU64 numBytes, const char* filename, PxI32 lineNumber)
-{
-	numBytes = PxMax(PxU64(1u), numBytes);
-	PxScopedCudaLock lock(*this);
-	CUdeviceptr ptr;
-	PxCUresult result = getCudaContext()->memAlloc(&ptr, numBytes);
-	if (result != CUDA_SUCCESS)
-		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Mem allocation failed with error code %i!\n", PxI32(result));
-	void* deviceBuffer = reinterpret_cast<void*>(ptr);
-#if PX_DEBUG
-	if (deviceBuffer)
-		mMemTracker.registerMemory(deviceBuffer, true, numBytes, filename, lineNumber);
-#else
-	PX_UNUSED(filename);
-	PX_UNUSED(lineNumber);
-#endif
-	return deviceBuffer;
-}
-void* CudaCtxMgr::allocPinnedHostBufferInternal(PxU64 numBytes, const char* filename, PxI32 lineNumber)
-{
-	numBytes = PxMax(PxU64(1u), numBytes);
-	PxScopedCudaLock lock(*this);
-	void* pinnedHostBuffer;
-	const unsigned int cuMemhostallocDevicemap = 0x02;
-	const unsigned int cuMemhostallocPortable = 0x01;
-	PxCUresult result = getCudaContext()->memHostAlloc(&pinnedHostBuffer, numBytes, cuMemhostallocDevicemap | cuMemhostallocPortable);
-	if (result != CUDA_SUCCESS)
-		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Mem allocation failed with error code %i!\n", PxI32(result));
-
-#if PX_DEBUG
-	mMemTracker.registerMemory(pinnedHostBuffer, false, numBytes, filename, lineNumber);
-#else
-	PX_UNUSED(filename);
-	PX_UNUSED(lineNumber);
-#endif
-	return pinnedHostBuffer;
-}
-
-void CudaCtxMgr::freeDeviceBufferInternal(void* deviceBuffer)
-{
-	if (!deviceBuffer)
-		return;
-	PxScopedCudaLock lock(*this);
-	PxCUresult result = getCudaContext()->memFree(CUdeviceptr(deviceBuffer));
-	if (result != CUDA_SUCCESS)
-		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Mem free failed with error code %i!\n", PxI32(result));
-#if PX_DEBUG
-	mMemTracker.unregisterMemory(deviceBuffer, true);
-#endif
-}
-void CudaCtxMgr::freePinnedHostBufferInternal(void* pinnedHostBuffer)
-{
-	if (!pinnedHostBuffer)
-		return;
-	PxScopedCudaLock lock(*this);
-	PxCUresult result = getCudaContext()->memFreeHost(pinnedHostBuffer);
-	if (result != CUDA_SUCCESS)
-		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Mem free failed with error code %i!\n", PxI32(result));
-#if PX_DEBUG
-	mMemTracker.unregisterMemory(pinnedHostBuffer, false);
-#endif
-}
-
-void CudaCtxMgr::clearDeviceBufferAsyncInternal(void* deviceBuffer, PxU32 numBytes, CUstream stream, PxI32 value)
-{
-	if (!deviceBuffer)
-		return;
-	PxScopedCudaLock lock(*this);
-	PX_ASSERT(numBytes % 4 == 0);
-	PxCUresult result = getCudaContext()->memsetD32Async(CUdeviceptr(deviceBuffer), value, numBytes >> 2, stream);
-	if (result != CUDA_SUCCESS)
-		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Mem set failed with error code %i!\n", PxI32(result));
-}
-
-void CudaCtxMgr::copyDToHAsyncInternal(void* hostBuffer, const void* deviceBuffer, PxU32 numBytes, CUstream stream)
-{
-	if (!deviceBuffer || !hostBuffer)
-		return;
-	PxScopedCudaLock lock(*this);
-	PxCUresult result = getCudaContext()->memcpyDtoHAsync(hostBuffer, CUdeviceptr(deviceBuffer), numBytes, stream);
-	if (result != CUDA_SUCCESS)
-		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "copyDtoHAsync set failed with error code %i!\n", PxI32(result));
-}
-void CudaCtxMgr::copyHToDAsyncInternal(void* deviceBuffer, const void* hostBuffer, PxU32 numBytes, CUstream stream)
-{
-	if (!deviceBuffer || !hostBuffer)
-		return;
-	PxScopedCudaLock lock(*this);
-	PxCUresult result = getCudaContext()->memcpyHtoDAsync(CUdeviceptr(deviceBuffer), hostBuffer, numBytes, stream);
-	if (result != CUDA_SUCCESS)
-		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "copyHtoDAsync set failed with error code %i!\n", PxI32(result));
-}
-void CudaCtxMgr::copyDToDAsyncInternal(void* dstDeviceBuffer, const void* srcDeviceBuffer, PxU32 numBytes, CUstream stream)
-{
-	if (!srcDeviceBuffer || !dstDeviceBuffer)
-		return;
-	PxScopedCudaLock lock(*this);
-	PxCUresult result = getCudaContext()->memcpyDtoDAsync(CUdeviceptr(dstDeviceBuffer), CUdeviceptr(srcDeviceBuffer), numBytes, stream);
-	if (result != CUDA_SUCCESS)
-		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "copyDtoDAsync set failed with error code %i!\n", PxI32(result));
-}
-
-void CudaCtxMgr::copyDToHInternal(void* hostBuffer, const void* deviceBuffer, PxU32 numBytes)
-{
-	if (!deviceBuffer || !hostBuffer)
-		return;
-	PxScopedCudaLock lock(*this);
-	PxCUresult result = getCudaContext()->memcpyDtoH(hostBuffer, CUdeviceptr(deviceBuffer), numBytes);
-	if (result != CUDA_SUCCESS)
-		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "copyDtoH set failed with error code %i!\n", PxI32(result));
-}
-void CudaCtxMgr::copyHToDInternal(void* deviceBuffer, const void* hostBuffer, PxU32 numBytes)
-{
-	if (!deviceBuffer || !hostBuffer)
-		return;
-	PxScopedCudaLock lock(*this);
-	PxCUresult result = getCudaContext()->memcpyHtoD(CUdeviceptr(deviceBuffer), hostBuffer, numBytes);
-	if (result != CUDA_SUCCESS)
-		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "copyHtoD set failed with error code %i!\n", PxI32(result));
-}
-
-void CudaCtxMgr::memsetD8AsyncInternal(void* dstDeviceBuffer, const PxU8& value, PxU32 numBytes, CUstream stream)
-{
-	if (!dstDeviceBuffer)
-		return;
-	PxScopedCudaLock lock(*this);
-	PxCUresult result = getCudaContext()->memsetD8Async(CUdeviceptr(dstDeviceBuffer), value, numBytes, stream);
-	if (result != CUDA_SUCCESS)
-		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Memset failed with error code %i!\n", PxI32(result));
-
-}
-
-void CudaCtxMgr::memsetD32AsyncInternal(void* dstDeviceBuffer, const PxU32& value, PxU32 numIntegers, CUstream stream)
-{
-	if (!dstDeviceBuffer)
-		return;
-	PxScopedCudaLock lock(*this);
-	PxCUresult result = getCudaContext()->memsetD32Async(CUdeviceptr(dstDeviceBuffer), value, numIntegers, stream);
-	if (result != CUDA_SUCCESS)
-		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Memset failed with error code %i!\n", PxI32(result));
 }
 
 

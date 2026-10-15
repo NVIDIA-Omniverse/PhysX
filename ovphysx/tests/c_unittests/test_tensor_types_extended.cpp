@@ -40,15 +40,15 @@ using namespace test_utils;
 // Helpers
 // ---------------------------------------------------------------------------
 
-static bool wait_ext_op(ovphysx_handle_t handle, ovphysx_op_index_t op_index)
+static bool wait_ext_op(ovphysx_instance_handle_t handle, ovphysx_enqueue_result_t task)
 {
-    ovphysx_op_wait_result_t wr{};
-    ovphysx_result_t r = ovphysx_wait_op(handle, op_index, 10'000'000'000ULL, &wr);
-    ovphysx_destroy_wait_result(&wr);
+    ovphysx_wait_task_result_t wr{};
+    ovphysx_result_t r = ovphysx_wait_task(handle, task, 10'000'000'000ULL, &wr);
+    ovphysx_destroy_wait_task_result(&wr);
     return r.status == OVPHYSX_API_SUCCESS;
 }
 
-static bool load_scene(ovphysx_handle_t handle, const char* path)
+static bool load_scene(ovphysx_instance_handle_t handle, const char* path)
 {
     return attach_usd_with_ovstage(handle, path);
 }
@@ -56,7 +56,7 @@ static bool load_scene(ovphysx_handle_t handle, const char* path)
 // Creates a binding and fetches its spec. Returns the binding handle, which the
 // caller destroys, or 0 after emitting a non-fatal failure.
 static ovphysx_tensor_binding_handle_t try_create(
-    ovphysx_handle_t handle,
+    ovphysx_instance_handle_t handle,
     const char* pattern,
     ovphysx_tensor_type_t type,
     const char* type_name)
@@ -84,7 +84,7 @@ static ovphysx_tensor_binding_handle_t try_create(
 }
 
 // Writes zeros into a binding and returns the status for the caller to assert on.
-static ovphysx_api_status_t try_write(ovphysx_handle_t handle,
+static ovphysx_api_status_t try_write(ovphysx_instance_handle_t handle,
                                       ovphysx_tensor_binding_handle_t binding,
                                       const ovphysx_tensor_spec_t& spec)
 {

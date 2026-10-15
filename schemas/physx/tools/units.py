@@ -43,11 +43,6 @@ def get_attribute_unit_exponents(attribute_name, prim=None) -> tuple[int, int, i
                 return exponents["RevoluteJoint"]
             else:
                 return exponents["PrismaticJoint"]
-        case "physxJoint:maxJointVelocity" | "physxJoint:armature":
-            if prim.IsA(UsdPhysics.RevoluteJoint) or prim.IsA(UsdPhysics.SphericalJoint):
-                return exponents["Angular joint"]
-            else:
-                return exponents["Linear joint"]
         case "physxMaterial:compliantContactStiffness" | "physxMaterial:compliantContactDamping":
             if prim.HasAPI(UsdPhysics.MaterialAPI):
                 if prim.GetAttribute("physxMaterial:compliantContactAccelerationSpring").Get() == True:

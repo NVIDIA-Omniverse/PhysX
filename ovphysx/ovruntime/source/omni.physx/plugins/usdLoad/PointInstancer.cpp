@@ -1,8 +1,15 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-3 AC-4
+ */
+
+// @implements REQ-PARSE-SCAN-001
+// @covers AC-20
+
 // @implements REQ-SIM-LOCALVELOCITY-001
-// @covers AC-1, AC-2
+// @covers AC-1 AC-2 AC-5
 
 /**
  * @implements REQ-PUBLICAPI-001
@@ -19,8 +26,15 @@
  * @covers AC-1 AC-3
  */
 
+// @implements REQ-CUSTOM-LIFETIME-001
+// @covers AC-5
+
+// @implements REQ-PARSE-INSTANCER-004
+// @covers AC-1 AC-2 AC-3
+
 #include "PointInstancer.h"
 
+#include <atomic>
 #include <limits>
 #include <unordered_set>
 
@@ -39,6 +53,7 @@
 #include "CollisionGroup.h"
 #include "IceDescriptorAllocator.h"
 
+#include <OvstageSource.h>
 #include <omni/physics/parse/IPhysicsSource.h>
 #include <omni/physics/parse/KnownTokens.h>
 #include <omni/physics/parse/ScanBackend.h>
@@ -60,6 +75,25 @@ namespace usdparser
 {
 
 using omni::physics::parse::ObjectKey;
+
+namespace
+{
+std::atomic_size_t& rigidInstancerArrayReadCounter()
+{
+    static std::atomic_size_t counter{ 0 };
+    return counter;
+}
+}
+
+void resetRigidInstancerArrayReadCountForTest()
+{
+    rigidInstancerArrayReadCounter().store(0, std::memory_order_relaxed);
+}
+
+size_t getRigidInstancerArrayReadCountForTest()
+{
+    return rigidInstancerArrayReadCounter().load(std::memory_order_relaxed);
+}
 
 // Out-of-line ctor/dtor/move for TargetDesc -- required because the
 // unique_ptr<ScannedStage> field forward-declares ScannedStage in
@@ -97,13 +131,12 @@ static void parseInstancerMaterials(AttachedStage& attachedStage, ObjectKey inst
     std::vector<ObjectKey> children;
     src->forEachChild(instancerKey, [&children](ObjectKey c) { children.push_back(c); });
     static const std::vector<std::string> kNoExclude;
-    omni::physics::parse::ScanOptions scanOptions;
+    omni::physics::parse::ScanOptions scanOptions = attachedStage.descriptorScanOptions();
     scanOptions.prunePointInstancerDescendants = false;
     for (const ObjectKey childKey : children)
     {
         const std::vector<std::string> scanRoots{ std::string(attachedStage.textViewFor(childKey)) };
-        omni::physics::parse::ScannedStage scanned = omni::physics::parse::scanStage(
-            attachedStage.attachTarget(), scanRoots, kNoExclude, scanOptions,
+        omni::physics::parse::ScannedStage scanned = attachedStage.scanStage(scanRoots, kNoExclude, scanOptions,
             omni::physx::usdparser::iceDescriptorAllocator());
 
         for (auto& matDesc : scanned.materials)
@@ -122,6 +155,34 @@ static void parseInstancerMaterials(AttachedStage& attachedStage, ObjectKey inst
             // matDesc auto-frees via unique_ptr at end of iteration.
         }
     }
+}
+
+// Synthetic static body for a prototype whose colliders have no rigid body.
+// The instance loop maps prototype body poses into the instancer frame with
+// instancerMatrixInverse, so seed instancer * prototype-root-local: the loop then
+// composes instancer * instance * prototype root, as USD and the positions update
+// path (PhysXPointInstancerPropertiesUpdate.cpp) do. Transforms of the prototype's
+// own ancestors, such as an external prototype's transformed parent, do not apply.
+// getCollisionShapeLocalTransform places each collider relative to the prototype
+// root, independent of this seed.
+static PhysxRigidBodyDesc* createPrototypeStaticBody(const AttachedStage& attachedStage,
+                                                     ObjectKey instancerKey,
+                                                     ObjectKey targetKey,
+                                                     const PhysxShapeDesc& shapeDesc)
+{
+    PhysxRigidBodyDesc* bodyDesc = createStaticBody();
+    bool resetXformStack;
+    const ::physx::PxMat44d protoLocal = internal::getLocalTransform(
+        attachedStage, targetKey, omni::physics::parse::ReadTime::at(std::numeric_limits<double>::lowest()),
+        resetXformStack);
+    ::physx::PxTransform pose;
+    ::physx::PxVec3 scale;
+    decomposeMatrix(pose, scale, internal::getWorldTransform(attachedStage, instancerKey) * protoLocal);
+    bodyDesc->position = toFloat3(pose.p);
+    bodyDesc->rotation = toFloat4(pose.q);
+    bodyDesc->scale = toFloat3(scale);
+    bodyDesc->sceneIds = shapeDesc.sceneIds;
+    return bodyDesc;
 }
 
 void parsePrototype(AttachedStage& attachedStage,
@@ -144,10 +205,10 @@ void parsePrototype(AttachedStage& attachedStage,
 
     const std::vector<std::string> scanRoots{ std::string(attachedStage.textViewFor(targetKey)) };
     static const std::vector<std::string> kNoExclude;
-    omni::physics::parse::ScanOptions scanOptions;
+    omni::physics::parse::ScanOptions scanOptions = attachedStage.descriptorScanOptions();
     scanOptions.prunePointInstancerDescendants = false;
     auto scanned = std::make_unique<omni::physics::parse::ScannedStage>();
-    *scanned = omni::physics::parse::scanStage(attachedStage.attachTarget(), scanRoots, kNoExclude, scanOptions,
+    *scanned = attachedStage.scanStage(scanRoots, kNoExclude, scanOptions,
                                                 omni::physx::usdparser::iceDescriptorAllocator());
     if (!scanned->sourcePtr())
     {
@@ -163,6 +224,12 @@ void parsePrototype(AttachedStage& attachedStage,
     PhysxObjectDesc* protoDesc = nullptr;
     ObjectKey protoKey;
     ObjectIdVector shapeIds;
+
+    // Ordinary shapes may be shared by point instances. Custom callbacks own
+    // per-shape plugin state, so every instance must construct its own shape.
+    // Collect the whole prototype to preserve mixed ordinary/custom compounds.
+    for (const std::unique_ptr<omni::physics::parse::PhysxShapeDesc, omni::physics::parse::DescDeleter<omni::physics::parse::PhysxShapeDesc>> & shape : scanned->shapes)
+        if (shape->type == eCustomShape) { collectShapes = true; break; }
 
     // Pass 1 — shapes.  scanStage iterates depth-first (matches the
     // legacy loadFromRange dispatch order), so children precede their
@@ -265,16 +332,19 @@ void parsePrototype(AttachedStage& attachedStage,
             {
                 if (!desc->rigidBody.valid())
                 {
-                    PhysxRigidBodyDesc* bodyDesc = createStaticBody();
-                    bodyDesc->position = desc->localPos;
-                    bodyDesc->rotation = desc->localRot;
-                    bodyDesc->scale = desc->localScale;
-
-                    desc->localPos   = { 0.0f, 0.0f, 0.0f };
-                    desc->localRot   = { 0.0f, 0.0f, 0.0f, 1.0f };
-                    desc->localScale = { 1.0f, 1.0f, 1.0f };
-
-                    protoDesc = bodyDesc;
+                    if (!protoDesc)
+                    {
+                        PhysxRigidBodyDesc* bodyDesc = createPrototypeStaticBody(
+                            attachedStage, objectInstance.instancerKey, targetKey, *desc);
+                        protoDesc = bodyDesc;
+                        out.generatedBody = omni::physics::parse::adoptDesc(
+                            iceDescriptorAllocator(), static_cast<StaticPhysxRigidBodyDesc*>(bodyDesc));
+                    }
+                    getCollisionShapeLocalTransform(attachedStage, key,
+                        targetKey, desc->localPos, desc->localRot, desc->localScale);
+                    // Bind the copied collider to the synthetic prototype frame
+                    // so per-instance createShape retains its relative pose.
+                    desc->rigidBody = targetKey;
                 }
                 out.shapeDescVector.push_back(std::make_pair(key, desc));
             }
@@ -283,22 +353,8 @@ void parsePrototype(AttachedStage& attachedStage,
                 if (!desc->rigidBody.valid())
                 {
                     if (!protoDesc || protoDesc->type != eStaticBody)
-                    {
-                        PhysxRigidBodyDesc* rbDesc = createStaticBody();
-                        bool resetXformStack;
-                        const ::physx::PxMat44d mat = internal::getLocalTransform(
-                            attachedStage, targetKey,
-                            omni::physics::parse::ReadTime::at(std::numeric_limits<double>::lowest()), resetXformStack);
-                        ::physx::PxTransform pose;
-                        ::physx::PxVec3 scale;
-                        decomposeMatrix(pose, scale, mat);
-                        rbDesc->position = toFloat3(pose.p);
-                        rbDesc->rotation = toFloat4(pose.q);
-                        rbDesc->scale = toFloat3(scale);
-                        rbDesc->sceneIds = desc->sceneIds;
-
-                        protoDesc = rbDesc;
-                    }
+                        protoDesc =
+                            createPrototypeStaticBody(attachedStage, objectInstance.instancerKey, targetKey, *desc);
 
                     CARB_ASSERT(protoDesc->type == eStaticBody);
                     PhysxRigidBodyDesc* rbDesc = static_cast<PhysxRigidBodyDesc*>(protoDesc);
@@ -312,7 +368,7 @@ void parsePrototype(AttachedStage& attachedStage,
                         targetKey, desc->localPos, desc->localRot,
                         desc->localScale);
 
-                    const ObjectId id = attachedStage.getPhysXPhysicsInterface()->createShape(
+                    const ObjectId id = attachedStage.getPhysXPhysicsInterface()->createShape(attachedStage,
                         key, *desc, kInvalidObjectId, &objectInstance);
                     attachedStage.getObjectDatabase()->findOrCreateEntry(key, attachedStage.textViewFor(key), eShape, id);
                     rbDesc->shapes.push_back(id);
@@ -406,6 +462,18 @@ void parseRigidBodyInstancer(AttachedStage& attachedStage,
     parseInstancerMaterials(attachedStage, instancerKey);
 
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
+    // The ordinary scan queried these single-apply families over the whole store,
+    // including prototypes below its prune roots. With neither family anywhere,
+    // no rigid prototype can exist. Keep independent material parsing above, but
+    // skip transforms, instance arrays and prototype scans. Unknown stays fail-open.
+    if (const omni::physics::ovstage::OvstageSource* ovstageSource =
+            dynamic_cast<const omni::physics::ovstage::OvstageSource*>(src))
+    {
+        static const char* const kRigidPrototypeSchemas[] = { "PhysicsRigidBodyAPI", "PhysicsCollisionAPI" };
+        if (!ovstageSource->stageHasAnySchema(kRigidPrototypeSchemas, 2, /*includeMultiApplyInstances=*/false)
+                 .value_or(true))
+            return;
+    }
 
     const ::physx::PxMat44d instancerMatrix = internal::getWorldTransform(attachedStage, instancerKey);
     const ::physx::PxMat44d instancerMatrixInverse = affineInverse(instancerMatrix);
@@ -442,6 +510,7 @@ void parseRigidBodyInstancer(AttachedStage& attachedStage,
     // (mirrors getAttributeArrayTimedFallback) — all via the source.
     const auto readArray = [&](omni::physics::parse::TokenId attr, auto& out) -> bool
     {
+        rigidInstancerArrayReadCounter().fetch_add(1, std::memory_order_relaxed);
         return internal::getArrayValue(attachedStage, instancerKey, attr,
                                         omni::physics::parse::ReadTime::defaultTime(), out) ||
                // std::numeric_limits<double>::lowest() is UsdTimeCode::EarliestTime()'s
@@ -696,6 +765,12 @@ void parseRigidBodyInstancer(AttachedStage& attachedStage,
 
             const ::physx::PxMat44d bodyMatrix = instancerMatrix * instanceMatrix * localBodyMatrix;
 
+            // The instance's world pose, needed below before the descriptor fields are
+            // filled: with `physics:localSpaceVelocities` the instance velocities are
+            // expressed in this body's own frame, exactly as an ordinary body's
+            // physics:velocity is (REQ-SIM-LOCALVELOCITY-001 AC-2/AC-5).
+            const ::physx::PxTransform bodyPose = toTransform(bodyMatrix);
+
             PhysxRigidBodyDesc* bodyDesc = nullptr;
             if (sourceBodyDesc->type == eDynamicBody)
             {
@@ -704,21 +779,31 @@ void parseRigidBodyInstancer(AttachedStage& attachedStage,
                 *dynamicBody = *(DynamicPhysxRigidBodyDesc*)sourceBodyDesc;
 
                 // degToRad(PxVec3) applies the same float scalar as degToRad(GfVec3f).
-                dynamicBody->angularVelocity =
-                    i < angularVelocities.size() ?
-                        toFloat3(degToRad(toPhysX(angularVelocities[i]))) :
-                        carb::Float3{ 0.0f, 0.0f, 0.0f };
+                ::physx::PxVec3 angularVelocity = i < angularVelocities.size() ?
+                                                      degToRad(toPhysX(angularVelocities[i])) :
+                                                      ::physx::PxVec3(0.0f);
+                ::physx::PxVec3 linearVelocity =
+                    i < velocities.size() ? toPhysX(velocities[i]) : ::physx::PxVec3(0.0f);
 
-                ::physx::PxVec3d transformedVelocity(0.0);
-                if (i < velocities.size())
-                    transformedVelocity = ::physx::PxVec3d(velocities[i].x, velocities[i].y, velocities[i].z);
                 if (dynamicBody->localSpaceVelocities)
                 {
-                    // Velocity is a direction: apply rotation and scale, excluding translation.
-                    transformedVelocity = instancerMatrix.rotate(transformedVelocity);
+                    // Velocities are directions in the instance's own frame: scale the
+                    // linear one along the local axes, then rotate both into world
+                    // space. Translation never contributes (NVBugs 6856138/6856148).
+                    //
+                    // `bodyPose.q` carries the instancer's rotation, the instance
+                    // orientation and the prototype's local rotation, and `sc` is the
+                    // scale this body is created with (`bodyDesc->scale` below, which
+                    // becomes InternalActor::mScale). The runtime array updaters read
+                    // the same two quantities off the live actor, so an authored value
+                    // maps identically at attach and on a later edit, and the velocity
+                    // write-back in InternalScene.cpp inverts it exactly.
+                    linearVelocity = localToWorldLinearVelocity(bodyPose.q, toFloat3(sc), linearVelocity);
+                    angularVelocity = localToWorldAngularVelocity(bodyPose.q, angularVelocity);
                 }
-                dynamicBody->linearVelocity = carb::Float3{ float(transformedVelocity.x), float(transformedVelocity.y),
-                                                            float(transformedVelocity.z) };
+
+                dynamicBody->linearVelocity = toFloat3(linearVelocity);
+                dynamicBody->angularVelocity = toFloat3(angularVelocity);
             }
             else
             {
@@ -727,7 +812,6 @@ void parseRigidBodyInstancer(AttachedStage& attachedStage,
                 *staticBody = *(StaticPhysxRigidBodyDesc*)sourceBodyDesc;
             }
 
-            const ::physx::PxTransform bodyPose = toTransform(bodyMatrix);
             bodyDesc->position = toFloat3(bodyPose.p);
             bodyDesc->scale = toFloat3(sc);
             bodyDesc->rotation = toFloat4(bodyPose.q);
@@ -786,6 +870,8 @@ void parseRigidBodyInstancer(AttachedStage& attachedStage,
             const ::physx::PxMat44d newLocalShapeMatrix = topBodyMatrixInverse * shapeWorldMatrix;
 
             PhysxShapeDesc* scaledShapeDesc = scaleShapeDesc(*sourceShapeDesc, instanceScale);
+            if (!scaledShapeDesc)
+                continue; // Unsupported custom scale: skip this instance without dereferencing a null descriptor.
 
             const ::physx::PxTransform newLocalShapePose = toTransform(newLocalShapeMatrix);
             scaledShapeDesc->localPos = toFloat3(newLocalShapePose.p);

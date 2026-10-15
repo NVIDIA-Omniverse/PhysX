@@ -19,6 +19,11 @@
 // On failure every g_sidecar* remains nullptr.
 bool loadInternalSidecar();
 
+// Refresh a resident sidecar's framework, borrowed built-ins and logging source
+// once per new framework bootstrap, before applying the stored logging policy.
+// Does not load the DSO or change its resolved operation pointers.
+bool refreshInternalSidecarRuntime();
+
 // Resolves an arbitrary symbol from the already-loaded internal sidecar.
 // Returns nullptr if the sidecar is not loaded yet or the symbol is missing.
 // Use for one-off symbols not tracked by the per-subsystem g_sidecar* globals.

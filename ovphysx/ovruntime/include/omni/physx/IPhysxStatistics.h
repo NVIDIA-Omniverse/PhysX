@@ -277,8 +277,8 @@ struct IPhysxStatistics
 {
     /// Returns simulation statistics for a particular PhysicsScene.
     ///
-    /// \param[in] attachHandle Attach holding the scene, from @ref
-    ///     IPhysxSimulation::getAttachHandle(), or kActiveAttach for the lone active attach.
+    /// \param[in] attachHandle Exact live attachment holding the scene.
+    ///     Zero, stale handles and the retired active sentinel are rejected.
     /// \param[in] path The scene, as an `omni::physics::parse::ObjectKey::handle` value (e.g. from
     ///            @ref IPhysx::resolveObjectKey()) -- NOT a legacy SdfPath-bit encoding (2026-08-29, ADR-0018:
     ///            breaking change). A handle is only valid against the Source instance that minted it.

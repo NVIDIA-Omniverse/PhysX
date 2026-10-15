@@ -13,6 +13,8 @@
 #pragma once
 
 #include <omni/physics/parse/Allocator.h>
+#include <omni/physics/parse/DescriptorRangeExecutor.h>
+#include <omni/physics/parse/DescriptorBatchAllocator.h>
 #include <omni/physics/parse/Descriptors.h>
 #include <omni/physics/parse/IPhysicsSource.h>
 #include <omni/physics/parse/ParseApi.h>
@@ -63,10 +65,28 @@ struct OvstageScanFilter
     std::vector<std::string> excludePaths;
     bool prunePointInstancerDescendants = true;
     DescendantScope descendantScope = DescendantScope::eActiveInstanced;
+    std::shared_ptr<DescriptorBatchAllocator> descriptorPool;
+    DescriptorExecutionOptions descriptorExecution;
 };
 
 struct OvstageScanResult
 {
+    OvstageScanResult() = default;
+    OvstageScanResult(OvstageScanResult&&) noexcept = default;
+    OvstageScanResult& operator=(OvstageScanResult&& other) noexcept
+    {
+        if (this != &other)
+        {
+            // Default member assignment would replace the pool/source before
+            // destroying the old descriptor lists that still depend on them.
+            this->~OvstageScanResult();
+            new (this) OvstageScanResult(std::move(other));
+        }
+        return *this;
+    }
+
+    // Declared before descriptor/auxiliary owners so the pool is destroyed last.
+    std::shared_ptr<DescriptorBatchAllocator> descriptorPool;
     // The exact source that mints descriptor handles. Declared first so it is
     // destroyed after every descriptor and moved into ScannedStage on attach.
     // Null when the scan ran through a caller-owned source (`borrowedSource`).
@@ -77,12 +97,12 @@ struct OvstageScanResult
     std::vector<DescPtr<PBDMaterialDesc>> pbdMaterials;
     std::vector<DescPtr<PhysxDeformableMaterialDesc>> deformableMaterials;
     std::vector<DescPtr<PhysxRigidBodyDesc>> bodies;
-    std::vector<DescPtr<PhysxShapeDesc>> shapes;
     // Owned-storage for mesh-shape MergeMeshDesc data (bounding-sphere/cube
     // approximations): the emitted Bounding{Sphere,Box}PhysxShapeDesc point at
     // these via mergedMesh, so they must outlive the shape descriptors. Moved
     // into the ScannedStage (retainOwnedMesh) in OvstageScan.cpp.
     std::vector<DescPtr<MergeMeshDesc>> ownedMeshes;
+    std::vector<DescPtr<PhysxShapeDesc>> shapes;
     std::vector<DescPtr<PhysxJointDesc>> joints;
     std::vector<DescPtr<MimicJointDesc>> mimicJoints;
     std::vector<DescPtr<CollisionGroupDesc>> collisionGroups;
@@ -146,6 +166,9 @@ struct OvstageScanResult
     // dropping them.
     size_t skippedShapes = 0;
 };
+
+// Transfer completed walker outputs while preserving exception-safe ownership.
+ScannedStage finishOvstageScan(OvstageScanResult&& scan);
 
 // With `attached` (an attach's live source over the same instance) the scan reads through it
 // instead of a fresh OvstageSource: its units, schema / type / hierarchy memos stay warm across

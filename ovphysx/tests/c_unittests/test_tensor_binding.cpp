@@ -30,6 +30,7 @@
 #include "global_test_environment.h"
 #include "test_utilities.h"
 #include "ovphysx/ovphysx.h"
+#include "ovphysx/ovphysx_attributes.h"
 #include "ovphysx/ovphysx_config.h"
 #include "ovphysx_test_utils.h"
 #include <gtest/gtest.h>
@@ -46,12 +47,11 @@
 
 #include "cuda_test_helpers.h"
 
-#include "WrenchConversion.h"
 
 using test_utils::make_ovx_string;
 using test_utils::make_ovx_string_bytes;
 
-static uintptr_t getPhysxCudaContextFromBinding(ovphysx_handle_t handle, ovphysx_tensor_binding_handle_t binding)
+static uintptr_t getPhysxCudaContextFromBinding(ovphysx_instance_handle_t handle, ovphysx_tensor_binding_handle_t binding)
 {
     uintptr_t ctx = 0;
     if (!ovphysx_get_tensor_binding_cuda_context_internal(handle, binding, &ctx))
@@ -59,57 +59,21 @@ static uintptr_t getPhysxCudaContextFromBinding(ovphysx_handle_t handle, ovphysx
     return ctx;
 }
 
-static bool wait_op_success(ovphysx_handle_t handle, ovphysx_op_index_t op_index, uint64_t timeout_ns = 10'000'000'000ULL) {
-    ovphysx_op_wait_result_t wait_result{};
-    ovphysx_result_t res = ovphysx_wait_op(handle, op_index, timeout_ns, &wait_result);
-    if (wait_result.error_op_indices && wait_result.num_errors > 0) {
+static bool wait_task_success(ovphysx_instance_handle_t handle, ovphysx_enqueue_result_t task, uint64_t timeout_ns = 10'000'000'000ULL) {
+    ovphysx_wait_task_result_t wait_result{};
+    ovphysx_result_t res = ovphysx_wait_task(handle, task, timeout_ns, &wait_result);
+    if (wait_result.error_tasks && wait_result.num_errors > 0) {
         for (size_t i = 0; i < wait_result.num_errors; i++) {
-            ovphysx_string_t op_err = ovphysx_get_last_op_error(wait_result.error_op_indices[i]);
+            ovphysx_string_t op_err = ovphysx_get_last_task_error(handle, wait_result.error_tasks[i]);
             std::cerr << "Op error: " << std::string(op_err.ptr, op_err.length) << std::endl;
         }
     }
-    ovphysx_destroy_wait_result(&wait_result);
+    ovphysx_destroy_wait_task_result(&wait_result);
     return res.status == OVPHYSX_API_SUCCESS;
 }
 
-TEST(TensorBinding, WrenchAosToSoaConversionCpu)
-{
-    // AoS row layout: [fx,fy,fz, tx,ty,tz, px,py,pz]
-    const int64_t N = 2;
-    const float aos[N * 9] = {
-        1.f, 2.f, 3.f,   4.f, 5.f, 6.f,   7.f, 8.f, 9.f,
-        10.f, 11.f, 12.f, 13.f, 14.f, 15.f, 16.f, 17.f, 18.f,
-    };
 
-    float soa[N * 9] = {};
-    ovphysx::internal::convertWrenchAosToSoaCpu(aos, N, soa);
-
-    // forces
-    EXPECT_FLOAT_EQ(soa[0], 1.f);
-    EXPECT_FLOAT_EQ(soa[1], 2.f);
-    EXPECT_FLOAT_EQ(soa[2], 3.f);
-    EXPECT_FLOAT_EQ(soa[3], 10.f);
-    EXPECT_FLOAT_EQ(soa[4], 11.f);
-    EXPECT_FLOAT_EQ(soa[5], 12.f);
-
-    // torques
-    EXPECT_FLOAT_EQ(soa[6], 4.f);
-    EXPECT_FLOAT_EQ(soa[7], 5.f);
-    EXPECT_FLOAT_EQ(soa[8], 6.f);
-    EXPECT_FLOAT_EQ(soa[9], 13.f);
-    EXPECT_FLOAT_EQ(soa[10], 14.f);
-    EXPECT_FLOAT_EQ(soa[11], 15.f);
-
-    // positions
-    EXPECT_FLOAT_EQ(soa[12], 7.f);
-    EXPECT_FLOAT_EQ(soa[13], 8.f);
-    EXPECT_FLOAT_EQ(soa[14], 9.f);
-    EXPECT_FLOAT_EQ(soa[15], 16.f);
-    EXPECT_FLOAT_EQ(soa[16], 17.f);
-    EXPECT_FLOAT_EQ(soa[17], 18.f);
-}
-
-static bool load_usd_and_wait(ovphysx_handle_t handle, const char* usd_path, ovphysx_usd_handle_t& out_handle) {
+static bool load_usd_and_wait(ovphysx_instance_handle_t handle, const char* usd_path, ovphysx_usd_handle_t& out_handle) {
     out_handle = 1;
     return test_utils::attach_usd_with_ovstage(handle, usd_path);
 }
@@ -163,19 +127,18 @@ private:
         return sOriginalCreate(stageId);
     }
 
-    static void CARB_ABI intercept(omni::physics::AttachHandle stageId)
+    static bool CARB_ABI intercept(omni::physics::AttachHandle stageId)
     {
         ++sCallCount;
         sLastStageId = stageId;
-        if (sOriginal)
-            sOriginal(stageId);
+        return sOriginal && sOriginal(stageId);
     }
 
     omni::physics::tensors::TensorApi& mTensorApi;
-    void(CARB_ABI* mOriginal)(omni::physics::AttachHandle) = nullptr;
+    bool(CARB_ABI* mOriginal)(omni::physics::AttachHandle) = nullptr;
     omni::physics::tensors::ISimulationView*(CARB_ABI* mOriginalCreate)(omni::physics::AttachHandle) = nullptr;
 
-    static inline void(CARB_ABI* sOriginal)(omni::physics::AttachHandle) = nullptr;
+    static inline bool(CARB_ABI* sOriginal)(omni::physics::AttachHandle) = nullptr;
     static inline omni::physics::tensors::ISimulationView*(CARB_ABI* sOriginalCreate)(omni::physics::AttachHandle) = nullptr;
     static inline int sCallCount = 0;
     static inline int sCreateCount = 0;
@@ -190,7 +153,7 @@ private:
 
 class TensorBindingCpuTest : public ::testing::Test {
 protected:
-    ovphysx_handle_t m_handle = 0;
+    ovphysx_instance_handle_t m_handle = 0;
 
     void SetUp() override {
         ASSERT_TRUE(ensureSharedCpuInstance()) << "Failed to create shared CPU PhysX instance";
@@ -199,9 +162,9 @@ protected:
 
     void TearDown() override {
         if (m_handle != 0) {
-            ovphysx_enqueue_result_t reset_result = ovphysx_reset_stage(m_handle);
+            ovphysx_enqueue_result_t reset_result = ovphysx_detach_ovstage(m_handle);
             if (reset_result.status == OVPHYSX_API_SUCCESS && reset_result.op_index != 0) {
-                EXPECT_TRUE(waitForOperationSuccess(m_handle, reset_result.op_index))
+                EXPECT_TRUE(waitForTaskSuccess(m_handle, reset_result))
                     << "TensorBindingCpuTest reset failed during teardown";
             }
             test_utils::destroy_ovstage_test_attachments(m_handle);
@@ -240,7 +203,7 @@ TEST_F(TensorBindingCpuTest, NativeDeviceReportsCpu)
     EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, binding).status, OVPHYSX_API_SUCCESS);
 }
 
-// ovphysx_reset_stage must release the tensor SimulationBackend's per-stage data, or stale
+// ovphysx_detach_ovstage must release the tensor SimulationBackend's per-stage data, or stale
 // views persist across reset and reattach. The reset path calls resetStage(stageId) in
 // detach_ovstage / unload_usd.
 TEST_F(TensorBindingCpuTest, ResetStageReleasesTensorBackendStage)
@@ -259,9 +222,9 @@ TEST_F(TensorBindingCpuTest, ResetStageReleasesTensorBackendStage)
     ASSERT_NE(tensorApi->resetStage, nullptr);
     ScopedTensorApiProbe probe(*tensorApi);
 
-    ovphysx_enqueue_result_t resetResult = ovphysx_reset_stage(m_handle);
+    ovphysx_enqueue_result_t resetResult = ovphysx_detach_ovstage(m_handle);
     ASSERT_EQ(resetResult.status, OVPHYSX_API_SUCCESS);
-    ASSERT_TRUE(wait_op_success(m_handle, resetResult.op_index));
+    ASSERT_TRUE(wait_task_success(m_handle, resetResult));
 
     EXPECT_EQ(probe.resetCount(), 1);
     EXPECT_GT(probe.lastStageId(), 0);
@@ -371,7 +334,7 @@ TEST_F(TensorBindingCpuTest, CpuArticulationCentroidalMomentumFloatingBase) {
     {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     }
 
     // Read must succeed for a floating-base articulation.
@@ -485,8 +448,10 @@ TEST_F(TensorBindingCpuTest, CpuCartPoleProjectedJointForcePreStepZero) {
 // for the cart-prismatic step-1 readback comparison with the GPU twin.
 TEST_F(TensorBindingCpuTest, CpuCartPoleProjectedJointForceMatchesActuation) {
     ovphysx_usd_handle_t usd_handle = 0;
-    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/CartPole.usda", usd_handle))
-        << "Failed to load CartPole.usda";
+    // CartPoleForcesOncePerStep.usda is CartPole.usda with external forces applied once per step,
+    // which this test expects.
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/CartPoleForcesOncePerStep.usda", usd_handle))
+        << "Failed to load CartPoleForcesOncePerStep.usda";
 
     ovphysx_tensor_binding_handle_t actuation_b = 0;
     {
@@ -523,7 +488,7 @@ TEST_F(TensorBindingCpuTest, CpuCartPoleProjectedJointForceMatchesActuation) {
     {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 1000.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     }
 
     std::vector<float> projected(N * D, 0.0f);
@@ -669,7 +634,7 @@ TEST_F(TensorBindingCpuTest, CpuRigidBodyDisableGravitySuppressesFall) {
     auto step_once = [&]() {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     };
 
     std::vector<float> poses(n * 7, 0.0f);
@@ -772,17 +737,16 @@ TEST_F(TensorBindingCpuTest, CpuRigidBodyDisableGravitySleepingBodiesWakeOnReena
 
     auto active_count = [&]() -> uint64_t {
         ovphysx_query_handle_t query = 0;
-        EXPECT_EQ(ovphysx_query(m_handle, OVPHYSX_OBJECT_RIGID_BODY, OVPHYSX_SCOPE_ACTIVE, &query).status,
-                  OVPHYSX_API_SUCCESS);
         ovstage_query_result_t result{};
-        EXPECT_EQ(ovphysx_fetch_query_result(m_handle, query, &result).status, OVPHYSX_API_SUCCESS);
-        EXPECT_EQ(ovphysx_release_query(m_handle, query).status, OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ACTIVE, &query, &result)).status,
+                  OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_release_query(m_handle, query)).status, OVPHYSX_API_SUCCESS);
         return result.total_prim_count;
     };
     auto step_once = [&]() {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     };
 
     ASSERT_EQ(ovphysx_rigid_body_view_sleep(m_handle, grav_binding, nullptr).status, OVPHYSX_API_SUCCESS);
@@ -1166,7 +1130,7 @@ TEST_F(TensorBindingCpuTest, CpuArticulationDisableGravitySuppressesFall) {
     auto step_once = [&]() {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     };
 
     std::vector<float> root_pose(7, 0.0f);
@@ -1227,9 +1191,13 @@ TEST_F(TensorBindingCpuTest, CpuArticulationDisableGravitySuppressesFall) {
     EXPECT_EQ(ovphysx_destroy_tensor_binding(m_handle, grav_binding).status, OVPHYSX_API_SUCCESS);
 }
 
-// Writing dof-positions and then calling ovphysx_articulation_update_kinematic must
-// propagate the new joint state into the link buffer without stepping the simulator
-// (OMPE-94459).
+// Writing dof-positions and then calling ovphysx_update_articulations_kinematic must
+// propagate the new joint state into the link buffer without stepping the simulator.
+// CATEGORY-3 GAP (no session port): a CPU SESSION joint write already teleports the links, so a session
+// port could not observe the kinematic update in isolation. The DirectGPU equivalent is session-covered
+// (test_session_properties_gpu.py::TestArticulationKinematicUpdateGpu::test_dof_position_write_updates_link_pose_after_fk) and CPU forward
+// kinematics by SelectedKinematicUpdateCpuTest in test_articulation_kinematic_isolation.cpp. See
+// PLAN-tensor-binding-deprecation (Blocked/deferred).
 TEST_F(TensorBindingCpuTest, CpuArticulationUpdateKinematicPropagatesDofToLinks) {
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/links_chain_sample.usda", usd_handle))
@@ -1271,9 +1239,15 @@ TEST_F(TensorBindingCpuTest, CpuArticulationUpdateKinematicPropagatesDofToLinks)
     int64_t dshape[2] = {dof_spec.shape[0], dof_spec.shape[1]}; dt.shape = dshape;
     ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, dof_b, &dt, nullptr).status, OVPHYSX_API_SUCCESS);
 
-    ASSERT_EQ(ovphysx_articulation_update_kinematic(m_handle, dof_b,
-                                                    OVPHYSX_ARTICULATION_KINEMATIC_POSITION).status,
-              OVPHYSX_API_SUCCESS);
+    ovphysx_query_handle_t query = 0;
+    ovphysx_enqueue_result_t query_task =
+        ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_ARTICULATION, OVPHYSX_SCOPE_ALL, &query, nullptr);
+    ASSERT_EQ(query_task.status, OVPHYSX_API_SUCCESS);
+    ASSERT_TRUE(wait_task_success(m_handle, query_task));
+    ovphysx_enqueue_result_t update_task = ovphysx_update_articulations_kinematic(
+        m_handle, query, OVPHYSX_ARTICULATION_KINEMATIC_POSITION);
+    ASSERT_EQ(update_task.status, OVPHYSX_API_SUCCESS);
+    ASSERT_TRUE(wait_task_success(m_handle, update_task));
 
     // Link poses read without a step must differ from the initial poses, since the
     // joint angles went from zero to 0.6.
@@ -1294,6 +1268,7 @@ TEST_F(TensorBindingCpuTest, CpuArticulationUpdateKinematicPropagatesDofToLinks)
 
     ovphysx_destroy_tensor_binding(m_handle, dof_b);
     ovphysx_destroy_tensor_binding(m_handle, link_b);
+    ASSERT_TRUE(wait_task_success(m_handle, ovphysx_release_query(m_handle, query)));
 }
 
 // ARTICULATION_DOF_DRIVE_MODEL exposes IArticulationView::set/getDofDriveModelProperties
@@ -1358,7 +1333,7 @@ TEST_F(TensorBindingCpuTest, CpuArticulationRootTransformPropagates) {
     {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     }
 
     ovphysx_tensor_binding_handle_t root_b = 0;
@@ -1421,7 +1396,7 @@ TEST_F(TensorBindingCpuTest, CpuArticulationRootTransformPropagates) {
     {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     }
 
     std::vector<float> link_post(N * L * 7, 0.0f);
@@ -1453,7 +1428,7 @@ TEST_F(TensorBindingCpuTest, CpuArticulationRootTransformPropagates) {
 // umbrella LinearDofVelocities scenario (OMPE-94459). With do_settle false the write
 // happens before the first step, as in the umbrella. With do_settle true one step runs
 // before the write, as in the passing single-articulation reference.
-static void RunMultiCartRailPrismaticDofVelocity(ovphysx_handle_t m_handle,
+static void RunMultiCartRailPrismaticDofVelocity(ovphysx_instance_handle_t m_handle,
                                                  bool do_settle,
                                                  const char* usd_asset = "tests/data/MultiCartRail.usda",
                                                  const char* pattern = "/envs/*") {
@@ -1464,7 +1439,7 @@ static void RunMultiCartRailPrismaticDofVelocity(ovphysx_handle_t m_handle,
     if (do_settle) {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     }
 
     ovphysx_tensor_binding_handle_t vel_b = 0;
@@ -1503,7 +1478,7 @@ static void RunMultiCartRailPrismaticDofVelocity(ovphysx_handle_t m_handle,
     {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     }
 
     std::vector<float> read_vel(N * D, 0.0f);
@@ -1620,7 +1595,7 @@ TEST_F(TensorBindingCpuTest, CpuLinearDrivePD_SettlesIn60Steps) {
     {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     }
 
     ovphysx_tensor_binding_handle_t pos_b = 0;
@@ -1648,7 +1623,7 @@ TEST_F(TensorBindingCpuTest, CpuLinearDrivePD_SettlesIn60Steps) {
     for (int s = 0; s < 60; ++s) {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
 
         t.data = &final_pos;
         ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, pos_b, &t).status, OVPHYSX_API_SUCCESS);
@@ -1702,7 +1677,7 @@ TEST_F(TensorBindingCpuTest, CpuPrismaticDofVelocity_NoDriftOnSingleArticulation
     {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     }
 
     float read_vel = 0.0f;
@@ -1714,7 +1689,7 @@ TEST_F(TensorBindingCpuTest, CpuPrismaticDofVelocity_NoDriftOnSingleArticulation
     ovphysx_destroy_tensor_binding(m_handle, vel_binding);
 }
 
-// OMPE-94459 (#13) / NVBugs 6560084: ovphysx_get_object_type classifies prims by
+// OMPE-94459 / NVBugs 6560084: ovphysx_get_object_type classifies prims by
 // TensorAPI object type. Articulation joints stay ARTICULATION_JOINT, distinct
 // from the standalone JOINT cases below.
 TEST_F(TensorBindingCpuTest, CpuGetObjectType) {
@@ -1752,7 +1727,7 @@ TEST_F(TensorBindingCpuTest, CpuGetObjectType) {
 
 // The classification is schema-independent, so each standalone-joint scene runs
 // the same checks: the joint path is JOINT, an absent path is INVALID.
-static void expectStandaloneJointClassified(ovphysx_handle_t handle, const char* usda, const char* joint_path) {
+static void expectStandaloneJointClassified(ovphysx_instance_handle_t handle, const char* usda, const char* joint_path) {
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(handle, usda, usd_handle)) << "Failed to load " << usda;
 
@@ -1812,7 +1787,7 @@ TEST_F(TensorBindingCpuTest, CpuRigidBodyDisableSimulationStopsSimulation) {
     auto step_once = [&]() {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     };
 
     step_once();
@@ -1912,7 +1887,7 @@ TEST_F(TensorBindingCpuTest, CpuRigidBodyDisableSimulationInOnStart) {
     for (int s = 0; s < 3; ++s) {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     }
 
     pose_t.data = poses.data();
@@ -2009,7 +1984,7 @@ TEST_F(TensorBindingCpuTest, CpuRigidBodyDisableSimulationIndexedInOnStart) {
     for (int s = 0; s < 2; ++s) {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     }
 
     std::vector<float> velocities(n * 6, 0.0f);
@@ -2085,7 +2060,7 @@ TEST_F(TensorBindingCpuTest, CpuRigidBodyDisableFlipWakeSequence) {
     auto step = [&]() {
         ovphysx_enqueue_result_t s = ovphysx_step(m_handle, 1.f / 60.f);
         ASSERT_EQ(s.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, s.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, s));
     };
     auto read_vz = [&](std::vector<float>& vz) {
         std::vector<float> buf(n * 6, 0.f);
@@ -2204,7 +2179,7 @@ TEST_F(TensorBindingCpuTest, CpuRigidBodyViewWakeUpAfterReEnable) {
     auto step_once = [&]() {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     };
 
     auto write_disable_all = [&](uint8_t value) {
@@ -2306,7 +2281,7 @@ TEST_F(TensorBindingCpuTest, CpuRigidBodyViewWakeUpIndexed) {
     {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     }
     {
         std::vector<uint8_t> flags(n, 0);
@@ -2336,7 +2311,7 @@ TEST_F(TensorBindingCpuTest, CpuRigidBodyViewWakeUpIndexed) {
     for (int s = 0; s < 3; ++s) {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     }
     std::vector<float> pose_after(n * 7, 0.0f);
     pt.data = pose_after.data();
@@ -2856,7 +2831,7 @@ def Xform "Body" (prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
         range.has_start_ordinal = true;
         range.start_ordinal = ordinal;
         range.end_ordinal = ordinal;
-        return ovphysx_update_from_ovstage(m_handle, range).status == OVPHYSX_API_SUCCESS;
+        return test_utils::complete_task(m_handle, ovphysx_update_from_ovstage(m_handle, range)).status == OVPHYSX_API_SUCCESS;
     };
     ASSERT_TRUE(addBody("/World/DynamicBoxes/box_0", 2));
     ovphysx_tensor_binding_desc_t desc{};
@@ -3015,7 +2990,7 @@ TEST_F(TensorBindingCpuTest, ForceWriteEffect_RigidBodyDisplacement) {
     {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f/60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     }
 
     ovphysx_tensor_binding_handle_t force_binding = 0;
@@ -3091,7 +3066,7 @@ TEST_F(TensorBindingCpuTest, ForceWriteEffect_RigidBodyDisplacement) {
 
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, dt);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     }
 
     std::vector<float> final_poses(N * 7, 0.0f);
@@ -3141,7 +3116,7 @@ TEST_F(TensorBindingCpuTest, WrenchWriteEffect_RigidBodyDisplacement) {
     {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f/60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     }
 
     ovphysx_tensor_binding_handle_t wrench_binding = 0;
@@ -3217,7 +3192,7 @@ TEST_F(TensorBindingCpuTest, WrenchWriteEffect_RigidBodyDisplacement) {
 
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, dt);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     }
 
     std::vector<float> final_poses(N * 7, 0.0f);
@@ -3275,7 +3250,7 @@ TEST_F(TensorBindingCpuTest, CpuOnlyLifecycle_NoCrash) {
         const float dt = 1.0f / 60.0f;
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, dt);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS) << "CPU step " << i << " failed";
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     }
 
     // warmup() runs in CPU mode too: a 1ns step for lazy init, and it disables Fabric sync.
@@ -3319,7 +3294,7 @@ TEST_F(TensorBindingCpuTest, CpuOnlyLifecycle_NoCrash) {
     {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     }
 
     // Destroying the binding must not crash even though the GPU was never initialized.
@@ -3417,11 +3392,11 @@ TEST_F(TensorBindingCpuTest, CpuOnlyCudaTensorRejected) {
 
 class DefaultGpuDynamicsTest : public ::testing::Test
 {
-    static ovphysx_handle_t s_handle;
+    static ovphysx_instance_handle_t s_handle;
     static std::string s_skipReason;
 
 protected:
-    ovphysx_handle_t m_handle = 0;
+    ovphysx_instance_handle_t m_handle = 0;
 
     static void SetUpTestSuite()
     {
@@ -3429,8 +3404,7 @@ protected:
         s_skipReason = "GPU tests disabled at compile time";
         return;
 #endif
-        const ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-        const ovphysx_result_t createResult = ovphysx_create_instance(&args, &s_handle);
+        const ovphysx_result_t createResult = ovphysx_create_instance(&s_handle);
         if (createResult.status != OVPHYSX_API_SUCCESS)
         {
             const ovphysx_string_t error = ovphysx_get_last_error();
@@ -3443,9 +3417,9 @@ protected:
     {
         if (s_handle == 0)
             return;
-        const ovphysx_enqueue_result_t resetResult = ovphysx_reset_stage(s_handle);
+        const ovphysx_enqueue_result_t resetResult = ovphysx_detach_ovstage(s_handle);
         if (resetResult.status == OVPHYSX_API_SUCCESS && resetResult.op_index != 0)
-            wait_op_success(s_handle, resetResult.op_index);
+            wait_task_success(s_handle, resetResult);
         test_utils::destroy_ovstage_test_attachments(s_handle);
         ovphysx_destroy_instance(s_handle);
         s_handle = 0;
@@ -3466,9 +3440,9 @@ protected:
     {
         if (m_handle == 0)
             return;
-        const ovphysx_enqueue_result_t resetResult = ovphysx_reset_stage(m_handle);
+        const ovphysx_enqueue_result_t resetResult = ovphysx_detach_ovstage(m_handle);
         if (resetResult.status == OVPHYSX_API_SUCCESS && resetResult.op_index != 0)
-            EXPECT_TRUE(wait_op_success(m_handle, resetResult.op_index));
+            EXPECT_TRUE(wait_task_success(m_handle, resetResult));
         else
             EXPECT_EQ(resetResult.status, OVPHYSX_API_SUCCESS);
         test_utils::destroy_ovstage_test_attachments(m_handle);
@@ -3481,7 +3455,7 @@ protected:
         {
             const ovphysx_enqueue_result_t result = ovphysx_step(m_handle, 1.0f / 60.0f);
             ASSERT_EQ(result.status, OVPHYSX_API_SUCCESS);
-            ASSERT_TRUE(wait_op_success(m_handle, result.op_index));
+            ASSERT_TRUE(wait_task_success(m_handle, result));
         }
     }
 
@@ -3491,30 +3465,29 @@ protected:
         step(1);
     }
 
-    uint64_t activeCount(const ovphysx_sim_object_type_t objectType)
+    uint64_t activeCount(const ovphysx_query_target_t objectType)
     {
         ovphysx_query_handle_t query = 0;
-        EXPECT_EQ(ovphysx_query(m_handle, objectType, OVPHYSX_SCOPE_ACTIVE, &query).status,
-                  OVPHYSX_API_SUCCESS);
         ovstage_query_result_t result{};
-        EXPECT_EQ(ovphysx_fetch_query_result(m_handle, query, &result).status, OVPHYSX_API_SUCCESS);
-        EXPECT_EQ(ovphysx_release_query(m_handle, query).status, OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, objectType, OVPHYSX_SCOPE_ACTIVE, &query, &result)).status,
+                  OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_release_query(m_handle, query)).status, OVPHYSX_API_SUCCESS);
         return result.total_prim_count;
     }
 
-    void writeUniformU8(const ovphysx_sim_object_type_t objectType,
+    void writeUniformU8(const ovphysx_query_target_t objectType,
                         const char* attributeName,
                         const uint8_t value)
     {
         writeUniform(objectType, attributeName, kDLUInt, 8, &value, sizeof(value));
     }
 
-    void writeDisableGravity(const ovphysx_sim_object_type_t objectType, const uint8_t value)
+    void writeDisableGravity(const ovphysx_query_target_t objectType, const uint8_t value)
     {
         writeUniformU8(objectType, OVPHYSX_ATTR_DISABLE_GRAVITY, value);
     }
 
-    void writeUniform(const ovphysx_sim_object_type_t objectType,
+    void writeUniform(const ovphysx_query_target_t objectType,
                       const char* attributeName,
                       const uint8_t dtypeCode,
                       const uint8_t dtypeBits,
@@ -3523,36 +3496,39 @@ protected:
     {
         struct WriteSessionGuard
         {
-            explicit WriteSessionGuard(const ovphysx_handle_t instance) : handle(instance)
+            explicit WriteSessionGuard(const ovphysx_instance_handle_t instance) : handle(instance)
             {
             }
 
             ~WriteSessionGuard()
             {
                 if (write)
-                    ovphysx_release_write(handle, write);
+                    test_utils::complete_task(handle, ovphysx_release_write(handle, write));
                 if (query)
-                    ovphysx_release_query(handle, query);
+                    test_utils::complete_task(handle, ovphysx_release_query(handle, query));
             }
 
-            ovphysx_handle_t handle;
+            ovphysx_instance_handle_t handle;
             ovphysx_query_handle_t query = 0;
             ovphysx_write_handle_t write = 0;
         } guard(m_handle);
 
-        ASSERT_EQ(ovphysx_query(m_handle, objectType, OVPHYSX_SCOPE_ALL, &guard.query).status,
+        ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, objectType, OVPHYSX_SCOPE_ALL, &guard.query, nullptr)).status,
                   OVPHYSX_API_SUCCESS);
 
         const ovx_string_or_token_t attribute = {
             0,
             { attributeName, std::strlen(attributeName) }
         };
-        ASSERT_EQ(ovphysx_write(m_handle, guard.query, &attribute, &guard.write).status, OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_write(m_handle, guard.query, &attribute, 1, &guard.write, nullptr)).status, OVPHYSX_API_SUCCESS);
 
-        const ovstage_map_group_t* group = nullptr;
+        ovphysx_fetched_write_group_t fetched{};
         ovphysx_result_t fetch{};
-        while ((fetch = ovphysx_fetch_write_next(m_handle, guard.write, &group)).status == OVPHYSX_API_SUCCESS)
+        while ((fetch = test_utils::complete_task(m_handle, ovphysx_fetch_write_next(m_handle, guard.write, &fetched))).status ==
+                   OVPHYSX_API_SUCCESS &&
+               fetched.group)
         {
+            const ovstage_map_group_t* group = fetched.group;
             ASSERT_NE(group, nullptr);
             ASSERT_EQ(group->data.tensor_count, 1u);
             const DLTensor& tensor = group->data.tensors[0];
@@ -3565,18 +3541,18 @@ protected:
             uint8_t* dst = static_cast<uint8_t*>(tensor.data);
             for (size_t i = 0; i < elementCount; ++i)
                 std::memcpy(dst + i * fillBytes, fillValue, fillBytes);
-            ASSERT_EQ(ovphysx_commit_group(m_handle, guard.write, group, ovstage_cuda_sync_t{}).status,
+            ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_commit_group(m_handle, guard.write, group, ovstage_cuda_sync_t{})).status,
                       OVPHYSX_API_SUCCESS);
         }
-        EXPECT_EQ(fetch.status, OVPHYSX_API_END_OF_ITERATION);
-        EXPECT_EQ(ovphysx_release_write(m_handle, guard.write).status, OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(fetch.status, OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_release_write(m_handle, guard.write)).status, OVPHYSX_API_SUCCESS);
         guard.write = 0;
-        EXPECT_EQ(ovphysx_release_query(m_handle, guard.query).status, OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_release_query(m_handle, guard.query)).status, OVPHYSX_API_SUCCESS);
         guard.query = 0;
     }
 };
 
-ovphysx_handle_t DefaultGpuDynamicsTest::s_handle = 0;
+ovphysx_instance_handle_t DefaultGpuDynamicsTest::s_handle = 0;
 std::string DefaultGpuDynamicsTest::s_skipReason;
 
 TEST_F(DefaultGpuDynamicsTest, TensorBindingRigidBodyDisableGravityAffectsSimulation)
@@ -3686,7 +3662,7 @@ TEST_F(DefaultGpuDynamicsTest, SessionWriteRigidBodyDisableGravityAffectsSimulat
             << "gravity-enabled control body " << i << " did not accelerate";
     }
 
-    ASSERT_NO_FATAL_FAILURE(writeDisableGravity(OVPHYSX_OBJECT_RIGID_BODY, 1));
+    ASSERT_NO_FATAL_FAILURE(writeDisableGravity(OVPHYSX_QUERY_TARGET_RIGID_BODY, 1));
     step(1);
     std::vector<float> disabledVel(static_cast<size_t>(count * 6), 0.0f);
     vel.data = disabledVel.data();
@@ -3702,7 +3678,7 @@ TEST_F(DefaultGpuDynamicsTest, SessionWriteRigidBodyDisableGravityAffectsSimulat
     pose.data = held.data();
     ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, poseBinding, &pose).status, OVPHYSX_API_SUCCESS);
 
-    ASSERT_NO_FATAL_FAILURE(writeDisableGravity(OVPHYSX_OBJECT_RIGID_BODY, 0));
+    ASSERT_NO_FATAL_FAILURE(writeDisableGravity(OVPHYSX_QUERY_TARGET_RIGID_BODY, 0));
     step(20);
     std::vector<float> released(static_cast<size_t>(count * 7), 0.0f);
     pose.data = released.data();
@@ -3730,7 +3706,7 @@ TEST_F(DefaultGpuDynamicsTest, SleepingRigidBodiesWakeOnlyWhenGravityIsReenabled
     ASSERT_GT(count, 0);
 
     ASSERT_EQ(ovphysx_rigid_body_view_sleep(m_handle, gravityBinding, nullptr).status, OVPHYSX_API_SUCCESS);
-    EXPECT_EQ(activeCount(OVPHYSX_OBJECT_RIGID_BODY), 0u);
+    EXPECT_EQ(activeCount(OVPHYSX_QUERY_TARGET_RIGID_BODY), 0u);
 
     std::vector<uint8_t> flags(static_cast<size_t>(count), 1);
     int64_t shape[1] = { count };
@@ -3742,13 +3718,13 @@ TEST_F(DefaultGpuDynamicsTest, SleepingRigidBodiesWakeOnlyWhenGravityIsReenabled
     flag.shape = shape;
     ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, gravityBinding, &flag, nullptr).status, OVPHYSX_API_SUCCESS);
     step(1);
-    EXPECT_EQ(activeCount(OVPHYSX_OBJECT_RIGID_BODY), 0u)
+    EXPECT_EQ(activeCount(OVPHYSX_QUERY_TARGET_RIGID_BODY), 0u)
         << "disabling gravity must not wake a sleeping body";
 
     std::fill(flags.begin(), flags.end(), 0);
     ASSERT_EQ(ovphysx_write_tensor_binding(m_handle, gravityBinding, &flag, nullptr).status, OVPHYSX_API_SUCCESS);
     step(1);
-    EXPECT_EQ(activeCount(OVPHYSX_OBJECT_RIGID_BODY), static_cast<uint64_t>(count))
+    EXPECT_EQ(activeCount(OVPHYSX_QUERY_TARGET_RIGID_BODY), static_cast<uint64_t>(count))
         << "re-enabling gravity must wake sleeping bodies for the next step";
 
     ovphysx_destroy_tensor_binding(m_handle, gravityBinding);
@@ -3847,14 +3823,14 @@ TEST_F(DefaultGpuDynamicsTest, SessionWriteArticulationLinkDisableGravityAffects
     EXPECT_LT(movingVel[2], beforeVel[2] - 0.1f)
         << "gravity-enabled articulation control did not accelerate";
 
-    ASSERT_NO_FATAL_FAILURE(writeDisableGravity(OVPHYSX_OBJECT_ARTICULATION_LINK, 1));
+    ASSERT_NO_FATAL_FAILURE(writeDisableGravity(OVPHYSX_QUERY_TARGET_ARTICULATION_LINK, 1));
     step(1);
     float disabledVel[6]{};
     vel.data = disabledVel;
     ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, rootVelBinding, &vel).status, OVPHYSX_API_SUCCESS);
     EXPECT_NEAR(disabledVel[2], movingVel[2], 0.02f) << "gravity-disabled articulation did not coast";
 
-    ASSERT_NO_FATAL_FAILURE(writeDisableGravity(OVPHYSX_OBJECT_ARTICULATION_LINK, 0));
+    ASSERT_NO_FATAL_FAILURE(writeDisableGravity(OVPHYSX_QUERY_TARGET_ARTICULATION_LINK, 0));
     step(20);
     float releasedVel[6]{};
     vel.data = releasedVel;
@@ -3875,12 +3851,12 @@ TEST_F(DefaultGpuDynamicsTest, SessionWriteArticulationLinkDisableGravityAffects
 // A single long-lived instance avoids the destroy/recreate cycle while
 // still resetting simulation state (USD, bindings) between tests.
 class TensorBindingGpuTest : public ::testing::Test {
-    static ovphysx_handle_t s_handle;
+    static ovphysx_instance_handle_t s_handle;
     static ovphysx::test_cuda::CudaOps s_cudaOps;
     static std::string s_skipReason;
 
 protected:
-    ovphysx_handle_t m_handle = 0;
+    ovphysx_instance_handle_t m_handle = 0;
     uintptr_t m_gpuBuffer = 0;
     ovphysx::test_cuda::CudaOps m_cudaOps{};
 
@@ -3905,7 +3881,7 @@ protected:
         args.config_entries = direct_gpu_entries;
         args.config_entry_count = sizeof(direct_gpu_entries) / sizeof(direct_gpu_entries[0]);
 
-        ovphysx_result_t create_result = ovphysx_create_instance(&args, &s_handle);
+        ovphysx_result_t create_result = ovphysx_create_instance_with_args(&args, &s_handle);
         if (create_result.status != OVPHYSX_API_SUCCESS) {
             ovphysx_string_t last_err = ovphysx_get_last_error();
             if (last_err.length > 0) {
@@ -3928,11 +3904,11 @@ protected:
     static void TearDownTestSuite() {
         s_cudaOps.reset(nullptr, 0);
         if (s_handle != 0) {
-            ovphysx_enqueue_result_t reset_result = ovphysx_reset_stage(s_handle);
+            ovphysx_enqueue_result_t reset_result = ovphysx_detach_ovstage(s_handle);
             if (reset_result.status == OVPHYSX_API_SUCCESS && reset_result.op_index != 0) {
-                ovphysx_op_wait_result_t wait_result{};
-                ovphysx_wait_op(s_handle, reset_result.op_index, 10'000'000'000ULL, &wait_result);
-                ovphysx_destroy_wait_result(&wait_result);
+                ovphysx_wait_task_result_t wait_result{};
+                ovphysx_wait_task(s_handle, reset_result, 10'000'000'000ULL, &wait_result);
+                ovphysx_destroy_wait_task_result(&wait_result);
             }
             ovphysx_destroy_instance(s_handle);
             s_handle = 0;
@@ -3955,11 +3931,11 @@ protected:
             m_gpuBuffer = 0;
         }
         if (s_handle != 0) {
-            ovphysx_enqueue_result_t reset_result = ovphysx_reset_stage(s_handle);
+            ovphysx_enqueue_result_t reset_result = ovphysx_detach_ovstage(s_handle);
             if (reset_result.status == OVPHYSX_API_SUCCESS && reset_result.op_index != 0) {
-                ovphysx_op_wait_result_t wait_result{};
-                ovphysx_wait_op(s_handle, reset_result.op_index, 10'000'000'000ULL, &wait_result);
-                ovphysx_destroy_wait_result(&wait_result);
+                ovphysx_wait_task_result_t wait_result{};
+                ovphysx_wait_task(s_handle, reset_result, 10'000'000'000ULL, &wait_result);
+                ovphysx_destroy_wait_task_result(&wait_result);
             }
         }
         m_handle = 0;
@@ -3984,7 +3960,7 @@ protected:
     }
 };
 
-ovphysx_handle_t TensorBindingGpuTest::s_handle = 0;
+ovphysx_instance_handle_t TensorBindingGpuTest::s_handle = 0;
 ovphysx::test_cuda::CudaOps TensorBindingGpuTest::s_cudaOps{};
 std::string TensorBindingGpuTest::s_skipReason;
 
@@ -6842,7 +6818,7 @@ TEST_F(TensorBindingGpuTest, GpuRigidBodyDisableGravitySuppressesFall) {
     auto step_once = [&]() {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     };
 
     auto read_vels_to_host = [&](std::vector<float>& out) {
@@ -6975,19 +6951,22 @@ TEST_F(TensorBindingGpuTest, NewBindingIncludesReenabledBody)
 
     // Session writes can reach disabled actors that the enabled-only binding omitted.
     ovphysx_query_handle_t query = 0;
-    ASSERT_EQ(ovphysx_query(
-                  m_handle, OVPHYSX_OBJECT_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_query(
+                  m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query, nullptr)).status, OVPHYSX_API_SUCCESS);
     const ovx_string_or_token_t attribute = {0, {OVPHYSX_ATTR_DISABLE_SIMULATION,
                                                 sizeof(OVPHYSX_ATTR_DISABLE_SIMULATION) - 1}};
     ovphysx_write_handle_t write = 0;
-    ASSERT_EQ(ovphysx_write(m_handle, query, &attribute, &write).status,
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_write(m_handle, query, &attribute, 1, &write, nullptr)).status,
               OVPHYSX_API_SUCCESS);
-    const ovstage_map_group_t* group = nullptr;
+    ovphysx_fetched_write_group_t fetched{};
     uint32_t groupsWritten = 0;
-    ovphysx_result_t fetch{};
-    while ((fetch = ovphysx_fetch_write_next(m_handle, write, &group)).status == OVPHYSX_API_SUCCESS)
+    while (true)
     {
-        ASSERT_NE(group, nullptr);
+        ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_fetch_write_next(m_handle, write, &fetched)).status,
+                  OVPHYSX_API_SUCCESS);
+        const ovstage_map_group_t* group = fetched.group;
+        if (!group)
+            break;
         ASSERT_EQ(group->data.tensor_count, 1u);
         const DLTensor& tensor = group->data.tensors[0];
         ASSERT_EQ(tensor.device.device_type, kDLCPU);
@@ -6995,14 +6974,13 @@ TEST_F(TensorBindingGpuTest, NewBindingIncludesReenabledBody)
         ASSERT_EQ(tensor.dtype.bits, 8);
         ASSERT_EQ(tensor.ndim, 1);
         std::memset(tensor.data, 0, static_cast<size_t>(tensor.shape[0]));
-        ASSERT_EQ(ovphysx_commit_group(
-                      m_handle, write, group, ovstage_cuda_sync_t{}).status, OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_commit_group(
+                      m_handle, write, group, ovstage_cuda_sync_t{})).status, OVPHYSX_API_SUCCESS);
         ++groupsWritten;
     }
-    ASSERT_EQ(fetch.status, OVPHYSX_API_END_OF_ITERATION);
     ASSERT_GT(groupsWritten, 0u);
-    ASSERT_EQ(ovphysx_release_write(m_handle, write).status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_release_query(m_handle, query).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_release_write(m_handle, write)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_release_query(m_handle, query)).status, OVPHYSX_API_SUCCESS);
 
     desc.tensor_type = OVPHYSX_TENSOR_RIGID_BODY_VELOCITY_F32;
     ovphysx_tensor_binding_handle_t velocity = 0;
@@ -7141,7 +7119,7 @@ TEST_F(TensorBindingGpuTest, GpuRigidBodyDisableSimulationStopsSimulation) {
     auto step_once = [&]() {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     };
 
     step_once();
@@ -7326,7 +7304,7 @@ TEST_F(TensorBindingGpuTest, GpuArticulationDisableGravitySuppressesFall) {
     auto step_once = [&]() {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     };
 
     auto read_root_z = [&](float& out_z) {
@@ -7480,8 +7458,10 @@ TEST_F(TensorBindingGpuTest, GpuArticulationShapePropertyWrite_B9) {
 // the scene, not at the engine.
 TEST_F(TensorBindingGpuTest, GpuMultiCartPoleSpacedProjectedJointForceMatchesActuation) {
     ovphysx_usd_handle_t usd_handle = 0;
-    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/MultiCartPoleSpaced.usda", usd_handle))
-        << "Failed to load MultiCartPoleSpaced.usda";
+    // MultiCartPoleSpacedForcesOncePerStep.usda is MultiCartPoleSpaced.usda with external forces applied once per step,
+    // which this test expects.
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/MultiCartPoleSpacedForcesOncePerStep.usda", usd_handle))
+        << "Failed to load MultiCartPoleSpacedForcesOncePerStep.usda";
 
     ASSERT_EQ(ovphysx_warmup(m_handle).status, OVPHYSX_API_SUCCESS);
 
@@ -7525,7 +7505,7 @@ TEST_F(TensorBindingGpuTest, GpuMultiCartPoleSpacedProjectedJointForceMatchesAct
     {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 1000.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     }
 
     ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, projected_b, &t).status,
@@ -7554,8 +7534,10 @@ TEST_F(TensorBindingGpuTest, GpuMultiCartPoleSpacedProjectedJointForceMatchesAct
 // joint forces must land within tolerance of the applied actuation.
 TEST_F(TensorBindingGpuTest, GpuCartPoleProjectedJointForceMatchesActuation) {
     ovphysx_usd_handle_t usd_handle = 0;
-    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/CartPole.usda", usd_handle))
-        << "Failed to load CartPole.usda";
+    // CartPoleForcesOncePerStep.usda is CartPole.usda with external forces applied once per step,
+    // which this test expects.
+    ASSERT_TRUE(load_usd_and_wait(m_handle, "tests/data/CartPoleForcesOncePerStep.usda", usd_handle))
+        << "Failed to load CartPoleForcesOncePerStep.usda";
 
     ASSERT_EQ(ovphysx_warmup(m_handle).status, OVPHYSX_API_SUCCESS);
 
@@ -7601,7 +7583,7 @@ TEST_F(TensorBindingGpuTest, GpuCartPoleProjectedJointForceMatchesActuation) {
     {
         ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 1000.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, step));
     }
 
     ASSERT_EQ(ovphysx_read_tensor_binding(m_handle, projected_b, &t).status,
@@ -7682,7 +7664,7 @@ TEST_F(TensorBindingGpuTest, GpuCartPoleProjectedJointForceWarmStartZero) {
 // articulation-ball contact.
 namespace
 {
-void run_ball_only_lift_probe(ovphysx_handle_t handle, const char* usda_relpath, float& out_dz)
+void run_ball_only_lift_probe(ovphysx_instance_handle_t handle, const char* usda_relpath, float& out_dz)
 {
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(handle, usda_relpath, usd_handle))
@@ -7730,7 +7712,7 @@ void run_ball_only_lift_probe(ovphysx_handle_t handle, const char* usda_relpath,
     for (int i = 0; i < 10; ++i) {
         ovphysx_enqueue_result_t step = ovphysx_step(handle, 1.0f / 60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(handle, step));
     }
 
     float pose_post[7] = {0.f};
@@ -7791,7 +7773,7 @@ namespace
 // for prismatic and revolute chains far from the origin.
 namespace
 {
-void run_cartpole_pre_step_zero(ovphysx_handle_t handle, const char* usda_relpath)
+void run_cartpole_pre_step_zero(ovphysx_instance_handle_t handle, const char* usda_relpath)
 {
     ovphysx_usd_handle_t usd_handle = 0;
     ASSERT_TRUE(load_usd_and_wait(handle, usda_relpath, usd_handle))
@@ -7843,7 +7825,7 @@ TEST_F(TensorBindingGpuTest, GpuCartPolePreStepZero_Far) {
 // This is the only coverage of the spherical branch of computeLinkRFromJointState.
 namespace
 {
-void run_spherical_arti_settle_probe(ovphysx_handle_t handle,
+void run_spherical_arti_settle_probe(ovphysx_instance_handle_t handle,
                                      const char* usda_relpath,
                                      float env_x, float env_y,
                                      float& out_child_local_z)
@@ -7867,7 +7849,7 @@ void run_spherical_arti_settle_probe(ovphysx_handle_t handle,
     for (int i = 0; i < 20; ++i) {
         ovphysx_enqueue_result_t step = ovphysx_step(handle, 1.0f / 60.0f);
         ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(handle, step.op_index));
+        ASSERT_TRUE(wait_task_success(handle, step));
     }
 
     float pose_post[7] = {0.f};
@@ -8147,7 +8129,7 @@ TEST_F(TensorBindingGpuTest, GpuRigidBodyWakeUpRequiresHostIndices) {
     auto step = [&]() {
         ovphysx_enqueue_result_t s = ovphysx_step(m_handle, 1.f / 60.f);
         ASSERT_EQ(s.status, OVPHYSX_API_SUCCESS);
-        ASSERT_TRUE(wait_op_success(m_handle, s.op_index));
+        ASSERT_TRUE(wait_task_success(m_handle, s));
     };
     auto read_vz = [&](std::vector<float>& vz) {
         void* gpu_buf = allocGpuBuffer(vel_bytes, vel_b);

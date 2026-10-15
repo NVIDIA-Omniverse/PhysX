@@ -9,6 +9,7 @@
 #include "foundation/PxSimpleTypes.h"
 #include "foundation/PxMemory.h"
 #include "foundation/PxVecMath.h"
+#include "foundation/PxMat33.h"
 #include "PxConstraintDesc.h"
 #include "DySolverConstraintTypes.h"
 
@@ -805,6 +806,76 @@ PX_FORCE_INLINE aos::Vec4V computeMinBiasTGSBlock(const aos::VecU32VArg flags, c
 }
 #endif
 
+/**
+\brief Accumulate one 1D constraint row's contribution to the reported impulse of a TGS rigid-body joint.
+
+The intention is to replicate the effective Jacobians of the first solver iteration (the ones built
+from the prep-time anchor offsets). Note that these are not the Jacobians produced by the row
+preprocessing: the solver additionally orthogonalizes each DY_SC_FLAG_ORTHO_TARGET row's angular part
+against the rotational-equality rows at every iteration.
+
+The angular Jacobian is reconstructed as ang + rWorld.cross(lin), the same expression solve1DStep()
+applies impulses through. For rows carrying DY_SC_FLAG_ORTHO_TARGET, the function additionally tracks
+how much impulse the solve's orthogonalization against the rotational-equality basis redirected along
+each basis axis (orthoImpulse), mirroring the projection in solve1DStep(). After processing all rows,
+the caller subtracts orthoImpulse[k] along each basis row's angular Jacobian and transfers the moment
+to the reporting point:
+
+    reported ang = angImpulse - sum_k(basisRowAngular0[k]*orthoImpulse[k]) - body0WorldOffset.cross(linImpulse)
+
+Every row's Jacobian pair remains momentum-consistent under the orthogonalization (it only mixes in
+rotational-equality rows, which are consistent pairs themselves), so the body-0-side reconstruction
+reports the exact constraint wrench even when body 0 is static or kinematic and its own
+sqrt-inverse-inertia is zero.
+
+\param[in] appliedForce The row's accumulated applied impulse.
+\param[in] rowFlags The row's internal flags (see SolverConstraintFlags). Rows without DY_SC_FLAG_OUTPUT_FORCE are ignored.
+\param[in] lin0 The row's linear Jacobian for body 0.
+\param[in] ang0 The row's stored angular Jacobian for body 0.
+\param[in] rAWorld The prep-time vector from body 0 to the constraint anchor, in the world frame.
+\param[in] lin1 See lin0 but for body 1.
+\param[in] ang1 See ang0 but for body 1.
+\param[in] rBWorld See rAWorld but for body 1.
+\param[in] sqrtInvInertia0 The world-space square root of body 0's inverse inertia tensor.
+\param[in] sqrtInvInertia1 See sqrtInvInertia0 but for body 1.
+\param[in] angOrthoAxis0 The rotational-equality basis for body 0, in sqrt-inverse-inertia space (from the constraint header).
+\param[in] angOrthoAxis1 See angOrthoAxis0 but for body 1.
+\param[in] angOrthoRecipResponse The reciprocal unit responses of the basis rows (from the constraint header).
+\param[in,out] linImpulse Accumulated reported linear impulse for body 0.
+\param[in,out] angImpulse Accumulated raw reported angular impulse for body 0.
+\param[in,out] orthoImpulse Accumulated impulse redirected along each rotational-equality basis axis.
+*/
+PX_CUDA_CALLABLE PX_FORCE_INLINE void accumulate1dConstraintImpulseTGS
+(const PxReal appliedForce, const PxU32 rowFlags,
+ const PxVec3& lin0, const PxVec3& ang0, const PxVec3& rAWorld,
+ const PxVec3& lin1, const PxVec3& ang1, const PxVec3& rBWorld,
+ const PxMat33& sqrtInvInertia0, const PxMat33& sqrtInvInertia1,
+ const PxVec3 angOrthoAxis0[3], const PxVec3 angOrthoAxis1[3], const PxReal angOrthoRecipResponse[3],
+ PxVec3& linImpulse, PxVec3& angImpulse, PxReal orthoImpulse[3])
+{
+	if (!(rowFlags & DY_SC_FLAG_OUTPUT_FORCE))
+		return;
+
+	//the full angular Jacobian, reconstructed the same way the solve does it: the sum covers both
+	//row types because non-angular rows store a zeroed ang and angular rows a zero lin (see the
+	//elaborate explanation of these assumptions in solve1DStep())
+	const PxVec3 cangImp0 = ang0 + rAWorld.cross(lin0);
+
+	linImpulse += lin0 * appliedForce;
+	angImpulse += cangImp0 * appliedForce;
+
+	if (rowFlags & DY_SC_FLAG_ORTHO_TARGET)
+	{
+		const PxVec3 cangImp1 = ang1 + rBWorld.cross(lin1);
+		const PxVec3 raXnI = sqrtInvInertia0 * cangImp0;
+		const PxVec3 rbXnI = sqrtInvInertia1 * cangImp1;
+		for (PxU32 k = 0; k < 3; k++)
+		{
+			const PxReal proj = (raXnI.dot(angOrthoAxis0[k]) + rbXnI.dot(angOrthoAxis1[k])) * angOrthoRecipResponse[k];
+			orthoImpulse[k] += proj * appliedForce;
+		}
+	}
+}
 
 } //namespace Dy
 } //namespace physx

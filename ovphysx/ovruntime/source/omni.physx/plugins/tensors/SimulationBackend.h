@@ -1,6 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-ATTACH-VIEWS-001
+ * @covers AC-2
+ */
+
 #pragma once
 
 /**
@@ -70,6 +75,11 @@ public:
 
     ISimulationView* createSimulationView(omni::physics::tensors::AttachHandle attachHandle);
 
+    // Whole-scene articulation FK refresh via DirectGPU, without building a SimulationView: it needs
+    // only the scene and its CUDA context. A no-op on a non-DirectGPU scene. Returns false on an
+    // unresolvable handle or missing scene.
+    bool updateArticulationsKinematic(omni::physics::tensors::AttachHandle attachHandle);
+
     // Stageless entry (ADR-0008): build a simulation view directly over a PxScene, with no resident
     // UsdStageCache stage, so an ovstage-only attach can still source bulk reads from the backend.
     // The view carries a null UsdStage and never dereferences it on the rigid/articulation read
@@ -88,20 +98,15 @@ public:
     // utilities
     //
 
-    // total number of physics simulation steps since the application started, always increasing
-    int64_t getTimestamp() const;
+    // Monotonic within one attachment, including direct tensor steps.
+    int64_t getTimestamp(omni::physics::tensors::AttachHandle attachHandle) const;
 
-    // number of simulation steps in the active simulation, or 0 if there is no active simulation
-    int64_t getStepCount() const;
+    // Steps since this attachment last reset, or zero for an expired owner.
+    int64_t getStepCount(omni::physics::tensors::AttachHandle attachHandle) const;
 
     // stage update events
-    void prePhysicsUpdate();
 
-    // manual step counting
-    void incrementStepCount()
-    {
-        ++mManualStepCount;
-    }
+    void incrementStepCount(omni::physics::tensors::AttachHandle attachHandle);
 
     void removeSimulationView(ISimulationView* view);
 
@@ -281,7 +286,6 @@ private:
     SceneCacheEntry* ensureSceneCacheEntryLocked(::physx::PxScene* scene,
                                                  std::vector<ISimulationView*>& pendingRelease);
 
-    uint64_t mManualStepCount = 0;
 
     omni::physx::SubscriptionId mObjectChangeSubscriptionId = omni::physx::kInvalidSubscriptionId;
 };

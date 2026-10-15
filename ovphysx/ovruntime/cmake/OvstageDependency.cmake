@@ -3,21 +3,19 @@
 
 # @implements REQ-PACKAGING-OVSTAGEDEP-001
 #
-# Resolve the ovstage dependency for the opt-in omni.physics.ovstage backend
-# (ADR-0002 Milestone 1). pull_dependencies links a local ovstage source
-# checkout into _build/target-deps/ovstage (see deps/ovstage-deps.packman.xml);
-# the artifactory wheel layout at _build/target-deps/ovstage_pip is a fallback.
+# Resolve OVStage from the fetched native package or a local source checkout.
+# scripts/fetch_ovstage_release.py stages the native package at _build/target-deps/ovstage.
 #
 # Resolution order for the ovstage root (override with -DOVSTAGE_DIR=...):
 #   1. explicit -DOVSTAGE_DIR
-#   2. the Packman source link at _build/target-deps/ovstage
+#   2. the native package or Packman source link at _build/target-deps/ovstage
 #   3. the wheel install directory at _build/target-deps/ovstage_pip
 #
 # Supported layouts:
 #   legacy:   ovstage/public/include, ovrtx/public/include, _build/*/release
 #   wheel:    ovstage/include/{ovstage,ovx,dlpack}, ovstage/lib, ovstage/bin
 #   package:  include/{ovstage,ovx,dlpack}, bin/libovstage.so (+ bin/plugins), lib/cmake
-#             (the artifactory ovstage package; libovstage.so ships in bin/, not lib/)
+#             (the released native package; libovstage.so ships in bin/, not lib/)
 #
 # Sets, in the parent scope:
 #   OVSTAGE_INCLUDE_DIRS  - list of include directories

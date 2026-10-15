@@ -13,17 +13,7 @@
 
 // Scoped profiling, for internal OmniPhysX profiling.
 //
-// NOT THREAD SAFE - main-thread use only. The destructor appends to the global
-// OmniPhysX::mProfileStats vector without any synchronization, so two scopes closing on different
-// threads corrupt the vector's control block: _M_start and _M_finish end up pointing into two
-// different allocations and the next reallocation writes far outside the buffer (NVBug 6558265).
-// The same applies to the CrossThreadProfileMap used by the PHYSICS_CROSS_THREAD_PROFILE_* macros
-// below - the "cross thread" in their name refers to measuring a span that starts and ends in
-// different places, not to being safe to call concurrently.
-//
-// Do not place PHYSICS_PROFILE (or the cross-thread macros) inside a carb::tasking task,
-// parallelFor body, or any other worker-thread callback. If per-task timings are needed, the
-// containers have to be guarded first.
+// Shared sample storage is protected for independent attachment clients.
 class ScopedProfile
 {
 public:
@@ -42,6 +32,7 @@ public:
         {
             const uint64_t endTime = Time::getCurrentCounterValue();
             const float timeInMs = Time::getCounterFrequency().toTensOfNanos(endTime - mStartTime) / (100.0f * 1000.0f);
+            std::lock_guard<carb::tasking::MutexWrapper> lock(omni::physx::OmniPhysX::getInstance().profileMutex);
             omni::physx::OmniPhysX::getInstance().getOmniPhysXProfileStats().push_back({ mProfileZone, timeInMs });
         }
     }
@@ -55,6 +46,7 @@ public:
 #define PHYSICS_CROSS_THREAD_PROFILE_START(zoneName)                                                                   \
     if (omni::physx::OmniPhysX::getInstance().isOmniPhysXProfilingEnabled())                                           \
     {                                                                                                                  \
+        std::lock_guard<carb::tasking::MutexWrapper> lock(omni::physx::OmniPhysX::getInstance().profileMutex); \
         omni::physx::OmniPhysX::getInstance().getOmniPhysXCrossThreadProfileMap()[zoneName] =                          \
             Time::getCurrentCounterValue();                                                                            \
     }
@@ -62,6 +54,7 @@ public:
 #define PHYSICS_CROSS_THREAD_PROFILE_END(zoneName)                                                                     \
     if (omni::physx::OmniPhysX::getInstance().isOmniPhysXProfilingEnabled())                                           \
     {                                                                                                                  \
+        std::lock_guard<carb::tasking::MutexWrapper> lock(omni::physx::OmniPhysX::getInstance().profileMutex); \
         CrossThreadProfileMap::const_iterator fit =                                                                    \
             omni::physx::OmniPhysX::getInstance().getOmniPhysXCrossThreadProfileMap().find(zoneName);                  \
         if (fit != omni::physx::OmniPhysX::getInstance().getOmniPhysXCrossThreadProfileMap().end())                    \

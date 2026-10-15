@@ -30,7 +30,7 @@ public:
 
     bool check() const override;
 
-    void release() override;
+    bool release() override;
 
     //
     // helpers

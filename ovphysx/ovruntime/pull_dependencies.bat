@@ -3,16 +3,18 @@ REM SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIA
 REM SPDX-License-Identifier: Apache-2.0
 
 REM @implements REQ-BUILD-WINDOWS-001
-REM @covers AC-1
-REM Usage: pull_dependencies.bat [--config release|debug|all] [--devphysx] [--devschema]
+REM @covers AC-1 AC-5
+REM Usage: pull_dependencies.bat [--config release|debug|all] [--devphysx] [--devschema] [--no-schema]
 
 set "DO_DEV_PHYSX=0"
 set "DO_DEV_SCHEMA=0"
+set "DO_NO_SCHEMA=0"
 set "CONFIGS=release"
 :parse_args
 if "%~1"=="" goto :done_args
 if /I "%~1"=="--devphysx" set "DO_DEV_PHYSX=1"
 if /I "%~1"=="--devschema" set "DO_DEV_SCHEMA=1"
+if /I "%~1"=="--no-schema" set "DO_NO_SCHEMA=1"
 if /I "%~1"=="--config" (
     if "%~2"=="" (
         echo Error: --config requires an argument: release, debug, or all
@@ -56,7 +58,7 @@ if %ERRORLEVEL% neq 0 (
     exit /b %ERRORLEVEL%
 )
 
-REM Pull target deps (PhysX, onnx-mlir, physxdevice, leveldb, snappy, cmake)
+REM Pull target deps (PhysX, physxdevice, leveldb, snappy, cmake)
 call %PACKMAN% pull deps\target-deps.packman.xml -p %PLATFORM%
 if %ERRORLEVEL% neq 0 (
     echo Failed to pull target dependencies!
@@ -115,10 +117,11 @@ if defined OVSTAGE_SRC (
     if exist "%OVSTAGE_FETCH%" (
         echo Fetching ovstage release for %PLATFORM% ...
         "%PYTHON%" "%OVSTAGE_FETCH%" --platform %PLATFORM% --dest "%CD%\_build\target-deps\ovstage"
-        if %ERRORLEVEL% neq 0 (
+        REM Check the live error level; percent-expanded values are stale in this block.
+        if errorlevel 1 (
             echo Failed to fetch ovstage release!
             popd
-            exit /b %ERRORLEVEL%
+            exit /b 1
         )
     ) else (
         echo ERROR: %OVSTAGE_FETCH% not found. ovstage is required to build ovruntime on this branch.
@@ -142,9 +145,8 @@ for %%C in (%CONFIGS%) do (
         exit /b 1
     )
 
-    REM Pull namespaced schema deps (physxSchema, physicsSchemaTools headers/libs).
-    REM Skipped in --devschema mode: CMake will point at the local schema build instead.
-    if %DO_DEV_SCHEMA%==0 (
+    REM Skip prebuilt schema headers for local-schema builds and USD-free consumers.
+    if %DO_DEV_SCHEMA%==0 if %DO_NO_SCHEMA%==0 (
         call %PACKMAN% pull deps\schema-deps.packman.xml -p %PLATFORM% -t platform_target_abi=%PLATFORM% -t config=%%C
         if errorlevel 1 (
             echo Failed to pull schema dependencies [%%C]!
@@ -169,6 +171,11 @@ REM Fetch pip dependencies (Newton USD schemas) using the packman Python.
 REM The canonical package list lives in deps\pip_newton.toml.
 if exist "%PYTHON%" (
     "%PYTHON%" tools\pip_fetch.py deps\pip_newton.toml
+    if errorlevel 1 (
+        echo Failed to fetch Newton schema dependencies!
+        popd
+        exit /b 1
+    )
 ) else (
     echo Warning: Python not found at %PYTHON% -- skipping pip fetch
 )

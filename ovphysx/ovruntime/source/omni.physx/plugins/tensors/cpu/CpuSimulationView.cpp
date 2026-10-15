@@ -10,6 +10,9 @@
  *
  * @implements REQ-PUBLICAPI-001
  * @covers AC-40
+ *
+ * @implements REQ-INPUT-COVERAGE-001
+ * @covers AC-6 AC-16
  */
 
 #include "tensors/cpu/CpuSimulationView.h"
@@ -41,9 +44,8 @@ namespace tensors
 
 CpuSimulationView::CpuSimulationView(usdparser::AttachedStage* attachedStage,
                                      PxScene* scene,
-                                     CpuSimulationDataPtr cpuSimData,
-                                     bool notifyWhenSimStopped)
-    : BaseSimulationView(attachedStage, scene, notifyWhenSimStopped), mCpuSimData(cpuSimData)
+                                     CpuSimulationDataPtr cpuSimData)
+    : BaseSimulationView(attachedStage, scene), mCpuSimData(cpuSimData)
 {
 }
 
@@ -132,7 +134,7 @@ CpuRigidBodyView* CpuSimulationView::supersetRigidView(
     if (!mSupersetRigidView)
     {
         std::vector<RigidBodyEntry> entries;
-        collectSupersetRigidEntries(mScene, entries);
+        collectSupersetRigidEntries(mScene, mAttachedStage, entries);
         if (entries.empty())
             return nullptr;
 

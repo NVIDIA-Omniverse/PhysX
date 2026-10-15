@@ -3,85 +3,82 @@
 
 ---
 id: REQ-CAPI-PHYSXPTR-001
-title: Pathless PxPhysics Pointer Lookup
+title: Native PhysX Pointers Through Reads
 status: implemented
 owner: ovphysx
 ---
 
 ## Description
 
-`OVPHYSX_PHYSX_TYPE_PHYSICS` identifies the process-wide
-`physx::PxPhysics` object, which has no physics-object path.
-`ovphysx_get_physx_ptr` therefore uses a zero-length `prim_path` as its
-distinguished selector. Both C representations, `{ NULL, 0 }` and
-`{ "", 0 }`, have identical meaning.
+Native PhysX addresses are the read-only `physxPointer` column
+(`OVPHYSX_ATTR_PHYSX_POINTER`), a host `uint64` with one borrowed address
+per matched object. Query type selects the kind. There is no dedicated
+lookup and no compatibility wrapper.
 
-This exception applies only to `OVPHYSX_PHYSX_TYPE_PHYSICS`. Path-bound
-types retain their non-empty path validation, and a non-empty selector
-for `PHYSICS` is invalid rather than a failed path lookup.
+`OVPHYSX_QUERY_TARGET_PHYSICS` is one row. Its path-list entry is `/`, the
+absolute root, and that entry is not a USD prim. Prim-set selection
+does not change that row. Every other former
+`ovphysx_physx_type_t` has a query type that publishes the same address
+the old lookup returned. `OVPHYSX_QUERY_TARGET_RIGID_BODY` stays dynamics-only.
 
-The returned pointer is borrowed process-global state. Callers must not
-release it, must use the matching PhysX SDK headers shipped for the
-ovphysx build, and must apply the existing interop lifetime and
-between-step access boundaries. Objects that callers explicitly create
-through `PxPhysics` follow the PhysX SDK's ownership rules; the
-no-release rule applies to the borrowed pointer returned by ovphysx.
+The address is copied into session scratch at read time. Scratch follows
+the existing read lifetime. The PhysX object stays borrowed. A read does
+not grant ownership, extend lifetime, or permit an SDK call the simulation
+or device mode already forbids. Do not `release()` the address. Do not
+toggle `PxActorFlag::eDISABLE_SIMULATION`; use the `disableSimulation` write.
 
-Disabling or re-enabling rigid-body simulation through a borrowed actor
-pointer is not supported. Callers must use the ovstage `disableSimulation`
-attribute (`ovphysx_write()` / `OVPHYSX_ATTR_DISABLE_SIMULATION`). Toggling
-`PxActorFlag::eDISABLE_SIMULATION` directly on a
-pointer from this API is undefined for DirectGPU read and write: cached GPU
-index maps may go stale and subsequent I/O may address the wrong body without
-error.
+A missing object is absent, including an explicit selection that matches
+nothing. A query type with no `physxPointer` attribute skips that name.
+A destroyed object disappears from the next query. A previously read
+`uint64` is not cleared in a live session.
+
+A completed step does not invalidate the object. Detach, instance
+destruction, and per-object destruction do. Cached addresses are
+invalidated by the instance-scoped object-destroyed and
+all-objects-destroyed callbacks. Clone does not emit creation; refresh
+after the clone task completes. `ovphysx_physx_type_t` remains the
+callback payload.
+
+Python reads the same column through `PhysX.read` as a Warp `uint64` array.
 
 ## Acceptance Criteria
 
-- AC-1: With a valid instance and attached, initialized stage, both
-  `{ NULL, 0 }` and `{ "", 0 }` with
-  `OVPHYSX_PHYSX_TYPE_PHYSICS` return `OVPHYSX_API_SUCCESS` and write a
-  non-null pointer.
-- AC-2: Both zero-length representations and repeated lookups, including
-  across a completed simulation step, return the same `PxPhysics`
-  pointer.
-- AC-3: A non-zero-length selector with `PHYSICS`, a zero-length selector
-  with any non-`PHYSICS` type, or `{ NULL, length > 0 }` returns
-  `OVPHYSX_API_INVALID_ARGUMENT` and leaves `out_ptr` null. An embedded-NUL
-  selector for `PHYSICS` also returns `OVPHYSX_API_INVALID_ARGUMENT` and
-  leaves `out_ptr` null.
-- AC-4: The existing attached-stage boundary remains: before attachment,
-  after reset, or after direct detachment, the lookup fails and does not
-  return a cached pointer.
-- AC-5: The experimental C++ `PhysXTypeFor<physx::PxPhysics>` trait maps
-  to `OVPHYSX_PHYSX_TYPE_PHYSICS`, and the typed empty-string lookup
-  reaches the same public behavior.
-- AC-6: Documentation on `ovphysx_get_physx_ptr` and in
-  `docs/developer_guide.md` states that toggling `eDISABLE_SIMULATION`
-  through a returned actor pointer is unsupported and undefined for DirectGPU
-  I/O, and names the official disable path (ovstage `disableSimulation` via
-  `ovphysx_write()`).
+- AC-1: With an attached, initialized stage, an `OVPHYSX_QUERY_TARGET_PHYSICS`
+  read of `physxPointer` returns one non-null host `uint64`. The row's
+  path is `/`. A later completed step returns the same address.
+- AC-2: For each former path-bound pointer kind, a read of `physxPointer`
+  on the matching query type returns a non-null address for a live object.
+  A path that matches nothing is absent.
+- AC-3: A query type that does not publish `physxPointer` skips that name.
+  A standalone joint is absent from `OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT`,
+  and an articulation joint is absent from `OVPHYSX_QUERY_TARGET_JOINT`.
+- AC-4: After successful `ovphysx_detach_ovstage` completion, a new read
+  does not return the previous address. Before attach, the physics row is
+  absent.
+- AC-5: A completed step does not change a path-bound address. Distinct
+  objects of the same type have distinct addresses.
+- AC-6: The developer guide states that the column is borrowed, that
+  `release()` is forbidden, that toggling `eDISABLE_SIMULATION` on a
+  returned actor is unsupported, and that instance-scoped destroy
+  callbacks are the invalidation signal.
 
 ## Test References
 
 - TEST-CAPI-PHYSXPTR-001
-- AC-6 is a documentation obligation, verified by inspecting `ovphysx_get_physx_ptr`'s doc comment
-  and `docs/developer_guide.md` — not by an automated test. The behavioral corollary (the official
-  disable paths work) is covered cross-tree by `test_directgpu_disabled_body` against
-  REQ-READ-CORE-001 AC-8 / REQ-INPUT-CORE-001 AC-10.
+- AC-6 is a documentation obligation, verified by inspecting
+  `docs/developer_guide.md`.
 
 ## Code References
 
-- ovphysx/include/ovphysx/ovphysx.h (`ovphysx_get_physx_ptr`)
-- ovphysx/include/ovphysx/ovphysx_types.h (`OVPHYSX_PHYSX_TYPE_PHYSICS`)
-- ovphysx/include/ovphysx/experimental/ovphysx.hpp (`PhysXTypeFor<physx::PxPhysics>`)
-- ovphysx/src/ovphysx/ovphysxPhysXInterop.cpp (`validateInteropArgs`, `ovphysx_get_physx_ptr`)
-- ovphysx/src/include/internal/sidecar/ovphysxInternalInterop.h (`ovphysx_internal_get_physx_ptr`)
-- ovphysx/src/ovphysxInternal/ovphysxInternalInterop.cpp (`ovphysx_internal_get_physx_ptr`)
+- ovphysx/include/ovphysx/ovphysx.h
+- ovphysx/include/ovphysx/ovphysx_types.h (`ovphysx_query_target_t`)
+- ovphysx/include/ovphysx/ovphysx_attributes.h (`OVPHYSX_ATTR_PHYSX_POINTER`)
+- ovphysx/src/ovphysx/ovphysxPhysXInterop.cpp (read-only writability rows)
 - ovphysx/tests/c_unittests/test_physx_ptr.cpp
-- ovphysx/tests/c_unittests/test_cpp_wrapper_comprehensive.cpp
-- ovphysx/tests/c_unittests/test_directgpu_disabled_body.cpp
 - ovphysx/docs/developer_guide.md (`PhysX Pointer Interop`)
 
 ## Dependencies
 
-- [ADR-0027](../../../ovruntime/plc/adr/ADR-0027-rigid-body-disable-notification.md) — official disable paths vs raw-pointer toggle
+- [ADR-0044](../../../ovruntime/plc/adr/ADR-0044-native-pointer-through-reads.md)
+- [REQ-READ-POINTER-001](../../../ovruntime/plc/requirements/output/REQ-READ-POINTER-001.md)
+- [ADR-0027](../../../ovruntime/plc/adr/ADR-0027-rigid-body-disable-notification.md)

@@ -1,8 +1,15 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-BATCH-001
+ * @covers AC-2 AC-3
+ */
+
 /**
  * Pluggable descriptor allocator for the parse library.
+ *
+ * @implements REQ-PARSE-CORE-006
+ * @covers AC-5 AC-9
  *
  * @implements REQ-PARSE-CORE-001
  */
@@ -11,6 +18,8 @@
 
 #include <cstddef>
 #include <memory>
+#include <new>
+#include <type_traits>
 #include <utility>
 
 namespace omni::physics::parse
@@ -31,6 +40,15 @@ class IDescriptorAllocator
 public:
     virtual ~IDescriptorAllocator() = default;
 
+    // Coordinator-only hint for additional simultaneous objects of this exact
+    // layout. Individual allocators need no preparation. All implementations
+    // and consumers are rebuilt together when this internal interface changes.
+    virtual bool reserve(size_t bytes, size_t alignment, size_t count)
+    {
+        (void)bytes; (void)alignment; (void)count;
+        return true;
+    }
+
     // Returns nullptr on failure.
     virtual void* allocate(size_t bytes,
                            size_t alignment = kDefaultDescriptorAlignment) = 0;
@@ -42,6 +60,13 @@ public:
                             size_t bytes,
                             size_t alignment = kDefaultDescriptorAlignment) noexcept = 0;
 };
+
+template <typename T>
+bool reserveDescriptors(IDescriptorAllocator& allocator, size_t count)
+{
+    constexpr size_t alignment = alignof(T) > kDefaultDescriptorAlignment ? alignof(T) : kDefaultDescriptorAlignment;
+    return allocator.reserve(sizeof(T), alignment, count);
+}
 
 // Type-erased deleter used by `DescPtr`. The destroy fn is minted by
 // `allocateDesc<T>` capturing the most-derived `T`, so destruction
@@ -63,6 +88,27 @@ struct DescDeleter
 
 template <typename T>
 using DescPtr = std::unique_ptr<T, DescDeleter<T>>;
+
+// Adopt a constructed object allocated by this exact allocator. The concrete
+// type must be known: never adopt a base pointer whose dynamic type differs.
+// Used at legacy placement-construction boundaries while ownership migrates.
+template <typename T, typename Base = T>
+DescPtr<Base> adoptDesc(IDescriptorAllocator& alloc, T* obj) noexcept
+{
+    static_assert(std::is_same_v<T, Base> || std::is_base_of_v<Base, T>);
+    static constexpr size_t bytes = sizeof(T);
+    static constexpr size_t alignment = alignof(T) > kDefaultDescriptorAlignment
+                                            ? alignof(T) : kDefaultDescriptorAlignment;
+    DescDeleter<Base> deleter;
+    deleter.alloc = &alloc;
+    deleter.destroy = +[](Base* p, IDescriptorAllocator* allocator) noexcept
+    {
+        T* derived = static_cast<T*>(p);
+        derived->~T();
+        allocator->deallocate(derived, bytes, alignment);
+    };
+    return DescPtr<Base>(obj, deleter);
+}
 
 // Allocate + construct a `T`, returning a `DescPtr<Base>` that owns it.
 // `Base` defaults to `T`; pass an explicit `Base` for polymorphic storage,
@@ -87,17 +133,15 @@ DescPtr<Base> allocateDesc(IDescriptorAllocator& alloc, Args&&... args)
     if (!mem)
         return DescPtr<Base>(nullptr, DescDeleter<Base>{});
 
-    T* obj = new (mem) T(std::forward<Args>(args)...);
-
-    DescDeleter<Base> d;
-    d.alloc = &alloc;
-    d.destroy = +[](Base* p, IDescriptorAllocator* a) noexcept
+    try
     {
-        T* derived = static_cast<T*>(p);
-        derived->~T();
-        a->deallocate(derived, bytes, alignment);
-    };
-    return DescPtr<Base>(obj, d);
+        return adoptDesc<T, Base>(alloc, new (mem) T(std::forward<Args>(args)...));
+    }
+    catch (...)
+    {
+        alloc.deallocate(mem, bytes, alignment);
+        throw;
+    }
 }
 
 // Rebind a `DescPtr<Derived>` into a `DescPtr<Base>` for polymorphic

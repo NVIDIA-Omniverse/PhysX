@@ -12,7 +12,7 @@ owner: ovphysx
 
 The installed CMake package derives its OVStage requirement from
 `OVSTAGE_VERSION` in `scripts/fetch_ovstage_release.py`, the same pin used
-by source builds and Python dependencies. SDK users obtain the required
+by source builds and Python dependencies. SDK users obtain the pinned
 release from package metadata rather than a separately maintained version
 in the getting-started documentation.
 
@@ -23,8 +23,11 @@ in the getting-started documentation.
   `ovphysx_OVSTAGE_CMAKE_VERSION`. Changing the source pin causes CMake
   configuration to regenerate the package metadata.
 - AC-2: **Consumer version selection.** `find_package(ovphysx)` requests
-  an exact major/minor/patch match from OVStage's CMake package. A different
-  release fails required dependency resolution during configuration. The
+  the pin's major/minor/patch version under OVStage's native compatibility
+  policy. A compatible application-supplied package takes precedence over
+  bootstrap, including a newer patch within the same minor release. If no
+  compatible package is available and fetching is disabled, required
+  resolution fails while a quiet optional lookup reports not-found. The
   existing schema-registration capability check remains in force.
 - AC-3: **Invalid pins fail.** Package generation fails when the pin source
   is missing, the assignment is missing or duplicated, or its value is not
@@ -52,3 +55,4 @@ pin remains available in the generated metadata to select the download.
 ## Dependencies
 
 - REQ-PACKAGING-TESTDEPS-001 — Python dependency copies use the same pin.
+- REQ-PACKAGING-OVSTAGE-001 — compatible supplied packages precede bootstrap.

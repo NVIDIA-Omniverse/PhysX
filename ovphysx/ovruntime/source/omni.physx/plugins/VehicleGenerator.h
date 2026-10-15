@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-INPUT-COVERAGE-001
+// @covers AC-20
+
 /**
  * @implements REQ-OMNIPVD-LATE-001
  * @covers AC-10
@@ -2671,6 +2674,11 @@ public:
             static_cast<::physx::PxVehicleTankDriveTransmissionCommandState*>(mTransmissionCommandState);
 
         tankDriveTransmissionCommandState->thrusts[thrustIndex] = thrust;
+    }
+
+    inline bool isTank() const
+    {
+        return mDifferentialType == DifferentialType::eTANK;
     }
 
     // deprecated (should only get called in combination with the deprecated "driven" attribute anymore)

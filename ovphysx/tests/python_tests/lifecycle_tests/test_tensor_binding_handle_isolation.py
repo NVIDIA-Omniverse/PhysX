@@ -6,7 +6,7 @@
 """Fresh-process regression test for NVBug 6504951 opaque-handle aliasing.
 
 Instance handles and per-instance resource handles must not both count from 1.
-If they do, then for a valid ``ovphysx_handle_t instance`` and
+If they do, then for a valid ``ovphysx_instance_handle_t instance`` and
 ``ovphysx_tensor_spec_t out_spec``,
 ``ovphysx_get_tensor_binding_spec(instance, instance, &out_spec)`` returns an
 ``ovphysx_result_t`` with ``.status == OVPHYSX_API_SUCCESS`` and populates

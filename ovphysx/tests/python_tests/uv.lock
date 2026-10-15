@@ -208,7 +208,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "ovstage", specifier = "==0.2.1.385922" },
+    { name = "ovstage", specifier = "==0.3.0.1791986420", index = "https://pypi.org/simple" },
     { name = "packaging", specifier = ">=20,<24" },
     { name = "warp-lang", specifier = ">=1.16,<2" },
 ]
@@ -229,6 +229,8 @@ dependencies = [
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "ovphysx" },
+    { name = "ovstage" },
+    { name = "physx-usd-schemas" },
     { name = "pytest" },
     { name = "usd-core", marker = "platform_machine != 'aarch64'" },
     { name = "warp-lang" },
@@ -239,6 +241,8 @@ requires-dist = [
     { name = "newton-usd-schemas", specifier = ">=0.4.1" },
     { name = "numpy", specifier = ">=1.20" },
     { name = "ovphysx", editable = "../../python" },
+    { name = "ovstage", index = "https://pypi.org/simple" },
+    { name = "physx-usd-schemas", specifier = ">=25.11.2", index = "https://pypi.org/simple" },
     { name = "pytest", specifier = ">=7" },
     { name = "usd-core", marker = "platform_machine != 'aarch64'" },
     { name = "warp-lang", specifier = ">=1.16,<1.17" },
@@ -246,12 +250,12 @@ requires-dist = [
 
 [[package]]
 name = "ovstage"
-version = "0.2.1.385922"
-source = { registry = "../../_build/target-deps/ovstage_wheel" }
+version = "0.3.0.1791986420"
+source = { registry = "https://pypi.org/simple" }
 wheels = [
-    { path = "ovstage-0.2.1.385922-py3-none-manylinux_2_35_aarch64.whl" },
-    { path = "ovstage-0.2.1.385922-py3-none-manylinux_2_35_x86_64.whl" },
-    { path = "ovstage-0.2.1.385922-py3-none-win_amd64.whl" },
+    { url = "https://files.pythonhosted.org/packages/f9/ae/f7348aec410a971f4126bd7b4cca92fcec25b7cca60f92267f5c98cc2ba2/ovstage-0.3.0.1791986420-py3-none-manylinux_2_35_aarch64.whl", hash = "sha256:1b9f983320a45703adab4bf72c9c17419728b9a874c300ae026abe46397f89dd", size = 64550686, upload-time = "2026-10-15T03:53:22.19Z" },
+    { url = "https://files.pythonhosted.org/packages/c8/d1/bebef33ec7c2fd2f7e776109092517b9ab2a4374fccca29b6c3351be77aa/ovstage-0.3.0.1791986420-py3-none-manylinux_2_35_x86_64.whl", hash = "sha256:35aa0c10c47549c495e65896356ce3b910041d2eaa602888f092f7e300586cf8", size = 66832291, upload-time = "2026-10-15T03:53:46.247Z" },
+    { url = "https://files.pythonhosted.org/packages/65/73/445749e2534e8fbd78a9f2ad2cc44d83cfd121a9bbdf459737c06c27adcd/ovstage-0.3.0.1791986420-py3-none-win_amd64.whl", hash = "sha256:400df4b7dc916edefa6f832aa11b674deb8a4d6831bba9ad3849169236b80c46", size = 38037230, upload-time = "2026-10-15T03:53:02.713Z" },
 ]
 
 [[package]]
@@ -261,6 +265,14 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/fb/2b/9b9c33ffed44ee921d0967086d653047286054117d584f1b1a7c22ceaf7b/packaging-23.2.tar.gz", hash = "sha256:048fb0e9405036518eaaf48a55953c750c11e1a1b68e0dd1a9d62ed0c092cfc5", size = 146714, upload-time = "2023-10-01T13:50:05.279Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ec/1a/610693ac4ee14fcdf2d9bf3c493370e4f2ef7ae2e19217d7a237ff42367d/packaging-23.2-py3-none-any.whl", hash = "sha256:8c491190033a9af7e1d931d0b5dacc2ef47509b34dd0de67ed209b5203fc88c7", size = 53011, upload-time = "2023-10-01T13:50:03.745Z" },
+]
+
+[[package]]
+name = "physx-usd-schemas"
+version = "25.11.2.72696984"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/09/8d/50f22a01334b86111201e535c6498fbb9400fa1f96d6c2bf657066fb29c0/physx_usd_schemas-25.11.2.72696984-py3-none-any.whl", hash = "sha256:44a8671f8d4f0fbdf07c9436b3827f96156e4b094b646d0903937f275eb84f0e", size = 79370, upload-time = "2026-10-12T19:48:29.536Z" },
 ]
 
 [[package]]

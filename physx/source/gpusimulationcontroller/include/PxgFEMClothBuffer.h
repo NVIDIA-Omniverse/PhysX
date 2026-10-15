@@ -35,7 +35,7 @@ class PxgFEMClothBuffer : public PxUserAllocated
 	PxgTypedCudaBuffer<PxU16> materialIndices;
 	PxgTypedCudaBuffer<float> dynamicfrictions;
 
-	PxgTypedCudaBuffer<PxU32> trianglesWithActiveEdges;
+	PxgTypedCudaBuffer<PxU32> trianglesWithOwnedEdges;
 	PxgTypedCudaBuffer<uint4> triangleVertexIndices;
 	PxgTypedCudaBuffer<uint4> orderedNonSharedTriangleVertexIndices_triIndex;
 
@@ -72,6 +72,9 @@ class PxgFEMClothBuffer : public PxUserAllocated
 	PxgTypedCudaBuffer<PxBounds3> packedNodeBounds; // for refit
 
 	PxgTypedCudaBuffer<PxU32> numPenetratedTets;
+
+	PxgTypedCudaBuffer<PxgDeformablePairInfo> rigidSurfaceFilterPairs;
+	PxgTypedCudaBuffer<PxgDeformablePairInfo> surfaceSurfaceFilterPairs;
 };
 
 }

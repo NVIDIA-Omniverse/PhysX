@@ -1,12 +1,32 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-RESOLVE-001
+// @covers AC-4
+
 /**
  * @implements REQ-READ-COVERAGE-001
  * @covers AC-1
  *
+ * @implements REQ-READ-CCT-001
+ * @covers AC-1
+ *
+ * @implements REQ-READ-SLEEP-001
+ * @covers AC-3
+ *
  * Moved out of OvxPhysicsRead.cpp unchanged when the write API needed the same enumeration; see the
  * header for why the two directions share one walk rather than each keeping its own.
+ */
+
+/**
+ * @implements REQ-ATTACH-IO-001
+ * @covers AC-2
+ *
+ * @implements REQ-INPUT-DEVICE-001
+ * @covers AC-10
+ *
+ * @implements REQ-READ-SDF-001
+ * @covers AC-3 AC-4
  */
 
 #include "OvxPhysicsShared.h"
@@ -28,6 +48,8 @@
 #include <omni/physx/IPhysx.h> // PhysXType (ePTActor / ePTScene)
 
 #include <carb/logging/Log.h>
+#include <common/utilities/CudaShimWrappers.h> // getCudaShim (waitForCallerProducer)
+#include <omni/physx/RuntimeError.h>
 
 #include <algorithm> // std::find (purgeDeadRigidReadCacheEntries)
 #include <atomic>   // mintRecordContentVersion
@@ -43,13 +65,17 @@ using omni::physics::parse::IPhysicsSource;
 namespace omni::physx::ovx
 {
 
+carb::tasking::RecursiveMutexWrapper& outputCacheMutex()
+{
+    return OmniPhysX::getInstance().outputCacheMutex;
+}
 std::unordered_map<RigidReadCacheKey, RigidReadCacheEntry, RigidReadCacheKeyHash> g_rigidReadCache;
 
 void purgeDeadRigidReadCacheEntries(const std::vector<PxScene*>& scenes)
 {
     for (auto it = g_rigidReadCache.begin(); it != g_rigidReadCache.end();)
     {
-        const bool live = std::find(scenes.begin(), scenes.end(), it->first.scene) != scenes.end();
+        const bool live = OmniPhysX::getInstance().getPhysXSetup().findPhysXScene(it->first.scene) != nullptr;
         it = live ? std::next(it) : g_rigidReadCache.erase(it);
     }
 }
@@ -154,10 +180,8 @@ bool ensureJointRecords(ArticulationReadCacheEntry& jc,
     return !jc.recs.empty();
 }
 
-bool getActiveContext(const char* who, ActiveContext& out)
+static bool validateSourceContext(const char* who, SourceContext& out)
 {
-    UsdLoad* usdLoad = UsdLoad::getUsdLoad();
-    out.stage = usdLoad ? usdLoad->getActiveAttachedStage() : nullptr;
     if (!out.stage)
     {
         CARB_LOG_ERROR("%s: no attached simulation -- attach an ovstage source first.", who);
@@ -167,6 +191,50 @@ bool getActiveContext(const char* who, ActiveContext& out)
     if (!out.source)
     {
         CARB_LOG_ERROR("%s: attached stage has no physics source.", who);
+        return false;
+    }
+    return true;
+}
+
+bool getSourceContext(uint64_t attachHandle, const char* who, SourceContext& out)
+{
+    out = SourceContext{};
+    out.stage = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
+    return validateSourceContext(who, out);
+}
+
+bool getSceneSourceContext(const PxScene* scene, const char* who, SourceContext& out)
+{
+    out = SourceContext{};
+    if (PhysXScene* owner = OmniPhysX::getInstance().getPhysXSetup().findPhysXScene(scene))
+        out.stage = &owner->getAttachedStage();
+    return validateSourceContext(who, out);
+}
+
+bool waitForCallerProducer(const ovstage_cuda_sync_t& sync, const char* who, const char* consequence)
+{
+    if (sync.stream == 0 && sync.wait_event == 0)
+        return true;
+    omni::physx::IOptionalCuda* const cuda = omni::physx::cudaShimWrappers::getCudaShim();
+    if (!cuda || !cuda->cudaAvailable())
+    {
+        OVX_RUNTIME_ERROR("%s: a CUDA producer handoff (stream 0x%llx, event 0x%llx) was supplied but no CUDA driver "
+                          "is available; %s.",
+                          who, static_cast<unsigned long long>(sync.stream),
+                          static_cast<unsigned long long>(sync.wait_event), consequence);
+        return false;
+    }
+    int status = 0;
+    if (sync.stream && !cuda->streamSynchronize(sync.stream, &status))
+    {
+        OVX_RUNTIME_ERROR("%s: draining the producer stream 0x%llx failed (CUresult %d); %s.", who,
+                          static_cast<unsigned long long>(sync.stream), status, consequence);
+        return false;
+    }
+    if (sync.wait_event && !cuda->eventSynchronize(sync.wait_event, &status))
+    {
+        OVX_RUNTIME_ERROR("%s: waiting for the producer event 0x%llx failed (CUresult %d); %s.", who,
+                          static_cast<unsigned long long>(sync.wait_event), status, consequence);
         return false;
     }
     return true;
@@ -226,7 +294,7 @@ ActiveActorSet collectActiveActorsForScene(PxScene* scene)
     if (!internalScene)
         return out; // no owner to ask: report nothing rather than dereference the list
 
-    out.sizeTo(OmniPhysX::getInstance().getInternalPhysXDatabase().getRecords().size());
+    out.sizeTo(internalScene->getAttachedStage().getInternalPhysXDatabase().getRecords().size());
     markActiveActorsOfScene(internalScene, out);
     return out;
 }
@@ -236,10 +304,10 @@ ActiveActorSet collectActiveActorsForScene(PxScene* scene)
 // which scenes contributed, so a call site asks sceneReports(owner) and an actor in a non-reporting
 // scene falls back to its own sleep state. Building one union rather than a set per scene keeps
 // this O(records) instead of O(scenes x records).
-ActiveActorSet collectActiveActors()
+ActiveActorSet collectActiveActors(AttachedStage& owner)
 {
     ActiveActorSet out;
-    InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    InternalPhysXDatabase& db = owner.getInternalPhysXDatabase();
     const size_t recordCount = db.getRecords().size();
     // Marked straight into ONE set rather than built per scene and merged: over a bitset every
     // scene marks into the same bits, where merging would be a second full insert pass over a set
@@ -263,24 +331,57 @@ ActiveActorSet collectActiveActors()
     return out;
 }
 
-// The InternalScene that owns `scene`. Needed because the released-actor predicate that makes
-// getActiveActors() safe to walk lives on InternalScene, and the per-scene entry point is handed
-// only a PxScene*. Linear over the record table, but only over the SCENE records, and a stage holds
-// a handful -- this runs once per ACTIVE read, not per actor.
+// kOvxActive for a controller is a property of its kinematic actor. When the scene can
+// report active actors, membership is that list. When it cannot (DirectGPU clears the
+// flag), the actor's awake state is the fallback -- the same split the vehicle read uses,
+// so a non-reporting scene does not drop every controller.
+bool cctRowInScope(const InternalCct& cct, uint32_t scope, const ActiveActorSet& active)
+{
+    if (scope != omni::physx::kOvxActive)
+        return true;
+    PxRigidActor* actor = cct.mActor;
+    if (!actor)
+        return false;
+    PxScene* scene = actor->getScene();
+    if (!scene)
+        return false;
+    if (active.sceneReports(scene))
+        return active.isActive(reinterpret_cast<size_t>(actor->userData));
+    PxRigidDynamic* dynamic = actor->is<PxRigidDynamic>();
+    if (!dynamic)
+        return true;
+    return !dynamic->isSleeping();
+}
+
+bool enumerateCctRows(usdparser::AttachedStage& owner, uint32_t scope, std::vector<CctOvStageRow>& out)
+{
+    out.clear();
+    InternalPhysXDatabase& db = owner.getInternalPhysXDatabase();
+    const std::vector<InternalDatabase::Record>& records = db.getRecords();
+    const ActiveActorSet active = (scope == omni::physx::kOvxActive) ? collectActiveActors(owner) : ActiveActorSet{};
+
+    for (size_t i = 0; i < records.size(); ++i)
+    {
+        const InternalDatabase::Record& rec = records[i];
+        if (rec.mType != ePTCct || !rec.mPtr || !rec.mInternalPtr)
+            continue;
+        InternalCct* cct = static_cast<InternalCct*>(rec.mInternalPtr);
+        if (!cct->mActor || !cctRowInScope(*cct, scope, active))
+            continue;
+        CctOvStageRow row;
+        row.controller = static_cast<PxController*>(rec.mPtr);
+        row.internal = cct;
+        row.key = rec.mKey;
+        out.push_back(row);
+    }
+    return true;
+}
+
+// Resolve exact native ownership without looking through another attachment's records.
 InternalScene* internalSceneOf(const PxScene* scene)
 {
-    if (!scene)
-        return nullptr;
-    InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
-    for (const InternalDatabase::Record& rec : db.getRecords())
-    {
-        if (rec.mType != omni::physx::ePTScene || !rec.mInternalPtr)
-            continue;
-        InternalScene* const candidate = reinterpret_cast<InternalScene*>(rec.mInternalPtr);
-        if (candidate->getScene() == scene)
-            return candidate;
-    }
-    return nullptr;
+    const PhysXScene* owner = OmniPhysX::getInstance().getPhysXSetup().findPhysXScene(scene);
+    return owner ? owner->getInternalScene() : nullptr;
 }
 
 // Whether an articulation link is in scope. Shared by the READ (scanLinkRecords) and by query
@@ -306,41 +407,24 @@ bool linkInScope(const PxArticulationLink& link,
 
 // One walk, bucketed by owning scene. getScene() is called here, where the actor was just dereferenced for
 // the type check and is still cache-resident.
-void scanRigidRecords(uint32_t scope, const ActiveActorSet& activeSet, RigidRecordScan& out)
+void scanRigidRecords(AttachedStage& owner, uint32_t scope, const ActiveActorSet& activeSet, RigidRecordScan& out)
 {
-    InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    InternalPhysXDatabase& db = owner.getInternalPhysXDatabase();
     const std::vector<InternalDatabase::Record>& records = db.getRecords();
     // Scene count is tiny (one per PhysicsScene prim), so a linear probe beats hashing per record.
     RigidSceneBucket* last = nullptr;
-    for (size_t ri = 0; ri < records.size(); ++ri)
-    {
-        const InternalDatabase::Record& rec = records[ri];
-        if (rec.mType != ePTActor || !rec.mPtr || !rec.mInternalPtr)
-            continue;
-        PxRigidDynamic* dyn = reinterpret_cast<PxRigidActor*>(rec.mPtr)->is<PxRigidDynamic>();
-        if (!dyn)
-            continue;
-        InternalActor* ia = reinterpret_cast<InternalActor*>(rec.mInternalPtr);
-        if (ia && ia->mInstanceIndex != kInvalidUint32_t)
-        {
-            // Reserved on first use, as the standalone buckets below are: an instancer-heavy stage is mostly
-            // instances, so an unreserved vector reallocates its way up to the instance count every read.
-            if (out.instanced.empty())
-                out.instanced.reserve(records.size());
-            out.instanced.push_back(dyn);
-            continue;
-        }
+    auto appendStandalone = [&](PxRigidDynamic* dyn, const ObjectKey& key, size_t ri) {
         if (scope == kOvxActive)
         {
             const bool active = activeSet.sceneReports(dyn->getScene())
                 ? activeSet.isActive(ri)
                 : !((dyn->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC) || dyn->isSleeping());
             if (!active)
-                continue;
+                return;
         }
         PxScene* owning = dyn->getScene();
         if (!owning)
-            continue; // not in a scene: no view to read it through
+            return; // not in a scene: no view to read it through
         // Records of one scene arrive in runs, so the previous bucket almost always hits.
         if (!last || last->scene != owning)
         {
@@ -368,19 +452,55 @@ void scanRigidRecords(uint32_t scope, const ActiveActorSet& activeSet, RigidReco
             }
         }
         last->bodies.push_back(dyn);
-        last->keys.push_back(rec.mKey);
+        last->keys.push_back(key);
+    };
+    for (size_t ri = 0; ri < records.size(); ++ri)
+    {
+        const InternalDatabase::Record& rec = records[ri];
+        if (rec.mType != ePTActor || !rec.mPtr || !rec.mInternalPtr)
+            continue;
+        PxRigidDynamic* dyn = reinterpret_cast<PxRigidActor*>(rec.mPtr)->is<PxRigidDynamic>();
+        if (!dyn)
+            continue;
+        InternalActor* ia = reinterpret_cast<InternalActor*>(rec.mInternalPtr);
+        if (ia && ia->mInstanceIndex != kInvalidUint32_t)
+        {
+            // Reserved on first use, as the standalone buckets below are: an instancer-heavy stage is mostly
+            // instances, so an unreserved vector reallocates its way up to the instance count every read.
+            if (out.instanced.empty())
+                out.instanced.reserve(records.size());
+            out.instanced.push_back(dyn);
+            continue;
+        }
+        appendStandalone(dyn, rec.mKey, ri);
+    }
+    // Controller proxies are kinematic dynamics stored as ePTCct. The pose read is this same
+    // rigid-body column. They stay out of the write plan (planRigidGroup), which would otherwise
+    // drive the proxy through the rigid setters and desync the controller.
+    last = nullptr;
+    for (size_t ri = 0; ri < records.size(); ++ri)
+    {
+        const InternalDatabase::Record& rec = records[ri];
+        if (rec.mType != ePTCct || !rec.mInternalPtr)
+            continue;
+        InternalCct* cct = static_cast<InternalCct*>(rec.mInternalPtr);
+        PxRigidDynamic* dyn = cct->mActor ? cct->mActor->is<PxRigidDynamic>() : nullptr;
+        if (!dyn)
+            continue;
+        appendStandalone(dyn, rec.mKey, ri);
     }
 }
 
 // One walk, bucketed by owning scene -- the link counterpart of scanRigidRecords, and for the same reason:
 // emission is per-scene, so a walk per scene would repeat the same per-record dereference and type check for
 // every scene on the stage.
-void scanLinkRecords(uint32_t scope, const ActiveActorSet& activeSet, RigidRecordScan& out)
+bool scanLinkRecords(AttachedStage& owner, uint32_t scope, const ActiveActorSet& activeSet, RigidRecordScan& out)
 {
-    InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    InternalPhysXDatabase& db = owner.getInternalPhysXDatabase();
     const std::vector<InternalDatabase::Record>& records = db.getRecords();
     // Scene count is tiny (one per PhysicsScene prim), so a linear probe beats hashing per record.
     RigidSceneBucket* last = nullptr;
+    bool complete = true;
     for (size_t ri = 0; ri < records.size(); ++ri)
     {
         const InternalDatabase::Record& rec = records[ri];
@@ -389,13 +509,16 @@ void scanLinkRecords(uint32_t scope, const ActiveActorSet& activeSet, RigidRecor
         PxArticulationLink* link = reinterpret_cast<PxRigidActor*>(rec.mPtr)->is<PxArticulationLink>();
         if (!link)
             continue;
-        if (!linkInScope(*link, ri, scope, activeSet))
-            continue;
         // Called here, where the link was just dereferenced for the type check and is still
         // cache-resident, rather than in a per-scene filtering pass that pays the indirection again.
         PxScene* owning = link->getScene();
         if (!owning)
+        {
+            complete = false;
             continue; // not in a scene: no view to read it through
+        }
+        if (!linkInScope(*link, ri, scope, activeSet))
+            continue;
         // Records of one scene arrive in runs, so the previous bucket almost always hits.
         if (!last || last->scene != owning)
         {
@@ -425,6 +548,7 @@ void scanLinkRecords(uint32_t scope, const ActiveActorSet& activeSet, RigidRecor
         last->bodies.push_back(link);
         last->keys.push_back(rec.mKey);
     }
+    return complete;
 }
 
 // The scan already grouped by scene; this is a lookup, not a filter.
@@ -437,40 +561,16 @@ const RigidSceneBucket* bucketForScene(const RigidRecordScan& scan, const PxScen
 }
 
 
-std::vector<ScenePair> allPhysicsScenesWithInternal()
+std::vector<ScenePair> allPhysicsScenesWithInternal(AttachedStage& owner)
 {
-    // Cached against the database's object-lifetime epoch, because the walk is O(records) and the
-    // answer is O(scenes): at 8192 envs it scanned ~164k records to return one pointer, measured at
-    // ~0.33 ms -- the single largest item inside a warm write session, about a third of it.
-    //
-    // Applied to the PRIMITIVE rather than to a projection, so every consumer of a scene list gets
-    // it: the read's rigid, vehicle and tendon paths, and the write's planning.
-    //
-    // The epoch is the right guard, and only because of how a scene comes to exist: InternalScene is
-    // constructed WITH its PxScene (PhysXScene.cpp), so a record can never be present and later
-    // start reporting a scene. Appearing therefore requires a record add and disappearing a record
-    // removal, both of which bump the epoch. If that construction order ever changes this cache goes
-    // stale silently -- a read or write would cover fewer scenes than it should -- so the assumption
-    // is stated here rather than left implicit.
-    static std::vector<ScenePair> sCached;
-    static uint64_t sEpoch = 0;
-    static bool sValid = false;
-    const uint64_t epoch = omni::physx::internal::recordLifetimeEpoch();
-    if (sValid && epoch == sEpoch)
-        return sCached;
-
     std::vector<ScenePair> scenes;
-    InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
-    for (const InternalDatabase::Record& rec : db.getRecords())
-        if (rec.mType == ePTScene && rec.mInternalPtr)
-        {
-            InternalScene* is = reinterpret_cast<InternalScene*>(rec.mInternalPtr);
-            if (PxScene* sc = is->getScene())
-                scenes.push_back({ sc, is });
-        }
-    sCached = scenes;
-    sEpoch = epoch;
-    sValid = true;
+    scenes.reserve(owner.getPhysXScenes().size());
+    for (usdparser::AttachedStage::SceneMap::const_reference item : owner.getPhysXScenes())
+    {
+        PhysXScene* scene = item.second;
+        if (scene && scene->getScene() && scene->getInternalScene())
+            scenes.push_back({ scene->getScene(), scene->getInternalScene() });
+    }
     return scenes;
 }
 
@@ -483,9 +583,9 @@ std::vector<PxScene*> scenesOf(const std::vector<ScenePair>& pairs)
     return scenes;
 }
 
-std::vector<PxScene*> allPhysicsScenes()
+std::vector<PxScene*> allPhysicsScenes(AttachedStage& owner)
 {
-    return scenesOf(allPhysicsScenesWithInternal());
+    return scenesOf(allPhysicsScenesWithInternal(owner));
 }
 
 EnabledRigidBodies::EnabledRigidBodies(const std::vector<PxRigidBody*>& bodies,

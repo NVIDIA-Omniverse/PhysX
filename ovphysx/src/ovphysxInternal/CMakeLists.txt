@@ -30,6 +30,8 @@ target_compile_definitions(ovphysx_internal PRIVATE
     carb_Framework=carb_Framework_latest
     carb_filesystem_IFileSystem=carb_filesystem_IFileSystem_latest
     carb_dictionary_IDictionary=carb_dictionary_IDictionary_latest
+    # Match the owner's static Carbonite task-helper layouts.
+    $<$<COMPILE_LANGUAGE:CXX>:carb_tasking_ITasking=carb_tasking_ITasking_latest>
 )
 if(WIN32)
     target_link_libraries(ovphysx_internal PRIVATE shlwapi pathcch winmm)

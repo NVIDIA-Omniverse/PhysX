@@ -27,8 +27,7 @@ using namespace omni::physx::internal;
 
 bool omni::physx::updateDeformableBody(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType type;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(type, objectId);
@@ -201,8 +200,7 @@ bool omni::physx::updateDeformableBody(AttachedStage& attachedStage, ObjectId ob
 
 bool omni::physx::updateDeformableRestOffset(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -224,8 +222,7 @@ bool omni::physx::updateDeformableRestOffset(AttachedStage& attachedStage, omni:
 bool omni::physx::updateDeformableContactOffset(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -277,7 +274,7 @@ static float resolveDeformableRestOffset(const AttachedStage& attachedStage,
 bool omni::physx::updateNewtonDeformableContactMargin(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const internal::InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
     if (!objectRecord)
@@ -326,7 +323,7 @@ bool omni::physx::updateNewtonDeformableContactMargin(AttachedStage& attachedSta
 bool omni::physx::updateNewtonDeformableContactGap(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const internal::InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
     if (!objectRecord)
@@ -359,8 +356,7 @@ bool omni::physx::updateNewtonDeformableContactGap(AttachedStage& attachedStage,
 
 bool omni::physx::updateDeformableMaterial(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
     PhysXType type;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(type, objectId);
     if (!objectRecord || !(type == PhysXType::ePTDeformableSurfaceMaterial || type == PhysXType::ePTDeformableVolumeMaterial))

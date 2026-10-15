@@ -217,20 +217,9 @@ ScannedStage scanStage(PXR_NS::UsdStageWeakPtr stage,
 
     if (!excludePaths.empty())
     {
-        // Replicator selective load: a single whole-stage walk from roots.front()
-        // that skips every prim in excludePaths (subtree inclusive). The two
-        // modes are mutually exclusive — exclude-based load is always single-root
-        // (the pseudo-root); additional roots would be silently ignored.
-        CARB_ASSERT(roots.size() == 1 &&
-            "scanStage: excludePaths is only supported with a single root (replicator selective load)");
-        PXR_NS::UsdPrim rootPrim = stage->GetPrimAtPath(roots.front());
-        if (!rootPrim)
-            return {};
-        // Whole-stage replicator load is always the instance-proxy predicate.
-        PXR_NS::UsdPrimRange range(rootPrim, PXR_NS::UsdTraverseInstanceProxies(
-            PXR_NS::UsdPrimIsActive && PXR_NS::UsdPrimIsDefined && PXR_NS::UsdPrimIsLoaded &&
-            !PXR_NS::UsdPrimIsAbstract));
-        omni::physics::schema::PrimIteratorExcludeRange primIterator(std::move(range), excludePaths);
+        const std::set<PXR_NS::SdfPath> rootSet(roots.begin(), roots.end());
+        omni::physics::schema::PrimIteratorMapRange rootsIterator(rootSet, stage);
+        omni::physics::schema::PrimIteratorExcludeRange primIterator(rootsIterator, excludePaths);
         return scanStage(stage, primIterator, allocator);
     }
 
@@ -273,15 +262,9 @@ ScannedStage scanTargetNative(const parse::AttachTarget& target,
     const SubtreeTraversal traversal = traversalForScope(options.descendantScope);
     if (!excludePaths.empty())
     {
-        CARB_ASSERT(scanRoots.size() == 1 &&
-            "scanStage: excludePaths is only supported with a single root (replicator selective load)");
-        const PXR_NS::UsdPrim rootPrim = stage->GetPrimAtPath(scanRoots.front());
-        if (!rootPrim)
-            return {};
-        PXR_NS::UsdPrimRange range(rootPrim, PXR_NS::UsdTraverseInstanceProxies(
-            PXR_NS::UsdPrimIsActive && PXR_NS::UsdPrimIsDefined && PXR_NS::UsdPrimIsLoaded &&
-            !PXR_NS::UsdPrimIsAbstract));
-        omni::physics::schema::PrimIteratorExcludeRange iterator(std::move(range), excludePaths);
+        const std::set<PXR_NS::SdfPath> rootSet(scanRoots.begin(), scanRoots.end());
+        omni::physics::schema::PrimIteratorMapRange rootsIterator(rootSet, stage);
+        omni::physics::schema::PrimIteratorExcludeRange iterator(rootsIterator, excludePaths);
         return scanStageNative(stage, iterator, allocator, source);
     }
     if (scanRoots.size() == 1 && traversal != SubtreeTraversal::eInstanceProxies)

@@ -2,6 +2,23 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PARSE-MASS-004
+ * @covers AC-1 AC-4
+ */
+
+/**
+ * @implements REQ-PARSE-COL-001
+ * @covers AC-1 AC-2 AC-3
+ *
+ * @implements REQ-PARSE-COL-003
+ * @covers AC-1 AC-3
+ *
+ * @implements REQ-PARSE-SHAPE-006
+ * @covers AC-1 AC-3
+ *
+ * @implements REQ-PARSE-COL-005
+ * @covers AC-1 AC-5
+ *
  * @implements REQ-LOAD-TOKENS-001
  * @covers AC-5
  */
@@ -18,8 +35,11 @@
  * @implements REQ-PARSE-BODY-003
  * @covers AC-1 AC-2 AC-3
  *
+ * @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5
+ *
  * @implements REQ-PARSE-SCAN-001
- * @covers AC-1 AC-14 AC-15 AC-16 AC-17 AC-18
+ * @covers AC-1 AC-14 AC-15 AC-16 AC-17 AC-18 AC-20
  *
  * @implements REQ-PARSE-CONSUMER-001
  * @covers AC-24
@@ -40,18 +60,17 @@
  * @covers AC-3 AC-4
  *
  * @implements REQ-PARSE-FEED-003
- * @covers AC-10 AC-12 AC-13 AC-14
- *
- * @implements REQ-PARSE-SHAPE-006
- * @covers AC-1 AC-3
- *
- * @implements REQ-PARSE-COL-005
- * @covers AC-1
+ * @covers AC-10 AC-12 AC-13 AC-14 AC-17
  */
 
 #include "OvstageWalker.h"
 
 #include "OvstageSource.h"
+#include "OvstageShapeBatch.h"
+#include "OvstageJointBatch.h"
+#include "OvstageVehicleBatch.h"
+#include "DescriptorMemoryStats.h"
+#include "OvstageDeformableBatch.h"
 
 
 
@@ -61,6 +80,15 @@
 #include <omni/physics/parse/ArticulationGraph.h>
 #include <omni/physics/parse/CustomTokens.h>
 #include <omni/physics/parse/ParseApi.h>
+#include <omni/physics/parse/PreparedBody.h>
+#include <omni/physics/parse/PreparedParticle.h>
+#include <omni/physics/parse/PreparedCct.h>
+#include <omni/physics/parse/PreparedAttachment.h>
+#include <omni/physics/parse/PreparedJoint.h>
+#include <omni/physics/parse/PreparedTendon.h>
+#include <omni/physics/parse/PreparedMimicJoint.h>
+#include <omni/physics/parse/PreparedMaterial.h>
+#include <omni/physics/parse/PreparedScene.h>
 #include <omni/physics/parse/ParseContext.h>
 #include <private/omni/physics/CollisionShapeTransform.h>
 #include <private/omni/physics/JointFrameTransform.h>
@@ -196,35 +224,6 @@ std::vector<std::string> appendedAttrs(const Bucket& bucket, size_t previousSize
     if (previousSize >= bucket.attrs.size())
         return {};
     return std::vector<std::string>(bucket.attrs.begin() + previousSize, bucket.attrs.end());
-}
-
-// Drop appended columns [firstAppended, end) of hasSchema-gated joint sub-schema families
-// that no matched prim authors (absent from `discovered`): parseJoint reads them only behind
-// a hasSchema gate that is false when the schema is unapplied. Unconditionally read columns
-// carry none of these prefixes. Applied-but-all-default falls back to a live per-prim read.
-void trimUnauthoredGatedJointAttrs(Bucket& bucket,
-                                   size_t firstAppended,
-                                   const std::vector<std::string>& discovered)
-{
-    if (firstAppended >= bucket.attrs.size())
-        return;
-    static const std::string_view kGatedPrefixes[] = {
-        "physxLimit:", "physxJointAxis:", "drive:", "limit:", "state:",
-        "physxDrivePerformanceEnvelope:", "physxPhysicsDistanceJoint:",
-    };
-    const std::unordered_set<std::string_view> authored(discovered.begin(), discovered.end());
-    auto isGated = [](std::string_view name) {
-        for (const std::string_view pfx : kGatedPrefixes)
-            if (name.size() > pfx.size() && name.compare(0, pfx.size(), pfx) == 0)
-                return true;
-        return false;
-    };
-    std::vector<std::string>& attrs = bucket.attrs;
-    attrs.erase(std::remove_if(attrs.begin() + firstAppended, attrs.end(),
-                               [&](const std::string& name) {
-                                   return isGated(name) && authored.count(name) == 0;
-                               }),
-                attrs.end());
 }
 
 void appendTransformAttrs(Bucket& bucket)
@@ -364,18 +363,6 @@ void appendRigidBodyAttrs(Bucket& bucket)
     });
 }
 
-void appendMassAttrs(Bucket& bucket)
-{
-    appendTransformAttrs(bucket);
-    appendBucketAttrs(bucket, {
-        "physics:mass",
-        "physics:density",
-        "physics:centerOfMass",
-        "physics:diagonalInertia",
-        "physics:principalAxes",
-    });
-}
-
 void appendCollisionShapeAttrs(Bucket& bucket)
 {
     appendTransformAttrs(bucket);
@@ -424,8 +411,22 @@ void appendCollisionShapeAttrs(Bucket& bucket)
     });
 }
 
+void appendMassAttrs(Bucket& bucket)
+{
+    appendTransformAttrs(bucket);
+    appendBucketAttrs(bucket, {
+        "physics:mass",
+        "physics:density",
+        "physics:centerOfMass",
+        "physics:diagonalInertia",
+        "physics:principalAxes",
+    });
+}
+
 void appendDeformableBodyAttrs(Bucket& bucket)
 {
+    if (bucket.keys.empty())
+        return;
     appendTransformAttrs(bucket);
     appendBucketAttrs(bucket, {
         "omniphysics:deformableBodyEnabled",
@@ -460,6 +461,8 @@ void appendDeformableBodyAttrs(Bucket& bucket)
 
 void appendCollisionGroupAttrs(Bucket& bucket)
 {
+    if (bucket.keys.empty())
+        return;
     appendBucketAttrs(bucket, {
         "physics:filteredGroups",
         "physics:invertFilteredGroups",
@@ -470,6 +473,8 @@ void appendCollisionGroupAttrs(Bucket& bucket)
 
 void appendArticulationAttrs(Bucket& bucket)
 {
+    if (bucket.keys.empty())
+        return;
     appendTransformAttrs(bucket);
     appendBucketAttrs(bucket, {
         "physics:filteredPairs",
@@ -481,204 +486,6 @@ void appendArticulationAttrs(Bucket& bucket)
         "physxArticulation:enabledSelfCollisions",
         "newton:selfCollisionEnabled",
     });
-}
-
-void appendJointCommonAttrs(Bucket& bucket)
-{
-    appendBucketAttrs(bucket, {
-        "physics:jointEnabled",
-        "physics:collisionEnabled",
-        "physics:excludeFromArticulation",
-        "physics:breakForce",
-        "physics:breakTorque",
-        "physics:body0",
-        "physics:body1",
-        "physics:localPos0",
-        "physics:localRot0",
-        "physics:localPos1",
-        "physics:localRot1",
-        "physxJoint:jointFriction",
-    });
-}
-
-void appendPhysxJointAxisAttrs(Bucket& bucket, const char* axis)
-{
-    const std::string axisBase = std::string("physxJointAxis:") + axis + ":";
-    appendBucketAttr(bucket, axisBase + "armature");
-    appendBucketAttr(bucket, axisBase + "maxJointVelocity");
-    appendBucketAttr(bucket, axisBase + "staticFrictionEffort");
-    appendBucketAttr(bucket, axisBase + "dynamicFrictionEffort");
-    appendBucketAttr(bucket, axisBase + "viscousFrictionCoefficient");
-
-    appendBucketAttrs(bucket, {
-        "physxJoint:armature",
-        "physxJoint:maxJointVelocity",
-        // Seeds maxJointVelocity before the PhysX reads (ParseJoint.cpp's
-        // readPhysxJointAxisApi), so it is read once per joint per axis.
-        "newton:velocityLimit",
-        // Likewise seed armature, the friction efforts and viscousFrictionCoefficient.
-        "newton:armature",
-        "newton:friction",
-        "newton:damping",
-    });
-}
-
-void appendPhysxLimitAttrs(Bucket& bucket, const char* axis)
-{
-    const std::string limitBase = std::string("physxLimit:") + axis + ":";
-    appendBucketAttr(bucket, limitBase + "restitution");
-    appendBucketAttr(bucket, limitBase + "bounceThreshold");
-    appendBucketAttr(bucket, limitBase + "stiffness");
-    appendBucketAttr(bucket, limitBase + "damping");
-}
-
-void appendPhysicsLimitAttrs(Bucket& bucket, const char* axis)
-{
-    const std::string limitBase = std::string("limit:") + axis + ":physics:";
-    appendBucketAttr(bucket, limitBase + "low");
-    appendBucketAttr(bucket, limitBase + "high");
-    appendPhysxLimitAttrs(bucket, axis);
-}
-
-void appendPhysicsDriveAttrs(Bucket& bucket, const char* axis)
-{
-    const std::string driveBase = std::string("drive:") + axis + ":physics:";
-    appendBucketAttr(bucket, driveBase + "stiffness");
-    appendBucketAttr(bucket, driveBase + "damping");
-    appendBucketAttr(bucket, driveBase + "targetPosition");
-    appendBucketAttr(bucket, driveBase + "targetVelocity");
-    appendBucketAttr(bucket, driveBase + "maxForce");
-    appendBucketAttr(bucket, driveBase + "type");
-}
-
-void appendPhysxDrivePerformanceEnvelopeAttrs(Bucket& bucket, const char* axis)
-{
-    const std::string envelopeBase = std::string("physxDrivePerformanceEnvelope:") + axis + ":";
-    appendBucketAttr(bucket, envelopeBase + "maxActuatorVelocity");
-    appendBucketAttr(bucket, envelopeBase + "velocityDependentResistance");
-    appendBucketAttr(bucket, envelopeBase + "speedEffortGradient");
-}
-
-void appendPhysicsJointStateAttrs(Bucket& bucket, const char* axis)
-{
-    const std::string stateBase = std::string("state:") + axis + ":physics:";
-    appendBucketAttr(bucket, stateBase + "position");
-    appendBucketAttr(bucket, stateBase + "velocity");
-}
-
-void appendNewtonMimicAttrs(Bucket& bucket)
-{
-    appendBucketAttrs(bucket, {
-        "newton:mimicJoint",
-    });
-}
-
-void appendJointAttrs(Bucket& bucket, ObjectType type)
-{
-    appendJointCommonAttrs(bucket);
-
-    switch (type)
-    {
-    case eJointFixed:
-        appendNewtonMimicAttrs(bucket);
-        break;
-
-    case eJointSpherical:
-        appendBucketAttrs(bucket, {
-            "physics:axis",
-            "physics:coneAngle0Limit",
-            "physics:coneAngle1Limit",
-        });
-        appendPhysxLimitAttrs(bucket, "cone");
-        appendPhysxJointAxisAttrs(bucket, "rotX");
-        appendPhysxJointAxisAttrs(bucket, "rotY");
-        appendPhysxJointAxisAttrs(bucket, "rotZ");
-        appendNewtonMimicAttrs(bucket);
-        break;
-
-    case eJointRevolute:
-        appendBucketAttrs(bucket, {
-            "physics:axis",
-            "physics:lowerLimit",
-            "physics:upperLimit",
-        });
-        appendPhysxLimitAttrs(bucket, "angular");
-        appendPhysxJointAxisAttrs(bucket, "angular");
-        appendPhysicsDriveAttrs(bucket, "angular");
-        appendPhysxDrivePerformanceEnvelopeAttrs(bucket, "angular");
-        appendPhysicsJointStateAttrs(bucket, "angular");
-        appendNewtonMimicAttrs(bucket);
-        break;
-
-    case eJointPrismatic:
-        appendBucketAttrs(bucket, {
-            "physics:axis",
-            "physics:lowerLimit",
-            "physics:upperLimit",
-        });
-        appendPhysxLimitAttrs(bucket, "linear");
-        appendPhysxJointAxisAttrs(bucket, "linear");
-        appendPhysicsDriveAttrs(bucket, "linear");
-        appendPhysxDrivePerformanceEnvelopeAttrs(bucket, "linear");
-        appendPhysicsJointStateAttrs(bucket, "linear");
-        appendNewtonMimicAttrs(bucket);
-        break;
-
-    case eJointDistance:
-        appendBucketAttrs(bucket, {
-            "physics:minDistance",
-            "physics:maxDistance",
-            "physxPhysicsDistanceJoint:springEnabled",
-            "physxPhysicsDistanceJoint:springStiffness",
-            "physxPhysicsDistanceJoint:springDamping",
-        });
-        appendPhysxLimitAttrs(bucket, "distance");
-        appendNewtonMimicAttrs(bucket);
-        break;
-
-    case eJointD6:
-    {
-        static const char* const kD6Axes[] = { "transX", "transY", "transZ", "rotX", "rotY", "rotZ", "distance" };
-        for (const char* axis : kD6Axes)
-        {
-            appendPhysicsLimitAttrs(bucket, axis);
-            appendPhysicsDriveAttrs(bucket, axis);
-        }
-
-        static const char* const kD6RotAxes[] = { "rotX", "rotY", "rotZ" };
-        for (const char* axis : kD6RotAxes)
-        {
-            appendPhysxJointAxisAttrs(bucket, axis);
-            appendPhysxDrivePerformanceEnvelopeAttrs(bucket, axis);
-        }
-
-        static const char* const kD6StateAxes[] = { "transX", "transY", "transZ", "rotX", "rotY", "rotZ" };
-        for (const char* axis : kD6StateAxes)
-            appendPhysicsJointStateAttrs(bucket, axis);
-
-        appendNewtonMimicAttrs(bucket);
-        break;
-    }
-
-    case eJointGear:
-        appendBucketAttrs(bucket, {
-            "physics:gearRatio",
-            "physics:hinge0",
-            "physics:hinge1",
-        });
-        break;
-
-    case eJointRackAndPinion:
-        appendBucketAttrs(bucket, {
-            "physics:ratio",
-            "physics:hinge",
-            "physics:prismatic",
-        });
-        break;
-
-    default:
-        break;
-    }
 }
 
 // Enumerate the ObjectKeys of prims matching a single-predicate filter, plus the
@@ -925,78 +732,10 @@ carb::Float4 quatFromRotation(const Matrix3d& r)
     return q;
 }
 
-float maxAbs2(float a, float b)
+// Use the source's composed type, including geometry behind renderer proxies.
+bool isType(const OvstageSource& src, ovstage_instance_t*, ObjectKey key, const char* typeName)
 {
-    return std::max(std::fabs(a), std::fabs(b));
-}
-
-float maxAbs3(float a, float b, float c)
-{
-    return std::max(maxAbs2(a, b), std::fabs(c));
-}
-
-void scaleRoundShape(Axis axis, const carb::Float3& scale, float& radius, float& halfHeight)
-{
-    if (axis == eX)
-    {
-        halfHeight *= scale.x;
-        radius *= maxAbs2(scale.y, scale.z);
-    }
-    else if (axis == eY)
-    {
-        halfHeight *= scale.y;
-        radius *= maxAbs2(scale.x, scale.z);
-    }
-    else
-    {
-        halfHeight *= scale.z;
-        radius *= maxAbs2(scale.x, scale.y);
-    }
-}
-
-
-// Does prim `path` have prim-type == `typeName`? (usd-prim-type is filter-only,
-// like usd-schemas — so a scoped query, not a column read.)
-bool isType(ovstage_instance_t* inst, const std::string& path, const char* typeName)
-{
-    ovx_string_t pathVal = ovxStr(path.c_str());
-    ovx_string_t typeVal = ovxStr(typeName);
-
-    ovstage_predicate_t preds[2]{};
-    preds[0].attribute.string = ovxStr("usd-path");
-    preds[0].op = OVSTAGE_FILTER_OP_IN;
-    preds[0].values = &pathVal;
-    preds[0].value_count = 1;
-    preds[1].attribute.string = ovxStr("usd-prim-type");
-    preds[1].op = OVSTAGE_FILTER_OP_IN;
-    preds[1].values = &typeVal;
-    preds[1].value_count = 1;
-
-    ovstage_filter_t filter{};
-    filter.predicates = preds;
-    filter.count = 2;
-
-    ovstage_query_handle_t q = OVSTAGE_INVALID_QUERY_HANDLE;
-    const ovstage_enqueue_result_t e = ovstage_query(inst, &filter, nullptr, 0, &q);
-    if (e.status != OVSTAGE_OK)
-        return false;
-    waitAndRelease(inst, e);
-
-    size_t count = 0;
-    ovstage_query_result_t qr{};
-    if (ovstage_fetch_query_result(inst, q, OVSTAGE_TIMEOUT_INFINITE, &qr) == OVSTAGE_OK)
-    {
-        count = qr.total_prim_count;
-        ovstage_release_query_result(inst, &qr);
-    }
-    waitAndRelease(inst, ovstage_release_query(inst, q));
-    return count >= 1;
-}
-
-bool isType(const OvstageSource& src, ovstage_instance_t* inst, ObjectKey key, const char* typeName)
-{
-    const std::string path(src.sourceKeyToString(key));
-    return !path.empty() && isType(inst, path, typeName);
+    return src.tokenToString(src.getTypeName(key)) == typeName;
 }
 
 bool tokenColumnContains(ovstage_instance_t* inst,
@@ -1249,164 +988,56 @@ bool hasCollisionInSubtree(const OvstageSource& src, ObjectKey key, TokenId coll
     return found;
 }
 
-bool fillCommonShape(ParseContext& ctx, ObjectKey key, const ShapeInfo& info, PhysxShapeDesc& desc)
+void prepareMeshShape(ParseContext& ctx, const IPhysicsSource& src,
+                      ObjectKey shapeKey, ObjectKey gprimKey,
+                      const PhysxRigidBodyDesc* body, PreparedOvstageShape& input)
 {
-    setToDefault(desc, ctx.units());
-
-    desc.collisionEnabled = info.collisionEnabled;
-    desc.collisionGroup = info.collisionGroup;
-    desc.rigidBody = info.rigidBody;
-    desc.localPos = info.localPos;
-    desc.localRot = info.localRot;
-    desc.localScale = info.localScale;
-    desc.sourceGprim = info.sourceGprim;
-
-    CollisionExtFields fields;
-    fields.contactOffset = desc.contactOffset;
-    fields.restOffset = desc.restOffset;
-    fields.torsionalPatchRadius = desc.torsionalPatchRadius;
-    fields.minTorsionalPatchRadius = desc.minTorsionalPatchRadius;
-    fields.isTrigger = desc.isTrigger;
-    fields.isTriggerUsdOutput = desc.isTriggerUsdOutput;
-    fields.attributeFallback = info.collisionAttributeFallback;
-    parseCollisionExt(ctx, key, fields);
-    desc.contactOffset = fields.contactOffset;
-    desc.restOffset = fields.restOffset;
-    desc.torsionalPatchRadius = fields.torsionalPatchRadius;
-    desc.minTorsionalPatchRadius = fields.minTorsionalPatchRadius;
-    desc.isTrigger = fields.isTrigger;
-    desc.isTriggerUsdOutput = fields.isTriggerUsdOutput;
-
-    for (ObjectKey owner : info.simulationOwners)
-    {
-        ObjectId id = ctx.objects().findEntry(owner, eScene);
-        if (id != kInvalidObjectId)
-            desc.sceneIds.push_back(id);
-    }
-    return info.simulationOwners.empty() || !desc.sceneIds.empty();
-}
-
-// Mesh-shape descriptor builder — the ovstage peer of NativeWalker::readMeshShapeDesc.
-// Reads the mesh approximation + cooking knobs via the shared parse functions, applies
-// the TriangleMesh / MeshSimplification -> ConvexHull fallback for dynamic non-kinematic
-// bodies (PhysX rejects non-SDF triangle meshes as a simulation shape on a dynamic body),
-// and allocates the typed descriptor. meshPrimKey = gprimKey: the cooking service reads
-// the geometry from there via IPhysicsSource::getMeshAttributes (FROM_PRIM_MESH_VIEW path).
-// Bounding-sphere/cube retain a scaled point buffer owned by the scan for fitting.
-DescPtr<PhysxShapeDesc> buildMeshShapeDesc(OvstageScanResult& out, ParseContext& ctx, const IPhysicsSource& src,
-                                           ObjectKey shapeKey, ObjectKey gprimKey, ObjectKey rigidBodyKey,
-                                           const carb::Float3& meshScale, const carb::Float3& signScale,
-                                           bool doubleSided, ObjectKey attributeFallback)
-{
-    MeshApproximation approx = parseMeshApproximation(ctx, shapeKey, attributeFallback);
-
-    if ((approx == MeshApproximation::eNone || approx == MeshApproximation::eMeshSimplification) &&
-        rigidBodyKey.valid())
-    {
-        bool kinematic = false, enabled = true;
-        src.getAttribute(rigidBodyKey, src.internToken("physics:kinematicEnabled"), kinematic);
-        src.getAttribute(rigidBodyKey, src.internToken("physics:rigidBodyEnabled"), enabled);
-        if (!kinematic && enabled)
-            approx = MeshApproximation::eConvexHull;
-    }
-
-    switch (approx)
+    MeshApproximation approximation = parseMeshApproximation(ctx, shapeKey);
+    if ((approximation == MeshApproximation::eNone || approximation == MeshApproximation::eMeshSimplification) &&
+        body && body->type == eDynamicBody && !static_cast<const DynamicPhysxRigidBodyDesc&>(*body).kinematicBody)
+        approximation = MeshApproximation::eConvexHull;
+    switch (approximation)
     {
     case MeshApproximation::eConvexHull:
-    {
-        DescPtr<ConvexMeshPhysxShapeDesc> cmd = allocateDesc<ConvexMeshPhysxShapeDesc>(ctx.descriptorAllocator());
-        cmd->meshScale = meshScale;
-        cmd->meshPrimKey = gprimKey;
-        cmd->convexCookingParams.signScale = signScale;
-        parseConvexHullCookingExt(ctx, shapeKey, cmd->convexCookingParams);
-        return descPtrCast<PhysxShapeDesc>(std::move(cmd));
-    }
-    case MeshApproximation::eMeshSimplification:
-    {
-        DescPtr<TriangleMeshPhysxShapeDesc> tmd = allocateDesc<TriangleMeshPhysxShapeDesc>(ctx.descriptorAllocator());
-        tmd->meshScale = meshScale;
-        tmd->meshPrimKey = gprimKey;
-        tmd->doubleSided = doubleSided;
-        tmd->triangleMeshCookingParams.mode = omni::physx::TriangleMeshMode::eQUADRIC_SIMPLIFICATION;
-        tmd->sdfMeshCookingParams.sdfResolution = 0;
-        parseTriangleMeshSimplificationCookingExt(ctx, shapeKey, tmd->triangleMeshCookingParams);
-        return descPtrCast<PhysxShapeDesc>(std::move(tmd));
-    }
+        input.type = eConvexMeshShape;
+        input.cooking = PreparedConvexHullCookingExt{};
+        std::get<PreparedConvexHullCookingExt>(input.cooking).physxConvexHullCollisionAPI =
+            src.hasSchema(shapeKey, ctx.knownTokens().physxConvexHullCollisionAPI);
+        break;
     case MeshApproximation::eConvexDecomposition:
-    {
-        DescPtr<ConvexMeshDecompositionPhysxShapeDesc> cdd =
-            allocateDesc<ConvexMeshDecompositionPhysxShapeDesc>(ctx.descriptorAllocator());
-        cdd->meshScale = meshScale;
-        cdd->meshPrimKey = gprimKey;
-        cdd->doubleSided = doubleSided;
-        cdd->convexDecompositionCookingParams.signScale = signScale;
-        cdd->sdfMeshCookingParams.sdfResolution = 0;
-        parseConvexDecompositionCookingExt(ctx, shapeKey, cdd->convexDecompositionCookingParams);
-        return descPtrCast<PhysxShapeDesc>(std::move(cdd));
-    }
+        input.type = eConvexMeshDecompositionShape;
+        input.cooking = PreparedConvexDecompositionCookingExt{};
+        break;
     case MeshApproximation::eSphereFill:
-    {
-        DescPtr<SpherePointsPhysxShapeDesc> sfd = allocateDesc<SpherePointsPhysxShapeDesc>(ctx.descriptorAllocator());
-        sfd->meshScale = meshScale;
-        sfd->meshPrimKey = gprimKey;
-        sfd->doubleSided = doubleSided;
-        sfd->sphereFillCookingParams.signScale = signScale;
-        sfd->sdfMeshCookingParams.sdfResolution = 0;
-        parseSphereFillCookingExt(ctx, shapeKey, sfd->sphereFillCookingParams);
-        return descPtrCast<PhysxShapeDesc>(std::move(sfd));
-    }
-    case MeshApproximation::eSdf:
-    {
-        DescPtr<TriangleMeshPhysxShapeDesc> tmd = allocateDesc<TriangleMeshPhysxShapeDesc>(ctx.descriptorAllocator());
-        tmd->meshScale = meshScale;
-        tmd->meshPrimKey = gprimKey;
-        tmd->doubleSided = doubleSided;
-        parseTriangleMeshCookingExt(ctx, shapeKey, tmd->triangleMeshCookingParams);
-        parseSdfMeshCookingExt(ctx, shapeKey, tmd->sdfMeshCookingParams);
-        return descPtrCast<PhysxShapeDesc>(std::move(tmd));
-    }
+        input.type = eSpherePointsShape;
+        input.cooking = PreparedSphereFillCookingExt{};
+        std::get<PreparedSphereFillCookingExt>(input.cooking).fillModeFlood = ctx.knownTokens().fillModeFlood;
+        std::get<PreparedSphereFillCookingExt>(input.cooking).fillModeRaycast = ctx.knownTokens().fillModeRaycast;
+        std::get<PreparedSphereFillCookingExt>(input.cooking).fillModeSurface = ctx.knownTokens().fillModeSurface;
+        break;
     case MeshApproximation::eBoundingSphere:
     case MeshApproximation::eBoundingCube:
     {
-        // Read the gprim's points into a mergedMesh buffer; the consumer computes
-        // the bounding-sphere radius / bounding-box halfExtents from those points.
-        // (Mirrors NativeWalker's USD path; needed so a dynamic body gets an analytic
-        // bounding shape instead of an illegal triangle-mesh simulation shape.)
-        // The points must carry the gprim's world scale: unlike the cooked-mesh
-        // descs there is no meshScale field for the consumer to apply later, so an
-        // unscaled buffer yields a bounding shape in mesh-local units.
-        DescPtr<MergeMeshDesc> mm = allocateDesc<MergeMeshDesc>(ctx.descriptorAllocator());
-        const MeshGeometry geom = parseMeshGeometry(ctx, gprimKey);
-        scaleMeshPoints(ctx, geom.points, meshScale, mm->points);
-
-        DescPtr<MergeMeshPhysxShapeDesc> typed;
-        if (approx == MeshApproximation::eBoundingSphere)
-        {
-            DescPtr<BoundingSpherePhysxShapeDesc> bs =
-                allocateDesc<BoundingSpherePhysxShapeDesc>(ctx.descriptorAllocator());
-            typed = descPtrCast<MergeMeshPhysxShapeDesc>(std::move(bs));
-        }
-        else
-        {
-            DescPtr<BoundingBoxPhysxShapeDesc> bb =
-                allocateDesc<BoundingBoxPhysxShapeDesc>(ctx.descriptorAllocator());
-            typed = descPtrCast<MergeMeshPhysxShapeDesc>(std::move(bb));
-        }
-        typed->mergedMesh = mm.get();
-        out.ownedMeshes.push_back(std::move(mm));
-        return descPtrCast<PhysxShapeDesc>(std::move(typed));
+        input.type = approximation == MeshApproximation::eBoundingSphere ? eBoundingSphereShape : eBoundingBoxShape;
+        const MeshGeometry geometry = parseMeshGeometry(ctx, gprimKey);
+        input.points = ctx.getBuffer<carb::Float3>(geometry.points);
+        break;
     }
-    case MeshApproximation::eNone:
+    case MeshApproximation::eMeshSimplification:
+        input.type = eTriangleMeshShape;
+        input.cooking = PreparedTriangleMeshSimplificationCookingExt{};
+        break;
+    case MeshApproximation::eSdf:
+        input.sdf = true;
+        input.sdfCooking.physxSDFMeshCollisionAPI = src.hasSchema(shapeKey, ctx.knownTokens().physxSDFMeshCollisionAPI);
+        input.sdfCooking.bitsPerPixel8 = ctx.knownTokens().bitsPerPixel8;
+        input.sdfCooking.bitsPerPixel16 = ctx.knownTokens().bitsPerPixel16;
+        input.sdfCooking.bitsPerPixel32 = ctx.knownTokens().bitsPerPixel32;
+        [[fallthrough]];
     default:
-    {
-        DescPtr<TriangleMeshPhysxShapeDesc> tmd = allocateDesc<TriangleMeshPhysxShapeDesc>(ctx.descriptorAllocator());
-        tmd->meshScale = meshScale;
-        tmd->meshPrimKey = gprimKey;
-        tmd->doubleSided = doubleSided;
-        tmd->sdfMeshCookingParams.sdfResolution = 0;
-        parseTriangleMeshCookingExt(ctx, shapeKey, tmd->triangleMeshCookingParams);
-        return descPtrCast<PhysxShapeDesc>(std::move(tmd));
-    }
+        input.type = eTriangleMeshShape;
+        input.cooking = PreparedTriangleMeshCookingExt{};
+        break;
     }
 }
 
@@ -1443,7 +1074,7 @@ int getOvstageWalkerEnumerateReadFaultForTest()
     return enumerateReadFaultCounter().load(std::memory_order_relaxed);
 }
 
-void emitTireFrictionTable(OvstageScanResult& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
+void emitTireFrictionTable(PreparedOvstageVehicles& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
 {
     TireFrictionTableInfo info;
     info.defaultFrictionValue = 1.0f;
@@ -1456,25 +1087,22 @@ void emitTireFrictionTable(OvstageScanResult& out, OvstageSource& src, ParseCont
     readFloatArrayEither(src, key, "frictionValues", "physxVehicleTireFrictionTable:frictionValues",
                          info.frictionValues);
 
-    if (DescPtr<TireFrictionTableDesc> desc = parseTireFrictionTable(ctx, key, info))
-        out.tireFrictionTables.push_back(std::move(desc));
+    out.tireFrictionTables.push_back(prepareTireFrictionTable(ctx, key, info));
 }
 
-void emitVehicleContext(OvstageScanResult& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
+void emitVehicleContext(PreparedOvstageVehicles& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
 {
     if (!src.isA(key, src.internToken("PhysicsScene")))
         return;
-    if (DescPtr<VehicleContextDesc> desc = parseVehicleContext(ctx, key))
-        out.vehicleContexts.push_back(std::move(desc));
+    out.vehicleContexts.push_back(prepareVehicleContext(ctx, key));
 }
 
-void emitVehicleWheel(OvstageScanResult& out, ParseContext& ctx, ObjectKey key)
+void emitVehicleWheel(PreparedOvstageVehicles& out, ParseContext& ctx, ObjectKey key)
 {
-    if (DescPtr<WheelDesc> desc = parseWheel(ctx, key))
-        out.vehicleWheels.push_back(std::move(desc));
+    out.vehicleWheels.push_back(prepareWheel(ctx, key));
 }
 
-void emitVehicleTire(OvstageScanResult& out, ovstage_instance_t* inst, OvstageSource& src,
+void emitVehicleTire(PreparedOvstageVehicles& out, ovstage_instance_t* inst, OvstageSource& src,
                      ParseContext& ctx, ObjectKey key, float massScale)
 {
     TireInfo info;
@@ -1503,17 +1131,15 @@ void emitVehicleTire(OvstageScanResult& out, ovstage_instance_t* inst, OvstageSo
         info.frictionTableTooMany = true;
     }
 
-    if (DescPtr<TireDesc> desc = parseTire(ctx, key, info))
-        out.vehicleTires.push_back(std::move(desc));
+    out.vehicleTires.push_back(prepareTire(ctx, key, info));
 }
 
-void emitVehicleSuspension(OvstageScanResult& out, ParseContext& ctx, ObjectKey key)
+void emitVehicleSuspension(PreparedOvstageVehicles& out, ParseContext& ctx, ObjectKey key)
 {
-    if (DescPtr<SuspensionDesc> desc = parseSuspension(ctx, key))
-        out.vehicleSuspensions.push_back(std::move(desc));
+    out.vehicleSuspensions.push_back(prepareSuspension(ctx, key));
 }
 
-void emitVehicleEngine(OvstageScanResult& out, OvstageSource& src, ParseContext& ctx,
+void emitVehicleEngine(PreparedOvstageVehicles& out, OvstageSource& src, ParseContext& ctx,
                        ObjectKey key, float kgmsScale)
 {
     EngineInfo info;
@@ -1530,38 +1156,28 @@ void emitVehicleEngine(OvstageScanResult& out, OvstageSource& src, ParseContext&
             info.torqueCurve[i] = curve[i];
     }
 
-    if (DescPtr<EngineDesc> desc = parseEngine(ctx, key, info))
-        out.vehicleEngines.push_back(std::move(desc));
+    out.vehicleEngines.push_back(prepareEngine(ctx, key, info));
 }
 
-void emitVehicleGears(OvstageScanResult& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
+void emitVehicleGears(PreparedOvstageVehicles& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
 {
     GearsInfo info;
     info.hasRatios = readFloatArray(src, key, "physxVehicleGears:ratios", info.ratios);
 
-    if (DescPtr<GearsDesc> desc = parseGears(ctx, key, info))
-    {
-        out.vehicleGears.push_back(std::move(desc));
-        out.vehicleGearsPaths.push_back(key);
-    }
+    out.vehicleGears.push_back(prepareGears(ctx, key, info));
 }
 
-void emitVehicleClutch(OvstageScanResult& out, ParseContext& ctx, ObjectKey key, float kgmsScale)
+void emitVehicleClutch(PreparedOvstageVehicles& out, ParseContext& ctx, ObjectKey key, float kgmsScale)
 {
-    if (DescPtr<ClutchDesc> desc = parseClutch(ctx, key, kgmsScale))
-    {
-        out.vehicleClutches.push_back(std::move(desc));
-        out.vehicleClutchPaths.push_back(key);
-    }
+    out.vehicleClutches.push_back(prepareClutch(ctx, key, kgmsScale));
 }
 
-void emitVehicleDriveBasic(OvstageScanResult& out, ParseContext& ctx, ObjectKey key, float kgmsScale)
+void emitVehicleDriveBasic(PreparedOvstageVehicles& out, ParseContext& ctx, ObjectKey key, float kgmsScale)
 {
-    if (DescPtr<DriveBasicDesc> desc = parseDriveBasic(ctx, key, kgmsScale))
-        out.vehicleDrivesBasic.push_back(std::move(desc));
+    out.vehicleDrivesBasic.push_back(prepareDriveBasic(ctx, key, kgmsScale));
 }
 
-void emitVehicleDriveStandard(OvstageScanResult& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
+void emitVehicleDriveStandard(PreparedOvstageVehicles& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
 {
     DriveStandardInfo info;
     info.engineKey = resolveRelOrApi(src, key, "physxVehicleDriveStandard:engine", "PhysxVehicleEngineAPI");
@@ -1570,12 +1186,7 @@ void emitVehicleDriveStandard(OvstageScanResult& out, OvstageSource& src, ParseC
                                           "PhysxVehicleAutoGearBoxAPI");
     info.clutchKey = resolveRelOrApi(src, key, "physxVehicleDriveStandard:clutch", "PhysxVehicleClutchAPI");
 
-    if (DescPtr<DriveStandardDesc> desc = parseDriveStandard(ctx, key, info))
-    {
-        out.vehicleDrivesStandard.push_back(std::move(desc));
-        out.vehicleDrivesStandardPaths.push_back(key);
-        out.vehicleDrivesStandardCrossRefs.push_back(info);
-    }
+    out.vehicleDrivesStandard.push_back(prepareDriveStandard(ctx, key, info));
 }
 
 void readDifferentialInfo(OvstageSource& src, ObjectKey key, DifferentialInfo& info)
@@ -1587,18 +1198,14 @@ void readDifferentialInfo(OvstageSource& src, ObjectKey key, DifferentialInfo& i
         src, key, "physxVehicleMultiWheelDifferential:averageWheelSpeedRatios", info.averageWheelSpeedRatios);
 }
 
-void emitVehicleMultiWheelDifferential(OvstageScanResult& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
+void emitVehicleMultiWheelDifferential(PreparedOvstageVehicles& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
 {
     DifferentialInfo info;
     readDifferentialInfo(src, key, info);
-    if (DescPtr<MultiWheelDifferentialDesc> desc = parseMultiWheelDifferential(ctx, key, info))
-    {
-        out.vehicleMultiWheelDifferentials.push_back(std::move(desc));
-        out.vehicleMultiWheelDifferentialPaths.push_back(key);
-    }
+    out.vehicleMultiWheelDifferentials.push_back(prepareMultiWheelDifferential(ctx, key, info));
 }
 
-void emitVehicleTankDifferential(OvstageScanResult& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
+void emitVehicleTankDifferential(PreparedOvstageVehicles& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
 {
     DifferentialInfo info;
     readDifferentialInfo(src, key, info);
@@ -1613,27 +1220,19 @@ void emitVehicleTankDifferential(OvstageScanResult& out, OvstageSource& src, Par
     tankInfo.hasTrackToWheelIndices = readIntArray(
         src, key, "physxVehicleTankDifferential:trackToWheelIndices", tankInfo.trackToWheelIndices);
 
-    if (DescPtr<TankDifferentialDesc> desc = parseTankDifferential(ctx, key, info, tankInfo))
-    {
-        out.vehicleTankDifferentials.push_back(std::move(desc));
-        out.vehicleTankDifferentialPaths.push_back(key);
-    }
+    out.vehicleTankDifferentials.push_back(prepareTankDifferential(ctx, key, info, tankInfo));
 }
 
-void emitVehicleAutoGearBox(OvstageScanResult& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
+void emitVehicleAutoGearBox(PreparedOvstageVehicles& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
 {
     AutoGearBoxInfo info;
     info.hasUpRatios = readFloatArray(src, key, "physxVehicleAutoGearBox:upRatios", info.upRatios);
     info.hasDownRatios = readFloatArray(src, key, "physxVehicleAutoGearBox:downRatios", info.downRatios);
 
-    if (DescPtr<AutoGearBoxDesc> desc = parseAutoGearBox(ctx, key, info))
-    {
-        out.vehicleAutoGearBoxes.push_back(std::move(desc));
-        out.vehicleAutoGearBoxPaths.push_back(key);
-    }
+    out.vehicleAutoGearBoxes.push_back(prepareAutoGearBox(ctx, key, info));
 }
 
-void emitVehicleBrakes(OvstageScanResult& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
+void emitVehicleBrakes(PreparedOvstageVehicles& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
 {
     src.forEachMultiApplyInstance(key, "PhysxVehicleBrakesAPI", [&](std::string_view instance)
     {
@@ -1651,39 +1250,26 @@ void emitVehicleBrakes(OvstageScanResult& out, OvstageSource& src, ParseContext&
         info.hasTorqueMultipliers = readFloatArray(src, key, (attrBase + "torqueMultipliers").c_str(),
                                                    info.torqueMultipliers);
 
-        if (DescPtr<BrakesDesc> desc = parseBrakes(ctx, key, instance, brakesIndex, info))
-        {
-            out.vehicleBrakes.push_back(std::move(desc));
-            out.vehicleBrakesPaths.push_back(key);
-            out.vehicleBrakesInstanceTokens.push_back(src.internToken(instance));
-        }
+        out.vehicleBrakes.push_back(prepareBrakes(ctx, key, instance, brakesIndex, info));
     });
 }
 
-void emitVehicleSteeringBasic(OvstageScanResult& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
+void emitVehicleSteeringBasic(PreparedOvstageVehicles& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
 {
     SteeringBasicInfo info;
     readIntArray(src, key, "physxVehicleSteering:wheels", info.wheels);
     info.hasAngleMultipliers = readFloatArray(src, key, "physxVehicleSteering:angleMultipliers",
                                               info.angleMultipliers);
 
-    if (DescPtr<SteeringBasicDesc> desc = parseSteeringBasic(ctx, key, info))
-    {
-        out.vehicleSteeringBasic.push_back(std::move(desc));
-        out.vehicleSteeringBasicPaths.push_back(key);
-    }
+    out.vehicleSteeringBasic.push_back(prepareSteeringBasic(ctx, key, info));
 }
 
-void emitVehicleSteeringAckermann(OvstageScanResult& out, ParseContext& ctx, ObjectKey key)
+void emitVehicleSteeringAckermann(PreparedOvstageVehicles& out, ParseContext& ctx, ObjectKey key)
 {
-    if (DescPtr<SteeringAckermannDesc> desc = parseSteeringAckermann(ctx, key))
-    {
-        out.vehicleSteeringAckermann.push_back(std::move(desc));
-        out.vehicleSteeringAckermannPaths.push_back(key);
-    }
+    out.vehicleSteeringAckermann.push_back(prepareSteeringAckermann(ctx, key));
 }
 
-void emitVehicleNonlinearCmdResponse(OvstageScanResult& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
+void emitVehicleNonlinearCmdResponse(PreparedOvstageVehicles& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
 {
     src.forEachMultiApplyInstance(key, "PhysxVehicleNonlinearCommandResponseAPI", [&](std::string_view instance)
     {
@@ -1697,16 +1283,11 @@ void emitVehicleNonlinearCmdResponse(OvstageScanResult& out, OvstageSource& src,
         info.hasSpeedResponses = readFloat2Array(src, key, (attrBase + "speedResponses").c_str(),
                                                  info.speedResponses);
 
-        if (DescPtr<NonlinearCmdResponseDesc> desc = parseNonlinearCmdResponse(ctx, key, instance, info))
-        {
-            out.vehicleNonlinearCmdResponses.push_back(std::move(desc));
-            out.vehicleNonlinearCmdResponsePaths.push_back(key);
-            out.vehicleNonlinearCmdResponseInstanceTokens.push_back(src.internToken(instance));
-        }
+        out.vehicleNonlinearCmdResponses.push_back(prepareNonlinearCmdResponse(ctx, key, instance, info));
     });
 }
 
-void emitVehicleSuspensionCompliance(OvstageScanResult& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
+void emitVehicleSuspensionCompliance(PreparedOvstageVehicles& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
 {
     SuspensionComplianceInfo info;
     readFloat2Array(src, key, "physxVehicleSuspensionCompliance:wheelToeAngle", info.wheelToeAngles);
@@ -1715,14 +1296,10 @@ void emitVehicleSuspensionCompliance(OvstageScanResult& out, OvstageSource& src,
                     info.suspensionForceAppPoints);
     readFloat4Array(src, key, "physxVehicleSuspensionCompliance:tireForceAppPoint", info.tireForceAppPoints);
 
-    if (DescPtr<SuspensionComplianceDesc> desc = parseSuspensionCompliance(ctx, key, info))
-    {
-        out.vehicleSuspensionCompliances.push_back(std::move(desc));
-        out.vehicleSuspensionCompliancePaths.push_back(key);
-    }
+    out.vehicleSuspensionCompliances.push_back(prepareSuspensionCompliance(ctx, key, info));
 }
 
-void emitVehicleWheelAttachment(OvstageScanResult& out, ovstage_instance_t* inst, OvstageSource& src,
+void emitVehicleWheelAttachment(PreparedOvstageVehicles& out, ovstage_instance_t* inst, OvstageSource& src,
                                 ParseContext& ctx, ObjectKey key)
 {
     WheelAttachmentInfo info;
@@ -1822,14 +1399,12 @@ void emitVehicleWheelAttachment(OvstageScanResult& out, ovstage_instance_t* inst
             return;
     }
 
-    if (DescPtr<WheelAttachmentDesc> desc = parseWheelAttachment(ctx, key, info))
-    {
-        out.vehicleWheelAttachments.push_back(std::move(desc));
-        out.vehicleWheelAttachmentInfos.push_back(info);
-    }
+    out.vehicleWheelAttachments.push_back(prepareWheelAttachment(ctx, key, info));
 }
 
-void emitVehicle(OvstageScanResult& out, OvstageSource& src, ParseContext& ctx,
+// @implements REQ-PARSE-VEH-ROOT-001
+// @covers AC-4
+void emitVehicle(PreparedOvstageVehicles& out, OvstageSource& src, ParseContext& ctx,
                  ObjectKey key, float lengthScale)
 {
     VehicleInfo info;
@@ -1845,81 +1420,75 @@ void emitVehicle(OvstageScanResult& out, OvstageSource& src, ParseContext& ctx,
         queryType == sweepType)
         info.queryType = 1;
 
-    if (DescPtr<VehicleDesc> desc = parseVehicle(ctx, key, info))
-    {
-        out.vehicles.push_back(std::move(desc));
-        out.vehiclePaths.push_back(key);
-    }
+    // Hosts include this metadata in their population descriptor. Preserve the
+    // legacy COM default only when no opinion was populated.
+    src.getAttribute(key, src.internToken("usd-metadata:customData:physxVehicle:referenceFrameIsCenterOfMass"),
+                     info.referenceFrameIsCenterOfMass);
+
+    out.vehicles.push_back(prepareVehicle(ctx, key, info));
 }
 
 
-void emitDeformableMaterial(OvstageScanResult& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
+void appendPreparedParticleSystems(OvstageScanResult& out, ParseContext& ctx, DescriptorBatchAllocator& batches,
+                                   const DescriptorExecutionOptions& execution, const std::vector<ObjectKey>& keys)
 {
-    DescPtr<PhysxDeformableMaterialDesc> desc;
-    if (src.hasSchema(key, src.internToken("OmniPhysicsSurfaceDeformableMaterialAPI")))
-    {
-        DescPtr<PhysxSurfaceDeformableMaterialDesc> surf = allocateDesc<PhysxSurfaceDeformableMaterialDesc>(ctx.descriptorAllocator());
-        parseDeformableMaterial(ctx, key, *surf);
-        parseSurfaceDeformableMaterial(ctx, key, *surf);
-        desc = descPtrCast<PhysxDeformableMaterialDesc>(std::move(surf));
-    }
-    else
-    {
-        desc = allocateDesc<PhysxDeformableMaterialDesc>(ctx.descriptorAllocator());
-        parseDeformableMaterial(ctx, key, *desc);
-    }
-    if (!desc)
-        return;
-    desc->poissonsRatio = std::min(desc->poissonsRatio, 0.4999f);
-    desc->materialKey = key;
-    out.deformableMaterials.push_back(std::move(desc));
-}
-
-void emitParticleSystem(OvstageScanResult& out, ParseContext& ctx, ObjectKey key)
-{
-    DescPtr<ParticleSystemDesc> sys = parseParticleSystem(ctx, key);
-    if (!sys)
-        return;
-    const float fluidRestOffset = sys->fluidRestOffset;
-    out.particleSystems.push_back(std::move(sys));
-
-    if (DescPtr<ParticleAnisotropyDesc> a = parseParticleAnisotropy(ctx, key))
-        out.particleAnisotropies.push_back(std::move(a));
-    if (DescPtr<ParticleSmoothingDesc> sm = parseParticleSmoothing(ctx, key))
-        out.particleSmoothings.push_back(std::move(sm));
-    if (DescPtr<ParticleIsosurfaceDesc> iso = parseParticleIsosurface(ctx, key, fluidRestOffset))
-        out.particleIsosurfaces.push_back(std::move(iso));
-}
-
-void emitParticleSet(OvstageScanResult& out, ParseContext& ctx, ObjectKey key)
-{
-    if (DescPtr<ParticleSetDesc> desc = parseParticleSet(ctx, key))
-    {
-        if (desc->particleSystemKey.valid() && ctx.source().exists(desc->particleSystemKey))
+        DescriptorPipelineStats* stats = execution.statistics;
+        DescriptorPhaseTimer phase(stats ? &stats->prepareSeconds : nullptr);
+        std::vector<PreparedParticleSystem> inputs;
+        for (ObjectKey key : keys) inputs.push_back(prepareParticleSystem(ctx, key));
+        if (stats) stats->preparedPeakBytes = std::max(stats->preparedPeakBytes, descriptor_memory::nested(inputs));
+        phase.transition(stats ? &stats->constructSeconds : nullptr);
+        std::vector<DescPtr<ParticleSystemDesc>> particleSystems = allocateDescriptorBatch<ParticleSystemDesc>(batches, inputs.size());
+        for (size_t i = 0; i < inputs.size(); ++i) prepareParticleSystemStorage(inputs[i], *particleSystems[i]);
+        phase.finish();
+        fillDescriptorRanges(inputs.size(), execution, [&](size_t begin, size_t end) noexcept
         {
-            const ObjectKey canonicalSystemKey = ctx.source().canonicalKey(desc->particleSystemKey);
-            const bool alreadyEmitted =
-                std::any_of(out.particleSystems.begin(), out.particleSystems.end(),
-                            [&](const DescPtr<ParticleSystemDesc>& existing)
-                            {
-                                return ctx.source().canonicalKey(existing->systemKey).handle == canonicalSystemKey.handle;
-                            });
-            if (!alreadyEmitted)
-            {
-                emitParticleSystem(out, ctx, desc->particleSystemKey);
-            }
+            for (size_t i = begin; i < end; ++i) fillParticleSystem(inputs[i], *particleSystems[i]);
+        });
+        phase.transition(stats ? &stats->prepareSeconds : nullptr);
+        std::vector<PreparedParticleAnisotropy> anisotropies;
+        std::vector<PreparedParticleSmoothing> smoothings;
+        std::vector<PreparedParticleIsosurface> isosurfaces;
+        for (const DescPtr<ParticleSystemDesc>& system : particleSystems)
+        {
+            ctx.particleSystemCache()[system->systemKey] =
+                { system->sceneKey, system->solidRestOffset, system->fluidRestOffset, system->particleContactOffset };
+            PreparedParticleAnisotropy anisotropy = prepareParticleAnisotropy(ctx, system->systemKey);
+            if (anisotropy.prepared) anisotropies.push_back(std::move(anisotropy));
+            PreparedParticleSmoothing smoothing = prepareParticleSmoothing(ctx, system->systemKey);
+            if (smoothing.prepared) smoothings.push_back(std::move(smoothing));
+            PreparedParticleIsosurface isosurface = prepareParticleIsosurface(ctx, system->systemKey, system->fluidRestOffset);
+            if (isosurface.prepared) isosurfaces.push_back(std::move(isosurface));
         }
-        out.particleSets.push_back(std::move(desc));
-    }
-}
-
-void emitParticleSampler(OvstageScanResult& out, ParseContext& ctx, ObjectKey key)
-{
-    if (DescPtr<ParticleSamplingDesc> desc = parseParticleSampling(ctx, key))
-    {
-        out.particleSamplers.push_back(std::move(desc));
-        out.particleSamplerKeys.push_back(key);
-    }
+        if (stats) stats->preparedPeakBytes = std::max(stats->preparedPeakBytes, descriptor_memory::nested(inputs) +
+            descriptor_memory::nested(anisotropies) + descriptor_memory::nested(smoothings) + descriptor_memory::nested(isosurfaces));
+        phase.transition(stats ? &stats->constructSeconds : nullptr);
+        std::vector<DescPtr<ParticleAnisotropyDesc>> particleAnisotropies = allocateDescriptorBatch<ParticleAnisotropyDesc>(batches, anisotropies.size());
+        phase.finish();
+        fillDescriptorRanges(anisotropies.size(), execution, [&](size_t begin, size_t end) noexcept
+        {
+            for (size_t i = begin; i < end; ++i) fillParticleAnisotropy(anisotropies[i], *particleAnisotropies[i]);
+        });
+        phase.transition(stats ? &stats->constructSeconds : nullptr);
+        std::vector<DescPtr<ParticleSmoothingDesc>> particleSmoothings = allocateDescriptorBatch<ParticleSmoothingDesc>(batches, smoothings.size());
+        phase.finish();
+        fillDescriptorRanges(smoothings.size(), execution, [&](size_t begin, size_t end) noexcept
+        {
+            for (size_t i = begin; i < end; ++i) fillParticleSmoothing(smoothings[i], *particleSmoothings[i]);
+        });
+        phase.transition(stats ? &stats->constructSeconds : nullptr);
+        std::vector<DescPtr<ParticleIsosurfaceDesc>> particleIsosurfaces = allocateDescriptorBatch<ParticleIsosurfaceDesc>(batches, isosurfaces.size());
+        for (size_t i = 0; i < isosurfaces.size(); ++i) prepareParticleIsosurfaceStorage(isosurfaces[i], *particleIsosurfaces[i]);
+        phase.finish();
+        fillDescriptorRanges(isosurfaces.size(), execution, [&](size_t begin, size_t end) noexcept
+        {
+            for (size_t i = begin; i < end; ++i) fillParticleIsosurface(isosurfaces[i], *particleIsosurfaces[i]);
+        });
+        phase.transition(stats ? &stats->finalizeSeconds : nullptr);
+        for (DescPtr<ParticleSystemDesc>& desc : particleSystems) out.particleSystems.push_back(std::move(desc));
+        for (DescPtr<ParticleAnisotropyDesc>& desc : particleAnisotropies) out.particleAnisotropies.push_back(std::move(desc));
+        for (DescPtr<ParticleSmoothingDesc>& desc : particleSmoothings) out.particleSmoothings.push_back(std::move(desc));
+        for (DescPtr<ParticleIsosurfaceDesc>& desc : particleIsosurfaces) out.particleIsosurfaces.push_back(std::move(desc));
 }
 
 ObjectType attachmentSubtypeForPrimType(std::string_view typeName)
@@ -1934,33 +1503,13 @@ ObjectType attachmentSubtypeForPrimType(std::string_view typeName)
     return eUndefined;
 }
 
-void emitAttachment(OvstageScanResult& out, ParseContext& ctx, ObjectKey key, ObjectType subtype)
-{
-    if (subtype == eUndefined)
-        return;
-    if (DescPtr<PhysxDeformableAttachmentDesc> desc = parseAttachment(ctx, key, subtype))
-    {
-        desc->primKey = key;
-        out.attachments.push_back(std::move(desc));
-    }
-}
-
-void emitElementCollisionFilter(OvstageScanResult& out, ParseContext& ctx, ObjectKey key)
-{
-    if (DescPtr<PhysxDeformableCollisionFilterDesc> desc = parseElementCollisionFilter(ctx, key))
-    {
-        desc->primKey = key;
-        out.deformableCollisionFilters.push_back(std::move(desc));
-    }
-}
-
 // Character-controller emit — the ovstage peer of NativeWalker.cpp::emitCct.
 // Requires the prim to be a Capsule gprim, reads its radius/height and world
 // transform (translation + scale), and the simulationOwner relationship from
 // PhysxCharacterControllerAPI. Per-axis scale baking matches the native walker
 // exactly: radius scaled by scale.y, halfHeight by scale.z. parse-lib's
 // source-agnostic parseCct resolves slopeLimit and the owner key.
-void emitCct(OvstageScanResult& out, OvstageSource& src, ParseContext& ctx, ObjectKey key)
+void prepareOvstageCct(std::vector<PreparedCct>& inputs, OvstageSource& src, ParseContext& ctx, ObjectKey key)
 {
     // A CCT on non-capsule geometry is dropped, as in the native walker. That one
     // logs "CCT prim must be a capsule geom"; this module links no logging backend
@@ -1994,8 +1543,7 @@ void emitCct(OvstageScanResult& out, OvstageSource& src, ParseContext& ctx, Obje
     src.getRelationshipTargets(key, src.internToken("physxCharacterController:simulationOwner"),
                                info.simulationOwners);
 
-    if (DescPtr<CapsuleCctDesc> desc = parseCct(ctx, key, info))
-        out.ccts.push_back(std::move(desc));
+    inputs.push_back(prepareCct(ctx, key, info));
 }
 
 bool isPointBased(const OvstageSource& src, ObjectKey key)
@@ -2056,13 +1604,7 @@ bool isEnabledCollisionGeom(const OvstageSource& src, ObjectKey key)
     if (!isPointBased(src, key))
         return false;
     bool enabled = true;
-    const TokenId collisionEnabled = src.internToken("physics:collisionEnabled");
-    if (!src.getAttribute(key, collisionEnabled, enabled))
-    {
-        const ObjectKey backing = src.collisionAttributeBackingKey(key);
-        if (backing.valid() && backing != key)
-            src.getAttribute(backing, collisionEnabled, enabled);
-    }
+    src.getAttribute(key, src.internToken("physics:collisionEnabled"), enabled);
     return enabled;
 }
 
@@ -2094,9 +1636,8 @@ void collectPointBasedSubtree(OvstageSource& src, ObjectKey root, std::vector<Ob
     });
 }
 
-void emitDeformableBody(OvstageScanResult& out, ovstage_instance_t* inst, OvstageSource& src,
-                        ParseContext& ctx, ObjectKey key, const SourceUnits& units,
-                        std::unordered_map<uint64_t, bool>& deformableBodyEnabledByCanonical)
+void prepareOvstageDeformable(std::vector<PreparedOvstageDeformable>& inputs, ovstage_instance_t* inst,
+                              OvstageSource& src, ParseContext& ctx, ObjectKey key)
 {
     const bool validGeomType = isType(src, inst, key, "Mesh") || isType(src, inst, key, "TetMesh") ||
                                isType(src, inst, key, "BasisCurves");
@@ -2104,7 +1645,7 @@ void emitDeformableBody(OvstageScanResult& out, ovstage_instance_t* inst, Ovstag
     if (!validGeomType && !validRootType)
         return;
 
-    const DeformableBodyParse parsed = parseDeformableBody(ctx, key);
+    DeformableBodyParse parsed = parseDeformableBody(ctx, key);
 
     ObjectKey simMeshKey;
     ObjectType simMeshType = eUndefined;
@@ -2156,142 +1697,71 @@ void emitDeformableBody(OvstageScanResult& out, ovstage_instance_t* inst, Ovstag
     if (!simMeshKey.valid())
         return;
 
-    DescPtr<PhysxDeformableBodyDesc> desc;
-    if (simMeshType == eSurfaceDeformableBody)
-    {
-        DescPtr<PhysxSurfaceDeformableBodyDesc> surf = allocateDesc<PhysxSurfaceDeformableBodyDesc>(ctx.descriptorAllocator());
-        setToDefault(*surf, units);
-        desc = descPtrCast<PhysxDeformableBodyDesc>(std::move(surf));
-    }
-    else
-    {
-        DescPtr<PhysxVolumeDeformableBodyDesc> vol = allocateDesc<PhysxVolumeDeformableBodyDesc>(ctx.descriptorAllocator());
-        setToDefault(*vol, units);
-        desc = descPtrCast<PhysxDeformableBodyDesc>(std::move(vol));
-    }
-
-    desc->primKey = key;
-    desc->bodyEnabled = parsed.bodyEnabled;
-    desc->kinematicBody = parsed.kinematicBody;
-    desc->startsAsleep = parsed.startsAsleep;
-    desc->mass = (parsed.mass <= 0.0f) ? -1.0f : parsed.mass;
-    desc->sourceSimulationOwners = parsed.simulationOwners;
-    desc->sourceFilteredCollisions = parsed.filteredCollisions;
-    desc->sourceFilteredCollisions.insert(desc->sourceFilteredCollisions.end(),
-                                          hierarchyFilteredPairs.begin(), hierarchyFilteredPairs.end());
-
-    Matrix4d transform;
-    src.getLocalToWorldTransform(key, transform);
-    std::memcpy(desc->transform.data, transform.data, sizeof(double) * 16);
-
-    desc->simMeshKey = simMeshKey;
-    desc->simMeshBindPoseToken = findPoseNameFromPurpose(src, simMeshKey, "bindPose");
-    {
-        TokenId orientation;
-        const TokenId leftHandedToken = src.internToken("leftHanded");
-        desc->simMeshLeftHandedOrientation =
-            src.getAttribute(simMeshKey, src.internToken("orientation"), orientation) &&
-            orientation == leftHandedToken;
-    }
-
+    PreparedOvstageDeformable input;
+    input.key = key;
+    input.surface = simMeshType == eSurfaceDeformableBody;
+    input.body = std::move(parsed);
+    input.body.filteredCollisions.insert(input.body.filteredCollisions.end(), hierarchyFilteredPairs.begin(), hierarchyFilteredPairs.end());
+    src.getLocalToWorldTransform(key, input.transform);
+    input.simMesh = simMeshKey;
+    input.simPose = findPoseNameFromPurpose(src, simMeshKey, "bindPose");
+    TokenId orientation;
+    input.simLeftHanded = src.getAttribute(simMeshKey, src.internToken("orientation"), orientation) && orientation == src.internToken("leftHanded");
     if (!collisionGeomKeys.empty())
     {
-        desc->collisionMeshKey = collisionGeomKeys.front();
-        if (!collisionGeomBindPoseTokens.empty())
-            desc->collisionMeshBindPoseToken = collisionGeomBindPoseTokens.front();
-        if (!collisionGeomLeftHandedOrientations.empty())
-            desc->collisionMeshLeftHandedOrientation = collisionGeomLeftHandedOrientations.front();
+        assert(collisionGeomKeys.size() == collisionGeomBindPoseTokens.size());
+        assert(collisionGeomKeys.size() == collisionGeomLeftHandedOrientations.size());
+        input.collisionMesh = collisionGeomKeys.front();
+        input.collisionPose = collisionGeomBindPoseTokens.front();
+        input.collisionLeftHanded = collisionGeomLeftHandedOrientations.front();
     }
-
-    desc->skinGeomPaths = std::move(skinGeomKeys);
-    desc->skinGeomBindPoseTokens = std::move(skinGeomBindPoseTokens);
-
-    const TokenId baseDBTok = src.internToken("PhysxBaseDeformableBodyAPI");
-    if (src.hasSchema(key, baseDBTok))
+    input.skin = std::move(skinGeomKeys);
+    input.skinPose = std::move(skinGeomBindPoseTokens);
+    if (src.hasSchema(key, src.internToken("PhysxBaseDeformableBodyAPI")))
     {
-        auto rdF = [&](const char* name, float def) {
-            float v = def;
-            src.getAttribute(key, src.internToken(name), v);
-            return v;
-        };
-        auto rdB = [&](const char* name, bool def) {
-            bool v = def;
-            src.getAttribute(key, src.internToken(name), v);
-            return v;
-        };
-        auto rdU = [&](const char* name, uint32_t def) {
-            int64_t iv = 0;
-            if (src.getAttribute(key, src.internToken(name), iv))
-                return uint32_t(iv);
-            return def;
-        };
-        desc->linearDamping = rdF("physxDeformableBody:linearDamping", desc->linearDamping);
-        desc->maxLinearVelocity = rdF("physxDeformableBody:maxLinearVelocity", desc->maxLinearVelocity);
-        desc->sleepThreshold = rdF("physxDeformableBody:sleepThreshold", desc->sleepThreshold);
-        desc->settlingThreshold = rdF("physxDeformableBody:settlingThreshold", desc->settlingThreshold);
-        desc->settlingDamping = rdF("physxDeformableBody:settlingDamping", desc->settlingDamping);
-        desc->maxDepenetrationVelocity = rdF("physxDeformableBody:maxDepenetrationVelocity", desc->maxDepenetrationVelocity);
-        desc->selfCollisionFilterDistance = rdF("physxDeformableBody:selfCollisionFilterDistance", desc->selfCollisionFilterDistance);
-        desc->solverPositionIterationCount = rdU("physxDeformableBody:solverPositionIterationCount", desc->solverPositionIterationCount);
-        desc->enableSpeculativeCCD = rdB("physxDeformableBody:enableSpeculativeCCD", desc->enableSpeculativeCCD);
-        desc->selfCollision = rdB("physxDeformableBody:selfCollision", desc->selfCollision);
-        desc->disableGravity = rdB("physxDeformableBody:disableGravity", desc->disableGravity);
+        input.linearDamping = prepareAttribute<float>(src, key, src.internToken("physxDeformableBody:linearDamping"));
+        input.maxLinearVelocity = prepareAttribute<float>(src, key, src.internToken("physxDeformableBody:maxLinearVelocity"));
+        input.sleepThreshold = prepareAttribute<float>(src, key, src.internToken("physxDeformableBody:sleepThreshold"));
+        input.settlingThreshold = prepareAttribute<float>(src, key, src.internToken("physxDeformableBody:settlingThreshold"));
+        input.settlingDamping = prepareAttribute<float>(src, key, src.internToken("physxDeformableBody:settlingDamping"));
+        input.maxDepenetrationVelocity = prepareAttribute<float>(src, key, src.internToken("physxDeformableBody:maxDepenetrationVelocity"));
+        input.selfCollisionFilterDistance = prepareAttribute<float>(src, key, src.internToken("physxDeformableBody:selfCollisionFilterDistance"));
+        input.solverPositionIterationCount = prepareAttribute<uint32_t>(src, key, src.internToken("physxDeformableBody:solverPositionIterationCount"));
+        input.enableSpeculativeCCD = prepareAttribute<bool>(src, key, src.internToken("physxDeformableBody:enableSpeculativeCCD"));
+        input.selfCollision = prepareAttribute<bool>(src, key, src.internToken("physxDeformableBody:selfCollision"));
+        input.disableGravity = prepareAttribute<bool>(src, key, src.internToken("physxDeformableBody:disableGravity"));
     }
-
-    if (simMeshType == eSurfaceDeformableBody && src.hasSchema(key, src.internToken("PhysxSurfaceDeformableBodyAPI")))
+    if (input.surface && src.hasSchema(key, src.internToken("PhysxSurfaceDeformableBodyAPI")))
     {
-        PhysxSurfaceDeformableBodyDesc* surf = static_cast<PhysxSurfaceDeformableBodyDesc*>(desc.get());
-        int64_t freq = 0;
-        if (src.getAttribute(key, src.internToken("physxDeformableBody:collisionPairUpdateFrequency"), freq))
-            surf->collisionPairUpdateFrequency = uint32_t(freq);
-        int64_t mult = 0;
-        if (src.getAttribute(key, src.internToken("physxDeformableBody:collisionIterationMultiplier"), mult))
-            surf->collisionIterationMultiplier = uint32_t(mult);
+        input.collisionPairUpdateFrequency = prepareAttribute<uint32_t>(src, key, src.internToken("physxDeformableBody:collisionPairUpdateFrequency"));
+        input.collisionIterationMultiplier = prepareAttribute<uint32_t>(src, key, src.internToken("physxDeformableBody:collisionIterationMultiplier"));
     }
-
     if (src.hasSchema(key, src.internToken("PhysxAutoDeformableBodyAPI")))
     {
-        src.getAttribute(key, src.internToken("physxDeformableBody:autoDeformableBodyEnabled"), desc->hasAutoAPI);
-        std::vector<ObjectKey> cookingTargets;
-        src.getRelationshipTargets(key, src.internToken("physxDeformableBody:cookingSourceMesh"), cookingTargets);
-        if (!cookingTargets.empty())
+        input.hasAutoAPI = prepareAttribute<bool>(src, key, src.internToken("physxDeformableBody:autoDeformableBodyEnabled"));
+        std::vector<ObjectKey> targets;
+        src.getRelationshipTargets(key, src.internToken("physxDeformableBody:cookingSourceMesh"), targets);
+        if (!targets.empty())
         {
-            desc->cookingSrcMeshKey = cookingTargets.front();
-            desc->cookingSrcMeshBindPoseToken = findPoseNameFromPurpose(src, cookingTargets.front(), "bindPose");
+            input.cookingMesh = targets.front();
+            input.cookingPose = findPoseNameFromPurpose(src, targets.front(), "bindPose");
         }
-
         if (src.hasSchema(key, src.internToken("PhysxAutoDeformableMeshSimplificationAPI")))
         {
-            auto rdU = [&](const char* name, uint32_t def) {
-                int64_t iv = 0;
-                if (src.getAttribute(key, src.internToken(name), iv))
-                    return uint32_t(iv);
-                return def;
-            };
-            auto rdB = [&](const char* name, bool def) {
-                bool v = def;
-                src.getAttribute(key, src.internToken(name), v);
-                return v;
-            };
-            desc->isAutoMeshSimplificationEnabled = rdB("physxDeformableBody:autoDeformableMeshSimplificationEnabled",
-                                                        desc->isAutoMeshSimplificationEnabled);
-            desc->isAutoRemeshingEnabled = rdB("physxDeformableBody:remeshingEnabled", desc->isAutoRemeshingEnabled);
-            desc->autoRemeshingResolution = rdU("physxDeformableBody:remeshingResolution", desc->autoRemeshingResolution);
-            desc->autoTriangleTargetCount = rdU("physxDeformableBody:targetTriangleCount", desc->autoTriangleTargetCount);
-            desc->hasAutoForceConforming = rdB("physxDeformableBody:forceConforming", desc->hasAutoForceConforming);
+            input.isAutoMeshSimplificationEnabled = prepareAttribute<bool>(src, key, src.internToken("physxDeformableBody:autoDeformableMeshSimplificationEnabled"));
+            input.isAutoRemeshingEnabled = prepareAttribute<bool>(src, key, src.internToken("physxDeformableBody:remeshingEnabled"));
+            input.autoRemeshingResolution = prepareAttribute<uint32_t>(src, key, src.internToken("physxDeformableBody:remeshingResolution"));
+            input.autoTriangleTargetCount = prepareAttribute<uint32_t>(src, key, src.internToken("physxDeformableBody:targetTriangleCount"));
+            input.hasAutoForceConforming = prepareAttribute<bool>(src, key, src.internToken("physxDeformableBody:forceConforming"));
         }
-        if (simMeshType != eSurfaceDeformableBody && src.hasSchema(key, src.internToken("PhysxAutoDeformableHexahedralMeshAPI")))
+        if (!input.surface && src.hasSchema(key, src.internToken("PhysxAutoDeformableHexahedralMeshAPI")))
         {
-            PhysxVolumeDeformableBodyDesc* vol = static_cast<PhysxVolumeDeformableBodyDesc*>(desc.get());
-            vol->isAutoHexahedralMeshEnabled = true;
-            int64_t resolution = 0;
-            if (src.getAttribute(key, src.internToken("physxDeformableBody:resolution"), resolution))
-                vol->autoHexahedralResolution = uint32_t(resolution);
+            input.hexahedral = true;
+            input.hexahedralResolution = prepareAttribute<uint32_t>(src, key, src.internToken("physxDeformableBody:resolution"));
         }
     }
-
-    deformableBodyEnabledByCanonical[src.canonicalPath(key)] = parsed.bodyEnabled;
-    out.deformables.push_back(std::move(desc));
+    input.prepared = true;
+    inputs.push_back(std::move(input));
 }
 
 OvstageScanResult scanOvstage(ovstage_instance_t* instance,
@@ -2305,6 +1775,12 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     OvstageScanResult out;
     if (!instance || !dict)
         return out;
+
+    out.descriptorPool = filter ? filter->descriptorPool : nullptr;
+    if (!out.descriptorPool || &out.descriptorPool->upstream() != &allocator)
+        out.descriptorPool = std::make_shared<DescriptorBatchAllocator>(allocator);
+    DescriptorBatchAllocator& batches = *out.descriptorPool;
+    const DescriptorExecutionOptions execution = filter ? filter->descriptorExecution : DescriptorExecutionOptions{};
 
     if (attached && attached->instance() != instance)
         attached = nullptr; // a foreign attach's source cannot mint keys for this instance
@@ -2341,6 +1817,28 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         }
     } scopedLoadCache{ src, ownWindow, attached ? src.suspendBucket() : nullptr };
 
+    DescriptorPipelineStats* stats = execution.statistics;
+    if (stats) *stats = {}; // Options may be reused for several prototype scans.
+    DescriptorPhaseTimer scanTimer(stats ? &stats->scanSeconds : nullptr);
+    struct ReadTimings
+    {
+        double shapeSetup = 0, shapeClassify = 0, shapeTransforms = 0, shapeRelations = 0;
+        double jointSetup = 0, jointTopology = 0, columns = 0;
+    } readTimings;
+    // Inclusive coordinator phase observations; none of these clocks run in workers.
+    struct SetupTimings
+    {
+        double enumerate = 0, transformAncestors = 0, relationshipAncestors = 0;
+        double transforms = 0, metadata = 0, attributes = 0, columns = 0, inputs = 0;
+    } bodySetup, shapeSetup;
+    struct JointTimings
+    {
+        double enumerate = 0, probe = 0, prefetch = 0, targets = 0, bodies = 0;
+        double frames = 0, membership = 0, structure = 0, declarations = 0;
+    } jointDetail;
+    std::array<double, 4> shapeRelationSeconds{}; // Subsets, material binding, filters, owners.
+    std::array<double, 10> waveSeconds{};
+    DescriptorPhaseTimer waveTimer(stats ? &waveSeconds[0] : nullptr);
     ParseContext ctx(src, allocator);
     const SourceUnits units = src.getSourceUnits();
     const float massScale = (units.kilogramsPerUnit != 0.0f) ? (1.0f / units.kilogramsPerUnit) : 1.0f;
@@ -2491,9 +1989,8 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     auto enumeratePrimTypeFiltered = [&](const char* typeName, const char* probeAttr,
                                          ovstage_ordinal_t ordinal) -> Bucket
     {
-        // A family the source's type index knows to be empty costs no whole-stage query; a
-        // populated one still enumerates live, which also discovers the columns its bucket
-        // prefetches.
+        // The authored-type column cannot be used in an IN filter. Its merged
+        // type index provides the exact keys; older stages retain live enumeration.
         std::vector<ObjectKey> indexed;
         if (src.collectPrimTypeKeys(typeName, indexed))
         {
@@ -2504,8 +2001,17 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
                                                 { return keyPassesFilter(key) && !isBelowPointInstancer(key); });
             if (!anyInScope)
                 return Bucket{};
+            if (src.hasAuthoredTypeColumn() == std::optional<bool>(true))
+            {
+                Bucket bucket;
+                bucket.keys = std::move(indexed);
+                return applyScanFilter(std::move(bucket));
+            }
         }
-        Bucket bucket = enumerate(src, instance, dict, "usd-prim-type", OVSTAGE_FILTER_OP_IN,
+        if (src.hasAuthoredTypeColumn() != std::optional<bool>(false))
+            throw std::runtime_error("OVStage schema scan could not complete the authored prim-type index "
+                                     "for ovstage_read_attributes at read ordinal " + std::to_string(ordinal));
+        Bucket bucket = enumerate(src, instance, dict, conv::kUsdPrimType, OVSTAGE_FILTER_OP_IN,
                                   typeName, probeAttr, ordinal, conv::kUsdPath);
         return applyScanFilter(std::move(bucket));
     };
@@ -2605,11 +2111,26 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         const Bucket bucket = enumeratePrimTypeFiltered(typeName.c_str(), conv::kLocalTransform, readOrdinal);
         appendCandidates(bucket, true);
     }
+    std::unordered_map<uint32_t, std::unordered_set<uint64_t>> candidateSchemaIdentities;
     for (const char* schemaName : { "PhysxParticleSetAPI", "PhysxParticleSamplingAPI", "InfiniteVoxelMapAPI" })
     {
         const Bucket bucket = enumerateSchemaFiltered(schemaName, conv::kLocalTransform, readOrdinal);
         appendCandidates(bucket, false);
+        std::unordered_set<uint64_t>& identities = candidateSchemaIdentities[src.internToken(schemaName).id];
+        for (const ObjectKey key : bucket.keys)
+        {
+            const uint64_t canonical = src.canonicalPath(key);
+            identities.insert(canonical ? canonical : key.handle);
+        }
     }
+    // These three APIs are single-apply. Reuse their exact discovery buckets instead
+    // of asking hasSchema's generic unqualified-base fallback to index every schema
+    // on the stage when, for example, a visual PointInstancer has no ParticleSetAPI.
+    auto hasCandidateSchema = [&](ObjectKey key, TokenId token) -> bool
+    {
+        const uint64_t canonical = src.canonicalPath(key);
+        return candidateSchemaIdentities.at(token.id).count(canonical ? canonical : key.handle) != 0;
+    };
     orderBucketKeys(particleObjectKeys);
     const KnownTokens& dispatchTokens = ctx.knownTokens();
     const TokenId voxelMapAPI = src.internToken("InfiniteVoxelMapAPI");
@@ -2622,7 +2143,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             out.particleObjectCandidates.push_back({ key, Kind::eParticleSystem });
         else if (src.isA(key, dispatchTokens.xformType))
         {
-            if (src.hasSchema(key, voxelMapAPI))
+            if (hasCandidateSchema(key, voxelMapAPI))
                 out.particleObjectCandidates.push_back({ key, Kind::eVoxelMap });
             else
             {
@@ -2631,10 +2152,10 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
                     out.particleObjectCandidates.push_back({ key, Kind::eCustomInstancer });
             }
         }
-        else if (src.isA(key, dispatchTokens.meshType) && src.hasSchema(key, dispatchTokens.physxParticleSamplingAPI))
+        else if (src.isA(key, dispatchTokens.meshType) && hasCandidateSchema(key, dispatchTokens.physxParticleSamplingAPI))
             out.particleObjectCandidates.push_back({ key, Kind::eParticleSampler });
         else if ((src.isA(key, dispatchTokens.pointBasedType) || src.isA(key, dispatchTokens.pointInstancerType)) &&
-                 src.hasSchema(key, dispatchTokens.physxParticleSetAPI))
+                 hasCandidateSchema(key, dispatchTokens.physxParticleSetAPI))
             out.particleObjectCandidates.push_back({ key, Kind::eParticleSet });
         else if (src.isA(key, dispatchTokens.pointInstancerType))
             out.particleObjectCandidates.push_back({ key, Kind::ePointInstancer });
@@ -2656,31 +2177,46 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             pointInstancerSubtreeRoots.emplace_back(src.sourceKeyToString(key));
     }
 
+    waveTimer.transition(stats ? &waveSeconds[1] : nullptr);
     // --- Scenes (PRIM_TYPE == PhysicsScene) ---
     Bucket sceneBucket = enumeratePrimTypeFiltered("PhysicsScene", "physics:gravityMagnitude", readOrdinal);
-    const std::vector<std::string> sceneDiscoveredAttrs = sceneBucket.attrs;
-    const size_t sceneAttrCount = sceneBucket.attrs.size();
-    appendSceneAttrs(sceneBucket);
-    src.prefetchBucket(sceneBucket.keys, sceneDiscoveredAttrs);
-    src.prefetchBucket(sceneBucket.keys, appendedAttrs(sceneBucket, sceneAttrCount));
-    for (const ObjectKey key : sceneBucket.keys)
+    // Scoped additions commonly have no scene or material. Avoid assembling
+    // their column lists and preparation storage after membership filtering.
+    if (!sceneBucket.keys.empty())
     {
-        DescPtr<PhysxSceneDesc> desc = allocateDesc<PhysxSceneDesc>(allocator);
-        if (!desc)
-            continue;
-        setToDefault(*desc, units);
-
-        SceneInfo info;
-        carb::Float3 dir{};
-        float mag = 0.0f;
-        if (src.getAttribute(key, tokGravityDir, dir))
-            info.gravityDirection = dir;
-        if (src.getAttribute(key, tokGravityMag, mag))
-            info.gravityMagnitude = mag;
-
-        parseScene(ctx, key, info, *desc);
-        desc->primKey = key;
-        out.scenes.push_back(std::move(desc));
+        const std::vector<std::string> sceneDiscoveredAttrs = sceneBucket.attrs;
+        const size_t sceneAttrCount = sceneBucket.attrs.size();
+        appendSceneAttrs(sceneBucket);
+        src.prefetchBucket(sceneBucket.keys, sceneDiscoveredAttrs);
+        src.prefetchBucket(sceneBucket.keys, appendedAttrs(sceneBucket, sceneAttrCount));
+        {
+            DescriptorPhaseTimer phase(stats ? &stats->prepareSeconds : nullptr);
+            std::vector<PreparedScene> inputs;
+            inputs.reserve(sceneBucket.keys.size());
+            for (const ObjectKey key : sceneBucket.keys)
+            {
+                SceneInfo info;
+                src.getAttribute(key, tokGravityDir, info.gravityDirection);
+                src.getAttribute(key, tokGravityMag, info.gravityMagnitude);
+                inputs.push_back(prepareScene(ctx, key, info));
+            }
+            if (stats) stats->preparedPeakBytes = std::max(stats->preparedPeakBytes, descriptor_memory::nested(inputs));
+            phase.transition(stats ? &stats->constructSeconds : nullptr);
+            out.scenes = allocateDescriptorBatch<PhysxSceneDesc>(batches, inputs.size());
+            std::vector<uint8_t> valid(inputs.size());
+            phase.finish();
+            fillDescriptorRanges(inputs.size(), execution, [&](size_t begin, size_t end) noexcept
+            {
+                for (size_t i = begin; i < end; ++i)
+                {
+                    setToDefault(*out.scenes[i], units);
+                    valid[i] = fillScene(inputs[i], *out.scenes[i]);
+                    out.scenes[i]->primKey = sceneBucket.keys[i];
+                }
+            });
+            if (std::find(valid.begin(), valid.end(), uint8_t(0)) != valid.end())
+                throw std::logic_error("unprepared scene input");
+        }
     }
     src.clearBucket();
 
@@ -2721,13 +2257,14 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     const bool wholeStageScan = !filter || (filter->scanRoots.empty() && !excludesScopeTheScan);
     if (out.scenes.empty() && wholeStageScan)
     {
-        if (DescPtr<PhysxSceneDesc> def = makeDefaultSceneDesc(allocator, units))
+        if (DescPtr<PhysxSceneDesc> def = makeDefaultSceneDesc(batches, units))
         {
             def->primKey = src.findByPath(conv::kDefaultScenePath);
             out.scenes.push_back(std::move(def));
         }
     }
 
+    waveTimer.transition(stats ? &waveSeconds[2] : nullptr);
     // --- Materials (HAS_APPLIED_SCHEMA PhysicsMaterialAPI) ---
     // Emit the material descriptors (friction / restitution / density). The
     // material→shape binding is resolved by ovpopulation as a target-path
@@ -2736,48 +2273,72 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     Bucket materialBucket = enumerateSchemaFiltered("PhysicsMaterialAPI",
                                                     "physics:dynamicFriction",
                                                     readOrdinal);
-    const std::vector<std::string> materialDiscoveredAttrs = materialBucket.attrs;
-    const size_t materialAttrCount = materialBucket.attrs.size();
-    appendMaterialAttrs(materialBucket);
-    src.prefetchBucket(materialBucket.keys, materialDiscoveredAttrs);
-    src.prefetchBucket(materialBucket.keys, appendedAttrs(materialBucket, materialAttrCount));
-    for (const ObjectKey key : materialBucket.keys)
+    if (!materialBucket.keys.empty())
     {
-        DescPtr<PhysxMaterialDesc> mat = parseMaterial(ctx, key);
-        if (!mat)
-            continue;
-        mat->materialKey = key; // parseMaterial sets this; keep explicit alongside the other concepts
-        out.materials.push_back(std::move(mat));
-    }
-    src.clearBucket();
+        const std::vector<std::string> materialDiscoveredAttrs = materialBucket.attrs;
+        const size_t materialAttrCount = materialBucket.attrs.size();
+        appendMaterialAttrs(materialBucket);
+        src.prefetchBucket(materialBucket.keys, materialDiscoveredAttrs);
+        src.prefetchBucket(materialBucket.keys, appendedAttrs(materialBucket, materialAttrCount));
+        {
+            DescriptorPhaseTimer phase(stats ? &stats->prepareSeconds : nullptr);
+            std::vector<PreparedMaterial> inputs(materialBucket.keys.size());
+            for (size_t index = 0; index < inputs.size(); ++index)
+                inputs[index] = prepareMaterial(ctx, materialBucket.keys[index]);
+            if (stats) stats->preparedPeakBytes = std::max(stats->preparedPeakBytes, descriptor_memory::nested(inputs));
+            phase.transition(stats ? &stats->constructSeconds : nullptr);
+            out.materials = allocateDescriptorBatch<PhysxMaterialDesc>(batches, inputs.size());
+            std::vector<uint8_t> valid(inputs.size(), 0);
+            phase.finish();
+            fillDescriptorRanges(inputs.size(), execution, [&](size_t begin, size_t end) noexcept
+            {
+                for (size_t index = begin; index < end; ++index)
+                    valid[index] = fillMaterial(inputs[index], *out.materials[index]) ? 1 : 0;
+            });
+            if (std::find(valid.begin(), valid.end(), uint8_t(0)) != valid.end())
+                throw std::logic_error("unprepared material input");
+        }
+        src.clearBucket();
 
-    // --- PBD materials (PhysxPBDMaterialAPI) ---
-    // ovpopulation currently exposes material prims through PhysicsMaterialAPI;
-    // probe those visible material keys for PBD attributes because usd-schemas may
-    // not include PhysxPBDMaterialAPI under ovstage yet.
-    const std::vector<std::string> pbdMaterialAttrs = {
-        "physxPBDMaterial:friction",
-        "physxPBDMaterial:particleFrictionScale",
-        "physxPBDMaterial:damping",
-        "physxPBDMaterial:viscosity",
-        "physxPBDMaterial:vorticityConfinement",
-        "physxPBDMaterial:surfaceTension",
-        "physxPBDMaterial:cohesion",
-        "physxPBDMaterial:adhesion",
-        "physxPBDMaterial:particleAdhesionScale",
-        "physxPBDMaterial:adhesionOffsetScale",
-        "physxPBDMaterial:gravityScale",
-        "physxPBDMaterial:cflCoefficient",
-        "physxPBDMaterial:density",
-    };
-    src.prefetchBucket(materialBucket.keys, pbdMaterialAttrs);
-    for (const ObjectKey key : materialBucket.keys)
-    {
-        DescPtr<PBDMaterialDesc> mat = parsePBDMaterial(ctx, key);
-        if (!mat)
-            continue;
-        mat->materialKey = key;
-        out.pbdMaterials.push_back(std::move(mat));
+        // --- PBD materials (PhysxPBDMaterialAPI) ---
+        // ovpopulation currently exposes material prims through PhysicsMaterialAPI;
+        // probe those visible material keys for PBD attributes because usd-schemas may
+        // not include PhysxPBDMaterialAPI under ovstage yet.
+        const std::vector<std::string> pbdMaterialAttrs = {
+            "physxPBDMaterial:friction",
+            "physxPBDMaterial:particleFrictionScale",
+            "physxPBDMaterial:damping",
+            "physxPBDMaterial:viscosity",
+            "physxPBDMaterial:vorticityConfinement",
+            "physxPBDMaterial:surfaceTension",
+            "physxPBDMaterial:cohesion",
+            "physxPBDMaterial:adhesion",
+            "physxPBDMaterial:particleAdhesionScale",
+            "physxPBDMaterial:adhesionOffsetScale",
+            "physxPBDMaterial:gravityScale",
+            "physxPBDMaterial:cflCoefficient",
+            "physxPBDMaterial:density",
+        };
+        src.prefetchBucket(materialBucket.keys, pbdMaterialAttrs);
+        {
+            DescriptorPhaseTimer phase(stats ? &stats->prepareSeconds : nullptr);
+            std::vector<PreparedPBDMaterial> inputs;
+            inputs.reserve(materialBucket.keys.size());
+            for (const ObjectKey key : materialBucket.keys)
+            {
+                PreparedPBDMaterial input = preparePBDMaterial(ctx, key);
+                if (input.enabled) inputs.push_back(input);
+            }
+            if (stats) stats->preparedPeakBytes = std::max(stats->preparedPeakBytes, descriptor_memory::nested(inputs));
+            phase.transition(stats ? &stats->constructSeconds : nullptr);
+            out.pbdMaterials = allocateDescriptorBatch<PBDMaterialDesc>(batches, inputs.size());
+            phase.finish();
+            fillDescriptorRanges(inputs.size(), execution, [&](size_t begin, size_t end) noexcept
+            {
+                for (size_t i = begin; i < end; ++i)
+                    fillPBDMaterial(inputs[i], *out.pbdMaterials[i]);
+            });
+        }
     }
     src.clearBucket();
 
@@ -2790,10 +2351,43 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     const Bucket deformableMaterialBucket = enumerateSchemasFiltered(deformableMaterialSchemas, 3,
                                                              "omniphysics:youngsModulus", readOrdinal);
     src.prefetchBucket(deformableMaterialBucket.keys, deformableMaterialBucket.attrs);
-    for (const ObjectKey key : deformableMaterialBucket.keys)
-        emitDeformableMaterial(out, src, ctx, key);
+    {
+        DescriptorPhaseTimer phase(stats ? &stats->prepareSeconds : nullptr);
+        std::vector<PreparedDeformableMaterial> inputs;
+        inputs.reserve(deformableMaterialBucket.keys.size());
+        size_t surfaceCount = 0;
+        for (const ObjectKey key : deformableMaterialBucket.keys)
+        {
+            inputs.push_back(prepareDeformableMaterial(ctx, key, true));
+            surfaceCount += inputs.back().surface;
+        }
+        if (stats) stats->preparedPeakBytes = std::max(stats->preparedPeakBytes, descriptor_memory::nested(inputs));
+        phase.transition(stats ? &stats->constructSeconds : nullptr);
+        std::vector<DescPtr<PhysxDeformableMaterialDesc>> surface =
+            allocateDescriptorBatch<PhysxSurfaceDeformableMaterialDesc, PhysxDeformableMaterialDesc>(batches, surfaceCount);
+        std::vector<DescPtr<PhysxDeformableMaterialDesc>> volume =
+            allocateDescriptorBatch<PhysxDeformableMaterialDesc>(batches, inputs.size() - surfaceCount);
+        out.deformableMaterials.resize(inputs.size());
+        size_t surfaceIndex = 0, volumeIndex = 0;
+        for (size_t i = 0; i < inputs.size(); ++i)
+            out.deformableMaterials[i] = inputs[i].surface ? std::move(surface[surfaceIndex++]) : std::move(volume[volumeIndex++]);
+        phase.finish();
+        fillDescriptorRanges(inputs.size(), execution, [&](size_t begin, size_t end) noexcept
+        {
+            for (size_t i = begin; i < end; ++i)
+            {
+                PhysxDeformableMaterialDesc& desc = *out.deformableMaterials[i];
+                if (inputs[i].surface)
+                    fillSurfaceDeformableMaterial(inputs[i], static_cast<PhysxSurfaceDeformableMaterialDesc&>(desc));
+                else
+                    fillDeformableMaterial(inputs[i], desc);
+                desc.poissonsRatio = std::min(desc.poissonsRatio, 0.4999f);
+            }
+        });
+    }
     src.clearBucket();
 
+    waveTimer.transition(stats ? &waveSeconds[3] : nullptr);
     // --- Rigid bodies (HAS_APPLIED_SCHEMA PhysicsRigidBodyAPI) ---
     std::unordered_set<ObjectKey, ObjectKey::Hash> bodySet;
     std::unordered_map<ObjectKey, PhysxRigidBodyDesc*, ObjectKey::Hash> bodyByKey;
@@ -2804,29 +2398,26 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     // key so a resolved body matches the body descriptor's primKey.
     std::unordered_map<uint64_t, ObjectKey> bodyByCanonical;
 
+    DescriptorPhaseTimer bodySetupTimer(stats ? &bodySetup.enumerate : nullptr);
     Bucket bodyBucket = enumerateSchemaFiltered("PhysicsRigidBodyAPI",
                                                 conv::kLocalTransform,
                                                 readOrdinal);
     const std::vector<std::string> bodyDiscoveredAttrs = bodyBucket.attrs;
     const size_t bodyAttrCount = bodyBucket.attrs.size();
-    appendRigidBodyAttrs(bodyBucket);
-    appendMassAttrs(bodyBucket);
 
     // The collision-shape family is enumerated here (the shape section below reuses it) so ONE
     // columnar read can cover both families: bodies, shapes, their geometry backings and every
     // ancestor, times every column the two sections and the consumer's follow-ups (mass update,
-    // actor setup) ask. Under the load cache the per-section prefetches below then find their
-    // columns covered and read nothing; usd-path in the set seeds the existence memo for the
+    // actor setup) ask. Complete load-cache coverage lets the per-section prefetches below
+    // skip their preparation; usd-path in the set seeds the existence memo for the
     // ancestor chains the actor setup walks.
     Bucket shapeBucket = enumerateSchemaFiltered("PhysicsCollisionAPI", conv::kLocalTransform, readOrdinal);
     const std::vector<std::string> shapeDiscoveredAttrs = shapeBucket.attrs;
     const size_t shapeAttrCount = shapeBucket.attrs.size();
-    appendCollisionShapeAttrs(shapeBucket);
-    appendMassAttrs(shapeBucket);
     std::vector<ObjectKey> shapeReadKeys = shapeBucket.keys;
     {
         std::unordered_set<uint64_t> shapeReadCanonical;
-        shapeReadCanonical.reserve(shapeBucket.keys.size() * 3);
+        shapeReadCanonical.reserve(shapeBucket.keys.size() * 2);
         for (const ObjectKey key : shapeBucket.keys)
         {
             const uint64_t canonical = src.canonicalPath(key);
@@ -2839,12 +2430,9 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             const uint64_t canonical = src.canonicalPath(backingKey);
             if (canonical && shapeReadCanonical.insert(canonical).second)
                 shapeReadKeys.push_back(backingKey);
-            const ObjectKey collisionBackingKey = src.collisionAttributeBackingKey(key);
-            const uint64_t collisionCanonical = src.canonicalPath(collisionBackingKey);
-            if (collisionCanonical && shapeReadCanonical.insert(collisionCanonical).second)
-                shapeReadKeys.push_back(collisionBackingKey);
         }
     }
+    bool mergedReadComplete = false;
     {
         Bucket merged;
         std::unordered_set<uint64_t> mergedIdentity; // canonical prim id: one row per prim
@@ -2868,82 +2456,224 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         addKeys(bodyBackingKeys);
         addKeys(shapeReadKeys);
         addKeys(src.collectAncestors(merged.keys));
-        appendTransformAttrs(merged);
-        for (const std::string& attr : OvstageSource::relationshipPrefetchAttrs())
-            appendBucketAttr(merged, attr.c_str());
-        for (const Bucket* family : { &bodyBucket, &shapeBucket })
-            for (const std::string& attr : family->attrs)
-                appendBucketAttr(merged, attr.c_str());
-        appendBucketAttr(merged, conv::kUsdPath);
-        src.prefetchBucket(merged.keys, merged.attrs);
+        // Cache only the fixed column names, never scene values or membership.
+        // Borrow the plan unless this scan discovers additional family columns.
+        static const std::vector<std::string> fixedColumns = []
+        {
+            Bucket all, body, shape;
+            appendTransformAttrs(all);
+            for (const std::string& attr : OvstageSource::relationshipPrefetchAttrs())
+                appendBucketAttr(all, attr);
+            appendRigidBodyAttrs(body);
+            appendMassAttrs(body);
+            appendCollisionShapeAttrs(shape);
+            appendMassAttrs(shape);
+            for (const Bucket* family : { &body, &shape })
+                for (const std::string& attr : family->attrs)
+                    appendBucketAttr(all, attr);
+            appendBucketAttr(all, conv::kUsdPath);
+            appendBucketAttr(all, "_instanceMaterialBinding");
+            return all.attrs;
+        }();
+        const std::vector<std::string>* mergedAttrs = &fixedColumns;
+        if (!bodyBucket.attrs.empty() || !shapeBucket.attrs.empty())
+        {
+            merged.attrs = fixedColumns;
+            for (const Bucket* family : { &bodyBucket, &shapeBucket })
+                for (const std::string& attr : family->attrs)
+                    appendBucketAttr(merged, attr);
+            mergedAttrs = &merged.attrs;
+        }
+        // Resolve collision scalars and collider density. Identity, transforms, schemas and
+        // relationships keep their logical rows. The backing values join this SAME
+        // body/shape read; parser getAttribute calls only inspect its cached rows.
+        src.prefetchResolvedInstanceBucket(merged.keys, *mergedAttrs, shapeBucket.keys, {
+            "physics:density",
+            "physics:collisionEnabled",
+            "physics:approximation",
+            "physxCollision:contactOffset",
+            "physxCollision:restOffset",
+            "physxCollision:torsionalPatchRadius",
+            "physxCollision:minTorsionalPatchRadius",
+            "newton:contactMargin",
+            "newton:contactGap",
+        });
+        mergedReadComplete = src.loadCacheCovers(merged.keys, *mergedAttrs);
     }
 
-    prefetchTransformAncestors(src, bodyBucket.keys);
-    src.prefetchRelationshipAncestors(bodyBucket.keys);
-    prefetchTransformsForKeys(src, bodyBucket.keys);
-    src.prefetchBucket(bodyBucket.keys, bodyDiscoveredAttrs);
-    src.prefetchBucket(bodyBucket.keys, appendedAttrs(bodyBucket, bodyAttrCount));
-    for (const ObjectKey key : bodyBucket.keys)
+    if (!mergedReadComplete)
     {
-        // Match NativeWalker: a dynamic body cannot move inside a scene-graph
-        // prototype. Only kinematic or disabled instance proxies are supported.
-        // Resolve just these validation controls from the strict ancestor's
-        // backing row; a top-level instance root keeps its own authored values.
-        const ObjectKey backing = src.collisionAttributeBackingKey(key);
-        bool enabled = true;
-        bool kinematic = false;
-        if (!src.getAttribute(key, tokRigidBodyEnabled, enabled) && backing.valid())
-            src.getAttribute(backing, tokRigidBodyEnabled, enabled);
-        if (!src.getAttribute(key, tokKinematicEnabled, kinematic) && backing.valid())
-            src.getAttribute(backing, tokKinematicEnabled, kinematic);
-        if (backing.valid() && enabled && !kinematic)
-        {
-            const std::string path(src.sourceKeyToString(key));
-            CARB_LOG_WARN("RigidBodyAPI on an instance proxy not supported, "
-                          "unless set to kinematic or not enabled. %s", path.c_str());
-            continue;
-        }
-
-        DescPtr<PhysxRigidBodyDesc> base;
-        if (enabled)
-        {
-            DescPtr<DynamicPhysxRigidBodyDesc> dyn = parseDynamicBody(ctx, key);
-            if (!dyn)
-                continue;
-            dyn->kinematicBody = kinematic;
-            base = descPtrCast<PhysxRigidBodyDesc>(std::move(dyn));
-        }
+        appendRigidBodyAttrs(bodyBucket);
+        appendMassAttrs(bodyBucket);
+        appendCollisionShapeAttrs(shapeBucket);
+        appendMassAttrs(shapeBucket);
+    }
+    bodySetupTimer.transition(stats ? &bodySetup.transformAncestors : nullptr);
+    if (!mergedReadComplete)
+        prefetchTransformAncestors(src, bodyBucket.keys);
+    bodySetupTimer.transition(stats ? &bodySetup.relationshipAncestors : nullptr);
+    if (!mergedReadComplete)
+        src.prefetchRelationshipAncestors(bodyBucket.keys);
+    bodySetupTimer.transition(stats ? &bodySetup.transforms : nullptr);
+    if (!mergedReadComplete)
+        prefetchTransformsForKeys(src, bodyBucket.keys);
+    bodySetupTimer.transition(stats ? &bodySetup.metadata : nullptr);
+    const KnownTokens& bodyTokens = ctx.knownTokens();
+    std::vector<uint8_t> columnBodies(bodyBucket.keys.size());
+    bool commonBodiesOnly = true;
+    for (size_t i = 0; i < bodyBucket.keys.size(); ++i)
+    {
+        columnBodies[i] = !src.hasSchema(bodyBucket.keys[i], bodyTokens.physxSurfaceVelocityAPI) &&
+                          !src.hasSchema(bodyBucket.keys[i], bodyTokens.physxSplinesSurfaceVelocityAPI);
+        commonBodiesOnly = commonBodiesOnly && columnBodies[i];
+    }
+    bodySetupTimer.transition(stats ? &bodySetup.attributes : nullptr);
+    if (!mergedReadComplete)
+    {
+        if (commonBodiesOnly)
+            src.prefetchBucket(bodyBucket.keys, {"physics:filteredPairs", "physics:simulationOwner"});
         else
         {
-            DescPtr<StaticPhysxRigidBodyDesc> stat = parseStaticBody(ctx, key);
-            if (!stat)
-                continue;
-            stat->sourceGPrimKey = key;
-            base = descPtrCast<PhysxRigidBodyDesc>(std::move(stat));
+            src.prefetchBucket(bodyBucket.keys, bodyDiscoveredAttrs);
+            src.prefetchBucket(bodyBucket.keys, appendedAttrs(bodyBucket, bodyAttrCount));
         }
-
-        base->primKey = key;
-        // World-space body pose from the resolved transform. The engine creates
-        // actors from position + rotation, so preserve both here.
-        Matrix4d m;
-        src.getLocalToWorldTransform(key, m);
-        base->position = { static_cast<float>(m.data[12]), static_cast<float>(m.data[13]),
-                           static_cast<float>(m.data[14]) };
-        Matrix3d rotation;
-        carb::Float3 scale{ 1.0f, 1.0f, 1.0f };
-        src.getLocalToWorldRotationAndScale(key, rotation, scale);
-        base->rotation = quatFromRotation(rotation);
-        base->scale = scale;
-
-        // Per-body collision filtering (PhysxFilteredPairsAPI → physics:filteredPairs);
-        // no-op when the API is absent.
-        base->sourceFilteredCollisions = parseFilteredPairs(ctx, key);
-        src.getRelationshipTargets(key, tokSimulationOwner, base->sourceSimulationOwners);
-
-        bodySet.insert(key);
-        bodyByKey.emplace(key, base.get());
-        bodyByCanonical.emplace(src.canonicalPath(key), key);
-        out.bodies.push_back(std::move(base));
+    }
+    {
+        DescriptorPhaseTimer phase(stats ? &stats->prepareSeconds : nullptr);
+        struct BodyInput
+        {
+            ObjectKey key;
+            Matrix4d world;
+            std::vector<ObjectKey> filtered, owners;
+            bool supported = true, kinematic = false;
+            bool dynamic = false, columnRead = false, physxBodyAPI = false;
+            size_t fallbackIndex = 0;
+            size_t dynamicIndex = 0;
+        };
+        std::vector<BodyInput> inputs(bodyBucket.keys.size());
+        std::vector<PreparedDynamicBody> dynamicInputs;
+        const auto bodyScalarTokens = dynamicBodyAttributeTokens(bodyTokens);
+        std::vector<TokenId> scalarTokens(bodyScalarTokens.begin(), bodyScalarTokens.end());
+        scalarTokens.push_back(tokRigidBodyEnabled);
+        bodySetupTimer.transition(stats ? &bodySetup.columns : nullptr);
+        const FrozenScalarBatch scalarRows = commonBodiesOnly ?
+            src.readScalarBatch(bodyBucket.keys, scalarTokens.data(), scalarTokens.size()) :
+            src.freezeScalarBatch(bodyBucket.keys, scalarTokens.data(), scalarTokens.size());
+        bodySetupTimer.transition(stats ? &bodySetup.inputs : nullptr);
+        const bool localVelocityDefault = ctx.outputVelocitiesLocalSpaceDefault();
+        size_t dynamicCount = 0;
+        size_t staticCount = 0, preparedBytes = inputs.capacity() * sizeof(BodyInput);
+        for (size_t index = 0; index < inputs.size(); ++index)
+        {
+            BodyInput& input = inputs[index];
+            input.key = bodyBucket.keys[index];
+            bool enabled = true;
+            bool complete = true;
+            const ObjectKey backing = src.collisionAttributeBackingKey(input.key);
+            if (!scalarRows.row(index, complete).getAttribute(input.key, tokRigidBodyEnabled, enabled) && backing.valid())
+                src.getAttribute(backing, tokRigidBodyEnabled, enabled);
+            if (!src.getAttribute(input.key, tokKinematicEnabled, input.kinematic) && backing.valid())
+                src.getAttribute(backing, tokKinematicEnabled, input.kinematic);
+            if (backing.valid() && enabled && !input.kinematic)
+            {
+                const std::string path(src.sourceKeyToString(input.key));
+                CARB_LOG_WARN("RigidBodyAPI on an instance proxy not supported, "
+                              "unless set to kinematic or not enabled. %s", path.c_str());
+                input.supported = false;
+                continue;
+            }
+            input.dynamic = enabled;
+            if (enabled)
+            {
+                input.dynamicIndex = dynamicCount++;
+                input.columnRead = columnBodies[index];
+                if (input.columnRead)
+                    input.physxBodyAPI = src.hasSchema(input.key, bodyTokens.physxRigidBodyAPI);
+                else
+                {
+                    input.fallbackIndex = dynamicInputs.size();
+                    dynamicInputs.push_back(prepareDynamicBody(ctx, input.key));
+                }
+            }
+            else
+                ++staticCount;
+            src.getLocalToWorldTransform(input.key, input.world);
+            input.filtered = parseFilteredPairs(ctx, input.key);
+            src.getRelationshipTargets(input.key, tokSimulationOwner, input.owners);
+            preparedBytes += (input.filtered.capacity() + input.owners.capacity()) * sizeof(ObjectKey);
+        }
+        bodySetupTimer.finish();
+        if (stats) stats->preparedPeakBytes = std::max(stats->preparedPeakBytes,
+            preparedBytes + scalarRows.capacityBytes() + dynamicInputs.capacity() * sizeof(PreparedDynamicBody));
+        phase.transition(stats ? &stats->constructSeconds : nullptr);
+        std::vector<DescPtr<PhysxRigidBodyDesc>> dynamicOwners =
+            allocateDescriptorBatch<DynamicPhysxRigidBodyDesc, PhysxRigidBodyDesc>(batches, dynamicCount);
+        std::vector<DescPtr<PhysxRigidBodyDesc>> staticOwners =
+            allocateDescriptorBatch<StaticPhysxRigidBodyDesc, PhysxRigidBodyDesc>(batches, staticCount);
+        out.bodies.resize(inputs.size());
+        size_t staticIndex = 0;
+        for (size_t i = 0; i < inputs.size(); ++i)
+        {
+            if (!inputs[i].supported) continue;
+            out.bodies[i] = inputs[i].dynamic ? std::move(dynamicOwners[inputs[i].dynamicIndex]) : std::move(staticOwners[staticIndex++]);
+            out.bodies[i]->sourceFilteredCollisions.resize(inputs[i].filtered.size());
+            out.bodies[i]->sourceSimulationOwners.resize(inputs[i].owners.size());
+        }
+        std::vector<uint8_t> valid(inputs.size());
+        phase.finish();
+        fillDescriptorRanges(inputs.size(), execution, [&](size_t begin, size_t end) noexcept
+        {
+            for (size_t i = begin; i < end; ++i)
+            {
+                const BodyInput& input = inputs[i];
+                if (!input.supported) { valid[i] = true; continue; }
+                PhysxRigidBodyDesc& output = *out.bodies[i];
+                Matrix3d rotation;
+                carb::Float3 scale;
+                decomposeWorldTransform(input.world, rotation, scale);
+                valid[i] = true;
+                if (input.dynamic)
+                {
+                    if (input.columnRead)
+                    {
+                        PreparedDynamicBody decoded;
+                        decoded.units = units;
+                        decoded.outputVelocitiesLocalSpaceDefault = localVelocityDefault;
+                        decoded.physxRigidBodyAPI = input.physxBodyAPI;
+                        decoded.rotation = rotation;
+                        decoded.scale = scale;
+                        bool complete = true;
+                        const auto row = scalarRows.row(i, complete);
+                        readDynamicBodyAttributes(row, input.key, bodyTokens, decoded);
+                        decoded.prepared = complete;
+                        valid[i] = fillDynamicBody(decoded, static_cast<DynamicPhysxRigidBodyDesc&>(output));
+                    }
+                    else
+                        valid[i] = fillDynamicBody(dynamicInputs[input.fallbackIndex], static_cast<DynamicPhysxRigidBodyDesc&>(output));
+                    static_cast<DynamicPhysxRigidBodyDesc&>(output).kinematicBody = input.kinematic;
+                }
+                else
+                    static_cast<StaticPhysxRigidBodyDesc&>(output).sourceGPrimKey = input.key;
+                output.primKey = input.key;
+                output.position = { static_cast<float>(input.world.data[12]), static_cast<float>(input.world.data[13]),
+                                    static_cast<float>(input.world.data[14]) };
+                output.rotation = quatFromRotation(rotation);
+                output.scale = scale;
+                std::copy(input.filtered.begin(), input.filtered.end(), output.sourceFilteredCollisions.begin());
+                std::copy(input.owners.begin(), input.owners.end(), output.sourceSimulationOwners.begin());
+            }
+        });
+        phase.transition(stats ? &stats->finalizeSeconds : nullptr);
+        if (std::find(valid.begin(), valid.end(), uint8_t(0)) != valid.end())
+            throw std::logic_error("unprepared body input");
+        out.bodies.erase(std::remove_if(out.bodies.begin(), out.bodies.end(),
+            [](const auto& body) { return !body; }), out.bodies.end());
+        for (const DescPtr<PhysxRigidBodyDesc>& body : out.bodies)
+        {
+            bodySet.insert(body->primKey);
+            bodyByKey.emplace(body->primKey, body.get());
+            bodyByCanonical.emplace(src.canonicalPath(body->primKey), body->primKey);
+        }
     }
     src.clearBucket();
 
@@ -2964,6 +2694,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         return {};
     };
 
+    waveTimer.transition(stats ? &waveSeconds[4] : nullptr);
     // --- Deformable bodies (HAS_APPLIED_SCHEMA OmniPhysicsDeformableBodyAPI) ---
     // Parse before rigid collision shapes so deformable collision children can be
     // skipped by the rigid-shape scan, matching the native walker.
@@ -2977,12 +2708,40 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     prefetchTransformsForKeys(src, deformableBodyBucket.keys);
     src.prefetchBucket(deformableBodyBucket.keys, deformableBodyDiscoveredAttrs);
     src.prefetchBucket(deformableBodyBucket.keys, appendedAttrs(deformableBodyBucket, deformableBodyAttrCount));
-    for (const ObjectKey key : deformableBodyBucket.keys)
-        emitDeformableBody(out, instance, src, ctx, key, units, deformableBodyEnabledByCanonical);
+    {
+        DescriptorPhaseTimer phase(stats ? &stats->prepareSeconds : nullptr);
+        std::vector<PreparedOvstageDeformable> inputs;
+        for (ObjectKey key : deformableBodyBucket.keys) prepareOvstageDeformable(inputs, instance, src, ctx, key);
+        const size_t surfaces = size_t(std::count_if(inputs.begin(), inputs.end(), [](const PreparedOvstageDeformable& input) { return input.surface; }));
+        if (stats) stats->preparedPeakBytes = std::max(stats->preparedPeakBytes, descriptor_memory::nested(inputs));
+        phase.transition(stats ? &stats->constructSeconds : nullptr);
+        std::vector<DescPtr<PhysxDeformableBodyDesc>> surface = allocateDescriptorBatch<PhysxSurfaceDeformableBodyDesc, PhysxDeformableBodyDesc>(batches, surfaces);
+        std::vector<DescPtr<PhysxDeformableBodyDesc>> volume = allocateDescriptorBatch<PhysxVolumeDeformableBodyDesc, PhysxDeformableBodyDesc>(batches, inputs.size() - surfaces);
+        out.deformables.resize(inputs.size());
+        size_t si = 0, vi = 0;
+        for (size_t i = 0; i < inputs.size(); ++i)
+        {
+            out.deformables[i] = inputs[i].surface ? std::move(surface[si++]) : std::move(volume[vi++]);
+            prepareOvstageDeformableStorage(inputs[i], *out.deformables[i]);
+        }
+        std::vector<uint8_t> valid(inputs.size());
+        phase.finish();
+        fillDescriptorRanges(inputs.size(), execution, [&](size_t begin, size_t end) noexcept
+        {
+            for (size_t i = begin; i < end; ++i) valid[i] = fillOvstageDeformable(inputs[i], units, *out.deformables[i]);
+        });
+        for (size_t i = 0; i < inputs.size(); ++i)
+        {
+            if (!valid[i]) throw std::logic_error("unprepared deformable body input or storage");
+            deformableBodyEnabledByCanonical[src.canonicalPath(inputs[i].key)] = inputs[i].body.bodyEnabled;
+        }
+    }
     src.clearBucket();
 
     auto isDeformableCollider = [&](ObjectKey shapeKey) -> bool
     {
+        if (deformableBodyEnabledByCanonical.empty())
+            return false;
         ObjectKey k = shapeKey;
         for (int guard = 0; k.valid() && guard < 64; ++guard)
         {
@@ -2994,32 +2753,30 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         return false;
     };
 
-    // Resolve a USD round-shape `axis` token (X/Y/Z) to a parse::Axis; USD's
-    // default for capsule/cylinder/cone is Z. ovstage stores the token as an id
-    // column, so keep it in source token space.
-    auto readAxis = [&](ObjectKey key) -> Axis
-    {
-        TokenId at{};
-        if (src.getAttribute(key, tokAxis, at) && at.valid())
-        {
-            if (at == tokAxisX)
-                return eX;
-            if (at == tokAxisY)
-                return eY;
-        }
-        return eZ;
-    };
-
+    waveTimer.transition(stats ? &waveSeconds[5] : nullptr);
     // --- Collision shapes (HAS_APPLIED_SCHEMA PhysicsCollisionAPI) ---
     // Analytic and mesh geometry keep logical identity and transforms on an
     // instance-proxy path while reading authored geometry from its prototype. The family
     // (shapeBucket / shapeReadKeys) was enumerated with the rigid bodies above; the merged read
     // there already covers these prefetches under the load cache.
-    prefetchTransformAncestors(src, shapeBucket.keys);
-    src.prefetchRelationshipAncestors(shapeBucket.keys);
-    prefetchTransformsForKeys(src, shapeBucket.keys);
-    src.prefetchBucket(shapeReadKeys, shapeDiscoveredAttrs);
-    src.prefetchBucket(shapeReadKeys, appendedAttrs(shapeBucket, shapeAttrCount));
+    DescriptorPhaseTimer shapeSetupTimer(stats ? &readTimings.shapeSetup : nullptr);
+    DescriptorPhaseTimer shapeDetailTimer(stats ? &shapeSetup.enumerate : nullptr);
+    shapeDetailTimer.transition(stats ? &shapeSetup.transformAncestors : nullptr);
+    if (!mergedReadComplete)
+        prefetchTransformAncestors(src, shapeBucket.keys);
+    shapeDetailTimer.transition(stats ? &shapeSetup.relationshipAncestors : nullptr);
+    if (!mergedReadComplete)
+        src.prefetchRelationshipAncestors(shapeBucket.keys);
+    shapeDetailTimer.transition(stats ? &shapeSetup.transforms : nullptr);
+    if (!mergedReadComplete)
+        prefetchTransformsForKeys(src, shapeBucket.keys);
+    shapeDetailTimer.transition(stats ? &shapeSetup.attributes : nullptr);
+    if (!mergedReadComplete)
+    {
+        src.prefetchBucket(shapeReadKeys, shapeDiscoveredAttrs);
+        src.prefetchBucket(shapeReadKeys, appendedAttrs(shapeBucket, shapeAttrCount));
+    }
+    shapeDetailTimer.transition(stats ? &shapeSetup.inputs : nullptr);
     enum class PrimType : uint8_t
     {
         eCube,
@@ -3031,15 +2788,14 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         eMesh,
         eNone, // resolved, but not one of the analytic types above (e.g. Xform)
     };
-    // No eager stage-wide prefetch here: primTypeIs() below is a per-key point
-    // query (usd-path IN [key] AND usd-prim-type IN [type], never a subtree or
-    // prefix scan), so its cost is bounded by the number of collision shapes
-    // actually classified, not by stage size. A prior version of this code
+    // Prefetch types only for collider and backing keys above. Descendant keys
+    // discovered later retain the per-key fallback below; no stage-wide type
+    // enumeration is needed. A prior version of this code
     // prefetched every prim of each analytic type stage-wide into
     // primTypeByCanonical up front -- including render-only geometry that has
     // nothing to do with physics -- which made attach cost scale with total
     // scene size instead of physics-relevant shape count (NVBug 6532970).
-    // primTypeByCanonical is instead populated lazily by primTypeIs() the first
+    // primTypeByCanonical is populated lazily by primTypeIs() the first
     // time a key's type resolves, so repeat probes for the same shape are served
     // from the map.
     std::unordered_map<uint64_t, PrimType> primTypeByCanonical;
@@ -3177,274 +2933,315 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         return std::string::npos;
     };
 
-    // Build and register one shape for a (collider, logical gprim) pair.
-    // colliderKey owns collision state and gprimKey owns runtime identity,
-    // transforms, and material. geometryKey is private ovstage backing for
-    // prototype-authored type and geometry values. Selected collision values
-    // may use colliderBackingKey only after their logical read misses.
-    auto emitShape = [&](ObjectKey colliderKey, ObjectKey gprimKey) -> bool
     {
-        if (isDeformableCollider(colliderKey))
-            return true;
-        const ObjectKey geometryKey = src.geometryBackingKey(gprimKey);
-        const ObjectKey colliderBackingKey = src.collisionAttributeBackingKey(colliderKey);
-
-        ShapeInfo info;
-        info.rigidBody = resolveBody(colliderKey);
-        info.sourceGprim = gprimKey;
-        info.collisionAttributeFallback = colliderBackingKey;
-        if (!src.getAttribute(colliderKey, tokCollisionEnabled, info.collisionEnabled) &&
-            colliderBackingKey.valid() && colliderBackingKey != colliderKey)
-            src.getAttribute(colliderBackingKey, tokCollisionEnabled, info.collisionEnabled);
-        // info.simulationOwners stays empty so the parsers do not drop the shape on
-        // unresolved scenes; the collider's owners are read onto the descriptor's
-        // sourceSimulationOwners below, which is where the native walker puts them
-        // and where the consumer resolves them.
-
-        Matrix3d gprimRot;
-        carb::Float3 gprimScale{ 1.0f, 1.0f, 1.0f };
-        src.getLocalToWorldRotationAndScale(gprimKey, gprimRot, gprimScale);
-
-        // Shape local pose. Mirror UsdGeomXformCache::ComputeRelativeTransform by
-        // accumulating local transforms from the gprim up to (but excluding) its
-        // body, stopping at a reset-xform-stack. The shared helper decomposes
-        // that matrix and bakes the body scale; transform sourcing remains
-        // ovstage-specific. A bodyless collider uses the gprim's world pose.
-        if (info.rigidBody.valid())
+        shapeDetailTimer.finish();
+        shapeSetupTimer.finish();
+        // Discovery owns all input storage; no descriptor exists until concrete
+        // one-to-many emission counts are known. The source stays pinned through join.
+        DescriptorPhaseTimer shapePhase(stats ? &stats->prepareSeconds : nullptr);
+        std::vector<PreparedOvstageShape> shapeInputs;
+        shapeInputs.reserve(shapeBucket.keys.size());
+        // Build and register one shape for a (collider, logical gprim) pair.
+        // colliderKey owns collision state and gprimKey owns runtime identity,
+        // transforms, and material. geometryKey is private ovstage backing used only
+        // for prototype-authored type and geometry values.
+        auto emitShape = [&](ObjectKey colliderKey, ObjectKey gprimKey) -> bool
         {
-            const uint64_t bodyCanonical = src.canonicalPath(info.rigidBody);
-            if (src.canonicalPath(gprimKey) != bodyCanonical)
+            DescriptorPhaseTimer detail(stats ? &readTimings.shapeClassify : nullptr);
+            if (isDeformableCollider(colliderKey))
+                return true;
+            const ObjectKey geometryKey = src.geometryBackingKey(gprimKey);
+
+            ShapeInfo info;
+            info.rigidBody = resolveBody(colliderKey);
+            info.sourceGprim = gprimKey;
+            // info.simulationOwners stays empty so the parsers do not drop the shape on
+            // unresolved scenes; the collider's owners are read onto the descriptor's
+            // sourceSimulationOwners below, which is where the native walker puts them
+            // and where the consumer resolves them.
+
+            PreparedOvstageShape input;
+            input.collider = colliderKey;
+            input.geometry = geometryKey;
+            detail.transition(stats ? &readTimings.shapeTransforms : nullptr);
+            src.getLocalToWorldTransform(gprimKey, input.world);
+
+            // Shape local pose. Mirror UsdGeomXformCache::ComputeRelativeTransform by
+            // accumulating local transforms from the gprim up to (but excluding) its
+            // body, stopping at a reset-xform-stack. The shared helper decomposes
+            // that matrix and bakes the body scale; transform sourcing remains
+            // ovstage-specific. A bodyless collider uses the gprim's world pose.
+            if (info.rigidBody.valid())
             {
-                ::physx::PxMat44d relativeTransform(::physx::PxIdentity);
-                ObjectKey current = gprimKey;
-                for (int guard = 0; current.valid() && guard < 64; ++guard)
+                const uint64_t bodyCanonical = src.canonicalPath(info.rigidBody);
+                if (src.canonicalPath(gprimKey) != bodyCanonical)
                 {
-                    if (src.canonicalPath(current) == bodyCanonical)
-                        break;
+                    ::physx::PxMat44d relativeTransform(::physx::PxIdentity);
+                    ObjectKey current = gprimKey;
+                    for (int guard = 0; current.valid() && guard < 64; ++guard)
+                    {
+                        if (src.canonicalPath(current) == bodyCanonical)
+                            break;
 
-                    Matrix4d localTransform;
-                    bool resetsXformStack = false;
-                    src.getLocalTransform(current, ReadTime::defaultTime(), localTransform, resetsXformStack);
-                    // Gf order was `relativeTransform *= local`; operands swap in
-                    // PhysX order (see common/foundation/MatrixTools.h).
-                    relativeTransform = toPxMat44d(localTransform) * relativeTransform;
-                    if (resetsXformStack)
-                        break;
-                    current = src.getParent(current);
+                        Matrix4d localTransform;
+                        bool resetsXformStack = false;
+                        src.getLocalTransform(current, ReadTime::defaultTime(), localTransform, resetsXformStack);
+                        // Gf order was `relativeTransform *= local`; operands swap in
+                        // PhysX order (see common/foundation/MatrixTools.h).
+                        relativeTransform = toPxMat44d(localTransform) * relativeTransform;
+                        if (resetsXformStack)
+                            break;
+                        current = src.getParent(current);
+                    }
+
+                    Matrix4d bodyWorldTransform;
+                    src.getLocalToWorldTransform(info.rigidBody, bodyWorldTransform);
+
+                    input.relativePose = true;
+                    std::memcpy(input.relative.data, &relativeTransform, sizeof(input.relative.data));
+                    input.bodyWorld = bodyWorldTransform;
                 }
+            }
+            detail.transition(stats ? &readTimings.shapeClassify : nullptr);
+            // Precedence mirrors NativeWalker::emitShape: a Plane gprim is decided
+            // before the custom-token check (which matters because "Plane" is itself a
+            // pre-registered shape token, a legacy alias for a non-UsdGeomPlane prim
+            // of that type), and the custom branch then outranks every analytic and
+            // mesh branch below -- a custom-geometry API on a Sphere is a custom
+            // shape, not a sphere.
+            //
+            // The two checks deliberately interrogate different keys, matching which
+            // prim NativeWalker::emitShape tests for each: for a collider applied
+            // directly to a gprim, colliderKey/gprimKey/geometryKey all collapse to
+            // that one prim, same as native's single `shapePrim`. For a collider on a
+            // non-gprim ancestor (the Xform-descent branch), native decides
+            // `customShape` exactly once against the collider prim before
+            // descending -- it is never re-tested per descendant child -- while the
+            // Plane check runs per child against that child's own prim. So
+            // `findCustomShapeToken` below is meant to see `colliderKey` (the
+            // collider, fixed across children) and `planeGprim` is meant to see
+            // `geometryKey` (the per-child geometry). Keep it this way rather than
+            // unifying them onto one key; that would change which prim decides
+            // custom-shape-ness for the Xform-descent case and diverge from native.
+            const bool planeGprim = primTypeIs(geometryKey, PrimType::ePlane);
+            const size_t customShapeToken = planeGprim ? std::string::npos : findCustomShapeToken(colliderKey);
+            if (planeGprim)
+            {
+                input.type = ePlaneShape;
+            }
+            else if (customShapeToken != std::string::npos)
+            {
+                input.type = eCustomShape;
+                input.customHash = customGeometryTokenHash(customShapeTokens[customShapeToken]);
+            }
+            else if (primTypeIs(geometryKey, PrimType::eCube))
+            {
+                input.type = eBoxShape;
+            }
+            else if (primTypeIs(geometryKey, PrimType::eSphere))
+            {
+                input.type = eSphereShape;
+            }
+            else if (primTypeIs(geometryKey, PrimType::eCapsule))
+            {
+                input.type = eCapsuleShape;
+                input.radius = 0.5;
+                input.height = 1.0;
+            }
+            else if (primTypeIs(geometryKey, PrimType::eCylinder) || primTypeIs(geometryKey, PrimType::eCone))
+            {
+                input.type = primTypeIs(geometryKey, PrimType::eCylinder) ? eCylinderShape : eConeShape;
+            }
+            else if (primTypeIs(geometryKey, PrimType::eMesh))
+            {
+                const auto body = bodyByKey.find(info.rigidBody);
+                prepareMeshShape(ctx, src, colliderKey, gprimKey,
+                    body == bodyByKey.end() ? nullptr : body->second, input);
+            }
+            else
+                return false;
+            input.common.units = units;
+            input.common.info = std::move(info);
+            input.common.prepared = true;
+            input.common.collision.physxCollisionAPI = src.hasSchema(colliderKey, ctx.knownTokens().physxCollisionAPI);
+            input.common.collision.physxTriggerAPI = src.hasSchema(colliderKey, ctx.knownTokens().physxTriggerAPI);
+            input.common.collision.physxTriggerStateAPI = src.hasSchema(colliderKey, ctx.knownTokens().physxTriggerStateAPI);
+            if (!input.common.ownersResolved)
+                return false;
 
-                Matrix4d bodyWorldTransform;
-                src.getLocalToWorldTransform(info.rigidBody, bodyWorldTransform);
+            detail.transition(stats ? &readTimings.shapeRelations : nullptr);
+            DescriptorPhaseTimer relationTimer(stats ? &shapeRelationSeconds[0] : nullptr);
+            // Per-face physics materials: a collider mesh expresses them as GeomSubset
+            // children that each bind their own material, and that is the only way to
+            // author more than one physics material on a mesh. They occupy
+            // sourceMaterials [0..N) with the collider's own binding as the trailing
+            // default slot, which is the order the consumer hands to
+            // PxShape::setMaterials. Mirrors the native walker's mesh-subset branch.
+            // Resolved on the geometry key so prototype-authored subsets are found for
+            // an instance proxy too.
+            if (primTypeIs(geometryKey, PrimType::eMesh))
+            {
+                src.forEachChild(geometryKey, [&](ObjectKey child)
+                {
+                    if (!src.isA(child, tokGeomSubset))
+                        return;
+                    TokenId elementType{};
+                    if (!src.getAttribute(child, tokElementType, elementType) || elementType != tokFace)
+                        return;
+                    // A subset that binds no material of its own resolves the mesh's, so
+                    // gate on the material actually being a physics material: a subset
+                    // bound only to a render material must not take a slot.
+                    const ObjectKey subsetMaterial = src.getMaterialBinding(child);
+                    if (subsetMaterial.valid() && src.hasSchema(subsetMaterial, tokPhysicsMaterialAPI))
+                        input.materials.push_back(subsetMaterial);
+                });
+            }
 
-                omni::physics::decomposeCollisionShapeLocalTransform(relativeTransform,
-                                                                    toPxMat44d(bodyWorldTransform), info.localPos,
-                                                                    info.localRot, info.localScale);
+            // Read direct material relationships or the resolved instance-material
+            // column through the source. Keep the lookup on the logical gprim so
+            // per-instance overrides survive. Mirrors the native walker, including its
+            // unconditional trailing slot: with per-face subsets present the collider's
+            // own binding is the default-fallback entry at index N, and the consumer
+            // indexes it positionally, so the slot has to exist even when nothing is
+            // bound there.
+            relationTimer.transition(stats ? &shapeRelationSeconds[1] : nullptr);
+            const ObjectKey material = src.getMaterialBinding(gprimKey);
+            if (material.valid() || !input.materials.empty())
+                input.materials.push_back(material);
+
+            // Per-shape collision filtering (PhysxFilteredPairsAPI on the collider).
+            relationTimer.transition(stats ? &shapeRelationSeconds[2] : nullptr);
+            input.filteredCollisions = parseFilteredPairs(ctx, colliderKey);
+
+            // Collider-level simulationOwner (physics:simulationOwner on CollisionAPI),
+            // which is what decides ownership for a bodyless static collider. Mirrors
+            // the native walker: the owners ride on the descriptor and the consumer
+            // resolves them, rather than going through ShapeInfo — whose
+            // unresolved-scene path drops the shape outright.
+            relationTimer.transition(stats ? &shapeRelationSeconds[3] : nullptr);
+            src.getRelationshipTargets(colliderKey, tokSimulationOwner, input.simulationOwners);
+
+            shapeInputs.push_back(std::move(input));
+            return true;
+        };
+
+        for (const ObjectKey key : shapeBucket.keys)
+        {
+            // A collider applied directly to an analytic gprim emits one shape. A
+            // collider applied to a non-geometry prim (e.g. an Xform) parents its
+            // geometry on descendant gprims — emit a shape per analytic child, with the
+            // static body kept at the collider's path (mirrors the native walker's
+            // Xform-collider descent). Child gprims carry no physics schema, so they are
+            // only present when the rendering domain was populated too.
+            if (emitShape(key, key))
+                continue;
+
+            bool emitted = false;
+            src.forEachChild(key, [&](ObjectKey child)
+            {
+                if (emitShape(key, child))
+                    emitted = true;
+            });
+            if (!emitted)
+                ++out.skippedShapes; // unsupported collider or no supported child geometry
+        }
+        const KnownTokens& shapeTokens = ctx.knownTokens();
+        const ShapeColumnTokens shapeFields{tokCollisionEnabled, tokSize, tokRadius, tokHeight, tokAxis, tokDoubleSided, tokAxisX, tokAxisY};
+        std::vector<ObjectKey> colliderRows, geometryRows;
+        colliderRows.reserve(shapeInputs.size());
+        geometryRows.reserve(shapeInputs.size());
+        for (const auto& input : shapeInputs)
+        {
+            colliderRows.push_back(input.collider);
+            geometryRows.push_back(input.geometry);
+        }
+        std::vector<TokenId> colliderAttributes{tokCollisionEnabled}, cookingTokens;
+        appendCollisionAttributeTokens(PreparedCollisionExt{}, shapeTokens, colliderAttributes);
+        std::array<bool, std::variant_size_v<PreparedShapeCooking>> declaredCooking{};
+        bool declaredSdf = false, declaredMargin = false;
+        for (const auto& input : shapeInputs)
+        {
+            if (!declaredCooking[input.cooking.index()])
+            {
+                std::visit([&](const auto& cooking)
+                {
+                    using T = std::decay_t<decltype(cooking)>;
+                    if constexpr (!std::is_same_v<T, std::monostate>)
+                        appendCollisionAttributeTokens(cooking, shapeTokens, colliderAttributes);
+                    if constexpr (std::is_same_v<T, PreparedSphereFillCookingExt>)
+                        cookingTokens.push_back(shapeTokens.physxSphereFillCollisionFillMode);
+                }, input.cooking);
+                declaredCooking[input.cooking.index()] = true;
+            }
+            if (input.sdf && !declaredSdf)
+            {
+                appendCollisionAttributeTokens(input.sdfCooking, shapeTokens, colliderAttributes);
+                cookingTokens.push_back(shapeTokens.physxSDFMeshCollisionSdfBitsPerSubgridPixel);
+                declaredSdf = true;
+            }
+            if ((input.type == eCylinderShape || input.type == eConeShape) && !declaredMargin)
+            {
+                colliderAttributes.push_back(shapeTokens.physxConvexGeometryMargin);
+                declaredMargin = true;
             }
         }
-        else
+        std::sort(colliderAttributes.begin(), colliderAttributes.end(), [](TokenId a, TokenId b) { return a.id < b.id; });
+        colliderAttributes.erase(std::unique(colliderAttributes.begin(), colliderAttributes.end()), colliderAttributes.end());
+        const auto geometryAttributes = shapeFields.geometryAttributes();
+        DescriptorPhaseTimer columnTimer(stats ? &readTimings.columns : nullptr);
+        const FrozenScalarBatch colliderColumns = src.readScalarBatch(colliderRows, colliderAttributes.data(), colliderAttributes.size(), cookingTokens.data(), cookingTokens.size());
+        const FrozenScalarBatch geometryColumns = src.readScalarBatch(geometryRows, geometryAttributes.data(), geometryAttributes.size(), &tokAxis, 1);
+        columnTimer.finish();
+        if (stats)
         {
-            Matrix4d wm;
-            src.getLocalToWorldTransform(gprimKey, wm);
-            info.localPos = { static_cast<float>(wm.data[12]), static_cast<float>(wm.data[13]),
-                              static_cast<float>(wm.data[14]) };
-            info.localRot = quatFromRotation(gprimRot);
-            info.localScale = gprimScale;
+            size_t bytes = shapeInputs.capacity() * sizeof(PreparedOvstageShape) + colliderColumns.capacityBytes() +
+                           geometryColumns.capacityBytes() + (colliderRows.capacity() + geometryRows.capacity()) * sizeof(ObjectKey);
+            for (const PreparedOvstageShape& input : shapeInputs)
+                bytes += (input.materials.capacity() + input.filteredCollisions.capacity() + input.simulationOwners.capacity() +
+                          input.common.info.simulationOwners.capacity()) * sizeof(ObjectKey) +
+                         input.common.sceneIds.capacity() * sizeof(ObjectId);
+            stats->preparedPeakBytes = std::max(stats->preparedPeakBytes, bytes);
         }
-
-        DescPtr<PhysxShapeDesc> shape;
-        bool commonFilled = true;
-        // Precedence mirrors NativeWalker::emitShape: a Plane gprim is decided
-        // before the custom-token check (which matters because "Plane" is itself a
-        // pre-registered shape token, a legacy alias for a non-UsdGeomPlane prim
-        // of that type), and the custom branch then outranks every analytic and
-        // mesh branch below -- a custom-geometry API on a Sphere is a custom
-        // shape, not a sphere.
-        //
-        // The two checks deliberately interrogate different keys, matching which
-        // prim NativeWalker::emitShape tests for each: for a collider applied
-        // directly to a gprim, colliderKey/gprimKey/geometryKey all collapse to
-        // that one prim, same as native's single `shapePrim`. For a collider on a
-        // non-gprim ancestor (the Xform-descent branch), native decides
-        // `customShape` exactly once against the collider prim before
-        // descending -- it is never re-tested per descendant child -- while the
-        // Plane check runs per child against that child's own prim. So
-        // `findCustomShapeToken` below is meant to see `colliderKey` (the
-        // collider, fixed across children) and `planeGprim` is meant to see
-        // `geometryKey` (the per-child geometry). Keep it this way rather than
-        // unifying them onto one key; that would change which prim decides
-        // custom-shape-ness for the Xform-descent case and diverge from native.
-        const bool planeGprim = primTypeIs(geometryKey, PrimType::ePlane);
-        const size_t customShapeToken = planeGprim ? std::string::npos : findCustomShapeToken(colliderKey);
-        if (planeGprim)
+        shapePhase.transition(stats ? &stats->constructSeconds : nullptr);
+        constructShapeBatches(batches, shapeInputs, out.shapes, out.ownedMeshes);
+        std::vector<uint8_t> validShapes(shapeInputs.size(), 0);
+        shapePhase.finish();
+        fillDescriptorRanges(shapeInputs.size(), execution, [&](size_t begin, size_t end) noexcept
         {
-            shape = descPtrCast<PhysxShapeDesc>(parsePlaneShape(ctx, colliderKey, info, readAxis(geometryKey)));
-        }
-        else if (customShapeToken != std::string::npos)
-        {
-            shape = descPtrCast<PhysxShapeDesc>(parseCustomShape(
-                ctx, colliderKey, info, customGeometryTokenHash(customShapeTokens[customShapeToken])));
-        }
-        else if (primTypeIs(geometryKey, PrimType::eCube))
-        {
-            double sizeAttr = 1.0;
-            src.getAttribute(geometryKey, tokSize, sizeAttr);
-            const float half = static_cast<float>(std::abs(sizeAttr)) * 0.5f;
-            shape = descPtrCast<PhysxShapeDesc>(parseBoxShape(
-                ctx, colliderKey, info,
-                { half * std::fabs(gprimScale.x), half * std::fabs(gprimScale.y), half * std::fabs(gprimScale.z) }));
-        }
-        else if (primTypeIs(geometryKey, PrimType::eSphere))
-        {
-            double radius = 1.0;
-            src.getAttribute(geometryKey, tokRadius, radius);
-            shape = descPtrCast<PhysxShapeDesc>(
-                parseSphereShape(ctx, colliderKey, info,
-                                 static_cast<float>(std::abs(radius)) *
-                                     maxAbs3(gprimScale.x, gprimScale.y, gprimScale.z)));
-        }
-        else if (primTypeIs(geometryKey, PrimType::eCapsule))
-        {
-            double radius = 0.5, height = 1.0;
-            src.getAttribute(geometryKey, tokRadius, radius);
-            src.getAttribute(geometryKey, tokHeight, height);
-            float scaledRadius = static_cast<float>(radius);
-            float scaledHalfHeight = static_cast<float>(height) * 0.5f;
-            const Axis axis = readAxis(geometryKey);
-            scaleRoundShape(axis, gprimScale, scaledRadius, scaledHalfHeight);
-            shape = descPtrCast<PhysxShapeDesc>(parseCapsuleShape(
-                ctx, colliderKey, info, std::fabs(scaledRadius), std::fabs(scaledHalfHeight), axis));
-        }
-        else if (primTypeIs(geometryKey, PrimType::eCylinder))
-        {
-            double radius = 1.0, height = 2.0;
-            src.getAttribute(geometryKey, tokRadius, radius);
-            src.getAttribute(geometryKey, tokHeight, height);
-            float scaledRadius = static_cast<float>(radius);
-            float scaledHalfHeight = static_cast<float>(height) * 0.5f;
-            const Axis axis = readAxis(geometryKey);
-            scaleRoundShape(axis, gprimScale, scaledRadius, scaledHalfHeight);
-            shape = descPtrCast<PhysxShapeDesc>(parseCylinderShape(
-                ctx, colliderKey, info, std::fabs(scaledRadius), std::fabs(scaledHalfHeight), axis));
-        }
-        else if (primTypeIs(geometryKey, PrimType::eCone))
-        {
-            double radius = 1.0, height = 2.0;
-            src.getAttribute(geometryKey, tokRadius, radius);
-            src.getAttribute(geometryKey, tokHeight, height);
-            float scaledRadius = static_cast<float>(radius);
-            float scaledHalfHeight = static_cast<float>(height) * 0.5f;
-            const Axis axis = readAxis(geometryKey);
-            scaleRoundShape(axis, gprimScale, scaledRadius, scaledHalfHeight);
-            shape = descPtrCast<PhysxShapeDesc>(parseConeShape(
-                ctx, colliderKey, info, std::fabs(scaledRadius), std::fabs(scaledHalfHeight), axis));
-        }
-        else if (primTypeIs(geometryKey, PrimType::eMesh))
-        {
-            // Mesh collider: build the cooking-input descriptor (triangle / convex /
-            // decomposition / sphere-fill / SDF per UsdPhysicsMeshCollisionAPI). The
-            // mesh scale is the gprim's world scale; the actual geometry is read later
-            // by the cooking service via IPhysicsSource::getMeshAttributes(gprimKey).
-            Matrix3d meshRot;
-            carb::Float3 meshScale{ 1.0f, 1.0f, 1.0f };
-            src.getLocalToWorldRotationAndScale(gprimKey, meshRot, meshScale);
-            const carb::Float3 signScale = scaleToSignScale(meshScale);
-            bool doubleSided = false;
-            src.getAttribute(geometryKey, tokDoubleSided, doubleSided);
-            shape = buildMeshShapeDesc(out, ctx, src, colliderKey, gprimKey, info.rigidBody, meshScale, signScale,
-                                       doubleSided, colliderBackingKey);
-            commonFilled = false;
-        }
-        else
-        {
-            return false; // convex / unhandled geometry — later slice
-        }
-
-        if (!shape)
-            return false;
-        if (!commonFilled && !fillCommonShape(ctx, colliderKey, info, *shape))
-            return false;
-        shape->primKey = colliderKey;
-        shape->sourceGprim = gprimKey;
-
-        // Per-face physics materials: a collider mesh expresses them as GeomSubset
-        // children that each bind their own material, and that is the only way to
-        // author more than one physics material on a mesh. They occupy
-        // sourceMaterials [0..N) with the collider's own binding as the trailing
-        // default slot, which is the order the consumer hands to
-        // PxShape::setMaterials. Mirrors the native walker's mesh-subset branch.
-        // Resolved on the geometry key so prototype-authored subsets are found for
-        // an instance proxy too.
-        if (primTypeIs(geometryKey, PrimType::eMesh))
-        {
-            src.forEachChild(geometryKey, [&](ObjectKey child)
+            for (size_t index = begin; index < end; ++index)
             {
-                if (!src.isA(child, tokGeomSubset))
-                    return;
-                TokenId elementType{};
-                if (!src.getAttribute(child, tokElementType, elementType) || elementType != tokFace)
-                    return;
-                // A subset that binds no material of its own resolves the mesh's, so
-                // gate on the material actually being a physics material: a subset
-                // bound only to a render material must not take a slot.
-                const ObjectKey subsetMaterial = src.getMaterialBinding(child);
-                if (subsetMaterial.valid() && src.hasSchema(subsetMaterial, tokPhysicsMaterialAPI))
-                    shape->sourceMaterials.push_back(subsetMaterial);
-            });
-        }
-
-        // Read direct material relationships or the resolved instance-material
-        // column through the source. Keep the lookup on the logical gprim so
-        // per-instance overrides survive. Mirrors the native walker, including its
-        // unconditional trailing slot: with per-face subsets present the collider's
-        // own binding is the default-fallback entry at index N, and the consumer
-        // indexes it positionally, so the slot has to exist even when nothing is
-        // bound there.
-        const ObjectKey material = src.getMaterialBinding(gprimKey);
-        if (material.valid() || !shape->sourceMaterials.empty())
-            shape->sourceMaterials.push_back(material);
-
-        // Per-shape collision filtering (PhysxFilteredPairsAPI on the collider).
-        shape->sourceFilteredCollisions = parseFilteredPairs(ctx, colliderKey);
-
-        // Collider-level simulationOwner (physics:simulationOwner on CollisionAPI),
-        // which is what decides ownership for a bodyless static collider. Mirrors
-        // the native walker: the owners ride on the descriptor and the consumer
-        // resolves them, rather than going through ShapeInfo — whose
-        // unresolved-scene path drops the shape outright.
-        src.getRelationshipTargets(colliderKey, tokSimulationOwner, shape->sourceSimulationOwners);
-
-        if (info.rigidBody.valid())
-        {
-            auto it = bodyByKey.find(info.rigidBody);
-            if (it != bodyByKey.end())
-                it->second->sourceCollisions.insert(colliderKey);
-        }
-        out.shapes.push_back(std::move(shape));
-        return true;
-    };
-
-    for (const ObjectKey key : shapeBucket.keys)
-    {
-        // A collider applied directly to an analytic gprim emits one shape. A
-        // collider applied to a non-geometry prim (e.g. an Xform) parents its
-        // geometry on descendant gprims — emit a shape per analytic child, with the
-        // static body kept at the collider's path (mirrors the native walker's
-        // Xform-collider descent). Child gprims carry no physics schema, so they are
-        // only present when the rendering domain was populated too.
-        if (emitShape(key, key))
-            continue;
-
-        bool emitted = false;
-        src.forEachChild(key, [&](ObjectKey child)
-        {
-            if (emitShape(key, child))
-                emitted = true;
+                auto& input = shapeInputs[index];
+                bool complete = true;
+                readOvstageShapeAttributes(colliderColumns.row(index, complete), geometryColumns.row(index, complete),
+                                           shapeTokens, shapeFields, input);
+                Matrix3d rotation;
+                decomposeWorldTransform(input.world, rotation, input.geometryScale);
+                if (input.relativePose)
+                    omni::physics::decomposeCollisionShapeLocalTransform(toPxMat44d(input.relative), toPxMat44d(input.bodyWorld),
+                        input.common.info.localPos, input.common.info.localRot, input.common.info.localScale);
+                else if (!input.common.info.rigidBody.valid())
+                {
+                    input.common.info.localPos = {float(input.world.data[12]), float(input.world.data[13]), float(input.world.data[14])};
+                    input.common.info.localRot = quatFromRotation(rotation);
+                    input.common.info.localScale = input.geometryScale;
+                }
+                validShapes[index] = complete && fillOvstageShape(input, *out.shapes[index]);
+            }
         });
-        if (!emitted)
-            ++out.skippedShapes; // unsupported collider or no supported child geometry
+        shapePhase.transition(stats ? &stats->finalizeSeconds : nullptr);
+        if (std::find(validShapes.begin(), validShapes.end(), uint8_t(0)) != validShapes.end())
+            throw std::logic_error("unprepared shape input or output storage");
+        // Publish body-collider edges only after all disjoint descriptor writes join.
+        for (const DescPtr<PhysxShapeDesc>& shape : out.shapes)
+        {
+            const auto body = bodyByKey.find(shape->rigidBody);
+            if (body != bodyByKey.end())
+                body->second->sourceCollisions.insert(shape->primKey);
+        }
     }
     src.clearBucket();
 
+    waveTimer.transition(stats ? &waveSeconds[6] : nullptr);
     // --- Joints (typed PhysicsJoint prims) ---
     // body0/body1 are resolved relationships (read back from ovpopulation).
     // Authored local frames are normalized, transformed from each relationship
@@ -3549,43 +3346,30 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         }
         return collisionBody;
     };
-    auto readJointAxis = [&](ObjectKey key) -> Axis
+    struct JointFrameInput
     {
-        TokenId at{};
-        if (src.getAttribute(key, tokJointAxis, at) && at.valid())
-        {
-            if (at == tokAxisY)
-                return eY;
-            if (at == tokAxisZ)
-                return eZ;
-        }
-        return eX; // USD joint default axis is X
+        Matrix4d relationshipWorld, bodyWorld;
+        bool hasTarget = false, targetsBody = false;
     };
-    auto transformJointFrame = [&](ObjectKey relationshipTarget,
-                                   ObjectKey body,
-                                   carb::Float3& localPosition,
-                                   carb::Float4& localOrientation) {
-        ::physx::PxQuat orientation(localOrientation.x, localOrientation.y, localOrientation.z, localOrientation.w);
-        orientation.normalize();
-        localOrientation = { orientation.x, orientation.y, orientation.z, orientation.w };
-        if (!relationshipTarget.valid())
-        {
-            return;
-        }
-
-        Matrix4d relationshipWorld;
-        src.getLocalToWorldTransform(relationshipTarget, relationshipWorld);
-
-        const bool relationshipTargetsBody =
-            body.valid() && src.canonicalPath(body) == src.canonicalPath(relationshipTarget);
-        Matrix4d bodyWorld = relationshipWorld;
-        if (!body.valid())
-            bodyWorld = Matrix4d{}; // identity (Math.h): no body, the pose stays world-space
-        else if (!relationshipTargetsBody)
-            src.getLocalToWorldTransform(body, bodyWorld);
-
-        omni::physics::transformJointFrameToBody(toPxMat44d(relationshipWorld), toPxMat44d(bodyWorld),
-                                                 relationshipTargetsBody, localPosition, localOrientation);
+    auto captureJointFrame = [&](ObjectKey target, ObjectKey body)
+    {
+        JointFrameInput frame;
+        frame.hasTarget = target.valid();
+        if (!frame.hasTarget) return frame;
+        src.getLocalToWorldTransform(target, frame.relationshipWorld);
+        frame.targetsBody = body.valid() && src.canonicalPath(body) == src.canonicalPath(target);
+        if (frame.targetsBody) frame.bodyWorld = frame.relationshipWorld;
+        else if (body.valid()) src.getLocalToWorldTransform(body, frame.bodyWorld);
+        return frame;
+    };
+    auto transformJointFrame = [](const JointFrameInput& frame, carb::Float3& position, carb::Float4& rotation) noexcept
+    {
+        ::physx::PxQuat q(rotation.x, rotation.y, rotation.z, rotation.w);
+        q.normalize();
+        rotation = {q.x, q.y, q.z, q.w};
+        if (frame.hasTarget)
+            omni::physics::transformJointFrameToBody(toPxMat44d(frame.relationshipWorld), toPxMat44d(frame.bodyWorld),
+                frame.targetsBody, position, rotation);
     };
 
     struct ScannedJointEntry
@@ -3630,7 +3414,6 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             "PhysicsDriveAPI:angular", "PhysicsDriveAPI:linear",
             "PhysicsDriveAPI:transX", "PhysicsDriveAPI:transY", "PhysicsDriveAPI:transZ",
             "PhysicsDriveAPI:rotX", "PhysicsDriveAPI:rotY", "PhysicsDriveAPI:rotZ", "PhysicsDriveAPI:distance" };
-        static const char* const kJointApi[] = { "PhysxJointAPI" };
         static const char* const kDistApi[] = { "PhysxPhysicsDistanceJointAPI" };
         // An undeterminable answer keeps the fail-open default (probe per joint).
         JointSchemaPresence& present = ctx.jointSchemaPresence();
@@ -3644,192 +3427,138 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         known(kEnv, countOf(kEnv), present.drivePerfEnvelope);
         known(kState, countOf(kState), present.jointState);
         known(kDrive, countOf(kDrive), present.physicsDrive);
-        known(kJointApi, countOf(kJointApi), present.physxJointApi);
         known(kDistApi, countOf(kDistApi), present.physxDistanceJoint);
     };
 
     for (const JointType& jt : jointTypes)
     {
+        DescriptorPhaseTimer jointSetupTimer(stats ? &readTimings.jointSetup : nullptr);
+        JointTimings perType;
+        double firstStructureSeconds = 0;
+        DescriptorPhaseTimer jointDetailTimer(stats ? &perType.enumerate : nullptr);
         Bucket jointBucket = enumeratePrimTypeFiltered(jt.typeName, "physics:localPos0", readOrdinal);
-        if (!jointBucket.keys.empty())
-            probeJointSchemaPresence();
-        const bool stageHasPhysicsDrive = ctx.jointSchemaPresence().physicsDrive;
-        const std::vector<std::string> jointDiscoveredAttrs = jointBucket.attrs;
-        const size_t jointAttrCount = jointBucket.attrs.size();
-        appendJointAttrs(jointBucket, jt.type);
-        // Prefetch only gated-family columns some prim authors (trimUnauthoredGatedJointAttrs).
-        trimUnauthoredGatedJointAttrs(jointBucket, jointAttrCount, jointDiscoveredAttrs);
-        // One columnar read of discovered + appended attrs.
-        src.prefetchBucket(jointBucket.keys, jointBucket.attrs);
-
-        // Drive tokens are constant per joint type: intern once here, not per joint.
-        const char* const driveInst = (jt.type == eJointRevolute)  ? "angular"
-                                       : (jt.type == eJointPrismatic) ? "linear"
-                                                                      : nullptr;
-        TokenId driveApiToken, driveStiffnessTok, driveDampingTok, driveTargetPosTok,
-            driveTargetVelTok, driveMaxForceTok, driveTypeTok;
-        if (driveInst)
+        if (jointBucket.keys.empty())
         {
-            driveApiToken = src.internToken(std::string("PhysicsDriveAPI:") + driveInst);
-            const std::string pfx = std::string("drive:") + driveInst + ":physics:";
-            driveStiffnessTok = src.internToken(pfx + "stiffness");
-            driveDampingTok = src.internToken(pfx + "damping");
-            driveTargetPosTok = src.internToken(pfx + "targetPosition");
-            driveTargetVelTok = src.internToken(pfx + "targetVelocity");
-            driveMaxForceTok = src.internToken(pfx + "maxForce");
-            driveTypeTok = src.internToken(pfx + "type");
+            src.clearBucket();
+            continue;
         }
-
+        jointDetailTimer.transition(stats ? &perType.probe : nullptr);
+        probeJointSchemaPresence();
+        const bool stageHasPhysicsDrive = ctx.jointSchemaPresence().physicsDrive;
+        // Relationship topology is discovered serially. Numeric and token-valued
+        // fields bind directly to retained rows after membership/storage is known.
+        jointDetailTimer.transition(stats ? &perType.prefetch : nullptr);
+        src.prefetchBucket(jointBucket.keys, {"physics:body0", "physics:body1", "physics:hinge0", "physics:hinge1", "physics:hinge", "physics:prismatic", "newton:mimicJoint"});
+        jointDetailTimer.finish();
+        jointSetupTimer.finish();
+        DescriptorPhaseTimer topologyTimer(stats ? &readTimings.jointTopology : nullptr);
+        DescriptorPhaseTimer jointPhase(stats ? &stats->prepareSeconds : nullptr);
+        const KnownTokens& jointTokens = ctx.knownTokens();
+        const JointReadTokens& jointNames = ctx.jointReadTokens();
+        const JointColumnTokens jointFields{tokJointEnabled, tokCollisionEnabled, tokBreakForce, tokBreakTorque, tokExcludeArt,
+            tokLocalPos0, tokLocalRot0, tokLocalPos1, tokLocalRot1, tokJointAxis, tokLowerLimit, tokUpperLimit,
+            tokCone0, tokCone1, tokMinDist, tokMaxDist, tokAxisY, tokAxisZ, tokDriveAcceleration};
+        std::vector<PreparedJoint> jointInputs;
+        std::vector<std::array<JointFrameInput, 2>> jointFrames;
+        jointInputs.reserve(jointBucket.keys.size());
+        jointFrames.reserve(jointBucket.keys.size());
         for (const ObjectKey key : jointBucket.keys)
         {
+            jointDetailTimer.transition(stats ? &perType.targets : nullptr);
             JointInfo info;
             info.type = jt.type;
-
-            bool flag = true;
-            if (src.getAttribute(key, tokJointEnabled, flag))
-                info.jointEnabled = flag;
-            flag = false;
-            if (src.getAttribute(key, tokCollisionEnabled, flag))
-                info.collisionEnabled = flag;
-            // Default to "no break" (FLT_MAX), overwritten only if authored.
-            info.breakForce = FLT_MAX;
-            info.breakTorque = FLT_MAX;
-            src.getAttribute(key, tokBreakForce, info.breakForce);
-            src.getAttribute(key, tokBreakTorque, info.breakTorque);
-            flag = false;
-            if (src.getAttribute(key, tokExcludeArt, flag))
-                info.excludeFromArticulation = flag;
-
-            // Resolved body relationships → nearest enabling rigid body.
-            const ObjectKey rel0 = firstTarget(key, tokBody0);
-            const ObjectKey rel1 = firstTarget(key, tokBody1);
-            const ObjectKey body0 = rel0.valid() ? resolveBodyFromTarget(rel0) : ObjectKey{};
-            const ObjectKey body1 = rel1.valid() ? resolveBodyFromTarget(rel1) : ObjectKey{};
-            info.rel0 = rel0;
-            info.rel1 = rel1;
-            info.body0 = body0;
-            info.body1 = body1;
-
-            // Authored local frames are relative to the relationship targets;
-            // convert them to the resolved body frames after reading.
-            {             src.getAttribute(key, tokLocalPos0, info.localPose0Position);
-            src.getAttribute(key, tokLocalRot0, info.localPose0Orientation);
-            src.getAttribute(key, tokLocalPos1, info.localPose1Position);
-            src.getAttribute(key, tokLocalRot1, info.localPose1Orientation);
-            transformJointFrame(rel0, body0, info.localPose0Position, info.localPose0Orientation);
-            transformJointFrame(rel1, body1, info.localPose1Position, info.localPose1Orientation);
-            }
-
-            // Per-type axis and single limit. D6 per-axis data and drives are
-            // populated separately below.
-            {             if (jt.type == eJointRevolute || jt.type == eJointPrismatic || jt.type == eJointSpherical)
-                info.axis = readJointAxis(key);
-            // A limit is active only when a bound is finite and inside the sentinel
-            // range; USD's unlimited default (-inf/+inf, or the +-0.5e38 sentinel)
-            // leaves it disabled. Mirrors NativeWalker — without the finite check an
-            // unlimited revolute/prismatic joint feeds inf bounds to the articulation
-            // joint's setLimitParams and PhysX rejects them.
-            constexpr float kJointSentinelLimit = 0.5e38f;
-            if (jt.type == eJointRevolute || jt.type == eJointPrismatic)
+            info.rel0 = firstTarget(key, tokBody0);
+            info.rel1 = firstTarget(key, tokBody1);
+            jointDetailTimer.transition(stats ? &perType.bodies : nullptr);
+            info.body0 = info.rel0.valid() ? resolveBodyFromTarget(info.rel0) : ObjectKey{};
+            info.body1 = info.rel1.valid() ? resolveBodyFromTarget(info.rel1) : ObjectKey{};
+            jointDetailTimer.transition(stats ? &perType.frames : nullptr);
+            jointFrames.push_back({captureJointFrame(info.rel0, info.body0), captureJointFrame(info.rel1, info.body1)});
+            jointDetailTimer.transition(stats ? &perType.membership : nullptr);
+            if (jt.type == eJointD6)
             {
-                src.getAttribute(key, tokLowerLimit, info.limit.lower);
-                src.getAttribute(key, tokUpperLimit, info.limit.upper);
-                info.limit.enabled =
-                    (std::isfinite(info.limit.lower) && info.limit.lower > -kJointSentinelLimit) ||
-                    (std::isfinite(info.limit.upper) && info.limit.upper < kJointSentinelLimit);
-            }
-            else if (jt.type == eJointSpherical)
-            {
-                src.getAttribute(key, tokCone0, info.limit.lower);
-                src.getAttribute(key, tokCone1, info.limit.upper);
-                info.limit.enabled = std::isfinite(info.limit.lower) && std::isfinite(info.limit.upper) &&
-                                     info.limit.lower >= 0.0f && info.limit.upper >= 0.0f;
-            }
-            else if (jt.type == eJointDistance)
-            {
-                float mn = -1.0f, mx = -1.0f;
-                info.minEnabled = src.getAttribute(key, tokMinDist, mn) && mn >= 0.0f;
-                info.maxEnabled = src.getAttribute(key, tokMaxDist, mx) && mx >= 0.0f;
-                info.limit.lower = mn;
-                info.limit.upper = mx;
-            }
-            else if (jt.type == eJointD6)
-            {
-                // D6 carries per-axis limits/drives as multi-apply UsdPhysicsLimitAPI:
-                // <axis> / UsdPhysicsDriveAPI:<axis> instances (axis = transX/Y/Z,
-                // rotX/Y/Z, distance). These axis names are fixed by the D6 schema,
-                // so check the exact schema tokens directly.
-                struct D6AxisSchema
+                for (const JointAxis axis : {eTransX, eTransY, eTransZ, eRotX, eRotY, eRotZ, eDistance})
                 {
-                    const char* instance;
-                    JointAxis axis;
-                };
-                static const D6AxisSchema kD6AxisSchemas[] = {
-                    { "transX", eTransX }, { "transY", eTransY }, { "transZ", eTransZ },
-                    { "rotX", eRotX },     { "rotY", eRotY },     { "rotZ", eRotZ },
-                    { "distance", eDistance },
-                };
-                for (const D6AxisSchema& axisSchema : kD6AxisSchemas)
-                {
-                    const std::string limitApi = std::string("PhysicsLimitAPI:") + axisSchema.instance;
-                    if (!src.hasSchema(key, src.internToken(limitApi)))
-                        continue;
-                    const std::string pfx = std::string("limit:") + axisSchema.instance + ":physics:";
-                    JointLimitInfo lim;
-                    src.getAttribute(key, src.internToken(pfx + "low"), lim.lower);
-                    src.getAttribute(key, src.internToken(pfx + "high"), lim.upper);
-                    // A limit is active only for finite bounds inside the sentinel
-                    // range; USD's unlimited (-inf/+inf or beyond +-0.5e38) leaves the
-                    // axis FREE (enabled=false), matching the revolute/prismatic rule.
-                    // Feeding inf to PxD6Joint's pyramid/limit setters is rejected.
-                    lim.enabled =
-                        (std::isfinite(lim.lower) && lim.lower > -kJointSentinelLimit) ||
-                        (std::isfinite(lim.upper) && lim.upper < kJointSentinelLimit);
-                    info.jointLimits.push_back({ axisSchema.axis, lim });
-                }
-                for (const D6AxisSchema& axisSchema : kD6AxisSchemas)
-                {
-                    const std::string driveApi = std::string("PhysicsDriveAPI:") + axisSchema.instance;
-                    if (!src.hasSchema(key, src.internToken(driveApi)))
-                        continue;
-                    const std::string pfx = std::string("drive:") + axisSchema.instance + ":physics:";
-                    JointDriveInfo drv;
-                    drv.enabled = true;
-                    drv.forceLimit = FLT_MAX;
-                    src.getAttribute(key, src.internToken(pfx + "stiffness"), drv.stiffness);
-                    src.getAttribute(key, src.internToken(pfx + "damping"), drv.damping);
-                    src.getAttribute(key, src.internToken(pfx + "targetPosition"), drv.targetPosition);
-                    src.getAttribute(key, src.internToken(pfx + "targetVelocity"), drv.targetVelocity);
-                    src.getAttribute(key, src.internToken(pfx + "maxForce"), drv.forceLimit);
-                    TokenId driveType{};
-                    if (src.getAttribute(key, src.internToken(pfx + "type"), driveType) && driveType.valid())
-                        drv.acceleration = (driveType == tokDriveAcceleration);
-                    info.jointDrives.push_back({ axisSchema.axis, drv });
+                    const auto& names = jointNames.instances[size_t(axis)];
+                    if (src.hasSchema(key, names.physicsLimitAPI)) info.jointLimits.push_back({axis, {}});
+                    if (src.hasSchema(key, names.physicsDriveAPI))
+                    {
+                        JointDriveInfo drive;
+                        drive.enabled = true;
+                        info.jointDrives.push_back({axis, drive});
+                    }
                 }
             }
+            else if ((jt.type == eJointRevolute || jt.type == eJointPrismatic) && stageHasPhysicsDrive)
+                info.drive.enabled = src.hasSchema(key, jointNames.instances[jt.type == eJointRevolute ? 7 : 8].physicsDriveAPI);
+            jointDetailTimer.transition(stats ? &perType.structure : nullptr);
+            DescriptorPhaseTimer firstStructureTimer(stats && jointInputs.empty() ? &firstStructureSeconds : nullptr);
+            jointInputs.push_back(prepareJointStructure(ctx, key, info));
+        }
+        jointDetailTimer.transition(stats ? &perType.declarations : nullptr);
+        auto jointAttributes = jointFields.attributes(jt.type);
+        std::vector<TokenId> jointTokenAttributes;
+        if (jt.type == eJointRevolute || jt.type == eJointPrismatic || jt.type == eJointSpherical)
+            jointTokenAttributes.push_back(tokJointAxis);
+        appendJointAttributeTokens(jointTokens, jointNames, jointInputs, jointAttributes, jointTokenAttributes);
+        jointDetailTimer.finish();
+        topologyTimer.finish();
+        DescriptorPhaseTimer columnTimer(stats ? &readTimings.columns : nullptr);
+        const FrozenScalarBatch jointColumns = src.readScalarBatch(jointBucket.keys, jointAttributes.data(), jointAttributes.size(),
+            jointTokenAttributes.data(), jointTokenAttributes.size());
+        columnTimer.finish();
+        if (stats)
+        {
+            jointDetail.enumerate += perType.enumerate;
+            jointDetail.probe += perType.probe;
+            jointDetail.prefetch += perType.prefetch;
+            jointDetail.targets += perType.targets;
+            jointDetail.bodies += perType.bodies;
+            jointDetail.frames += perType.frames;
+            jointDetail.membership += perType.membership;
+            jointDetail.structure += perType.structure;
+            jointDetail.declarations += perType.declarations;
+            std::fprintf(stderr, "Descriptor joint type: type=%s keys=%zu columns=%zu enumerate=%.6f probe=%.6f prefetch=%.6f targets=%.6f bodies=%.6f frames=%.6f membership=%.6f structure=%.6f declarations=%.6f first_structure=%.6f\n",
+                jt.typeName, jointBucket.keys.size(), jointAttributes.size(), perType.enumerate,
+                perType.probe, perType.prefetch, perType.targets, perType.bodies, perType.frames,
+                perType.membership, perType.structure, perType.declarations, firstStructureSeconds);
+        }
 
-            // Revolute/prismatic single-axis drive (UsdPhysicsDriveAPI:<instance>).
-            // The instance is fixed by joint type ("angular" for revolute,
-            // "linear" for prismatic), so it is read directly without multi-apply
-            // enumeration. The drive is active iff that DriveAPI instance is applied.
-            if (driveInst && stageHasPhysicsDrive && src.hasSchema(key, driveApiToken))
+        if (stats)
+        {
+            size_t bytes = jointInputs.capacity() * sizeof(PreparedJoint) + jointColumns.capacityBytes() +
+                           jointFrames.capacity() * sizeof(std::array<JointFrameInput, 2>);
+            for (const PreparedJoint& input : jointInputs)
+                bytes += input.info.jointLimits.capacity() * sizeof(std::pair<JointAxis, JointLimitInfo>) +
+                         input.info.jointDrives.capacity() * sizeof(std::pair<JointAxis, JointDriveInfo>);
+            stats->preparedPeakBytes = std::max(stats->preparedPeakBytes, bytes);
+        }
+        jointPhase.transition(stats ? &stats->constructSeconds : nullptr);
+        std::vector<DescPtr<PhysxJointDesc>> jointOutputs = allocateJointBatch(batches, jt.type, jointInputs.size());
+        for (size_t i = 0; i < jointInputs.size(); ++i)
+            prepareJointStorage(jointInputs[i], *jointOutputs[i]);
+        std::vector<uint8_t> jointValid(jointInputs.size());
+        jointPhase.finish();
+        fillDescriptorRanges(jointInputs.size(), execution, [&](size_t begin, size_t end) noexcept
+        {
+            for (size_t i = begin; i < end; ++i)
             {
-                info.drive.enabled = true;
-                info.drive.forceLimit = FLT_MAX;
-                src.getAttribute(key, driveStiffnessTok, info.drive.stiffness);
-                src.getAttribute(key, driveDampingTok, info.drive.damping);
-                src.getAttribute(key, driveTargetPosTok, info.drive.targetPosition);
-                src.getAttribute(key, driveTargetVelTok, info.drive.targetVelocity);
-                src.getAttribute(key, driveMaxForceTok, info.drive.forceLimit);
-                TokenId driveType{};
-                if (src.getAttribute(key, driveTypeTok, driveType) && driveType.valid())
-                    info.drive.acceleration = (driveType == tokDriveAcceleration);
+                auto& input = jointInputs[i];
+                bool complete = true;
+                readOvstageJointAttributes(jointColumns.row(i, complete), jointTokens, jointNames, jointFields, input);
+                transformJointFrame(jointFrames[i][0], input.info.localPose0Position, input.info.localPose0Orientation);
+                transformJointFrame(jointFrames[i][1], input.info.localPose1Position, input.info.localPose1Orientation);
+                jointValid[i] = complete && fillJoint(input, *jointOutputs[i]);
             }
-            }
-
-            DescPtr<PhysxJointDesc> joint = parseJoint(ctx, key, info);
-            if (!joint)
-                continue;
+        });
+        jointPhase.transition(stats ? &stats->finalizeSeconds : nullptr);
+        for (size_t i = 0; i < jointInputs.size(); ++i)
+        {
+            if (!jointValid[i])
+                throw std::logic_error("Incomplete prepared joint input or output storage");
+            const ObjectKey key = jointInputs[i].key;
+            const JointInfo& info = jointInputs[i].info;
+            DescPtr<PhysxJointDesc>& joint = jointOutputs[i];
 
             auto bodyFromReferencedJoint = [&](ObjectKey referencedJoint) -> ObjectKey
             {
@@ -3901,6 +3630,8 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             return nullptr;
         };
 
+        DescriptorPhaseTimer tendonPhase(stats ? &stats->prepareSeconds : nullptr);
+        std::vector<PreparedMimicJoint> mimicInputs;
         for (const ObjectKey& jointKey : jointOrder)
         {
             ScannedJointMap::const_iterator it = jointMap.find(jointKey);
@@ -3921,11 +3652,22 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
                                             info.jointType == eJointSpherical ||
                                             info.jointType == eJointDistance;
             if (physxMimicAllowed)
-                parseMimicJoints(ctx, jointKey, info, jointTypeOf, jointLimitOf, out.mimicJoints);
+                prepareMimicJoints(ctx, jointKey, info, jointTypeOf, jointLimitOf, mimicInputs);
             if (newtonMimicAllowed)
-                parseNewtonMimicJoints(ctx, jointKey, info, jointTypeOf, out.mimicJoints);
+                prepareNewtonMimicJoints(ctx, jointKey, info, jointTypeOf, mimicInputs);
         }
 
+        if (stats) stats->preparedPeakBytes = std::max(stats->preparedPeakBytes, mimicInputs.capacity() * sizeof(PreparedMimicJoint));
+        tendonPhase.transition(stats ? &stats->constructSeconds : nullptr);
+        out.mimicJoints = allocateDescriptorBatch<MimicJointDesc>(batches, mimicInputs.size());
+        tendonPhase.finish();
+        fillDescriptorRanges(mimicInputs.size(), execution, [&](size_t begin, size_t end) noexcept
+        {
+            for (size_t i = begin; i < end; ++i) fillMimicJoint(mimicInputs[i], *out.mimicJoints[i]);
+        });
+
+        tendonPhase.transition(stats ? &stats->prepareSeconds : nullptr);
+        std::vector<PreparedFixedTendon> fixedInputs;
         // parseFixedTendons probes every joint (one schema read each); skip the pass when no
         // prim applies a fixed-tendon axis schema. Membership, not authored attributes: an
         // applied instance with schema-default values is still a tendon.
@@ -3941,8 +3683,26 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
             info.jointType = it->second.desc->type;
             info.body0 = it->second.desc->body0;
             info.body1 = it->second.desc->body1;
-            parseFixedTendons(ctx, jointKey, info, out.fixedTendonAxes, out.fixedTendons);
+            prepareFixedTendons(ctx, jointKey, info, fixedInputs);
         }
+        const size_t roots = size_t(std::count_if(fixedInputs.begin(), fixedInputs.end(), [](const PreparedFixedTendon& input) { return input.root; }));
+        if (stats) stats->preparedPeakBytes = std::max(stats->preparedPeakBytes, mimicInputs.capacity() * sizeof(PreparedMimicJoint) + fixedInputs.capacity() * sizeof(PreparedFixedTendon));
+        tendonPhase.transition(stats ? &stats->constructSeconds : nullptr);
+        out.fixedTendonAxes = allocateDescriptorBatch<PhysxTendonAxisDesc>(batches, fixedInputs.size());
+        out.fixedTendons = allocateDescriptorBatch<PhysxTendonFixedDesc>(batches, roots);
+        std::vector<PhysxTendonFixedDesc*> rootSlots(fixedInputs.size(), nullptr);
+        size_t rootIndex = 0;
+        for (size_t i = 0; i < fixedInputs.size(); ++i)
+            if (fixedInputs[i].root) rootSlots[i] = out.fixedTendons[rootIndex++].get();
+        tendonPhase.finish();
+        fillDescriptorRanges(fixedInputs.size(), execution, [&](size_t begin, size_t end) noexcept
+        {
+            for (size_t i = begin; i < end; ++i)
+            {
+                fillFixedTendonAxis(fixedInputs[i], *out.fixedTendonAxes[i]);
+                if (rootSlots[i]) fillFixedTendonRoot(fixedInputs[i], *rootSlots[i]);
+            }
+        });
     }
 
     // Spatial tendon attachments are arbitrary multi-apply schemas on articulation
@@ -3957,22 +3717,48 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         sizeof(kSpatialTendonBases) / sizeof(kSpatialTendonBases[0]);
     std::vector<ObjectKey> spatialTendonKeys;
     // Spatial-tendon instance names are user-arbitrary, so collectMultiApplySchemaKeys needs
-    // a whole-stage schema parse; skip it unless some prim applies one of the bases.
-    if (src.stageHasAnySchema(kSpatialTendonBases, kSpatialTendonBaseCount).value_or(true))
+    // a whole-stage schema parse. Only emitted bodies can own the attachments we prepare
+    // below, so an empty body set needs neither the presence probe nor that parse.
+    if (!bodyByKey.empty() &&
+        src.stageHasAnySchema(kSpatialTendonBases, kSpatialTendonBaseCount).value_or(true))
         for (const char* base : kSpatialTendonBases)
             src.collectMultiApplySchemaKeys(src.internToken(base), spatialTendonKeys);
     if (!spatialTendonKeys.empty())
     {
+        DescriptorPhaseTimer phase(stats ? &stats->prepareSeconds : nullptr);
+        std::vector<PreparedSpatialTendon> inputs;
         for (const auto& bodyEntry : bodyByKey)
         {
             if (!bodyEntry.second)
                 continue;
             SpatialTendonParseInfo info;
             info.linkWorldScale = bodyEntry.second->scale;
-            parseSpatialTendons(ctx, bodyEntry.first, info, out.spatialTendonAttachments);
+            prepareSpatialTendons(ctx, bodyEntry.first, info, inputs);
         }
+        size_t roots = 0, leaves = 0;
+        for (const PreparedSpatialTendon& input : inputs)
+        {
+            roots += input.type == eTendonAttachmentRoot;
+            leaves += input.type == eTendonAttachmentLeaf;
+        }
+        if (stats) stats->preparedPeakBytes = std::max(stats->preparedPeakBytes, descriptor_memory::nested(inputs));
+        phase.transition(stats ? &stats->constructSeconds : nullptr);
+        std::vector<DescPtr<PhysxTendonAttachmentDesc>> rootOwners = allocateDescriptorBatch<PhysxTendonSpatialDesc, PhysxTendonAttachmentDesc>(batches, roots);
+        std::vector<DescPtr<PhysxTendonAttachmentDesc>> leafOwners = allocateDescriptorBatch<PhysxTendonAttachmentLeafDesc, PhysxTendonAttachmentDesc>(batches, leaves);
+        std::vector<DescPtr<PhysxTendonAttachmentDesc>> middleOwners = allocateDescriptorBatch<PhysxTendonAttachmentDesc>(batches, inputs.size() - roots - leaves);
+        out.spatialTendonAttachments.resize(inputs.size());
+        size_t root = 0, leaf = 0, middle = 0;
+        for (size_t i = 0; i < inputs.size(); ++i)
+            out.spatialTendonAttachments[i] = inputs[i].type == eTendonAttachmentRoot ? std::move(rootOwners[root++]) :
+                inputs[i].type == eTendonAttachmentLeaf ? std::move(leafOwners[leaf++]) : std::move(middleOwners[middle++]);
+        phase.finish();
+        fillDescriptorRanges(inputs.size(), execution, [&](size_t begin, size_t end) noexcept
+        {
+            for (size_t i = begin; i < end; ++i) fillSpatialTendon(inputs[i], *out.spatialTendonAttachments[i]);
+        });
     }
 
+    waveTimer.transition(stats ? &waveSeconds[7] : nullptr);
     // --- Collision groups (typed UsdPhysicsCollisionGroup prims) ---
     // filteredGroups (group↔group filtering) + the `colliders` collection
     // membership, both resolved through the source from ovpopulation-persisted
@@ -3985,16 +3771,15 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     appendCollisionGroupAttrs(cgBucket);
     src.prefetchBucket(cgBucket.keys, cgDiscoveredAttrs);
     src.prefetchBucket(cgBucket.keys, appendedAttrs(cgBucket, cgAttrCount));
-    for (const ObjectKey key : cgBucket.keys)
+    out.collisionGroups = allocateDescriptorBatch<CollisionGroupDesc>(batches, cgBucket.keys.size());
+    for (size_t i = 0; i < cgBucket.keys.size(); ++i)
     {
+        const ObjectKey key = cgBucket.keys[i];
         CollisionGroupInfo info = parseCollisionGroup(ctx, key);
-        DescPtr<CollisionGroupDesc> desc = allocateDesc<CollisionGroupDesc>(allocator);
-        if (!desc)
-            continue;
-        desc->primKey = key;
-        desc->sourceFilteredGroups = std::move(info.filteredGroups);
-        desc->sourceMembers = std::move(info.members);
-        out.collisionGroups.push_back(std::move(desc));
+        CollisionGroupDesc& desc = *out.collisionGroups[i];
+        desc.primKey = key;
+        desc.sourceFilteredGroups = std::move(info.filteredGroups);
+        desc.sourceMembers = std::move(info.members);
     }
     src.clearBucket();
 
@@ -4035,17 +3820,34 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
 
     src.clearBucket();
 
-    buildArticulations(src, allocator, artRoots, out.bodies, out.joints, out.articulations);
+    {
+        DescriptorPhaseTimer timer(stats ? &stats->graphSeconds : nullptr);
+        buildArticulations(src, batches, artRoots, out.bodies, out.joints, out.articulations);
+    }
 
+    PreparedOvstageVehicles vehicleInputs;
     auto scanBucket = [&](const Bucket& bucket, auto emit)
     {
+        if (bucket.keys.empty())
+        {
+            src.clearBucket();
+            return;
+        }
+
         src.prefetchBucket(bucket.keys, bucket.attrs);
         for (const ObjectKey key : bucket.keys)
             emit(key);
+        flushPreparedVehicles(vehicleInputs, out, batches, execution);
         src.clearBucket();
     };
     auto scanBucketWithTransform = [&](const Bucket& bucket, auto emit)
     {
+        if (bucket.keys.empty())
+        {
+            src.clearBucket();
+            return;
+        }
+
         Bucket withTransforms = bucket;
         appendTransformAttrs(withTransforms);
         prefetchTransformAncestors(src, withTransforms.keys);
@@ -4053,26 +3855,81 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         src.prefetchBucket(bucket.keys, bucket.attrs);
         for (const ObjectKey key : withTransforms.keys)
             emit(key);
+        flushPreparedVehicles(vehicleInputs, out, batches, execution);
         src.clearBucket();
     };
 
+    waveTimer.transition(stats ? &waveSeconds[8] : nullptr);
     // --- Particles ---
     Bucket particleSystemBucket = enumeratePrimTypeFiltered("PhysxParticleSystem",
                                                            "particleSystemEnabled",
                                                            readOrdinal);
     appendBucketAttr(particleSystemBucket, "physics:simulationOwner");
     appendBucketAttr(particleSystemBucket, "physics:filteredPairs");
-    scanBucket(particleSystemBucket, [&](ObjectKey key) { emitParticleSystem(out, ctx, key); });
+    src.prefetchBucket(particleSystemBucket.keys, particleSystemBucket.attrs);
+    appendPreparedParticleSystems(out, ctx, batches, execution, particleSystemBucket.keys);
+    src.clearBucket();
 
     Bucket particleSetBucket = enumerateSchemaFiltered("PhysxParticleSetAPI",
                                                      "physxParticle:particleSystem", readOrdinal);
     appendBucketAttr(particleSetBucket, "physxParticle:particleSystem");
-    scanBucket(particleSetBucket, [&](ObjectKey key) { emitParticleSet(out, ctx, key); });
+    {
+        DescriptorPhaseTimer phase(stats ? &stats->prepareSeconds : nullptr);
+        std::vector<PreparedParticleSet> inputs;
+        std::vector<ObjectKey> referencedSystems;
+        std::unordered_set<ObjectKey, ObjectKey::Hash> emittedSystems;
+        for (const DescPtr<ParticleSystemDesc>& system : out.particleSystems)
+            emittedSystems.insert(src.canonicalKey(system->systemKey));
+        scanBucket(particleSetBucket, [&](ObjectKey key)
+        {
+            PreparedParticleSet input = prepareParticleSet(ctx, key, false);
+            if (!input.prepared) return;
+            if (input.systemKey.valid() && src.exists(input.systemKey) &&
+                emittedSystems.insert(src.canonicalKey(input.systemKey)).second)
+                referencedSystems.push_back(input.systemKey);
+            inputs.push_back(std::move(input));
+        });
+        phase.finish();
+        appendPreparedParticleSystems(out, ctx, batches, execution, referencedSystems);
+        phase.transition(stats ? &stats->prepareSeconds : nullptr);
+        for (PreparedParticleSet& input : inputs)
+            resolvePreparedParticleSetSystem(ctx, input);
+        if (stats) stats->preparedPeakBytes = std::max(stats->preparedPeakBytes, descriptor_memory::nested(inputs));
+        phase.transition(stats ? &stats->constructSeconds : nullptr);
+        out.particleSets = allocateDescriptorBatch<ParticleSetDesc>(batches, inputs.size());
+        for (size_t i = 0; i < inputs.size(); ++i) prepareParticleSetStorage(inputs[i], *out.particleSets[i]);
+        phase.finish();
+        fillDescriptorRanges(inputs.size(), execution, [&](size_t begin, size_t end) noexcept
+        {
+            for (size_t i = begin; i < end; ++i) fillParticleSet(inputs[i], *out.particleSets[i]);
+        });
+    }
 
     Bucket particleSamplerBucket = enumerateSchemaFiltered("PhysxParticleSamplingAPI",
                                                           "physxParticleSampling:samplingDistance", readOrdinal);
     appendBucketAttr(particleSamplerBucket, "physxParticleSampling:particles");
-    scanBucket(particleSamplerBucket, [&](ObjectKey key) { emitParticleSampler(out, ctx, key); });
+    {
+        DescriptorPhaseTimer phase(stats ? &stats->prepareSeconds : nullptr);
+        std::vector<PreparedParticleSampling> inputs;
+        scanBucket(particleSamplerBucket, [&](ObjectKey key)
+        {
+            PreparedParticleSampling input = prepareParticleSampling(ctx, key);
+            if (input.prepared) inputs.push_back(input);
+        });
+        if (stats) stats->preparedPeakBytes = std::max(stats->preparedPeakBytes, descriptor_memory::nested(inputs));
+        phase.transition(stats ? &stats->constructSeconds : nullptr);
+        out.particleSamplers = allocateDescriptorBatch<ParticleSamplingDesc>(batches, inputs.size());
+        out.particleSamplerKeys.resize(inputs.size());
+        phase.finish();
+        fillDescriptorRanges(inputs.size(), execution, [&](size_t begin, size_t end) noexcept
+        {
+            for (size_t i = begin; i < end; ++i)
+            {
+                fillParticleSampling(inputs[i], *out.particleSamplers[i]);
+                out.particleSamplerKeys[i] = inputs[i].key;
+            }
+        });
+    }
 
     // --- Deformable attachments and element collision filters ---
     static const char* const attachmentTypeNames[] = {
@@ -4087,13 +3944,54 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
                                                                   "omniphysics:attachmentEnabled",
                                                                   readOrdinal);
         const ObjectType subtype = attachmentSubtypeForPrimType(typeName);
-        scanBucket(attachmentBucket, [&](ObjectKey key) { emitAttachment(out, ctx, key, subtype); });
+        DescriptorPhaseTimer phase(stats ? &stats->prepareSeconds : nullptr);
+        std::vector<PreparedAttachment> inputs;
+        scanBucket(attachmentBucket, [&](ObjectKey key)
+        {
+            PreparedAttachment input = prepareAttachment(ctx, key, subtype);
+            if (input.valid) inputs.push_back(input);
+        });
+        if (stats) stats->preparedPeakBytes = std::max(stats->preparedPeakBytes, descriptor_memory::nested(inputs));
+        phase.transition(stats ? &stats->constructSeconds : nullptr);
+        std::vector<DescPtr<PhysxDeformableAttachmentDesc>> outputs =
+            allocateDescriptorBatch<PhysxDeformableAttachmentDesc>(batches, inputs.size());
+        phase.finish();
+        fillDescriptorRanges(inputs.size(), execution, [&](size_t begin, size_t end) noexcept
+        {
+            for (size_t i = begin; i < end; ++i)
+            {
+                fillAttachment(inputs[i], *outputs[i]);
+                outputs[i]->primKey = inputs[i].key;
+            }
+        });
+        for (DescPtr<PhysxDeformableAttachmentDesc>& desc : outputs)
+            out.attachments.push_back(std::move(desc));
     }
 
     const Bucket filterBucket = enumeratePrimTypeFiltered("OmniPhysicsElementCollisionFilter",
                                                           "omniphysics:filterEnabled",
                                                           readOrdinal);
-    scanBucket(filterBucket, [&](ObjectKey key) { emitElementCollisionFilter(out, ctx, key); });
+    {
+        DescriptorPhaseTimer phase(stats ? &stats->prepareSeconds : nullptr);
+        std::vector<PreparedAttachment> inputs;
+        scanBucket(filterBucket, [&](ObjectKey key)
+        {
+            PreparedAttachment input = prepareElementCollisionFilter(ctx, key);
+            if (input.valid) inputs.push_back(input);
+        });
+        if (stats) stats->preparedPeakBytes = std::max(stats->preparedPeakBytes, descriptor_memory::nested(inputs));
+        phase.transition(stats ? &stats->constructSeconds : nullptr);
+        out.deformableCollisionFilters = allocateDescriptorBatch<PhysxDeformableCollisionFilterDesc>(batches, inputs.size());
+        phase.finish();
+        fillDescriptorRanges(inputs.size(), execution, [&](size_t begin, size_t end) noexcept
+        {
+            for (size_t i = begin; i < end; ++i)
+            {
+                fillElementCollisionFilter(inputs[i], *out.deformableCollisionFilters[i]);
+                out.deformableCollisionFilters[i]->primKey = inputs[i].key;
+            }
+        });
+    }
 
     // --- Character controllers ---
     // Peer of NativeWalker's ApiFlag::eCharacterControllerAPI dispatch. Needs the
@@ -4106,21 +4004,36 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         "radius",
         "height",
     });
-    scanBucketWithTransform(cctBucket, [&](ObjectKey key) { emitCct(out, src, ctx, key); });
+    {
+        DescriptorPhaseTimer phase(stats ? &stats->prepareSeconds : nullptr);
+        std::vector<PreparedCct> inputs;
+        scanBucketWithTransform(cctBucket, [&](ObjectKey key) { prepareOvstageCct(inputs, src, ctx, key); });
+        if (stats) stats->preparedPeakBytes = std::max(stats->preparedPeakBytes, descriptor_memory::nested(inputs));
+        phase.transition(stats ? &stats->constructSeconds : nullptr);
+        out.ccts = allocateDescriptorBatch<CapsuleCctDesc>(batches, inputs.size());
+        phase.finish();
+        fillDescriptorRanges(inputs.size(), execution, [&](size_t begin, size_t end) noexcept
+        {
+            for (size_t i = begin; i < end; ++i) fillCct(inputs[i], *out.ccts[i]);
+        });
+    }
 
+    waveTimer.transition(stats ? &waveSeconds[9] : nullptr);
     // --- Vehicles: scene context + tire friction tables ---
     // Descriptors in their own right (a vehicle may reference them later): always scanned.
     const Bucket vehCtxBucket = enumerateSchemaFiltered("PhysxVehicleContextAPI",
                                                 "physxVehicleContext:updateMode", readOrdinal);
-    scanBucket(vehCtxBucket, [&](ObjectKey key) { emitVehicleContext(out, src, ctx, key); });
+    scanBucket(vehCtxBucket, [&](ObjectKey key) { emitVehicleContext(vehicleInputs, src, ctx, key); });
 
     const Bucket tftBucket = enumeratePrimTypeFiltered("PhysxVehicleTireFrictionTable",
                                                        "frictionValues",
                                                        readOrdinal);
-    scanBucket(tftBucket, [&](ObjectKey key) { emitTireFrictionTable(out, src, ctx, key); });
+    scanBucket(tftBucket, [&](ObjectKey key) { emitTireFrictionTable(vehicleInputs, src, ctx, key); });
 
     // The ~16 component / vehicle enumerates below are each an ovstage query even when
-    // empty; one count query over the whole vehicle schema family gates them. Unknown → scan.
+    // empty; one count query over the whole vehicle schema family gates them. Every name
+    // here is concrete (single-apply or qualified), so arbitrary-instance discovery would
+    // read unrelated render schemas without adding a possible match. Unknown → scan.
     static const char* const kVehicleFamilySchemas[] = {
         "PhysxVehicleAPI", "PhysxVehicleWheelAPI", "PhysxVehicleTireAPI", "PhysxVehicleSuspensionAPI",
         "PhysxVehicleEngineAPI", "PhysxVehicleGearsAPI", "PhysxVehicleClutchAPI", "PhysxVehicleDriveBasicAPI",
@@ -4130,46 +4043,47 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
         "PhysxVehicleNonlinearCommandResponseAPI:drive", "PhysxVehicleNonlinearCommandResponseAPI:steer",
         "PhysxVehicleNonlinearCommandResponseAPI:brakes0", "PhysxVehicleNonlinearCommandResponseAPI:brakes1",
         "PhysxVehicleWheelAttachmentAPI", "PhysxVehicleSuspensionComplianceAPI" };
-    if (src.stageHasAnySchema(kVehicleFamilySchemas, sizeof(kVehicleFamilySchemas) / sizeof(kVehicleFamilySchemas[0]))
+    if (src.stageHasAnySchema(kVehicleFamilySchemas, sizeof(kVehicleFamilySchemas) / sizeof(kVehicleFamilySchemas[0]),
+                              /*includeMultiApplyInstances=*/false)
             .value_or(true))
     {
     // --- Vehicles: shareable wheel/tire/suspension components ---
     const Bucket wheelBucket = enumerateSchemaFiltered("PhysxVehicleWheelAPI",
                                                "physxVehicleWheel:radius", readOrdinal);
-    scanBucket(wheelBucket, [&](ObjectKey key) { emitVehicleWheel(out, ctx, key); });
+    scanBucket(wheelBucket, [&](ObjectKey key) { emitVehicleWheel(vehicleInputs, ctx, key); });
 
     const Bucket tireBucket = enumerateSchemaFiltered("PhysxVehicleTireAPI",
                                               "physxVehicleTire:lateralStiffnessGraph", readOrdinal);
-    scanBucket(tireBucket, [&](ObjectKey key) { emitVehicleTire(out, instance, src, ctx, key, massScale); });
+    scanBucket(tireBucket, [&](ObjectKey key) { emitVehicleTire(vehicleInputs, instance, src, ctx, key, massScale); });
 
     const Bucket suspensionBucket = enumerateSchemaFiltered("PhysxVehicleSuspensionAPI",
                                                     "physxVehicleSuspension:springStrength", readOrdinal);
-    scanBucket(suspensionBucket, [&](ObjectKey key) { emitVehicleSuspension(out, ctx, key); });
+    scanBucket(suspensionBucket, [&](ObjectKey key) { emitVehicleSuspension(vehicleInputs, ctx, key); });
 
     // --- Vehicles: drivetrain components ---
     const Bucket engineBucket = enumerateSchemaFiltered("PhysxVehicleEngineAPI",
                                                 "physxVehicleEngine:peakTorque", readOrdinal);
-    scanBucket(engineBucket, [&](ObjectKey key) { emitVehicleEngine(out, src, ctx, key, kgmsScale); });
+    scanBucket(engineBucket, [&](ObjectKey key) { emitVehicleEngine(vehicleInputs, src, ctx, key, kgmsScale); });
 
     const Bucket gearsBucket = enumerateSchemaFiltered("PhysxVehicleGearsAPI",
                                                "physxVehicleGears:ratios", readOrdinal);
-    scanBucket(gearsBucket, [&](ObjectKey key) { emitVehicleGears(out, src, ctx, key); });
+    scanBucket(gearsBucket, [&](ObjectKey key) { emitVehicleGears(vehicleInputs, src, ctx, key); });
 
     const Bucket clutchBucket = enumerateSchemaFiltered("PhysxVehicleClutchAPI",
                                                 "physxVehicleClutch:strength", readOrdinal);
-    scanBucket(clutchBucket, [&](ObjectKey key) { emitVehicleClutch(out, ctx, key, kgmsScale); });
+    scanBucket(clutchBucket, [&](ObjectKey key) { emitVehicleClutch(vehicleInputs, ctx, key, kgmsScale); });
 
     const Bucket driveBasicBucket = enumerateSchemaFiltered("PhysxVehicleDriveBasicAPI",
                                                     "physxVehicleDriveBasic:peakTorque", readOrdinal);
-    scanBucket(driveBasicBucket, [&](ObjectKey key) { emitVehicleDriveBasic(out, ctx, key, kgmsScale); });
+    scanBucket(driveBasicBucket, [&](ObjectKey key) { emitVehicleDriveBasic(vehicleInputs, ctx, key, kgmsScale); });
 
     const Bucket driveStandardBucket = enumerateSchemaFiltered("PhysxVehicleDriveStandardAPI",
                                                        "physxVehicleDriveStandard:engine", readOrdinal);
-    scanBucket(driveStandardBucket, [&](ObjectKey key) { emitVehicleDriveStandard(out, src, ctx, key); });
+    scanBucket(driveStandardBucket, [&](ObjectKey key) { emitVehicleDriveStandard(vehicleInputs, src, ctx, key); });
 
     const Bucket tankDiffBucket = enumerateSchemaFiltered("PhysxVehicleTankDifferentialAPI",
                                                   "physxVehicleTankDifferential:numberOfWheelsPerTrack", readOrdinal);
-    scanBucket(tankDiffBucket, [&](ObjectKey key) { emitVehicleTankDifferential(out, src, ctx, key); });
+    scanBucket(tankDiffBucket, [&](ObjectKey key) { emitVehicleTankDifferential(vehicleInputs, src, ctx, key); });
 
     const Bucket multiDiffBucket = enumerateSchemaFiltered("PhysxVehicleMultiWheelDifferentialAPI",
                                                    "physxVehicleMultiWheelDifferential:wheels", readOrdinal);
@@ -4177,22 +4091,22 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     scanBucket(multiDiffBucket, [&](ObjectKey key)
     {
         if (!src.hasSchema(key, tokTankDiffApi))
-            emitVehicleMultiWheelDifferential(out, src, ctx, key);
+            emitVehicleMultiWheelDifferential(vehicleInputs, src, ctx, key);
     });
 
     const Bucket autoGearBucket = enumerateSchemaFiltered("PhysxVehicleAutoGearBoxAPI",
                                                   "physxVehicleAutoGearBox:upRatios", readOrdinal);
-    scanBucket(autoGearBucket, [&](ObjectKey key) { emitVehicleAutoGearBox(out, src, ctx, key); });
+    scanBucket(autoGearBucket, [&](ObjectKey key) { emitVehicleAutoGearBox(vehicleInputs, src, ctx, key); });
 
     // --- Vehicles: brakes, steering, nonlinear response ---
     const char* const brakeSchemas[] = { "PhysxVehicleBrakesAPI:brakes0", "PhysxVehicleBrakesAPI:brakes1" };
     const Bucket brakesBucket = enumerateSchemasFiltered(brakeSchemas, 2,
                                                  "physxVehicleBrakes:brakes0:maxBrakeTorque", readOrdinal);
-    scanBucket(brakesBucket, [&](ObjectKey key) { emitVehicleBrakes(out, src, ctx, key); });
+    scanBucket(brakesBucket, [&](ObjectKey key) { emitVehicleBrakes(vehicleInputs, src, ctx, key); });
 
     const Bucket steeringBucket = enumerateSchemaFiltered("PhysxVehicleSteeringAPI",
                                                   "physxVehicleSteering:wheels", readOrdinal);
-    scanBucket(steeringBucket, [&](ObjectKey key) { emitVehicleSteeringBasic(out, src, ctx, key); });
+    scanBucket(steeringBucket, [&](ObjectKey key) { emitVehicleSteeringBasic(vehicleInputs, src, ctx, key); });
 
     const Bucket ackermannBucket = enumerateSchemaFiltered("PhysxVehicleAckermannSteeringAPI",
                                                    "physxVehicleAckermannSteering:wheel0", readOrdinal);
@@ -4200,7 +4114,7 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     scanBucket(ackermannBucket, [&](ObjectKey key)
     {
         if (!src.hasSchema(key, tokSteeringApi))
-            emitVehicleSteeringAckermann(out, ctx, key);
+            emitVehicleSteeringAckermann(vehicleInputs, ctx, key);
     });
 
     const char* const ncrSchemas[] = {
@@ -4211,23 +4125,58 @@ OvstageScanResult scanOvstage(ovstage_instance_t* instance,
     };
     const Bucket ncrBucket = enumerateSchemasFiltered(ncrSchemas, 4,
                                               "physxVehicleNonlinearCommandResponse:drive:commandValues", readOrdinal);
-    scanBucket(ncrBucket, [&](ObjectKey key) { emitVehicleNonlinearCmdResponse(out, src, ctx, key); });
+    scanBucket(ncrBucket, [&](ObjectKey key) { emitVehicleNonlinearCmdResponse(vehicleInputs, src, ctx, key); });
 
     // --- Vehicles: wheel attachments, suspension compliance, chassis roots ---
     const Bucket wheelAttachmentBucket = enumerateSchemaFiltered("PhysxVehicleWheelAttachmentAPI",
                                                          "physxVehicleWheelAttachment:index", readOrdinal);
-    scanBucket(wheelAttachmentBucket, [&](ObjectKey key) { emitVehicleWheelAttachment(out, instance, src, ctx, key); });
+    scanBucket(wheelAttachmentBucket, [&](ObjectKey key) { emitVehicleWheelAttachment(vehicleInputs, instance, src, ctx, key); });
 
     const Bucket suspensionComplianceBucket = enumerateSchemaFiltered("PhysxVehicleSuspensionComplianceAPI",
                                                               "physxVehicleSuspensionCompliance:suspensionForceAppPoint",
                                                               readOrdinal);
-    scanBucket(suspensionComplianceBucket, [&](ObjectKey key) { emitVehicleSuspensionCompliance(out, src, ctx, key); });
+    scanBucket(suspensionComplianceBucket, [&](ObjectKey key) { emitVehicleSuspensionCompliance(vehicleInputs, src, ctx, key); });
 
     const Bucket vehicleBucket = enumerateSchemaFiltered("PhysxVehicleAPI",
                                                  "physxVehicle:vehicleEnabled", readOrdinal);
-    scanBucketWithTransform(vehicleBucket, [&](ObjectKey key) { emitVehicle(out, src, ctx, key, lengthScale); });
+    scanBucketWithTransform(vehicleBucket, [&](ObjectKey key) { emitVehicle(vehicleInputs, src, ctx, key, lengthScale); });
     }
 
+    waveTimer.finish();
+    scanTimer.finish();
+    if (stats)
+    {
+        stats->coordinatorOtherSeconds = std::max(0.0, stats->scanSeconds - stats->prepareSeconds -
+            stats->constructSeconds - stats->fillAndJoinSeconds - stats->finalizeSeconds - stats->graphSeconds);
+        const DescriptorBatchStats pool = batches.stats();
+        stats->outputMemberCapacityBytes = descriptorMemberCapacityBytes(out);
+        stats->logicalRequests = pool.requests;
+        stats->backingAllocations = pool.backingAllocations;
+        stats->poolLiveBytes = pool.liveBytes;
+        stats->poolPeakBytes = pool.peakBytes;
+        stats->poolRetainedBytes = pool.retainedBytes;
+        stats->poolSlackBytes = pool.slackBytes;
+        std::fprintf(stderr, "Descriptor reads: shape_setup=%.6f shape_classify=%.6f shape_transforms=%.6f shape_relations=%.6f joint_setup=%.6f joint_topology=%.6f columns=%.6f\n",
+            readTimings.shapeSetup, readTimings.shapeClassify, readTimings.shapeTransforms, readTimings.shapeRelations,
+            readTimings.jointSetup, readTimings.jointTopology, readTimings.columns);
+        std::fprintf(stderr, "Descriptor waves: init=%.6f scenes=%.6f materials=%.6f bodies=%.6f deformables=%.6f shapes=%.6f joints_dependents=%.6f groups_graph=%.6f particles_attachments=%.6f vehicles=%.6f\n",
+            waveSeconds[0], waveSeconds[1], waveSeconds[2], waveSeconds[3], waveSeconds[4],
+            waveSeconds[5], waveSeconds[6], waveSeconds[7], waveSeconds[8], waveSeconds[9]);
+        auto printSetup = [](const char* family, const SetupTimings& timing, size_t keys)
+        {
+            std::fprintf(stderr, "Descriptor setup %s: keys=%zu enumerate=%.6f transform_ancestors=%.6f relationship_ancestors=%.6f transforms=%.6f metadata=%.6f attributes=%.6f columns=%.6f inputs=%.6f\n",
+                family, keys, timing.enumerate, timing.transformAncestors, timing.relationshipAncestors,
+                timing.transforms, timing.metadata, timing.attributes, timing.columns, timing.inputs);
+        };
+        std::fprintf(stderr, "Descriptor joint details: enumerate=%.6f probe=%.6f prefetch=%.6f targets=%.6f bodies=%.6f frames=%.6f membership=%.6f structure=%.6f declarations=%.6f\n",
+            jointDetail.enumerate, jointDetail.probe, jointDetail.prefetch, jointDetail.targets,
+            jointDetail.bodies, jointDetail.frames, jointDetail.membership, jointDetail.structure, jointDetail.declarations);
+        std::fprintf(stderr, "Descriptor shape relations: subsets=%.6f material=%.6f filters=%.6f owners=%.6f\n",
+            shapeRelationSeconds[0], shapeRelationSeconds[1], shapeRelationSeconds[2], shapeRelationSeconds[3]);
+        printSetup("bodies", bodySetup, bodyBucket.keys.size());
+        printSetup("shapes", shapeSetup, shapeBucket.keys.size());
+        if (execution.reportStatistics) execution.reportStatistics(*stats);
+    }
     return out;
 }
 

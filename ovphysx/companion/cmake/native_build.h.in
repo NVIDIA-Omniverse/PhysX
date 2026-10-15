@@ -1,0 +1,7 @@
+// SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+#pragma once
+#define OVPHYSX_COMPANION_PHYSX_BUILD "@COMPANION_PHYSX_BUILD@"
+
+#define OVPHYSX_COMPANION_DEBUG_BUILD @OVPHYSX_COMPANION_DEBUG_BUILD@

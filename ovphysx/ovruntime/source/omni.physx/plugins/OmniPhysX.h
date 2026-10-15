@@ -1,9 +1,21 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-EVENT-QUEUE-001
+// @covers AC-4
+
 #pragma once
+#include <carb/tasking/TaskingUtils.h>
+#include "AttachmentEvents.h"
+#include "CachedSettings.h"
 
 /**
+ * @implements REQ-ATTACH-LIFETIME-001
+ * @covers AC-3 AC-4
+ *
+ * @implements REQ-ATTACH-EXECUTION-001
+ * @covers AC-4
+ *
  * @implements REQ-BUILD-BRIDGE-001
  * @covers AC-1 AC-2
  */
@@ -19,19 +31,24 @@
 #include <private/omni/physx/IPhysxTests.h>
 
 #include "Setup.h"
+#include "RuntimeExecution.h"
 #include "PhysXReplicator.h"
 #include "internal/InternalPhysXDatabase.h"
 #include "PhysXStageUpdate.h"
 #include "usdLoad/AttachedStage.h" // AttachedStageUsdHandle (AttachOvstageBackingStageHandle below)
 
 #include <cstddef>
+#include <map>
+#include <mutex>
 #include <vector>
 
+namespace omni::physx::tensors { class SimulationBackend; }
 namespace omni
 {
 namespace physx
 {
 
+class PhysXUsdPhysicsInterface;
 class ContactReport;
 class TriggerManager;
 class PhysXCustomJointManager;
@@ -40,20 +57,7 @@ class PhysXPropertyQueryManager;
 class RaycastManager;
 struct PhysXRuntimeInterfaces;
 
-struct StepEventSub
-{
-    bool valid;
-    omni::physx::OnPhysicsStepEventFn stepFn;
-    void* userData;
-};
-
-template <typename OrderingType>
-using StepEventSubscriptionRegistry = EventSubscriptionRegistry<StepEventSub, OrderingType>;
-using SimulationEventSubscriptionRegistry =
-    EventSubscriptionRegistry<std::pair<omni::physx::OnPhysicsSimulationEventFn, void*>>;
-
-using ProfileStatsSubscriptionRegistry =
-    EventSubscriptionRegistry<std::pair<omni::physx::ProfileStatsNotificationFn, void*>>;
+using ProfileEventMap = std::map<SubscriptionId, std::pair<ProfileStatsNotificationFn, void*>>;
 
 using ProfileStatsVector = std::vector<PhysicsProfileStats>;
 using CrossThreadProfileMap = std::unordered_map<std::string, uint64_t>;
@@ -113,37 +117,7 @@ static_assert(sizeof(SimulationLayerHandle) == sizeof(void*),
 using AttachOvstageBackingStageHandle = ::omni::physx::usdparser::AttachedStageUsdHandle;
 
 // OM-45822 caching these settings avoids slowing down performance of the runtime update loop (visible in OmniGym sim)
-struct OmniCachedSettings
-{
-    float viewportGizmoScale = 1.0f;
-    int visualizationDisplayParticles = 0;
-    bool updateToUsd = true;
-    bool updateToUsdUsingXformCommonAPI = false;
-    bool updateVelocitiesToUsd = true;
-    bool outputVelocitiesLocalSpace = false;
-    bool updateParticlesToUsd = true;
-    bool localMeshCacheEnabled = false;
-    int localMeshCacheSize = 0;
-    int minFrameRate = 30;
-    float jointBodyTransformCheckTolerance = 0.001f;
-    bool simulateEmptyScene = false;
-    bool enableSynchronousKernelLaunches = false;
-    bool disableContactProcessing = false;
-    bool disableResetOnStop = false;
-    std::string defaultSimulator = "";
-    bool approximateCones = false;
-    bool approximateCylinders = false;
-    bool enableExtendedJointAngles = false;
-};
 
-struct AddStepEvent
-{
-    omni::physx::SubscriptionId id;
-    OnPhysicsStepEventFn onUpdate;
-    void* userData;
-    bool preStep;
-    int order;
-};
 
 // shift by one if someone uses an Id from outside
 static const ::physx::PxU32 kOmniPhysXTypeId = ::physx::PxConcreteType::eFIRST_USER_EXTENSION << 1;
@@ -152,10 +126,16 @@ static const int kTypeIdBatchSize = 8;
 class OmniPhysX : public Allocateable
 {
 public:
+    std::shared_ptr<tensors::SimulationBackend> tensorBackend;
+    carb::tasking::RecursiveMutexWrapper outputCacheMutex;
+    carb::tasking::MutexWrapper samplerIndexMutex;
+
     ///////////////////////////////////////////////////////////////////////////////////////
     void onStartup();
 
     void onShutdown();
+
+    PhysXUsdPhysicsInterface& getUsdPhysicsInterface() { return *mUsdPhysicsInterface; }
     ///////////////////////////////////////////////////////////////////////////////////////
 
     static OmniPhysX& getInstance();
@@ -172,7 +152,7 @@ public:
 
     ///////////////////////////////////////////////////////////////////////////////////////
     // Attach to a stage, main entry point
-    void physXAttach(long int stageId, bool loadPhysics);
+    AttachHandle physXAttach(long int stageId, bool loadPhysics, const PhysxAttachOptions& options = {});
     // Stageless attach for a consumer-provided ovstage source (ADR-0002 M2c-E).
     // Returns false when the lower attach fails. The backing stage/id are
     // classified before this method starts the session. `backingStage` (a Kit-
@@ -180,12 +160,14 @@ public:
     // there is no UsdUtilsStageCache to resolve one from, and
     // physxSimulationAttachOvstage (PhysX.cpp) always passes
     // `effectiveBackingStageId == 0` there.
-    bool physXAttachOvstage(const void* ovstageAttachPayload,
+    AttachHandle physXAttachOvstage(const void* ovstageAttachPayload,
                             uint64_t readOrdinal,
                             AttachOvstageBackingStageHandle backingStage,
-                            uint64_t effectiveBackingStageId);
+                            uint64_t effectiveBackingStageId,
+                            const PhysxAttachOptions& options,
+                            bool startConfiguredRecording = true);
     // Pull + apply ovstage change deltas over an explicit ordinal range (ADR-0003 M3).
-    bool physXUpdateFromOvStage(uint64_t fromOrdinal, uint64_t toOrdinal);
+    bool physXUpdateFromOvStage(omni::physics::AttachHandle attach, uint64_t fromOrdinal, uint64_t toOrdinal);
 
 private:
     // Shared session prologue for both attach paths (USD + ovstage): create the
@@ -193,25 +175,18 @@ private:
     // Ensuring the PxPhysics singleton is not this method's job: physXAttach() does it
     // itself, before calling in, since it is the only caller with a real stage to derive
     // tolerances from.
-    void physXAttachSession();
 
 public:
 
     // Deatch from a stage, remove all physics
-    void physXDetach();
+    bool physXDetach(AttachHandle attach);
 
-    void resetSimulation();
+    void resetSimulation(usdparser::AttachedStage& owner);
 
     ///////////////////////////////////////////////////////////////////////////////////////
     // Check if IPhysxSimulation attach was used
-    bool isSimulationAttachedStage() const
-    {
-        return mSimulationAttachStage;
-    }
-    void setSimulationAttachedStage(bool val)
-    {
-        mSimulationAttachStage = val;
-    }
+
+
 
     ///////////////////////////////////////////////////////////////////////////////////////
     const PhysXSetup& getPhysXSetup() const
@@ -238,34 +213,8 @@ public:
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////
-    // Get Internal PhysX database, contains records for PhysX and internal pointers
-    const internal::InternalPhysXDatabase& getInternalPhysXDatabase() const
-    {
-        if (!mInternalPhysXDatabase)
-        {
-            mInternalPhysXDatabase = ICE_NEW(internal::InternalPhysXDatabase);
-        }
-        return *mInternalPhysXDatabase;
-    }
-    internal::InternalPhysXDatabase& getInternalPhysXDatabase()
-    {
-        if (!mInternalPhysXDatabase)
-        {
-            mInternalPhysXDatabase = ICE_NEW(internal::InternalPhysXDatabase);
-        }
-        return *mInternalPhysXDatabase;
-    }
-
-    static const internal::InternalPhysXDatabase* getInternalPhysXDatabaseCheck()
-    {
-        return getInstanceCheck() ? getInstance().mInternalPhysXDatabase : nullptr;
-    };
-
-    ///////////////////////////////////////////////////////////////////////////////////////
     // Create/release for PhysX and InternalPhysXDatabase
     void releasePhysXScenes();
-    void createInternalPhysXDatabase();
-    void releaseInternalPhysXDatabase();
 
     ///////////////////////////////////////////////////////////////////////////////////////
     carb::dictionary::IDictionary* getIDictionary() const
@@ -294,7 +243,7 @@ public:
         return mErrorEventStream;
     }
 
-    void sendSimulationEvent(SimulationEvent type);
+    void sendSimulationEvent(SimulationEvent type, AttachHandle attach = omni::physics::kNoAttach);
 
     template <typename... ValuesT>
     carb::events::IEventPtr createSimulationEventV2(SimulationEvent type, ValuesT... values)
@@ -326,19 +275,19 @@ public:
     // simulation overrides
     int32_t getGpuPipelineOverride() const
     {
-        return mGpuPipelineOverride;
+        return mCachedSettings.gpuPipelineOverride;
     }
     void setGpuPipelineOverride(int val)
     {
-        mGpuPipelineOverride = val;
+        mCachedSettings.gpuPipelineOverride = val;
     }
     int32_t getSolverTypeOverride() const
     {
-        return mSolverTypeOverride;
+        return mCachedSettings.solverTypeOverride;
     }
     void setSolverTypeOverride(int val)
     {
-        mSolverTypeOverride = val;
+        mCachedSettings.solverTypeOverride = val;
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////
@@ -359,6 +308,7 @@ public:
     {
         mEnableProfile = val;
     }
+    mutable carb::tasking::MutexWrapper profileMutex;
     const ProfileStatsVector& getOmniPhysXProfileStats() const
     {
         return mProfileStats;
@@ -378,127 +328,21 @@ public:
         return mCrossProfileStats;
     }
 
-    SubscriptionId addProfileStatsSubscription(ProfileStatsNotificationFn onEvent, void* userData)
-    {
-        if (mEventSubscriptionLock)
-        {
-            CARB_LOG_ERROR("Subscription cannot be changed during the event call.");
-            return kInvalidSubscriptionId;
-        }
-        else
-        {
-            return mProfileStatsSubscriptions.addEvent(std::make_pair(onEvent, userData));
-        }
-    }
-
-    void removeProfileStatsSubscription(SubscriptionId subscriptionId)
-    {
-        if (mEventSubscriptionLock)
-        {
-            CARB_LOG_ERROR("Subscription cannot be changed during the event call.");
-        }
-        else
-        {
-            mProfileStatsSubscriptions.removeEvent(subscriptionId);
-        }
-    }
-
-    void fireProfileStatsSubscription()
-    {
-        if (mEnableProfile)
-        {
-            mEventSubscriptionLock = true;
-            if (!mProfileStatsSubscriptions.map.empty() && !mProfileStats.empty())
-            {
-                ProfileStatsSubscriptionRegistry::EventMap::const_iterator it = mProfileStatsSubscriptions.map.begin();
-                ProfileStatsSubscriptionRegistry::EventMap::const_iterator itEnd = mProfileStatsSubscriptions.map.end();
-                while (it != itEnd)
-                {
-                    it->second.first(mProfileStats, it->second.second);
-                    it++;
-                }
-                mProfileStats.clear();
-                mCrossProfileStats.clear();
-            }
-            mEventSubscriptionLock = false;
-        }
-    }
+    SubscriptionId addProfileStatsSubscription(ProfileStatsNotificationFn onEvent, void* userData);
+    void removeProfileStatsSubscription(SubscriptionId subscriptionId);
+    void fireProfileStatsSubscription();
 
     ///////////////////////////////////////////////////////////////////////////////////////
     // debug vis
-    bool isDebugVisualizationEnabled() const
-    {
-        return mEnableVisualization;
-    }
-    void setDebugVisualizationEnabled(bool val)
-    {
-        mEnableVisualization = val;
-        mDebugVisualizationDirty = true;
-    }
-    bool isNormalsVisualizationEnabled() const
-    {
-        return mEnableNormalsVisualization;
-    }
-    bool isDebugVisualizationDirty() const
-    {
-        return mEnableVisualization && mDebugVisualizationDirty;
-    }
-    void setDebugVisualizationDirty(bool val)
-    {
-        mDebugVisualizationDirty = val;
-    }
-    void setNormalsVisualizationEnabled(bool val)
-    {
-        mEnableNormalsVisualization = val;
-    }
-    float getVisualizationScale() const
-    {
-        return mVisualizationScale;
-    }
-    void setVisualizationScale(float val)
-    {
-        mVisualizationScale = val;
-        mDebugVisualizationDirty = true;
-    }
-    uint64_t getVisualizationBitMask() const
-    {
-        return mVisualizationBitMask;
-    }
-    void setVisualizationBitMask(uint64_t val)
-    {
-        mVisualizationBitMask = val;
-    }
+
 
     ///////////////////////////////////////////////////////////////////////////////////////
     // Simulation state
-    bool isSimulationRunning() const
-    {
-        return mRunning;
-    }
-    void setSimulationRunning(bool val)
-    {
-        mRunning = val;
-    }
-    bool hasSimulationStarted() const
-    {
-        bool retVal = false;
-        {
-            std::unique_lock<carb::tasking::MutexWrapper> simStartedLock(mSimParamMutex);
-            retVal = mHasSimulationStarted;
-        }
-        return retVal;
-    }
+
+
+
     // sets simulation started value and returns previous value
-    bool setSimulationStarted(bool val)
-    {
-        bool wasSimulationStopped;
-        {
-            std::unique_lock<carb::tasking::MutexWrapper> simStartedLock(mSimParamMutex);
-            wasSimulationStopped = !mHasSimulationStarted;
-            mHasSimulationStarted = val;
-        }
-        return wasSimulationStopped;
-    }
+
 
     ///////////////////////////////////////////////////////////////////////////////////////
     // Velocities output space
@@ -514,175 +358,14 @@ public:
     ///////////////////////////////////////////////////////////////////////////////////////
     // Get event subscriptions
 
-    // Default args preserve legacy behavior: unspecified means post-step, unordered insertion.
-    SubscriptionId addOnStepEventSubscription(OnPhysicsStepEventFn onUpdate,
-                                              void* userData,
-                                              bool preStep = false,
-                                              int order = 0)
-    {
-        if (mEventSubscriptionLock)
-        {
-            auto& subscriptionsMap = preStep ? mPreStepSubscriptions : mPostStepSubscriptions;
-            omni::physx::SubscriptionId id = subscriptionsMap.getNextId();
-            mAddStepSubscriptions.push_back({ id, onUpdate, userData, preStep, order });
-            return id;
-        }
-        else
-        {
-            auto& subscriptionsMap = preStep ? mPreStepSubscriptions : mPostStepSubscriptions;
-            return subscriptionsMap.addEvent({ true, onUpdate, userData }, order);
-        }
-    }
-
-    void removeOnStepEventSubscription(SubscriptionId subscriptionId)
-    {
-        if (mEventSubscriptionLock)
-        {
-            StepEventSubscriptionRegistry<OrderedRegistryTag>::EventMap::iterator fit =
-                std::find_if(mPreStepSubscriptions.getMap().begin(), mPreStepSubscriptions.getMap().end(),
-                             [&](const auto& pair) { return pair.second.first == subscriptionId; });
-
-            if (fit != mPreStepSubscriptions.getMap().end())
-            {
-                fit->second.second.valid = false;
-                mInvalidStepSubscriptions.push_back(subscriptionId);
-            }
-            else
-            {
-                fit = std::find_if(mPostStepSubscriptions.getMap().begin(), mPostStepSubscriptions.getMap().end(),
-                                   [&](const auto& pair) { return pair.second.first == subscriptionId; });
-
-                if (fit != mPostStepSubscriptions.getMap().end())
-                {
-                    fit->second.second.valid = false;
-                    mInvalidStepSubscriptions.push_back(subscriptionId);
-                }
-            }
-        }
-        else
-        {
-            // These maps have a shared id generator so ids are unique, this allows us to remove events without having
-            // to specify if it's in one map or another
-            mPreStepSubscriptions.removeEvent(subscriptionId);
-            mPostStepSubscriptions.removeEvent(subscriptionId);
-        }
-    }
-
-    void fireOnStepEventSubscriptions(float timeStep, bool preStep)
-    {
-        mEventSubscriptionLock = true;
-        const auto& subscriptionsMap = preStep ? mPreStepSubscriptions : mPostStepSubscriptions;
-        for (const auto& [key, value] : subscriptionsMap.getMap())
-        {
-            const StepEventSub& ev = value.second;
-            if (ev.stepFn && ev.valid)
-            {
-                // Isolate a throwing callback so it cannot escape into a noexcept ABI boundary,
-                // and so one bad callback does not skip the remaining subscribers.
-                try
-                {
-                    ev.stepFn(timeStep, ev.userData);
-                }
-                catch (const std::exception& e)
-                {
-                    CARB_LOG_ERROR("PhysicsUpdate: %s step callback threw an exception: %s",
-                                   preStep ? "pre" : "post", e.what());
-                }
-                catch (...)
-                {
-                    CARB_LOG_ERROR("PhysicsUpdate: %s step callback threw an unknown exception",
-                                   preStep ? "pre" : "post");
-                }
-            }
-        }
-        mEventSubscriptionLock = false;
-        if (!mInvalidStepSubscriptions.empty())
-        {
-            for (const SubscriptionId id : mInvalidStepSubscriptions)
-            {
-                removeOnStepEventSubscription(id);
-            }
-            mInvalidStepSubscriptions.clear();
-        }
-        if (!mAddStepSubscriptions.empty())
-        {
-            for (const AddStepEvent& sub : mAddStepSubscriptions)
-            {
-                auto& subscriptionsMap = sub.preStep ? mPreStepSubscriptions : mPostStepSubscriptions;
-                subscriptionsMap.getMap().insert({ sub.order, { sub.id, { true, sub.onUpdate, sub.userData } } });
-            }
-            mAddStepSubscriptions.clear();
-        }
-    }
-
-    void fireStatusEventSubscriptions(SimulationStatusEvent eventStatus) const
-    {
-        mEventSubscriptionLock = true;
-        if (!mSimulationSubscriptions.map.empty())
-        {
-            SimulationEventSubscriptionRegistry::EventMap::const_iterator it = mSimulationSubscriptions.map.begin();
-            SimulationEventSubscriptionRegistry::EventMap::const_iterator itEnd = mSimulationSubscriptions.map.end();
-            while (it != itEnd)
-            {
-                it->second.first(eventStatus, it->second.second);
-                it++;
-            }
-        }
-        mEventSubscriptionLock = false;
-    }
-
-    SubscriptionId addStatusEventSubscription(OnPhysicsSimulationEventFn onEvent, void* userData)
-    {
-        if (mEventSubscriptionLock)
-        {
-            CARB_LOG_ERROR("Subscription cannot be changed during the event call.");
-            return kInvalidSubscriptionId;
-        }
-        else
-        {
-            return mSimulationSubscriptions.addEvent(std::make_pair(onEvent, userData));
-        }
-    }
-
-    void removeStatusEventSubscription(SubscriptionId subscriptionId)
-    {
-        if (mEventSubscriptionLock)
-        {
-            CARB_LOG_ERROR("Subscription cannot be changed during the event call.");
-        }
-        else
-        {
-            mSimulationSubscriptions.removeEvent(subscriptionId);
-        }
-    }
-
-    ///////////////////////////////////////////////////////////////////////////////////////
-    // Temp physics scene
-    bool hasTempPhysicsScene() const
-    {
-        return mHasTempPhysicsScene;
-    }
-    void setHasTempPhysicsScene(bool val)
-    {
-        mHasTempPhysicsScene = val;
-    }
-    // The synthetic default-scene placeholder's fixed literal identity
-    // ("/PhysicsScene_16e12ee3daea") is inlined at its two consumers
-    // (PhysXStageUpdate.cpp's physXReset(), usdLoad/LoadStage.cpp's stageless-default-scene
-    // fallback) rather than reached through an accessor here.
-    // ObjectKey identity of the same synthetic default-scene placeholder (ADR-0019 retype of
-    // the field this replaces): minted once per attach by usdLoad/LoadStage.cpp's
-    // stageless-default-scene fallback via AttachedStage::keyFor() on the same fixed literal
-    // and recorded here, so PhysXUsdPhysicsInterface::createObject's ObjectKey-taking overload
-    // can be used for the engine-side creation without a repeated SdfPath round trip.
-    omni::physics::parse::ObjectKey getTempPhysicsSceneKey() const
-    {
-        return mTempPhysicsScenePath;
-    }
-    void setTempPhysicsSceneKey(omni::physics::parse::ObjectKey key)
-    {
-        mTempPhysicsScenePath = key;
-    }
+    SubscriptionId addOnStepEventSubscription(AttachHandle attach, std::function<void(float, void*)> onUpdate,
+                                              void* userData, bool preStep, int order);
+    void removeOnStepEventSubscription(SubscriptionId subscriptionId);
+    void fireOnStepEventSubscriptions(AttachHandle attach, float timeStep, bool preStep);
+    void fireStatusEventSubscriptions(AttachHandle attach, SimulationStatusEvent eventStatus) const;
+    SubscriptionId addStatusEventSubscription(AttachHandle attach, std::function<void(SimulationStatusEvent, void*)> onEvent, void* userData);
+    void removeStatusEventSubscription(SubscriptionId subscriptionId);
+    void retireEventSubscriptions(usdparser::AttachedStage& attachedStage);
 
     ///////////////////////////////////////////////////////////////////////////////////////
     // Trigger report
@@ -697,14 +380,7 @@ public:
 
     ///////////////////////////////////////////////////////////////////////////////////////
     // Raycast manager
-    const RaycastManager& getRaycastManager() const
-    {
-        return *mRaycastManager;
-    }
-    RaycastManager& getRaycastManager()
-    {
-        return *mRaycastManager;
-    }
+
 
     ///////////////////////////////////////////////////////////////////////////////////////
     // Custom joint manager
@@ -742,6 +418,7 @@ public:
     // Type id
     ::physx::PxU32 getFreeTypeId()
     {
+        std::lock_guard<carb::tasking::MutexWrapper> lock(mTypeIdMutex);
         if (mFreeTypeId.empty())
         {
             for (int i = 0; i < kTypeIdBatchSize; i++)
@@ -757,25 +434,14 @@ public:
     }
     void pushBackFreeTypeId(::physx::PxU32 id)
     {
+        std::lock_guard<carb::tasking::MutexWrapper> lock(mTypeIdMutex);
         mFreeTypeId.push_back(id);
     }
 
-    uint64_t getSimulationTimestamp() const
-    {
-        return mSimulationTimestamp;
-    }
-    uint64_t getSimulationStepCount() const
-    {
-        return mSimulationTimestamp - mCurrentTimestampOffset;
-    }
-    void setCurrentTimestampOffset(uint64_t val)
-    {
-        mCurrentTimestampOffset = val;
-    }
-    void increateSimulationTimestamp()
-    {
-        mSimulationTimestamp++;
-    }
+
+
+
+
 
     ///////////////////////////////////////////////////////////////////////////////////////
     // Get Settings Structure
@@ -791,17 +457,11 @@ public:
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////
-    // Replicator. Registrations name an *attach*, not a stage (ADR-0016): either a real handle
-    // from IPhysxSimulation::getAttachHandle(), or kActiveAttach when the caller registers before
-    // the attach exists (the documented registerReplicator() -> attachStage() flow, where no
-    // handle has been minted yet).
+    // Replicator registrations require a concrete live attachment (ADR-0042).
     bool registerReplicator(AttachHandle attachHandle, const IReplicatorCallback& callback);
     void unregisterReplicator(AttachHandle attachHandle);
-    // kActiveAttach and the lone active attach's own handle name the same attach, and which of the
-    // two a caller holds depends only on whether it registered before or after the attach, so a
-    // registration made under either spelling resolves through the other. Out of line because that
-    // equivalence needs UsdLoad.
-    PhysXReplicator* getReplicator(AttachHandle attachHandle);
+    // Registrations are resolved only by the exact attachment handle.
+    std::shared_ptr<PhysXReplicator> getReplicator(AttachHandle attachHandle);
 
     ///////////////////////////////////////////////////////////////////////////////////////
     // CUDA
@@ -828,8 +488,8 @@ private:
     carb::settings::ISettings* mISettings{ nullptr };
 
     // PhysX globals
+    std::shared_ptr<PhysXUsdPhysicsInterface> mUsdPhysicsInterface;
     PhysXSetup mPhysXSetup;
-    mutable internal::InternalPhysXDatabase* mInternalPhysXDatabase{ nullptr }; // PhysX <-> internal object records
 
     // event streams
     carb::events::IEventStreamPtr mSimulationEventStreamV2;
@@ -838,48 +498,28 @@ private:
     SimulationLayerHandle mSimulationLayer;
 
     // simulation overrides
-    int32_t mGpuPipelineOverride{ -1 }; // -1: use setting from schema, 0: force CPU, 1: force GPU
-    int32_t mSolverTypeOverride{ -1 }; // -1: use setting from schema, 0: force PGS, 1: force TGS
 
     // profiling
-    bool mEnablePVDProfile{ 0 };
-    bool mEnableProfile{ true }; // do own top level profiling for now
+    std::atomic<bool> mEnablePVDProfile{ false };
+    std::atomic<bool> mEnableProfile{ true }; // do own top level profiling for now
     ProfileStatsVector mProfileStats;
     CrossThreadProfileMap mCrossProfileStats;
-    ProfileStatsSubscriptionRegistry mProfileStatsSubscriptions;
+    ProfileEventMap mProfileStatsSubscriptions;
 
     // debug vis
-    bool mEnableVisualization{ false };
-    bool mEnableNormalsVisualization{ false };
-    bool mDebugVisualizationDirty{ true };
-    float mVisualizationScale{ 1.0f };
-    uint64_t mVisualizationBitMask{ 0ul };
+
 
     // Simulation state
-    mutable carb::tasking::MutexWrapper mSimParamMutex; // A.B. Do we really need this mutex?
-    bool mHasSimulationStarted{ false };
-    bool mRunning{ false };
-    uint64_t mSimulationTimestamp{ 0 };
-    uint64_t mCurrentTimestampOffset{ 0 };
 
     // velocity output state
     bool mOutputVelocitiesLocalSpace{ false };
 
     // Event subscriptions
-    StepEventSubscriptionRegistry<OrderedRegistryTag> mPreStepSubscriptions;
-    StepEventSubscriptionRegistry<OrderedRegistryTag> mPostStepSubscriptions;
-    SimulationEventSubscriptionRegistry mSimulationSubscriptions;
-    mutable bool mEventSubscriptionLock{ false };
-    std::vector<SubscriptionId> mInvalidStepSubscriptions;
-    std::vector<AddStepEvent> mAddStepSubscriptions;
 
-    bool mSimulationAttachStage{ false }; // whether IPhysxSimulation interface was used
 
-    // Temp physics scene. ObjectKey identity (ADR-0019 retype from SdfPath); see
-    // getTempPhysicsSceneKey()/setTempPhysicsSceneKey() above -- default-constructed
-    // (invalid) until the stageless-default-scene fallback mints and records one.
-    bool mHasTempPhysicsScene{ false };
-    omni::physics::parse::ObjectKey mTempPhysicsScenePath;
+
+    mutable carb::tasking::MutexWrapper mEventSubscriptionsMutex;
+
 
     // ISettings subscriptions to remove ourselves from when exiting
     OmniCachedSettings mCachedSettings;
@@ -887,7 +527,7 @@ private:
 
     TriggerManager* mTriggerManager{ nullptr };
 
-    RaycastManager* mRaycastManager{ nullptr };
+
 
     carb::extras::LibraryHandle mCudaHandle{ nullptr };
 
@@ -900,15 +540,14 @@ private:
 
     // type id
     std::vector<::physx::PxU32> mTypeIds;
+    carb::tasking::MutexWrapper mTypeIdMutex;
     std::vector<::physx::PxU32> mFreeTypeId;
 
     // replicator, keyed by attach handle
     ReplicatorMap mReplicatorMap;
+    carb::tasking::MutexWrapper mReplicatorMutex;
 
-    // Shared by getReplicator() and unregisterReplicator(): resolves a registration through either
-    // spelling of the attach it was made under (see getReplicator()). Returns mReplicatorMap.end()
-    // when there is none.
-    ReplicatorMap::iterator findReplicatorEntry(AttachHandle attachHandle);
+
 
     // Function-table copies for the static runtime accessors that replaced
     // Carbonite acquire/publication for the internal PhysX runtime.

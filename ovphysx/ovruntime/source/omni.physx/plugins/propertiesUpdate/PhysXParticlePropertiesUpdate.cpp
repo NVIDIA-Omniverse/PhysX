@@ -34,8 +34,7 @@ using namespace omni::physx::internal;
 // PARTICLE SYSTEM
 bool omni::physx::updateParticleSystemAttribute(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -172,8 +171,7 @@ bool omni::physx::updateParticleSystemAttribute(AttachedStage& attachedStage, om
 
 bool omni::physx::updateParticleSmoothingEnabledAttribute(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -207,8 +205,7 @@ bool omni::physx::updateParticleSmoothingEnabledAttribute(AttachedStage& attache
 
 bool omni::physx::updateParticleAnisotropyEnabledAttribute(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -242,8 +239,7 @@ bool omni::physx::updateParticleAnisotropyEnabledAttribute(AttachedStage& attach
 
 bool omni::physx::updateParticleIsosurfaceEnabledAttribute(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -277,8 +273,7 @@ bool omni::physx::updateParticleIsosurfaceEnabledAttribute(AttachedStage& attach
 
 bool omni::physx::updateParticleIsosurfaceAttribute(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -297,7 +292,7 @@ bool omni::physx::updateParticleIsosurfaceAttribute(AttachedStage& attachedStage
         // Read the key only once internalPS is known good -- the check below used to
         // come after this dereference.
         const uint32_t postFlags =
-            internalPS ? particles::getPostprocessStages(internalPS->mKey) : uint32_t(ParticlePostFlag::eNone);
+            internalPS ? particles::getPostprocessStages(attachedStage, internalPS->mKey) : uint32_t(ParticlePostFlag::eNone);
 
         if (internalPS && (postFlags & ParticlePostFlag::eIsosurface))
         {
@@ -366,8 +361,7 @@ bool omni::physx::updateParticleIsosurfaceAttribute(AttachedStage& attachedStage
 
 bool omni::physx::updateDiffuseParticlesEnabledAttribute(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -400,8 +394,7 @@ bool omni::physx::updateDiffuseParticlesEnabledAttribute(AttachedStage& attached
 
 bool omni::physx::updateDiffuseParticlesAttribute(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -506,8 +499,7 @@ bool omni::physx::updateDiffuseParticlesAttribute(AttachedStage& attachedStage, 
 // PARTICLE SET
 bool omni::physx::updateParticleSetEnabled(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTParticleSet;
     InternalParticleSet* internalParticleSet = reinterpret_cast<InternalParticleSet*>(db.getInternalTypedRecord(internalType, objectId));
@@ -526,8 +518,7 @@ bool omni::physx::updateParticleSetEnabled(AttachedStage& attachedStage, ObjectI
 
 bool omni::physx::updateParticleSetSelfCollision(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTParticleSet;
     InternalParticleSet* internalParticleSet = reinterpret_cast<InternalParticleSet*>(db.getInternalTypedRecord(internalType, objectId));
@@ -563,8 +554,7 @@ bool omni::physx::updateParticleSetSelfCollision(AttachedStage& attachedStage, O
 
 bool omni::physx::updateParticleSetFluid(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -607,8 +597,7 @@ bool omni::physx::updateParticleSetFluid(AttachedStage& attachedStage, omni::phy
 
 bool omni::physx::updateParticleSetParticleGroup(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTParticleSet;
     InternalParticleSet* internalParticleSet = reinterpret_cast<InternalParticleSet*>(db.getInternalTypedRecord(internalType, objectId));
@@ -672,8 +661,7 @@ static void updateParticlePositions(AttachedStage& attachedStage, InternalPartic
 
 bool omni::physx::updateParticlePositions(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTParticleSet;
     InternalParticleSet* internalParticleSet = reinterpret_cast<InternalParticleSet*>(db.getInternalTypedRecord(internalType, objectId));
@@ -710,8 +698,7 @@ bool omni::physx::updateParticlePositions(AttachedStage& attachedStage, omni::ph
 
 bool omni::physx::updateParticleSimPositions(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTParticleSet;
     InternalParticleSet* internalParticleSet = reinterpret_cast<InternalParticleSet*>(db.getInternalTypedRecord(internalType, objectId));
@@ -733,8 +720,7 @@ bool omni::physx::updateParticleSimPositions(AttachedStage& attachedStage, omni:
 
 bool omni::physx::updateParticleVelocities(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTParticleSet;
     InternalParticleSet* internalParticleSet = reinterpret_cast<InternalParticleSet*>(db.getInternalTypedRecord(internalType, objectId));
@@ -785,8 +771,7 @@ bool omni::physx::updateParticleVelocities(AttachedStage& attachedStage, omni::p
 // material
 bool omni::physx::updatePBDMaterialAttribute(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType = ePTRemoved;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objectId);
@@ -910,7 +895,7 @@ bool omni::physx::updatePBDMaterialAttribute(AttachedStage& attachedStage, Objec
 
                 for (size_t i = 0; i < intMat->mParticleIds.size(); i++)
                 {
-                    OmniPhysX::getInstance().getInternalPhysXDatabase().addDirtyMassParticle(intMat->mParticleIds[i]);
+                    attachedStage.getInternalPhysXDatabase().addDirtyMassParticle(intMat->mParticleIds[i]);
                 }
             }
         }
@@ -920,8 +905,7 @@ bool omni::physx::updatePBDMaterialAttribute(AttachedStage& attachedStage, Objec
 
 bool omni::physx::updateParticleDensity(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     db.addDirtyMassParticle(size_t(objectId));
     return true;

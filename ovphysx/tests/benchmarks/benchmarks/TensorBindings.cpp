@@ -136,14 +136,16 @@ public:
             t[2] = static_cast<float>(row) * kSpacing;
             t[6] = 1.0f;
         }
-        ovphysx_api_status_t st = mPhysX->clone("/World/envs/template", targets, transforms.data());
+        const ovphysx_enqueue_result_t clone = mPhysX->clone("/World/envs/template", targets, transforms.data());
+        ovphysx_api_status_t st = clone.status;
+        if (st == OVPHYSX_API_SUCCESS)
+            st = mPhysX->waitAll().status();
         if (st != OVPHYSX_API_SUCCESS)
         {
             printFormatted("TensorIo: clone(N=%u) failed: %d",
                            mEnvCount, static_cast<int>(st));
             return;
         }
-        mPhysX->waitAll();
 
         mPattern = "/World/envs/env*/*";
 

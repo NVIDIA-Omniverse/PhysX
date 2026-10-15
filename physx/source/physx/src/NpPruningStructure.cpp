@@ -247,7 +247,19 @@ void PruningStructure::resolveReferences(PxDeserializationContext& context)
 		return;
 
 	for (PxU32 i = 0; i < mNbActors; i++)
+	{
 		context.translatePxBase(mActors[i]);
+
+		//Re-point the actor at this structure, the way build() does. NpShapeManager's deserialization
+		//constructor clears the field, so without this the flag NpScene::addCollection() reads would be lost.
+		//This runs after the actors are constructed: a pruning structure requires them, and the collection is
+		//sorted dependencies-first.
+		const PxType type = mActors[i]->getConcreteType();
+		if (type == PxConcreteType::eRIGID_STATIC)
+			static_cast<NpRigidStatic*>(mActors[i])->getShapeManager().setPruningStructure(this);
+		else if (type == PxConcreteType::eRIGID_DYNAMIC)
+			static_cast<NpRigidDynamic*>(mActors[i])->getShapeManager().setPruningStructure(this);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -303,6 +315,20 @@ void PruningStructure::importExtraData(PxDeserializationContext& context)
 	if (!isValid())
 	{
 		PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, PX_FL, "PrunerStructure::importExtraData: Pruning structure is invalid!");
+
+		//Nothing was written for any of these - exportExtraData() bails out at the same test - so what the object
+		//image carries is the *exporting* process' addresses and counts. Leaving them in place means release()
+		//walks a foreign mActors array (it does so unconditionally), and requiresObjects() bails out at that test
+		//too, so the collection sorter sees no children and emits an invalid structure at its own position,
+		//usually first. That puts it in reach of any failed load, not just a completed one. Empty it instead.
+		//Freeing nothing: this instance does not own its memory, and ~PruningStructure only frees when it does.
+		mActors = NULL;
+		mNbActors = 0;
+		for (PxU32 i = 0; i < 2; i++)
+		{
+			mData[i].mAABBTreeNodes = NULL;
+			mData[i].mAABBTreeIndices = NULL;
+		}
 		return;
 	}
 
@@ -368,7 +394,12 @@ void PruningStructure::invalidate(PxActor* actor)
 			else if (type == PxConcreteType::eRIGID_DYNAMIC)
 				static_cast<NpRigidDynamic*>(mActors[i])->getShapeManager().setPruningStructure(NULL);
 
-			mActors[i] = mActors[mNbActors--];
+			//Post-decrement here read mActors[mNbActors], one past the last element - mActors is allocated with
+			//exactly mNbActors entries (see build()) - and stored that out-of-bounds value back into the list,
+			//while the actor that should have been moved down was dropped. release() then walked the wild
+			//pointer, and release() never cleared the back-pointer of the actor it lost, leaving it pointing
+			//at a freed structure.
+			mActors[i] = mActors[--mNbActors];
 			break;
 		}
 	}

@@ -9,6 +9,7 @@
 #include "CmPinnableBitMap.h"
 #include "PxsSimpleIslandManager.h"
 #include "DyFeatherstoneArticulation.h"
+#include "BpVolumeData.h"
 
 namespace physx
 {
@@ -46,7 +47,7 @@ namespace Sc
 	{
 		PX_NOCOPY(ArticulationSim)
 	public:
-											ArticulationSim(ArticulationCore& core, Scene& scene, BodyCore& root);
+											ArticulationSim(ArticulationCore& core, Scene& scene, BodyCore& root, Bp::AggregateHandle handle);
 											~ArticulationSim();
 
 	PX_FORCE_INLINE	ArticulationCore&		getCore()			const	{ return mCore;				}
@@ -112,7 +113,14 @@ namespace Sc
 												return reinterpret_cast<PxSpatialVelocity&>(accel);
 											}
 
-	PX_FORCE_INLINE PxNodeIndex				getIslandNodeIndex() const { return mIslandNodeIndex; }
+	PX_FORCE_INLINE PxNodeIndex				getIslandNodeIndex()	const	{ return mIslandNodeIndex;	}
+
+					// PT: handle of the aggregate this articulation belongs to, or PX_INVALID_U32 if it is not aggregated. This is a copy of
+					// the aggregate ID stored in the link cores, kept here to avoid chasing pointers to the root link in the serial part of
+					// updateArticulationAfterIntegration. An articulation can be removed from its aggregate at runtime while it stays in the
+					// scene (PxAggregate::removeArticulation / release), so this must be refreshed from NpArticulationReducedCoordinate::setAggregate.
+	PX_FORCE_INLINE Bp::AggregateHandle		getAggregateHandle()	const						{ return mAggregateHandle;		}
+	PX_FORCE_INLINE void					setAggregateHandle(Bp::AggregateHandle handle)		{ mAggregateHandle = handle;	}
 
 					PxU32					findBodyIndex(BodySim& body) const;
 
@@ -160,6 +168,7 @@ namespace Sc
 					PxArray<Dy::ArticulationMimicJointCore*>	mMimicJoints;
 					
 					PxNodeIndex									mIslandNodeIndex;
+					Bp::AggregateHandle							mAggregateHandle;
 					PxArray <Dy::ArticulationLoopConstraint>	mLoopConstraints;
 					bool										mIsLLArticulationInitialized;
 					ArticulationSimDirtyFlags					mDirtyFlags;

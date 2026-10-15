@@ -13,7 +13,7 @@ Use this guide when you integrate, build, and operate ovphysx in your own applic
 - [Configuration](#configuration)
 - [Process-Global Lifecycle](#process-global-lifecycle)
 - [Multi-Instance Support](#multi-instance-support)
-- [Operation Indices and Polling](#operation-indices-and-polling)
+- [Task Receipts and Polling](#task-receipts-and-polling)
 - [Threading](#threading)
 - [Tensor Binding Diagnostics](#tensor-binding-diagnostics)
 - [Ownership and Lifetimes](#ownership-and-lifetimes)
@@ -28,17 +28,18 @@ Use this guide when you integrate, build, and operate ovphysx in your own applic
 - [Running With Other Carbonite Users](#running-with-other-carbonite-users)
 - [Logging](#logging)
 - [OmniPVD Recording](#omnipvd-recording)
-- [NVTX Profiling With Nsight Systems](#nvtx-profiling-with-nsight-systems)
+- [Profiling](#profiling)
 
 ## Relationship and Consumption Model
 
-ovphysx provides a stable C API and Python bindings for ovstage-driven PhysX simulation.
+ovphysx provides a C API and Python bindings for ovstage-driven PhysX simulation.
 Use ovphysx when you need USD-based physics simulation outside of Omniverse Kit with a small native SDK.
 
 - Python: `pip install ovphysx` and `from ovphysx import PhysX`
 - C/C++: download the ovphysx SDK and matching native ovstage archive as
   described in the [SDK Quickstart](tutorials/quickstart.md), keep the package
   roots separate, and link through CMake
+- Porting a 0.6 application: [Migration from 0.6](migrating_0_6_to_0_7.md)
 
 **CPU note (x86_64):** pre-built ovphysx binaries require **AVX**. Missing AVX is
 detected at `ovphysx_initialize()` with a clear error. Refer to
@@ -73,7 +74,10 @@ The ovphysx samples are runnable references for SDK and wheel usage, designed to
 | `tensor_bindings_views.py` | | Build lightweight view wrappers on TensorBindingsAPI (advanced; **deprecated**) |
 | `omnipvd_recording.py` | [OmniPVD Recording](tutorials/omnipvd_recording.md) | Record physics internals to .ovd files |
 | `output_read.py` | [ovstage Integration](ovstage_integration.md) | Closed loop: author control into ovstage, drain it explicitly, step, and read rigid-body position and velocity from `boxes_falling_on_groundplane.usda` |
-| `session_write.py` | [Tensor Bindings](tutorials/tensor_bindings.md#migrating-to-the-session-readwrite-api) | Open a `PhysX.write()` session for `linearVelocity`, commit it, step, and verify the consequence by reading `position` back |
+| `session_write.py` | [Migrating off Tensor Bindings](tensor_binding_migration.md) | Write `linearVelocity` through a session write, commit it, step, and verify the consequence by reading `position` back |
+| `clone.py` | [Cloning](tutorials/cloning.md) | Clone a subtree before the first step and read rigid-body positions |
+| `profiling.py` | [Profiling](tutorials/profiling.md) | Chrome trace and NVTX profiler backends |
+| `vehicle_read_write.py` | [Vehicles](read_write/vehicles.md) | Read and write vehicle controls and wheel state |
 
 **Extra Python Samples** (`tests/python_samples_extra/`):
 
@@ -92,75 +96,149 @@ The ovphysx samples are runnable references for SDK and wheel usage, designed to
 | `contact_binding_c/` | [Contact Binding](tutorials/contact_binding.md) | Contact force reading |
 | `omnipvd_recording_cpp/` | [OmniPVD Recording](tutorials/omnipvd_recording.md) | Record physics internals to .ovd files |
 | `physx_interop_cpp/` | [PhysX Interop](tutorials/physx_interop.md) | Direct PhysX SDK pointer access |
-| `output_read_c/` | [ovstage Integration](ovstage_integration.md) | Closed loop on the same scene; queries several output types, including `OVPHYSX_OBJECT_ARTICULATION`, which is empty because the USD has no articulations |
+| `output_read_c/` | [ovstage Integration](ovstage_integration.md) | Closed loop on the same scene; queries several output types, including `OVPHYSX_QUERY_TARGET_ARTICULATION`, which is empty because the USD has no articulations |
+| `clone_c/` | [Cloning](tutorials/cloning.md) | Same three-target clone in C |
+| `vehicle_read_write_cpp/` | [Vehicles](read_write/vehicles.md) | Vehicle session read/write, including `ovphysx_write` |
+| `ovstage_output_cpp/` | [ovstage Integration](ovstage_integration.md) | Publish simulated world transforms back to ovstage |
+| `hello_world_source_link/` | [Source-link build](tutorials/source_link_build.md) | Link the SDK from a source build |
 
 For SDK setup, refer to [SDK Quickstart](tutorials/quickstart.md).
 
 The tensor-binding API is **deprecated**; new code should use the session read/write API
 (`ovphysx_read` / `ovphysx_write`). For the deprecated tensor binding shape/read/write semantics,
 refer to [Tensor Bindings](tutorials/tensor_bindings.md).
-Canonical enum-level definitions are in `include/ovphysx/ovphysx_types.h` (`ovphysx_tensor_type_t`).
+Canonical enum-level definitions are in `include/ovphysx/ovphysx_legacy_types.h` (`ovphysx_tensor_type_t`).
 
 ## Execution Model
 
-ovphysx uses a stream-ordered execution model:
+ovphysx preserves submission and data ordering. Existing task-producing calls
+return a receipt: `ovphysx_enqueue_result_t` in C and `Task` in Python. Keep the
+whole receipt and use `ovphysx_wait_task()` / `PhysX.wait_task()` to collect that
+operation's outcome. A receipt reports admission, not execution success.
 
-- Calls are enqueued in submission order and observe prior writes without extra sync.
-- Asynchronous calls return an `op_index`; wait on it before consuming results outside the stream.
-- Synchronous calls complete before returning. `clone()` retains the operation-index-shaped API
-  and returns an already-complete `op_index`; waiting on it is valid and returns immediately.
+`step()` / `ovphysx_step()` starts asynchronous simulation. `clone()`,
+`attach_ovstage()`, `update_from_ovstage()` and `detach_ovstage()` currently
+finish inline but still return receipts; their execution
+failures are reported when collected. Native query, read/write session open,
+fetch, commit, release and articulation-kinematic update also return receipts and
+currently execute inline. No host-nonblocking guarantee follows from a task receipt.
+Keep caller-owned inputs and output slots alive until completion; inspect output
+handles and groups only after a successful wait. A successful fetch with a null
+group is EOF. Rejected submissions instead return no
+task and expose an immediate error. `step_sync()` / `ovphysx_step_sync()` steps
+and waits in one call. Repeat it in a local loop when a workload uses decimation.
 
-Concretely, `step()` / `ovphysx_step()` is **asynchronous** and returns an
-`op_index`, while `step_sync()` / `ovphysx_step_sync()` steps and waits in one
-call (and `step_n_sync()` batches N synchronous steps). After an async `step()`,
-in-stream ovphysx operations (tensor `read()` / `write()`) see the result without
-extra synchronization; only out-of-stream consumers (external GPU work, logging,
-rendering, network I/O) need an explicit `wait_op()` / `wait_all()`.
+In-stream ovphysx operations preserve their existing synchronization and data
+ordering. Before external CPU access, rendering, logging or other consumers need
+the result, wait on the relevant task. Explicit CUDA producer-event and
+consumer-stream dependencies remain necessary where documented; collecting a
+task does not replace those handoffs.
 
-Use `ovphysx_wait_op()` (or `PhysX.wait_op()` in Python) to:
-- synchronize before reading or modifying tensors on CPU/GPU if they are currently accessed by asynchronous operations inside ovphysx
-- ensure correctness before external side-effects (logging, rendering, network I/O)
+Python tensor-binding, contact-binding, and SDF calls that accept caller-owned
+CUDA device or managed-memory buffers finish pending work on the current Warp
+stream or use the producer's
+`__dlpack_device__` / `__dlpack__(stream=...)` handoff before accessing storage.
+This includes output-buffer initialization and cached binding reuse. For pinned
+host buffers, callers must finish pending CUDA work before the call. Raw
+`DLTensor` descriptors carry no producer stream: callers must finish pending work
+or pass the API's explicit stream/event arguments where available. Session write
+commits still use their explicit CUDA stream/event arguments.
+
+A failed task does not automatically make a later task fail. Waiting on successful
+B reports only B; an earlier failed A remains reportable through its own wait or
+`wait_all()`, even when A's original receipt was discarded. Later calls still
+validate actual simulation state and prerequisites.
+
+Run custom application code directly after successfully waiting on the relevant
+task. Use `wait_all()` when that code needs every earlier outcome collected;
+it also acknowledges earlier failures. The task API exposes completion of native
+operations and does not schedule application callbacks. Log,
+object-change and contact callbacks keep their own documented contracts.
+
+### Stage lifecycle completion
+
+Attach, update and detach use the same admission and completion contract as
+other tasks. Invalid arguments, an already-attached instance or an update without
+an attachment reject before changing the attachment. Detach also rejects
+conflicting companion transitions before task admission. Runtime failures after
+admission belong to the task's outcome.
+Wait successfully before using a newly attached scene or the result of an update.
+Keep the Stage and the sealed ordinal data needed by attach/update alive until
+the task finishes. An attached Stage stays alive until successful detach or
+instance destruction. A failed teardown may still own the Stage and may already
+have retired some resources; keep it alive while handling the failure.
+
+`detach_ovstage()` replaces the removed `reset_stage()`. It tears down physics,
+preserves accumulated simulation time, and does not restore initial poses.
+Repeated detach succeeds with a new task receipt. To restore episode state,
+write the required poses, velocities and joint state; to rebuild physics,
+successfully detach and then attach the desired Stage snapshot.
+
+`is_stage_attached()` remains synchronous: it reads current attachment ownership
+without waiting, creating a task, or collecting earlier outcomes. It is useful
+after failures but does not establish simulation readiness or resource validity.
+Wait for the relevant lifecycle task before asking for its settled state. A false
+snapshot while attach is pending does not permit destroying that Stage.
 
 ## Configuration
 
-The SDK uses a typed config system for known settings, plus a raw Carbonite-setting override for arbitrary paths. Config entries are built
-with convenience functions from `ovphysx_config.h` and passed at instance creation or set at runtime.
+Process-global keys (`ovphysx_global_config_key_t` / `GlobalConfigKey`) are
+configured independently of instances. Set startup-only keys (`CPU_ONLY`,
+`OVD_RECORDING_CAPABLE`, profiler, and cooked-cache location) **before the first
+instance**. Other keys remain writable only while their backend can honor the change; scene-creation
+keys reject writes while a stage is attached. Configure every setting with a
+`GlobalConfigKey` through `set_global_config`, and create the instance with no
+config arguments for those settings.
+The only current per-instance key is CUDA GPU selection
+(`OVPHYSX_CONFIG_ACTIVE_CUDA_GPUS` / `ConfigKey.ACTIVE_CUDA_GPUS`): set it
+**after** create and **before** attach. After attach, changing it returns
+`OVPHYSX_API_INVALID_STATE` and keeps the prior value.
+
+Environment variables stay authoritative over the matching global setter.
+Known overrides: `OVPHYSX_DISABLE_GPU` (`CPU_ONLY`),
+`OVPHYSX_PROFILER` (`PROFILER_BACKEND`), and
+`OVPHYSX_PROFILER_OUTPUT` (`PROFILER_OUTPUT_PATH`).
+`get_global_config` reports the effective value.
+
+`PhysXConfig`, typed config-entry arrays, and `ovphysx_create_args` /
+`ovphysx_create_instance_with_args` are the legacy path. New code uses the
+scoped setters below where a matching key exists, including `OVD_RECORDING_CAPABLE`; see
+[OmniPVD Recording](#omnipvd-recording).
 
 ### C
 
 ```c
 #include <ovphysx/ovphysx.h>
-#include "ovphysx/ovphysx_config.h"
-#include <stdint.h>
+#include <ovphysx/ovphysx_config.h>
 
 int main(void)
 {
-    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-    ovphysx_config_entry_t entries[] = {
-        ovphysx_config_entry_disable_contact_processing(true),
-        ovphysx_config_entry_num_threads(4),
-        ovphysx_config_entry_carbonite(
-            OVPHYSX_LITERAL("/physics/updateToUsd"),
-            OVPHYSX_LITERAL("false")),
-    };
-    args.config_entries = entries;
-    args.config_entry_count = 3;
-
     if (ovphysx_initialize().status != OVPHYSX_API_SUCCESS)
         return 1;
 
-    ovphysx_handle_t handle = OVPHYSX_INVALID_HANDLE;
-    if (ovphysx_create_instance(&args, &handle).status != OVPHYSX_API_SUCCESS) {
+    ovphysx_result_t result = ovphysx_set_global_config(
+        OVPHYSX_GLOBAL_CONFIG_DISABLE_CONTACT_PROCESSING,
+        ovphysx_config_value_bool(true));
+    if (result.status != OVPHYSX_API_SUCCESS)
+        return 1;
+    result = ovphysx_set_global_config(
+        OVPHYSX_GLOBAL_CONFIG_NUM_THREADS, ovphysx_config_value_int64(4));
+    if (result.status != OVPHYSX_API_SUCCESS)
+        return 1;
+
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    if (ovphysx_create_instance(&handle).status != OVPHYSX_API_SUCCESS) {
         ovphysx_shutdown();
         return 1;
     }
 
-    ovphysx_result_t result =
-        ovphysx_set_global_config(ovphysx_config_entry_num_threads(8));
-    int32_t threads = 0;
+    result = ovphysx_set_config(
+        handle,
+        OVPHYSX_CONFIG_ACTIVE_CUDA_GPUS,
+        ovphysx_config_value_string(OVPHYSX_LITERAL("0")));
+    ovphysx_config_value_t threads = ovphysx_config_value_int64(0);
     if (result.status == OVPHYSX_API_SUCCESS)
-        result = ovphysx_get_global_config_int32(
-            OVPHYSX_CONFIG_NUM_THREADS, &threads);
+        result = ovphysx_get_global_config(OVPHYSX_GLOBAL_CONFIG_NUM_THREADS, &threads);
 
     ovphysx_result_t destroy_result = ovphysx_destroy_instance(handle);
     ovphysx_result_t shutdown_result = ovphysx_shutdown();
@@ -175,31 +253,26 @@ int main(void)
 ### Python
 
 ```python
-from ovphysx import PhysX, PhysXConfig, ConfigBool, ConfigInt32
+from ovphysx import ConfigKey, GlobalConfigKey, PhysX, get_global_config, set_global_config
 
-def read_configuration() -> tuple[int, bool]:
-    physx = PhysX(config=PhysXConfig(
-        disable_contact_processing=True,
-        num_threads=4,
-        carbonite_overrides={"/physics/updateToUsd": False},
-    ))
+
+def read_configuration() -> tuple[int | None, bool | None]:
+    set_global_config(GlobalConfigKey.DISABLE_CONTACT_PROCESSING, True)
+    set_global_config(GlobalConfigKey.NUM_THREADS, 4)
+    physx = PhysX()
     try:
-        threads = physx.get_config_int32(ConfigInt32.NUM_THREADS)
-        enabled = physx.get_config_bool(ConfigBool.DISABLE_CONTACT_PROCESSING)
+        physx.set_config(ConfigKey.ACTIVE_CUDA_GPUS, "0")
+        threads = get_global_config(GlobalConfigKey.NUM_THREADS)
+        enabled = get_global_config(GlobalConfigKey.DISABLE_CONTACT_PROCESSING)
+        assert threads is None or isinstance(threads, int)
+        assert enabled is None or isinstance(enabled, bool)
         return threads, enabled
     finally:
         physx.destroy()
 ```
 
-The ``carbonite_overrides`` dict accepts arbitrary Carbonite setting paths for
-settings not yet covered by the typed fields. Value types are auto-detected from the
-string representation. Using a ``carbonite_overrides`` key that targets a path already
-covered by a typed field raises ``ValueError``.
-
-> **Note:** `carbonite_overrides` is write-only. There is no getter for arbitrary Carbonite paths; use the typed getters (`get_config_bool`, `get_config_int32`, and the other `get_config_*` methods) for known settings.
-
-Config is process-global (Carbonite-backed). All instances in the same process share the
-same config state.
+Global keys are process-wide. `ACTIVE_CUDA_GPUS` is retained per instance until
+attach.
 
 ### Cooked-Collider Cache (UJITSO)
 
@@ -215,19 +288,27 @@ location from the environment and does not persist to a location of its own choo
 enable cross-run persistence:
 
 ```python
-from ovphysx import PhysX, PhysXConfig
+from ovphysx import GlobalConfigKey, PhysX, set_global_config
+
 
 def create_physx_with_cache(cache_directory: str) -> PhysX:
-    return PhysX(config=PhysXConfig(cooked_collider_cache_dir=cache_directory))
+    set_global_config(GlobalConfigKey.COOKED_COLLIDER_CACHE_DIRECTORY, cache_directory)
+    return PhysX()
 ```
 
-In C, set the `OVPHYSX_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY` string config key. The first run with
+In C, set `OVPHYSX_GLOBAL_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY` before
+`ovphysx_create_instance()`. The first run with
 a given cache cooks and stores the result; later runs with an unchanged scene are served from the
 cache without re-cooking.
 
 With no directory configured, nothing is persisted: cooked colliders go to a **process-private**
-directory under the OS temp directory, so every run re-cooks. ovphysx removes that directory at
-normal process exit. Python destroys still-live `PhysX` instances from `atexit`, including after
+directory under the OS temp directory, so every run re-cooks. After all instances are destroyed,
+`ovphysx_shutdown()` stops the datastore and removes that directory on Linux. Windows retains
+the datastore until normal process exit. Its framework release callback attempts removal
+after the datastore stops, but Windows cleanup remains best-effort: another dependency's
+terminating exit hook can prevent that callback from running. Leftover private directories
+may require normal temporary-directory cleanup. Python destroys still-live
+`PhysX` instances from `atexit`, including after
 an uncaught Ctrl-C (`KeyboardInterrupt`), then shuts down the process lifecycle even if a
 `read()` Warp array is still globally reachable, so cleanup follows the same last-instance
 shutdown path as explicit `destroy()`. Abrupt termination that cannot run exit handlers, such as `SIGKILL` or a
@@ -238,22 +319,21 @@ translate it into their normal shutdown flow. Do not `os.fork()` or use
 runtime, CUDA, and Carbonite are not fork-safe; a child that inherited live
 instances would run the parent's `atexit` teardown against native state it does
 not own. Start workers with `spawn`, or use a process that never constructed
-`PhysX`. On Windows removal is
-best-effort because the datastore may still hold files open. The cache still needs a real path in
-that case -- the underlying datastore has no memory-only mode and would otherwise report an error
-for a path it cannot open -- but nothing is left behind for the next run to reuse after successful
-cleanup. The temp location itself follows the platform's `TMPDIR`/`TMP`/`TEMP` convention; what
+`PhysX`. The cache needs a real path while the datastore is active. Its background writers and
+open files must be released before directory removal. Filesystem removal
+errors are reported on stderr. The temp location follows the platform's `TMPDIR`/`TMP`/`TEMP` convention; what
 ovphysx will not do is derive a *persistent* cache location from the environment. The same
 process-private fallback is used when a configured directory cannot be created or written.
 
-The configured directory is applied when the ovphysx runtime first starts in a process. Once the
-runtime is up, a later `PhysXConfig(cooked_collider_cache_dir=...)` in the same process is not
-picked up -- the datastore is built once. Set it on the first instance, or use a separate process
-per cache location.
+The configured directory is applied when the framework first creates its datastore.
+On Linux, destroy all instances and call `ovphysx_shutdown()`, then initialize and configure
+the next lifecycle to change directories. Windows retains its datastore until process exit;
+use a separate process for a different directory. Python's final `PhysX.destroy()` completes
+SDK shutdown when no other lifecycle owners remain.
 
 Cooked colliders are **not** reused across runs when:
 
-- No `cooked_collider_cache_dir` is configured: cooking still runs, but nothing is persisted, so it re-cooks every run.
+- No cooked-collider cache directory is configured: cooking still runs, but nothing is persisted, so it re-cooks every run.
 - ovphysx cannot create or write the configured directory: it falls back to the process-private cache, so nothing is persisted (a warning is logged).
 - The mesh, the cooking parameters/type, or the PhysX build changed: the key differs, so the shape is re-cooked (this is correct, not a fault).
 - Collision cooking has been disabled (it is enabled by default).
@@ -285,51 +365,134 @@ expect its destruction-time records through the disabled callback.
 
 ## Multi-Instance Support
 
-The SDK exposes a per-instance handle (`ovphysx_handle_t`) so callers can manage lifetime and tensor/contact bindings on a per-instance basis. **However, the underlying simulation state is process-global**: only one ovstage-backed USD scene can be attached at a time across all instances in a process. While one instance owns the live attach, another instance's attach attempt returns `OVPHYSX_API_ERROR` and leaves the owner's stage and bindings unchanged. Detach the owning instance before attaching a stage on another instance.
+The SDK exposes a per-instance handle (`ovphysx_instance_handle_t`). Wrapper-owned state -- tensor and contact bindings, output query/read/write sessions, object-change subscriptions, task errors, debug-render settings, and scene-query hit buffers -- is isolated per handle. Foreign subordinate handles return `OVPHYSX_API_NOT_FOUND` and leave the owner untouched. Debug rendering is `OVPHYSX_QUERY_TARGET_DEBUG_RENDER` on that handle (settings and geometry through the read/write sessions); geometry is limited to scenes of the instance's attach.
+
+Each instance holds at most one ovstage attach. Several instances may be attached at the same time, including stages that use the same prim paths. Attaching, stepping, detaching, or destroying one instance does not detach the others. The same ovstage instance cannot be attached twice.
 
 Concretely, this means:
 
-- Multiple `ovphysx_handle_t` values can coexist, but they share one simulation backend and one attached stage.
-- Config, the hard CPU-only policy, and the attached stage are process-global. Different instances cannot use different config values or stages in the same process; outside hard CPU-only mode, CPU/GPU dynamics are authored per scene.
-- For isolated stages or parallel simulations, run each in a separate subprocess.
+- Multiple `ovphysx_instance_handle_t` values can coexist. Instance operations take that handle first (`ovphysx_subscribe_object_changes`, `ovphysx_get_last_task_error`, and the rest of the instance surface).
+- Process-global functions omit the handle: initialize/shutdown, `ovphysx_create_instance`, version queries, CPU-mode and global config, logging, `ovphysx_get_last_error`, `ovphysx_destroy_wait_task_result`, `ovphysx_writability`.
+- The hard CPU-only policy, process-global config, logging, the SDK tolerance scale, and the recording transport are process-wide. Each attachment captures its own dispatcher and CUDA options at attach. Outside hard CPU-only mode, CPU/GPU dynamics are authored per scene.
+- A single instance is not thread-safe: serialize calls on one handle. Different instances may step their own attachments at the same time. A recording start/stop needs every attached instance idle and returns an error if one is still stepping.
+- The same ovstage instance must not be attached to two ovphysx instances. Use a separate stage per instance.
 
 Multiple `UsdPhysicsScene` prims within the same loaded stage **are** supported. `ovphysx_step()` advances all scenes together; per-scene independent stepping is not currently exposed through the ovphysx C API.
 
 In-process destroy/create cycles **are supported** within one active process
 lifecycle: per-instance destruction leaves Carbonite and the direct PhysX
 runtime available for the next instance. The hard CPU-only request is the
-exception: as soon as `ovphysx_set_cpu_mode(true)` succeeds, it is sticky and
+exception: as soon as setting `OVPHYSX_GLOBAL_CONFIG_CPU_ONLY` to `true`
+succeeds, it is sticky and
 cannot be reverted in that process. Its CPU-only and ovphysx no-CUDA guarantees
 require setting it before the first instance. Outside hard CPU-only mode, CPU/GPU
 dynamics remain authored per scene in USD rather than selected by
 `ovphysx_create_instance()`. Call `ovphysx_shutdown()` once when the current
 process-lifecycle scope is done. With no live handles it clears the
-`ovphysx_initialize()` token and drains the direct PhysX runtime; the Carbonite
-framework remains resident for its process-exit hook.
+`ovphysx_initialize()` token and drains the direct PhysX runtime. Linux also releases its
+Carbonite framework and dependency plugins, preserving earlier host `atexit` handlers and
+implicit buffered-file flushing. Windows retains Carbonite's process-exit hook for safe
+OVStage/Fabric DLL teardown; Windows hosts must flush buffered files explicitly before exit.
+Independently loaded libraries such as OVStage may install their own terminating exit
+handlers on Linux too. Explicitly flush host output when using those libraries;
+ovphysx shutdown does not remove their handlers.
+A later `ovphysx_initialize()` can start another lifecycle on either platform.
+If ovphysx reused a framework already populated by a foreign host, that host retains
+responsibility for its framework and datastore teardown.
 
-## Operation Indices and Polling
+## Task Receipts and Polling
 
-`op_index` values are single-use. A wait processes unconsumed indices in order
-through the requested index: every completed or failed index it reaches is
-consumed and must not be used again. A timeout leaves the first still-pending
-index and later indices unconsumed. An index completed by internal stream
-synchronization may be acknowledged once with `wait_op`; that acknowledgement
-consumes it.
+A receipt can be copied and needs no destructor. Each terminal outcome is
+collected once: `wait_task(task)` collects only that task, and a repeated direct
+wait returns `NOT_FOUND` (`RuntimeError` in Python). Internal synchronization
+retires execution resources without collecting outcomes or discarding errors.
+
+`wait_all()` covers tasks accepted when the call begins. It scans uncollected
+outcomes in submission order with one readiness deadline. If that deadline
+expires, it stops at the earliest unfinished task; earlier completed outcomes
+are collected, and later outcomes remain available. Previously collected
+failures are not reported again. Waiting on an empty set succeeds.
 
 C and C++ callers use `ovphysx_timeout_t`, a `uint64_t` nanosecond type. Pass
-`OVPHYSX_TIMEOUT_POLL` for a non-blocking readiness check, a positive value for
-a finite wait, or `OVPHYSX_TIMEOUT_INFINITE` to wait until a terminal result.
-Zero does not wait for simulation readiness, and a positive value bounds only
-that readiness wait. Once a result is ready, the call may still finalize and
-publish it before returning, so total wall-clock duration can exceed a finite
-timeout. Python uses the equivalent `timeout_ns=0`, a positive integer, or
-`None`.
+`OVPHYSX_TIMEOUT_POLL` for a readiness poll, a positive value for a finite wait,
+or `OVPHYSX_TIMEOUT_INFINITE` for an infinite wait. Python uses `timeout_ns=0`,
+a positive integer, or `None`. Ready-at-deadline wins. Finalization may take
+longer than a finite readiness timeout. Timeout leaves unfinished tasks retryable.
+
+C waits require a non-null, zero-initialized `ovphysx_wait_task_result_t`.
+`error_tasks` contains full failed receipts, and `pending_task` is zero when
+nothing is pending. Check the returned `ovphysx_result_t` separately: `TIMEOUT`
+takes precedence over collected errors, `ERROR` reports execution or internal
+failure, and `SUCCESS` means no collected task failed. Destroy every output with
+`ovphysx_destroy_wait_task_result()`, including timeout outputs. Destruction
+zeros the result and accepts null or already-cleaned results. Never shallow-copy
+an owning wait result or reuse a nonempty one; C++ `WaitResult` is move-only.
+
+Task errors belong to their wait result. `ovphysx_get_last_task_error(instance,
+task)` is read-only and returns text retained by a live result; missing causes
+return empty text. Borrowed text survives unrelated waits and instance teardown
+until its result is destroyed. Fresh lookup requires a live matching instance.
+Receipts and retained results do not keep simulation or CUDA resources alive.
+
+Python returns immutable `Task` values from `step`, `clone`, `attach_ovstage`,
+`update_from_ovstage` and `detach_ovstage`.
+Wait using `physx.wait_task(task, timeout_ns=None)` or
+`physx.wait_all(timeout_ns=None)`; both return `None` on success. `TaskError`
+contains immutable `(Task, message)` entries in `errors`. `TaskTimeoutError`
+contains `errors` collected before the timeout and `pending_task`. Python copies
+those values before native cleanup, so exception details remain valid afterwards.
+
+The Python session API returns an `Operation` from `query`, `read`, `write`,
+`fetch_next`, `commit`, and `close` / `release`, without waiting. An operation holds
+its real native receipts in `tasks` (`task` when there is exactly one; a close with
+nothing native to release has none). `operation.wait()` collects them and returns the
+typed result, raising `TaskError` for a failure. `operation.result` never waits: it
+raises until the outcome has been collected. `wait_all()` also collects registered
+operations, and a later `wait()` or `result` returns the cached result or raises the
+cached failure again. The typed result is built once, at the first `wait()` or
+`result` access, which must happen on the submitting thread; read arrays are ordered
+onto the Warp stream current at that access. Inputs and output slots stay alive until
+an operation is collected, even when the operation object is dropped, so call
+`wait_all()` periodically in fire-and-forget loops to bound retained storage and
+observe failures. [The session model](read_write/index.md#the-session-model) shows a
+complete query, read, write and commit sequence.
+
+`read_sync`, `read_tokens_sync`, `write_sync`, `commit_sync`, `close_sync`,
+`step_sync`, `update_articulations_kinematic` and `evaluate_sdf_shapes` are the
+waiting conveniences.
+Closing a session or query, leaving its `with` block, and cleanup of an abandoned
+object submit releases without waiting; `wait_all()` or instance destruction observes
+their failures. A session returned by `read_sync` or `write_sync` waits for the
+releases it submits when its `with` block exits. Read storage that arrays still
+borrow is released only after the result and every alias are dropped, and a later
+`wait_all()` collects that release. CUDA stream/event dependencies still apply.
+Context exit preserves an exception from the body and chains cleanup failures.
+Deferred finalization never calls native session release from a garbage-collector
+thread; the owning thread drains it.
+
+```python
+from ovphysx import PhysX, TaskError, TaskTimeoutError
+
+def poll_step(physx: PhysX, dt: float) -> bool:
+    task = physx.step(dt)
+    try:
+        physx.wait_task(task, timeout_ns=0)
+    except TaskTimeoutError:
+        # The unfinished task is still valid; collect it with an infinite wait.
+        physx.wait_task(task)
+        return False
+    except TaskError as error:
+        for failed_task, message in error.errors:
+            print(f"Task {failed_task.op_index}: {message}")
+        raise
+    return True
+```
 
 ## Threading
 
 - A single instance is **not** thread-safe. Serialize access externally.
-- Do not wait on the same `op_index` from multiple threads.
-- Because all instances share one simulation backend and one attached stage, calling simulation APIs concurrently from different instances is not safe either. Serialize across instances as well.
+- Calls may move between threads when externally serialized; do not wait on the same task concurrently.
+- Different instances may step their own attachments at the same time. A recording start/stop needs every attached instance idle.
 
 ### Python: concurrent `step()` and tensor I/O
 
@@ -372,7 +535,7 @@ def run_workers(physx, binding, output_buffer, dt):
 
 When using asynchronous `step()`, the same rule applies: do not call
 `binding.read()` / `binding.write()` concurrently with an in-flight step.
-Either wait first (`wait_op()` / `wait_all()` / `step_sync()`), or keep all
+Either wait first (`wait_task()` / `wait_all()` / `step_sync()`), or keep all
 step and tensor calls on one thread. In-stream tensor reads submitted after
 `step()` on the same thread are stream-ordered and safe without an explicit
 wait; cross-thread use always requires external serialization.
@@ -398,29 +561,27 @@ wait; cross-thread use always requires external serialization.
 ## Ownership and Lifetimes
 
 - Tensor bindings, contact bindings, and attribute bindings own internal resources. They are automatically destroyed when the parent instance is destroyed through `ovphysx_destroy_instance()`. Explicit per-binding destruction (`ovphysx_destroy_tensor_binding`, `ovphysx_destroy_contact_binding`) is available for releasing resources earlier.
-- In Python, close a binding deterministically with a `with` block or an explicit `binding.destroy()`. New code should exchange simulation state through the session read/write API, which manages its own lifetimes (`with physx.read(...) as result:` / `with physx.write(...) as session:`); the tensor-binding form `with physx.create_tensor_binding("/World/robot*", tensor_type=TensorType.RIGID_BODY_POSE) as binding:` is **deprecated** but still works during the deprecation window. Contact bindings — `with physx.create_contact_binding(["/World/sensor*"]) as binding:` — are a separate, current API. If garbage collection cleans up a `TensorBinding` or `ContactBinding` first, ovphysx emits `ResourceWarning`. Python suppresses this warning category by default; run with `-W default` or set `PYTHONWARNINGS=default` to show it.
+- In Python, close a binding deterministically with a `with` block or an explicit `binding.destroy()`. New code should exchange simulation state through the session read/write API, whose queries and sessions are context managers (`with physx.read_sync(...) as result:` / `with physx.write_sync(...) as session:`, or the `Query`, `ReadResult` and `WriteSession` returned by the default `query` / `read` / `write` operations); the tensor-binding form `with physx.create_tensor_binding("/World/robot*", tensor_type=TensorType.RIGID_BODY_POSE) as binding:` is **deprecated** but still works during the deprecation window. Contact bindings — `with physx.create_contact_binding(["/World/sensor*"]) as binding:` — are a **deprecated** compatibility surface (C declarations live in `ovphysx_legacy.h`). If garbage collection cleans up a `TensorBinding` or `ContactBinding` first, ovphysx emits `ResourceWarning`. Python suppresses this warning category by default; run with `-W default` or set `PYTHONWARNINGS=default` to show it.
 - Create tensor and contact bindings once outside simulation loops and reuse them across steps. Creating a new binding every step allocates new native resources and is slower than reusing the existing binding.
-- Tensor and contact bindings are views of the currently realized physics objects. `step()` and `step_sync()` do not invalidate them, but application-owned stage lifecycle changes do. Before `reset_stage()`, before removing USD data that contains bound objects, or before replacing/reparsing the stage so bound objects are destroyed and recreated, destroy cached bindings when practical. If a stale binding survives one of those lifecycle operations, only destroy it; do not read or write through it. Create replacement bindings after the operation has completed. Do not keep cached bindings across topology changes and probe them defensively; the application knows when it changed the stage.
-- On failure, call `ovphysx_get_last_error()` on the same thread to retrieve the error string (valid until the next ovphysx call on that thread).
-- PhysX pointers from `ovphysx_get_physx_ptr()` are owned by ovphysx — do not call `release()` on them. Refer to [PhysX Pointer Interop](#physx-pointer-interop) for lifetime details.
-- **Contact report buffers** from `ovphysx_get_contact_report()` (and the
-  default Python `get_contact_report()`) are zero-copy views into internal
-  buffers — valid **only** until the next `step()` / `step_sync()` call.
-  Accessing them after the next step is undefined behavior (silent
-  corruption or segfault). Python: pass `copy=True` to
-  `physx.get_contact_report(copy=True)` to receive Python-owned lists of
-  dicts that are safe to retain across simulation steps. Recommended for RL
-  training loops or any code path that holds contact data across a step.
+- Tensor and contact bindings are views of the currently realized physics objects. `step()` and `step_sync()` do not invalidate them, but application-owned stage lifecycle changes do. Before `detach_ovstage()`, before removing USD data that contains bound objects, or before replacing/reparsing the stage so bound objects are destroyed and recreated, destroy cached bindings when practical. If a stale binding survives one of those lifecycle operations, only destroy it; do not read or write through it. Create replacement bindings after the operation has completed. Do not keep cached bindings across topology changes and probe them defensively; the application knows when it changed the stage.
+- For admission or synchronous API failures, read `ovphysx_get_last_error()` before
+  the next call on that thread. Accepted task failures belong to their wait result.
+- Native session release transfers ownership only when admitted. A rejected release
+  can be retried; an accepted release must never be resubmitted even if its wait
+  reports execution failure. The SDK owns remaining cleanup. Finish external buffer
+  consumers before releasing their read session.
+- A `physxPointer` value is a borrowed address. Do not call `release()` on it. Refer to [PhysX Pointer Interop](#physx-pointer-interop) for lifetime details.
 - **PhysX instance lifecycle (Python)**: call `physx.destroy()` explicitly,
   normally from a `finally` block, to guarantee deterministic cleanup of native
-  resources. `destroy()` is checked, so a cleanup failure raised from `finally`
+  resources. Drop all output-read arrays and downstream views first; otherwise
+  `destroy()` raises before teardown and leaves the instance usable for a retry. `destroy()` is checked, so a cleanup failure raised from `finally`
   becomes the active exception while Python preserves any in-flight exception
   as chained context. Applications that need different exception precedence
   must catch and log cleanup failures explicitly. ovphysx 0.6 removes the
   former `release()` spelling and the main-object context-manager protocol. If
   an instance is garbage-collected *during* the run (dropped mid-program rather
   than held to interpreter shutdown), `__del__` emits a `ResourceWarning`
-  before calling `destroy()` itself. The warning is silent by default (filtered
+  before native cleanup. The warning is silent by default (filtered
   out unless `python -W default::ResourceWarning` or a test suite captures it)
   and mirrors Python file-object semantics. If both best-effort native cleanup
   attempts fail before returning a status, the finalizer emits a default-visible
@@ -439,9 +600,10 @@ the ovphysx wheel and its exact `ovstage` wheel dependency:
 
 - ovphysx runtime dependencies are loaded from its packaged plugins directory
   (`_install/plugins/` in a source install, `ovphysx/plugins/` in the wheel).
-- ovstage supplies its own headers, shared library, CMake package, and runtime
-  tree. Native users download its archive separately and keep the package roots
-  separate.
+- OVStage supplies its own headers, shared library, CMake package, and runtime
+  tree, in a package root kept separate from OVPhysX's. Native users either put
+  their own on `CMAKE_PREFIX_PATH` or let `find_package(ovphysx)` fetch the
+  pinned build.
 - The ovphysx wheel includes the physics runtime. It does not bundle or load
   OmniClient or its connection library.
 - The exact `ovstage` wheel supplies the ovstage runtime together with OmniClient, its
@@ -452,8 +614,7 @@ the ovphysx wheel and its exact `ovstage` wheel dependency:
 - Python's bulk data access is the session read/write API (`PhysX.read` / `PhysX.write`); the
   deprecated `TensorBindingsAPI` remains for the deprecation window, and the legacy
   `ovphysx.tensors` compatibility layer is no longer shipped.
-- `pip install ovphysx` resolves the ovstage wheel automatically. Native SDK
-  users manually download both archives.
+- `pip install ovphysx` resolves the OVStage wheel automatically.
 - The Newton USD schema is not a package dependency. Scenes that author
   `newton:*` attributes (read as fallbacks for the PhysX spellings) need
   `pip install newton-usd-schemas`, or the schema downloaded from
@@ -475,35 +636,41 @@ neither the SDK nor the wheel ships a USD runtime, a USD plugin registry, or a
 `config.toml`. ovphysx never loads, preloads, or version-checks USD: ovstage
 ingests USD scenes through its own internal namespaced OpenUSD runtime, and the
 application owns whatever USD it authors with. There is no USD-linked variant
-of ovphysx; scenes are attached through ovstage only, so exactly one USD image
-is ever loaded in the process.
+of ovphysx; scenes are attached through ovstage only, so ovphysx itself loads no
+USD beyond ovstage's namespaced OpenUSD runtime -- any stock `usd-core` the
+application authors with is loaded and owned separately by that application.
 
 ## Error Handling
 
 **For C:**
-- Check `result.status` on every call.
-- On failure, call `ovphysx_get_last_error()` on the same thread to retrieve the error string (valid until the next ovphysx call on that thread).
-- For `ovphysx_wait_op()`, iterate over `error_op_indices` and call `ovphysx_get_last_op_error()` per failed op index, then free the result with `ovphysx_destroy_wait_result()`.
+- Check `result.status` on every call. For an accepted task, wait on the whole
+  receipt and check that result before consuming any outputs.
+- On admission or synchronous API failure, call `ovphysx_get_last_error()` on the same thread to retrieve the error string (valid until the next ovphysx call on that thread).
+- For task waits, inspect `error_tasks` even on timeout, retrieve each cause with `ovphysx_get_last_task_error(instance, task)`, then free the output with `ovphysx_destroy_wait_task_result()`. Retain the result for as long as borrowed causes are needed.
 
 **For Python:**
-- Runtime errors are raised on failed calls.
+- Rejected submissions and wait validation/internal failures raise ordinary runtime errors. Collected execution failures raise `TaskError`; unfinished waits raise `TaskTimeoutError`, which can also contain partial failures.
 - Use try/finally or context managers to ensure bindings are destroyed.
 - Pass `raise_if_empty=True` to `create_tensor_binding()` when a zero-count binding should be treated as a configuration error.
 - For optional or broad queries, keep the default `raise_if_empty=False` and check `binding.count` before reading.
 
 ## Warmup and Determinism
 
-Tensor reads require a warmup step that initializes PhysX structures (and
-DirectGPU buffers in GPU mode). This is done automatically on the first tensor
-operation. If deterministic initial state matters, call `ovphysx_warmup()`
-explicitly after USD load and before the first tensor read.
+Deprecated tensor-binding reads require a warmup step that initializes PhysX
+structures (and DirectGPU buffers in GPU mode). That binding path warms up
+automatically on its first tensor operation. Session reads and writes never
+auto-warm; complete the first step before reading DirectGPU device state or
+committing a DirectGPU write. See
+[Step-first precondition](read_write/data_model.md#step-first-precondition-directgpu).
+If deterministic initial state matters, call `ovphysx_warmup()` explicitly after
+scene attachment and before the first legacy tensor-binding read.
 
 > **Ordering constraint:** all `clone()` calls must happen **before** warmup.
 > Calling `clone()` after `warmup()` or after the first `step()` /
-> `step_sync()` / `step_n_sync()` reallocates physics structures and corrupts already-initialized
+> `step_sync()` reallocates physics structures and corrupts already-initialized
 > solver state. The C runtime rejects this ordering with
 > `OVPHYSX_API_INVALID_ARGUMENT`, surfaced in Python as `RuntimeError`. If you
-> need to clone after warmup, call `reset_stage()`, wait for it to complete,
+> need to clone after warmup, call `detach_ovstage()`, wait for it to complete,
 > then reload the source scene or reattach its ovstage before cloning again.
 
 GPU dynamics and DirectGPU TensorAPI are separate choices.
@@ -512,21 +679,23 @@ GPU dynamics and DirectGPU TensorAPI are separate choices.
 ovphysx itself from opening the CUDA driver (for example on a CPU-only deployment):
 
 ```python
-from ovphysx import PhysX
+from ovphysx import GlobalConfigKey, PhysX, get_global_config, set_global_config
 
 def create_cpu_only_physx() -> PhysX:
-    PhysX.set_cpu_mode(True)  # before the first PhysX() so ovphysx stays off CUDA
-    assert PhysX.get_cpu_mode() is True
+    set_global_config(GlobalConfigKey.CPU_ONLY, True)
+    assert get_global_config(GlobalConfigKey.CPU_ONLY) is True
     return PhysX()
 ```
 
-`PhysX.get_cpu_mode()` / `ovphysx_get_cpu_mode()` report the effective hard
-CPU-only policy (`set_cpu_mode(True)` or `OVPHYSX_DISABLE_GPU`). They do **not**
+`get_global_config(GlobalConfigKey.CPU_ONLY)` /
+`ovphysx_get_global_config(OVPHYSX_GLOBAL_CONFIG_CPU_ONLY, ...)` report the
+effective hard CPU-only policy (a configured `true` value or
+`OVPHYSX_DISABLE_GPU`). They do **not**
 report per-scene USD `physxScene:enableGPUDynamics`, a CUDA ordinal, or
 attach-time resolved CPU versus GPU dynamics -- those remain separate controls
 by design. Successful instance creation also emits an INFO line containing
-`process_cpu_only=...` (and, when not hard CPU-only, create-args intent such as
-`active_cuda_gpus=no_override` for empty input versus `-1` for explicit
+`process_cpu_only=...` (and, when not hard CPU-only, GPU-selection intent such as
+`active_cuda_gpus=no_override` when `ACTIVE_CUDA_GPUS` is unset versus `-1` for explicit
 automatic selection). This hard-policy slice does not replace a host that still
 needs attach-time confirmation of scene dynamics before dropping a defensive
 `set_cpu_mode(True)`.
@@ -539,8 +708,8 @@ For deployment environments, setting `OVPHYSX_DISABLE_GPU` before ovphysx
 initialization provides the equivalent process-wide CPU-only policy.
 
 Other libraries in the process may still open the CUDA driver. Loading an
-ovstage-backed stage currently does, and constructing a `warp.array` through
-`PhysX.read()` or `PhysX.write()` does when Warp was built with CUDA. Use a
+ovstage-backed stage currently does, and constructing the `warp.array` values of a
+session read or write does when Warp was built with CUDA. Use a
 CPU-only Warp build to keep those Python paths driverless.
 
 This forces all PhysX scenes in the process to use CPU dynamics, overriding
@@ -559,7 +728,10 @@ opting into DirectGPU before instance creation:
 ```python
 from ovphysx import PhysX, PhysXConfig
 
+
 def create_direct_gpu_physx() -> PhysX:
+    # /physics/suppressReadback is still a Carbonite override on the legacy
+    # PhysXConfig / create_args path; there is no scoped GlobalConfigKey for it.
     return PhysX(
         config=PhysXConfig(
             carbonite_overrides={
@@ -570,8 +742,10 @@ def create_direct_gpu_physx() -> PhysX:
 ```
 
 Use this for IsaacLab-style tensor workloads that read state or contact tensors
-every step. Leave DirectGPU off for scenes that need contact modification, such
-as surface velocity or custom contact callbacks.
+every step. Contact bindings continue to provide contact data with DirectGPU
+enabled. Leave DirectGPU off if you need CPU-scene contact events. Contact
+modification, such as surface velocity or custom contact modification callbacks,
+also requires DirectGPU to be off.
 
 After creating a tensor binding, query Python `binding.native_device` or C
 `ovphysx_get_tensor_binding_native_device()` before allocating its DLPack
@@ -603,8 +777,8 @@ Two paths duplicate a scene subtree for large-scale parallel simulation:
    `warnings` module, so observe it through `enable_python_logging()` or
    `ovphysx_set_log_callback()` ([Logging](#logging)). Replication executes
    inline. C and Python return an
-   already-complete op index (`ovphysx_wait_op` remains valid and returns immediately), while the
-   C++ wrapper reports it through the optional `outOpIndex` out-param. Cloning is
+   already-complete task receipt, also returned directly by the C++ wrapper.
+   Wait on the receipt to collect completion and any execution failure. Cloning is
    driven by the PhysX replicator: each target becomes a
    real physics object — articulations are reconstructed, not flattened —
    addressable by its target path. It happens in the simulation's internal
@@ -667,14 +841,13 @@ placeholder strings; do not commit real credentials in source code.
 
 ```python
 import ovphysx
+from ovphysx.samples.python_samples.schema_support import physx_schema_paths
 import ovstage
 
 def step_remote_scene(scene_url: str) -> None:
-    # ovphysx never registers its codeless PhysX schemas; do it before the
-    # first population call in the process, together with the Newton schema
-    # (pip install newton-usd-schemas).
+    # Register external PhysX and Newton schemas before population.
     ovstage.population.register_usd_schemas(
-        [str(ovphysx.codeless_schema_root()), str(ovphysx.newton_schema_root())]
+        [*[str(p) for p in physx_schema_paths()], str(ovphysx.newton_schema_root())]
     )
     stage = ovstage.Stage("remote-scene")
     physx = None
@@ -686,13 +859,13 @@ def step_remote_scene(scene_url: str) -> None:
             stage,
             scene_url,
             ordinal=1,
-            domains=ovstage.PopulationDomain.PHYSICS,
+            domains=ovstage.PopulationDomain.ALL,
         )
         # attach_ovstage() reads at a sealed ordinal.
         stage.advance_write_floor(ordinal=1).wait()
-        physx.attach_ovstage(stage, read_ordinal=1)
+        physx.wait_task(physx.attach_ovstage(stage, read_ordinal=1))
         physx.step_sync(1.0 / 60.0)
-        physx.detach_ovstage()
+        physx.wait_task(physx.detach_ovstage())
     finally:
         if physx is not None:
             physx.destroy()
@@ -703,10 +876,10 @@ def step_remote_scene(scene_url: str) -> None:
 
 - OmniClient credentials are **process-global** — configure them **before** ovstage
   population of the remote URL.
-- The `domains` mask in the `step_remote_scene` example is `PHYSICS`, which matches
-  the shipped samples when the USD is known not to put physics under native
-  scene-graph instances. For arbitrary content prefer `ALL` (equivalently
-  `PHYSICS | RENDERING`) — refer to
+- The `domains` mask in the `step_remote_scene` example is `ALL` (equivalently
+  `PHYSICS | RENDERING`), the choice for arbitrary content. `PHYSICS` alone, as in
+  the shipped samples, is enough when the USD is known not to put physics under
+  native scene-graph instances — refer to
   [Population domains](ovstage_integration.md#population-domains).
 - OmniClient must be loaded before credentials are configured. Kit-hosted
   Python can import the host-provided `omni.client` module. Standalone callers
@@ -716,6 +889,11 @@ def step_remote_scene(scene_url: str) -> None:
   not part of the static ovphysx bootstrap path.
 
 ## Scene Queries
+
+Scene queries are a deprecated compatibility surface declared in
+`include/ovphysx/ovphysx_legacy.h`. `ovphysx.h` still includes that header so
+existing `#include <ovphysx/ovphysx.h>` consumers compile. New code should
+include the legacy header explicitly.
 
 ovphysx provides three scene query functions covering raycast, sweep, and overlap:
 
@@ -791,115 +969,92 @@ prim path by re-deriving the old path hash. Resolve these fields with
 `ovphysx_scene_query_get_paths_from_ids()` (Python:
 `PhysX.get_scene_query_paths_from_ids()`), the scene-query counterpart of
 `ovphysx_contact_binding_get_other_actor_paths_from_ids()` for contact
-bindings; see `changelog.md`'s `ovphysx_scene_query_hit_t` entry for the full
-break this resolver closes.
+bindings. Refer to the [C API Reference](api.md) for the scene-query hit and
+path-resolver contracts.
 
 
 ## PhysX Pointer Interop
 
-For advanced use cases that go beyond the TensorBindingsAPI -- such as custom joint
-manipulation or direct body property access -- ovphysx can return raw PhysX SDK object
-pointers by physics-object path and type.
+Native PhysX addresses are the read-only `physxPointer` column
+(`OVPHYSX_ATTR_PHYSX_POINTER`). Query the matching `ovphysx_query_target_t`
+and read that attribute. The column is a host `uint64`, one borrowed address
+per matched object. Python reads it through `PhysX.read` as a Warp `uint64`
+array. There is no separate pointer lookup.
 
-```c
-#include <ovphysx/ovphysx.h>
+| Query type | Address |
+|---|---|
+| `OVPHYSX_QUERY_TARGET_SCENE` | `PxScene` |
+| `OVPHYSX_QUERY_TARGET_PHYSX_MATERIAL` | `PxMaterial` |
+| `OVPHYSX_QUERY_TARGET_SHAPE` | `PxShape` |
+| `OVPHYSX_QUERY_TARGET_COMPOUND_SHAPE` | compound-shape wrapper |
+| `OVPHYSX_QUERY_TARGET_RIGID_ACTOR` | `PxRigidDynamic` or `PxRigidStatic` |
+| `OVPHYSX_QUERY_TARGET_JOINT` | standalone `PxJoint` |
+| `OVPHYSX_QUERY_TARGET_CUSTOM_JOINT` | plugin custom joint |
+| `OVPHYSX_QUERY_TARGET_ARTICULATION` | `PxArticulationReducedCoordinate` |
+| `OVPHYSX_QUERY_TARGET_ARTICULATION_LINK` | `PxArticulationLink` |
+| `OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT` | `PxArticulationJointReducedCoordinate` |
+| `OVPHYSX_QUERY_TARGET_PARTICLE_SYSTEM` | particle system |
+| `OVPHYSX_QUERY_TARGET_PARTICLE_SET` | particle set |
+| `OVPHYSX_QUERY_TARGET_PHYSICS` | process-global `PxPhysics` |
 
-static ovphysx_result_t get_scene_and_physics(
-    ovphysx_handle_t handle, void** out_scene, void** out_physics)
-{
-    ovphysx_result_t result = ovphysx_get_physx_ptr(
-        handle, OVPHYSX_LITERAL("/World/physicsScene"),
-        OVPHYSX_PHYSX_TYPE_SCENE, out_scene);
-    if (result.status != OVPHYSX_API_SUCCESS) {
-        return result;
-    }
+`OVPHYSX_QUERY_TARGET_PHYSICS` is one row. Its path-list entry is `/`, the absolute
+root, and that entry is not a USD prim. Prim-set selection
+does not change that row. The other new types above publish only
+`physxPointer`. `OVPHYSX_QUERY_TARGET_RIGID_BODY` stays dynamics-only and does not
+carry actor pointers, including statics.
 
-    ovphysx_string_t no_path = { NULL, 0 };
-    return ovphysx_get_physx_ptr(
-        handle, no_path, OVPHYSX_PHYSX_TYPE_PHYSICS, out_physics);
-}
-```
+A missing object is absent from the result. A query type with no
+`physxPointer` attribute skips that name the same way it skips any other
+unknown attribute. A destroyed object disappears from the next query. A
+`uint64` already copied into a live read session is not cleared.
 
-`PxPhysics` is process-global and has no physics-object path. Select it with
-`OVPHYSX_PHYSX_TYPE_PHYSICS` and a zero-length string view. Both C
-representations, `{ NULL, 0 }` and `{ "", 0 }`, have the same meaning.
+The read is an ordinary read task. Drain pending simulation before using an
+address, and use it only after that task completes. Do not call PhysX on the
+pointer during an in-flight step.
 
-A non-empty selector for `OVPHYSX_PHYSX_TYPE_PHYSICS` is invalid. Every other
-PhysX object type continues to require a non-empty physics-object path.
+The query target is the classification. Standalone joints, custom joints, and
+articulation joints are `OVPHYSX_QUERY_TARGET_JOINT`,
+`OVPHYSX_QUERY_TARGET_CUSTOM_JOINT`, and
+`OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT`. A path of another kind is absent
+from that query. `ovphysx_physx_type_t` names the kind carried by
+object-change callbacks.
 
-The `ovphysx_physx_type_t` enum specifies which PhysX type to look up
-(scene, actor, articulation link, joint, shape, and material, among others).
-The C API returns `void*`; the caller casts to the appropriate PhysX SDK type.
-
-For high-level classification without casting PhysX pointers, use
-`ovphysx_get_object_type()` (Python: `PhysX.get_object_type()`), which returns
-the `ovphysx_object_type_t` taxonomy. Standalone UsdPhysics joints classify as
-`OVPHYSX_OBJECT_TYPE_JOINT`; plugin-registered custom joints classify as
-`OVPHYSX_OBJECT_TYPE_CUSTOM_JOINT`; articulation joints classify as
-`OVPHYSX_OBJECT_TYPE_ARTICULATION_JOINT`. Each pairs with the matching
-`ovphysx_get_physx_ptr` selector (refer to `ovphysx_object_type_t` and
-`ovphysx_physx_type_t`). `OVPHYSX_OBJECT_TYPE_INVALID` means no classified
-simulation object at the path, not that the call failed. This enum is separate
-from `ovphysx_sim_object_type_t`, which drives the session read/write API.
-
-Casting requires the PhysX SDK C++ headers (for example `PxScene.h`,
-`PxRigidDynamic.h`). The ovphysx SDK ships these headers under
-`include/physx/`; `find_package(ovphysx)` sets `ovphysx_PHYSX_INCLUDE_DIR`
-to point there. No PhysX library linking is needed.
+Casting requires the PhysX SDK C++ headers shipped under `include/physx/`.
+`find_package(ovphysx)` sets `ovphysx_PHYSX_INCLUDE_DIR`. No PhysX library
+linking is needed.
 
 Refer to the [PhysX Interop tutorial](tutorials/physx_interop.md) for a
-complete sample that uses `setKinematicTarget()` on a `PxRigidDynamic*`.
-
-The C++ experimental API provides a type-safe overload that deduces the
-enum from the pointer type, preventing mismatches at compile time:
-
-```cpp
-#include <ovphysx/experimental/ovphysx.hpp>
-
-static ovphysx_api_status_t get_physx_roots(
-    ovphysx::PhysX& sdk,
-    physx::PxScene*& out_scene,
-    physx::PxPhysics*& out_physics)
-{
-    out_scene = nullptr;
-    out_physics = nullptr;
-
-    ovphysx_api_status_t status =
-        sdk.getPhysXPtr("/World/physicsScene", out_scene);
-    if (status != OVPHYSX_API_SUCCESS) {
-        return status;
-    }
-
-    return sdk.getPhysXPtr("", out_physics);
-}
-```
-
-PhysX pointer interop is exposed only through the C and C++ APIs. The Python
-binding does not expose raw PhysX pointers; use the session read/write API
-(`PhysX.read` / `PhysX.write`) for Python data-access workflows instead.
+sample that reads `physxPointer` and calls `setKinematicTarget()`.
 
 ### Pointer Lifetime
 
-Returned pointers are borrowed. Treat them as invalid after stage reset or
-detachment, or after instance destruction, and reacquire them after attaching
-and initializing another stage. Calls to `ovphysx_step()` do **not** invalidate
-existing pointers. Do not call `release()` on returned pointers -- ovphysx owns
-them. These rules also apply to the process-global `PxPhysics` pointer. Use the
-PhysX SDK headers shipped for the same ovphysx build to preserve ABI compatibility.
-Objects that callers explicitly create through `PxPhysics` follow the PhysX SDK's
-ownership rules; the no-release rule applies to the pointer returned by ovphysx.
+The address names a borrowed PhysX object. Reading it does not grant
+ownership, extend lifetime, or permit an SDK call the simulation or device
+mode already forbids. Treat the object as invalid after stage detachment,
+instance destruction, or that object's own destruction, and
+reacquire it after attaching and initializing another stage. A completed
+`ovphysx_step()` does not invalidate the object. The numeric column stays
+valid until the read session is released, and a later step does not rewrite
+it. Do not call `release()` on the address. These rules also apply to the
+process-global `PxPhysics` pointer. Objects that callers explicitly create
+through `PxPhysics` follow the PhysX SDK's ownership rules.
+
+Cached addresses are invalidated by the instance-scoped object-destroyed and
+all-objects-destroyed callbacks. `ovphysx_clone()` does not emit a creation
+callback for the clones. Refresh cached addresses after the clone task
+completes.
 
 ### Thread Safety
 
 PhysX APIs on returned pointers must only be called between simulation
-steps — specifically after `wait_op()` completes for the preceding step
+steps — specifically after `wait_task()` completes for the preceding step
 and before the next `ovphysx_step()` call. Calling PhysX APIs while a
 step is in-flight is a data race.
 
 ### Disabling simulation
 
 Do not set or clear `PxActorFlag::eDISABLE_SIMULATION` on a
-`PxRigidDynamic*` obtained from `ovphysx_get_physx_ptr()`. That path is
+`PxRigidDynamic*` read from `physxPointer`. That path is
 unsupported: ovphysx does not observe the change, and on DirectGPU scenes
 the next read or write may address the wrong body without error.
 
@@ -919,23 +1074,23 @@ the experimental C++ wrapper returns an RAII
 `ovphysx::ObjectChangeSubscription`. Subscribers receive three optional
 callbacks:
 
-- `on_object_created` — fires AFTER the object exists. Safe to call
-  `ovphysx_get_physx_ptr()` from a deferred handler.
+- `on_object_created` — fires AFTER the object exists. Safe to read
+  `physxPointer` from a deferred handler.
 - `on_object_destroyed` — fires BEFORE the object is destroyed. Drop any
-  cached pointer at this point; do not call `release()` on it.
+  cached pointer before the callback returns; it is unusable after that
+  return. Do not call `release()` on it.
 - `on_all_objects_destroyed` — fires BEFORE a bulk teardown, for example
-  `ovphysx_reset_stage()`. Flush the entire pointer cache; no per-object
+  `ovphysx_detach_ovstage()`. Flush the entire pointer cache before returning;
+  every cached pointer is unusable after that return, and no per-object
   destruction events follow.
 
 The pathless `PxPhysics` object is not identified by per-path create or destroy
-callbacks. Invalidate any cached `PxPhysics` pointer at the explicit reset,
-detach, and instance-destruction boundaries described above.
+callbacks. Invalidate any cached `PxPhysics` pointer at the explicit detach
+and instance-destruction boundaries described above.
 
-Subscriptions are **process-global**: a single subscription receives events
-from every ovphysx instance in the process. There is no per-instance filter,
-and callback payloads do not include a stage identifier — only `prim_path`.
-Today ovphysx is single-attached-stage-per-process, so treat these callbacks
-as one-stage-at-a-time and do not rely on them for cross-stage bookkeeping.
+Subscriptions are **per instance**: pass the owning `ovphysx_instance_handle_t`. Callbacks fire only while that instance's own attachment is live, and only for that attachment. A peer instance cannot unsubscribe another instance's subscription (`OVPHYSX_API_NOT_FOUND`). Callback payloads still carry `prim_path` (and type), not a stage identifier -- key caches by instance plus path, because two live stages may use the same paths.
+
+`ovphysx_unsubscribe_object_changes()` returns `OVPHYSX_API_SUCCESS` only after that subscription's callbacks have finished, including ones already running on another thread. `user_data` can be freed after that return. Calling unsubscribe from inside any object-change callback returns `OVPHYSX_API_INVALID_STATE` and leaves the subscription active. That check follows the Carbonite task when the callback is running as one, and the native thread otherwise. These notifications stay callbacks. They are not query or read records.
 
 ```c
 #include <ovphysx/ovphysx.h>
@@ -960,6 +1115,7 @@ static void on_all_destroyed(void* user_data)
 }
 
 static ovphysx_result_t start_observing_object_changes(
+    ovphysx_instance_handle_t handle,
     pointer_cache_t* cache,
     ovphysx_subscription_id_t* out_subscription)
 {
@@ -967,13 +1123,14 @@ static ovphysx_result_t start_observing_object_changes(
     callbacks.on_object_destroyed = on_destroyed;
     callbacks.on_all_objects_destroyed = on_all_destroyed;
     callbacks.user_data = cache;
-    return ovphysx_subscribe_object_changes(&callbacks, out_subscription);
+    return ovphysx_subscribe_object_changes(handle, &callbacks, out_subscription);
 }
 
 static ovphysx_result_t stop_observing_object_changes(
+    ovphysx_instance_handle_t handle,
     ovphysx_subscription_id_t subscription)
 {
-    return ovphysx_unsubscribe_object_changes(subscription);
+    return ovphysx_unsubscribe_object_changes(handle, subscription);
 }
 ```
 
@@ -988,53 +1145,85 @@ struct PointerCache {
 };
 
 static ovphysx::ObjectChangeSubscription observe_object_changes(
-    PointerCache& cache)
+    ovphysx_instance_handle_t handle, PointerCache& cache)
 {
     ovphysx::ObjectChangeCallbacks callbacks;
     callbacks.onDestroyed = [&cache](
         std::string_view path, ovphysx_physx_type_t) { cache.drop(path); };
     callbacks.onAllDestroyed = [&cache]() { cache.clear(); };
-    return ovphysx::subscribeObjectChanges(std::move(callbacks));
+    return ovphysx::subscribeObjectChanges(handle, std::move(callbacks));
 }
 ```
 
 **Threading:** callbacks may fire from internal worker threads during
-`ovphysx_step()`, `ovphysx_step_sync()`, `ovphysx_clone()`, or
-`ovphysx_reset_stage()`. Do **not** call other ovphysx APIs from inside a
-callback — defer follow-up work to after the next `wait_op()` /
-`wait_all()` returns, or after the synchronous call (`ovphysx_step_sync()`,
-`ovphysx_reset_stage()`) returns.
+`ovphysx_step()`, `ovphysx_step_sync()`, or
+`ovphysx_detach_ovstage()`. Do **not** call other ovphysx APIs from inside a
+callback -- defer follow-up work until the operation's task wait succeeds, or
+until `ovphysx_step_sync()` returns successfully. Unsubscribe from inside any
+object-change callback returns `OVPHYSX_API_INVALID_STATE` instead of waiting.
+That check follows the Carbonite task when the callback is running as one, and
+the native thread otherwise. Another task on the same worker is not inside the
+callback. Destroying the C++ handle there closes that subscription without
+waiting, skips later callbacks, and frees its state after that callback has
+unwound, including when the callback throws.
 
-**Known limitation:** `ovphysx_clone()` does not currently emit
-`on_object_created` notifications. Pointer caches that need to track cloned
-objects must be refreshed after the synchronous clone call returns.
-`ovphysx_reset_stage()` reliably
-emits `on_all_objects_destroyed` and is the supported path for bulk
-pointer invalidation.
+**Clone and population:** `ovphysx_clone()` does not emit `on_object_created`.
+Pointer caches that need to track cloned objects must be refreshed after the
+clone task wait succeeds. The initial ovstage attach/update population is also
+silent. `ovphysx_detach_ovstage()` emits `on_all_objects_destroyed` and is the
+supported path for bulk pointer invalidation.
 
 ## Contact Data
 
-ovphysx provides two complementary APIs for reading contact information.
-Choose the one that fits your use case:
+Use the session read API for new contact-data consumers: query `CONTACT_SENSOR`
+for net forces, raw contact detail, or CPU contact events, or use
+`ovphysx_query_contacts` to pair sensors with filters. In Python, use
+`PhysX.query` with `SimObjectType.CONTACT_SENSOR` and the `contacts=` argument. Query creation can return an optional discovery summary, and reads can
+report omitted attributes in their optional session summary. See
+[Contact queries](read_write/index.md#contact-queries) and
+[Contact sensors](read_write/readable.md#contact-sensors) for the complete contract.
 
-| | Contact Binding | Contact Report |
-|---|---|---|
-| **Use when** | You need aggregate force tensors for RL rewards/safety, or per-contact-point geometry with actor identities | You need raw per-step contact event data for custom sensors or collision debugging |
-| **Data shape** | `[S, 3]` net forces, `[S, F, 3]` force matrix, or flat per-contact arrays plus a `[C, 2]` actor-ID tensor (all DLPack-compatible) | Variable-length arrays of event headers + contact points (raw buffers, zero-copy) |
-| **API style** | Create a binding, then read tensors each step | Call once per step, receive pointers to internal buffers |
-| **USD requirement** | Sensor prims must have `PhysxContactReportAPI` applied | Prims must have `PhysxContactReportAPI` applied |
-| **Key functions** | `create_contact_binding()`, `read_contact_net_forces()`, `read_contact_force_matrix()`, `read_raw_contact_data()` | `get_contact_report()` |
+The compatibility APIs below remain available for existing consumers:
+
+| | Contact Binding |
+|---|---|
+| **Use when** | You need aggregate force tensors for RL rewards/safety, or per-contact-point geometry with actor identities |
+| **Data shape** | `[S, 3]` net forces, `[S, F, 3]` force matrix, or flat per-contact arrays plus a `[C, 2]` actor-ID tensor (all DLPack-compatible) |
+| **API style** | Create a binding, then read tensors each step |
+| **Device modes** | CPU dynamics and GPU dynamics, including DirectGPU |
+| **USD requirement** | Sensor prims must have `PhysxContactReportAPI` applied; child sensors also need reports from a participating actor (see [Child collider sensors](read_write/readable.md#child-collider-sensors)) |
+| **Key functions** | `create_contact_binding()`, `read_contact_net_forces()`, `read_contact_force_matrix()`, `read_raw_contact_data()` |
 
 ### Contact Binding (Aggregate Force Tensors)
 
 Contact bindings give you aggregate net force vectors between sets of sensor
 and filter bodies, delivered as DLPack tensors that work on both CPU and GPU.
 Every authored USD prim named by `sensor_patterns` must have
-`PhysxContactReportAPI` applied; filter prims need no extra schema. Filter
-patterns are still resolved against physics-registered objects, though (a
+`PhysxContactReportAPI` applied. Runtime-only clones use the schema metadata
+copied from the corresponding source object, so an untagged collider cannot
+become a sensor just because its parent body has the schema. Filter prims need no
+extra schema. Filter patterns are still resolved against physics-registered objects, though (a
 collider, rigid body, or other physics registration) — a pattern that only
 names an arbitrary non-physics USD prim, for example a plain visual `Mesh` with
 no physics schema at all, matches nothing.
+
+On CPU simulation and GPU dynamics with CPU readback, a tagged child collider is eligible as a
+sensor but does not enable its owning body's reporting. Also enable reporting on the body (or the
+owning articulation link or root) to avoid depending on reports from the other actor in the pair.
+If neither actor reports matching contacts, the child remains eligible but reads zero force.
+See [Child collider sensors](read_write/readable.md#child-collider-sensors) for the authoring example.
+
+For these modes, enable reporting on the owner but select only the child as a
+binding sensor. Selecting the owner as a sensor in this or another live contact
+binding on the same attachment gives the owner precedence: contacts are credited
+to the owner and the child reads zero. Check wildcard patterns for unintended
+owner matches, and establish the bindings before stepping. Session reads support
+selecting both the owner and child in these modes.
+
+On DirectGPU, a separate child collider carrying `PhysxContactReportAPI` is
+accepted by the deprecated contact binding, but the runtime logs an unsupported
+collider warning and the child reads zero force. DirectGPU session queries omit
+that child row; select the owning body or articulation link instead.
 
 Refer to the [Contact Binding tutorial](tutorials/contact_binding.md) for a full
 walkthrough. Key points:
@@ -1045,118 +1234,9 @@ walkthrough. Key points:
 - CUDA output tensors require DirectGPU TensorAPI; `physxScene:enableGPUDynamics=true` by itself
   only selects GPU dynamics. Refer to [Warmup and Determinism](#warmup-and-determinism).
 - `dt` for impulse-to-force conversion is taken automatically from the last
-  successful `step()`, `step_sync()`, or `step_n_sync()` call.
-
-### Contact Report (Per-Point Event Data)
-
-The contact report exposes the raw per-step contact events collected by
-ovphysx. This gives you every individual contact point with
-position, normal, impulse, and separation — useful for custom contact sensors,
-collision debugging, or building higher-level contact processing.
-
-Prims must have `PhysxContactReportAPI` applied in the USD stage for contacts
-to be reported.
-
-```c
-#include <ovphysx/ovphysx.h>
-
-static ovphysx_result_t read_contact_report(ovphysx_handle_t handle)
-{
-    const ovphysx_contact_event_header_t* headers = NULL;
-    const ovphysx_contact_point_t* points = NULL;
-    const ovphysx_friction_anchor_t* anchors = NULL;
-    uint32_t num_headers = 0;
-    uint32_t num_points = 0;
-    uint32_t num_anchors = 0;
-
-    return ovphysx_get_contact_report(
-        handle,
-        &headers,
-        &num_headers,
-        &points,
-        &num_points,
-        &anchors,
-        &num_anchors);
-}
-```
-
-The friction anchor parameters are optional -- pass NULL to skip them.
-
-The C API returns typed struct pointers defined in `ovphysx_types.h`.
-The C++ experimental API provides aliases (`PhysX::ContactEventHeader`,
-`PhysX::ContactPoint`, `PhysX::FrictionAnchor`) and a typed
-`getContactReport()` method.
-
-Data is valid until the next simulation step. A typical usage pattern:
-
-1. Apply `PhysxContactReportAPI` to prims of interest.
-2. `step()` + `wait_all()`.
-3. Call `get_contact_report()` to read that step's contacts.
-4. Parse event headers for contact pairs; index into contact data for per-point details.
-
-> **⚠️ Lifetime hazard (default zero-copy mode).** The arrays / pointers
-> returned by `get_contact_report()` with `copy=False` (the C default and the
-> Python default) are views into internal C buffers that are valid **only
-> until the next `step()` / `step_sync()`**. After the next step the buffers
-> may be reallocated or reused — accessing the views is undefined behavior
-> (silent data corruption or segfault). Python cannot detect this dangling
-> state.
->
-> For RL training loops or any code path that retains contact data across a
-> step, use **`copy=True`** in Python to receive Python-owned `list[dict]`
-> for each section (safe to hold across steps, small per-step overhead).
-
-**Buffer capacity between steps.** The runtime keeps reusable C-heap vectors for
-contact headers, contact points, and friction anchors. Each step clears and
-refills them, but capacity grows to the peak contact count seen so far while
-physics scenes remain loaded. That growth is outside the Python heap and is not
-visible to `tracemalloc`. Call `reset_stage()` to tear down the attached physics
-session and release native buffers. `reset_stage()` detaches the stage;
-`resetSimulation()` / `releasePhysicsObjects()` delete all `PhysXScene` objects
-(and their `ContactReport` state), which releases the grown vector capacity.
-
-In Python (zero-copy, default):
-
-```python
-from ovphysx import PhysX
-
-def print_borrowed_contacts(physx: PhysX) -> None:
-    report = physx.get_contact_report()
-    for i in range(report["num_headers"]):
-        header = report["headers"][i]
-        print(
-            f"pair {i}: actor0={header.actor0:#x}, "
-            f"{header.numContactData} points"
-        )
-    for j in range(report["num_points"]):
-        point = report["points"][j]
-        print(
-            f"  pos=({point.position[0]:.3f}, "
-            f"{point.position[1]:.3f}, {point.position[2]:.3f})"
-        )
-    # Finish access before the next step; native buffers will be reused.
-```
-
-In Python (safe across steps, `copy=True`):
-
-```python
-from ovphysx import PhysX
-
-def print_owned_contacts_after_step(physx: PhysX, dt: float) -> None:
-    report = physx.get_contact_report(copy=True)
-    physx.step_sync(dt)  # native buffers are reused, but report is owned
-    for header in report["headers"]:
-        print(
-            f"actor0={header['actor0']:#x}, "
-            f"{header['numContactData']} points"
-        )
-    for point in report["points"]:
-        position = point["position"]
-        print(
-            f"  pos=({position[0]:.3f}, "
-            f"{position[1]:.3f}, {position[2]:.3f})"
-        )
-```
+  successful `step()` or `step_sync()` call that simulated. A zero-dt step
+  simulates nothing: it leaves both the contacts and that `dt` unchanged, so
+  reads across it are identical.
 
 ## Running With Other Carbonite Users
 
@@ -1173,13 +1253,12 @@ framework is allowed by default, but `OVPHYSX_COEXIST_REFUSE=1` makes ovphysx fa
 fast, and foundation-interface mismatches still fail with clear probe errors.
 Compatible OV libraries can share Carbonite without sharing the PhysX runtime.
 
-ovphysx ships its PhysX USD schemas as codeless plugins and never registers
-them itself. The application registers them with the USD runtime it owns before
-the first ovstage population call in the process: obtain the root with
-`ovphysx_get_codeless_schema_root()` and pass it to
-`ovstage_population_register_usd_schemas()` (Python:
-`ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])`),
-and register the separately installed Newton USD schema
+Applications install `physx-usd-schemas` separately and register both
+resource directories before the first USD schema read, including population or
+export. The application recipes in the samples locate and validate the required
+resources without importing USD; see
+[Physics Schemas](physics_schemas.md) for Python and native setup.
+Register the separately installed Newton USD schema
 (`ovphysx.newton_schema_root()`) in the same call when scenes author `newton:*`
 attributes.
 When another USD-aware subsystem, such as ovrtx, shares the process, register
@@ -1201,18 +1280,19 @@ Important process rules:
 - Sharing a pre-loaded Carbonite PhysX runtime stack is not supported.
 - Kit or Isaac Sim processes that already loaded their physics extensions are
   not supported ovphysx embedding targets.
-- Use `active_cuda_gpus` for CUDA device selection. ovphysx applies an explicit
-  selection as part of serialized scene attachment; other subsystems must not
-  reconfigure physics GPU selection during that attachment. A non-empty
-  `active_cuda_gpus` value takes precedence over `scene_multi_gpu_mode`. The
-  empty value makes no ovphysx ordinal override (a fresh/default PhysX process
+- Set `ACTIVE_CUDA_GPUS` after create and before attach for CUDA device
+  selection. ovphysx applies an explicit selection as part of serialized scene
+  attachment; other subsystems must not reconfigure physics GPU selection during
+  that attachment. A non-empty value takes precedence over `SCENE_MULTI_GPU_MODE`.
+  Unset makes no ovphysx ordinal override (a fresh/default PhysX process
   selects automatically); `"-1"` explicitly requests automatic single-device
   selection. Applications that require a deterministic ordinal pass it
   explicitly before the first GPU scene attaches. An already-created PhysX CUDA
   context manager is not retargeted; use a new process to select a different
   ordinal. The expert DirectGPU setting `/physics/suppressReadback` is
-  host-managed and should be configured before instance creation rather than
-  changed while physics is active.
+  host-managed (legacy Carbonite override on create-args / `PhysXConfig`) and
+  should be configured before instance creation rather than changed while
+  physics is active.
 - If another Carbonite user already set the app directory, ovphysx preserves it.
 
 Schema-path registration governs coexistence in the *process*. If the subsystems
@@ -1238,22 +1318,28 @@ whole-runtime or process mute.
 ```python
 import ovphysx
 
-ovphysx.set_log_level(ovphysx.LogLevel.VERBOSE)
-print(ovphysx.get_log_level())
+ovphysx.set_global_config(ovphysx.GlobalConfigKey.LOG_LEVEL, ovphysx.LogLevel.VERBOSE)
+print(ovphysx.get_global_config(ovphysx.GlobalConfigKey.LOG_LEVEL))
 ```
 
 #### C
 
 ```c
 #include <ovphysx/ovphysx.h>
+#include <ovphysx/ovphysx_config.h>
 
 int main(void) {
     /* Applies to the omni_physx_sdk, omni.physx, and ovphysx_internal sources. */
-    if (ovphysx_set_log_level(OVPHYSX_LOG_VERBOSE).status != OVPHYSX_API_SUCCESS)
+    if (ovphysx_set_global_config(
+            OVPHYSX_GLOBAL_CONFIG_LOG_LEVEL,
+            ovphysx_config_value_int64(OVPHYSX_LOG_VERBOSE)).status != OVPHYSX_API_SUCCESS)
         return 1;
 
-    uint32_t current = ovphysx_get_log_level();
-    return current == OVPHYSX_LOG_VERBOSE ? 0 : 1;
+    ovphysx_config_value_t current = {0};
+    if (ovphysx_get_global_config(
+            OVPHYSX_GLOBAL_CONFIG_LOG_LEVEL, &current).status != OVPHYSX_API_SUCCESS)
+        return 1;
+    return current.value.int64_value == OVPHYSX_LOG_VERBOSE ? 0 : 1;
 }
 ```
 
@@ -1269,6 +1355,7 @@ Unix-epoch seconds.
 
 ```c
 #include <ovphysx/ovphysx.h>
+#include <ovphysx/ovphysx_config.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -1286,7 +1373,9 @@ void my_logger(ovphysx_log_level_t level,
 int main(void) {
     ovphysx_string_t filter = OVPHYSX_LITERAL(
         "omni_physx_sdk=verbose,omni.physx=verbose,ovphysx_internal=warning");
-    if (ovphysx_set_log_level(OVPHYSX_LOG_VERBOSE).status != OVPHYSX_API_SUCCESS)
+    if (ovphysx_set_global_config(
+            OVPHYSX_GLOBAL_CONFIG_LOG_LEVEL,
+            ovphysx_config_value_int64(OVPHYSX_LOG_VERBOSE)).status != OVPHYSX_API_SUCCESS)
         return 1;
     if (ovphysx_set_log_callback(
             OVPHYSX_LOG_WARNING, &filter, my_logger, NULL).status != OVPHYSX_API_SUCCESS)
@@ -1311,7 +1400,7 @@ successful replace, disable, or shutdown drains the slot.
 
 By default, Carbonite logs to the console. When a custom callback is registered
 that also writes to the console, output may be doubled.
-`ovphysx_enable_default_log_output()` controls Carbonite's process-global
+`OVPHYSX_GLOBAL_CONFIG_DEFAULT_LOG_OUTPUT` controls Carbonite's process-global
 built-in console logger, so disabling it affects every Carbonite tenant in the
 process. Multi-tenant hosts should normally own that policy themselves. A
 standalone application can suppress the built-in logger as follows:
@@ -1322,19 +1411,22 @@ standalone application can suppress the built-in logger as follows:
 import ovphysx
 
 ovphysx.enable_python_logging()
-ovphysx.enable_default_log_output(False)
+ovphysx.set_global_config(ovphysx.GlobalConfigKey.DEFAULT_LOG_OUTPUT, False)
 ```
 
 #### C
 
 ```c
 #include <ovphysx/ovphysx.h>
+#include <ovphysx/ovphysx_config.h>
 
 int configure_logging(ovphysx_log_callback_t callback) {
     if (ovphysx_set_log_callback(
             OVPHYSX_LOG_VERBOSE, NULL, callback, NULL).status != OVPHYSX_API_SUCCESS)
         return 1;
-    if (ovphysx_enable_default_log_output(false).status != OVPHYSX_API_SUCCESS)
+    if (ovphysx_set_global_config(
+            OVPHYSX_GLOBAL_CONFIG_DEFAULT_LOG_OUTPUT,
+            ovphysx_config_value_bool(false)).status != OVPHYSX_API_SUCCESS)
         return 1;
     return 0;
 }
@@ -1375,7 +1467,9 @@ the Python callback owner alive until native callback draining returns; bridge
 enable/disable calls started during shutdown fail as overlapping transitions.
 Calling `PhysX()` or `PhysX.destroy()` from inside the native log callback is
 rejected before it can wait on or change process-lifecycle state; retry after
-the callback returns. Process initialization and final shutdown publish
+the callback returns. Reading process-global configuration from that callback
+is supported, including the bound profiler. Setting a startup-only
+process-global value from it is rejected and does not wait on instance creation. Process initialization and final shutdown publish
 transitions without holding the process-lifecycle lock while native code may
 deliver or drain callbacks. Concurrent constructors wait on a condition while
 process initialization finishes. Construction racing final shutdown fails fast
@@ -1397,156 +1491,85 @@ solver state. The reader must support both the recording's OmniPVD stream
 version and its independent PhysX OVD integration version; refer to the full
 tutorial for the current versions and compatibility policy.
 
-Startup OmniPVD output and late-recording capability are selected at instance
-creation. The default FILE startup transport also uses a recording directory:
+Enable recording capability with module-level
+`set_global_config(GlobalConfigKey.OVD_RECORDING_CAPABLE, True)` before
+`PhysX()`. Native callers initialize, then call
+`ovphysx_set_global_config(OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE,
+ovphysx_config_value_bool(true))` before `ovphysx_create_instance(&handle)`.
+The BOOL key defaults to false, is process-wide, and leaves output dormant
+until explicit start. Its setter is rejected after the first successful create
+until successful shutdown with no live instances, even after all instances are
+destroyed. Shutdown while handles remain live does not reopen the setter.
+The configured value is retained across shutdown, and the getter reports it.
+Old typed and raw OVD startup configuration returns `INVALID_ARGUMENT` with
+migration guidance; its numeric slots remain reserved. Python startup fields,
+including `PhysXConfig.omnipvd_recording_capable`, are removed.
+Python releases its native lifecycle when the last owner is destroyed.
+Attach the scene, then use `start_recording()` with
+an explicit FILE or TCP `OmniPvdDestination`; start before the first step to
+capture the first simulation frame. Creation, attach, and reattach never start
+output automatically. Stop before teardown, or start a new
+recording on the same capable runtime.
 
-| Python field | C builder | Description |
-|---|---|---|
-| `omnipvd_ovd_recording_directory` | `ovphysx_config_entry_omnipvd_ovd_recording_directory()` | Directory for `.ovd` output |
-| `omnipvd_output_enabled` | `ovphysx_config_entry_omnipvd_output_enabled()` | Enable recording |
-| `omnipvd_recording_capable` | `ovphysx_config_entry_omnipvd_recording_capable()` | Permit recording to start later without enabling startup output |
+Native callers use `ovphysx_instance_handle_t` and the
+`ovphysx_ovd_start_recording`, `ovphysx_ovd_stop_recording`, and
+`ovphysx_ovd_is_recording` entry points. The destination layout and ownership
+are unchanged. Python retains `start_recording`, `stop_recording`, and
+`is_recording`.
 
-Set `omnipvd_output_enabled` before creating the PhysX instance. For FILE, also set
-`omnipvd_ovd_recording_directory`; it is auto-created if needed. TCP does not use it.
-Startup output implicitly installs late-recording capability. To enable only
-late recording, set `omnipvd_recording_capable=True` before creating the first
-instance instead.
+The [recording tutorial](tutorials/omnipvd_recording.md) contains complete
+examples and the dormant capability cost. Existing startup-output callers
+should follow the [migration guide](ovd_api_migration.md).
 
-The capability choice is process-wide and latched when the shared runtime is
-created. Default instances deliberately cannot start recording later: with both
-startup output and capability disabled, ovphysx passes a null `PxOmniPvd` to
-PhysX, avoiding incremental sampler, factory-listener, and sampling-mutex
-overhead. This is the only zero-OmniPVD-overhead configuration. Explicit late
-recording capability creates the provider and sampler at `PxPhysics` creation
-and enables OVD and collision readback on attached scenes even while recording
-is idle; DirectGPU scenes therefore retain that readback cost. A second live
-instance cannot change this creation-time choice.
+## Profiling
 
-The startup transport has four additional typed fields:
+ovphysx can publish its profile zones to one of two consumers, so you can see what your process was doing. Three groups of zones appear:
 
-| Python field | C builder | Description |
-|---|---|---|
-| `omnipvd_transport` | `ovphysx_config_entry_omnipvd_transport()` | Exact lowercase `"file"` or `"tcp"`; defaults to FILE |
-| `omnipvd_tcp_address` | `ovphysx_config_entry_omnipvd_tcp_address()` | TCP listener address |
-| `omnipvd_tcp_port` | `ovphysx_config_entry_omnipvd_tcp_port()` | TCP listener port, 1 through 65535 |
-| `omnipvd_tcp_timeout_ms` | `ovphysx_config_entry_omnipvd_tcp_timeout_ms()` | Blocked-send timeout in milliseconds; 0 leaves it at the OS default and uses a 3000 ms connect window |
-
-For TCP, ovphysx synchronously attempts to connect to a ready trusted-plaintext
-listener. A failed open is logged and cleaned up; the instance may still succeed
-with recording inactive. FILE alone renames/imports files.
-
-```python
-import ovstage
-from ovphysx import PhysX, PhysXConfig, codeless_schema_root, newton_schema_root
-
-physx = PhysX(
-    config=PhysXConfig(
-        omnipvd_ovd_recording_directory="/tmp/pvd_output",
-        omnipvd_output_enabled=True,
-    )
-)
-
-# Register the codeless PhysX schemas and the Newton schema before the first population call.
-ovstage.population.register_usd_schemas([str(codeless_schema_root()), str(newton_schema_root())])
-stage = ovstage.Stage("recorded-scene")
-ovstage.population.open_usd(
-    stage, "scene.usda", ordinal=1, domains=ovstage.PopulationDomain.PHYSICS
-)
-# attach_ovstage() reads at a sealed ordinal.
-stage.advance_write_floor(ordinal=1).wait()
-physx.attach_ovstage(stage, read_ordinal=1)
-for i in range(100):
-    physx.step_sync(1/60)
-
-physx.detach_ovstage()  # finalizes recording -> <timestamp>_rec.ovd
-physx.destroy()
-stage.destroy()
-```
-
-To begin recording after the instance and scene already exist, use the
-late-recording API. FILE takes an exact output path; TCP connects to a listener
-that is already ready. After stopping, the same instance can start another
-session with either transport. Refer to the
-[complete late TCP-to-FILE Python sequence and C API
-example](tutorials/omnipvd_recording.md#late-tcp-recording) in the OmniPVD
-recording tutorial.
-
-The C equivalents are `ovphysx_start_recording()`,
-`ovphysx_is_recording()`, and `ovphysx_stop_recording()`. Only one recording may
-be active in the shared runtime. Starting while active returns
-`OVPHYSX_API_INVALID_STATE` and never replaces the current stream. A destination
-validation, FILE open, or TCP connect failure may be retried, and a successful
-stop permits another session to the same or a different FILE/TCP destination.
-Late start requires a live physics stage in the shared runtime; calls before
-its first attach or between detach and reattach return
-`OVPHYSX_API_INVALID_STATE`.
-Detaching the active stage or destroying its owning instance stops and finalizes
-the shared session, including a session started by a peer handle, and clears its
-public owner. After reattach, a capability-only runtime stays dormant and can
-start a late recording immediately. Configured startup output instead starts a
-new startup session owned by the reattaching instance; that instance must stop
-the session before choosing a late destination. On cold startup, ownership is
-reserved for the creating instance when creation succeeds and becomes observable
-when the first stage attach starts sampling. Peer instances report inactive and
-cannot stop the owner's session.
-
-These synchronous APIs follow the ovphysx same-thread contract. The caller must
-serialize recording calls on each handle and recording/attach/detach/destroy
-transitions across all handles sharing the runtime; concurrent calls are not
-supported. Startup, late, and restarted sessions each capture the current core
-PhysX, PhysXExtensions (including joints and custom geometry), and PhysXVehicle
-state. Stopping releases the session's Vehicle PVD state; the next start creates
-fresh handles and records the live vehicles again.
-
-The [OmniPVD Recording tutorial](tutorials/omnipvd_recording.md) has compact
-Python and C examples for both TCP startup and late TCP attach.
-
-No OmniPVD-specific dependencies are needed beyond the matching ovphysx and
-ovstage packages; the writer is built into the packaged PhysX runtime.
-
-For the full tutorial with C examples and Kit inspection instructions, refer to [OmniPVD Recording](tutorials/omnipvd_recording.md).
-
-## NVTX Profiling With Nsight Systems
-
-ovphysx can emit NVTX ranges so that an [Nsight Systems](https://developer.nvidia.com/nsight-systems) capture shows what your process was doing, correlated with the CUDA activity Nsight already records. Two NVTX domains appear in the timeline:
-
-| Domain | Contents |
+| Group | Contents |
 |---|---|
-| `ovphysx` | The ovphysx API calls: `ovphysx_step`, `ovphysx_step_sync`, `ovphysx_step_n_sync`, `ovphysx_wait_op`, `ovphysx_attach_ovstage`, `ovphysx_clone`, and the tensor binding create / read / write calls |
-| `PhysX` | The PhysX SDK's own profile zones, nested inside the step ranges above, for both CPU and GPU work |
+| `ovphysx_*` | The ovphysx API calls: `ovphysx_step`, `ovphysx_step_sync`, `ovphysx_wait_task`, `ovphysx_wait_all`, `ovphysx_attach_ovstage`, `ovphysx_clone`, and the tensor binding create / read / write calls |
+| Runtime zones | The host-side work between them: USD parsing and stage load, collision cooking, PhysX task dispatch, per-step orchestration |
+| PhysX SDK zones | The SDK's own profile zones, nested inside the step zones above, for both CPU and GPU work |
 
-The instrumentation is compiled into release builds and the shipped wheel, so profiling needs no rebuild. Emission is off by default and is enabled in one of two equivalent ways.
+The instrumentation is compiled into release builds and the shipped wheel, so profiling needs no rebuild. No backend is selected by default, and while none is bound a zone costs an atomic load and a branch.
 
-Set the environment variable, which needs no change to your code:
+Select one with the environment variable, which needs no change to your code:
 
 ```bash
-OVPHYSX_NVTX=1 nsys profile -t nvtx,cuda python my_workload.py
+OVPHYSX_PROFILER=trace OVPHYSX_PROFILER_OUTPUT=run.json python my_workload.py
+OVPHYSX_PROFILER=nvtx nsys profile -t nvtx,cuda python my_workload.py
 ```
 
-Or enable it programmatically, which is useful when the process decides at runtime whether it is being profiled:
+Or programmatically, which is useful when the process decides at runtime whether it is being profiled:
 
 ```python
-from ovphysx import PhysX, PhysXConfig
+from ovphysx import GlobalConfigKey, PhysX, ProfilerBackend, set_global_config
 
-physx = PhysX(config=PhysXConfig(nvtx_enabled=True))
+set_global_config(GlobalConfigKey.PROFILER_BACKEND, int(ProfilerBackend.TRACE))
+set_global_config(GlobalConfigKey.PROFILER_OUTPUT_PATH, "run.json")
+physx = PhysX()
 ```
 
-In C, use `ovphysx_config_entry_nvtx_enabled(true)` in the `config_entries` array of `ovphysx_create_args`.
+In C, call `ovphysx_set_global_config(OVPHYSX_GLOBAL_CONFIG_PROFILER_BACKEND,
+ovphysx_config_value_int64(OVPHYSX_PROFILER_BACKEND_TRACE))` before
+`ovphysx_create_instance()`.
 
-Both forms resolve to the process-wide `/physics/nvtxEnabled` Carbonite setting and must be in place **before** the instance is created, because the PhysX SDK profiler callback is installed while the SDK is created. `ovphysx_get_global_config_bool(OVPHYSX_CONFIG_NVTX_ENABLED, &value)` (Python: `physx.get_config_bool(ConfigBool.NVTX_ENABLED)`) reports the effective state.
+Both forms resolve to the process-wide `/physics/profilerBackend` Carbonite setting and must be in place **before** the instance is created, because the backend is bound and the PhysX SDK profiler callback installed while the SDK is created. Before a backend is bound, `ovphysx_get_global_config(OVPHYSX_GLOBAL_CONFIG_PROFILER_BACKEND, &value)` (Python: `get_global_config(GlobalConfigKey.PROFILER_BACKEND)`) reports the environment value when `OVPHYSX_PROFILER` is set, otherwise the setter. After ovphysx binds a backend, the getter reports that bound backend and, for the trace backend, the output path captured at bind. A later environment change does not change the getter until the last instance shuts down. A failed bind reports `NONE` and an unset output path. If another Carbonite profiler already owns the process, the getter also reports `NONE`: the ovphysx selection is not the publisher, and the zones still go to the host profiler.
 
 Because this is a create-time decision, profile a slice of a long run by scoping the collection with Nsight's delay, duration, and capture-range options rather than by toggling the instrumentation.
 
-Like all Carbonite settings, `/physics/nvtxEnabled` is process-global and sticky: once a process enables it, a later instance created with no config entry and no environment variable stays enabled. Turning it off again is explicit, with `OVPHYSX_NVTX=0` or a false config entry.
+Like all Carbonite settings, `/physics/profilerBackend` is process-global and sticky: once a process selects a backend, a later instance created with no setter and no environment variable keeps it. Turning it off again is explicit, with `OVPHYSX_PROFILER=none` or `PROFILER_BACKEND` set to `NONE`. The first backend to bind also wins for as long as any instance is alive; a later instance asking for a different one, or for `NONE`, is told at `WARN` which is actually bound and publishes to that one. Once the last instance shuts down the profiler is released and the latch clears, so a process that destroys every instance can select a different backend for the next one.
 
 Notes:
 
-- The `PhysX` domain depends on the profile zones being compiled into the PhysX SDK that ovphysx links, which is the case for the shipped `checked` PhysX libraries. A build against a PhysX `release` package has no zones to forward, and that domain stays silent while the `ovphysx` domain still works.
-- The PhysX SDK's high-level phases (`Basic.simulate`, `Basic.collision`, ...) are cross-thread ranges, which Nsight reports separately from the thread-local ones (`nvtx_startend_sum` versus `nvtx_pushpop_sum`).
-- `ovphysx_step` only enqueues work, so its range is short and the simulation cost appears under `ovphysx_wait_op`. That is the asynchronous execution model, not a measurement artifact.
-- NVTX 3 is header-only, so nothing extra is linked or shipped. When disabled, a zone costs a single branch.
-- This is independent of the Carbonite profiler (`/physics/exposeProfilerData`): either, both, or neither sink can be active.
+- The trace file is written when the **last** instance in the process shuts down, because that is when the profiler is released. It is plain JSON, not gzip.
+- The PhysX SDK zones depend on the profile zones being compiled into the PhysX SDK that ovphysx links, which is the case for the shipped `checked` PhysX libraries. A build against a PhysX `release` package has no zones to forward, and that group stays silent while the others still work.
+- The SDK's twelve cross-thread phases (`Basic.simulate`, `Basic.collision`, ...) are not reported at all, under any backend. The Carbonite profiler interface models a zone as a per-thread begin/end pair and cannot express a range closing on another thread, so the runtime discards them rather than corrupt a thread's zone stack. `Basic.simulate` spans the same work as `ovphysx_step` through `ovphysx_wait_task`, which is the closest substitute for the outermost one.
+- `ovphysx_step` only enqueues work, so its zone is short and the simulation cost appears under `ovphysx_wait_task`. That is the asynchronous execution model, not a measurement artifact.
+- The runtime zones include Carbonite's own task-system zones (`Running fiber`, `Executing task`), which wrap everything else and so dominate a summary sorted by total time. They are also not free to record: several build their names per prim, so a profiled stage attach is measurably slower than an unprofiled one.
+- If the surrounding process already bound a Carbonite profiler backend, that one keeps the zones and ovphysx logs which backend bound, at `INFO`.
+- The SDK zones reach the Carbonite profiler (`/physics/exposeProfilerData`, on by default) and from there whichever backend is bound, so they follow the same one route as every other zone.
 
-For a runnable sample, memory-traffic attribution, and troubleshooting, refer to [NVTX Profiling](tutorials/nvtx_profiling.md). For recording options and the timeline UI, refer to the [Nsight Systems User Guide](https://docs.nvidia.com/nsight-systems/UserGuide/index.html).
+For a runnable sample, memory-traffic attribution, and troubleshooting, refer to [Profiling](tutorials/profiling.md). For recording options and the timeline UI, refer to the [Nsight Systems User Guide](https://docs.nvidia.com/nsight-systems/UserGuide/index.html).
 
 You now have the core integration rules for building, running, and operating ovphysx. For the full C API reference, refer to the [C API Reference](api.md). For Python, refer to the [Python API Reference](python_api.rst).

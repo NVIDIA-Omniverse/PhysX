@@ -1,6 +1,15 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-1 AC-2
+
+// @implements REQ-ATTACH-LIFETIME-001
+// @covers AC-3
+
+// @implements REQ-ATTACH-RESOLVE-001
+// @covers AC-9 AC-10
+
 /**
  * @implements REQ-PUBLICAPI-001
  * @covers AC-7 AC-9 AC-10
@@ -21,6 +30,7 @@
 #include <string>
 
 #include <omni/physx/IPhysx.h>
+#include "../CallbackRegistry.h"
 #include <private/omni/physx/PhysxUsd.h>
 #include <omni/physics/parse/Handles.h>
 
@@ -70,15 +80,9 @@ public:
 
     ~PhysXUsdPhysicsInterface();
 
-    bool isDirty() const
-    {
-        return mDirty;
-    }
+    void setDirty(const usdparser::AttachedStage& attachedStage, bool val);
 
-    void setDirty(bool val)
-    {
-        mDirty = val;
-    }
+    void captureParseOptions(usdparser::AttachedStage& attachedStage) const;
 
     void setExposePrimNames(bool val)
     {
@@ -101,11 +105,8 @@ public:
                                      const usdparser::PhysxObjectDesc& objectDesc,
                                      const usdparser::ObjectInstance* instance = nullptr);
 
-    // ObjectKey-native entry point: resolves the active attach directly (no
-    // UsdStageWeakPtr/stage-cache round trip needed). Both real callers
-    // (PointInstancer.cpp, Collision.cpp) already hold the ObjectKey directly; no
-    // SdfPath-taking overload is needed.
-    usdparser::ObjectId createShape(omni::physics::parse::ObjectKey key,
+    // Object identifiers are local to the explicitly supplied attachment.
+    usdparser::ObjectId createShape(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key,
                                     const usdparser::PhysxObjectDesc& objectDesc,
                                     usdparser::ObjectId bodyId,
                                     const usdparser::ObjectInstance* instance = nullptr);
@@ -114,7 +115,7 @@ public:
     // identity was never actually needed here (it switches purely on objectId's InternalDatabase
     // record type), so the interface dropped the unused SdfPath param and this works
     // unconditionally now. Also implemented by PhysXPropertyQuery.cpp's own override.
-    MassInformation getShapeMassInfo(usdparser::ObjectId objectId) const;
+    MassInformation getShapeMassInfo(const usdparser::AttachedStage& attachedStage, usdparser::ObjectId objectId) const;
 
     usdparser::ObjectId createJoint(usdparser::AttachedStage& attachedStage,
                                     omni::physics::parse::ObjectKey jointKey,
@@ -142,7 +143,7 @@ public:
                          bool scaleProvided = true);
 
     // ObjectKey-native entry point (the `path` this replaces was already unused in the body).
-    bool updateMass(omni::physics::parse::ObjectKey key,
+    bool updateMass(const usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key,
                     usdparser::ObjectId objectId,
                     float mass,
                     const carb::Float3& diagInertia,
@@ -162,7 +163,7 @@ public:
                                                      usdparser::ObjectId objectId,
                                                      float value);
     // ObjectKey-native entry point (the `path` this replaces was already unused in the body).
-    bool updateParticleMass(omni::physics::parse::ObjectKey key,
+    bool updateParticleMass(const usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key,
                             usdparser::ObjectId objectId,
                             const usdparser::ParticleDesc& particleDesc);
 
@@ -176,11 +177,11 @@ public:
                       omni::physics::parse::ReadTime timeCode);
 
     // ObjectKey-native entry point (the `path` this replaces was already unused in the body).
-    void setupCollisionGroup(omni::physics::parse::ObjectKey key, const usdparser::CollisionGroupDesc& desc);
+    void setupCollisionGroup(const usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, const usdparser::CollisionGroupDesc& desc);
 
     bool setVehicleContext(const usdparser::AttachedStage& attachedStage, const usdparser::VehicleContextDesc&);
 
-    void releaseAllObjects();
+    void releaseAllObjects(usdparser::AttachedStage& attachedStage);
 
     // get shapes for mass computation, return true if triggers are present. ObjectIdPathMap is
     // ObjectKey-valued (LoadTools.h), so this works unconditionally.
@@ -204,8 +205,8 @@ public:
     void finishSetup(const usdparser::AttachedStage& attachedStage);
     void finalizeArticulations(const usdparser::AttachedStage& attachedStage);
 
-    void processDeformableAttachmentShapeEvents();
-    void processDeformableCollisionFilterShapeEvents();
+    void processDeformableAttachmentShapeEvents(const usdparser::AttachedStage& attachedStage);
+    void processDeformableCollisionFilterShapeEvents(const usdparser::AttachedStage& attachedStage);
 
     static bool createOBB(const void* inputPoints,
                           const size_t nbPoints,
@@ -231,7 +232,11 @@ public:
      * @param[in] callback The callback structure with the notification functions.
      * @return Subscription Id to unsubscribe
      */
-    SubscriptionId subscribeToObjectChangeNotifications(const IPhysicsObjectChangeCallback& callback);
+    // Internal process services may use kNoAttach to observe all contexts. Public
+    // registration validates an exact owner before entering this helper.
+    SubscriptionId subscribeToObjectChangeNotifications(const IPhysicsObjectChangeCallback& callback,
+                                                        AttachHandle attach = kNoAttach);
+    void retireObjectChangeNotifications(AttachHandle attach);
 
     /**
      * Unsubscribe to physics object change notifications.
@@ -245,15 +250,9 @@ public:
      *
      * @param[in] enable Defines whether object change notifications should be sent or not
      */
-    void enableObjectChangeNotifications(bool enable)
-    {
-        mObjectChangeNotificationsEnabled = enable;
-    }
+    void enableObjectChangeNotifications(usdparser::AttachedStage& owner, bool enable);
 
-    bool objectChangeNotificationsEnabled() const
-    {
-        return mObjectChangeNotificationsEnabled;
-    }
+    bool objectChangeNotificationsEnabled(const usdparser::AttachedStage& owner) const;
 
     /**
      * Marks the window during which the initial stage population (attach/update
@@ -273,19 +272,13 @@ public:
      *
      * @param[in] inProgress Whether the initial stage population is in progress.
      */
-    void setInitialStagePopulationInProgress(bool inProgress)
-    {
-        mInitialStagePopulationInProgress = inProgress;
-    }
+    void setInitialStagePopulationInProgress(usdparser::AttachedStage& owner, bool inProgress);
 
-    bool initialStagePopulationInProgress() const
-    {
-        return mInitialStagePopulationInProgress;
-    }
+    bool initialStagePopulationInProgress(const usdparser::AttachedStage& owner) const;
 
-    void sendObjectCreationNotification(omni::physics::parse::ObjectKey key, usdparser::ObjectId objectId, PhysXType physxType);
+    void sendObjectCreationNotification(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, usdparser::ObjectId objectId, PhysXType physxType);
 
-    void sendObjectDestructionNotification(omni::physics::parse::ObjectKey key, usdparser::ObjectId objectId, PhysXType physxType);
+    void sendObjectDestructionNotification(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, usdparser::ObjectId objectId, PhysXType physxType);
 
 
     /**
@@ -327,20 +320,20 @@ private:
 
     // Vehicle creation/registration. The only USD dependency (xform-op authoring of
     // wheel/shape scale) lives in InternalVehicle.cpp's WheelTransformManagementEntry::init.
-    usdparser::ObjectId createTireFrictionTable(const usdparser::TireFrictionTableDesc&);
+    usdparser::ObjectId createTireFrictionTable(const usdparser::AttachedStage& attachedStage, const usdparser::TireFrictionTableDesc&);
     usdparser::ObjectId createVehicle(usdparser::AttachedStage& attachedStage,
                                       omni::physics::parse::ObjectKey vehicleKey,
                                       const usdparser::VehicleDesc& vehicleDesc);
     usdparser::ObjectId createVehicleController(usdparser::AttachedStage& attachedStage,
                                                 omni::physics::parse::ObjectKey vehicleControllerKey,
                                                 const usdparser::VehicleControllerDesc&);
-    usdparser::ObjectId registerVehicleComponent(omni::physics::parse::ObjectKey key, PhysXType type);
-    usdparser::ObjectId registerVehicleWheelComponent(omni::physics::parse::ObjectKey key, PhysXType type);
+    usdparser::ObjectId registerVehicleComponent(const usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, PhysXType type);
+    usdparser::ObjectId registerVehicleWheelComponent(const usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, PhysXType type);
     usdparser::ObjectId createVehicleWheelController(usdparser::AttachedStage& attachedStage,
                                                      omni::physics::parse::ObjectKey wheelControllerKey,
                                                      const usdparser::WheelControllerDesc&);
 
-    usdparser::ObjectId createMimicJoint(const usdparser::MimicJointDesc&);
+    usdparser::ObjectId createMimicJoint(const usdparser::AttachedStage& attachedStage, const usdparser::MimicJointDesc&);
 
     void changeParticlePostProcess(usdparser::AttachedStage& attachedStage,
                                    omni::physics::parse::ObjectKey key,
@@ -349,7 +342,7 @@ private:
 
     void changeParticleDiffuseParticles(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, bool removed);
 
-    void removeArticulationFromSceneAndScheduleForReAdd(const ::physx::PxArticulationReducedCoordinate&);
+    void removeArticulationFromSceneAndScheduleForReAdd(const usdparser::AttachedStage&, const ::physx::PxArticulationReducedCoordinate&);
 
 private:
     /**
@@ -359,26 +352,17 @@ private:
      * delivered when simulation notifications are enabled or the subscriber opted
      * out of the simulation-stopped gate.
      */
-    bool shouldDeliverObjectChangeNotification(const IPhysicsObjectChangeCallback& callback) const
+    struct ObjectChangeObserver : IPhysicsObjectChangeCallback
     {
-        // The initial stage population is suppressed by default, even for subscribers that
-        // opt out of the simulation-stopped gate (stopCallbackWhenSimStopped == false, e.g.
-        // ovphysx) -- the caller already has that state from setup. Only a subscriber that
-        // explicitly opts in via notifyInitialPopulation observes the initial population.
-        if (mInitialStagePopulationInProgress)
-            return callback.notifyInitialPopulation;
-        return mObjectChangeNotificationsEnabled || !callback.stopCallbackWhenSimStopped;
-    }
+        AttachHandle attach = kNoAttach;
+    };
+    bool shouldDeliverObjectChangeNotification(const usdparser::AttachedStage& owner,
+                                               const ObjectChangeObserver& callback) const;
 
-    std::vector<usdparser::ObjectId> mArticulations;
-    std::vector<internal::InternalPbdParticleSystem*> mParticleSystems;
-    PhysicsObjectChangeSubscriptionRegistry mPhysicsObjectChangeSubscriptions;
+    using ObjectChangeRegistry = CallbackRegistry<ObjectChangeObserver>;
+    ObjectChangeRegistry mPhysicsObjectChangeSubscriptions;
     // Kit-inspector-only debug filter storage; see setForceParseOnlySingleScene's comment above.
     std::string mForceParseOnlySingleScenePath;
-    usdparser::ObjectId mForceParseOnlySingleSceneObjectId;
-    bool mDirty;
-    bool mObjectChangeNotificationsEnabled;
-    bool mInitialStagePopulationInProgress = false;
     bool mExposePrimNames;
 };
 
@@ -399,19 +383,20 @@ PhysXUsdPhysicsInterface& getPhysXUsdPhysicsInterface();
 class InitialStagePopulationScope
 {
 public:
-    explicit InitialStagePopulationScope(PhysXUsdPhysicsInterface& iface)
+    explicit InitialStagePopulationScope(PhysXUsdPhysicsInterface& iface, usdparser::AttachedStage& owner)
         : mIface(iface)
-        , mPrevInProgress(iface.initialStagePopulationInProgress())
-        , mPrevNotificationsEnabled(iface.objectChangeNotificationsEnabled())
+        , mOwner(owner)
+        , mPrevInProgress(iface.initialStagePopulationInProgress(owner))
+        , mPrevNotificationsEnabled(iface.objectChangeNotificationsEnabled(owner))
     {
-        mIface.setInitialStagePopulationInProgress(true);
-        mIface.enableObjectChangeNotifications(false);
+        mIface.setInitialStagePopulationInProgress(mOwner, true);
+        mIface.enableObjectChangeNotifications(mOwner, false);
     }
 
     ~InitialStagePopulationScope()
     {
-        mIface.enableObjectChangeNotifications(mPrevNotificationsEnabled);
-        mIface.setInitialStagePopulationInProgress(mPrevInProgress);
+        mIface.enableObjectChangeNotifications(mOwner, mPrevNotificationsEnabled);
+        mIface.setInitialStagePopulationInProgress(mOwner, mPrevInProgress);
     }
 
     InitialStagePopulationScope(const InitialStagePopulationScope&) = delete;
@@ -419,6 +404,7 @@ public:
 
 private:
     PhysXUsdPhysicsInterface& mIface;
+    usdparser::AttachedStage& mOwner;
     bool mPrevInProgress;
     bool mPrevNotificationsEnabled;
 };

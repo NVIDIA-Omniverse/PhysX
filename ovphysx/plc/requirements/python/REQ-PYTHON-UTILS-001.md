@@ -67,7 +67,7 @@ while a name whose ground is its own gets a row of its own.
 | `get_physx_interface`, `get_physx_simulation_interface`, `get_physx_cooking_interface`, `get_physx_cooking_private_interface`, `get_physx_scene_query_interface`, `get_physx_attachment_private_interface`, `get_physx_property_query_interface`, `get_physx_replicator_interface`, `get_physx_stage_update_interface`, `get_physx_statistics_interface`, `get_physx_visualization_interface`, `get_physx_benchmarks_interface`, `get_physxunittests_interface` | `ifaces.py` | Each acquires one of the `omni.physx.bindings._physx` interfaces that were removed with the bindings. ovphysx's equivalent is the `PhysX` class over the C ABI, not an accessor. |
 | `new_memory_stage`, `release_memory_stage` | `utils.py` | Wrap `attach_stage` / `detach_stage` on the simulation interface. ovphysx owns stage attachment through its own public API. |
 | `ExpectMessage`, `safe_import_tests` | `utils.py` | Kit test scaffolding. `ExpectMessage` drives `get_physxunittests_interface().start_logger_check*`; `safe_import_tests` exists to load `omni.physxtests` into the Kit test runner. |
-| `get_initial_collider_pairs` | `physicsUtils.py` | Attaches the stage, steps the simulation and reads the contact report, all through the simulation interface, then decodes the reported collider ids with `PhysicsSchemaTools.intToSdfPath`, which was retired with the bindings. That decode has no port rather than no author yet: ovphysx reports contact identity as an opaque `ObjectKey` handle assigned by the runtime, not as a uint64-encoded `SdfPath` (ADR-0019), so an equivalent has to resolve its pairs through `PhysX.get_scene_query_paths_from_ids` and is a different function, not a recovered one. Both measured Isaac callers are Kit extensions, which could not import an ovphysx version of it either way. |
+| `get_initial_collider_pairs` | `physicsUtils.py` | Attaches the stage, steps the simulation and reads the contact report, all through the simulation interface, then decodes the reported collider ids with `PhysicsSchemaTools.intToSdfPath`, which was retired with the bindings. That decode has no port rather than no author yet: ovphysx's session contact reads return dictionary-interned prim-path handles, not uint64-encoded `SdfPath` values, so an equivalent has to resolve its pairs through the attached Stage's path dictionary and is a different function, not a recovered one. Both measured Isaac callers are Kit extensions, which could not import an ovphysx version of it either way. |
 | `compute_conforming_tetrahedral_mesh`, `compute_voxel_tetrahedral_mesh` | `deformableUtils.py` | Thin wrappers over `get_physx_cooking_interface()`, and ovphysx's public C headers under `ovphysx/include/` expose no cooking entry point at all -- the single `cook`-matching name there is `OVPHYSX_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY` in `ovphysx_types.h`, a cache-location setting rather than a call that cooks -- so there is nothing to rewrite them against. Authoring an auto deformable hierarchy does not need them, because the runtime cooks at simulation time; author-time cooking has no ovphysx equivalent. |
 | `create_auto_deformable_attachment` | `deformableUtils.py` | Not recoverable in USD alone; see the note below. |
 | `loadTetFile` | `deformableMeshUtils.py` | Resolves `${kit}` through `carb.tokens`, and is broken independently of Kit: it uses `os`, `re` and `carb` without importing any of them, so it raised `NameError` on every call. |
@@ -231,8 +231,8 @@ phase I"), all nine carried deprecation language in their final source --
 `TetMeshData` and five siblings under a `# DEPRECATED` comment in
 `deformableUtils.py`, the three particle-cloth helpers under a docstring reading
 "DEPRECATED: Will be replaced by new deformable implementation in future release"
--- and every API schema any of them applies is gone from the schemas ovphysx
-ships. `PhysxDeformableAPI`, `PhysxDeformableBodyAPI`,
+-- and every API schema any of them applies is gone from the current PhysX
+schema sources. `PhysxDeformableAPI`, `PhysxDeformableBodyAPI`,
 `PhysxDeformableSurfaceAPI`, `PhysxDeformableBodyMaterialAPI`,
 `PhysxDeformableSurfaceMaterialAPI`, `PhysxParticleClothAPI`,
 `PhysxAutoParticleClothAPI` and the `TetrahedralMesh` prim type appear in neither
@@ -253,14 +253,14 @@ not, and the difference is stated rather than smoothed over.
 
 | Superseded | Module at removal | Replacement, and why it is pinned |
 |---|---|---|
-| `add_physx_deformable_body` | `deformableUtils.py` | Guide row: → `set_physics_volume_deformable_body` for single-prim setups, and `create_auto_volume_deformable_hierarchy` for hierarchies that want simulation and collision meshes generated. Applies `PhysxDeformableAPI` and `PhysxDeformableBodyAPI`, both absent from the shipped schemas. |
+| `add_physx_deformable_body` | `deformableUtils.py` | Guide row: → `set_physics_volume_deformable_body` for single-prim setups, and `create_auto_volume_deformable_hierarchy` for hierarchies that want simulation and collision meshes generated. Applies `PhysxDeformableAPI` and `PhysxDeformableBodyAPI`, both absent from the current schema sources. |
 | `add_deformable_body_material` | `deformableUtils.py` | Guide row: → `add_deformable_material`. Applies `PhysxDeformableBodyMaterialAPI`, absent. |
 | `add_physx_particle_cloth` | `particleUtils.py` | Guide row: → `set_physics_surface_deformable_body`, and `create_auto_surface_deformable_hierarchy` for hierarchies. The guide's own note is worth carrying: the port is *not* behavior-preserving, because particle cloth was a PBD mass-spring system and surface deformables are XPBD FEM corotational linear elasticity, so the two do not share a physical model. Applies `PhysxParticleClothAPI`, absent. |
 | `add_physx_particle_cloth_with_constraints` | `particleUtils.py` | Guide row, mapped explicitly to "N/A". There is no replacement; the spring constraints it authored have no counterpart, since a surface deformable's physical properties come from its material and the rest-shape attributes of its simulation mesh. Applies `PhysxParticleClothAPI` and `PhysxAutoParticleClothAPI`, both absent. |
 | `add_physx_deformable_surface` | `deformableUtils.py` | No guide row. Pinned on the schema test -- it applies `PhysxDeformableAPI` and `PhysxDeformableSurfaceAPI`, both absent -- and on being the sibling a porter meets in the same file, two definitions below `add_physx_deformable_body`. No documented demand is claimed for it. |
 | `add_deformable_surface_material` | `deformableUtils.py` | No guide row. Same two grounds: applies `PhysxDeformableSurfaceMaterialAPI`, absent, and sits immediately after `add_deformable_body_material`, whose replacement the guide does record. |
 | `TetMeshData` | `deformableUtils.py` | No guide row. A container for tetrahedral-mesh point and index arrays, and the first `# DEPRECATED` marker in the file. Pinned as the type the two volume helpers passed around, so a porter reading their old call sites meets it before it meets them. |
-| `create_skin_mesh_from_tetrahedral_mesh` | `deformableUtils.py` | No guide row. Authors a `TetrahedralMesh` prim, a type absent from the shipped schemas, so it cannot be recovered even codeless. |
+| `create_skin_mesh_from_tetrahedral_mesh` | `deformableUtils.py` | No guide row. Authors a `TetrahedralMesh` prim, a type absent from the current schema sources, so it cannot be recovered even codeless. |
 | `create_spring_grid` | `particleUtils.py` | No guide row. Builds the spring topology `add_physx_particle_cloth_with_constraints` consumed, which the guide maps to "N/A", so it is superseded by the same absence one step upstream. |
 
 Two exclusions from the nine are worth a sentence each, so the choice is legible.
@@ -435,15 +435,15 @@ why it has to hold.
 
 `pxr` is deliberately not declared as an ovphysx
 dependency: an authoring process supplies its own USD runtime, matching what
-`ovphysx.schemas` and the bundled `codeless_schemas` sample already do.
+the bundled `codeless_schemas` sample already does.
 Consequently `ovphysx.utils` is reached through an explicit
 `import ovphysx.utils` and is not imported from `ovphysx/__init__.py`, so
 `import ovphysx` keeps working for simulation-only consumers that have no `pxr`.
 "Why `pxr` is caller-supplied" below records what forces that and what it costs.
 
-ovphysx ships the PhysX and Omni deformable schemas as *codeless* artifacts, so
-there is no compiled `PhysxSchema` Python module and no typed
-`PhysxSchema.PhysxRigidBodyAPI` class. Every PhysX-specific call is therefore
+The application installs `physx-usd-schemas` separately. Its PhysX and
+Omni deformable schemas are *codeless* artifacts, requiring no compiled schema
+bindings. These utilities use the generic USD API: every PhysX-specific call is
 expressed in codeless form: API schemas are applied by schema identifier and
 their properties authored by name, and concrete PhysX prim types are defined by
 type name. Core `UsdPhysics` schemas keep their typed bindings. The codeless
@@ -474,77 +474,44 @@ schema class as `api=`, and no caller outside the Kit command layer supplied it.
 
 ### Why PhysX schemas are reached codeless
 
-The forcing constraint is that ovphysx ships the PhysX and Omni deformable
-schemas **data-only**. The schema source sets `skipCodeGeneration = true`, and
-ovphysx's schema export stages only the registration data -- `plugInfo.json` and
-`generatedSchema.usda` -- into the wheel. Consequently `pxr` in an ovphysx
-environment exposes no `PhysxSchema` module at all: `from pxr import
-PhysxSchema`, the only import form any recovered module used, raises
-`ImportError` at the import line. Core `UsdPhysics` is unaffected, because its
-typed bindings are part of stock `usd-core`. That data-only export is the
-position and not an accident of what the export happens to copy: ovphysx ships
-no typed `PhysxSchema` facade, compiled or pure-Python, and depends on none.
+OVPhysX ships no PhysX schema resources or typed `PhysxSchema` facade. The
+application installs a separate provider, such as `physx-usd-schemas`, and
+registers its resources with stock `usd-core`. The utilities use the registered
+schemas through generic USD APIs; they do not depend on the provider's Python
+facade. Stock `usd-core` supplies typed `UsdPhysics` bindings but no
+`pxr.PhysxSchema` module.
 
-Reaching the schemas through raw `prim.ApplyAPI("...")` and the generic property
-API, with no helper module at all, was the other alternative rejected here: it
-would leave all three of the failure modes above at every call site rather than
-translating them in one place.
+Using raw `prim.ApplyAPI("...")` and property access at every call site would
+repeat the three failure modes above. `ovphysx.utils.codeless` translates them
+in one place.
 
-**The pure-Python facade, stated at its strongest.** This is the alternative most
-likely to be re-proposed, so it is recorded with the measurements rather than
-only the conclusion; the behaviours below were executed against stock `usd-core`
-riding on ovphysx's own schema registration, and the generated-output instability
-was checked against the facade revision in the pinned schema dependency package.
-Such a facade exists, works, and is already in ovphysx's dependency closure: it
-is generated in this repository, committed beside the schema source, and shipped
-under `lib/python/` in that package, beside the very registration data ovphysx's
-export is derived from. It re-creates the typed surface (`Apply`, `Get`,
-`Get<Attr>Attr`, `Create<Attr>Attr`, `Tokens`) over `prim.ApplyAPI` and named
-attribute access, and on stock `usd-core` it produces **byte-identical USD** to
-the codeless form, multiple-apply instance naming included -- which is what makes
-its rejection non-obvious. Adopting it would have cost roughly one copy step in
-the export. It loses for three reasons, none of which is "it would not work":
+**Why the utilities do not use a typed facade.** During utility recovery, the
+pure-Python facade generated by this repository produced byte-identical USD to
+the codeless form, including multiple-apply names. It was rejected as the
+utility implementation for these reasons:
 
-1. **It does not restore the import line users copy.** The facade is a
-   *top-level* `PhysxSchema`, not a `pxr` submodule, so `from pxr import
-   PhysxSchema` still raises `ImportError`. It would fix ovphysx's own call-site
-   spelling while leaving a copied user snippet broken at line 1. This reason
-   survives the rename above: a snippet's `from pxr import PhysxSchema` line has
-   nothing to do with how this surface spells its own helpers, and it is the
-   line that fails first.
-2. **Its classes are not registered `TfType`s.** Handed a facade class,
-   `prim.HasAPI(cls)`, `prim.RemoveAPI(cls)` and `prim.IsA(cls)` all raise
-   `TypeError`. That covers 8 of the 43 executable `PhysxSchema.` call sites in
-   the recovered code, so a facade-based port would have needed the codeless
-   spelling at exactly those sites anyway -- and it converts a clean import-time
-   failure into a late runtime one whose message does not hint that a codeless
-   schema is the cause.
-3. **It is unstable generated output.** The revision in the pinned dependency
-   package lacks the compatibility check the current generator emits, so
-   `bool(PhysxSchema.PhysxParticleSystem(prim))` returns `True` for *any* prim.
-   One recovered particle helper validated a prim with exactly that idiom, so a
-   facade-based port pinned at the revision ovphysx actually consumes would have
-   shipped a silent validation bug. The delivered helper uses an explicit
-   type-name check instead.
+1. Its top-level `PhysxSchema` module does not restore the `from pxr import
+   PhysxSchema` import used by the recovered modules and copied user snippets.
+2. Its classes are not registered `TfType`s. `prim.HasAPI(cls)`,
+   `prim.RemoveAPI(cls)` and `prim.IsA(cls)` reject them with `TypeError`.
+   Eight of the 43 recovered `PhysxSchema.` call sites therefore still needed
+   generic USD APIs.
+3. The facade revision evaluated during recovery lacked the current generator's
+   compatibility check: `bool(PhysxSchema.PhysxParticleSystem(prim))` accepted
+   any prim. The recovered particle helper uses an explicit type-name check.
+   This historical result is not a claim about the current provider wheel.
 
-**Depending on the separately published PhysX USD schema wheel** loses for all of
-the above plus one more: it carries a second copy of `generatedSchema.usda`. USD
-dedupes plugins **by name**, first registration wins silently, and the loser does
-not appear in the plugin registry at all -- so a divergence between the two copies
-resolves by import order, with no diagnostic and no way to observe it.
+The separately published schema wheel is now the schema source; OVPhysX no
+longer bundles a competing copy of `generatedSchema.usda`. Resource delivery
+and the choice of authoring helpers are independent.
 
-**Two arguments against the facade are false**, and are recorded so they do not
-return. A typed facade call does *not* silently
-no-op: with the schemas unregistered,
-`PhysxSchema.PhysxRigidBodyAPI.Apply(prim)` raises the *same* `Tf.ErrorException`
-that `ovphysx.utils.codeless` exists to translate. (The real silent-authoring
-hazard nearby is different, and is standard USD behaviour with compiled bindings
-too: calling `Create<Attr>Attr()` without `Apply` authors a property the runtime
-ignores, which is the one case `codeless.set_attr` uniquely catches.) And the
-facade's broken inherited-attribute enumeration -- `GetSchemaAttributeNames`
-reporting only a class's own attributes -- does not affect ovphysx, whose schema
-introspection reads `Usd.SchemaRegistry` prim definitions directly and so
-composes inherited properties either way.
+**Two rejected objections.** A facade's `Apply` call does not silently no-op
+when schemas are unregistered: it raises the same `Tf.ErrorException` that the
+codeless helper translates. Calling `Create<Attr>Attr()` without applying the
+API can author an ignored property with either binding style; `codeless.set_attr`
+catches that case. The evaluated facade's incomplete inherited-attribute
+enumeration also did not affect these utilities, which read composed prim
+definitions from `Usd.SchemaRegistry` directly.
 
 **Where the deformable pose attributes stay raw.** Seven property writes in
 `ovphysx/python/ovphysx/utils/deformable.py` author
@@ -552,7 +519,7 @@ composes inherited properties either way.
 `deformablePose:default:omniphysics:points` through `Usd.Prim.CreateAttribute`
 rather than through `codeless.set_attr`, and that is a decision rather than an
 oversight. Both properties *are* declared by `OmniPhysicsDeformablePoseAPI` in
-the shipped `generatedSchema.usda`, so `codeless.set_attr` would resolve them
+the provider's `generatedSchema.usda`, so `codeless.set_attr` would resolve them
 once the API is applied; the two spellings are equivalent on the happy path.
 They differ when the application does not happen. Those writes sit in the
 bind-pose pass that `create_auto_volume_deformable_hierarchy` and
@@ -871,6 +838,10 @@ and date in this table resolves in this repository as recorded.
   outside an `Sdf.ChangeBlock`; neither encloses its read-and-write sequence in
   one, because composed stage state is not valid to inspect while change
   processing is deferred.
+  `get_unit_scale_factor` returns the reciprocal of positive finite stage
+  `metersPerUnit`, including the USD fallback when metadata is unauthored.
+  Non-positive or non-finite values log a warning and return `1.0`, without
+  changing the stage metadata.
 
 - AC-5: Authoring helpers create `UsdGeom` cube, sphere, capsule, cylinder, cone
   and xform prims at a collision-free stage path with a display color and an
@@ -904,6 +875,11 @@ and date in this table resolves in this repository as recorded.
   `create_triangle_mesh_square`, `create_tetra_voxel_box`,
   `create_tetra_voxel_sphere` and `create_triangle_mesh_cube` return empty point
   and index lists when any integer grid dimension is non-positive.
+  `create_mesh_cone` requires a finite positive height, a finite non-negative
+  radius, and integer tessellation of at least three. Invalid dimensions or
+  tessellation below three raise `ValueError` before any stage mutation,
+  including when the target path already holds a mesh. Zero radius remains
+  supported.
 
 - AC-7: Particle helpers define a `PhysxParticleSystem` prim and set only
   the attributes the caller supplied, author `UsdGeom.Points` and
@@ -1092,7 +1068,7 @@ and date in this table resolves in this repository as recorded.
   and these nine had already left the package when that census was taken. Their
   ground is neither exclusion, a usefulness re-audit nor a privatization: every
   API schema they
-  apply is absent from the schemas ovphysx ships, so a recovered version would
+  apply is absent from the schemas the external provider supplies, so a recovered version would
   raise from `codeless.apply_api` rather than author anything. Pinning them keeps
   the 38 / 17 / 3 / 129 figures untouched and stops a future recovery pass from
   reintroducing a name whose schema no longer exists. The nine are
@@ -1151,7 +1127,7 @@ and date in this table resolves in this repository as recorded.
   strip a family of mutually exclusive APIs without first asking which one is
   present. `schema_is_registered` is what tells an unregistered schema set apart
   from an identifier that does not name a known API, and it answers
-  `False` unless *every* codeless schema root ovphysx ships reached the registry:
+  `False` unless *every* codeless schema root the external provider supplies reached the registry:
   the PhysX schemas and the Omni deformable schemas are separate USD plugins that
   register independently, so a probe of one alone would report success while the
   helpers authoring against the other failed and the diagnosis blamed the
@@ -1202,7 +1178,7 @@ and date in this table resolves in this repository as recorded.
   process that did not register the schemas and one that called the default
   registration helper after USD had already built its registry.
   A registration helper registers the
-  codeless schemas shipped with the wheel into a stock USD runtime and is
+  externally installed codeless schemas into a stock USD runtime and is
   idempotent. Attributes the caller did not supply are left unauthored so they
   keep their schema fallback.
 

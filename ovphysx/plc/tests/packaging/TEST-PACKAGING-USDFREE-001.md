@@ -12,8 +12,7 @@ type: integration
 **Landed 2026-09-01 (ADR-0027 Flip-B); partly automated.**
 
 - **Automated:** AC-2, AC-4 and AC-7 — every `install.cmake` and
-  `build_wheel.cmake` run executes `scripts/verify_pyless_closure.py
-  --require-schemas` over the complete `_install/` and wheel staging trees and
+  `build_wheel.cmake` run executes `scripts/verify_pyless_closure.py` over the complete `_install/` and wheel staging trees and
   fails on any violation, so every successful install and wheel build is a
   passing run of the same checks. The verifier's own policy is covered offline by
   `tests/python_tests/test_verify_pyless_closure.py`
@@ -22,12 +21,11 @@ type: integration
   `test_verify_rejects_direct_usd_monolith_import`,
   `test_verify_rejects_upstream_modular_usd_library_names`,
   `test_verify_rejects_usd_runtime_config_file`,
-  `test_verify_require_schemas_accepts_complete_codeless_tree`,
-  `test_verify_require_schemas_rejects_nonfunctional_registry_and_module`,
-  `test_verify_require_schemas_rejects_missing_root_registry_and_module_payload`),
+  `test_verify_rejects_bundled_codeless_schemas`,
+  `test_verify_rejects_provider_copied_under_another_directory`),
   and the staging entry points by `tests/python_tests/test_package_deps.py`
   (`test_package_deps_stages_no_usd_payload`,
-  `test_package_deps_exports_codeless_schemas_into_install_tree`).
+  `test_package_deps_removes_obsolete_bundled_schemas`).
 - **Manual:** AC-1, AC-3, AC-5, AC-6 and AC-8 — a single-configuration
   `readelf`/grep pass run by hand at review (commands below); no CI step asserts
   them yet.
@@ -74,14 +72,13 @@ ovstage resolves for itself.
   in its configure.
 - AC-2/AC-3: neither library lists a USD `NEEDED` or an undefined pxr symbol.
 - AC-4: No USD library, closure library, `plugins/usd` directory or
-  `config.toml` appears under `_install/` or in the wheel; the codeless
-  `schemas/physx` tree is complete.
+  `config.toml` appears under `_install/` or in the wheel; no schema resource is bundled.
 - AC-5: No `*OvruntimePhysicsUsd*` artifact appears under `_install/` or in the
   wheel.
 - AC-6: `libovphysx` contains no USD preload, detection or version-check code
   path.
 - AC-7: an install or wheel build whose staging tree violates AC-2 or AC-4, or
-  lacks the schema tree, fails with a specific verifier error.
+  bundles schema resources, fails with a specific verifier error.
 - AC-8: No installed SDK header includes `pxr/`; `OmniPhysXUtilities.h` and
   `Utilities.h` are installed and are themselves pxr-free.
 

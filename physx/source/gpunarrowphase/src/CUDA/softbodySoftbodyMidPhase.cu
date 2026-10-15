@@ -13,7 +13,7 @@
 
 #include "PxgConvexConvexShape.h"
 #include "PxgContactManager.h"
-#include "PxgDeformableContactInfo.h"
+#include "PxgDeformableContactWriters.h"
 #include "PxgFEMCloth.h"
 #include "PxgNpKernelIndices.h"
 #include "PxgSimulationCoreDesc.h"
@@ -297,41 +297,38 @@ struct SbMeshTreeTraverser
 	const PxVec3&						restP;
 	const PxU32							vertIdx;
 	const PxReal						distance;
-	const PxU32*						vertToSuraceTetRemap;
 	const PxU8*							surfaceTetHint;
 	const float4*						restTetVerts;
-	PxgSoftBodyContactWriter&			writer;
-
+	PxgDbDbContactWriter&				writer;
 	const PxReal*						tetraStresses;
-	const PxReal filterDistanceSq;
+	const PxReal						filterDistanceSq;
 	const PxReal						selfCollisionStressTolerance;
-	const PxgNonRigidFilterPair*		pairs;
-	const PxU32							nbPairs;	
-	PxReal bestDist = PX_MAX_F32;
-	PxVec3 bestClosestP;
-	PxVec3 bestNormal;
-	PxU32 bestPrimIndex = 0;
+	const PxgDeformablePairInfo*		filterPairs;
+	const PxU32							nbFilterPairs;
+	PxReal								bestDist = PX_MAX_F32;
+	PxVec3								bestClosestP;
+	PxVec3								bestNormal;
+	PxU32								bestPrimIndex = 0;
 
 	PX_FORCE_INLINE __device__ SbMeshTreeTraverser(
 		femMidphaseScratch* PX_RESTRICT	s_warpScratch,
-		const PxU32							softbodyId,
-		const PxVec3&						point,
-		const PxVec3&						restP,
-		const PxU32							vertIdx,
-		const PxReal						distance,
-		const PxU32*						vertToSuraceTetRemap,
-		const PxU8*							surfaceTetHint,
-		const float4*						restTetVerts,
-		PxgSoftBodyContactWriter&			writer,
-		const PxReal*						tetraStresses,
-		const PxReal						selfCollisionFilterDistance,
-		const PxReal						selfCollisionStressTolerance,
-		const PxgNonRigidFilterPair*		pairs,
-		const PxU32							nbPairs
+		const PxU32						softbodyId,
+		const PxVec3&					point,
+		const PxVec3&					restP,
+		const PxU32						vertIdx,
+		const PxReal					distance,
+		const PxU8*						surfaceTetHint,
+		const float4*					restTetVerts,
+		PxgDbDbContactWriter&			writer,
+		const PxReal*					tetraStresses,
+		const PxReal					selfCollisionFilterDistance,
+		const PxReal					selfCollisionStressTolerance,
+		const PxgDeformablePairInfo*	filterPairs,
+		const PxU32						nbFilterPairs
 	) : s_warpScratch(s_warpScratch), softbodyId(softbodyId), point(point), restP(restP), vertIdx(vertIdx),
-		distance(distance), vertToSuraceTetRemap(vertToSuraceTetRemap), surfaceTetHint(surfaceTetHint), restTetVerts(restTetVerts), writer(writer),		
+		distance(distance), surfaceTetHint(surfaceTetHint), restTetVerts(restTetVerts), writer(writer),
 		tetraStresses(tetraStresses), filterDistanceSq(selfCollisionFilterDistance*selfCollisionFilterDistance), selfCollisionStressTolerance(selfCollisionStressTolerance),
-		pairs(pairs), nbPairs(nbPairs)
+		filterPairs(filterPairs), nbFilterPairs(nbFilterPairs)
 	{ }
 
 	PX_FORCE_INLINE __device__ void intersectPrimitiveFullWarp(PxU32 primitiveIndex, PxU32 idxInWarp)
@@ -352,12 +349,12 @@ struct SbMeshTreeTraverser
 			//don't generate contacts with neighbour vert
 			if (hint && (!((tetIdx1.x == vertIdx) || (tetIdx1.y == vertIdx) || (tetIdx1.z == vertIdx) || (tetIdx1.w == vertIdx))))
 			{
-				const PxU32 softBodyMask0 = PxEncodeSoftBodyIndex(softbodyId, vertIdx);
-				const PxU32 softBodyMask1 = PxEncodeSoftBodyIndex(softbodyId, primitiveIndex);
-				//If we found the tetrahedron index in the attachment list, we don't need to generate contacts between the rigid
-				//body and the tetrahedron
-				const bool filterPairs = find(pairs, nbPairs, softBodyMask0, softBodyMask1);
-				if (!filterPairs)
+				// A filter pair for these two elements suppresses contact generation between them. Also
+				// checks whether the tetrahedron is filtered against any.
+				const bool filtered =
+					findVolumeVolumeFilter(filterPairs, nbFilterPairs, softbodyId, vertIdx, softbodyId, primitiveIndex) ||
+					findVolumeVolumeFilter(filterPairs, nbFilterPairs, softbodyId, PxgDeformableRef::ANY_FEATURE, softbodyId, primitiveIndex);
+				if (!filtered)
 				{
 
 					PxVec3 a = PxLoad3(s_warpScratch->meshVerts[tetIdx1.x]);
@@ -468,50 +465,47 @@ struct SbMeshTreeTraverser
 			PxU32 index = atomicAdd(writer.totalContactCount, 1);
 
 			const PxReal pen = bestDist;
-			const PxU32 tetrahedronIdx0 = vertToSuraceTetRemap[vertIdx];
-			PxU32 pairId0 = PxEncodeSoftBodyIndex(softbodyId, tetrahedronIdx0);
-			PxU32 pairId1 = PxEncodeSoftBodyIndex(softbodyId, bestPrimIndex);
+			PxU64 vertexRef0 = PxgEncodeDeformableVertex(softbodyId, vertIdx);
+			PxU64 tetRef1 = PxgEncodeDeformableTetrahedron(softbodyId, bestPrimIndex);
 
-			writer.writeContact(index, make_float4(bestClosestP.x, bestClosestP.y, bestClosestP.z, 0.f), make_float4(bestNormal.x, bestNormal.y, bestNormal.z, pen),
-				make_float4(point.x, point.y, point.z, 0.f), make_float4(bestClosestP.x, bestClosestP.y, bestClosestP.z, 0.f), pairId0, pairId1);				
+			writer.writeVolumeVolumeContact(index, make_float4(bestClosestP.x, bestClosestP.y, bestClosestP.z, 0.f),
+				make_float4(bestNormal.x, bestNormal.y, bestNormal.z, pen), vertexRef0, tetRef1);
 		}
 	}
 };
 
 struct SbSbMeshTreeTraverser
 {
-	femMidphaseScratch* PX_RESTRICT	s_warpScratch;
+	femMidphaseScratch* PX_RESTRICT		s_warpScratch;
 	const PxU32							softbodyId0;
 	const PxU32							softbodyId1;
 	const PxVec3&						point;
 	const PxU32							vertIdx;
 	const PxReal						distance;
-	const PxU32*						vertToSurfaceTetRemap0;
 	const PxU8*							surfaceTetHint1;
-	PxgSoftBodyContactWriter&			writer;
-	const PxgNonRigidFilterPair*		pairs;
-	const PxU32							nbPairs;
-
-	PxReal bestDist = PX_MAX_F32;
-	PxVec3 bestClosestP;
-	PxVec3 bestNormal;
-	PxU32 bestPrimIndex = 0;
+	PxgDbDbContactWriter&				writer;
+	const PxgDeformablePairInfo*		filterPairs;
+	const PxU32							nbFilterPairs;
+	PxReal								bestDist = PX_MAX_F32;
+	PxVec3								bestClosestP;
+	PxVec3								bestNormal;
+	PxU32								bestPrimIndex = 0;
 
 	PX_FORCE_INLINE __device__ SbSbMeshTreeTraverser(
 		femMidphaseScratch* PX_RESTRICT	s_warpScratch,
-		const PxU32							softbodyId0,
-		const PxU32							softbodyId1,
-		const PxVec3&						point,
-		const PxU32							vertIdx,
-		const PxReal						distance,
-		const PxU32*						vertToSurfaceTetRemap0,
-		const PxU8*							surfaceTetHint1,
-		PxgSoftBodyContactWriter&			writer,
-		const PxgNonRigidFilterPair*		pairs,
-		const PxU32							nbPairs)
+		const PxU32						softbodyId0,
+		const PxU32						softbodyId1,
+		const PxVec3&					point,
+		const PxU32						vertIdx,
+		const PxReal					distance,
+		const PxU8*						surfaceTetHint1,
+		PxgDbDbContactWriter&			writer,
+		const PxgDeformablePairInfo*	filterPairs,
+		const PxU32						nbFilterPairs
+		)
 		: s_warpScratch(s_warpScratch), softbodyId0(softbodyId0), softbodyId1(softbodyId1), point(point),
-		  vertIdx(vertIdx), distance(distance), vertToSurfaceTetRemap0(vertToSurfaceTetRemap0), surfaceTetHint1(surfaceTetHint1),
-		  writer(writer), pairs(pairs), nbPairs(nbPairs)
+		  vertIdx(vertIdx), distance(distance), surfaceTetHint1(surfaceTetHint1),
+		  writer(writer), filterPairs(filterPairs), nbFilterPairs(nbFilterPairs)
 	{ }
 
 	PX_FORCE_INLINE __device__ void intersectPrimitiveFullWarp(PxU32 primitiveIndex, PxU32 idxInWarp)
@@ -532,13 +526,12 @@ struct SbSbMeshTreeTraverser
 			//generate contact if the tetrahedron is surface tet
 			if (hint)
 			{
-				const PxU32 softBodyMask0 = PxEncodeSoftBodyIndex(softbodyId0, vertIdx);
-				const PxU32 softBodyMask1 = PxEncodeSoftBodyIndex(softbodyId1, primitiveIndex);
-
-				//If we found the tetrahedron index in the attachment list, we don't need to generate contacts between the rigid
-				//body and the tetrahedron
-
-				if (!find(pairs, nbPairs, softBodyMask0, softBodyMask1))
+				// A filter pair for these two elements suppresses contact generation between them. Also
+				// checks whether the other volume's tetrahedron is filtered against any.
+				const bool filtered =
+					findVolumeVolumeFilter(filterPairs, nbFilterPairs, softbodyId0, vertIdx, softbodyId1, primitiveIndex) ||
+					findVolumeVolumeFilter(filterPairs, nbFilterPairs, softbodyId0, PxgDeformableRef::ANY_FEATURE, softbodyId1, primitiveIndex);
+				if (!filtered)
 				{
 					PxVec3 a = PxLoad3(s_warpScratch->meshVerts[tetIdx1.x]);
 					PxVec3 b = PxLoad3(s_warpScratch->meshVerts[tetIdx1.y]);
@@ -619,12 +612,11 @@ struct SbSbMeshTreeTraverser
 			PxU32 index = atomicAdd(writer.totalContactCount, 1);
 
 			const PxReal pen = bestDist;
-			const PxU32 tetrahedronIdx0 = vertToSurfaceTetRemap0[vertIdx];
-			PxU32 pairId0 = PxEncodeSoftBodyIndex(softbodyId0, tetrahedronIdx0);
-			PxU32 pairId1 = PxEncodeSoftBodyIndex(softbodyId1, bestPrimIndex);
+			PxU64 vertexRef0 = PxgEncodeDeformableVertex(softbodyId0, vertIdx);
+			PxU64 tetRef1 = PxgEncodeDeformableTetrahedron(softbodyId1, bestPrimIndex);
 
-			writer.writeContact(index, make_float4(bestClosestP.x, bestClosestP.y, bestClosestP.z, 0.f), make_float4(bestNormal.x, bestNormal.y, bestNormal.z, pen),
-				make_float4(point.x, point.y, point.z, 0.f), make_float4(bestClosestP.x, bestClosestP.y, bestClosestP.z, 0.f), pairId0, pairId1);
+			writer.writeVolumeVolumeContact(index, make_float4(bestClosestP.x, bestClosestP.y, bestClosestP.z, 0.f),
+				make_float4(bestNormal.x, bestNormal.y, bestNormal.z, pen), vertexRef0, tetRef1);
 		}
 	}
 };
@@ -670,7 +662,7 @@ __device__ static inline void sb_tetmeshMidphaseCore2(
 	const PxgShape* PX_RESTRICT					gpuShapes,
 	const PxgSoftBody* PX_RESTRICT				softbodies,
 	femMidphaseScratch*							s_warpScratch,
-	PxgSoftBodyContactWriter&					writer
+	PxgDbDbContactWriter&						writer
 )
 {
 
@@ -731,7 +723,6 @@ __device__ static inline void sb_tetmeshMidphaseCore2(
 
 		const PxU32 NbWarps = blockDim.y*gridDim.x;
 
-		const PxU32* vertToSurfaceTetRemap0 = softbody0.mSurfaceVertToTetRemap;
 		//const uint4* tetIndices = softbody0.mTetIndices; //s_warpScratch->tetmeshTetIndices[0];
 		const float4* tetVerts = softbody0.mPosition_InvMass; //s_warpScratch->tetmeshVerts[0];
 		//const PxU8* surfaceHint = softbody0.mTetMeshSurfaceHint; // s_warpScratch->tetmeshTetSurfaceHint[0];
@@ -740,28 +731,26 @@ __device__ static inline void sb_tetmeshMidphaseCore2(
 
 		const PxU8* surfaceTetHint1 = softbody1.mTetMeshSurfaceHint;
 
-		const PxgNonRigidFilterPair* pairs = softbody0.mFilteringPairs;
-		const PxU32 nbFilterPairs = softbody0.mNumFilterPairs;
+		const PxgDeformablePairInfo* filterPairs = softbody0.mVolumeVolumeFilterPairs;
+		const PxU32 nbFilterPairs = softbody0.mNumVolumeVolumeFilterPairs;
 
 		for (PxU32 vertIdx = globalWarpIdx; vertIdx < nbVerts; vertIdx += NbWarps)
 		{
 			//avoid generate contacts if the tetrahedron isn'sb_sbMeshTreeTraversalt a surface vert
 			PxU8 hint = surfaceVertsHint[vertIdx];
-		
+
 			if (hint)
 			{
 
 				const float4 vertf = tetVerts[vertIdx];
 				const PxVec3 point(vertf.x, vertf.y, vertf.z);
 
-				const PxU32 softBodyMask0 = PxEncodeSoftBodyIndex(shape0.particleOrSoftbodyId, vertIdx);
-				const PxU32 softBodyMask1 = PxEncodeSoftBodyIndex(shape1.particleOrSoftbodyId, PX_MAX_NB_DEFORMABLE_VOLUME_TET);
 				//If we found the tetrahedron index in the filtering list, we don't need to generate contacts between the rigid
 				//body and the tetrahedron
-				const bool filterPairs = find(pairs, nbFilterPairs, softBodyMask0, softBodyMask1);
-				
-	
-				if (!filterPairs)
+				const bool filtered = findVolumeVolumeFilter(filterPairs, nbFilterPairs,
+					shape0.particleOrSoftbodyId, vertIdx, shape1.particleOrSoftbodyId, PxgDeformableRef::ANY_FEATURE);
+
+				if (!filtered)
 				{
 					SbSbMeshTreeTraverser traverser(
 						s_warpScratch,
@@ -770,10 +759,9 @@ __device__ static inline void sb_tetmeshMidphaseCore2(
 						point,
 						vertIdx,
 						contactDist,
-						vertToSurfaceTetRemap0,
 						surfaceTetHint1,
 						writer,
-						pairs,
+						filterPairs,
 						nbFilterPairs);
 					bv32TreeTraversal<SbSbMeshTreeTraverser, WarpsPerBlock>(s_warpScratch->bv32PackedNodes, s_warpScratch->sBv32Nodes, traverser);
 					traverser.finalizeFullWarp();					
@@ -793,7 +781,7 @@ void sb_sbMidphaseGeneratePairsLaunch(
 	const PxReal* PX_RESTRICT					contactDistance,
 	const PxgShape* PX_RESTRICT					gpuShapes,
 	const PxgSoftBody* PX_RESTRICT				softbodies,
-	PxgSoftBodyContactWriter					writer
+	PxgDbDbContactWriter						writer
 )
 {
 
@@ -819,7 +807,7 @@ __device__ static inline void sb_selfCollisionMidphaseCore2(
 	const PxgSoftBody* PX_RESTRICT	softbodies,
 
 	femMidphaseScratch*				s_warpScratch,
-	PxgSoftBodyContactWriter&		writer
+	PxgDbDbContactWriter&			writer
 )
 {
 	const PxU32 cmIdx = blockIdx.y;
@@ -879,12 +867,11 @@ __device__ static inline void sb_selfCollisionMidphaseCore2(
 		const float4* tetVerts = s_warpScratch->meshVerts;
 
 		const PxU8*  surfaceVertsHint = softbody->mSurfaceVertsHint;
-		const PxU32* vertToSurfaceTetRemap = softbody->mSurfaceVertToTetRemap;
 		const float4* restTetVerts = softbody->mRestPosition;
 		const PxReal* tetraStresses = softbody->mTetraStressCoefficient;
 
-		const PxgNonRigidFilterPair* pairs = softbody->mFilteringPairs;
-		const PxU32 nbFilterPairs = softbody->mNumFilterPairs;
+		const PxgDeformablePairInfo* filterPairs = softbody->mVolumeVolumeFilterPairs;
+		const PxU32 nbFilterPairs = softbody->mNumVolumeVolumeFilterPairs;
 
 		const PxU8* surfaceHint = softbody->mTetMeshSurfaceHint;
 
@@ -894,14 +881,11 @@ __device__ static inline void sb_selfCollisionMidphaseCore2(
 			PxU8 hint = surfaceVertsHint[vertIdx];
 			if (hint)
 			{
-
-				const PxU32 softBodyMask0 = PxEncodeSoftBodyIndex(softbodyId, vertIdx);
-				const PxU32 softBodyMask1 = PxEncodeSoftBodyIndex(softbodyId, PX_MAX_NB_DEFORMABLE_VOLUME_TET);
 				//If we found the tetrahedron index in the filtering list, we don't need to generate contacts between the rigid
 				//body and the tetrahedron
-				const bool filterPairs = find(pairs, nbFilterPairs, softBodyMask0, softBodyMask1);
+				const bool filtered = findVolumeVolumeFilter(filterPairs, nbFilterPairs, softbodyId, vertIdx, softbodyId, PxgDeformableRef::ANY_FEATURE);
 
-				if (!filterPairs)
+				if (!filtered)
 				{
 					const float4 vertf = tetVerts[vertIdx];
 					const float4 restf = restTetVerts[vertIdx];
@@ -914,14 +898,13 @@ __device__ static inline void sb_selfCollisionMidphaseCore2(
 						restP,
 						vertIdx,
 						contactDist,
-						vertToSurfaceTetRemap,
 						surfaceHint,
 						restTetVerts,
 						writer,
 						tetraStresses,
 						selfCollisionDistance,
 						selfCollisionStressTolerance,
-						pairs,
+						filterPairs,
 						nbFilterPairs);
 					bv32TreeTraversal<SbMeshTreeTraverser, WarpsPerBlock>(s_warpScratch->bv32PackedNodes, s_warpScratch->sBv32Nodes, traverser);
 					traverser.finalizeFullWarp();					
@@ -937,7 +920,7 @@ void sb_selfCollisionMidphaseGeneratePairsLaunch(
 	const PxU32*					activeSoftbodies,
 	const PxReal* PX_RESTRICT		contactDistance,
 	const PxgSoftBody* PX_RESTRICT	softbodies,
-	PxgSoftBodyContactWriter		writer
+	PxgDbDbContactWriter			writer
 )
 {
 	__shared__ PxU32 scratchMem[MIDPHASE_WARPS_PER_BLOCK][WARP_SIZE * 18];
@@ -1096,20 +1079,16 @@ __device__ static inline void sb_trimeshMidphaseCore(
 extern "C" __global__
 __launch_bounds__(1024, 0)
 void sb_sdfMeshMidphaseGeneratePairsLaunch(
-	const PxReal tolerenceLength,
-	const PxgContactManagerInput* PX_RESTRICT cmInputs,
-	const PxsCachedTransform* PX_RESTRICT transformCache,
-	const PxBounds3* PX_RESTRICT bounds,
-	const PxReal* PX_RESTRICT contactDistance,
+	const PxReal								tolerenceLength,
+	const PxgContactManagerInput* PX_RESTRICT	cmInputs,
+	const PxsCachedTransform* PX_RESTRICT		transformCache,
+	const PxBounds3* PX_RESTRICT				bounds,
+	const PxReal* PX_RESTRICT					contactDistance,
 	const PxReal* PX_RESTRICT					restDistance,
-	const PxgShape* PX_RESTRICT gpuShapes,
-	const PxgSoftBody* PX_RESTRICT softbodies,
-	const PxNodeIndex* PX_RESTRICT shapeToRigidRemapTable,
-
-	PxgRigidFilterPair*							filterPairs,
-	const PxU32									nbFilterPairs,
-
-	PxgFEMContactWriter writer
+	const PxgShape* PX_RESTRICT					gpuShapes,
+	const PxgSoftBody* PX_RESTRICT				softbodies,
+	const PxNodeIndex* PX_RESTRICT				shapeToRigidRemapTable,
+	PxgRigidDbContactWriter						writer
 )
 {
 	__shared__ __align__(16) char sMesh[sizeof(PxgTriangleMesh)];
@@ -1185,7 +1164,7 @@ void sb_sdfMeshMidphaseGeneratePairsLaunch(
 		PxVec3 contactDir;
 		PxVec3 contactPos;
 		bool candidateContact = false;
-		PxU32 pairId1;
+		PxU64 tetRef;
 
 		if (ind < nbTets)
 		{
@@ -1218,10 +1197,10 @@ void sb_sdfMeshMidphaseGeneratePairsLaunch(
 
 					contactDir = trimeshToWorld.rotate(contactDir);
 
-					pairId1 = PxEncodeSoftBodyIndex(softbodyShape.particleOrSoftbodyId, ind);
-					//If we found the tetrahedron index in the attachment list, we don't need to generate contacts between the rigid
-					//body and the tetrahedron
-					if (find(filterPairs, nbFilterPairs, rigidId.getInd(), pairId1))
+					tetRef = PxgEncodeDeformableTetrahedron(softbodyShape.particleOrSoftbodyId, ind);
+					// A filter pair for this rigid and tetrahedron suppresses contact generation between them.
+					if (findRigidVolumeFilter(softbody.mRigidVolumeFilterPairs, softbody.mNumRigidVolumeFilterPairs,
+						rigidId, trimeshCacheRef, softbodyShape.particleOrSoftbodyId, ind))
 						candidateContact = false;
 				}
 			}
@@ -1231,10 +1210,10 @@ void sb_sdfMeshMidphaseGeneratePairsLaunch(
 
 		if (candidateContact)
 		{
-			PxU64 pairId0 = rigidId.getInd();
+			PxU64 rigidRef = rigidId.getInd();
 
-			writer.writeContactNoBarycentric(contactIndex, make_float4(contactPos.x, contactPos.y, contactPos.z, restDist),
-				make_float4(contactDir.x, contactDir.y, contactDir.z, sep), pairId0, pairId1, rigidId.getInd());
+			writer.writeVolumeContact(contactIndex, make_float4(contactPos.x, contactPos.y, contactPos.z, restDist),
+				make_float4(contactDir.x, contactDir.y, contactDir.z, sep), rigidRef, trimeshShape.materialIndex, tetRef);
 		}
 	}
 }
@@ -1327,7 +1306,7 @@ __device__ static inline void sb_clothMidphaseCore(
 		
 			s_warpScratch->meshVerts = cloth.mPosition_InvMass;
 
-			s_warpScratch->meshVertsIndices = cloth.mTriangleVertexIndices;
+			s_warpScratch->meshVertsIndices = cloth.mTriangleVertexIndices_ownedEdges;
 
 			
 		}

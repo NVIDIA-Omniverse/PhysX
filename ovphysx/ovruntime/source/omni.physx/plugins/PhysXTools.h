@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-RESOLVE-001
+// @covers AC-1 AC-2
+
 /**
  * @implements REQ-PARSE-CONSUMER-001
  * @covers AC-24
@@ -70,9 +73,8 @@ namespace physx
 // pxr-free degToRad/radToDeg overloads (float, PxVec3, carb::Float3) live in PhysXToolsCore.h.
 
 template <class Type>
-inline Type* getPtr(PhysXType type, omni::physx::usdparser::ObjectId id)
+inline Type* getPtr(const internal::InternalDatabase& internaldb, PhysXType type, omni::physx::usdparser::ObjectId id)
 {
-    const internal::InternalPhysXDatabase& internaldb = OmniPhysX::getInstance().getInternalPhysXDatabase();
     if (id == omni::physx::usdparser::kInvalidObjectId)
         return nullptr;
     void* ptr = internaldb.getTypedRecord(type, id);
@@ -80,9 +82,8 @@ inline Type* getPtr(PhysXType type, omni::physx::usdparser::ObjectId id)
 }
 
 template <class Type>
-inline Type* getInternalPtr(PhysXType type, omni::physx::usdparser::ObjectId id)
+inline Type* getInternalPtr(const internal::InternalDatabase& internaldb, PhysXType type, omni::physx::usdparser::ObjectId id)
 {
-    const internal::InternalPhysXDatabase& internaldb = OmniPhysX::getInstance().getInternalPhysXDatabase();
     if (id == omni::physx::usdparser::kInvalidObjectId)
         return nullptr;
     void* ptr = internaldb.getInternalTypedRecord(type, id);
@@ -554,12 +555,12 @@ inline bool getJointAndLocalPose(const omni::physx::usdparser::AttachedStage& at
 {
     ::physx::PxBase* joint =
         reinterpret_cast<::physx::PxBase*>(omni::physx::getObjectDataOrID<omni::physx::ObjectDataQueryType::ePHYSX_PTR>(
-            jointKey, ePTJoint, OmniPhysX::getInstance().getInternalPhysXDatabase(), attachedStage));
+            jointKey, ePTJoint, attachedStage.getInternalPhysXDatabase(), attachedStage));
     if (!joint)
     {
         joint = reinterpret_cast<::physx::PxBase*>(
             omni::physx::getObjectDataOrID<omni::physx::ObjectDataQueryType::ePHYSX_PTR>(
-                jointKey, ePTLinkJoint, OmniPhysX::getInstance().getInternalPhysXDatabase(), attachedStage));
+                jointKey, ePTLinkJoint, attachedStage.getInternalPhysXDatabase(), attachedStage));
     }
 
     if (joint && joint->getConcreteType() == ::physx::PxJointConcreteType::eD6)

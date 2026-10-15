@@ -15,17 +15,23 @@ Usage:
 The optional ``--python`` override replaces the ``python`` field in every
 ``[[dependency]]`` block (useful when the calling project provides its own
 Python).  Similarly ``--target-deps`` replaces the target directory prefix.
+An optional ``constraint_file`` resolves relative to the TOML file. Locked
+installs are reused only while the dependency settings and lock are unchanged.
 """
 
 from __future__ import annotations
 
 import argparse
 import fnmatch
+import hashlib
+import json
 import logging
 import os
+from pathlib import Path
 import platform
 import subprocess
 import sys
+import tempfile
 
 try:
     import tomllib  # Python 3.11+
@@ -77,6 +83,42 @@ def _find_python_exe(python_dir: str) -> str | None:
         if os.path.isfile(p) and os.access(p, os.X_OK):
             return p
     return None
+
+
+def _install_locked(cmd: list[str], target_dir: str, fingerprint: str) -> bool:
+    """Publish a complete locked install; preserve the previous cache on failure."""
+    target = Path(target_dir).absolute()
+    stamp = target / ".pip-fetch-lock"
+    try:
+        if target.is_symlink() or target.resolve() != target.parent.resolve() / target.name:
+            raise OSError(f"Locked pip target must not be a link: {target}")
+        if stamp.is_file() and stamp.read_text() == fingerprint:
+            logger.info("Locked target is current: %s", target)
+            return True
+
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix=".pip-", dir=target.parent) as scratch:
+            staged = Path(scratch) / "package"
+            result = subprocess.run([*cmd, f"--target={staged}"])
+            if result.returncode != 0:
+                logger.error("Locked pip install failed (exit %d): %s", result.returncode, target)
+                return False
+            (staged / stamp.name).write_text(fingerprint)
+            previous = Path(scratch) / "previous"
+            if target.exists():
+                if target.resolve() != target.parent.resolve() / target.name:
+                    raise OSError(f"Locked pip target escapes its parent: {target}")
+                target.rename(previous)
+            try:
+                staged.rename(target)
+            except OSError:
+                if previous.exists():
+                    previous.rename(target)
+                raise
+        return True
+    except OSError as error:
+        logger.error("Cannot provision locked pip target %s: %s", target, error)
+        return False
 
 
 # ---------------------------------------------------------------------------
@@ -141,14 +183,29 @@ def fetch(
         if not packages:
             continue
 
-        # Skip if target already exists (unless append mode)
         append = dep.get("append_to_install_folder", False)
-        if os.path.isdir(target_dir) and not append:
+        download_only = dep.get("download_only", False)
+        constraint_file = dep.get("constraint_file")
+        fingerprint = None
+        if constraint_file:
+            if append or download_only:
+                logger.error("Locked dependencies require a separate install target")
+                ok = False
+                continue
+            constraint_file = _resolve_path(config_file, constraint_file)
+            try:
+                lock = Path(constraint_file).read_bytes()
+            except OSError as error:
+                logger.error("Cannot read pip lock %s: %s", constraint_file, error)
+                ok = False
+                continue
+            inputs = json.dumps([dep, platform_target, python_exe], sort_keys=True).encode()
+            fingerprint = hashlib.sha256(inputs + b"\0" + lock).hexdigest()
+        elif os.path.isdir(target_dir) and not append:
             logger.info("Target already exists, skipping: %s", target_dir)
             continue
 
         # Build pip command — mirrors repo_build pippull.py _build_install_cmd()
-        download_only = dep.get("download_only", False)
         install_deps = dep.get("install_dependencies", True)
         extra_args = dep.get("extra_args", [])
 
@@ -156,7 +213,9 @@ def fetch(
         if download_only:
             cmd.extend(["download", f"--destination-directory={target_dir}"])
         else:
-            cmd.extend(["install", f"--target={target_dir}"])
+            cmd.append("install")
+            if not constraint_file:
+                cmd.append(f"--target={target_dir}")
 
         cmd.extend(["--disable-pip-version-check", "--no-input", "--timeout=60", "--retries=5"])
 
@@ -164,12 +223,19 @@ def fetch(
             cmd.append("--no-deps")
 
         cmd.extend(extra_args)
+        if constraint_file:
+            cmd.extend(["--constraint", constraint_file])
         cmd.extend(packages)
 
         pkg_summary = ", ".join(packages[:3])
         if len(packages) > 3:
             pkg_summary += f" ... ({len(packages)} total)"
         logger.info("Installing into '%s': %s", os.path.basename(target_dir), pkg_summary)
+
+        if fingerprint is not None:
+            if not _install_locked(cmd, target_dir, fingerprint):
+                ok = False
+            continue
 
         result = subprocess.run(cmd)
         if result.returncode != 0:

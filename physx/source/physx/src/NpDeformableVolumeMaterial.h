@@ -25,7 +25,7 @@ class NpDeformableVolumeMaterial : public PxDeformableVolumeMaterial, public PxU
 public:
 	// PX_SERIALIZATION
 										NpDeformableVolumeMaterial(PxBaseFlags baseFlags) : PxDeformableVolumeMaterial(baseFlags), mMaterial(PxEmpty) {}
-	virtual	void						resolveReferences(PxDeserializationContext& context);
+	virtual	bool						resolveReferences(PxDeserializationContext& context);
 	static	NpDeformableVolumeMaterial*	createObject(PxU8*& address, PxDeserializationContext& context);
 
 			void						preExportDataReset() { Cm::RefCountable_preExportDataReset(*this); }

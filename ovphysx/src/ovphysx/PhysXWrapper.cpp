@@ -1,25 +1,35 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-CAPI-TASK-001
+// @covers AC-1 AC-4 AC-5
+
 /**
  * @implements REQ-CAPI-ASYNC-001
  * @covers AC-2
+ *
+ * @implements REQ-CAPI-SDF-001
+ * @covers AC-1
  */
 
 
+// @implements REQ-CAPI-COMPANION-001
+// @covers AC-2
+
 // C++ wrapper over the ovphysx C API, declared in ovphysx/experimental/ovphysx.hpp.
 
-#include "AsyncEventManager/AsyncEventManager.hpp"
 #include "ovphysx/experimental/ovphysx.hpp"
+#include "ovphysx/ovphysx_geometry_query.h"
 #include "ovphysx/ovphysx_types.h"
 #include "carb/logging/Log.h"
+#include <exception>
+#include <stdexcept>
+#include <utility>
 
 namespace ovphysx {
 
-using ovphysx::async::async_event_handle_t;
-
 namespace {
-inline bool ensureHandle(ovphysx_handle_t h, const char* fn) {
+inline bool ensureHandle(ovphysx_instance_handle_t h, const char* fn) {
     if (!h) {
         CARB_LOG_ERROR("%s: invalid ovphysx_handle (null). Did PhysX::create(...) succeed?", fn);
         return false;
@@ -32,13 +42,17 @@ inline bool ensureHandle(ovphysx_handle_t h, const char* fn) {
 // Constructors / Destructor / Move
 //------------------------------------------------------------------------------------------------------------
 
-PhysX::PhysX(ovphysx_handle_t h) : m_handle(h) {}
+PhysX::PhysX(ovphysx_instance_handle_t h) : m_handle(h) {}
 
 PhysX::PhysX() : m_handle(0) {}
 
 PhysX::~PhysX() {
     if (m_handle) {
-        ovphysx_destroy_instance(m_handle);
+        const ovphysx_result_t result = ovphysx_destroy_instance(m_handle);
+        if (result.status == OVPHYSX_API_INVALID_STATE) {
+            CARB_LOG_ERROR("PhysX destructor requires closed leases and an idle runtime; call reset() and retry before leaving scope");
+            std::terminate(); // A noexcept destructor cannot transfer a still-live owner to its caller.
+        }
     }
 }
 
@@ -47,25 +61,24 @@ PhysX::PhysX(PhysX&& other) noexcept : m_handle(other.m_handle) {
 }
 
 PhysX& PhysX::operator=(PhysX&& other) noexcept {
-    if (this != &other) {
-        if (m_handle) {
-            ovphysx_destroy_instance(m_handle);
-        }
-        m_handle = other.m_handle;
-        other.m_handle = 0;
-    }
+    // Swap ownership: the moved-from object retains our prior handle, so no
+    // fallible destruction is hidden inside a noexcept assignment.
+    std::swap(m_handle, other.m_handle);
     return *this;
 }
 
-ovphysx_handle_t PhysX::release() {
-    ovphysx_handle_t h = m_handle;
+ovphysx_instance_handle_t PhysX::release() {
+    ovphysx_instance_handle_t h = m_handle;
     m_handle = 0;
     return h;
 }
 
-void PhysX::reset(ovphysx_handle_t h) {
+void PhysX::reset(ovphysx_instance_handle_t h) {
+    if (h == m_handle) return;
     if (m_handle) {
-        ovphysx_destroy_instance(m_handle);
+        const ovphysx_result_t result = ovphysx_destroy_instance(m_handle);
+        if (result.status == OVPHYSX_API_INVALID_STATE)
+            throw std::runtime_error("PhysX reset refused: close outstanding leases or finish concurrent operations, then retry");
     }
     m_handle = h;
 }
@@ -74,72 +87,51 @@ void PhysX::reset(ovphysx_handle_t h) {
 // Stage Management
 //------------------------------------------------------------------------------------------------------------
 
-ovphysx_api_status_t PhysX::reset_stage() {
-    if (!ensureHandle(m_handle, "PhysX::reset_stage")) return OVPHYSX_API_ERROR;
-    ovphysx_enqueue_result_t r = ovphysx_reset_stage(m_handle);
-    return r.status;
+ovphysx_enqueue_result_t PhysX::detachOvstage() {
+    return ovphysx_detach_ovstage(m_handle);
 }
 
-ovphysx_api_status_t PhysX::attachOvstage(ovstage_instance_t* stage, ovstage_ordinal_t read_ordinal) {
-    if (!ensureHandle(m_handle, "PhysX::attachOvstage")) return OVPHYSX_API_ERROR;
-    ovphysx_result_t r = ovphysx_attach_ovstage(m_handle, stage, read_ordinal);
-    return r.status;
+ovphysx_enqueue_result_t PhysX::attachOvstage(ovstage_instance_t* stage, ovstage_ordinal_t read_ordinal) {
+    return ovphysx_attach_ovstage(m_handle, stage, read_ordinal);
 }
 
-ovphysx_api_status_t PhysX::updateFromOvstage(ovstage_ordinal_range_t range) {
-    if (!ensureHandle(m_handle, "PhysX::updateFromOvstage")) return OVPHYSX_API_ERROR;
-    ovphysx_result_t r = ovphysx_update_from_ovstage(m_handle, range);
-    return r.status;
+ovphysx_enqueue_result_t PhysX::updateFromOvstage(ovstage_ordinal_range_t range) {
+    return ovphysx_update_from_ovstage(m_handle, range);
 }
 
 //------------------------------------------------------------------------------------------------------------
 // Simulation
 //------------------------------------------------------------------------------------------------------------
 
-ovphysx_api_status_t PhysX::step(float step_dt) {
-    if (!ensureHandle(m_handle, "PhysX::step")) return OVPHYSX_API_ERROR;
-    ovphysx_enqueue_result_t r = ovphysx_step(m_handle, step_dt);
-    return r.status;
+ovphysx_enqueue_result_t PhysX::step(float step_dt) {
+    return ovphysx_step(m_handle, step_dt);
 }
 
-ovphysx_api_status_t PhysX::updateArticulationsKinematic() {
-    if (!ensureHandle(m_handle, "PhysX::updateArticulationsKinematic")) return OVPHYSX_API_ERROR;
-    ovphysx_result_t r = ovphysx_update_articulations_kinematic(m_handle);
-    return r.status;
+ovphysx_enqueue_result_t PhysX::updateArticulationsKinematic(ovphysx_query_handle_t query, uint32_t flags) {
+    return ovphysx_update_articulations_kinematic(m_handle, query, flags);
 }
 
-//------------------------------------------------------------------------------------------------------------
-// User Tasks
-//------------------------------------------------------------------------------------------------------------
-
-ovphysx_api_status_t PhysX::addUserTask(const ovphysx_user_task_desc_t& desc,
-                                         ovphysx_op_index_t& out_op_index) {
-    if (!ensureHandle(m_handle, "PhysX::addUserTask")) return OVPHYSX_API_ERROR;
-    ovphysx_enqueue_result_t r = ovphysx_add_user_task(m_handle, &desc);
-    out_op_index = r.op_index;
-    return r.status;
+ovphysx_enqueue_result_t PhysX::evaluateSdfShapes(ovphysx_query_handle_t query,
+                                                  const DLTensor* points,
+                                                  DLTensor* out,
+                                                  ovstage_cuda_sync_t pointsReady) {
+    return ovphysx_evaluate_sdf_shapes(m_handle, query, points, out, pointsReady);
 }
 
 //------------------------------------------------------------------------------------------------------------
 // Synchronization
 //------------------------------------------------------------------------------------------------------------
 
-physx::WaitResult PhysX::waitOp(ovphysx_op_index_t op_index, ovphysx_timeout_t timeout_ns) {
-    if (!ensureHandle(m_handle, "PhysX::waitOp")) {
-        return physx::WaitResult();
-    }
-    physx::WaitResult w;
-    ovphysx_wait_op(m_handle, op_index, timeout_ns, w.get());
-    return w;
+physx::WaitResult PhysX::waitTask(ovphysx_enqueue_result_t task, ovphysx_timeout_t timeout_ns) {
+    physx::WaitResult result;
+    result.waitTask(m_handle, task, timeout_ns);
+    return result;
 }
 
 physx::WaitResult PhysX::waitAll(ovphysx_timeout_t timeout_ns) {
-    if (!ensureHandle(m_handle, "PhysX::waitAll")) {
-        return physx::WaitResult();
-    }
-    physx::WaitResult w;
-    ovphysx_wait_op(m_handle, OVPHYSX_OP_INDEX_ALL, timeout_ns, w.get());
-    return w;
+    physx::WaitResult result;
+    result.waitAll(m_handle, timeout_ns);
+    return result;
 }
 
 //------------------------------------------------------------------------------------------------------------
@@ -227,6 +219,15 @@ const ovphysx_create_args& CreateArgs::cArgs() const { return m_args; }
 // Factory
 //------------------------------------------------------------------------------------------------------------
 
+ovphysx_api_status_t PhysX::create(PhysX& out_instance)
+{
+    ovphysx_instance_handle_t handle = 0;
+    const ovphysx_result_t result = ovphysx_create_instance(&handle);
+    if (result.status == OVPHYSX_API_SUCCESS)
+        out_instance = PhysX(handle);
+    return result.status;
+}
+
 ovphysx_api_status_t PhysX::create(
     PhysX& out_instance,
     const CreateArgs& args)
@@ -242,8 +243,8 @@ ovphysx_api_status_t PhysX::create(
         return OVPHYSX_API_INVALID_ARGUMENT;
     }
 
-    ovphysx_handle_t handle = 0;
-    ovphysx_result_t result = ovphysx_create_instance(&cArgs, &handle);
+    ovphysx_instance_handle_t handle = 0;
+    ovphysx_result_t result = ovphysx_create_instance_with_args(&cArgs, &handle);
 
     if (result.status == OVPHYSX_API_SUCCESS) {
         out_instance = PhysX(handle);
@@ -253,12 +254,19 @@ ovphysx_api_status_t PhysX::create(
 
 ovphysx_api_status_t PhysX::setCpuMode(bool cpuOnly)
 {
-    return ovphysx_set_cpu_mode(cpuOnly).status;
+    return ovphysx_set_global_config(
+        OVPHYSX_GLOBAL_CONFIG_CPU_ONLY,
+        ovphysx_config_value_bool(cpuOnly)).status;
 }
 
 ovphysx_api_status_t PhysX::getCpuMode(bool& outCpuOnly)
 {
-    return ovphysx_get_cpu_mode(&outCpuOnly).status;
+    ovphysx_config_value_t value = {};
+    const ovphysx_result_t result =
+        ovphysx_get_global_config(OVPHYSX_GLOBAL_CONFIG_CPU_ONLY, &value);
+    if (result.status == OVPHYSX_API_SUCCESS)
+        outCpuOnly = value.value.bool_value;
+    return result.status;
 }
 
 //------------------------------------------------------------------------------------------------------------
@@ -291,74 +299,21 @@ ovphysx_api_status_t PhysX::createTensorBinding(
 // Clone
 //------------------------------------------------------------------------------------------------------------
 
-ovphysx_api_status_t PhysX::clone(const std::string& sourcePath, const std::vector<std::string>& targetPaths,
-                                  const float* anchorTransforms, const uint32_t* envIds,
-                                  ovphysx_op_index_t* outOpIndex)
+ovphysx_enqueue_result_t PhysX::clone(const std::string& sourcePath, const std::vector<std::string>& targetPaths,
+                                      const float* anchorTransforms, const uint32_t* envIds)
 {
-    if (!ensureHandle(m_handle, "PhysX::clone")) return OVPHYSX_API_ERROR;
-
-    if (sourcePath.empty()) {
-        CARB_LOG_ERROR("Source path must be a non-empty string");
-        return OVPHYSX_API_INVALID_ARGUMENT;
-    }
-
-    if (targetPaths.empty()) {
-        CARB_LOG_ERROR("Target paths must be a non-empty vector");
-        return OVPHYSX_API_INVALID_ARGUMENT;
-    }
-
-    for (const auto& targetPath : targetPaths) {
-        if (targetPath == sourcePath) {
-            CARB_LOG_ERROR("Target path '%s' cannot be the same as source path", targetPath.c_str());
-            return OVPHYSX_API_INVALID_ARGUMENT;
-        }
-    }
-
     std::vector<ovphysx_string_t> targetStrings;
     targetStrings.reserve(targetPaths.size());
-    for (const auto& path : targetPaths) {
+    for (const std::string& path : targetPaths) {
         targetStrings.push_back({path.c_str(), path.size()});
     }
-
-    ovphysx_enqueue_result_t status = ovphysx_clone(
+    return ovphysx_clone(
         m_handle,
         {sourcePath.c_str(), sourcePath.size()},
         targetStrings.data(),
         static_cast<uint32_t>(targetStrings.size()),
         anchorTransforms,
-        envIds
-    );
-
-    if (status.status != OVPHYSX_API_SUCCESS) {
-        ovphysx_string_t err = ovphysx_get_last_error();
-        if (err.ptr && err.length > 0) {
-            CARB_LOG_ERROR(
-                "Clone failed: status=%d, source=\"%s\", targets=%zu, error=\"%.*s\"",
-                status.status,
-                sourcePath.c_str(),
-                targetPaths.size(),
-                static_cast<int>(err.length),
-                err.ptr
-            );
-        } else {
-            CARB_LOG_ERROR("Clone failed: status=%d, source=\"%s\", targets=%zu",
-                           status.status, sourcePath.c_str(), targetPaths.size());
-        }
-        return OVPHYSX_API_ERROR;
-    }
-
-    // Check clone operation result (operation completes before ovphysx_clone returns)
-    async_event_handle_t cloneEvent = ovphysx::async::get_event_for_op(m_handle, status.op_index);
-    if (ovphysx::async::AsyncEventManager::poll_event(cloneEvent) != ASYNC_STATUS_COMPLETED) {
-        CARB_LOG_ERROR("Clone operation failed");
-        return OVPHYSX_API_ERROR;
-    }
-
-    // Surface the op index for API uniformity with the C/Python forms (already complete here).
-    if (outOpIndex) {
-        *outOpIndex = status.op_index;
-    }
-    return OVPHYSX_API_SUCCESS;
+        envIds);
 }
 
 } // namespace ovphysx

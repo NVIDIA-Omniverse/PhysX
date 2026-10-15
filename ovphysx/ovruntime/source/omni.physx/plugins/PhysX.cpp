@@ -1,11 +1,23 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-1 AC-2 AC-3 AC-4
+
+// @implements REQ-ATTACH-LIFETIME-001
+// @covers AC-1
+
+// @implements REQ-ATTACH-SERVICES-001
+// @covers AC-7
+
 /**
- * @implements REQ-PARSE-BACKEND-001
+ * @implements REQ-RUNTIME-ERROR-001
  * @covers AC-3
+ *
+ * @implements REQ-PARSE-BACKEND-001
+ * @covers AC-3 AC-6
  * @implements REQ-REPLICATE-001
- * @covers AC-1 AC-2
+ * @covers AC-1 AC-2 AC-8
  * @implements REQ-SIM-OBJECTDB-001
  * @covers AC-1
  *
@@ -16,11 +28,16 @@
  * @covers AC-1 AC-2 AC-3
  *
  * @implements REQ-OMNIPVD-LATE-001
- * @covers AC-3 AC-4 AC-5 AC-6
+ * @covers AC-3 AC-4 AC-5 AC-6 AC-9
+ *
+ * @implements REQ-TENSOR-VIEW-001
+ * @covers AC-2
  */
 
 // The USD-reaching entry points live in usdBridge/RuntimeBridge.cpp behind the pxr-free
 // declarations in usdBridge/RuntimeBridge.h (ADR-0027).
+#include <omni/physx/RuntimeError.h>
+#include "AttachmentObjectLookup.h"
 #include "usdBridge/RuntimeBridge.h"
 
 #include "OmniPhysX.h"
@@ -31,6 +48,7 @@
 #include "PhysXTools.h"
 #include "PhysXUnitTestsIface.h"
 #include "PhysXUpdate.h"
+#include "RuntimeExecution.h"
 #include "usdInterface/UsdInterface.h"
 #include "Raycast.h"
 #include "Setup.h"
@@ -115,16 +133,10 @@ PX_COMPILE_TIME_ASSERT(sizeof(PxVec3)==sizeof(carb::Float3));
 // now, not loaded as a Carbonite plugin module.
 OMNI_LOG_DEFINE_CHANNEL(OMNI_LOG_DEFAULT_CHANNEL, "omni.physx", "PhysX runtime")
 
-void resetPhysX()
-{
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    omniPhysX.releasePhysXScenes();
-}
-
 bool updateMaterialDensity(AttachedStage& attachedStage, ObjectId objectId, omni::physics::parse::TokenId propertyName, omni::physics::parse::ReadTime timeCode)
 {
     PhysXType internalType;
-    omni::physx::internal::InternalPhysXDatabase& internalPhysXDatabase = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    omni::physx::internal::InternalPhysXDatabase& internalPhysXDatabase = attachedStage.getInternalPhysXDatabase();
     void* objectRecord = internalPhysXDatabase.getRecord(internalType, objectId);
     if (!objectRecord)
         return true;
@@ -136,7 +148,7 @@ bool updateMaterialDensity(AttachedStage& attachedStage, ObjectId objectId, omni
 
     if (internalType == ePTMaterial)
     {
-        getPhysXUsdPhysicsInterface().setDirty(true);
+        getPhysXUsdPhysicsInterface().setDirty(attachedStage, true);
         InternalMaterial* intMat = (InternalMaterial*)materialRec.mInternalPtr;
         intMat->mDensity = data;
         for (size_t i = intMat->mShapeIds.size(); i--;)
@@ -177,53 +189,58 @@ bool updateMaterialDensity(AttachedStage& attachedStage, ObjectId objectId, omni
     return true;
 }
 
-// A USD-source-only reload operation (public ABI: IPhysx::forceLoadPhysicsFromUSD), with no
-// ovstage meaning -- confirmed by test-side documentation (e.g. TestTensorReplicatedMatcher.cpp,
-// TestMeshMergeCollision.cpp) and by the exclusion list in tools/repoman/ovstage_coverage.py.
-// The split is semantic, not a compile constraint: the body names no pxr type and would build
-// either way, but re-parsing the *active USD stage* under an ovstage attach would swap the
-// source out from under the caller. With no seam installed it reports "no USD stage attached",
-// the same outcome an ovstage-only attach gives.
-void forceLoadPhysicsFromUSD()
+// USD developer reload resolves one attachment and preserves its captured configuration.
+RuntimeResult forceLoadPhysicsFromUSD(AttachHandle attach)
 {
-    bridgeForceLoadPhysicsFromUSD();
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return RuntimeResult::eBusy;
+    return bridgeForceLoadPhysicsFromUSD(attach);
 }
 
-void flushChanges()
+void flushChanges(AttachHandle attach)
 {
-    const uint64_t stageId = UsdLoad::getUsdLoad()->getActiveStageId();
-    UsdLoad::getUsdLoad()->flushChanges();
-    AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStage(stageId);
-    if (attachedStage)
-    {
-        attachedStage->getPhysXPhysicsInterface()->finalizeArticulations(*attachedStage);
-        OmniPhysX::getInstance().getInternalPhysXDatabase().updateDirtyMassActors();
-    }
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return;
+
+    const std::shared_ptr<AttachedStage> attachedStage = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    if (!attachedStage)
+        return;
+    UsdLoad::getUsdLoad()->flushChanges(*attachedStage);
+    attachedStage->getPhysXPhysicsInterface()->finalizeArticulations(*attachedStage);
+    attachedStage->getInternalPhysXDatabase().updateDirtyMassActors();
     OmniPhysX::getInstance().getErrorEventStream()->pump();
 }
 
-void releasePhysicsObjects()
+RuntimeResult releasePhysicsObjects(AttachHandle attach)
 {
-    const uint64_t stageId = UsdLoad::getUsdLoad()->getActiveStageId();
-    UsdLoad::getUsdLoad()->releasePhysicsObjects(stageId);
+    RuntimeExecutionScope operation(attach, true);
+    if (!operation)
+        return RuntimeResult::eBusy;
+    auto owner = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    if (!owner)
+        return RuntimeResult::eInvalidAttachment;
+    waitForSimulationCompletion(*owner, false);
+    retireRuntimeExecution(attach);
+    UsdLoad::getUsdLoad()->releasePhysicsObjects(attach);
+    return RuntimeResult::eSuccess;
 }
 
-ObjectId getObjectId(omni::physics::parse::ObjectKey key, PhysXType type)
+ObjectId getObjectIdInternal(omni::physics::AttachHandle attach, omni::physics::parse::ObjectKey key, PhysXType type)
 {
-    const uint64_t stageId = UsdLoad::getUsdLoad()->getActiveStageId();
-    const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStage(stageId);
+    const std::shared_ptr<AttachedStage> attachedStage = UsdLoad::getUsdLoad()->acquireAttachment(attach);
     if (attachedStage)
-        return ObjectId(getObjectDataOrID<ObjectDataQueryType::eOBJECT_ID>(key, type, OmniPhysX::getInstance().getInternalPhysXDatabase(), *attachedStage));
+        return ObjectId(getObjectDataOrID<ObjectDataQueryType::eOBJECT_ID>(key, type, attachedStage->getInternalPhysXDatabase(), *attachedStage));
     else
         return kInvalidObjectId;
 }
 
-void* getPhysXPtr(omni::physics::parse::ObjectKey key, PhysXType type)
+void* getPhysXPtrInternal(omni::physics::AttachHandle attach, omni::physics::parse::ObjectKey key, PhysXType type)
 {
-    const uint64_t stageId = UsdLoad::getUsdLoad()->getActiveStageId();
-    const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStage(stageId);
+    const std::shared_ptr<AttachedStage> attachedStage = UsdLoad::getUsdLoad()->acquireAttachment(attach);
     if (attachedStage)
-        return (void*)(getObjectDataOrID<ObjectDataQueryType::ePHYSX_PTR>(key, type, OmniPhysX::getInstance().getInternalPhysXDatabase(), *attachedStage));
+        return (void*)(getObjectDataOrID<ObjectDataQueryType::ePHYSX_PTR>(key, type, attachedStage->getInternalPhysXDatabase(), *attachedStage));
     else
         return nullptr;
 }
@@ -255,55 +272,26 @@ void* getPhysXPtr(omni::physics::parse::ObjectKey key, PhysXType type)
 // AttachedStage-level facility physxSimulationCloneEnvironments below now uses too (see its
 // comment); PhysXReplicator.cpp's resolveClone cannot adopt it without a larger, out-of-scope
 // change (see its own file-level comment).
-omni::physics::parse::ObjectKey resolveObjectKey(const char* path)
+omni::physics::parse::ObjectKey resolveObjectKey(omni::physics::AttachHandle attach, const char* path)
 {
-    const uint64_t stageId = UsdLoad::getUsdLoad()->getActiveStageId();
-    const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStage(stageId);
-    if (!attachedStage || !path)
-        return {};
-    const omni::physics::parse::IPhysicsSource* source = attachedStage->getSource();
-    if (!source)
-        return {};
-    const omni::physics::parse::ObjectKey key = attachedStage->keyFor(std::string_view(path));
-    if (!key.valid())
-        return {};
-    // Registry first: an ObjectDb hit is a map lookup, while exists() can cost an
-    // ovstage whole-stage query for keys outside the source's caches.
-    const usdparser::ObjectIdMap* entries = attachedStage->getObjectIds(key);
-    if (entries && !entries->empty())
-        return key;
-    return source->exists(key) ? key : omni::physics::parse::ObjectKey{};
+    auto owner = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    return attachmentLookup::resolveKey(owner.get(), path);
 }
 
 // The other lookup-side ADR-0019 path-string-crossing function on the public API:
 // renders the opaque object-identity handle back to a human-readable path string.
-const char* objectKeyToPath(omni::physics::parse::ObjectKey key)
+const char* objectKeyToPath(omni::physics::AttachHandle attach, omni::physics::parse::ObjectKey key)
 {
-    const uint64_t stageId = UsdLoad::getUsdLoad()->getActiveStageId();
-    const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStage(stageId);
-    if (!attachedStage)
-        return "";
-    const omni::physics::parse::IPhysicsSource* source = attachedStage->getSource();
-    if (!source)
-        return "";
-    // Liveness (ObjectDb, then source, then InternalPhysXDatabase) lives in
-    // AttachedStage::isKeyLive so this resolver and the tensor-view resolver
-    // (getOtherActorPathsFromIds) share one definition and cannot drift.
-    if (!attachedStage->isKeyLive(key))
-        return "";
-    // sourceKeyToString's backing storage is a null-terminated std::string in every
-    // IPhysicsSource implementation (UsdSource, OvstageSource, ProceduralSource, MockSource), so
-    // .data() is safe for a resolved key -- but every implementation returns a default-constructed
-    // std::string_view{} (data() == nullptr) for an invalid/unresolved key, which would break the
-    // documented "empty string" contract if returned as-is.
-    const std::string_view pathView = source->sourceKeyToString(key);
-    return pathView.data() ? pathView.data() : "";
+    auto owner = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    return attachmentLookup::pathFor(owner.get(), key);
 }
 
-uint32_t getPhysXPtrInstanced(omni::physics::parse::ObjectKey key, void** data, uint32_t dataSize, PhysXType type)
+uint32_t getPhysXPtrInstanced(omni::physics::AttachHandle attach, omni::physics::parse::ObjectKey key, void** data, uint32_t dataSize, PhysXType type)
 {
-    const uint64_t stageId = UsdLoad::getUsdLoad()->getActiveStageId();
-    const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStage(stageId);
+    RuntimeExecutionScope execution(attach);
+    if (!execution || (!data && dataSize != 0))
+        return 0;
+    const std::shared_ptr<AttachedStage> attachedStage = UsdLoad::getUsdLoad()->acquireAttachment(attach);
     uint32_t currentIndex = 0;
     if (attachedStage)
     {
@@ -314,7 +302,7 @@ uint32_t getPhysXPtrInstanced(omni::physics::parse::ObjectKey key, void** data, 
             while (it != entries->end())
             {
                 const usdparser::ObjectId objectId = it->second;
-                void* ptr = OmniPhysX::getInstance().getInternalPhysXDatabase().getTypedRecord(type, objectId);
+                void* ptr = attachedStage->getInternalPhysXDatabase().getTypedRecord(type, objectId);
                 if (ptr && currentIndex < dataSize)
                 {
                     data[currentIndex++] = ptr;
@@ -326,9 +314,12 @@ uint32_t getPhysXPtrInstanced(omni::physics::parse::ObjectKey key, void** data, 
     return currentIndex;
 }
 
-void* getPhysXPtrFast(ObjectId objectId)
+void* getPhysXPtrFastInternal(omni::physics::AttachHandle attach, ObjectId objectId)
 {
-    const omni::physx::internal::InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    const std::shared_ptr<AttachedStage> attachedStage = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    if (!attachedStage)
+        return nullptr;
+    const omni::physx::internal::InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
     if (objectId < db.getRecords().size())
     {
         const InternalDatabase::Record& record = db.getRecords()[objectId];
@@ -337,29 +328,32 @@ void* getPhysXPtrFast(ObjectId objectId)
     return nullptr;
 }
 
-void* getInternalPtr(omni::physics::parse::ObjectKey key, PhysXType type)
+void* getInternalPtr(const AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, PhysXType type)
 {
-    const uint64_t stageId = UsdLoad::getUsdLoad()->getActiveStageId();
-    const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStage(stageId);
-    if (attachedStage)
-        return (void*)(getObjectDataOrID<ObjectDataQueryType::eINTERNAL_PTR>(key, type, OmniPhysX::getInstance().getInternalPhysXDatabase(), *attachedStage));
-    else
-        return nullptr;
+    return reinterpret_cast<void*>(getObjectDataOrID<ObjectDataQueryType::eINTERNAL_PTR>(
+        key, type, attachedStage.getInternalPhysXDatabase(), attachedStage));
 }
 
-const void* createD6JointAtPath(const char* jointPath,
+const void* createD6JointAtPath(omni::physics::AttachHandle attach, const char* jointPath,
                                 omni::physics::parse::ObjectKey body0,
                                 omni::physics::parse::ObjectKey body1)
 {
-    omni::physx::internal::InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return nullptr;
 
-    PxRigidActor* actor0 = (PxRigidActor *)getPhysXPtr(body0, ePTActor);
+    const std::shared_ptr<AttachedStage> attachedStage = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    if (!attachedStage || !jointPath || !*jointPath)
+        return nullptr;
+    omni::physx::internal::InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
+
+    PxRigidActor* actor0 = (PxRigidActor *)getPhysXPtrInternal(attach, body0, ePTActor);
     if (!actor0)
-        actor0 = (PxRigidActor *)getPhysXPtr(body0, ePTLink);
+        actor0 = (PxRigidActor *)getPhysXPtrInternal(attach, body0, ePTLink);
 
-    PxRigidActor* actor1 = (PxRigidActor*)getPhysXPtr(body1, ePTActor);
+    PxRigidActor* actor1 = (PxRigidActor*)getPhysXPtrInternal(attach, body1, ePTActor);
     if (!actor1)
-        actor1 = (PxRigidActor *)getPhysXPtr(body1, ePTLink);
+        actor1 = (PxRigidActor *)getPhysXPtrInternal(attach, body1, ePTLink);
 
     PxTransform localPose0(PxIdentity);
     PxTransform localPose1(PxIdentity);
@@ -367,7 +361,6 @@ const void* createD6JointAtPath(const char* jointPath,
     PxJoint* j = PxD6JointCreate(*OmniPhysX::getInstance().getPhysXSetup().getPhysics(), actor0, localPose0, actor1, localPose1);
 
     // No attached stage means there are no records to register against, so skip the add.
-    const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getActiveAttachedStage();
     if (j && attachedStage && jointPath)
     {
         // Existence-independent minting (ADR-0019 decision 3): this is a create, not a
@@ -385,30 +378,35 @@ const void* createD6JointAtPath(const char* jointPath,
     return j;
 }
 
-void releaseD6Joint(void* jointPtr)
+void releaseD6Joint(omni::physics::AttachHandle attach, void* jointPtr)
 {
-    omni::physx::internal::InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
-    if (jointPtr)
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return;
+
+    const std::shared_ptr<AttachedStage> attachedStage = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    if (!attachedStage || !jointPtr)
+        return;
+    omni::physx::internal::InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
+    for (InternalDatabase::Record& record : db.getRecords())
     {
-        PxJoint* joint = reinterpret_cast<PxJoint*>(jointPtr);
-        size_t index = size_t(joint->userData);
-        if (index < db.getRecords().size())
+        if (record.mType == ePTJoint && record.mPtr == jointPtr)
         {
-            InternalDatabase::Record& objectRecord = db.getRecords()[index];
-            if (objectRecord.mPtr == jointPtr)
-            {
-                InternalJoint* intJoint = (InternalJoint*)objectRecord.mInternalPtr;
-                SAFE_DELETE_SINGLE(intJoint);
-                objectRecord.setRemoved();
-                joint->release();
-            }
+            InternalJoint* joint = static_cast<InternalJoint*>(record.mInternalPtr);
+            SAFE_DELETE_SINGLE(joint);
+            record.setRemoved();
+            static_cast<PxJoint*>(jointPtr)->release();
+            return;
         }
     }
 }
 
-SubscriptionId subscribeToPhysicsOnStepEvents(bool preStep, int order, OnPhysicsStepEventFn onUpdate, void* userData)
+SubscriptionId subscribeToPhysicsOnStepEvents(AttachHandle attach, bool preStep, int order, OnPhysicsStepEventFn onUpdate, void* userData)
 {
-    return OmniPhysX::getInstance().addOnStepEventSubscription(onUpdate, userData, preStep, order);
+    RuntimeExecutionScope execution(attach, true);
+    if (!execution || !usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach))
+        return kInvalidSubscriptionId;
+    return OmniPhysX::getInstance().addOnStepEventSubscription(attach, onUpdate, userData, preStep, order);
 }
 
 void unsubscribeToPhysicsOnStepEvents(SubscriptionId subscriptionId)
@@ -416,9 +414,12 @@ void unsubscribeToPhysicsOnStepEvents(SubscriptionId subscriptionId)
     OmniPhysX::getInstance().removeOnStepEventSubscription(subscriptionId);
 }
 
-SubscriptionId subscribeToPhysicsSimulationEvents(OnPhysicsSimulationEventFn onEvent, void* userData)
+SubscriptionId subscribeToPhysicsSimulationEvents(AttachHandle attach, OnPhysicsSimulationEventFn onEvent, void* userData)
 {
-    return OmniPhysX::getInstance().addStatusEventSubscription(onEvent, userData);
+    RuntimeExecutionScope execution(attach, true);
+    if (!execution || !usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach))
+        return kInvalidSubscriptionId;
+    return OmniPhysX::getInstance().addStatusEventSubscription(attach, onEvent, userData);
 }
 
 void unsubscribeToPhysicsSimulationEvents(SubscriptionId subscriptionId)
@@ -426,27 +427,12 @@ void unsubscribeToPhysicsSimulationEvents(SubscriptionId subscriptionId)
     OmniPhysX::getInstance().removeStatusEventSubscription(subscriptionId);
 }
 
-omni::physics::parse::ObjectKey getObjectKeyForId(ObjectId objectId)
+omni::physics::parse::ObjectKey getObjectKeyForId(omni::physics::AttachHandle attach, ObjectId objectId)
 {
-    const omni::physx::internal::InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
-    if (objectId < db.getRecords().size())
-    {
-        // record.mKey is already the source-side ObjectKey (ADR-0004/ADR-0005); this is a public-ABI
-        // entry point (IPhysx.h) that the tensor views call with an id they hold across frames, so it
-        // can be reached with no attach resolved -- returning the key directly needs no attach lookup
-        // at all, unlike the retired SdfPath rendering this replaces (a caller needing the string
-        // composes it via objectKeyToPath(getObjectKeyForId(id))).
-        //
-        // setRemoved() nulls mPtr/mInternalPtr and sets mType to ePTRemoved but deliberately leaves
-        // mKey untouched (Internal.h), so a removed record's slot still carries its former key. Gate
-        // on liveness here -- the same mType != ePTRemoved check the other Record accessors
-        // (getFullTypedRecord, checkRecordType) already use -- so a removed id answers the documented
-        // invalid sentinel instead of resurrecting its stale key.
-        const InternalDatabase::Record& record = db.getRecords()[objectId];
-        if (record.mType != ePTRemoved)
-            return record.mKey;
-    }
-    return {};
+    RuntimeExecutionScope execution(attach);
+    if (!execution)
+        return {};
+    return attachmentLookup::keyForObject(UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach), objectId);
 }
 
 // Updates transformations for a specific physX scene. If sceneKey is invalid, all scenes except the
@@ -456,70 +442,62 @@ omni::physics::parse::ObjectKey getObjectKeyForId(ObjectId objectId)
 // this function's own body never touches SdfPath -- callers that only have a scene identity by
 // public-ABI uint64_t construct the ObjectKey directly before calling in (see
 // updateTransformationsScene below).
-void updateTransformationsInternal(omni::physics::parse::ObjectKey sceneKey, bool updateToUSD, bool updateVelocitiesToUsd, bool outputVelocitiesLocalSpace)
+RuntimeResult updateTransformationsInternal(AttachHandle attach, uint64_t sceneKey, bool updateToUSD,
+                                             bool updateVelocitiesToUsd, bool outputVelocitiesLocalSpace)
 {
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    CARB_PROFILE_ZONE(0, "updateRenderTransforms");
-    const bool updateParticlesToUsd = omniPhysX.getISettings()->getAsBool(kSettingUpdateParticlesToUsd);
-
-    const PhysXScenesMap& physxScenes = omniPhysX.getPhysXSetup().getPhysXScenes();
-    for (PhysXScenesMap::const_reference ref : physxScenes)
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return RuntimeResult::eBusy;
+    auto owner = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    if (!owner)
+        return RuntimeResult::eInvalidAttachment;
+    bool found = sceneKey == 0;
+    const bool updateParticlesToUsd = owner->getCachedSettings().updateParticlesToUsd;
+    for (AttachedStage::SceneMap::const_reference entry : owner->getPhysXScenes())
     {
-        const PhysXScene* sc = ref.second;
-
-        if (!sceneKey.valid())
-        {
-            if (sc->getUpdateType() == eDisabled)
-                continue;
-        }
-        else
-        {
-            if (sc->getSceneSdfPath() != sceneKey)
-                continue;
-        }
-
-
-        sc->getInternalScene()->updateSimulationOutputs(updateToUSD, updateVelocitiesToUsd, outputVelocitiesLocalSpace, updateParticlesToUsd);
+        PhysXScene* scene = entry.second;
+        if (sceneKey != 0 && scene->getSceneSdfPath().handle != sceneKey)
+            continue;
+        if (sceneKey == 0 && scene->getUpdateType() == eDisabled)
+            continue;
+        found = true;
+        scene->getInternalScene()->updateSimulationOutputs(updateToUSD, updateVelocitiesToUsd,
+                                                          outputVelocitiesLocalSpace, updateParticlesToUsd);
     }
+    return found ? RuntimeResult::eSuccess : RuntimeResult::eInvalidScene;
 }
 
-static void updateTransformations(bool /*useFaceCache*/, bool updateToUSD, bool updateVelocitiesToUsd, bool outputVelocitiesLocalSpace)
+static RuntimeResult updateTransformations(AttachHandle attach, bool /*useFaceCache*/, bool updateToUSD,
+                                          bool updateVelocitiesToUsd, bool outputVelocitiesLocalSpace)
 {
-    updateTransformationsInternal(omni::physics::parse::ObjectKey(), updateToUSD, updateVelocitiesToUsd, outputVelocitiesLocalSpace);
+    return updateTransformationsInternal(attach, 0, updateToUSD, updateVelocitiesToUsd, outputVelocitiesLocalSpace);
 }
 
-static void updateTransformationsScene(uint64_t scenePath, bool updateToUSD, bool updateVelocitiesToUsd)
+static RuntimeResult updateTransformationsScene(AttachHandle attach, uint64_t sceneKey, bool updateToUSD, bool updateVelocitiesToUsd)
 {
-    // scenePath IS the scene's ObjectKey::handle (ADR-0018, a breaking change) -- no SdfPath
-    // decode, no attach lookup. 0 stays the "no specific scene" value.
-    const omni::physics::parse::ObjectKey sceneKey{ scenePath };
-    updateTransformationsInternal(sceneKey, updateToUSD, updateVelocitiesToUsd, false /* unused, only left for API compatibility reasons */);
+    return updateTransformationsInternal(attach, sceneKey, updateToUSD, updateVelocitiesToUsd, false);
 }
 
-static void startSimulation()
+static RuntimeResult startSimulation(AttachHandle attach)
 {
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    omniPhysX.setSimulationStarted(true);
-    // Kit-inspector-only debug filter, unreachable from ovphysx's own ovstage attach path
-    // (see setForceParseOnlySingleScene's comment in usdInterface/UsdInterface.h).
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return RuntimeResult::eBusy;
+    auto owner = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    if (!owner)
+        return RuntimeResult::eInvalidAttachment;
+    OmniPhysX& runtime = OmniPhysX::getInstance();
     {
-        const char* forceSingleScene = omniPhysX.getISettings()->getStringBuffer(kSettingForceParseOnlySingleScene);
-        getPhysXUsdPhysicsInterface().setForceParseOnlySingleScene(forceSingleScene ? forceSingleScene : std::string());
+        InitialStagePopulationScope populationScope(*owner->getPhysXPhysicsInterface(), *owner);
+        processUpdates(*owner, 0.0f);
     }
+    owner->getPhysXPhysicsInterface()->enableObjectChangeNotifications(*owner, true);
+    owner->setSimulationStarted(true);
+    owner->setSimulationRunning(true);
+    runtime.sendSimulationEvent(SimulationEvent::eResumed, attach);
 
-    {
-        // Suppress initial-population notifications; the scope restores both
-        // gates even if update() throws.
-        InitialStagePopulationScope populationScope(getPhysXUsdPhysicsInterface());
-        UsdLoad::getUsdLoad()->update(0.0f);
-    }
-
-    getPhysXUsdPhysicsInterface().enableObjectChangeNotifications(true);
-    // now the initial load is done and notifications should be sent
-
-    omniPhysX.sendSimulationEvent(SimulationEvent::eResumed);
-    omniPhysX.setSimulationRunning(true);
-    omniPhysX.getPhysXSetup().resetPhysXErrorCounter();
+    runtime.getPhysXSetup().resetPhysXErrorCounter();
+    return RuntimeResult::eSuccess;
 }
 
 carb::events::IEventStreamPtr getErrorEventStream()
@@ -527,18 +505,25 @@ carb::events::IEventStreamPtr getErrorEventStream()
     return OmniPhysX::getInstance().getErrorEventStream();
 }
 
-void endSimulation()
+RuntimeResult endSimulation(AttachHandle attach)
 {
-    OmniPhysX::getInstance().resetSimulation();
+    RuntimeExecutionScope operation(attach, true);
+    if (!operation)
+        return RuntimeResult::eBusy;
+    auto owner = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    if (!owner)
+        return RuntimeResult::eInvalidAttachment;
+    OmniPhysX::getInstance().resetSimulation(*owner);
+    return RuntimeResult::eSuccess;
 }
 
 // Benchmark-harness-only USD-stage loading (IPhysxBenchmarks), never called on
 // ovphysx's own ovstage attach path. Producing a valid stage id requires pxr
 // (UsdStage/UsdUtilsStageCache) already resident in-process; with no stage-lifecycle
 // seam installed (production) it reports "no stage".
-static long loadTargetStage(const char* path)
+static long loadTargetStage(const char* path, AttachHandle& attach)
 {
-    return bridgeLoadTargetStage(path);
+    return bridgeLoadTargetStage(path, attach);
 }
 
 // Same benchmark-harness-only reasoning as loadTargetStage above.
@@ -547,118 +532,35 @@ static long int createEmptyStage()
     return bridgeCreateEmptyStage();
 }
 
-static void detachStage()
+static bool loadTargetStage_Id(long stageId, AttachHandle& attach)
 {
-    waitForSimulationCompletion(false);
-    if (UsdLoad::getUsdLoad()->getActiveAttachedStage())
-    {
-        OmniPhysX::getInstance().physXDetach();
-    }
+    return bridgeAttachTargetStageId(stageId, attach);
 }
 
-
-// Same benchmark-harness-only reasoning as loadTargetStage above: with no seam a
-// nonzero stageId can only be a caller error (no UsdUtilsStageCache to resolve it
-// against), so match the "stage not found" outcome rather than silently attaching nothing.
-static bool loadTargetStage_Id(long stageId)
+static AttachHandle attachOvstageWithAdmission(const void* ovstageAttachPayload, uint64_t readOrdinal,
+                                               const PhysxAttachOptions& options, bool startConfiguredRecording,
+                                               bool& busy)
 {
-    detachStage();
+    RuntimeExecutionScope operation(kNoAttach, false);
+    busy = !operation;
+    if (!operation)
+        return kNoAttach;
 
-    if (stageId && !bridgeAttachTargetStageId(stageId))
-        return false;
-
-    return true;
-}
-
-// Shared simulation-attach prologue for both the USD-stage and ovstage entry
-// points: mark the session running, take over stage-update ticking, tear down any
-// previous attach, and flag the attached-stage state. The only divergence between
-// the two public entries is what gets attached afterwards (a USD stage id vs an
-// ovstage payload).
-static void beginSimulationAttach()
-{
     OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    omniPhysX.setSimulationRunning(true);
-    omniPhysX.getStageUpdate().detachStageUpdate();
-    detachStage();
-    omniPhysX.setSimulationAttachedStage(true);
-}
-
-bool physxSimulationAttachOvstage(const void* ovstageAttachPayload, uint64_t readOrdinal)
-{
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    bool sessionMutationStarted = false;
-    const auto rollbackAttach = [&]() noexcept -> bool
-    {
-        UsdLoad* usdLoad = UsdLoad::getUsdLoad();
-        try
-        {
-            if (usdLoad->getActiveAttachedStage())
-                omniPhysX.physXDetach();
-        }
-        catch (...)
-        {
-            CARB_LOG_ERROR("Failed to clean up a partial ovstage attachment");
-            if (AttachedStage* remainingStage = usdLoad->getActiveAttachedStage())
-            {
-                try
-                {
-                    usdLoad->detach(static_cast<uint64_t>(remainingStage->getStageId()));
-                }
-                catch (...)
-                {
-                    CARB_LOG_ERROR("Forced cleanup of a partial ovstage attachment failed");
-                }
-            }
-        }
-
-        if (usdLoad->getActiveAttachedStage())
-        {
-            CARB_LOG_ERROR("Ovstage attach rollback left an active AttachedStage; session flags remain attached");
-            return false;
-        }
-
-        try
-        {
-            omniPhysX.getStageUpdate().attachStageUpdate();
-        }
-        catch (...)
-        {
-            CARB_LOG_ERROR("Failed to restore stage-update ownership after ovstage attach failure");
-        }
-        omniPhysX.setSimulationRunning(false);
-        omniPhysX.setSimulationAttachedStage(false);
-        return true;
-    };
-
     try
     {
-        // Resolve and classify the optional compatibility stage before changing
-        // simulation-session state. The payload remains caller-owned and unmodified.
-        uint64_t candidateStageId = 0;
-        const ovstage_api_status_t queryStatus =
-            omni::physics::ovstage::queryBackingUsdStageId(ovstageAttachPayload, candidateStageId);
-
-        // Resolved below only when the candidate id is actually resident in this runtime's
-        // UsdUtilsStageCache (via the installed stage-lifecycle seam); stays empty otherwise.
+        // Validate the descriptor before preparing a candidate. Production passes
+        // no backing id; only USD-aware developer callers opt into co-attachment.
+        const auto* payload = static_cast<const omni::physics::ovstage::OvstageAttach*>(ovstageAttachPayload);
+        if (!payload || !payload->instance)
+        {
+            CARB_LOG_ERROR("ovstage attach requires a non-null payload and instance");
+            return kNoAttach;
+        }
+        const uint64_t candidateStageId = payload->usdStageId;
         AttachOvstageBackingStageHandle backingStageHandle{};
         uint64_t effectiveBackingStageId = 0;
-        if (queryStatus == OVSTAGE_ERROR_NOT_SUPPORTED)
-        {
-            // A genuinely backing-less provider uses the supported ovstage-only path.
-        }
-        else if (queryStatus != OVSTAGE_OK)
-        {
-            CARB_LOG_ERROR("Could not query the ovstage backing USD stage id (status %u)",
-                           static_cast<unsigned int>(queryStatus));
-            return false;
-        }
-        else if (candidateStageId == 0)
-        {
-            CARB_LOG_ERROR("ovstage returned OVSTAGE_OK with an invalid zero backing USD stage id");
-            return false;
-        }
-        else
+        if (candidateStageId != 0)
         {
             if (candidateStageId > static_cast<uint64_t>(std::numeric_limits<long>::max()))
             {
@@ -686,17 +588,16 @@ bool physxSimulationAttachOvstage(const void* ovstageAttachPayload, uint64_t rea
             }
         }
 
-        sessionMutationStarted = true;
-        beginSimulationAttach();
-        const bool attached = omniPhysX.physXAttachOvstage(
-            ovstageAttachPayload, readOrdinal, backingStageHandle, effectiveBackingStageId);
+        const AttachHandle attached = omniPhysX.physXAttachOvstage(ovstageAttachPayload, readOrdinal,
+            backingStageHandle, effectiveBackingStageId, options, startConfiguredRecording);
         if (!attached)
-        {
-            if (!rollbackAttach())
-                CARB_LOG_ERROR("Ovstage attach failed and rollback could not release the caller payload");
-            return false;
-        }
-        return true;
+            return kNoAttach;
+
+        // Publish session ownership only after this candidate has succeeded.
+        // No existing attachment participates in preparation or rollback.
+
+
+        return attached;
     }
     catch (const std::exception& error)
     {
@@ -707,19 +608,24 @@ bool physxSimulationAttachOvstage(const void* ovstageAttachPayload, uint64_t rea
         CARB_LOG_ERROR("ovstage attach failed with an unknown exception");
     }
 
-    if (sessionMutationStarted)
-    {
-        if (!rollbackAttach())
-            CARB_LOG_ERROR("Ovstage attach exception rollback could not release the caller payload");
-    }
-    return false;
+    return kNoAttach;
 }
 
-bool physxSimulationUpdateFromOvStage(uint64_t fromOrdinal, uint64_t toOrdinal)
+AttachHandle physxSimulationAttachOvstage(const void* payload, uint64_t ordinal, const PhysxAttachOptions& options)
 {
+    bool busy = false;
+    return attachOvstageWithAdmission(payload, ordinal, options, /*startConfiguredRecording=*/true, busy);
+}
+
+bool physxSimulationUpdateFromOvStage(AttachHandle attach, uint64_t fromOrdinal, uint64_t toOrdinal)
+{
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return false;
+
     // Pull + apply the ovstage change delta for the explicit ordinal range
     // [fromOrdinal, toOrdinal] (ADR-0003 M3). The caller advanced the ordinals.
-    return OmniPhysX::getInstance().physXUpdateFromOvStage(fromOrdinal, toOrdinal);
+    return OmniPhysX::getInstance().physXUpdateFromOvStage(attach, fromOrdinal, toOrdinal);
 }
 
 namespace
@@ -762,10 +668,14 @@ bool hasPathPrefix(const std::string& path, const std::string& prefix)
 }
 } // namespace
 
-bool physxSimulationCloneEnvironments(const char* sourcePath, const char* const* targetPaths,
+bool physxSimulationCloneEnvironments(AttachHandle attachHandle, const char* sourcePath, const char* const* targetPaths,
                                       uint32_t numTargets, const float* anchorTransforms,
                                       const uint32_t* envIds, bool useEnvIds)
 {
+    RuntimeExecutionScope operation(attachHandle);
+    if (!operation)
+        return false;
+
     // Drives the PhysX SDK replicator. sourcePath + targetPaths are plain strings, so no USD
     // type crosses the ABI. Each copy is named by targetPaths[i] (rename callback) and placed at
     // anchorTransforms[i] (a [numTargets*7] pose array, or null to co-locate on the source). envIds
@@ -774,21 +684,12 @@ bool physxSimulationCloneEnvironments(const char* sourcePath, const char* const*
     //
     if (!sourcePath || !targetPaths || numTargets == 0)
         return false;
-    // Resolve the active attach itself: this entry point takes no attach argument, so it targets
-    // whichever attach is live, and the caller (ovphysx_clone) reports a wrong cause when the
-    // refusal here is silent.
-    AttachedStage* activeStage = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    auto activeStage = UsdLoad::getUsdLoad()->acquireAttachment(attachHandle);
     if (!activeStage)
     {
-        CARB_LOG_ERROR("clone: no stage is attached; attach a stage before cloning environments.");
+        OVX_RUNTIME_ERROR("clone: an exact live attachment handle is required.");
         return false;
     }
-    // No backing-stage check: the replicator enumerates the source subtree from the object DB's
-    // prim hierarchy, not from USD, so cloning works on a stageless (USD-free) attach. Everything
-    // below names that attach by its handle (ADR-0016), which is nonzero and unique for every live
-    // attach including a stageless one -- unlike its stage id, which is 0 both for "USD-free
-    // source" and for "nothing attached", and which a later re-attach can reuse.
-    const AttachHandle attachHandle = activeStage->getAttachHandle();
 
     // Validate the source and every target is a non-root absolute prim path. ovphysx_clone
     // rejects empty/NUL/duplicate/source-equal targets C-first but treats the strings as opaque,
@@ -815,7 +716,7 @@ bool physxSimulationCloneEnvironments(const char* sourcePath, const char* const*
         {
             if (envIds[k] >= 0x00FFFFFFu)
             {
-                CARB_LOG_ERROR("clone: envIds[%u] = %u is out of range; env ids must be < 0x00FFFFFF "
+                OVX_RUNTIME_ERROR("clone: envIds[%u] = %u is out of range; env ids must be < 0x00FFFFFF "
                                "(PhysX supports at most 1<<24 environments; the runtime id is "
                                "envIds[i] + 1).",
                                k, envIds[k]);
@@ -853,7 +754,7 @@ bool physxSimulationCloneEnvironments(const char* sourcePath, const char* const*
                     const ObjectIdMap* entries = attachedStage->getObjectIds(subKey);
                     if (entries && !entries->empty())
                     {
-                        CARB_LOG_ERROR(
+                        OVX_RUNTIME_ERROR(
                             "clone: target '%s' is already populated with physics (at '%s'); cloning onto "
                             "a populated target would create duplicate actors. Use an empty target path.",
                             targetPaths[k], targetSubPathStr.c_str());
@@ -879,7 +780,7 @@ bool physxSimulationCloneEnvironments(const char* sourcePath, const char* const*
             {
                 if (hasPathPrefix(target, recorded) || hasPathPrefix(recorded, target))
                 {
-                    CARB_LOG_ERROR(
+                    OVX_RUNTIME_ERROR(
                         "clone: target '%s' overlaps the earlier runtime clone target '%s' on this "
                         "attach (same path or ancestor/descendant); cloning there would create "
                         "duplicate live actors. Use a disjoint target path.",
@@ -891,7 +792,7 @@ bool physxSimulationCloneEnvironments(const char* sourcePath, const char* const*
             {
                 if (hasPathPrefix(target, sibling) || hasPathPrefix(sibling, target))
                 {
-                    CARB_LOG_ERROR(
+                    OVX_RUNTIME_ERROR(
                         "clone: targets '%s' and '%s' overlap within one clone() call (same path or "
                         "ancestor/descendant); each copy needs a disjoint target path.",
                         targetPaths[k], sibling.c_str());
@@ -908,39 +809,18 @@ bool physxSimulationCloneEnvironments(const char* sourcePath, const char* const*
     cloneTargetPaths.reserve(numTargets);
     for (uint32_t k = 0; k < numTargets; ++k)
         cloneTargetPaths.emplace_back(targetPaths[k]);
-    CloneRenameUserData renameUserData{ &cloneTargetPaths, activeStage };
+    CloneRenameUserData renameUserData{ &cloneTargetPaths, activeStage.get() };
 
     // Register after attach (the source is already parsed). Under the attach-time creation-id mode
     // (kSettingReplicatorEnvIdsOnAttach, set by ovphysx before attaching), the source's bodies hold
     // env id 0, so with useEnvIds the source (env 0) and clones (1..N) are collision-safe even when
     // co-located. useEnvIds stays an optional GPU-broadphase filtering pass-through.
-    omni::physx::IPhysxReplicator& replicator = omni::physx::runtime::getPhysxReplicatorInterface();
     omni::physx::IReplicatorCallback cb{};
     cb.hierarchyRenameFn = &replicatorCloneRename;
     cb.userData = &renameUserData;
-    replicator.registerReplicator(attachHandle, cb);
-
-    // The registration is live only for the synchronous replicate() below. Always drop it on the
-    // way out, including when replicate() throws: a lingering entry leaks a PhysXReplicator, and
-    // getReplicator() would keep steering this attach down the replicator path instead of a normal
-    // parse, breaking reset_stage() reload. Keying on the attach handle confines that leak to the
-    // attach it belongs to -- a stage id could be reused by a later re-attach, which is what made
-    // a stale entry hijack an unrelated attach. unregisterReplicator also clears the
-    // replicator-stage flag. The scope guard makes this exception-safe.
-    struct ReplicatorUnregisterGuard
-    {
-        omni::physx::IPhysxReplicator& replicator;
-        AttachHandle attachHandle;
-        ~ReplicatorUnregisterGuard() { replicator.unregisterReplicator(attachHandle); }
-    } unregisterGuard{ replicator, attachHandle };
-
-    // Explicit per-clone world poses + optional caller-supplied logical env ids, applied to each
-    // copy during the replicate below. Both are set fresh per call (null clears).
-    if (PhysXReplicator* concrete = OmniPhysX::getInstance().getReplicator(attachHandle))
-    {
-        concrete->setCloneTransforms(anchorTransforms, numTargets);
-        concrete->setCloneEnvIds(envIds, numTargets);
-    }
+    PhysXReplicator replicator(cb);
+    replicator.setCloneTransforms(anchorTransforms, numTargets);
+    replicator.setCloneEnvIds(envIds, numTargets);
 
     // `path` is the source's ObjectKey.handle (ADR-0018).
     // `sourcePath` is validated above and always resolves against `activeStage`'s already-live
@@ -962,53 +842,90 @@ bool physxSimulationCloneEnvironments(const char* sourcePath, const char* const*
     return cloned;
 }
 
-bool physxSimulationAttach(long stageId)
+AttachHandle physxSimulationAttach(long stageId, const PhysxAttachOptions& options)
 {
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    if (stageId && omniPhysX.isSimulationAttachedStage() && stageId == UsdLoad::getUsdLoad()->getActiveStageId())
-    {
-        CARB_LOG_ERROR("Stage %d already attached.", stageId);
+    RuntimeExecutionScope operation(kNoAttach, false);
+    if (!operation)
         return false;
-    }
 
-    beginSimulationAttach();
-    return loadTargetStage_Id(stageId);
-}
-
-void physxSimulationDetach()
-{
     OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    detachStage();
-
-    omniPhysX.getStageUpdate().attachStageUpdate();
-
-    omniPhysX.setSimulationRunning(false);
-    omniPhysX.setSimulationAttachedStage(false);
-}
-
-static long getPhysxSimulationAttachedStage()
-{
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    if (omniPhysX.isSimulationAttachedStage())
+    try
     {
-        return UsdLoad::getUsdLoad()->getActiveStageId();
+        return omniPhysX.physXAttach(stageId, true, options);
     }
-    return 0l;
+    catch (const std::exception& error)
+    {
+        CARB_LOG_ERROR("USD attachment failed: %s", error.what());
+    }
+    catch (...)
+    {
+        CARB_LOG_ERROR("USD attachment failed with an unknown exception");
+    }
+    return kNoAttach;
 }
 
-static uint64_t getPhysxSimulationAttachHandle()
+RuntimeResult physxSimulationDetach(AttachHandle attach)
 {
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    if (omniPhysX.isSimulationAttachedStage())
+    if (attach == kNoAttach || attach == kActiveAttach)
+        return RuntimeResult::eInvalidAttachment;
+    RuntimeExecutionScope configuration(kNoAttach);
+    if (!configuration)
+        return RuntimeResult::eBusy;
+    RuntimeExecutionScope operation(attach, true);
+    if (!operation)
+        return RuntimeResult::eBusy;
+    OmniPhysX& runtime = OmniPhysX::getInstance();
+    if (!runtime.physXDetach(attach))
+        return RuntimeResult::eInvalidAttachment;
+    return RuntimeResult::eSuccess;
+}
+
+static long getPhysxSimulationAttachedStage(AttachHandle attach)
+{
+    auto owner = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    return owner ? owner->getStageId() : 0;
+}
+
+
+
+// Recording reconfigures the one SDK-wide transport. Hold each published owner's
+// admission for this short call; no owner can dispatch while the transport changes.
+// The caller also holds the configuration admission, preventing candidate publication.
+bool omni::physx::admitIdleRecordingOwners(std::vector<std::unique_ptr<RuntimeExecutionScope>>& owners)
+{
+    for (const auto& entry : UsdLoad::getUsdLoad()->getAttachedStages())
     {
-        return UsdLoad::getUsdLoad()->getActiveAttachHandle();
+        owners.emplace_back(std::make_unique<RuntimeExecutionScope>(entry.first));
+        if (!*owners.back())
+            return false;
     }
-    return UsdLoad::kNoAttachHandle;
+    return true;
+}
+
+namespace
+{
+class RecordingAdmission
+{
+public:
+    RecordingAdmission() : mAuthoring(runtimeAuthoringMutex(),std::try_to_lock),
+        mConfiguration(omni::physics::kNoAttach)
+    {
+        mAdmitted=mAuthoring.owns_lock() && mConfiguration && admitIdleRecordingOwners(mOwners);
+    }
+    explicit operator bool() const noexcept {return mAdmitted;}
+private:
+    std::unique_lock<std::shared_mutex> mAuthoring;
+    RuntimeExecutionScope mConfiguration;
+    std::vector<std::unique_ptr<RuntimeExecutionScope>> mOwners;
+    bool mAdmitted=false;
+};
 }
 
 static OmniPvdRecordingResult startOmniPvdRecording(
     uint32_t transport, const char* target, uint16_t tcpPort, uint32_t tcpTimeoutMs)
 {
+    RecordingAdmission admission;
+    if (!admission) return OmniPvdRecordingResult::eBusy;
     if (!target)
         return OmniPvdRecordingResult::eError;
 
@@ -1034,12 +951,19 @@ static OmniPvdRecordingResult startOmniPvdRecording(
 
 static OmniPvdRecordingResult stopOmniPvdRecording()
 {
+    RecordingAdmission admission;
+    if (!admission) return OmniPvdRecordingResult::eBusy;
     return OmniPhysX::getInstance().getPhysXSetup().stopOmniPvdRecording();
 }
 
-static bool isOmniPvdRecording()
+static RuntimeResult getOmniPvdRecordingStatus(bool* recording)
 {
-    return OmniPhysX::getInstance().getPhysXSetup().isOmniPvdRecording();
+    RecordingAdmission admission;
+    if (!admission) return RuntimeResult::eBusy;
+    if (!recording)
+        return RuntimeResult::eInvalidArgument;
+    *recording = OmniPhysX::getInstance().getPhysXSetup().isOmniPvdRecording();
+    return RuntimeResult::eSuccess;
 }
 
 void addCrashreporterMetadata()
@@ -1188,6 +1112,7 @@ OMNI_PHYSX_RUNTIME_API void startup()
     fillInterface(interfaces.tensorApi);
     omni::physx::optionalCuda::setProvider(getOptionalCudaForShim);
     addCrashreporterMetadata();
+    initializeRuntimeCallbacks();
     omniPhysX.onStartup();
 
     // PhysX tensors initialize through the direct runtime accessors.
@@ -1206,6 +1131,7 @@ OMNI_PHYSX_RUNTIME_API void shutdown()
     omni::physx::tensors::tensorsShutdown();
     OmniPhysX& omniPhysX = *omniPhysXPtr;
     omniPhysX.onShutdown();
+    shutdownRuntimeCallbacks();
     omni::physx::foundation::shutdownRuntime();
     omni::physx::optionalCuda::setProvider(nullptr);
     omniPhysX.setPhysxRuntimeStarted(false);
@@ -1433,6 +1359,77 @@ OMNI_PHYSX_RUNTIME_API IOptionalCuda* tryGetOptionalCudaInterface()
     return omniPhysX ? &omniPhysX->getRuntimeInterfaces().optionalCuda : nullptr;
 }
 
+// @implements REQ-ATTACH-SERVICES-001
+// @covers AC-3
+OMNI_PHYSX_RUNTIME_API bool snapshotAttachDefaults(PhysxAttachmentSettings& attachment,
+                                                  PhysxSharedSettings& shared)
+{
+    RuntimeExecutionScope operation(kNoAttach);
+    if (!operation)
+        return false;
+    OmniPhysX* owner = tryGetRuntimeOwner();
+    if (!owner)
+        return false;
+    const PhysxAttachmentSettings attachmentCopy = owner->getCachedSettings();
+    const PhysxSharedSettings sharedCopy = owner->getPhysXSetup().getSharedSettingsDefaults();
+    attachment = attachmentCopy;
+    shared = sharedCopy;
+    return true;
+}
+
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-4
+OMNI_PHYSX_RUNTIME_API AttachHandle attachOvstageWithAdmission(const void* payload, uint64_t ordinal,
+                                                               const PhysxAttachOptions& options,
+                                                               bool startConfiguredRecording, bool& busy)
+{
+    return ::attachOvstageWithAdmission(payload, ordinal, options, startConfiguredRecording, busy);
+}
+
+// @implements REQ-ATTACH-SERVICES-001
+// @covers AC-3
+OMNI_PHYSX_RUNTIME_API bool snapshotAttachedSettings(AttachHandle attach,
+                                                     PhysxAttachmentSettings& attachment,
+                                                     PhysxSharedSettings& shared)
+{
+    RuntimeExecutionScope operation(attach);
+    if (!operation || !tryGetRuntimeOwner())
+        return false;
+    auto owner = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    if (!owner)
+        return false;
+    attachment = owner->getCachedSettings();
+    shared = owner->getSharedSettings();
+    return true;
+}
+
+// @implements REQ-ATTACH-SERVICES-001
+// @covers AC-7
+OMNI_PHYSX_RUNTIME_API bool setAttachmentContactProcessingDisabled(AttachHandle attach, bool disabled)
+{
+    RuntimeExecutionScope operation(attach);
+    if (!operation || !tryGetRuntimeOwner())
+        return false;
+    auto owner = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    if (!owner)
+        return false;
+    owner->setContactProcessingDisabled(disabled);
+    return true;
+}
+
+OMNI_PHYSX_RUNTIME_API bool isRuntimeExecuting() noexcept
+{
+    if (getRuntimeCallbackDepth() != 0)
+        return true;
+    return runtimeOperationCount().load(std::memory_order_relaxed) != 0;
+}
+
+OMNI_PHYSX_RUNTIME_API bool isRuntimeBusy(AttachHandle attach, bool allowPendingOwner) noexcept
+{
+    RuntimeExecutionScope operation(attach, allowPendingOwner);
+    return !operation;
+}
+
 OMNI_PHYSX_RUNTIME_API IPhysxSimulation& getPhysxSimulationInterface()
 {
     return getRuntimeOwner().getRuntimeInterfaces().physxSimulation;
@@ -1479,26 +1476,21 @@ static void resetSettings()
     PhysXSettings::getInstance().resetAllSettings();
 }
 
-static void bmOverwriteGPUSetting(bool enableGPU)
-{
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    omniPhysX.setGpuPipelineOverride(enableGPU ? 1 : 0);
-    omniPhysX.getISettings()->setInt(kSettingOverrideGPU, omniPhysX.getGpuPipelineOverride());
-    omniPhysX.releasePhysXScenes();
-}
-
+// These setters change defaults for future attachments only. Explicit descriptor
+// values take precedence and already attached scenes retain their snapshots.
 static void overwriteGPUSetting(int val)
 {
-    {
-        if (OmniPhysX::getInstance().hasSimulationStarted()) {
-            CARB_LOG_WARN("Physics simulation has started. Not possible to set the GPU parameters.");
-            return;
-        }
-    }
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    omniPhysX.setGpuPipelineOverride(val);
-    omniPhysX.getISettings()->setInt(kSettingOverrideGPU, val);
-    resetPhysX();
+    RuntimeExecutionScope operation(kNoAttach);
+    if (!operation || val < -1 || val > 1)
+        return;
+    OmniPhysX& runtime = OmniPhysX::getInstance();
+    runtime.setGpuPipelineOverride(val);
+    runtime.getISettings()->setInt(kSettingOverrideGPU, val);
+}
+
+static void bmOverwriteGPUSetting(bool enableGPU)
+{
+    overwriteGPUSetting(enableGPU ? 1 : 0);
 }
 
 static int getOverwriteGPUSetting()
@@ -1508,28 +1500,20 @@ static int getOverwriteGPUSetting()
 
 static void overwriteSolverType(int val)
 {
-    {
-        if (OmniPhysX::getInstance().hasSimulationStarted()) {
-            CARB_LOG_WARN("Physics simulation has started. Not possible to set the solver type.");
-            return;
-        }
-    }
+    RuntimeExecutionScope operation(kNoAttach);
+    if (!operation || val < -1 || val > 1)
+        return;
     OmniPhysX::getInstance().setSolverTypeOverride(val);
-    resetPhysX();
 }
 
 static void setThreadCount(uint32_t threadCount)
 {
-    {
-        if (OmniPhysX::getInstance().hasSimulationStarted()) {
-            CARB_LOG_WARN("Physics simulation has started. Not possible to set the thread count.");
-            return;
-        }
-    }
-    OmniPhysX::getInstance().getPhysXSetup().setThreadCount(threadCount);
-    OmniPhysX::getInstance().getPhysXSetup().createCpuDispatcher(threadCount);
-    OmniPhysX::getInstance().getISettings()->setInt(kSettingNumThreads, threadCount);
-    resetPhysX();
+    RuntimeExecutionScope operation(kNoAttach);
+    if (!operation || threadCount >= 256)
+        return;
+    OmniPhysX& runtime = OmniPhysX::getInstance();
+    // Acquisition creates the dispatcher from these validated defaults.
+    runtime.getISettings()->setInt(kSettingNumThreads, threadCount);
 }
 
 static void reconnectPVD()
@@ -1543,66 +1527,49 @@ static void reconnectPVD()
     }
 }
 
-bool saveSceneToRepX(const char* filepath)
+bool saveSceneToRepX(AttachHandle attach, const char* filepath)
 {
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    omni::physx::internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
-    bool sceneEmpty = false;
-    if (db.getRecords().size() == 1)
-    {
-        sceneEmpty = true;
-    }
-
-    // flush changes or load scene
-    forceLoadPhysicsFromUSD();
-
-    const PhysXScenesMap& physxScenes = omniPhysX.getPhysXSetup().getPhysXScenes();
-    if (physxScenes.empty())
+    RuntimeExecutionScope operation(attach);
+    if (!operation || !filepath || !*filepath)
         return false;
-
-    PxCollection* collectionSdk = ::physx::PxCollectionExt::createCollection(*OmniPhysX::getInstance().getPhysXSetup().getPhysics());
-    if (!collectionSdk)
+    auto owner = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    if (!owner || owner->getPhysXScenes().empty())
         return false;
-
-    PxSerializationRegistry* sr = PxSerialization::createSerializationRegistry(*OmniPhysX::getInstance().getPhysXSetup().getPhysics());
-
-    std::vector<PxCollection*> sceneCollections;
-    for (PhysXScenesMap::const_reference ref : physxScenes)
+    PxPhysics& physics = *OmniPhysX::getInstance().getPhysXSetup().getPhysics();
+    PxCollection* collection = PxCreateCollection();
+    PxSerializationRegistry* serializers = PxSerialization::createSerializationRegistry(physics);
+    if (!collection || !serializers)
     {
-        PxCollection* collectionScene = PxCollectionExt::createCollection(*ref.second->getScene());
-        if (!collectionScene)
-            continue;
-
-        collectionSdk->add(*collectionScene);
-        sceneCollections.push_back(collectionScene);
+        if (collection) collection->release();
+        if (serializers) serializers->release();
+        return false;
     }
-
-    PxSerialization::complete(*collectionSdk, *sr, NULL);
-
-    PxDefaultFileOutputStream theStream(filepath);
-    PxSerialization::serializeCollectionToXml(theStream, *collectionSdk, *sr);
-
-    for (size_t i = 0; i < sceneCollections.size(); i++)
+    bool success = true;
+    for (AttachedStage::SceneMap::const_reference entry : owner->getPhysXScenes())
     {
-        sceneCollections[i]->release();
+        PxCollection* scene = PxCollectionExt::createCollection(*entry.second->getScene());
+        if (!scene)
+        {
+            success = false;
+            break;
+        }
+        collection->add(*scene);
+        scene->release();
     }
-    collectionSdk->release();
-
-    sr->release();
-
-    // release if scene was empty
-    if (sceneEmpty)
-        releasePhysicsObjects();
-
-    return true;
+    if (success)
+    {
+        PxSerialization::complete(*collection, *serializers, nullptr);
+        PxDefaultFileOutputStream stream(filepath);
+        success = stream.isValid() && PxSerialization::serializeCollectionToXml(stream, *collection, *serializers);
+    }
+    collection->release();
+    serializers->release();
+    return success;
 }
 
 static void bmSetThreadCount(uint32_t threadCount)
 {
-    OmniPhysX::getInstance().getPhysXSetup().setThreadCount(threadCount);
-    OmniPhysX::getInstance().getPhysXSetup().createCpuDispatcher(threadCount);
-    OmniPhysX::getInstance().getISettings()->setInt(kSettingNumThreads, threadCount);
-    resetPhysX();
+    setThreadCount(threadCount);
 }
 
 static void bmEnablePVDProfile(bool enablePVD)
@@ -1617,6 +1584,7 @@ static void bmEnableProfile(bool enableProfle)
 
 static void bmGetProfileStats(std::vector<PhysicsProfileStats>& stats)
 {
+    std::lock_guard<carb::tasking::MutexWrapper> lock(OmniPhysX::getInstance().profileMutex);
     stats.clear();
     const ProfileStatsVector& profileStats = OmniPhysX::getInstance().getOmniPhysXProfileStats();
     for (size_t i = profileStats.size(); i--;)
@@ -1645,20 +1613,20 @@ typedef void (*applySimFn)(const InternalDatabase::Record* target, void* data);
 
 // `path` is an ObjectKey::handle value (ADR-0018/ADR-0019), not an SdfPath-bit encoding.
 // Test callers must mint it via testKeyFor(...).handle, not sdfPathToInt(...).
-static bool applySimulationInterfaceFunctionToPointInstancer(AttachHandle attachHandle, uint64_t path, const applySimFn* applyFunction, void* data, uint32_t protoIndex)
+static bool applySimulationInterfaceFunctionToPointInstancer(AttachHandle attachHandle, uint64_t path, const applySimFn* applyFunction, void* data, uint32_t protoIndex, bool preStepForce = false)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->resolveAttach(attachHandle);
+    RuntimeExecutionScope operation(attachHandle, false, preStepForce);
+    if (!operation)
+        return false;
+
+    auto attachedStage = UsdLoad::getUsdLoad()->acquireAttachment(attachHandle);
     if (!attachedStage)
     {
-        CARB_LOG_ERROR("SimulationInterface instanced function could not resolve attach handle %llu: it is either "
-                       "kNoAttach, or a handle whose attach has since been detached (a handle is minted per attach "
-                       "and never reused). Pass IPhysxSimulation::getAttachHandle(), or kActiveAttach for the lone "
-                       "active attach.",
+        CARB_LOG_ERROR("SimulationInterface function requires an exact live attachment handle: %llu",
                        static_cast<unsigned long long>(attachHandle));
         return false;
     }
-    const omni::physx::internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const omni::physx::internal::InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
     const ObjectIdMap* entries = attachedStage->getObjectIds(omni::physics::parse::ObjectKey{ path });
     if (!entries)
     {
@@ -1747,20 +1715,20 @@ static bool applySimulationInterfaceFunctionToPointInstancer(AttachHandle attach
     return true;
 }
 
-static bool applySimulationInterfaceFunction(AttachHandle attachHandle, uint64_t path, const applySimFn* applyFunction, void* data)
+static bool applySimulationInterfaceFunction(AttachHandle attachHandle, uint64_t path, const applySimFn* applyFunction, void* data, bool preStepForce = false)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->resolveAttach(attachHandle);
+    RuntimeExecutionScope operation(attachHandle, false, preStepForce);
+    if (!operation)
+        return false;
+
+    auto attachedStage = UsdLoad::getUsdLoad()->acquireAttachment(attachHandle);
     if (!attachedStage)
     {
-        CARB_LOG_ERROR("SimulationInterface function could not resolve attach handle %llu: it is either kNoAttach, "
-                       "or a handle whose attach has since been detached (a handle is minted per attach and never "
-                       "reused). Pass IPhysxSimulation::getAttachHandle(), or kActiveAttach for the lone active "
-                       "attach.",
+        CARB_LOG_ERROR("SimulationInterface function requires an exact live attachment handle: %llu",
                        static_cast<unsigned long long>(attachHandle));
         return false;
     }
-    const omni::physx::internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const omni::physx::internal::InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
     const ObjectIdMap* entries = attachedStage->getObjectIds(omni::physics::parse::ObjectKey{ path });
     if (!entries)
     {
@@ -1783,20 +1751,20 @@ static bool applySimulationInterfaceFunction(AttachHandle attachHandle, uint64_t
 }
 
 // ObjectKey overload for callers that already hold the identity (ADR-0019).
-static bool applySimulationInterfaceFunction(AttachHandle attachHandle, omni::physics::parse::ObjectKey key, const applySimFn* applyFunction, void* data)
+static bool applySimulationInterfaceFunction(AttachHandle attachHandle, omni::physics::parse::ObjectKey key, const applySimFn* applyFunction, void* data, bool preStepForce = false)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->resolveAttach(attachHandle);
+    RuntimeExecutionScope operation(attachHandle, false, preStepForce);
+    if (!operation)
+        return false;
+
+    auto attachedStage = UsdLoad::getUsdLoad()->acquireAttachment(attachHandle);
     if (!attachedStage)
     {
-        CARB_LOG_ERROR("SimulationInterface function could not resolve attach handle %llu: it is either kNoAttach, "
-                       "or a handle whose attach has since been detached (a handle is minted per attach and never "
-                       "reused). Pass IPhysxSimulation::getAttachHandle(), or kActiveAttach for the lone active "
-                       "attach.",
+        CARB_LOG_ERROR("SimulationInterface function requires an exact live attachment handle: %llu",
                        static_cast<unsigned long long>(attachHandle));
         return false;
     }
-    const omni::physx::internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const omni::physx::internal::InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
     const ObjectIdMap* entries = attachedStage->getObjectIds(key);
     if (!entries)
     {
@@ -1844,7 +1812,7 @@ static void addForceAtPosInstanced(AttachHandle attachHandle, uint64_t path, con
 {
     addForceAtPosData forceData = {force, pos, mode};
     const applySimFn function = addForceAtPosInternal;
-    if(!applySimulationInterfaceFunctionToPointInstancer(attachHandle, path, &function, &forceData, protoIndex))
+    if(!applySimulationInterfaceFunctionToPointInstancer(attachHandle, path, &function, &forceData, protoIndex, true))
     {
         CARB_LOG_ERROR("Error executing addForceAtPosInstanced.");
     }
@@ -1854,7 +1822,7 @@ static void addForceAtPos(AttachHandle attachHandle, uint64_t path, const carb::
 {
     addForceAtPosData forceData = {force, pos, mode};
     const applySimFn function = addForceAtPosInternal;
-    if(!applySimulationInterfaceFunction(attachHandle, path, &function, &forceData))
+    if(!applySimulationInterfaceFunction(attachHandle, path, &function, &forceData, true))
     {
         CARB_LOG_ERROR("Error executing addForceAtPos.");
     }
@@ -1885,9 +1853,9 @@ static void addTorqueInstanced(AttachHandle attachHandle, uint64_t path, const c
 {
     addTorqueData torqueData = {torque, ForceModeType::eFORCE};
     const applySimFn function = addTorqueInsternal;
-    if(!applySimulationInterfaceFunctionToPointInstancer(attachHandle, path, &function, &torqueData, protoIndex))
+    if(!applySimulationInterfaceFunctionToPointInstancer(attachHandle, path, &function, &torqueData, protoIndex, true))
     {
-        CARB_LOG_ERROR("Error executing addForceAtPosInstanced.");
+        CARB_LOG_ERROR("Error executing addTorqueInstanced.");
     }
 }
 
@@ -1895,7 +1863,7 @@ static void addTorque(AttachHandle attachHandle, uint64_t path, const carb::Floa
 {
     addTorqueData torqueData = {torque, ForceModeType::eFORCE};
     const applySimFn function = addTorqueInsternal;
-    if(!applySimulationInterfaceFunction(attachHandle, path, &function, &torqueData))
+    if(!applySimulationInterfaceFunction(attachHandle, path, &function, &torqueData, true))
     {
         CARB_LOG_ERROR("Error executing addTorque.");
     }
@@ -1934,10 +1902,9 @@ static bool getRigidBodyTransformationInstanced(AttachHandle attachHandle, uint6
 }
 #endif
 
-static bool getRigidBodyTransformation(omni::physics::parse::ObjectKey key, carb::Float3& pos, carb::Float4& rot)
+static bool getRigidBodyTransformation(omni::physics::AttachHandle attach, omni::physics::parse::ObjectKey key, carb::Float3& pos, carb::Float4& rot)
 {
-    const uint64_t stageId = UsdLoad::getUsdLoad()->getActiveStageId();
-    const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStage(stageId);
+    const std::shared_ptr<AttachedStage> attachedStage = UsdLoad::getUsdLoad()->acquireAttachment(attach);
     if (!attachedStage)
     {
         CARB_LOG_ERROR("Error executing getRigidBodyTransformation.");
@@ -1945,8 +1912,7 @@ static bool getRigidBodyTransformation(omni::physics::parse::ObjectKey key, carb
     }
     getRigidBodyTransformData transformData = {pos, rot};
     const applySimFn function = getRigidBodyTransformationInternal;
-    // Key-only entry point: it names no attach, so it targets whichever one is live.
-    if(!applySimulationInterfaceFunction(kActiveAttach, key, &function, &transformData))
+    if(!applySimulationInterfaceFunction(attach, key, &function, &transformData))
     {
         CARB_LOG_ERROR("Error executing getRigidBodyTransformation.");
         return false;
@@ -2109,13 +2075,12 @@ static bool isSleeping(AttachHandle attachHandle, uint64_t path)
     return sleeping;
 }
 
-static int getWheelIndex(omni::physics::parse::ObjectKey wheelKey)
+static int getWheelIndex(omni::physics::AttachHandle attach, omni::physics::parse::ObjectKey wheelKey)
 {
-    const uint64_t stageId = UsdLoad::getUsdLoad()->getActiveStageId();
-    const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStage(stageId);
+    const std::shared_ptr<AttachedStage> attachedStage = UsdLoad::getUsdLoad()->acquireAttachment(attach);
     if (!attachedStage)
         return -1;
-    InternalVehicleWheelAttachment* wheelAttachment = static_cast<InternalVehicleWheelAttachment*>(getInternalPtr(wheelKey, ePTVehicleWheelAttachment));
+    InternalVehicleWheelAttachment* wheelAttachment = static_cast<InternalVehicleWheelAttachment*>(getInternalPtr(*attachedStage, wheelKey, ePTVehicleWheelAttachment));
     if (wheelAttachment != nullptr)
     {
         if (wheelAttachment->mVehicle)
@@ -2127,13 +2092,20 @@ static int getWheelIndex(omni::physics::parse::ObjectKey wheelKey)
         return -1;
 }
 
-static float computeVehicleVelocity(const usdparser::ObjectId vehicleId,
+static float computeVehicleVelocity(omni::physics::AttachHandle attach, const usdparser::ObjectId vehicleId,
     const carb::Float3* direction)
 {
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return 0.0f;
+
+    const std::shared_ptr<AttachedStage> attachedStage = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    if (!attachedStage)
+        return 0.0f;
+
     if (vehicleId != kInvalidObjectId)
     {
-        const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-        const omni::physx::internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+        const omni::physx::internal::InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
 
         void* internalObject = db.getInternalTypedRecord(ePTVehicle, vehicleId);
         if (internalObject)
@@ -2164,13 +2136,20 @@ static float computeVehicleVelocity(const usdparser::ObjectId vehicleId,
     return 0.0f;
 }
 
-static bool getVehicleDriveState(const usdparser::ObjectId vehicleControllerId,
+static bool getVehicleDriveState(omni::physics::AttachHandle attach, const usdparser::ObjectId vehicleControllerId,
     VehicleDriveState& driveState)
 {
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return false;
+
+    const std::shared_ptr<AttachedStage> attachedStage = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    if (!attachedStage)
+        return false;
+
     if (vehicleControllerId != kInvalidObjectId)
     {
-        const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-        const omni::physx::internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+        const omni::physx::internal::InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
 
         void* internalObject = db.getInternalTypedRecord(ePTVehicleController, vehicleControllerId);
         if (internalObject)
@@ -2192,11 +2171,18 @@ static bool getVehicleDriveState(const usdparser::ObjectId vehicleControllerId,
     return false;
 }
 
-static bool getWheelState(const usdparser::ObjectId* wheelAttachmentIds, const uint32_t wheelAttachmentIdCount,
+static bool getWheelState(omni::physics::AttachHandle attach, const usdparser::ObjectId* wheelAttachmentIds, const uint32_t wheelAttachmentIdCount,
     VehicleWheelState* states)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const omni::physx::internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return false;
+
+    const std::shared_ptr<AttachedStage> attachedStage = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    if (!attachedStage)
+        return false;
+
+    const omni::physx::internal::InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
 
     for (uint32_t i = 0; i < wheelAttachmentIdCount; i++)
     {
@@ -2224,11 +2210,18 @@ static bool getWheelState(const usdparser::ObjectId* wheelAttachmentIds, const u
     return true;
 }
 
-static void setWheelRotationSpeed(const usdparser::ObjectId* wheelAttachmentIds, const uint32_t wheelAttachmentIdCount,
+static void setWheelRotationSpeed(omni::physics::AttachHandle attach, const usdparser::ObjectId* wheelAttachmentIds, const uint32_t wheelAttachmentIdCount,
     const float* rotationSpeeds)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const omni::physx::internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return;
+
+    const std::shared_ptr<AttachedStage> attachedStage = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    if (!attachedStage)
+        return;
+
+    const omni::physx::internal::InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
 
     for (uint32_t i = 0; i < wheelAttachmentIdCount; i++)
     {
@@ -2253,11 +2246,18 @@ static void setWheelRotationSpeed(const usdparser::ObjectId* wheelAttachmentIds,
     }
 }
 
-static void setWheelRotationAngle(const usdparser::ObjectId* wheelAttachmentIds, const uint32_t wheelAttachmentIdCount,
+static void setWheelRotationAngle(omni::physics::AttachHandle attach, const usdparser::ObjectId* wheelAttachmentIds, const uint32_t wheelAttachmentIdCount,
     const float* rotationAngles)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const omni::physx::internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return;
+
+    const std::shared_ptr<AttachedStage> attachedStage = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    if (!attachedStage)
+        return;
+
+    const omni::physx::internal::InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
 
     for (uint32_t i = 0; i < wheelAttachmentIdCount; i++)
     {
@@ -2282,9 +2282,13 @@ static void setWheelRotationAngle(const usdparser::ObjectId* wheelAttachmentIds,
     }
 }
 
-static void getInternalSurfaceDeformableBodyData(const usdparser::ObjectId deformableId, InternalSurfaceDeformableBodyData& data)
+static void getInternalSurfaceDeformableBodyData(omni::physics::AttachHandle attach, const usdparser::ObjectId deformableId, InternalSurfaceDeformableBodyData& data)
 {
-    InternalSurfaceDeformableBody* internalPtr = omni::physx::getInternalPtr<InternalSurfaceDeformableBody>(ePTDeformableSurface, deformableId);
+    const std::shared_ptr<AttachedStage> attachedStage = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    if (!attachedStage)
+        return;
+
+    InternalSurfaceDeformableBody* internalPtr = omni::physx::getInternalPtr<InternalSurfaceDeformableBody>(attachedStage->getInternalPhysXDatabase(), ePTDeformableSurface, deformableId);
     if (internalPtr)
     {
         // ADR-0019: the ABI now hands out the stored ObjectKeys directly, no path resolution needed.
@@ -2306,9 +2310,13 @@ static void getInternalSurfaceDeformableBodyData(const usdparser::ObjectId defor
     }
 }
 
-static void getInternalVolumeDeformableBodyData(const usdparser::ObjectId deformableId, InternalVolumeDeformableBodyData& data)
+static void getInternalVolumeDeformableBodyData(omni::physics::AttachHandle attach, const usdparser::ObjectId deformableId, InternalVolumeDeformableBodyData& data)
 {
-    InternalVolumeDeformableBody* internalPtr = omni::physx::getInternalPtr<InternalVolumeDeformableBody>(ePTDeformableVolume, deformableId);
+    const std::shared_ptr<AttachedStage> attachedStage = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    if (!attachedStage)
+        return;
+
+    InternalVolumeDeformableBody* internalPtr = omni::physx::getInternalPtr<InternalVolumeDeformableBody>(attachedStage->getInternalPhysXDatabase(), ePTDeformableVolume, deformableId);
     if (internalPtr)
     {
         // ADR-0019: the ABI now hands out the stored ObjectKeys directly, no path resolution needed.
@@ -2350,23 +2358,28 @@ void setSimulationLayer(const char* layerIdentifier)
     bridgeSetSimulationLayer(layerIdentifier);
 }
 
-bool isRunning()
+bool isRunning(AttachHandle attach)
 {
-    return OmniPhysX::getInstance().isSimulationRunning();
+    auto owner = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    return owner && owner->isSimulationRunning();
 }
 
-static bool isInteractiveActorRaycast(const carb::Float3* origin, const carb::Float3* direction)
+static bool isInteractiveActorRaycast(AttachHandle attach, const carb::Float3* origin, const carb::Float3* direction)
 {
-    if (!isRunning())
+    RuntimeExecutionScope operation(attach);
+    if (!operation || !origin || !direction)
         return false;
-    return OmniPhysX::getInstance().getRaycastManager().interactiveActorRaycast(origin, direction);
+    auto owner = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    return owner && owner->getRaycastManager().interactiveActorRaycast(origin, direction);
 }
 
-static void updateInteraction(const carb::Float3* origin, const carb::Float3* direction, PhysicsInteractionEvent interactionEvent)
+static void updateInteraction(AttachHandle attach, const carb::Float3* origin, const carb::Float3* direction, PhysicsInteractionEvent interactionEvent)
 {
-    if (!isRunning())
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
         return;
-    OmniPhysX::getInstance().getRaycastManager().handleInteractionEvent(reinterpret_cast<const float*>(origin), reinterpret_cast<const float*>(direction), interactionEvent);
+    if (auto owner = UsdLoad::getUsdLoad()->acquireAttachment(attach))
+        owner->getRaycastManager().handleInteractionEvent(reinterpret_cast<const float*>(origin), reinterpret_cast<const float*>(direction), interactionEvent);
 }
 
 void runBackwardsCompatibility()
@@ -2386,11 +2399,13 @@ const char* getBackwardsCompatibilityCheckLog()
     return "";
 }
 
-omni::physics::parse::ObjectKey getCollisionGroupFromCollider(omni::physics::parse::ObjectKey colliderKey)
+omni::physics::parse::ObjectKey getCollisionGroupFromCollider(omni::physics::AttachHandle attach, omni::physics::parse::ObjectKey colliderKey)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const omni::physx::internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
-    const PxShape* shape = static_cast<const PxShape*>(getPhysXPtr(colliderKey, ePTShape));
+    const std::shared_ptr<AttachedStage> attachedStage = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    if (!attachedStage)
+        return {};
+    const omni::physx::internal::InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
+    const PxShape* shape = static_cast<const PxShape*>(getPhysXPtrInternal(attach, colliderKey, ePTShape));
     if (shape != nullptr)
     {
         const uint32_t colGroupId = convertCollisionGroupFromPxFilterData(shape->getQueryFilterData());
@@ -2406,19 +2421,29 @@ omni::physics::parse::ObjectKey getCollisionGroupFromCollider(omni::physics::par
     return omni::physics::parse::ObjectKey{};
 }
 
-bool isReadbackSuppressed()
+bool isReadbackSuppressed(AttachHandle attach)
 {
-    // A.B. update for multiple scenes
-    PhysXScene* ps = OmniPhysX::getInstance().getPhysXSetup().getPhysXScene(0);
-    return ps && ps->isReadbackSuppressed();
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return false;
+    auto owner = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    const PhysXScene* scene = owner ? owner->getDefaultPhysXScene() : nullptr;
+    return scene && scene->isReadbackSuppressed();
 }
 
-void setVehicleToRestState(const usdparser::ObjectId vehicleId)
+void setVehicleToRestState(omni::physics::AttachHandle attach, const usdparser::ObjectId vehicleId)
 {
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return;
+
+    const std::shared_ptr<AttachedStage> attachedStage = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    if (!attachedStage)
+        return;
+
     if (vehicleId != kInvalidObjectId)
     {
-        const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-        const omni::physx::internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+        const omni::physx::internal::InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
 
         void* internalObject = db.getInternalTypedRecord(ePTVehicle, vehicleId);
         if (internalObject)
@@ -2437,17 +2462,22 @@ void setVehicleToRestState(const usdparser::ObjectId vehicleId)
     }
 }
 
-bool getWheelTransformations(const usdparser::ObjectId vehicleId, const int* wheelIndices,
+bool getWheelTransformations(omni::physics::AttachHandle attach, const usdparser::ObjectId vehicleId, const int* wheelIndices,
     const unsigned int wheelIndexCount, const bool addVehicleTransform,
     carb::Float3* positions, carb::Float4* orientations)
 {
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return false;
+
+    const std::shared_ptr<AttachedStage> attachedStage = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    if (!attachedStage)
+        return false;
+
     if (vehicleId != kInvalidObjectId)
     {
-        const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-        const omni::physx::internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+        const omni::physx::internal::InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
 
-        CARB_ASSERT(vehicleId < db.getRecords().size());
-        CARB_ASSERT(db.getRecords()[vehicleId].mType == ePTVehicle);
 
         void* internalObject = db.getInternalTypedRecord(ePTVehicle, vehicleId);
         if (internalObject)
@@ -2471,9 +2501,12 @@ bool getWheelTransformations(const usdparser::ObjectId vehicleId, const int* whe
     return false;
 }
 
-SubscriptionId subscribeToObjectChangeNotifications(const IPhysicsObjectChangeCallback& callback)
+SubscriptionId subscribeToObjectChangeNotifications(AttachHandle attach, const IPhysicsObjectChangeCallback& callback)
 {
-    return getPhysXUsdPhysicsInterface().subscribeToObjectChangeNotifications(callback);
+    RuntimeExecutionScope execution(attach);
+    if (!execution || !usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach))
+        return kInvalidSubscriptionId;
+    return getPhysXUsdPhysicsInterface().subscribeToObjectChangeNotifications(callback, attach);
 }
 
 void unsubscribeToObjectChangeNotifications(SubscriptionId subscriptionId)
@@ -2486,9 +2519,37 @@ bool isAsyncSimRenderEnabled()
     return OmniPhysX::getInstance().getPhysXSetup().isAsyncSimEnabled();
 }
 
-void disableResetOnStop(bool disable)
+// @implements REQ-ATTACH-SERVICES-001
+// @covers AC-3
+RuntimeResult disableResetOnStop(AttachHandle attach, bool disable)
 {
-    OmniPhysX::getInstance().getCachedSettings().disableResetOnStop = disable;
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return RuntimeResult::eBusy;
+    auto owner = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    if (!owner)
+        return RuntimeResult::eInvalidAttachment;
+    owner->setDisableResetOnStop(disable);
+    return RuntimeResult::eSuccess;
+}
+
+// Public native-pointer and object-id lookups participate in runtime admission.
+ObjectId getObjectId(AttachHandle attach, omni::physics::parse::ObjectKey key, PhysXType type)
+{
+    RuntimeExecutionScope operation(attach);
+    return operation ? getObjectIdInternal(attach, key, type) : kInvalidObjectId;
+}
+
+void* getPhysXPtr(AttachHandle attach, omni::physics::parse::ObjectKey key, PhysXType type)
+{
+    RuntimeExecutionScope operation(attach);
+    return operation ? getPhysXPtrInternal(attach, key, type) : nullptr;
+}
+
+void* getPhysXPtrFast(AttachHandle attach, ObjectId objectId)
+{
+    RuntimeExecutionScope operation(attach);
+    return operation ? getPhysXPtrFastInternal(attach, objectId) : nullptr;
 }
 
 void fillInterface(omni::physx::IPhysxFoundation& iface)
@@ -2585,6 +2646,8 @@ void fillInterface(IPhysxVisualization& iface)
     iface.releaseCollisionRepresentation = releaseCollisionRepresentation;
     iface.getMeshKey = getMeshKey;
     iface.getDebugDrawCollShapeColor = getDebugDrawCollShapeColor;
+    iface.applyDebugRenderForAttach = applyDebugRenderForAttachRequest;
+    iface.copyDebugPrimitivesForAttach = copyDebugPrimitivesForAttachBuffers;
 }
 
 void fillInterface(IPhysxUnitTests& iface)
@@ -2601,6 +2664,8 @@ void fillInterface(IPhysxUnitTests& iface)
     iface.updateCooking = updateCooking;
     iface.isCudaLibPresent = isCudaLibPresent;
     iface.getSceneInternalActorCount = getSceneInternalActorCount;
+    iface.getForceRigidActor = getForceRigidActor;
+    iface.getSceneInternalForceCount = getSceneInternalForceCount;
     iface.resetRaycastQueryTestCounters = resetRaycastQueryTestCounters;
     iface.getRaycastPreFilterCallCount = getRaycastPreFilterCallCount;
     iface.getRaycastQueryInternCount = getRaycastQueryInternCount;
@@ -2666,22 +2731,33 @@ void fillInterface(IPhysxSimulation& iface)
     iface.putToSleepInstanced = putToSleepInstanced;
     iface.isSleepingInstanced = isSleepingInstanced;
     iface.getAttachedStage = getPhysxSimulationAttachedStage;
-    iface.getAttachHandle = getPhysxSimulationAttachHandle;
     iface.startOmniPvdRecording = startOmniPvdRecording;
     iface.stopOmniPvdRecording = stopOmniPvdRecording;
-    iface.isOmniPvdRecording = isOmniPvdRecording;
+    iface.getOmniPvdRecordingStatus = getOmniPvdRecordingStatus;
 }
 
-// Adapts the 2-param free function to the 1-param CARB_ABI interface.
-static bool updateAutoDeformableAttachmentABI(omni::physics::parse::ObjectKey key)
+static bool setupAutoDeformableAttachmentABI(AttachHandle attach, omni::physics::parse::ObjectKey key)
 {
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return false;
+    auto owner = UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    return owner && setupAutoDeformableAttachment(*owner, key);
+}
+
+static bool updateAutoDeformableAttachmentABI(AttachHandle attach, omni::physics::parse::ObjectKey key)
+{
+    RuntimeExecutionScope operation(attach);
+    if (!operation)
+        return false;
+    auto owner = UsdLoad::getUsdLoad()->acquireAttachment(attach);
     bool attachmentDataRecomputed = false;
-    return updateAutoDeformableAttachment(key, attachmentDataRecomputed);
+    return owner && updateAutoDeformableAttachment(*owner, key, attachmentDataRecomputed);
 }
 
 void fillInterface(IPhysxAttachmentPrivate& iface)
 {
-    iface.setupAutoDeformableAttachment = setupAutoDeformableAttachment;
+    iface.setupAutoDeformableAttachment = setupAutoDeformableAttachmentABI;
     iface.updateAutoDeformableAttachment = updateAutoDeformableAttachmentABI;
 
     iface.createSurfaceSampler = omni::sampling::createSurfaceSampler;

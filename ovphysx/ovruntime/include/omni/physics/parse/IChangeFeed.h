@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-FEED-006
+ * @covers AC-1
+ */
+
 #pragma once
 
 #include "Handles.h"
@@ -166,6 +170,14 @@ public:
 
     /// @brief Pause/resume change accumulation without dropping registrations.
     virtual void setEnabled(bool enabled) = 0;
+
+    /// Opt in only when all consumers initialize added prims from a full source
+    /// resync before completing the update. A supporting backend may omit initial
+    /// property and transform deltas after every structural-add callback accepts.
+    /// Existing-object edits and structural events remain required. Disabled by
+    /// default; backends that do not support the optimization ignore this hint.
+    /// Change this setting only between drains, under the consumer's admission.
+    virtual void setAddedPrimPropertiesCoveredByResync(bool covered) { (void)covered; }
 };
 
 } // namespace parse

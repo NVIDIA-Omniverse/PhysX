@@ -20,7 +20,7 @@ operations are otherwise supported.
 ## Acceptance Criteria
 
 - AC-1: `ovphysx_get_tensor_binding_native_device` is an additive C ABI function with
-  signature `(ovphysx_handle_t, ovphysx_tensor_binding_handle_t, DLDevice*)`.
+  signature `(ovphysx_instance_handle_t, ovphysx_tensor_binding_handle_t, DLDevice*)`.
 - AC-2: A host-resident binding reports `DLDevice{kDLCPU, 0}`. A
   CUDA-resident binding reports `DLDevice{kDLCUDA, N}`, where `N` is the
   binding's native TensorAPI view ordinal.
@@ -42,7 +42,7 @@ operations are otherwise supported.
 
 ## Code References
 
-- ovphysx/include/ovphysx/ovphysx.h (`ovphysx_get_tensor_binding_native_device`)
+- ovphysx/include/ovphysx/ovphysx_legacy.h (`ovphysx_get_tensor_binding_native_device`)
 - ovphysx/src/ovphysx/ovphysxTensorBinding.cpp (`getBindingNativeDeviceOrdinal`,
   `ovphysx_get_tensor_binding_native_device`)
 - ovphysx/include/ovphysx/experimental/TensorBinding.hpp (`nativeDevice`)

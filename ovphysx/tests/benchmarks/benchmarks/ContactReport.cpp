@@ -6,7 +6,17 @@
  * @covers AC-2 AC-3 AC-4
  */
 
-// Steady-state raw contact-report performance for persistent dynamic/static pairs.
+// Steady-state contact-sensor net-force read through the public session read API
+// (replacing the old raw-contact benchmark rows). Raw event/detail consumers
+// migrate through the session contact-event/detail attributes (ADR-0044), not
+// these two aggregated net-force columns.
+// Each measured sample times ovphysx_query(OVPHYSX_QUERY_TARGET_CONTACT_SENSOR) +
+// ovphysx_read(netNormalContactForce, netFrictionContactForce) + drain over 512
+// resting contact-sensor bodies. The simulation step itself is advanced in
+// preStep(), outside the timed region, so the row measures the read path only.
+// The CPU row reads host-backed groups; the GPU row runs under DirectGPU, where
+// the net-force columns are device-resident -- modeled on OutputRead's session
+// read/drain lane.
 
 #include "framework/UsdPCH.h"
 
@@ -14,17 +24,22 @@
 #include "../framework/BmGlobals.h"
 #include "../framework/BmUtils.h"
 #include "../BenchmarkFailure.h"
+#include "../TaskCompletion.h"
 #include "AuthoringCommon.h"
 
+#if defined(OVPHYSX_BENCHMARK_HAS_CUDA)
+#include <cuda_runtime_api.h>
+#endif
+
+#include "ovphysx/dlpack/dlpack.h"
+#include <ovphysx/ovphysx_attributes.h>
 #include <ovphysx/experimental/ovphysx.hpp>
 
-#include <algorithm>
-#include <array>
 #include <cmath>
+#include <cstdarg>
 #include <cstdint>
+#include <cstdio>
 #include <iomanip>
-#include <limits>
-#include <memory>
 #include <sstream>
 #include <string>
 
@@ -37,47 +52,51 @@ void initContactReport()
 namespace
 {
 
-const uint32_t kPairCount = 512;
+const uint32_t kSensorCount = 512;
 const uint32_t kMeasuredSteps = 20;
 const uint32_t kMeasuredRuns = 5;
-const uint32_t kMaximumWarmupSteps = 32;
-const uint32_t kStableReportsRequired = 3;
+const uint32_t kMaximumWarmupSteps = 48;
+const uint32_t kStableReadsRequired = 3;
 const float kStepDt = 1.0f / 60.0f;
-const double kCellPitch = 4.0;
-const double kPairOffset = 0.75;
+const double kCellPitch = 2.0;
+const double kBoxHalfExtent = 0.25;
+// A resting unit-mass box under gravity carries a net normal force of ~9.81 N, so
+// a warm-up read whose host net-force column stays below this is not generating
+// contacts (dead scene / broken reduction).
+const float kLiveNormalForceThreshold = 1.0f;
 const uint32_t kPinnedGpuRigidContactCapacity = 524288;
 const uint32_t kPinnedGpuRigidPatchCapacity = 81920;
 const uint32_t kPinnedGpuFoundLostPairsCapacity = 262144;
-// ovphysx_contact_event_header_t documents these ABI values but does not expose
-// a public named enum for them.
-const int32_t kContactEventFound = 0;
-const int32_t kContactEventPersist = 2;
 
 const char* const kScenePrim = "def PhysicsScene \"PhysicsScene\"";
 const char* const kSceneApi = "prepend apiSchemas = [\"PhysxSceneAPI\"]";
-const char* const kSleepingOff = "uniform bool physxScene:disableSleeping = true";
 const char* const kCpuDynamics = "bool physxScene:enableGPUDynamics = false";
 const char* const kCpuBroadphase = "uniform token physxScene:broadphaseType = \"MBP\"";
 const char* const kGpuDynamics = "bool physxScene:enableGPUDynamics = true";
 const char* const kGpuBroadphase = "uniform token physxScene:broadphaseType = \"GPU\"";
-const char* const kReporterApis =
+const char* const kSensorApis =
     "prepend apiSchemas = [\"PhysicsRigidBodyAPI\", \"PhysicsCollisionAPI\", \"PhysicsMassAPI\", "
     "\"PhysxRigidBodyAPI\", \"PhysxContactReportAPI\"]";
 const char* const kReportThreshold = "float physxContactReport:threshold = 0";
-const char* const kKinematicOff = "bool physics:kinematicEnabled = false";
 const char* const kSleepThreshold = "float physxRigidBody:sleepThreshold = 0";
-const char* const kSolveContactOff = "bool physxRigidBody:solveContact = false";
 
 
+// 512 dynamic boxes resting on a static ground slab, spaced so they never touch a
+// neighbour. Each box carries PhysxContactReportAPI and sleepThreshold = 0 so a
+// settled body keeps reporting its steady net contact force; the ground has no
+// schema and is not a sensor. Under gravity each box is one contact sensor whose
+// net normal force resists its weight.
 std::string makeScene(bool gpu)
 {
-    const uint32_t side = static_cast<uint32_t>(std::ceil(std::sqrt(static_cast<double>(kPairCount))));
+    const uint32_t side = static_cast<uint32_t>(std::ceil(std::sqrt(static_cast<double>(kSensorCount))));
+    const double span = static_cast<double>(side) * kCellPitch + 4.0;
 
     std::ostringstream stream;
     stream << "#usda 1.0\n"
               "(\n"
               "    defaultPrim = \"World\"\n"
               "    metersPerUnit = 1\n"
+              "    kilogramsPerUnit = 1\n"
               "    upAxis = \"Y\"\n"
               ")\n\n"
               "def Xform \"World\"\n"
@@ -88,88 +107,59 @@ std::string makeScene(bool gpu)
            << "    )\n"
               "    {\n"
               "        vector3f physics:gravityDirection = (0, -1, 0)\n"
-              "        float physics:gravityMagnitude = 0\n"
+              "        float physics:gravityMagnitude = 9.81\n"
               "        uint physxScene:timeStepsPerSecond = 60\n"
-           << "        " << kSleepingOff << "\n"
            << "        " << (gpu ? kGpuDynamics : kCpuDynamics) << "\n"
            << "        " << (gpu ? kGpuBroadphase : kCpuBroadphase) << "\n";
     if (gpu)
     {
-        // Pin the exact PhysxSceneAPI schema defaults. This fixture must not
-        // scale or shrink these global GPU buffers with its pair count.
         stream << "        uint physxScene:gpuMaxRigidContactCount = " << kPinnedGpuRigidContactCapacity << "\n"
                << "        uint physxScene:gpuMaxRigidPatchCount = " << kPinnedGpuRigidPatchCapacity << "\n"
                << "        uint physxScene:gpuFoundLostPairsCapacity = " << kPinnedGpuFoundLostPairsCapacity << "\n";
     }
     stream << "    }\n\n";
 
-    for (uint32_t index = 0; index < kPairCount; ++index)
+    // Static ground slab: a thin, wide static collider centred under the grid,
+    // top surface at y = 0. No physics body, no contact-report schema.
+    stream << "    def Cube \"Ground\" (\n"
+           << "        prepend apiSchemas = [\"PhysicsCollisionAPI\"]\n"
+           << "    )\n"
+           << "    {\n"
+           << "        double size = 1\n"
+           << "        float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]\n"
+           << "        bool physics:collisionEnabled = true\n"
+           << "        double3 xformOp:translate = (" << span * 0.5 << ", -0.5, " << span * 0.5 << ")\n"
+           << "        float3 xformOp:scale = (" << span << ", 1, " << span << ")\n"
+           << "        uniform token[] xformOpOrder = [\"xformOp:translate\", \"xformOp:scale\"]\n"
+           << "    }\n\n";
+
+    for (uint32_t index = 0; index < kSensorCount; ++index)
     {
         const uint32_t row = index / side;
         const uint32_t column = index % side;
-        const double x = static_cast<double>(column) * kCellPitch;
-        const double z = static_cast<double>(row) * kCellPitch;
+        const double x = 2.0 + static_cast<double>(column) * kCellPitch;
+        const double z = 2.0 + static_cast<double>(row) * kCellPitch;
 
-        stream << "    def Sphere \"Reporter_" << std::setw(6) << std::setfill('0') << index << "\" (\n"
-               << "        " << kReporterApis << "\n"
+        stream << "    def Cube \"Sensor_" << std::setw(6) << std::setfill('0') << index << "\" (\n"
+               << "        " << kSensorApis << "\n"
                << "    )\n"
                << "    {\n"
-               << "        double radius = 0.5\n"
-               << "        float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]\n"
+               << "        double size = " << (kBoxHalfExtent * 2.0) << "\n"
+               << "        float3[] extent = [(" << -kBoxHalfExtent << ", " << -kBoxHalfExtent << ", "
+               << -kBoxHalfExtent << "), (" << kBoxHalfExtent << ", " << kBoxHalfExtent << ", " << kBoxHalfExtent
+               << ")]\n"
                << "        bool physics:collisionEnabled = true\n"
                << "        bool physics:rigidBodyEnabled = true\n"
-               << "        " << kKinematicOff << "\n"
                << "        float physics:mass = 1\n"
-               << "        vector3f physics:velocity = (0, 0, 0)\n"
-               << "        vector3f physics:angularVelocity = (0, 0, 0)\n"
                << "        " << kReportThreshold << "\n"
                << "        " << kSleepThreshold << "\n"
-               << "        " << kSolveContactOff << "\n"
-               << "        double3 xformOp:translate = (" << x << ", 0, " << z << ")\n"
-               << "        uniform token[] xformOpOrder = [\"xformOp:translate\"]\n"
-               << "    }\n\n"
-               << "    def Sphere \"Static_" << std::setw(6) << std::setfill('0') << index << "\" (\n"
-               << "        prepend apiSchemas = [\"PhysicsCollisionAPI\"]\n"
-               << "    )\n"
-               << "    {\n"
-               << "        double radius = 0.5\n"
-               << "        float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]\n"
-               << "        bool physics:collisionEnabled = true\n"
-               << "        double3 xformOp:translate = (" << x + kPairOffset << ", 0, " << z << ")\n"
+               << "        double3 xformOp:translate = (" << x << ", " << kBoxHalfExtent << ", " << z << ")\n"
                << "        uniform token[] xformOpOrder = [\"xformOp:translate\"]\n"
                << "    }\n\n";
     }
     stream << "}\n";
     return stream.str();
 }
-
-
-struct PairId
-{
-    uint64_t low = 0;
-    uint64_t high = 0;
-
-    bool operator==(const PairId& other) const
-    {
-        return low == other.low && high == other.high;
-    }
-
-    bool operator<(const PairId& other) const
-    {
-        return low < other.low || (low == other.low && high < other.high);
-    }
-};
-
-
-struct ReportView
-{
-    const ovphysx_contact_event_header_t* headers = nullptr;
-    uint32_t numHeaders = 0;
-    const ovphysx_contact_point_t* points = nullptr;
-    uint32_t numPoints = 0;
-    const ovphysx_friction_anchor_t* anchors = nullptr;
-    uint32_t numAnchors = 0;
-};
 
 
 class ContactReportBase : public BmBenchmark
@@ -187,18 +177,24 @@ public:
     bool isValid() const override
     {
         const BmGlobals& globals = BmGlobals::getInstance();
-        if (globals.directGpu())
-        {
-            // BmBenchmark fixes this override as const, so the process-wide
-            // failure ledger records the invalid invocation, not object state.
-            bmRecordFailure(mRow, "ContactReport rows reject DirectGPU; run the GPU row with --forceGpu only");
-            return false;
-        }
-        if (globals.forceGpu() != mGpu)
+        if (globals.getPhysX() == nullptr)
         {
             return false;
         }
-        return globals.getPhysX() != nullptr;
+        if (!mGpu)
+        {
+            // The CPU row runs only on the default (host) pass.
+            return !globals.forceGpu();
+        }
+#if !defined(OVPHYSX_BENCHMARK_HAS_CUDA)
+        // Without CUDA a DirectGPU net-force read cannot be consumed; skip.
+        return false;
+#else
+        // On a DirectGPU scene the net-force columns are device-resident, so the
+        // GPU row requires --forceGpu AND --directGpu; otherwise it is selected
+        // and skipped without publishing a metric.
+        return globals.forceGpu() && globals.directGpu();
+#endif
     }
 
     uint32_t getNbSteps() const override
@@ -223,80 +219,55 @@ public:
 
     void preStep() override
     {
-    }
-
-    Time::Second timedStep() override
-    {
+        // Advance the simulation outside the timed region so the row measures the
+        // contact-sensor read, not the step.
         if (!mSetupOk || !mStepOk)
         {
-            // A prior bmRecordFailure() makes the harness discard every timing
-            // for this row and exit nonzero, so this value is never published.
-            return 0.0f;
+            return;
         }
-
-        ReportView report;
-        Time timer;
-        const ovphysx_result_t stepResult = ovphysx_step_sync(mPhysX->handle(), kStepDt);
-        if (stepResult.status != OVPHYSX_API_SUCCESS)
+        if (bmCompleteTask(handle(), mPhysX->step(kStepDt)).status != OVPHYSX_API_SUCCESS)
         {
-            const Time::Second elapsed = timer.getElapsedSeconds();
-            bmRecordFailure(mRow, "ovphysx_step_sync failed: status=%d", static_cast<int>(stepResult.status));
-            mStepOk = false;
-            return elapsed;
-        }
-        const ovphysx_result_t reportResult =
-            ovphysx_get_contact_report(mPhysX->handle(), &report.headers, &report.numHeaders, &report.points,
-                                       &report.numPoints, &report.anchors, &report.numAnchors);
-        const Time::Second elapsed = timer.getElapsedSeconds();
-
-        if (reportResult.status != OVPHYSX_API_SUCCESS)
-        {
-            const ovphysx_string_t error = ovphysx_get_last_error();
-            bmRecordFailure(mRow, "ovphysx_get_contact_report failed: status=%d %.*s",
-                            static_cast<int>(reportResult.status), static_cast<int>(error.length),
-                            error.ptr ? error.ptr : "");
-            mStepOk = false;
-            return elapsed;
-        }
-
-        bool allPersist = false;
-        if (!validateReport(report, allPersist))
-        {
-            mStepOk = false;
-            return elapsed;
-        }
-        if (!allPersist)
-        {
-            bmRecordFailure(mRow, "measured report contains a non-persist event");
+            bmRecordFailure(mRow, "ovphysx_step failed before contact-sensor read");
             mStepOk = false;
         }
-        else if (!gpuEvidenceOk("measured step"))
-        {
-            mStepOk = false;
-        }
-        return elapsed;
     }
 
     void endRun() override
     {
-        if (!gpuEvidenceOk("end of measured run"))
-        {
-            mStepOk = false;
-        }
     }
 
 protected:
     void step() override
     {
+        // The timed operation: one query + read + drain of the net contact forces.
+        if (!mSetupOk || !mStepOk)
+        {
+            return;
+        }
+        // A measured read treats empty or incomplete contact output as a failure;
+        // record its deferred reason so the harness suppresses this row. The
+        // timed path does not touch force values (warm-up already validated
+        // the row count and device), so the measured number is a pure read latency.
+        if (!readNetContactForces(/*checkLive=*/false))
+        {
+            if (!bmRowHasFailure(mRow))
+            {
+                bmRecordFailure(mRow, "%s", mLastReason.c_str());
+            }
+            mStepOk = false;
+        }
     }
 
 private:
+    ovphysx_instance_handle_t handle() const
+    {
+        return mPhysX->handle();
+    }
+
     void setup()
     {
         mSetupOk = false;
         mStepOk = false;
-        mAttachHandle = 0;
-        mIdentityResolved = false;
         mPhysX = BmGlobals::getInstance().getPhysX();
         if (!authoringbm::prepareStageAttachmentForRun(mAttachment, mRow, &mLeftoverAttachmentReported))
         {
@@ -309,37 +280,13 @@ private:
             return;
         }
 
-        // Destroy any prior owner before constructing a replacement: the log
-        // API has one process-global callback slot.
-        mGpuScope.reset();
-        mGpuScope.reset(new authoringbm::GpuFallbackScope(mGpu, mRow));
-        if (!mGpuScope->evidenceOk("detector setup"))
-        {
-            return;
-        }
         const std::string usda = makeScene(mGpu);
-        if (!authoringbm::populateAndAttachChecked(
-                mPhysX, authoringbm::UsdSource::eString, usda, "ovphysx-contact-report", mAttachment, mRow, &mAttached))
+        if (!authoringbm::populateAndAttachChecked(mPhysX, authoringbm::UsdSource::eString, usda,
+                                                   "ovphysx-contact-report", mAttachment, mRow, &mAttached))
         {
             return;
         }
-        if (!warmupAndCheckDevice())
-        {
-            return;
-        }
-        if (ovphysx_get_attach_handle(mPhysX->handle(), &mAttachHandle).status != OVPHYSX_API_SUCCESS ||
-            mAttachHandle == 0)
-        {
-            const ovphysx_string_t error = ovphysx_get_last_error();
-            bmRecordFailure(mRow, "get_attach_handle failed or returned zero: %.*s", static_cast<int>(error.length),
-                            error.ptr ? error.ptr : "");
-            return;
-        }
-        if (!stabilizeReport())
-        {
-            return;
-        }
-        if (!gpuEvidenceOk("stabilization"))
+        if (!stabilize())
         {
             return;
         }
@@ -355,10 +302,6 @@ private:
         }
         mSetupOk = false;
         mStepOk = false;
-        if (mGpuScope)
-        {
-            mGpuScope->evidenceOk("end of measured runs");
-        }
         if (!authoringbm::clearOvstageChecked(mAttached ? mPhysX : nullptr, mAttachment, mRow))
         {
             bmRecordFailure(mRow, "ovstage teardown failed; retaining the stage attachment");
@@ -368,330 +311,244 @@ private:
         {
             mAttached = false;
         }
-        if (mGpuScope)
-        {
-            mGpuScope->finish("stage teardown");
-            mGpuScope.reset();
-        }
     }
 
-    bool gpuEvidenceOk(const char* phase)
+    // Require three consecutive warm-up reads with the full 512-sensor set on the
+    // expected device and, on a host read, a live net normal force. DirectGPU
+    // force values are not checked. Runs outside any measured timing.
+    bool stabilize()
     {
-        if (!mGpu)
-        {
-            return true;
-        }
-        if (!mGpuScope)
-        {
-            bmRecordFailure(mRow, "%s has no GPU fallback/capacity detector", phase);
-            return false;
-        }
-        return mGpuScope->evidenceOk(phase);
-    }
-
-    bool warmupAndCheckDevice()
-    {
-        return authoringbm::checkDeviceEvidenceAndWarmup(mPhysX->handle(), mGpu, *mGpuScope, mRow);
-    }
-
-    // Split a resolved collider path into its Reporter/Static role and pair index.
-    static bool parsePairPath(const std::string& path, bool& isReporter, uint32_t& index)
-    {
-        static const std::string kReporterPrefix = "/World/Reporter_";
-        static const std::string kStaticPrefix = "/World/Static_";
-
-        const std::string* prefix = nullptr;
-        if (path.rfind(kReporterPrefix, 0) == 0)
-        {
-            isReporter = true;
-            prefix = &kReporterPrefix;
-        }
-        else if (path.rfind(kStaticPrefix, 0) == 0)
-        {
-            isReporter = false;
-            prefix = &kStaticPrefix;
-        }
-        else
-        {
-            return false;
-        }
-
-        const std::string digits = path.substr(prefix->size());
-        if (digits.size() != 6 || digits.find_first_not_of("0123456789") != std::string::npos)
-        {
-            return false;
-        }
-        index = static_cast<uint32_t>(std::stoul(digits));
-        return index < kPairCount;
-    }
-
-    // The header identity fields are opaque ObjectKey handles (ADR-0019), so the
-    // expected set cannot be computed client-side from a path bit-cast. Resolve
-    // the first stabilized report's handles to paths once, prove they exactly
-    // cover the authored Reporter_N/Static_N pairs, and snapshot the handles so
-    // every later report is checked by cheap integer comparison.
-    bool resolveExpectedPairs(const ReportView& report)
-    {
-        if (report.numHeaders != kPairCount || !report.headers)
-        {
-            bmRecordFailure(mRow, "identity resolution expected %u headers, got %u%s", kPairCount, report.numHeaders,
-                            report.headers ? "" : " (null header buffer)");
-            return false;
-        }
-
-        std::array<uint64_t, static_cast<size_t>(kPairCount) * 2> ids{};
-        for (uint32_t index = 0; index < kPairCount; ++index)
-        {
-            ids[static_cast<size_t>(index) * 2] = report.headers[index].collider0;
-            ids[static_cast<size_t>(index) * 2 + 1] = report.headers[index].collider1;
-        }
-
-        std::array<ovphysx_string_t, static_cast<size_t>(kPairCount) * 2> paths{};
-        uint32_t resolvedCount = 0;
-        const ovphysx_result_t result =
-            ovphysx_scene_query_get_paths_from_ids(mPhysX->handle(), ids.data(), static_cast<uint32_t>(ids.size()),
-                                                   paths.data(), static_cast<uint32_t>(paths.size()), &resolvedCount);
-        if (result.status != OVPHYSX_API_SUCCESS || resolvedCount != ids.size())
-        {
-            const ovphysx_string_t error = ovphysx_get_last_error();
-            bmRecordFailure(mRow, "collider id resolution failed: status=%d count=%u %.*s",
-                            static_cast<int>(result.status), resolvedCount, static_cast<int>(error.length),
-                            error.ptr ? error.ptr : "");
-            return false;
-        }
-
-        std::array<uint8_t, kPairCount> seen{};
-        seen.fill(0);
-        for (uint32_t index = 0; index < kPairCount; ++index)
-        {
-            uint32_t pairIndex[2] = { 0, 0 };
-            bool isReporter[2] = { false, false };
-            for (uint32_t side = 0; side < 2; ++side)
-            {
-                const ovphysx_string_t& entry = paths[static_cast<size_t>(index) * 2 + side];
-                const std::string path(entry.ptr ? entry.ptr : "", entry.ptr ? entry.length : 0);
-                if (!parsePairPath(path, isReporter[side], pairIndex[side]))
-                {
-                    bmRecordFailure(mRow, "header %u collider%u resolved to unexpected path '%s'", index, side,
-                                    path.c_str());
-                    return false;
-                }
-            }
-            if (isReporter[0] == isReporter[1] || pairIndex[0] != pairIndex[1])
-            {
-                bmRecordFailure(mRow, "header %u is not a Reporter/Static pair with a shared index", index);
-                return false;
-            }
-            if (seen[pairIndex[0]] != 0)
-            {
-                bmRecordFailure(mRow, "authored pair %u reported more than once", pairIndex[0]);
-                return false;
-            }
-            seen[pairIndex[0]] = 1;
-
-            const uint64_t collider0 = report.headers[index].collider0;
-            const uint64_t collider1 = report.headers[index].collider1;
-            if (collider0 == 0 || collider1 == 0 || collider0 == collider1)
-            {
-                bmRecordFailure(mRow, "invalid collider identity for authored pair %u", pairIndex[0]);
-                return false;
-            }
-            // Parenthesized to stop the Windows min/max macros from expanding these.
-            mExpectedPairs[index] = { (std::min)(collider0, collider1), (std::max)(collider0, collider1) };
-        }
-
-        std::sort(mExpectedPairs.begin(), mExpectedPairs.end());
-        if (std::adjacent_find(mExpectedPairs.begin(), mExpectedPairs.end()) != mExpectedPairs.end())
-        {
-            bmRecordFailure(mRow, "expected Reporter/Static identities are not unique");
-            return false;
-        }
-        mIdentityResolved = true;
-        return true;
-    }
-
-    bool stabilizeReport()
-    {
-        uint32_t stableReports = 0;
-
+        uint32_t stableReads = 0;
         for (uint32_t warmup = 1; warmup <= kMaximumWarmupSteps; ++warmup)
         {
-            ReportView report;
-            const ovphysx_result_t stepResult = ovphysx_step_sync(mPhysX->handle(), kStepDt);
-            if (stepResult.status != OVPHYSX_API_SUCCESS)
+            if (bmCompleteTask(handle(), mPhysX->step(kStepDt)).status != OVPHYSX_API_SUCCESS)
             {
-                bmRecordFailure(
-                    mRow, "warmup step failed at step %u: status=%d", warmup, static_cast<int>(stepResult.status));
+                bmRecordFailure(mRow, "ovphysx_step failed during contact-sensor warmup");
                 return false;
             }
-            const ovphysx_result_t reportResult =
-                ovphysx_get_contact_report(mPhysX->handle(), &report.headers, &report.numHeaders, &report.points,
-                                           &report.numPoints, &report.anchors, &report.numAnchors);
-            if (reportResult.status != OVPHYSX_API_SUCCESS)
+            if (readNetContactForces(/*checkLive=*/true))
             {
-                bmRecordFailure(
-                    mRow, "warmup getter failed at step %u: status=%d", warmup, static_cast<int>(reportResult.status));
-                return false;
-            }
-            if (!gpuEvidenceOk("warmup step"))
-            {
-                return false;
-            }
-            if (!mIdentityResolved && !resolveExpectedPairs(report))
-            {
-                return false;
-            }
-
-            bool allPersist = false;
-            if (!validateReport(report, allPersist))
-            {
-                return false;
-            }
-
-            if (allPersist)
-            {
-                ++stableReports;
-                if (stableReports >= kStableReportsRequired)
+                if (++stableReads >= kStableReadsRequired)
                 {
-                    printFormatted("%s: warmup stabilized after %u steps (%u headers, %u points, %u anchors)", mRow,
-                                   warmup, report.numHeaders, report.numPoints, report.numAnchors);
+                    printFormatted("%s: warmup stabilized after %u steps (%u sensors)", mRow, warmup, kSensorCount);
                     return true;
                 }
             }
             else
             {
-                stableReports = 0;
+                // Task, synchronization, device and cleanup failures are already
+                // in the ledger. Successful reads with an incomplete or not-yet-live
+                // contact set may be retried within the warm-up bound.
+                if (bmRowHasFailure(mRow))
+                {
+                    return false;
+                }
+                stableReads = 0;
             }
         }
-
-        bmRecordFailure(mRow, "contact report did not produce %u consecutive persistent reports within %u warmup steps",
-                        kStableReportsRequired, kMaximumWarmupSteps);
+        bmRecordFailure(mRow,
+                        "contact-sensor read did not reach %u consecutive complete reads within %u warmup steps "
+                        "(last: %s)",
+                        kStableReadsRequired, kMaximumWarmupSteps,
+                        mLastReason.empty() ? "n/a" : mLastReason.c_str());
         return false;
     }
 
-    bool validateReport(const ReportView& report, bool& allPersist)
+    // One query(CONTACT_SENSOR) + read(net normal, net friction) + full drain.
+    // Operational failures immediately enter the row ledger. Contact readiness
+    // misses return false with a deferred reason for the caller's retry policy.
+    bool readNetContactForces(bool checkLive)
     {
-        if (!mIdentityResolved)
+        ovphysx_query_handle_t query = 0;
+        if (bmCompleteTask(handle(), ovphysx_query(handle(), OVPHYSX_QUERY_TARGET_CONTACT_SENSOR, OVPHYSX_SCOPE_ALL,
+                                                   &query, nullptr))
+                    .status != OVPHYSX_API_SUCCESS ||
+            query == 0)
         {
-            bmRecordFailure(mRow, "report validated before the expected identities were resolved");
-            return false;
-        }
-        if ((report.numHeaders != 0 && !report.headers) || (report.numPoints != 0 && !report.points) ||
-            (report.numAnchors != 0 && !report.anchors))
-        {
-            bmRecordFailure(mRow, "contact getter returned a null buffer with a positive count");
-            return false;
-        }
-        if (report.numHeaders != kPairCount || report.numPoints != kPairCount || report.numAnchors != 0)
-        {
-            bmRecordFailure(mRow, "unexpected cardinality: expected %u headers/points and zero anchors, got %u/%u/%u",
-                            kPairCount, report.numHeaders, report.numPoints, report.numAnchors);
-            return false;
+            return fail("ovphysx_query(CONTACT_SENSOR) failed");
         }
 
-        mPointCoverage.fill(0);
-        allPersist = true;
+        static const ovx_string_or_token_t attrs[] = {
+            { 0, { OVPHYSX_ATTR_NET_NORMAL_CONTACT_FORCE, sizeof(OVPHYSX_ATTR_NET_NORMAL_CONTACT_FORCE) - 1 } },
+            { 0, { OVPHYSX_ATTR_NET_FRICTION_CONTACT_FORCE, sizeof(OVPHYSX_ATTR_NET_FRICTION_CONTACT_FORCE) - 1 } },
+        };
+        ovphysx_read_handle_t read = 0;
+        const bool readOk =
+            bmCompleteTask(handle(), ovphysx_read(handle(), query, attrs, sizeof(attrs) / sizeof(attrs[0]), &read,
+                                                  nullptr))
+                    .status == OVPHYSX_API_SUCCESS &&
+            read != 0;
 
-        for (uint32_t headerIndex = 0; headerIndex < report.numHeaders; ++headerIndex)
+        bool ok = readOk ? drain(read, checkLive) : fail("ovphysx_read(netNormal/netFriction contact force) failed");
+
+        // Always release in order (read then query); a release failure is a
+        // fail-closed condition, so fold its status into the result.
+        if (read != 0 &&
+            bmCompleteTask(handle(), ovphysx_release_read(handle(), read)).status != OVPHYSX_API_SUCCESS)
         {
-            const ovphysx_contact_event_header_t& header = report.headers[headerIndex];
-            if (header.type != kContactEventFound && header.type != kContactEventPersist)
-            {
-                bmRecordFailure(mRow, "invalid contact event type %d at header %u", header.type, headerIndex);
-                return false;
-            }
-            allPersist = allPersist && header.type == kContactEventPersist;
-            if (header.attachHandle != mAttachHandle || header.attachHandle == 0)
-            {
-                bmRecordFailure(mRow, "wrong attach handle at header %u: expected %llu, got %llu", headerIndex,
-                                static_cast<unsigned long long>(mAttachHandle),
-                                static_cast<unsigned long long>(header.attachHandle));
-                return false;
-            }
-            if (header.actor0 == 0 || header.actor1 == 0 || header.collider0 == 0 || header.collider1 == 0 ||
-                header.actor0 != header.collider0 || header.actor1 != header.collider1 ||
-                header.actor0 == header.actor1 || header.protoIndex0 != (std::numeric_limits<uint32_t>::max)() ||
-                header.protoIndex1 != (std::numeric_limits<uint32_t>::max)())
-            {
-                bmRecordFailure(mRow, "invalid actor/collider identity data at header %u", headerIndex);
-                return false;
-            }
+            ok = fail("ovphysx_release_read failed");
+        }
+        if (bmCompleteTask(handle(), ovphysx_release_query(handle(), query)).status != OVPHYSX_API_SUCCESS)
+        {
+            ok = fail("ovphysx_release_query failed");
+        }
+        return ok;
+    }
 
-            const PairId pair{ (std::min)(header.collider0, header.collider1),
-                               (std::max)(header.collider0, header.collider1) };
-            if (!std::binary_search(mExpectedPairs.begin(), mExpectedPairs.end(), pair))
+    bool drain(ovphysx_read_handle_t read, bool checkLive)
+    {
+        const ovstage_read_group_t* group = nullptr;
+        uint32_t groups = 0;
+        int64_t groupRows = -1;
+        bool rowsConsistent = true;
+        float maxHostForce = 0.0f;
+        bool sawHostForceColumn = false;
+        bool drained = false;
+        for (;;)
+        {
+            const ovphysx_api_status_t status =
+                bmCompleteTask(handle(), ovphysx_fetch_read_next(handle(), read, &group)).status;
+            if (status == OVPHYSX_API_SUCCESS && group == nullptr)
             {
-                bmRecordFailure(mRow, "unexpected Reporter/Static identity pair at header %u", headerIndex);
-                return false;
+                drained = true;
+                break;
             }
-            mObservedPairs[headerIndex] = pair;
-
-            if (header.numContactData != 1 || header.contactDataOffset > report.numPoints ||
-                header.numContactData > report.numPoints - header.contactDataOffset ||
-                header.contactDataOffset >= mPointCoverage.size())
+            if (status != OVPHYSX_API_SUCCESS || group == nullptr)
             {
-                bmRecordFailure(mRow, "invalid point slice at header %u: offset=%u count=%u total=%u", headerIndex,
-                                header.contactDataOffset, header.numContactData, report.numPoints);
-                return false;
+                return fail("ovphysx_fetch_read_next failed after %u groups", groups);
             }
-            if (header.frictionAnchorsDataOffset != 0 || header.numfrictionAnchorsData != 0)
+            const DLTensor* tensor =
+                (group->data.tensors && group->data.tensor_count > 0) ? &group->data.tensors[0] : nullptr;
+            if (tensor && tensor->device.device_type != (mGpu ? kDLCUDA : kDLCPU))
             {
-                bmRecordFailure(mRow, "unexpected friction anchors at header %u: offset=%u count=%u", headerIndex,
-                                header.frictionAnchorsDataOffset, header.numfrictionAnchorsData);
-                return false;
+                return fail("expected %s contact-sensor tensor, got device type %d", mGpu ? "CUDA" : "CPU",
+                            static_cast<int>(tensor->device.device_type));
             }
-
-            const uint32_t pointIndex = header.contactDataOffset;
-            if (mPointCoverage[pointIndex] != 0)
+            if (tensor && tensor->shape)
             {
-                bmRecordFailure(mRow, "overlapping point slices at point %u", pointIndex);
-                return false;
-            }
-            mPointCoverage[pointIndex] = 1;
-
-            const ovphysx_contact_point_t& point = report.points[pointIndex];
-            for (uint32_t axis = 0; axis < 3; ++axis)
-            {
-                if (!std::isfinite(point.position[axis]) || !std::isfinite(point.normal[axis]) ||
-                    !std::isfinite(point.impulse[axis]))
+                // Every net-force group spans the full sensor set; require each to
+                // carry exactly 512 rows, not merely the largest.
+                const int64_t rows = tensor->shape[0];
+                if (groupRows < 0)
                 {
-                    bmRecordFailure(mRow, "non-finite point data at point %u", pointIndex);
-                    return false;
+                    groupRows = rows;
+                }
+                else if (rows != groupRows)
+                {
+                    rowsConsistent = false;
+                }
+                // Warm-up only: check physical liveness on a host read, which
+                // exposes the net-force column directly; a resting sensor's net
+                // normal force is ~ its weight, so an all-zero column means no
+                // contacts are being generated. Device (DirectGPU) columns are
+                // checked for CUDA residency and row count, not force values,
+                // and a strided column is skipped rather than walked unsafely.
+                if (checkLive && tensor->data && tensor->strides == nullptr &&
+                    tensor->device.device_type == kDLCPU &&
+                    tensor->dtype.code == static_cast<uint8_t>(kDLFloat) && tensor->dtype.bits == 32)
+                {
+                    sawHostForceColumn = true;
+                    size_t elems = tensor->dtype.lanes ? tensor->dtype.lanes : 1;
+                    for (int32_t d = 0; d < tensor->ndim; ++d)
+                    {
+                        elems *= static_cast<size_t>(tensor->shape[d]);
+                    }
+                    const float* data =
+                        reinterpret_cast<const float*>(static_cast<const char*>(tensor->data) + tensor->byte_offset);
+                    for (size_t i = 0; i < elems; ++i)
+                    {
+                        // Plain comparison rather than std::max: on MSVC the USD
+                        // precompiled header drags in the windows.h max() macro,
+                        // which would mangle a std::max( call site.
+                        const float mag = std::fabs(data[i]);
+                        if (mag > maxHostForce)
+                        {
+                            maxHostForce = mag;
+                        }
+                    }
                 }
             }
-            if (!std::isfinite(point.separation) || point.separation > 0.0f || point.separation < -1.0f)
+            // On a DirectGPU scene the net-force columns are device-resident; honor
+            // the per-group CUDA sync before releasing. No-op on CPU / non-CUDA.
+            if (!waitForGroup(*group))
             {
-                bmRecordFailure(
-                    mRow, "invalid separation at point %u: %.9g", pointIndex, static_cast<double>(point.separation));
-                return false;
+                return fail("cuda_sync wait failed after %u groups", groups);
             }
-            const float normalLengthSquared = point.normal[0] * point.normal[0] + point.normal[1] * point.normal[1] +
-                                              point.normal[2] * point.normal[2];
-            if (normalLengthSquared < 0.5f || normalLengthSquared > 1.5f)
+            ++groups;
+            const ovstage_read_group_id_t groupId = group->read_group_id;
+            group = nullptr;
+            if (bmCompleteTask(handle(), ovphysx_release_group(handle(), read, groupId)).status != OVPHYSX_API_SUCCESS)
             {
-                bmRecordFailure(mRow, "invalid contact normal at point %u", pointIndex);
-                return false;
+                return fail("ovphysx_release_group failed after %u groups", groups);
             }
         }
 
-        if (std::find(mPointCoverage.begin(), mPointCoverage.end(), uint8_t{ 0 }) != mPointCoverage.end())
+        if (!drained || groups == 0)
         {
-            bmRecordFailure(mRow, "contact report contains an incomplete point-slice partition");
-            return false;
+            return warmupMiss("contact-sensor read drained no groups");
         }
-
-        std::sort(mObservedPairs.begin(), mObservedPairs.end());
-        if (std::adjacent_find(mObservedPairs.begin(), mObservedPairs.end()) != mObservedPairs.end())
+        if (groupRows != static_cast<int64_t>(kSensorCount) || !rowsConsistent)
         {
-            bmRecordFailure(mRow, "contact report contains a duplicate Reporter/Static pair");
-            return false;
+            return warmupMiss("expected %u contact-sensor rows in every group, got %lld (consistent=%d)", kSensorCount,
+                              static_cast<long long>(groupRows), static_cast<int>(rowsConsistent));
         }
-        if (mObservedPairs != mExpectedPairs)
+        if (checkLive && sawHostForceColumn && maxHostForce < kLiveNormalForceThreshold)
         {
-            bmRecordFailure(mRow, "contact report identity set does not exactly cover the expected pairs");
-            return false;
+            return warmupMiss("no contact sensor reported a live net force (max %.4g N); scene not generating contacts",
+                              static_cast<double>(maxHostForce));
         }
         return true;
+    }
+
+#if defined(OVPHYSX_BENCHMARK_HAS_CUDA)
+    bool waitForGroup(const ovstage_read_group_t& group)
+    {
+        if (group.data.cuda_sync.wait_event != 0)
+        {
+            return cudaEventSynchronize(reinterpret_cast<cudaEvent_t>(group.data.cuda_sync.wait_event)) == cudaSuccess;
+        }
+        if (group.data.cuda_sync.stream != 0)
+        {
+            const cudaStream_t stream = group.data.cuda_sync.stream == 1 ?
+                                            cudaStream_t{} :
+                                            reinterpret_cast<cudaStream_t>(group.data.cuda_sync.stream);
+            return cudaStreamSynchronize(stream) == cudaSuccess;
+        }
+        return true;
+    }
+#else
+    bool waitForGroup(const ovstage_read_group_t&)
+    {
+        return true;
+    }
+#endif
+
+    // Operational failures are fatal even during warmup. Cleanup may retire the
+    // session despite returning an error, so teardown cannot recover this signal.
+    bool fail(const char* fmt, ...)
+    {
+        char buffer[256];
+        va_list args;
+        va_start(args, fmt);
+        std::vsnprintf(buffer, sizeof(buffer), fmt, args);
+        va_end(args);
+        mLastReason.assign(buffer);
+        bmRecordFailure(mRow, "%s", buffer);
+        return false;
+    }
+
+    // A successful read can observe an empty, incomplete or not-yet-live contact
+    // set. Stabilization retries these misses within its existing step bound;
+    // a measured read records empty or incomplete output as a failure.
+    bool warmupMiss(const char* fmt, ...)
+    {
+        char buffer[256];
+        va_list args;
+        va_start(args, fmt);
+        std::vsnprintf(buffer, sizeof(buffer), fmt, args);
+        va_end(args);
+        mLastReason.assign(buffer);
+        return false;
     }
 
     const char* mRow = nullptr;
@@ -703,34 +560,27 @@ private:
     bool mInitializationAttempted = false;
     bool mSetupOk = false;
     bool mStepOk = false;
-    uint64_t mAttachHandle = 0;
-    std::array<PairId, kPairCount> mExpectedPairs{};
-    std::array<PairId, kPairCount> mObservedPairs{};
-    std::array<uint8_t, kPairCount> mPointCoverage{};
-    bool mIdentityResolved = false;
-    std::unique_ptr<authoringbm::GpuFallbackScope> mGpuScope;
+    std::string mLastReason;
 };
 
 
-struct ContactReportPersistentPairs512Cpu : ContactReportBase
+struct ContactReportNetForce512Cpu : ContactReportBase
 {
-    ContactReportPersistentPairs512Cpu() : ContactReportBase("ContactReport.persistent_pairs_512_step_read_cpu", false)
+    ContactReportNetForce512Cpu() : ContactReportBase("ContactReport.net_force_512_read_cpu", false)
     {
     }
 };
 
 
-struct ContactReportPersistentPairs512Gpu : ContactReportBase
+struct ContactReportNetForce512Gpu : ContactReportBase
 {
-    ContactReportPersistentPairs512Gpu() : ContactReportBase("ContactReport.persistent_pairs_512_step_read_gpu", true)
+    ContactReportNetForce512Gpu() : ContactReportBase("ContactReport.net_force_512_read_gpu", true)
     {
     }
 };
 
 
-Register<ContactReportPersistentPairs512Cpu, true> sContactReportPersistentPairs512Cpu(
-    "ContactReport.persistent_pairs_512_step_read_cpu");
-Register<ContactReportPersistentPairs512Gpu, true> sContactReportPersistentPairs512Gpu(
-    "ContactReport.persistent_pairs_512_step_read_gpu");
+Register<ContactReportNetForce512Cpu, true> sContactReportNetForce512Cpu("ContactReport.net_force_512_read_cpu");
+Register<ContactReportNetForce512Gpu, true> sContactReportNetForce512Gpu("ContactReport.net_force_512_read_gpu");
 
 } // namespace

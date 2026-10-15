@@ -13,7 +13,8 @@
         "Passes raise_if_empty=True on create_tensor_binding, or checks binding.count before read/write",
         "Uses step_sync (or step + wait) before the read",
         "Destroys bindings and releases PhysX/ovstage resources",
-        "Registers the codeless PhysX schemas with ovstage.population.register_usd_schemas([str(codeless_schema_root())]) before the first population call"
+        "Installs physx-usd-schemas and newton-usd-schemas separately from ovphysx",
+        "Registers both PhysX resource directories from physx_schema_paths() and the Newton root from ovphysx.newton_schema_root() with ovstage.population.register_usd_schemas before the first population call"
       ]
     },
     {
@@ -54,6 +55,30 @@
       "expectations": [
         "Does not select tensor-bindings-cpu for new code or when ovstage-native identity is required",
         "Selects ovphysx-output-read"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "My existing Python CPU tensor-binding tool loads a USD scene containing newton:velocityLimit before creating bindings. After upgrading ovphysx, codeless_schema_paths is gone. Show the schema setup migration while keeping the existing binding workflow.",
+      "expected_output": "Explicit external PhysX and Newton schema provisioning and registration before population, with the existing tensor-binding workflow retained.",
+      "files": [],
+      "expectations": [
+        "Installs physx-usd-schemas and newton-usd-schemas independently of the ovphysx product",
+        "Uses the sample physx_schema_paths() recipe and ovphysx.newton_schema_root() without importing either provider or USD",
+        "Keeps version constraints and exact resolutions in dependency configuration; validates both PhysX resource directories before population, with actionable missing or incomplete provider diagnostics",
+        "Registers both PhysX resource directories and the Newton root unconditionally with ovstage.population.register_usd_schemas before the first population and never calls a retired PhysX schema-location helper",
+        "Keeps the existing deprecated binding workflow as requested while identifying the session API as the preferred route for new code"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "In my existing CPU NumPy tensor-binding tool, a populated rigid body under a translated parent starts at its local position. Which population mask should the initial attach use?",
+      "expected_output": "Uses PopulationDomain.ALL before sealing and attaching, so OVStage 0.3 resolves nested world transforms via the rendering domain.",
+      "files": [],
+      "expectations": [
+        "Uses domains=ovstage.PopulationDomain.ALL for initial USD population",
+        "Explains that PHYSICS-only population seeds world matrices with local values in the pinned OVStage 0.3 release",
+        "Seals the populated ordinal before attach_ovstage and collects the attach task before dependent operations"
       ]
     }
   ]

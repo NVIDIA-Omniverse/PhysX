@@ -33,22 +33,20 @@ or the wheel staging tree must therefore not contain:
   - ELF DT_NEEDED / SONAME entries or Windows PE imports that still depend on
     Python, OpenUSD, or core Carbonite
 
-With --require-schemas the tree must also carry the codeless PhysX USD schemas
-(schemas/physx/plugInfo.json plus at least one <Module>/resources/plugInfo.json),
-which ovphysx ships as data for the application to register.
+Codeless PhysX schema resources must also be absent: the application installs
+the external provider and registers its resources before population.
 
 This script scans a directory tree and exits non-zero if any violations are
 found. It is meant to be called from install.cmake and build_wheel.cmake as
 a hard gate, and also from Python tests for fast offline policy checks.
 
 Usage:
-    python scripts/verify_pyless_closure.py --dir _install --require-schemas
-    python scripts/verify_pyless_closure.py --dir _build/python_wheel_staging/ovphysx --require-schemas
+    python scripts/verify_pyless_closure.py --dir _install
+    python scripts/verify_pyless_closure.py --dir _build/python_wheel_staging/ovphysx
 """
 
 import argparse
 import fnmatch
-import json
 import platform
 import re
 import struct
@@ -381,11 +379,11 @@ def _check_no_usd_plugin_registry(root: Path) -> list[str]:
     """The USD plugin registry (plugins/usd) belonged to ovphysx's own USD runtime.
 
     ovphysx no longer has one, so any plugInfo.json under plugins/ is a stale or
-    misrouted USD payload. The codeless schemas live under schemas/physx instead.
+    misrouted USD payload. Schema resources belong to the external provider.
     """
     plugins_usd = root / "plugins" / "usd"
     if plugins_usd.exists():
-        return [f"USD plugin registry shipped: {_relative_path(root, plugins_usd)} (schemas belong in schemas/physx)"]
+        return [f"USD plugin registry shipped: {_relative_path(root, plugins_usd)} (schemas belong to the external provider)"]
     return []
 
 
@@ -402,61 +400,13 @@ def _check_no_usd_runtime_config(root: Path) -> list[str]:
     ]
 
 
-def _load_plug_info(path: Path):
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return None
+def _check_no_bundled_schemas(root: Path) -> list[str]:
+    # Reject schema resources anywhere in the payload.
+    return [f"bundled USD schema resource: {_relative_path(root, path)}"
+            for path in sorted(root.rglob("generatedSchema.usda"))]
 
 
-def _check_codeless_schemas(root: Path) -> list[str]:
-    """The codeless PhysX schema tree must be registrable as shipped: a root
-    plugInfo.json that includes the module resources, and at least one
-    <Module>/resources/ holding a resource-type plugInfo.json with declared
-    schema types and a generatedSchema.usda."""
-    schema_root = root / "schemas" / "physx"
-    rel_root = _relative_path(root, schema_root)
-    violations = []
-    root_plug_info = schema_root / "plugInfo.json"
-    if not root_plug_info.is_file():
-        violations.append(f"missing codeless schema root registry: {rel_root}/plugInfo.json")
-    else:
-        root_data = _load_plug_info(root_plug_info)
-        includes = root_data.get("Includes") if isinstance(root_data, dict) else None
-        if not isinstance(includes, list) or "*/resources/" not in includes:
-            violations.append(
-                f"codeless schema root registry does not include the module resources: "
-                f'{rel_root}/plugInfo.json (expected "Includes": ["*/resources/"])'
-            )
-    modules = sorted(schema_root.glob("*/resources/plugInfo.json")) if schema_root.is_dir() else []
-    if not modules:
-        violations.append(f"no codeless schema module under {rel_root} (expected <Module>/resources/plugInfo.json)")
-    for plug_info in modules:
-        rel_module = _relative_path(root, plug_info.parent)
-        if not (plug_info.parent / "generatedSchema.usda").is_file():
-            violations.append(f"codeless schema module without generatedSchema.usda: {rel_module}")
-        data = _load_plug_info(plug_info)
-        plugins = data.get("Plugins") if isinstance(data, dict) else None
-        if not isinstance(plugins, list) or not plugins:
-            violations.append(f"codeless schema module without a Plugins entry: {rel_module}/plugInfo.json")
-            continue
-        for plugin in plugins:
-            if not isinstance(plugin, dict):
-                violations.append(f"codeless schema module with a malformed Plugins entry: {rel_module}/plugInfo.json")
-                continue
-            if plugin.get("Type") != "resource":
-                violations.append(
-                    f"codeless schema module is not a resource plugin: {rel_module}/plugInfo.json "
-                    f"(Type {plugin.get('Type')!r})"
-                )
-            if "LibraryPath" in plugin:
-                violations.append(f"codeless schema module names a LibraryPath: {rel_module}/plugInfo.json")
-            if not (plugin.get("Info") or {}).get("Types"):
-                violations.append(f"codeless schema module declares no schema types: {rel_module}/plugInfo.json")
-    return violations
-
-
-def verify(directory: Path, require_schemas: bool = False) -> list[str]:
+def verify(directory: Path) -> list[str]:
     """Run all py-less, USD-free package checks and return violations."""
     violations = []
     violations.extend(_check_forbidden_files(directory))
@@ -464,8 +414,7 @@ def verify(directory: Path, require_schemas: bool = False) -> list[str]:
     violations.extend(_check_no_usd_runtime_config(directory))
     violations.extend(_check_elf_dynamic_linux(directory))
     violations.extend(_check_pe_imports_windows(directory))
-    if require_schemas:
-        violations.extend(_check_codeless_schemas(directory))
+    violations.extend(_check_no_bundled_schemas(directory))
     return violations
 
 
@@ -475,15 +424,13 @@ def main():
     )
     parser.add_argument("--dir", type=Path, required=True,
                         help="Root directory to scan (_install or wheel staging)")
-    parser.add_argument("--require-schemas", action="store_true",
-                        help="Also require the codeless PhysX schema tree under schemas/physx")
     args = parser.parse_args()
 
     if not args.dir.is_dir():
         print(f"[ERROR] Directory not found: {args.dir}", file=sys.stderr)
         sys.exit(1)
 
-    violations = verify(args.dir, require_schemas=args.require_schemas)
+    violations = verify(args.dir)
     if violations:
         print(f"\n[FAIL] {len(violations)} package isolation violation(s) in {args.dir}:\n")
         for v in violations:

@@ -29,6 +29,13 @@
 #include <extensions/PxCollectionExt.h>
 #include <foundation/PxMat44.h>
 
+#include <cstdint>
+
+namespace physx
+{
+class PxController;
+}
+
 namespace omni { namespace physx { namespace usdparser { class AttachedStage; } } }
 
 namespace omni
@@ -202,6 +209,9 @@ public:
     }
 
     ::physx::PxQuat mFixupQ;
+    // The controller this actor was created for. Released with the record; null only
+    // before that assignment.
+    ::physx::PxController* mController = nullptr;
 };
 
 class InternalForce : public Allocateable

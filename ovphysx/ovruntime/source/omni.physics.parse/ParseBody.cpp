@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-1 AC-2
+ *
  * @implements REQ-PARSE-BODY-001
  * @covers AC-1 AC-2 AC-3 AC-4 AC-6
  *
@@ -13,9 +16,13 @@
  *
  * @implements REQ-SPLINE-TARGET-001
  * @covers AC-1
+ *
+ * @implements REQ-SIM-LOCALVELOCITY-001
+ * @covers AC-3 AC-4
  */
 
 #include <omni/physics/parse/ParseApi.h>
+#include <omni/physics/parse/PreparedBody.h>
 #include <omni/physics/parse/KnownTokens.h>
 
 #include <cfloat>
@@ -38,51 +45,14 @@ constexpr float kDegToRad = 0.01745329251994329547f;
 constexpr float kRadToDeg = 57.29577951308232286465f;
 
 template <typename T>
-T readScalar(const IPhysicsSource& src, ObjectKey key, TokenId attr, T defaultVal)
+T readPreparedClamped(const PreparedAttribute<T>& input, T defaultVal, T minVal, T maxVal) noexcept
 {
-    if constexpr (std::is_same_v<T, int>)
-    {
-        int64_t v = defaultVal;
-        src.getAttribute(key, attr, v);
-        return static_cast<int>(v);
-    }
-    else
-    {
-        T v = defaultVal;
-        src.getAttribute(key, attr, v);
-        return v;
-    }
-}
-
-// Read an attribute with [min, max] clamping. Several PhysxRigidBodyAPI
-// attributes have schema defaults of `inf` (e.g., maxLinearVelocity);
-// without clamping we'd hand `inf` to PhysX, which rejects it as an
-// invalid float.
-//
-// Gates on `hasAuthoredAttribute` — schema defaults are intentionally
-// NOT applied because the caller pre-loaded `defaultVal` with a
-// units-scaled default (e.g. sleepThreshold's
-// `5e-5 * tolerancesSpeed^2`). Without the gate, an unauthored
-// attribute would return its raw schema default and silently overwrite
-// the units-scaled default.
-template <typename T>
-T readScalarClamped(const IPhysicsSource& src, ObjectKey key, TokenId attr,
-                    T defaultVal, T minVal, T maxVal)
-{
-    if (!src.hasAuthoredAttribute(key, attr))
+    if (!input.authored)
         return defaultVal;
-    T v = readScalar<T>(src, key, attr, defaultVal);
-    if (v < minVal) v = minVal;
-    if (v > maxVal) v = maxVal;
-    return v;
-}
-
-carb::Float3 readFloat3(const IPhysicsSource& src, ObjectKey key, TokenId attr,
-                       const carb::Float3& defaultVal)
-{
-    carb::Float3 v = defaultVal;
-    src.getAttribute(key, attr, v);
-    return v;
+    T value = input.valueOr(defaultVal);
+    if (value < minVal) value = minVal;
+    if (value > maxVal) value = maxVal;
+    return value;
 }
 
 inline carb::Float3 degToRad(const carb::Float3& v)
@@ -125,82 +95,127 @@ void setToDefault(DynamicPhysxRigidBodyDesc& desc, const SourceUnits& units)
 
 DescPtr<DynamicPhysxRigidBodyDesc> parseDynamicBody(ParseContext& ctx, ObjectKey key)
 {
+    DescPtr<DynamicPhysxRigidBodyDesc> desc = allocateDesc<DynamicPhysxRigidBodyDesc>(ctx.descriptorAllocator());
+    if (desc)
+        fillDynamicBody(prepareDynamicBody(ctx, key), *desc);
+    return desc;
+}
+
+PreparedDynamicBody prepareDynamicBody(ParseContext& ctx, ObjectKey key)
+{
     IPhysicsSource& src = ctx.source();
     const KnownTokens& tok = ctx.knownTokens();
+    PreparedDynamicBody input;
+    input.units = ctx.units();
+    input.outputVelocitiesLocalSpaceDefault = ctx.outputVelocitiesLocalSpaceDefault();
+    input.physxRigidBodyAPI = src.hasSchema(key, tok.physxRigidBodyAPI);
+    input.physxSurfaceVelocityAPI = src.hasSchema(key, tok.physxSurfaceVelocityAPI);
+    input.physxSplinesSurfaceVelocityAPI = src.hasSchema(key, tok.physxSplinesSurfaceVelocityAPI);
+    readDynamicBodyAttributes(src, key, tok, input);
+    if (input.metadataLocalSpaceVelocities.valueOr(input.outputVelocitiesLocalSpaceDefault) ||
+        (input.physxSurfaceVelocityAPI && input.physxSurfaceVelocityLocalSpace.valueOr(true)))
+        src.getLocalToWorldRotationAndScale(key, input.rotation, input.scale);
 
-    DescPtr<DynamicPhysxRigidBodyDesc> desc =
-        allocateDesc<DynamicPhysxRigidBodyDesc>(ctx.descriptorAllocator());
-    setToDefault(*desc, ctx.units());
+    if (input.physxSplinesSurfaceVelocityAPI && input.physxSplinesSurfaceVelocityEnabled.valueOr(true))
+    {
+        std::vector<ObjectKey> targets;
+        src.getRelationshipTargets(key, tok.physxSplinesSurfaceVelocityCurve, targets);
+        if (!targets.empty() && src.isA(targets[0], tok.basisCurvesType))
+        {
+            ObjectKey parent = src.getParent(targets[0]);
+            while (parent.valid())
+            {
+                if (parent == key)
+                {
+                    input.splineCurve = targets[0];
+                    break;
+                }
+                const ObjectKey next = src.getParent(parent);
+                if (next == parent) break;
+                parent = next;
+            }
+        }
+    }
+    input.prepared = true;
+    return input;
+}
+
+bool fillDynamicBody(const PreparedDynamicBody& input, DynamicPhysxRigidBodyDesc& output) noexcept
+{
+    if (!input.prepared)
+        return false;
+    DynamicPhysxRigidBodyDesc* desc = &output;
+    setToDefault(*desc, input.units);
 
     // Basic UsdPhysicsRigidBodyAPI fields
-    desc->kinematicBody  = readScalar<bool>(src, key, tok.physicsKinematicEnabled, false);
-    desc->startsAsleep   = readScalar<bool>(src, key, tok.physicsStartsAsleep, false);
+    desc->kinematicBody  = input.physicsKinematicEnabled.valueOr(false);
+    desc->startsAsleep   = input.physicsStartsAsleep.valueOr(false);
 
     // Local-space-velocity output mode: start from the consumer's global
     // setting (e.g. omni.physx /physics/outputVelocitiesLocalSpace) and
     // let per-prim metadata override.
-    desc->localSpaceVelocities = ctx.outputVelocitiesLocalSpaceDefault();
+    desc->localSpaceVelocities = input.outputVelocitiesLocalSpaceDefault;
     // `physics:localSpaceVelocities` is authored as customData metadata in
     // USD; UsdSource::getAttribute falls back to customData when the prim
     // has no schema-applied attribute by that name. Callers don't need to
     // know which storage the source uses.
-    src.getAttribute(key, tok.metadataLocalSpaceVelocities, desc->localSpaceVelocities);
+    input.metadataLocalSpaceVelocities.read(desc->localSpaceVelocities);
 
-    desc->linearVelocity  = readFloat3(src, key, tok.physicsVelocity,        { 0.0f, 0.0f, 0.0f });
+    desc->linearVelocity  = input.physicsVelocity.valueOr({ 0.0f, 0.0f, 0.0f });
     // angularVelocity authored in deg/s in USD; engine-side is rad/s.
     desc->angularVelocity = degToRad(
-        readFloat3(src, key, tok.physicsAngularVelocity, { 0.0f, 0.0f, 0.0f }));
+        input.physicsAngularVelocity.valueOr({ 0.0f, 0.0f, 0.0f }));
 
-    // When localSpaceVelocities is on, apply the prim's rotation (and
-    // per-axis scale, on linear only) so the authored vector becomes a
-    // world-space velocity.
+    // Scale linear velocity in the body's local axes before rotating both
+    // velocities into world space.
     if (desc->localSpaceVelocities)
     {
         Matrix3d rot;
         carb::Float3 scale;
-        src.getLocalToWorldRotationAndScale(key, rot, scale);
-        desc->linearVelocity  = componentScale(scale, rotateDir(rot, desc->linearVelocity));
+        rot = input.rotation;
+        scale = input.scale;
+        desc->linearVelocity  = rotateDir(rot, componentScale(scale, desc->linearVelocity));
         desc->angularVelocity = rotateDir(rot, desc->angularVelocity);
     }
 
     // PhysxRigidBodyAPI extensions — only override when the API is applied.
     // For each field, the readScalar default is the current (set-to-default)
     // value, so unauthored attributes preserve the units-aware defaults.
-    if (src.hasSchema(key, tok.physxRigidBodyAPI))
+    if (input.physxRigidBodyAPI)
     {
         // Clamping ranges enforce PhysX's documented valid bounds for
         // each field.
-        desc->linearDamping             = readScalarClamped<float>(src, key, tok.physxRigidBodyLinearDamping,  desc->linearDamping,  0.0f, FLT_MAX);
-        desc->angularDamping            = readScalarClamped<float>(src, key, tok.physxRigidBodyAngularDamping, desc->angularDamping, 0.0f, FLT_MAX);
-        desc->maxLinearVelocity         = readScalarClamped<float>(src, key, tok.physxRigidBodyMaxLinearVelocity,  desc->maxLinearVelocity,  0.0f, kSqrtFloatMax);
+        desc->linearDamping             = readPreparedClamped(input.physxRigidBodyLinearDamping,  desc->linearDamping,  0.0f, FLT_MAX);
+        desc->angularDamping            = readPreparedClamped(input.physxRigidBodyAngularDamping, desc->angularDamping, 0.0f, FLT_MAX);
+        desc->maxLinearVelocity         = readPreparedClamped(input.physxRigidBodyMaxLinearVelocity,  desc->maxLinearVelocity,  0.0f, kSqrtFloatMax);
         // maxAngularVelocity authored in deg/s; clamp [0, SQRT_FLT_MAX] then convert to rad/s.
         {
             float deg = -1.0f;
-            if (src.getAttribute(key, tok.physxRigidBodyMaxAngularVelocity, deg) && deg >= 0.0f)
+            if (input.physxRigidBodyMaxAngularVelocity.read(deg) && deg >= 0.0f)
             {
                 if (deg > kSqrtFloatMax) deg = kSqrtFloatMax;
                 desc->maxAngularVelocity = deg * kDegToRad;
             }
         }
-        desc->sleepThreshold            = readScalarClamped<float>(src, key, tok.physxRigidBodySleepThreshold,  desc->sleepThreshold,  0.0f, FLT_MAX);
-        desc->stabilizationThreshold    = readScalarClamped<float>(src, key, tok.physxRigidBodyStabilizationThreshold, desc->stabilizationThreshold, 0.0f, FLT_MAX);
-        desc->maxDepenetrationVelocity  = readScalarClamped<float>(src, key, tok.physxRigidBodyMaxDepenetrationVelocity, desc->maxDepenetrationVelocity, 0.0f, FLT_MAX);
-        desc->contactSlopCoefficient    = readScalarClamped<float>(src, key, tok.physxRigidBodyContactSlopCoefficient, desc->contactSlopCoefficient, 0.0f, FLT_MAX);
-        desc->maxContactImpulse         = readScalarClamped<float>(src, key, tok.physxRigidBodyMaxContactImpulse, desc->maxContactImpulse, 0.0f, FLT_MAX);
-        desc->cfmScale                  = readScalarClamped<float>(src, key, tok.physxRigidBodyCfmScale, desc->cfmScale, 0.0f, 1.0f);
+        desc->sleepThreshold            = readPreparedClamped(input.physxRigidBodySleepThreshold,  desc->sleepThreshold,  0.0f, FLT_MAX);
+        desc->stabilizationThreshold    = readPreparedClamped(input.physxRigidBodyStabilizationThreshold, desc->stabilizationThreshold, 0.0f, FLT_MAX);
+        desc->maxDepenetrationVelocity  = readPreparedClamped(input.physxRigidBodyMaxDepenetrationVelocity, desc->maxDepenetrationVelocity, 0.0f, FLT_MAX);
+        desc->contactSlopCoefficient    = readPreparedClamped(input.physxRigidBodyContactSlopCoefficient, desc->contactSlopCoefficient, 0.0f, FLT_MAX);
+        desc->maxContactImpulse         = readPreparedClamped(input.physxRigidBodyMaxContactImpulse, desc->maxContactImpulse, 0.0f, FLT_MAX);
+        desc->cfmScale                  = readPreparedClamped(input.physxRigidBodyCfmScale, desc->cfmScale, 0.0f, 1.0f);
 
-        desc->solverPositionIterationCount = readScalarClamped<int>(src, key, tok.physxRigidBodySolverPositionIterationCount, desc->solverPositionIterationCount, 1, 255);
-        desc->solverVelocityIterationCount = readScalarClamped<int>(src, key, tok.physxRigidBodySolverVelocityIterationCount, desc->solverVelocityIterationCount, 0, 255);
+        desc->solverPositionIterationCount = readPreparedClamped(input.physxRigidBodySolverPositionIterationCount, desc->solverPositionIterationCount, 1, 255);
+        desc->solverVelocityIterationCount = readPreparedClamped(input.physxRigidBodySolverVelocityIterationCount, desc->solverVelocityIterationCount, 0, 255);
 
-        desc->enableCCD                = readScalar<bool>(src, key, tok.physxRigidBodyEnableCCD, desc->enableCCD);
-        desc->enableSpeculativeCCD     = readScalar<bool>(src, key, tok.physxRigidBodyEnableSpeculativeCCD, desc->enableSpeculativeCCD);
-        desc->disableGravity           = readScalar<bool>(src, key, tok.physxRigidBodyDisableGravity, desc->disableGravity);
-        desc->retainAccelerations      = readScalar<bool>(src, key, tok.physxRigidBodyRetainAccelerations, desc->retainAccelerations);
-        desc->enableGyroscopicForces   = readScalar<bool>(src, key, tok.physxRigidBodyEnableGyroscopicForces, desc->enableGyroscopicForces);
-        desc->solveContacts            = readScalar<bool>(src, key, tok.physxRigidBodySolveContact, desc->solveContacts);
+        desc->enableCCD                = input.physxRigidBodyEnableCCD.valueOr(desc->enableCCD);
+        desc->enableSpeculativeCCD     = input.physxRigidBodyEnableSpeculativeCCD.valueOr(desc->enableSpeculativeCCD);
+        desc->disableGravity           = input.physxRigidBodyDisableGravity.valueOr(desc->disableGravity);
+        desc->retainAccelerations      = input.physxRigidBodyRetainAccelerations.valueOr(desc->retainAccelerations);
+        desc->enableGyroscopicForces   = input.physxRigidBodyEnableGyroscopicForces.valueOr(desc->enableGyroscopicForces);
+        desc->solveContacts            = input.physxRigidBodySolveContact.valueOr(desc->solveContacts);
 
-        desc->lockedPosAxis            = readScalarClamped<int>(src, key, tok.physxRigidBodyLockedPosAxis, desc->lockedPosAxis, 0, 7);
-        desc->lockedRotAxis            = readScalarClamped<int>(src, key, tok.physxRigidBodyLockedRotAxis, desc->lockedRotAxis, 0, 7);
+        desc->lockedPosAxis            = readPreparedClamped(input.physxRigidBodyLockedPosAxis, desc->lockedPosAxis, 0, 7);
+        desc->lockedRotAxis            = readPreparedClamped(input.physxRigidBodyLockedRotAxis, desc->lockedRotAxis, 0, 7);
     }
 
     // Legacy compatibility: a kinematic body with non-zero authored velocities
@@ -217,14 +232,14 @@ DescPtr<DynamicPhysxRigidBodyDesc> parseDynamicBody(ParseContext& ctx, ObjectKey
         desc->surfaceAngularVelocity       = desc->angularVelocity;
     }
 
-    if (src.hasSchema(key, tok.physxSurfaceVelocityAPI))
+    if (input.physxSurfaceVelocityAPI)
     {
-        desc->surfaceVelocityEnabled    = readScalar<bool>(src, key, tok.physxSurfaceVelocityEnabled, true);
-        desc->surfaceVelocityLocalSpace = readScalar<bool>(src, key, tok.physxSurfaceVelocityLocalSpace, true);
-        desc->surfaceLinearVelocity     = readFloat3(src, key, tok.physxSurfaceVelocity, { 0.0f, 0.0f, 0.0f });
+        desc->surfaceVelocityEnabled    = input.physxSurfaceVelocityEnabled.valueOr(true);
+        desc->surfaceVelocityLocalSpace = input.physxSurfaceVelocityLocalSpace.valueOr(true);
+        desc->surfaceLinearVelocity     = input.physxSurfaceVelocity.valueOr({ 0.0f, 0.0f, 0.0f });
         // surfaceAngularVelocity is authored in deg/s; convert to rad/s.
         desc->surfaceAngularVelocity    = degToRad(
-            readFloat3(src, key, tok.physxSurfaceAngularVelocity, { 0.0f, 0.0f, 0.0f }));
+            input.physxSurfaceAngularVelocity.valueOr({ 0.0f, 0.0f, 0.0f }));
 
         // Keep the authored value: the scale fold below is not invertible (a zero scale
         // component loses the axis), and the runtime needs the pre-fold quantity to
@@ -235,16 +250,13 @@ DescPtr<DynamicPhysxRigidBodyDesc> parseDynamicBody(ParseContext& ctx, ObjectKey
         // rotation) when surfaceVelocityLocalSpace is true.
         if (desc->surfaceVelocityLocalSpace)
         {
-            Matrix3d rot;
-            carb::Float3 scale;
-            src.getLocalToWorldRotationAndScale(key, rot, scale);
-            desc->surfaceLinearVelocity = componentScale(scale, desc->surfaceLinearVelocity);
+            desc->surfaceLinearVelocity = componentScale(input.scale, desc->surfaceLinearVelocity);
         }
     }
 
-    if (src.hasSchema(key, tok.physxSplinesSurfaceVelocityAPI))
+    if (input.physxSplinesSurfaceVelocityAPI)
     {
-        desc->splinesSurfaceVelocityEnabled = readScalar<bool>(src, key, tok.physxSplinesSurfaceVelocityEnabled, true);
+        desc->splinesSurfaceVelocityEnabled = input.physxSplinesSurfaceVelocityEnabled.valueOr(true);
 
         // Surface velocity from a curve and from explicit components
         // are mutually exclusive.
@@ -253,55 +265,16 @@ DescPtr<DynamicPhysxRigidBodyDesc> parseDynamicBody(ParseContext& ctx, ObjectKey
 
         if (desc->splinesSurfaceVelocityEnabled)
         {
-            desc->splinesSurfaceVelocityMagnitude = readScalar<float>(
-                src, key, tok.physxSplinesSurfaceVelocityMagnitude, 0.0f);
+            desc->splinesSurfaceVelocityMagnitude = input.physxSplinesSurfaceVelocityMagnitude.valueOr(0.0f);
 
-            std::vector<ObjectKey> curveTargets;
-            src.getRelationshipTargets(key, tok.physxSplinesSurfaceVelocityCurve, curveTargets);
-            if (curveTargets.empty())
-            {
-                desc->splinesSurfaceVelocityEnabled = false;
-            }
+            if (input.splineCurve.valid())
+                desc->splinesCurvePrimKey = input.splineCurve;
             else
-            {
-                ObjectKey curve = curveTargets[0];
-                // Legacy validations (PhysicsBody.cpp::parseRigidBody):
-                //   1. Curve target must be a UsdGeomBasisCurves prim.
-                //   2. Curve must be a descendant of the body in the hierarchy.
-                // BasisCurves is a CONCRETE PRIM TYPE, so this is an isA question,
-                // not a hasSchema one -- hasSchema answers "is this applied API
-                // present on the prim". UsdSource happens to resolve type names
-                // through hasSchema too, which hid the mistake; OvstageSource
-                // correctly reports false for a name that is not an applied API,
-                // and spline surface velocity then disabled itself silently on
-                // every non-USD source. LoadStage's validation of this same
-                // relationship already uses isA, so this also makes the two agree.
-                bool isCurve = src.isA(curve, tok.basisCurvesType);
-                bool isDescendant = false;
-                if (isCurve)
-                {
-                    ObjectKey parent = src.getParent(curve);
-                    while (parent.handle != 0)
-                    {
-                        if (parent.handle == key.handle)
-                        {
-                            isDescendant = true;
-                            break;
-                        }
-                        ObjectKey next = src.getParent(parent);
-                        if (next.handle == parent.handle) break;
-                        parent = next;
-                    }
-                }
-                if (isCurve && isDescendant)
-                    desc->splinesCurvePrimKey = curve;
-                else
-                    desc->splinesSurfaceVelocityEnabled = false;
-            }
+                desc->splinesSurfaceVelocityEnabled = false;
         }
     }
 
-    return desc;
+    return true;
 }
 
 DescPtr<StaticPhysxRigidBodyDesc> parseStaticBody(ParseContext& ctx, ObjectKey /*key*/)

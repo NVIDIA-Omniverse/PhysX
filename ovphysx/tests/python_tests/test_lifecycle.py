@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-# PARTIALLY DEPRECATED (tensor-binding-deprecation): the TensorBinding-lifecycle tests here retire with the binding. The attach-handle and ContactBinding tests stay.
+# TensorBinding tests retire with that API; attachment and ContactBinding tests remain.
 
 
 # Lifecycle tests that use the shared session-scoped PhysX instance.
@@ -13,46 +13,77 @@ import gc
 from ctypes import byref, c_int32
 
 import pytest
+from ovphysx import Task
 from ovphysx._bindings import ovphysx_tensor_spec_t
 from ovphysx.types import ApiStatus, TensorType
 from test_utils import destroy_ovstage_test_attachments, load_usd_with_ovstage
 
 
-def test_get_attach_handle_reflects_current_attach(physx_sdk):
-    """Test PhysX.get_attach_handle() against attach/detach/reattach (ADR-0016).
+def test_native_same_stage_reattach_invalidates_python_cache(physx_sdk):
+    # @implements REQ-PYTHON-FRAME-001
+    # @covers AC-1
+    import ctypes
+    from test_utils import attach_usd_with_ovstage, data_path
+    from ovphysx.utils.simulation import OvStageOutputCache
 
-    Covered APIs:
-        PhysX.get_attach_handle
-        ovstage attach/detach helper
+    assert not physx_sdk.is_stage_attached()
+    stage = attach_usd_with_ovstage(physx_sdk, data_path("basic_simulation.usda"))
+    cache = OvStageOutputCache(physx_sdk)
+    try:
+        assert physx_sdk.is_stage_attached()
+        native = physx_sdk._lib
+        receipt = native.ovphysx_detach_ovstage(physx_sdk.handle)
+        assert receipt.status == ApiStatus.SUCCESS
+        physx_sdk.wait_task(Task._from_native(receipt))
+        assert not physx_sdk.is_stage_attached()
+        assert physx_sdk._attached_ovstage is stage  # Native caller bypassed Python.
+        receipt = native.ovphysx_attach_ovstage(physx_sdk.handle, ctypes.cast(stage._inst, ctypes.c_void_p), 1)
+        assert receipt.status == ApiStatus.SUCCESS
+        physx_sdk.wait_task(Task._from_native(receipt))
+        assert physx_sdk.is_stage_attached()
+        with pytest.raises(RuntimeError, match="detach or reattach"):
+            cache.refresh()
+        cache.close()
+        cache.close()
+        with OvStageOutputCache(physx_sdk) as replacement:
+            replacement.refresh()
+        physx_sdk.wait_task(physx_sdk.detach_ovstage())
+        physx_sdk.wait_task(physx_sdk.detach_ovstage())
+        assert not physx_sdk.is_stage_attached()
+    finally:
+        cache.close()
+        physx_sdk.wait_task(physx_sdk.detach_ovstage())
+        destroy_ovstage_test_attachments(physx_sdk)
 
-    Args:
-        physx_sdk: PhysX SDK fixture
 
-    Returns:
-        None: Ensures the attach handle is nonzero while attached, zero once
-        detached, and never repeats across a detach/reattach pair on the same
-        instance.
-    """
-    import os
+def test_native_different_stage_attach_rejects_stale_python_keepalive(physx_sdk):
+    # @implements REQ-PYTHON-FRAME-001
+    # @covers AC-1
+    import ctypes
+    import ovstage
+    from test_utils import attach_usd_with_ovstage, data_path
+    from ovphysx.utils.simulation import OvStageOutputCache
 
-    test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    usd_path = os.path.join(test_dir, "data", "basic_simulation.usda")
-
-    assert physx_sdk.get_attach_handle() == 0
-
-    load_usd_with_ovstage(physx_sdk, usd_path)
-    physx_sdk.wait_all()
-    first_handle = physx_sdk.get_attach_handle()
-    assert first_handle != 0
-
-    destroy_ovstage_test_attachments(physx_sdk)
-    assert physx_sdk.get_attach_handle() == 0
-
-    load_usd_with_ovstage(physx_sdk, usd_path)
-    physx_sdk.wait_all()
-    second_handle = physx_sdk.get_attach_handle()
-    assert second_handle != 0
-    assert second_handle != first_handle
+    original = attach_usd_with_ovstage(physx_sdk, data_path("basic_simulation.usda"))
+    with ovstage.Stage("native-replacement") as replacement:
+        try:
+            native = physx_sdk._lib
+            receipt = native.ovphysx_detach_ovstage(physx_sdk.handle)
+            assert receipt.status == ApiStatus.SUCCESS
+            physx_sdk.wait_task(Task._from_native(receipt))
+            receipt = native.ovphysx_attach_ovstage(
+                physx_sdk.handle, ctypes.cast(replacement._inst, ctypes.c_void_p), 1
+            )
+            assert receipt.status == ApiStatus.SUCCESS
+            physx_sdk.wait_task(Task._from_native(receipt))
+            assert physx_sdk._attached_ovstage is original
+            assert physx_sdk.is_stage_attached(replacement)
+            assert not physx_sdk.is_stage_attached(original)
+            with pytest.raises(RuntimeError, match="current ovstage.Stage object"):
+                OvStageOutputCache(physx_sdk)
+        finally:
+            physx_sdk.wait_task(physx_sdk.detach_ovstage())
+            destroy_ovstage_test_attachments(physx_sdk)
 
 
 def test_operations_on_destroyed_binding(physx_sdk):

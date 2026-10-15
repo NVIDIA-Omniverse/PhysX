@@ -1,7 +1,19 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-1 AC-3 AC-4
+
+// @implements REQ-ATTACH-LIFETIME-001
+// @covers AC-3 AC-4
+// @implements REQ-PARSE-CORE-006
+// @covers AC-9
+
 #include "CollisionRepresentation.h"
+#include "RuntimeExecution.h"
+#include <limits>
+#include <mutex>
+#include <unordered_map>
 
 #include "OmniPhysX.h"
 #include "CookingDataAsync.h"
@@ -11,7 +23,6 @@
 #include "common/utilities/Defer.h"
 #include "usdLoad/LoadUsd.h"
 #include "usdLoad/Collision.h"
-#include "usdBridge/StageBridge.h"
 #include <PxPhysicsAPI.h>
 
 using namespace ::physx;
@@ -22,6 +33,59 @@ namespace omni
 {
 namespace physx
 {
+
+namespace
+{
+struct CollisionTaskCompletion
+{
+    ~CollisionTaskCompletion();
+    uintptr_t token = 0;
+    bool completed = false; // protected by gCollisionTaskMutex
+};
+struct CollisionTaskEntry
+{
+    AttachHandle attach;
+    PhysxCookingOperationHandle nativeHandle;
+};
+std::mutex gCollisionTaskMutex;
+std::unordered_map<uintptr_t, CollisionTaskEntry> gCollisionTasks;
+uintptr_t gNextCollisionTaskToken = 1;
+
+CollisionTaskCompletion::~CollisionTaskCompletion()
+{
+    // Superseded requests can drop their callback without invoking it.
+    std::lock_guard<std::mutex> lock(gCollisionTaskMutex);
+    gCollisionTasks.erase(token);
+}
+
+std::shared_ptr<CollisionTaskCompletion> createCollisionTaskCompletion()
+{
+    std::lock_guard<std::mutex> lock(gCollisionTaskMutex);
+    if (gNextCollisionTaskToken == std::numeric_limits<uintptr_t>::max())
+        return {};
+    std::shared_ptr<CollisionTaskCompletion> completion = std::make_shared<CollisionTaskCompletion>();
+    completion->token = gNextCollisionTaskToken++;
+    return completion;
+}
+void completeCollisionTask(const std::shared_ptr<CollisionTaskCompletion>& completion)
+{
+    std::lock_guard<std::mutex> lock(gCollisionTaskMutex);
+    completion->completed = true;
+    gCollisionTasks.erase(completion->token);
+}
+} // namespace
+
+void retireCollisionRepresentationTasks(AttachHandle attach)
+{
+    std::lock_guard<std::mutex> lock(gCollisionTaskMutex);
+    for (auto it = gCollisionTasks.begin(); it != gCollisionTasks.end();)
+    {
+        if (it->second.attach == attach)
+            it = gCollisionTasks.erase(it);
+        else
+            ++it;
+    }
+}
 
 struct CollisionRepresentationConvex
 {
@@ -42,12 +106,7 @@ struct CollisionRepresentationConvex
             break;
         }
         case PhysxCookingDataType::eCONVEX_DECOMPOSITION: {
-            auto it = omni::physx::getMeshCache()->getConvexDecompositionMap().find(cookedDataCRC);
-
-            for (const auto& item : it->second)
-            {
-                meshes.push_back(item);
-            }
+            meshes = omni::physx::getMeshCache()->getConvexDecomposition(cookedDataCRC);
             break;
         }
         default:
@@ -66,20 +125,12 @@ struct CollisionRepresentationConvex
     {
         std::vector<ConvexMeshData> convexMeshDatas;
         convexMeshDatas.resize(meshes.size());
-        const ConvexMeshDataMap& meshMap = getMeshCache()->getConvexMeshDataMap();
         for (size_t index = 0; index < meshes.size(); ++index)
         {
             PxConvexMesh* mesh = meshes[index];
-            ConvexMeshDataMap::const_iterator it = meshMap.find(mesh);
-            if (it == meshMap.end())
-                return false;
-            const ConvexMeshData& md = it->second;
             ConvexMeshData& meshData = convexMeshDatas[index];
-            meshData.indices = md.indices;
-            meshData.numPolygons = md.numPolygons;
-            meshData.numVertices = md.numVertices;
-            meshData.polygons = md.polygons;
-            meshData.vertices = md.vertices;
+            if (!getMeshCache()->getConvexMeshData(mesh, meshData))
+                return false;
             meshData.computeNumIndices();
         }
         PhysxCollisionRepresentationConvexResult convexResult;
@@ -150,6 +201,20 @@ template <typename ResultType, typename ContextType>
 PhysxCollisionRepresentationTask requestCollisionRepresentation(const PhysxCollisionRepresentationRequest& request,
                                                                 typename ResultType::CallbackType onResult)
 {
+    RuntimeExecutionScope operation(request.attachHandle);
+    if (!operation)
+        return { nullptr, RuntimeResult::eBusy };
+    AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStageByHandle(request.attachHandle);
+    if (!attachedStage)
+        return { nullptr, RuntimeResult::eInvalidAttachment };
+
+    // The same guard applies to immediate and pumped/asynchronous completion.
+    // This carries recursion state, never an implicit attachment selection.
+    onResult = [callback = std::move(onResult)](PhysxCollisionRepresentationResult::Enum status, const ResultType& result) {
+        RuntimeCallbackScope callbackScope;
+        callback(status, result);
+    };
+
     // As we can't extract convex data directly from cooked data (see PX-1707), we have to create the PxConvexMesh.
     //
     // General flow to achieve this in an eficient way is:
@@ -169,7 +234,6 @@ PhysxCollisionRepresentationTask requestCollisionRepresentation(const PhysxColli
         onResult(PhysxCollisionRepresentationResult::eRESULT_ERROR_NOT_READY, result);
         return { nullptr };
     }
-    omni::physx::PhysxCookingAsyncContext asyncContext = cookingDataAsync->getCookingAsyncContext();
 
     omni::physx::IPhysxCookingService* cookingService =
         OmniPhysX::getInstance().getPhysXSetup().getCookingServiceInterface();
@@ -181,80 +245,17 @@ PhysxCollisionRepresentationTask requestCollisionRepresentation(const PhysxColli
     //----------------------------------------------------------------------------------
     // 1. Parse the collision API
     //----------------------------------------------------------------------------------
-    // The attach lookup names an attach, so it goes through the handle (ADR-0016 Decision 8). The
-    // stage id is kept for the two things below that genuinely need a USD stage, not for this.
-    // kNoAttach keeps the historical stage-id route so a caller that has not migrated still works;
-    // the stageless case is exactly what it never handled, and only a handle can express it.
-    AttachedStage* attachedStage = nullptr;
-    if (request.attachHandle != omni::physx::kNoAttach)
-    {
-        attachedStage = UsdLoad::getUsdLoad()->resolveAttach(request.attachHandle);
-        if (!attachedStage)
-        {
-            // A handle that was supplied and did not resolve is a caller error, and saying so is
-            // the point of taking a handle at all (ADR-0016 Decision 3). The stage-id path below
-            // still runs, so behaviour is unchanged for a stage-backed request -- but on a
-            // stageless attach it is the difference between a diagnosed failure and none.
-            CARB_LOG_ERROR("requestConvexCollisionRepresentation could not resolve attach handle %llu: it is a "
-                           "handle whose attach has since been detached (a handle is minted per attach and never "
-                           "reused). Falling back to stageId %llu. Pass IPhysxSimulation::getAttachHandle(), or "
-                           "kActiveAttach for the lone active attach.",
-                           static_cast<unsigned long long>(request.attachHandle),
-                           static_cast<unsigned long long>(request.stageId));
-        }
-    }
-    else
-    {
-        attachedStage = UsdLoad::getUsdLoad()->getAttachedStage(request.stageId);
-        if (!attachedStage)
-            attachedStage = UsdLoad::getUsdLoad()->getActiveAttachedStage();
-    }
-
-    omni::physics::parse::ObjectKey collisionKey;
-    PhysxShapeDesc* collisionDesc = nullptr;
-    // The common case: an attach (USD or ovstage) is already live, so the collision prim is
-    // resolved straight through it.
-    //
-    // collisionPrimId is `ObjectKey::handle` directly for THIS arm (ADR-0018, a breaking
-    // change), not the legacy asInt()-encoded-SdfPath-bits format. See IPhysxCooking.h.
-    //
-    // Generation-tag caveat (ADR-0021), this arm only: a handle only resolves against the
-    // Source that minted it. Safe here because attachedStage is the same live attach the
-    // caller resolved the handle against. A stale handle simply fails to resolve rather than
-    // silently naming the wrong prim.
-    if (attachedStage)
-    {
-        collisionKey = omni::physics::parse::ObjectKey{ request.collisionPrimId };
-        collisionDesc = parseCollision(*attachedStage, collisionKey, collisionKey);
-    }
-    // Fallback arm: a "foreign" stage, named by stage id and never attached through the
-    // attach/backend registry (see TestOvstageStagelessForeignStageParse.cpp). The storage
-    // has to stay alive for the rest of this function, not just for the parse -- ObjectKey is
-    // per-AttachedStage-instance state, so collisionDesc's meshPrimKey would not resolve
-    // against a second, independently-built AttachedStage when the later mesh-view read
-    // (below) needs it. Needs the reparse seam (a live UsdStageCache); without it the bridge
-    // logs and returns null.
-    //
-    // Deliberately NOT the direct-construction pattern above: this arm identifies a prim on
-    // a stage nobody has ever attached, so no live Source could have minted an ObjectKey for
-    // it. collisionPrimId keeps its legacy SdfPath-bit meaning here (a carve-out in
-    // IPhysxCooking.h).
-    AttachedStage foreignStageStorage;
-    if (!attachedStage)
-    {
-        collisionDesc = bridgeParseForeignStageCollision(
-            request.stageId, request.collisionPrimId, foreignStageStorage, collisionKey);
-        if (collisionDesc)
-            attachedStage = &foreignStageStorage;
-    }
+    const omni::physics::parse::ObjectKey collisionKey{ request.collisionPrimId };
+    ScannedCollision collision = parseCollision(*attachedStage, collisionKey, collisionKey);
+    PhysxShapeDesc* collisionDesc = collision.get();
     if (collisionDesc == nullptr)
     {
         onResult(PhysxCollisionRepresentationResult::eRESULT_ERROR_INVALID_PARSING, result);
         return { nullptr };
     }
 
-    // Delete the collision desc on scope exit
-    auto deleteCollisionDesc = CreateDeferLambda([&] { releaseDesc(collisionDesc); });
+    omni::physx::PhysxCookingAsyncContext asyncContext = cookingDataAsync->getCookingAsyncContext(*attachedStage);
+
 
     //----------------------------------------------------------------------------------
     // 2. Compute meshKey and CookedDataCRC
@@ -263,14 +264,10 @@ PhysxCollisionRepresentationTask requestCollisionRepresentation(const PhysxColli
     // Setup the cooking request with shared parameters between
     PhysxCookingComputeRequest cookingRequest;
     cookingRequest.primId = request.collisionPrimId;
-    // primStageId/primId are correlation keys for the onFinished continuation and debug logging
-    // (ADR-0016 Decision 6), not an input source -- the geometry comes from IPhysicsSource below.
-    // In the attachedStage arm above, request.collisionPrimId is already ObjectKey.handle,
-    // matching what CookingDataAsync.cpp's keyToLegacyPathInt produces. In the foreign-stage
-    // arm it keeps its legacy SdfPath-bit meaning, so this correlation id differs there --
-    // harmless, since correlation/logging is its only documented use.
-    cookingRequest.primStageId = request.stageId;
-    cookingRequest.attachHandle = attachedStage ? attachedStage->getAttachHandle() : request.attachHandle;
+    // Backing stage metadata is diagnostic correlation only; source data and task
+    // lifetime always come from the selected attachment.
+    cookingRequest.primStageId = attachedStage->getStageId();
+    cookingRequest.attachHandle = attachedStage->getAttachHandle();
     const bool async = request.options.hasFlag(PhysxCollisionRepresentationRequest::Options::kComputeAsynchronously);
     cookingRequest.options.setFlag(omni::physx::PhysxCookingComputeRequest::Options::kComputeGPUCookingData, true);
 
@@ -363,13 +360,20 @@ PhysxCollisionRepresentationTask requestCollisionRepresentation(const PhysxColli
 
     // We can't use unique_ptr because PhysxCookingComputeRequest::onFinished is copied and not moved
     // (root reason is that we can't express move semantics in carbonite interfaces).
+    const std::shared_ptr<CollisionTaskCompletion> completion = createCollisionTaskCompletion();
+    if (!completion)
+    {
+        onResult(PhysxCollisionRepresentationResult::eRESULT_ERROR_NOT_READY, result);
+        return { nullptr };
+    }
     std::shared_ptr<ContextType> context = std::make_shared<ContextType>();
     context->request = request;
     context->onResult = onResult;
     cookingRequest.mode = PhysxCookingComputeRequest::eMODE_REQUEST_COOKED_DATA;
     cookingRequest.options.setFlag(PhysxCookingComputeRequest::Options::kComputeAsynchronously, async);
     cookingRequest.meshKey = meshKey;
-    cookingRequest.onFinished = [context](const omni::physx::PhysxCookingComputeResult& cookingResult) {
+    cookingRequest.onFinished = [context, completion](const omni::physx::PhysxCookingComputeResult& cookingResult) {
+        completeCollisionTask(completion);
         if (cookingResult.result == PhysxCookingResult::eVALID)
         {
             //----------------------------------------------------------------------------------
@@ -402,6 +406,17 @@ PhysxCollisionRepresentationTask requestCollisionRepresentation(const PhysxColli
         return { nullptr };
     }
 
+    if (handle.handle)
+    {
+        std::lock_guard<std::mutex> lock(gCollisionTaskMutex);
+        if (!completion->completed)
+        {
+            gCollisionTasks.emplace(completion->token, CollisionTaskEntry{request.attachHandle, handle.handle});
+            handle.handle = reinterpret_cast<void*>(completion->token);
+        }
+        else
+            handle.handle = nullptr;
+    }
     return handle;
 }
 
@@ -412,14 +427,43 @@ PhysxCollisionRepresentationTask requestConvexCollisionRepresentation(
         request, onResult);
 }
 
-void cancelCollisionRepresentationTask(PhysxCollisionRepresentationTask task, bool invokeCallbackAnyway)
+bool isCollisionRepresentationTaskLive(PhysxCollisionRepresentationTask task)
 {
+    std::lock_guard<std::mutex> lock(gCollisionTaskMutex);
+    return gCollisionTasks.count(reinterpret_cast<uintptr_t>(task.handle)) != 0;
+}
+
+RuntimeResult cancelCollisionRepresentationTask(PhysxCollisionRepresentationTask task, bool invokeCallbackAnyway)
+{
+    if (getRuntimeCallbackDepth())
+        return RuntimeResult::eBusy;
+    if (!task.handle)
+        return RuntimeResult::eSuccess;
+    CollisionTaskEntry entry{};
+    {
+        std::lock_guard<std::mutex> lock(gCollisionTaskMutex);
+        const auto found = gCollisionTasks.find(reinterpret_cast<uintptr_t>(task.handle));
+        if (found == gCollisionTasks.end())
+            return RuntimeResult::eSuccess;
+        entry = found->second;
+    }
+    RuntimeExecutionScope operation(entry.attach, true);
+    if (!operation)
+        return RuntimeResult::eBusy;
+    {
+        std::lock_guard<std::mutex> lock(gCollisionTaskMutex);
+        if (!gCollisionTasks.erase(reinterpret_cast<uintptr_t>(task.handle)))
+            return RuntimeResult::eSuccess;
+    }
+    if (!UsdLoad::getUsdLoad()->getAttachedStageByHandle(entry.attach))
+        return RuntimeResult::eSuccess;
     omni::physx::IPhysxCookingService* cookingService =
         OmniPhysX::getInstance().getPhysXSetup().getCookingServiceInterface();
     if (cookingService)
     {
-        cookingService->cancelTask(task.handle, invokeCallbackAnyway);
+        cookingService->cancelTask(entry.nativeHandle, invokeCallbackAnyway);
     }
+    return RuntimeResult::eSuccess;
 }
 } // namespace physx
 } // namespace omni

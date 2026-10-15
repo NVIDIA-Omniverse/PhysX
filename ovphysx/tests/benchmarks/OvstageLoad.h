@@ -29,9 +29,9 @@ inline bool benchmarkLoadUsdWithOvstage(
     {
         return false;
     }
-    if (attachment.stage)
+    if (attachment.stage && !ovphysx_sample_destroy_stage(physx->handle(), &attachment))
     {
-        ovphysx_sample_destroy_stage(physx->handle(), &attachment);
+        return false;
     }
     if (!ovphysx_sample_attach_usd_with_ovstage(physx->handle(), path.c_str(), &attachment))
     {
@@ -45,8 +45,6 @@ inline void benchmarkClearOvstage(ovphysx::PhysX* physx, ovphysx_sample_stage_at
 {
     if (physx)
     {
-        (void)ovphysx_reset_stage(physx->handle());
-        physx->waitAll();
         ovphysx_sample_destroy_stage(physx->handle(), &attachment);
     }
     else if (attachment.stage)

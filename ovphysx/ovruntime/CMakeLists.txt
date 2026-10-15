@@ -115,18 +115,6 @@ if(NOT DEFINED CUDA_DIR)
     endif()
 endif()
 
-# NVTX 3 ships inside the CUDA package as header-only sources, at the same
-# <nvtx3/...> path the PhysX SDK uses. ovruntime_add_external_system_includes()
-# already puts ${CUDA_DIR}/include on every target, so the targets that emit
-# NVTX ranges only need the compile definition below.
-set(OVRUNTIME_NVTX_AVAILABLE FALSE)
-if(DEFINED CUDA_DIR AND EXISTS "${CUDA_DIR}/include/nvtx3/nvToolsExt.h")
-    set(OVRUNTIME_NVTX_AVAILABLE TRUE)
-    message(STATUS "Found NVTX 3: ${CUDA_DIR}/include/nvtx3")
-else()
-    message(STATUS "NVTX 3 headers not found; NVTX profiling will be compiled out")
-endif()
-
 # Find Python (pulled via packman). Allow override via -DPYTHON_DIR=...
 # for multi-version binding builds (e.g. py311 pass from ovphysx).
 if(NOT DEFINED PYTHON_DIR OR NOT EXISTS "${PYTHON_DIR}")
@@ -178,10 +166,10 @@ if(NOT DEFINED OVRUNTIME_DEPS_DIR)
     unset(_ovr_deps_candidate)
 endif()
 
-# Find physics schema (physxSchema)
-# When OVRUNTIME_DEV_SCHEMA is ON, use the locally-built schema from ../../schemas/physx/
-# instead of the packman-provided usd_ext_physics package.
-if(NOT DEFINED USD_EXT_PHYSICS_DIR)
+include(Options)                    # ovruntime-specific options (OVRUNTIME_ENABLE_TESTS, etc.)
+
+# Standalone USD tests use local or Packman-provided schema headers.
+if(OVRUNTIME_ENABLE_TESTS AND NOT DEFINED USD_EXT_PHYSICS_DIR)
     if(OVRUNTIME_DEV_SCHEMA)
         set(USD_EXT_PHYSICS_DIR "${OVRUNTIME_ROOT_DIR}/../../schemas/physx/_build/schema")
         message(STATUS "DevSchema mode: using local physics schema: ${USD_EXT_PHYSICS_DIR}")
@@ -200,10 +188,6 @@ if(NOT DEFINED USD_EXT_PHYSICS_DIR)
         unset(_uep_candidate)
     endif()
 endif()
-
-include(Options)                    # ovruntime-specific options (OVRUNTIME_ENABLE_TESTS, etc.)
-
-
 
 include(NvidiaBuildOptions)         # shared: CRT, output dirs, platform naming
 include(CarbPlatform)              # shared: CARB_PLATFORM_DIR for Carbonite SDK lib path
@@ -315,6 +299,8 @@ add_compile_definitions(
     # headers in ovruntime_deps need v2. Set tree-wide, not per-target: v1 and v2 give File and
     # ScopedFile different definitions, so mixing them across TUs is an ABI hazard.
     $<$<COMPILE_LANGUAGE:CXX>:carb_filesystem_IFileSystem=carb_filesystem_IFileSystem_latest>
+    # ApplyRange/TreeNode layouts must match the linked static Carbonite library.
+    $<$<COMPILE_LANGUAGE:CXX>:carb_tasking_ITasking=carb_tasking_ITasking_latest>
 )
 
 # Code coverage instrumentation (gcov)

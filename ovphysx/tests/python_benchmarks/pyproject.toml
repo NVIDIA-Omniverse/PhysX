@@ -10,11 +10,14 @@ name = "ovphysx-python-benchmarks"
 version = "0.0.1"
 requires-python = ">=3.10"
 dependencies = [
+  "physx-usd-schemas>=25.11.2",
   "pytest>=7",
   "pytest-benchmark>=4",
   "numpy>=1.20",
   "ovphysx",
   "newton-usd-schemas>=0.4.1",
+  # The version comes from ovphysx; declare the package to select its index.
+  "ovstage",
 ]
 
 [project.optional-dependencies]
@@ -33,10 +36,24 @@ testpaths = ["."]
 # match both so pytest's auto-discovery picks up bench files.
 python_files = ["bench_*.py", "test_*.py"]
 
-[tool.uv]
-index-url = "https://pypi.org/simple"
-# Match the Python test environment: ovstage is supplied by the build, not PyPI.
-find-links = ["../../_build/target-deps/ovstage_wheel"]
+# Resolve OVStage from its explicit index with hashes in uv.lock (ADR-0033).
+
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple"
+default = true
+
+[[tool.uv.index]]
+name = "ovstage"
+url = "https://pypi.org/simple"
+explicit = true
+
+[[tool.uv.index]]
+name = "physx-usd-schemas"
+url = "https://pypi.org/simple"
+explicit = true
 
 [tool.uv.sources]
 "ovphysx" = { path = "../../python", editable = true }
+ovstage = { index = "ovstage" }
+physx-usd-schemas = { index = "physx-usd-schemas" }

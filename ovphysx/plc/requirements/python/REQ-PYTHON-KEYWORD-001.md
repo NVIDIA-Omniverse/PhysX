@@ -27,8 +27,9 @@ already satisfy the SDD's Rule 13 definition without `*`.
 
 - AC-1: The runtime signatures make `PhysX` constructor settings, operation
   wait timeouts, the initial ovstage read ordinal, output-read scope, contact
-  report options, and Python logging severity/filter options keyword-only.
-  Operation indices, stages, output object types/attributes, and the Python
+  report options, `write_sync`'s debug-render `values` buffer, and Python
+  logging severity/filter options keyword-only.
+  Task receipts, stages, output object types/attributes, and the Python
   logger name remain positional-or-keyword primary operands.
 
 - AC-2: `api.pyi` exposes the same positional and keyword-only parameter split

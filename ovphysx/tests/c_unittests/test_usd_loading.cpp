@@ -137,7 +137,7 @@ struct OvstageGuard
     {
         if (attachedHandle != OVPHYSX_INVALID_HANDLE)
         {
-            if (ovphysx_detach_ovstage(attachedHandle).status != OVPHYSX_API_SUCCESS)
+            if (test_utils::complete_task(attachedHandle, ovphysx_detach_ovstage(attachedHandle)).status != OVPHYSX_API_SUCCESS)
             {
                 ADD_FAILURE() << "failed to detach caller-owned ovstage during cleanup";
                 return;
@@ -147,7 +147,7 @@ struct OvstageGuard
     }
 
     ovstage_instance_t* stage = nullptr;
-    ovphysx_handle_t attachedHandle = OVPHYSX_INVALID_HANDLE;
+    ovphysx_instance_handle_t attachedHandle = OVPHYSX_INVALID_HANDLE;
 };
 
 } // namespace
@@ -187,21 +187,6 @@ TEST_F(PhysXTestFixture, DetachAllowsOvstageReattach)
     ASSERT_TRUE(attach_usd_with_ovstage(m_handle, "tests/data/simple_physics_scene.usda"));
 }
 
-TEST_F(PhysXTestFixture, ResetDetachesOvstage)
-{
-    ASSERT_TRUE(attach_usd_with_ovstage(m_handle, "tests/data/minimal_scene.usda"));
-
-    ovphysx_enqueue_result_t reset = ovphysx_reset_stage(m_handle);
-    ASSERT_EQ(reset.status, OVPHYSX_API_SUCCESS);
-    if (reset.op_index != 0)
-    {
-        ASSERT_TRUE(waitForOperationSuccess(m_handle, reset.op_index, 3'000'000'000ULL));
-    }
-    destroy_ovstage_test_attachments(m_handle);
-
-    ASSERT_TRUE(attach_usd_with_ovstage(m_handle, "tests/data/simple_physics_scene.usda"));
-}
-
 TEST_F(PhysXTestFixture, UnsealedAttachFailsAndSealedRetrySucceeds)
 {
     ovstage_instance_desc_t desc{};
@@ -212,25 +197,27 @@ TEST_F(PhysXTestFixture, UnsealedAttachFailsAndSealedRetrySucceeds)
 
     ASSERT_TRUE(populateTwoArticulations(stage));
 
-    const ovphysx_result_t unsealedAttach = ovphysx_attach_ovstage(m_handle, stage, 1);
-    if (unsealedAttach.status == OVPHYSX_API_SUCCESS)
-    {
-        stageGuard.attachedHandle = m_handle;
-        FAIL() << "unsealed ovstage attachment unexpectedly succeeded";
-    }
-    ASSERT_EQ(unsealedAttach.status, OVPHYSX_API_ERROR);
-    const ovphysx_string_t error = ovphysx_get_last_error();
+    const ovphysx_enqueue_result_t unsealedAttach = ovphysx_attach_ovstage(m_handle, stage, 1);
+    ASSERT_EQ(unsealedAttach.status, OVPHYSX_API_SUCCESS);
+    ASSERT_NE(unsealedAttach.op_index, 0u);
+    ASSERT_EQ(unsealedAttach.instance, m_handle);
+    stageGuard.attachedHandle = m_handle;
+    ovphysx::physx::WaitResult unsealedResult;
+    ASSERT_EQ(unsealedResult.waitTask(m_handle, unsealedAttach), OVPHYSX_API_ERROR);
+    ASSERT_EQ(unsealedResult.errorCount(), 1u);
+    EXPECT_EQ(unsealedResult.errorTaskAt(0).op_index, unsealedAttach.op_index);
+    const ovphysx_string_t error = ovphysx_get_last_task_error(m_handle, unsealedAttach);
     ASSERT_NE(error.ptr, nullptr);
     const std::string message(error.ptr, error.length);
     EXPECT_NE(message.find("schema scan"), std::string::npos) << message;
     EXPECT_NE(message.find("ovstage_read_attributes"), std::string::npos) << message;
     EXPECT_NE(message.find("ordinal 1"), std::string::npos) << message;
     ASSERT_TRUE(advanceWriteFloor(stage, OVSTAGE_SCOPE_ALL));
-    ASSERT_EQ(ovphysx_attach_ovstage(m_handle, stage, 1).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_attach_ovstage(m_handle, stage, 1)).status, OVPHYSX_API_SUCCESS);
     stageGuard.attachedHandle = m_handle;
     EXPECT_EQ(ovphysx_get_last_error().length, 0u);
 
-    ASSERT_EQ(ovphysx_detach_ovstage(m_handle).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_detach_ovstage(m_handle)).status, OVPHYSX_API_SUCCESS);
     stageGuard.attachedHandle = OVPHYSX_INVALID_HANDLE;
 }
 
@@ -248,10 +235,10 @@ TEST_F(PhysXTestFixture, ScopedSealAllowsUnrelatedUnsealedData)
     ASSERT_TRUE(writeUnconsumedAttribute(stage, unrelatedAttribute));
     ASSERT_TRUE(advanceWriteFloor(stage, OVSTAGE_SCOPE_EXCLUDE, &unrelatedAttribute, 1));
 
-    ASSERT_EQ(ovphysx_attach_ovstage(m_handle, stage, 1).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_attach_ovstage(m_handle, stage, 1)).status, OVPHYSX_API_SUCCESS);
     stageGuard.attachedHandle = m_handle;
 
-    ASSERT_EQ(ovphysx_detach_ovstage(m_handle).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_detach_ovstage(m_handle)).status, OVPHYSX_API_SUCCESS);
     stageGuard.attachedHandle = OVPHYSX_INVALID_HANDLE;
 }
 
@@ -268,18 +255,58 @@ TEST_F(PhysXTestFixture, DetachWithoutStepDropsPendingArticulations)
 
     ASSERT_TRUE(populateTwoArticulations(stage));
     ASSERT_TRUE(advanceWriteFloor(stage, OVSTAGE_SCOPE_ALL));
-    ASSERT_EQ(ovphysx_attach_ovstage(m_handle, stage, 1).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_attach_ovstage(m_handle, stage, 1)).status, OVPHYSX_API_SUCCESS);
     stageGuard.attachedHandle = m_handle;
 
     // No ovphysx_step() before the detach, so nothing drains the pending list but teardown.
-    ASSERT_EQ(ovphysx_detach_ovstage(m_handle).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_detach_ovstage(m_handle)).status, OVPHYSX_API_SUCCESS);
     stageGuard.attachedHandle = OVPHYSX_INVALID_HANDLE;
 
     ASSERT_TRUE(attach_usd_with_ovstage(m_handle, "tests/data/minimal_scene.usda"));
 
     const ovphysx_enqueue_result_t step = ovphysx_step(m_handle, 1.0f / 60.0f);
     ASSERT_EQ(step.status, OVPHYSX_API_SUCCESS);
-    EXPECT_TRUE(waitForOperationSuccess(m_handle, step.op_index, 10'000'000'000ULL));
+    EXPECT_TRUE(waitForTaskSuccess(m_handle, step, 10'000'000'000ULL));
+}
+
+// @implements REQ-CAPI-OVSTAGE-ATTACH-001
+// @covers AC-5
+// @implements REQ-CAPI-OVSTAGE-UPDATE-001
+// @covers AC-3
+TEST_F(PhysXTestFixture, AttachAndUpdateReturnCollectableTasks)
+{
+    ovstage_instance_desc_t desc{};
+    desc.name = "ovphysx-lifecycle-task-test";
+    ovstage_instance_t* stage = nullptr;
+    ASSERT_EQ(ovstage_create_instance(&desc, &stage), OVSTAGE_OK);
+    OvstageGuard stageGuard{stage};
+    ASSERT_TRUE(populateTwoArticulations(stage));
+    ASSERT_TRUE(advanceWriteFloor(stage, OVSTAGE_SCOPE_ALL));
+
+    const ovphysx_enqueue_result_t attach = ovphysx_attach_ovstage(m_handle, stage, 1);
+    ASSERT_EQ(attach.status, OVPHYSX_API_SUCCESS);
+    ASSERT_NE(attach.op_index, 0u);
+    EXPECT_EQ(attach.instance, m_handle);
+    stageGuard.attachedHandle = m_handle;
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, attach));
+
+    const ovphysx_enqueue_result_t duplicate = ovphysx_attach_ovstage(m_handle, stage, 1);
+    EXPECT_NE(duplicate.status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(duplicate.op_index, 0u);
+    EXPECT_EQ(duplicate.instance, 0u);
+
+    const ovstage_ordinal_range_t range{1, 1, true};
+    const ovphysx_enqueue_result_t update = ovphysx_update_from_ovstage(m_handle, range);
+    ASSERT_EQ(update.status, OVPHYSX_API_SUCCESS);
+    EXPECT_GT(update.op_index, attach.op_index);
+    EXPECT_EQ(update.instance, m_handle);
+    bool attached = false;
+    ASSERT_EQ(ovphysx_is_stage_attached(m_handle, stage, &attached).status, OVPHYSX_API_SUCCESS);
+    EXPECT_TRUE(attached);
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, update));
+    ovphysx::physx::WaitResult collected;
+    EXPECT_EQ(collected.waitTask(m_handle, attach, 0), OVPHYSX_API_NOT_FOUND);
+    EXPECT_EQ(collected.waitTask(m_handle, update, 0), OVPHYSX_API_NOT_FOUND);
 }
 
 TEST_F(PhysXTestFixture, AttachOvstageRejectsZeroReadOrdinal)
@@ -290,8 +317,10 @@ TEST_F(PhysXTestFixture, AttachOvstageRejectsZeroReadOrdinal)
     ASSERT_EQ(ovstage_create_instance(&desc, &stage), OVSTAGE_OK);
     OvstageGuard stageGuard{ stage };
 
-    const ovphysx_result_t zeroOrdinal = ovphysx_attach_ovstage(m_handle, stage, 0);
+    const ovphysx_enqueue_result_t zeroOrdinal = ovphysx_attach_ovstage(m_handle, stage, 0);
     ASSERT_EQ(zeroOrdinal.status, OVPHYSX_API_INVALID_ARGUMENT);
+    EXPECT_EQ(zeroOrdinal.op_index, 0u);
+    EXPECT_EQ(zeroOrdinal.instance, 0u);
 
     ASSERT_TRUE(attach_usd_with_ovstage(m_handle, "tests/data/minimal_scene.usda"));
 }

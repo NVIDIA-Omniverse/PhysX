@@ -2,12 +2,13 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-# Usage: ./pull_dependencies.sh [--config release|debug|all] [--devphysx] [--devschema]
+# Usage: ./pull_dependencies.sh [--config release|debug|all] [--devphysx] [--devschema] [--no-schema]
 
 set -e
 
 DO_DEV_PHYSX=0
 DO_DEV_SCHEMA=0
+DO_NO_SCHEMA=0
 CONFIGS="release"
 
 while [ $# -gt 0 ]; do
@@ -17,6 +18,9 @@ while [ $# -gt 0 ]; do
             ;;
         --devschema)
             DO_DEV_SCHEMA=1
+            ;;
+        --no-schema)
+            DO_NO_SCHEMA=1
             ;;
         --config)
             shift
@@ -35,7 +39,7 @@ while [ $# -gt 0 ]; do
             esac
             ;;
         *)
-            echo "Error: unknown option '$1'; expected --config, --devphysx, or --devschema"
+            echo "Error: unknown option '$1'; expected --config, --devphysx, --devschema, or --no-schema"
             exit 1
             ;;
     esac
@@ -62,7 +66,7 @@ fi
 # Pull host deps (msvc)
 $PACKMAN pull deps/host-deps.packman.xml -p "$PLATFORM"
 
-# Pull target deps (PhysX, onnx-mlir, physxdevice, leveldb, snappy, cmake)
+# Pull target deps (PhysX, physxdevice, leveldb, snappy, cmake)
 $PACKMAN pull deps/target-deps.packman.xml -p "$PLATFORM"
 
 # ovruntime_deps (release variant, config-independent). The config-dependent
@@ -116,9 +120,8 @@ for CONFIG in $CONFIGS; do
     # for filtered-out entries (nvtx, omniusdresolver), never resolved.
     $PACKMAN pull deps/ovruntime-deps-import.packman.xml -p "$PLATFORM" -t "platform_target_abi=$PLATFORM" -t "platform_target=$PLATFORM" -t "usd_ver=unused" -t "config=$CONFIG"
 
-    # Pull namespaced schema deps (physxSchema, physicsSchemaTools headers/libs).
-    # Skipped in --devschema mode: CMake will point at the local schema build instead.
-    if [ "$DO_DEV_SCHEMA" -eq 0 ]; then
+    # Skip prebuilt schema headers for local-schema builds and USD-free consumers.
+    if [ "$DO_DEV_SCHEMA" -eq 0 ] && [ "$DO_NO_SCHEMA" -eq 0 ]; then
         $PACKMAN pull deps/schema-deps.packman.xml -p "$PLATFORM" -t "platform_target_abi=$PLATFORM" -t "config=$CONFIG"
     fi
 done

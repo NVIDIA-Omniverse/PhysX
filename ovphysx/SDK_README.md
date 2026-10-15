@@ -13,30 +13,45 @@ and a C/C++ package.
 
 ## Quick Start (C/C++)
 
-The native OVPhysX package does not include OVStage. Download the matching
-native archive from the
-[OVStage GitHub Releases](https://github.com/NVIDIA-Omniverse/ovstage/releases)
-page and extract it beside OVPhysX, without overlaying the two trees. The SDK
-records its OVStage release in `ovphysx_OVSTAGE_VERSION` in
-`lib/cmake/ovphysx/ovphysxConfig.cmake`; use that value to select the archive.
-`find_package(ovphysx)` checks that OVStage's major, minor, and patch version
-match the SDK's requirement. Then build and run a bundled sample:
+The native SDK automatically resolves OVStage. Build and run a bundled sample:
 
 ```bash
 # Run from the extracted SDK root directory
-export OVSTAGE_ROOT=/path/to/extracted/ovstage
-cmake -B build -S samples/c_samples/hello_world_c \
-  -DCMAKE_PREFIX_PATH="$PWD;$OVSTAGE_ROOT"
+python samples/c_samples/common/fetch_physx_schemas.py --dest ../physx-schemas
+export PHYSX_USD_SCHEMAS_ROOT="$(cd ../physx-schemas && pwd)"
+cmake -B build -S samples/c_samples/hello_world_c -DCMAKE_PREFIX_PATH="$PWD"
 cmake --build build
 ./build/hello_world_c
 ```
 
-On Windows, set the OVStage runtime paths in the shell that launches the sample:
+`find_package(ovphysx)` resolves OVStage itself: if your application already
+provides an OVStage package, put it on `CMAKE_PREFIX_PATH` and that one is used;
+otherwise OVPhysX downloads the pinned build, verifies it against a committed
+SHA-256, and caches it per user so later configures are offline.
 
-```powershell
-$env:OVSTAGE_ROOT = "C:\path\to\extracted\ovstage"
-$env:PATH = "$env:OVSTAGE_ROOT\bin;$env:OVSTAGE_ROOT\bin\plugins;$env:OVSTAGE_ROOT\bin\plugins\omni.client.lib;$env:OVSTAGE_ROOT\bin\plugins\omni.usd_resolver;$env:PATH"
-```
+| Option | Effect |
+| --- | --- |
+| `-DCMAKE_PREFIX_PATH="$PWD;/path/to/ovstage"` | Use your own OVStage. Nothing is downloaded. |
+| `-DOVPHYSX_FETCH_OVSTAGE=OFF` | Never download. Configure fails if OVStage is not already findable. |
+| `-DOVPHYSX_OVSTAGE_CACHE_DIR=<dir>` | Put the downloaded package somewhere specific. |
+
+Downloading needs Python 3.8+ on `PATH`. Keep the OVStage package root separate
+from the OVPhysX one — do not overlay the two trees. For manual provisioning,
+the SDK records its pinned release in `ovphysx_OVSTAGE_VERSION` in
+`lib/cmake/ovphysx/ovphysxConfig.cmake`. CMake accepts a compatible supplied
+package as defined by OVStage's package-version metadata.
+
+On Windows, set `$env:PHYSX_USD_SCHEMAS_ROOT` to the extracted schema directory.
+OVStage loads its plugins relative to its own location, so its
+directories must be on `PATH` when the sample runs. `ovphysx_set_ovstage_runtime_env(<target>)`
+sets the Visual Studio debugger's `PATH` and generates `run_<target>.cmd` beside
+the executable. When debugging, also set the working directory for relative
+scene paths and provide `PHYSX_USD_SCHEMAS_ROOT` in the debugger environment.
+The bundled samples call it. With Visual Studio, build with
+`cmake --build build --config Release`, then run
+`build\Release\run_hello_world_c.cmd`. With Ninja, the launcher is directly in
+`build\`. `ovphysx_ovstage_runtime_path(<var>)` returns the paths for custom
+launchers. Linux samples use RPATH.
 
 See `samples/c_samples/` for more examples. Each sample has its own `CMakeLists.txt` that uses `find_package(ovphysx)`.
 
@@ -53,19 +68,19 @@ Key resources:
 - C API header: `include/ovphysx/ovphysx.h`
 
 Important notes:
-- OVStage is an application-supplied dependency. Keep its extracted native
-  package separate from the OVPhysX package.
+- OVStage is an application-owned dependency. An application that already has one
+  keeps it — put it on `CMAKE_PREFIX_PATH` and OVPhysX will not fetch a second.
+  Keep its package root separate from the OVPhysX one.
 - This SDK ships no OpenUSD libraries. ovstage ingests USD scenes through its
   own internal namespaced OpenUSD runtime; the application owns whatever USD it
-  authors with. The PhysX USD schemas ship as codeless plugins under
-  `schemas/physx/`; register them with
-  `ovstage_population_register_usd_schemas()` (path from
-  `ovphysx_get_codeless_schema_root()`) before the first population call, as
+  authors with. Install `physx-usd-schemas` separately and register both
+  resource directories with `ovstage_population_register_usd_schemas()` before
+  the first population call, as
   `samples/c_samples/common/ovstage_sample.h` does. Scenes that author Newton
   `newton:*` attributes also need the Newton USD schema
   (https://github.com/newton-physics/newton-usd-schemas, or the
   `newton-usd-schemas` PyPI package) registered in the same call; the SDK does
   not ship it and the C API does not check for it.
-- `PhysX.read()` and `read_tokens()` return `warp.array` values on CPU and CUDA.
+- Python session reads (`PhysX.read()`, `read_sync()`) expose `warp.array` values on CPU and CUDA.
   Warp owns downstream DLPack interoperability with other frameworks; the native
   C API and compatibility tensor-binding surface retain DLTensor descriptors.

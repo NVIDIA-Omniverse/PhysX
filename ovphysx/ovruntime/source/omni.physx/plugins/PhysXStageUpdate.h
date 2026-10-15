@@ -14,9 +14,6 @@ namespace physx
 class PhysXStageUpdate
 {
 public:
-    void attachStageUpdate();
-    void detachStageUpdate();
-
     void attachPropertyQueryStageUpdate()
     {
         mPropertyQueryAttached = true;
@@ -27,35 +24,13 @@ public:
         mPropertyQueryAttached = false;
     }
 
-    bool isAttached() const
-    {
-        return mAttached;
-    }
-
-    void attach(bool val)
-    {
-        mAttached = val;
-    }
-
     bool isPropertyQueryAttached() const
     {
         return mPropertyQueryAttached;
     }
 
 
-    uint64_t getAttachedStage() const
-    {
-        return mAttachedStage;
-    }
-
-    void setAttachedStage(uint64_t stageId)
-    {
-        mAttachedStage = stageId;
-    }
-
 private:
-    uint64_t mAttachedStage{ 0 };
-    bool mAttached{ false };
     bool mPropertyQueryAttached{ false };
 };
 

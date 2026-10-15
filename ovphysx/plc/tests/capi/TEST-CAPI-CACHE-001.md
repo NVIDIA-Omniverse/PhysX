@@ -9,45 +9,33 @@ type: integration
 
 ## Scenario
 
-The process-private cooked-collider cache fallback is torn down cleanly
-on the common sequential-lifecycle path, and the last-loader cleanup
-survives a concurrent create racing a concurrent destroy without
-crashing, deadlocking, or emitting the "failed to remove" WARN it would
-raise on a real teardown failure.
+`tests/python_tests/test_ujitso_cooking_cache.py` observes the private directory
+between native instance destruction and SDK shutdown, then after process exit.
 
 ## Given
 
-- A build with `cooked_collider_cache_dir` unset, so the process-private
-  fallback of ADR-0001 is active.
-- Native log capture available to observe `[CarboniteLoader]` WARN/ERROR
-  output during and after instance teardown.
+- A CPU-only Python subprocess with an isolated temporary directory and no configured cache.
+- A loaded mesh scene with completed collision cooking.
+- A witness around `ovphysx_destroy_instance` that runs before Python calls SDK shutdown.
 
 ## When
 
-- A single instance is created and destroyed sequentially (no
-  concurrency), draining `g_activeLoaders` to zero.
-- A second scenario creates two instances, then destroys one on a
-  background thread while the other is created/destroyed concurrently
-  from the main thread, so the "last loader" refcount transition and a
-  fresh `initialize()` can interleave.
+- The last instance is destroyed and the Python lifecycle shuts down the SDK.
+- The child exits normally.
 
 ## Then
 
-- The sequential case produces no `[CarboniteLoader]` WARN/ERROR about
-  failing to remove the process-private cache, confirming AC-1 and AC-3's
-  common-case (first-attempt) path stays silent.
-- The concurrent case completes without crash, hang, or a "failed to
-  remove" WARN attributable to the cleanup racing the new loader's
-  initialization, confirming the AC-2 serialization holds under a
-  destroy/create race.
+- The directory still exists after native instance destruction (REQ AC-1).
+- The child exits without datastore errors and on Linux leaves no private directory
+  (REQ AC-3). Windows retains its established best-effort removal contract.
 
-## Notes
+## Additional Coverage
 
-Deterministically reproducing the underlying write-back race itself (a
-cook's compute callback firing before `carb.datastore` finishes flushing
-to disk) is out of scope for this test: this repo has no hook into
-`carb.ujitso.default`/`carb.datastore`'s write-back completion, which is
-precisely why the retry loop in AC-3 exists instead of a wait. This test
-instead pins the two properties this repo *can* verify without that hook:
-the common-case path stays silent, and the last-loader/initialize race
-named in AC-2 does not corrupt state or deadlock.
+- `test_cache_dir_reconfiguration_follows_framework_lifetime` cooks in two successive
+  SDK lifecycles. Linux uses each configured directory; Windows keeps the first
+  datastore and directory until process exit (REQ AC-3).
+- `MultiInstance.ConcurrentCreateDestroyMaintainsLoaderLifecycle` is a loader
+  concurrency smoke test only. It does not call SDK shutdown and supplies no
+  evidence for the framework-release/directory-removal critical section (REQ AC-2).
+  That locking boundary is verified by inspection of `bootstrapMutex` coverage;
+  no deterministic concurrent SDK-shutdown test is claimed here.

@@ -166,12 +166,6 @@ if(NOT FORCE_REBUILD)
     file(GLOB_RECURSE OVSTAGE_PACKAGE_FILES "${PROJECT_ROOT}/_install/python/ovstage/*")
     list(APPEND STAMPED_LIBS ${OVSTAGE_PACKAGE_FILES})
 
-    # The codeless USD schema artifacts (staged into _install/schemas by install.cmake)
-    # are copied into the wheel later in this script. Tracking them makes a schema-only
-    # change (regenerated/added schema, libs/py unchanged) invalidate the stamp instead
-    # of shipping stale codeless schema data.
-    file(GLOB_RECURSE INSTALL_SCHEMA_FILES "${PROJECT_ROOT}/_install/schemas/*")
-    list(APPEND STAMPED_LIBS ${INSTALL_SCHEMA_FILES})
     file(GLOB_RECURSE INSTALL_PLUGIN_FILES "${PROJECT_ROOT}/_install/plugins/*")
     list(APPEND STAMPED_LIBS ${INSTALL_PLUGIN_FILES})
 
@@ -413,19 +407,6 @@ else()
     message(FATAL_ERROR "tests/data not found at ${PROJECT_ROOT}/tests/data")
 endif()
 
-# The codeless USD schemas ship in the wheel package under ovphysx/schemas/.
-# install.cmake stages them into _install/schemas. They are exposed at a stable
-# path for external authoring/validation tooling. See ovphysx.codeless_schema_paths().
-set(INSTALL_SCHEMAS_DIR "${PROJECT_ROOT}/_install/schemas")
-if(EXISTS "${INSTALL_SCHEMAS_DIR}")
-    copy_tree_if_different("${INSTALL_SCHEMAS_DIR}" "${STAGING_WHEEL_PKG_DIR}/schemas")
-    message(STATUS "  Copied codeless USD schemas -> wheel: ovphysx/schemas/")
-else()
-    message(FATAL_ERROR
-        "Codeless USD schemas not found at ${INSTALL_SCHEMAS_DIR}. "
-        "Run 'cmake -P scripts/install.cmake' first.")
-endif()
-
 if(NOT WIN32)
     if(BUILD_TYPE STREQUAL "Debug")
         message(STATUS "Skipping stripping for Debug build (preserving debug symbols)")
@@ -443,7 +424,7 @@ verify_glibc_baseline("${STAGING_WHEEL_PKG_DIR}" "wheel package tree")
 message(STATUS "Verifying py-less, USD-free package contents for wheel staging tree...")
 execute_process(
     COMMAND "${TARGET_PYTHON}" "${SCRIPT_DIR}/verify_pyless_closure.py"
-            "--dir=${STAGING_WHEEL_PKG_DIR}" --require-schemas
+            "--dir=${STAGING_WHEEL_PKG_DIR}"
     WORKING_DIRECTORY "${PROJECT_ROOT}"
     RESULT_VARIABLE PYLESS_WHEEL_CHECK_RESULT
 )
@@ -452,7 +433,7 @@ if(NOT PYLESS_WHEEL_CHECK_RESULT EQUAL 0)
         "Package content verification failed for the wheel staging tree.\n"
         "The wheel must not ship libpython, any OpenUSD library or its dependency\n"
         "closure, a USD plugin registry, Python schema bindings, or build-tree Python\n"
-        "RPATH entries, and must ship schemas/physx.\n"
+        "RPATH entries, or bundled PhysX schemas.\n"
         "See verify_pyless_closure.py output above for details."
     )
 endif()

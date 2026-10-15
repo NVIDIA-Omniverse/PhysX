@@ -1,0 +1,66 @@
+#usda 1.0
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+(metersPerUnit = 1
+ upAxis = "Z")
+def Xform "World" {
+    def PhysicsScene "Scene" {
+        vector3f physics:gravityDirection = (0, 0, -1)
+        float physics:gravityMagnitude = 9.81
+    }
+    def Material "Material" (prepend apiSchemas = ["PhysicsMaterialAPI"]) {
+        float physics:staticFriction = 0.7
+        float physics:dynamicFriction = 0.4
+        float physics:restitution = 0.2
+    }
+    def Cube "Body" (prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]) {
+        double size = 1
+        float physics:mass = 6
+        float3 physics:diagonalInertia = (1, 2, 3)
+        point3f physics:centerOfMass = (0.1, 0, 0)
+        rel material:binding:physics = </World/Material>
+        double3 xformOp:translate = (4, 0, 4)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+    def PhysicsRevoluteJoint "Hinge" {
+        rel physics:body1 = </World/Body>
+        point3f physics:localPos0 = (4, 0, 5)
+        point3f physics:localPos1 = (0, 0, 1)
+        uniform token physics:axis = "Y"
+        float physics:breakForce = 100000
+        float physics:breakTorque = 200000
+    }
+    def Xform "Robot" (prepend apiSchemas = ["PhysicsArticulationRootAPI"]) {
+        def Cube "Base" (prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]) {
+            double size = 0.4
+            float physics:mass = 2
+            double3 xformOp:translate = (0, 0, 4)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+        def Cube "Tip" (prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]) {
+            double size = 0.4
+            float physics:mass = 1
+            double3 xformOp:translate = (1, 0, 4)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+        def PhysicsFixedJoint "Anchor" {
+            rel physics:body1 = </World/Robot/Base>
+            point3f physics:localPos0 = (0, 0, 4)
+        }
+        def PhysicsRevoluteJoint "Elbow" (prepend apiSchemas = ["PhysicsDriveAPI:angular"]) {
+            rel physics:body0 = </World/Robot/Base>
+            rel physics:body1 = </World/Robot/Tip>
+            point3f physics:localPos0 = (0.5, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            uniform token physics:axis = "Y"
+            float drive:angular:physics:targetVelocity = 30
+            float drive:angular:physics:damping = 10
+        }
+    }
+    def Cube "Floor" (prepend apiSchemas = ["PhysicsCollisionAPI"]) {
+        double size = 1
+        double3 xformOp:translate = (0, 0, -0.5)
+        double3 xformOp:scale = (20, 20, 1)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+}

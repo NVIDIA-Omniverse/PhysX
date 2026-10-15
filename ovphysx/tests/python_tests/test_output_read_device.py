@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-# ADR-0008: PhysX.read returns Warp arrays that preserve the native CUDA allocation on a GPU sim.
+# ADR-0008: PhysX.read_sync returns Warp arrays that preserve the native CUDA allocation on a GPU sim.
 # The `physx_sdk` fixture (conftest.py) sets /physics/suppressReadback, so the sim here is GPU-mode.
 
 # @implements REQ-PYTHON-READ-001
@@ -19,7 +19,7 @@ def test_rigid_body_read_returns_cuda_warp_arrays(physx_sdk):
         physx_sdk.step(1.0 / 60.0)
     physx_sdk.wait_all()
 
-    with physx_sdk.read(SimObjectType.RIGID_BODY, ["position", "linearVelocity"], scope=ObjectScope.ALL) as result:
+    with physx_sdk.read_sync(SimObjectType.RIGID_BODY, ["position", "linearVelocity"], scope=ObjectScope.ALL) as result:
         groups = result.groups
         assert groups, "expected at least one rigid-body read group"
         for g in groups:
@@ -29,7 +29,7 @@ def test_rigid_body_read_returns_cuda_warp_arrays(physx_sdk):
                 # A GPU sim's read column must live on the GPU, not the host.
                 assert t.device.is_cuda, (
                     f"expected a CUDA Warp array, got {t.device}. "
-                    "PhysX.read must preserve the GPU allocation."
+                    "PhysX.read_sync must preserve the GPU allocation."
                 )
             # Count comes from group metadata, independent of where the tensor lives.
             assert g.prim_count >= 1
@@ -43,7 +43,7 @@ def test_device_column_expands_lanes_to_a_trailing_dimension(physx_sdk):
         physx_sdk.step(1.0 / 60.0)
     physx_sdk.wait_all()
 
-    with physx_sdk.read(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
+    with physx_sdk.read_sync(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
         groups = result.groups
         assert groups, "expected at least one rigid-body read group"
         for g in groups:

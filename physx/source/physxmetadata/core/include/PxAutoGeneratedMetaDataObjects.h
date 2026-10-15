@@ -1150,9 +1150,8 @@ template<> struct PxEnumTraits< physx::PxArticulationMotion::Enum > { PxEnumTrai
 		PxArticulationLimit LimitParams[physx::PxArticulationAxis::eCOUNT];
 		PxArticulationDrive DriveParams[physx::PxArticulationAxis::eCOUNT];
 		PxReal Armature[physx::PxArticulationAxis::eCOUNT];
-		PxReal FrictionCoefficient;
 		PxJointFrictionParams FrictionParams[physx::PxArticulationAxis::eCOUNT];
-		PxReal MaxJointVelocity;
+		PxReal MaxJointVelocity[physx::PxArticulationAxis::eCOUNT];
 		PxReal JointPosition[physx::PxArticulationAxis::eCOUNT];
 		PxReal JointVelocity[physx::PxArticulationAxis::eCOUNT];
 		const char * ConcreteTypeName;
@@ -1167,7 +1166,6 @@ template<> struct PxEnumTraits< physx::PxArticulationMotion::Enum > { PxEnumTrai
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxArticulationJointReducedCoordinate, LimitParams, PxArticulationJointReducedCoordinateGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxArticulationJointReducedCoordinate, DriveParams, PxArticulationJointReducedCoordinateGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxArticulationJointReducedCoordinate, Armature, PxArticulationJointReducedCoordinateGeneratedValues)
-	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxArticulationJointReducedCoordinate, FrictionCoefficient, PxArticulationJointReducedCoordinateGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxArticulationJointReducedCoordinate, FrictionParams, PxArticulationJointReducedCoordinateGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxArticulationJointReducedCoordinate, MaxJointVelocity, PxArticulationJointReducedCoordinateGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxArticulationJointReducedCoordinate, JointPosition, PxArticulationJointReducedCoordinateGeneratedValues)
@@ -1186,9 +1184,8 @@ template<> struct PxEnumTraits< physx::PxArticulationMotion::Enum > { PxEnumTrai
 		PxIndexedPropertyInfo<PX_PROPERTY_INFO_NAME::PxArticulationJointReducedCoordinate_LimitParams, PxArticulationJointReducedCoordinate, PxArticulationAxis::Enum, PxArticulationLimit > LimitParams;
 		PxIndexedPropertyInfo<PX_PROPERTY_INFO_NAME::PxArticulationJointReducedCoordinate_DriveParams, PxArticulationJointReducedCoordinate, PxArticulationAxis::Enum, PxArticulationDrive > DriveParams;
 		PxIndexedPropertyInfo<PX_PROPERTY_INFO_NAME::PxArticulationJointReducedCoordinate_Armature, PxArticulationJointReducedCoordinate, PxArticulationAxis::Enum, PxReal > Armature;
-		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxArticulationJointReducedCoordinate_FrictionCoefficient, PxArticulationJointReducedCoordinate, const PxReal, PxReal > FrictionCoefficient;
 		PxIndexedPropertyInfo<PX_PROPERTY_INFO_NAME::PxArticulationJointReducedCoordinate_FrictionParams, PxArticulationJointReducedCoordinate, PxArticulationAxis::Enum, PxJointFrictionParams > FrictionParams;
-		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxArticulationJointReducedCoordinate_MaxJointVelocity, PxArticulationJointReducedCoordinate, const PxReal, PxReal > MaxJointVelocity;
+		PxIndexedPropertyInfo<PX_PROPERTY_INFO_NAME::PxArticulationJointReducedCoordinate_MaxJointVelocity, PxArticulationJointReducedCoordinate, PxArticulationAxis::Enum, PxReal > MaxJointVelocity;
 		PxIndexedPropertyInfo<PX_PROPERTY_INFO_NAME::PxArticulationJointReducedCoordinate_JointPosition, PxArticulationJointReducedCoordinate, PxArticulationAxis::Enum, PxReal > JointPosition;
 		PxIndexedPropertyInfo<PX_PROPERTY_INFO_NAME::PxArticulationJointReducedCoordinate_JointVelocity, PxArticulationJointReducedCoordinate, PxArticulationAxis::Enum, PxReal > JointVelocity;
 		PxReadOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxArticulationJointReducedCoordinate_ConcreteTypeName, PxArticulationJointReducedCoordinate, const char * > ConcreteTypeName;
@@ -1213,7 +1210,7 @@ template<> struct PxEnumTraits< physx::PxArticulationMotion::Enum > { PxEnumTrai
 			PX_UNUSED(inStartIndex);
 			return inStartIndex;
 		}
-		static PxU32 instancePropertyCount() { return 15; }
+		static PxU32 instancePropertyCount() { return 14; }
 		static PxU32 totalPropertyCount() { return instancePropertyCount(); }
 		template<typename TOperator>
 		PxU32 visitInstanceProperties( TOperator inOperator, PxU32 inStartIndex = 0 ) const
@@ -1227,15 +1224,14 @@ template<> struct PxEnumTraits< physx::PxArticulationMotion::Enum > { PxEnumTrai
 			inOperator( LimitParams, inStartIndex + 4 );; 
 			inOperator( DriveParams, inStartIndex + 5 );; 
 			inOperator( Armature, inStartIndex + 6 );; 
-			inOperator( FrictionCoefficient, inStartIndex + 7 );; 
-			inOperator( FrictionParams, inStartIndex + 8 );; 
-			inOperator( MaxJointVelocity, inStartIndex + 9 );; 
-			inOperator( JointPosition, inStartIndex + 10 );; 
-			inOperator( JointVelocity, inStartIndex + 11 );; 
-			inOperator( ConcreteTypeName, inStartIndex + 12 );; 
-			inOperator( Name, inStartIndex + 13 );; 
-			inOperator( UserData, inStartIndex + 14 );; 
-			return 15 + inStartIndex;
+			inOperator( FrictionParams, inStartIndex + 7 );; 
+			inOperator( MaxJointVelocity, inStartIndex + 8 );; 
+			inOperator( JointPosition, inStartIndex + 9 );; 
+			inOperator( JointVelocity, inStartIndex + 10 );; 
+			inOperator( ConcreteTypeName, inStartIndex + 11 );; 
+			inOperator( Name, inStartIndex + 12 );; 
+			inOperator( UserData, inStartIndex + 13 );; 
+			return 14 + inStartIndex;
 		}
 	};
 	template<> struct PxClassInfoTraits<PxArticulationJointReducedCoordinate>
@@ -1246,7 +1242,6 @@ template<> struct PxEnumTraits< physx::PxArticulationMotion::Enum > { PxEnumTrai
 
 	static PxU32ToName g_physx__PxArticulationFlag__EnumConversion[] = {
 		{ "eFIX_BASE", static_cast<PxU32>( physx::PxArticulationFlag::eFIX_BASE ) },
-		{ "eDRIVE_LIMITS_ARE_FORCES", static_cast<PxU32>( physx::PxArticulationFlag::eDRIVE_LIMITS_ARE_FORCES ) },
 		{ "eDISABLE_SELF_COLLISION", static_cast<PxU32>( physx::PxArticulationFlag::eDISABLE_SELF_COLLISION ) },
 		{ NULL, 0 }
 	};
@@ -2478,12 +2473,6 @@ template<> struct PxEnumTraits< physx::PxActorTypeFlag::Enum > { PxEnumTraits() 
 	};
 
 template<> struct PxEnumTraits< physx::PxPairFilteringMode::Enum > { PxEnumTraits() : NameConversion( g_physx__PxPairFilteringMode__EnumConversion ) {} const PxU32ToName* NameConversion; }; 
-	static PxU32ToName g_physx__PxFrictionType__EnumConversion[] = {
-		{ "ePATCH", static_cast<PxU32>( physx::PxFrictionType::ePATCH ) },
-		{ NULL, 0 }
-	};
-
-template<> struct PxEnumTraits< physx::PxFrictionType::Enum > { PxEnumTraits() : NameConversion( g_physx__PxFrictionType__EnumConversion ) {} const PxU32ToName* NameConversion; }; 
 	static PxU32ToName g_physx__PxSolverType__EnumConversion[] = {
 		{ "ePGS", static_cast<PxU32>( physx::PxSolverType::ePGS ) },
 		{ "eTGS", static_cast<PxU32>( physx::PxSolverType::eTGS ) },
@@ -2502,7 +2491,6 @@ template<> struct PxEnumTraits< physx::PxSolverType::Enum > { PxEnumTraits() : N
 		{ "eCONTACT_NORMAL", static_cast<PxU32>( physx::PxVisualizationParameter::eCONTACT_NORMAL ) },
 		{ "eCONTACT_ERROR", static_cast<PxU32>( physx::PxVisualizationParameter::eCONTACT_ERROR ) },
 		{ "eCONTACT_IMPULSE", static_cast<PxU32>( physx::PxVisualizationParameter::eCONTACT_IMPULSE ) },
-		{ "eCONTACT_FORCE", static_cast<PxU32>( physx::PxVisualizationParameter::eCONTACT_FORCE ) },
 		{ "eFRICTION_POINT", static_cast<PxU32>( physx::PxVisualizationParameter::eFRICTION_POINT ) },
 		{ "eFRICTION_NORMAL", static_cast<PxU32>( physx::PxVisualizationParameter::eFRICTION_NORMAL ) },
 		{ "eFRICTION_IMPULSE", static_cast<PxU32>( physx::PxVisualizationParameter::eFRICTION_IMPULSE ) },
@@ -2563,7 +2551,6 @@ template<> struct PxEnumTraits< physx::PxBroadPhaseType::Enum > { PxEnumTraits()
 		PxReal MaxBiasCoefficient;
 		PxReal FrictionOffsetThreshold;
 		PxReal FrictionCorrelationDistance;
-		PxFrictionType::Enum FrictionType;
 		PxSolverType::Enum SolverType;
 		PxBounds3 VisualizationCullingBox;
 		PxBroadPhaseType::Enum BroadPhaseType;
@@ -2601,7 +2588,6 @@ template<> struct PxEnumTraits< physx::PxBroadPhaseType::Enum > { PxEnumTraits()
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxScene, MaxBiasCoefficient, PxSceneGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxScene, FrictionOffsetThreshold, PxSceneGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxScene, FrictionCorrelationDistance, PxSceneGeneratedValues)
-	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxScene, FrictionType, PxSceneGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxScene, SolverType, PxSceneGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxScene, VisualizationCullingBox, PxSceneGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxScene, BroadPhaseType, PxSceneGeneratedValues)
@@ -2647,7 +2633,6 @@ template<> struct PxEnumTraits< physx::PxBroadPhaseType::Enum > { PxEnumTraits()
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxScene_MaxBiasCoefficient, PxScene, const PxReal, PxReal > MaxBiasCoefficient;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxScene_FrictionOffsetThreshold, PxScene, const PxReal, PxReal > FrictionOffsetThreshold;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxScene_FrictionCorrelationDistance, PxScene, const PxReal, PxReal > FrictionCorrelationDistance;
-		PxReadOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxScene_FrictionType, PxScene, PxFrictionType::Enum > FrictionType;
 		PxReadOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxScene_SolverType, PxScene, PxSolverType::Enum > SolverType;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxScene_VisualizationCullingBox, PxScene, const PxBounds3 &, PxBounds3 > VisualizationCullingBox;
 		PxReadOnlyPropertyInfo<PX_PROPERTY_INFO_NAME::PxScene_BroadPhaseType, PxScene, PxBroadPhaseType::Enum > BroadPhaseType;
@@ -2686,7 +2671,7 @@ template<> struct PxEnumTraits< physx::PxBroadPhaseType::Enum > { PxEnumTraits()
 			inStartIndex = PxSceneSQSystemGeneratedInfo::visitInstanceProperties( inOperator, inStartIndex );
 			return inStartIndex;
 		}
-		static PxU32 instancePropertyCount() { return 46; }
+		static PxU32 instancePropertyCount() { return 45; }
 		static PxU32 totalPropertyCount() { return instancePropertyCount()
 				+ PxSceneSQSystemGeneratedInfo::totalPropertyCount(); }
 		template<typename TOperator>
@@ -2723,24 +2708,23 @@ template<> struct PxEnumTraits< physx::PxBroadPhaseType::Enum > { PxEnumTraits()
 			inOperator( MaxBiasCoefficient, inStartIndex + 26 );; 
 			inOperator( FrictionOffsetThreshold, inStartIndex + 27 );; 
 			inOperator( FrictionCorrelationDistance, inStartIndex + 28 );; 
-			inOperator( FrictionType, inStartIndex + 29 );; 
-			inOperator( SolverType, inStartIndex + 30 );; 
-			inOperator( VisualizationCullingBox, inStartIndex + 31 );; 
-			inOperator( BroadPhaseType, inStartIndex + 32 );; 
-			inOperator( BroadPhaseRegions, inStartIndex + 33 );; 
-			inOperator( TaskManager, inStartIndex + 34 );; 
-			inOperator( NbContactDataBlocks, inStartIndex + 35 );; 
-			inOperator( MaxNbContactDataBlocksUsed, inStartIndex + 36 );; 
-			inOperator( ContactReportStreamBufferSize, inStartIndex + 37 );; 
-			inOperator( SolverBatchSize, inStartIndex + 38 );; 
-			inOperator( SolverArticulationBatchSize, inStartIndex + 39 );; 
-			inOperator( WakeCounterResetValue, inStartIndex + 40 );; 
-			inOperator( GpuDynamicsConfig, inStartIndex + 41 );; 
-			inOperator( DeformableSurfaceGpuPostSolveCallback, inStartIndex + 42 );; 
-			inOperator( DeformableVolumeGpuPostSolveCallback, inStartIndex + 43 );; 
-			inOperator( UserData, inStartIndex + 44 );; 
-			inOperator( SimulationStatistics, inStartIndex + 45 );; 
-			return 46 + inStartIndex;
+			inOperator( SolverType, inStartIndex + 29 );; 
+			inOperator( VisualizationCullingBox, inStartIndex + 30 );; 
+			inOperator( BroadPhaseType, inStartIndex + 31 );; 
+			inOperator( BroadPhaseRegions, inStartIndex + 32 );; 
+			inOperator( TaskManager, inStartIndex + 33 );; 
+			inOperator( NbContactDataBlocks, inStartIndex + 34 );; 
+			inOperator( MaxNbContactDataBlocksUsed, inStartIndex + 35 );; 
+			inOperator( ContactReportStreamBufferSize, inStartIndex + 36 );; 
+			inOperator( SolverBatchSize, inStartIndex + 37 );; 
+			inOperator( SolverArticulationBatchSize, inStartIndex + 38 );; 
+			inOperator( WakeCounterResetValue, inStartIndex + 39 );; 
+			inOperator( GpuDynamicsConfig, inStartIndex + 40 );; 
+			inOperator( DeformableSurfaceGpuPostSolveCallback, inStartIndex + 41 );; 
+			inOperator( DeformableVolumeGpuPostSolveCallback, inStartIndex + 42 );; 
+			inOperator( UserData, inStartIndex + 43 );; 
+			inOperator( SimulationStatistics, inStartIndex + 44 );; 
+			return 45 + inStartIndex;
 		}
 	};
 	template<> struct PxClassInfoTraits<PxScene>
@@ -2871,7 +2855,7 @@ template<> struct PxEnumTraits< physx::PxHeightFieldFlag::Enum > { PxEnumTraits(
 		PxU32 NbRows;
 		PxU32 NbColumns;
 		PxHeightFieldFormat::Enum Format;
-		PxStridedData Samples;
+		PxBoundedData Samples;
 		PxReal ConvexEdgeThreshold;
 		PxHeightFieldFlags Flags;
 		 PX_PHYSX_CORE_API PxHeightFieldDescGeneratedValues( const PxHeightFieldDesc* inSource );
@@ -2889,7 +2873,7 @@ template<> struct PxEnumTraits< physx::PxHeightFieldFlag::Enum > { PxEnumTraits(
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxHeightFieldDesc_NbRows, PxHeightFieldDesc, PxU32, PxU32 > NbRows;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxHeightFieldDesc_NbColumns, PxHeightFieldDesc, PxU32, PxU32 > NbColumns;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxHeightFieldDesc_Format, PxHeightFieldDesc, PxHeightFieldFormat::Enum, PxHeightFieldFormat::Enum > Format;
-		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxHeightFieldDesc_Samples, PxHeightFieldDesc, PxStridedData, PxStridedData > Samples;
+		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxHeightFieldDesc_Samples, PxHeightFieldDesc, PxBoundedData, PxBoundedData > Samples;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxHeightFieldDesc_ConvexEdgeThreshold, PxHeightFieldDesc, PxReal, PxReal > ConvexEdgeThreshold;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxHeightFieldDesc_Flags, PxHeightFieldDesc, PxHeightFieldFlags, PxHeightFieldFlags > Flags;
 
@@ -3114,14 +3098,12 @@ template<> struct PxEnumTraits< physx::PxArticulationDriveType::Enum > { PxEnumT
 	{
 		PxReal Stiffness;
 		PxReal Damping;
-		PxReal MaxForce;
 		PxPerformanceEnvelope Envelope;
 		PxArticulationDriveType::Enum DriveType;
 		 PX_PHYSX_CORE_API PxArticulationDriveGeneratedValues( const PxArticulationDrive* inSource );
 	};
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxArticulationDrive, Stiffness, PxArticulationDriveGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxArticulationDrive, Damping, PxArticulationDriveGeneratedValues)
-	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxArticulationDrive, MaxForce, PxArticulationDriveGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxArticulationDrive, Envelope, PxArticulationDriveGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxArticulationDrive, DriveType, PxArticulationDriveGeneratedValues)
 	struct PxArticulationDriveGeneratedInfo
@@ -3130,7 +3112,6 @@ template<> struct PxEnumTraits< physx::PxArticulationDriveType::Enum > { PxEnumT
 		static const char* getClassName() { return "PxArticulationDrive"; }
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxArticulationDrive_Stiffness, PxArticulationDrive, PxReal, PxReal > Stiffness;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxArticulationDrive_Damping, PxArticulationDrive, PxReal, PxReal > Damping;
-		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxArticulationDrive_MaxForce, PxArticulationDrive, PxReal, PxReal > MaxForce;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxArticulationDrive_Envelope, PxArticulationDrive, PxPerformanceEnvelope, PxPerformanceEnvelope > Envelope;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxArticulationDrive_DriveType, PxArticulationDrive, PxArticulationDriveType::Enum, PxArticulationDriveType::Enum > DriveType;
 
@@ -3152,7 +3133,7 @@ template<> struct PxEnumTraits< physx::PxArticulationDriveType::Enum > { PxEnumT
 			PX_UNUSED(inStartIndex);
 			return inStartIndex;
 		}
-		static PxU32 instancePropertyCount() { return 5; }
+		static PxU32 instancePropertyCount() { return 4; }
 		static PxU32 totalPropertyCount() { return instancePropertyCount(); }
 		template<typename TOperator>
 		PxU32 visitInstanceProperties( TOperator inOperator, PxU32 inStartIndex = 0 ) const
@@ -3161,10 +3142,9 @@ template<> struct PxEnumTraits< physx::PxArticulationDriveType::Enum > { PxEnumT
 			PX_UNUSED(inStartIndex);
 			inOperator( Stiffness, inStartIndex + 0 );; 
 			inOperator( Damping, inStartIndex + 1 );; 
-			inOperator( MaxForce, inStartIndex + 2 );; 
-			inOperator( Envelope, inStartIndex + 3 );; 
-			inOperator( DriveType, inStartIndex + 4 );; 
-			return 5 + inStartIndex;
+			inOperator( Envelope, inStartIndex + 2 );; 
+			inOperator( DriveType, inStartIndex + 3 );; 
+			return 4 + inStartIndex;
 		}
 	};
 	template<> struct PxClassInfoTraits<PxArticulationDrive>
@@ -3292,7 +3272,6 @@ template<> struct PxEnumTraits< physx::PxBVHBuildStrategy::Enum > { PxEnumTraits
 		PxBroadPhaseType::Enum BroadPhaseType;
 		PxBroadPhaseCallback * BroadPhaseCallback;
 		PxSceneLimits Limits;
-		PxFrictionType::Enum FrictionType;
 		PxSolverType::Enum SolverType;
 		PxReal BounceThresholdVelocity;
 		PxReal FrictionOffsetThreshold;
@@ -3332,7 +3311,6 @@ template<> struct PxEnumTraits< physx::PxBVHBuildStrategy::Enum > { PxEnumTraits
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxSceneDesc, BroadPhaseType, PxSceneDescGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxSceneDesc, BroadPhaseCallback, PxSceneDescGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxSceneDesc, Limits, PxSceneDescGeneratedValues)
-	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxSceneDesc, FrictionType, PxSceneDescGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxSceneDesc, SolverType, PxSceneDescGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxSceneDesc, BounceThresholdVelocity, PxSceneDescGeneratedValues)
 	DEFINE_PROPERTY_TO_VALUE_STRUCT_MAP( PxSceneDesc, FrictionOffsetThreshold, PxSceneDescGeneratedValues)
@@ -3375,7 +3353,6 @@ template<> struct PxEnumTraits< physx::PxBVHBuildStrategy::Enum > { PxEnumTraits
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxSceneDesc_BroadPhaseType, PxSceneDesc, PxBroadPhaseType::Enum, PxBroadPhaseType::Enum > BroadPhaseType;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxSceneDesc_BroadPhaseCallback, PxSceneDesc, PxBroadPhaseCallback *, PxBroadPhaseCallback * > BroadPhaseCallback;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxSceneDesc_Limits, PxSceneDesc, PxSceneLimits, PxSceneLimits > Limits;
-		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxSceneDesc_FrictionType, PxSceneDesc, PxFrictionType::Enum, PxFrictionType::Enum > FrictionType;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxSceneDesc_SolverType, PxSceneDesc, PxSolverType::Enum, PxSolverType::Enum > SolverType;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxSceneDesc_BounceThresholdVelocity, PxSceneDesc, PxReal, PxReal > BounceThresholdVelocity;
 		PxPropertyInfo<PX_PROPERTY_INFO_NAME::PxSceneDesc_FrictionOffsetThreshold, PxSceneDesc, PxReal, PxReal > FrictionOffsetThreshold;
@@ -3422,7 +3399,7 @@ template<> struct PxEnumTraits< physx::PxBVHBuildStrategy::Enum > { PxEnumTraits
 			inStartIndex = PxSceneQueryDescGeneratedInfo::visitInstanceProperties( inOperator, inStartIndex );
 			return inStartIndex;
 		}
-		static PxU32 instancePropertyCount() { return 39; }
+		static PxU32 instancePropertyCount() { return 38; }
 		static PxU32 totalPropertyCount() { return instancePropertyCount()
 				+ PxSceneQueryDescGeneratedInfo::totalPropertyCount(); }
 		template<typename TOperator>
@@ -3444,32 +3421,31 @@ template<> struct PxEnumTraits< physx::PxBVHBuildStrategy::Enum > { PxEnumTraits
 			inOperator( BroadPhaseType, inStartIndex + 11 );; 
 			inOperator( BroadPhaseCallback, inStartIndex + 12 );; 
 			inOperator( Limits, inStartIndex + 13 );; 
-			inOperator( FrictionType, inStartIndex + 14 );; 
-			inOperator( SolverType, inStartIndex + 15 );; 
-			inOperator( BounceThresholdVelocity, inStartIndex + 16 );; 
-			inOperator( FrictionOffsetThreshold, inStartIndex + 17 );; 
-			inOperator( FrictionCorrelationDistance, inStartIndex + 18 );; 
-			inOperator( Flags, inStartIndex + 19 );; 
-			inOperator( CpuDispatcher, inStartIndex + 20 );; 
-			inOperator( CudaContextManager, inStartIndex + 21 );; 
-			inOperator( UserData, inStartIndex + 22 );; 
-			inOperator( SolverBatchSize, inStartIndex + 23 );; 
-			inOperator( SolverArticulationBatchSize, inStartIndex + 24 );; 
-			inOperator( NbContactDataBlocks, inStartIndex + 25 );; 
-			inOperator( MaxNbContactDataBlocks, inStartIndex + 26 );; 
-			inOperator( MaxBiasCoefficient, inStartIndex + 27 );; 
-			inOperator( ContactReportStreamBufferSize, inStartIndex + 28 );; 
-			inOperator( CcdMaxPasses, inStartIndex + 29 );; 
-			inOperator( CcdThreshold, inStartIndex + 30 );; 
-			inOperator( CcdMaxSeparation, inStartIndex + 31 );; 
-			inOperator( WakeCounterResetValue, inStartIndex + 32 );; 
-			inOperator( SanityBounds, inStartIndex + 33 );; 
-			inOperator( GpuDynamicsConfig, inStartIndex + 34 );; 
-			inOperator( GpuMaxNumPartitions, inStartIndex + 35 );; 
-			inOperator( GpuMaxNumStaticPartitions, inStartIndex + 36 );; 
-			inOperator( GpuComputeVersion, inStartIndex + 37 );; 
-			inOperator( ContactPairSlabSize, inStartIndex + 38 );; 
-			return 39 + inStartIndex;
+			inOperator( SolverType, inStartIndex + 14 );; 
+			inOperator( BounceThresholdVelocity, inStartIndex + 15 );; 
+			inOperator( FrictionOffsetThreshold, inStartIndex + 16 );; 
+			inOperator( FrictionCorrelationDistance, inStartIndex + 17 );; 
+			inOperator( Flags, inStartIndex + 18 );; 
+			inOperator( CpuDispatcher, inStartIndex + 19 );; 
+			inOperator( CudaContextManager, inStartIndex + 20 );; 
+			inOperator( UserData, inStartIndex + 21 );; 
+			inOperator( SolverBatchSize, inStartIndex + 22 );; 
+			inOperator( SolverArticulationBatchSize, inStartIndex + 23 );; 
+			inOperator( NbContactDataBlocks, inStartIndex + 24 );; 
+			inOperator( MaxNbContactDataBlocks, inStartIndex + 25 );; 
+			inOperator( MaxBiasCoefficient, inStartIndex + 26 );; 
+			inOperator( ContactReportStreamBufferSize, inStartIndex + 27 );; 
+			inOperator( CcdMaxPasses, inStartIndex + 28 );; 
+			inOperator( CcdThreshold, inStartIndex + 29 );; 
+			inOperator( CcdMaxSeparation, inStartIndex + 30 );; 
+			inOperator( WakeCounterResetValue, inStartIndex + 31 );; 
+			inOperator( SanityBounds, inStartIndex + 32 );; 
+			inOperator( GpuDynamicsConfig, inStartIndex + 33 );; 
+			inOperator( GpuMaxNumPartitions, inStartIndex + 34 );; 
+			inOperator( GpuMaxNumStaticPartitions, inStartIndex + 35 );; 
+			inOperator( GpuComputeVersion, inStartIndex + 36 );; 
+			inOperator( ContactPairSlabSize, inStartIndex + 37 );; 
+			return 38 + inStartIndex;
 		}
 	};
 	template<> struct PxClassInfoTraits<PxSceneDesc>

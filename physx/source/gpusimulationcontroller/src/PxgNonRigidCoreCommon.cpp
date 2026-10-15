@@ -36,17 +36,16 @@ PxgNonRigidCore::PxgNonRigidCore(PxgCudaKernelWranglerManager* gpuKernelWrangler
 	mRSDesc(allocDesc.hostAlloc, statType),
 	mRadixSortDescBuf(allocDesc.deviceAlloc, statType),
 	mRadixCountTotalBuf(allocDesc.deviceAlloc, statType),
-	mContactByRigidBuf(allocDesc.deviceAlloc, statType),
-	mContactSortedByRigidBuf(allocDesc.deviceAlloc, statType),
-	mTempContactByRigidBitBuf(allocDesc.deviceAlloc, statType),
-	mContactRemapSortedByRigidBuf(allocDesc.deviceAlloc, statType),
-	mContactSortedByParticleBuf(allocDesc.deviceAlloc, statType),
-	mTempContactByParticleBitBuf(allocDesc.deviceAlloc, statType),
-	mContactRemapSortedByParticleBuf(allocDesc.deviceAlloc, statType),
-	mTempContactBuf(allocDesc.deviceAlloc, statType),
-	mTempContactRemapBuf(allocDesc.deviceAlloc, statType),
-	mTempContactBuf2(allocDesc.deviceAlloc, statType),
-	mTempContactRemapBuf2(allocDesc.deviceAlloc, statType),
+	mContactByRigidBuffer(allocDesc.deviceAlloc, statType),
+	mTempContactByRigidBitBuffer(allocDesc.deviceAlloc, statType),
+	mContactRemapSortedByRigidBuffer(allocDesc.deviceAlloc, statType),
+	mContactByParticleBuffer(allocDesc.deviceAlloc, statType),
+	mTempContactByParticleBitBuffer(allocDesc.deviceAlloc, statType),
+	mContactRemapSortedByParticleBuffer(allocDesc.deviceAlloc, statType),
+	mTempContactBuffer(allocDesc.deviceAlloc, statType),
+	mTempContactRemapBuffer(allocDesc.deviceAlloc, statType),
+	mTempContactBuffer2(allocDesc.deviceAlloc, statType),
+	mTempContactRemapBuffer2(allocDesc.deviceAlloc, statType),
 #if PX_ENABLE_SIM_STATS
 	mCollisionStackSizeBytesStats(0)
 #else
@@ -60,19 +59,18 @@ PxgNonRigidCore::PxgNonRigidCore(PxgCudaKernelWranglerManager* gpuKernelWrangler
 
 	const PxU32 maxContactsRoundedUp4 = (mMaxContacts + 3) & ~(4 - 1);
 
-	mContactByRigidBuf.allocateElements(mMaxContacts, PX_FL);							// PxNodeIndex, no radix sort.
-	mContactSortedByRigidBuf.allocateElements(mMaxContacts, PX_FL);						// PxNodeIndex, no radix sort.
-	mTempContactByRigidBitBuf.allocateElements(maxContactsRoundedUp4, PX_FL);			// PxU32, used in radix sort
-	mContactRemapSortedByRigidBuf.allocateElements(maxContactsRoundedUp4, PX_FL);		// PxU32, used in radix sort
+	mContactByRigidBuffer.allocateElements(mMaxContacts, PX_FL);							// PxNodeIndex, no radix sort.
+	mTempContactByRigidBitBuffer.allocateElements(maxContactsRoundedUp4, PX_FL);			// PxU32, used in radix sort
+	mContactRemapSortedByRigidBuffer.allocateElements(maxContactsRoundedUp4, PX_FL);		// PxU32, used in radix sort
 
-	mContactSortedByParticleBuf.allocateElements((mMaxContacts + 1) & ~(2 - 1), PX_FL);
-	mTempContactByParticleBitBuf.allocateElements(maxContactsRoundedUp4, PX_FL);		// PxU32, used in radix sort
-	mContactRemapSortedByParticleBuf.allocateElements(maxContactsRoundedUp4, PX_FL);	// PxU32, used in radix sort
+	mContactByParticleBuffer.allocateElements((mMaxContacts + 1) & ~(2 - 1), PX_FL);
+	mTempContactByParticleBitBuffer.allocateElements(maxContactsRoundedUp4, PX_FL);		// PxU32, used in radix sort
+	mContactRemapSortedByParticleBuffer.allocateElements(maxContactsRoundedUp4, PX_FL);	// PxU32, used in radix sort
 		
-	mTempContactBuf.allocateElements(maxContactsRoundedUp4, PX_FL);			// PxU32, used in radix sort
-	mTempContactRemapBuf.allocateElements(maxContactsRoundedUp4, PX_FL);	// PxU32, used in radix sort
-	mTempContactBuf2.allocateElements(maxContactsRoundedUp4, PX_FL);		// PxU32, used in radix sort
-	mTempContactRemapBuf2.allocateElements(maxContactsRoundedUp4, PX_FL); 	// PxU32, used in radix sort
+	mTempContactBuffer.allocateElements(maxContactsRoundedUp4, PX_FL);			// PxU32, used in radix sort
+	mTempContactRemapBuffer.allocateElements(maxContactsRoundedUp4, PX_FL);	// PxU32, used in radix sort
+	mTempContactBuffer2.allocateElements(maxContactsRoundedUp4, PX_FL);		// PxU32, used in radix sort
+	mTempContactRemapBuffer2.allocateElements(maxContactsRoundedUp4, PX_FL); 	// PxU32, used in radix sort
 }
 
 PxgNonRigidCore::~PxgNonRigidCore()

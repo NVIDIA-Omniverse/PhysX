@@ -29,8 +29,8 @@ Author and drive the support as follows:
 3. Bind a physics material with enough static and dynamic friction for the load.
 4. Write a new target pose before each step.
 
-The support is driven correctly when a read of `RIGID_BODY_POSE` places the
-support at the pose you wrote for that step, and the rider's position along the
+The support is driven correctly when session reads of `RIGID_BODY` `position`
+and `orientation` place the support at the pose you wrote for that step, and the rider's position along the
 motion axis has advanced with it over successive steps. A rider displacement near
 zero while the support moves means the support was teleported rather than driven
 to a kinematic target, which is the failure the shipped samples check for.
@@ -62,7 +62,7 @@ needed to carry a rider. The tensor-binding write surface is deprecated (superse
 session write API, `ovphysx_write` / `PhysX.write`) and does not expose a separate
 kinematic-target tensor.
 
-C++ applications can also use `ovphysx_get_physx_ptr()` and call
+C++ applications can also read `physxPointer` and call
 `PxRigidDynamic::setKinematicTarget()` directly. Refer to
 [PhysX Interop](../tutorials/physx_interop.md).
 
@@ -72,6 +72,8 @@ Use `PhysxSurfaceVelocityAPI` when the support stays in place but its contact
 surface moves:
 
 ```usda
+#usda 1.0
+
 def Cube "Conveyor" (
     prepend apiSchemas = [
         "PhysicsCollisionAPI",
@@ -120,9 +122,10 @@ motion is observably greater than either independent lane.
 
 A surface-velocity change does not wake a body that has settled to sleep.
 Disable sleeping for continuously controlled loads by setting
-`physxRigidBody:sleepThreshold = 0`, or call
-`ovphysx_rigid_body_view_wake_up()` (`TensorBinding.wake_up()` in Python)
-immediately before motion begins. Kinematic support motion and surface velocity
+`physxRigidBody:sleepThreshold = 0`, or write the session `wake` attribute with
+nonzero values for the selected dynamic bodies immediately before motion begins.
+Use a prim-set query to include those bodies while they are asleep; see
+[Wake and sleep commands](../read_write/writable.md#rigid-bodies). Kinematic support motion and surface velocity
 also require sufficient friction to transmit tangential motion; bind an
 explicit physics material instead of relying on defaults.
 
@@ -137,7 +140,7 @@ Before you enter the control loop, confirm the following:
 Then, for each frame:
 
 1. Publish and seal ovstage transform and surface-velocity control edits.
-2. Call `update_from_ovstage()` for exactly those control ordinals.
+2. Call `update_from_ovstage()` for exactly those control ordinals and wait for its task.
 3. Step and wait for completion.
 4. Read poses and velocities.
 
@@ -148,16 +151,20 @@ arriving indicates a sleeping load or insufficient friction.
 
 ## Reset and Readback
 
-Use `reset_stage()` and reload or reattach the baseline scene for deterministic
+Wait successfully for `detach_ovstage()`, then reload or reattach the baseline scene for deterministic
 reruns. Replaying only poses and velocities from an in-contact mid-run state
 does not restore PhysX contact caches and is not a deterministic reset.
 
-Read resolved runtime state with `RIGID_BODY_POSE` and
-`RIGID_BODY_VELOCITY`, or use the ovstage output-read API. Reading the source
-USD only shows authored values; it does not prove that the live PhysX actor
-received a target or that contact carried the rider.
+Read resolved runtime state through the session read (`PhysX.read` /
+`ovphysx_read`), selecting the rider by its path as the samples below do.
+Reading the source USD only shows authored values; it does not prove that the
+live PhysX actor received a target or that contact carried the rider.
 
 ## Runnable Samples
+
+The Python sample loads `kinematic_support.usda`, which ships with every package under
+`ovphysx/samples/data/` in the wheel, `<sdk-root>/samples/data/` in the C/C++ SDK,
+and `tests/data/` in a repository checkout.
 
 Python:
 

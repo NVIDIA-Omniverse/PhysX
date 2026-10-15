@@ -19,7 +19,7 @@ dependencies = [
   # against the population/runtime ABI of the pinned ovstage release. This pin is
   # generated from the OVSTAGE_VERSION constant in scripts/fetch_ovstage_release.py
   # (the version source of truth); do not edit this line by hand.
-  "ovstage==0.2.1.385922",
+  "ovstage==0.3.0.1791986420",
   # Warp is the public CPU/CUDA array frontend for PhysX.read(). Floor is the tested line,
   # pinned exactly in tests; <2 only guards a major bump (a minor cap collides with IsaacLab).
   "warp-lang>=1.16,<2",
@@ -62,6 +62,21 @@ required-environments = [
   "sys_platform == 'win32' and platform_machine == 'AMD64'",
 ]
 
+# Resolve OVStage from its explicit index with hashes in uv.lock (ADR-0033).
+
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple"
+default = true
+
+[[tool.uv.index]]
+name = "ovstage"
+url = "https://pypi.org/simple"
+explicit = true
+
+[tool.uv.sources]
+ovstage = { index = "ovstage" }
+
 [tool.setuptools.dynamic]
 version = {attr = "ovphysx.__version__"}
 
@@ -82,7 +97,6 @@ include = ["ovphysx*"]
   "lib/**/*",
   "plugins/**/*",
   "deps/**/*",  # Extension Python packages (v2/) and kernel/py packages (_kit_py/)
-  "schemas/**/*",  # Codeless PhysX USD schemas for external authoring/validation
   "SKILLS.md",
   "skills/**/*",
   "samples/**/*",

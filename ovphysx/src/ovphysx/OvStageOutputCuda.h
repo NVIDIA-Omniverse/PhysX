@@ -31,7 +31,7 @@ public:
     // Preserve a cold stage read, which can migrate GPU-backed matrices to CPU.
     // Probes the driver when available but does not create a CUDA context.
     OutputCudaContextScope();
-    // A null buffer creates a no-op scope and does not query CUDA.
+    // Select the output buffer context, or preserve the caller context for CPU output.
     explicit OutputCudaContextScope(const OutputCudaBuffers* buffers);
     ~OutputCudaContextScope();
     OutputCudaContextScope(const OutputCudaContextScope&) = delete;

@@ -245,19 +245,15 @@ static void solveContact(const PxSolverConstraintDesc& desc, SolverContext& cach
 			for(PxU32 i=0;i<numFrictionConstr;i++)
 			{
 				SolverContactFriction& f = frictions[i];
-				PxPrefetchLine(&frictions[i],128);
+				PxPrefetchLine(&frictions[i], 128);
 
-				const Vec4V normalXYZ_appliedForceW = f.normalXYZ_appliedForceW;
-				const Vec4V raXnXYZ_velMultiplierW = f.raXnXYZ_velMultiplierW;
-				const Vec4V rbXnXYZ_biasW = f.rbXnXYZ_biasW;
+				const Vec3V normal = f.normal;
+				const Vec3V raXn = f.raXn;
+				const Vec3V rbXn = f.rbXn;
 
-				const Vec3V normal = Vec3V_From_Vec4V(normalXYZ_appliedForceW);
-				const Vec3V raXn = Vec3V_From_Vec4V(raXnXYZ_velMultiplierW);
-				const Vec3V rbXn = Vec3V_From_Vec4V(rbXnXYZ_biasW);
-
-				const FloatV appliedForce = V4GetW(normalXYZ_appliedForceW);
-				const FloatV bias = V4GetW(rbXnXYZ_biasW);
-				const FloatV velMultiplier = V4GetW(raXnXYZ_velMultiplierW);
+				const FloatV appliedForce = FLoad(f.appliedForce);
+				const FloatV bias = FLoad(f.bias);
+				const FloatV velMultiplier = FLoad(f.velMultiplier);
 				
 				const FloatV targetVel = FLoad(f.targetVel);
 
@@ -372,6 +368,7 @@ static void solveContact_BStatic(const PxSolverConstraintDesc& desc, SolverConte
 		{
 			const FloatV maxFrictionImpulse = FMul(hdr->getStaticFriction(), accumulatedNormalImpulse);
 			const FloatV maxDynFrictionImpulse = FMul(hdr->getDynamicFriction(), accumulatedNormalImpulse);
+			const FloatV negMaxDynFrictionImpulse = FNeg(maxDynFrictionImpulse);
 
 			BoolV broken = BFFFF();
 			if(cache.writeBackIteration)
@@ -380,23 +377,17 @@ static void solveContact_BStatic(const PxSolverConstraintDesc& desc, SolverConte
 			for(PxU32 i=0;i<numFrictionConstr;i++)
 			{
 				SolverContactFriction& f = frictions[i];
-				PxPrefetchLine(&frictions[i],128);
+				PxPrefetchLine(&frictions[i], 128);
 
-				const Vec4V normalXYZ_appliedForceW = f.normalXYZ_appliedForceW;
-				const Vec4V raXnXYZ_velMultiplierW = f.raXnXYZ_velMultiplierW;
-				const Vec4V rbXnXYZ_biasW = f.rbXnXYZ_biasW;
+				const Vec3V normal = f.normal;
+				const Vec3V raXn = f.raXn;
 
-				const Vec3V normal = Vec3V_From_Vec4V(normalXYZ_appliedForceW);
-				const Vec3V raXn = Vec3V_From_Vec4V(raXnXYZ_velMultiplierW);
-
-				const FloatV appliedForce = V4GetW(normalXYZ_appliedForceW);
-				const FloatV bias = V4GetW(rbXnXYZ_biasW);
-				const FloatV velMultiplier = V4GetW(raXnXYZ_velMultiplierW);
+				const FloatV appliedForce = FLoad(f.appliedForce);
+				const FloatV bias = FLoad(f.bias);
+				const FloatV velMultiplier = FLoad(f.velMultiplier);
 
 				const FloatV targetVel = FLoad(f.targetVel);
 	
-				const FloatV negMaxDynFrictionImpulse = FNeg(maxDynFrictionImpulse);
-
 				const Vec3V delLinVel0 = V3Scale(normal, invMassA);
 				//const FloatV negMaxFrictionImpulse = FNeg(maxFrictionImpulse);
 
@@ -1021,14 +1012,17 @@ void solveExtContact(const PxSolverConstraintDesc& desc, Vec3V& linVel0, Vec3V& 
 		const Vec3V contactNormal = Vec3V_From_Vec4V(hdr->normal_minAppliedImpulseForFrictionW);
 		const FloatV minNorImpulse = V4GetW(hdr->normal_minAppliedImpulseForFrictionW);
 
-		const FloatV accumulatedNormalImpulse = FMax(solveExtContacts(contacts, numNormalConstr, contactNormal, linVel0, angVel0, linVel1,
-			angVel1, li0, ai0, li1, ai1, appliedForceBuffer), minNorImpulse);
+		const FloatV accumulatedNormalImpulse = FMax(solveExtContacts(	contacts, numNormalConstr, contactNormal, linVel0, angVel0, linVel1,
+																		angVel1, li0, ai0, li1, ai1, appliedForceBuffer), minNorImpulse);
 
 		if (doFriction && numFrictionConstr)
 		{
 			PxPrefetchLine(frictions);
 			const FloatV maxFrictionImpulse = FMul(hdr->getStaticFriction(), accumulatedNormalImpulse);
+			const FloatV negMaxFrictionImpulse = FNeg(maxFrictionImpulse);
+
 			const FloatV maxDynFrictionImpulse = FMul(hdr->getDynamicFriction(), accumulatedNormalImpulse);
+			const FloatV negMaxDynFrictionImpulse = FNeg(maxDynFrictionImpulse);
 
 			BoolV broken = BFFFF();
 
@@ -1037,24 +1031,17 @@ void solveExtContact(const PxSolverConstraintDesc& desc, Vec3V& linVel0, Vec3V& 
 				SolverContactFrictionExt& f = frictions[i];
 				PxPrefetchLine(&frictions[i + 1]);
 
-				const Vec4V normalXYZ_appliedForceW = f.normalXYZ_appliedForceW;
-				const Vec4V raXnXYZ_velMultiplierW = f.raXnXYZ_velMultiplierW;
-				const Vec4V rbXnXYZ_biasW = f.rbXnXYZ_biasW;
-
-				const Vec3V normal = Vec3V_From_Vec4V(normalXYZ_appliedForceW);
+				const Vec3V normal = f.normal;
 				/*const Vec3V normal0 = V3Scale(normal, sqrtInvMass0);
 				const Vec3V normal1 = V3Scale(normal, sqrtInvMass1);*/
-				const Vec3V raXn = Vec3V_From_Vec4V(raXnXYZ_velMultiplierW);
-				const Vec3V rbXn = Vec3V_From_Vec4V(rbXnXYZ_biasW);
+				const Vec3V raXn = f.raXn;
+				const Vec3V rbXn = f.rbXn;
 
-				const FloatV appliedForce = V4GetW(normalXYZ_appliedForceW);
-				const FloatV bias = V4GetW(rbXnXYZ_biasW);
-				const FloatV velMultiplier = V4GetW(raXnXYZ_velMultiplierW);
+				const FloatV appliedForce = FLoad(f.appliedForce);
+				const FloatV bias = FLoad(f.bias);
+				const FloatV velMultiplier = FLoad(f.velMultiplier);
 
 				const FloatV targetVel = FLoad(f.targetVel);
-
-				const FloatV negMaxDynFrictionImpulse = FNeg(maxDynFrictionImpulse);
-				const FloatV negMaxFrictionImpulse = FNeg(maxFrictionImpulse);
 
 				const Vec3V v0 = V3MulAdd(linVel0, normal, V3Mul(angVel0, raXn));
 				const Vec3V v1 = V3MulAdd(linVel1, normal, V3Mul(angVel1, rbXn));
@@ -1088,15 +1075,17 @@ void solveExtContact(const PxSolverConstraintDesc& desc, Vec3V& linVel0, Vec3V& 
 
 				broken = BOr(broken, BOr(clampLow, clampHigh));
 
-				FloatV deltaF = FSub(newAppliedForce, appliedForce);
+				const FloatV deltaF = FSub(newAppliedForce, appliedForce);
 
 				linVel0 = V3ScaleAdd(f.linDeltaVA, deltaF, linVel0);
 				angVel0 = V3ScaleAdd(f.angDeltaVA, deltaF, angVel0);
 				linVel1 = V3ScaleAdd(f.linDeltaVB, deltaF, linVel1);
 				angVel1 = V3ScaleAdd(f.angDeltaVB, deltaF, angVel1);
 
-				li0 = V3ScaleAdd(normal, deltaF, li0);	ai0 = V3ScaleAdd(raXn, deltaF, ai0);
-				li1 = V3ScaleAdd(normal, deltaF, li1);	ai1 = V3ScaleAdd(rbXn, deltaF, ai1);
+				li0 = V3ScaleAdd(normal, deltaF, li0);
+				ai0 = V3ScaleAdd(raXn, deltaF, ai0);
+				li1 = V3ScaleAdd(normal, deltaF, li1);
+				ai1 = V3ScaleAdd(rbXn, deltaF, ai1);
 
 #if 0
 				PxVec3 lv0, lv1, av0, av1;

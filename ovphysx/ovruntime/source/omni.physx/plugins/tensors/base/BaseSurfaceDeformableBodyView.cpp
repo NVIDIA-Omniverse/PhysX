@@ -181,9 +181,10 @@ bool BaseSurfaceDeformableBodyView::check() const
     return result;
 }
 
-void BaseSurfaceDeformableBodyView::release()
+bool BaseSurfaceDeformableBodyView::release()
 {
     delete this;
+    return true;
 }
 
 void BaseSurfaceDeformableBodyView::_onParentRelease()

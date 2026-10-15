@@ -30,6 +30,21 @@ from ovphysx import utils as physicsUtils  # noqa: E402
 from ovphysx.utils import codeless, schema  # noqa: E402
 
 
+def test_authoring_discovery_accepts_application_selected_provider_version(tmp_path, monkeypatch):
+    info = tmp_path / "physx_usd_schemas-26.1.0.dist-info"
+    info.mkdir()
+    (info / "METADATA").write_text("Name: physx-usd-schemas\nVersion: 26.1.0\n", encoding="utf-8")
+    expected = []
+    for module in ("PhysxSchema", "OmniUsdPhysicsDeformableSchema"):
+        root = tmp_path / "physx_usd_schemas" / module / "resources"
+        root.mkdir(parents=True)
+        (root / "plugInfo.json").write_text("{}", encoding="utf-8")
+        (root / "generatedSchema.usda").write_text("#usda 1.0", encoding="utf-8")
+        expected.append(root)
+    monkeypatch.syspath_prepend(str(tmp_path))
+    assert codeless._schema_paths() == expected
+
+
 def test_type_resolution_and_property_names(codeless_schemas):
     assert schema.get_tf_type_compatible("PhysxRigidBodyAPI")
     assert schema.get_tf_type_compatible(UsdPhysics.RigidBodyAPI)
@@ -574,24 +589,20 @@ else:
 print("RESULT " + json.dumps(outcome))
 """
 
-# Registers a tree carrying the PhysX schema root and not the Omni deformable
-# one, in the supported order, so nothing here is late. Rebinding
-# codeless_schema_paths on the package is how the child gets a half-staged
-# install: register_schemas() imports that name at call time.
+# Register only PhysX, before registry access, to test partial registration.
 _HALF_STAGED_CHILD = """
 import json
 import sys
 from pathlib import Path
 
 import ovphysx
+from ovphysx.utils import codeless
 
 half_staged = Path(sys.argv[1])
-ovphysx.codeless_schema_paths = lambda: sorted(half_staged.glob("*/resources"))
-
-from ovphysx.utils import codeless
+codeless._schema_paths = lambda: sorted(half_staged.glob("*/resources"))
 from pxr import Usd
 
-outcome = {"roots": [path.parent.name for path in ovphysx.codeless_schema_paths()]}
+outcome = {"roots": [path.parent.name for path in codeless._schema_paths()]}
 try:
     codeless.register_schemas(verify=True)
 except codeless.CodelessSchemaError as exc:
@@ -627,20 +638,19 @@ import sys
 from pathlib import Path
 
 import ovphysx
+from ovphysx.utils import codeless
 
-complete = list(ovphysx.codeless_schema_paths())
+complete = list(codeless._schema_paths())
 half_staged = Path(sys.argv[1])
 register_second = sys.argv[2] == "second"
 
-ovphysx.codeless_schema_paths = lambda: sorted(half_staged.glob("*/resources"))
+codeless._schema_paths = lambda: sorted(half_staged.glob("*/resources"))
 
-from ovphysx.utils import codeless
-
-outcome = {"first_roots": [path.parent.name for path in ovphysx.codeless_schema_paths()]}
+outcome = {"first_roots": [path.parent.name for path in codeless._schema_paths()]}
 codeless.register_schemas()
 
 if register_second:
-    ovphysx.codeless_schema_paths = lambda: complete
+    codeless._schema_paths = lambda: complete
     codeless.register_schemas()
 
 from pxr import Usd

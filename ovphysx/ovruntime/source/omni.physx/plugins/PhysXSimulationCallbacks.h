@@ -1,14 +1,31 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-EVENT-QUEUE-001
+// @covers AC-4
+
+// @implements REQ-ATTACH-LIFETIME-001
+// @covers AC-3 AC-4
+
+/**
+ * @implements REQ-ATTACH-EXECUTION-001
+ * @covers AC-1 AC-2 AC-4
+ */
+
 #pragma once
 
 #include <omni/physx/IPhysxSimulation.h>
+#include "CallbackRegistry.h"
 
 namespace omni
 {
 namespace physx
 {
+
+namespace usdparser { class AttachedStage; }
+
+using OwnedContactRegistry = CallbackRegistry<std::pair<std::function<void(const ContactEventHeader*, uint32_t, const ContactData*, uint32_t, void*)>, void*>>;
+using OwnedFullContactRegistry = CallbackRegistry<std::pair<OnFullContactReportEventFn, void*>>;
 
 struct GlobalSimulationFlag
 {
@@ -24,40 +41,38 @@ struct GlobalSimulationFlag
     };
 };
 
-void physxSetSimulationCallback(const omni::physx::ISimulationCallback& cb);
+void physxSetSimulationCallback(AttachHandle attachHandle, const omni::physx::ISimulationCallback& cb);
 
-void physxSetSimulationFlags(uint32_t outputType, uint32_t flags);
-void physxAddSimulationFlags(uint32_t outputType, uint32_t flags);
-void physxRemoveSimulationFlags(uint32_t outputType, uint32_t flags);
+void physxSetSimulationFlags(AttachHandle attachHandle, uint32_t outputType, uint32_t flags);
+void physxAddSimulationFlags(AttachHandle attachHandle, uint32_t outputType, uint32_t flags);
+void physxRemoveSimulationFlags(AttachHandle attachHandle, uint32_t outputType, uint32_t flags);
 
 SubscriptionId physxSubscribePhysicsTriggerReportEvents(AttachHandle attachHandle,
                                                         uint64_t path,
                                                         OnTriggerEventReportEventFn onEvent,
                                                         void* userData);
 void physxUnsubscribePhysicsTriggerReportEvents(SubscriptionId id);
-SubscriptionId physxSubscribePhysicsContactReportEvents(OnContactReportEventFn onEvent, void* userData);
-void physxUnsubscribePhysicsContactReportEvents(SubscriptionId id);
-SubscriptionId physxSubscribePhysicsFullContactReportEvents(OnFullContactReportEventFn onEvent, void* userData);
-void physxUnsubscribePhysicsFullContactReportEvents(SubscriptionId id);
-uint32_t physxGetContactReport(const ContactEventHeader** contactEventBuffer,
+SubscriptionId physxSubscribePhysicsContactReportEvents(AttachHandle attachHandle, OnContactReportEventFn onEvent, void* userData);
+void physxUnsubscribePhysicsContactReportEvents(AttachHandle attachHandle, SubscriptionId id);
+SubscriptionId physxSubscribePhysicsFullContactReportEvents(AttachHandle attachHandle, OnFullContactReportEventFn onEvent, void* userData);
+void physxUnsubscribePhysicsFullContactReportEvents(AttachHandle attachHandle, SubscriptionId id);
+uint32_t physxGetContactReport(AttachHandle attachHandle, const ContactEventHeader** contactEventBuffer,
                                const ContactData** contactDataBuffer,
                                uint32_t& numContactData);
-uint32_t physxFullGetContactReport(const ContactEventHeader** contactEventBuffer,
+uint32_t physxFullGetContactReport(AttachHandle attachHandle, const ContactEventHeader** contactEventBuffer,
                                    const ContactData** contactDataBuffer,
                                    uint32_t& numContactData,
                                    const FrictionAnchor** frictionAnchorDataBuffer,
                                    uint32_t& numFrictionAnchorData);
-uint64_t physxGetSimulationTimestamp();
-uint64_t physxGetSimulationStepCount();
+uint64_t physxGetSimulationTimestamp(AttachHandle attachHandle);
+uint64_t physxGetSimulationStepCount(AttachHandle attachHandle);
 
 class SimulationCallbacks
 {
 public:
-    SimulationCallbacks();
+    explicit SimulationCallbacks(const usdparser::AttachedStage& attachedStage);
 
     ~SimulationCallbacks();
-
-    static SimulationCallbacks* getSimulationCallbacks();
 
     void init(const ISimulationCallback& cb);
 
@@ -97,35 +112,37 @@ public:
         return mUserData;
     }
 
-    const ContactReportEventSubscriptionRegistry& getContactReportRegistry() const
+    const OwnedContactRegistry& getContactReportRegistry() const
     {
         return mContactReportSubscriptions;
     }
 
-    ContactReportEventSubscriptionRegistry& getContactReportRegistry()
+    OwnedContactRegistry& getContactReportRegistry()
     {
         return mContactReportSubscriptions;
     }
 
-    const FullContactReportEventSubscriptionRegistry& getFullContactReportRegistry() const
+    const OwnedFullContactRegistry& getFullContactReportRegistry() const
     {
         return mFullContactReportSubscriptions;
     }
 
-    FullContactReportEventSubscriptionRegistry& getFullContactReportRegistry()
+    OwnedFullContactRegistry& getFullContactReportRegistry()
     {
         return mFullContactReportSubscriptions;
     }
 
 private:
+    const usdparser::AttachedStage& mAttachedStage;
+
     TransformUpdateNotificationFn mTransformationWriteFn;
     VelocityUpdateNotificationFn mVelocityWriteFn;
     TransformUpdateFn mTransformUpdateFn;
     void* mUserData;
     uint32_t mGlobalSimulationFlags;
 
-    ContactReportEventSubscriptionRegistry mContactReportSubscriptions;
-    FullContactReportEventSubscriptionRegistry mFullContactReportSubscriptions;
+    OwnedContactRegistry mContactReportSubscriptions;
+    OwnedFullContactRegistry mFullContactReportSubscriptions;
 };
 
 } // namespace physx

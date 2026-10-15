@@ -14,7 +14,7 @@
 
 // The caller has populated and attached this stage at sealed ordinal 1.
 // This sample has no application edits to drain back into physics.
-bool publishFrames(ovphysx_handle_t physics, ovstage_instance_t* stage)
+bool publishFrames(ovphysx_instance_handle_t physics, ovstage_instance_t* stage)
 {
     // Destroy the cache before its owning physics instance and stage.
     ovphysx::utils::OvStageOutputCache cache;
@@ -62,9 +62,8 @@ int main()
     if (ovphysx_initialize().status != OVPHYSX_API_SUCCESS)
         return 1;
 
-    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-    ovphysx_handle_t physics = OVPHYSX_INVALID_HANDLE;
-    if (ovphysx_create_instance(&args, &physics).status != OVPHYSX_API_SUCCESS)
+    ovphysx_instance_handle_t physics = OVPHYSX_INVALID_HANDLE;
+    if (ovphysx_create_instance(&physics).status != OVPHYSX_API_SUCCESS)
     {
         ovphysx_shutdown();
         return 1;

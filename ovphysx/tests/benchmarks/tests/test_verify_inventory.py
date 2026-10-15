@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-CAPI-BENCHMARK-007
+# @covers AC-1
+
 # Contract tests for verify_inventory.py. They pin the live producer contract.
 #
 # The inventory is pinned at eighteen rows: twelve CPU-canonical rows and six
@@ -543,8 +546,7 @@ class ProducerInventoryFixtureTests(unittest.TestCase):
         self.assertEqual(len(names), len(set(names)))
 
 
-if __name__ == "__main__":
-    unittest.main()
+
 
 
 class OwnedInventoryTests(unittest.TestCase):
@@ -607,14 +609,14 @@ class OwnedInventoryTests(unittest.TestCase):
 
 
 class OutputReadInventoryFixtureTests(unittest.TestCase):
-    """Pins the committed outputread_inventory.json to its matrix of 15 visible CPU rows and
-    19 hidden DirectGPU rows, every one owned."""
+    """Pins the committed outputread_inventory.json to its matrix of 17 visible CPU rows and
+    21 hidden DirectGPU rows, every one owned."""
 
     def test_fixture_shape(self):
         rows = vi.load_inventory(str(OUTPUT_READ_INVENTORY_PATH))
-        self.assertEqual(len(rows), 34)
-        self.assertEqual(len([r for r in rows if r.device == "cpu"]), 15)
-        self.assertEqual(len([r for r in rows if r.device == "gpu"]), 19)
+        self.assertEqual(len(rows), 38)
+        self.assertEqual(len([r for r in rows if r.device == "cpu"]), 17)
+        self.assertEqual(len([r for r in rows if r.device == "gpu"]), 21)
 
     def test_every_row_is_owned_and_purposed(self):
         with open(OUTPUT_READ_INVENTORY_PATH, encoding="utf-8") as handle:
@@ -638,6 +640,7 @@ class OutputReadInventoryFixtureTests(unittest.TestCase):
 
 HIGH_SCALE_INVENTORY_PATH = THIS_DIR / "high_scale_inventory.json"
 CONTACT_INVENTORY_PATH = THIS_DIR / "contact_report_inventory.json"
+WRITE_ONLY_INVENTORY_PATH = THIS_DIR / "write_only_inventory.json"
 
 
 class HighScaleInventoryFixtureTests(unittest.TestCase):
@@ -679,6 +682,7 @@ class HighScaleInventoryFixtureTests(unittest.TestCase):
                 vi.load_inventory(str(OUTPUT_READ_INVENTORY_PATH)),
                 vi.load_inventory(str(HIGH_SCALE_INVENTORY_PATH)),
                 vi.load_inventory(str(CONTACT_INVENTORY_PATH)),
+                vi.load_inventory(str(WRITE_ONLY_INVENTORY_PATH)),
             ]
         )
 
@@ -744,3 +748,25 @@ class InventoryUnionTests(unittest.TestCase):
             )
             self.assertEqual(vi.main(["check-union", first, second]), 0)
             self.assertEqual(vi.main(["check-union", first, colliding]), 1)
+
+
+class WriteOnlyInventoryTests(unittest.TestCase):
+    def test_six_cpu_rows_cannot_enter_existing_families(self):
+        import fnmatch
+
+        rows = vi.load_inventory(str(WRITE_ONLY_INVENTORY_PATH))
+        expected = {
+            f"WriteOnly.velocity_{lane}_{count}_cpu"
+            for lane in ("ovstage", "tensor")
+            for count in (4096, 8192, 16384)
+        }
+        self.assertEqual({row.name for row in rows}, expected)
+        for row in rows:
+            self.assertTrue(row.hidden)
+            self.assertEqual(row.device, "cpu")
+            for pattern in ("Authoring.*", "WriteScaling.*", "WriteScalingHighN.*", "RuntimeSpawnScaling.*"):
+                self.assertFalse(fnmatch.fnmatchcase(row.name, pattern))
+
+
+if __name__ == "__main__":
+    unittest.main()

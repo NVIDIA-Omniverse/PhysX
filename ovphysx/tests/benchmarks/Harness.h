@@ -49,8 +49,10 @@ struct CmdLineParameters
     bool uniquify;
     bool verbose;
     bool runHidden;
-    bool enableTracy;
-    bool enableNvtx;
+    /// --profiler=<none|nvtx|trace>; NULL leaves the environment alone.
+    const char* profilerBackend;
+    /// --profiler-output=<file>; only meaningful for the trace backend.
+    const char* profilerOutput;
 
     CmdLineParameters()
         : filterString(NULL),
@@ -74,8 +76,8 @@ struct CmdLineParameters
           uniquify(false),
           verbose(false),
           runHidden(false),
-          enableTracy(false),
-          enableNvtx(false)
+          profilerBackend(NULL),
+          profilerOutput(NULL)
     {
     }
 };

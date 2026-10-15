@@ -147,9 +147,10 @@ const char* BaseRigidContactView::getFilterUsdPrimName(uint32_t sensorIdx, uint3
     return nullptr;
 }
 
-void BaseRigidContactView::release()
+bool BaseRigidContactView::release()
 {
     delete this;
+    return true;
 }
 
 void BaseRigidContactView::_onParentRelease()

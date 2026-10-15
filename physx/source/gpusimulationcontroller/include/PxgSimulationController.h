@@ -13,7 +13,9 @@
 #include "PxgFEMCloth.h"
 #include "PxgAllocatorDesc.h"
 #include "PxgAttachmentManager.h"
+#include "PxgDeformableFilterManager.h"
 #include "PxgSimulationCoreDesc.h"
+#include "DyDeformableVolume.h"
 
 #include "PxsSimulationController.h"
 #include "CmTask.h"
@@ -319,82 +321,70 @@ namespace physx
 		virtual void releaseDeferredArticulationIds()	PX_OVERRIDE;
 
 
-		virtual PxU32 addRigidAttachment(Dy::DeformableVolume* deformableVolume, const PxNodeIndex& softBodyNodeIndex,
-			PxsRigidBody* rigidBody, const PxNodeIndex& rigidNodeIndex, PxU32 vertIndex, const PxVec3& actorSpacePose,
-			const bool isActive, bool doConversion)	PX_OVERRIDE;
+		virtual PxU32 addVolumeRigidAttachments(Dy::DeformableVolume* deformableVolume, PxsRigidBody* rigidBody, const PxNodeIndex& rigidNodeIndex,
+			PxDeformableAttachmentTargetType::Enum feature, const PxU32* indices, const PxVec4* barycentrics,
+			const PxTransform& frame, const PxVec4* coords, PxU32 count, const bool isActive)	PX_OVERRIDE;
+		virtual void removeVolumeRigidAttachments(Dy::DeformableVolume* deformableVolume, PxU32 handle)	PX_OVERRIDE;
 
-		virtual PxU32 addTetRigidAttachment(Dy::DeformableVolume* deformableVolume,
-			PxsRigidBody* rigidBody, const PxNodeIndex& rigidNodeIndex, PxU32 tetIdx, const PxVec4& barycentrics, const PxVec3& actorSpacePose,
-			const bool isActive, bool doConversion)	PX_OVERRIDE;
+		virtual PxU32 addVolumeVolumeAttachments(Dy::DeformableVolume* deformableVolume0, PxDeformableAttachmentTargetType::Enum feature0,
+			const PxU32* indices0, const PxVec4* barycentrics0, Dy::DeformableVolume* deformableVolume1,
+			PxDeformableAttachmentTargetType::Enum feature1, const PxU32* indices1, const PxVec4* barycentrics1,
+			PxU32 count, const bool addToActive)	PX_OVERRIDE;
+		virtual void removeVolumeVolumeAttachments(Dy::DeformableVolume* deformableVolume0, PxU32 handle)	PX_OVERRIDE;
 
-		virtual void removeRigidAttachment(Dy::DeformableVolume* deformableVolume, PxU32 handle)	PX_OVERRIDE;
+		virtual PxU32 addVolumeSurfaceAttachments(Dy::DeformableVolume* deformableVolume, PxDeformableAttachmentTargetType::Enum feature0,
+			const PxU32* indices0, const PxVec4* barycentrics0, Dy::DeformableSurface* deformableSurface,
+			PxDeformableAttachmentTargetType::Enum feature1, const PxU32* indices1, const PxVec4* barycentrics1,
+			PxU32 count, const bool isActive)	PX_OVERRIDE;
+		virtual void removeVolumeSurfaceAttachments(Dy::DeformableVolume* deformableVolume, PxU32 handle)	PX_OVERRIDE;
 
-		virtual void addTetRigidFilter(Dy::DeformableVolume* deformableVolume,
-			const PxNodeIndex& rigidNodeIndex, PxU32 tetId)	PX_OVERRIDE;
-		virtual void removeTetRigidFilter(Dy::DeformableVolume* deformableVolume,
-			const PxNodeIndex& rigidNodeIndex, PxU32 tetId)	PX_OVERRIDE;
+		virtual void addVolumeRigidFilters(Dy::DeformableVolume* deformableVolume,
+			const PxNodeIndex& rigidNodeIndex, PxU32* tetIndices, PxU32 tetIndicesSize)	PX_OVERRIDE;
+		virtual void removeVolumeRigidFilters(Dy::DeformableVolume* deformableVolume,
+			const PxNodeIndex& rigidNodeIndex, PxU32* tetIndices, PxU32 tetIndicesSize)	PX_OVERRIDE;
+		virtual void addVolumeStaticShapeFilters(Dy::DeformableVolume* deformableVolume,
+			const PxU32* shapeCacheIds, PxU32 nbShapes, PxU32* tetIndices, PxU32 tetIndicesSize)	PX_OVERRIDE;
+		virtual void removeVolumeStaticShapeFilters(Dy::DeformableVolume* deformableVolume,
+			const PxU32* shapeCacheIds, PxU32 nbShapes, PxU32* tetIndices, PxU32 tetIndicesSize)	PX_OVERRIDE;
 
-		virtual void addSoftBodyFilter(Dy::DeformableVolume* deformableVolume0, Dy::DeformableVolume* deformableVolume1, PxU32 tetIdx0,
-			PxU32 tetIdx1)	PX_OVERRIDE;
-		virtual void removeSoftBodyFilter(Dy::DeformableVolume* deformableVolume0, Dy::DeformableVolume* deformableVolume1, PxU32 tetIdx0,
-			PxU32 tetId1)	PX_OVERRIDE;
-		virtual void addSoftBodyFilters(Dy::DeformableVolume* deformableVolume0, Dy::DeformableVolume* deformableVolume1, PxU32* tetIndices0, PxU32* tetIndices1,
+		virtual void addVolumeVolumeFilters(Dy::DeformableVolume* deformableVolume0, Dy::DeformableVolume* deformableVolume1, PxU32* tetIndices0, PxU32* tetIndices1,
 			PxU32 tetIndicesSize)	PX_OVERRIDE;
-		virtual void removeSoftBodyFilters(Dy::DeformableVolume* deformableVolume0, Dy::DeformableVolume* deformableVolume1, PxU32* tetIndices0, PxU32* tetIndices1,
+		virtual void removeVolumeVolumeFilters(Dy::DeformableVolume* deformableVolume0, Dy::DeformableVolume* deformableVolume1, PxU32* tetIndices0, PxU32* tetIndices1,
 			PxU32 tetIndicesSize)	PX_OVERRIDE;
 
-		virtual PxU32 addSoftBodyAttachment(Dy::DeformableVolume* deformableVolume0, Dy::DeformableVolume* deformableVolume1, PxU32 tetIdx0, PxU32 tetIdx1,
-			const PxVec4& tetBarycentric0, const PxVec4& tetBarycentric1,
-			const bool addToActive, bool doConversion)	PX_OVERRIDE;
+		virtual void addVolumeSurfaceFilters(Dy::DeformableVolume* deformableVolume, Dy::DeformableSurface* deformableSurface, PxU32* triIndices, PxU32* tetIndices,
+			PxU32 indicesSize)	PX_OVERRIDE;
+		virtual void removeVolumeSurfaceFilters(Dy::DeformableVolume* deformableVolume, Dy::DeformableSurface* deformableSurface, PxU32* triIndices, PxU32* tetIndices,
+			PxU32 indicesSize)	PX_OVERRIDE;
 
-		virtual void removeSoftBodyAttachment(Dy::DeformableVolume* deformableVolume0, PxU32 handle)	PX_OVERRIDE;
+		virtual PxU32 addSurfaceRigidAttachments(Dy::DeformableSurface* deformableSurface, PxsRigidBody* rigidBody, const PxNodeIndex& rigidNodeIndex,
+			PxDeformableAttachmentTargetType::Enum feature, const PxU32* indices, const PxVec4* barycentrics,
+			const PxTransform& frame, const PxVec4* coords, PxU32 count, const bool isActive)	PX_OVERRIDE;
+		virtual void removeSurfaceRigidAttachments(Dy::DeformableSurface* deformableSurface, PxU32 handle)	PX_OVERRIDE;
 
-		virtual void addClothFilter(Dy::DeformableVolume* deformableVolume, Dy::DeformableSurface* deformableSurface, PxU32 triIdx, PxU32 tetIdx)	PX_OVERRIDE;
-		virtual void removeClothFilter(Dy::DeformableVolume* deformableVolume, Dy::DeformableSurface* deformableSurface, PxU32 triId, PxU32 tetIdx)	PX_OVERRIDE;
+		virtual PxU32 addSurfaceSurfaceAttachments(Dy::DeformableSurface* deformableSurface0, PxDeformableAttachmentTargetType::Enum feature0,
+			const PxU32* indices0, const PxVec4* barycentrics0, Dy::DeformableSurface* deformableSurface1,
+			PxDeformableAttachmentTargetType::Enum feature1, const PxU32* indices1, const PxVec4* barycentrics1,
+			PxU32 count, const bool addToActive)	PX_OVERRIDE;
+		virtual void removeSurfaceSurfaceAttachments(Dy::DeformableSurface* deformableSurface0, PxU32 handle)	PX_OVERRIDE;
 
-		virtual PxU32 addClothAttachment(Dy::DeformableVolume* deformableVolume, Dy::DeformableSurface* deformableSurface, PxU32 triIdx,
-			const PxVec4& triBarycentric, PxU32 tetIdx, const PxVec4& tetBarycentric,
-			const bool isActive, bool doConversion)	PX_OVERRIDE;
+		virtual void addSurfaceRigidFilters(Dy::DeformableSurface* deformableSurface,
+			const PxNodeIndex& rigidNodeIndex, PxU32* triIndices, PxU32 triIndicesSize)	PX_OVERRIDE;
+		virtual void removeSurfaceRigidFilters(Dy::DeformableSurface* deformableSurface, const PxNodeIndex& rigidNodeIndex, PxU32* triIndices,
+			PxU32 triIndicesSize)	PX_OVERRIDE;
+		virtual void addSurfaceStaticShapeFilters(Dy::DeformableSurface* deformableSurface,
+			const PxU32* shapeCacheIds, PxU32 nbShapes, PxU32* triIndices, PxU32 triIndicesSize)	PX_OVERRIDE;
+		virtual void removeSurfaceStaticShapeFilters(Dy::DeformableSurface* deformableSurface,
+			const PxU32* shapeCacheIds, PxU32 nbShapes, PxU32* triIndices, PxU32 triIndicesSize)	PX_OVERRIDE;
 
-		virtual void removeClothAttachment(Dy::DeformableVolume* deformableVolume, PxU32 handle)	PX_OVERRIDE;
+		virtual void addSurfaceSurfaceFilters(Dy::DeformableSurface* deformableSurface0, Dy::DeformableSurface* deformableSurface1, PxU32* triIndices0, PxU32* triIndices1,
+			PxU32 triIndicesSize)	PX_OVERRIDE;
+		virtual void removeSurfaceSurfaceFilters(Dy::DeformableSurface* deformableSurface0, Dy::DeformableSurface* deformableSurface1, PxU32* triIndices0, PxU32* triIndices1,
+			PxU32 triIndicesSize)	PX_OVERRIDE;
 
-		virtual PxU32 addRigidAttachment(Dy::DeformableSurface* deformableSurface, const PxNodeIndex& clothNodeIndex,
-			PxsRigidBody* rigidBody, const PxNodeIndex& rigidNodeIndex, PxU32 vertIndex, const PxVec3& actorSpacePose,
-			const bool isActive)	PX_OVERRIDE;
-
-		virtual void removeRigidAttachment(Dy::DeformableSurface* deformableSurface, PxU32 handle)	PX_OVERRIDE;
-
-		virtual void addTriRigidFilter(Dy::DeformableSurface* deformableSurface,
-			const PxNodeIndex& rigidNodeIndex, PxU32 triIdx)	PX_OVERRIDE;
-
-		virtual void removeTriRigidFilter(Dy::DeformableSurface* deformableSurface, const PxNodeIndex& rigidNodeIndex,PxU32 triIdx)	PX_OVERRIDE;
-
-		virtual PxU32 addTriRigidAttachment(Dy::DeformableSurface* deformableSurface,
-			PxsRigidBody* rigidBody, const PxNodeIndex& rigidNodeIndex, PxU32 triIdx, const PxVec4& barycentrics,
-			const PxVec3& actorSpacePose,
-			const bool isActive)	PX_OVERRIDE;
-
-		virtual void removeTriRigidAttachment(Dy::DeformableSurface* deformableSurface, PxU32 handle)	PX_OVERRIDE;
-
-		virtual void addClothFilter(Dy::DeformableSurface* deformableSurface0, Dy::DeformableSurface* deformableSurface1, PxU32 triIdx0, PxU32 triIdx1)	PX_OVERRIDE;
-		virtual void removeClothFilter(Dy::DeformableSurface* deformableSurface0, Dy::DeformableSurface* deformableSurface1, PxU32 triIdx0, PxU32 triId1)	PX_OVERRIDE;
-
-		virtual PxU32 addTriClothAttachment(Dy::DeformableSurface* deformableSurface0, Dy::DeformableSurface* deformableSurface1, PxU32 triIdx0, PxU32 triIdx1,
-			const PxVec4& triBarycentric0, const PxVec4& triBarycentric1, const bool addToActive)	PX_OVERRIDE;
-		
-		virtual void removeTriClothAttachment(Dy::DeformableSurface* deformableSurface0, PxU32 handle)	PX_OVERRIDE;
-
-		PxU32 addRigidAttachmentInternal(const PxU32 nonRigidId, const PxU32 elemId, const bool isVertex, const PxVec4& barycentric, PxsRigidBody* rigidBody,
-			const PxNodeIndex& rigidNodeIndex, const PxVec3& actorSpacePose,
-			AttachmentManager<PxgFEMRigidAttachment>& attachments, bool addToActive);
-
-		void addSoftBodyFiltersInternal(Dy::DeformableVolume* deformableVolume0, Dy::DeformableVolume* deformableVolume1, PxU32* tetIndices, PxU32 size);
-		void removeSoftBodyFiltersInternal(Dy::DeformableVolume* deformableVolume0, Dy::DeformableVolume* deformableVolume1, PxU32* tetIndices, PxU32 size);
-
-		void createDeformableSurfaceCore();
-		void createDeformableVolumeCore();
 		virtual void addSoftBody(Dy::DeformableVolume* deformableVolume, const PxNodeIndex& nodeIndex)	PX_OVERRIDE;
 		virtual void releaseSoftBody(Dy::DeformableVolume* deformableVolume)	PX_OVERRIDE;
+
 		virtual void releaseDeferredSoftBodyIds()	PX_OVERRIDE;
 		virtual void activateSoftbody(Dy::DeformableVolume* deformableVolume)	PX_OVERRIDE;
 		virtual void deactivateSoftbody(Dy::DeformableVolume* deformableVolume)	PX_OVERRIDE;
@@ -512,9 +502,6 @@ namespace physx
 		void preIntegrateAndUpdateBoundFEMCloth(const PxVec3 gravity, const PxReal dt);
 		void updateJointsAndSyncData();
 
-		void computeSoftBodySimMeshData(Dy::DeformableVolume* deformableVolume, PxU32 tetId, const PxVec4& tetBarycentric,
-			PxU32& outTetId, PxVec4& outTetBarycentric);
-
 		PX_FORCE_INLINE PxU32 getMaxLinks() { return mMaxLinks; }
 
 		PX_FORCE_INLINE PxU32 getMaxFemContacts() { return mMaxFemClothContacts; }
@@ -552,6 +539,9 @@ namespace physx
 		bool	 		getRecomputeArticulationBlockFormat() const { return mRecomputeArticulationBlockFormat; }
 
 	private:
+
+		void createDeformableSurfaceCore();
+		void createDeformableVolumeCore();
 
 		void copyToGpuBodySim(PxBaseTask* continuation);
 		void copyToGpuParticleSystem(PxBaseTask* continuation);
@@ -649,23 +639,13 @@ namespace physx
 		PxArray<PxU32>												mSoftBodyNodeIndexPool;
 		PxArray<PxU32>												mNewTetMeshByteSizePool;
 
-		AttachmentManager<PxgFEMRigidAttachment>					mRigidSoftBodyAttachments;
-		Cm::PinnableArray<PxgRigidFilterPair>						mSoftBodyRigidFilterPairs;
-		PxArray<PxU32>												mSoftBodyRigidFilterRefs;
-		bool														mSoftBodyRigidFilterPairsDirty;
+		PxgAttachmentManager										mVolumeRigidAttachments;
+		PxgAttachmentManager										mVolumeVolumeAttachments;
+		PxgAttachmentManager										mVolumeSurfaceAttachments;
 
-		AttachmentManager<PxgFEMFEMAttachment>						mSoftBodySoftBodyAttachments;
-		PxArray <Dy::DeformableVolume*>								mDirtyDeformableVolumeForFilterPairs;
-
-		AttachmentManager<PxgFEMFEMAttachment>						mSoftBodyClothAttachments;
-		Cm::PinnableArray<PxgNonRigidFilterPair>					mSoftBodyClothTetVertFilterPairs;
-		PxArray<PxU32>												mSoftBodyClothTetVertFilterRefs;
-		bool														mSoftBodyClothFilterPairsDirty;
-
-		AttachmentManager<PxgFEMFEMAttachment>						mClothClothAttachments;
-		Cm::PinnableArray<PxgNonRigidFilterPair>					mClothClothVertTriFilterPairs;
-		PxArray<PxU32>												mClothClothVertTriFilterRefs;
-		bool														mClothClothFilterPairsDirty;
+		PxgDeformableFilterManager								mVolumeRigidFilters;
+		PxgDeformableFilterManager								mVolumeVolumeFilters;
+		PxgDeformableFilterManager								mVolumeSurfaceFilters;
 
 		Cm::PinnableArray<PxgFEMCloth>								mNewFEMClothPool;
 		PxArray<PxgFEMClothData>									mNewFEMClothDataPool;
@@ -677,10 +657,15 @@ namespace physx
 		PxArray<PxU32>												mFEMClothNodeIndexPool;
 		PxArray<PxU32>												mNewTriangleMeshByteSizePool;
 
-		AttachmentManager<PxgFEMRigidAttachment>					mClothRigidAttachments;
-		Cm::PinnableArray<PxgRigidFilterPair>						mClothRigidFilterPairs;
-		PxArray<PxU32>												mClothRigidFilterRefs;
-		bool														mClothRigidFilterPairsDirty;
+		// Mesh topology per deformable surface, keyed by its GPU remap id. Derived when the surface joins
+		// a scene, which is before its element filters register, and dropped when it leaves.
+		PxArray<PxgDeformableSurfaceTopology*>						mSurfaceTopologies;
+
+		PxgAttachmentManager										mSurfaceRigidAttachments;
+		PxgAttachmentManager										mSurfaceSurfaceAttachments;
+
+		PxgDeformableFilterManager								mSurfaceRigidFilters;
+		PxgDeformableFilterManager								mSurfaceSurfaceFilters;
 
 		Cm::PinnableArray<PxU32>									mFrozenPool;
 		Cm::PinnableArray<PxU32>									mUnfrozenPool;

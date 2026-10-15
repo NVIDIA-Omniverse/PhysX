@@ -54,7 +54,7 @@ The extra out-count argument is a pre-release C ABI break, matching
 
 ## Code References
 
-- ovphysx/include/ovphysx/ovphysx.h (`ovphysx_read_normal_contact_data`,
+- ovphysx/include/ovphysx/ovphysx_legacy.h (`ovphysx_read_normal_contact_data`,
   `ovphysx_read_friction_contact_data`, `ovphysx_contact_binding_get_sensor_paths`,
   `ovphysx_contact_binding_get_filter_paths`)
 - ovphysx/src/ovphysx/ovphysxContactBinding.cpp

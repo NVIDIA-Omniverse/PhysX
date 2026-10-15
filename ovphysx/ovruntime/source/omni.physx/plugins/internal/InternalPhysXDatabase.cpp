@@ -1,12 +1,24 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-LIFETIME-001
+// @covers AC-1 AC-2 AC-3
+
 /**
  * @implements REQ-PUBLICAPI-001
  * @covers AC-27
  */
 
+/**
+ * @implements REQ-ATTACH-RESOLVE-001
+ * @covers AC-7, AC-11
+ */
+
+// @implements REQ-CUSTOM-LIFETIME-001
+// @covers AC-2 AC-3
+
 #include "InternalPhysXDatabase.h"
+#include "PhysXCustomJoint.h"
 #include "PhysXUpdate.h"
 #include "Setup.h"
 #include "OmniPhysX.h"
@@ -26,16 +38,17 @@ using namespace carb;
 using namespace ::physx;
 
 
-InternalPhysXDatabase::InternalPhysXDatabase() : mInitialTransformsStored(false), mDebugDrawFlags(0ull), mNestedBodiesUsed(false)
+InternalPhysXDatabase::InternalPhysXDatabase(const AttachedStage* attachedStage)
+    : InternalDatabase(attachedStage ? &attachedStage->recordVersion : nullptr), mAttachedStage(attachedStage), mInitialTransformsStored(false), mDebugDrawFlags(0ull), mNestedBodiesUsed(false)
 {
     // A.B. lets add one record so that we dont return the id of 0, which
     // is a bit confusing, though seems to still work
     addRecord(ePTRemoved, nullptr, nullptr, omni::physics::parse::ObjectKey{});
 
     OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    if (omniPhysX.isDebugVisualizationEnabled())
+    if (mAttachedStage && mAttachedStage->isDebugVisualizationEnabled())
     {
-        const uint64_t visMask = omniPhysX.getVisualizationBitMask();
+        const uint64_t visMask = mAttachedStage->getVisualizationBitMask();
         for (uint64_t i = uint64_t(ePhysXNumValues); i < uint64_t(eNumValues); i++)
         {
             if (visMask & (1ull << i))
@@ -53,7 +66,11 @@ InternalPhysXDatabase::~InternalPhysXDatabase()
 
 void InternalPhysXDatabase::release()
 {
-    waitForSimulationCompletion(false);
+    if (mAttachedStage)
+    {
+        for (const AttachedStage::SceneMap::value_type& entry : mAttachedStage->getPhysXScenes())
+            entry.second->waitForCompletion(false);
+    }
 
     mPxJointMap.clear();
 
@@ -63,8 +80,28 @@ void InternalPhysXDatabase::release()
         Record& rec = getRecords()[i];
         switch (rec.mType)
         {
+        case ePTCompoundShape:
+        {
+            CompoundShape* compound = static_cast<CompoundShape*>(rec.mPtr);
+            if (compound)
+                for (PxShape* nativeShape : compound->getShapes())
+                    nativeShape->release();
+            delete compound;
+            rec.mPtr = nullptr;
+            InternalShape* shape = static_cast<InternalShape*>(rec.mInternalPtr);
+            SAFE_DELETE_ALLOCABLE_SINGLE(shape);
+            rec.mInternalPtr = nullptr;
+        }
+        break;
+        case ePTCollisionGroup:
+            delete static_cast<PxFilterData*>(rec.mPtr);
+            rec.mPtr = nullptr;
+            break;
         case ePTShape:
         {
+            if (rec.mPtr)
+                static_cast<PxShape*>(rec.mPtr)->release();
+            rec.mPtr = nullptr;
             InternalShape* shape = (InternalShape*)rec.mInternalPtr;
             SAFE_DELETE_ALLOCABLE_SINGLE(shape);
         }
@@ -72,6 +109,9 @@ void InternalPhysXDatabase::release()
 
         case ePTMaterial:
         {
+            if (rec.mPtr)
+                static_cast<PxMaterial*>(rec.mPtr)->release();
+            rec.mPtr = nullptr;
             InternalMaterial* material = (InternalMaterial*)rec.mInternalPtr;
             SAFE_DELETE_ALLOCABLE_SINGLE(material);
         }
@@ -87,6 +127,11 @@ void InternalPhysXDatabase::release()
         case ePTArticulation:
         {
             InternalArticulation* art = (InternalArticulation*)rec.mInternalPtr;
+            if (art && art->mAggregate)
+            {
+                art->mAggregate->release();
+                art->mAggregate = nullptr;
+            }
             SAFE_DELETE_ALLOCABLE_SINGLE(art);
         }
         break;
@@ -97,8 +142,25 @@ void InternalPhysXDatabase::release()
         }
         break;
 
+        case ePTCustomJoint:
+        {
+            if (mAttachedStage)
+            {
+                const std::unordered_map<omni::physics::parse::ObjectKey, omni::physx::CustomPhysXJoint *, omni::physics::parse::ObjectKey::Hash>::iterator found = mAttachedStage->customJoints.find(rec.mKey);
+                if (found != mAttachedStage->customJoints.end() && found->second == rec.mPtr)
+                    found->second->release();
+            }
+            rec.mPtr = nullptr;
+            InternalJoint* joint = static_cast<InternalJoint*>(rec.mInternalPtr);
+            SAFE_DELETE_ALLOCABLE_SINGLE(joint);
+            rec.mInternalPtr = nullptr;
+        }
+        break;
         case ePTJoint:
         {
+            if (rec.mPtr)
+                static_cast<PxJoint*>(rec.mPtr)->release();
+            rec.mPtr = nullptr;
             InternalJoint* joint = (InternalJoint*)rec.mInternalPtr;
             SAFE_DELETE_ALLOCABLE_SINGLE(joint);
         }
@@ -169,9 +231,26 @@ void InternalPhysXDatabase::release()
         }
         break;
 
+        case ePTPBDMaterial:
+        {
+            if (rec.mPtr)
+                static_cast<PxPBDMaterial*>(rec.mPtr)->release();
+            rec.mPtr = nullptr;
+            InternalPBDParticleMaterial* material = static_cast<InternalPBDParticleMaterial*>(rec.mInternalPtr);
+            SAFE_DELETE_ALLOCABLE_SINGLE(material);
+        }
+        break;
         case ePTDeformableVolumeMaterial:
         case ePTDeformableSurfaceMaterial:
         {
+            if (rec.mPtr)
+            {
+                if (rec.mType == ePTDeformableVolumeMaterial)
+                    static_cast<PxDeformableVolumeMaterial*>(rec.mPtr)->release();
+                else
+                    static_cast<PxDeformableSurfaceMaterial*>(rec.mPtr)->release();
+            }
+            rec.mPtr = nullptr;
             InternalDeformableMaterial* material = (InternalDeformableMaterial*)rec.mInternalPtr;
             SAFE_DELETE_ALLOCABLE_SINGLE(material);
         }
@@ -219,12 +298,11 @@ SplinesCurve* InternalPhysXDatabase::addSplinesCurve(const AttachedStage& attach
 }
 
 omni::physx::usdparser::ObjectId InternalPhysXDatabase::createTireFrictionTable(
+        const usdparser::AttachedStage& attachedStage,
         const omni::physx::usdparser::TireFrictionTableDesc& tireFrictionTableDesc)
 {
-    InternalTireFrictionTable* tireFrictionTable = InternalTireFrictionTable::create(tireFrictionTableDesc, *this);
-    // No attached stage means there are no records to register against, so skip the add.
-    const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getActiveAttachedStage();
-    if (tireFrictionTable && attachedStage)
+    InternalTireFrictionTable* tireFrictionTable = InternalTireFrictionTable::create(attachedStage, tireFrictionTableDesc, *this);
+    if (tireFrictionTable)
     {
         // Keyed from the descriptor's own key, not a UsdPrim path: identity that resolves
         // with no backing stage.
@@ -326,8 +404,7 @@ void InternalPhysXDatabase::updateDirtyMassActors()
             // reads MassAPI/material/units through the source and needs no UsdPrim, so this works
             // under ovstage too (the prior UsdPrim round-trip threw "Used null prim" for sources
             // with no backing UsdStage).
-            if (AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage())
-                RequestRigidBodyMassUpdate(*as, internalActor->mKey);
+            RequestRigidBodyMassUpdate(internalActor->mPhysXScene->getAttachedStage(), internalActor->mKey);
         }
     }
 
@@ -339,8 +416,7 @@ void InternalPhysXDatabase::updateDirtyMassActors()
         internalActor->mFlags &= ~InternalActorFlag::eHAS_DIRTY_MASS;
         if (internalActor->mNumParticles > 0)
         {
-            if (AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage())
-                RequestParticleMassUpdate(*as, internalActor->mKey);
+            RequestParticleMassUpdate(internalActor->mPhysXScene->getAttachedStage(), internalActor->mKey);
         }
     }
 
@@ -373,8 +449,9 @@ void InternalPhysXDatabase::storePxJoint(const ::physx::PxRigidActor* actor, omn
 
 void InternalPhysXDatabase::resetStartProperties(bool useUsdUpdate, bool useVelocitiesUSDUpdate, bool outputVelocitiesLocalSpace)
 {
-    const PhysXScenesMap& physxScenes = OmniPhysX::getInstance().getPhysXSetup().getPhysXScenes();
-    for (PhysXScenesMap::const_reference ref : physxScenes)
+    if (!mAttachedStage)
+        return;
+    for (const AttachedStage::SceneMap::value_type& ref : mAttachedStage->getPhysXScenes())
     {
         const PhysXScene* sc = ref.second;
 
@@ -392,14 +469,15 @@ void InternalPhysXDatabase::resetStartProperties(bool useUsdUpdate, bool useVelo
     // velocity" tokens as InternalScene::updateJointState. Unconditional: a no-op when there is
     // no live write sink (a stageless/ovstage-without-sink attach), matching every
     // other write-sink call site in this codebase.
-    if (AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage())
+    if (const AttachedStage* as = mAttachedStage)
     {
-        if (omni::physics::parse::IPhysicsDataWrite* dw = as->getDataWrite())
+        if (omni::physics::parse::IPhysicsDataWrite* dw =
+                const_cast<omni::physics::parse::IPhysicsDataWrite*>(as->getDataWrite()))
         {
             using omni::physics::parse::DataWriteView;
             using omni::physics::parse::DataType;
 
-            if (omni::physics::parse::IPhysicsSource* source = as->getSource())
+            if (const omni::physics::parse::IPhysicsSource* source = as->getSource())
             {
                 omni::physics::parse::KnownTokens tok;
                 tok.intern(*source);
@@ -486,10 +564,9 @@ void InternalPhysXDatabase::resetStartProperties(bool useUsdUpdate, bool useVelo
 void InternalPhysXDatabase::debugDraw()
 {
     mRenderBuffer.clear();
-    if (OmniPhysX::getInstance().isDebugVisualizationEnabled())
-    {        
-        const PhysXScenesMap& physxScenes = OmniPhysX::getInstance().getPhysXSetup().getPhysXScenes();
-        for (PhysXScenesMap::const_reference ref : physxScenes)
+    if (mAttachedStage && mAttachedStage->isDebugVisualizationEnabled())
+    {
+        for (const AttachedStage::SceneMap::value_type& ref : mAttachedStage->getPhysXScenes())
         {
             const PhysXScene* sc = ref.second;
             sc->getInternalScene()->debugDraw(mRenderBuffer, mDebugDrawFlags);

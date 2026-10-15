@@ -25,9 +25,16 @@
 //    PxVisualizationParameter::eSIMULATION_MESH (deformable visualization is an open TODO in
 //    NpDebugViz.cpp), so no scene, CPU or GPU, can make it export.
 
+/**
+ * @implements REQ-CAPI-DEBUG-RENDER-001
+ * @covers AC-8 AC-9
+ */
+
 #include <gtest/gtest.h>
 #include "ovphysx/ovphysx.h"
+#include "ovphysx/ovphysx_attributes.h"
 #include "ovphysx/ovphysx_types.h"
+#include "debug_render_session_shim.h"
 #include "ovphysx/ovphysx_config.h"
 #include "global_test_environment.h"
 #include "test_utilities.h"
@@ -45,21 +52,21 @@ using namespace test_utils;
 
 namespace
 {
-bool e2e_wait(ovphysx_handle_t h, ovphysx_op_index_t op)
+bool e2e_wait(ovphysx_instance_handle_t h, ovphysx_enqueue_result_t task)
 {
-    ovphysx_op_wait_result_t wr{};
-    ovphysx_result_t r = ovphysx_wait_op(h, op, 10'000'000'000ULL, &wr);
-    ovphysx_destroy_wait_result(&wr);
+    ovphysx_wait_task_result_t wr{};
+    ovphysx_result_t r = ovphysx_wait_task(h, task, 10'000'000'000ULL, &wr);
+    ovphysx_destroy_wait_task_result(&wr);
     return r.status == OVPHYSX_API_SUCCESS;
 }
 
-bool e2e_step(ovphysx_handle_t h, float dt)
+bool e2e_step(ovphysx_instance_handle_t h, float dt)
 {
     ovphysx_enqueue_result_t r = ovphysx_step(h, dt);
-    return r.status == OVPHYSX_API_SUCCESS && e2e_wait(h, r.op_index);
+    return r.status == OVPHYSX_API_SUCCESS && e2e_wait(h, r);
 }
 
-bool e2e_intern_path(ovphysx_handle_t h, const char* path, ovx_primpath_t* out_path)
+bool e2e_intern_path(ovphysx_instance_handle_t h, const char* path, ovx_primpath_t* out_path)
 {
     if (!path || !out_path)
         return false;
@@ -83,15 +90,15 @@ bool e2e_intern_path(ovphysx_handle_t h, const char* path, ovx_primpath_t* out_p
 }
 
 // Total render-buffer primitives (points + lines + triangles) currently exported.
-uint32_t e2e_total_prims(ovphysx_handle_t h)
+uint32_t e2e_total_prims(ovphysx_instance_handle_t h)
 {
     const ovphysx_debug_point_t* p = nullptr;
     const ovphysx_debug_line_t* l = nullptr;
     const ovphysx_debug_triangle_t* t = nullptr;
     uint32_t np = 0, nl = 0, nt = 0;
-    ovphysx_debug_render_get_points(h, &p, &np);
-    ovphysx_debug_render_get_lines(h, &l, &nl);
-    ovphysx_debug_render_get_triangles(h, &t, &nt);
+    debug_render_get_points(h, &p, &np);
+    debug_render_get_lines(h, &l, &nl);
+    debug_render_get_triangles(h, &t, &nt);
     return np + nl + nt;
 }
 
@@ -102,21 +109,106 @@ struct DebugRenderE2E : public PhysXTestFixture
     // per-test cleanups remain as documentation of what each test set.
     void TearDown() override
     {
-        ovphysx_debug_render_set_scope_tokens(m_handle, nullptr, 0u);
+        debug_render_set_scope_tokens(m_handle, nullptr, 0u);
         for (int p = OVPHYSX_DEBUG_RENDER_PARAM_WORLD_AXES; p < OVPHYSX_DEBUG_RENDER_PARAM_COUNT; ++p)
-            ovphysx_debug_render_set_parameter(m_handle, (ovphysx_debug_render_parameter_t)p, 0.0f);
-        ovphysx_debug_render_enable(m_handle, false);
+            debug_render_set_parameter(m_handle, (ovphysx_debug_render_parameter_t)p, 0.0f);
+        debug_render_enable(m_handle, false);
         PhysXTestFixture::TearDown();
     }
 };
 } // namespace
+
+TEST_F(DebugRenderE2E, SharedDictionaryMatchesAttachedStage)
+{
+    ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/boxes_falling_on_groundplane.usda"))
+        << "attach_usd_with_ovstage failed";
+
+    ovphysx_query_handle_t query = 0;
+    ovstage_query_result_t summary{};
+    summary.attribute_count = 1;
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_DEBUG_RENDER, OVPHYSX_SCOPE_ALL, &query, &summary)).status,
+              OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(summary.attribute_count, 0u);
+
+    void* stageDictionary = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(test_utils::ovstage_test_attachments_mutex());
+        const auto it = test_utils::ovstage_test_attachments().find(m_handle);
+        ASSERT_NE(it, test_utils::ovstage_test_attachments().end());
+        ASSERT_FALSE(it->second.empty());
+        stageDictionary = ovstage_get_path_dictionary(it->second.back().stage);
+    }
+    EXPECT_NE(stageDictionary, nullptr);
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_release_query(m_handle, query)).status, OVPHYSX_API_SUCCESS);
+}
+
+TEST_F(DebugRenderE2E, AttributeTokenRoundTripsThroughTheStageDictionary)
+{
+    ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/boxes_falling_on_groundplane.usda"))
+        << "attach_usd_with_ovstage failed";
+
+    ovphysx_query_handle_t query = 0;
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_DEBUG_RENDER, OVPHYSX_SCOPE_ALL, &query, nullptr)).status,
+              OVPHYSX_API_SUCCESS);
+    void* stageDictionary = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(test_utils::ovstage_test_attachments_mutex());
+        const auto it = test_utils::ovstage_test_attachments().find(m_handle);
+        ASSERT_NE(it, test_utils::ovstage_test_attachments().end());
+        ASSERT_FALSE(it->second.empty());
+        stageDictionary = ovstage_get_path_dictionary(it->second.back().stage);
+    }
+    ASSERT_NE(stageDictionary, nullptr);
+    auto* paths = static_cast<path_dictionary_instance_t*>(stageDictionary);
+
+    const ovx_string_t name{ OVPHYSX_ATTR_DEBUG_BODY_AXES, sizeof(OVPHYSX_ATTR_DEBUG_BODY_AXES) - 1 };
+    ovx_token_t token = 0;
+    const ovx_api_result_t interned = path_dictionary_create_tokens_from_strings(paths, &name, 1, &token);
+    if (interned.error.ptr)
+        path_dictionary_release_error(paths, interned.error);
+    ASSERT_EQ(interned.status, OVX_API_SUCCESS);
+    ASSERT_NE(token, 0u);
+
+    ovx_string_or_token_t byToken{};
+    byToken.token = token;
+    const ovx_string_or_token_t attributes[] = { byToken, OVPHYSX_NAME_DEBUG_SCALE };
+    ovphysx_read_handle_t read = 0;
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, query, attributes, 2, &read, nullptr)).status,
+              OVPHYSX_API_SUCCESS);
+    const ovstage_read_group_t* bodyAxes = nullptr;
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_fetch_read_next(m_handle, read, &bodyAxes)).status,
+              OVPHYSX_API_SUCCESS);
+    ASSERT_NE(bodyAxes, nullptr);
+    EXPECT_EQ(bodyAxes->attribute, token);
+    ovx_string_t resolved{};
+    const ovx_api_result_t lookedUp =
+        path_dictionary_get_strings_from_tokens(paths, &bodyAxes->attribute, 1, &resolved);
+    if (lookedUp.error.ptr)
+        path_dictionary_release_error(paths, lookedUp.error);
+    ASSERT_EQ(lookedUp.status, OVX_API_SUCCESS);
+    ASSERT_EQ(resolved.length, name.length);
+    EXPECT_EQ(std::string(resolved.ptr, resolved.length), std::string(name.ptr, name.length));
+
+    const ovstage_read_group_t* scale = nullptr;
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_fetch_read_next(m_handle, read, &scale)).status,
+              OVPHYSX_API_SUCCESS);
+    ASSERT_NE(scale, nullptr);
+    EXPECT_NE(scale->attribute, 0u);
+    EXPECT_NE(scale->attribute, bodyAxes->attribute);
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_release_group(m_handle, read, bodyAxes->read_group_id)).status,
+              OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_release_group(m_handle, read, scale->read_group_id)).status,
+              OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_release_read(m_handle, read)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_release_query(m_handle, query)).status, OVPHYSX_API_SUCCESS);
+}
 
 TEST_F(DebugRenderE2E, DrawableParamsExportPrimitives)
 {
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/boxes_falling_on_groundplane.usda"))
         << "attach_usd_with_ovstage failed";
 
-    ASSERT_EQ(ovphysx_debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
 
     // A few steps so the boxes are falling and the linear-velocity arrows have length.
     for (int i = 0; i < 3; ++i)
@@ -129,12 +221,12 @@ TEST_F(DebugRenderE2E, DrawableParamsExportPrimitives)
     std::vector<uint32_t> total(N, 0u);
     for (int p = OVPHYSX_DEBUG_RENDER_PARAM_WORLD_AXES; p < N; ++p)
     {
-        ASSERT_EQ(ovphysx_debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
-        ovphysx_debug_render_set_parameter(m_handle, (ovphysx_debug_render_parameter_t)p, 1.0f);
+        ASSERT_EQ(debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
+        debug_render_set_parameter(m_handle, (ovphysx_debug_render_parameter_t)p, 1.0f);
         for (int i = 0; i < 2; ++i)
             ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "step failed at param " << p;
         total[p] = e2e_total_prims(m_handle);
-        ovphysx_debug_render_set_parameter(m_handle, (ovphysx_debug_render_parameter_t)p, 0.0f);
+        debug_render_set_parameter(m_handle, (ovphysx_debug_render_parameter_t)p, 0.0f);
     }
 
     static const char* kNames[OVPHYSX_DEBUG_RENDER_PARAM_COUNT] = {
@@ -176,25 +268,25 @@ TEST_F(DebugRenderE2E, JointParamsExportPrimitives)
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/Ant.usda"))
         << "attach_usd_with_ovstage failed";
 
-    ASSERT_EQ(ovphysx_debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
 
     // Warm up: let the ant articulation settle and start moving.
     for (int i = 0; i < 3; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "warm-up step failed";
 
-    ASSERT_EQ(ovphysx_debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_JOINT_LOCAL_FRAMES, 1.0f);
+    ASSERT_EQ(debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_JOINT_LOCAL_FRAMES, 1.0f);
     for (int i = 0; i < 2; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "step failed for JOINT_LOCAL_FRAMES";
     uint32_t joint_local_frames_prims = e2e_total_prims(m_handle);
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_JOINT_LOCAL_FRAMES, 0.0f);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_JOINT_LOCAL_FRAMES, 0.0f);
 
-    ASSERT_EQ(ovphysx_debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_JOINT_LIMITS, 1.0f);
+    ASSERT_EQ(debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_JOINT_LIMITS, 1.0f);
     for (int i = 0; i < 2; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "step failed for JOINT_LIMITS";
     uint32_t joint_limits_prims = e2e_total_prims(m_handle);
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_JOINT_LIMITS, 0.0f);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_JOINT_LIMITS, 0.0f);
 
     std::printf("[DebugRenderE2E] Ant articulation joint parameters:\n");
     std::printf("  %2d %-22s : %-8s (%u prims)\n", OVPHYSX_DEBUG_RENDER_PARAM_JOINT_LOCAL_FRAMES,
@@ -218,25 +310,25 @@ TEST_F(DebugRenderE2E, TriangleMeshCollisionsExportPrimitives)
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/trimesh_ground_collisions.usda"))
         << "attach_usd_with_ovstage failed";
 
-    ASSERT_EQ(ovphysx_debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
 
     // A few steps so the box collides with the trimesh ground and collision normals/edges are visible.
     for (int i = 0; i < 5; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "warm-up step failed";
 
-    ASSERT_EQ(ovphysx_debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_COLLISION_FACE_NORMALS, 1.0f);
+    ASSERT_EQ(debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_COLLISION_FACE_NORMALS, 1.0f);
     ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "face normals step failed";
     uint32_t face_normals_total = e2e_total_prims(m_handle);
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_COLLISION_FACE_NORMALS, 0.0f);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_COLLISION_FACE_NORMALS, 0.0f);
     EXPECT_GT(face_normals_total, 0u)
         << "COLLISION_FACE_NORMALS should export primitives for triangle-mesh collider";
 
-    ASSERT_EQ(ovphysx_debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_COLLISION_EDGES, 1.0f);
+    ASSERT_EQ(debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_COLLISION_EDGES, 1.0f);
     ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "edges step failed";
     uint32_t edges_total = e2e_total_prims(m_handle);
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_COLLISION_EDGES, 0.0f);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_COLLISION_EDGES, 0.0f);
     EXPECT_GT(edges_total, 0u)
         << "COLLISION_EDGES should export primitives for triangle-mesh collider";
 
@@ -253,15 +345,15 @@ TEST_F(DebugRenderE2E, CompoundShapesExportPrimitives)
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/compound_shapes.usda"))
         << "attach_usd_with_ovstage failed";
 
-    ASSERT_EQ(ovphysx_debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
 
     // Step a few times to let physics settle
     for (int i = 0; i < 3; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "warm-up step failed";
 
     // Enable only COLLISION_COMPOUNDS to isolate the parameter
-    ASSERT_EQ(ovphysx_debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
-    ovphysx_debug_render_set_parameter(
+    ASSERT_EQ(debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
+    debug_render_set_parameter(
         m_handle, OVPHYSX_DEBUG_RENDER_PARAM_COLLISION_COMPOUNDS, 1.0f);
 
     // Step to trigger visualization
@@ -274,9 +366,9 @@ TEST_F(DebugRenderE2E, CompoundShapesExportPrimitives)
     EXPECT_GT(total, 0u) << "Collision compounds (compound AABBs) should export primitives";
 
     // The parameter mask is process-global (ovphysx cache + omni.physx visMask) and
-    // survives the fixture's reset_stage. Disable what this test enabled so later
+    // survives the fixture's detach_ovstage. Disable what this test enabled so later
     // tests' enable(true) does not re-apply a leaked bit to their fresh scene.
-    ovphysx_debug_render_set_parameter(
+    debug_render_set_parameter(
         m_handle, OVPHYSX_DEBUG_RENDER_PARAM_COLLISION_COMPOUNDS, 0.0f);
 }
 
@@ -286,22 +378,22 @@ TEST_F(DebugRenderE2E, MBPRegionsExportPrimitives)
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/boxes_falling_on_groundplane_mbp.usda"))
         << "attach_usd_with_ovstage failed";
 
-    ASSERT_EQ(ovphysx_debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
 
     // Warm up simulation a couple steps for MBP to organize regions
     for (int i = 0; i < 2; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "warm-up step failed";
 
     // Enable MBP_REGIONS visualization exclusively
-    ASSERT_EQ(ovphysx_debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_MBP_REGIONS, 1.0f);
+    ASSERT_EQ(debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_MBP_REGIONS, 1.0f);
 
     // Step to allow visualization to emit
     for (int i = 0; i < 2; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "step failed";
 
     uint32_t total = e2e_total_prims(m_handle);
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_MBP_REGIONS, 0.0f);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_MBP_REGIONS, 0.0f);
     std::printf("[DebugRenderE2E] MBP_REGIONS exports %u primitives\n", total);
     // MBP_REGIONS visualizes the broadphase's registered regions. MBP regions must be
     // defined explicitly, but ovphysx exposes no broadphase-region API and USD physics has
@@ -320,7 +412,7 @@ TEST_F(DebugRenderE2E, CullBoxExportsWhenSet)
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/boxes_falling_on_groundplane.usda"))
         << "attach_usd_with_ovstage failed";
 
-    ASSERT_EQ(ovphysx_debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
 
     // Warm up the simulation with a few steps.
     for (int i = 0; i < 2; ++i)
@@ -330,12 +422,12 @@ TEST_F(DebugRenderE2E, CullBoxExportsWhenSet)
     // CULL_BOX visualization only emits when a culling box is explicitly set.
     float min_box[3] = {-100.0f, -100.0f, -100.0f};
     float max_box[3] = {100.0f, 100.0f, 100.0f};
-    ASSERT_EQ(ovphysx_debug_render_set_culling_box(m_handle, min_box, max_box).status,
+    ASSERT_EQ(debug_render_set_culling_box(m_handle, min_box, max_box).status,
               OVPHYSX_API_SUCCESS) << "set_culling_box failed";
 
     // Enable debug render and CULL_BOX parameter exclusively.
-    ASSERT_EQ(ovphysx_debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CULL_BOX, 1.0f);
+    ASSERT_EQ(debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CULL_BOX, 1.0f);
 
     // Step the simulation so visualization captures the culling box.
     ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "step failed";
@@ -345,7 +437,7 @@ TEST_F(DebugRenderE2E, CullBoxExportsWhenSet)
 
     // Same leak hygiene as every sibling test: the mask is process-global, so a
     // leaked CULL_BOX bit would re-arm on later tests' enable(true).
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CULL_BOX, 0.0f);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CULL_BOX, 0.0f);
 }
 
 
@@ -354,14 +446,14 @@ TEST_F(DebugRenderE2E, ContactAndFrictionParamsExport)
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/boxes_falling_on_groundplane.usda"))
         << "attach_usd_with_ovstage failed";
 
-    ASSERT_EQ(ovphysx_debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
 
     // Settle the boxes onto the ground so there is sustained contact. Contact/friction
     // visualization only emits while bodies are actually touching.
     for (int i = 0; i < 120; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "settle step failed";
 
-    ASSERT_EQ(ovphysx_debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
     struct ContactVizParam
     {
         ovphysx_debug_render_parameter_t param;
@@ -384,12 +476,12 @@ TEST_F(DebugRenderE2E, ContactAndFrictionParamsExport)
     // silently kills one of them fails here rather than skipping.
     for (const ContactVizParam& pp : params)
     {
-        ovphysx_debug_render_set_parameter(m_handle, pp.param, 1.0f);
+        debug_render_set_parameter(m_handle, pp.param, 1.0f);
         for (int i = 0; i < 2; ++i)
             ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "step failed at contact param " << pp.name;
         uint32_t t = e2e_total_prims(m_handle);
         std::printf("  %2d %-22s : %u prims\n", pp.param, pp.name, t);
-        ovphysx_debug_render_set_parameter(m_handle, pp.param, 0.0f);
+        debug_render_set_parameter(m_handle, pp.param, 0.0f);
         EXPECT_GT(t, 0u) << pp.name << " must emit for settled boxes in sustained ground contact";
     }
 }
@@ -403,18 +495,18 @@ TEST_F(DebugRenderE2E, ParameterValueScalesMagnitude)
 {
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/boxes_falling_on_groundplane.usda"))
         << "attach_usd_with_ovstage failed";
-    ASSERT_EQ(ovphysx_debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
     for (int p = OVPHYSX_DEBUG_RENDER_PARAM_WORLD_AXES; p < OVPHYSX_DEBUG_RENDER_PARAM_COUNT; ++p)
-        ovphysx_debug_render_set_parameter(m_handle, (ovphysx_debug_render_parameter_t)p, 0.0f);
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_NORMAL, 1.0f);
+        debug_render_set_parameter(m_handle, (ovphysx_debug_render_parameter_t)p, 0.0f);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_NORMAL, 1.0f);
     for (int i = 0; i < 120; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "settle step failed";
 
     auto max_line_len = [this]() {
         const ovphysx_debug_line_t* ls = nullptr;
         uint32_t n = 0;
-        ovphysx_debug_render_get_lines(m_handle, &ls, &n);
+        debug_render_get_lines(m_handle, &ls, &n);
         float best = 0.0f;
         for (uint32_t i = 0; i < n; ++i) {
             const float dx = ls[i].pos1[0] - ls[i].pos0[0];
@@ -429,7 +521,7 @@ TEST_F(DebugRenderE2E, ParameterValueScalesMagnitude)
     ASSERT_GT(len1, 0.0f) << "contact normals must emit for settled boxes";
 
     // Triple the CONTACT_NORMAL size.
-    ASSERT_EQ(ovphysx_debug_render_set_parameter(
+    ASSERT_EQ(debug_render_set_parameter(
                   m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_NORMAL, 3.0f).status,
               OVPHYSX_API_SUCCESS);
     for (int i = 0; i < 2; ++i)
@@ -441,14 +533,14 @@ TEST_F(DebugRenderE2E, ParameterValueScalesMagnitude)
         << "contact-normal length must track the parameter value";
 
     // Invalid arguments are rejected.
-    EXPECT_EQ(ovphysx_debug_render_set_parameter(m_handle, 0u, 1.0f).status,
+    EXPECT_EQ(debug_render_set_parameter(m_handle, 0u, 1.0f).status,
               OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(ovphysx_debug_render_set_parameter(
+    EXPECT_EQ(debug_render_set_parameter(
                   m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_NORMAL, -1.0f).status,
-              OVPHYSX_API_INVALID_ARGUMENT);
+              OVPHYSX_API_ERROR);
 
     // Suite-shared state hygiene.
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_NORMAL, 0.0f);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_NORMAL, 0.0f);
 }
 
 
@@ -456,11 +548,11 @@ TEST_F(DebugRenderE2E, TokenScopeUsesExactInternedMembership)
 {
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(
         m_handle, "tests/data/boxes_falling_on_groundplane.usda"));
-    ASSERT_EQ(ovphysx_debug_render_set_scale(m_handle, 1.0f).status,
+    ASSERT_EQ(debug_render_set_scale(m_handle, 1.0f).status,
               OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_debug_render_enable(m_handle, true).status,
+    ASSERT_EQ(debug_render_enable(m_handle, true).status,
               OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_debug_render_set_parameter(
+    ASSERT_EQ(debug_render_set_parameter(
                   m_handle,
                   OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES,
                   1.0f).status,
@@ -475,7 +567,7 @@ TEST_F(DebugRenderE2E, TokenScopeUsesExactInternedMembership)
     EXPECT_NE(cube_tokens[0], OVX_INVALID_PRIMPATH);
     EXPECT_EQ(cube_tokens[0], cube_tokens[1]);
 
-    ASSERT_EQ(ovphysx_debug_render_set_scope_tokens(
+    ASSERT_EQ(debug_render_set_scope_tokens(
                   m_handle, cube_tokens, 1u).status,
               OVPHYSX_API_SUCCESS);
     ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f));
@@ -485,13 +577,13 @@ TEST_F(DebugRenderE2E, TokenScopeUsesExactInternedMembership)
 
     ovx_primpath_t world_token{};
     ASSERT_TRUE(e2e_intern_path(m_handle, "/World", &world_token));
-    ASSERT_EQ(ovphysx_debug_render_set_scope_tokens(
+    ASSERT_EQ(debug_render_set_scope_tokens(
                   m_handle, &world_token, 1u).status,
               OVPHYSX_API_SUCCESS);
     ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f));
     EXPECT_EQ(e2e_total_prims(m_handle), 0u);
 
-    ASSERT_EQ(ovphysx_debug_render_set_scope_tokens(
+    ASSERT_EQ(debug_render_set_scope_tokens(
                   m_handle, nullptr, 0u).status,
               OVPHYSX_API_SUCCESS);
     ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f));
@@ -513,12 +605,12 @@ TEST_F(DebugRenderE2E, ScopeRestrictsContactViz)
     // clearing restores emission.
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/boxes_falling_on_groundplane.usda"))
         << "attach_usd_with_ovstage failed";
-    ASSERT_EQ(ovphysx_debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
     for (int p = OVPHYSX_DEBUG_RENDER_PARAM_WORLD_AXES; p < OVPHYSX_DEBUG_RENDER_PARAM_COUNT; ++p)
-        ovphysx_debug_render_set_parameter(m_handle, (ovphysx_debug_render_parameter_t)p, 0.0f);
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_POINT, 1.0f);
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_NORMAL, 1.0f);
+        debug_render_set_parameter(m_handle, (ovphysx_debug_render_parameter_t)p, 0.0f);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_POINT, 1.0f);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_NORMAL, 1.0f);
     // Land the boxes but stay well inside the wake window: sleeping pairs stop
     // emitting contacts regardless of scope, which would fake a positive.
     for (int i = 0; i < 60; ++i)
@@ -532,7 +624,7 @@ TEST_F(DebugRenderE2E, ScopeRestrictsContactViz)
     // via the either-side rule. Everything else goes quiet.
     ovx_primpath_t one_cube_token{};
     ASSERT_TRUE(e2e_intern_path(m_handle, "/World/Cube1", &one_cube_token));
-    ASSERT_EQ(ovphysx_debug_render_set_scope_tokens(m_handle, &one_cube_token, 1u).status,
+    ASSERT_EQ(debug_render_set_scope_tokens(m_handle, &one_cube_token, 1u).status,
               OVPHYSX_API_SUCCESS);
     ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "step after scoping failed";
     const uint32_t scoped = e2e_total_prims(m_handle);
@@ -544,25 +636,27 @@ TEST_F(DebugRenderE2E, ScopeRestrictsContactViz)
     // Nothing in scope: contact viz must go silent entirely.
     ovx_primpath_t nothing_token{};
     ASSERT_TRUE(e2e_intern_path(m_handle, "/None", &nothing_token));
-    ASSERT_EQ(ovphysx_debug_render_set_scope_tokens(m_handle, &nothing_token, 1u).status,
+    ASSERT_EQ(debug_render_set_scope_tokens(m_handle, &nothing_token, 1u).status,
               OVPHYSX_API_SUCCESS);
     ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "step after empty scope failed";
     EXPECT_EQ(e2e_total_prims(m_handle), 0u) << "no pair has a side in scope -> no contact prims";
 
     // Clearing restores the pairs (counts can drift a frame after resting
     // contacts resettle, so assert emission, not the exact number).
-    ASSERT_EQ(ovphysx_debug_render_set_scope_tokens(m_handle, nullptr, 0u).status,
+    ASSERT_EQ(debug_render_set_scope_tokens(m_handle, nullptr, 0u).status,
               OVPHYSX_API_SUCCESS);
     ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "step after clearing scope failed";
     const uint32_t restored = e2e_total_prims(m_handle);
     EXPECT_GT(restored, scoped) << "clearing the scope must restore the out-of-scope pairs";
 
     // Suite-shared state hygiene (the scope is process-global like the mask).
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_POINT, 0.0f);
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_NORMAL, 0.0f);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_POINT, 0.0f);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_NORMAL, 0.0f);
 }
 
 
+// @implements REQ-CAPI-INSTANCE-SCOPE-001
+// @covers AC-5
 TEST_F(DebugRenderE2E, ScopeClearsAcrossStageReplacement)
 {
     // Prim-path handles belong to one OVStage dictionary. Detach clears the
@@ -570,18 +664,18 @@ TEST_F(DebugRenderE2E, ScopeClearsAcrossStageReplacement)
     // stage starts unscoped and cannot accidentally reuse stale numeric IDs.
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/boxes_falling_on_groundplane.usda"))
         << "first attach failed";
-    ASSERT_EQ(ovphysx_debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
     for (int p = OVPHYSX_DEBUG_RENDER_PARAM_WORLD_AXES; p < OVPHYSX_DEBUG_RENDER_PARAM_COUNT; ++p)
-        ovphysx_debug_render_set_parameter(m_handle, (ovphysx_debug_render_parameter_t)p, 0.0f);
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, 1.0f);
+        debug_render_set_parameter(m_handle, (ovphysx_debug_render_parameter_t)p, 0.0f);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, 1.0f);
     for (int i = 0; i < 3; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "warm-up step failed";
     const uint32_t full = e2e_total_prims(m_handle);
     ASSERT_GT(full, 0u) << "body axes must emit unscoped";
     ovx_primpath_t one_cube_token{};
     ASSERT_TRUE(e2e_intern_path(m_handle, "/World/Cube1", &one_cube_token));
-    ASSERT_EQ(ovphysx_debug_render_set_scope_tokens(m_handle, &one_cube_token, 1u).status,
+    ASSERT_EQ(debug_render_set_scope_tokens(m_handle, &one_cube_token, 1u).status,
               OVPHYSX_API_SUCCESS);
     ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "step after scoping failed";
     const uint32_t scoped = e2e_total_prims(m_handle);
@@ -590,17 +684,17 @@ TEST_F(DebugRenderE2E, ScopeClearsAcrossStageReplacement)
 
     // Fresh attach. Scene parameters died with the scene, so re-apply the
     // scale and parameter without reusing the old dictionary's path handle.
-    ovphysx_enqueue_result_t reset = ovphysx_reset_stage(m_handle);
+    ovphysx_enqueue_result_t reset = ovphysx_detach_ovstage(m_handle);
     ASSERT_EQ(reset.status, OVPHYSX_API_SUCCESS);
     if (reset.op_index != 0)
     {
-        ASSERT_TRUE(e2e_wait(m_handle, reset.op_index)) << "reset wait failed";
+        ASSERT_TRUE(e2e_wait(m_handle, reset)) << "reset wait failed";
     }
     test_utils::destroy_ovstage_test_attachments(m_handle);
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/boxes_falling_on_groundplane.usda"))
         << "second attach failed";
-    ASSERT_EQ(ovphysx_debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, 1.0f);
+    ASSERT_EQ(debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, 1.0f);
     for (int i = 0; i < 3; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "post-reattach step failed";
     const uint32_t replacement = e2e_total_prims(m_handle);
@@ -628,11 +722,11 @@ TEST_F(DebugRenderE2E, ScopeClearsAcrossStageReplacement)
 // -------------------------------------------------------------------------
 class SdfDebugRenderGpuTest : public ::testing::Test
 {
-    static ovphysx_handle_t s_handle;
+    static ovphysx_instance_handle_t s_handle;
     static std::string s_skipReason;
 
 protected:
-    ovphysx_handle_t m_handle = 0;
+    ovphysx_instance_handle_t m_handle = 0;
 
     static void SetUpTestSuite()
     {
@@ -640,8 +734,7 @@ protected:
         s_skipReason = "GPU tests disabled at compile time";
         return;
 #endif
-        ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-        ovphysx_result_t create_result = ovphysx_create_instance(&args, &s_handle);
+        ovphysx_result_t create_result = ovphysx_create_instance(&s_handle);
         if (create_result.status != OVPHYSX_API_SUCCESS)
         {
             ovphysx_string_t last_err = ovphysx_get_last_error();
@@ -655,12 +748,12 @@ protected:
     {
         if (s_handle != 0)
         {
-            ovphysx_enqueue_result_t reset_result = ovphysx_reset_stage(s_handle);
+            ovphysx_enqueue_result_t reset_result = ovphysx_detach_ovstage(s_handle);
             if (reset_result.status == OVPHYSX_API_SUCCESS && reset_result.op_index != 0)
             {
-                ovphysx_op_wait_result_t wait_result{};
-                ovphysx_wait_op(s_handle, reset_result.op_index, 10'000'000'000ULL, &wait_result);
-                ovphysx_destroy_wait_result(&wait_result);
+                ovphysx_wait_task_result_t wait_result{};
+                ovphysx_wait_task(s_handle, reset_result, 10'000'000'000ULL, &wait_result);
+                ovphysx_destroy_wait_task_result(&wait_result);
             }
             ovphysx_destroy_instance(s_handle);
             s_handle = 0;
@@ -684,7 +777,7 @@ protected:
     }
 };
 
-ovphysx_handle_t SdfDebugRenderGpuTest::s_handle = 0;
+ovphysx_instance_handle_t SdfDebugRenderGpuTest::s_handle = 0;
 std::string SdfDebugRenderGpuTest::s_skipReason;
 
 TEST_F(SdfDebugRenderGpuTest, SDFExportsGeometry)
@@ -696,7 +789,7 @@ TEST_F(SdfDebugRenderGpuTest, SDFExportsGeometry)
 
     std::printf("[SdfDebugRenderGpuTest] phase: set_scale + warm-up steps\n");
     std::fflush(stdout);
-    ASSERT_EQ(ovphysx_debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
 
     // A couple of steps so the SDF-collider body settles and PhysX finalizes
     // SDF cooking and any collision detection.
@@ -705,10 +798,10 @@ TEST_F(SdfDebugRenderGpuTest, SDFExportsGeometry)
 
     std::printf("[SdfDebugRenderGpuTest] phase: enable SDF param + step\n");
     std::fflush(stdout);
-    ASSERT_EQ(ovphysx_debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
     for (int p = OVPHYSX_DEBUG_RENDER_PARAM_WORLD_AXES; p < OVPHYSX_DEBUG_RENDER_PARAM_COUNT; ++p)
-        ovphysx_debug_render_set_parameter(m_handle, (ovphysx_debug_render_parameter_t)p, 0.0f);
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_SDF, 1.0f);
+        debug_render_set_parameter(m_handle, (ovphysx_debug_render_parameter_t)p, 0.0f);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_SDF, 1.0f);
     ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "SDF step failed";
 
     uint32_t total = e2e_total_prims(m_handle);
@@ -730,11 +823,11 @@ TEST_F(SdfDebugRenderGpuTest, SDFExportsGeometry)
 // -------------------------------------------------------------------------
 class DirectGpuVizGpuTest : public ::testing::Test
 {
-    static ovphysx_handle_t s_handle;
+    static ovphysx_instance_handle_t s_handle;
     static std::string s_skipReason;
 
 protected:
-    ovphysx_handle_t m_handle = 0;
+    ovphysx_instance_handle_t m_handle = 0;
 
     static void SetUpTestSuite()
     {
@@ -751,7 +844,7 @@ protected:
         };
         args.config_entries = direct_gpu_entries;
         args.config_entry_count = sizeof(direct_gpu_entries) / sizeof(direct_gpu_entries[0]);
-        ovphysx_result_t create_result = ovphysx_create_instance(&args, &s_handle);
+        ovphysx_result_t create_result = ovphysx_create_instance_with_args(&args, &s_handle);
         if (create_result.status != OVPHYSX_API_SUCCESS)
         {
             ovphysx_string_t last_err = ovphysx_get_last_error();
@@ -765,12 +858,12 @@ protected:
     {
         if (s_handle != 0)
         {
-            ovphysx_enqueue_result_t reset_result = ovphysx_reset_stage(s_handle);
+            ovphysx_enqueue_result_t reset_result = ovphysx_detach_ovstage(s_handle);
             if (reset_result.status == OVPHYSX_API_SUCCESS && reset_result.op_index != 0)
             {
-                ovphysx_op_wait_result_t wait_result{};
-                ovphysx_wait_op(s_handle, reset_result.op_index, 10'000'000'000ULL, &wait_result);
-                ovphysx_destroy_wait_result(&wait_result);
+                ovphysx_wait_task_result_t wait_result{};
+                ovphysx_wait_task(s_handle, reset_result, 10'000'000'000ULL, &wait_result);
+                ovphysx_destroy_wait_task_result(&wait_result);
             }
             ovphysx_destroy_instance(s_handle);
             s_handle = 0;
@@ -793,28 +886,28 @@ protected:
         // Process-global viz state hygiene, exception-safe (see DebugRenderE2E).
         if (m_handle != 0)
         {
-            ovphysx_debug_render_set_scope_tokens(m_handle, nullptr, 0u);
+            debug_render_set_scope_tokens(m_handle, nullptr, 0u);
             for (int p = OVPHYSX_DEBUG_RENDER_PARAM_WORLD_AXES; p < OVPHYSX_DEBUG_RENDER_PARAM_COUNT; ++p)
-                ovphysx_debug_render_set_parameter(m_handle, (ovphysx_debug_render_parameter_t)p, 0.0f);
-            ovphysx_debug_render_enable(m_handle, false);
+                debug_render_set_parameter(m_handle, (ovphysx_debug_render_parameter_t)p, 0.0f);
+            debug_render_enable(m_handle, false);
         }
         // Reset the stage between tests (same pattern as TensorBindingGpuTest): the
         // instance is suite-shared, and a second attach on a populated stage fails.
         if (s_handle != 0)
         {
-            ovphysx_enqueue_result_t reset_result = ovphysx_reset_stage(s_handle);
+            ovphysx_enqueue_result_t reset_result = ovphysx_detach_ovstage(s_handle);
             if (reset_result.status == OVPHYSX_API_SUCCESS && reset_result.op_index != 0)
             {
-                ovphysx_op_wait_result_t wait_result{};
-                ovphysx_wait_op(s_handle, reset_result.op_index, 10'000'000'000ULL, &wait_result);
-                ovphysx_destroy_wait_result(&wait_result);
+                ovphysx_wait_task_result_t wait_result{};
+                ovphysx_wait_task(s_handle, reset_result, 10'000'000'000ULL, &wait_result);
+                ovphysx_destroy_wait_task_result(&wait_result);
             }
         }
         m_handle = 0;
     }
 };
 
-ovphysx_handle_t DirectGpuVizGpuTest::s_handle = 0;
+ovphysx_instance_handle_t DirectGpuVizGpuTest::s_handle = 0;
 std::string DirectGpuVizGpuTest::s_skipReason;
 
 TEST_F(DirectGpuVizGpuTest, FrictionParamsExportPrimitives)
@@ -824,7 +917,7 @@ TEST_F(DirectGpuVizGpuTest, FrictionParamsExportPrimitives)
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/boxes_falling_on_groundplane.usda"))
         << "attach_usd_with_ovstage failed";
 
-    ASSERT_EQ(ovphysx_debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
 
     // Settle the boxes into sustained ground contact. Friction anchors only exist for
     // pairs the solver keeps active friction patches for.
@@ -833,9 +926,9 @@ TEST_F(DirectGpuVizGpuTest, FrictionParamsExportPrimitives)
     for (int i = 0; i < 120; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "settle step failed";
 
-    ASSERT_EQ(ovphysx_debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
     for (int p = OVPHYSX_DEBUG_RENDER_PARAM_WORLD_AXES; p < OVPHYSX_DEBUG_RENDER_PARAM_COUNT; ++p)
-        ovphysx_debug_render_set_parameter(m_handle, (ovphysx_debug_render_parameter_t)p, 0.0f);
+        debug_render_set_parameter(m_handle, (ovphysx_debug_render_parameter_t)p, 0.0f);
 
     struct FrictionVizParam
     {
@@ -850,14 +943,14 @@ TEST_F(DirectGpuVizGpuTest, FrictionParamsExportPrimitives)
     uint32_t grand = 0;
     for (const FrictionVizParam& f : kFriction)
     {
-        ovphysx_debug_render_set_parameter(m_handle, f.param, 1.0f);
+        debug_render_set_parameter(m_handle, f.param, 1.0f);
         for (int i = 0; i < 2; ++i)
             ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "step failed for " << f.name;
         const uint32_t t = e2e_total_prims(m_handle);
         grand += t;
         std::printf("[DirectGpuVizGpuTest] %-16s: %u prims\n", f.name, t);
         std::fflush(stdout);
-        ovphysx_debug_render_set_parameter(m_handle, f.param, 0.0f);
+        debug_render_set_parameter(m_handle, f.param, 0.0f);
     }
 
     // Triage probe, always printed. Contact-point viz shares the NP-end capture
@@ -866,13 +959,13 @@ TEST_F(DirectGpuVizGpuTest, FrictionParamsExportPrimitives)
     // friction == 0 means the NP-end pair outputs are healthy and the
     // fetch-time friction path is the suspect. Contacts == 0 means the pairs
     // produced no narrowphase output at all at measure time.
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_POINT, 1.0f);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_POINT, 1.0f);
     for (int i = 0; i < 2; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "step failed for ContactPoint probe";
     const uint32_t contactPrims = e2e_total_prims(m_handle);
     std::printf("[DirectGpuVizGpuTest] ContactPoint    : %u prims (triage probe)\n", contactPrims);
     std::fflush(stdout);
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_POINT, 0.0f);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_POINT, 0.0f);
     EXPECT_GT(contactPrims, 0u) << "settled boxes must export contact points under the "
                                    "direct-GPU API (NP-end capture health check)";
 
@@ -904,17 +997,17 @@ TEST_F(DirectGpuVizGpuTest, TrimeshContactParamsExport)
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/trimesh_ground_collisions.usda"))
         << "attach_usd_with_ovstage failed";
 
-    ASSERT_EQ(ovphysx_debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
 
     // Let the box land on the triangle-mesh ground for sustained convex-trimesh contact.
     for (int i = 0; i < 120; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "settle step failed";
 
-    ASSERT_EQ(ovphysx_debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
     for (int p = OVPHYSX_DEBUG_RENDER_PARAM_WORLD_AXES; p < OVPHYSX_DEBUG_RENDER_PARAM_COUNT; ++p)
-        ovphysx_debug_render_set_parameter(m_handle, (ovphysx_debug_render_parameter_t)p, 0.0f);
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_POINT, 1.0f);
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_NORMAL, 1.0f);
+        debug_render_set_parameter(m_handle, (ovphysx_debug_render_parameter_t)p, 0.0f);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_POINT, 1.0f);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_NORMAL, 1.0f);
     for (int i = 0; i < 2; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "step failed";
 
@@ -934,11 +1027,11 @@ TEST_F(DirectGpuVizGpuTest, ScopeRestrictsContactViz)
 {
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/boxes_falling_on_groundplane.usda"))
         << "attach_usd_with_ovstage failed";
-    ASSERT_EQ(ovphysx_debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(debug_render_set_scale(m_handle, 1.0f).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(debug_render_enable(m_handle, true).status, OVPHYSX_API_SUCCESS);
     for (int p = OVPHYSX_DEBUG_RENDER_PARAM_WORLD_AXES; p < OVPHYSX_DEBUG_RENDER_PARAM_COUNT; ++p)
-        ovphysx_debug_render_set_parameter(m_handle, (ovphysx_debug_render_parameter_t)p, 0.0f);
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_POINT, 1.0f);
+        debug_render_set_parameter(m_handle, (ovphysx_debug_render_parameter_t)p, 0.0f);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_POINT, 1.0f);
     for (int i = 0; i < 120; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "settle step failed";
     const uint32_t full = e2e_total_prims(m_handle);
@@ -959,7 +1052,7 @@ TEST_F(DirectGpuVizGpuTest, ScopeRestrictsContactViz)
 
     ovx_primpath_t one_cube_token{};
     ASSERT_TRUE(e2e_intern_path(m_handle, "/World/Cube1", &one_cube_token));
-    ASSERT_EQ(ovphysx_debug_render_set_scope_tokens(m_handle, &one_cube_token, 1u).status,
+    ASSERT_EQ(debug_render_set_scope_tokens(m_handle, &one_cube_token, 1u).status,
               OVPHYSX_API_SUCCESS);
     for (int i = 0; i < 2; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "step after scoping failed";
@@ -971,18 +1064,18 @@ TEST_F(DirectGpuVizGpuTest, ScopeRestrictsContactViz)
 
     ovx_primpath_t nothing_token{};
     ASSERT_TRUE(e2e_intern_path(m_handle, "/None", &nothing_token));
-    ASSERT_EQ(ovphysx_debug_render_set_scope_tokens(m_handle, &nothing_token, 1u).status,
+    ASSERT_EQ(debug_render_set_scope_tokens(m_handle, &nothing_token, 1u).status,
               OVPHYSX_API_SUCCESS);
     for (int i = 0; i < 2; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "step after empty scope failed";
     EXPECT_EQ(e2e_total_prims(m_handle), 0u) << "no pair has a side in scope -> no captured contacts";
 
-    ASSERT_EQ(ovphysx_debug_render_set_scope_tokens(m_handle, nullptr, 0u).status,
+    ASSERT_EQ(debug_render_set_scope_tokens(m_handle, nullptr, 0u).status,
               OVPHYSX_API_SUCCESS);
     for (int i = 0; i < 2; ++i)
         ASSERT_TRUE(e2e_step(m_handle, 1.0f / 60.0f)) << "step after clearing scope failed";
     EXPECT_GT(e2e_total_prims(m_handle), scoped) << "clearing the scope must restore the out-of-scope pairs";
 
     // Suite-shared state hygiene (the scope is process-global like the mask).
-    ovphysx_debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_POINT, 0.0f);
+    debug_render_set_parameter(m_handle, OVPHYSX_DEBUG_RENDER_PARAM_CONTACT_POINT, 0.0f);
 }

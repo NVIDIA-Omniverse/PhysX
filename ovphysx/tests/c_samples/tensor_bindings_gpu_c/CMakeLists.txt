@@ -19,6 +19,9 @@ target_compile_definitions(tensor_bindings_gpu_c PRIVATE
 )
 if(WIN32)
     ovphysx_copy_runtime_dlls(tensor_bindings_gpu_c)
+    # OVStage is not copied (it loads its plugins relative to itself), so its
+    # directories have to reach the process through PATH.
+    ovphysx_set_ovstage_runtime_env(tensor_bindings_gpu_c)
 endif()
 
 if(CUDAToolkit_FOUND)

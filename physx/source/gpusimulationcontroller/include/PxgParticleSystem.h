@@ -99,9 +99,9 @@ namespace physx
 	}PX_ALIGN_SUFFIX(16);
 
 	// Contact block for particle-rigid pairs. Field names match
-	// PxgDbRigidContactBlock so PxgRigidPart::readContactPrep templates
+	// PxgRigidDbContactBlock so PxgRigidPart::readContactPrep templates
 	// over both. Particle side is a single vertex, filled inline by the solver.
-	struct PxgParticleRigidContactBlock
+	struct PxgRigidParticleContactBlock
 	{
 		float4 raXn_resp[32];
 		float4 raXnF0_resp[32];
@@ -236,22 +236,12 @@ namespace physx
 #pragma warning(pop)   
 #endif	
 
-	PX_ALIGN_PREFIX(16)
-		struct PxgParticlePrimitiveContact
+	struct PxgRigidParticleContactWriter
 	{
-	public:
-		// Penetration relative to the pair rest distance, which contact generation incorporates. The other
-		// contact types report a raw distance and apply the rest distance in the contact prep.
-		PxVec4		normal_pen;				//normal pen
-
-		PxU64		rigidId;				//the corresponding rigid body node index
-		PxU64		particleId;				//particle index
-	}PX_ALIGN_SUFFIX(16);
-
-
-	struct PxgParticleContactWriter
-	{
-		PxgParticlePrimitiveContact* PX_RESTRICT	particleContacts;
+		PxgDeformablePairInfo* PX_RESTRICT			particleContactInfos;
+		// Penetration is relative to the pair rest distance, which contact generation incorporates. The
+		// other contact types report a raw distance and apply the rest distance in the contact prep.
+		float4* PX_RESTRICT							particleContactNormalPens;
 		PxU32*										numTotalContacts;
 		PxU64*										contactSortedByParticle;
 		PxU32*										tempContactByParticle;
@@ -259,25 +249,29 @@ namespace physx
 		PxNodeIndex*								contactByRigid;
 		PxU32*										tempContactByRigid;
 		PxU32*										contactIndexSortedByRigid;
-		PxU32									maxContacts;
+		PxU32										maxContacts;
 
 		PX_FORCE_INLINE PX_CUDA_CALLABLE void writeContact(PxU32 index, const PxVec4& normalPen,
-			PxU64 compressedParticleIndex, PxNodeIndex rigidId)
+			PxNodeIndex rigidId, PxU64 particleRef)
 		{
 			if (index < maxContacts)
 			{
 				contactByRigid[index] = rigidId;
-			    tempContactByRigid[index] = PxU32(rigidId.getInd() & 0xffffffff);
+			    tempContactByRigid[index] = PxgGetContactSortKey(PxgEncodeRigidNode(rigidId));
 				contactIndexSortedByRigid[index] = index;
 
-				contactSortedByParticle[index] = compressedParticleIndex;
-			    tempContactByParticle[index] = PxGetParticleIndex(compressedParticleIndex);
+				contactSortedByParticle[index] = particleRef;
+			    tempContactByParticle[index] = PxgGetContactSortKey(particleRef);
 				contactIndexSortedByParticle[index] = index;
 
-				PxgParticlePrimitiveContact& contact = particleContacts[index];
-				contact.normal_pen = normalPen;
-				contact.rigidId = rigidId.getInd();
-				contact.particleId = compressedParticleIndex;
+				particleContactInfos[index].ref0 = PxgEncodeRigidNode(rigidId);
+				particleContactInfos[index].ref1 = particleRef;
+				// Field by field, since make_float4 is device only and this writer also compiles on the host.
+				float4& outNormalPen = particleContactNormalPens[index];
+				outNormalPen.x = normalPen.x;
+				outNormalPen.y = normalPen.y;
+				outNormalPen.z = normalPen.z;
+				outNormalPen.w = normalPen.w;
 			}
 		}
 	};

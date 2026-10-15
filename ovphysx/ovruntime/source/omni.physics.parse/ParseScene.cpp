@@ -1,9 +1,13 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-1 AC-2
+ */
+
 /**
  * @implements REQ-PARSE-SCENE-001
- * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7
  *
  * @implements REQ-PARSE-UNIFY-001
  * @covers AC-1 AC-2
@@ -18,6 +22,7 @@
 // SceneInfo + the consumer's material-binding parsers.
 
 #include <omni/physics/parse/ParseApi.h>
+#include <omni/physics/parse/PreparedScene.h>
 #include <omni/physics/parse/KnownTokens.h>
 
 #include <cfloat>
@@ -44,22 +49,10 @@ bool isPowerOfTwo(uint32_t v)
 //     return is `false`. Only in-range authored values count as
 //     "authored" for downstream gating such as `physxTimeStepsAuthored`.
 template <typename T>
-bool readClampedIfAuthored(const IPhysicsSource& src, ObjectKey key, TokenId attr,
-                            T& val, T minVal, T maxVal)
+bool fillClamped(const PreparedAttribute<T>& input, T& val, T minVal, T maxVal) noexcept
 {
-    if (!src.hasAuthoredAttribute(key, attr)) return false;
-
-    T attrVal;
-    if constexpr (std::is_same_v<T, uint32_t> || std::is_same_v<T, int32_t>)
-    {
-        int64_t tmp;
-        if (!src.getAttribute(key, attr, tmp)) return false;
-        attrVal = static_cast<T>(tmp);
-    }
-    else
-    {
-        if (!src.getAttribute(key, attr, attrVal)) return false;
-    }
+    if (!input.valid) return false;
+    T attrVal = input.value;
 
     if constexpr (std::is_floating_point_v<T>)
     {
@@ -75,23 +68,6 @@ bool readClampedIfAuthored(const IPhysicsSource& src, ObjectKey key, TokenId att
     if (attrVal < minVal) val = minVal;
     else                  val = maxVal;
     return false;
-}
-
-// Unclamped attribute read for GPU capacity ints. Calls Get() on the
-// attribute; for USD this resolves the schema fallback default when
-// unauthored, so the write is unconditional.
-template <typename T>
-void readScalarAlways(const IPhysicsSource& src, ObjectKey key, TokenId attr, T& val)
-{
-    int64_t tmp;
-    if (src.getAttribute(key, attr, tmp))
-        val = static_cast<T>(tmp);
-}
-
-bool readBoolIfAuthored(const IPhysicsSource& src, ObjectKey key, TokenId attr, bool& out)
-{
-    if (!src.hasAuthoredAttribute(key, attr)) return false;
-    return src.getAttribute(key, attr, out);
 }
 
 } // namespace
@@ -131,14 +107,124 @@ DescPtr<PhysxSceneDesc> makeDefaultSceneDesc(IDescriptorAllocator& allocator, co
 
 void parseScene(ParseContext& ctx, ObjectKey key, const SceneInfo& info, PhysxSceneDesc& desc)
 {
-    IPhysicsSource& src = ctx.source();
+    fillScene(prepareScene(ctx, key, info), desc);
+    if (!info.quasistaticActors.empty())
+    {
+        desc.quasistaticActors.clear();
+        desc.quasistaticActors.reserve(info.quasistaticActors.size());
+        desc.quasistaticActors.insert(info.quasistaticActors.begin(), info.quasistaticActors.end());
+    }
+}
+
+PreparedScene prepareScene(ParseContext& ctx, ObjectKey key, const SceneInfo& info)
+{
+    const IPhysicsSource& src = ctx.source();
     const KnownTokens& tok = ctx.knownTokens();
+    PreparedScene input;
+    input.info = info;
+    input.physxSceneAPI = src.hasSchema(key, tok.physxSceneAPI);
+    input.quasistaticAPI = src.hasSchema(key, tok.physxSceneQuasistaticAPI);
+    input.broadphaseTypeGPU = tok.broadphaseTypeGPU;
+    input.broadphaseTypeMBP = tok.broadphaseTypeMBP;
+    input.broadphaseTypeSAP = tok.broadphaseTypeSAP;
+    input.collisionSystemSAT = tok.collisionSystemSAT;
+    input.sceneUpdateAsynchronous = tok.sceneUpdateAsynchronous;
+    input.sceneUpdateDisabled = tok.sceneUpdateDisabled;
+    input.sceneUpdateSynchronous = tok.sceneUpdateSynchronous;
+    input.solverTypePGS = tok.solverTypePGS;
+    input.solverTypeTGS = tok.solverTypeTGS;
+    if (input.physxSceneAPI)
+        input.physxSceneBounceThreshold = prepareAttribute<float>(src, key, tok.physxSceneBounceThreshold, true);
+    if (input.physxSceneAPI)
+        input.physxSceneFrictionOffsetThreshold = prepareAttribute<float>(src, key, tok.physxSceneFrictionOffsetThreshold, true);
+    if (input.physxSceneAPI)
+        input.physxSceneFrictionCorrelationDistance = prepareAttribute<float>(src, key, tok.physxSceneFrictionCorrelationDistance, true);
+    if (input.physxSceneAPI)
+        input.physxSceneMaxBiasCoefficient = prepareAttribute<float>(src, key, tok.physxSceneMaxBiasCoefficient, true);
+    if (input.physxSceneAPI)
+        input.physxSceneTimeStepsPerSecond = prepareAttribute<uint32_t>(src, key, tok.physxSceneTimeStepsPerSecond, true);
+    if (input.physxSceneAPI)
+        input.physxSceneMinPositionIterationCount = prepareAttribute<uint32_t>(src, key, tok.physxSceneMinPositionIterationCount, true);
+    if (input.physxSceneAPI)
+        input.physxSceneMaxPositionIterationCount = prepareAttribute<uint32_t>(src, key, tok.physxSceneMaxPositionIterationCount, true);
+    if (input.physxSceneAPI)
+        input.physxSceneMinVelocityIterationCount = prepareAttribute<uint32_t>(src, key, tok.physxSceneMinVelocityIterationCount, true);
+    if (input.physxSceneAPI)
+        input.physxSceneMaxVelocityIterationCount = prepareAttribute<uint32_t>(src, key, tok.physxSceneMaxVelocityIterationCount, true);
+    if (input.physxSceneAPI)
+        input.physxSceneGpuMaxNumPartitions = prepareAttribute<uint32_t>(src, key, tok.physxSceneGpuMaxNumPartitions, true);
+    if (input.physxSceneAPI)
+        input.physxSceneEnableCCD = prepareAttribute<bool>(src, key, tok.physxSceneEnableCCD, true);
+    if (input.physxSceneAPI)
+        input.physxSceneEnableStabilization = prepareAttribute<bool>(src, key, tok.physxSceneEnableStabilization, true);
+    if (input.physxSceneAPI)
+        input.physxSceneEnableGPUDynamics = prepareAttribute<bool>(src, key, tok.physxSceneEnableGPUDynamics, true);
+    if (input.physxSceneAPI)
+        input.physxSceneEnableEnhancedDeterminism = prepareAttribute<bool>(src, key, tok.physxSceneEnableEnhancedDeterminism, true);
+    if (input.physxSceneAPI)
+        input.physxSceneEnableExternalForcesEveryIteration = prepareAttribute<bool>(src, key, tok.physxSceneEnableExternalForcesEveryIteration, true);
+    if (input.physxSceneAPI)
+        input.physxSceneInvertCollisionGroupFilter = prepareAttribute<bool>(src, key, tok.physxSceneInvertCollisionGroupFilter, true);
+    if (input.physxSceneAPI)
+        input.physxSceneReportKinematicKinematicPairs = prepareAttribute<bool>(src, key, tok.physxSceneReportKinematicKinematicPairs, true);
+    if (input.physxSceneAPI)
+        input.physxSceneReportKinematicStaticPairs = prepareAttribute<bool>(src, key, tok.physxSceneReportKinematicStaticPairs, true);
+    if (input.physxSceneAPI)
+        input.physxSceneEnableSceneQuerySupport = prepareAttribute<bool>(src, key, tok.physxSceneEnableSceneQuerySupport, true);
+    if (input.physxSceneAPI)
+        input.physxSceneSolveArticulationContactLast = prepareAttribute<bool>(src, key, tok.physxSceneSolveArticulationContactLast, true);
+    if (input.physxSceneAPI)
+        input.physxSceneDisableSleeping = prepareAttribute<bool>(src, key, tok.physxSceneDisableSleeping, true);
+    if (input.physxSceneAPI)
+        input.physxSceneGpuTempBufferCapacity = prepareAttribute<int64_t>(src, key, tok.physxSceneGpuTempBufferCapacity);
+    if (input.physxSceneAPI)
+        input.physxSceneGpuMaxRigidContactCount = prepareAttribute<int64_t>(src, key, tok.physxSceneGpuMaxRigidContactCount);
+    if (input.physxSceneAPI)
+        input.physxSceneGpuMaxRigidPatchCount = prepareAttribute<int64_t>(src, key, tok.physxSceneGpuMaxRigidPatchCount);
+    if (input.physxSceneAPI)
+        input.physxSceneGpuHeapCapacity = prepareAttribute<int64_t>(src, key, tok.physxSceneGpuHeapCapacity);
+    if (input.physxSceneAPI)
+        input.physxSceneGpuFoundLostPairsCapacity = prepareAttribute<int64_t>(src, key, tok.physxSceneGpuFoundLostPairsCapacity);
+    if (input.physxSceneAPI)
+        input.physxSceneGpuFoundLostAggregatePairsCapacity = prepareAttribute<int64_t>(src, key, tok.physxSceneGpuFoundLostAggregatePairsCapacity);
+    if (input.physxSceneAPI)
+        input.physxSceneGpuTotalAggregatePairsCapacity = prepareAttribute<int64_t>(src, key, tok.physxSceneGpuTotalAggregatePairsCapacity);
+    if (input.physxSceneAPI)
+        input.physxSceneGpuMaxDeformableVolumeContacts = prepareAttribute<int64_t>(src, key, tok.physxSceneGpuMaxDeformableVolumeContacts);
+    if (input.physxSceneAPI)
+        input.physxSceneGpuMaxDeformableSurfaceContacts = prepareAttribute<int64_t>(src, key, tok.physxSceneGpuMaxDeformableSurfaceContacts);
+    if (input.physxSceneAPI)
+        input.physxSceneGpuMaxParticleContacts = prepareAttribute<int64_t>(src, key, tok.physxSceneGpuMaxParticleContacts);
+    if (input.physxSceneAPI)
+        input.physxSceneGpuCollisionStackSize = prepareAttribute<int64_t>(src, key, tok.physxSceneGpuCollisionStackSize);
+    if (input.physxSceneAPI)
+        input.physxSceneUpdateType = prepareAttribute<TokenId>(src, key, tok.physxSceneUpdateType);
+    if (input.physxSceneAPI)
+        input.physxSceneCollisionSystem = prepareAttribute<TokenId>(src, key, tok.physxSceneCollisionSystem);
+    if (input.physxSceneAPI)
+        input.physxSceneSolverType = prepareAttribute<TokenId>(src, key, tok.physxSceneSolverType);
+    if (input.physxSceneAPI)
+        input.physxSceneBroadphaseType = prepareAttribute<TokenId>(src, key, tok.physxSceneBroadphaseType);
+    input.newtonTimeStepsPerSecond = prepareAttribute<int64_t>(src, key, tok.newtonTimeStepsPerSecond, true);
+    input.newtonGravityEnabled = prepareAttribute<bool>(src, key, tok.newtonGravityEnabled, true);
+    if (input.quasistaticAPI)
+        input.physxSceneQuasistaticEnableQuasistatic = prepareAttribute<bool>(src, key, tok.physxSceneQuasistaticEnableQuasistatic);
+    input.physxSceneEnvIdInBoundsBitCount = prepareAttribute<int64_t>(src, key, tok.physxSceneEnvIdInBoundsBitCount, true);
+    input.prepared = true;
+    return input;
+}
+
+bool fillScene(const PreparedScene& input, PhysxSceneDesc& desc) noexcept
+{
+    if (!input.prepared) return false;
+    const PreparedScene& tok = input;
+    const SceneInfo& info = input.info;
 
     // Gravity from info (already up-axis-resolved by the schema parser).
     desc.gravityDirection = info.gravityDirection;
     desc.gravityMagnitude = info.gravityMagnitude;
 
-    const bool hasPhysxSceneAPI = src.hasSchema(key, tok.physxSceneAPI);
+    const bool hasPhysxSceneAPI = input.physxSceneAPI;
 
     bool physxTimeStepsAuthored = false;
 
@@ -146,36 +232,27 @@ void parseScene(ParseContext& ctx, ObjectKey key, const SceneInfo& info, PhysxSc
     {
         // updateType token enum
         TokenId updateType;
-        if (src.getAttribute(key, tok.physxSceneUpdateType, updateType))
+        if (input.physxSceneUpdateType.read(updateType))
         {
             if      (updateType == tok.sceneUpdateSynchronous)  desc.sceneUpdateType = eSynchronous;
             else if (updateType == tok.sceneUpdateAsynchronous) desc.sceneUpdateType = eAsynchronous;
             else if (updateType == tok.sceneUpdateDisabled)     desc.sceneUpdateType = eDisabled;
         }
 
-        readClampedIfAuthored<float>(
-            src, key, tok.physxSceneBounceThreshold, desc.bounceThreshold, 1e-06f, FLT_MAX);
-        readClampedIfAuthored<float>(
-            src, key, tok.physxSceneFrictionOffsetThreshold, desc.frictionOffsetThreshold, 0.0f, FLT_MAX);
-        readClampedIfAuthored<float>(
-            src, key, tok.physxSceneFrictionCorrelationDistance, desc.frictionCorrelationDistance, 0.0f, FLT_MAX);
-        readClampedIfAuthored<float>(
-            src, key, tok.physxSceneMaxBiasCoefficient, desc.maxBiasCoefficient, 0.0f, FLT_MAX);
+        fillClamped(input.physxSceneBounceThreshold, desc.bounceThreshold, 1e-06f, FLT_MAX);
+        fillClamped(input.physxSceneFrictionOffsetThreshold, desc.frictionOffsetThreshold, 0.0f, FLT_MAX);
+        fillClamped(input.physxSceneFrictionCorrelationDistance, desc.frictionCorrelationDistance, 0.0f, FLT_MAX);
+        fillClamped(input.physxSceneMaxBiasCoefficient, desc.maxBiasCoefficient, 0.0f, FLT_MAX);
 
         // `physxTimeStepsAuthored` is true ONLY when the value is
         // authored AND in range — it gates whether the Newton fallback
         // runs below.
-        physxTimeStepsAuthored = readClampedIfAuthored<uint32_t>(
-            src, key, tok.physxSceneTimeStepsPerSecond, desc.timeStepsPerSecond, 1u, UINT_MAX);
+        physxTimeStepsAuthored = fillClamped(input.physxSceneTimeStepsPerSecond, desc.timeStepsPerSecond, 1u, UINT_MAX);
 
-        readClampedIfAuthored<uint32_t>(
-            src, key, tok.physxSceneMinPositionIterationCount, desc.minPosIterationCount, 0u, 255u);
-        readClampedIfAuthored<uint32_t>(
-            src, key, tok.physxSceneMaxPositionIterationCount, desc.maxPosIterationCount, 0u, 255u);
-        readClampedIfAuthored<uint32_t>(
-            src, key, tok.physxSceneMinVelocityIterationCount, desc.minVelIterationCount, 0u, 255u);
-        readClampedIfAuthored<uint32_t>(
-            src, key, tok.physxSceneMaxVelocityIterationCount, desc.maxVelIterationCount, 0u, 255u);
+        fillClamped(input.physxSceneMinPositionIterationCount, desc.minPosIterationCount, 0u, 255u);
+        fillClamped(input.physxSceneMaxPositionIterationCount, desc.maxPosIterationCount, 0u, 255u);
+        fillClamped(input.physxSceneMinVelocityIterationCount, desc.minVelIterationCount, 0u, 255u);
+        fillClamped(input.physxSceneMaxVelocityIterationCount, desc.maxVelIterationCount, 0u, 255u);
 
         // Silently clamp min down when min > max — the schema parser
         // already logs an error on the same descriptor before this
@@ -185,20 +262,20 @@ void parseScene(ParseContext& ctx, ObjectKey key, const SceneInfo& info, PhysxSc
         if (desc.minVelIterationCount > desc.maxVelIterationCount)
             desc.minVelIterationCount = desc.maxVelIterationCount;
 
-        readBoolIfAuthored(src, key, tok.physxSceneEnableCCD, desc.enableCCD);
-        readBoolIfAuthored(src, key, tok.physxSceneEnableStabilization, desc.enableStabilization);
-        readBoolIfAuthored(src, key, tok.physxSceneEnableGPUDynamics, desc.enableGPUDynamics);
-        readBoolIfAuthored(src, key, tok.physxSceneEnableEnhancedDeterminism, desc.enableEnhancedDeterminism);
-        readBoolIfAuthored(src, key, tok.physxSceneEnableExternalForcesEveryIteration, desc.enableExternalForcesEveryIteration);
-        readBoolIfAuthored(src, key, tok.physxSceneInvertCollisionGroupFilter, desc.invertedFiltering);
-        readBoolIfAuthored(src, key, tok.physxSceneReportKinematicKinematicPairs, desc.reportKineKine);
-        readBoolIfAuthored(src, key, tok.physxSceneReportKinematicStaticPairs, desc.reportKineStatic);
-        readBoolIfAuthored(src, key, tok.physxSceneEnableSceneQuerySupport, desc.supportSceneQueries);
-        readBoolIfAuthored(src, key, tok.physxSceneSolveArticulationContactLast, desc.solveArticulationContactLast);
-        readBoolIfAuthored(src, key, tok.physxSceneDisableSleeping, desc.disableSleeping);
+        input.physxSceneEnableCCD.read( desc.enableCCD);
+        input.physxSceneEnableStabilization.read( desc.enableStabilization);
+        input.physxSceneEnableGPUDynamics.read( desc.enableGPUDynamics);
+        input.physxSceneEnableEnhancedDeterminism.read( desc.enableEnhancedDeterminism);
+        input.physxSceneEnableExternalForcesEveryIteration.read( desc.enableExternalForcesEveryIteration);
+        input.physxSceneInvertCollisionGroupFilter.read( desc.invertedFiltering);
+        input.physxSceneReportKinematicKinematicPairs.read( desc.reportKineKine);
+        input.physxSceneReportKinematicStaticPairs.read( desc.reportKineStatic);
+        input.physxSceneEnableSceneQuerySupport.read( desc.supportSceneQueries);
+        input.physxSceneSolveArticulationContactLast.read( desc.solveArticulationContactLast);
+        input.physxSceneDisableSleeping.read( desc.disableSleeping);
 
         TokenId collisionSystem;
-        if (src.getAttribute(key, tok.physxSceneCollisionSystem, collisionSystem))
+        if (input.physxSceneCollisionSystem.read(collisionSystem))
         {
             // Only test against SAT; PCM is the schema-default token
             // and does NOT trigger a write (the PCM enum is already the
@@ -208,14 +285,14 @@ void parseScene(ParseContext& ctx, ObjectKey key, const SceneInfo& info, PhysxSc
         }
 
         TokenId solverType;
-        if (src.getAttribute(key, tok.physxSceneSolverType, solverType))
+        if (input.physxSceneSolverType.read(solverType))
         {
             if      (solverType == tok.solverTypeTGS) desc.solverType = eTGS;
             else if (solverType == tok.solverTypePGS) desc.solverType = ePGS;
         }
 
         TokenId broadphaseType;
-        if (src.getAttribute(key, tok.physxSceneBroadphaseType, broadphaseType))
+        if (input.physxSceneBroadphaseType.read(broadphaseType))
         {
             if      (broadphaseType == tok.broadphaseTypeSAP) desc.broadphaseType = eSAP;
             else if (broadphaseType == tok.broadphaseTypeMBP) desc.broadphaseType = eMBP;
@@ -227,20 +304,19 @@ void parseScene(ParseContext& ctx, ObjectKey key, const SceneInfo& info, PhysxSc
 
         // GPU capacity ints — raw `attr.Get(&...)` with no clamp writes
         // the schema fallback default unconditionally when unauthored.
-        readScalarAlways<uint64_t>(src, key, tok.physxSceneGpuTempBufferCapacity, desc.gpuTempBufferCapacity);
-        readScalarAlways<uint32_t>(src, key, tok.physxSceneGpuMaxRigidContactCount, desc.gpuMaxRigidContactCount);
-        readScalarAlways<uint32_t>(src, key, tok.physxSceneGpuMaxRigidPatchCount, desc.gpuMaxRigidPatchCount);
-        readScalarAlways<uint32_t>(src, key, tok.physxSceneGpuHeapCapacity, desc.gpuHeapCapacity);
-        readScalarAlways<uint32_t>(src, key, tok.physxSceneGpuFoundLostPairsCapacity, desc.gpuFoundLostPairsCapacity);
-        readScalarAlways<uint32_t>(src, key, tok.physxSceneGpuFoundLostAggregatePairsCapacity, desc.gpuFoundLostAggregatePairsCapacity);
-        readScalarAlways<uint32_t>(src, key, tok.physxSceneGpuTotalAggregatePairsCapacity, desc.gpuTotalAggregatePairsCapacity);
-        readScalarAlways<uint32_t>(src, key, tok.physxSceneGpuMaxDeformableVolumeContacts, desc.gpuMaxDeformableVolumeContacts);
-        readScalarAlways<uint32_t>(src, key, tok.physxSceneGpuMaxDeformableSurfaceContacts, desc.gpuMaxDeformableSurfaceContacts);
-        readScalarAlways<uint32_t>(src, key, tok.physxSceneGpuMaxParticleContacts, desc.gpuMaxParticleContacts);
-        readScalarAlways<uint32_t>(src, key, tok.physxSceneGpuCollisionStackSize, desc.gpuCollisionStackSize);
+        desc.gpuTempBufferCapacity = static_cast<uint64_t>(input.physxSceneGpuTempBufferCapacity.valueOr(desc.gpuTempBufferCapacity));
+        desc.gpuMaxRigidContactCount = static_cast<uint32_t>(input.physxSceneGpuMaxRigidContactCount.valueOr(desc.gpuMaxRigidContactCount));
+        desc.gpuMaxRigidPatchCount = static_cast<uint32_t>(input.physxSceneGpuMaxRigidPatchCount.valueOr(desc.gpuMaxRigidPatchCount));
+        desc.gpuHeapCapacity = static_cast<uint32_t>(input.physxSceneGpuHeapCapacity.valueOr(desc.gpuHeapCapacity));
+        desc.gpuFoundLostPairsCapacity = static_cast<uint32_t>(input.physxSceneGpuFoundLostPairsCapacity.valueOr(desc.gpuFoundLostPairsCapacity));
+        desc.gpuFoundLostAggregatePairsCapacity = static_cast<uint32_t>(input.physxSceneGpuFoundLostAggregatePairsCapacity.valueOr(desc.gpuFoundLostAggregatePairsCapacity));
+        desc.gpuTotalAggregatePairsCapacity = static_cast<uint32_t>(input.physxSceneGpuTotalAggregatePairsCapacity.valueOr(desc.gpuTotalAggregatePairsCapacity));
+        desc.gpuMaxDeformableVolumeContacts = static_cast<uint32_t>(input.physxSceneGpuMaxDeformableVolumeContacts.valueOr(desc.gpuMaxDeformableVolumeContacts));
+        desc.gpuMaxDeformableSurfaceContacts = static_cast<uint32_t>(input.physxSceneGpuMaxDeformableSurfaceContacts.valueOr(desc.gpuMaxDeformableSurfaceContacts));
+        desc.gpuMaxParticleContacts = static_cast<uint32_t>(input.physxSceneGpuMaxParticleContacts.valueOr(desc.gpuMaxParticleContacts));
+        desc.gpuCollisionStackSize = static_cast<uint32_t>(input.physxSceneGpuCollisionStackSize.valueOr(desc.gpuCollisionStackSize));
 
-        readClampedIfAuthored<uint32_t>(
-            src, key, tok.physxSceneGpuMaxNumPartitions, desc.gpuMaxNumPartitions, 1u, 32u);
+        fillClamped(input.physxSceneGpuMaxNumPartitions, desc.gpuMaxNumPartitions, 1u, 32u);
         if (!isPowerOfTwo(desc.gpuMaxNumPartitions))
             desc.gpuMaxNumPartitions = 8;
 
@@ -266,10 +342,10 @@ void parseScene(ParseContext& ctx, ObjectKey key, const SceneInfo& info, PhysxSc
     //     Per-body PhysX disableGravity flags still work when this is true.
     if (!physxTimeStepsAuthored)
     {
-        if (src.hasAuthoredAttribute(key, tok.newtonTimeStepsPerSecond))
+        if (input.newtonTimeStepsPerSecond.authored)
         {
             int64_t iv;
-            if (src.getAttribute(key, tok.newtonTimeStepsPerSecond, iv))
+            if (input.newtonTimeStepsPerSecond.read(iv))
             {
                 if (iv < 1)
                     desc.timeStepsPerSecond = 1u;
@@ -281,10 +357,10 @@ void parseScene(ParseContext& ctx, ObjectKey key, const SceneInfo& info, PhysxSc
         }
     }
 
-    if (src.hasAuthoredAttribute(key, tok.newtonGravityEnabled))
+    if (input.newtonGravityEnabled.authored)
     {
         bool gravityEnabled = true;
-        if (src.getAttribute(key, tok.newtonGravityEnabled, gravityEnabled) && !gravityEnabled)
+        if (input.newtonGravityEnabled.read(gravityEnabled) && !gravityEnabled)
             desc.gravityMagnitude = 0.0f;
     }
 
@@ -295,16 +371,9 @@ void parseScene(ParseContext& ctx, ObjectKey key, const SceneInfo& info, PhysxSc
     // routing site performs and hands us via SceneInfo::quasistaticActors;
     // an empty list means "no actors" (either API not applied or empty
     // includes rel).
-    if (src.hasSchema(key, tok.physxSceneQuasistaticAPI))
+    if (input.quasistaticAPI)
     {
-        src.getAttribute(key, tok.physxSceneQuasistaticEnableQuasistatic, desc.enableQuasistatic);
-    }
-    if (!info.quasistaticActors.empty())
-    {
-        desc.quasistaticActors.clear();
-        desc.quasistaticActors.reserve(info.quasistaticActors.size());
-        for (ObjectKey k : info.quasistaticActors)
-            desc.quasistaticActors.insert(k);
+        input.physxSceneQuasistaticEnableQuasistatic.read(desc.enableQuasistatic);
     }
 
     // envIdInBoundsBitCount is read regardless of PhysxSceneAPI, but only
@@ -314,10 +383,10 @@ void parseScene(ParseContext& ctx, ObjectKey key, const SceneInfo& info, PhysxSc
     // schema-applied gate doesn't matter.
     if (desc.broadphaseType == eGPU)
     {
-        if (src.hasAuthoredAttribute(key, tok.physxSceneEnvIdInBoundsBitCount))
+        if (input.physxSceneEnvIdInBoundsBitCount.authored)
         {
             int64_t iv;
-            if (src.getAttribute(key, tok.physxSceneEnvIdInBoundsBitCount, iv))
+            if (input.physxSceneEnvIdInBoundsBitCount.read(iv))
                 desc.envIdInBoundsBitCount = static_cast<int32_t>(iv);
         }
         else
@@ -325,6 +394,7 @@ void parseScene(ParseContext& ctx, ObjectKey key, const SceneInfo& info, PhysxSc
             desc.envIdInBoundsBitCount = -1;
         }
     }
+    return true;
 }
 
 } // namespace omni::physics::parse

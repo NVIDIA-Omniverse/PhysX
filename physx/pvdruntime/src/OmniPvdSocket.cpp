@@ -190,6 +190,16 @@ bool OmniPvdSocket::isOpen() const
 
 bool OmniPvdSocket::beginListen(uint16_t port)
 {
+	return beginListenInternal(port, false);
+}
+
+bool OmniPvdSocket::beginListenExclusive(uint16_t port)
+{
+	return beginListenInternal(port, true);
+}
+
+bool OmniPvdSocket::beginListenInternal(uint16_t port, bool exclusiveAddressUse)
+{
 #if defined(OMNI_PVD_WIN)
 	if (!omniPvdEnsureWinsock())
 		return false;
@@ -198,8 +208,26 @@ bool OmniPvdSocket::beginListen(uint16_t port)
 	if (mListenSocket == OMNI_PVD_INVALID_SOCKET)
 		return false;
 
-	int reuse = 1;
-	::setsockopt((OmniPvdNativeSocket)mListenSocket, SOL_SOCKET, SO_REUSEADDR, (const char*)&reuse, sizeof(reuse));
+	if (exclusiveAddressUse)
+	{
+#if defined(OMNI_PVD_WIN)
+		int exclusive = 1;
+		if (::setsockopt((OmniPvdNativeSocket)mListenSocket, SOL_SOCKET, SO_EXCLUSIVEADDRUSE,
+			(const char*)&exclusive, sizeof(exclusive)) != 0)
+		{
+			close();
+			return false;
+		}
+#else
+		// Without SO_REUSEADDR, POSIX rejects competing binds on the listening port.
+#endif
+	}
+	else
+	{
+		int reuse = 1;
+		::setsockopt((OmniPvdNativeSocket)mListenSocket, SOL_SOCKET, SO_REUSEADDR,
+			(const char*)&reuse, sizeof(reuse));
+	}
 
 	sockaddr_in addr;
 	memset(&addr, 0, sizeof(addr));

@@ -22,7 +22,7 @@
 # What this does:
 #   - Performs the CMake install (copies libraries, headers, config files to _install/)
 #   - Packages filtered native dependencies using deps_manifest.toml
-#   - Strips debug symbols on Linux (only files that are still unstripped)
+#   - Strips debug symbols and compiler comments on Linux
 #   - Verifies the glibc/libstdc++ baseline
 #   - Required for: C++ sample tests (validates find_package() integration)
 #   - Typical use: CI, pre-release validation, or when testing the CMake package config
@@ -63,12 +63,6 @@ if(NOT EXISTS "${TARGET_PYTHON}")
                         "Run scripts/fetch_deps.bat (Windows) or scripts/fetch_deps.sh (Linux) first.")
 endif()
 
-if(NOT DEFINED BUILD_DIR)
-    set(BUILD_DIR "_build")
-endif()
-
-set(BUILD_PATH "${PROJECT_ROOT}/${BUILD_DIR}")
-
 if(NOT _OVPHYSX_INSTALL_RUNTIME_DEPS_EXPLICIT AND EXISTS "${BUILD_PATH}/CMakeCache.txt")
     file(STRINGS "${BUILD_PATH}/CMakeCache.txt" _OVPHYSX_CACHED_RELEASE_RUNTIME_DEPS
         REGEX "^OVPHYSX_USE_RELEASE_RUNTIME_DEPS:(BOOL|UNINITIALIZED)=")
@@ -104,24 +98,6 @@ if(BUILD_TYPE_LOWER STREQUAL "debug" AND NOT OVPHYSX_USE_RELEASE_RUNTIME_DEPS)
         "Use -DOVPHYSX_USE_RELEASE_RUNTIME_DEPS=ON for Debug compilation.")
 endif()
 
-# Preserve the schema source selected by build.cmake when install.cmake is run
-# later as a separate step. A stamp means package the local schemas/physx build.
-# No stamp means package the prebuilt namespaced usd_ext_physics package.
-if(NOT DEFINED OVPHYSX_DEV_SCHEMA)
-    set(_DEV_SCHEMA_STAMP "${BUILD_PATH}/ovphysx_dev_schema.stamp")
-    if(EXISTS "${_DEV_SCHEMA_STAMP}")
-        set(OVPHYSX_DEV_SCHEMA ON)
-    else()
-        set(OVPHYSX_DEV_SCHEMA OFF)
-    endif()
-endif()
-if(NOT "${OVPHYSX_DEV_SCHEMA}" MATCHES "^(ON|OFF|TRUE|FALSE|YES|NO|1|0)$")
-    message(FATAL_ERROR
-        "Invalid OVPHYSX_DEV_SCHEMA value: '${OVPHYSX_DEV_SCHEMA}'. "
-        "Expected one of ON, OFF, TRUE, FALSE, YES, NO, 1, 0."
-    )
-endif()
-
 if(NOT EXISTS "${BUILD_PATH}")
     message(FATAL_ERROR "Build directory not found: ${BUILD_PATH}\nPlease run: cmake -P scripts/build.cmake")
 endif()
@@ -132,7 +108,7 @@ message(STATUS "Project root: ${PROJECT_ROOT}")
 message(STATUS "Build type: ${BUILD_TYPE}")
 message(STATUS "Build directory: ${BUILD_DIR}")
 message(STATUS "Platform: ${CMAKE_HOST_SYSTEM_NAME}")
-message(STATUS "USD: none shipped (ovstage brings its own runtime; codeless schemas staged as data)")
+message(STATUS "USD: none shipped (ovstage brings its own runtime; schemas installed separately by applications)")
 message(STATUS "Static Carbonite: ON")
 message(STATUS "")
 
@@ -157,7 +133,6 @@ set(OVRUNTIME_DEPS_LICENSE_IMPORT "ovruntime/deps/ovruntime-deps.packman.xml")
 set(OVRUNTIME_LICENSE_IMPORT "ovruntime/deps/ovruntime-deps-import.packman.xml")
 set(OVRUNTIME_USD_LICENSE_IMPORT "ovruntime/deps/usd-deps.packman.xml")
 set(OVRUNTIME_CARB_LICENSE_IMPORT "ovruntime/deps/carb-sdk-deps-import.packman.xml")
-set(OVRUNTIME_SCHEMA_LICENSE_IMPORT "ovruntime/deps/schema-deps.packman.xml")
 execute_process(
     COMMAND "${PROJECT_ROOT}/repo${SCRIPT_SUFFIX}"
             --set-token abi:2_35
@@ -177,7 +152,6 @@ execute_process(
                ${OVRUNTIME_LICENSE_IMPORT}
                ${OVRUNTIME_USD_LICENSE_IMPORT}
                ${OVRUNTIME_CARB_LICENSE_IMPORT}
-               ${OVRUNTIME_SCHEMA_LICENSE_IMPORT}
     WORKING_DIRECTORY "${PROJECT_ROOT}"
     RESULT_VARIABLE LICENSE_GATHER_RESULT
 )
@@ -335,16 +309,13 @@ message(STATUS
 
 set(_PACKAGE_DEPS_ARGS
     "${TARGET_PYTHON}" "${SCRIPT_DIR}/package_deps.py"
-    --build-dir=${BUILD_PATH}
+    --build-dir=${PROJECT_ROOT}/_build
     --install-dir=${PROJECT_ROOT}/_install
     --ovruntime-install-dir=${OVRUNTIME_INSTALL_DIR}
     --ovstage-dir=${_OVPHYSX_RESOLVED_OVSTAGE_DIR}
     --ovstage-runtime-dir=${_OVPHYSX_RESOLVED_OVSTAGE_RUNTIME_DIR}
     --config=${OVPHYSX_RUNTIME_DEPS_CONFIG}
 )
-if(OVPHYSX_DEV_SCHEMA)
-    list(APPEND _PACKAGE_DEPS_ARGS --devschema)
-endif()
 if(NOT OVPHYSX_LICENSING_AVAILABLE)
     # In the public source drop license gathering was skipped above, so there is
     # no ovphysx-LICENSES.zip for package_deps to merge OVStage notices into.
@@ -361,12 +332,6 @@ if(NOT PACKAGE_DEPS_RESULT EQUAL 0)
     message(FATAL_ERROR "Failed to package dependencies (exit code: ${PACKAGE_DEPS_RESULT})")
 endif()
 
-# The codeless PhysX USD schemas (schemas/physx/, OMPE-86833) are staged by
-# package_deps.py from the selected schema package (packman usd_ext_physics by
-# default, or a local build under --devschema). They are data only. The
-# application registers them with the USD runtime it owns. See
-# ovphysx_get_codeless_schema_root() and ovphysx.codeless_schema_root().
-
 # Copy PDB debug symbol files for Debug builds on Windows.
 # CMake install already handles ovphysx.pdb and ovphysx_internal.pdb (via CMakeLists.txt).
 # The PDBs from the ovruntime output are copied as well so the dependency
@@ -381,7 +346,7 @@ if(WIN32 AND BUILD_TYPE STREQUAL "Debug")
     endforeach()
 endif()
 
-# Strip any ELF binaries that are still unstripped. Debug builds keep their symbols.
+# Strip ELF symbols and compiler comments. Debug builds keep their symbols.
 if(NOT WIN32)
     if(BUILD_TYPE STREQUAL "Debug")
         message(STATUS "Skipping stripping for Debug build (preserving debug symbols)")
@@ -560,12 +525,11 @@ endif()
 
 # Verify the shipped package is py-less and USD-free: no bundled libpython, no
 # OpenUSD library or USD dependency closure, no USD plugin registry, no Python
-# schema bindings, no build-tree Python RPATHs, and a complete codeless schema
-# tree under schemas/physx.
+# schema bindings, no build-tree Python RPATHs, and no bundled schema resources.
 message(STATUS "Verifying py-less, USD-free package contents...")
 execute_process(
     COMMAND "${TARGET_PYTHON}" "${SCRIPT_DIR}/verify_pyless_closure.py"
-            "--dir=${PROJECT_ROOT}/_install" --require-schemas
+            "--dir=${PROJECT_ROOT}/_install"
     WORKING_DIRECTORY "${PROJECT_ROOT}"
     RESULT_VARIABLE PYLESS_CHECK_RESULT
 )
@@ -574,14 +538,14 @@ if(NOT PYLESS_CHECK_RESULT EQUAL 0)
         "Package content verification failed for _install/.\n"
         "The native package must not contain libpython, any OpenUSD library or its\n"
         "dependency closure, a USD plugin registry, Python schema bindings, or\n"
-        "build-tree Python RPATH entries, and must ship schemas/physx.\n"
+        "build-tree Python RPATH entries, or bundled PhysX schemas.\n"
         "See verify_pyless_closure.py output above for details."
     )
 endif()
 
 # The binary license is the Omniverse License for binary distributions.
 set(BINARY_LICENSE "${PROJECT_ROOT}/licenses/LICENSE-binary.txt")
-set(LICENSES_ZIP "${BUILD_PATH}/PACKAGE-LICENSES/ovphysx-LICENSES.zip")
+set(LICENSES_ZIP "${PROJECT_ROOT}/_build/PACKAGE-LICENSES/ovphysx-LICENSES.zip")
 if(NOT EXISTS "${BINARY_LICENSE}")
     message(FATAL_ERROR "Binary license not found: ${BINARY_LICENSE}")
 endif()

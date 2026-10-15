@@ -65,8 +65,6 @@ namespace Sc
 						void								setJointVelocity(PxArticulationAxis::Enum axis, const PxReal jointVel);
 						PxReal								getJointVelocity(PxArticulationAxis::Enum axis)	const;
 
-						void								setMaxJointVelocity(PxReal maxJointV);
-		PX_FORCE_INLINE	PxReal								getMaxJointVelocity()	const	{ return mCore.maxJointVelocity[0];	}
 
 						void								setMaxJointVelocity(PxArticulationAxis::Enum axis, PxReal maxJointV);
 		PX_FORCE_INLINE	PxReal								getMaxJointVelocity(PxArticulationAxis::Enum axis)	const	{ return mCore.maxJointVelocity[axis];	}
@@ -76,9 +74,6 @@ namespace Sc
 
 		PX_FORCE_INLINE	void								setJointType(PxArticulationJointType::Enum type)	{ mCore.setJointType(type);								}
 		PX_FORCE_INLINE	PxArticulationJointType::Enum		getJointType()								const	{ return PxArticulationJointType::Enum(mCore.jointType);	}
-						
-						void								setFrictionCoefficient(const PxReal coefficient);
-		PX_FORCE_INLINE	PxReal								getFrictionCoefficient()					const	{ return mCore.frictionCoefficient;				}
 
 						void								setFrictionParams(PxArticulationAxis::Enum axis, const PxJointFrictionParams& jointFrictionParams);
 		PX_FORCE_INLINE PxJointFrictionParams				getFrictionParams(PxArticulationAxis::Enum axis) const	{ return mCore.frictionParams[axis];				}

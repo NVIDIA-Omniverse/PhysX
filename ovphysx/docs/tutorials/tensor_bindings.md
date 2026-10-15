@@ -7,68 +7,28 @@
 > by the session read/write API — `ovphysx_read` / `ovphysx_write` in C, `PhysX.read` /
 > `PhysX.write` in Python. Bindings keep working through the deprecation window but are not the
 > recommended path for new code. The runnable session samples are
-> `tests/c_samples/output_read_c/` and `tests/python_samples/output_read.py` for reads, and
-> `tests/python_samples/session_write.py` for writes (no C write sample ships yet). Refer to
-> [Migrating to the Session Read/Write API](#migrating-to-the-session-readwrite-api).
+> `tests/c_samples/output_read_c/` and `tests/python_samples/output_read.py` for reads,
+> `tests/python_samples/session_write.py` for a Python write, and
+> `tests/c_samples/vehicle_read_write_cpp/` for a C++ session write. Refer to
+> [Migrating off Tensor Bindings](../tensor_binding_migration.md).
+>
+> The `tests/...` paths above are relative to `ovphysx/` in a source checkout.
+> In the **Python wheel**, the two Python files are
+> `samples/python_samples/output_read.py` and
+> `samples/python_samples/session_write.py`, relative to the directory containing
+> `ovphysx.__file__`. The **C/C++ SDK** provides
+> `<sdk-root>/samples/c_samples/output_read_c/` and
+> `<sdk-root>/samples/c_samples/vehicle_read_write_cpp/`.
+> Obtain and configure the separate SDK as described in [SDK Quickstart](quickstart.md).
 
-This tutorial shows how to read and write simulation data through tensor bindings after you attach an ovstage-populated scene. You learn how to use path patterns to bind multiple physics objects in one call, including runtime-only clone paths.
+This tutorial shows how to read and write simulation data through tensor bindings after you attach an ovstage-populated scene. You learn how to use path patterns to bind multiple physics objects in one call, including runtime-only clone paths. The pattern matching rules are specified in [Path patterns](../read_write/path_patterns.md).
 
 ## Migrating to the session read/write API
 
-The session API replaces a binding's single packed `TensorType` with an `(object type,
-attribute name)` pair passed to `ovphysx_query` + `ovphysx_read` / `ovphysx_write`. Two model
-changes matter when porting:
-
-- **Packed columns split into per-attribute columns.** `RIGID_BODY_POSE` `(N, 7)` becomes two
-  attributes — `position` `(N, 3)` and `orientation` `(N, 4)`; `RIGID_BODY_VELOCITY` `(N, 6)`
-  becomes `linearVelocity` `(N, 3)` and `angularVelocity` `(N, 3)`.
-- **Angular units are per-axis, not per column.** An `ARTICULATION_JOINT` joint row holds one value
-  per unlocked reduced-coordinate DOF *axis*, so the unit of `jointPosition`, `jointVelocity`,
-  `jointPositionTarget`, and `jointVelocityTarget` follows the axis kind, not the column: an **angular
-  axis (revolute, or a D6 rotational DOF) is always in degrees**, and a **prismatic axis stays in the
-  stage's base length unit** (no conversion). The joint's axis kind fixes this — authoring a
-  `JointStateAPI` does not change it. A binding value on an angular axis must be scaled to degrees,
-  but scaling a prismatic axis by 57.3× is a bug — so convert by the axis kind you authored in USD
-  (no per-row attribute reports it back), not by blanket-converting the column. Refer to
-  [ovstage integration](../ovstage_integration.md) for the full per-axis rule. Everything else,
-  including the body / link / root `angularVelocity` columns, is the engine's native **radians** with
-  **no conversion** — scaling those by 57.3× is likewise a bug.
-
-**Tensor binding to session API mapping**
-
-This table maps each tensor-binding `TensorType` to its session object type and
-attributes:
-
-| Tensor binding `TensorType` | Session object type | Session attribute(s) |
-|---|---|---|
-| `RIGID_BODY_POSE` | `RIGID_BODY` | `position`, `orientation` |
-| `RIGID_BODY_VELOCITY` | `RIGID_BODY` | `linearVelocity`, `angularVelocity` (rad/s — no conversion) |
-| `RIGID_BODY_FORCE` / `RIGID_BODY_WRENCH` | `RIGID_BODY` | `force` / `wrench` (write-only) |
-| `RIGID_BODY_MASS` / `RIGID_BODY_INERTIA` | `RIGID_BODY` | `mass` / `inertia` |
-| `RIGID_BODY_COM_POSE` | `RIGID_BODY` | `centerOfMassPosition`, `centerOfMassOrientation` |
-| `ARTICULATION_DOF_POSITION` / `ARTICULATION_DOF_VELOCITY` | `ARTICULATION_JOINT` | `jointPosition` / `jointVelocity` (per-axis units — refer to the per-axis angular-unit rule in this section) |
-| `ARTICULATION_DOF_POSITION_TARGET` / `..._VELOCITY_TARGET` | `ARTICULATION_JOINT` | `jointPositionTarget` / `jointVelocityTarget` (per-axis units — refer to the per-axis angular-unit rule in this section) |
-| `ARTICULATION_ROOT_POSE` | `ARTICULATION` | `rootPosition`, `rootOrientation` |
-| `ARTICULATION_ROOT_VELOCITY` | `ARTICULATION` | `rootLinearVelocity`, `rootAngularVelocity` (rad/s — no conversion) |
-| `ARTICULATION_LINK_POSE` / `ARTICULATION_LINK_VELOCITY` | `ARTICULATION_LINK` | `position` + `orientation` / `linearVelocity` + `angularVelocity` (rad/s — no conversion) |
-| `ARTICULATION_LINK_WRENCH` | `ARTICULATION_LINK` | `wrench` (write-only) |
-
-This is the common subset. The full attribute vocabulary is the `OVPHYSX_ATTR_*` macros in
-`ovphysx_types.h` (C-only; a Python caller passes the plain attribute-name string directly,
-e.g. `"position"`), and which `(object type, attribute)` pairs are writable is queryable at
-runtime through `ovphysx_writability`, which has no *public* Python binding
-(`ovphysx._bindings.writability()` is a private wrapper around the same call, not a
-supported public API). Consult the
-**Writable attributes by object type** table in the `ovphysx-session-write` skill, or attempt
-the write, which raises `RuntimeError` immediately for an unwritable attribute.
-
-**Runnable session-write sample:**
-
-```{literalinclude} ../../tests/python_samples/session_write.py
-:language: python
-:start-after: [tutorial-start]
-:end-before: [tutorial-end]
-```
+A dedicated guide maps each tensor-binding capability to its session read/write equivalent and
+states the cross-cutting differences (packed columns split per attribute, per-axis angular units,
+prim-selection subsets, task receipts) once: refer to
+[Migrating off Tensor Bindings](../tensor_binding_migration.md).
 
 ## Prerequisites
 
@@ -141,16 +101,15 @@ Create them after loading USD and reuse them across simulation steps. A normal
 `step()` or `step_sync()` does not invalidate a binding.
 
 Do not keep cached bindings across application-owned topology changes. Before
-`reset()`, before removing USD data that contains bound objects, or before
+`detach_ovstage()`, before removing USD data that contains bound objects, or before
 loading or reparsing a stage so bound objects are destroyed and recreated,
 destroy cached bindings when practical. If a stale binding survives one of those
 lifecycle operations, only destroy it; do not read or write through it. Create a
-replacement binding after the operation completes. In reset-heavy episode code,
-the reset path should clear cached bindings because that path is where the
-application changes the stage.
+replacement binding after the lifecycle task completes successfully. A reset
+that only writes episode poses does not replace the Stage or its bindings.
 
 `step()` is asynchronous: in-stream tensor reads and writes do not need extra
-synchronization, but out-of-stream consumers must call `wait_op()` or
+synchronization, but out-of-stream consumers must call `wait_task()` or
 `wait_all()` before reading results. Refer to the
 [Execution Model](../developer_guide.md#execution-model) for details.
 
@@ -193,7 +152,7 @@ Symbols:
 - `V`: max simulation node count across matched volume deformables
 - `Vr`: max rest node count across matched volume deformables
 - `E`: max simulation element count across matched volume deformables (tetrahedra, K=4)
-- `F`: max collision element count across matched volume deformables; K = `getNumNodesPerElement()` (4 for tetmesh)
+- `F`: max collision element count across matched volume deformables; each collision element has four node indices (`K=4`)
 - `P`: deformable material count in the binding
 - `Bs`: surface deformable body count in the binding
 - `Vs`: max simulation node count across matched surface deformables
@@ -252,7 +211,7 @@ is running on GPU.
 
 **Volume Deformable Body State**
 
-Symbols: `B` = volume deformable body count, `V` = max simulation nodes, `Vr` = max rest nodes, `E` = max simulation elements (tetrahedra, K=4), `F` = max collision elements (triangles, K=3).
+Symbols: `B` = volume deformable body count, `V` = max simulation nodes, `Vr` = max rest nodes, `E` = max simulation elements (tetrahedra, K=4), `F` = max collision elements (tetrahedra, K=4).
 
 These constants expose simulation and rest mesh state on volume deformable bodies:
 
@@ -427,8 +386,8 @@ spatial tendons:
 | `OVPHYSX_TENSOR_ARTICULATION_SPATIAL_TENDON_LIMIT_STIFFNESS_F32` | `(A, T)` | 2D | yes | yes | limit stiffness scalar per tendon | Requires articulation with spatial tendons |
 | `OVPHYSX_TENSOR_ARTICULATION_SPATIAL_TENDON_OFFSET_F32` | `(A, T)` | 2D | yes | yes | offset scalar per tendon | Requires articulation with spatial tendons |
 
-For canonical enum definitions and low-level semantics, refer to `include/ovphysx/ovphysx_types.h`.
+For canonical enum definitions and low-level semantics, refer to `include/ovphysx/ovphysx_legacy_types.h`.
 
 ## Result
 
-After this tutorial, you can create tensor bindings, push batched simulation inputs, and read back batched results. For new code, prefer the session read/write API — refer to [Migrating to the Session Read/Write API](#migrating-to-the-session-readwrite-api).
+After this tutorial, you can create tensor bindings, push batched simulation inputs, and read back batched results. For new code, prefer the session read/write API — refer to [Migrating off Tensor Bindings](../tensor_binding_migration.md).

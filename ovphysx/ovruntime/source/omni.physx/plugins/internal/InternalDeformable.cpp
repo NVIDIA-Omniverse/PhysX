@@ -48,21 +48,21 @@ InternalDeformableBody::InternalDeformableBody()
 
 InternalDeformableBody ::~InternalDeformableBody()
 {
-    PxCudaContextManager* cudaContextManager = OmniPhysX::getInstance().getPhysXSetup().getCudaContextManager();
+    PxCudaContextManager* cudaContextManager = mPhysXScene ? mPhysXScene->getScene()->getCudaContextManager() : nullptr;
     if (!cudaContextManager)
         return;
 
     if (mSimMeshPositionInvMassH)
-        PX_PINNED_HOST_FREE(cudaContextManager, mSimMeshPositionInvMassH);
+        PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mSimMeshPositionInvMassH);
 
     if (mSimMeshVelocityH)
-        PX_PINNED_HOST_FREE(cudaContextManager, mSimMeshVelocityH);
+        PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mSimMeshVelocityH);
 
     if (mAllSkinnedVerticesH)
-        PX_PINNED_HOST_FREE(cudaContextManager, mAllSkinnedVerticesH);
+        PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mAllSkinnedVerticesH);
 
     if (mAllSkinnedVerticesD)
-        PX_DEVICE_FREE(cudaContextManager, mAllSkinnedVerticesD);
+        PxCudaHelpersExt::freeDeviceBuffer(*cudaContextManager, mAllSkinnedVerticesD);
 }
 
 InternalVolumeDeformableBody::InternalVolumeDeformableBody()
@@ -74,6 +74,8 @@ InternalVolumeDeformableBody::InternalVolumeDeformableBody()
     , mDeformableVolumeMesh(nullptr)
     , mSimMeshTetIndicesD(nullptr)
     , mSkinningEmbeddingInfoD(nullptr)
+    , mSimMeshKinematicTargetsD(nullptr)
+    , mKinematicTargetActive(false)
 {
 }
 
@@ -91,18 +93,23 @@ InternalVolumeDeformableBody::~InternalVolumeDeformableBody()
 
     SAFE_RELEASE(mDeformableVolumeMesh);
 
-    PxCudaContextManager* cudaContextManager = OmniPhysX::getInstance().getPhysXSetup().getCudaContextManager();
+    PxCudaContextManager* cudaContextManager = mPhysXScene ? mPhysXScene->getScene()->getCudaContextManager() : nullptr;
     if (!cudaContextManager)
         return;
 
     if (mCollMeshPositionInvMassH)
-        PX_PINNED_HOST_FREE(cudaContextManager, mCollMeshPositionInvMassH);
+        PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, mCollMeshPositionInvMassH);
 
     if (mSimMeshTetIndicesD)
         PxCudaHelpersExt::freeDeviceBuffer(*cudaContextManager, mSimMeshTetIndicesD);
 
     if (mSkinningEmbeddingInfoD)
         PxCudaHelpersExt::freeDeviceBuffer(*cudaContextManager, mSkinningEmbeddingInfoD);
+
+    // The kinematic-target buffer is freed only after the actor is released above, so PhysX is no
+    // longer reading it (setKinematicTargetBufferD had adopted it).
+    if (mSimMeshKinematicTargetsD)
+        PxCudaHelpersExt::freeDeviceBuffer(*cudaContextManager, mSimMeshKinematicTargetsD);
 }
 
 bool InternalVolumeDeformableBody::findTetsFromVtxIndices(const std::vector<PxU32>& vtxIds, std::vector<PxU32>& tetIds, std::vector<PxVec4>& tetBarycentrics, bool forSimMesh)
@@ -224,7 +231,7 @@ InternalSurfaceDeformableBody::~InternalSurfaceDeformableBody()
         SAFE_RELEASE(mTriangleMesh)
     }
 
-    PxCudaContextManager* cudaContextManager = OmniPhysX::getInstance().getPhysXSetup().getCudaContextManager();
+    PxCudaContextManager* cudaContextManager = mPhysXScene ? mPhysXScene->getScene()->getCudaContextManager() : nullptr;
     if (!cudaContextManager)
         return;
 

@@ -15,10 +15,13 @@ articulations, and deformables.
 > API**, and fluid render post-processing (isosurface, anisotropy, smoothing) and
 > the Kit particle-sampler UI are out of scope for ovphysx.
 
-> **Particles require GPU simulation.** Enable GPU dynamics on the physics scene
-> (`physxScene:enableGPUDynamics = true`, `physxScene:broadphaseType = "GPU"`) —
-> refer to [Physics Scene](physics_scene.md). CPU simulation of particles is not
-> supported. The particle schema is not finalized and can change.
+> **Particles require GPU simulation.** On the physics scene,
+> `physxScene:enableGPUDynamics` defaults to `true`, and
+> `physxScene:broadphaseType` defaults to `"GPU"`; explicitly authoring these
+> values is optional. CUDA must be available and CPU-only mode must not be
+> forced. Refer to [CPU and GPU Simulation](physics_scene.md#cpu-and-gpu-simulation).
+> CPU simulation of particles is not supported. The particle schema is not
+> finalized and can change.
 
 ## Simulation Components
 

@@ -3,6 +3,11 @@
 
 #pragma once
 
+// @implements REQ-ATTACH-VIEWS-001
+// @covers AC-4
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-3 AC-4
+
 /**
  * @implements REQ-TENSOR-PATH-001
  * @covers AC-1
@@ -47,7 +52,6 @@ public:
     virtual bool getDofDampings(const TensorDesc* dstTensor) const = 0;
     virtual bool getDofMaxForces(const TensorDesc* dstTensor) const = 0;
     virtual bool getDofDriveModelProperties(const TensorDesc* dstTensor) const = 0;
-    virtual bool getDofFrictionCoefficients(const TensorDesc* dstTensor) const = 0; // deprecated
     virtual bool getDofFrictionProperties(const TensorDesc* dstTensor) const = 0;
     virtual bool getDofMaxVelocities(const TensorDesc* dstTensor) const = 0;
     virtual bool getDofArmatures(const TensorDesc* dstTensor) const = 0;
@@ -57,7 +61,6 @@ public:
     virtual bool setDofDampings(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
     virtual bool setDofMaxForces(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
     virtual bool setDofDriveModelProperties(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
-    virtual bool setDofFrictionCoefficients(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0; // deprecated
     virtual bool setDofFrictionProperties(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
     virtual bool setDofMaxVelocities(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
     virtual bool setDofArmatures(const TensorDesc* srcTensor, const TensorDesc* indexTensor) = 0;
@@ -71,7 +74,6 @@ public:
     virtual bool setDofDampingsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
     virtual bool setDofMaxForcesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
     virtual bool setDofDriveModelPropertiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
-    virtual bool setDofFrictionCoefficientsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0; // deprecated
     virtual bool setDofFrictionPropertiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
     virtual bool setDofMaxVelocitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
     virtual bool setDofArmaturesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
@@ -227,7 +229,8 @@ public:
 
     virtual bool check() const = 0;
 
-    virtual void release() = 0;
+    // Returns false while runtime execution is busy; the view remains owned by the caller.
+    virtual bool release() = 0;
 
 protected:
     virtual ~IArticulationView() = default;

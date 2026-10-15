@@ -26,10 +26,12 @@ Later volume-deformable examples reuse the volume example's `prim` variable.
 deformable root prim, and a grid resolution that the surrounding script already
 defined.
 
-> **Deformables require GPU simulation.** Enable GPU dynamics on the physics
-> scene (`physxScene:enableGPUDynamics = true`, `physxScene:broadphaseType =
-> "GPU"`); refer to [Physics Scene](physics_scene.md). CPU simulation of deformables is
-> not supported.
+> **Deformables require GPU simulation.** On the physics scene,
+> `physxScene:enableGPUDynamics` defaults to `true`, and
+> `physxScene:broadphaseType` defaults to `"GPU"`; explicitly authoring these
+> values is optional. CUDA must be available and CPU-only mode must not be
+> forced. Refer to [CPU and GPU Simulation](physics_scene.md#cpu-and-gpu-simulation).
+> CPU simulation of deformables is not supported.
 
 ## Single-Mesh Volume Deformable
 

@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-1 AC-2
+ */
+
 /**
  * @implements REQ-PARSE-MIMIC-001
  * @covers AC-1 AC-2 AC-3 AC-4 AC-7
@@ -16,6 +20,7 @@
 
 #include <omni/physics/parse/IPhysicsSource.h>
 #include <omni/physics/parse/ParseApi.h>
+#include <omni/physics/parse/PreparedMimicJoint.h>
 #include <omni/physics/parse/ParseContext.h>
 
 #include <carb/logging/Log.h>
@@ -211,11 +216,11 @@ ObjectKey readSingleRelTarget(IPhysicsSource& src, ObjectKey key, const std::str
 
 // @implements REQ-PARSE-MIMIC-001
 // @covers AC-1 AC-2 AC-7
-void parseMimicJoints(ParseContext& ctx, ObjectKey jointKey,
+void prepareMimicJoints(ParseContext& ctx, ObjectKey jointKey,
                      const MimicJointParseInfo& info,
                      const JointTypeLookup& jointTypeOf,
                      const JointLimitLookup& jointLimitOf,
-                     std::vector<DescPtr<MimicJointDesc>>& out)
+                     std::vector<PreparedMimicJoint>& out)
 {
     if (info.excludeFromArticulation)
     {
@@ -249,7 +254,8 @@ void parseMimicJoints(ParseContext& ctx, ObjectKey jointKey,
             return;
         }
 
-        DescPtr<MimicJointDesc> desc = allocateDesc<MimicJointDesc>(ctx.descriptorAllocator());
+        PreparedMimicJoint input;
+        PreparedMimicJoint* desc = &input;
         desc->type             = kAxisObjectTypes[i];
         desc->mimicJointKey   = jointKey;
         desc->gearing          = 0.0f;
@@ -348,7 +354,7 @@ void parseMimicJoints(ParseContext& ctx, ObjectKey jointKey,
         }
 
         desc->referenceJointKey = refKey;
-        out.push_back(std::move(desc));
+        out.push_back(input);
         ++appliedMimicAPICount;
     }
 }
@@ -384,10 +390,10 @@ bool isNewtonSingleDof(IPhysicsSource& src, ObjectKey key, ObjectType jointType,
 
 // @implements REQ-PARSE-MIMIC-001
 // @covers AC-3
-void parseNewtonMimicJoints(ParseContext& ctx, ObjectKey jointKey,
+void prepareNewtonMimicJoints(ParseContext& ctx, ObjectKey jointKey,
                             const MimicJointParseInfo& info,
                             const JointTypeLookup& jointTypeOf,
-                            std::vector<DescPtr<MimicJointDesc>>& out)
+                            std::vector<PreparedMimicJoint>& out)
 {
     IPhysicsSource& src = ctx.source();
 
@@ -463,7 +469,8 @@ void parseNewtonMimicJoints(ParseContext& ctx, ObjectKey jointKey,
     readFloat(src, jointKey, "newton:mimicCoef0", coef0);
     readFloat(src, jointKey, "newton:mimicCoef1", coef1);
 
-    DescPtr<MimicJointDesc> desc = allocateDesc<MimicJointDesc>(ctx.descriptorAllocator());
+    PreparedMimicJoint input;
+        PreparedMimicJoint* desc = &input;
     desc->type                 = eNewtonMimicJoint;
     desc->mimicJointKey       = jointKey;
     desc->mimicJointAxis       = MimicJointDesc::eDEFAULT_AXIS;
@@ -471,12 +478,54 @@ void parseNewtonMimicJoints(ParseContext& ctx, ObjectKey jointKey,
     desc->referenceJointAxis   = MimicJointDesc::eDEFAULT_AXIS;
     // Newton: joint0 = coef0 + coef1 * joint1
     // PhysX: joint0 + gearing * joint1 + offset = 0
-    desc->gearing              = -coef1;
-    desc->offset               = -coef0;
+    desc->gearing              = coef1;
+    desc->offset               = coef0;
     desc->naturalFrequency     = 0.0f;
     desc->dampingRatio         = 0.0f;
 
-    out.push_back(std::move(desc));
+    out.push_back(input);
+}
+
+bool fillMimicJoint(const PreparedMimicJoint& input, MimicJointDesc& output) noexcept
+{
+    if (input.type != eMimicJointRotX && input.type != eMimicJointRotY && input.type != eMimicJointRotZ && input.type != eNewtonMimicJoint) return false;
+    output.type = input.type;
+    output.mimicJointKey = input.mimicJointKey;
+    output.mimicJointAxis = input.mimicJointAxis;
+    output.referenceJointKey = input.referenceJointKey;
+    output.referenceJointAxis = input.referenceJointAxis;
+    output.gearing = input.type == eNewtonMimicJoint ? -input.gearing : input.gearing;
+    output.offset = input.type == eNewtonMimicJoint ? -input.offset : input.offset;
+    output.naturalFrequency = input.naturalFrequency;
+    output.dampingRatio = input.dampingRatio;
+    return true;
+}
+namespace
+{
+void appendMimicDescriptors(ParseContext& ctx, const std::vector<PreparedMimicJoint>& inputs, std::vector<DescPtr<MimicJointDesc>>& out)
+{
+    if (!reserveDescriptors<MimicJointDesc>(ctx.descriptorAllocator(), inputs.size())) throw std::bad_alloc();
+    for (const PreparedMimicJoint& input : inputs)
+    {
+        DescPtr<MimicJointDesc> desc = allocateDesc<MimicJointDesc>(ctx.descriptorAllocator());
+        if (desc && fillMimicJoint(input, *desc)) out.push_back(std::move(desc));
+    }
+}
+}
+void parseMimicJoints(ParseContext& ctx, ObjectKey key, const MimicJointParseInfo& info,
+                     const JointTypeLookup& jointTypeOf, const JointLimitLookup& jointLimitOf,
+                     std::vector<DescPtr<MimicJointDesc>>& out)
+{
+    std::vector<PreparedMimicJoint> inputs;
+    prepareMimicJoints(ctx, key, info, jointTypeOf, jointLimitOf, inputs);
+    appendMimicDescriptors(ctx, inputs, out);
+}
+void parseNewtonMimicJoints(ParseContext& ctx, ObjectKey key, const MimicJointParseInfo& info,
+                           const JointTypeLookup& jointTypeOf, std::vector<DescPtr<MimicJointDesc>>& out)
+{
+    std::vector<PreparedMimicJoint> inputs;
+    prepareNewtonMimicJoints(ctx, key, info, jointTypeOf, inputs);
+    appendMimicDescriptors(ctx, inputs, out);
 }
 
 } // namespace omni::physics::parse

@@ -5,7 +5,7 @@
 
 What this file guards against
 -----------------------------
-ovphysx consumes a codeless "physics schema" package (`usd_ext_physics`): USD
+The local schema tree used to build the devschema provider wheel contains USD
 plugin data (`plugInfo.json` as `Type=resource` + `generatedSchema.usda`) and
 Python, with no native binary of any kind. Because it carries no compiled code
 it is platform- and USD-ABI-independent.

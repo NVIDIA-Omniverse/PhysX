@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-RESOLVE-001
+// @covers AC-3
+
 #pragma once
 
 #ifdef _MSC_VER
@@ -23,6 +26,7 @@ namespace omni
 {
 namespace physx
 {
+namespace usdparser { class AttachedStage; }
 namespace internal
 {
 
@@ -54,6 +58,8 @@ struct ShapeRemovedEvent
 
 class InternalDeformableAttachment : public Allocateable
 {
+    usdparser::AttachedStage& mAttachedStage;
+
 public:
     struct AttachmentData
     {
@@ -73,7 +79,7 @@ public:
         omni::physics::parse::ObjectKey rootKey;
     };
 
-    InternalDeformableAttachment(omni::physics::parse::ObjectKey key, const usdparser::PhysxDeformableAttachmentDesc& desc);
+    InternalDeformableAttachment(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, const usdparser::PhysxDeformableAttachmentDesc& desc);
     virtual ~InternalDeformableAttachment();
 
     bool isValid();
@@ -124,6 +130,8 @@ public:
 
 class InternalDeformableCollisionFilter : public Allocateable
 {
+    usdparser::AttachedStage& mAttachedStage;
+
 public:
     struct CollisionFilterData
     {
@@ -140,7 +148,7 @@ public:
         usdparser::ObjectId rootObjId{ usdparser::kInvalidObjectId };
     };
 
-    InternalDeformableCollisionFilter(omni::physics::parse::ObjectKey key, const usdparser::PhysxDeformableCollisionFilterDesc& desc);
+    InternalDeformableCollisionFilter(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, const usdparser::PhysxDeformableCollisionFilterDesc& desc);
     virtual ~InternalDeformableCollisionFilter();
 
     bool isValid();

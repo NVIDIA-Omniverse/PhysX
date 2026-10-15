@@ -340,7 +340,7 @@ namespace Sc
 					void						addConstraintToMap(ConstraintCore& constraint, RigidCore*, RigidCore*);
 					void						removeConstraintFromMap(const ConstraintInteraction&);
 
-					void						addArticulation(ArticulationCore&, BodyCore& root);
+					void						addArticulation(ArticulationCore&, BodyCore& root, Bp::AggregateHandle);
 					void						removeArticulation(ArticulationCore&);
 
 					void						addArticulationJoint(ArticulationJointCore&, BodyCore& parent, BodyCore& child);
@@ -1051,42 +1051,35 @@ namespace Sc
 					void								addParticleSystemSimControl(ParticleSystemCore& core);
 					void								removeParticleSystemSimControl(ParticleSystemCore& core);
 
-					PxU32								addRigidAttachment(BodyCore* core, DeformableVolumeSim& sim, PxU32 vertId, const PxVec3& actorSpacePose, bool doConversion);
-					void								removeRigidAttachment(BodyCore* core, DeformableVolumeSim& sim, PxU32 handle);
-						
-					void								addTetRigidFilter(BodyCore* core, DeformableVolumeSim& sim, PxU32 tetIdx);
-					void								removeTetRigidFilter(BodyCore* core, DeformableVolumeSim& sim, PxU32 tetIdx);
+					PxU32								addVolumeRigidAttachments(BodyCore* core, DeformableVolumeSim& sim, PxDeformableAttachmentTargetType::Enum feature, const PxU32* indices, const PxVec4* barycentrics, const PxTransform& frame, const PxVec4* coords, PxU32 count);
+					void								removeVolumeRigidAttachments(BodyCore* core, DeformableVolumeSim& sim, PxU32 handle);
 
-					PxU32								addTetRigidAttachment(BodyCore* core, DeformableVolumeSim& sim, PxU32 tetIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose, bool doConversion);
-						
-					void								addSoftBodyFilter(DeformableVolumeCore& core, PxU32 tetIdx0, DeformableVolumeSim& sim, PxU32 tetIdx1);
-					void								removeSoftBodyFilter(DeformableVolumeCore& core, PxU32 tetIdx0, DeformableVolumeSim& sim, PxU32 tetIdx1);
-					void								addSoftBodyFilters(DeformableVolumeCore& core, DeformableVolumeSim& sim, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize);
-					void								removeSoftBodyFilters(DeformableVolumeCore& core, DeformableVolumeSim& sim, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize);
+					PxU32								addVolumeVolumeAttachments(DeformableVolumeCore& core, PxDeformableAttachmentTargetType::Enum feature0, const PxU32* indices0, const PxVec4* barycentrics0, DeformableVolumeSim& sim, PxDeformableAttachmentTargetType::Enum feature1, const PxU32* indices1, const PxVec4* barycentrics1, PxU32 count);
+					void								removeVolumeVolumeAttachments(DeformableVolumeCore& core, DeformableVolumeSim& sim, PxU32 handle);
 
-					PxU32								addSoftBodyAttachment(DeformableVolumeCore& core, PxU32 tetIdx0, const PxVec4& triBarycentric0, DeformableVolumeSim& sim, PxU32 tetIdx1, const PxVec4& tetBarycentric1, bool doConversion);
-					void								removeSoftBodyAttachment(DeformableVolumeCore& core, DeformableVolumeSim& sim, PxU32 handle);
+					PxU32								addVolumeSurfaceAttachments(DeformableSurfaceCore& core, PxDeformableAttachmentTargetType::Enum feature0, const PxU32* indices0, const PxVec4* barycentrics0, DeformableVolumeSim& sim, PxDeformableAttachmentTargetType::Enum feature1, const PxU32* indices1, const PxVec4* barycentrics1, PxU32 count);
+					void								removeVolumeSurfaceAttachments(DeformableSurfaceCore& core, DeformableVolumeSim& sim, PxU32 handle);
 
-					void								addClothFilter(DeformableSurfaceCore& core, PxU32 triIdx, Sc::DeformableVolumeSim& sim, PxU32 tetIdx);
-					void								removeClothFilter(DeformableSurfaceCore& core, PxU32 triIdx, Sc::DeformableVolumeSim& sim, PxU32 tetIdx);
+					void								addVolumeRigidFilters(RigidCore* core, DeformableVolumeSim& sim, PxU32* tetIndices, PxU32 tetIndicesSize);
+					void								removeVolumeRigidFilters(RigidCore* core, DeformableVolumeSim& sim, PxU32* tetIndices, PxU32 tetIndicesSize);
 
-					PxU32								addClothAttachment(DeformableSurfaceCore& core, PxU32 triIdx, const PxVec4& triBarycentric, DeformableVolumeSim& sim, PxU32 tetIdx, const PxVec4& tetBarycentric, bool doConversion);
-					void								removeClothAttachment(DeformableSurfaceCore& core, DeformableVolumeSim& sim, PxU32 handle);
+					void								addVolumeVolumeFilters(DeformableVolumeCore& core, DeformableVolumeSim& sim, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize);
+					void								removeVolumeVolumeFilters(DeformableVolumeCore& core, DeformableVolumeSim& sim, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize);
 
-					PxU32								addRigidAttachment(BodyCore* core, DeformableSurfaceSim& sim, PxU32 vertId, const PxVec3& actorSpacePose);
-					void								removeRigidAttachment(BodyCore* core, DeformableSurfaceSim& sim, PxU32 handle);
+					void								addVolumeSurfaceFilters(DeformableSurfaceCore& core, PxU32* triIndices, Sc::DeformableVolumeSim& sim, PxU32* tetIndices, PxU32 indicesSize);
+					void								removeVolumeSurfaceFilters(DeformableSurfaceCore& core, PxU32* triIndices, Sc::DeformableVolumeSim& sim, PxU32* tetIndices, PxU32 indicesSize);
 
-					void								addClothFilter(DeformableSurfaceCore& core0, PxU32 triIdx0, Sc::DeformableSurfaceSim& sim1, PxU32 triIdx1);
-					void								removeClothFilter(DeformableSurfaceCore& core, PxU32 triIdx0, DeformableSurfaceSim& sim1, PxU32 triIdx1);
+					PxU32								addSurfaceRigidAttachments(BodyCore* core, DeformableSurfaceSim& sim, PxDeformableAttachmentTargetType::Enum feature, const PxU32* indices, const PxVec4* barycentrics, const PxTransform& frame, const PxVec4* coords, PxU32 count);
+					void								removeSurfaceRigidAttachments(BodyCore* core, DeformableSurfaceSim& sim, PxU32 handle);
 
-					PxU32								addTriClothAttachment(DeformableSurfaceCore& core0, PxU32 triIdx0, const PxVec4& barycentric0, Sc::DeformableSurfaceSim& sim1, PxU32 triIdx1, const PxVec4& barycentric1);
-					void								removeTriClothAttachment(DeformableSurfaceCore& core, DeformableSurfaceSim& sim1, PxU32 handle);
+					PxU32								addSurfaceSurfaceAttachments(DeformableSurfaceCore& core0, PxDeformableAttachmentTargetType::Enum feature0, const PxU32* indices0, const PxVec4* barycentrics0, DeformableSurfaceSim& sim1, PxDeformableAttachmentTargetType::Enum feature1, const PxU32* indices1, const PxVec4* barycentrics1, PxU32 count);
+					void								removeSurfaceSurfaceAttachments(DeformableSurfaceCore& core, DeformableSurfaceSim& sim1, PxU32 handle);
 
-					void								addTriRigidFilter(BodyCore* core, DeformableSurfaceSim& sim, PxU32 triIdx);
-					void								removeTriRigidFilter(BodyCore* core, DeformableSurfaceSim& sim, PxU32 triIdx);
+					void								addSurfaceRigidFilters(RigidCore* core, DeformableSurfaceSim& sim, PxU32* triIndices, PxU32 triIndicesSize);
+					void								removeSurfaceRigidFilters(RigidCore* core, DeformableSurfaceSim& sim, PxU32* triIndices, PxU32 triIndicesSize);
 
-					PxU32								addTriRigidAttachment(BodyCore* core, DeformableSurfaceSim& sim, PxU32 triIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose);
-					void								removeTriRigidAttachment(BodyCore* core, DeformableSurfaceSim& sim, PxU32 handle);
+					void								addSurfaceSurfaceFilters(DeformableSurfaceCore& core0, PxU32* triIndices0, Sc::DeformableSurfaceSim& sim1, PxU32* triIndices1, PxU32 triIndicesSize);
+					void								removeSurfaceSurfaceFilters(DeformableSurfaceCore& core, PxU32* triIndices0, DeformableSurfaceSim& sim1, PxU32* triIndices1, PxU32 triIndicesSize);
 
 					PxActor**							getActiveDeformableVolumeActors(PxU32& nbActorsOut);
 					void								setActiveDeformableVolumeActors(PxActor** actors, PxU32 nbActors);

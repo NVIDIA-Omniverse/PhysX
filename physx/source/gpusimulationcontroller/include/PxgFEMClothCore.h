@@ -108,7 +108,18 @@ namespace physx
 
 		void onClothRemoved();
 
+		void copyContactCountsToHost();
+
 	  private:
+		//surface vs surface collision contacts, split by feature pair: vertex-triangle and edge-edge
+		PxgTypedCudaBuffer<PxgDeformablePairInfo>	mSurfaceSurfaceVTContactInfoBuffer;
+		PxgTypedCudaBuffer<PxU32>					mSurfaceSurfaceVTContactCountBuffer;
+		Cm::PinnableObject<PxU32>					mSurfaceSurfaceVTPrevContactCountPinned;
+
+		PxgTypedCudaBuffer<PxgDeformablePairInfo>	mSurfaceSurfaceEEContactInfoBuffer;
+		PxgTypedCudaBuffer<PxU32>					mSurfaceSurfaceEEContactCountBuffer;
+		Cm::PinnableObject<PxU32>					mSurfaceSurfaceEEPrevContactCountPinned;
+
 		void preIntegrateSystem(PxgFEMCloth* femClothsd, PxU32* activeFemCloths, PxU32 nbActiveFemCloths, PxU32 maxVertices,
 								const PxVec3& gravity, PxReal dt, CUstream bpStream);
 

@@ -15,6 +15,22 @@ namespace omni { namespace physx { class IPhysxSimulation; } }
 namespace ovphysx
 {
 
+// What the loader actually bound for this epoch. Getters report this instead of
+// re-reading OVPHYSX_PROFILER after the first successful bind.
+struct BoundProfilerState
+{
+    bool active = false;
+    bool bindFailed = false;
+    bool hostOwned = false;
+    int32_t backend = 0;
+    bool outputPathCaptured = false;
+    std::string outputPath;
+};
+
+BoundProfilerState boundProfilerState();
+// Called after the last instance and the direct runtime have drained.
+void shutdownCarbonite();
+
 /**
  * @brief Bootstraps Carbonite dependencies and starts the linked PhysX runtime.
  * 

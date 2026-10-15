@@ -1726,10 +1726,9 @@ void Sc::Scene::removeConstraintFromMap(const ConstraintInteraction& interaction
 	mConstraintMap.erase(PxPair<const Sc::ActorSim*, const Sc::ActorSim*>(bSim, bSim1));
 }
 
-void Sc::Scene::addArticulation(ArticulationCore& articulation, BodyCore& root)
+void Sc::Scene::addArticulation(ArticulationCore& articulation, BodyCore& root, Bp::AggregateHandle handle)
 {
-	ArticulationSim* sim = PX_NEW(ArticulationSim)(articulation, *this, root);
-
+	ArticulationSim* sim = PX_NEW(ArticulationSim)(articulation, *this, root, handle);
 	if(!sim)
 		return;
 
@@ -3501,6 +3500,36 @@ void Sc::Scene::removeDeformableVolumeSimControl(Sc::DeformableVolumeCore& core)
 	}
 }
 
+// PT: OMPE-109164 - a BodyCore only has a sim while its actor is in a scene (see ActorCore::setSim),
+// and a deformable attachment can outlive that. So a non-null core is not enough on its own: when the
+// sim is gone we fall back to the invalid node index / null body that a core-less world attachment
+// already uses, rather than dereferencing null.
+static PX_FORCE_INLINE BodySim* getBodySimIfInScene(BodyCore* core)
+{
+	return core ? core->getSim() : NULL;
+}
+
+static PX_FORCE_INLINE bool isStaticCore(const RigidCore* core)
+{
+	return core && core->getActorCoreType() == PxActorType::eRIGID_STATIC;
+}
+
+// A static has no node of its own, so its element filters are keyed on the transform cache ids of its shapes
+// in the scene. See PxgEncodeStaticShapeRef. A static outside the scene has no shapes in it, and its filters
+// are added again with the actor.
+static void collectStaticShapeCacheIds(RigidCore* core, PxArray<PxU32>& cacheIds)
+{
+	PX_ASSERT(isStaticCore(core));
+	if (const StaticSim* staticSim = static_cast<StaticCore*>(core)->getSim())
+	{
+		ElementSim* const* elements = staticSim->getElements();
+		const PxU32 nbElements = staticSim->getNbElements();
+		cacheIds.reserve(nbElements);
+		for (PxU32 i = 0; i < nbElements; i++)
+			cacheIds.pushBack(static_cast<const ShapeSimBase*>(elements[i])->getTransformCacheID());
+	}
+}
+
 static PX_FORCE_INLINE void addToIslandManager(
 	PxHashMap<PxPair<PxU32, PxU32>, DeformableRigidInteraction>& interactionMap,
 	IG::SimpleIslandManager* islandManager, const ActorSim& sim, PxNodeIndex nodeIndex, IG::Edge::EdgeType edgeType)
@@ -3515,6 +3544,7 @@ static PX_FORCE_INLINE void addToIslandManager(
 		islandManager->setEdgeConnected(edgeIdx, edgeType);
 		interaction.mIndex = edgeIdx;
 	}
+
 	interaction.mCount++;
 }
 
@@ -3523,6 +3553,14 @@ static PX_FORCE_INLINE void removeFromIslandManager(
 	IG::SimpleIslandManager* islandManager, const ActorSim& sim, PxNodeIndex nodeIndex)
 {
 	PxPair<PxU32, PxU32> pair(sim.getNodeIndex().index(), nodeIndex.index());
+
+	// PT: OMPE-109164 - the add was keyed on the rigid body's node index, so if that body left the
+	// scene before the attachment was removed we now look up an invalid one and miss. operator[]
+	// would insert on a miss and the decrement below would then underflow to 0xffffffff, leaving an
+	// entry that never erases and that blocks the island edge for the next body to reuse that index.
+	if(!interactionMap.find(pair))
+		return;
+
 	DeformableRigidInteraction& interaction = interactionMap[pair];
 	interaction.mCount--;
 	if (interaction.mCount == 0)
@@ -3533,284 +3571,249 @@ static PX_FORCE_INLINE void removeFromIslandManager(
 }
 
 
-PxU32 Sc::Scene::addRigidAttachment(Sc::BodyCore* core, Sc::DeformableVolumeSim& sim, PxU32 vertId, const PxVec3& actorSpacePose,
-	bool doConversion)
+PxU32 Sc::Scene::addVolumeRigidAttachments(Sc::BodyCore* core, Sc::DeformableVolumeSim& sim,
+	PxDeformableAttachmentTargetType::Enum feature, const PxU32* indices, const PxVec4* barycentrics,
+	const PxTransform& frame, const PxVec4* coords, PxU32 count)
 {
 	PxNodeIndex nodeIndex;
 	PxsRigidBody* body = NULL;
 
-	if (core)
+	if (BodySim* bodySim = getBodySimIfInScene(core))
 	{
-		nodeIndex = core->getSim()->getNodeIndex();
-		body = &core->getSim()->getLowLevelBody();
+		nodeIndex = bodySim->getNodeIndex();
+		body = &bodySim->getLowLevelBody();
 	}
 
-	PxU32 handle = mSimulationController->addRigidAttachment(sim.getLowLevelDeformableVolume(), sim.getNodeIndex(), body,
-		nodeIndex, vertId, actorSpacePose, sim.isActive(), doConversion);
+	const PxU32 handle = mSimulationController->addVolumeRigidAttachments(sim.getLowLevelDeformableVolume(), body, nodeIndex, feature, indices, barycentrics, frame, coords, count, sim.isActive());
 
 	addToIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex, IG::Edge::eSOFT_BODY_CONTACT);
 
 	return handle;
 }
 
-void Sc::Scene::removeRigidAttachment(Sc::BodyCore* core, Sc::DeformableVolumeSim& sim, PxU32 handle)
+void Sc::Scene::removeVolumeRigidAttachments(Sc::BodyCore* core, Sc::DeformableVolumeSim& sim, PxU32 handle)
 {
 	PxNodeIndex nodeIndex;
 	
-	if (core)
+	if (BodySim* bodySim = getBodySimIfInScene(core))
 	{
-		nodeIndex = core->getSim()->getNodeIndex();
+		nodeIndex = bodySim->getNodeIndex();
 	}
 
-	mSimulationController->removeRigidAttachment(sim.getLowLevelDeformableVolume(), handle);
+	mSimulationController->removeVolumeRigidAttachments(sim.getLowLevelDeformableVolume(), handle);
 
 	removeFromIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex);
 }
 
-void Sc::Scene::addTetRigidFilter(Sc::BodyCore* core, Sc::DeformableVolumeSim& sim, PxU32 tetIdx)
-{
-	PxNodeIndex nodeIndex;
-
-	if (core)
-	{
-		nodeIndex = core->getSim()->getNodeIndex();
-	}
-
-	mSimulationController->addTetRigidFilter(sim.getLowLevelDeformableVolume(), nodeIndex, tetIdx);
-}
-
-void Sc::Scene::removeTetRigidFilter(Sc::BodyCore* core, Sc::DeformableVolumeSim& sim, PxU32 tetIdx)
-{
-	PxNodeIndex nodeIndex;
-
-	if (core)
-	{
-		nodeIndex = core->getSim()->getNodeIndex();
-	}
-	mSimulationController->removeTetRigidFilter(sim.getLowLevelDeformableVolume(), nodeIndex, tetIdx);
-}
-
-PxU32 Sc::Scene::addTetRigidAttachment(Sc::BodyCore* core, Sc::DeformableVolumeSim& sim, PxU32 tetIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose,
-	bool doConversion)
-{
-	PxNodeIndex nodeIndex;
-	PxsRigidBody* body = NULL;
-
-	if (core)
-	{
-		nodeIndex = core->getSim()->getNodeIndex();
-		body = &core->getSim()->getLowLevelBody();
-	}
-
-	PxU32 handle = mSimulationController->addTetRigidAttachment(sim.getLowLevelDeformableVolume(), body, nodeIndex,
-		tetIdx, barycentric, actorSpacePose, sim.isActive(), doConversion);
-
-	addToIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex, IG::Edge::eSOFT_BODY_CONTACT);
-
-	return handle;
-}
-
-void Sc::Scene::addSoftBodyFilter(DeformableVolumeCore& core, PxU32 tetIdx0, DeformableVolumeSim& sim, PxU32 tetIdx1)
+PxU32 Sc::Scene::addVolumeVolumeAttachments(Sc::DeformableVolumeCore& core, PxDeformableAttachmentTargetType::Enum feature0,
+	const PxU32* indices0, const PxVec4* barycentrics0, Sc::DeformableVolumeSim& sim,
+	PxDeformableAttachmentTargetType::Enum feature1, const PxU32* indices1, const PxVec4* barycentrics1, PxU32 count)
 {
 	Sc::DeformableVolumeSim& bSim = *core.getSim();
 
-	mSimulationController->addSoftBodyFilter(bSim.getLowLevelDeformableVolume(), sim.getLowLevelDeformableVolume(), tetIdx0, tetIdx1);
-}
-
-void Sc::Scene::removeSoftBodyFilter(DeformableVolumeCore& core, PxU32 tetIdx0, DeformableVolumeSim& sim, PxU32 tetIdx1)
-{
-	Sc::DeformableVolumeSim& bSim = *core.getSim();
-	mSimulationController->removeSoftBodyFilter(bSim.getLowLevelDeformableVolume(), sim.getLowLevelDeformableVolume(), tetIdx0, tetIdx1);
-}
-
-void Sc::Scene::addSoftBodyFilters(DeformableVolumeCore& core, DeformableVolumeSim& sim, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize)
-{
-	Sc::DeformableVolumeSim& bSim = *core.getSim();
-
-	mSimulationController->addSoftBodyFilters(bSim.getLowLevelDeformableVolume(), sim.getLowLevelDeformableVolume(), tetIndices0, tetIndices1, tetIndicesSize);
-}
-
-void Sc::Scene::removeSoftBodyFilters(DeformableVolumeCore& core, DeformableVolumeSim& sim, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize)
-{
-	Sc::DeformableVolumeSim& bSim = *core.getSim();
-	mSimulationController->removeSoftBodyFilters(bSim.getLowLevelDeformableVolume(), sim.getLowLevelDeformableVolume(), tetIndices0, tetIndices1, tetIndicesSize);
-}
-
-PxU32 Sc::Scene::addSoftBodyAttachment(DeformableVolumeCore& core, PxU32 tetIdx0, const PxVec4& tetBarycentric0, Sc::DeformableVolumeSim& sim, PxU32 tetIdx1, const PxVec4& tetBarycentric1,
-	bool doConversion)
-{
-	Sc::DeformableVolumeSim& bSim = *core.getSim();
-
-	PxU32 handle = mSimulationController->addSoftBodyAttachment(bSim.getLowLevelDeformableVolume(), sim.getLowLevelDeformableVolume(), tetIdx0, tetIdx1,
-		tetBarycentric0, tetBarycentric1, sim.isActive() || bSim.isActive(), doConversion);
+	const PxU32 handle = mSimulationController->addVolumeVolumeAttachments(bSim.getLowLevelDeformableVolume(), feature0,
+		indices0, barycentrics0, sim.getLowLevelDeformableVolume(), feature1, indices1, barycentrics1, count,
+		sim.isActive() || bSim.isActive());
 
 	addToIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim, bSim.getNodeIndex(), IG::Edge::eSOFT_BODY_CONTACT);
 
 	return handle;
 }
 
-void Sc::Scene::removeSoftBodyAttachment(DeformableVolumeCore& core, Sc::DeformableVolumeSim& sim, PxU32 handle)
+void Sc::Scene::removeVolumeVolumeAttachments(DeformableVolumeCore& core, Sc::DeformableVolumeSim& sim, PxU32 handle)
 {
 	Sc::DeformableVolumeSim& bSim = *core.getSim();
-	mSimulationController->removeSoftBodyAttachment(bSim.getLowLevelDeformableVolume(), handle);
+	mSimulationController->removeVolumeVolumeAttachments(bSim.getLowLevelDeformableVolume(), handle);
 
 	removeFromIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim, bSim.getNodeIndex());
 }
 
-void Sc::Scene::addClothFilter(Sc::DeformableSurfaceCore& core, PxU32 triIdx, Sc::DeformableVolumeSim& sim, PxU32 tetIdx)
+PxU32 Sc::Scene::addVolumeSurfaceAttachments(Sc::DeformableSurfaceCore& core, PxDeformableAttachmentTargetType::Enum feature0,
+	const PxU32* indices0, const PxVec4* barycentrics0, Sc::DeformableVolumeSim& sim,
+	PxDeformableAttachmentTargetType::Enum feature1, const PxU32* indices1, const PxVec4* barycentrics1, PxU32 count)
 {
 	Sc::DeformableSurfaceSim& bSim = *core.getSim();
 
-	mSimulationController->addClothFilter(sim.getLowLevelDeformableVolume(), bSim.getLowLevelDeformableSurface(), triIdx,tetIdx);
-}
-
-void Sc::Scene::removeClothFilter(Sc::DeformableSurfaceCore& core, PxU32 triIdx, Sc::DeformableVolumeSim& sim, PxU32 tetIdx)
-{
-	Sc::DeformableSurfaceSim& bSim = *core.getSim();
-	mSimulationController->removeClothFilter(sim.getLowLevelDeformableVolume(), bSim.getLowLevelDeformableSurface(), triIdx, tetIdx);
-}
-
-PxU32 Sc::Scene::addClothAttachment(Sc::DeformableSurfaceCore& core, PxU32 triIdx, const PxVec4& triBarycentric, Sc::DeformableVolumeSim& sim, PxU32 tetIdx,
-	const PxVec4& tetBarycentric, bool doConversion)
-{
-	Sc::DeformableSurfaceSim& bSim = *core.getSim();
-
-	PxU32 handle = mSimulationController->addClothAttachment(sim.getLowLevelDeformableVolume(), bSim.getLowLevelDeformableSurface(), triIdx, triBarycentric,
-		tetIdx, tetBarycentric, sim.isActive(), doConversion);
+	const PxU32 handle = mSimulationController->addVolumeSurfaceAttachments(sim.getLowLevelDeformableVolume(), feature1,
+		indices1, barycentrics1, bSim.getLowLevelDeformableSurface(), feature0, indices0, barycentrics0, count,
+		sim.isActive() || bSim.isActive());
 
 	addToIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim, bSim.getNodeIndex(), IG::Edge::eFEM_CLOTH_CONTACT);
 
 	return handle;
 }
 
-void Sc::Scene::removeClothAttachment(Sc::DeformableSurfaceCore& core, Sc::DeformableVolumeSim& sim, PxU32 handle)
+void Sc::Scene::removeVolumeSurfaceAttachments(Sc::DeformableSurfaceCore& core, Sc::DeformableVolumeSim& sim, PxU32 handle)
 {
-	PX_UNUSED(core);
 	Sc::DeformableSurfaceSim& bSim = *core.getSim();
-	mSimulationController->removeClothAttachment(sim.getLowLevelDeformableVolume(), handle);
+	mSimulationController->removeVolumeSurfaceAttachments(sim.getLowLevelDeformableVolume(), handle);
 
 	removeFromIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim, bSim.getNodeIndex());
 }
 
-PxU32 Sc::Scene::addRigidAttachment(Sc::BodyCore* core, Sc::DeformableSurfaceSim& sim, PxU32 vertId, const PxVec3& actorSpacePose)
+void Sc::Scene::addVolumeRigidFilters(Sc::RigidCore* core, Sc::DeformableVolumeSim& sim, PxU32* tetIndices, PxU32 tetIndicesSize)
+{
+	if (isStaticCore(core))
+	{
+		PxArray<PxU32> shapeCacheIds;
+		collectStaticShapeCacheIds(core, shapeCacheIds);
+		mSimulationController->addVolumeStaticShapeFilters(sim.getLowLevelDeformableVolume(), shapeCacheIds.begin(), shapeCacheIds.size(), tetIndices, tetIndicesSize);
+		return;
+	}
+
+	// A body with no sim in the scene has no node to key on, and its filters are added again with the sim.
+	BodySim* bodySim = getBodySimIfInScene(static_cast<BodyCore*>(core));
+	if (!bodySim)
+		return;
+
+	mSimulationController->addVolumeRigidFilters(sim.getLowLevelDeformableVolume(), bodySim->getNodeIndex(), tetIndices, tetIndicesSize);
+}
+
+void Sc::Scene::removeVolumeRigidFilters(Sc::RigidCore* core, Sc::DeformableVolumeSim& sim, PxU32* tetIndices, PxU32 tetIndicesSize)
+{
+	if (isStaticCore(core))
+	{
+		PxArray<PxU32> shapeCacheIds;
+		collectStaticShapeCacheIds(core, shapeCacheIds);
+		mSimulationController->removeVolumeStaticShapeFilters(sim.getLowLevelDeformableVolume(), shapeCacheIds.begin(), shapeCacheIds.size(), tetIndices, tetIndicesSize);
+		return;
+	}
+
+	BodySim* bodySim = getBodySimIfInScene(static_cast<BodyCore*>(core));
+	if (!bodySim)
+		return;
+
+	mSimulationController->removeVolumeRigidFilters(sim.getLowLevelDeformableVolume(), bodySim->getNodeIndex(), tetIndices, tetIndicesSize);
+}
+
+void Sc::Scene::addVolumeVolumeFilters(DeformableVolumeCore& core, DeformableVolumeSim& sim, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize)
+{
+	Sc::DeformableVolumeSim& bSim = *core.getSim();
+
+	mSimulationController->addVolumeVolumeFilters(bSim.getLowLevelDeformableVolume(), sim.getLowLevelDeformableVolume(), tetIndices0, tetIndices1, tetIndicesSize);
+}
+
+void Sc::Scene::removeVolumeVolumeFilters(DeformableVolumeCore& core, DeformableVolumeSim& sim, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize)
+{
+	Sc::DeformableVolumeSim& bSim = *core.getSim();
+	mSimulationController->removeVolumeVolumeFilters(bSim.getLowLevelDeformableVolume(), sim.getLowLevelDeformableVolume(), tetIndices0, tetIndices1, tetIndicesSize);
+}
+
+void Sc::Scene::addVolumeSurfaceFilters(Sc::DeformableSurfaceCore& core, PxU32* triIndices, Sc::DeformableVolumeSim& sim, PxU32* tetIndices, PxU32 indicesSize)
+{
+	Sc::DeformableSurfaceSim& bSim = *core.getSim();
+
+	mSimulationController->addVolumeSurfaceFilters(sim.getLowLevelDeformableVolume(), bSim.getLowLevelDeformableSurface(), triIndices, tetIndices, indicesSize);
+}
+
+void Sc::Scene::removeVolumeSurfaceFilters(Sc::DeformableSurfaceCore& core, PxU32* triIndices, Sc::DeformableVolumeSim& sim, PxU32* tetIndices, PxU32 indicesSize)
+{
+	Sc::DeformableSurfaceSim& bSim = *core.getSim();
+	mSimulationController->removeVolumeSurfaceFilters(sim.getLowLevelDeformableVolume(), bSim.getLowLevelDeformableSurface(), triIndices, tetIndices, indicesSize);
+}
+
+PxU32 Sc::Scene::addSurfaceRigidAttachments(Sc::BodyCore* core, Sc::DeformableSurfaceSim& sim,
+	PxDeformableAttachmentTargetType::Enum feature, const PxU32* indices, const PxVec4* barycentrics,
+	const PxTransform& frame, const PxVec4* coords, PxU32 count)
 {
 	PxNodeIndex nodeIndex;
 	PxsRigidBody* body = NULL;
 
-	if (core)
+	if (BodySim* bodySim = getBodySimIfInScene(core))
 	{
-		nodeIndex = core->getSim()->getNodeIndex();
-		body = &core->getSim()->getLowLevelBody();
+		nodeIndex = bodySim->getNodeIndex();
+		body = &bodySim->getLowLevelBody();
 	}
 
-	PxU32 handle = mSimulationController->addRigidAttachment(sim.getLowLevelDeformableSurface(), sim.getNodeIndex(), body, nodeIndex,
-		vertId, actorSpacePose, sim.isActive());
+	const PxU32 handle = mSimulationController->addSurfaceRigidAttachments(sim.getLowLevelDeformableSurface(), body, nodeIndex, feature, indices, barycentrics, frame, coords, count, sim.isActive());
 
 	addToIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex, IG::Edge::eFEM_CLOTH_CONTACT);
 
 	return handle;
 }
 
-void Sc::Scene::removeRigidAttachment(Sc::BodyCore* core, Sc::DeformableSurfaceSim& sim, PxU32 handle)
+void Sc::Scene::removeSurfaceRigidAttachments(Sc::BodyCore* core, Sc::DeformableSurfaceSim& sim, PxU32 handle)
 {
 	PxNodeIndex nodeIndex;
 
-	if (core)
+	if (BodySim* bodySim = getBodySimIfInScene(core))
 	{
-		nodeIndex = core->getSim()->getNodeIndex();
+		nodeIndex = bodySim->getNodeIndex();
 	}
 
-	mSimulationController->removeRigidAttachment(sim.getLowLevelDeformableSurface(), handle);
+	mSimulationController->removeSurfaceRigidAttachments(sim.getLowLevelDeformableSurface(), handle);
 
 	removeFromIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex);
 }
 
-void Sc::Scene::addTriRigidFilter(Sc::BodyCore* core, Sc::DeformableSurfaceSim& sim, PxU32 triIdx)
-{
-	PxNodeIndex nodeIndex;
-
-	if (core)
-	{
-		nodeIndex = core->getSim()->getNodeIndex();
-	}
-
-	mSimulationController->addTriRigidFilter(sim.getLowLevelDeformableSurface(), nodeIndex, triIdx);
-}
-
-void Sc::Scene::removeTriRigidFilter(Sc::BodyCore* core, Sc::DeformableSurfaceSim& sim, PxU32 triIdx)
-{
-	PxNodeIndex nodeIndex;
-
-	if (core)
-	{
-		nodeIndex = core->getSim()->getNodeIndex();
-	}
-
-	mSimulationController->removeTriRigidFilter(sim.getLowLevelDeformableSurface(), nodeIndex, triIdx);
-}
-
-PxU32 Sc::Scene::addTriRigidAttachment(Sc::BodyCore* core, Sc::DeformableSurfaceSim& sim, PxU32 triIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose)
-{
-	PxNodeIndex nodeIndex;
-	PxsRigidBody* body = NULL;
-
-	if (core)
-	{
-		nodeIndex = core->getSim()->getNodeIndex();
-		body = &core->getSim()->getLowLevelBody();
-	}
-
-	PxU32 handle = mSimulationController->addTriRigidAttachment(sim.getLowLevelDeformableSurface(), body, nodeIndex, triIdx, barycentric, actorSpacePose, sim.isActive());
-
-	addToIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex, IG::Edge::eFEM_CLOTH_CONTACT);
-
-	return handle;
-}
-
-void Sc::Scene::removeTriRigidAttachment(Sc::BodyCore* core, Sc::DeformableSurfaceSim& sim, PxU32 handle)
-{
-	PxNodeIndex nodeIndex;
-
-	if (core)
-	{
-		nodeIndex = core->getSim()->getNodeIndex();
-	}
-
-	mSimulationController->removeTriRigidAttachment(sim.getLowLevelDeformableSurface(), handle);
-
-	removeFromIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim, nodeIndex);
-}
-
-void Sc::Scene::addClothFilter(DeformableSurfaceCore& core0, PxU32 triIdx0, Sc::DeformableSurfaceSim& sim1, PxU32 triIdx1)
+PxU32 Sc::Scene::addSurfaceSurfaceAttachments(Sc::DeformableSurfaceCore& core0, PxDeformableAttachmentTargetType::Enum feature0,
+	const PxU32* indices0, const PxVec4* barycentrics0, Sc::DeformableSurfaceSim& sim1,
+	PxDeformableAttachmentTargetType::Enum feature1, const PxU32* indices1, const PxVec4* barycentrics1, PxU32 count)
 {
 	Sc::DeformableSurfaceSim& sim0 = *core0.getSim();
 
-	mSimulationController->addClothFilter(sim0.getLowLevelDeformableSurface(), sim1.getLowLevelDeformableSurface(), triIdx0, triIdx1);
-}
-
-void Sc::Scene::removeClothFilter(DeformableSurfaceCore& core, PxU32 triIdx0, DeformableSurfaceSim& sim1, PxU32 triIdx1)
-{
-	Sc::DeformableSurfaceSim& sim0 = *core.getSim();
-	mSimulationController->removeClothFilter(sim0.getLowLevelDeformableSurface(), sim1.getLowLevelDeformableSurface(), triIdx0, triIdx1);
-}
-
-PxU32 Sc::Scene::addTriClothAttachment(DeformableSurfaceCore& core, PxU32 triIdx0, const PxVec4& barycentric0, Sc::DeformableSurfaceSim& sim1, PxU32 triIdx1, const PxVec4& barycentric1)
-{
-	Sc::DeformableSurfaceSim& sim0 = *core.getSim();
-
-	PxU32 handle = mSimulationController->addTriClothAttachment(sim0.getLowLevelDeformableSurface(), sim1.getLowLevelDeformableSurface(), triIdx0, triIdx1, barycentric0, barycentric1, sim1.isActive() || sim0.isActive());
+	const PxU32 handle = mSimulationController->addSurfaceSurfaceAttachments(sim0.getLowLevelDeformableSurface(), feature0,
+		indices0, barycentrics0, sim1.getLowLevelDeformableSurface(), feature1, indices1, barycentrics1, count,
+		sim0.isActive() || sim1.isActive());
 
 	addToIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim0, sim1.getNodeIndex(), IG::Edge::eFEM_CLOTH_CONTACT);
 
 	return handle;
 }
 
-void Sc::Scene::removeTriClothAttachment(DeformableSurfaceCore& core, DeformableSurfaceSim& sim1, PxU32 handle)
+void Sc::Scene::removeSurfaceSurfaceAttachments(DeformableSurfaceCore& core, DeformableSurfaceSim& sim1, PxU32 handle)
 {
 	Sc::DeformableSurfaceSim& sim0 = *core.getSim();
-	mSimulationController->removeTriClothAttachment(sim0.getLowLevelDeformableSurface(), handle);
+	mSimulationController->removeSurfaceSurfaceAttachments(sim0.getLowLevelDeformableSurface(), handle);
 
 	removeFromIslandManager(mDeformableRigidInteractionMap, mSimpleIslandManager, sim0, sim1.getNodeIndex());
+}
+
+void Sc::Scene::addSurfaceRigidFilters(Sc::RigidCore* core, Sc::DeformableSurfaceSim& sim, PxU32* triIndices, PxU32 triIndicesSize)
+{
+	if (isStaticCore(core))
+	{
+		PxArray<PxU32> shapeCacheIds;
+		collectStaticShapeCacheIds(core, shapeCacheIds);
+		mSimulationController->addSurfaceStaticShapeFilters(sim.getLowLevelDeformableSurface(), shapeCacheIds.begin(), shapeCacheIds.size(), triIndices, triIndicesSize);
+		return;
+	}
+
+	BodySim* bodySim = getBodySimIfInScene(static_cast<BodyCore*>(core));
+	if (!bodySim)
+		return;
+
+	mSimulationController->addSurfaceRigidFilters(sim.getLowLevelDeformableSurface(), bodySim->getNodeIndex(), triIndices, triIndicesSize);
+}
+
+void Sc::Scene::removeSurfaceRigidFilters(Sc::RigidCore* core, Sc::DeformableSurfaceSim& sim, PxU32* triIndices, PxU32 triIndicesSize)
+{
+	if (isStaticCore(core))
+	{
+		PxArray<PxU32> shapeCacheIds;
+		collectStaticShapeCacheIds(core, shapeCacheIds);
+		mSimulationController->removeSurfaceStaticShapeFilters(sim.getLowLevelDeformableSurface(), shapeCacheIds.begin(), shapeCacheIds.size(), triIndices, triIndicesSize);
+		return;
+	}
+
+	BodySim* bodySim = getBodySimIfInScene(static_cast<BodyCore*>(core));
+	if (!bodySim)
+		return;
+
+	mSimulationController->removeSurfaceRigidFilters(sim.getLowLevelDeformableSurface(), bodySim->getNodeIndex(), triIndices, triIndicesSize);
+}
+
+void Sc::Scene::addSurfaceSurfaceFilters(DeformableSurfaceCore& core0, PxU32* triIndices0, Sc::DeformableSurfaceSim& sim1, PxU32* triIndices1, PxU32 triIndicesSize)
+{
+	Sc::DeformableSurfaceSim& sim0 = *core0.getSim();
+
+	mSimulationController->addSurfaceSurfaceFilters(sim0.getLowLevelDeformableSurface(), sim1.getLowLevelDeformableSurface(), triIndices0, triIndices1, triIndicesSize);
+}
+
+void Sc::Scene::removeSurfaceSurfaceFilters(DeformableSurfaceCore& core, PxU32* triIndices0, DeformableSurfaceSim& sim1, PxU32* triIndices1, PxU32 triIndicesSize)
+{
+	Sc::DeformableSurfaceSim& sim0 = *core.getSim();
+	mSimulationController->removeSurfaceSurfaceFilters(sim0.getLowLevelDeformableSurface(), sim1.getLowLevelDeformableSurface(), triIndices0, triIndices1, triIndicesSize);
 }
 
 void Sc::Scene::addParticleSystemSimControl(Sc::ParticleSystemCore& core)

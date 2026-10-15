@@ -50,20 +50,15 @@ def _load_scene(sdk):
 
 def _slide_sensor(sdk):
     """Set tangential motion so the next step reports a substantial friction force."""
-    from ovphysx.types import TensorType
+    from ovphysx.types import SimObjectType
 
-    with pytest.warns(DeprecationWarning):
-        velocity = sdk.create_tensor_binding(
-            pattern="/World/Cube1", tensor_type=TensorType.RIGID_BODY_VELOCITY,
-        )
-    try:
-        values = np.zeros(velocity.shape, dtype=np.float32)
-        values[0, 0] = 0.5
-        velocity.write(values)
-        sdk.wait_all()
-        sdk.step_sync(1.0 / 60.0)
-    finally:
-        velocity.destroy()
+    for attribute, value in (("linearVelocity", (0.5, 0.0, 0.0)), ("angularVelocity", (0.0, 0.0, 0.0))):
+        with sdk.write_sync(SimObjectType.RIGID_BODY, attribute, pattern="/World/Cube1") as session:
+            for group in session.groups:
+                group.tensors[0].assign(np.tile(np.asarray(value, dtype=np.float32), (group.prim_count, 1)))
+                session.commit_sync(group)
+    sdk.wait_all()
+    sdk.step_sync(1.0 / 60.0)
 
 
 # ---------------------------------------------------------------------------

@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-BATCH-001
+ * @covers AC-1 AC-3
+ */
+
 /**
  * @implements REQ-PARSE-INSTANCER-DISPATCH-001
  * @covers AC-1
@@ -42,10 +46,18 @@ omni::physics::parse::ScannedStage scanStageOvstage(ovstage_instance_t* instance
 
     OvstageScanResult scan = scanOvstage(instance, dict, allocator, readOrdinal, filter, usdStageId, attached);
 
+    return finishOvstageScan(std::move(scan));
+}
+
+parse::ScannedStage finishOvstageScan(OvstageScanResult&& scan)
+{
     // TokenIds are source-local, so retain the source that minted the descriptor handles: the
     // attach's own source when the scan borrowed it, else the fresh one the scan built.
     parse::ScannedStage out = scan.borrowedSource ? parse::makeScannedStageBorrowingSource(*scan.borrowedSource) :
                                                     parse::makeScannedStageFromSource(std::move(scan.source));
+    // Keep scan's owner until every family has transferred: retaining a mesh can
+    // allocate and throw while later descriptors still belong to scan.
+    out.retainAllocator(scan.descriptorPool);
     out.scenes = std::move(scan.scenes);
     out.materials = std::move(scan.materials);
     out.pbdMaterials = std::move(scan.pbdMaterials);
@@ -157,6 +169,8 @@ public:
 
         const OvstageAttach* attach = mAttachPayload;
         OvstageScanFilter filter;
+        filter.descriptorPool = options.descriptorPool;
+        filter.descriptorExecution = options.descriptorExecution;
         filter.scanRoots = scanRoots;
         filter.excludePaths = excludePaths;
         filter.prunePointInstancerDescendants = options.prunePointInstancerDescendants;

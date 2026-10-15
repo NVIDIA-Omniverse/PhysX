@@ -8,7 +8,7 @@ for a codeless schema, backed by raw USD access. No compiled _physxSchema bindin
 """
 from pxr import Usd, Sdf, Tf
 
-__all__ = ['PhysxSceneAPI', 'PhysxRigidBodyAPI', 'PhysxContactReportAPI', 'PhysxCollisionAPI', 'PhysxConvexHullCollisionAPI', 'PhysxConvexDecompositionCollisionAPI', 'PhysxSphereFillCollisionAPI', 'PhysxTriangleMeshSimplificationCollisionAPI', 'PhysxTriangleMeshCollisionAPI', 'PhysxSDFMeshCollisionAPI', 'PhysxSurfaceVelocityAPI', 'PhysxMeshMergeCollisionAPI', 'PhysxSceneQuasistaticAPI', 'PhysxMaterialAPI', 'PhysxPhysicsInstancer', 'PhysxPhysicsJointInstancer', 'PhysxPhysicsGearJoint', 'PhysxPhysicsRackAndPinionJoint', 'PhysxJointAPI', 'PhysxPhysicsDistanceJointAPI', 'PhysxLimitAPI', 'JointStateAPI', 'PhysxArticulationAPI', 'PhysxForceAPI', 'PhysxCharacterControllerAPI', 'PhysxTriggerAPI', 'PhysxTriggerStateAPI', 'PhysxCookedDataAPI', 'PhysxTendonAxisAPI', 'PhysxTendonAxisRootAPI', 'PhysxTendonAttachmentAPI', 'PhysxTendonAttachmentRootAPI', 'PhysxTendonAttachmentLeafAPI', 'PhysxMimicJointAPI', 'PhysxVehicleContextAPI', 'PhysxVehicleTireFrictionTable', 'PhysxVehicleWheelAPI', 'PhysxVehicleTireAPI', 'PhysxVehicleSuspensionAPI', 'PhysxVehicleWheelAttachmentAPI', 'PhysxVehicleSuspensionComplianceAPI', 'PhysxVehicleEngineAPI', 'PhysxVehicleGearsAPI', 'PhysxVehicleAutoGearBoxAPI', 'PhysxVehicleClutchAPI', 'PhysxVehicleDriveBasicAPI', 'PhysxVehicleDriveStandardAPI', 'PhysxVehicleMultiWheelDifferentialAPI', 'PhysxVehicleTankDifferentialAPI', 'PhysxVehicleBrakesAPI', 'PhysxVehicleSteeringAPI', 'PhysxVehicleAckermannSteeringAPI', 'PhysxVehicleAPI', 'PhysxVehicleControllerAPI', 'PhysxVehicleTankControllerAPI', 'PhysxVehicleWheelControllerAPI', 'PhysxVehicleNonlinearCommandResponseAPI', 'PhysxCameraAPI', 'PhysxCameraFollowAPI', 'PhysxCameraFollowLookAPI', 'PhysxCameraFollowVelocityAPI', 'PhysxCameraDroneAPI', 'PhysxParticleSystem', 'PhysxParticleIsosurfaceAPI', 'PhysxParticleSmoothingAPI', 'PhysxParticleAnisotropyAPI', 'PhysxDiffuseParticlesAPI', 'PhysxPBDMaterialAPI', 'PhysxParticleAPI', 'PhysxParticleSetAPI', 'PhysxParticleSamplingAPI', 'PhysxJointAxisAPI', 'PhysxDrivePerformanceEnvelopeAPI', 'PhysxSplinesSurfaceVelocityAPI', 'PhysxBaseDeformableBodyAPI', 'PhysxSurfaceDeformableBodyAPI', 'PhysxDeformableMaterialAPI', 'PhysxSurfaceDeformableMaterialAPI', 'PhysxAutoDeformableBodyAPI', 'PhysxAutoDeformableHexahedralMeshAPI', 'PhysxAutoDeformableMeshSimplificationAPI', 'PhysxAutoDeformableAttachmentAPI']
+__all__ = ['PhysxSceneAPI', 'PhysxRigidBodyAPI', 'PhysxContactReportAPI', 'PhysxCollisionAPI', 'PhysxConvexHullCollisionAPI', 'PhysxConvexDecompositionCollisionAPI', 'PhysxSphereFillCollisionAPI', 'PhysxTriangleMeshSimplificationCollisionAPI', 'PhysxTriangleMeshCollisionAPI', 'PhysxSDFMeshCollisionAPI', 'PhysxSurfaceVelocityAPI', 'PhysxMeshMergeCollisionAPI', 'PhysxSceneQuasistaticAPI', 'PhysxMaterialAPI', 'PhysxPhysicsInstancer', 'PhysxPhysicsJointInstancer', 'PhysxPhysicsGearJoint', 'PhysxPhysicsRackAndPinionJoint', 'PhysxPhysicsDistanceJointAPI', 'PhysxLimitAPI', 'JointStateAPI', 'PhysxArticulationAPI', 'PhysxForceAPI', 'PhysxCharacterControllerAPI', 'PhysxTriggerAPI', 'PhysxTriggerStateAPI', 'PhysxCookedDataAPI', 'PhysxTendonAxisAPI', 'PhysxTendonAxisRootAPI', 'PhysxTendonAttachmentAPI', 'PhysxTendonAttachmentRootAPI', 'PhysxTendonAttachmentLeafAPI', 'PhysxMimicJointAPI', 'PhysxVehicleContextAPI', 'PhysxVehicleTireFrictionTable', 'PhysxVehicleWheelAPI', 'PhysxVehicleTireAPI', 'PhysxVehicleSuspensionAPI', 'PhysxVehicleWheelAttachmentAPI', 'PhysxVehicleSuspensionComplianceAPI', 'PhysxVehicleEngineAPI', 'PhysxVehicleGearsAPI', 'PhysxVehicleAutoGearBoxAPI', 'PhysxVehicleClutchAPI', 'PhysxVehicleDriveBasicAPI', 'PhysxVehicleDriveStandardAPI', 'PhysxVehicleMultiWheelDifferentialAPI', 'PhysxVehicleTankDifferentialAPI', 'PhysxVehicleBrakesAPI', 'PhysxVehicleSteeringAPI', 'PhysxVehicleAckermannSteeringAPI', 'PhysxVehicleAPI', 'PhysxVehicleControllerAPI', 'PhysxVehicleTankControllerAPI', 'PhysxVehicleWheelControllerAPI', 'PhysxVehicleNonlinearCommandResponseAPI', 'PhysxCameraAPI', 'PhysxCameraFollowAPI', 'PhysxCameraFollowLookAPI', 'PhysxCameraFollowVelocityAPI', 'PhysxCameraDroneAPI', 'PhysxParticleSystem', 'PhysxParticleIsosurfaceAPI', 'PhysxParticleSmoothingAPI', 'PhysxParticleAnisotropyAPI', 'PhysxDiffuseParticlesAPI', 'PhysxPBDMaterialAPI', 'PhysxParticleAPI', 'PhysxParticleSetAPI', 'PhysxParticleSamplingAPI', 'PhysxJointAxisAPI', 'PhysxDrivePerformanceEnvelopeAPI', 'PhysxSplinesSurfaceVelocityAPI', 'PhysxBaseDeformableBodyAPI', 'PhysxSurfaceDeformableBodyAPI', 'PhysxDeformableMaterialAPI', 'PhysxSurfaceDeformableMaterialAPI', 'PhysxAutoDeformableBodyAPI', 'PhysxAutoDeformableHexahedralMeshAPI', 'PhysxAutoDeformableMeshSimplificationAPI', 'PhysxAutoDeformableAttachmentAPI']
 
 
 class _Base:
@@ -1749,70 +1749,6 @@ class PhysxPhysicsRackAndPinionJoint(_Base):
         return self._prim.GetRelationship("physics:prismatic")
     def CreatePrismaticRel(self):
         return self._prim.CreateRelationship("physics:prismatic", False)
-
-class PhysxJointAPI(_Base):
-    _schemaName = "PhysxJointAPI"
-    schemaKind = 'single'
-    _schemaAttributeNames = ['physxJoint:jointFriction', 'physxJoint:maxJointVelocity', 'physxJoint:armature']
-    @classmethod
-    def _GetStaticTfType(cls):
-        return Usd.SchemaRegistry.GetTypeFromSchemaTypeName(cls._schemaName)
-    @classmethod
-    def GetSchemaAttributeNames(cls, includeInherited=True, instanceName=None):
-        names = list(cls._schemaAttributeNames)
-        base = cls.__bases__[0]
-        if includeInherited and base is not _Base and hasattr(base, 'GetSchemaAttributeNames'):
-            names = list(base.GetSchemaAttributeNames(True)) + names
-        if instanceName is not None:
-            instanceName = str(instanceName)
-            if instanceName:
-                names = [name.replace(':__INSTANCE_NAME__:', ':' + instanceName + ':') for name in names]
-        return names
-    @classmethod
-    def CanApply(cls, prim):
-        return prim.CanApplyAPI(cls._schemaName)  # native _CanApplyAPIResult (bool + .whyNot)
-    @classmethod
-    def Apply(cls, prim):
-        if prim.ApplyAPI(cls._schemaName):
-            return cls(prim)
-        return cls()
-    @classmethod
-    def Get(cls, stage, path): return cls(stage.GetPrimAtPath(path))
-    def _IsCompatible(self):
-        return self._prim.HasAPI(self._schemaName)
-    def GetJointFrictionAttr(self):
-        return self._prim.GetAttribute("physxJoint:jointFriction")
-    def CreateJointFrictionAttr(self, defaultValue=None, writeSparsely=False):
-        _t = Sdf.ValueTypeNames.Float
-        if writeSparsely and defaultValue is not None:
-            attr = self._prim.GetAttribute("physxJoint:jointFriction")
-            if attr and not attr.HasAuthoredValue() and attr.Get() == _coerce_to_type(defaultValue, _t):
-                return attr
-        attr = self._prim.CreateAttribute("physxJoint:jointFriction", _t, False)
-        if defaultValue is not None: attr.Set(defaultValue)
-        return attr
-    def GetMaxJointVelocityAttr(self):
-        return self._prim.GetAttribute("physxJoint:maxJointVelocity")
-    def CreateMaxJointVelocityAttr(self, defaultValue=None, writeSparsely=False):
-        _t = Sdf.ValueTypeNames.Float
-        if writeSparsely and defaultValue is not None:
-            attr = self._prim.GetAttribute("physxJoint:maxJointVelocity")
-            if attr and not attr.HasAuthoredValue() and attr.Get() == _coerce_to_type(defaultValue, _t):
-                return attr
-        attr = self._prim.CreateAttribute("physxJoint:maxJointVelocity", _t, False)
-        if defaultValue is not None: attr.Set(defaultValue)
-        return attr
-    def GetArmatureAttr(self):
-        return self._prim.GetAttribute("physxJoint:armature")
-    def CreateArmatureAttr(self, defaultValue=None, writeSparsely=False):
-        _t = Sdf.ValueTypeNames.Float
-        if writeSparsely and defaultValue is not None:
-            attr = self._prim.GetAttribute("physxJoint:armature")
-            if attr and not attr.HasAuthoredValue() and attr.Get() == _coerce_to_type(defaultValue, _t):
-                return attr
-        attr = self._prim.CreateAttribute("physxJoint:armature", _t, False)
-        if defaultValue is not None: attr.Set(defaultValue)
-        return attr
 
 class PhysxPhysicsDistanceJointAPI(_Base):
     _schemaName = "PhysxPhysicsDistanceJointAPI"

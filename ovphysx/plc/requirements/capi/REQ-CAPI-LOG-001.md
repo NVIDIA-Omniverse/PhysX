@@ -24,7 +24,10 @@ drain behavior.
   after prior accepted calls finish. Every successful shutdown flushes
   Carbonite, disables the callback, and waits for accepted calls before
   returning, including when live handles remain solely for explicit
-  destruction. Invalid arguments leave the prior registration unchanged. Any
+  destruction. Shutdown closes logger registration until the next bootstrap; a
+  callback replacement published after the final drain remains pending and must
+  register with the next framework rather than the retiring one.
+  Invalid arguments leave the prior registration unchanged. Any
   other returned error may follow publication, so the candidate callback and
   user data remain valid until a later successful replace, disable, or shutdown
   drains the slot.
@@ -60,7 +63,13 @@ drain behavior.
 - ovphysx/include/ovphysx/ovphysx_types.h
 - ovphysx/include/ovphysx/ovphysx.h
 - ovphysx/src/include/LogManager.hpp
+- ovphysx/src/include/internal/LogManagerState.hpp
+- ovphysx/src/include/internal/GlobalState.hpp
+- ovphysx/src/ovphysx/GlobalState.cpp
 - ovphysx/src/include/ovphysx_test_utils.h
+- ovphysx/src/ovphysx/ovphysxSidecarLoader.cpp
+- ovphysx/src/ovphysxInternal/ovphysxInternalBootstrap.cpp
+- ovphysx/src/CarboniteLoader/CarboniteLoader.cpp
 - ovphysx/src/ovphysx/LogManager.cpp
 - ovphysx/src/ovphysx/ovphysx.cpp
 - ovphysx/python/ovphysx/types.py

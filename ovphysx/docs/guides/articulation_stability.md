@@ -13,20 +13,21 @@ Complex mechanisms have higher natural frequencies and need smaller timesteps.
 Closed articulation loops and humanoids often need well above the default 60 Hz
 (humanoids commonly run at 100 Hz or more).
 
-Before you change either value, note the scene's current
-`physxScene:timeStepsPerSecond` and position-iteration counts, and have a
+Before you change either value, note the `dt` passed to `step(dt)` or
+`step_sync(dt)` and the scene's position-iteration counts, and have a
 reproducible scene that shows the instability. Both steps are judged by whether
 that instability disappears, so an intermittent case gives you no signal.
 
-1. Try reducing the timestep (raise `physxScene:timeStepsPerSecond`) to see if
+1. Try reducing the `dt` passed to `step()` or `step_sync()` to check whether
    instability resolves.
 2. If it does, try reducing the number of TGS/PGS position iterations — stability
    is often preserved with fewer iterations at a smaller timestep, improving
    performance.
 
 You are done when the instability is gone at the highest timestep and the lowest
-iteration count that still hold it. Both attributes are authored on the scene
-prim; refer to
+iteration count that still hold it. ovphysx uses the timestep passed by the
+application; changing `physxScene:timeStepsPerSecond` alone does not change that
+step duration. Author the iteration limits on the scene prim; refer to
 [Physics Solver](../simulation_setup/physics_scene.md#physics-solver).
 
 ## Mimic Joint Compliance

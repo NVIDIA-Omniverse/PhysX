@@ -32,14 +32,13 @@ namespace physx
 			CUdeviceptr numKeysd, PxgRadixSortBlockDesc* rsDescs,
 			CUdeviceptr radixSortDescBuf0, CUdeviceptr radixSortDescBuf1);
 
-		PX_FORCE_INLINE PxgTypedCudaBuffer<PxNodeIndex>& getContactByRigid() { return mContactByRigidBuf; }
-		PX_FORCE_INLINE PxgTypedCudaBuffer<PxNodeIndex>& getContactSortedByRigid() { return mContactSortedByRigidBuf; }
-		PX_FORCE_INLINE PxgTypedCudaBuffer<PxU32>& getTempContactByRigid() { return mTempContactByRigidBitBuf; }
-		PX_FORCE_INLINE PxgTypedCudaBuffer<PxU32>& getContactRemapSortedByRigid() { return mContactRemapSortedByRigidBuf; }
+		PX_FORCE_INLINE PxgTypedCudaBuffer<PxNodeIndex>& getContactByRigid() { return mContactByRigidBuffer; }
+		PX_FORCE_INLINE PxgTypedCudaBuffer<PxU32>& getTempContactByRigid() { return mTempContactByRigidBitBuffer; }
+		PX_FORCE_INLINE PxgTypedCudaBuffer<PxU32>& getContactRemapSortedByRigid() { return mContactRemapSortedByRigidBuffer; }
 
-		PX_FORCE_INLINE PxgTypedCudaBuffer<PxU64>& getContactSortedByParticle() { return mContactSortedByParticleBuf; }
-		PX_FORCE_INLINE PxgTypedCudaBuffer<PxU32>& getTempContactByParticle() { return mTempContactByParticleBitBuf; }
-		PX_FORCE_INLINE PxgTypedCudaBuffer<PxU32>& getContactRemapSortedByParticle() { return mContactRemapSortedByParticleBuf; }
+		PX_FORCE_INLINE PxgTypedCudaBuffer<PxU64>& getContactByParticle() { return mContactByParticleBuffer; }
+		PX_FORCE_INLINE PxgTypedCudaBuffer<PxU32>& getTempContactByParticle() { return mTempContactByParticleBitBuffer; }
+		PX_FORCE_INLINE PxgTypedCudaBuffer<PxU32>& getContactRemapSortedByParticle() { return mContactRemapSortedByParticleBuffer; }
 		
 		PxgCudaPagedLinearAllocator		mIntermStackAlloc;
 		PxgTypedCudaBuffer<PxU32>		mStackSizeNeededOnDevice;
@@ -56,20 +55,19 @@ namespace physx
 		PxU32										mRadixCountSize;
 
 		//for radix sort
-		PxgTypedCudaBuffer<PxNodeIndex>	mContactByRigidBuf;			//rigidId is nodeIndex, which is 64 bit
-		PxgTypedCudaBuffer<PxNodeIndex> mContactSortedByRigidBuf;	//rigidId is nodeIndex, which is 64 bit
-		PxgTypedCudaBuffer<PxU32>		mTempContactByRigidBitBuf; //low/high 32 bit
-		PxgTypedCudaBuffer<PxU32>		mContactRemapSortedByRigidBuf; //rank index
+		PxgTypedCudaBuffer<PxNodeIndex>	mContactByRigidBuffer;			//rigidId is nodeIndex, which is 64 bit
+		PxgTypedCudaBuffer<PxU32>		mTempContactByRigidBitBuffer; //low/high 32 bit
+		PxgTypedCudaBuffer<PxU32>		mContactRemapSortedByRigidBuffer; //rank index
 
-		PxgTypedCudaBuffer<PxU64>		mContactSortedByParticleBuf;	//PxU64 particle system id and particle index
-		PxgTypedCudaBuffer<PxU32>		mTempContactByParticleBitBuf; //low/high 32 bit
-		PxgTypedCudaBuffer<PxU32>		mContactRemapSortedByParticleBuf; //rank index
+		PxgTypedCudaBuffer<PxU64>		mContactByParticleBuffer;	//PxU64 particle system id and particle index
+		PxgTypedCudaBuffer<PxU32>		mTempContactByParticleBitBuffer; //low/high 32 bit
+		PxgTypedCudaBuffer<PxU32>		mContactRemapSortedByParticleBuffer; //rank index
 
 	
-		PxgTypedCudaBuffer<PxU32>		mTempContactBuf;
-		PxgTypedCudaBuffer<PxU32>		mTempContactRemapBuf;
-		PxgTypedCudaBuffer<PxU32>		mTempContactBuf2;
-		PxgTypedCudaBuffer<PxU32>		mTempContactRemapBuf2;
+		PxgTypedCudaBuffer<PxU32>		mTempContactBuffer;
+		PxgTypedCudaBuffer<PxU32>		mTempContactRemapBuffer;
+		PxgTypedCudaBuffer<PxU32>		mTempContactBuffer2;
+		PxgTypedCudaBuffer<PxU32>		mTempContactRemapBuffer2;
 
 #if PX_ENABLE_SIM_STATS
 		PxU32							mCollisionStackSizeBytesStats;

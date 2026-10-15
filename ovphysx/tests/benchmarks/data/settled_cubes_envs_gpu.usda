@@ -1,0 +1,254 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Y"
+    doc = "Settled-subset fixture for cloning. Per env: 16 kinematic cubes on the ground, 4 falling dynamics, so SCOPE_ACTIVE reads a fixed 4/20 subset. Template lives at /World/envs/template for clone() into env1..envN. See gen_settled_cubes.py."
+)
+
+def Xform "World"
+{
+    def PhysicsScene "physicsScene" (
+        prepend apiSchemas = ["PhysxSceneAPI"]
+    )
+    {
+        vector3f physics:gravityDirection = (0, -1, 0)
+        float physics:gravityMagnitude = 9.81
+        uint physxScene:timeStepsPerSecond = 240
+        bool physxScene:enableGPUDynamics = true
+        string physxScene:broadphaseType = "GPU"
+    }
+
+    def Cube "GroundPlane" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        double size = 1.0
+        double3 xformOp:scale = (200.0, 0.02, 200.0)
+        double3 xformOp:translate = (0, -0.01, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Xform "envs"
+    {
+        def Xform "template"
+        {
+
+            def Cube "cube_00" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+            )
+            {
+                double size = 0.3
+                float physics:mass = 1.0
+                double3 xformOp:translate = (2.305596298685065, 20.0, -0.1971994991428111)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cube "cube_01" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+            )
+            {
+                double size = 0.3
+                float physics:mass = 1.0
+                double3 xformOp:translate = (1.7309644513047469, 20.0, 0.1423361978879203)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cube "cube_02" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+            )
+            {
+                double size = 0.3
+                float physics:mass = 1.0
+                double3 xformOp:translate = (2.173196663526804, 20.0, 0.053581006849747315)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cube "cube_03" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+            )
+            {
+                double size = 0.3
+                float physics:mass = 1.0
+                double3 xformOp:translate = (2.2610471130308167, 20.0, -0.3265740145767043)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cube "cube_04" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+            )
+            {
+                double size = 0.3
+                float physics:mass = 1.0
+                bool physics:kinematicEnabled = 1
+                double3 xformOp:translate = (-2.0, 0.15, -1.0)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cube "cube_05" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+            )
+            {
+                double size = 0.3
+                float physics:mass = 1.0
+                bool physics:kinematicEnabled = 1
+                double3 xformOp:translate = (-1.5, 0.15, -1.0)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cube "cube_06" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+            )
+            {
+                double size = 0.3
+                float physics:mass = 1.0
+                bool physics:kinematicEnabled = 1
+                double3 xformOp:translate = (-1.0, 0.15, -1.0)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cube "cube_07" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+            )
+            {
+                double size = 0.3
+                float physics:mass = 1.0
+                bool physics:kinematicEnabled = 1
+                double3 xformOp:translate = (-0.5, 0.15, -1.0)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cube "cube_08" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+            )
+            {
+                double size = 0.3
+                float physics:mass = 1.0
+                bool physics:kinematicEnabled = 1
+                double3 xformOp:translate = (-2.0, 0.15, -0.5)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cube "cube_09" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+            )
+            {
+                double size = 0.3
+                float physics:mass = 1.0
+                bool physics:kinematicEnabled = 1
+                double3 xformOp:translate = (-1.5, 0.15, -0.5)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cube "cube_10" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+            )
+            {
+                double size = 0.3
+                float physics:mass = 1.0
+                bool physics:kinematicEnabled = 1
+                double3 xformOp:translate = (-1.0, 0.15, -0.5)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cube "cube_11" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+            )
+            {
+                double size = 0.3
+                float physics:mass = 1.0
+                bool physics:kinematicEnabled = 1
+                double3 xformOp:translate = (-0.5, 0.15, -0.5)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cube "cube_12" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+            )
+            {
+                double size = 0.3
+                float physics:mass = 1.0
+                bool physics:kinematicEnabled = 1
+                double3 xformOp:translate = (-2.0, 0.15, 0.0)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cube "cube_13" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+            )
+            {
+                double size = 0.3
+                float physics:mass = 1.0
+                bool physics:kinematicEnabled = 1
+                double3 xformOp:translate = (-1.5, 0.15, 0.0)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cube "cube_14" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+            )
+            {
+                double size = 0.3
+                float physics:mass = 1.0
+                bool physics:kinematicEnabled = 1
+                double3 xformOp:translate = (-1.0, 0.15, 0.0)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cube "cube_15" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+            )
+            {
+                double size = 0.3
+                float physics:mass = 1.0
+                bool physics:kinematicEnabled = 1
+                double3 xformOp:translate = (-0.5, 0.15, 0.0)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cube "cube_16" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+            )
+            {
+                double size = 0.3
+                float physics:mass = 1.0
+                bool physics:kinematicEnabled = 1
+                double3 xformOp:translate = (-2.0, 0.15, 0.5)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cube "cube_17" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+            )
+            {
+                double size = 0.3
+                float physics:mass = 1.0
+                bool physics:kinematicEnabled = 1
+                double3 xformOp:translate = (-1.5, 0.15, 0.5)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cube "cube_18" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+            )
+            {
+                double size = 0.3
+                float physics:mass = 1.0
+                bool physics:kinematicEnabled = 1
+                double3 xformOp:translate = (-1.0, 0.15, 0.5)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cube "cube_19" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]
+            )
+            {
+                double size = 0.3
+                float physics:mass = 1.0
+                bool physics:kinematicEnabled = 1
+                double3 xformOp:translate = (-0.5, 0.15, 0.5)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+        }
+    }
+}

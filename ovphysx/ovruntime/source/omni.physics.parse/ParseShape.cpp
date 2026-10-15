@@ -2,16 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-1 AC-2 AC-3
+ *
  * @implements REQ-PARSE-SHAPE-001
  * @covers AC-3 AC-4
  *
- * @implements REQ-PARSE-SHAPE-002
- * @covers AC-1
- *
  * @implements REQ-PARSE-SHAPE-006
- * @covers AC-1 AC-2 AC-3
+ * @covers AC-2
  *
- * @implements REQ-PARSE-COL-005
+ * @implements REQ-PARSE-SHAPE-002
  * @covers AC-1
  */
 
@@ -20,6 +20,7 @@
 // invocation live in the consumer-side walker, not here.
 
 #include <omni/physics/parse/ParseApi.h>
+#include <omni/physics/parse/PreparedShape.h>
 #include <omni/physics/parse/KnownTokens.h>
 
 #include <algorithm>
@@ -36,47 +37,9 @@ namespace
 // resolved to a scene ObjectId — the shape is rejected in that case.
 bool fillCommonShape(ParseContext& ctx, ObjectKey key, const ShapeInfo& info, PhysxShapeDesc& desc)
 {
-    setToDefault(desc, ctx.units());
-
-    desc.collisionEnabled = info.collisionEnabled;
-    desc.collisionGroup   = info.collisionGroup;
-    desc.rigidBody        = info.rigidBody;
-    desc.localPos         = info.localPos;
-    desc.localRot         = info.localRot;
-    desc.localScale       = info.localScale;
-    desc.sourceGprim      = info.sourceGprim;
-
-    // Overlay PhysX extension fields + Newton contactMargin/contactGap
-    // fallbacks via parseCollisionExt (already covers torsionalPatchRadius,
-    // minTorsionalPatchRadius, contactOffset, restOffset, isTrigger,
-    // isTriggerUsdOutput, plus the sentinel/range/cross-validation logic).
-    CollisionExtFields fields;
-    fields.contactOffset          = desc.contactOffset;
-    fields.restOffset             = desc.restOffset;
-    fields.torsionalPatchRadius   = desc.torsionalPatchRadius;
-    fields.minTorsionalPatchRadius = desc.minTorsionalPatchRadius;
-    fields.isTrigger              = desc.isTrigger;
-    fields.isTriggerUsdOutput     = desc.isTriggerUsdOutput;
-    fields.attributeFallback      = info.collisionAttributeFallback;
-    parseCollisionExt(ctx, key, fields);
-    desc.contactOffset            = fields.contactOffset;
-    desc.restOffset               = fields.restOffset;
-    desc.torsionalPatchRadius     = fields.torsionalPatchRadius;
-    desc.minTorsionalPatchRadius  = fields.minTorsionalPatchRadius;
-    desc.isTrigger                = fields.isTrigger;
-    desc.isTriggerUsdOutput       = fields.isTriggerUsdOutput;
-
-    // Resolve simulationOwners → sceneIds (scene category).
-    for (ObjectKey owner : info.simulationOwners)
-    {
-        ObjectId id = ctx.objects().findEntry(owner, eScene);
-        if (id != kInvalidObjectId)
-            desc.sceneIds.push_back(id);
-    }
-    if (!info.simulationOwners.empty() && desc.sceneIds.empty())
-        return false;
-
-    return true;
+    const PreparedShapeCommon input = prepareShapeCommon(ctx, key, info);
+    desc.sceneIds.resize(input.sceneIds.size());
+    return fillShapeCommon(input, desc);
 }
 
 // Reads `physxConvexGeometry:margin` (Cylinder/Cone shapes). Gated on
@@ -95,6 +58,62 @@ void readConvexGeometryMargin(ParseContext& ctx, ObjectKey key, float& margin)
 }
 
 } // namespace
+
+PreparedShapeCommon prepareShapeCommon(ParseContext& ctx, ObjectKey key, const ShapeInfo& info)
+{
+    PreparedShapeCommon input;
+    input.units = ctx.units();
+    input.info = info;
+    input.collision = prepareCollisionExt(ctx, key);
+    input.sceneIds.reserve(info.simulationOwners.size());
+    for (const ObjectKey owner : info.simulationOwners)
+    {
+        const ObjectId id = ctx.objects().findEntry(owner, eScene);
+        if (id != kInvalidObjectId)
+            input.sceneIds.push_back(id);
+    }
+    input.ownersResolved = info.simulationOwners.empty() || !input.sceneIds.empty();
+    input.prepared = true;
+    return input;
+}
+
+bool fillShapeCommon(const PreparedShapeCommon& input, PhysxShapeDesc& desc) noexcept
+{
+    if (!input.prepared || !input.ownersResolved || desc.sceneIds.size() != input.sceneIds.size())
+        return false;
+    setToDefault(desc, input.units);
+
+    desc.collisionEnabled = input.info.collisionEnabled;
+    desc.collisionGroup   = input.info.collisionGroup;
+    desc.rigidBody        = input.info.rigidBody;
+    desc.localPos         = input.info.localPos;
+    desc.localRot         = input.info.localRot;
+    desc.localScale       = input.info.localScale;
+    desc.sourceGprim      = input.info.sourceGprim;
+
+    // Overlay PhysX extension fields + Newton contactMargin/contactGap
+    // fallbacks via parseCollisionExt (already covers torsionalPatchRadius,
+    // minTorsionalPatchRadius, contactOffset, restOffset, isTrigger,
+    // isTriggerUsdOutput, plus the sentinel/range/cross-validation logic).
+    CollisionExtFields fields;
+    fields.contactOffset          = desc.contactOffset;
+    fields.restOffset             = desc.restOffset;
+    fields.torsionalPatchRadius   = desc.torsionalPatchRadius;
+    fields.minTorsionalPatchRadius = desc.minTorsionalPatchRadius;
+    fields.isTrigger              = desc.isTrigger;
+    fields.isTriggerUsdOutput     = desc.isTriggerUsdOutput;
+    if (!fillCollisionExt(input.collision, fields))
+        return false;
+    desc.contactOffset            = fields.contactOffset;
+    desc.restOffset               = fields.restOffset;
+    desc.torsionalPatchRadius     = fields.torsionalPatchRadius;
+    desc.minTorsionalPatchRadius  = fields.minTorsionalPatchRadius;
+    desc.isTrigger                = fields.isTrigger;
+    desc.isTriggerUsdOutput       = fields.isTriggerUsdOutput;
+
+    std::copy(input.sceneIds.begin(), input.sceneIds.end(), desc.sceneIds.begin());
+    return true;
+}
 
 void setToDefault(PhysxShapeDesc& desc, const SourceUnits& units)
 {
@@ -187,7 +206,7 @@ DescPtr<CustomPhysxShapeDesc> parseCustomShape(ParseContext& ctx, ObjectKey key,
     return d;
 }
 
-MeshApproximation parseMeshApproximation(ParseContext& ctx, ObjectKey key, ObjectKey attributeFallback)
+MeshApproximation parseMeshApproximation(ParseContext& ctx, ObjectKey key)
 {
     IPhysicsSource& src = ctx.source();
     const KnownTokens& tok = ctx.knownTokens();
@@ -199,12 +218,7 @@ MeshApproximation parseMeshApproximation(ParseContext& ctx, ObjectKey key, Objec
         return MeshApproximation::eNone;
 
     TokenId approx;
-    // The walker supplies only a strict-ancestor prototype backing key. A
-    // readable logical value (including "none") always wins; instance roots
-    // with value blocks must not fall back to their own geometry prototype.
-    if (!src.getAttribute(key, tok.physicsApproximation, approx) &&
-        (!attributeFallback.valid() || attributeFallback == key ||
-         !src.getAttribute(attributeFallback, tok.physicsApproximation, approx)))
+    if (!src.getAttribute(key, tok.physicsApproximation, approx))
         return MeshApproximation::eNone;
 
     if      (approx == tok.approximationNone)               return MeshApproximation::eNone;

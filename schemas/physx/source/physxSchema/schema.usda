@@ -273,14 +273,16 @@ class "PhysxSceneAPI"
         doc = """Provides improved determinism at the expense of performance."""
     )
 
-    bool physxScene:enableExternalForcesEveryIteration = false (
+    bool physxScene:enableExternalForcesEveryIteration = true (
         customData = {
             string apiName = "enableExternalForcesEveryIteration"
         }
 
         displayGroup = "Advanced"
         displayName = "Enable External Forces Every Iteration"
-        doc = """Enables greater TGS solver stability."""
+        doc = """Deprecated: applying gravity and other external forces in every TGS solver iteration is the default and will be the only TGS behavior once the attribute is removed.
+        Enables greater TGS solver stability by applying gravity and other external forces in every solver position iteration instead of once per simulation step.
+        Has no effect with the PGS solver."""
     )
 
 	    bool physxScene:solveArticulationContactLast = false (
@@ -1458,70 +1460,6 @@ class PhysxPhysicsRackAndPinionJoint "PhysxPhysicsRackAndPinionJoint"
         doc = """Ratio between angular and linear motion. For a rack of length L with N0 teeth and a pinion of N1 teeth, the ratio should be (PI * 2 * N0)/(L * N1).
             Range: (-inf, inf)
             Units: degrees / distance"""
-    )
-}
-
-class "PhysxJointAPI"
-(
-    doc = """PhysX joint extended parameters. Can be applied to a PhysicsJoint prim or
-          the derived classes PhysicsRevoluteJoint, PhysicsPrismaticJoint or PhysicsSphericalJoint."""
-   inherits = </APISchemaBase>
-)
-{
-    float physxJoint:jointFriction = 0.0 (
-        customData = {
-            string apiName = "jointFriction"
-        }
-
-        displayGroup = "Advanced"
-        displayName = "Joint Friction"
-        doc = """Joint friction. Only applies to joints that are part of an articulation (see PhysicsArticulationRootAPI).
-            All joint axes will use the same friction value.
-
-            The joint friction is unitless and relates the magnitudes of the linear force vector F and torque vector T
-            transmitted from parent to child link to the maximal friction force F_resist that may be applied by the solver
-            to resist joint motion, per axis; i.e. |F_resist| <= coefficient * (|F| + |T|), where F_resist may refer to a
-            linear force or torque depending on the joint axis (linear vs. angular). The simulated friction effect is
-            therefore similar to static and Coulomb friction. In order to simulate dynamic joint friction, a joint drive
-            (see PhysicsDriveAPI) with zero stiffness and zero velocity target, and an appropriately dimensioned damping
-            parameter should be used.
-
-            Range: [0, inf)
-            Units: dimensionless"""
-    )
-
-    float physxJoint:maxJointVelocity = inf (
-        customData = {
-            string apiName = "maxJointVelocity"
-        }
-
-        displayGroup = "Advanced"
-        displayName = "Maximum Joint Velocity"
-        doc = """Maximum joint velocity. Only applies to joints that are part of an articulation (see PhysicsArticulationRootAPI).
-            All joint axes will use the same maximum joint velocity value.
-
-            The solver will apply appropriate joint-space impulses in order to enforce the per-axis joint-velocity limit.
-
-            Range: [0, inf)
-            Units: Linear joint - distance / seconds
-                   Angular joint - degrees / seconds"""
-    )
-
-    float physxJoint:armature = 0.0 (
-        customData = {
-            string apiName = "armature"
-        }
-
-        displayGroup = "Advanced"
-        displayName = "Armature"
-        doc = """Conceptually, armature represents the inertia of an actuator driving the joint. It is an artificial mass/inertia
-            that is added to the joint-space inertia and can help stabilize an articulation. Note that this parameter is used only
-            when the joint belongs to an articulation (see PhysicsArticulationRootAPI). Furthermore, note that for a joint with
-            multiple degrees of freedom (like a PhysicsSphericalJoint), the specified armature will be applied to each of the
-            corresponding axes individually.
-            Range: [0, inf)
-            Units: Linear joint - mass
-                   Angular joint - mass * distance^2"""
     )
 }
 
@@ -5670,9 +5608,10 @@ class "PhysxParticleSamplingAPI"
 # ---------------------------------------------------------------------------
 class "PhysxJointAxisAPI"
 (
-    doc = """PhysX joint parameters defined per axis. Can be applied to a PhysicsJoint prim or
-        the derived classes PhysicsRevoluteJoint, PhysicsPrismaticJoint or PhysicsSphericalJoint.
-        For overlapping parameters with PhysxJointAPI, the parameters of PhysxJointAxisAPI take precedence for that axis. """
+    doc = """PhysX joint parameters defined per axis, used only for joints that are part of an articulation
+        (see PhysicsArticulationRootAPI). Can be applied to a PhysicsJoint prim or the derived classes
+        PhysicsRevoluteJoint, PhysicsPrismaticJoint or PhysicsSphericalJoint, with the instance name angular
+        for a revolute joint, linear for a prismatic joint, and rotX, rotY or rotZ for a spherical or generic joint."""
     inherits = </APISchemaBase>
      customData = {
         token apiSchemaType = "multipleApply"

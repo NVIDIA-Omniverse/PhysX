@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-1 AC-2
+ */
+
 /**
  * @implements REQ-PARSE-VEH-DRIVETRAIN-001
  * @covers AC-1 AC-2 AC-3
@@ -15,6 +19,8 @@
 
 #include <omni/physics/parse/IPhysicsSource.h>
 #include <omni/physics/parse/ParseApi.h>
+#include <omni/physics/parse/PreparedVehicle.h>
+#include <stdexcept>
 #include <omni/physics/parse/ParseContext.h>
 
 #include <carb/logging/Log.h>
@@ -26,22 +32,48 @@ namespace omni::physics::parse
 
 // @implements REQ-PARSE-VEH-DRIVETRAIN-001
 // @covers AC-1 AC-2 AC-3
-DescPtr<EngineDesc> parseEngine(ParseContext& ctx, ObjectKey key, const EngineInfo& info)
+PreparedEngine prepareEngine(ParseContext& ctx, ObjectKey key, const EngineInfo& info)
 {
-    IPhysicsSource& src = ctx.source();
-    const std::string ownerName(src.sourceKeyToString(key));
+    PreparedEngine input;
+    input.key = key;
+    input.info = info;
+    input.reads = prepareVehicleReads(ctx.source(), key, {
+        { "physxVehicleEngine:dampingRateFullThrottle", VehicleAttributeType::floating },
+        { "physxVehicleEngine:dampingRateZeroThrottleClutchDisengaged", VehicleAttributeType::floating },
+        { "physxVehicleEngine:dampingRateZeroThrottleClutchEngaged", VehicleAttributeType::floating },
+        { "physxVehicleEngine:idleRotationSpeed", VehicleAttributeType::floating },
+        { "physxVehicleEngine:maxRotationSpeed", VehicleAttributeType::floating },
+        { "physxVehicleEngine:moi", VehicleAttributeType::floating },
+        { "physxVehicleEngine:peakTorque", VehicleAttributeType::floating }
+    });
+    return input;
+}
 
-    DescPtr<EngineDesc> desc = allocateDesc<EngineDesc>(ctx.descriptorAllocator());
+void prepareEngineStorage(const PreparedEngine& input, EngineDesc& output)
+{
+    (void)input; (void)output;
+}
+
+bool fillEngine(const PreparedEngine& input, EngineDesc& output, VehicleFillStatus& status) noexcept
+{
+    PreparedVehicleReader src(input.reads, status);
+    [[maybe_unused]] ObjectKey key = input.key;
+    [[maybe_unused]] const EngineInfo& info = input.info;
+
+
+    const std::string& ownerName = src.sourceKeyToString(key);
+
+    EngineDesc* desc = &output;
     desc->key = key;
 
     {
         float v;
-        if (src.getAttribute(key, src.internToken("physxVehicleEngine:moi"), v))
+        if (src.getAttribute(key, src.attribute("physxVehicleEngine:moi"), v))
         {
             if (!(v >= FLT_MIN) || !(v < FLT_MAX))
             {
-                CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"moi\" out of range.", ownerName.c_str());
-                return {};
+                VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"moi\" out of range.", ownerName.c_str());
+                return false;
             }
             desc->moi = v;
         }
@@ -53,17 +85,17 @@ DescPtr<EngineDesc> parseEngine(ParseContext& ctx, ObjectKey key, const EngineIn
 
     {
         float v;
-        if (!src.getAttribute(key, src.internToken("physxVehicleEngine:peakTorque"), v))
+        if (!src.getAttribute(key, src.attribute("physxVehicleEngine:peakTorque"), v))
         {
-            CARB_LOG_ERROR("Usd Physics: prim \"%s\" needs to have attribute \"peakTorque\" defined.", ownerName.c_str());
-            return {};
+            VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\" needs to have attribute \"peakTorque\" defined.", ownerName.c_str());
+            return false;
         }
         if (v != -1.0f)
         {
             if (!(v >= 0.0f) || !(v < FLT_MAX))
             {
-                CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"peakTorque\" out of range.", ownerName.c_str());
-                return {};
+                VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"peakTorque\" out of range.", ownerName.c_str());
+                return false;
             }
             desc->peakTorque = v;
         }
@@ -75,15 +107,15 @@ DescPtr<EngineDesc> parseEngine(ParseContext& ctx, ObjectKey key, const EngineIn
 
     auto readRequiredNonNeg = [&](const char* attrName, float& out) -> bool {
         float v;
-        if (!src.getAttribute(key, src.internToken(attrName), v))
+        if (!src.getAttribute(key, src.attribute(attrName), v))
         {
-            CARB_LOG_ERROR("Usd Physics: prim \"%s\" needs to have attribute \"%s\" defined.",
+            VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\" needs to have attribute \"%s\" defined.",
                            ownerName.c_str(), attrName);
             return false;
         }
         if (!(v >= 0.0f) || !(v < FLT_MAX))
         {
-            CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"%s\" out of range.",
+            VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"%s\" out of range.",
                            ownerName.c_str(), attrName);
             return false;
         }
@@ -91,8 +123,8 @@ DescPtr<EngineDesc> parseEngine(ParseContext& ctx, ObjectKey key, const EngineIn
         return true;
     };
 
-    if (!readRequiredNonNeg("physxVehicleEngine:maxRotationSpeed",  desc->maxRotationSpeed))  return {};
-    if (!readRequiredNonNeg("physxVehicleEngine:idleRotationSpeed", desc->idleRotationSpeed)) return {};
+    if (!readRequiredNonNeg("physxVehicleEngine:maxRotationSpeed",  desc->maxRotationSpeed))  return false;
+    if (!readRequiredNonNeg("physxVehicleEngine:idleRotationSpeed", desc->idleRotationSpeed)) return false;
 
     // torqueCurve: walker pre-read. When authored, expect 1..8 entries
     // with monotonically-increasing first dimension in [0, 1]. Default
@@ -102,13 +134,13 @@ DescPtr<EngineDesc> parseEngine(ParseContext& ctx, ObjectKey key, const EngineIn
         uint32_t cnt = info.torqueCurvePointCount;
         if (cnt == 0)
         {
-            CARB_LOG_ERROR("Usd Physics: attribute \"torqueCurve\" of engine \"%s\" needs to have at least 1 entry.",
+            VEHICLE_LOG_ERROR(status, "Usd Physics: attribute \"torqueCurve\" of engine \"%s\" needs to have at least 1 entry.",
                            ownerName.c_str());
-            return {};
+            return false;
         }
         if (cnt > EngineDesc::maxNumberOfTorqueCurvePoints)
         {
-            CARB_LOG_ERROR("Usd Physics: attribute \"torqueCurve\" of engine \"%s\" has more than %d entries. Entries will be culled.",
+            VEHICLE_LOG_ERROR(status, "Usd Physics: attribute \"torqueCurve\" of engine \"%s\" has more than %d entries. Entries will be culled.",
                            ownerName.c_str(), EngineDesc::maxNumberOfTorqueCurvePoints);
             cnt = EngineDesc::maxNumberOfTorqueCurvePoints;
         }
@@ -117,18 +149,18 @@ DescPtr<EngineDesc> parseEngine(ParseContext& ctx, ObjectKey key, const EngineIn
         {
             if (xVal > info.torqueCurve[i].x)
             {
-                CARB_LOG_ERROR("Usd Physics: attribute \"torqueCurve\" of engine \"%s\" has invalid values: first dimension "
+                VEHICLE_LOG_ERROR(status, "Usd Physics: attribute \"torqueCurve\" of engine \"%s\" has invalid values: first dimension "
                                "expects increasing values in [0, 1].", ownerName.c_str());
-                return {};
+                return false;
             }
             desc->torqueCurve[i] = info.torqueCurve[i];
             xVal = info.torqueCurve[i].x;
         }
         if (xVal > 1.0f)
         {
-            CARB_LOG_ERROR("Usd Physics: attribute \"torqueCurve\" of engine \"%s\" has invalid values: first dimension "
+            VEHICLE_LOG_ERROR(status, "Usd Physics: attribute \"torqueCurve\" of engine \"%s\" has invalid values: first dimension "
                            "expects increasing values in [0, 1].", ownerName.c_str());
-            return {};
+            return false;
         }
         desc->torqueCurvePointCount = cnt;
     }
@@ -142,9 +174,9 @@ DescPtr<EngineDesc> parseEngine(ParseContext& ctx, ObjectKey key, const EngineIn
 
     auto readDampingWithKgmsFallback = [&](const char* attrName, float defaultMul, float& out) -> bool {
         float v;
-        if (!src.getAttribute(key, src.internToken(attrName), v))
+        if (!src.getAttribute(key, src.attribute(attrName), v))
         {
-            CARB_LOG_ERROR("Usd Physics: prim \"%s\" needs to have attribute \"%s\" defined.",
+            VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\" needs to have attribute \"%s\" defined.",
                            ownerName.c_str(), attrName);
             return false;
         }
@@ -152,7 +184,7 @@ DescPtr<EngineDesc> parseEngine(ParseContext& ctx, ObjectKey key, const EngineIn
         {
             if (!(v >= 0.0f) || !(v < FLT_MAX))
             {
-                CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"%s\" out of range.",
+                VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"%s\" out of range.",
                                ownerName.c_str(), attrName);
                 return false;
             }
@@ -165,11 +197,32 @@ DescPtr<EngineDesc> parseEngine(ParseContext& ctx, ObjectKey key, const EngineIn
         return true;
     };
 
-    if (!readDampingWithKgmsFallback("physxVehicleEngine:dampingRateFullThrottle",            0.15f, desc->dampingRateFullThrottle)) return {};
-    if (!readDampingWithKgmsFallback("physxVehicleEngine:dampingRateZeroThrottleClutchEngaged", 2.0f,  desc->dampingRateZeroThrottleClutchEngaged)) return {};
-    if (!readDampingWithKgmsFallback("physxVehicleEngine:dampingRateZeroThrottleClutchDisengaged", 0.35f, desc->dampingRateZeroThrottleClutchDisengaged)) return {};
+    if (!readDampingWithKgmsFallback("physxVehicleEngine:dampingRateFullThrottle",            0.15f, desc->dampingRateFullThrottle)) return false;
+    if (!readDampingWithKgmsFallback("physxVehicleEngine:dampingRateZeroThrottleClutchEngaged", 2.0f,  desc->dampingRateZeroThrottleClutchEngaged)) return false;
+    if (!readDampingWithKgmsFallback("physxVehicleEngine:dampingRateZeroThrottleClutchDisengaged", 0.35f, desc->dampingRateZeroThrottleClutchDisengaged)) return false;
 
-    return desc;
+    return true;
 }
+
+void finishEngineStorage(EngineDesc& output, const VehicleFillStatus& status)
+{
+    (void)output; (void)status;
+}
+
+DescPtr<EngineDesc> parseEngine(ParseContext& ctx, ObjectKey key, const EngineInfo& info)
+{
+    const PreparedEngine input = prepareEngine(ctx, key, info);
+    DescPtr<EngineDesc> output = allocateDesc<EngineDesc>(ctx.descriptorAllocator());
+    if (!output) return {};
+    prepareEngineStorage(input, *output);
+    VehicleFillStatus status;
+    const bool valid = fillEngine(input, *output, status);
+    status.report();
+    if (status.incomplete) throw std::logic_error("Incomplete prepared vehicle input or storage");
+    if (!valid) return {};
+    finishEngineStorage(*output, status);
+    return output;
+}
+
 
 } // namespace omni::physics::parse

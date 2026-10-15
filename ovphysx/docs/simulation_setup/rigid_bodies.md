@@ -290,8 +290,10 @@ USD supports two instancing mechanisms, both usable with rigid bodies (but not
 with articulation links):
 
 - **Scenegraph instancing** references shared **collision geometry** so many
-  bodies reuse one collision archetype. Rigid-body parameters such as mass are
-  not shared — set them per body. Shared collider attributes cannot be modified;
+  bodies reuse one collision archetype. Set rigid-body parameters such as mass
+  per body. Positive density authored on a shared collider applies to every instance and
+  takes precedence over body density; explicit body mass still wins. Shared
+  collider attributes cannot be modified;
   create individual instances if you need per-body colliders.
 - **Point instancing** (`UsdGeom.PointInstancer`) instances the **entire rigid
   body** from a prototype. The prototype itself is not simulated; only the
@@ -306,3 +308,32 @@ instancer has count zero. Read simulated instance state through the `RIGID_BODY`
 object type in the ovstage [output read](../ovstage_integration.md) API. To
 control instances, author the point instancer arrays through ovstage and pass
 those control ordinals to `update_from_ovstage()`.
+
+### Local-space instance velocities
+
+By default the `velocities` and `angularVelocities` arrays are world-space
+values and are applied as authored. Setting the `physics:localSpaceVelocities`
+customData on the **prototype** (`ovphysx.utils.authoring.set_local_space_velocities`)
+opts its instances into local-space velocities, exactly as it does for an
+ordinary rigid body:
+
+- The frame is the **instance's own world pose** — the instancer's world
+  transform composed with the instance's `orientations` entry and the
+  prototype's own local rotation. It is not the instancer's frame alone.
+- The linear velocity is multiplied by the **instancer's** decomposed world
+  scale along the instance's local axes and then rotated into world space; the
+  angular velocity is rotated without being scaled. Translation never
+  contributes. The per-instance `scales` entry and the prototype's own scale
+  position and size the instance but do not take part in this mapping.
+- The same rule applies whether the value arrives at attach or as a later edit
+  of the array, and it reads the instance's pose **as it is when the value is
+  applied**. An edit that lands after the instance has turned — from an
+  `orientations` edit, from its own spin, or from simulation — is interpreted
+  in the turned frame. Re-authoring an array entry on an instance that has not
+  turned leaves its world velocity unchanged.
+- Velocities written back **to the instancer arrays** use the same frame and
+  scale, so that round trip is the identity. This inverse belongs to the USD
+  write-back only. The `RIGID_BODY` output read above always reports world-space
+  velocities, with angular velocity in rad/s, whether or not the opt-in is set —
+  so an application that re-authors a value it read there has to apply the
+  inverse frame and scale itself, and convert rad/s back to deg/s.

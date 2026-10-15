@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-1 AC-2
+ */
+
 /**
  * @implements REQ-PARSE-VEH-CONTEXT-001
  * @covers AC-1 AC-2 AC-3
@@ -14,6 +18,8 @@
 
 #include <omni/physics/parse/IPhysicsSource.h>
 #include <omni/physics/parse/ParseApi.h>
+#include <omni/physics/parse/PreparedVehicle.h>
+#include <stdexcept>
 #include <omni/physics/parse/ParseContext.h>
 
 #include <carb/logging/Log.h>
@@ -35,19 +41,19 @@ bool tokenToAxisDir(std::string_view tok, VehicleContextDesc::AxisDir& out)
     return false;
 }
 
-bool readAxisOrDeprecatedVec3(IPhysicsSource& src, ObjectKey key,
-                              const std::string& tokenAttrName,
-                              const std::string& deprecatedVec3AttrName,
+bool readAxisOrDeprecatedVec3(PreparedVehicleReader& src, ObjectKey key,
+                              std::string_view tokenAttrName,
+                              std::string_view deprecatedVec3AttrName,
                               VehicleContextDesc::AxisDir& outAxis,
                               carb::Float3& outVec3,
                               std::string_view ownerName,
-                              const char* axisLabel)
+                              const char* axisLabel, VehicleFillStatus& status)
 {
     TokenId tok;
-    if (!src.getAttribute(key, src.internToken(tokenAttrName), tok))
+    if (!src.getAttribute(key, src.attribute(tokenAttrName), tok))
     {
-        CARB_LOG_ERROR("Usd Physics: \"%s\" needs to have token \"%s\" defined.",
-                       std::string(ownerName).c_str(), axisLabel);
+        VEHICLE_LOG_ERROR(status, "Usd Physics: \"%s\" needs to have token \"%s\" defined.",
+                       ownerName.data(), axisLabel);
         return false;
     }
     const std::string_view tokStr = src.tokenToString(tok);
@@ -55,21 +61,21 @@ bool readAxisOrDeprecatedVec3(IPhysicsSource& src, ObjectKey key,
     {
         if (!tokenToAxisDir(tokStr, outAxis))
         {
-            CARB_LOG_ERROR("Usd Physics: \"%s\" has unsupported \"%s\" token \"%s\".",
-                           std::string(ownerName).c_str(), axisLabel, std::string(tokStr).c_str());
+            VEHICLE_LOG_ERROR(status, "Usd Physics: \"%s\" has unsupported \"%s\" token \"%s\".",
+                           ownerName.data(), axisLabel, tokStr.data());
             return false;
         }
         return true;
     }
     outAxis = VehicleContextDesc::eUndefined;
-    if (!src.getAttribute(key, src.internToken(deprecatedVec3AttrName), outVec3))
+    if (!src.getAttribute(key, src.attribute(deprecatedVec3AttrName), outVec3))
     {
-        CARB_LOG_ERROR("Usd Physics: \"%s\" needs to have attribute \"%s\" defined when \"%s\" is undefined.",
-                       std::string(ownerName).c_str(), deprecatedVec3AttrName.c_str(), axisLabel);
+        VEHICLE_LOG_ERROR(status, "Usd Physics: \"%s\" needs to have attribute \"%s\" defined when \"%s\" is undefined.",
+                       ownerName.data(), deprecatedVec3AttrName.data(), axisLabel);
         return false;
     }
-    CARB_LOG_WARN("Usd Physics: vehicle context \"%s\": attribute \"%s\" is deprecated. Please use \"%s\" instead.",
-                  std::string(ownerName).c_str(), deprecatedVec3AttrName.c_str(), axisLabel);
+    VEHICLE_LOG_WARN(status, "Usd Physics: vehicle context \"%s\": attribute \"%s\" is deprecated. Please use \"%s\" instead.",
+                  ownerName.data(), deprecatedVec3AttrName.data(), axisLabel);
     return true;
 }
 
@@ -77,21 +83,43 @@ bool readAxisOrDeprecatedVec3(IPhysicsSource& src, ObjectKey key,
 
 // @implements REQ-PARSE-VEH-CONTEXT-001
 // @covers AC-1 AC-2 AC-3
-DescPtr<VehicleContextDesc> parseVehicleContext(ParseContext& ctx, ObjectKey key)
+PreparedVehicleContext prepareVehicleContext(ParseContext& ctx, ObjectKey key)
 {
-    IPhysicsSource& src = ctx.source();
-    const std::string ownerName(src.sourceKeyToString(key));
+    PreparedVehicleContext input;
+    input.key = key;
+    input.reads = prepareVehicleReads(ctx.source(), key, {
+        { "physxVehicleContext:updateMode", VehicleAttributeType::token },
+        { "physxVehicleContext:verticalAxis", VehicleAttributeType::token },
+        { "physxVehicleContext:longitudinalAxis", VehicleAttributeType::token },
+        { "physxVehicleContext:upAxis", VehicleAttributeType::float3 },
+        { "physxVehicleContext:forwardAxis", VehicleAttributeType::float3 }
+    });
+    return input;
+}
 
-    DescPtr<VehicleContextDesc> desc = allocateDesc<VehicleContextDesc>(ctx.descriptorAllocator());
+void prepareVehicleContextStorage(const PreparedVehicleContext& input, VehicleContextDesc& output)
+{
+    (void)input; (void)output;
+}
+
+bool fillVehicleContext(const PreparedVehicleContext& input, VehicleContextDesc& output, VehicleFillStatus& status) noexcept
+{
+    PreparedVehicleReader src(input.reads, status);
+    [[maybe_unused]] ObjectKey key = input.key;
+
+
+    const std::string& ownerName = src.sourceKeyToString(key);
+
+    VehicleContextDesc* desc = &output;
     desc->setDefaultValues();
     desc->sceneKey = key;
 
     // updateMode → eVelocityChange when token == "velocityChange", else eAcceleration.
     TokenId mode;
-    if (!src.getAttribute(key, src.internToken("physxVehicleContext:updateMode"), mode))
+    if (!src.getAttribute(key, src.attribute("physxVehicleContext:updateMode"), mode))
     {
-        CARB_LOG_ERROR("Usd Physics: \"%s\" needs to have token \"updateMode\" defined.", ownerName.c_str());
-        return {};
+        VEHICLE_LOG_ERROR(status, "Usd Physics: \"%s\" needs to have token \"updateMode\" defined.", ownerName.c_str());
+        return false;
     }
     const std::string_view modeStr = src.tokenToString(mode);
     desc->vehicleUpdateMode = (modeStr == "velocityChange") ? eVelocityChange : eAcceleration;
@@ -100,15 +128,15 @@ DescPtr<VehicleContextDesc> parseVehicleContext(ParseContext& ctx, ObjectKey key
                                   "physxVehicleContext:verticalAxis",
                                   "physxVehicleContext:upAxis",
                                   desc->verticalAxis, desc->upAxis,
-                                  ownerName, "verticalAxis"))
-        return {};
+                                  ownerName, "verticalAxis", status))
+        return false;
 
     if (!readAxisOrDeprecatedVec3(src, key,
                                   "physxVehicleContext:longitudinalAxis",
                                   "physxVehicleContext:forwardAxis",
                                   desc->longitudinalAxis, desc->forwardAxis,
-                                  ownerName, "longitudinalAxis"))
-        return {};
+                                  ownerName, "longitudinalAxis", status))
+        return false;
 
     // Same-axis check (deprecated path only): warn when vertical and
     // longitudinal collapse onto the same axis pair.
@@ -122,11 +150,32 @@ DescPtr<VehicleContextDesc> parseVehicleContext(ParseContext& ctx, ObjectKey key
         desc->longitudinalAxis != VehicleContextDesc::eUndefined &&
         (desc->verticalAxis >> 1) == (desc->longitudinalAxis >> 1))
     {
-        CARB_LOG_WARN("Usd Physics: vehicle context \"%s\": tokens \"verticalAxis\" and \"longitudinalAxis\" "
+        VEHICLE_LOG_WARN(status, "Usd Physics: vehicle context \"%s\": tokens \"verticalAxis\" and \"longitudinalAxis\" "
                       "can not use the same axis.", ownerName.c_str());
     }
 
-    return desc;
+    return true;
 }
+
+void finishVehicleContextStorage(VehicleContextDesc& output, const VehicleFillStatus& status)
+{
+    (void)output; (void)status;
+}
+
+DescPtr<VehicleContextDesc> parseVehicleContext(ParseContext& ctx, ObjectKey key)
+{
+    const PreparedVehicleContext input = prepareVehicleContext(ctx, key);
+    DescPtr<VehicleContextDesc> output = allocateDesc<VehicleContextDesc>(ctx.descriptorAllocator());
+    if (!output) return {};
+    prepareVehicleContextStorage(input, *output);
+    VehicleFillStatus status;
+    const bool valid = fillVehicleContext(input, *output, status);
+    status.report();
+    if (status.incomplete) throw std::logic_error("Incomplete prepared vehicle input or storage");
+    if (!valid) return {};
+    finishVehicleContextStorage(*output, status);
+    return output;
+}
+
 
 } // namespace omni::physics::parse

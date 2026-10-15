@@ -31,6 +31,7 @@ struct Registry
     TokenSet shapeTokens;
     TokenSet jointTokens;
     TokenSet instancerTokens;
+    uint64_t generation=0;
 
     Registry()
     {
@@ -81,7 +82,7 @@ void registerCustomToken(CustomTokenKind kind, std::string_view token)
         return;
     Registry& r = registry();
     std::lock_guard<std::mutex> lock(r.mutex);
-    setFor(r, kind).emplace(token);
+    if (setFor(r, kind).emplace(token).second) ++r.generation;
 }
 
 void unregisterCustomToken(CustomTokenKind kind, std::string_view token)
@@ -92,8 +93,7 @@ void unregisterCustomToken(CustomTokenKind kind, std::string_view token)
     // std::less<> makes the set transparent, so the heterogeneous erase below
     // needs no temporary std::string.
     const TokenSet::const_iterator it = set.find(token);
-    if (it != set.end())
-        set.erase(it);
+    if (it != set.end()) {set.erase(it);++r.generation;}
 }
 
 // Snapshot semantics: each lookup acquires the mutex once and tests against the
@@ -108,6 +108,13 @@ bool isCustomToken(CustomTokenKind kind, std::string_view token)
     std::lock_guard<std::mutex> lock(r.mutex);
     const TokenSet& set = setFor(r, kind);
     return set.find(token) != set.end();
+}
+
+uint64_t customTokenGeneration()
+{
+    Registry& r=registry();
+    std::lock_guard<std::mutex> lock(r.mutex);
+    return r.generation;
 }
 
 std::vector<std::string> customTokens(CustomTokenKind kind)

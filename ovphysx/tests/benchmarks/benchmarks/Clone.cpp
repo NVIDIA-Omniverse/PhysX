@@ -97,13 +97,15 @@ protected:
         ovphysx::PhysX* physx = BmGlobals::getInstance().getPhysX();
         if (!physx) return;
 
-        ovphysx_api_status_t st = physx->clone("/World/envs/env0", mTargets, mAnchorTransforms.data());
+        const ovphysx_enqueue_result_t clone = physx->clone("/World/envs/env0", mTargets, mAnchorTransforms.data());
+        ovphysx_api_status_t st = clone.status;
+        if (st == OVPHYSX_API_SUCCESS)
+            st = physx->waitAll().status();
         if (st != OVPHYSX_API_SUCCESS)
         {
             printFormatted("Clone: clone(N=%u) failed: status=%d", mN, static_cast<int>(st));
             return;
         }
-        physx->waitAll();
     }
 
 private:

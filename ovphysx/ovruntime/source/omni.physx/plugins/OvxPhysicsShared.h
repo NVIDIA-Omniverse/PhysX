@@ -1,11 +1,20 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-READ-RESULT-001
+// @covers AC-2 AC-5
+
 #pragma once
 
 /**
  * @implements REQ-READ-COVERAGE-001
  * @covers AC-1
+ *
+ * @implements REQ-READ-VEHICLE-001
+ * @covers AC-5
+ *
+ * @implements REQ-READ-SLEEP-001
+ * @covers AC-3
  */
 
 // Object enumeration shared by the ovstage read (OvxPhysicsRead.cpp) and write (OvxPhysicsWrite.cpp).
@@ -65,6 +74,7 @@ class InternalDeformableBody;
 namespace physx
 {
 class PxScene;
+class PxController;
 class PxRigidBody;
 class PxArticulationLink;
 class PxDeformableBody;
@@ -82,6 +92,7 @@ namespace omni::physx::tensors
 {
 struct ArticulationEntry;
 class BasePointInstancerView;
+class BaseVehicleView;
 }
 
 namespace omni::physx::ovx
@@ -89,16 +100,54 @@ namespace omni::physx::ovx
 
 using omni::physics::parse::ObjectKey;
 
+// Prim-set selection compaction, shared by every typed read (OvxPhysicsRead.cpp) and write
+// (OvxPhysicsWrite.cpp) emit path so the selection semantics live in ONE place (ADR-0025 /
+// REQ-READ-SELECT-001). `selectedIndices` decides membership -- which prims a selection includes, and in
+// what order -- and `gatherByIndices` is its parallel-column companion, filtering each column by the
+// SAME index list so the columns of one emit cannot fall out of lockstep and a new column is one more
+// call, not another loop to keep in sync. Both produce fresh vectors: a selected emit must never mutate
+// the shared per-scene caches it reads from (AC-5).
+//
+// `Selection` is any type exposing `admits(const ObjectKey&)` -- the read's KeySelection or the write's
+// WriteSession -- so one definition serves both directions and they cannot diverge.
+template <typename Selection>
+inline std::vector<size_t> selectedIndices(const Selection& selection, const std::vector<ObjectKey>& keys)
+{
+    std::vector<size_t> keep;
+    keep.reserve(keys.size());
+    for (size_t i = 0; i < keys.size(); ++i)
+        if (selection.admits(keys[i]))
+            keep.push_back(i);
+    return keep;
+}
+
+template <typename T>
+inline std::vector<T> gatherByIndices(const std::vector<T>& column, const std::vector<size_t>& indices)
+{
+    std::vector<T> out;
+    out.reserve(indices.size());
+    for (size_t index : indices)
+        out.push_back(column[index]);
+    return out;
+}
+
 // The attached ovstage simulation both directions operate against. Every entry point resolves this
 // first: without a source there is no path dictionary, so neither a read column nor a write group can
 // name the prims it covers. `who` labels the error.
-struct ActiveContext
+struct SourceContext
 {
     omni::physx::usdparser::AttachedStage* stage = nullptr;
     omni::physics::parse::IPhysicsSource* source = nullptr;
 };
 
-bool getActiveContext(const char* who, ActiveContext& out);
+bool getSourceContext(uint64_t attachHandle, const char* who, SourceContext& out);
+bool getSceneSourceContext(const ::physx::PxScene* scene, const char* who, SourceContext& out);
+
+// Wait out a caller's producer handoff (ovstage's {stream, wait_event}) before its data is read: a nonzero stream is
+// drained, then a nonzero event waited on, both observed on the host. {0, 0} asserts nothing is outstanding. False,
+// with the runtime error "<who>: ...; <consequence>.", when a handoff is supplied but cannot be proven. Shared by the
+// write commit and the SDF evaluation, so both honour a handoff by the same rules and report it in the same words.
+bool waitForCallerProducer(const ovstage_cuda_sync_t& sync, const char* who, const char* consequence);
 
 // Active-actor tracking. When a scene runs with PxSceneFlag::eENABLE_ACTIVE_ACTORS
 // (the same set the USD write-back sink consumes), getActiveActors() reports the
@@ -122,9 +171,11 @@ struct ActiveActorSet
 
     // Record indices the solver moved last step, one BIT each rather than a hash set.
     //
-    // The representation is the whole cost of this type. The set is a per-step fact, so it is
-    // rebuilt from scratch on every ACTIVE read and never cached -- which makes its BUILD, not its
-    // lookup, the thing to pay attention to. As a hash set that build was one insert per moved
+    // The representation is the whole cost of this type. The set is a per-step fact and is never
+    // cached itself, so whenever an ACTIVE read builds it, it is rebuilt from scratch -- which makes
+    // its BUILD, not its lookup, the thing to pay attention to. (The DirectGPU active read now reuses
+    // an epoch-keyed body-list cache and skips this build while warm -- buildStandaloneRigid,
+    // REQ-READ-CORE-001 AC-5; the CPU active read has no such cache and rebuilds every step.) As a hash set that build was one insert per moved
     // actor with rehash growth underneath, and at 163,840 movers it measured ~17 ms against a
     // device read of 668 us: the scope cost 26x the read it was scoping. A bit per record is ~20 KB
     // at that size, marked in O(1) with no hashing and no reallocation, and small enough to stay in
@@ -174,7 +225,7 @@ struct ActiveActorSet
     }
 };
 
-ActiveActorSet collectActiveActors();
+ActiveActorSet collectActiveActors(usdparser::AttachedStage& owner);
 
 // THE one safe walk over a scene's active actors. Every consumer goes through here.
 //
@@ -246,11 +297,13 @@ bool linkInScope(const ::physx::PxArticulationLink& link,
                  uint32_t scope,
                  const ActiveActorSet& activeSet);
 
-void scanRigidRecords(uint32_t scope, const ActiveActorSet& activeSet, RigidRecordScan& out);
+void scanRigidRecords(usdparser::AttachedStage& owner, uint32_t scope, const ActiveActorSet& activeSet, RigidRecordScan& out);
 
 // The link counterpart of scanRigidRecords, shared for the same reason: a write session over
 // articulation links must select exactly the links the read selects, under the same scope rules.
-void scanLinkRecords(uint32_t scope, const ActiveActorSet& activeSet, RigidRecordScan& out);
+// Returns false if a link has no scene yet: the emitted selection is usable, but cannot be cached
+// across reads because buffered insertion does not change the record lifetime epoch.
+bool scanLinkRecords(usdparser::AttachedStage& owner, uint32_t scope, const ActiveActorSet& activeSet, RigidRecordScan& out);
 
 // The scan already grouped by scene; this is a lookup, not a filter.
 const RigidSceneBucket* bucketForScene(const RigidRecordScan& scan, const ::physx::PxScene* scene);
@@ -264,6 +317,7 @@ const RigidSceneBucket* bucketForScene(const RigidRecordScan& scan, const ::phys
 // The record walk, run at most once per read and only when some scene needs it.
 struct LazyRigidScan
 {
+    usdparser::AttachedStage& owner;
     uint32_t scope;
     bool ran = false;
     RigidRecordScan data;
@@ -279,7 +333,7 @@ struct LazyRigidScan
         if (!activeRan)
         {
             if (scope == ::omni::physx::kOvxActive)
-                active = collectActiveActors();
+                active = collectActiveActors(owner);
             activeRan = true;
         }
         return active; // unavailable for any other scope, which is what those callers expect
@@ -289,7 +343,7 @@ struct LazyRigidScan
     {
         if (!ran)
         {
-            scanRigidRecords(scope, activeActors(), data);
+            scanRigidRecords(owner, scope, activeActors(), data);
             ran = true;
         }
         return data;
@@ -309,11 +363,11 @@ using ScenePair = std::pair<::physx::PxScene*, omni::physx::internal::InternalSc
 // One walk of the record database; the projections below come out of it rather than walking again,
 // so there is one definition of "a live physics scene" to keep correct instead of two that have to
 // agree.
-std::vector<ScenePair> allPhysicsScenesWithInternal();
+std::vector<ScenePair> allPhysicsScenesWithInternal(usdparser::AttachedStage& owner);
 
 std::vector<::physx::PxScene*> scenesOf(const std::vector<ScenePair>& pairs);
 
-std::vector<::physx::PxScene*> allPhysicsScenes();
+std::vector<::physx::PxScene*> allPhysicsScenes(usdparser::AttachedStage& owner);
 
 // PhysX frees the DirectGPU state row of an eDISABLE_SIMULATION rigid dynamic, so a device column
 // must never source one. Statics and articulation links are never PxRigidDynamic, so this is false
@@ -425,6 +479,10 @@ struct RigidReadCacheEntry
     // superset view was not rebuilt; this says no object was created or retired, which is the part
     // generation cannot answer on the stageless path.
     uint64_t dbEpoch = 0;
+    // Only meaningful for the DirectGPU ACTIVE entry, whose body set is the non-kinematic bodies and so
+    // changes when a flag flips as well as on create/retire. 0 for the ALL entry, which does not depend
+    // on it. See kinematicToggleEpoch().
+    uint64_t kinematicEpoch = 0;
     std::vector<ObjectKey> keys;
     std::vector<ovx_primpath_t> handles; // keys canonicalised once
     std::vector<::physx::PxU32> rows;    // superset rows for `keys`, same order; valid for `generation`
@@ -577,7 +635,7 @@ struct ArticulationReadCacheEntry
 // Defined in OvxPhysicsRead.cpp. Exposed so the WRITE can fill the cache itself rather than
 // requiring the caller to have issued a read first: that precondition was real while the write had
 // no way to run the walk, and it is not something a write API should impose.
-bool refreshArticulationCache(const std::vector<::physx::PxScene*>& scenes);
+bool refreshArticulationCache(usdparser::AttachedStage& owner, const std::vector<::physx::PxScene*>& scenes);
 
 // This scene's entry, or null when the walk has not covered it. Never re-runs the walk; call
 // refreshArticulationCache first.
@@ -592,6 +650,9 @@ uint64_t mintRecordContentVersion();
 // Free every pooled output-column buffer and release every manager reference the read-column pool
 // holds, ahead of CUDA/foundation shutdown. Called from OmniPhysX::onShutdown; see the definition.
 void ovxDrainColumnPools();
+
+// Retire only this scene's cached views before its context or native objects die.
+void ovxRetireSceneCaches(const ::physx::PxScene* scene, uint64_t attach);
 
 // Derive `jc`'s per-output DOF records, per-joint slices and interned handles against the
 // articulation view that numbered `entries` / `localToRow`, or serve them from the cache when
@@ -650,7 +711,8 @@ struct TendonReadCacheEntry
 
 // Enumerate `scene`'s tendons of one kind into the shared cache if the object database has moved,
 // and return that scene's entry. Never null: an entry is inserted even when the scene owns no
-// tendons, because that empty answer is exactly what the cache exists to avoid re-deriving.
+// tendons, because that empty answer is exactly what the cache exists to avoid re-deriving. A walk
+// that skipped an articulation pending scene insertion is returned but not cached.
 //
 // Defined in OvxPhysicsRead.cpp beside the walk that fills it, and exposed here so the WRITE runs
 // the same walk rather than a second one -- and so it does not have to require the caller to issue a
@@ -676,16 +738,37 @@ struct VehicleReadCacheEntry
     std::vector<omni::physx::tensors::VehicleWheelOvStageRecord> recs;
     std::vector<ObjectKey> keys;
     std::vector<ovx_primpath_t> handles;
+    std::vector<ObjectKey> vehicleKeys;
+    std::vector<ovx_primpath_t> vehicleHandles;
 };
 
-// This scene's entry, or null when no vehicle enumeration has been derived for it. Defined in
-// OvxPhysicsRead.cpp beside the walk that fills it.
-//
-// Unlike the articulation and tendon accessors, this one does NOT refresh: the vehicle walk needs a
-// CpuSimulationView and the scene's InternalScene, which the read already holds at that point and
-// the write would have to re-acquire. The write reports the miss instead -- see the vehicle branch
-// in planGroups.
+// Refresh the full wheel enumeration under the caller's existing runtime admission. An empty scene
+// has a valid empty entry; null means its backend view could not be acquired. The optional view is
+// the same one used to number the records, so a read can gather without reacquiring it.
+VehicleReadCacheEntry* refreshVehicleCache(omni::physics::parse::IPhysicsSource& source,
+                                         ::physx::PxScene* scene,
+                                         omni::physx::tensors::BaseVehicleView** outView = nullptr);
+
+// Inspect the existing entry without refreshing it. Commit uses the enumeration from session open.
 VehicleReadCacheEntry* vehicleCacheEntry(const ::physx::PxScene* scene);
+
+// ---------------------------------------------------------------------------
+// Character controllers. One walk for the read and the write: a write session
+// opened against a read query must name the same controllers in the same order.
+// ---------------------------------------------------------------------------
+
+struct CctOvStageRow
+{
+    ::physx::PxController* controller = nullptr;
+    omni::physx::internal::InternalCct* internal = nullptr;
+    ObjectKey key;
+};
+
+// Database order. kOvxActive keeps a controller whose actor the scene reported as
+// active; a scene that cannot report active actors falls back to the actor's awake
+// state. A controller with no actor is omitted. Returns false only on failure;
+// an empty result is success.
+bool enumerateCctRows(usdparser::AttachedStage& owner, uint32_t scope, std::vector<CctOvStageRow>& out);
 
 // ---------------------------------------------------------------------------
 // Point-instancer instances, shared by the read and the write.
@@ -776,7 +859,22 @@ struct ParticleWriteTargets
 // vectors.
 bool particleWriteTargets(::physx::PxScene* scene, uint32_t scope, ParticleWriteTargets& out);
 
-bool queryTypeScope(uint64_t query, uint32_t& outType, uint32_t& outScope);
+bool queryTypeScope(uint64_t query, uint64_t& outAttach, uint32_t& outType, uint32_t& outScope);
+
+// Debug-render queries have no stage when detached. Returns false for any other query.
+bool debugRenderQuery(uint64_t query, uint64_t& outInstance, uint64_t& outAttach);
+
+// Internal helpers for a caller already holding runtime admission. They acquire
+// only the output-cache lock, never recursively acquire runtime admission.
+bool queryTotalPrimCountLocked(uint64_t query, size_t& outCount);
+bool queryMembershipLocked(uint64_t query, std::unordered_set<ObjectKey, ObjectKey::Hash>& outKeys);
+ovx_path_dictionary_t* queryDictionaryLocked(uint64_t query);
+
+// The query's resolved prim-set selection (ADR-0025), if it was opened with one. Returns true and fills
+// `outKeys` when the query carries a selection; false (leaving `outKeys` untouched) for a whole-set query
+// or an invalid handle. A write reuses this so narrowing the query narrows the write (REQ-READ-SELECT-001
+// AC-4). Defined in OvxPhysicsRead.cpp beside queryTypeScope, where the query state lives.
+bool querySelection(uint64_t query, std::unordered_set<ObjectKey, ObjectKey::Hash>& outKeys);
 
 // Identity for a row list, handed to a rigid-body view as its upload token: the view re-uploads its
 // device copy exactly when this changes, so it must change exactly when the CONTENTS do.
@@ -794,3 +892,20 @@ bool queryTypeScope(uint64_t query, uint32_t& outType, uint32_t& outScope);
 uint64_t nextRowsVersion();
 
 } // namespace omni::physx::ovx
+
+namespace omni::physx::ovx
+{
+// Terminal metadata retirement requires the source dictionary to remain alive.
+// Ordinary scene rebuilds leave read snapshots and their prim lists intact.
+void retireAttachmentReadCaches(omni::physics::AttachHandle attach, bool retireReadMetadata = false);
+// Internal lifecycle diagnostic for retention regressions.
+size_t attachmentReadCacheEntryCount();
+// Internal lifecycle diagnostic for reuse regressions: the DirectGPU contact reducers built so far, process-wide.
+uint64_t contactReducerBuildCount();
+// How many contact reads of its attachment an unused contact-query reducer survives. A caller opening a fresh
+// query per read (the Python read) and alternating a few contact specifications reuses each one; one whose rows
+// nobody asks for again is released within this many reads, so idle reducers stay bounded.
+inline constexpr uint32_t kContactReducerIdleReads = 4;
+}
+
+namespace omni::physx::ovx { carb::tasking::RecursiveMutexWrapper& outputCacheMutex(); }

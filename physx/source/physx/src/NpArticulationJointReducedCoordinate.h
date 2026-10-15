@@ -65,10 +65,6 @@ namespace physx
 		virtual		PxReal				getDriveVelocity(PxArticulationAxis::Enum axis) const	PX_OVERRIDE PX_FINAL;
 		virtual		void				setArmature(PxArticulationAxis::Enum axis, const PxReal armature)	PX_OVERRIDE PX_FINAL;
 		virtual		PxReal				getArmature(PxArticulationAxis::Enum axis) const	PX_OVERRIDE PX_FINAL;
-		virtual		void				setFrictionCoefficient(const PxReal coefficient)	PX_OVERRIDE PX_FINAL;
-		virtual		PxReal				getFrictionCoefficient() const	PX_OVERRIDE PX_FINAL;
-		virtual		void				setMaxJointVelocity(const PxReal maxJointV)	PX_OVERRIDE PX_FINAL;
-		virtual		PxReal				getMaxJointVelocity() const	PX_OVERRIDE PX_FINAL;
 		virtual		void				setMaxJointVelocity(PxArticulationAxis::Enum axis, const PxReal maxJointV)	PX_OVERRIDE PX_FINAL;
 		virtual		PxReal				getMaxJointVelocity(PxArticulationAxis::Enum axis) const	PX_OVERRIDE PX_FINAL;
 		virtual		void				setFrictionParams(PxArticulationAxis::Enum axis, const PxJointFrictionParams& jointFrictionParams) PX_OVERRIDE PX_FINAL;
@@ -105,24 +101,10 @@ namespace physx
 			UPDATE_PVD_PROPERTY
 		}
 
-		PX_INLINE void	scSetFrictionCoefficient(const PxReal v)
-		{
-			PX_ASSERT(!isAPIWriteForbidden());
-			mCore.setFrictionCoefficient(v);
-			UPDATE_PVD_PROPERTY
-		}
-
 		PX_INLINE void	scSetFrictionParams(PxArticulationAxis::Enum axis, const PxJointFrictionParams& jointFrictionParams)
 		{
 			PX_ASSERT(!isAPIWriteForbidden());
 			mCore.setFrictionParams(axis, jointFrictionParams);
-			UPDATE_PVD_PROPERTY
-		}
-
-		PX_INLINE void	scSetMaxJointVelocity(const PxReal v)
-		{
-			PX_ASSERT(!isAPIWriteForbidden());
-			mCore.setMaxJointVelocity(v);
 			UPDATE_PVD_PROPERTY
 		}
 

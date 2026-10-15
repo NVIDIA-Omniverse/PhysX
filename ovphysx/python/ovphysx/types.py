@@ -1,22 +1,37 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-# @implements REQ-PYTHON-OMNIPVD-001
+# @implements REQ-CAPI-VEHICLE-001
 # @covers AC-1
+
+# @implements REQ-CAPI-OVD-NAMES-001
+# @covers AC-3
+
 # @implements REQ-PYTHON-OMNIPVD-LATE-001
 # @covers AC-2
 # @implements REQ-PYTHON-READPOOL-001
 # @covers AC-1
 # @implements REQ-CAPI-OBJECTTYPE-001
 # @covers AC-1
+# @implements REQ-PYTHON-TASK-001
+# @covers AC-8
+# @implements REQ-CAPI-CONFIG-001
+# @covers AC-1 AC-8
+# @implements REQ-CAPI-READ-CONTACT-002
+# @covers AC-3
+# @implements REQ-CAPI-WRITE-001
+# @covers AC-15
+# @implements REQ-CAPI-SDF-001
+# @covers AC-4
 
 """Pure-Python type definitions for ovphysx.
 
-@implements REQ-CAPI-NVTX-001
+@implements REQ-CAPI-PROFILER-001
 @covers AC-2
 
 This module contains IntEnum definitions that mirror the C enums in
-ovphysx/include/ovphysx/ovphysx_types.h. It has zero native dependencies
+ovphysx/include/ovphysx/ovphysx_types.h and the legacy-only enums in
+ovphysx/include/ovphysx/ovphysx_legacy_types.h. It has zero native dependencies
 (no ctypes, no shared library loading, no USD) and is safe to import in
 any Python process regardless of USD version or native library state.
 
@@ -30,7 +45,8 @@ Naming convention: strip the ``OVPHYSX_TENSOR_`` prefix and scalar dtype suffix
 mechanically verifiable.
 """
 
-from enum import IntEnum
+from enum import IntEnum, IntFlag
+from typing import NamedTuple, Sequence, Union
 
 
 class TensorType(IntEnum):
@@ -164,7 +180,11 @@ class TensorType(IntEnum):
 
 
 class SceneQueryMode(IntEnum):
-    """Scene query hit mode. Mirrors ovphysx_scene_query_mode_t."""
+    """Scene query hit mode. Mirrors ovphysx_scene_query_mode_t.
+
+    .. deprecated:: 0.6.0
+        Scene queries are deprecated.
+    """
 
     CLOSEST = 0  # Return the single closest hit (or none)
     ANY     = 1  # Return whether any hit exists (0 or 1 result)
@@ -172,7 +192,11 @@ class SceneQueryMode(IntEnum):
 
 
 class SceneQueryGeometryType(IntEnum):
-    """Geometry type for sweep/overlap queries. Mirrors ovphysx_scene_query_geometry_type_t."""
+    """Geometry type for sweep/overlap queries. Mirrors ovphysx_scene_query_geometry_type_t.
+
+    .. deprecated:: 0.6.0
+        Scene queries are deprecated.
+    """
 
     SPHERE = 0  # Sphere defined by radius + center
     BOX    = 1  # Oriented box defined by half-extents + pose
@@ -206,17 +230,19 @@ class ApiStatus(IntEnum):
     BUFFER_TOO_SMALL = 6    # caller-supplied buffer is too small, see out_required_size
     DEVICE_MISMATCH = 7     # tensor device cannot be used or staged for this binding/policy
     GPU_NOT_AVAILABLE = 8   # GPU requested but not available or CUDA init failed
-    END_OF_ITERATION = 9    # iterator exhausted (e.g. fetch_read_next past the last group), not an error
-    INVALID_STATE = 10      # operation is not valid in the instance's current lifecycle state
+    INVALID_STATE = 9       # operation is not valid in the instance's current lifecycle state
 
 
 class ObjectType(IntEnum):
-    """TensorAPI object classification. Mirrors ``ovphysx_object_type_t``.
+    """TensorAPI object classification. Mirrors ``ovphysx_object_type_t`` in the legacy C header.
+
+    .. deprecated:: 0.6.0
+        Object-type lookup via :meth:`PhysX.get_object_type` is deprecated.
 
     Returned by :meth:`PhysX.get_object_type`. Standalone UsdPhysics joints are
-    ``JOINT``; plugin-registered custom joints are ``CUSTOM_JOINT`` (pair with
-    ``OVPHYSX_PHYSX_TYPE_CUSTOM_JOINT`` / ``get_physx_ptr``); articulation joints
-    are ``ARTICULATION_JOINT``.
+    ``JOINT``; plugin-registered custom joints are ``CUSTOM_JOINT``; articulation
+    joints are ``ARTICULATION_JOINT``. Native addresses for those kinds are the
+    ``physxPointer`` column on the matching :class:`SimObjectType`.
     """
 
     INVALID = 0  # No classified simulation object at the path
@@ -230,11 +256,16 @@ class ObjectType(IntEnum):
 
 
 class SimObjectType(IntEnum):
-    """Simulated object type for the physics output read.
+    """Query target for the physics output read.
 
-    Mirrors ``ovphysx_sim_object_type_t``. This is a separate enum domain from
-    the TensorBindings :class:`ObjectType`. In particular,
-    ``SimObjectType.ARTICULATION`` is 9 while ``ObjectType.ARTICULATION`` is 2.
+    Mirrors ``ovphysx_query_target_t``, including its numbering rules: explicit
+    contiguous values from 0, new entries appended with the next integer, and no
+    gaps or renumbering. ``DEBUG_RENDER`` is an instance target, not a simulated
+    prim. Its value is pinned like the others; later types append after it.
+
+    This is a separate enum domain from the TensorBindings :class:`ObjectType`.
+    In particular, ``SimObjectType.ARTICULATION`` is 9 while
+    ``ObjectType.ARTICULATION`` is 2.
     """
 
     RIGID_BODY = 0
@@ -248,6 +279,20 @@ class SimObjectType(IntEnum):
     SPATIAL_TENDON = 8
     ARTICULATION = 9
     DEFORMABLE_MATERIAL = 10
+    CONTACT_SENSOR = 11
+    CHARACTER_CONTROLLER = 12
+    VEHICLE = 13
+    SCENE = 14
+    PHYSX_MATERIAL = 15
+    SHAPE = 16
+    COMPOUND_SHAPE = 17
+    RIGID_ACTOR = 18
+    JOINT = 19
+    CUSTOM_JOINT = 20
+    PARTICLE_SYSTEM = 21
+    PHYSICS = 22
+    DEBUG_RENDER = 23
+    SDF_SHAPE = 24
 
 
 class ObjectScope(IntEnum):
@@ -261,39 +306,98 @@ class ObjectScope(IntEnum):
     ACTIVE = 1
 
 
+class ContactSelection(NamedTuple):
+    """One contact-sensor selection and its filters, for ``PhysX.query(..., contacts=[...])`` (ADR-0044).
+
+    ``sensors`` selects sensor bodies -- and, on CPU simulation or GPU dynamics with CPU readback,
+    colliders carrying ``PhysxContactReportAPI`` (host-only; a DirectGPU scene has no separate child-collider
+    rows, and a body row overlaps its collider rows, so don't sum across them). Each
+    entry of ``filters`` must match one object, shared by every sensor of this selection, or exactly one
+    object per sensor, paired by position. Every selection is either a glob ``str`` or a list of native
+    ``ovx_primpath_t`` handles, as for ``pattern`` and ``prim_paths``. All selections of one query carry
+    the same number of filters.
+
+    A separate child collider's schema enables sensor selection, not its owner's reporting. Also enable
+    reporting on the body, owning articulation link, or articulation root to avoid depending on reports
+    from the other actor in each pair. The child remains a row but reads zero when neither actor reports
+    matching contacts. Configure reporting settings on the reporting actor or articulation root;
+    a standalone static collider is its own actor and enables reporting on CPU simulation and GPU dynamics
+    with CPU readback. On DirectGPU its sensor row remains but reads zero force.
+    """
+
+    sensors: Union[str, Sequence[int]]
+    filters: Sequence[Union[str, Sequence[int]]] = ()
+
+
+class ArticulationKinematicFlag(IntFlag):
+    """Articulation state propagated by ``update_articulations_kinematic``."""
+
+    POSITION = 1 << 0
+    VELOCITY = 1 << 1
+
+
+class GlobalConfigKey(IntEnum):
+    """Process-global configuration keys."""
+
+    DISABLE_CONTACT_PROCESSING = 0x00000000
+    COLLISION_CONE_CUSTOM_GEOMETRY = 0x00000001
+    COLLISION_CYLINDER_CUSTOM_GEOMETRY = 0x00000002
+    NUM_THREADS = 0x00000003
+    SCENE_MULTI_GPU_MODE = 0x00000004
+    OVSTAGE_READ_POOL_MAX_MB = 0x00000005
+    PROFILER_BACKEND = 0x00000006
+    COOKED_COLLIDER_CACHE_DIRECTORY = 0x00000007
+    PROFILER_OUTPUT_PATH = 0x00000008
+    CPU_ONLY = 0x00000009
+    LOG_LEVEL = 0x0000000A
+    DEFAULT_LOG_OUTPUT = 0x0000000B
+    OVD_RECORDING_CAPABLE = 0x0000000C
+
+
+class ConfigKey(IntEnum):
+    """Per-instance configuration keys."""
+
+    ACTIVE_CUDA_GPUS = 0x00010000
+
+
 class ConfigBool(IntEnum):
-    """Boolean config keys. Mirrors ovphysx_config_bool_t."""
+    """Deprecated boolean configuration keys."""
 
     DISABLE_CONTACT_PROCESSING = 0
     COLLISION_CONE_CUSTOM_GEOMETRY = 1
     COLLISION_CYLINDER_CUSTOM_GEOMETRY = 2
-    OMNIPVD_OUTPUT_ENABLED = 3
-    NVTX_ENABLED = 4
-    OMNIPVD_RECORDING_CAPABLE = 5
 
 
 class ConfigInt32(IntEnum):
-    """Int32 config keys. Mirrors ovphysx_config_int32_t."""
+    """Deprecated int32 configuration keys."""
 
     NUM_THREADS = 0
     SCENE_MULTI_GPU_MODE = 1
-    OMNIPVD_TCP_PORT = 2
-    OMNIPVD_TCP_TIMEOUT_MS = 3
     OVSTAGE_READ_POOL_MAX_MB = 4
+    PROFILER_BACKEND = 5
 
 
 class ConfigFloat(IntEnum):
-    """Float config keys (reserved). Mirrors ovphysx_config_float_t."""
+    """Deprecated float configuration keys."""
     pass
 
 
 class ConfigString(IntEnum):
-    """String config keys. Mirrors ovphysx_config_string_t."""
+    """Deprecated string configuration keys."""
 
-    OMNIPVD_OVD_RECORDING_DIRECTORY = 0
     COOKED_COLLIDER_CACHE_DIRECTORY = 1
-    OMNIPVD_TRANSPORT = 2
-    OMNIPVD_TCP_ADDRESS = 3
+    PROFILER_OUTPUT_PATH = 4
+
+
+class ProfilerBackend(IntEnum):
+    """Profiler backend selection. Mirrors ovphysx_profiler_backend_t.
+
+    The value of :attr:`GlobalConfigKey.PROFILER_BACKEND`.
+    """
+
+    NONE = 0
+    NVTX = 1
+    TRACE = 2
 
 
 class BindingPrimMode(IntEnum):

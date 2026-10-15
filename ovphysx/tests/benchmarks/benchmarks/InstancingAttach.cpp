@@ -11,7 +11,10 @@
 // `instanceable = false`. If a flat row costs the same as its instanced
 // sibling, the cost is not specific to scene-graph instancing.
 
+#include "../../c_samples/common/ovstage_sample.h"
 #include "framework/UsdPCH.h"
+
+#include "../TaskCompletion.h"
 
 #include "../framework/BmBenchmark.h"
 #include "../framework/BmGlobals.h"
@@ -129,7 +132,7 @@ public:
             return;
         if (mAttached && mPhysX)
         {
-            const ovphysx_result_t detach = ovphysx_detach_ovstage(mPhysX->handle());
+            const ovphysx_result_t detach = bmCompleteTask(mPhysX->handle(), ovphysx_detach_ovstage(mPhysX->handle()));
             // An attached Stage remains caller-owned. Retain it if detach fails
             // rather than destroying storage still referenced by ovphysx.
             if (detach.status != OVPHYSX_API_SUCCESS)
@@ -168,32 +171,32 @@ public:
     Time::Second timedStep() override
     {
         Time timer;
-        const ovphysx_result_t attach = ovphysx_attach_ovstage(mPhysX->handle(), mStage, kInitialOrdinal);
+        const ovphysx_enqueue_result_t attach = ovphysx_attach_ovstage(mPhysX->handle(), mStage, kInitialOrdinal);
         if (attach.status != OVPHYSX_API_SUCCESS)
             throw std::runtime_error(ovphysxError("ovphysx_attach_ovstage"));
         mAttached = true;
 
-        ovphysx_op_wait_result_t waitResult{};
+        ovphysx_wait_task_result_t waitResult{};
         const ovphysx_result_t waitStatus =
-            ovphysx_wait_op(mPhysX->handle(), OVPHYSX_OP_INDEX_ALL, UINT64_MAX, &waitResult);
+            ovphysx_wait_task(mPhysX->handle(), attach, OVPHYSX_TIMEOUT_INFINITE, &waitResult);
         const Time::Second elapsed = timer.getElapsedSeconds();
 
         std::string waitError;
         if (waitStatus.status != OVPHYSX_API_SUCCESS || waitResult.num_errors != 0)
         {
-            waitError = ovphysxError("ovphysx_wait_op");
+            waitError = ovphysxError("ovphysx_wait_task");
             // A failed operation sets the aggregate status as well as num_errors,
             // so the specific per-op message is only reachable from inside this
             // branch. Read it after ovphysxError() has copied the aggregate text.
-            if (waitResult.num_errors != 0 && waitResult.error_op_indices)
+            if (waitResult.num_errors != 0 && waitResult.error_tasks)
             {
-                const ovphysx_string_t error = ovphysx_get_last_op_error(waitResult.error_op_indices[0]);
+                const ovphysx_string_t error = ovphysx_get_last_task_error(mPhysX->handle(), waitResult.error_tasks[0]);
                 if (error.ptr)
-                    waitError += " (op " + std::to_string(waitResult.error_op_indices[0]) + ": " +
+                    waitError += " (op " + std::to_string(waitResult.error_tasks[0].op_index) + ": " +
                                  std::string(error.ptr, error.length) + ")";
             }
         }
-        ovphysx_destroy_wait_result(&waitResult);
+        ovphysx_destroy_wait_task_result(&waitResult);
         if (!waitError.empty())
             throw std::runtime_error(waitError);
 
@@ -216,18 +219,8 @@ private:
     {
         mPhysX = BmGlobals::getInstance().getPhysX();
 
-        // ovphysx ships its PhysX schemas as codeless data and never registers
-        // them. The application does, before the first population in the process.
-        ovphysx_string_t schemaRoot{};
-        if (ovphysx_get_codeless_schema_root(&schemaRoot).status != OVPHYSX_API_SUCCESS)
-        {
-            throw std::runtime_error("ovphysx_get_codeless_schema_root failed");
-        }
-        const ovx_string_t schemaPath{ schemaRoot.ptr, schemaRoot.length };
-        if (ovstage_population_register_usd_schemas(&schemaPath, 1) != OVSTAGE_OK)
-        {
-            failPreparation(populationError("ovstage_population_register_usd_schemas"));
-        }
+        if (!ovphysx_sample_register_physx_schemas())
+            throw std::runtime_error("External PhysX schema registration failed");
 
         ovstage_instance_desc_t desc{};
         desc.name = "ovphysx-instancing-attach-benchmark";
@@ -278,19 +271,14 @@ private:
     void validateBodyCount()
     {
         ovphysx_query_handle_t query = 0;
-        const ovphysx_result_t queryStatus =
-            ovphysx_query(mPhysX->handle(), OVPHYSX_OBJECT_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query);
+        ovstage_query_result_t result{};
+        const ovphysx_result_t queryStatus = bmCompleteTask(
+            mPhysX->handle(), ovphysx_query(mPhysX->handle(), OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query, &result));
         if (queryStatus.status != OVPHYSX_API_SUCCESS || query == 0)
             throw std::runtime_error(ovphysxError("ovphysx_query"));
 
-        ovstage_query_result_t result{};
-        const ovphysx_result_t fetchStatus = ovphysx_fetch_query_result(mPhysX->handle(), query, &result);
-        const std::string fetchError =
-            fetchStatus.status == OVPHYSX_API_SUCCESS ? std::string() : ovphysxError("ovphysx_fetch_query_result");
         const size_t bodyCount = result.total_prim_count;
-        const ovphysx_result_t releaseStatus = ovphysx_release_query(mPhysX->handle(), query);
-        if (fetchStatus.status != OVPHYSX_API_SUCCESS)
-            throw std::runtime_error(fetchError);
+        const ovphysx_result_t releaseStatus = bmCompleteTask(mPhysX->handle(), ovphysx_release_query(mPhysX->handle(), query));
         if (releaseStatus.status != OVPHYSX_API_SUCCESS)
             throw std::runtime_error(ovphysxError("ovphysx_release_query"));
         if (bodyCount != kPhysicsBodyCount)
@@ -306,7 +294,7 @@ private:
             return;
         if (mAttached)
         {
-            const ovphysx_result_t detach = ovphysx_detach_ovstage(mPhysX->handle());
+            const ovphysx_result_t detach = bmCompleteTask(mPhysX->handle(), ovphysx_detach_ovstage(mPhysX->handle()));
             if (detach.status != OVPHYSX_API_SUCCESS)
                 throw std::runtime_error(ovphysxError("ovphysx_detach_ovstage"));
             mAttached = false;

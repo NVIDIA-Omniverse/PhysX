@@ -147,48 +147,148 @@ void NpShape::requiresObjects(PxProcessPxBaseCallback& c)
 	for (PxU32 i=0; i < nbMaterials; i++)
 	{
 		NpMaterial* mat = scGetMaterial<NpMaterial>(i);
+
+		//Same hazard as the refcount loop in resolveReferences(): scGetMaterial() resolves through mCore's
+		//material index into the material manager, which returns NULL for an index the manager does not know.
+		//The mesh above is already guarded; this loop was not.
+		// ### DEFENSIVE (OMPE-109162)
+		if(!mat)
+		{
+			PX_ASSERT(0);
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
+				"NpShape::requiresObjects: material %u of %u is not registered with the material manager "
+				"(see OMPE-109162); skipping it.", i, nbMaterials);
+			continue;
+		}
+
 		c.process(*mat);
 	}
 }
 
-void NpShape::resolveReferences(PxDeserializationContext& context)
+// Returns false when none of the shape's material references resolved. In that case the shape has taken no
+// mesh or material reference at all, and the caller must fail the deserialization - see createObject().
+bool NpShape::resolveReferences(PxDeserializationContext& context)
 {
-	// getMaterials() only works after material indices have been patched. 
+	// getMaterials() only works after material indices have been patched.
 	// in order to get to the new material indices, we need access to the new materials.
 	// this only leaves us with the option of acquiring the material through the context given an old material index (we do have the mapping)
 	{
 		PxU32 nbIndices = mCore.getNbMaterialIndices();
 		const PxU16* indices = mCore.getMaterialIndices();
 
+		bool anyUnresolved = false;
+		bool anyResolved = false;
+		PxU16 fallbackHandle = MATERIAL_INVALID_HANDLE;
+
 		for (PxU32 i=0; i < nbIndices; i++)
 		{
 			PxBase* base = context.resolveReference(PX_SERIAL_REF_KIND_MATERIAL_IDX, size_t(indices[i]));
-			PX_ASSERT(base && base->is<PxMaterial>());
 
-			NpMaterial& material = *static_cast<NpMaterial*>(base);
-			mCore.resolveMaterialReference(i, material.mMaterial.mMaterialIndex);
+			//A reference that does not resolve to a material used to be caught by an assert only, so in a
+			//release build a NULL was dereferenced here directly, and a non-material was cast to NpMaterial and
+			//read for a material index - which then propagates: the index below is looked up in the material
+			//manager by the second pass at the end of this function, that lookup returns NULL for an index the
+			//manager does not know, and the refcount increment dereferences it (OMPE-109162, fault at 0xc).
+			//No assert here: an unresolvable reference is a statement about the serialized data, not about a
+			//PhysX invariant. It is fully handled below, so aborting a debug build over it would only mean the
+			//same malformed input behaves differently per configuration. The three asserts left in this file
+			//guard the opposite case - a material index the manager itself does not know.
+			//Deliberately not tagged ### DEFENSIVE: this is input validation that two tests drive on purpose, and a
+			//later sweep of workarounds must not take it out.
+			if(!base || !base->is<PxMaterial>())
+			{
+				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
+					"NpShape::resolveReferences: material reference %u of %u did not resolve to a material "
+					"(see OMPE-109162).", i, nbIndices);
+
+				//Just leaving the slot alone is not safe: it still holds an index into the *source* SDK's
+				//material table, and this SDK hands that same index out again to an unrelated material as soon
+				//as NpMaterialManager recycles it. The shape would then silently simulate with that material
+				//and decrement its refcount in ~NpShape without ever having incremented it. Mark the slot for
+				//the fix-up below instead - a resolved handle is always < MATERIAL_INVALID_HANDLE (see
+				//NpMaterialManager::setMaterial), so the marker cannot be mistaken for one.
+				mCore.resolveMaterialReference(i, MATERIAL_INVALID_HANDLE);
+				anyUnresolved = true;
+				continue;
+			}
+
+			const PxU16 handle = static_cast<NpMaterial*>(base)->mMaterial.mMaterialIndex;
+			mCore.resolveMaterialReference(i, handle);
+
+			if(!anyResolved)
+			{
+				fallbackHandle = handle;
+				anyResolved = true;
+			}
+		}
+
+		if(anyUnresolved)
+		{
+			//Nothing to fall back on. Bail out before taking any reference so that the caller can drop the
+			//shape without ~NpShape() releasing counts we never took.
+			if(!anyResolved)
+			{
+				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
+					"NpShape::resolveReferences: none of the shape's material references resolved "
+					"(see OMPE-109162); failing the deserialization of this shape.");
+				return false;
+			}
+
+			const PxU16* patchedIndices = mCore.getMaterialIndices();
+			for (PxU32 i=0; i < nbIndices; i++)
+			{
+				if(patchedIndices[i] == MATERIAL_INVALID_HANDLE)
+					mCore.resolveMaterialReference(i, fallbackHandle);
+			}
 		}
 	}
 
 	//we don't resolve mExclusiveShapeActor because it's set to NULL on export.
 	//it's recovered when the actors resolveReferences attaches to the shape
 
-	mCore.resolveReferences(context);	
+	mCore.resolveReferences(context);
 
 	incMeshRefCount();
 
 	// Increment materials' refcounts in a second pass. Works better in case of failure above.
 	const PxU32 nbMaterials = scGetNbMaterials();
 	for (PxU32 i=0; i < nbMaterials; i++)
-		RefCountable_incRefCount(*scGetMaterial<NpMaterial>(i));
+	{
+		//Every slot now holds a handle that resolved, so this can only fire if the material manager and the
+		//material disagree. Kept as defence in depth: ~NpShape() null-checks the matching decrement, and an
+		//unchecked increment here is where OMPE-109162 faults (fault at 0xc).
+		// ### DEFENSIVE (OMPE-109162)
+		NpMaterial* material = scGetMaterial<NpMaterial>(i);
+		if(!material)
+		{
+			PX_ASSERT(0);
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
+				"NpShape::resolveReferences: material %u of %u is not registered with the material manager "
+				"(see OMPE-109162); skipping its reference count.", i, nbMaterials);
+			continue;
+		}
+
+		RefCountable_incRefCount(*material);
+	}
+
+	return true;
 }
 
 NpShape* NpShape::createObject(PxU8*& address, PxDeserializationContext& context)
 {
 	NpShape* obj = PX_PLACEMENT_NEW(address, NpShape(PxBaseFlag::eIS_RELEASABLE));
-	address += sizeof(NpShape);	
+	address += sizeof(NpShape);
 	obj->importExtraData(context);
-	obj->resolveReferences(context);
+
+	//Deliberately not destroyed: resolveReferences() reported the failure and bailed out before taking any mesh
+	//or material reference, so ~NpShape() would release counts this shape never acquired. It also never reached
+	//the caller's collection, so the teardown there (releasePartialCollection in SnBinaryDeserialization, which
+	//does release the objects that got that far) will not see it either. The object was placement-new'd into the
+	//deserialization buffer, which the caller frees as a whole once the load fails, and its constructor and
+	//importExtraData() only assign fields - there is nothing to undo.
+	if(!obj->resolveReferences(context))
+		return NULL;
+
 	return obj;
 }
 //~PX_SERIALIZATION
@@ -460,7 +560,22 @@ void NpShape::setMaterialsInternal(PxMaterialType* const * materials, PxU16 mate
 			RefCountable_incRefCount(*materials[i]);
 
 		for (PxU32 i = 0; i < oldMaterialCount; i++)
+		{
+			//oldMaterials came from scGetMaterials(), which resolves through mCore's material indices into the
+			//material manager and yields NULL for an index the manager does not know - the state a failed
+			//reference resolution in resolveReferences() leaves behind.
+			// ### DEFENSIVE (OMPE-109162)
+			if(!oldMaterials[i])
+			{
+				PX_ASSERT(0);
+				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
+					"PxShape::setMaterials: previous material %u of %u is not registered with the material "
+					"manager (see OMPE-109162); skipping its reference count.", i, oldMaterialCount);
+				continue;
+			}
+
 			RefCountable_decRefCount(*oldMaterials[i]);
+		}
 	}
 
 	NP_CHECK_SCENE_CUDA_ABORT_AND_SET_CORRUPTION(npScene)

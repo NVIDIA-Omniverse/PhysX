@@ -36,7 +36,7 @@ void Sc::ArticulationSpatialTendonSim::setStiffness(const PxReal stiffness)
 {
 	mLLTendon.mStiffness = stiffness;
 
-	mArtiSim->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON);
+	mArtiSim->setArticulationDirty(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON);
 }
 
 PxReal Sc::ArticulationSpatialTendonSim::getStiffness() const
@@ -48,7 +48,7 @@ void Sc::ArticulationSpatialTendonSim::setDamping(const PxReal damping)
 {
 	mLLTendon.mDamping = damping;
 
-	mArtiSim->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON);
+	mArtiSim->setArticulationDirty(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON);
 }
 
 PxReal Sc::ArticulationSpatialTendonSim::getDamping() const
@@ -60,7 +60,7 @@ void Sc::ArticulationSpatialTendonSim::setLimitStiffness(const PxReal stiffness)
 {
 	mLLTendon.mLimitStiffness = stiffness;
 
-	mArtiSim->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_FIXED_TENDON);
+	mArtiSim->setArticulationDirty(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON);
 }
 
 PxReal Sc::ArticulationSpatialTendonSim::getLimitStiffness() const
@@ -72,7 +72,7 @@ void Sc::ArticulationSpatialTendonSim::setOffset(const PxReal offset)
 {
 	mLLTendon.mOffset = offset;
 
-	mArtiSim->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON);
+	mArtiSim->setArticulationDirty(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON);
 }
 
 PxReal Sc::ArticulationSpatialTendonSim::getOffset() const
@@ -89,7 +89,7 @@ void Sc::ArticulationSpatialTendonSim::setAttachmentCoefficient(ArticulationAtta
 
 	attachment.coefficient = coefficient;
 
-	mArtiSim->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON_ATTACHMENT);
+	mArtiSim->setArticulationDirty(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON_ATTACHMENT);
 }
 
 void Sc::ArticulationSpatialTendonSim::setAttachmentRelativeOffset(ArticulationAttachmentCore& core, const PxVec3& offset)
@@ -100,7 +100,7 @@ void Sc::ArticulationSpatialTendonSim::setAttachmentRelativeOffset(ArticulationA
 
 	attachment.relativeOffset = offset;
 
-	mArtiSim->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON_ATTACHMENT);
+	mArtiSim->setArticulationDirty(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON_ATTACHMENT);
 }
 
 void Sc::ArticulationSpatialTendonSim::setAttachmentLimits(ArticulationAttachmentCore& core, const PxReal lowLimit, const PxReal highLimit)
@@ -112,7 +112,7 @@ void Sc::ArticulationSpatialTendonSim::setAttachmentLimits(ArticulationAttachmen
 	attachment.lowLimit = lowLimit;
 	attachment.highLimit = highLimit;
 
-	mArtiSim->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON_ATTACHMENT);
+	mArtiSim->setArticulationDirty(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON_ATTACHMENT);
 }
 
 void Sc::ArticulationSpatialTendonSim::setAttachmentRestLength(ArticulationAttachmentCore& core, const PxReal restLength)
@@ -121,7 +121,7 @@ void Sc::ArticulationSpatialTendonSim::setAttachmentRestLength(ArticulationAttac
 	Dy::ArticulationAttachment& attachment = mLLTendon.getAttachment(index);
 	attachment.restLength = restLength;
 
-	mArtiSim->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON_ATTACHMENT);
+	mArtiSim->setArticulationDirty(Dy::ArticulationDirtyFlag::eDIRTY_SPATIAL_TENDON_ATTACHMENT);
 }
 
 void Sc::ArticulationSpatialTendonSim::addAttachment(ArticulationAttachmentCore& core)
@@ -199,7 +199,7 @@ void Sc::ArticulationFixedTendonSim::setStiffness(const PxReal stiffness)
 {
 	mLLTendon.mStiffness = stiffness;
 
-	mArtiSim->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_FIXED_TENDON);
+	mArtiSim->setArticulationDirty(Dy::ArticulationDirtyFlag::eDIRTY_FIXED_TENDON);
 }
 
 PxReal Sc::ArticulationFixedTendonSim::getStiffness() const
@@ -211,7 +211,7 @@ void Sc::ArticulationFixedTendonSim::setDamping(const PxReal damping)
 {
 	mLLTendon.mDamping = damping;
 
-	mArtiSim->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_FIXED_TENDON);
+	mArtiSim->setArticulationDirty(Dy::ArticulationDirtyFlag::eDIRTY_FIXED_TENDON);
 }
 
 PxReal Sc::ArticulationFixedTendonSim::getDamping() const
@@ -223,7 +223,7 @@ void Sc::ArticulationFixedTendonSim::setLimitStiffness(const PxReal stiffness)
 {
 	mLLTendon.mLimitStiffness = stiffness;
 
-	mArtiSim->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_FIXED_TENDON);
+	mArtiSim->setArticulationDirty(Dy::ArticulationDirtyFlag::eDIRTY_FIXED_TENDON);
 }
 
 PxReal Sc::ArticulationFixedTendonSim::getLimitStiffness() const

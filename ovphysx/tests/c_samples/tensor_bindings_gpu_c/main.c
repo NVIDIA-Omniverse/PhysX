@@ -38,13 +38,13 @@ static int check_result(ovphysx_result_t result, const char* context)
     return 1;
 }
 
-static int wait_op(ovphysx_handle_t handle, ovphysx_op_index_t op_index, const char* context)
+static int wait_task(ovphysx_instance_handle_t handle, ovphysx_enqueue_result_t task, const char* context)
 {
-    ovphysx_op_wait_result_t wait_result = { 0 };
-    ovphysx_result_t result = ovphysx_wait_op(handle, op_index, 10ull * 1000ull * 1000ull * 1000ull, &wait_result);
+    ovphysx_wait_task_result_t wait_result = { 0 };
+    ovphysx_result_t result = ovphysx_wait_task(handle, task, 10ull * 1000ull * 1000ull * 1000ull, &wait_result);
     
     int has_errors = (wait_result.num_errors > 0);
-    ovphysx_destroy_wait_result(&wait_result);
+    ovphysx_destroy_wait_task_result(&wait_result);
     if (has_errors)
     {
         fprintf(stderr, "ERROR in %s: async operation failed\n", context);
@@ -59,7 +59,7 @@ static int wait_op(ovphysx_handle_t handle, ovphysx_op_index_t op_index, const c
 }
 
 static int query_cuda_binding_device(
-    ovphysx_handle_t handle,
+    ovphysx_instance_handle_t handle,
     ovphysx_tensor_binding_handle_t binding,
     const char* name,
     int32_t* out_device_id)
@@ -77,7 +77,7 @@ static int query_cuda_binding_device(
     return 1;
 }
 
-static int destroy_instance_and_shutdown(ovphysx_handle_t handle)
+static int destroy_instance_and_shutdown(ovphysx_instance_handle_t handle)
 {
     ovphysx_sample_destroy_stage(handle, &g_stage_attachment);
     ovphysx_sample_destroy_stage(handle, &g_stage_attachment);
@@ -112,7 +112,7 @@ static int run(void)
     // is enabled separately so these bindings have a native kDLCUDA path without
     // staging. It is incompatible with contact-modify callbacks such as
     // PhysxSurfaceVelocityAPI.
-    ovphysx_handle_t handle = 0;
+    ovphysx_instance_handle_t handle = 0;
     ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
     ovphysx_config_entry_t config_entries[] = {
         ovphysx_config_entry_carbonite(
@@ -125,7 +125,7 @@ static int run(void)
     snprintf(device_ordinal, sizeof(device_ordinal), "%d", requested_device_id);
     args.active_cuda_gpus = ovphysx_cstr(device_ordinal);
 
-    result = ovphysx_create_instance(&args, &handle);
+    result = ovphysx_create_instance_with_args(&args, &handle);
     if (!check_result(result, "create_instance")) {
         ovphysx_shutdown();
         return 1;
@@ -406,7 +406,7 @@ static int run(void)
             }
             return destroy_instance_and_shutdown(handle);
         }
-        if (!wait_op(handle, step_result.op_index, "step"))
+        if (!wait_task(handle, step_result, "step"))
         {
             return destroy_instance_and_shutdown(handle);
         }

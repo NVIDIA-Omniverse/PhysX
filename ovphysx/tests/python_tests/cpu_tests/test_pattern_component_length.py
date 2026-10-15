@@ -2,10 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # @implements REQ-CAPI-PATTERN-001
-# @covers AC-1 AC-2 AC-3
+# @covers AC-1 AC-2 AC-3 AC-5
 
 # PARTIALLY DEPRECATED (tensor-binding-deprecation): the create_tensor_binding cases retire with
-# the binding; the SDF view and contact binding cases stay.
+# the binding, and the SDF view and contact binding cases with those APIs, deprecated as well; the
+# session selection cases stay.
 
 """Regression coverage for NVBugs 6714840.
 
@@ -19,6 +20,7 @@ from __future__ import annotations
 import pytest
 
 from ovphysx import TensorType
+from ovphysx.types import SimObjectType
 from test_utils import data_path, load_usd_with_ovstage
 
 _LIMIT = 4096
@@ -45,6 +47,17 @@ def test_create_tensor_binding_rejects_oversized_pattern_component(boxes_scene, 
         boxes_scene.create_tensor_binding(pattern=pattern, tensor_type=TensorType.RIGID_BODY_POSE)
 
 
+# Session counterpart of test_create_tensor_binding_rejects_oversized_pattern_component's check.
+@pytest.mark.parametrize("pattern", [_OVERSIZED_LITERAL, _OVERSIZED_GLOB], ids=["literal", "glob"])
+def test_selection_rejects_oversized_pattern_component(boxes_scene, pattern):
+    with pytest.raises(RuntimeError, match=_LIMIT_MESSAGE):
+        with boxes_scene.read_sync(SimObjectType.RIGID_BODY, ["position"], pattern=pattern):
+            pass
+    with pytest.raises(RuntimeError, match=_LIMIT_MESSAGE):
+        with boxes_scene.write_sync(SimObjectType.RIGID_BODY, "position", pattern=pattern):
+            pass
+
+
 def test_create_tensor_binding_rejects_oversized_prim_path_component(boxes_scene):
     with pytest.raises(RuntimeError, match=_LIMIT_MESSAGE):
         boxes_scene.create_tensor_binding(
@@ -60,11 +73,27 @@ def test_create_tensor_binding_accepts_component_at_limit(boxes_scene):
         binding.destroy()
 
 
+# Session counterpart of test_create_tensor_binding_accepts_component_at_limit's check.
+def test_selection_accepts_component_at_limit(boxes_scene):
+    with boxes_scene.read_sync(SimObjectType.RIGID_BODY, ["position"], pattern=_AT_LIMIT) as result:
+        assert result.groups == []
+
+
 def test_create_tensor_binding_rejects_oversized_group_component(boxes_scene):
     # Neither '/'-split half exceeds the limit; the whole group does, and that is what the
     # runtime would have to compile.
     with pytest.raises(RuntimeError, match=_LIMIT_MESSAGE):
         boxes_scene.create_tensor_binding(pattern=_OVERSIZED_GROUP, tensor_type=TensorType.RIGID_BODY_POSE)
+
+
+# Session counterpart of test_create_tensor_binding_rejects_oversized_group_component's check.
+def test_selection_rejects_oversized_group_component(boxes_scene):
+    with pytest.raises(RuntimeError, match=_LIMIT_MESSAGE):
+        with boxes_scene.read_sync(SimObjectType.RIGID_BODY, ["position"], pattern=_OVERSIZED_GROUP):
+            pass
+    with pytest.raises(RuntimeError, match=_LIMIT_MESSAGE):
+        with boxes_scene.write_sync(SimObjectType.RIGID_BODY, "position", pattern=_OVERSIZED_GROUP):
+            pass
 
 
 def test_create_tensor_binding_accepts_short_group_with_slash(boxes_scene):

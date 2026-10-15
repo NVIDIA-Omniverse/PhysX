@@ -1,0 +1,15 @@
+#usda 1.0
+(
+    defaultPrim = "envs"
+    metersPerUnit = 1
+    upAxis = "Z"
+    subLayers = [
+        @./MultiCartPoleSpaced.usda@
+    ]
+)
+
+# MultiCartPoleSpaced.usda with external forces applied once per step, for tests that expect it.
+over "physicsScene"
+{
+    bool physxScene:enableExternalForcesEveryIteration = 0
+}

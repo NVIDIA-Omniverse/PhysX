@@ -20,7 +20,6 @@ physxDeformableMaterialAPI.h
 physxDiffuseParticlesAPI.h
 physxDrivePerformanceEnvelopeAPI.h
 physxForceAPI.h
-physxJointAPI.h
 physxJointAxisAPI.h
 physxLimitAPI.h
 physxMaterialAPI.h

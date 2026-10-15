@@ -15,10 +15,36 @@
  * @covers AC-4
  *
  * @implements REQ-READ-ATTRS-001
- * @covers AC-1, AC-7, AC-8, AC-10, AC-11, AC-12, AC-14
+ * @covers AC-1, AC-7, AC-8, AC-10, AC-11, AC-12, AC-14, AC-20
+ *
+ * @implements REQ-READ-SLEEP-001
+ * @covers AC-1 AC-2 AC-3
+ *
+ * @implements REQ-INPUT-COVERAGE-001
+ * @covers AC-6, AC-16, AC-18
+ *
+ * @implements REQ-RUNTIME-ERROR-001
+ * @covers AC-3
+ *
+ * @implements REQ-TENSOR-MATERIAL-001
+ * @covers AC-2 AC-3
+ *
+ * @implements REQ-TENSOR-MATERIAL-002
+ * @covers AC-1 AC-2 AC-3
+ *
+ * @implements REQ-READ-SELECT-001
+ * @covers AC-8
  *
  * The ovstage body-property columns at the end of this file: one host implementation serving both
- * backends, because these are authored inputs with no device source for a backend to differ over.
+ * backends. Authored inputs have no device source for a backend to differ over.
+ * isSleeping is a host state snapshot: PhysX supplies it on sleep-enabled scenes, while
+ * eDISABLE_SLEEPING supplies false without accessing suppressed simulation state.
+ * The kinematic-target pair (AC-20) is the same shape -- a CPU-only PhysX target API, no device batch.
+ * Its write setter preflights the group and fails the commit before any mutation for a disabled
+ * kinematic body (the object-state half of AC-6) or a non-finite/zero-quaternion target value -- the
+ * runtime side of the rigid kinematic-target contract AC-16 states. setWakeStatesOvStage (AC-18) is the
+ * same CPU-only shape: a host wakeUp/putToSleep with no device batch, skipping kinematic and disabled
+ * bodies whose PhysX guards (PX_CHECK_AND_RETURN) are compiled out in release.
  */
 
 // clang-format off
@@ -36,6 +62,7 @@
 
 #include <carb/logging/Log.h>
 #include <omni/physx/IPhysx.h>
+#include <omni/physx/RuntimeError.h>
 
 #include <omni/physics/tensors/TensorUtils.h>
 
@@ -549,6 +576,162 @@ bool BaseRigidBodyView::setDisableGravities(const TensorDesc* srcTensor, const T
     return true;
 }
 
+namespace
+{
+// The body's pending kinematic target in the world frame, or its global pose when no target applies
+// (non-kinematic body, articulation link, or a kinematic body not yet driven this step) --
+// PxRigidDynamic::getKinematicTarget leaves the seed untouched and returns false in those cases.
+// The pending target is host-authoritative and fresh on any device; the getGlobalPose() fallback is
+// live on CPU but the LAST-SYNCED host pose under DirectGPU suppressed readback, so it can lag the
+// live device pose for a body that moves. Callers subtract/add the subspace origin themselves; this
+// stays in the engine's world frame.
+PxTransform currentKinematicTargetOrPose(const RigidBodyEntry& entry)
+{
+    PxTransform target = entry.body->getGlobalPose();
+    if (entry.type == RigidBodyType::eRigidDynamic && (entry.body->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC))
+    {
+        static_cast<PxRigidDynamic*>(entry.body)->getKinematicTarget(target);
+    }
+    return target;
+}
+} // namespace
+
+bool BaseRigidBodyView::getKinematicTargets(const TensorDesc* dstTensor) const
+{
+    CHECK_VALID_DATA_SIM_RETURN(mSimData, mSim, false);
+
+    if (!dstTensor || !dstTensor->data)
+    {
+        return false;
+    }
+
+    if (!checkTensorDevice(*dstTensor, -1, "kinematic target", __FUNCTION__) ||
+        !checkTensorFloat32(*dstTensor, "kinematic target", __FUNCTION__) ||
+        !checkTensorSizeExact(*dstTensor, getCount() * 7u, "kinematic target", __FUNCTION__))
+    {
+        return false;
+    }
+
+    float* dst = static_cast<float*>(dstTensor->data);
+    for (PxU32 i = 0; i < mEntries.size(); i++)
+    {
+        const RigidBodyEntry& entry = mEntries[i];
+
+        // Undriven bodies fall back to their pose (fresh on CPU, last-synced under DirectGPU suppressed
+        // readback -- see currentKinematicTargetOrPose), keeping the column dense.
+        PxTransform target = currentKinematicTargetOrPose(entry);
+
+        const Subspace* subspace = entry.subspace;
+        if (subspace)
+        {
+            target.p.x -= subspace->origin.x;
+            target.p.y -= subspace->origin.y;
+            target.p.z -= subspace->origin.z;
+        }
+        *dst++ = target.p.x;
+        *dst++ = target.p.y;
+        *dst++ = target.p.z;
+        *dst++ = target.q.x;
+        *dst++ = target.q.y;
+        *dst++ = target.q.z;
+        *dst++ = target.q.w;
+    }
+
+    return true;
+}
+
+bool BaseRigidBodyView::setKinematicTargets(const TensorDesc* srcTensor, const TensorDesc* indexTensor)
+{
+    CHECK_VALID_DATA_SIM_RETURN(mSimData, mSim, false);
+
+    // Kinematic target is INERT on a DirectGPU scene: PxRigidDynamic::setKinematicTarget has no
+    // counterpart in the DirectGPU write API, so the CPU-integrated target is never uploaded to the
+    // device and the body would not move. Refuse loudly rather than silently succeed -- the same fact
+    // the ovstage write enforces in planRigidGroup, and what the removed GpuRigidBodyView override
+    // implied. setKinematicTargetsMasked routes through here, so it is covered too.
+    if (!mEntries.empty() && mEntries[0].body && mEntries[0].body->getScene() &&
+        mEntries[0].body->getScene()->getFlags().isSet(PxSceneFlag::eENABLE_DIRECT_GPU_API))
+    {
+        CARB_LOG_ERROR("setKinematicTargets: a kinematic target is integrated on the CPU and is not uploaded "
+                       "to the device; it is not applied on a DirectGPU scene.");
+        return false;
+    }
+
+    if (!srcTensor || !srcTensor->data)
+    {
+        return false;
+    }
+
+    if (!checkTensorDevice(*srcTensor, -1, "kinematic target", __FUNCTION__) ||
+        !checkTensorFloat32(*srcTensor, "kinematic target", __FUNCTION__) ||
+        !checkTensorSizeExact(*srcTensor, getCount() * 7u, "kinematic target", __FUNCTION__))
+    {
+        return false;
+    }
+
+    const PxU32* indices = nullptr;
+    PxU32 numIndices = 0;
+    if (indexTensor && indexTensor->data)
+    {
+        if (!checkTensorDevice(*indexTensor, -1, "index", __FUNCTION__) ||
+            !checkTensorInt32(*indexTensor, "index", __FUNCTION__) ||
+            !checkIndexTensorSize(*indexTensor, getCount(), __FUNCTION__))
+        {
+            return false;
+        }
+        indices = static_cast<const PxU32*>(indexTensor->data);
+        numIndices = PxU32(getTensorTotalSize(*indexTensor));
+    }
+    else
+    {
+        indices = mAllIndices.data();
+        numIndices = PxU32(mAllIndices.size());
+    }
+
+    for (PxU32 i = 0; i < numIndices; i++)
+    {
+        PxU32 idx = indices[i];
+        if (idx < mEntries.size())
+        {
+            RigidBodyEntry& entry = mEntries[idx];
+            const float* src = static_cast<const float*>(srcTensor->data) + idx * 7;
+
+            PxTransform target;
+            target.p.x = *src++;
+            target.p.y = *src++;
+            target.p.z = *src++;
+            target.q.x = *src++;
+            target.q.y = *src++;
+            target.q.z = *src++;
+            target.q.w = *src++;
+
+            Subspace* subspace = entry.subspace;
+            if (subspace)
+            {
+                target.p.x += subspace->origin.x;
+                target.p.y += subspace->origin.y;
+                target.p.z += subspace->origin.z;
+            }
+
+            // setKinematicTarget requires a kinematic body that is NOT eDISABLE_SIMULATION (PhysX names
+            // both, both compiled out in release). A disabled kinematic body is skipped silently; a
+            // structurally ineligible one (link, non-kinematic) warns.
+            const bool kinematic = entry.type == RigidBodyType::eRigidDynamic &&
+                                   (entry.body->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC);
+            if (kinematic && !entry.body->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION))
+            {
+                static_cast<PxRigidDynamic*>(entry.body)->setKinematicTarget(target);
+            }
+            else if (!kinematic)
+            {
+                CARB_LOG_WARN("Cannot set kinematic target on articulation link or non-kinematic rigid body at '%s'", entry.path.c_str());
+            }
+        }
+    }
+
+    return true;
+}
+
 bool BaseRigidBodyView::setDisableSimulations(const TensorDesc* srcTensor, const TensorDesc* indexTensor)
 {
     CHECK_VALID_DATA_SIM_RETURN(mSimData, mSim, false);
@@ -848,6 +1031,7 @@ bool BaseRigidBodyView::setMaterialProperties(const TensorDesc* srcTensor, const
         numIndices = PxU32(mAllIndices.size());
     }
 
+    bool allApplied = true;
     for (PxU32 i = 0; i < numIndices; i++)
     {
         PxU32 idx = indices[i];
@@ -856,9 +1040,19 @@ bool BaseRigidBodyView::setMaterialProperties(const TensorDesc* srcTensor, const
             const float* src = static_cast<const float*>(srcTensor->data) + idx * mMaxShapes * 3;
             for (PxU32 j = 0; j < mEntries[idx].numShapes; j++)
             {
-                PxMaterial* material = mSim->createSharedMaterial(src[j * 3], src[j * 3 + 1], src[j * 3 + 2], 0.0f,
-                                                                  PxCombineMode::eAVERAGE, PxCombineMode::eAVERAGE,
-                                                                  PxCombineMode::eAVERAGE);
+                // Only friction and restitution are written; keep the rest of the material.
+                PxMaterial* old;
+                mEntries[idx].shapes[j]->getMaterials(&old, 1);
+                PxMaterial* material = mSim->createSharedMaterial(
+                    src[j * 3], src[j * 3 + 1], src[j * 3 + 2], old->getDamping(), old->getFrictionCombineMode(),
+                    old->getRestitutionCombineMode(), old->getDampingCombineMode(), old->getFlags());
+
+                // No material (see createSharedMaterial's warning): keep the current one, report failure.
+                if (!material)
+                {
+                    allApplied = false;
+                    continue;
+                }
 
                 int nMaterials = mEntries[idx].shapes[j]->getNbMaterials();
                 std::vector<PxMaterial*> extraMats;
@@ -877,7 +1071,7 @@ bool BaseRigidBodyView::setMaterialProperties(const TensorDesc* srcTensor, const
         }
     }
 
-    return true;
+    return allApplied;
 }
 
 bool BaseRigidBodyView::setCompliantMaterialProperties(const TensorDesc* srcTensor,
@@ -922,6 +1116,7 @@ bool BaseRigidBodyView::setCompliantMaterialProperties(const TensorDesc* srcTens
         numIndices = PxU32(mAllIndices.size());
     }
 
+    bool allApplied = true;
     for (PxU32 i = 0; i < numIndices; i++)
     {
         PxU32 idx = indices[i];
@@ -931,11 +1126,21 @@ bool BaseRigidBodyView::setCompliantMaterialProperties(const TensorDesc* srcTens
             const uint8_t* srcCombineMode = static_cast<const uint8_t*>(srcCombineModeTensor->data) + idx * mMaxShapes * 3;
             for (PxU32 j = 0; j < mEntries[idx].numShapes; j++)
             {
-                PxMaterial* material =
-                    mSim->createSharedMaterial(src[j * 4], src[j * 4 + 1], -src[j * 4 + 2], src[j * 4 + 3],
-                                               static_cast<PxCombineMode::Enum>(srcCombineMode[j * 3 + 0]),
-                                               static_cast<PxCombineMode::Enum>(srcCombineMode[j * 3 + 1]),
-                                               static_cast<PxCombineMode::Enum>(srcCombineMode[j * 3 + 2]));
+                // The material flags are not written; keep them.
+                PxMaterial* old;
+                mEntries[idx].shapes[j]->getMaterials(&old, 1);
+                PxMaterial* material = mSim->createSharedMaterial(
+                    src[j * 4], src[j * 4 + 1], -src[j * 4 + 2], src[j * 4 + 3],
+                    static_cast<PxCombineMode::Enum>(srcCombineMode[j * 3 + 0]),
+                    static_cast<PxCombineMode::Enum>(srcCombineMode[j * 3 + 1]),
+                    static_cast<PxCombineMode::Enum>(srcCombineMode[j * 3 + 2]), old->getFlags());
+
+                // No material (see createSharedMaterial's warning): keep the current one, report failure.
+                if (!material)
+                {
+                    allApplied = false;
+                    continue;
+                }
 
                 int nMaterials = mEntries[idx].shapes[j]->getNbMaterials();
                 std::vector<PxMaterial*> extraMats;
@@ -954,7 +1159,7 @@ bool BaseRigidBodyView::setCompliantMaterialProperties(const TensorDesc* srcTens
         }
     }
 
-    return true;
+    return allApplied;
 }
 
 bool BaseRigidBodyView::setRestOffsets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) const
@@ -1099,9 +1304,10 @@ bool BaseRigidBodyView::check() const
     return result;
 }
 
-void BaseRigidBodyView::release()
+bool BaseRigidBodyView::release()
 {
     delete this;
+    return true;
 }
 
 void BaseRigidBodyView::_onParentRelease()
@@ -1117,6 +1323,17 @@ void BaseRigidBodyView::_onParentRelease()
 using omni::physics::tensors::MaskResult;
 using omni::physics::tensors::resolveMaskToIndices;
 using omni::physics::tensors::makeIndexTensorDesc;
+
+bool BaseRigidBodyView::setKinematicTargetsMasked(const TensorDesc* src, const TensorDesc* mask)
+{
+    std::vector<uint32_t> indices;
+    auto result = resolveMaskToIndices(mask, getCount(), -1, indices, __FUNCTION__);
+    if (result == MaskResult::Error) return false;
+    if (result == MaskResult::Empty) return true;
+    if (result == MaskResult::All)   return setKinematicTargets(src, nullptr);
+    TensorDesc idx = makeIndexTensorDesc(indices, -1);
+    return setKinematicTargets(src, &idx);
+}
 
 bool BaseRigidBodyView::setDisableGravitiesMasked(const TensorDesc* src, const TensorDesc* mask)
 {
@@ -1204,6 +1421,9 @@ BaseRigidBodyView::BodyPropertyLayout BaseRigidBodyView::layoutOf(const BodyProp
         { 4, false, false, "com orientation" },   // eComOrientation
         { 1, true, false, "disable gravity" },    // eDisableGravity
         { 1, true, false, "disable simulation" }, // eDisableSimulation
+        { 1, true, false, "isSleeping" },         // eIsSleeping
+        { 3, false, false, "kinematic target position" },    // eKinematicTargetPosition
+        { 4, false, false, "kinematic target orientation" }, // eKinematicTargetOrientation
         // Per-shape: width 0 because it belongs to the read (its widest body), not to the attribute;
         // the gather takes it from the destination tensor instead.
         { 0, false, true, "static friction" },  // eStaticFriction
@@ -1236,6 +1456,40 @@ PxMat33 comFrameInertia(const PxRigidBody& body, bool inverse)
     const PxMat33 diag = PxMat33::createDiagonal(inverse ? body.getMassSpaceInvInertiaTensor() :
                                                            body.getMassSpaceInertiaTensor());
     return R * diag * R.getTranspose();
+}
+
+bool currentSleepState(const RigidBodyEntry& entry, uint8_t& state)
+{
+    if (!entry.body)
+    {
+        CARB_LOG_ERROR("%s: isSleeping row has no rigid body", __FUNCTION__);
+        return false;
+    }
+    PxRigidDynamic* const dynamicBody = entry.type == RigidBodyType::eRigidDynamic ?
+                                           entry.body->is<PxRigidDynamic>() : nullptr;
+    PxArticulationLink* const link = entry.type == RigidBodyType::eArticulationLink ?
+                                        entry.body->is<PxArticulationLink>() : nullptr;
+    if (!dynamicBody && !link)
+    {
+        CARB_LOG_ERROR("%s: isSleeping row has an unsupported rigid body type", __FUNCTION__);
+        return false;
+    }
+    PxArticulationReducedCoordinate* const articulation = link ? &link->getArticulation() : nullptr;
+    // Check each row: base views can contain bodies from different scenes or with no scene.
+    PxScene* const scene = dynamicBody ? dynamicBody->getScene() : articulation->getScene();
+    if (!scene)
+    {
+        CARB_LOG_ERROR("%s: isSleeping requires the body or articulation to be in a scene", __FUNCTION__);
+        return false;
+    }
+
+    // DirectGPU requires eDISABLE_SLEEPING. Use that contract without touching CPU copies of
+    // simulation state. The read emitter retains its pre-step and disabled-body omissions.
+    if (scene->getFlags().isSet(PxSceneFlag::eDISABLE_SLEEPING))
+        state = 0;
+    else
+        state = static_cast<uint8_t>(dynamicBody ? dynamicBody->isSleeping() : articulation->isSleeping());
+    return true;
 }
 } // namespace
 
@@ -1340,19 +1594,19 @@ bool BaseRigidBodyView::getBodyPropertyOvStage(const BodyProperty prop,
     for (PxU32 i = 0; i < numOutputs; i++)
     {
         const PxU32 recIdx = outRecordIdx ? outRecordIdx[i] : i;
-        const PxRigidBody& body = *mEntries[recIdx].body;
+        const PxRigidBody* const body = mEntries[recIdx].body;
         switch (prop)
         {
         case BodyProperty::eMass:
-            *fdst++ = body.getMass();
+            *fdst++ = body->getMass();
             break;
         case BodyProperty::eInvMass:
-            *fdst++ = body.getInvMass();
+            *fdst++ = body->getInvMass();
             break;
         case BodyProperty::eInertia:
         case BodyProperty::eInvInertia:
         {
-            const PxMat33 m = comFrameInertia(body, prop == BodyProperty::eInvInertia);
+            const PxMat33 m = comFrameInertia(*body, prop == BodyProperty::eInvInertia);
             *fdst++ = m.column0.x;
             *fdst++ = m.column0.y;
             *fdst++ = m.column0.z;
@@ -1366,7 +1620,7 @@ bool BaseRigidBodyView::getBodyPropertyOvStage(const BodyProperty prop,
         }
         case BodyProperty::eComPosition:
         {
-            const PxVec3 p = body.getCMassLocalPose().p;
+            const PxVec3 p = body->getCMassLocalPose().p;
             *fdst++ = p.x;
             *fdst++ = p.y;
             *fdst++ = p.z;
@@ -1374,7 +1628,7 @@ bool BaseRigidBodyView::getBodyPropertyOvStage(const BodyProperty prop,
         }
         case BodyProperty::eComOrientation:
         {
-            const PxQuat q = body.getCMassLocalPose().q;
+            const PxQuat q = body->getCMassLocalPose().q;
             *fdst++ = q.x;
             *fdst++ = q.y;
             *fdst++ = q.z;
@@ -1382,11 +1636,35 @@ bool BaseRigidBodyView::getBodyPropertyOvStage(const BodyProperty prop,
             break;
         }
         case BodyProperty::eDisableGravity:
-            *bdst++ = (body.getActorFlags() & PxActorFlag::eDISABLE_GRAVITY) ? 1 : 0;
+            *bdst++ = (body->getActorFlags() & PxActorFlag::eDISABLE_GRAVITY) ? 1 : 0;
             break;
         case BodyProperty::eDisableSimulation:
-            *bdst++ = (body.getActorFlags() & PxActorFlag::eDISABLE_SIMULATION) ? 1 : 0;
+            *bdst++ = (body->getActorFlags() & PxActorFlag::eDISABLE_SIMULATION) ? 1 : 0;
             break;
+        case BodyProperty::eIsSleeping:
+            if (!currentSleepState(mEntries[recIdx], *bdst++))
+                return false;
+            break;
+        case BodyProperty::eKinematicTargetPosition:
+        {
+            const RigidBodyEntry& entry = mEntries[recIdx];
+            PxVec3 p = currentKinematicTargetOrPose(entry).p;
+            if (entry.subspace)
+                p -= PxVec3(entry.subspace->origin.x, entry.subspace->origin.y, entry.subspace->origin.z);
+            *fdst++ = p.x;
+            *fdst++ = p.y;
+            *fdst++ = p.z;
+            break;
+        }
+        case BodyProperty::eKinematicTargetOrientation:
+        {
+            const PxQuat q = currentKinematicTargetOrPose(mEntries[recIdx]).q;
+            *fdst++ = q.x;
+            *fdst++ = q.y;
+            *fdst++ = q.z;
+            *fdst++ = q.w;
+            break;
+        }
         case BodyProperty::eCount:
             break; // not a property; the per-shape and shapeCount cases returned above
         }
@@ -1479,12 +1757,12 @@ bool BaseRigidBodyView::setBodyPropertyOvStage(const BodyProperty prop,
     if (!srcTensor || !srcTensor->data)
         return false;
 
-    // Derived and structural properties have no setter. Refused here rather than reaching a switch
+    // Read-only properties have no setter. Refused here rather than reaching a switch
     // with no case for them, so a caller learns the name is not writable instead of getting silence.
     if (prop == BodyProperty::eInvMass || prop == BodyProperty::eInvInertia ||
-        prop == BodyProperty::eShapeCount || prop == BodyProperty::eCount)
+        prop == BodyProperty::eShapeCount || prop == BodyProperty::eIsSleeping || prop == BodyProperty::eCount)
     {
-        CARB_LOG_ERROR("%s is not writable: it is derived from other properties or structural",
+        CARB_LOG_ERROR("%s is not writable: it is derived, structural, or runtime state",
                        layoutOf(prop).label);
         return false;
     }
@@ -1515,6 +1793,7 @@ bool BaseRigidBodyView::setBodyPropertyOvStage(const BodyProperty prop,
     // the padded tail rather than writing shapes it does not have.
     if (layout.perShape)
     {
+        bool allApplied = true;
         for (PxU32 i = 0; i < numOutputs; i++)
         {
             const PxU32 recIdx = outRecordIdx ? outRecordIdx[i] : i;
@@ -1537,23 +1816,139 @@ bool BaseRigidBodyView::setBodyPropertyOvStage(const BodyProperty prop,
                 }
                 else
                 {
-                    // Material 0 only, matching the gather and the tensor API. A material is SHARED:
-                    // writing a friction coefficient through one shape changes it for every shape
-                    // bound to the same material, which is PhysX's model rather than something this
-                    // layer can localise.
-                    PxMaterial* material = nullptr;
-                    if (shape->getMaterials(&material, 1) == 0 || !material)
+                    // Material 0 only, matching the gather and the tensor API. A material may be SHARED
+                    // across shapes (the authored default, say), so mutating it in place would change
+                    // every sibling bound to it -- breaking the selected-write isolation AC-4 promises.
+                    // Give this shape its own pooled material carrying the current material's settings
+                    // with only the written coefficient replaced, so siblings keep theirs. The pool
+                    // reuses one material per distinct value set, so writing the same values to many
+                    // shapes still collapses onto a single material.
+                    PxMaterial* current = nullptr;
+                    if (shape->getMaterials(&current, 1) == 0 || !current)
                         continue;
+                    float sf = current->getStaticFriction();
+                    float df = current->getDynamicFriction();
+                    float r = current->getRestitution();
+                    float currentCoeff;
                     if (prop == BodyProperty::eStaticFriction)
-                        material->setStaticFriction(v);
+                    {
+                        currentCoeff = sf;
+                        sf = v;
+                    }
                     else if (prop == BodyProperty::eDynamicFriction)
-                        material->setDynamicFriction(v);
+                    {
+                        currentCoeff = df;
+                        df = v;
+                    }
                     else
-                        material->setRestitution(v);
+                    {
+                        currentCoeff = r;
+                        r = v;
+                    }
+                    // Already at the target value: leave the shape on its current (possibly shared)
+                    // material rather than forking a duplicate, so an unchanged write preserves sharing.
+                    if (v == currentCoeff)
+                        continue;
+                    // Preserve the current material's OTHER settings (flags, damping and the three combine
+                    // modes).
+                    PxMaterial* owned = mSim->createSharedMaterial(sf, df, r, current->getDamping(),
+                                                                   current->getFrictionCombineMode(),
+                                                                   current->getRestitutionCombineMode(),
+                                                                   current->getDampingCombineMode(), current->getFlags());
+                    if (!owned)
+                    {
+                        // Pool exhausted / invalid value (see createSharedMaterial): keep the current
+                        // material and report the partial failure.
+                        allApplied = false;
+                        continue;
+                    }
+                    // Swap material 0 only, preserving any additional per-face materials.
+                    const PxU32 nMaterials = shape->getNbMaterials();
+                    std::vector<PxMaterial*> mats(nMaterials);
+                    shape->getMaterials(mats.data(), nMaterials, 0);
+                    PxMaterial* const replaced = mats[0];
+                    mats[0] = owned;
+                    shape->setMaterials(mats.data(), nMaterials);
+                    // setMaterials returns void and is IGNORED for a shared shape attached to actors or
+                    // while the simulation runs (NpShape::setMaterialsInternal). Releasing the replaced
+                    // material before the swap is confirmed would hand a still-referenced material back to
+                    // the pool, which createSharedMaterial later recycles in place. Confirm by re-read, then
+                    // release only the material the shape no longer uses: releasing the replaced one is a
+                    // no-op for an authored material (siblings sharing it are untouched) and a refcount drop
+                    // for a pooled one.
+                    PxMaterial* current0 = nullptr;
+                    if (shape->getMaterials(&current0, 1) == 1 && current0 == owned)
+                    {
+                        mSim->releaseSharedMaterial(replaced);
+                    }
+                    else
+                    {
+                        // The shape kept its old material; drop the unused fork and report the partial write.
+                        mSim->releaseSharedMaterial(owned);
+                        allApplied = false;
+                    }
                 }
             }
         }
-        return true;
+        return allApplied;
+    }
+
+    // Kinematic target is PREFLIGHTED before any mutation: every eligible row is checked, and if any one
+    // is bad the whole commit fails naming it -- the atomic-refusal shape AC-10 uses for a jointLimit on a
+    // free axis, so a caller cannot mistake a partial write for a complete one. Two conditions are checked,
+    // both of which PxRigidDynamic::setKinematicTarget only asserts (compiled out in release), so without
+    // this the commit would return success after corrupting the body:
+    //   - Object state (REQ-INPUT-COVERAGE-001 AC-6): setKinematicTarget forbids eDISABLE_SIMULATION. The
+    //     CPU planner does not filter disabled rows (only the DirectGPU planner does, and DirectGPU refuses
+    //     the rigid target outright before reaching here), so a disabled kinematic body arrives here and
+    //     must be surfaced rather than skipped into a false success.
+    //   - Value validity: the target values flow straight into setKinematicTarget. A non-finite position
+    //     stores a NaN pose, and a zero or non-finite quaternion divides by zero when PhysX normalises it.
+    // Only KINEMATIC rows are checked: a link or non-kinematic dynamic never reaches setKinematicTarget
+    // (it warns and is served around in the switch below), so failing the group over the target values it
+    // supplied -- which are discarded -- would break that per-object serve-around.
+    if (prop == BodyProperty::eKinematicTargetPosition || prop == BodyProperty::eKinematicTargetOrientation)
+    {
+        for (PxU32 i = 0; i < numOutputs; i++)
+        {
+            const PxU32 recIdx = outRecordIdx ? outRecordIdx[i] : i;
+            const RigidBodyEntry& entry = mEntries[recIdx];
+            const bool kinematic = entry.type == RigidBodyType::eRigidDynamic &&
+                                   (entry.body->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC);
+            if (!kinematic)
+                continue;
+            if (entry.body->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION))
+            {
+                OVX_RUNTIME_ERROR("Cannot set a kinematic target on the disabled body at '%s': PhysX requires an "
+                                  "enabled body (eDISABLE_SIMULATION is set). Re-enable it via 'disableSimulation' "
+                                  "first -- nothing was written.",
+                                  entry.path.c_str());
+                return false;
+            }
+            const float* const v = fsrc + size_t(i) * comp;
+            if (prop == BodyProperty::eKinematicTargetPosition)
+            {
+                if (!PxIsFinite(v[0]) || !PxIsFinite(v[1]) || !PxIsFinite(v[2]))
+                {
+                    OVX_RUNTIME_ERROR("Kinematic target position for '%s' is not finite (%g, %g, %g); "
+                                      "nothing was written.",
+                                      entry.path.c_str(), v[0], v[1], v[2]);
+                    return false;
+                }
+            }
+            else
+            {
+                const bool finite = PxIsFinite(v[0]) && PxIsFinite(v[1]) && PxIsFinite(v[2]) && PxIsFinite(v[3]);
+                const float magSq = v[0] * v[0] + v[1] * v[1] + v[2] * v[2] + v[3] * v[3];
+                if (!finite || magSq < 1e-12f)
+                {
+                    OVX_RUNTIME_ERROR("Kinematic target orientation for '%s' is not a usable quaternion "
+                                      "(%g, %g, %g, %g): it must be finite and non-zero; nothing was written.",
+                                      entry.path.c_str(), v[0], v[1], v[2], v[3]);
+                    return false;
+                }
+            }
+        }
     }
 
     for (PxU32 i = 0; i < numOutputs; i++)
@@ -1618,6 +2013,41 @@ bool BaseRigidBodyView::setBodyPropertyOvStage(const BodyProperty prop,
             // refreshRdGpuIndices.
             body.setActorFlag(PxActorFlag::eDISABLE_SIMULATION, *bsrc++ != 0);
             break;
+        case BodyProperty::eKinematicTargetPosition:
+        case BodyProperty::eKinematicTargetOrientation:
+        {
+            // Read-modify-write on the one PxTransform target, so writing the position column keeps the
+            // orientation half (and vice versa). PxRigidDynamic::setKinematicTarget names two
+            // preconditions -- kinematic, and NOT eDISABLE_SIMULATION. The disabled precondition is
+            // enforced by the preflight above (the whole commit has already failed if any requested body
+            // is a disabled kinematic), so here only the STRUCTURAL one remains: a link or non-kinematic
+            // dynamic can never take a target, so it warns and is served around.
+            const RigidBodyEntry& entry = mEntries[recIdx];
+            const bool kinematic = entry.type == RigidBodyType::eRigidDynamic &&
+                                   (entry.body->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC);
+            if (kinematic)
+            {
+                PxTransform target = currentKinematicTargetOrPose(entry);
+                if (prop == BodyProperty::eKinematicTargetPosition)
+                {
+                    target.p = PxVec3(fsrc[0], fsrc[1], fsrc[2]);
+                    if (entry.subspace)
+                        target.p += PxVec3(entry.subspace->origin.x, entry.subspace->origin.y, entry.subspace->origin.z);
+                }
+                else
+                {
+                    target.q = PxQuat(fsrc[0], fsrc[1], fsrc[2], fsrc[3]);
+                }
+                static_cast<PxRigidDynamic*>(entry.body)->setKinematicTarget(target);
+            }
+            else
+            {
+                CARB_LOG_WARN("Cannot set kinematic target on articulation link or non-kinematic rigid body at '%s'",
+                              entry.path.c_str());
+            }
+            fsrc += (prop == BodyProperty::eKinematicTargetPosition) ? 3 : 4;
+            break;
+        }
         default:
             break; // the read-only and per-shape cases returned above
         }
@@ -1625,57 +2055,131 @@ bool BaseRigidBodyView::setBodyPropertyOvStage(const BodyProperty prop,
     return true;
 }
 
-bool BaseRigidBodyView::setMassesOvStage(const TensorDesc* srcTensor, const PxU32* outRecordIdx, const PxU32 numOutputs, uint64_t)
+bool BaseRigidBodyView::setMassesOvStage(const TensorDesc* srcTensor, const PxU32* outRecordIdx, const PxU32 numOutputs, uint64_t, bool)
 {
     return setBodyPropertyOvStage(BodyProperty::eMass, srcTensor, outRecordIdx, numOutputs);
 }
 
-bool BaseRigidBodyView::setInertiasOvStage(const TensorDesc* srcTensor, const PxU32* outRecordIdx, const PxU32 numOutputs, uint64_t)
+bool BaseRigidBodyView::setInertiasOvStage(const TensorDesc* srcTensor, const PxU32* outRecordIdx, const PxU32 numOutputs, uint64_t, bool)
 {
     return setBodyPropertyOvStage(BodyProperty::eInertia, srcTensor, outRecordIdx, numOutputs);
 }
 
-bool BaseRigidBodyView::setComPositionsOvStage(const TensorDesc* srcTensor, const PxU32* outRecordIdx, const PxU32 numOutputs, uint64_t)
+bool BaseRigidBodyView::setComPositionsOvStage(const TensorDesc* srcTensor, const PxU32* outRecordIdx, const PxU32 numOutputs, uint64_t, bool)
 {
     return setBodyPropertyOvStage(BodyProperty::eComPosition, srcTensor, outRecordIdx, numOutputs);
 }
 
-bool BaseRigidBodyView::setComOrientationsOvStage(const TensorDesc* srcTensor, const PxU32* outRecordIdx, const PxU32 numOutputs, uint64_t)
+bool BaseRigidBodyView::setComOrientationsOvStage(const TensorDesc* srcTensor, const PxU32* outRecordIdx, const PxU32 numOutputs, uint64_t, bool)
 {
     return setBodyPropertyOvStage(BodyProperty::eComOrientation, srcTensor, outRecordIdx, numOutputs);
 }
 
-bool BaseRigidBodyView::setDisableGravitiesOvStage(const TensorDesc* srcTensor, const PxU32* outRecordIdx, const PxU32 numOutputs, uint64_t)
+bool BaseRigidBodyView::setDisableGravitiesOvStage(const TensorDesc* srcTensor, const PxU32* outRecordIdx, const PxU32 numOutputs, uint64_t, bool)
 {
     return setBodyPropertyOvStage(BodyProperty::eDisableGravity, srcTensor, outRecordIdx, numOutputs);
 }
 
-bool BaseRigidBodyView::setDisableSimulationsOvStage(const TensorDesc* srcTensor, const PxU32* outRecordIdx, const PxU32 numOutputs, uint64_t)
+bool BaseRigidBodyView::setDisableSimulationsOvStage(const TensorDesc* srcTensor, const PxU32* outRecordIdx, const PxU32 numOutputs, uint64_t, bool)
 {
     return setBodyPropertyOvStage(BodyProperty::eDisableSimulation, srcTensor, outRecordIdx, numOutputs);
 }
 
-bool BaseRigidBodyView::setStaticFrictionsOvStage(const TensorDesc* srcTensor, const PxU32* outRecordIdx, const PxU32 numOutputs, uint64_t)
+// Wake / sleep command (write-only). Self-contained rather than routed through
+// setBodyPropertyOvStage, whose BodyProperty enum couples a read case to every write case: wake has no
+// stored command value to read. isSleeping exposes the current state separately. The scene is
+// never DirectGPU here -- planRigidGroup refuses wake on a DirectGPU scene -- so this is a plain CPU
+// wakeUp/putToSleep with no device sibling to notify.
+bool BaseRigidBodyView::setWakeStatesOvStage(const TensorDesc* srcTensor,
+                                             const PxU32* const outRecordIdx,
+                                             const PxU32 numOutputs,
+                                             uint64_t,
+                                             bool)
+{
+    CHECK_VALID_DATA_SIM_RETURN(mSimData, mSim, false);
+    if (!srcTensor || !srcTensor->data)
+        return false;
+
+    if (!checkTensorDevice(*srcTensor, -1, "wake", __FUNCTION__) ||
+        !omni::physics::tensors::checkTensorDataType(*srcTensor, omni::physics::tensors::TensorDataType::eUint8, "wake",
+                                                     __FUNCTION__) ||
+        !checkTensorSizeExact(*srcTensor, numOutputs, "wake", __FUNCTION__) ||
+        !omni::physics::tensors::checkRecordIndices(outRecordIdx, numOutputs, mEntries.size(), "wake", __FUNCTION__))
+    {
+        return false;
+    }
+
+    // eDISABLE_SLEEPING scene: NpRigidDynamic::putToSleep() rejects with a release-firing error LOG
+    // ("...Call ignored.") -- a plain PxGetFoundation().error(), not a debug-only PX_CHECK -- so a bulk
+    // sleep-all would log once per dynamic per commit, defeating the silent-bulk-control design above.
+    // Drop the sleep lane silently on such a scene (wakeUp has no such restriction, so the wake lane is
+    // untouched). Scene-level flag, so checked once from the first entry, matching setKinematicTargets'
+    // DirectGPU check above (the view is single-scene).
+    const bool sleepingDisabled = !mEntries.empty() && mEntries[0].body && mEntries[0].body->getScene() &&
+                                  mEntries[0].body->getScene()->getFlags().isSet(PxSceneFlag::eDISABLE_SLEEPING);
+
+    const uint8_t* const bsrc = static_cast<const uint8_t*>(srcTensor->data);
+    for (PxU32 i = 0; i < numOutputs; i++)
+    {
+        const PxU32 recIdx = outRecordIdx ? outRecordIdx[i] : i;
+        const RigidBodyEntry& entry = mEntries[recIdx];
+        // This command only drives standalone rigid dynamics. wakeUp/putToSleep guard a kinematic or
+        // eDISABLE_SIMULATION body with PX_CHECK_AND_RETURN -- a checked-build log-and-return that is
+        // COMPILED OUT in release, so the release call proceeds unguarded. Skipping both here avoids that
+        // unguarded release path, and is an improvement over the deprecated view's wakeUp/putToSleep,
+        // which skipped only the disabled one. A link never reaches here: the write table marks wake not
+        // linkWritable.
+        //
+        // The skip is SILENT by design (no per-row warn), unlike the kinematic-target serve-around above.
+        // wake is a bulk control -- a "wake every rigid body" write over the whole set is routine and may
+        // run each frame -- so warning on the kinematic/disabled rows it legitimately steps over would
+        // spam every frame. The kinematic target is a targeted per-body op, so its warn fits; wake's does
+        // not.
+        if (entry.type != RigidBodyType::eRigidDynamic)
+            continue;
+        PxRigidDynamic* const dyn = static_cast<PxRigidDynamic*>(entry.body);
+        if (dyn->getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION) ||
+            (dyn->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC))
+            continue;
+        if (bsrc[i] != 0)
+            dyn->wakeUp();
+        else if (!sleepingDisabled)
+            dyn->putToSleep(); // else: eDISABLE_SLEEPING -- no sleep state to set, skip silently (see above)
+    }
+    return true;
+}
+
+bool BaseRigidBodyView::setKinematicTargetPositionsOvStage(const TensorDesc* srcTensor, const PxU32* outRecordIdx, const PxU32 numOutputs, uint64_t, bool)
+{
+    return setBodyPropertyOvStage(BodyProperty::eKinematicTargetPosition, srcTensor, outRecordIdx, numOutputs);
+}
+
+bool BaseRigidBodyView::setKinematicTargetOrientationsOvStage(const TensorDesc* srcTensor, const PxU32* outRecordIdx, const PxU32 numOutputs, uint64_t, bool)
+{
+    return setBodyPropertyOvStage(BodyProperty::eKinematicTargetOrientation, srcTensor, outRecordIdx, numOutputs);
+}
+
+bool BaseRigidBodyView::setStaticFrictionsOvStage(const TensorDesc* srcTensor, const PxU32* outRecordIdx, const PxU32 numOutputs, uint64_t, bool)
 {
     return setBodyPropertyOvStage(BodyProperty::eStaticFriction, srcTensor, outRecordIdx, numOutputs);
 }
 
-bool BaseRigidBodyView::setDynamicFrictionsOvStage(const TensorDesc* srcTensor, const PxU32* outRecordIdx, const PxU32 numOutputs, uint64_t)
+bool BaseRigidBodyView::setDynamicFrictionsOvStage(const TensorDesc* srcTensor, const PxU32* outRecordIdx, const PxU32 numOutputs, uint64_t, bool)
 {
     return setBodyPropertyOvStage(BodyProperty::eDynamicFriction, srcTensor, outRecordIdx, numOutputs);
 }
 
-bool BaseRigidBodyView::setRestitutionsOvStage(const TensorDesc* srcTensor, const PxU32* outRecordIdx, const PxU32 numOutputs, uint64_t)
+bool BaseRigidBodyView::setRestitutionsOvStage(const TensorDesc* srcTensor, const PxU32* outRecordIdx, const PxU32 numOutputs, uint64_t, bool)
 {
     return setBodyPropertyOvStage(BodyProperty::eRestitution, srcTensor, outRecordIdx, numOutputs);
 }
 
-bool BaseRigidBodyView::setContactOffsetsOvStage(const TensorDesc* srcTensor, const PxU32* outRecordIdx, const PxU32 numOutputs, uint64_t)
+bool BaseRigidBodyView::setContactOffsetsOvStage(const TensorDesc* srcTensor, const PxU32* outRecordIdx, const PxU32 numOutputs, uint64_t, bool)
 {
     return setBodyPropertyOvStage(BodyProperty::eContactOffset, srcTensor, outRecordIdx, numOutputs);
 }
 
-bool BaseRigidBodyView::setRestOffsetsOvStage(const TensorDesc* srcTensor, const PxU32* outRecordIdx, const PxU32 numOutputs, uint64_t)
+bool BaseRigidBodyView::setRestOffsetsOvStage(const TensorDesc* srcTensor, const PxU32* outRecordIdx, const PxU32 numOutputs, uint64_t, bool)
 {
     return setBodyPropertyOvStage(BodyProperty::eRestOffset, srcTensor, outRecordIdx, numOutputs);
 }
@@ -1726,6 +2230,26 @@ bool BaseRigidBodyView::getDisableSimulationsOvStage(const TensorDesc* dstTensor
                                                      const PxU32 numOutputs, uint64_t) const
 {
     return getBodyPropertyOvStage(BodyProperty::eDisableSimulation, dstTensor, outRecordIdx, numOutputs);
+}
+
+bool BaseRigidBodyView::getSleepStatesOvStage(const TensorDesc* dstTensor,
+                                             const PxU32* const outRecordIdx,
+                                             const PxU32 numOutputs,
+                                             uint64_t) const
+{
+    return getBodyPropertyOvStage(BodyProperty::eIsSleeping, dstTensor, outRecordIdx, numOutputs);
+}
+
+bool BaseRigidBodyView::getKinematicTargetPositionsOvStage(const TensorDesc* dstTensor, const PxU32* outRecordIdx,
+                                                           const PxU32 numOutputs, uint64_t) const
+{
+    return getBodyPropertyOvStage(BodyProperty::eKinematicTargetPosition, dstTensor, outRecordIdx, numOutputs);
+}
+
+bool BaseRigidBodyView::getKinematicTargetOrientationsOvStage(const TensorDesc* dstTensor, const PxU32* outRecordIdx,
+                                                              const PxU32 numOutputs, uint64_t) const
+{
+    return getBodyPropertyOvStage(BodyProperty::eKinematicTargetOrientation, dstTensor, outRecordIdx, numOutputs);
 }
 
 bool BaseRigidBodyView::getStaticFrictionsOvStage(const TensorDesc* dstTensor, const PxU32* outRecordIdx,

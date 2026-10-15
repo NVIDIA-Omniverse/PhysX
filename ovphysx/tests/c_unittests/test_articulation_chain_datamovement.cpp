@@ -8,6 +8,7 @@
 
 #include <gtest/gtest.h>
 #include "ovphysx/ovphysx.h"
+#include "ovphysx/ovphysx_attributes.h"
 #include "global_test_environment.h"
 #include "test_utilities.h"
 
@@ -40,15 +41,15 @@ TEST_F(PhysXTestFixture, ArticulationChainDataMovement_CompleteSimulation) {
     auto readLinkPositions = [&]() -> std::vector<float> {
         std::vector<float> out;
         ovphysx_query_handle_t rq = 0;
-        EXPECT_EQ(ovphysx_query(m_handle, OVPHYSX_OBJECT_ARTICULATION_LINK, OVPHYSX_SCOPE_ALL, &rq).status,
+        EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_ARTICULATION_LINK, OVPHYSX_SCOPE_ALL, &rq, nullptr)).status,
                   OVPHYSX_API_SUCCESS);
         ovphysx_read_handle_t rs = 0;
-        EXPECT_EQ(ovphysx_read(m_handle, rq, &posAttr, 1, &rs).status, OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, rq, &posAttr, 1, &rs, nullptr)).status, OVPHYSX_API_SUCCESS);
         const ovstage_read_group_t* g = nullptr;
         for (;;)
         {
-            const ovphysx_result_t fr = ovphysx_fetch_read_next(m_handle, rs, &g);
-            if (fr.status == OVPHYSX_API_END_OF_ITERATION)
+            const ovphysx_result_t fr = test_utils::complete_task(m_handle, ovphysx_fetch_read_next(m_handle, rs, &g));
+            if (fr.status == OVPHYSX_API_SUCCESS && !g)
                 break;
             if (fr.status != OVPHYSX_API_SUCCESS)
             {
@@ -64,10 +65,10 @@ TEST_F(PhysXTestFixture, ArticulationChainDataMovement_CompleteSimulation) {
                 const float* p = static_cast<const float*>(t.data);
                 out.insert(out.end(), p, p + rows * 3);
             }
-            ovphysx_release_group(m_handle, rs, g->read_group_id);
+            test_utils::complete_task(m_handle, ovphysx_release_group(m_handle, rs, g->read_group_id));
         }
-        ovphysx_release_read(m_handle, rs);
-        ovphysx_release_query(m_handle, rq);
+        test_utils::complete_task(m_handle, ovphysx_release_read(m_handle, rs));
+        test_utils::complete_task(m_handle, ovphysx_release_query(m_handle, rq));
         return out;
     };
 
@@ -76,10 +77,10 @@ TEST_F(PhysXTestFixture, ArticulationChainDataMovement_CompleteSimulation) {
         {
             const ovphysx_enqueue_result_t sr = ovphysx_step(m_handle, dt);
             EXPECT_EQ(sr.status, OVPHYSX_API_SUCCESS);
-            ovphysx_op_wait_result_t wr = {};
-            EXPECT_EQ(ovphysx_wait_op(m_handle, sr.op_index, 30000000000ULL, &wr).status, OVPHYSX_API_SUCCESS);
+            ovphysx_wait_task_result_t wr = {};
+            EXPECT_EQ(ovphysx_wait_task(m_handle, sr, 30000000000ULL, &wr).status, OVPHYSX_API_SUCCESS);
             EXPECT_EQ(wr.num_errors, 0);
-            ovphysx_destroy_wait_result(&wr);
+            ovphysx_destroy_wait_task_result(&wr);
         }
     };
 
@@ -87,15 +88,15 @@ TEST_F(PhysXTestFixture, ArticulationChainDataMovement_CompleteSimulation) {
     auto readJointVelocities = [&]() -> std::vector<float> {
         std::vector<float> out;
         ovphysx_query_handle_t rq = 0;
-        EXPECT_EQ(ovphysx_query(m_handle, OVPHYSX_OBJECT_ARTICULATION_JOINT, OVPHYSX_SCOPE_ALL, &rq).status,
+        EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT, OVPHYSX_SCOPE_ALL, &rq, nullptr)).status,
                   OVPHYSX_API_SUCCESS);
         ovphysx_read_handle_t rs = 0;
-        EXPECT_EQ(ovphysx_read(m_handle, rq, &jointVelAttr, 1, &rs).status, OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(test_utils::complete_task(m_handle, ovphysx_read(m_handle, rq, &jointVelAttr, 1, &rs, nullptr)).status, OVPHYSX_API_SUCCESS);
         const ovstage_read_group_t* g = nullptr;
         for (;;)
         {
-            const ovphysx_result_t fr = ovphysx_fetch_read_next(m_handle, rs, &g);
-            if (fr.status == OVPHYSX_API_END_OF_ITERATION)
+            const ovphysx_result_t fr = test_utils::complete_task(m_handle, ovphysx_fetch_read_next(m_handle, rs, &g));
+            if (fr.status == OVPHYSX_API_SUCCESS && !g)
                 break;
             if (fr.status != OVPHYSX_API_SUCCESS)
             {
@@ -112,10 +113,10 @@ TEST_F(PhysXTestFixture, ArticulationChainDataMovement_CompleteSimulation) {
                 const float* p = static_cast<const float*>(t.data);
                 out.insert(out.end(), p, p + count);
             }
-            ovphysx_release_group(m_handle, rs, g->read_group_id);
+            test_utils::complete_task(m_handle, ovphysx_release_group(m_handle, rs, g->read_group_id));
         }
-        ovphysx_release_read(m_handle, rs);
-        ovphysx_release_query(m_handle, rq);
+        test_utils::complete_task(m_handle, ovphysx_release_read(m_handle, rs));
+        test_utils::complete_task(m_handle, ovphysx_release_query(m_handle, rq));
         return out;
     };
 
@@ -130,16 +131,18 @@ TEST_F(PhysXTestFixture, ArticulationChainDataMovement_CompleteSimulation) {
     const float DRIVE_DEG_PER_S = 60.0f;
     {
         ovphysx_query_handle_t wq = 0;
-        ASSERT_EQ(ovphysx_query(m_handle, OVPHYSX_OBJECT_ARTICULATION_JOINT, OVPHYSX_SCOPE_ALL, &wq).status,
+        ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT, OVPHYSX_SCOPE_ALL, &wq, nullptr)).status,
                   OVPHYSX_API_SUCCESS);
         ovphysx_write_handle_t ws = 0;
-        ASSERT_EQ(ovphysx_write(m_handle, wq, &velTargetAttr, &ws).status, OVPHYSX_API_SUCCESS);
-        const ovstage_map_group_t* g = nullptr;
+        ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_write(m_handle, wq, &velTargetAttr, 1, &ws, nullptr)).status, OVPHYSX_API_SUCCESS);
+        ovphysx_fetched_write_group_t fetched{};
         int groups_written = 0;
         for (ovphysx_result_t fw;
-             (fw = ovphysx_fetch_write_next(m_handle, ws, &g)).status != OVPHYSX_API_END_OF_ITERATION;)
+             (fw = test_utils::complete_task(m_handle, ovphysx_fetch_write_next(m_handle, ws, &fetched))).status != OVPHYSX_API_SUCCESS ||
+             fetched.group;)
         {
-            ASSERT_EQ(fw.status, OVPHYSX_API_SUCCESS);  // any non-END_OF_ITERATION status is a real error
+            ASSERT_EQ(fw.status, OVPHYSX_API_SUCCESS);  // failure is not exhaustion
+            const ovstage_map_group_t* g = fetched.group;
             for (uint32_t ti = 0; g->data.tensors && ti < g->data.tensor_count; ++ti)
             {
                 const DLTensor& t = g->data.tensors[ti];
@@ -150,12 +153,12 @@ TEST_F(PhysXTestFixture, ArticulationChainDataMovement_CompleteSimulation) {
                 for (size_t j = 0; j < count; ++j)
                     dst[j] = DRIVE_DEG_PER_S;
             }
-            ASSERT_EQ(ovphysx_commit_group(m_handle, ws, g, ovstage_cuda_sync_t{}).status, OVPHYSX_API_SUCCESS);
+            ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_commit_group(m_handle, ws, g, ovstage_cuda_sync_t{})).status, OVPHYSX_API_SUCCESS);
             ++groups_written;
         }
         ASSERT_GT(groups_written, 0) << "write session produced no groups";
-        ovphysx_release_write(m_handle, ws);
-        ovphysx_release_query(m_handle, wq);
+        test_utils::complete_task(m_handle, ovphysx_release_write(m_handle, ws));
+        test_utils::complete_task(m_handle, ovphysx_release_query(m_handle, wq));
     }
 
     // Step a couple of frames so the joints spin up while still short of their limits, then read
@@ -192,11 +195,11 @@ TEST_F(PhysXTestFixture, ArticulationChainDataMovement_CompleteSimulation) {
     EXPECT_GT(max_displacement, 0.1f) << "Chain should have moved significantly under the drive";
 
     // Reset to clear the USD stage.
-    ovphysx_enqueue_result_t reset_result = ovphysx_reset_stage(m_handle);
+    ovphysx_enqueue_result_t reset_result = ovphysx_detach_ovstage(m_handle);
     ASSERT_EQ(reset_result.status, OVPHYSX_API_SUCCESS);
-    ovphysx_op_wait_result_t reset_wait_result = {};
-    ASSERT_EQ(ovphysx_wait_op(m_handle, reset_result.op_index, 30000000000ULL, &reset_wait_result).status,
+    ovphysx_wait_task_result_t reset_wait_result = {};
+    ASSERT_EQ(ovphysx_wait_task(m_handle, reset_result, 30000000000ULL, &reset_wait_result).status,
               OVPHYSX_API_SUCCESS);
     ASSERT_EQ(reset_wait_result.num_errors, 0);
-    ovphysx_destroy_wait_result(&reset_wait_result);
+    ovphysx_destroy_wait_task_result(&reset_wait_result);
 }

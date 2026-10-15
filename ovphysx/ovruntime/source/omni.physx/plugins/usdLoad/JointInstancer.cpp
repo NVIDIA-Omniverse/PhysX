@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-3 AC-4
+ */
+
 /**
  * @implements REQ-PUBLICAPI-001
  * @covers AC-27 AC-28
@@ -68,9 +72,9 @@ void parseJointPrototype(AttachedStage& attachedStage,
 
     const std::vector<std::string> scanRoots{ std::string(attachedStage.textViewFor(targetKey)) };
     static const std::vector<std::string> kNoExclude;
-    omni::physics::parse::ScanOptions scanOptions;
+    omni::physics::parse::ScanOptions scanOptions = attachedStage.descriptorScanOptions();
     auto scanned = std::make_unique<omni::physics::parse::ScannedStage>();
-    *scanned = omni::physics::parse::scanStage(attachedStage.attachTarget(), scanRoots, kNoExclude, scanOptions,
+    *scanned = attachedStage.scanStage(scanRoots, kNoExclude, scanOptions,
                                                omni::physx::usdparser::iceDescriptorAllocator());
 
     if (scanned->joints.empty())
@@ -90,7 +94,7 @@ void parseJointPrototype(AttachedStage& attachedStage,
 ObjectId resolveBodyPath(AttachedStage& attachedStage, ObjectKey bodyKey, int bodyIndex)
 {
     ObjectDb* objectDb = attachedStage.getObjectDatabase();
-    internal::InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     const omni::physics::parse::IPhysicsSource* src = attachedStage.getSource();
     if (src && bodyKey.valid())
@@ -311,8 +315,8 @@ void parseJointInstancer(AttachedStage& attachedStage,
             const ObjectId resolvedBody0 = resolveBodyPath(attachedStage, body0Key, body0Index);
             const ObjectId resolvedBody1 = resolveBodyPath(attachedStage, body1Key, body1Index);
 
-            const bool body0Dynamic = resolvedBody0 == kInvalidObjectId ? false : isRigidBodyDynamic(resolvedBody0);
-            const bool body1Dynamic = resolvedBody1 == kInvalidObjectId ? false : isRigidBodyDynamic(resolvedBody1);
+            const bool body0Dynamic = resolvedBody0 == kInvalidObjectId ? false : isRigidBodyDynamic(attachedStage, resolvedBody0);
+            const bool body1Dynamic = resolvedBody1 == kInvalidObjectId ? false : isRigidBodyDynamic(attachedStage, resolvedBody1);
 
             createJoint(attachedStage, targetDesc.descKey, jointDesc, resolvedBody0, body0Dynamic, resolvedBody1, body1Dynamic);
 

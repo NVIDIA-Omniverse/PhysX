@@ -3,8 +3,8 @@
 
 """Tests for internal _bindings module.
 
-Covers low-level ctypes bindings, library loading helpers, and the two
-sentinel constants that live in _bindings (not in types.py).
+Covers low-level ctypes bindings, library loading helpers, and the invalid-handle
+sentinel constant that live in _bindings (not in types.py).
 
 Enum value coverage (TensorType, ApiStatus, LogLevel, BindingPrimMode)
 is handled by test_types_sync.py and test_module_exports.py.
@@ -104,13 +104,6 @@ def test_invalid_handle_constant():
 
     assert isinstance(OVPHYSX_INVALID_HANDLE, int)
     assert OVPHYSX_INVALID_HANDLE == 0
-
-
-def test_op_index_all_constant():
-    from ovphysx._bindings import OP_INDEX_ALL
-
-    assert isinstance(OP_INDEX_ALL, int)
-    assert OP_INDEX_ALL == 0xFFFFFFFFFFFFFFFF
 
 
 def test_bundled_lib_path():

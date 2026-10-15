@@ -1,0 +1,91 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+# Three disconnected two-link articulations under one articulation root.
+# robot_0 and robot_1 simulate in scene A; robot_2 simulates in scene B.
+# Path lookup of /World/Shared resolves one root, so the three runtime articulation rows share a key.
+
+def Xform "World" {
+    def PhysicsScene "sceneA" (prepend apiSchemas = ["PhysxSceneAPI"]) {
+        float physics:gravityMagnitude = 0
+        bool physxScene:enableGPUDynamics = true
+        uniform token physxScene:broadphaseType = "GPU"
+    }
+    def PhysicsScene "sceneB" (prepend apiSchemas = ["PhysxSceneAPI"]) {
+        float physics:gravityMagnitude = 0
+        bool physxScene:enableGPUDynamics = true
+        uniform token physxScene:broadphaseType = "GPU"
+    }
+    def Xform "Shared" (prepend apiSchemas = ["PhysicsArticulationRootAPI", "PhysxArticulationAPI"]) {
+        def Xform "robot_0" {
+            def Cube "base" (prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]) {
+                double size = 0.1
+                double3 xformOp:translate = (0, 0, 0)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+                float physics:mass = 1
+                rel physics:simulationOwner = </World/sceneA>
+            }
+            def Cube "tip" (prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]) {
+                double size = 0.1
+                double3 xformOp:translate = (1, 0, 0)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+                float physics:mass = 1
+                rel physics:simulationOwner = </World/sceneA>
+            }
+            def PhysicsFixedJoint "joint" {
+                rel physics:body0 = </World/Shared/robot_0/base>
+                rel physics:body1 = </World/Shared/robot_0/tip>
+                point3f physics:localPos0 = (1, 0, 0)
+                point3f physics:localPos1 = (0, 0, 0)
+            }
+        }
+        def Xform "robot_1" {
+            def Cube "base" (prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]) {
+                double size = 0.1
+                double3 xformOp:translate = (10, 0, 0)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+                float physics:mass = 1
+                rel physics:simulationOwner = </World/sceneA>
+            }
+            def Cube "tip" (prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]) {
+                double size = 0.1
+                double3 xformOp:translate = (11, 0, 0)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+                float physics:mass = 1
+                rel physics:simulationOwner = </World/sceneA>
+            }
+            def PhysicsFixedJoint "joint" {
+                rel physics:body0 = </World/Shared/robot_1/base>
+                rel physics:body1 = </World/Shared/robot_1/tip>
+                point3f physics:localPos0 = (1, 0, 0)
+                point3f physics:localPos1 = (0, 0, 0)
+            }
+        }
+        def Xform "robot_2" {
+            def Cube "base" (prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]) {
+                double size = 0.1
+                double3 xformOp:translate = (20, 0, 0)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+                float physics:mass = 1
+                rel physics:simulationOwner = </World/sceneB>
+            }
+            def Cube "tip" (prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI"]) {
+                double size = 0.1
+                double3 xformOp:translate = (21, 0, 0)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+                float physics:mass = 1
+                rel physics:simulationOwner = </World/sceneB>
+            }
+            def PhysicsFixedJoint "joint" {
+                rel physics:body0 = </World/Shared/robot_2/base>
+                rel physics:body1 = </World/Shared/robot_2/tip>
+                point3f physics:localPos0 = (1, 0, 0)
+                point3f physics:localPos1 = (0, 0, 0)
+            }
+        }
+    }
+}

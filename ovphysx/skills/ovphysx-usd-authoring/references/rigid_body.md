@@ -41,7 +41,7 @@ What you set most when authoring rigid bodies (intent, not full definitions):
 For the complete attribute set with types and default values, see the schema, not
 this list (it would drift): core `Physics*` attributes are defined by the OpenUSD
 `UsdPhysics` schema (stock `usd-core`); PhysX-specific `Physx*` attributes are in
-ovphysx's shipped codeless `generatedSchema.usda`. Both are rendered in the
+the external provider's codeless `generatedSchema.usda`. Both are rendered in the
 [Omni Physics documentation](https://docs.omniverse.nvidia.com/kit/docs/omni_physics/latest/index.html).
 
 For a complete, CI-tested body in a scene (body `Xform` + child collider, placed
@@ -81,8 +81,7 @@ geometry prims under the body `Xform`; all move rigidly with it.
 ## PhysX-Specific Properties
 
 CCD, per-body solver settings, and applied forces live on PhysX schemas
-(`PhysxRigidBodyAPI`, `PhysxForceAPI`, ...). These are codeless in ovphysx (no
-typed Python class). Register the schemas, then apply generically — see the
+(`PhysxRigidBodyAPI`, `PhysxForceAPI`, ...). These come from the external codeless schema provider. Register the schemas, then apply generically — see the
 codeless-schema pattern and its tested sample referenced in `SKILL.md`. In
 `.usda`, list them in `apiSchemas` and set their attributes directly.
 

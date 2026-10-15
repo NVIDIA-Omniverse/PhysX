@@ -37,13 +37,22 @@ class _PhysX:
         self.steps = []
         self.ordered_groups = []
 
-    def get_attach_handle(self):
+    def is_stage_attached(self, stage=None):
+        return stage is None or stage is getattr(self, "_native_stage", self._attached_ovstage)
+
+    def _capture_attachment_query(self):
         return self._attach_handle
+
+    def _is_query_valid(self, query):
+        return query == self._attach_handle
+
+    def _release_attachment_query(self, query, *, defer=False):
+        pass
 
     def step_sync(self, dt):
         self.steps.append(dt)
 
-    def read(self, object_type, names, *, scope):
+    def read_sync(self, object_type, names, *, scope):
         assert scope == ObjectScope.ALL
         return _ReadResult(self._groups_by_type.get(object_type, []))
 
@@ -51,35 +60,40 @@ class _PhysX:
         self.ordered_groups.append(group)
 
 
-class _RecordingStage:
-    def __init__(self, stage, *, failing_ordinal=None):
-        self._stage = stage
-        self._failing_ordinal = failing_ordinal
-        self.writes = []
-        self.write_floors = []
-        self.reads = 0
-        self.released_queries = []
+def _record_stage_calls(stage, *, failing_ordinal=None):
+    # Keep the real Stage owner: PathDictionary rejects forwarding proxies.
+    stage.writes = []
+    stage.write_floors = []
+    stage.reads = 0
+    stage.released_queries = []
+    write_attribute = stage.write_attribute
+    read_attributes = stage.read_attributes
+    release_query = stage.release_query
+    advance_write_floor = stage.advance_write_floor
 
-    def __getattr__(self, name):
-        return getattr(self._stage, name)
-
-    def write_attribute(self, query, attribute, ordinal, tensors, **kwargs):
-        self.writes.append((attribute, ordinal, tensors, kwargs))
-        if ordinal == self._failing_ordinal:
+    def record_write(query, attribute, ordinal, tensors, **kwargs):
+        stage.writes.append((attribute, ordinal, tensors, kwargs))
+        if ordinal == failing_ordinal:
             raise RuntimeError("write failed")
-        return self._stage.write_attribute(query, attribute, ordinal, tensors, **kwargs)
+        return write_attribute(query, attribute, ordinal, tensors, **kwargs)
 
-    def read_attributes(self, query, attributes, ordinal_range):
-        self.reads += 1
-        return self._stage.read_attributes(query, attributes, ordinal_range)
+    def record_read(query, attributes, ordinal_range):
+        stage.reads += 1
+        return read_attributes(query, attributes, ordinal_range)
 
-    def release_query(self, query):
-        self.released_queries.append(query)
-        return self._stage.release_query(query)
+    def record_release(query):
+        stage.released_queries.append(query)
+        return release_query(query)
 
-    def advance_write_floor(self, *, ordinal):
-        self.write_floors.append(ordinal)
-        return self._stage.advance_write_floor(ordinal=ordinal)
+    def record_floor(*, ordinal):
+        stage.write_floors.append(ordinal)
+        return advance_write_floor(ordinal=ordinal)
+
+    stage.write_attribute = record_write
+    stage.read_attributes = record_read
+    stage.release_query = record_release
+    stage.advance_write_floor = record_floor
+    return stage
 
 
 def _group(
@@ -141,8 +155,9 @@ def _read_attribute(stage, query, paths, attribute, ordinal):
                     array = np.array(group.array(tensor_index), copy=True)
                     if int(tensor.dtype.bits) == 16:
                         array = array.view(np.float16)
+                    layout = ovstage.typed_tensor_to_write(tensor)
                     values.append(
-                        (array, int(tensor.dtype.bits), int(tensor.dtype.lanes or 1), int(group.raw.semantic))
+                        (array, int(layout.dtype.bits), int(layout.dtype.lanes), int(group.raw.semantic))
                     )
     return values
 
@@ -258,7 +273,7 @@ def test_fixed_pose_writes_only_world_matrix_and_reuses_buffers(device, write_on
     if device.startswith("cuda") and not wp.is_cuda_available():
         pytest.skip("CUDA is unavailable")
     with ovstage.Stage(f"output-cache-fixed-{device}") as raw_stage:
-        stage = _RecordingStage(raw_stage)
+        stage = _record_stage_calls(raw_stage)
         with ovstage.PathDictionary(stage) as paths:
             with paths.create_path_list_from_strings(["/World/A", "/World/B"]) as path_list:
                 _seed_fixed_stage(
@@ -362,7 +377,7 @@ def test_default_reads_current_world_matrix_each_call(stage_device, physics_devi
     if any(device.startswith("cuda") for device in (stage_device, physics_device)) and not wp.is_cuda_available():
         pytest.skip("CUDA is unavailable")
     with ovstage.Stage(f"output-default-current-scale-{stage_device}-{physics_device}") as raw_stage:
-        stage = _RecordingStage(raw_stage)
+        stage = _record_stage_calls(raw_stage)
         with ovstage.PathDictionary(stage) as paths:
             with paths.create_path_list_from_strings(["/World/Body"]) as path_list:
                 _seed_fixed_stage(
@@ -449,7 +464,7 @@ def test_point_instancer_preserves_holes_and_authored_tail(device, monkeypatch):
     baseline_positions = [[10, 20, 30], [40, 50, 60], [70, 80, 90]]
     baseline_orientations = [[0, 0, 0, 1], [0, 0.5, 0, 0.866], [0, 0, 1, 0]]
     with ovstage.Stage(f"output-cache-instancer-{device}") as raw_stage:
-        stage = _RecordingStage(raw_stage)
+        stage = _record_stage_calls(raw_stage)
         with ovstage.PathDictionary(stage) as paths:
             with paths.create_path_list_from_strings(["/World/PI"]) as path_list:
                 _seed_instancer_stage(stage, paths, path_list, baseline_positions, baseline_orientations, device=device)
@@ -579,13 +594,30 @@ def test_point_instancer_grows_new_holes_with_defaults(stage_device, physics_dev
                 )
 
 
+def test_world_matrix_read_preserves_outer_stride():
+    matrices = np.arange(3 * 16, dtype=np.float64).reshape(3, 4, 4)[::2]
+    tensor = ovstage.DLTensor.from_dlpack(matrices)
+    group = SimpleNamespace(
+        is_array=False,
+        raw=SimpleNamespace(data=SimpleNamespace(cuda_sync=SimpleNamespace(wait_event=0))),
+        tensor=lambda _index: tensor,
+        dlpack=lambda _index: matrices,
+    )
+    with ovstage.Stage("output-matrix-stride") as stage:
+        with OvStageOutputCache(_PhysX(stage)) as cache:
+            borrowed = cache._world_matrix_array(group)
+            assert borrowed.shape == (2, 16)
+            assert borrowed.strides == (matrices.strides[0], matrices.itemsize)
+            assert np.array_equal(borrowed.numpy(), matrices.reshape(2, 16))
+
+
 def test_dlpack_capture_orders_warp_after_ovstage_event():
     with ovstage.Stage("output-cache-event-order") as stage:
         physx = _PhysX(stage)
         with OvStageOutputCache(physx) as cache:
             source = wp.zeros((1, 3), dtype=wp.float32)
             raw = SimpleNamespace(data=SimpleNamespace(cuda_sync=SimpleNamespace(wait_event=123)))
-            tensor = SimpleNamespace(dtype=SimpleNamespace(bits=32, lanes=3))
+            tensor = SimpleNamespace(dtype=SimpleNamespace(code=2, bits=32, lanes=3))
             group = SimpleNamespace(
                 raw=raw,
                 tensor=lambda _index: tensor,
@@ -658,7 +690,7 @@ def test_non_pose_array_output_keeps_shadow_attribute_behavior():
 
 def test_write_failure_releases_query_without_advancing_floor():
     with ovstage.Stage("output-write-failure") as raw_stage:
-        stage = _RecordingStage(raw_stage, failing_ordinal=2)
+        stage = _record_stage_calls(raw_stage, failing_ordinal=2)
         with ovstage.PathDictionary(stage) as paths:
             with paths.create_path_list_from_strings(["/World/Particles"]) as path_list:
                 group = _group(
@@ -683,7 +715,7 @@ def test_write_failure_releases_query_without_advancing_floor():
 
 def test_pose_write_failure_releases_queries_without_advancing_floor():
     with ovstage.Stage("output-pose-write-failure") as raw_stage:
-        stage = _RecordingStage(raw_stage, failing_ordinal=2)
+        stage = _record_stage_calls(raw_stage, failing_ordinal=2)
         with ovstage.PathDictionary(stage) as paths:
             with paths.create_path_list_from_strings(["/World/Body"]) as path_list:
                 _seed_fixed_stage(
@@ -720,7 +752,7 @@ def test_pose_write_failure_releases_queries_without_advancing_floor():
 
 def test_missing_fixed_scale_fails_without_writing_or_sealing():
     with ovstage.Stage("output-cache-missing-scale") as raw_stage:
-        stage = _RecordingStage(raw_stage)
+        stage = _record_stage_calls(raw_stage)
         with ovstage.PathDictionary(stage) as paths:
             with paths.create_path_list_from_strings(["/World/Body"]) as path_list:
                 groups = [
@@ -764,3 +796,46 @@ def test_cache_rejects_reattach_and_close_is_idempotent():
         cache.close()
         with pytest.raises(RuntimeError, match="closed"):
             cache.refresh()
+
+
+def test_cache_uses_native_query_lifetime_without_attachment_identity():
+    with ovstage.Stage("output-cache-query-lifetime") as stage:
+        physx = _PhysX(stage)
+
+        def forbidden_identity():
+            raise AssertionError("output caches must not retrieve runtime attach identities")
+
+        physx.get_attach_handle = forbidden_identity
+        released = []
+        physx._release_attachment_query = released.append
+        cache = OvStageOutputCache(physx)
+        cache.refresh()
+        physx._attach_handle += 1  # Native detach/reattach, same Python Stage.
+        with pytest.raises(RuntimeError, match="detach or reattach"):
+            cache.refresh()
+        cache.close()
+        cache.close()
+        assert released == [17]
+
+
+def test_cache_rejects_native_stage_replacement_with_stale_python_keepalive():
+    with ovstage.Stage("old-stage") as original, ovstage.Stage("native-replacement") as replacement:
+        physx = _PhysX(original)
+        physx._native_stage = replacement
+        released = []
+        physx._release_attachment_query = released.append
+        with pytest.raises(RuntimeError, match="current ovstage.Stage object"):
+            OvStageOutputCache(physx)
+        assert released == [17]
+
+
+def test_cache_collection_defers_native_query_release():
+    import gc
+    with ovstage.Stage("collected-cache") as stage:
+        physx = _PhysX(stage)
+        releases = []
+        physx._release_attachment_query = lambda query, *, defer=False: releases.append((query, defer))
+        cache = OvStageOutputCache(physx)
+        del cache
+        gc.collect()
+        assert releases == [(17, True)]

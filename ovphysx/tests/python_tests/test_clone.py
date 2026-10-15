@@ -1,11 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-# TODO(tensor-binding-deprecation): the clone assertions count matches through binding.count
-# (a pattern / prim_paths -> match-count accessor). The session read has no equivalent (its query
-# is by object type + scope, not by path pattern), so the binding stays until read gains path
-# selection. Only the count probe needs it. The clone behaviour under test is API-independent.
-
 """Python tests for clone functionality.
 
 Tests the high-level Python API for cloning USD prim hierarchies.
@@ -15,10 +10,21 @@ These tests verify the Python wrapper correctly calls through and handles errors
 
 import os
 
+import ovstage
 import pytest
 from ovphysx.dlpack import DLDataTypeCode
-from ovphysx.types import ObjectScope, SimObjectType, TensorType
-from test_utils import load_usd_with_ovstage
+from ovphysx.types import ObjectScope, SimObjectType
+from test_utils import attach_usd_with_ovstage, clone_bare_leaf_body_and_step, load_usd_with_ovstage
+
+
+def _selected_body_count(sdk, stage, *, pattern=None, paths=None):
+    """Rigid bodies a read selected by ``pattern`` or by the explicit ``paths`` covers."""
+    handles = None
+    if paths:
+        with ovstage.PathDictionary(stage) as dictionary:
+            handles = [dictionary.intern_path(p) for p in paths]
+    with sdk.read_sync(SimObjectType.RIGID_BODY, ["position"], prim_paths=handles, pattern=pattern) as result:
+        return sum(group.prim_count for group in result.groups)
 
 
 def test_clone_basic_functionality(physx_sdk):
@@ -41,7 +47,7 @@ def test_clone_basic_functionality(physx_sdk):
     # read must see exactly 4 (source + 3 clones). Warm up first, because a read needs the first step.
     sdk.warmup()
     sdk.wait_all()
-    with sdk.read(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
+    with sdk.read_sync(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
         body_count = sum(g.prim_count for g in result.groups)
     assert body_count == 4, f"expected 4 bodies (source + 3 clones), got {body_count}"
 
@@ -240,15 +246,15 @@ def test_clone_after_warmup_raises_runtime_error(physx_sdk):
 
 
 def test_clone_after_reset_succeeds(physx_sdk):
-    """Clean-recovery: warmup() -> reset() -> ovstage attach/update -> clone() succeeds.
+    """Clean-recovery: warmup() -> detach_ovstage() -> ovstage attach/update -> clone() succeeds.
 
-    Exercises the warmup-then-reset-and-start-over path with no failed clone in
-    between. Regression for NVBug 6172717: proves reset() clears
+    Exercises the warmup-then-detach-and-start-over path with no failed clone in
+    between. Regression for NVBug 6172717: proves detach_ovstage() clears
     the C-side ``warmup_done`` flag so subsequent clone() works.
 
     Pair with ``test_clone_failed_after_warmup_then_reset_succeeds`` which
     covers the user-facing failure-recovery path (warmup -> failed clone ->
-    reset -> ovstage attach/update -> clone).
+    detach -> ovstage attach/update -> clone).
     """
     sdk = physx_sdk
     test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -257,25 +263,25 @@ def test_clone_after_reset_succeeds(physx_sdk):
     sdk.wait_all()
     sdk.warmup()
 
-    # reset() invalidates usd handles and clears the C-side warmup_done flag.
-    sdk.reset_stage()
+    # detach_ovstage() invalidates usd handles and clears the C-side warmup_done flag.
+    sdk.detach_ovstage()
     sdk.wait_all()
     load_usd_with_ovstage(sdk, usd_path)
     sdk.wait_all()
 
-    # Clone should now succeed since warmup state was cleared by reset.
+    # Clone should now succeed since warmup state was cleared by detach.
     sdk.clone("/World/envs/env0", ["/World/envs/env_post_reset"])
     sdk.wait_all()
 
 
 def test_clone_failed_after_warmup_then_reset_succeeds(physx_sdk):
-    """Documented recovery: warmup -> clone (raises) -> reset -> ovstage attach/update -> clone.
+    """Documented recovery: warmup -> clone (raises) -> detach -> ovstage attach/update -> clone.
 
-    This is the exact user-facing path the error message advises (reset, then
+    This is the exact user-facing path the error message advises (detach, then
     reload or reattach the source stage). Regression for NVBug 6172717 and the
     orphan async op: the synchronous precondition failure in ``ovphysx_clone``
     uses ``set_enqueue_error`` rather than ``fail_with_event``, so no failed op
-    is registered for ``ovphysx_reset_stage()``'s pending-op drain to trip over.
+    is registered for ``ovphysx_detach_ovstage()``'s pending-op drain to trip over.
     """
     sdk = physx_sdk
     test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -288,10 +294,9 @@ def test_clone_failed_after_warmup_then_reset_succeeds(physx_sdk):
     with pytest.raises(RuntimeError, match="clone\\(\\) must be called before warmup"):
         sdk.clone("/World/envs/env0", ["/World/envs/env_after_warmup"])
 
-    # Then: the documented recovery path must work end-to-end. reset_stage() drains
-    # pending ops internally. If the failed clone were registered as a failed async
-    # op, this call would fail.
-    sdk.reset_stage()
+    # The rejected clone has no task outcome. Detach completes teardown, and the
+    # following explicit wait must not report a spurious clone task failure.
+    sdk.detach_ovstage()
     sdk.wait_all()
     load_usd_with_ovstage(sdk, usd_path)
     sdk.wait_all()
@@ -313,34 +318,28 @@ def test_clone_subtree_with_physics_scene(physx_sdk):
 
     test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     usd_path = os.path.join(test_dir, "data", "boxes_falling_on_groundplane.usda")
-    load_usd_with_ovstage(sdk, usd_path)
+    stage = attach_usd_with_ovstage(sdk, usd_path)
     sdk.wait_all()
-
-    def count(**binding_kwargs):
-        binding = sdk.create_tensor_binding(
-            tensor_type=TensorType.RIGID_BODY_POSE, **binding_kwargs
-        )
-        try:
-            return binding.count
-        finally:
-            binding.destroy()
-
-    # Source sanity: the wildcard resolves every dynamic body in the USD-authored source.
-    assert count(pattern="/World/*") == 11, "expected 11 source bodies"
 
     # Clone the whole /World subtree (which contains the singleton PhysicsScene).
     # clone() reports success: the non-replicable scene node is skipped, bodies replicate.
+    # Cloning must precede the first step, which a read needs.
     sdk.clone("/World", ["/World_clone0"])
     sdk.wait_all()
+    sdk.warmup()
+    sdk.wait_all()
+
+    # Source sanity: the wildcard resolves every dynamic body in the USD-authored source.
+    assert _selected_body_count(sdk, stage, pattern="/World/*") == 11, "expected 11 source bodies"
 
     # The clone must be functional: every cloned body addressable by explicit path.
     cube_paths = [f"/World_clone0/Cube{i}" for i in range(1, 12)]
-    assert count(prim_paths=cube_paths) == 11, (
+    assert _selected_body_count(sdk, stage, paths=cube_paths) == 11, (
         "replication should materialize all 11 cloned bodies (explicit paths)"
     )
 
     # The wildcard over the clone root must resolve the same 11 bodies.
-    clone_wildcard = count(pattern="/World_clone0/*")
+    clone_wildcard = _selected_body_count(sdk, stage, pattern="/World_clone0/*")
     assert clone_wildcard == 11, (
         f"wildcard /World_clone0/* should resolve 11 cloned bodies, got {clone_wildcard}"
     )
@@ -358,24 +357,18 @@ def test_clone_single_body_to_top_level_target(physx_sdk):
     sdk = physx_sdk
     test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     usd_path = os.path.join(test_dir, "data", "boxes_falling_on_groundplane.usda")
-    load_usd_with_ovstage(sdk, usd_path)
+    stage = attach_usd_with_ovstage(sdk, usd_path)
     sdk.wait_all()
-
-    def count(**binding_kwargs):
-        binding = sdk.create_tensor_binding(
-            tensor_type=TensorType.RIGID_BODY_POSE, **binding_kwargs
-        )
-        try:
-            return binding.count
-        finally:
-            binding.destroy()
 
     sdk.clone("/World/Cube1", ["/SoloClone"])
     sdk.wait_all()
+    sdk.warmup()
+    sdk.wait_all()
 
-    assert count(prim_paths=["/SoloClone"]) == 1, "explicit path must resolve the single-body clone"
-    assert count(pattern="/SoloClone") == 1, "literal pattern must resolve the single-body clone"
-    assert count(pattern="/Solo*") == 1, "wildcard must resolve the single-body clone root"
+    count = _selected_body_count
+    assert count(sdk, stage, paths=["/SoloClone"]) == 1, "explicit path must resolve the single-body clone"
+    assert count(sdk, stage, pattern="/SoloClone") == 1, "literal pattern must resolve the single-body clone"
+    assert count(sdk, stage, pattern="/Solo*") == 1, "wildcard must resolve the single-body clone root"
 
 
 def test_clone_nested_subtree_to_top_level_target(physx_sdk):
@@ -390,21 +383,25 @@ def test_clone_nested_subtree_to_top_level_target(physx_sdk):
     sdk = physx_sdk
     test_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     usd_path = os.path.join(test_dir, "data", "basic_simulation.usda")
-    load_usd_with_ovstage(sdk, usd_path)
+    stage = attach_usd_with_ovstage(sdk, usd_path)
     sdk.wait_all()
-
-    def count(**binding_kwargs):
-        binding = sdk.create_tensor_binding(
-            tensor_type=TensorType.RIGID_BODY_POSE, **binding_kwargs
-        )
-        try:
-            return binding.count
-        finally:
-            binding.destroy()
 
     sdk.clone("/World/envs", ["/EnvsClone"])
     sdk.wait_all()
+    sdk.warmup()
+    sdk.wait_all()
 
-    assert count(prim_paths=["/EnvsClone/env0/table"]) == 1, "explicit nested clone body must resolve"
-    assert count(pattern="/EnvsClone/**") == 1, "recursive wildcard must reach the nested clone body"
-    assert count(pattern="/EnvsClone/*/table") == 1, "multi-segment wildcard must resolve the nested body"
+    count = _selected_body_count
+    assert count(sdk, stage, paths=["/EnvsClone/env0/table"]) == 1, "explicit nested clone body must resolve"
+    assert count(sdk, stage, pattern="/EnvsClone/**") == 1, "recursive wildcard must reach the nested clone body"
+    assert count(sdk, stage, pattern="/EnvsClone/*/table") == 1, "multi-segment wildcard must resolve the nested body"
+
+
+def test_clone_bare_leaf_rigid_body_simulates(physx_sdk):
+    """NVBugs 6401436: a cloned bare leaf rigid body must simulate, not crash on the first step.
+
+    The source prim carries the rigid-body API itself (no Xform wrapper). 0.4.x returned success
+    from clone() and SIGSEGV'd in step_sync(). Runs on the DirectGPU session fixture. The CPU twin
+    is ``cpu_tests/test_clone_cpu.py``. See ``clone_bare_leaf_body_and_step`` for the assertions.
+    """
+    clone_bare_leaf_body_and_step(physx_sdk, step_api="sync")

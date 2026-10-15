@@ -81,13 +81,17 @@ bool OMNI_PVD_CALL OmniPvdSocketReadStreamImpl::openStream()
 		return true; // already open, so nothing to do
 
 	// Blocking server listen + accept of the connecting producer on the fixed port.
-	if (!mSocket.listenAndAccept(mPort))
+	if (!mSocket.beginListen(mPort))
 	{
 		mSocket.close();
 		return false;
 	}
+	return acceptAndValidate();
+}
 
-	if (!recvAndValidateHandshake())
+bool OmniPvdSocketReadStreamImpl::acceptAndValidate()
+{
+	if (!mSocket.acceptOne() || !recvAndValidateHandshake())
 	{
 		mSocket.close();
 		return false;

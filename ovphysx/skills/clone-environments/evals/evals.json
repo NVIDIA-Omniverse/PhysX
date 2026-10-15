@@ -4,15 +4,17 @@
     {
       "id": 1,
       "prompt": "In Python, load a USD scene and clone /World/envs/env0 into env1..env3 for batched simulation. Wait so bindings can see the clones.",
-      "expected_output": "A Python flow that attaches a populated ovstage, calls PhysX.clone with the source and target paths before warmup or the first step, then wait_all before creating bindings.",
+      "expected_output": "A Python flow that installs and registers the external PhysX and Newton schemas before population, attaches the populated ovstage, calls PhysX.clone with the source and target paths before warmup or the first step, then wait_all before creating bindings.",
       "files": [],
       "expectations": [
         "Selects clone-environments",
         "Clones before warmup() or the first simulation step",
         "Calls physx.clone(source, targets) then wait_all (or equivalent wait)",
         "Does not claim clone authors new USD prims for the targets",
-        "Registers the codeless PhysX schemas with ovstage.population.register_usd_schemas([str(codeless_schema_root())]) before the first population call",
-        "If the example selects CPU mode, gives each clone a spatially disjoint anchor_transforms pose"
+        "Registers both PhysX resource directories from physx_schema_paths() and the Newton root from ovphysx.newton_schema_root() with ovstage.population.register_usd_schemas before the first population call",
+        "If the example selects CPU mode, gives each clone a spatially disjoint anchor_transforms pose",
+        "Installs physx-usd-schemas and newton-usd-schemas separately from ovphysx and locates their schema resources without importing either provider or USD",
+        "Registers PhysX and Newton schemas unconditionally before population or stock-USD schema-registry access; does not call retired PhysX schema-location APIs such as codeless_schema_paths"
       ]
     },
     {
@@ -56,6 +58,29 @@
         "Recommends spatially disjoint anchor_transforms for CPU clones",
         "Does not recommend co-locating CPU clones",
         "Names enable_python_logging() or ovphysx_set_log_callback() as the way to observe the runtime's EnvIds warning, and does not claim clone() raises or emits a Python warning"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "My stage is already attached to an ovphysx::PhysX instance. Show a small C++ example that clones /World/envs/env0 twice and waits, with automatic cleanup of the wait result.",
+      "expected_output": "A complete C++ function using PhysX::clone, checking the admission status, and holding the result of PhysX::waitTask in an ovphysx::physx::WaitResult whose destructor releases the native result.",
+      "files": [],
+      "expectations": [
+        "Clones before warmup or the first simulation step and provides spatially separated anchor transforms",
+        "Checks the clone receipt status before calling PhysX::waitTask",
+        "Uses ovphysx::physx::WaitResult and checks its status() for the execution outcome",
+        "Relies on WaitResult destruction instead of manually destroying or shallow-copying its native result"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Before cloning /World/envs/env0, I populate a USD whose source box has a translated parent, but the box loads at its local position. Which population mask should the clone example use?",
+      "expected_output": "Uses PopulationDomain.ALL before sealing and attaching, so OVStage 0.3 resolves nested world transforms via the rendering domain.",
+      "files": [],
+      "expectations": [
+        "Uses domains=ovstage.PopulationDomain.ALL for initial USD population",
+        "Explains that PHYSICS-only population seeds world matrices with local values in the pinned OVStage 0.3 release",
+        "Seals the populated ordinal before attach_ovstage and collects the attach task before dependent operations"
       ]
     }
   ]

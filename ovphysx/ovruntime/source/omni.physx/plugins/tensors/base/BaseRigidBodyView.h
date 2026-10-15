@@ -4,6 +4,9 @@
 /**
  * @implements REQ-INPUT-CORE-001
  * @covers AC-4
+ *
+ * @implements REQ-READ-SLEEP-001
+ * @covers AC-1 AC-2 AC-3
  */
 
 #pragma once
@@ -38,7 +41,7 @@ public:
 
     bool check() const override;
 
-    void release() override;
+    bool release() override;
 
     // rigid body properties
     bool getMasses(const TensorDesc* dstTensor) const override;
@@ -60,6 +63,11 @@ public:
     // so legacy tensor bindings and the ovstage write API have identical simulation semantics.
     static void setDisableGravityAndRefresh(::physx::PxRigidBody& body, bool disabled);
 
+    // Kinematic target: a CPU-only per-body PhysX API (PxRigidDynamic::set/getKinematicTarget), no
+    // device batch. Lives on the base view for both backends, like the disable-gravity CPU-only path.
+    bool getKinematicTargets(const TensorDesc* dstTensor) const override;
+    bool setKinematicTargets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
+
     bool wakeUp(const TensorDesc* indexTensor) override;
     bool putToSleep(const TensorDesc* indexTensor) override;
 
@@ -78,6 +86,7 @@ public:
 
     // CPU-only property masked wrappers (host mask -> indexed Base/Gpu setters).
     // Device-mask paths for pose/vel/mass stay on Cpu/Gpu views.
+    bool setKinematicTargetsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
     bool setDisableGravitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
     bool setDisableSimulationsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
     bool setMaterialPropertiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) const override;
@@ -104,25 +113,28 @@ public:
     // ------------------------------------------------------------------------------------------
     // ovstage column reads for the body properties (ADR-0008, REQ-READ-ATTRS-001).
     //
-    // Host-only and shared by both backends: these are simulation *inputs* that PhysX never writes
-    // back, so DirectGPU readback suppression cannot make them stale and the emitted column is
+    // Host-only and shared by both backends: authored inputs are unaffected by DirectGPU readback
+    // suppression; isSleeping reports zero when sleeping is disabled. The emitted column is
     // `kDLCPU` even on a DirectGPU scene. `rowsToken` is unused; it exists so the signature matches
     // the pose/velocity family the reader's attribute table dispatches through.
 
     // ovstage property WRITE (ADR-0012), public alongside the gathers they invert. Host-only: none
     // of these has a device destination, so one implementation serves both backends -- see
     // setBodyPropertyOvStage.
-    bool setMassesOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken);
-    bool setInertiasOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken);
-    bool setComPositionsOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken);
-    bool setComOrientationsOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken);
-    bool setDisableGravitiesOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken);
-    bool setDisableSimulationsOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken);
-    bool setStaticFrictionsOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken);
-    bool setDynamicFrictionsOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken);
-    bool setRestitutionsOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken);
-    bool setContactOffsetsOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken);
-    bool setRestOffsetsOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken);
+    bool setMassesOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken, bool wholeSet);
+    bool setInertiasOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken, bool wholeSet);
+    bool setComPositionsOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken, bool wholeSet);
+    bool setComOrientationsOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken, bool wholeSet);
+    bool setDisableGravitiesOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken, bool wholeSet);
+    bool setDisableSimulationsOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken, bool wholeSet);
+    bool setWakeStatesOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken, bool wholeSet);
+    bool setKinematicTargetPositionsOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken, bool wholeSet);
+    bool setKinematicTargetOrientationsOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken, bool wholeSet);
+    bool setStaticFrictionsOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken, bool wholeSet);
+    bool setDynamicFrictionsOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken, bool wholeSet);
+    bool setRestitutionsOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken, bool wholeSet);
+    bool setContactOffsetsOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken, bool wholeSet);
+    bool setRestOffsetsOvStage(const TensorDesc* srcTensor, const ::physx::PxU32* outRecordIdx, ::physx::PxU32 numOutputs, uint64_t rowsToken, bool wholeSet);
 
     bool getMassesOvStage(const TensorDesc* dstTensor,
                           const ::physx::PxU32* outRecordIdx,
@@ -158,6 +170,21 @@ public:
                                       const ::physx::PxU32* outRecordIdx,
                                       ::physx::PxU32 numOutputs,
                                       uint64_t rowsToken) const;
+    // Host uint8 state snapshot. Links report the owning articulation's state; a scene with
+    // sleeping disabled supplies false without reading simulation state from the host.
+    bool getSleepStatesOvStage(const TensorDesc* dstTensor,
+                              const ::physx::PxU32* outRecordIdx,
+                              ::physx::PxU32 numOutputs,
+                              uint64_t rowsToken) const;
+    // Float columns: the pending kinematic target pose, split POINT + QUATERNION like the live pose.
+    bool getKinematicTargetPositionsOvStage(const TensorDesc* dstTensor,
+                                            const ::physx::PxU32* outRecordIdx,
+                                            ::physx::PxU32 numOutputs,
+                                            uint64_t rowsToken) const;
+    bool getKinematicTargetOrientationsOvStage(const TensorDesc* dstTensor,
+                                               const ::physx::PxU32* outRecordIdx,
+                                               ::physx::PxU32 numOutputs,
+                                               uint64_t rowsToken) const;
 
     // ------------------------------------------------------------------------------------------
     // Per-SHAPE columns (REQ-READ-ATTRS-001 AC-10).
@@ -225,6 +252,12 @@ protected:
         eComOrientation,
         eDisableGravity,
         eDisableSimulation,
+        eIsSleeping,
+        // A pending kinematic target pose, split into a POINT and a QUATERNION column the same way the
+        // live pose is (position/orientation), so each carries its USD role. Host-only: the CPU-side
+        // PxRigidDynamic::set/getKinematicTarget, no device batch.
+        eKinematicTargetPosition,
+        eKinematicTargetOrientation,
         // Per-shape, below. Their width comes from the destination tensor, not from layoutOf().
         eStaticFriction,
         eDynamicFriction,
@@ -264,7 +297,7 @@ protected:
     // call, no packed pair and no scatter kernel here -- just the setters, which is why one
     // implementation on the base view serves both backends where pose and velocity needed two.
     //
-    // Read-only properties (inverse mass, inverse inertia, shape count) have no setter and are
+    // Read-only properties (inverse mass, inverse inertia, shape count, sleep state) have no setter and are
     // rejected by layout rather than silently ignored.
     bool setBodyPropertyOvStage(BodyProperty prop,
                                 const TensorDesc* srcTensor,

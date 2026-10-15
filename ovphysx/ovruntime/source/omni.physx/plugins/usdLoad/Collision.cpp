@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-IO-001
+// @covers AC-3
+
 /**
  * @implements REQ-PARSE-SHAPE-005
  * @covers AC-3
@@ -22,7 +25,13 @@
  *
  * @implements REQ-COOK-SOURCE-001
  * @covers AC-1 AC-3
+ *
+ * @implements REQ-PARSE-CORE-006
+ * @covers AC-9
  */
+
+// @implements REQ-CUSTOM-LIFETIME-001
+// @covers AC-5
 
 #include <omni/physics/parse/KnownTokens.h>
 
@@ -41,6 +50,7 @@
 #include <PhysXTools.h>
 #include "Mass.h"
 #include "PhysicsBody.h"
+#include "IceDescriptorAllocator.h"
 
 #include <OmniPhysX.h>
 #include <omni/physx/IPhysxSettings.h>
@@ -65,62 +75,6 @@ namespace physx
 {
 namespace usdparser
 {
-
-// ObjectKey-keyed rather than SdfPath-keyed: every caller (below) already has
-// the mesh's ObjectKey directly and previously materialized a PXR_NS::SdfPath
-// purely to key this cache, mirroring the CctMap retype in internal/
-// InternalScene.h (same ObjectKey-opaque-identity pattern, ADR-0019).
-using MeshKeyMap = std::unordered_map<omni::physics::parse::ObjectKey, omni::physx::usdparser::MeshKey,
-                                      omni::physics::parse::ObjectKey::Hash>;
-
-
-class MeshKeyCache
-{
-public:
-
-    void setMeshKey(omni::physics::parse::ObjectKey name, const MeshKey &key)
-    {
-        mMeshKeys[name] = key;
-    }
-
-    bool getMeshKey(omni::physics::parse::ObjectKey name, MeshKey &key) const
-    {
-        bool ret = false;
-
-        MeshKeyMap::const_iterator found = mMeshKeys.find(name);
-        if ( found != mMeshKeys.end() )
-        {
-            ret = true;
-            key = (*found).second;
-        }
-
-        return ret;
-    }
-
-    bool clearMeshKey(omni::physics::parse::ObjectKey name)
-    {
-        bool ret = false;
-
-        MeshKeyMap::iterator found = mMeshKeys.find(name);
-        if (found != mMeshKeys.end())
-        {
-            ret = true;
-            mMeshKeys.erase(found);
-        }
-        return ret;
-    }
-
-    void reset(void)
-    {
-        mMeshKeys.clear();
-    }
-
-private:
-    MeshKeyMap  mMeshKeys;
-};
-
-MeshKeyCache gMeshKeyCache;
-
 
 // compute bounding sphere for a given vertex array
 // get the furthers points along each axis first and create a sphere based on these two initial points (min/max)
@@ -180,6 +134,20 @@ PhysxShapeDesc* scaleShapeDesc(const PhysxShapeDesc& inDesc, const carb::Float3&
 
     switch (inDesc.type)
     {
+    case eCustomShape:
+    {
+        // The callback contract has no scale parameter. Never silently share or
+        // resize plugin state for a scaled instance; that needs a new provider.
+        if (s != ::physx::PxVec3(1.0f))
+        {
+            CARB_LOG_ERROR("Scaled custom-geometry point instances are unsupported.");
+            return nullptr;
+        }
+        omni::physics::parse::CustomPhysxShapeDesc * custom = ICE_PLACEMENT_NEW(CustomPhysxShapeDesc)();
+        *custom = static_cast<const CustomPhysxShapeDesc&>(inDesc);
+        desc = custom;
+    }
+    break;
     case eSphereShape:
     {
         desc = ICE_PLACEMENT_NEW(SpherePhysxShapeDesc)();
@@ -352,10 +320,13 @@ PhysxRigidBodyDesc* createShape(AttachedStage& attachedStage, omni::physics::par
     // If we use shape for instanced create, we should not search for existing bodies.
     // getRigidBody is ObjectKey-native (ADR-0019).
     const ObjectId bodyId = instancedShapeId ? kInvalidObjectId : getRigidBody(attachedStage, key, *shapeDesc);
+    omni::physics::parse::DescPtr<StaticPhysxRigidBodyDesc> generatedBody;
     PhysxRigidBodyDesc* bodyDesc = nullptr;
     if (!shapeDesc->rigidBody.valid())
     {
-        bodyDesc = createStaticBody();
+        generatedBody = omni::physics::parse::adoptDesc(
+            iceDescriptorAllocator(), static_cast<StaticPhysxRigidBodyDesc*>(createStaticBody()));
+        bodyDesc = generatedBody.get();
         bodyDesc->position = shapeDesc->localPos;
         bodyDesc->rotation = shapeDesc->localRot;
         bodyDesc->scale = shapeDesc->localScale;
@@ -377,7 +348,7 @@ PhysxRigidBodyDesc* createShape(AttachedStage& attachedStage, omni::physics::par
             shapeDesc->localPos, shapeDesc->localRot, shapeDesc->localScale);
     }
 
-    const ObjectId id = attachedStage.getPhysXPhysicsInterface()->createShape(key, *shapeDesc, bodyId, objectInstance);
+    const ObjectId id = attachedStage.getPhysXPhysicsInterface()->createShape(attachedStage, key, *shapeDesc, bodyId, objectInstance);
     if (id != kInvalidObjectId)
     {
         // findOrCreateEntry(ObjectKey, pathText, ...) so this also feeds
@@ -413,12 +384,10 @@ PhysxRigidBodyDesc* createShape(AttachedStage& attachedStage, omni::physics::par
         bodyDesc->shapes.push_back(id);
     }
 
-    return bodyDesc;
-}
-
-void releaseShapeDesc(PhysxShapeDesc* desc)
-{
-    ICE_FREE(desc);
+    // Legacy instancer callers own the returned static body. The stage loader
+    // immediately adopts it into generatedBodies; this guard covers failure
+    // before that handoff.
+    return generatedBody.release();
 }
 
 SourceMeshGeometryScope::~SourceMeshGeometryScope()
@@ -509,7 +478,9 @@ static bool fillCookingRequestFromSourceMesh(omni::physx::PhysxCookingComputeReq
         return false;
 
     // ObjectKey-keyed (see MeshKeyMap above) -- every caller already has meshKey.
-    gMeshKeyCache.getMeshKey(meshKey, request.meshKey);
+    const auto cached = attachedStage->getMeshKeyCache().find(meshKey);
+    if (cached != attachedStage->getMeshKeyCache().end())
+        request.meshKey = cached->second;
     // primStageId/primId are correlation keys only (REQ-COOK-SOURCE-001 AC-1); attachHandle is
     // the attach this request belongs to, and is what any completion-side attach lookup
     // resolves (ADR-0016 Decision 6).
@@ -549,7 +520,9 @@ bool fillConvexMeshDesc(AttachedStage* attachedStage, omni::physics::parse::Obje
 
     desc.convexCookingParams = cookingParams;
     omni::physx::PhysxCookingComputeRequest request;
-    gMeshKeyCache.getMeshKey(meshKey, request.meshKey);
+    const auto cached = attachedStage->getMeshKeyCache().find(meshKey);
+    if (cached != attachedStage->getMeshKeyCache().end())
+        request.meshKey = cached->second;
     // primStageId/primId are correlation keys only (REQ-COOK-SOURCE-001 AC-1); attachHandle is
     // the attach identity (ADR-0016 Decision 6).
     request.primStageId = uint64_t(attachedStage->getStageId());
@@ -571,7 +544,7 @@ bool fillConvexMeshDesc(AttachedStage* attachedStage, omni::physics::parse::Obje
         meshCRCComputedSuccessfully = true;
         desc.crc = result.cookedDataCRC;
         desc.meshKey = result.meshKey;
-        gMeshKeyCache.setMeshKey(meshKey, desc.meshKey);
+        attachedStage->getMeshKeyCache()[meshKey] = desc.meshKey;
     };
     IPhysxCookingService* cookingService = OmniPhysX::getInstance().getPhysXSetup().getCookingServiceInterface();
     cookingService->requestConvexMeshCookedData(nullptr, request, desc.convexCookingParams);
@@ -607,7 +580,7 @@ bool fillConvexDecompositionDesc(AttachedStage* attachedStage, omni::physics::pa
         meshCRCComputedSuccessfully = true;
         desc.crc = result.cookedDataCRC;
         desc.meshKey = result.meshKey;
-        gMeshKeyCache.setMeshKey(meshKey, desc.meshKey);
+        attachedStage->getMeshKeyCache()[meshKey] = desc.meshKey;
     };
     IPhysxCookingService* cookingService = OmniPhysX::getInstance().getPhysXSetup().getCookingServiceInterface();
     if (!cookingService)
@@ -644,7 +617,7 @@ bool fillSphereFillDesc(AttachedStage* attachedStage, omni::physics::parse::Obje
         meshCRCComputedSuccessfully = true;
         desc.crc = result.cookedDataCRC;
         desc.meshKey = result.meshKey;
-        gMeshKeyCache.setMeshKey(meshKey, desc.meshKey);
+        attachedStage->getMeshKeyCache()[meshKey] = desc.meshKey;
     };
     IPhysxCookingService* cookingService = OmniPhysX::getInstance().getPhysXSetup().getCookingServiceInterface();
     if (!cookingService)
@@ -675,7 +648,7 @@ bool fillTriangleMeshDesc(AttachedStage* attachedStage, omni::physics::parse::Ob
         meshCRCComputedSuccessfully = true;
         desc.crc = result.cookedDataCRC;
         desc.meshKey = result.meshKey;
-        gMeshKeyCache.setMeshKey(meshKey, desc.meshKey);
+        attachedStage->getMeshKeyCache()[meshKey] = desc.meshKey;
     };
     IPhysxCookingService* cookingService = OmniPhysX::getInstance().getPhysXSetup().getCookingServiceInterface();
     if (!cookingService)
@@ -705,7 +678,7 @@ bool fillSdfTriangleMeshDesc(AttachedStage* attachedStage, omni::physics::parse:
         meshCRCComputedSuccessfully = true;
         desc.crc = result.cookedDataCRC;
         desc.meshKey = result.meshKey;
-        gMeshKeyCache.setMeshKey(meshKey, desc.meshKey);
+        attachedStage->getMeshKeyCache()[meshKey] = desc.meshKey;
     };
     IPhysxCookingService* cookingService = OmniPhysX::getInstance().getPhysXSetup().getCookingServiceInterface();
     if (!cookingService)
@@ -714,14 +687,14 @@ bool fillSdfTriangleMeshDesc(AttachedStage* attachedStage, omni::physics::parse:
     return meshCRCComputedSuccessfully;
 }
 
-void notifyStageReset(void)
+void notifyStageReset(const AttachedStage& owner)
 {
-    gMeshKeyCache.reset();
+    owner.getMeshKeyCache().clear();
 }
 
-void invalidateMeshKeyCache(omni::physics::parse::ObjectKey key)
+void invalidateMeshKeyCache(const AttachedStage& owner, omni::physics::parse::ObjectKey key)
 {
-    gMeshKeyCache.clearMeshKey(key);
+    owner.getMeshKeyCache().erase(key);
 }
 
 } // namespace usdparser

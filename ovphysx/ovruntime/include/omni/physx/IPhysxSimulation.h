@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-LIFETIME-001
+// @covers AC-1 AC-3 AC-4
+
 /**
  * @implements REQ-SIM-OVSTAGE-ATTACH-001
  * @covers AC-1 AC-3
@@ -15,6 +18,11 @@
  * @implements REQ-OMNIPVD-LATE-001
  * @covers AC-3 AC-4 AC-5 AC-6
  */
+/**
+ * @implements REQ-ATTACH-EXECUTION-001
+ * @covers AC-1 AC-2 AC-3 AC-4
+ */
+
 #pragma once
 
 #include <carb/Defines.h>
@@ -23,7 +31,9 @@
 #include <omni/physics/AttachHandle.h>
 
 #include "ContactEvent.h"
+#include "RuntimeResult.h"
 #include "TriggerEvent.h"
+#include "AttachOptions.h"
 
 namespace omni
 {
@@ -184,6 +194,7 @@ enum class OmniPvdRecordingResult : uint32_t
     eNotSupported,
     eError,
     eNotCapable,
+    eBusy,
 };
 
 
@@ -194,18 +205,15 @@ enum class OmniPvdRecordingResult : uint32_t
 
 struct IPhysxSimulation
 {
-    /// Attach USD stage. This will run the physics parser
-    /// and will populate the PhysX SDK with the corresponding simulation objects.
-    ///
-    /// Note: previous stage will be detached.
-    ///
-    /// \param[in] id USD stageId (can be retrieved from a stagePtr -
-    /// PXR_NS::UsdUtilsStageCache::Get().GetId(stagePtr).ToLongInt()) \return True if stage was successfully attached.
-    bool(CARB_ABI* attachStage)(long id);
+    /// Attach a developer USD stage and realize a private candidate using copied options.
+    /// id is the stage-cache identifier. Returns its new attachment handle, or kNoAttach
+    /// on invalid input, failed realization or busy admission. Existing owners are preserved.
+    AttachHandle(CARB_ABI* attachStage)(long id, const PhysxAttachOptions& options);
 
-    /// Detach USD stage, this will remove all objects from the PhysX SDK
-    ///
-    void(CARB_ABI* detachStage)();
+    /// Retire exactly one attachment and drain only its outstanding simulation.
+    /// Returns busy during callback reentry, conflicting owner entry, or runtime configuration work.
+    /// Drains this owner even while a peer has pending simulation.
+    RuntimeResult(CARB_ABI* detachStage)(AttachHandle attach);
 
     /// Sets simulation callbacks for omni.physx
     ///
@@ -213,37 +221,41 @@ struct IPhysxSimulation
     /// to set a simulation callbacks after attachStage is called, any call before will get ignored
     ///
     /// \param[in] callback ISimulationCallback structure with callback functions
-    void(CARB_ABI* setSimulationCallback)(const ISimulationCallback& callback);
+    /// \param[in] attachHandle Exact live attachment handle; active-attachment sentinels are not accepted.
+    void(CARB_ABI* setSimulationCallback)(AttachHandle attachHandle, const ISimulationCallback& callback);
 
 
-    /// Sets simulation output flags globally, replacing whatever was set before
+    /// Sets simulation output flags for the attachment, replacing whatever was set before
     ///
     /// /note Simulation flags are reset each attach/detachStage call, it is expected
     /// to set a simulation flag after attachStage is called, any call before will get ignored
     ///
     /// \param[in] outputType Output type for the simulation flags
     /// \param[in] flags Flags to set
-    void(CARB_ABI* setSimulationOutputFlags)(uint32_t outputType, uint32_t flags);
+    /// \param[in] attachHandle Exact live attachment handle; active-attachment sentinels are not accepted.
+    void(CARB_ABI* setSimulationOutputFlags)(AttachHandle attachHandle, uint32_t outputType, uint32_t flags);
 
 
-    /// Adds simulation output flags globally, on top of whatever was set before
+    /// Adds simulation output flags for the attachment, on top of whatever was set before
     ///
     /// /note Simulation flags are reset each attach/detachStage call, it is expected
     /// to set a simulation flag after attachStage is called, any call before will get ignored
     ///
     /// \param[in] outputType Output type for the simulation flags
     /// \param[in] flags Flags to add
-    void(CARB_ABI* addSimulationOutputFlags)(uint32_t outputType, uint32_t flags);
+    /// \param[in] attachHandle Exact live attachment handle; active-attachment sentinels are not accepted.
+    void(CARB_ABI* addSimulationOutputFlags)(AttachHandle attachHandle, uint32_t outputType, uint32_t flags);
 
 
-    /// Removes (clears) simulation output flags globally
+    /// Removes (clears) simulation output flags for the attachment
     ///
     /// /note Simulation flags are reset each attach/detachStage call, it is expected
     /// to set a simulation flag after attachStage is called, any call before will get ignored
     ///
     /// \param[in] outputType Output type for the simulation flags
     /// \param[in] flags Flags to remove
-    void(CARB_ABI* removeSimulationOutputFlags)(uint32_t outputType, uint32_t flags);
+    /// \param[in] attachHandle Exact live attachment handle; active-attachment sentinels are not accepted.
+    void(CARB_ABI* removeSimulationOutputFlags)(AttachHandle attachHandle, uint32_t outputType, uint32_t flags);
 
     /// Execute physics simulation
     ///
@@ -253,18 +265,25 @@ struct IPhysxSimulation
     ///
     /// \param[in] elapsedTime Simulation time in seconds.
     /// \param[in] currentTime Current time, might be used for time sampled transformations to apply.
-    void(CARB_ABI* simulate)(float elapsedTime, float currentTime);
+    // Execution calls select exactly this attachment; zero, reserved, and stale
+    // handles never select a replacement. Invalid handles perform no work and
+    // checkResults/checkResultsScene return false. Submission and fetch return
+    // eBusy on forbidden callback reentry or a conflicting operation on this owner.
+    // Each owner retains its interval until its final fetch. Peers run independently.
+    // Application callbacks must not suspend or migrate tasks; a pre-step callback
+    // may apply forces to its own owner, but cannot submit, fetch or detach.
+    RuntimeResult(CARB_ABI* simulate)(AttachHandle attach, float elapsedTime, float currentTime);
 
     /// Fetch simulation results.
     /// Writing out simulation results based on physics settings.
     ///
     /// \note This is a blocking call. The function will wait until the simulation is finished.
-    void(CARB_ABI* fetchResults)();
+    RuntimeResult(CARB_ABI* fetchResults)(AttachHandle attach);
 
     /// Check if simulation finished.
     ///
     /// return True if simulation finished.
-    bool(CARB_ABI* checkResults)();
+    bool(CARB_ABI* checkResults)(AttachHandle attach);
 
     /// Flush changes will force physics to process buffered changes
     ///
@@ -274,47 +293,62 @@ struct IPhysxSimulation
     /// the relationship change gets processed immediately and fails because prim A only gets added at the
     /// start of the next sim step.
     ///
-    void(CARB_ABI* flushChanges)();
+    /// \param[in] attach Exact live attachment; invalid handles leave every queue unchanged.
+    void(CARB_ABI* flushChanges)(AttachHandle attach);
 
-    /// Subscribe to physics simulation contact report events.
+    /// Subscribe to physics simulation contact report events for the exact owner.
+    /// Reset preserves subscriptions; detach retires them. Registration is rejected
+    /// from callbacks or during this owner's pending simulation. Cancellation is
+    /// idempotent and permitted from callbacks; already admitted callbacks may
+    /// finish after concurrent removal, so retain userData until dispatch drains.
     ///
     /// \note The contact buffer data are available for one simulation step.
+    /// Requires an idle selected attachment; callback, pending, invalid-owner, or invalid-output calls
+    /// return zero without changing outputs. Use callback arguments during event delivery.
     ///
     /// \param onEvent The callback function to be called on contact report.
     /// \param userData The userData to be passed back in the callback function.
     /// \return Subscription Id for release
-    SubscriptionId(CARB_ABI* subscribePhysicsContactReportEvents)(OnContactReportEventFn onEvent, void* userData);
+    /// \param[in] attachHandle Exact live attachment handle; active-attachment sentinels are not accepted.
+    SubscriptionId(CARB_ABI* subscribePhysicsContactReportEvents)(AttachHandle attachHandle, OnContactReportEventFn onEvent, void* userData);
 
     /// Unsubscribes to contact report events.
     ///
     /// subscriptionId SubscriptionId obtained via @ref subscribePhysicsContactReportEvents.
-    void(CARB_ABI* unsubscribePhysicsContactReportEvents)(SubscriptionId subscriptionId);
+    /// \param[in] attachHandle Exact live attachment handle; active-attachment sentinels are not accepted.
+    void(CARB_ABI* unsubscribePhysicsContactReportEvents)(AttachHandle attachHandle, SubscriptionId subscriptionId);
 
     /// Get contact report data for current simulation step directly.
     ///
     /// \note The contact buffer data are available for one simulation step.
+    /// Requires an idle selected attachment; callback, pending, invalid-owner, or invalid-output calls
+    /// return zero without changing outputs. Use callback arguments during event delivery.
     ///
     /// \param contactEventBuffer Contact event header buffer, contains headers for contacts.
     /// \param contactDataBuffer Contact data, contains contact data for individual headers.
     /// \param numContactData Number of contact data.
     /// \return Number of contact headers in the contact event buffer
-    uint32_t(CARB_ABI* getContactReport)(const ContactEventHeader** contactEventBuffer,
+    /// \param[in] attachHandle Exact live attachment handle; active-attachment sentinels are not accepted.
+    uint32_t(CARB_ABI* getContactReport)(AttachHandle attachHandle, const ContactEventHeader** contactEventBuffer,
                                          const ContactData** contactDataBuffer,
                                          uint32_t& numContactData);
 
     /// Get physics simulation timestamp.
     ///
-    /// Timestamp will increase with every simulation step.
+    /// Timestamp increases with every step of this attachment, including direct tensor steps.
+    /// It is monotonic for the lifetime of this attachment; an invalid handle returns 0.
     ///
     /// \return Current timestamp
-    uint64_t(CARB_ABI* getSimulationTimestamp)();
+    /// \param[in] attachHandle Exact live attachment handle; active-attachment sentinels are not accepted.
+    uint64_t(CARB_ABI* getSimulationTimestamp)(AttachHandle attachHandle);
 
-    /// Get the number of physics steps performed in the active simulation.
+    /// Get the number of physics steps performed by the selected attachment.
     ///
     /// The step count resets to 0 when a new simulation starts.
     ///
-    /// \return Number of steps since the currently active simulation started or 0 if there is no active simulation.
-    uint64_t(CARB_ABI* getSimulationStepCount)();
+    /// \return Number of steps since the attachment last reset, or 0 for an invalid handle.
+    /// \param[in] attachHandle Exact live attachment handle; active-attachment sentinels are not accepted.
+    uint64_t(CARB_ABI* getSimulationStepCount)(AttachHandle attachHandle);
 
     /// Execute the physics simulation on a specific scene.
     ///
@@ -328,7 +362,7 @@ struct IPhysxSimulation
     ///            breaking change). A handle is only valid against the Source instance that minted it.
     /// \param[in] elapsedTime Simulation time in seconds.
     /// \param[in] currentTime Current time, might be used for time sampled transformations to apply.
-    void(CARB_ABI* simulateScene)(uint64_t scenePath, float elapsedTime, float currentTime);
+    RuntimeResult(CARB_ABI* simulateScene)(AttachHandle attach, uint64_t scenePath, float elapsedTime, float currentTime);
 
     /// Fetch simulation scene results and writes out simulation results based on physics settings for
     /// a specific scene. Disabling a scene has no effect on this function.
@@ -339,7 +373,7 @@ struct IPhysxSimulation
     /// \param[in] scenePath   The scene, as an `omni::physics::parse::ObjectKey::handle` value (e.g. from
     ///            @ref IPhysx::resolveObjectKey()) -- NOT a legacy SdfPath-bit encoding (2026-08-29, ADR-0018:
     ///            breaking change). A handle is only valid against the Source instance that minted it.
-    void(CARB_ABI* fetchResultsScene)(uint64_t scenePath);
+    RuntimeResult(CARB_ABI* fetchResultsScene)(AttachHandle attach, uint64_t scenePath);
 
     /// Check if a simulation scene is finished. Disabling a scene has no effect on this function.
     /// If scenePath is 0, it behaves like IPhysxSimulation::checkResults
@@ -349,12 +383,12 @@ struct IPhysxSimulation
     /// \param[in] scenePath   The scene, as an `omni::physics::parse::ObjectKey::handle` value (e.g. from
     ///            @ref IPhysx::resolveObjectKey()) -- NOT a legacy SdfPath-bit encoding (2026-08-29, ADR-0018:
     ///            breaking change). A handle is only valid against the Source instance that minted it.
-    bool(CARB_ABI* checkResultsScene)(uint64_t scenePath);
+    bool(CARB_ABI* checkResultsScene)(AttachHandle attach, uint64_t scenePath);
 
     /// Applies a force (or impulse) defined in the global coordinate frame, acting at a particular
     /// point in global coordinates, to the actor.
-    /// \param[in] attachHandle Attach to apply to, from @ref IPhysxSimulation::getAttachHandle(),
-    ///                         or kActiveAttach for the lone active attach.
+    /// \param[in] attachHandle Attach to apply to, from @ref IPhysxSimulation::attachOvstage(),
+    ///                         requiring an exact live attachment (no active-attachment sentinel).
     /// \param[in] path		  The body, as an `omni::physics::parse::ObjectKey::handle` value (e.g. from
     ///            @ref IPhysx::resolveObjectKey()) -- NOT a legacy SdfPath-bit encoding (2026-08-29, ADR-0018:
     ///            breaking change). A handle is only valid against the Source instance that minted it.
@@ -368,8 +402,8 @@ struct IPhysxSimulation
                                   ForceModeType::Enum mode);
 
     /// Applies a torque (or impulse) at the center of mass
-    /// \param[in] attachHandle Attach to apply to, from @ref IPhysxSimulation::getAttachHandle(),
-    ///                         or kActiveAttach for the lone active attach.
+    /// \param[in] attachHandle Attach to apply to, from @ref IPhysxSimulation::attachOvstage(),
+    ///                         requiring an exact live attachment (no active-attachment sentinel).
     /// \param[in] path		  The body, as an `omni::physics::parse::ObjectKey::handle` value (e.g. from
     ///            @ref IPhysx::resolveObjectKey()) -- NOT a legacy SdfPath-bit encoding (2026-08-29, ADR-0018:
     ///            breaking change). A handle is only valid against the Source instance that minted it.
@@ -377,24 +411,24 @@ struct IPhysxSimulation
     void(CARB_ABI* addTorque)(AttachHandle attachHandle, uint64_t path, const carb::Float3& torque);
 
     /// Wakes up body on given path
-    /// \param[in] attachHandle Attach holding the body, from @ref IPhysxSimulation::getAttachHandle(),
-    ///                         or kActiveAttach for the lone active attach.
+    /// \param[in] attachHandle Attach holding the body, from @ref IPhysxSimulation::attachOvstage(),
+    ///                         requiring an exact live attachment (no active-attachment sentinel).
     /// \param[in] path		  The body, as an `omni::physics::parse::ObjectKey::handle` value (e.g. from
     ///            @ref IPhysx::resolveObjectKey()) -- NOT a legacy SdfPath-bit encoding (2026-08-29, ADR-0018:
     ///            breaking change). A handle is only valid against the Source instance that minted it.
     void(CARB_ABI* wakeUp)(AttachHandle attachHandle, uint64_t path);
 
     /// Puts to sleep body on given path
-    /// \param[in] attachHandle Attach holding the body, from @ref IPhysxSimulation::getAttachHandle(),
-    ///                         or kActiveAttach for the lone active attach.
+    /// \param[in] attachHandle Attach holding the body, from @ref IPhysxSimulation::attachOvstage(),
+    ///                         requiring an exact live attachment (no active-attachment sentinel).
     /// \param[in] path		  The body, as an `omni::physics::parse::ObjectKey::handle` value (e.g. from
     ///            @ref IPhysx::resolveObjectKey()) -- NOT a legacy SdfPath-bit encoding (2026-08-29, ADR-0018:
     ///            breaking change). A handle is only valid against the Source instance that minted it.
     void(CARB_ABI* putToSleep)(AttachHandle attachHandle, uint64_t path);
 
     /// Checks whether a body sleeps
-    /// \param[in] attachHandle Attach holding the body, from @ref IPhysxSimulation::getAttachHandle(),
-    ///                         or kActiveAttach for the lone active attach.
+    /// \param[in] attachHandle Attach holding the body, from @ref IPhysxSimulation::attachOvstage(),
+    ///                         requiring an exact live attachment (no active-attachment sentinel).
     /// \param[in] path		  The body, as an `omni::physics::parse::ObjectKey::handle` value (e.g. from
     ///            @ref IPhysx::resolveObjectKey()) -- NOT a legacy SdfPath-bit encoding (2026-08-29, ADR-0018:
     ///            breaking change). A handle is only valid against the Source instance that minted it.
@@ -403,11 +437,13 @@ struct IPhysxSimulation
 
     /// Subscribe to physics simulation trigger report events.
     ///
-    /// \note There is no "all attaches" wildcard: a real handle or kActiveAttach is required and
-    /// kNoAttach is rejected (ADR-0016). A consumer that wants every attach subscribes per attach.
+    /// \note A live exact attachment is required. Zero, stale and active-sentinel
+    /// handles are rejected. Subscriptions survive reset and retire on detach.
+    /// Removal is allowed inside a callback; already admitted callbacks may finish.
+    /// New registration is rejected from callbacks or during this owner's pending step.
     ///
     /// \param attachHandle The attach containing the prim with trigger API, from @ref
-    /// IPhysxSimulation::getAttachHandle(), or kActiveAttach for the lone active attach. Reported
+    /// IPhysxSimulation::attachOvstage(), requiring an exact live attachment (no active-attachment sentinel). Reported
     /// back as TriggerEventData::attachHandle.
     /// \param path The prim containing the trigger API, as an `omni::physics::parse::ObjectKey::handle`
     /// value (e.g. from @ref IPhysx::resolveObjectKey(), or from a prior TriggerEventData's own ObjectKey
@@ -419,7 +455,7 @@ struct IPhysxSimulation
     /// \param userData The userData to be passed back in the callback function.
     /// \return Subscription Id to stop receiving notifications (to be used with @ref
     /// IPhysxSimulation::unsubscribePhysicsTriggerReportEvents), or kInvalidSubscriptionId if
-    /// attachHandle is kNoAttach.
+    /// attachment identity, callback or execution admission is invalid.
     SubscriptionId(CARB_ABI* subscribePhysicsTriggerReportEvents)(AttachHandle attachHandle,
                                                                   uint64_t path,
                                                                   OnTriggerEventReportEventFn onEvent,
@@ -432,8 +468,8 @@ struct IPhysxSimulation
 
     /// Applies a force (or impulse) defined in the global coordinate frame, acting at a particular
     /// point in global coordinates, to the point instancer body.
-    /// \param[in] attachHandle         Attach to apply to, from @ref IPhysxSimulation::getAttachHandle(),
-    ///                                 or kActiveAttach for the lone active attach.
+    /// \param[in] attachHandle         Attach to apply to, from @ref IPhysxSimulation::attachOvstage(),
+    ///                                 requiring an exact live attachment (no active-attachment sentinel).
     /// \param[in] pointInstancerPath   The point instancer, as an `omni::physics::parse::ObjectKey::handle` value
     ///            (e.g. from @ref IPhysx::resolveObjectKey()) -- NOT a legacy SdfPath-bit encoding (2026-08-29,
     ///            ADR-0018: breaking change). A handle is only valid against the Source instance that minted it.
@@ -450,8 +486,8 @@ struct IPhysxSimulation
                                            uint32_t protoIndex);
 
     /// Applies a torque (or impulse) to the point instancer at the center of mass
-    /// \param[in] attachHandle         Attach to apply to, from @ref IPhysxSimulation::getAttachHandle(),
-    ///                                 or kActiveAttach for the lone active attach.
+    /// \param[in] attachHandle         Attach to apply to, from @ref IPhysxSimulation::attachOvstage(),
+    ///                                 requiring an exact live attachment (no active-attachment sentinel).
     /// \param[in] pointInstancerPath   The point instancer, as an `omni::physics::parse::ObjectKey::handle` value
     ///            (e.g. from @ref IPhysx::resolveObjectKey()) -- NOT a legacy SdfPath-bit encoding (2026-08-29,
     ///            ADR-0018: breaking change). A handle is only valid against the Source instance that minted it.
@@ -465,8 +501,7 @@ struct IPhysxSimulation
 
     /// Wakes up point instancer body on given path
     /// \param[in] attachHandle         Attach holding the point instancer, from @ref
-    ///                                 IPhysxSimulation::getAttachHandle(), or kActiveAttach for the
-    ///                                 lone active attach.
+    ///                                 IPhysxSimulation::attachOvstage(). Reserved selectors are invalid.
     /// \param[in] pointInstancerPath   The point instancer, as an `omni::physics::parse::ObjectKey::handle` value
     ///            (e.g. from @ref IPhysx::resolveObjectKey()) -- NOT a legacy SdfPath-bit encoding (2026-08-29,
     ///            ADR-0018: breaking change). A handle is only valid against the Source instance that minted it.
@@ -476,8 +511,7 @@ struct IPhysxSimulation
 
     /// Puts to sleep point instancer body on given path
     /// \param[in] attachHandle         Attach holding the point instancer, from @ref
-    ///                                 IPhysxSimulation::getAttachHandle(), or kActiveAttach for the
-    ///                                 lone active attach.
+    ///                                 IPhysxSimulation::attachOvstage(). Reserved selectors are invalid.
     /// \param[in] pointInstancerPath   The point instancer, as an `omni::physics::parse::ObjectKey::handle` value
     ///            (e.g. from @ref IPhysx::resolveObjectKey()) -- NOT a legacy SdfPath-bit encoding (2026-08-29,
     ///            ADR-0018: breaking change). A handle is only valid against the Source instance that minted it.
@@ -487,8 +521,7 @@ struct IPhysxSimulation
 
     /// Checks whether a point instancer body sleeps
     /// \param[in] attachHandle         Attach holding the point instancer, from @ref
-    ///                                 IPhysxSimulation::getAttachHandle(), or kActiveAttach for the
-    ///                                 lone active attach.
+    ///                                 IPhysxSimulation::attachOvstage(). Reserved selectors are invalid.
     /// \param[in] pointInstancerPath   The point instancer, as an `omni::physics::parse::ObjectKey::handle` value
     ///            (e.g. from @ref IPhysx::resolveObjectKey()) -- NOT a legacy SdfPath-bit encoding (2026-08-29,
     ///            ADR-0018: breaking change). A handle is only valid against the Source instance that minted it.
@@ -496,43 +529,34 @@ struct IPhysxSimulation
     /// \return True if body is asleep
     bool(CARB_ABI* isSleepingInstanced)(AttachHandle attachHandle, uint64_t pointInstancerPath, uint32_t protoIndex);
 
-    /// Gets the currently attached USD stage.
-    ///
-    /// \return USD stageId, or 0 when nothing is attached OR when the attached
-    ///         source has no backing USD stage. Use getAttachHandle() to tell
-    ///         those apart, or to identify the attach itself.
-    long(CARB_ABI* getAttachedStage)();
-
-    /// Gets a handle identifying the current attach.
-    ///
-    /// Unlike getAttachedStage(), this is not a USD stage id: it is nonzero for
-    /// every live attach, including one whose source has no backing USD stage,
-    /// and a fresh handle is minted per attach. So a consumer that stores the
-    /// handle when it binds can distinguish "still the attach I bound to" from
-    /// "detached" and from "a different attach that happens to share a stage id"
-    /// -- none of which a stage id can express, since 0 there means both "no
-    /// stage" and "a stageless attach". See ADR-0013.
-    ///
-    /// \return attach handle, or 0 when nothing is attached
-    uint64_t(CARB_ABI* getAttachHandle)();
+    /// Return the selected attachment's backing USD stage id, or zero for a
+    /// stageless or invalid attachment. Attachment identity is the handle returned
+    /// by attachStage/attachOvstage, independent of this developer metadata.
+    long(CARB_ABI* getAttachedStage)(AttachHandle attach);
 
     /// Subscribe to physics simulation contact report events including friction anchors.
     ///
     /// \note The contact buffer data are available for one simulation step.
+    /// Requires an idle selected attachment; callback, pending, invalid-owner, or invalid-output calls
+    /// return zero without changing outputs. Use callback arguments during event delivery.
     ///
     /// \param onEvent The callback function to be called on contact report.
     /// \param userData The userData to be passed back in the callback function.
     /// \return Subscription Id for release
-    SubscriptionId(CARB_ABI* subscribePhysicsFullContactReportEvents)(OnFullContactReportEventFn onEvent, void* userData);
+    /// \param[in] attachHandle Exact live attachment handle; active-attachment sentinels are not accepted.
+    SubscriptionId(CARB_ABI* subscribePhysicsFullContactReportEvents)(AttachHandle attachHandle, OnFullContactReportEventFn onEvent, void* userData);
 
     /// Unsubscribes to contact report events.
     ///
     /// subscriptionId SubscriptionId obtained via @ref subscribePhysicsContactReportEvents.
-    void(CARB_ABI* unsubscribePhysicsFullContactReportEvents)(SubscriptionId subscriptionId);
+    /// \param[in] attachHandle Exact live attachment handle; active-attachment sentinels are not accepted.
+    void(CARB_ABI* unsubscribePhysicsFullContactReportEvents)(AttachHandle attachHandle, SubscriptionId subscriptionId);
 
     /// Get contact report data for current simulation step directly including friction anchors.
     ///
     /// \note The contact buffer data are available for one simulation step.
+    /// Requires an idle selected attachment; callback, pending, invalid-owner, or invalid-output calls
+    /// return zero without changing outputs. Use callback arguments during event delivery.
     ///
     /// \param contactEventBuffer Contact event header buffer, contains headers for contacts.
     /// \param contactDataBuffer Contact data, contains contact data for individual headers.
@@ -540,27 +564,22 @@ struct IPhysxSimulation
     /// \param frictionAnchorDataBuffer Friction anchor data, contains friction anchor data for individual headers.
     /// \param numFrictionAnchorData Number of friction anchor data.
     /// \return Number of contact headers in the contact event buffer
-    uint32_t(CARB_ABI* getFullContactReport)(const ContactEventHeader** contactEventBuffer,
+    /// \param[in] attachHandle Exact live attachment handle; active-attachment sentinels are not accepted.
+    uint32_t(CARB_ABI* getFullContactReport)(AttachHandle attachHandle, const ContactEventHeader** contactEventBuffer,
                                              const ContactData** contactDataBuffer,
                                              uint32_t& numContactData,
                                              const FrictionAnchor** frictionAnchorDataBuffer,
                                              uint32_t& numFrictionAnchorData);
 
-    /// Attach a consumer-provided ovstage source instead of a USD stage (ADR-0002).
-    /// `ovstageAttachPayload` is a backend-opaque pointer (a const
-    /// `omni::physics::ovstage::OvstageAttach*` = ovstage instance + path
-    /// dictionary), which the caller owns and must keep alive until detach after
-    /// a successful attachment.
-    /// `readOrdinal` is the sealed ovstage ordinal the initial scene parse reads
-    /// at; the caller owns the ordinal and passes it explicitly (it is no longer
-    /// carried inside the payload).
-    /// The runtime installs and restores the ovstage parse and scan backends as
-    /// part of the attachment; callers do not register those process-global
-    /// backends themselves. A false return leaves no active attachment and
-    /// retains no reference to `ovstageAttachPayload`.
-    /// Appended at the end of the struct to preserve ABI of the existing slots.
-    /// \return True if the ovstage source was successfully attached.
-    bool(CARB_ABI* attachOvstage)(const void* ovstageAttachPayload, uint64_t readOrdinal);
+    /// Attach a consumer-provided ovstage source instead of a USD stage.
+    /// The runtime copies the OvstageAttach descriptor and owns its parse/scan
+    /// backends. The caller keeps the referenced ovstage instance, dictionary,
+    /// and sealed read ordinal alive for the attachment's lifetime.
+    /// Initial parsing reads the supplied sealed ordinal.
+    /// Returns the new nonzero attachment handle on success, or kNoAttach on
+    /// failure. The candidate is not publicly resolvable until loading succeeds.
+    AttachHandle(CARB_ABI* attachOvstage)(const void* ovstageAttachPayload, uint64_t readOrdinal,
+                                       const PhysxAttachOptions& options);
 
     /// Pull and apply ovstage change deltas for an explicit, producer-supplied
     /// ordinal range [fromOrdinal, toOrdinal] (ADR-0003 M3). The caller is the
@@ -570,11 +589,11 @@ struct IPhysxSimulation
     /// running simulation. Ordinals through the latest successfully consumed
     /// ordinal are skipped: a fully consumed range succeeds as a no-op, while an
     /// overlapping range drains only its unread suffix. The attach read ordinal
-    /// starts consumed. No-op unless an ovstage source is attached.
-    /// Appended at the end of the struct to preserve ABI of the existing slots.
+    /// starts consumed. Only the selected attachment's feed and queues are consumed.
+    /// \param[in] attach Exact live attachment; zero, active and stale handles fail.
     /// \return True if the range was drained (false if no ovstage feed or the
     ///         range could not be served → caller should re-attach).
-    bool(CARB_ABI* updateFromOvStage)(uint64_t fromOrdinal, uint64_t toOrdinal);
+    bool(CARB_ABI* updateFromOvStage)(AttachHandle attach, uint64_t fromOrdinal, uint64_t toOrdinal);
 
     /// Clone the environment subtree at \p sourcePath into \p numTargets copies via the PhysX SDK
     /// replicator (binary serialization) -- the path that forms real articulations. Source-agnostic:
@@ -608,24 +627,24 @@ struct IPhysxSimulation
     /// this attach (runtime clones author no USD prim, so they are tracked per attach), fails the
     /// call -- cloning there would stack duplicate live actors on one path.
     ///
-    /// Appended at the end of the struct to preserve ABI of the existing slots. No-op
-    /// unless a stage/ovstage source is attached. \return True on success.
-    bool(CARB_ABI* cloneEnvironments)(const char* sourcePath, const char* const* targetPaths,
+    /// \param[in] attach Exact live attachment whose source, scenes and target records are used.
+    /// Zero, active and stale handles fail without creating objects. \return True on success.
+    bool(CARB_ABI* cloneEnvironments)(AttachHandle attach, const char* sourcePath, const char* const* targetPaths,
                                       uint32_t numTargets, const float* anchorTransforms,
                                       const uint32_t* envIds, bool useEnvIds);
 
     /// Start a late OmniPVD recording on the shared runtime.
-    /// Appended to preserve the ABI of existing slots.
+    /// Returns eBusy while runtime work is pending or from a runtime callback.
     OmniPvdRecordingResult(CARB_ABI* startOmniPvdRecording)(
         uint32_t transport, const char* target, uint16_t tcpPort, uint32_t tcpTimeoutMs);
 
     /// Stop and finalize the active OmniPVD recording.
-    /// Appended to preserve the ABI of existing slots.
+    /// Returns eBusy while runtime work is pending or from a runtime callback.
     OmniPvdRecordingResult(CARB_ABI* stopOmniPvdRecording)();
 
-    /// Return true only while OmniPVD sampling is active.
-    /// Appended to preserve the ABI of existing slots.
-    bool(CARB_ABI* isOmniPvdRecording)();
+    /// Query sampling status. Failure leaves the output untouched.
+    /// Returns eBusy while runtime work is pending or from a runtime callback.
+    RuntimeResult(CARB_ABI* getOmniPvdRecordingStatus)(bool* recording);
 };
 
 

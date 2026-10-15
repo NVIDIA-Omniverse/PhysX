@@ -74,6 +74,42 @@ bool canonicalisePathHandles(const IPhysicsSource& source,
     return true;
 }
 
+bool internHandles(const IPhysicsSource& source,
+                   const ovx_primpath_t* handles,
+                   size_t count,
+                   std::vector<ObjectKey>& outKeys)
+{
+    const auto* ovSource = dynamic_cast<const OvstageSource*>(&source);
+    if (!ovSource)
+        return false;
+
+    if (count == 0)
+        return true; // an ovstage source with nothing to intern
+    if (!handles)
+        return false;
+
+    outKeys.reserve(outKeys.size() + count);
+    for (size_t i = 0; i < count; ++i)
+    {
+        // internKey packs the raw dictionary handle into this source's generation-tagged ObjectKey, then
+        // canonicalKey normalises it to the interned-by-path handle. This normalisation is load-bearing:
+        // intern_path and enumerate hand back DISTINCT handles for the same prim (canonicalKey's own doc),
+        // so a caller's interned handle would not compare equal to the enumerated key a read gates on. The
+        // glob path resolves literals through findByPath, i.e. the same canonical form, so both selection
+        // routes land on the identical key. A raw handle carries no generation, so internKey tags whatever it
+        // is given with this source's: the generation check that guards keys this source mints cannot apply.
+        // A handle from the current dictionary names its path; a number the dictionary does not know stays
+        // non-canonical and matches nothing (a selection is a superset filter); a zero handle interns to the
+        // invalid sentinel and is dropped. A handle kept from a dictionary that has since been destroyed (every
+        // ovstage instance released) is invalid but undetectable -- the dictionary has no liveness query -- and
+        // may name a different prim. The public contract requires handles from the attached Stage's dictionary.
+        const ObjectKey key = ovSource->canonicalKey(ovSource->internKey(static_cast<uint64_t>(handles[i])));
+        if (key.valid())
+            outKeys.push_back(key);
+    }
+    return true;
+}
+
 ovx_primpath_list_t buildPathListFromHandles(const IPhysicsSource& source,
                                              const ovx_primpath_t* handles,
                                              size_t count,

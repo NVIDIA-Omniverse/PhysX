@@ -1,12 +1,16 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-LIFETIME-001
+// @covers AC-1 AC-2 AC-3
+
 /**
  * @implements REQ-PUBLICAPI-002
  * @covers AC-2 AC-8
  */
 #pragma once
 
+#include <usdLoad/ScannedCollision.h>
 #include <private/omni/physx/PhysxUsd.h>
 
 #include <carb/tasking/TaskingTypes.h>
@@ -28,14 +32,12 @@ namespace physx
 {
 namespace usdparser
 {
-using AttachedStageMap = std::unordered_map<uint64_t, AttachedStage*>;
-
-void releaseDesc(PhysxObjectDesc* objectDesc);
+using AttachedStageMap = std::unordered_map<uint64_t, std::shared_ptr<AttachedStage>>;
 
 // Single-prim collision parse for a caller that already holds the collision/gprim identity
 // as an ObjectKey (ADR-0019). Foreign-stage parsing by stage-cache id goes through
 // usdBridge/StageBridge.h's bridgeParseForeignStageCollision.
-PhysxShapeDesc* parseCollision(AttachedStage& attachedStage,
+ScannedCollision parseCollision(AttachedStage& attachedStage,
                                omni::physics::parse::ObjectKey collisionKey,
                                omni::physics::parse::ObjectKey gPrimKey);
 
@@ -48,87 +50,83 @@ public:
 
     static UsdLoad* getUsdLoad();
 
+    // Cleanup must not recreate the singleton after runtime teardown.
+    static UsdLoad* getUsdLoadIfCreated() noexcept;
+
     // Destroys the lazily-created getUsdLoad() singleton and resets the
     // backing pointer, so the next getUsdLoad() builds a fresh instance.
     static void releaseUsdLoad();
 
-    bool attach(bool loadPhysics, uint64_t stageId, PhysXUsdPhysicsInterface* usdPhysicsInt);
+    AttachHandle attach(bool loadPhysics, uint64_t stageId, PhysXUsdPhysicsInterface* usdPhysicsInt,
+                        const PhysxAttachOptions& options = {});
     // Stageless attach for a consumer-provided ovstage source (ADR-0002 M2c-E).
     // `ovstageAttachPayload` is the backend-opaque AttachTarget payload (a
-    // const OvstageAttach*), consumer-owned + kept alive for the attach. The
+    // const OvstageAttach*). Its descriptor is copied; the referenced instance and
+    // dictionary remain consumer-owned for the attach. The
     // backing stage/id are resolved by the runtime entry before any session
     // mutation; this layer never re-queries the payload identity.
     //
     // `backingStage` is trailing with a default of "no backing stage", so callers that
     // have none can omit it. AttachedStageUsdHandle (AttachedStage.h) is
     // PXR_NS::UsdStageWeakPtr itself under USD and an unused two-pointer POD otherwise.
-    bool attachOvstage(const void* ovstageAttachPayload,
+    uint64_t attachOvstage(const void* ovstageAttachPayload,
                        uint64_t readOrdinal,
                        uint64_t effectiveBackingStageId,
                        PhysXUsdPhysicsInterface* usdPhysicsInt,
                        bool loadPhysics = true,
-                       AttachedStageUsdHandle backingStage = AttachedStageUsdHandle{});
+                       AttachedStageUsdHandle backingStage = AttachedStageUsdHandle{},
+                       const PhysxAttachOptions* options = nullptr,
+                       bool startConfiguredRecording = true);
 
-    // First half of the replicator attach, so PhysXReplicator::attach() can create the
-    // AttachedStage/Source BEFORE its replicationAttachFn callback fires: verify not already
-    // attached, resolve the stage, construct+register the AttachedStage. No parsing happens
-    // here. A no-op returning true when attachStage is false (the ovstage path already has a
-    // Source). Must be called, and must succeed, before attachReplicatorFinish() for the
-    // same stageId.
-    bool attachReplicatorCreateSource(uint64_t stageId, PhysXUsdPhysicsInterface* usdPhysicsInt, bool attachStage);
 
-    // Second half: assumes attachReplicatorCreateSource() above already succeeded for this
-    // stageId (getAttachedStage(stageId) is non-null). Performs the exclude-path-filtered
-    // traversal/parse and the failure rollback (detach() when attachStage, else just clearing
-    // the replicator-stage flag).
-    bool attachReplicatorFinish(uint64_t stageId, const PathSet& excludePaths, bool attachStage);
 
     void detach(uint64_t stageId);
 
+    // Resource-retirement core: unpublish this owner before draining its work and
+    // destroying its source/database/scenes. Does not shut down the shared SDK or
+    // broadcast the legacy process-wide lifecycle events. Public detach must add
+    // owner-scoped event delivery before using this operation.
+    bool retireAttachment(AttachHandle attach);
+
+
 private:
     // Source-agnostic load core shared by attach() (USD) and attachOvstage()
-    // (ovstage): registers the AttachedStage under `key`, then optionally traverses
-    // and creates engine objects via loadFromStage() (ADR-0002 Option 1).
-    bool loadAttachedStage(AttachedStage* attachedStage, uint64_t key, bool loadPhysics);
-    void sendPhysicsObjectsReleasedEvent() noexcept;
+    // (ovstage): realizes a private candidate, then publishes its owning pointer.
+    // startConfiguredRecording starts legacy startup OmniPVD output afterwards; an
+    // attachment without a public recording owner (companion preview) passes false.
+    uint64_t loadAttachedStage(std::unique_ptr<AttachedStage> attachedStage, bool loadPhysics,
+                               bool startConfiguredRecording = true);
+    static uint64_t allocateAttachHandle();
+    void sendPhysicsObjectsReleasedEvent(AttachHandle attach) noexcept;
 
     // Shared body for attachOvstage() above (LoadUsd.cpp): guard checks, backend
     // install/rollback/exception scaffolding, and the loadAttachedStage() call.
-    bool attachOvstageCore(const void* ovstageAttachPayload,
+    uint64_t attachOvstageCore(const void* ovstageAttachPayload,
                            uint64_t readOrdinal,
                            AttachedStageUsdHandle backingStage,
                            uint64_t effectiveBackingStageId,
                            PhysXUsdPhysicsInterface* usdPhysicsInt,
-                           bool loadPhysics);
+                           bool loadPhysics,
+                           const PhysxAttachOptions* options,
+                           bool startConfiguredRecording);
 
 public:
 
+    // Developer USD adapter only. Backing stage IDs are metadata, not registry keys.
     AttachedStage* getAttachedStage(uint64_t stageId) const
     {
-        if (stageId == 0 && mAttachedStages.size() == 1)
+        std::lock_guard<carb::tasking::MutexWrapper> lock(mRegistryMutex);
+        AttachedStage* found = nullptr;
+        for (const AttachedStageMap::value_type& entry : mAttachedStages)
         {
-            return mAttachedStages.begin()->second;
+            if (static_cast<uint64_t>(entry.second->getStageId()) == stageId)
+            {
+                if (found)
+                    return nullptr; // ambiguous backing metadata never selects a peer
+                found = entry.second.get();
+            }
         }
-
-        AttachedStageMap::const_iterator fit = mAttachedStages.find(stageId);
-        if (fit != mAttachedStages.end())
-        {
-            return fit->second;
-        }
-
-        return nullptr;
-    }
-
-    // Convenience accessors for the single currently-attached stage. ovruntime attaches one stage at
-    // a time, registered under its effective resident BACKING USD stage id (0 when no usable backing
-    // stage is resident in this runtime's UsdUtilsStageCache, e.g. a source whose raw nonzero id
-    // belongs to another USD runtime). Resolve the lone attach by its actual key whenever exactly one
-    // stage is attached; fall back to id 0 (then null) otherwise.
-    AttachedStage* getActiveAttachedStage() const
-    {
-        if (mAttachedStages.size() == 1)
-            return mAttachedStages.begin()->second;
-        return getAttachedStage(0);
+        return found;
     }
 
     // ------------------------------------------------------------------
@@ -142,64 +140,42 @@ public:
 
     static constexpr uint64_t kNoAttachHandle = 0;
 
-    // Linear scan on purpose: ovruntime holds one attach at a time (a handful at
-    // most), and a second index keyed by handle would be a duplicate that every
-    // teardown path has to remember to keep in sync. The AttachedStage owns its
-    // handle; this is the only place that reads it back.
-    AttachedStage* getAttachedStageByHandle(uint64_t attachHandle) const
+    std::shared_ptr<AttachedStage> acquireAttachment(uint64_t attachHandle) const
     {
-        if (attachHandle == kNoAttachHandle)
-            return nullptr;
-
-        for (AttachedStageMap::const_reference ref : mAttachedStages)
-        {
-            if (ref.second && ref.second->getAttachHandle() == attachHandle)
-                return ref.second;
-        }
-        return nullptr;
+        std::lock_guard<carb::tasking::MutexWrapper> lock(mRegistryMutex);
+        const auto it = mAttachedStages.find(attachHandle);
+        return it != mAttachedStages.end() ? it->second : nullptr;
     }
 
-    // Handle of the lone active attach, or kNoAttachHandle when nothing (or more
-    // than one thing) is attached. Mirrors getActiveAttachedStage().
-    uint64_t getActiveAttachHandle() const
+    // Internal borrowed lookup. The caller must hold an execution lease or be
+    // executing synchronously inside the selected owner's callback.
+    AttachedStage* getAttachedStageByHandle(uint64_t attachHandle) const
     {
-        const AttachedStage* attachedStage = getActiveAttachedStage();
-        return attachedStage ? attachedStage->getAttachHandle() : kNoAttachHandle;
+        return acquireAttachment(attachHandle).get();
     }
 
     // The single resolution prologue every attach-handle entry point shares
     // (ADR-0016 Decision 3).
-    // kActiveAttach -> the lone active attach; kNoAttach and a stale handle -> null.
+    // Zero, retired and reserved sentinel handles resolve to null.
     // Deliberately silent: callers log their own diagnostic, since only they know
     // which entry point failed.
     AttachedStage* resolveAttach(uint64_t attachHandle) const;
 
 
-    long getActiveStageId() const
+
+    AttachedStageMap getAttachedStages() const
     {
-        AttachedStage* attachedStage = getAttachedStage(0);
-        return attachedStage ? attachedStage->getStageId() : 0;
+        std::lock_guard<carb::tasking::MutexWrapper> lock(mRegistryMutex);
+        return mAttachedStages;
     }
 
-    void update(uint64_t stageId, float);
-    void update(float);
-    void flushChanges();
+    void flushChanges(AttachedStage& attachedStage);
 
-    void releasePhysicsObjects(uint64_t stageId,
+    void releasePhysicsObjects(AttachHandle attach,
                                bool rebuildObjectDatabase = true,
                                bool sendReleasedEvent = true);
 
-    void blockUSDUpdate(bool val);
-    bool usdUpdateIsBlocked();
 
-    void setAsyncUSDUpdate(bool val)
-    {
-        mAsyncUpdate = val;
-    }
-    bool getAsyncUSDUpdate() const
-    {
-        return mAsyncUpdate;
-    }
     void processChanges();
 
     MemoryAllocator getMemoryAllocator()
@@ -209,19 +185,16 @@ public:
 
     void updateRigidBodyMass();
 
-    void changeDefaultSimulator(const std::string& defaultSim);
 
 public:
     carb::tasking::MutexWrapper mParsingMutex;
 
 private:
-    std::atomic_int32_t mBlockUsdUpdate;
     MemoryAllocator mMemoryAllocator;
-    volatile bool mAsyncUpdate;
-    // Keyed by backing USD stage id, which is what the USD change-notice and
-    // stage-lifecycle paths legitimately look up by. Attach *identity* is the
-    // AttachedStage's own handle, not this key -- see getAttachedStageByHandle.
+    // Owns only committed contexts, indexed by never-reused attachment handles.
+    mutable carb::tasking::MutexWrapper mRegistryMutex;
     AttachedStageMap mAttachedStages;
+    std::unordered_set<const void*> mReservedOvstages;
     // Never reused, never 0, so a handle held across a detach resolves to null
     // rather than to whatever attached next.
     //
@@ -242,26 +215,7 @@ private:
     // counter must outlive any single UsdLoad instance to keep the never-reused
     // guarantee above process-wide, not just per-attach-session.
     static std::atomic<uint64_t> mNextAttachHandle;
-    // True while attachOvstage() has switched the process parse/scan backends to
-    // ovstage; detach() uses it to restore the USD defaults.
-    bool mExternalBackendInstalled = false;
-    // Allocated before installing the ovstage backends and retained until
-    // failure cleanup or detach, so teardown restores USD without allocating.
-    std::unique_ptr<omni::physics::parse::IParseBackend> mRestoreParseBackend;
-    // Scan-backend counterpart of mRestoreParseBackend: the previous default scan backend,
-    // captured by ownership before the ovstage scan backend overwrites it, so detach reinstalls
-    // the exact same instance instead of nulling the slot (which would strand a USD-loaded
-    // process with no scan backend, the collapsed install slivers being no-ops).
-    std::unique_ptr<omni::physics::parse::IScanBackend> mRestoreScanBackend;
-    // Ref count of live plain (non-ovstage) attaches sharing the registered native-USD
-    // scan backend: attach() installs it on the 0->1 transition, detach() removes it on
-    // 1->0. Only ever nonzero while mExternalBackendInstalled is false.
-    size_t mPlainScanBackendRefCount = 0;
-    // Scan backend that was live before the 0->1 plain-attach re-asserted the native-USD
-    // one, captured by ownership so the 1->0 transition restores the exact pre-attach slot
-    // (null when a test helper had displaced it, the startup USD scan otherwise) instead of
-    // stranding the process with the attach-installed backend.
-    std::unique_ptr<omni::physics::parse::IScanBackend> mRestorePlainScanBackend;
+
 };
 
 

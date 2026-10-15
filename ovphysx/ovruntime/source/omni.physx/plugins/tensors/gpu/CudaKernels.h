@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-TENSOR-CONTACT-004
+// @covers AC-1 AC-2
+
 /**
  * @implements REQ-TENSOR-CONTACT-003
  * @covers AC-1 AC-2 AC-3 AC-4
@@ -10,6 +13,9 @@
  *
  * @implements REQ-READ-INVDYN-001
  * @covers AC-10
+ *
+ * @implements REQ-READ-SDF-001
+ * @covers AC-3
  */
 
 #pragma once
@@ -42,6 +48,9 @@ struct GpuPointInstancerRecord;
 struct GpuPointSetReadRecord;
 struct PointSetTransform;
 struct SingleAllocPolicy;
+
+// Clear caller-owned contact storage in the same stream as the contact kernels.
+bool clearContactBuffer(void* destination, size_t bytes);
 
 //
 // articulations
@@ -215,6 +224,23 @@ bool fetchArtiLinkVectorOvStage(float* dst,
                                 const ::physx::PxU32 comp,
                                 const ArticulationLinkOvStageRecord* records);
 
+// ovstage contact-sensor row compaction: dst[i*comp + c] = src[rowIdx[i]*comp + c]. A selected contact read
+// reduces over the full sensor population and compacts its rows out of the result, so the selection never keys
+// a reducer.
+bool compactContactSensorRowsOvStage(float* dst,
+                                     const float* src,
+                                     const ::physx::PxU32* rowIdx,
+                                     const ::physx::PxU32 numRows,
+                                     const ::physx::PxU32 comp);
+
+// ovstage SDF evaluation points: dst[i] = (src[i], 0), the caller's [N, Q, 3] points widened to the
+// PxVec4 layout PxDirectGPUAPI::evaluateSDFDistances reads.
+bool packSdfQueryPointsOvStage(::physx::PxVec4* dst, const ::physx::PxVec3* src, const ::physx::PxU32 count);
+
+// ovstage raw-contact identities: dst[i] = pairs[2i + 1], the other body of each (sensor, other) pair the raw
+// contact fill writes, as one contiguous column.
+bool fetchRawContactOtherBodyOvStage(uint64_t* dst, const uint64_t* pairs, const ::physx::PxU32 count);
+
 // ovstage rigid/link pose column, fused: PhysX-layout scratch -> the packed destination column in
 // ONE pass. Resolves rigid-dynamic vs articulation-link source (de-padding the [numArti x
 // simMaxLinks] link block), subtracts the subspace origin, and writes only the requested component
@@ -318,6 +344,7 @@ bool submitLinkWrenchOvStage(::physx::PxVec3* linkForces,
                               const ::physx::PxVec3* comsByRecord,
                               const GpuRigidBodyRecord* records,
                               const ::physx::PxU32* rows,
+                              const ::physx::PxU32* rowCompactArti,
                               ::physx::PxU32 numOutputs,
                               ::physx::PxU32 simMaxLinks,
                               ::physx::PxU32 comps);
@@ -884,6 +911,39 @@ bool submitPointSetColumnOvStage(::physx::PxVec4* dst,
                                  const PointSetTransform& localToWorld,
                                  ::physx::PxU32 numPoints,
                                  bool reframe);
+
+// The ovstage volume-deformable KINEMATIC-TARGET write (ADR-0012): scatter one body's caller column
+// (four floats per node: xyz target + w active-flag) into the runtime-owned PxVec4 buffer PhysX adopts
+// through setKinematicTargetBufferD. xyz is reframed exactly as the point-set scatter reframes points
+// (same sim-mesh frame), but the fourth lane is SET from the source flag -- for a kinematic-target
+// buffer w selects driven (0) vs free (non-zero), it is not inverse mass. `anyActiveOut` (optional,
+// device int, pre-zeroed) is raised to 1 if any written node is active, so the caller can tear the body
+// down when a write leaves every node free.
+bool submitKinematicTargetColumnOvStage(::physx::PxVec4* dst,
+                                        const float* src,
+                                        const PointSetTransform& localToWorld,
+                                        ::physx::PxU32 numNodes,
+                                        bool reframe,
+                                        int* anyActiveOut);
+
+// The ovstage volume-deformable KINEMATIC-TARGET read: gather one body's runtime-owned PxVec4 buffer
+// (the one setKinematicTargetBufferD adopted) into a four-float-per-node column (xyz + w flag). The
+// inverse of submitKinematicTargetColumnOvStage: xyz is carried world->sim-mesh by `worldToLocal`
+// exactly as fetchPointSetColumnOvStage reframes points, and the w flag passes through unchanged so a
+// reader sees which nodes are driven. Per BODY, not rectangular -- each driven body owns its own buffer.
+bool fetchKinematicTargetColumnOvStage(float* dst,
+                                       const ::physx::PxVec4* src,
+                                       const PointSetTransform& worldToLocal,
+                                       ::physx::PxU32 numNodes,
+                                       bool reframe);
+
+// Raise `violationOut` (device int, pre-zeroed) if the incoming column would move any node from driven
+// (current target w == 0) to free (new w != 0). Read-only, so the caller can refuse before scattering.
+// Enforces the monotonic rule -- free->driven is allowed at any time, driven->free never is.
+bool detectKinematicUnpinColumnOvStage(const ::physx::PxVec4* current,
+                                       const float* newColumn,
+                                       ::physx::PxU32 numNodes,
+                                       int* violationOut);
 
 } // namespace tensors
 } // namespace physx

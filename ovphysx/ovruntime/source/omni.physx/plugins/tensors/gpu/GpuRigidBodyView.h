@@ -1,6 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-INPUT-DEVICE-001
+ * @covers AC-9
+ */
+
 #pragma once
 
 #include "tensors/CommonTypes.h"
@@ -31,9 +36,9 @@ public:
     ~GpuRigidBodyView() override;
 
     // Test-only: number of ovstage row-list host-to-device uploads this view has performed. A read that
-    // reuses a cached slot does not increment it, so a test can assert that the two stable kOvxAll reads
-    // (loose rigid bodies, articulation links) stay warm in their own LRU slots even while an
-    // uncacheable kOvxActive read churns a third list between them -- the row-cache reuse this class
+    // reuses a cached slot does not increment it, so a test can assert that several concurrent lists --
+    // the two stable kOvxAll reads (loose rigid bodies, articulation links) and a now-cacheable DirectGPU
+    // kOvxActive read -- all stay warm in their own LRU slots at once, the row-cache reuse this class
     // exists to provide.
     uint64_t ovStageRowsUploadCount() const { return mOvStageRowsUploadCount; }
 
@@ -150,11 +155,11 @@ public:
     bool setPositionsOvStage(const TensorDesc* srcTensor,
                              const ::physx::PxU32* outRecordIdx,
                              ::physx::PxU32 numOutputs,
-                             uint64_t rowsToken);
+                             uint64_t rowsToken, bool wholeSet);
     bool setOrientationsOvStage(const TensorDesc* srcTensor,
                                 const ::physx::PxU32* outRecordIdx,
                                 ::physx::PxU32 numOutputs,
-                                uint64_t rowsToken);
+                                uint64_t rowsToken, bool wholeSet);
     // True when this row list names articulation LINKS rather than rigid dynamics. Decided from the
     // FIRST valid row, not by scanning: an ovstage query carries one object type, so a mixed list is
     // not a state this API can produce.
@@ -170,7 +175,8 @@ public:
                               const ::physx::PxU32* outRecordIdx,
                               ::physx::PxU32 numOutputs,
                               uint64_t rowsToken,
-                              ::physx::PxU32 comps);
+                              ::physx::PxU32 comps,
+                              bool wholeSet);
 
     // ovstage WRENCH write (ADR-0012). One [N,9] column -- force, torque, world
     // application point -- becoming PhysX's eFORCE and eTORQUE in a single pass.
@@ -181,7 +187,7 @@ public:
     bool setWrenchesOvStage(const TensorDesc* srcTensor,
                             const ::physx::PxU32* outRecordIdx,
                             ::physx::PxU32 numOutputs,
-                            uint64_t rowsToken);
+                            uint64_t rowsToken, bool wholeSet);
 
     // ovstage FORCE write (ADR-0012). Write-only: the solver consumes it and clears it
     // each step, so there is nothing to read back and nothing to preserve -- which is why this needs
@@ -192,16 +198,16 @@ public:
     bool setForcesOvStage(const TensorDesc* srcTensor,
                           const ::physx::PxU32* outRecordIdx,
                           ::physx::PxU32 numOutputs,
-                          uint64_t rowsToken);
+                          uint64_t rowsToken, bool wholeSet);
 
     bool setLinearVelocitiesOvStage(const TensorDesc* srcTensor,
                                     const ::physx::PxU32* outRecordIdx,
                                     ::physx::PxU32 numOutputs,
-                                    uint64_t rowsToken);
+                                    uint64_t rowsToken, bool wholeSet);
     bool setAngularVelocitiesOvStage(const TensorDesc* srcTensor,
                                      const ::physx::PxU32* outRecordIdx,
                                      ::physx::PxU32 numOutputs,
-                                     uint64_t rowsToken);
+                                     uint64_t rowsToken, bool wholeSet);
 
     // Block until the last ovstage write issued through this view has completed on the device.
     //
@@ -209,7 +215,7 @@ public:
     // read, which blocks in ovxReleaseRead for exactly the same reason. The column being freed is
     // the buffer PhysX reads the payload from (the velocity paths hand it over directly), so
     // freeing it while the write is still in flight is a use-after-free on device memory.
-    void waitOvStageWriteDone() const;
+    bool waitOvStageWriteDone() const;
 
     // True when an entry's actor was absent from the simulation data's actor map at construction.
     // The data does not describe this actor set -- it predates the actor, or belongs to a scene
@@ -217,7 +223,6 @@ public:
     // cached data should discard the cache and rebuild rather than read sentinel rows.
     bool hasUnresolvedEntries() const { return mHasUnresolvedEntries; }
 
-    bool setKinematicTargets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
     bool setTransforms(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
     bool setVelocities(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
 
@@ -229,7 +234,6 @@ public:
                                          const bool isGlobal) override;
 
     // Masked overrides
-    bool setKinematicTargetsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
     bool setTransformsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
     bool setVelocitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
     bool applyForcesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
@@ -384,6 +388,9 @@ private:
     mutable uint64_t mLastSeenRdDisableEpoch = 0;
     uint32_t mNumArtis = 0;
     uint32_t mNumArtiRoots = 0;
+    // Link records in this view: every link of every articulation it holds, including articulations the
+    // attachment does not own. A whole-set link write may skip its dedup only when it names this many rows.
+    uint32_t mNumLinkRecords = 0;
 
     // will keep this until direct GPU API for articulation link mass properties is available
     // made class memebrs to avoid frequent memory allocation
@@ -438,14 +445,15 @@ private:
     //
     // A SMALL LRU, not one slot: this superset view is the single row cache shared by every ovstage
     // list that gathers a subset through it -- kOvxAll rigid-body and articulation-link reads (a
-    // PxArticulationLink is a PxRigidBody), kept warm across frames; uncacheable kOvxActive reads, a
-    // fresh list every read; and the rigid write path -- a standalone list plus one per point instancer,
-    // each rebuilt per commit. (Instancer READS do not pass through here.) Several are live at once in a
-    // normal read/write loop, so one slot would evict the previous list on every access and re-upload
-    // it, and the token gate would never hit. The LRU holds kOvStageRowsSlots distinct lists. A stable
-    // read hits its slot every frame, keeping its recency newest, so a churning list -- an active read
-    // or a write, whose token changes every time and is never seen again -- cycles through the surplus
-    // slots and does not evict a warm read WHILE A SLOT IS FREE. Thrash-free while the concurrently-live
+    // PxArticulationLink is a PxRigidBody), kept warm across frames; kOvxActive reads (cacheable on a
+    // DirectGPU scene, keyed on the record + kinematic-toggle epochs, so warm like an ALL read there; a
+    // fresh list every read on CPU); and the rigid write path -- a standalone list plus one per point
+    // instancer, each rebuilt per commit. (Instancer READS do not pass through here.) Several are live at
+    // once in a normal read/write loop, so one slot would evict the previous list on every access and
+    // re-upload it, and the token gate would never hit. The LRU holds kOvStageRowsSlots distinct lists. A
+    // stable read hits its slot every frame, keeping its recency newest, so a churning list -- a write
+    // (or a CPU active read), whose token changes every time and is never seen again -- cycles through the
+    // surplus slots and does not evict a warm read WHILE A SLOT IS FREE. Thrash-free while the concurrently-live
     // lists number <= kOvStageRowsSlots; beyond that the least-recently-used list is evicted -- warm
     // reads no longer exempt -- never worse than the single slot it replaced (see kOvStageRowsSlots for
     // what that bound does and does not buy). ovStageRowsDevice picks the smallest-tick slot as the
@@ -490,6 +498,19 @@ private:
     uint32_t mOvStageWrenchCapacity = 0;
     ::physx::PxRigidDynamicGPUIndex* mOvStageIdxDev = nullptr;
     uint32_t mOvStageWriteCapacity = 0;
+    // The link-wrench SPARSE apply's two host-resolved index buffers (grown-and-cached like the wrench
+    // output above). mOvStageLinkWrenchArtisDev holds the written articulations' PhysX GPU indices in
+    // compact order; mOvStageLinkWrenchRowArtiDev holds, per written row, that row's compact slot. Both
+    // are built on the host from the query's records, so the apply reaches only the written
+    // articulations with no device->host survivor-count read.
+    ::physx::PxArticulationGPUIndex* mOvStageLinkWrenchArtisDev = nullptr;
+    uint32_t mOvStageLinkWrenchArtisCapacity = 0;
+    ::physx::PxU32* mOvStageLinkWrenchRowArtiDev = nullptr;
+    uint32_t mOvStageLinkWrenchRowArtiCapacity = 0;
+    // Host scratch for the link-wrench dedup, cached across calls so steady-state reuse does not reallocate.
+    std::vector<::physx::PxU32> mLinkWrenchArtiToCompact;                   // tensorArtiIdx -> compact slot
+    std::vector<::physx::PxArticulationGPUIndex> mLinkWrenchWrittenArtis;   // compact slot -> GPU index
+    std::vector<::physx::PxU32> mLinkWrenchRowCompact;                      // written row -> compact slot
     // What the per-row validation was last run against. TWO values, because the thing it checks can
     // be invalidated by either: the row list moving, or a disable/re-enable recycling GPU indices
     // under an unchanged row list. The index kernel itself is not gated on these at all -- see

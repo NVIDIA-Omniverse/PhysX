@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-SERVICES-001
+// @covers AC-3
+
 /**
  * @implements REQ-PUBLICAPI-001
  * @covers AC-27 AC-28
@@ -63,12 +66,12 @@ InternalActor::InternalActor(PhysXScene* ps,
       mMirrorMemsize(0),
       mMirrorMemory(nullptr)
 {
-    InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    InternalPhysXDatabase& db = mPhysXScene->getAttachedStage().getInternalPhysXDatabase();
     if (instance)
     {
         // Instanced actors are only created on the (single-threaded) non-replicator
         // path, so minting the instancer key here is safe.
-        AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+        AttachedStage* as = &mPhysXScene->getAttachedStage();
         // A missing AttachedStage here is a fatal setup error, not a case to
         // silently fall back to direct USD for.
         CARB_ASSERT(as);
@@ -160,7 +163,7 @@ InternalActor::InternalActor(PhysXScene* ps,
         // Nested-rigid-body detection: is `key` a descendant of another enabled rigid
         // body, and if so, is it actually composed under that ancestor's transform (no
         // resetXformStack break in between)? Walks ancestors via IPhysicsSource::getParent.
-        AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+        AttachedStage* as = &mPhysXScene->getAttachedStage();
         if (as)
         {
             if (const omni::physics::parse::IPhysicsSource* src = as->getSource())
@@ -244,7 +247,7 @@ InternalActor::~InternalActor() = default;
 
 void InternalActor::switchFromKinematic()
 {
-    InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    InternalPhysXDatabase& db = mPhysXScene->getAttachedStage().getInternalPhysXDatabase();
     ActorInitialDataMap::iterator initFit = db.mInitialActorDataMap.find(mKey);
     if (initFit == db.mInitialActorDataMap.end())
     {
@@ -254,12 +257,12 @@ void InternalActor::switchFromKinematic()
 
 void InternalActor::initializeDynamicActor(bool runtimeInitialization)
 {
-    const bool updateUSD = OmniPhysX::getInstance().getCachedSettings().updateToUsd &&
-        !(SimulationCallbacks::getSimulationCallbacks()->checkGlobalSimulationFlags(GlobalSimulationFlag::eTRANSFORMATION | GlobalSimulationFlag::eSKIP_WRITE));
+    const bool updateUSD = mPhysXScene->getAttachedStage().getCachedSettings().updateToUsd &&
+        !(mPhysXScene->getAttachedStage().getSimulationCallbacks().checkGlobalSimulationFlags(GlobalSimulationFlag::eTRANSFORMATION | GlobalSimulationFlag::eSKIP_WRITE));
 
-    InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    InternalPhysXDatabase& db = mPhysXScene->getAttachedStage().getInternalPhysXDatabase();
 
-    AttachedStage* attachedStage = updateUSD ? UsdLoad::getUsdLoad()->getActiveAttachedStage() : nullptr;
+    AttachedStage* attachedStage = updateUSD ? &mPhysXScene->getAttachedStage() : nullptr;
     omni::physics::parse::IPhysicsDataWrite* dw = attachedStage ? attachedStage->getDataWrite() : nullptr;
 
     if (updateUSD && dw)
@@ -301,7 +304,7 @@ void InternalActor::initializeDynamicActor(bool runtimeInitialization)
         if (dw)
         {
             dw->setUpdateToUsdUsingXformCommonAPI(
-                OmniPhysX::getInstance().getCachedSettings().updateToUsdUsingXformCommonAPI);
+                mPhysXScene->getAttachedStage().getCachedSettings().updateToUsdUsingXformCommonAPI);
 
             // The one-time load-time xform-op normalization authors new xformOp
             // attributes and rewrites xformOpOrder at whatever destination
@@ -389,7 +392,7 @@ void InternalActor::enableSplineSurfaceVelocity(bool enable,
             shapePtr->setSimulationFilterData(fd);
         }
 
-        InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+        InternalPhysXDatabase& db = mPhysXScene->getAttachedStage().getInternalPhysXDatabase();
         bool added = false;
         mSplinesCurve = db.addSplinesCurve(attachedStage, splinesCurveKey, added);
         if (mSplinesCurve)

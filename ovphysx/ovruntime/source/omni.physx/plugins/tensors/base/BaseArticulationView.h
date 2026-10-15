@@ -56,14 +56,16 @@ public:
     bool getJacobianShape(uint32_t* numRows, uint32_t* numCols) const override;
     bool getGeneralizedMassMatrixShape(uint32_t* numRows, uint32_t* numCols) const override;
 
-    // Which inverse dynamics column a width is being asked for. Not a per-attribute enum: coriolis and
-    // gravity are both eGeneralizedForce because their width rule is identical.
+    // Which inverse dynamics column: the width AND, for the shared gather, which compute to run. Coriolis and
+    // gravity are separate values even though their width rule is identical (both M), so a caller can
+    // tell them apart; the width switch handles the two in one fall-through case.
     enum class InverseDynamicsColumn
     {
         eNone, // not an inverse dynamics column; width comes from the attribute, not the topology
         eJacobian,
         eMassMatrix,
-        eGeneralizedForce,
+        eCoriolisForce,
+        eGravityForce,
         eCentroidalMomentum,
         // Width is a constant 2, so it needs none of the topology arithmetic the others do. It is here
         // so that it is EMITTED per cohort like them, keeping it on the same partitioning as the
@@ -261,6 +263,15 @@ public:
         const TensorDesc* dst;
     };
 
+    // One requested inverse dynamics column for the shared gather: which column, and where its values go. The
+    // shared gather runs the compute each column needs once, reusing the setup (commonInit, and the mass
+    // matrix / Coriolis term the centroidal column is defined against) across every column in one call.
+    struct InverseDynamicsColumnRequest
+    {
+        InverseDynamicsColumn column;
+        const TensorDesc* dst;
+    };
+
     // DOF properties
     bool getDofTypes(const TensorDesc* dstTensor) const override;
     bool getDofMotions(const TensorDesc* dstTensor) const override;
@@ -270,7 +281,6 @@ public:
     bool getDofDampings(const TensorDesc* dstTensor) const override;
     bool getDofMaxForces(const TensorDesc* dstTensor) const override;
     bool getDofDriveModelProperties(const TensorDesc* dstTensor) const override;
-    bool getDofFrictionCoefficients(const TensorDesc* dstTensor) const override; // deprecated
     bool getDofFrictionProperties(const TensorDesc* dstTensor) const override;
     bool getDofMaxVelocities(const TensorDesc* dstTensor) const override;
     bool getDofArmatures(const TensorDesc* dstTensor) const override;
@@ -282,7 +292,7 @@ public:
     // INPUTS PhysX never writes back, so there is no device copy to scatter into.
     //
     // READ-MODIFY-WRITE where a property shares a PhysX struct with its neighbours -- stiffness,
-    // damping, maxForce, the drive envelope and driveType all live in one PxArticulationDrive, and
+    // damping, the drive envelope and driveType all live in one PxArticulationDrive, and
     // the three frictions in one PxArticulationJointFrictionParams. A session carries ONE attribute,
     // so each of those reads the struct back before overwriting its own field.
     bool setDofPropertyOvStage(DofProperty prop,
@@ -295,7 +305,6 @@ public:
     bool setDofDampings(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
     bool setDofMaxForces(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
     bool setDofDriveModelProperties(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
-    bool setDofFrictionCoefficients(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override; // deprecated
     bool setDofFrictionProperties(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
     bool setDofMaxVelocities(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
     bool setDofArmatures(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
@@ -330,6 +339,28 @@ public:
     bool getRestOffsetsOvStage(const TensorDesc* dstTensor, const ::physx::PxU32* rows, ::physx::PxU32 count) const;
     bool getShapeCountsOvStage(const TensorDesc* dstTensor, const ::physx::PxU32* rows, ::physx::PxU32 count) const;
 
+    // Whole-articulation topology metadata (replaces ovphysx_articulation_metadata_t field-for-field):
+    // one int32 per articulation, derived from the metatype/entry like getShapeCountsOvStage and
+    // host-resident on every device. One core reader switches on the quantity; the six table-facing
+    // wrappers below fix it, so the read table references a distinct method pointer per attribute.
+    enum class TopologyMetadata : uint32_t
+    {
+        eDofCount = 0,
+        eLinkCount,
+        eJointCount,
+        eFixedTendonCount,
+        eSpatialTendonCount,
+        eIsFixedBase
+    };
+    bool getDofCountsOvStage(const TensorDesc* dstTensor, const ::physx::PxU32* rows, ::physx::PxU32 count) const;
+    bool getLinkCountsOvStage(const TensorDesc* dstTensor, const ::physx::PxU32* rows, ::physx::PxU32 count) const;
+    bool getJointCountsOvStage(const TensorDesc* dstTensor, const ::physx::PxU32* rows, ::physx::PxU32 count) const;
+    bool getFixedTendonCountsOvStage(const TensorDesc* dstTensor, const ::physx::PxU32* rows, ::physx::PxU32 count) const;
+    bool getSpatialTendonCountsOvStage(const TensorDesc* dstTensor, const ::physx::PxU32* rows, ::physx::PxU32 count) const;
+    bool getIsFixedBaseOvStage(const TensorDesc* dstTensor, const ::physx::PxU32* rows, ::physx::PxU32 count) const;
+    bool getTopologyMetadataOvStage(TopologyMetadata property, const TensorDesc* dstTensor,
+                                    const ::physx::PxU32* rows, ::physx::PxU32 count) const;
+
     // Host-resident like getShapeCountsOvStage above: derived from the metatype, not from simulation
     // state. It is the shape side channel for the flattened `jacobian` column, whose two dimensions both
     // vary with topology and so cannot be recovered from dtype.lanes (REQ-READ-INVDYN-001 AC-6).
@@ -355,7 +386,7 @@ public:
 
     bool check() const override;
 
-    void release() override;
+    bool release() override;
 
     //
     // helpers

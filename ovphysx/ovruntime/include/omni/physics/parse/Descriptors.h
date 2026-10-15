@@ -413,7 +413,7 @@ struct PhysxSceneDesc : PhysxObjectDesc
     bool enableStabilization = false;
     bool enableGPUDynamics = true;
     bool enableEnhancedDeterminism = false;
-    bool enableExternalForcesEveryIteration = false;
+    bool enableExternalForcesEveryIteration = true;
     bool invertedFiltering = false;
     bool reportKineKine = false;
     bool reportKineStatic = false;
@@ -893,7 +893,7 @@ struct PhysxJointDesc : PhysxObjectDesc
     PhysxJointDesc()
         : localPose0Position({ 0.0f, 0.0f, 0.0f }), localPose0Orientation({ 1.0f, 0.0f, 0.0f, 0.0f }),
           localPose1Position({ 0.0f, 0.0f, 0.0f }), localPose1Orientation({ 1.0f, 0.0f, 0.0f, 0.0f }),
-          jointEnabled(true), breakForce(FLT_MAX), breakTorque(FLT_MAX), jointFriction(0.0f)
+          jointEnabled(true), breakForce(FLT_MAX), breakTorque(FLT_MAX)
     {
     }
 
@@ -909,7 +909,6 @@ struct PhysxJointDesc : PhysxObjectDesc
     bool jointEnabled;
     float breakForce;
     float breakTorque;
-    float jointFriction;
     bool enableCollision = false;            // USD `physics:collisionEnabled` default
     bool excludedFromArticulation = false;   // USD `physics:excludeFromArticulation` default
     bool validBodyTransformations = true;    // runtime-side validity flag; parsers default to true

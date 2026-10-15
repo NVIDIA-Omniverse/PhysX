@@ -13,7 +13,7 @@
 #   -DBUILD_TYPE=Debug|Release    Build type (default: Release)
 #   -DVERBOSE=ON|OFF              Verbose build output (default: OFF)
 #   -DDEV_PHYSX=ON|OFF            Build PhysX SDK from source (default: OFF)
-#   -DDEV_SCHEMA=ON|OFF           Use locally-built namespaced physics schema (default: OFF).
+#   -DDEV_SCHEMA=ON|OFF           Build a local schema provider wheel for tests/samples (default: OFF).
 #   -DBENCHMARKS=ON|OFF           Build the opt-in benchmark suite (default: OFF)
 #   -DOVPHYSX_REQUIRE_BENCHMARK_CUDA=ON|OFF
 #                                   Reject CPU-only benchmark configuration (default: OFF)
@@ -41,10 +41,6 @@ get_filename_component(PROJECT_ROOT "${SCRIPT_DIR}/.." ABSOLUTE)
 include("${SCRIPT_DIR}/crossplatform_helpers.cmake")
 include("${SCRIPT_DIR}/build_common.cmake")
 include("${SCRIPT_DIR}/host_path_utils.cmake")
-
-if(NOT DEFINED BUILD_DIR)
-    set(BUILD_DIR "_build")
-endif()
 
 if(NOT DEFINED CLEAN_BUILD)
     set(CLEAN_BUILD OFF)
@@ -79,7 +75,6 @@ message(STATUS "Platform: ${CMAKE_HOST_SYSTEM_NAME}")
 message(STATUS "Parallel jobs: ${JOBS}")
 message(STATUS "USD mode: namespaced")
 
-set(BUILD_PATH "${PROJECT_ROOT}/${BUILD_DIR}")
 set(OVPHYSX_DEV_SCHEMA_STAMP "${BUILD_PATH}/ovphysx_dev_schema.stamp")
 
 # The sibling ovruntime repository is included as a CMake subproject, not built separately.
@@ -176,14 +171,13 @@ file(REMOVE "${OVPHYSX_DEV_SCHEMA_STAMP}")
 # ============================================================================
 # Fetch ovruntime dependencies
 # ============================================================================
-# Pulled BEFORE ovphysx fetch_deps, which imports the USD monolith from the
-# ovruntime_deps package that is only present after this pull.
+# Pull shared runtime manifests before fetch_deps imports them; skip schema headers.
 message(STATUS "")
 message(STATUS "Pulling ovruntime dependencies...")
 
 set(OVRUNTIME_PULL_DEPS "${OVRUNTIME_DIR}/pull_dependencies${SCRIPT_SUFFIX}")
 set(_OVRUNTIME_PULL_CONFIG "${OVPHYSX_RUNTIME_DEPS_CONFIG}")
-set(_OVRUNTIME_PULL_ARGS "--config" "${_OVRUNTIME_PULL_CONFIG}")
+set(_OVRUNTIME_PULL_ARGS "--config" "${_OVRUNTIME_PULL_CONFIG}" "--no-schema")
 if(DEV_PHYSX)
     list(APPEND _OVRUNTIME_PULL_ARGS "--devphysx")
 endif()
@@ -236,91 +230,33 @@ if(NOT EXISTS "${TARGET_PYTHON}")
                         "Run scripts/fetch_deps.bat (Windows) or scripts/fetch_deps.sh (Linux) first.")
 endif()
 
-# Make sure the pulled schema package is codeless (no native lib, plugInfo is a
-# resource plugin). A codefull package regressing back in would reintroduce the
-# USD ABI hazard the codeless migration removed.
-if(NOT DEV_SCHEMA)
-    # usd_ext_physics is a single config-neutral package staged at a flat path.
-    # Release and debug builds consume the same tree.
-    set(_SCHEMA_VERIFY_DIR "${OVRUNTIME_DIR}/_build/target-deps/usd_ext_physics")
-    if(EXISTS "${_SCHEMA_VERIFY_DIR}")
-        message(STATUS "Verifying schema package (codeless) at ${_SCHEMA_VERIFY_DIR}...")
-        execute_process(
-            COMMAND "${TARGET_PYTHON}" "${SCRIPT_DIR}/verify_schema_package.py"
-                    "--dir=${_SCHEMA_VERIFY_DIR}"
-            WORKING_DIRECTORY "${PROJECT_ROOT}"
-            RESULT_VARIABLE _SCHEMA_VERIFY_RESULT
-        )
-        if(NOT _SCHEMA_VERIFY_RESULT EQUAL 0)
-            message(FATAL_ERROR
-                "Schema package at ${_SCHEMA_VERIFY_DIR} is not a valid codeless schema. "
-                "Delete _build/target-deps and re-pull, or update the schema pin in "
-                "ovphysx/ovruntime/deps/schema-deps.packman.xml.")
-        endif()
-        message(STATUS "  [OK] schema package verified as codeless")
-    else()
-        message(FATAL_ERROR
-            "Schema package directory not found at ${_SCHEMA_VERIFY_DIR}. "
-            "Delete _build/target-deps and re-pull, or check ovphysx/ovruntime/deps/schema-deps.packman.xml.")
-    endif()
-endif()
-
 # ============================================================================
-# Build local physics schema when requested (--devschema / -DDEV_SCHEMA=ON)
+# Build a separate local provider wheel when requested (--devschema)
 # ============================================================================
-# Namespaced ovphysx uses the prebuilt namespaced-monolithic usd_ext_physics
-# packman package by default (pulled above via ovruntime's schema-deps
-# manifest). --devschema is an explicit override for schema developers who
-# iterate on schemas/physx locally. It rebuilds the schema against the USD
-# pulled above and replaces the packman package as ovruntime's
-# USD_EXT_PHYSICS_DIR source.
+# Regenerate before packaging so source edits cannot reuse stale schema data.
 if(DEV_SCHEMA)
     set(SCHEMA_DIR "${PROJECT_ROOT}/../schemas/physx")
     set(SCHEMA_BUILD_DIR "${SCHEMA_DIR}/_build/schema")
-    set(SCHEMA_HEADER "${SCHEMA_BUILD_DIR}/include/physxSchema/tokens.h")
-    set(_SCHEMA_NEEDS_BUILD TRUE)
-
-    if(EXISTS "${SCHEMA_HEADER}")
-        execute_process(
-            COMMAND "${TARGET_PYTHON}" "${SCRIPT_DIR}/verify_schema_package.py"
-                    "--dir=${SCHEMA_BUILD_DIR}"
-            WORKING_DIRECTORY "${PROJECT_ROOT}"
-            RESULT_VARIABLE _LOCAL_SCHEMA_VERIFY_RESULT
-        )
-        if(_LOCAL_SCHEMA_VERIFY_RESULT EQUAL 0)
-            set(_SCHEMA_NEEDS_BUILD FALSE)
-        else()
-            message(STATUS "Local physics schema is missing or not codeless; rebuilding.")
-        endif()
+    message(STATUS "")
+    message(STATUS "Building local physics schema...")
+    execute_process(
+        COMMAND "${SCHEMA_DIR}/build${SCRIPT_SUFFIX}"
+        WORKING_DIRECTORY "${SCHEMA_DIR}"
+        RESULT_VARIABLE _SCHEMA_BUILD_RESULT
+    )
+    if(NOT _SCHEMA_BUILD_RESULT STREQUAL "0")
+        message(FATAL_ERROR "Failed to build local schema (exit code: ${_SCHEMA_BUILD_RESULT})")
     endif()
-
-    if(_SCHEMA_NEEDS_BUILD)
-        message(STATUS "")
-        message(STATUS "Building local physics schema...")
-        # build.sh/build.bat pull deps, regenerate the codeless artifacts, and stage
-        # them to _build/schema without repo_build/repo_usd/premake.
-        execute_process(
-            COMMAND "${SCHEMA_DIR}/build${SCRIPT_SUFFIX}"
-            WORKING_DIRECTORY "${SCHEMA_DIR}"
-            RESULT_VARIABLE _SCHEMA_BUILD_RESULT
-        )
-        if(NOT _SCHEMA_BUILD_RESULT STREQUAL "0")
-            message(FATAL_ERROR "Failed to build local schema (exit code: ${_SCHEMA_BUILD_RESULT})")
-        endif()
-        execute_process(
-            COMMAND "${TARGET_PYTHON}" "${SCRIPT_DIR}/verify_schema_package.py"
-                    "--dir=${SCHEMA_BUILD_DIR}"
-            WORKING_DIRECTORY "${PROJECT_ROOT}"
-            RESULT_VARIABLE _LOCAL_SCHEMA_VERIFY_RESULT
-        )
-        if(NOT _LOCAL_SCHEMA_VERIFY_RESULT EQUAL 0)
-            message(FATAL_ERROR "Local physics schema at ${SCHEMA_BUILD_DIR} is not a valid codeless schema.")
-        endif()
-        message(STATUS "  [OK] local physics schema built")
-    else()
-        message(STATUS "  [OK] local physics schema already built (codeless)")
+    execute_process(
+        COMMAND "${TARGET_PYTHON}" "${SCRIPT_DIR}/verify_schema_package.py"
+                "--dir=${SCHEMA_BUILD_DIR}"
+        WORKING_DIRECTORY "${PROJECT_ROOT}"
+        RESULT_VARIABLE _LOCAL_SCHEMA_VERIFY_RESULT
+    )
+    if(NOT _LOCAL_SCHEMA_VERIFY_RESULT EQUAL 0)
+        message(FATAL_ERROR "Local physics schema at ${SCHEMA_BUILD_DIR} is not a valid codeless schema.")
     endif()
-    file(WRITE "${OVPHYSX_DEV_SCHEMA_STAMP}" "ON\n")
+    include("${SCRIPT_DIR}/build_dev_schema_provider.cmake")
 endif()
 
 # ============================================================================
@@ -515,19 +451,11 @@ set(CMAKE_ARGS
     "-DOVPHYSX_USE_RELEASE_RUNTIME_DEPS=${OVPHYSX_USE_RELEASE_RUNTIME_DEPS}"
 )
 
-# Pass dev flags through explicitly so stale cache values in _build/CMakeCache.txt
-# cannot keep local PhysX/schema overrides enabled after the caller removed the
-# CLI flag on a later build.
+# Clear the cached PhysX override when --devphysx is no longer passed.
 if(DEV_PHYSX)
     list(APPEND CMAKE_ARGS "-DOVPHYSX_DEV_PHYSX=ON")
 else()
     list(APPEND CMAKE_ARGS "-DOVPHYSX_DEV_PHYSX=OFF")
-endif()
-
-if(DEV_SCHEMA)
-    list(APPEND CMAKE_ARGS "-DOVPHYSX_DEV_SCHEMA=ON")
-else()
-    list(APPEND CMAKE_ARGS "-DOVPHYSX_DEV_SCHEMA=OFF")
 endif()
 
 # --benchmarks: build the opt-in benchmark suite under tests/benchmarks/.

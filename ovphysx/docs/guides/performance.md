@@ -6,16 +6,19 @@
 Best practices for optimizing simulation performance with ovphysx. Most tuning is
 either a per-scene USD attribute on the codeless `PhysxSceneAPI` (refer to
 [Physics Scene](../simulation_setup/physics_scene.md) and
-[Physics Schemas](../physics_schemas.md)) or a `PhysXConfig` option on the
-instance.
+[Physics Schemas](../physics_schemas.md)) or a process-global config key set
+before instance creation.
 
 ## Measure First
 
 Before applying anything below, find out where the time actually goes. Setting
-`OVPHYSX_NVTX=1` makes a run annotate itself for NVIDIA Nsight Systems, so a
-capture shows each ovphysx call and each PhysX simulation phase, CPU and GPU,
-correlated with CUDA activity. It needs no rebuild and is off by default. Refer to
-[NVTX Profiling](../tutorials/nvtx_profiling.md).
+`OVPHYSX_PROFILER=trace` makes a run write a chrome trace JSON covering each
+ovphysx call, the host-side stage load and collision cooking work, and most of the
+PhysX SDK's own zones — no external tool needed, and the result is parseable from a
+script. Setting `OVPHYSX_PROFILER=nvtx` instead publishes to an NVIDIA Nsight
+Systems capture, correlated with CUDA activity, which is what lets you attribute
+host-device transfers. Neither needs a rebuild and no backend is selected by
+default. Refer to [Profiling](../tutorials/profiling.md).
 
 Note that `ovphysx_step` only enqueues work: in a capture the simulation cost shows
 up under the matching wait, not the step.
@@ -44,19 +47,73 @@ USD, so there is no per-step USD write-back cost. Read state in bulk through
 the session read API (`ovphysx_read` / `PhysX.read`, backed by the ovstage
 [output read](../ovstage_integration.md); device-native `warp.array` columns) rather than
 per-prim. The older [tensor bindings](../tutorials/tensor_bindings.md) (DLPack, zero-copy on
-device) are deprecated.
+device) are deprecated. Request the optional query and session results only when you use them:
+passing NULL in C, or `metadata=False` in Python (the default for `read()` and `write()`), skips
+their discovery work.
 
 ## Physics Thread Count
 
-Adjust the number of CPU simulation threads. For small scenes, single-threaded
-(`num_threads=0`) often gives the best performance. Set it where you construct
-the instance, in your own application script; it is not authored in USD:
+Three independent settings control CPU workers. They are not aliases.
+
+`/physics/physxDispatcher` (default `false`) chooses which pool runs PhysX
+CPU dispatcher tasks. Unset or `false` uses ovruntime's Carb dispatcher, which
+submits those tasks into the process-wide `carb.tasking` pool. `true` creates
+PhysX's own `PxDefaultCpuDispatcher` with a dedicated worker set, and PhysX
+CPU tasks no longer run on Carb workers. Other Carbonite work still uses the
+tasking pool either way. Hosts may set this before create through the legacy
+`PhysXConfig.carbonite_overrides` / `ovphysx_create_args` carbonite path; there
+is no scoped `GlobalConfigKey` for it.
+
+`num_threads` (`/persistent/physics/numThreads`, default `8`) is the PhysX CPU
+dispatcher limit, not the Carb pool size. With the default Carb dispatcher it
+caps how many PhysX tasks may run at once on that pool (effective concurrency
+is also bounded by `carb.tasking` `threadCount`). With `physxDispatcher=true`
+it is the size of PhysX's own dispatcher. `num_threads=0` means no extra
+PhysX dispatcher workers: those tasks run on the calling thread. For small
+scenes that is often faster. Set it before constructing the instance; it is
+not authored in USD:
+
+```python
+from ovphysx import GlobalConfigKey, PhysX, set_global_config
+
+set_global_config(GlobalConfigKey.NUM_THREADS, 0)
+physx = PhysX()
+```
+
+`/plugins/carb.tasking.plugin/threadCount` and
+`/plugins/omni.tbb.globalcontrol/maxThreadCount` size the process-wide Carb
+and TBB pools. ovphysx treats these as startup-only settings and writes no
+count of its own, so an unconfigured pool sizes itself to the machine. TBB is
+not the PhysX CPU dispatcher. Run each pool-size experiment in a fresh process
+and pass the overrides to the first constructor through the legacy
+`PhysXConfig` carbonite path:
 
 ```python
 from ovphysx import PhysX, PhysXConfig
 
-physx = PhysX(config=PhysXConfig(num_threads=0))
+physx = PhysX(
+    config=PhysXConfig(
+        carbonite_overrides={
+            "/plugins/carb.tasking.plugin/threadCount": 8,
+            "/plugins/omni.tbb.globalcontrol/maxThreadCount": 8,
+            "/physics/physxDispatcher": False,
+        }
+    )
+)
 ```
+
+A Carbonite host that started tasking before ovphysx remains the owner of its
+pool size. Under ovphysx's startup-only configuration policy, worker-pool
+changes requested after tasking starts are rejected. Carbonite provides a
+separate runtime tasking reconfiguration API, but ovphysx does not expose it.
+
+Raising `threadCount` does not raise the PhysX dispatcher cap: that is still
+`num_threads`. Raising `num_threads` above the live tasking pool does not
+create extra Carb workers. Smaller is not automatically faster for the
+tasking pool. On a GPU-heavy scene with thousands of replicated environments,
+a tasking pool well above the logical CPU count measured faster than one
+sized at or below it, so treat that count as something to measure for your
+own workload rather than a value to minimize.
 
 ## Stepping Cadence
 
@@ -93,9 +150,9 @@ def PhysicsScene "physicsScene" (
 
 ## Multi-GPU
 
-On multi-GPU machines, pass a supported multi-GPU pattern through
-`active_cuda_gpus` for a potential speedup. Alternatively, when
-`active_cuda_gpus` is empty, use `PhysXConfig(scene_multi_gpu_mode=...)`. Refer to
+On multi-GPU machines, set `ConfigKey.ACTIVE_CUDA_GPUS` after create and before
+attach for a potential speedup. Alternatively, when that key is unset, set
+`GlobalConfigKey.SCENE_MULTI_GPU_MODE` before create. Refer to
 [CPU and GPU Simulation](../simulation_setup/physics_scene.md#cpu-and-gpu-simulation).
 
 ## Collision Geometry Choice

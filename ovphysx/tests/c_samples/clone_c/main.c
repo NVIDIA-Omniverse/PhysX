@@ -26,17 +26,17 @@
 #error "This file must be compiled as C, not C++"
 #endif
 
-static int wait_op_success(
-    ovphysx_handle_t handle,
+static int wait_task_success(
+    ovphysx_instance_handle_t handle,
     ovphysx_enqueue_result_t res,
     ovphysx_timeout_t timeout_ns) {
   if (res.status != OVPHYSX_API_SUCCESS) {
     return 0;
   }
-  ovphysx_op_wait_result_t wait_result = {0};
-  ovphysx_result_t wait_res = ovphysx_wait_op(handle, res.op_index, timeout_ns, &wait_result);
+  ovphysx_wait_task_result_t wait_result = {0};
+  ovphysx_result_t wait_res = ovphysx_wait_task(handle, res, timeout_ns, &wait_result);
   int success = (wait_res.status == OVPHYSX_API_SUCCESS && wait_result.num_errors == 0);
-  ovphysx_destroy_wait_result(&wait_result);
+  ovphysx_destroy_wait_task_result(&wait_result);
   return success;
 }
 
@@ -50,11 +50,9 @@ static int run(void)
     return 1;
   }
 
-  ovphysx_create_args create_args = OVPHYSX_CREATE_ARGS_DEFAULT;
-
   printf("Creating PhysX instance...\n");
-  ovphysx_handle_t handle = 0;
-  ovphysx_result_t create_res = ovphysx_create_instance(&create_args, &handle);
+  ovphysx_instance_handle_t handle = 0;
+  ovphysx_result_t create_res = ovphysx_create_instance(&handle);
   if (create_res.status != OVPHYSX_API_SUCCESS) {
     fprintf(stderr, "Failed to create PhysX instance\n");
     ovphysx_shutdown();
@@ -103,7 +101,7 @@ static int run(void)
       NUM_TARGETS,
       anchor_transforms,
       NULL);  /* env_ids: NULL selects automatic per-call numbering. */
-  if (!wait_op_success(handle, clone_res, 10ULL * 1000 * 1000 * 1000)) {
+  if (!wait_task_success(handle, clone_res, 10ULL * 1000 * 1000 * 1000)) {
     fprintf(stderr, "Clone operation failed or timed out\n");
     ovphysx_sample_destroy_stage(handle, &stage_attachment);
     ovphysx_destroy_instance(handle);
@@ -116,7 +114,7 @@ static int run(void)
   printf("Running simulation with clones (10 steps)...\n");
   for (int i = 0; i < 10; i++) {
     ovphysx_enqueue_result_t step_res = ovphysx_step(handle, 1.0f/60.0f);
-    if (!wait_op_success(handle, step_res, 10ULL * 1000 * 1000 * 1000)) {
+    if (!wait_task_success(handle, step_res, 10ULL * 1000 * 1000 * 1000)) {
       fprintf(stderr, "Failed to run simulation step %d\n", i);
       ovphysx_sample_destroy_stage(handle, &stage_attachment);
       ovphysx_destroy_instance(handle);

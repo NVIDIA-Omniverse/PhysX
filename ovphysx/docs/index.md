@@ -11,7 +11,7 @@ To get started, refer to the [Quickstart](tutorials/quickstart.md).
 > **Note**
 >
 > - **Maturity**: ovphysx is pre-release software and not yet mature.
-> - **USD coexistence**: ovphysx ships no OpenUSD runtime and never loads, links, or version-checks one. ovstage, the mandatory exact-version dependency, ingests USD scenes through its own internal namespaced OpenUSD runtime; the application owns whatever USD it authors with (for example stock `usd-core`). ovphysx ships its PhysX USD schemas as codeless plugins: register them with the USD runtime you own before the first ovstage population call or schema-registry access, or the ovstage attach is refused. Scenes that author Newton `newton:*` attributes also need the separately installed `newton-usd-schemas` package registered the same way; `attach_ovstage()` warns when it was not. Refer to [Physics Schemas](physics_schemas.md).
+> - **USD coexistence**: ovphysx ships no OpenUSD runtime and never loads, links, or version-checks one. ovstage, the mandatory exact-version dependency, ingests USD scenes through its own internal namespaced OpenUSD runtime; the application owns whatever USD it authors with (for example stock `usd-core`). Install `physx-usd-schemas` separately and register both resource directories with ovstage before the first USD schema read (population or export) in each process, including workers. By default, attach is refused if ovstage reports that either PhysX schema family was missing when its USD schema registry was built; restart and register before populating or exporting. Scenes that author Newton `newton:*` attributes also need the separately installed `newton-usd-schemas` package registered the same way; Python's `attach_ovstage()` warns when it was not. Refer to [Physics Schemas](physics_schemas.md).
 > - **API stability**: Parts of the API are still being completed and may change before 1.0.
 
 ovphysx packages a USD-aware PhysX simulation runtime with tensorized data access. Applications populate scenes through ovstage, attach the stage to ovphysx, and drain committed ordinal ranges into simulation.
@@ -30,6 +30,10 @@ External references of contained functionality:
 
 ovphysx_overview
 developer_guide
+coding_style
+migrating_0_6_to_0_7
+ovd_api_migration
+tensor_binding_migration
 ov_libraries_v2_annex
 local_development
 changelog
@@ -73,6 +77,8 @@ read_write/data_model
 read_write/device
 read_write/readable
 read_write/writable
+read_write/vehicles
+read_write/path_patterns
 read_write/limitations
 ```
 
@@ -88,7 +94,7 @@ tutorials/cloning
 tutorials/render_handoff
 tutorials/physx_interop
 tutorials/omnipvd_recording
-tutorials/nvtx_profiling
+tutorials/profiling
 tutorials/source_link_build
 ```
 

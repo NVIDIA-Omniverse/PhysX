@@ -54,7 +54,6 @@ old entry points as deprecated aliases.
   deprecated, and their API documentation states the same status. The Python
   factory emits one caller-attributed `DeprecationWarning` and returns a
   usable binding. Deprecation preserves read results and alias warnings.
-  The independent contact-report API is outside this deprecated family.
 
 ## Test References
 
@@ -62,7 +61,7 @@ old entry points as deprecated aliases.
 
 ## Code References
 
-- `ovphysx/include/ovphysx/ovphysx.h`
+- `ovphysx/include/ovphysx/ovphysx_legacy.h`
 - `ovphysx/src/ovphysx/ovphysxContactBinding.cpp`
 - `ovphysx/python/ovphysx/_bindings.py`
 - `ovphysx/python/ovphysx/api.py`

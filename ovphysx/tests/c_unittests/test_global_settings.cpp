@@ -2,24 +2,23 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Tests for:
-//   ovphysx_set_global_config / ovphysx_get_global_config_*  (typed config API)
+//   scoped configuration and legacy typed config compatibility
 
 /**
  * @implements REQ-CAPI-STRING-001
  * @covers AC-3
  *
- * @implements REQ-CAPI-COLLISION-CONFIG-001
- * @covers AC-1 AC-2
- *
- * @implements REQ-CAPI-OMNIPVD-001
- * @covers AC-2
+ * @implements REQ-CAPI-CONFIG-001
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7
  */
 
 #include <gtest/gtest.h>
 #include "ovphysx/ovphysx.h"
+#include "ovphysxTestHelpers.h"
 #include "ovphysx/ovphysx_config.h"
 #include "global_test_environment.h"
 #include "test_utilities.h"
+#include "ovphysx_test_utils.h"
 #include <PxShape.h>
 #include <cstring>
 #include <string>
@@ -30,19 +29,19 @@ using namespace test_utils;
 
 namespace
 {
-class ScopedRecordingDirectoryRestore
+class ScopedCookedCachePathRestore
 {
 public:
-    explicit ScopedRecordingDirectoryRestore(const std::string& value)
+    explicit ScopedCookedCachePathRestore(const std::string& value)
         : m_value(value)
     {
     }
 
-    ~ScopedRecordingDirectoryRestore()
+    ~ScopedCookedCachePathRestore()
     {
         const ovphysx_string_t value = { m_value.data(), m_value.size() };
-        (void)ovphysx_set_global_config(
-            ovphysx_config_entry_omnipvd_ovd_recording_directory(value));
+        (void)ovphysx_set_raw_string_setting_for_test_internal(
+            "/UJITSO/datastore/localCachePath", value.ptr, value.length);
     }
 
 private:
@@ -50,11 +49,11 @@ private:
 };
 }
 
-static bool wait_gs_op(ovphysx_handle_t handle, ovphysx_op_index_t op_index)
+static bool wait_gs_op(ovphysx_instance_handle_t handle, ovphysx_enqueue_result_t task)
 {
-    ovphysx_op_wait_result_t wr{};
-    ovphysx_result_t r = ovphysx_wait_op(handle, op_index, 10'000'000'000ULL, &wr);
-    ovphysx_destroy_wait_result(&wr);
+    ovphysx_wait_task_result_t wr{};
+    ovphysx_result_t r = ovphysx_wait_task(handle, task, 10'000'000'000ULL, &wr);
+    ovphysx_destroy_wait_task_result(&wr);
     return r.status == OVPHYSX_API_SUCCESS;
 }
 
@@ -62,115 +61,436 @@ static bool wait_gs_op(ovphysx_handle_t handle, ovphysx_op_index_t op_index)
 // Typed Config API Tests
 // ============================================================================
 
-class CollisionGeometryConfigTest : public ::testing::Test
+TEST(ScopedConfig, KeyRangesDoNotOverlap)
+{
+    EXPECT_LE(
+        static_cast<uint32_t>(OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE),
+        0x0000ffffu);
+    EXPECT_GE(static_cast<uint32_t>(OVPHYSX_CONFIG_ACTIVE_CUDA_GPUS), 0x00010000u);
+}
+
+TEST(ScopedConfig, GlobalTypeRangeAndFailureAtomicity)
+{
+    ovphysx_config_value_t value = ovphysx_config_value_int64(64);
+    ASSERT_EQ(
+        ovphysx_set_global_config(OVPHYSX_GLOBAL_CONFIG_OVSTAGE_READ_POOL_MAX_MB, value).status,
+        OVPHYSX_API_SUCCESS);
+
+    ovphysx_config_value_t out = {};
+    ASSERT_EQ(
+        ovphysx_get_global_config(OVPHYSX_GLOBAL_CONFIG_OVSTAGE_READ_POOL_MAX_MB, &out).status,
+        OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(out.type, OVPHYSX_CONFIG_VALUE_INT64);
+    EXPECT_EQ(out.value.int64_value, 64);
+
+    EXPECT_EQ(
+        ovphysx_set_global_config(
+            OVPHYSX_GLOBAL_CONFIG_OVSTAGE_READ_POOL_MAX_MB,
+            ovphysx_config_value_bool(true)).status,
+        OVPHYSX_API_INVALID_ARGUMENT);
+    EXPECT_EQ(
+        ovphysx_set_global_config(
+            OVPHYSX_GLOBAL_CONFIG_OVSTAGE_READ_POOL_MAX_MB,
+            ovphysx_config_value_int64(static_cast<int64_t>(INT32_MAX) + 1)).status,
+        OVPHYSX_API_INVALID_ARGUMENT);
+
+    ASSERT_EQ(
+        ovphysx_get_global_config(OVPHYSX_GLOBAL_CONFIG_OVSTAGE_READ_POOL_MAX_MB, &out).status,
+        OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(out.value.int64_value, 64);
+}
+
+TEST(ScopedConfig, CrossScopeCastIsRejected)
+{
+    EXPECT_EQ(
+        ovphysx_set_global_config(
+            static_cast<ovphysx_global_config_key_t>(OVPHYSX_CONFIG_ACTIVE_CUDA_GPUS),
+            ovphysx_config_value_string(OVPHYSX_LITERAL("0"))).status,
+        OVPHYSX_API_INVALID_ARGUMENT);
+}
+
+TEST(ScopedConfig, InstanceStringIsCopiedAndUsesCallerBuffer)
+{
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&handle).status, OVPHYSX_API_SUCCESS);
+
+    ovphysx_config_value_t out = {};
+    out.type = OVPHYSX_CONFIG_VALUE_STRING;
+    EXPECT_EQ(
+        ovphysx_get_config(handle, OVPHYSX_CONFIG_ACTIVE_CUDA_GPUS, &out).status,
+        OVPHYSX_API_NOT_FOUND);
+    EXPECT_EQ(
+        ovphysx_set_config(
+            handle,
+            static_cast<ovphysx_config_key_t>(
+                OVPHYSX_GLOBAL_CONFIG_DISABLE_CONTACT_PROCESSING),
+            ovphysx_config_value_bool(true)).status,
+        OVPHYSX_API_INVALID_ARGUMENT);
+
+    char source[] = "0";
+    ASSERT_EQ(
+        ovphysx_set_config(
+            handle,
+            OVPHYSX_CONFIG_ACTIVE_CUDA_GPUS,
+            ovphysx_config_value_string({source, 1})).status,
+        OVPHYSX_API_SUCCESS);
+    source[0] = '7';
+
+    EXPECT_EQ(
+        ovphysx_get_config(handle, OVPHYSX_CONFIG_ACTIVE_CUDA_GPUS, &out).status,
+        OVPHYSX_API_BUFFER_TOO_SMALL);
+    ASSERT_EQ(out.value.string_value.length, 2u);
+
+    char buffer[2] = {};
+    out.value.string_value = {buffer, sizeof(buffer)};
+    ASSERT_EQ(
+        ovphysx_get_config(handle, OVPHYSX_CONFIG_ACTIVE_CUDA_GPUS, &out).status,
+        OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(std::string(buffer, out.value.string_value.length), "0");
+
+    ASSERT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
+}
+
+TEST(ScopedConfig, InstanceWriteAfterAttachPreservesPriorValue)
+{
+    destroySharedCpuInstance();
+
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&handle).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(
+        ovphysx_set_config(
+            handle,
+            OVPHYSX_CONFIG_ACTIVE_CUDA_GPUS,
+            ovphysx_config_value_string(OVPHYSX_LITERAL("0"))).status,
+        OVPHYSX_API_SUCCESS);
+    ASSERT_TRUE(attach_usd_with_ovstage(
+        handle,
+        OVPHYSX_SOURCE_DIR "/tests/data/minimal_scene.usda"));
+
+    EXPECT_EQ(
+        ovphysx_set_config(
+            handle,
+            OVPHYSX_CONFIG_ACTIVE_CUDA_GPUS,
+            ovphysx_config_value_string(OVPHYSX_LITERAL("-1"))).status,
+        OVPHYSX_API_INVALID_STATE);
+
+    char buffer[2] = {};
+    ovphysx_config_value_t out = {};
+    out.type = OVPHYSX_CONFIG_VALUE_STRING;
+    out.value.string_value = {buffer, sizeof(buffer)};
+    ASSERT_EQ(
+        ovphysx_get_config(handle, OVPHYSX_CONFIG_ACTIVE_CUDA_GPUS, &out).status,
+        OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(std::string(buffer, out.value.string_value.length), "0");
+
+    ASSERT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
+}
+
+TEST(ScopedConfig, LegacyCreateValueIsVisibleThroughScopedGetter)
+{
+    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
+    args.active_cuda_gpus = OVPHYSX_LITERAL("-1");
+
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(
+        ovphysx_create_instance_with_args(&args, &handle).status,
+        OVPHYSX_API_SUCCESS);
+
+    char buffer[3] = {};
+    ovphysx_config_value_t out = {};
+    out.type = OVPHYSX_CONFIG_VALUE_STRING;
+    out.value.string_value = {buffer, sizeof(buffer)};
+    ASSERT_EQ(
+        ovphysx_get_config(handle, OVPHYSX_CONFIG_ACTIVE_CUDA_GPUS, &out).status,
+        OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(std::string(buffer, out.value.string_value.length), "-1");
+
+    ASSERT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
+}
+
+TEST(ScopedConfig, LegacyEntryUpdatesRetainedGlobalValue)
+{
+    destroySharedCpuInstance();
+    ASSERT_EQ(
+        ovphysx_set_global_config(
+            OVPHYSX_GLOBAL_CONFIG_NUM_THREADS, ovphysx_config_value_int64(4)).status,
+        OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(
+        ovphysx_set_global_config_entry(ovphysx_config_entry_num_threads(6)).status,
+        OVPHYSX_API_SUCCESS);
+
+    ovphysx_instance_handle_t first = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&first).status, OVPHYSX_API_SUCCESS);
+    ovphysx_config_value_t out = {};
+    ASSERT_EQ(
+        ovphysx_get_global_config(OVPHYSX_GLOBAL_CONFIG_NUM_THREADS, &out).status,
+        OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(out.value.int64_value, 6);
+    ASSERT_EQ(ovphysx_destroy_instance(first).status, OVPHYSX_API_SUCCESS);
+
+    ovphysx_instance_handle_t second = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&second).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(
+        ovphysx_get_global_config(OVPHYSX_GLOBAL_CONFIG_NUM_THREADS, &out).status,
+        OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(out.value.int64_value, 6);
+    ASSERT_EQ(ovphysx_destroy_instance(second).status, OVPHYSX_API_SUCCESS);
+
+    ASSERT_EQ(
+        ovphysx_set_global_config_entry(ovphysx_config_entry_num_threads(8)).status,
+        OVPHYSX_API_SUCCESS);
+}
+
+TEST(ScopedConfig, CarboniteNumThreadsPathWithOrWithoutSlashSurvivesNextCreate)
+{
+    destroySharedCpuInstance();
+    ovphysx_instance_handle_t warmup = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&warmup).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_destroy_instance(warmup).status, OVPHYSX_API_SUCCESS);
+
+    const char* paths[] = {"persistent/physics/numThreads", "/persistent/physics/numThreads"};
+    const char* values[] = {"6", "7"};
+    const int64_t expected[] = {6, 7};
+    for (int i = 0; i < 2; ++i)
+    {
+        ASSERT_EQ(
+            ovphysx_set_global_config(
+                OVPHYSX_GLOBAL_CONFIG_NUM_THREADS, ovphysx_config_value_int64(4)).status,
+            OVPHYSX_API_SUCCESS);
+        const ovphysx_string_t path = {paths[i], std::strlen(paths[i])};
+        const ovphysx_string_t value = {values[i], std::strlen(values[i])};
+        ASSERT_EQ(
+            ovphysx_set_global_config_entry(
+                ovphysx_config_entry_carbonite(path, value)).status,
+            OVPHYSX_API_SUCCESS);
+
+        ovphysx_config_value_t out = {};
+        ASSERT_EQ(
+            ovphysx_get_global_config(OVPHYSX_GLOBAL_CONFIG_NUM_THREADS, &out).status,
+            OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(out.value.int64_value, expected[i]);
+
+        ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+        ASSERT_EQ(ovphysx_create_instance(&handle).status, OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(
+            ovphysx_get_global_config(OVPHYSX_GLOBAL_CONFIG_NUM_THREADS, &out).status,
+            OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(out.value.int64_value, expected[i]);
+        ASSERT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
+    }
+
+    ASSERT_EQ(
+        ovphysx_set_global_config_entry(ovphysx_config_entry_num_threads(8)).status,
+        OVPHYSX_API_SUCCESS);
+}
+
+TEST(ScopedConfig, LegacyNumThreadsRejectsOutOfRange)
+{
+    destroySharedCpuInstance();
+    ovphysx_instance_handle_t warmup = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&warmup).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_destroy_instance(warmup).status, OVPHYSX_API_SUCCESS);
+
+    ASSERT_EQ(
+        ovphysx_set_global_config(
+            OVPHYSX_GLOBAL_CONFIG_NUM_THREADS, ovphysx_config_value_int64(4)).status,
+        OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(
+        ovphysx_set_global_config_entry(ovphysx_config_entry_num_threads(256)).status,
+        OVPHYSX_API_INVALID_ARGUMENT);
+
+    ovphysx_config_value_t out = {};
+    ASSERT_EQ(
+        ovphysx_get_global_config(OVPHYSX_GLOBAL_CONFIG_NUM_THREADS, &out).status,
+        OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(out.value.int64_value, 4);
+
+    ASSERT_EQ(
+        ovphysx_set_global_config_entry(ovphysx_config_entry_num_threads(8)).status,
+        OVPHYSX_API_SUCCESS);
+}
+
+TEST(ScopedConfig, LegacyNumThreadsRejectedWhileStageAttached)
+{
+    ovphysx_config_value_t current = {};
+    ASSERT_EQ(
+        ovphysx_get_global_config(OVPHYSX_GLOBAL_CONFIG_NUM_THREADS, &current).status,
+        OVPHYSX_API_SUCCESS);
+    const int64_t prior = current.value.int64_value;
+    const int32_t rejected = prior == 0 ? 1 : 0;
+
+    destroySharedCpuInstance();
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&handle).status, OVPHYSX_API_SUCCESS);
+    ASSERT_TRUE(attach_usd_with_ovstage(
+        handle,
+        OVPHYSX_SOURCE_DIR "/tests/data/minimal_scene.usda"));
+
+    EXPECT_EQ(
+        ovphysx_set_global_config_entry(ovphysx_config_entry_num_threads(rejected)).status,
+        OVPHYSX_API_INVALID_STATE);
+    ovphysx_config_value_t out = {};
+    ASSERT_EQ(
+        ovphysx_get_global_config(OVPHYSX_GLOBAL_CONFIG_NUM_THREADS, &out).status,
+        OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(out.value.int64_value, prior);
+
+    ASSERT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
+}
+
+TEST(ScopedConfig, LegacyProfilerBackendRejectedAfterCreate)
+{
+    destroySharedCpuInstance();
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&handle).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(
+        ovphysx_set_global_config_entry(
+            ovphysx_config_entry_profiler_backend(OVPHYSX_PROFILER_BACKEND_NVTX)).status,
+        OVPHYSX_API_INVALID_STATE);
+    ASSERT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
+}
+
+TEST(ScopedConfig, CustomConeGeometryInvertsApproximateSetting)
+{
+    destroySharedCpuInstance();
+    ASSERT_EQ(
+        ovphysx_set_global_config(
+            OVPHYSX_GLOBAL_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY,
+            ovphysx_config_value_bool(false)).status,
+        OVPHYSX_API_SUCCESS);
+
+    bool approximate = false;
+    ASSERT_EQ(
+        ovphysx_test_get_settings_bool("/physics/collisionApproximateCones", &approximate).status,
+        OVPHYSX_API_SUCCESS);
+    EXPECT_TRUE(approximate);
+
+    ovphysx_config_value_t out = {};
+    ASSERT_EQ(
+        ovphysx_get_global_config(
+            OVPHYSX_GLOBAL_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY, &out).status,
+        OVPHYSX_API_SUCCESS);
+    EXPECT_FALSE(out.value.bool_value);
+
+    bool legacy = true;
+    ASSERT_EQ(
+        ovphysx_get_global_config_bool(
+            OVPHYSX_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY, &legacy).status,
+        OVPHYSX_API_SUCCESS);
+    EXPECT_FALSE(legacy);
+
+    ASSERT_EQ(
+        ovphysx_set_global_config(
+            OVPHYSX_GLOBAL_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY,
+            ovphysx_config_value_bool(true)).status,
+        OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(
+        ovphysx_test_get_settings_bool("/physics/collisionApproximateCones", &approximate).status,
+        OVPHYSX_API_SUCCESS);
+    EXPECT_FALSE(approximate);
+    ASSERT_EQ(
+        ovphysx_get_global_config(
+            OVPHYSX_GLOBAL_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY, &out).status,
+        OVPHYSX_API_SUCCESS);
+    EXPECT_TRUE(out.value.bool_value);
+}
+
+class CollisionGeometryConfigTest : public PhysXTestFixture
 {
 protected:
     void SetUp() override
     {
-        ASSERT_TRUE(ensureSharedCpuInstance());
-        destroySharedCpuInstance();
-        ASSERT_EQ(ovphysx_get_global_config_bool(
-            OVPHYSX_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY, &m_cone).status,
+        ASSERT_EQ(ovphysx_get_global_config(
+            OVPHYSX_GLOBAL_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY, &m_cone).status,
             OVPHYSX_API_SUCCESS);
-        ASSERT_EQ(ovphysx_get_global_config_bool(
-            OVPHYSX_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY, &m_cylinder).status,
+        ASSERT_EQ(ovphysx_get_global_config(
+            OVPHYSX_GLOBAL_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY, &m_cylinder).status,
             OVPHYSX_API_SUCCESS);
         m_saved = true;
+        PhysXTestFixture::SetUp();
     }
 
     void TearDown() override
     {
-        if (m_handle)
-        {
-            EXPECT_TRUE(destroy_ovstage_test_attachments(m_handle));
-            EXPECT_EQ(ovphysx_destroy_instance(m_handle).status, OVPHYSX_API_SUCCESS);
-        }
+        PhysXTestFixture::TearDown();
         if (m_saved)
         {
             EXPECT_EQ(ovphysx_set_global_config(
-                ovphysx_config_entry_collision_cone_custom_geometry(m_cone)).status,
+                OVPHYSX_GLOBAL_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY, m_cone).status,
                 OVPHYSX_API_SUCCESS);
             EXPECT_EQ(ovphysx_set_global_config(
-                ovphysx_config_entry_collision_cylinder_custom_geometry(m_cylinder)).status,
+                OVPHYSX_GLOBAL_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY, m_cylinder).status,
                 OVPHYSX_API_SUCCESS);
         }
     }
 
-    void checkGeometry(bool coneCustom)
-    {
-        ASSERT_TRUE(attach_usd_with_ovstage(m_handle, "tests/data/cone_and_cylinder.usda"));
-        ASSERT_EQ(ovphysx_step_sync(m_handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
-        const char* paths[] = { "/World/Cone", "/World/Cylinder" };
-        const ovphysx_config_bool_t keys[] = {
-            OVPHYSX_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY,
-            OVPHYSX_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY,
-        };
-        for (int index = 0; index < 2; ++index)
-        {
-            SCOPED_TRACE(paths[index]);
-            const bool custom = index == 0 ? coneCustom : !coneCustom;
-            bool value = !custom;
-            ASSERT_EQ(ovphysx_get_global_config_bool(keys[index], &value).status, OVPHYSX_API_SUCCESS);
-            EXPECT_EQ(value, custom);
-            void* pointer = nullptr;
-            ASSERT_EQ(ovphysx_get_physx_ptr(m_handle, ovphysx_cstr(paths[index]),
-                OVPHYSX_PHYSX_TYPE_SHAPE, &pointer).status, OVPHYSX_API_SUCCESS);
-            ASSERT_NE(pointer, nullptr);
-            const physx::PxShape* shape = static_cast<const physx::PxShape*>(pointer);
-            EXPECT_EQ(shape->getGeometry().getType(), custom ?
-                physx::PxGeometryType::eCONVEXCORE : physx::PxGeometryType::eCONVEXMESH);
-        }
-        ASSERT_TRUE(destroy_ovstage_test_attachments(m_handle));
-    }
-
-    void setRawApproximation(bool coneApproximate)
-    {
-        ASSERT_EQ(ovphysx_set_global_config(ovphysx_config_entry_carbonite(
-            OVPHYSX_LITERAL("/physics/collisionApproximateCones"),
-            coneApproximate ? OVPHYSX_LITERAL("true") : OVPHYSX_LITERAL("false"))).status,
-            OVPHYSX_API_SUCCESS);
-        ASSERT_EQ(ovphysx_set_global_config(ovphysx_config_entry_carbonite(
-            OVPHYSX_LITERAL("/physics/collisionApproximateCylinders"),
-            coneApproximate ? OVPHYSX_LITERAL("false") : OVPHYSX_LITERAL("true"))).status,
-            OVPHYSX_API_SUCCESS);
-    }
-
-    ovphysx_handle_t m_handle = OVPHYSX_INVALID_HANDLE;
-
 private:
-    bool m_cone = false;
-    bool m_cylinder = false;
+    ovphysx_config_value_t m_cone{};
+    ovphysx_config_value_t m_cylinder{};
     bool m_saved = false;
 };
 
-TEST_F(CollisionGeometryConfigTest, CreationEntriesAndRawSettingsSelectShapeGeometry)
+TEST_F(CollisionGeometryConfigTest, SelectsConeAndCylinderShapeGeometry)
 {
     for (bool coneCustom : { true, false })
     {
         SCOPED_TRACE(coneCustom);
-        // Seed opposite runtime values without relying on the typed mapping.
-        ASSERT_NO_FATAL_FAILURE(setRawApproximation(coneCustom));
-        const ovphysx_config_entry_t entries[] = {
-            ovphysx_config_entry_collision_cone_custom_geometry(coneCustom),
-            ovphysx_config_entry_collision_cylinder_custom_geometry(!coneCustom),
-        };
-        ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-        args.config_entries = entries;
-        args.config_entry_count = 2;
-        ASSERT_EQ(ovphysx_create_instance(&args, &m_handle).status, OVPHYSX_API_SUCCESS);
-        ASSERT_NO_FATAL_FAILURE(checkGeometry(coneCustom));
+        ASSERT_EQ(ovphysx_set_global_config(
+            OVPHYSX_GLOBAL_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY,
+            ovphysx_config_value_bool(coneCustom)).status, OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(ovphysx_set_global_config(
+            OVPHYSX_GLOBAL_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY,
+            ovphysx_config_value_bool(!coneCustom)).status, OVPHYSX_API_SUCCESS);
+        ASSERT_TRUE(attach_usd_with_ovstage(m_handle, "tests/data/cone_and_cylinder.usda"));
 
-        ASSERT_NO_FATAL_FAILURE(setRawApproximation(coneCustom));
-        ASSERT_NO_FATAL_FAILURE(checkGeometry(!coneCustom));
-        ASSERT_EQ(ovphysx_destroy_instance(m_handle).status, OVPHYSX_API_SUCCESS);
-        m_handle = OVPHYSX_INVALID_HANDLE;
+        physx::PxShape* cone = static_cast<physx::PxShape*>(
+            read_physx_pointer(m_handle, OVPHYSX_QUERY_TARGET_SHAPE, "/World/Cone"));
+        physx::PxShape* cylinder = static_cast<physx::PxShape*>(
+            read_physx_pointer(m_handle, OVPHYSX_QUERY_TARGET_SHAPE, "/World/Cylinder"));
+        ASSERT_NE(cone, nullptr);
+        ASSERT_NE(cylinder, nullptr);
+        EXPECT_EQ(cone->getGeometry().getType(), coneCustom ?
+            physx::PxGeometryType::eCONVEXCORE : physx::PxGeometryType::eCONVEXMESH);
+        EXPECT_EQ(cylinder->getGeometry().getType(), coneCustom ?
+            physx::PxGeometryType::eCONVEXMESH : physx::PxGeometryType::eCONVEXCORE);
+
+        ASSERT_TRUE(destroy_ovstage_test_attachments(m_handle));
     }
+}
+
+TEST(ScopedConfig, NumThreadsRejectedWhileStageAttached)
+{
+    ovphysx_config_value_t current = {};
+    ASSERT_EQ(
+        ovphysx_get_global_config(OVPHYSX_GLOBAL_CONFIG_NUM_THREADS, &current).status,
+        OVPHYSX_API_SUCCESS);
+    const int64_t prior = current.value.int64_value;
+    const int64_t rejected = prior == 0 ? 1 : 0;
+
+    destroySharedCpuInstance();
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&handle).status, OVPHYSX_API_SUCCESS);
+    ASSERT_TRUE(attach_usd_with_ovstage(
+        handle,
+        OVPHYSX_SOURCE_DIR "/tests/data/minimal_scene.usda"));
+
+    EXPECT_EQ(
+        ovphysx_set_global_config(
+            OVPHYSX_GLOBAL_CONFIG_NUM_THREADS, ovphysx_config_value_int64(rejected)).status,
+        OVPHYSX_API_INVALID_STATE);
+    ovphysx_config_value_t out = {};
+    ASSERT_EQ(
+        ovphysx_get_global_config(OVPHYSX_GLOBAL_CONFIG_NUM_THREADS, &out).status,
+        OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(out.value.int64_value, prior);
+
+    ASSERT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
 }
 
 // set_global_config with a typed bool entry must succeed.
 TEST(TypedConfig, SetBoolSucceeds)
 {
-    ovphysx_result_t r = ovphysx_set_global_config(
+    ovphysx_result_t r = ovphysx_set_global_config_entry(
         ovphysx_config_entry_disable_contact_processing(false));
     EXPECT_EQ(r.status, OVPHYSX_API_SUCCESS)
         << "set_global_config(bool) must succeed for a known-writable key";
@@ -179,7 +499,7 @@ TEST(TypedConfig, SetBoolSucceeds)
 // Bool roundtrip: set then get.
 TEST(TypedConfig, BoolRoundTrip)
 {
-    ovphysx_result_t r = ovphysx_set_global_config(
+    ovphysx_result_t r = ovphysx_set_global_config_entry(
         ovphysx_config_entry_disable_contact_processing(true));
     if (r.status != OVPHYSX_API_SUCCESS)
         GTEST_SKIP() << "Setting not writable; skipping round-trip test";
@@ -190,7 +510,7 @@ TEST(TypedConfig, BoolRoundTrip)
     EXPECT_TRUE(out) << "Bool value must round-trip correctly";
 
     // Toggle back
-    r = ovphysx_set_global_config(
+    r = ovphysx_set_global_config_entry(
         ovphysx_config_entry_disable_contact_processing(false));
     ASSERT_EQ(r.status, OVPHYSX_API_SUCCESS);
 
@@ -202,7 +522,7 @@ TEST(TypedConfig, BoolRoundTrip)
 // Int32 roundtrip: set num_threads then get.
 TEST(TypedConfig, Int32RoundTrip)
 {
-    ovphysx_result_t r = ovphysx_set_global_config(
+    ovphysx_result_t r = ovphysx_set_global_config_entry(
         ovphysx_config_entry_num_threads(8));
     ASSERT_EQ(r.status, OVPHYSX_API_SUCCESS);
 
@@ -222,59 +542,27 @@ TEST(TypedConfig, OvstageReadPoolMaxMbRoundTrip)
     ASSERT_EQ(ovphysx_get_global_config_int32(OVPHYSX_CONFIG_OVSTAGE_READ_POOL_MAX_MB, &original).status,
               OVPHYSX_API_SUCCESS);
 
-    ASSERT_EQ(ovphysx_set_global_config(ovphysx_config_entry_ovstage_read_pool_max_mb(64)).status,
+    ASSERT_EQ(ovphysx_set_global_config_entry(ovphysx_config_entry_ovstage_read_pool_max_mb(64)).status,
               OVPHYSX_API_SUCCESS);
     int32_t out = 0;
     ASSERT_EQ(ovphysx_get_global_config_int32(OVPHYSX_CONFIG_OVSTAGE_READ_POOL_MAX_MB, &out).status,
               OVPHYSX_API_SUCCESS);
     EXPECT_EQ(out, 64) << "pool budget must round-trip through /physics/ovstageReadPoolMaxMB";
 
-    ASSERT_EQ(ovphysx_set_global_config(ovphysx_config_entry_ovstage_read_pool_max_mb(0)).status,
+    ASSERT_EQ(ovphysx_set_global_config_entry(ovphysx_config_entry_ovstage_read_pool_max_mb(0)).status,
               OVPHYSX_API_SUCCESS);
     ASSERT_EQ(ovphysx_get_global_config_int32(OVPHYSX_CONFIG_OVSTAGE_READ_POOL_MAX_MB, &out).status,
               OVPHYSX_API_SUCCESS);
     EXPECT_EQ(out, 0) << "0 disables the pool and is an accepted, round-tripping value";
 
-    ASSERT_EQ(ovphysx_set_global_config(ovphysx_config_entry_ovstage_read_pool_max_mb(original)).status,
+    ASSERT_EQ(ovphysx_set_global_config_entry(ovphysx_config_entry_ovstage_read_pool_max_mb(original)).status,
               OVPHYSX_API_SUCCESS);
-}
-
-TEST(TypedConfig, CreateOnlyKeysCannotMutateLiveRuntime)
-{
-    destroySharedCpuInstance();
-    ASSERT_EQ(ovphysx_set_global_config(ovphysx_config_entry_omnipvd_output_enabled(false)).status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_set_global_config(
-        ovphysx_config_entry_omnipvd_ovd_recording_directory(OVPHYSX_LITERAL(""))).status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(
-        ovphysx_set_global_config(ovphysx_config_entry_omnipvd_transport(OVPHYSX_OMNIPVD_TRANSPORT_FILE_NAME)).status,
-        OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_set_global_config(
-        ovphysx_config_entry_omnipvd_tcp_address(OVPHYSX_LITERAL(""))).status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_set_global_config(ovphysx_config_entry_omnipvd_tcp_port(1234)).status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_set_global_config(ovphysx_config_entry_omnipvd_tcp_timeout_ms(0)).status, OVPHYSX_API_SUCCESS);
-
-    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-    ovphysx_handle_t handle = OVPHYSX_INVALID_HANDLE;
-    ASSERT_EQ(ovphysx_create_instance(&args, &handle).status, OVPHYSX_API_SUCCESS);
-    ASSERT_NE(handle, OVPHYSX_INVALID_HANDLE);
-
-    EXPECT_EQ(ovphysx_set_global_config(ovphysx_config_entry_omnipvd_tcp_port(4321)).status, OVPHYSX_API_ERROR);
-    EXPECT_EQ(
-        ovphysx_set_global_config(ovphysx_config_entry_carbonite(
-            OVPHYSX_LITERAL("/physics/omniPvdTransport"), OVPHYSX_OMNIPVD_TRANSPORT_TCP_NAME)).status,
-        OVPHYSX_API_ERROR);
-
-    int32_t port = 0;
-    EXPECT_EQ(ovphysx_get_global_config_int32(OVPHYSX_CONFIG_OMNIPVD_TCP_PORT, &port).status, OVPHYSX_API_SUCCESS);
-    EXPECT_EQ(port, 1234);
-    ASSERT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_set_global_config(ovphysx_config_entry_omnipvd_tcp_port(0)).status, OVPHYSX_API_SUCCESS);
 }
 
 // Raw Carbonite setting override roundtrip.
 TEST(TypedConfig, CarboniteDirectOverride)
 {
-    ovphysx_result_t r = ovphysx_set_global_config(
+    ovphysx_result_t r = ovphysx_set_global_config_entry(
         ovphysx_config_entry_carbonite(
             OVPHYSX_LITERAL("/physics/disableContactProcessing"),
             OVPHYSX_LITERAL("true")));
@@ -335,7 +623,7 @@ TEST(TypedConfig, StringOutputRejectsMissingBuffer)
     size_t requiredSize = 0;
     EXPECT_EQ(
         ovphysx_get_global_config_string(
-            OVPHYSX_CONFIG_OMNIPVD_OVD_RECORDING_DIRECTORY, &value, &requiredSize).status,
+            OVPHYSX_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY, &value, &requiredSize).status,
         OVPHYSX_API_INVALID_ARGUMENT);
 }
 
@@ -346,9 +634,7 @@ TEST(TypedConfig, StringOutputPreservesCapacityForRetry)
     ovphysx_string_t priorValue = { priorProbe, sizeof(priorProbe) };
     size_t priorRequiredSize = 0;
     ovphysx_result_t priorResult = ovphysx_get_global_config_string(
-        OVPHYSX_CONFIG_OMNIPVD_OVD_RECORDING_DIRECTORY, &priorValue, &priorRequiredSize);
-    if (priorResult.status == OVPHYSX_API_NOT_FOUND)
-        GTEST_SKIP() << "Recording-directory setting is absent; preserving that state without mutation";
+        OVPHYSX_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY, &priorValue, &priorRequiredSize);
     ASSERT_TRUE(
         priorResult.status == OVPHYSX_API_SUCCESS ||
         priorResult.status == OVPHYSX_API_BUFFER_TOO_SMALL);
@@ -364,26 +650,24 @@ TEST(TypedConfig, StringOutputPreservesCapacityForRetry)
         priorValue = { priorBuffer.data(), priorBuffer.size() };
         ASSERT_EQ(
             ovphysx_get_global_config_string(
-                OVPHYSX_CONFIG_OMNIPVD_OVD_RECORDING_DIRECTORY,
+                OVPHYSX_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY,
                 &priorValue,
                 &priorRequiredSize).status,
             OVPHYSX_API_SUCCESS);
         prior.assign(priorValue.ptr, priorValue.length);
     }
-    const ScopedRecordingDirectoryRestore restore(prior);
+    const ScopedCookedCachePathRestore restore(prior);
 
     static constexpr char expected[] = "ovphysx-config-contract";
-    ASSERT_EQ(
-        ovphysx_set_global_config(
-            ovphysx_config_entry_omnipvd_ovd_recording_directory(OVPHYSX_LITERAL(expected))).status,
-        OVPHYSX_API_SUCCESS);
+    ASSERT_TRUE(ovphysx_set_raw_string_setting_for_test_internal(
+        "/UJITSO/datastore/localCachePath", expected, sizeof(expected) - 1));
 
     char fullBuffer[sizeof(expected)] = {};
     ovphysx_string_t fullValue = { fullBuffer, sizeof(fullBuffer) };
     size_t requiredSize = 0;
     ASSERT_EQ(
         ovphysx_get_global_config_string(
-            OVPHYSX_CONFIG_OMNIPVD_OVD_RECORDING_DIRECTORY, &fullValue, &requiredSize).status,
+            OVPHYSX_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY, &fullValue, &requiredSize).status,
         OVPHYSX_API_SUCCESS);
     EXPECT_EQ(fullValue.length, sizeof(expected) - 1);
     EXPECT_EQ(requiredSize, sizeof(expected));
@@ -395,7 +679,7 @@ TEST(TypedConfig, StringOutputPreservesCapacityForRetry)
     requiredSize = 0;
     EXPECT_EQ(
         ovphysx_get_global_config_string(
-            OVPHYSX_CONFIG_OMNIPVD_OVD_RECORDING_DIRECTORY, &smallValue, &requiredSize).status,
+            OVPHYSX_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY, &smallValue, &requiredSize).status,
         OVPHYSX_API_BUFFER_TOO_SMALL);
     EXPECT_EQ(smallValue.length, sizeof(smallBuffer));
     EXPECT_EQ(smallValue.ptr[sizeof(smallBuffer) - 1], '\0');
@@ -405,7 +689,7 @@ TEST(TypedConfig, StringOutputPreservesCapacityForRetry)
     ovphysx_string_t oneByteValue = { oneByteBuffer, sizeof(oneByteBuffer) };
     EXPECT_EQ(
         ovphysx_get_global_config_string(
-            OVPHYSX_CONFIG_OMNIPVD_OVD_RECORDING_DIRECTORY, &oneByteValue, &requiredSize).status,
+            OVPHYSX_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY, &oneByteValue, &requiredSize).status,
         OVPHYSX_API_BUFFER_TOO_SMALL);
     EXPECT_EQ(oneByteValue.length, sizeof(oneByteBuffer));
     EXPECT_EQ(oneByteValue.ptr[0], '\0');
@@ -415,7 +699,7 @@ TEST(TypedConfig, StringOutputPreservesCapacityForRetry)
     ovphysx_string_t retryValue = { retryBuffer.data(), retryBuffer.size() };
     ASSERT_EQ(
         ovphysx_get_global_config_string(
-            OVPHYSX_CONFIG_OMNIPVD_OVD_RECORDING_DIRECTORY, &retryValue, &requiredSize).status,
+            OVPHYSX_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY, &retryValue, &requiredSize).status,
         OVPHYSX_API_SUCCESS);
     EXPECT_EQ(retryValue.length, sizeof(expected) - 1);
     EXPECT_EQ(retryValue.ptr[retryValue.length], '\0');
@@ -431,7 +715,7 @@ TEST(TypedConfig, StringOutputRejectsCapacityAboveUint32)
     size_t requiredSize = 0;
     EXPECT_EQ(
         ovphysx_get_global_config_string(
-            OVPHYSX_CONFIG_OMNIPVD_OVD_RECORDING_DIRECTORY, &value, &requiredSize).status,
+            OVPHYSX_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY, &value, &requiredSize).status,
         OVPHYSX_API_INVALID_ARGUMENT);
 }
 #endif

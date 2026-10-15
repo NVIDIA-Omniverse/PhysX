@@ -63,9 +63,49 @@
       "files": [],
       "expectations": [
         "Selects tensor-bindings-gpu to maintain the existing CUDA binding code",
+        "Sets ConfigKey.ACTIVE_CUDA_GPUS through physx.set_config after PhysX creation and before attach rather than passing the GPU ordinal through instance creation",
+        "Leaves /physics/suppressReadback on the legacy PhysXConfig carbonite path instead of inventing a scoped DirectGPU key",
         "Clones then wait_all (or equivalent wait) before create_tensor_binding when binding /World/envs/env*",
         "Passes raise_if_empty=True on create_tensor_binding, or checks binding.count before read/write",
         "Keeps native_device.device_type.value != DLDeviceType.kDLCUDA rather than comparing the enum object to the int"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "My existing C GPU tensor-binding application populates its USD scene before creating bindings. After upgrading ovphysx, ovphysx_get_codeless_schema_root is gone. Show the schema setup migration while keeping the existing binding workflow.",
+      "expected_output": "Explicit external PhysX schema provisioning and registration before population, with the existing tensor-binding workflow retained.",
+      "files": [],
+      "expectations": [
+        "Installs physx-usd-schemas independently of the ovphysx product",
+        "Unpacks the provider wheel separately, preserves distribution metadata, and uses the native sample helper with PHYSX_USD_SCHEMAS_ROOT",
+        "Keeps exact artifact selection in the native provider lock; validates both resource directories before population, with actionable missing or incomplete provider diagnostics",
+        "Registers both module resources before the first population and never calls a retired PhysX schema-location helper",
+        "Keeps the existing deprecated binding workflow as requested while identifying the session API as the preferred route for new code"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "In my existing CUDA tensor-binding pipeline, a populated articulation under a translated parent starts at its local position. Which population mask should the initial attach use?",
+      "expected_output": "Uses PopulationDomain.ALL before sealing and attaching, so OVStage 0.3 resolves nested world transforms via the rendering domain.",
+      "files": [],
+      "expectations": [
+        "Uses domains=ovstage.PopulationDomain.ALL for initial USD population",
+        "Explains that PHYSICS-only population seeds world matrices with local values in the pinned OVStage 0.3 release",
+        "Seals the populated ordinal before attach_ovstage and collects the attach task before dependent operations"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "My existing Python CUDA tensor-binding application loads a USD scene containing newton:velocityLimit. Show the package installation and scene-loading setup while keeping my existing PyTorch tensor-binding workflow.",
+      "expected_output": "Installs the external PhysX and Newton schema packages and registers both before population, while retaining the existing CUDA tensor-binding workflow.",
+      "files": [],
+      "expectations": [
+        "Selects tensor-bindings-gpu to maintain the existing CUDA binding code",
+        "Installs physx-usd-schemas and newton-usd-schemas separately from ovphysx",
+        "Uses the sample physx_schema_paths() recipe and ovphysx.newton_schema_root() without importing either provider or USD",
+        "Registers both PhysX resource directories and the Newton root unconditionally with ovstage.population.register_usd_schemas before the first population call",
+        "Populates with domains=ovstage.PopulationDomain.ALL, seals the ordinal, and collects attach_ovstage completion before dependent operations",
+        "Keeps the existing deprecated binding workflow as requested while identifying the session API as the preferred route for new code"
       ]
     }
   ]

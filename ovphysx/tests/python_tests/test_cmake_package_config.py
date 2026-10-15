@@ -6,7 +6,11 @@
 # @implements REQ-PACKAGING-OVSTAGEVERSION-001
 # @covers AC-1 AC-2 AC-3
 # @maps_to TEST-PACKAGING-OVSTAGEVERSION-001
+# @implements REQ-PACKAGING-OVSTAGE-001
+# @covers AC-5
+# @maps_to TEST-PACKAGING-OVSTAGE-002
 
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -14,7 +18,7 @@ from pathlib import Path
 import pytest
 
 OVPHYSX_DIR = Path(__file__).resolve().parents[2]
-PIN = "0.2.1.385922"
+PIN = "0.3.1.123456.abcdef12"
 
 
 def _run_cmake(*args: str) -> subprocess.CompletedProcess:
@@ -41,6 +45,14 @@ def _generate_packages(tmp_path: Path, pin: str, supplied_version: str, *, schem
     sdk = tmp_path / "sdk"
     config_dir = sdk / "lib" / "cmake" / "ovphysx"
     config_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(OVPHYSX_DIR / "cmake" / "OvstageBootstrap.cmake", config_dir)
+    scripts_dir = sdk / "scripts"
+    scripts_dir.mkdir(exist_ok=True)
+    (scripts_dir / "fetch_ovstage_release.py").write_text(
+        f'OVSTAGE_VERSION = "{pin}"\n'
+        'raise RuntimeError("The offline consumer fixture must never download OVStage")\n',
+        encoding="utf-8",
+    )
     (sdk / "include").mkdir(exist_ok=True)
     (config_dir / "ovphysxTargets.cmake").write_text(
         'add_library(ovphysx::ovphysx INTERFACE IMPORTED)\n'
@@ -60,6 +72,7 @@ def _generate_packages(tmp_path: Path, pin: str, supplied_version: str, *, schem
     (ovstage / "ovstageConfig.cmake").write_text(
         'add_library(ovstage::ovstage INTERFACE IMPORTED)\n'
         f'set(ovstage_INCLUDE_DIRS "{include_dir.as_posix()}")\n'
+        'set(OVSTAGE_BINARY_DIR "${CMAKE_CURRENT_LIST_DIR}/bin")\n'
         'set_target_properties(ovstage::ovstage PROPERTIES\n'
         '    INTERFACE_INCLUDE_DIRECTORIES "${ovstage_INCLUDE_DIRS}")\n',
         encoding="utf-8",
@@ -93,16 +106,23 @@ def _generate_packages(tmp_path: Path, pin: str, supplied_version: str, *, schem
     return config_dir
 
 
-def _configure_consumer(tmp_path: Path, config_dir: Path) -> subprocess.CompletedProcess:
+def _configure_consumer(
+    tmp_path: Path, config_dir: Path, *, required: bool = True, fetch: bool = False
+) -> subprocess.CompletedProcess:
     source = tmp_path / "consumer"
     source.mkdir(exist_ok=True)
     (source / "CMakeLists.txt").write_text(
         'cmake_minimum_required(VERSION 3.22)\n'
         'project(ovphysx_consumer NONE)\n'
+        'set(CMAKE_SYSTEM_PROCESSOR x86_64)\n'
         'set(CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH OFF)\n'
         'set(CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH OFF)\n'
         'set(CMAKE_FIND_USE_CMAKE_SYSTEM_PATH OFF)\n'
-        'find_package(ovphysx REQUIRED CONFIG)\n'
+        f'find_package(ovphysx {"REQUIRED" if required else "QUIET"} CONFIG)\n'
+        'if(NOT ovphysx_FOUND)\n'
+        '    file(WRITE "${CMAKE_BINARY_DIR}/not-found.txt" "${ovphysx_NOT_FOUND_MESSAGE}")\n'
+        '    return()\n'
+        'endif()\n'
         'get_target_property(dependencies ovphysx::ovphysx INTERFACE_LINK_LIBRARIES)\n'
         'if(NOT "ovstage::ovstage" IN_LIST dependencies)\n'
         '    message(FATAL_ERROR "Consumer did not inherit the OVStage target")\n'
@@ -115,21 +135,24 @@ def _configure_consumer(tmp_path: Path, config_dir: Path) -> subprocess.Complete
         "-S", str(source), "-B", str(tmp_path / "consumer-build"),
         f"-Dovphysx_DIR={config_dir.as_posix()}",
         f"-Dovstage_DIR={(tmp_path / 'ovstage').as_posix()}",
+        f"-DOVPHYSX_FETCH_OVSTAGE={'ON' if fetch else 'OFF'}",
+        f"-DOVPHYSX_OVSTAGE_CACHE_DIR={(tmp_path / 'empty-cache').as_posix()}",
         "-DCMAKE_FIND_USE_PACKAGE_REGISTRY=OFF",
         "-DCMAKE_FIND_USE_SYSTEM_PACKAGE_REGISTRY=OFF",
     )
 
 
-@pytest.mark.parametrize("supplied_version", ["0.2.0", "0.2.2", "0.3.0"])
-def test_consumer_rejects_ovstage_from_another_release(tmp_path, supplied_version):
+@pytest.mark.parametrize("supplied_version", ["0.3.0", "0.2.1", "0.4.0"])
+def test_consumer_rejects_incompatible_ovstage_when_fetch_disabled(tmp_path, supplied_version):
     config_dir = _generate_packages(tmp_path, PIN, supplied_version)
     result = _configure_consumer(tmp_path, config_dir)
     assert result.returncode != 0, f"OVStage {supplied_version} was accepted for pin {PIN}:\n{_output(result)}"
     assert "ovstage" in _output(result)
-    assert "0.2.1" in _output(result)
+    assert "0.3.1" in _output(result)
+    assert "OVPHYSX_FETCH_OVSTAGE is OFF" in " ".join(_output(result).split())
 
 
-@pytest.mark.parametrize("pin", [PIN, "0.7.2.999999"])
+@pytest.mark.parametrize("pin", [PIN, "0.7.2.999999", "0.8.0"])
 def test_consumer_accepts_matching_release_and_exposes_full_pin(tmp_path, pin):
     semver = ".".join(pin.split(".")[:3])
     config_dir = _generate_packages(tmp_path, pin, semver)
@@ -138,8 +161,26 @@ def test_consumer_accepts_matching_release_and_exposes_full_pin(tmp_path, pin):
     assert (tmp_path / "consumer-build" / "resolved.txt").read_text(encoding="utf-8").splitlines() == [pin, semver]
 
 
+def test_consumer_prefers_compatible_supplied_package_over_bootstrap(tmp_path):
+    config_dir = _generate_packages(tmp_path, PIN, "0.3.2")
+    result = _configure_consumer(tmp_path, config_dir, fetch=True)
+    assert result.returncode == 0, _output(result)
+    assert "fetching OVStage" not in _output(result)
+    assert (tmp_path / "consumer-build" / "resolved.txt").read_text(encoding="utf-8").splitlines() == [PIN, "0.3.1"]
+    assert not (tmp_path / "empty-cache").exists()
+
+
+def test_quiet_consumer_reports_unavailable_ovstage_without_failing(tmp_path):
+    config_dir = _generate_packages(tmp_path, PIN, "0.4.0")
+    result = _configure_consumer(tmp_path, config_dir, required=False)
+    assert result.returncode == 0, _output(result)
+    message = (tmp_path / "consumer-build" / "not-found.txt").read_text(encoding="utf-8")
+    assert "0.3.1" in message
+    assert "OVPHYSX_FETCH_OVSTAGE is OFF" in message
+
+
 def test_consumer_rejects_missing_schema_registration_api(tmp_path):
-    config_dir = _generate_packages(tmp_path, PIN, "0.2.1", schema_api=False)
+    config_dir = _generate_packages(tmp_path, PIN, "0.3.1", schema_api=False)
     result = _configure_consumer(tmp_path, config_dir)
     assert result.returncode != 0, _output(result)
     assert "ovstage_population_register_usd_schemas" in _output(result)
@@ -165,3 +206,69 @@ def test_package_generation_rejects_missing_or_malformed_pin(tmp_path, source):
     result = _run_cmake("-P", str(script))
     assert result.returncode != 0, _output(result)
     assert "OVSTAGE_VERSION" in _output(result) or "version source is missing" in _output(result)
+
+
+def _generate_windows_launcher(tmp_path: Path) -> tuple[Path, Path]:
+    config_dir = _generate_packages(tmp_path, PIN, "0.3.1")
+    source = tmp_path / "consumer"
+    source.mkdir()
+    executable = tmp_path / "application with spaces" / "probe.exe"
+    executable.parent.mkdir()
+    (source / "CMakeLists.txt").write_text(
+        'cmake_minimum_required(VERSION 3.22)\n'
+        'project(launcher_consumer NONE)\n'
+        'set(WIN32 TRUE)\n'
+        'find_package(ovphysx REQUIRED CONFIG)\n'
+        'add_executable(probe IMPORTED)\n'
+        f'set_property(TARGET probe PROPERTY IMPORTED_LOCATION "{executable.as_posix()}")\n'
+        'ovphysx_set_ovstage_runtime_env(probe)\n'
+        'ovphysx_ovstage_runtime_path(runtime_path)\n'
+        'file(WRITE "${CMAKE_BINARY_DIR}/runtime-path.txt" "${runtime_path}")\n',
+        encoding="utf-8",
+    )
+    result = _run_cmake(
+        "-S", str(source), "-B", str(tmp_path / "consumer-build"),
+        f"-Dovphysx_DIR={config_dir.as_posix()}",
+        f"-Dovstage_DIR={(tmp_path / 'ovstage').as_posix()}",
+        "-DOVPHYSX_FETCH_OVSTAGE=OFF",
+    )
+    assert result.returncode == 0, _output(result)
+    return executable.parent / "run_probe.cmd", executable
+
+
+def test_windows_launcher_scopes_runtime_path_and_returns_child_status(tmp_path):
+    launcher, executable = _generate_windows_launcher(tmp_path)
+    lines = launcher.read_text(encoding="utf-8").splitlines()
+    runtime_path = (tmp_path / "consumer-build" / "runtime-path.txt").read_text(encoding="utf-8")
+    assert len(runtime_path.split(";")) == 4
+    path_assignment = lines.index(f'set "PATH={runtime_path};%PATH%"')
+    launch = lines.index(f'"{executable.as_posix()}" %*')
+    assert lines.index("setlocal") < path_assignment < launch
+    assert lines[-1] == "exit /b %errorlevel%"
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Requires the Windows command interpreter")
+@pytest.mark.parametrize("exit_code", [0, 7])
+def test_windows_launcher_preserves_parent_path_and_child_exit_code(tmp_path, exit_code):
+    launcher, executable = _generate_windows_launcher(tmp_path)
+    command_interpreter = Path(os.environ["SystemRoot"]) / "System32" / "cmd.exe"
+    shutil.copy2(command_interpreter, executable)
+    parent = tmp_path / "parent.cmd"
+    parent.write_text(
+        '@echo off\n'
+        'setlocal\n'
+        'set "ORIGINAL_PATH=%PATH%"\n'
+        + (
+            f'call "{launcher}" /d /c exit /b {exit_code}\n'
+            f'if not "%errorlevel%"=="{exit_code}" exit /b 1\n'
+            'if not "%PATH%"=="%ORIGINAL_PATH%" exit /b 2\n'
+        ) * 2
+        + 'exit /b 0\n',
+        encoding="utf-8",
+    )
+    result = subprocess.run(
+        [str(command_interpreter), "/d", "/c", str(parent)],
+        env=dict(os.environ, PATH=f"{command_interpreter.parent};{tmp_path / 'caller tools'}"),
+        text=True, capture_output=True, check=False,
+    )
+    assert result.returncode == 0, _output(result)

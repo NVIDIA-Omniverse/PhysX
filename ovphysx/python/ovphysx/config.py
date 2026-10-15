@@ -3,11 +3,12 @@
 
 # @implements REQ-CAPI-THREADS-001
 # @covers AC-2
-# @implements REQ-CAPI-COLLISION-CONFIG-001
-# @covers AC-1 AC-3
 
+# @implements REQ-CAPI-OVD-NAMES-001
+# @covers AC-1 AC-2 AC-3 AC-4
 # @implements REQ-PYTHON-OMNIPVD-001
 # @covers AC-1 AC-2
+
 # @implements REQ-PYTHON-OMNIPVD-LATE-001
 # @covers AC-1 AC-2
 # @implements REQ-PYTHON-READPOOL-001
@@ -15,7 +16,7 @@
 
 """Typed config for ovphysx.
 
-@implements REQ-CAPI-NVTX-001
+@implements REQ-CAPI-PROFILER-001
 @covers AC-6
 
 Provides :class:`PhysXConfig`, a dataclass whose fields map 1:1 to the
@@ -24,40 +25,55 @@ applied. The rest keep their Carbonite/PhysX defaults.
 
 Usage::
 
-    from ovphysx import PhysX, PhysXConfig
+    from ovphysx import PhysX, set_global_config
+    from ovphysx.types import GlobalConfigKey
 
-    physx = PhysX(config=PhysXConfig(
-        disable_contact_processing=True,
-        num_threads=4,
-        carbonite_overrides={"/physics/updateToUsd": False},
-    ))
+    set_global_config(GlobalConfigKey.DISABLE_CONTACT_PROCESSING, True)
+    set_global_config(GlobalConfigKey.NUM_THREADS, 4)
+    physx = PhysX()
+
+``PhysXConfig`` is the legacy path. Carbonite-only settings still use
+``carbonite_overrides``; passing ``config=`` emits a ``DeprecationWarning``.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from inspect import Parameter, Signature, signature
+
+from .types import ProfilerBackend
 
 
 # Boolean config key enum values (must match ovphysx_config_bool_t)
 _DISABLE_CONTACT_PROCESSING = 0
 _COLLISION_CONE_CUSTOM_GEOMETRY = 1
 _COLLISION_CYLINDER_CUSTOM_GEOMETRY = 2
-_OMNIPVD_OUTPUT_ENABLED = 3
-_NVTX_ENABLED = 4
-_OMNIPVD_RECORDING_CAPABLE = 5
 
 # Int32 config key enum values (must match ovphysx_config_int32_t)
 _NUM_THREADS = 0
 _SCENE_MULTI_GPU_MODE = 1
-_OMNIPVD_TCP_PORT = 2
-_OMNIPVD_TCP_TIMEOUT_MS = 3
 _OVSTAGE_READ_POOL_MAX_MB = 4
+_PROFILER_BACKEND = 5
 
 # String config key enum values (must match ovphysx_config_string_t)
-_OMNIPVD_OVD_RECORDING_DIRECTORY = 0
 _COOKED_COLLIDER_CACHE_DIRECTORY = 1
-_OMNIPVD_TRANSPORT = 2
-_OMNIPVD_TCP_ADDRESS = 3
+_PROFILER_OUTPUT_PATH = 4
+
+# The names accepted by PhysXConfig.profiler_backend, spelled the way the
+# OVPHYSX_PROFILER environment variable spells them. ProfilerBackend is the single
+# source of truth for the values; types is pure Python, so importing it here does not
+# pull in the native bindings.
+_PROFILER_BACKEND_NAMES = {member.name.lower(): int(member) for member in ProfilerBackend}
+
+_RETIRED_OVD_FIELDS = frozenset({
+    "omnipvd_recording_capable",
+    "omnipvd_output_enabled",
+    "omnipvd_ovd_recording_directory",
+    "omnipvd_transport",
+    "omnipvd_tcp_address",
+    "omnipvd_tcp_port",
+    "omnipvd_tcp_timeout_ms",
+})
 
 
 # ---------------------------------------------------------------------------
@@ -130,7 +146,7 @@ def _make_carbonite_entry(key: str, value: bool | int | float | str):
 
 @dataclass(frozen=True)
 class OmniPvdDestination:
-    """Exact destination for a late OmniPVD recording session."""
+    """Exact destination for an explicit OVD recording session."""
 
     transport: str
     file_path: str = ""
@@ -184,40 +200,36 @@ class PhysXConfig:
     All fields default to ``None`` (= use Carbonite/PhysX default).
     Only non-None fields are applied.
 
-    Example::
+    Settings with a ``GlobalConfigKey`` use the global API instead::
 
-        from ovphysx import PhysX, PhysXConfig
+        from ovphysx import PhysX, set_global_config
+        from ovphysx.types import GlobalConfigKey
 
-        physx = PhysX(config=PhysXConfig(
-            disable_contact_processing=True,
-            num_threads=4,
-            carbonite_overrides={"/physics/updateToUsd": False},
-        ))
+        set_global_config(GlobalConfigKey.DISABLE_CONTACT_PROCESSING, True)
+        set_global_config(GlobalConfigKey.NUM_THREADS, 4)
+        physx = PhysX()
+
+    Carbonite-only settings still use ``carbonite_overrides``; passing
+    ``config=`` emits a ``DeprecationWarning``.
     """
 
     disable_contact_processing: bool | None = None
-    #: True (default) selects a convex core; False selects a convex mesh.
-    #: Set before stage attachment; existing shapes are not rebuilt.
     collision_cone_custom_geometry: bool | None = None
-    #: True (default) selects a convex core; False selects a convex mesh.
-    #: Set before stage attachment; existing shapes are not rebuilt.
     collision_cylinder_custom_geometry: bool | None = None
     num_threads: int | None = None
     scene_multi_gpu_mode: int | None = None  #: 0=disabled, 1=all GPUs, 2=skip first GPU. Used only when active_cuda_gpus is empty
-    omnipvd_output_enabled: bool | None = None  #: Must be set before instance creation
-    #: Enables late :meth:`PhysX.start_recording`. Set before the first instance is created.
-    #: Process-wide and unset/false by default. ``omnipvd_output_enabled=True`` also
-    #: enables this capability. Otherwise default creation installs no OmniPVD provider.
-    omnipvd_recording_capable: bool | None = None
-    omnipvd_ovd_recording_directory: str | None = None  #: Must be set before instance creation
-    omnipvd_transport: str | None = None  #: Exact lowercase "file" or "tcp"
-    omnipvd_tcp_address: str | None = None
-    omnipvd_tcp_port: int | None = None
-    omnipvd_tcp_timeout_ms: int | None = None  #: 0 uses the OS send timeout and a 3000 ms connect window
-    #: Emit NVTX ranges for the ovphysx API calls and the PhysX SDK profile zones, for
-    #: capture with Nsight Systems. Off by default. Must be set before instance creation.
-    #: Setting OVPHYSX_NVTX=1 in the environment has the same effect.
-    nvtx_enabled: bool | None = None
+    #: Profiler backend for the ovphysx API zones, the runtime's host-side zones (stage
+    #: load, collision cooking, step orchestration) and the PhysX SDK profile zones.
+    #: Accepts ``"none"``, ``"nvtx"`` or ``"trace"`` (case-insensitive), or a
+    #: ``PROFILER_BACKEND_*`` value. Off by default; must be set before instance creation,
+    #: because the profiler is bound during engine startup. Setting
+    #: ``OVPHYSX_PROFILER=nvtx`` in the environment has the same effect.
+    profiler_backend: str | int | None = None
+    #: Destination file for ``profiler_backend="trace"``, ignored by the other backends.
+    #: Unset writes ``ct-profile <date> <time>.json`` to the working directory. The trace
+    #: is written when the last instance shuts down. Setting ``OVPHYSX_PROFILER_OUTPUT``
+    #: in the environment has the same effect.
+    profiler_output_path: str | None = None
     #: Directory for the local cooked-collider (UJITSO) cache. Provide this to persist cooked
     #: colliders across runs and reuse them on the next launch. If left None, ovphysx cooks to a
     #: process-private temp directory that is discarded at shutdown, so nothing persists.
@@ -231,27 +243,32 @@ class PhysXConfig:
     ovstage_read_pool_max_mb: int | None = None
     carbonite_overrides: dict[str, bool | int | float | str] | None = None
 
+    def __new__(cls, *args, **kwargs):
+        retired = sorted(_RETIRED_OVD_FIELDS.intersection(kwargs))
+        if retired:
+            raise TypeError(
+                f"PhysXConfig.{retired[0]} was removed in 0.7: call "
+                "set_global_config(GlobalConfigKey.OVD_RECORDING_CAPABLE, True) "
+                "before the first PhysX(), attach, then "
+                "PhysX.start_recording(OmniPvdDestination.file(...) or .tcp(...)). "
+                "See docs/ovd_api_migration.md."
+            )
+        return super().__new__(cls)
+
     def __post_init__(self):
         _bool_fields = (
             "disable_contact_processing",
             "collision_cone_custom_geometry",
             "collision_cylinder_custom_geometry",
-            "omnipvd_output_enabled",
-            "nvtx_enabled",
-            "omnipvd_recording_capable",
         )
         _int_fields = (
             "num_threads",
             "scene_multi_gpu_mode",
-            "omnipvd_tcp_port",
-            "omnipvd_tcp_timeout_ms",
             "ovstage_read_pool_max_mb",
         )
         _str_fields = (
-            "omnipvd_ovd_recording_directory",
-            "omnipvd_transport",
-            "omnipvd_tcp_address",
             "cooked_collider_cache_dir",
+            "profiler_output_path",
         )
         for name in _bool_fields:
             value = getattr(self, name)
@@ -269,16 +286,79 @@ class PhysXConfig:
             raise TypeError(
                 f"PhysXConfig.carbonite_overrides must be dict, got {type(self.carbonite_overrides).__name__}"
             )
-        if self.omnipvd_transport is not None and self.omnipvd_transport not in ("file", "tcp"):
-            raise ValueError("PhysXConfig.omnipvd_transport must be 'file' or 'tcp'")
-        if self.omnipvd_transport == "tcp":
-            if not self.omnipvd_tcp_address:
-                raise ValueError("PhysXConfig.omnipvd_tcp_address must be non-empty for TCP")
-            if self.omnipvd_tcp_port is None or not 1 <= self.omnipvd_tcp_port <= 65535:
-                raise ValueError("PhysXConfig.omnipvd_tcp_port must be in 1..65535 for TCP")
-            timeout = 0 if self.omnipvd_tcp_timeout_ms is None else self.omnipvd_tcp_timeout_ms
-            if not 0 <= timeout <= 2**31 - 1:
-                raise ValueError("PhysXConfig.omnipvd_tcp_timeout_ms must be in 0..INT32_MAX")
+        # Normalized to the int the C enum expects, so _to_c_config stays a plain lookup.
+        # Names are accepted because that is how the environment variable spells it, and
+        # a caller who writes profiler_backend="nvtx" should not have to import a constant.
+        if self.profiler_backend is not None:
+            if isinstance(self.profiler_backend, str):
+                normalized = _PROFILER_BACKEND_NAMES.get(self.profiler_backend.lower())
+                if normalized is None:
+                    raise ValueError(
+                        "PhysXConfig.profiler_backend must be one of "
+                        f"{sorted(_PROFILER_BACKEND_NAMES)}, got {self.profiler_backend!r}"
+                    )
+                self.profiler_backend = normalized
+            elif isinstance(self.profiler_backend, int) and not isinstance(self.profiler_backend, bool):
+                if self.profiler_backend not in _PROFILER_BACKEND_NAMES.values():
+                    raise ValueError(
+                        "PhysXConfig.profiler_backend must be a PROFILER_BACKEND_* value, "
+                        f"got {self.profiler_backend}"
+                    )
+            else:
+                raise TypeError(
+                    "PhysXConfig.profiler_backend must be str or int, "
+                    f"got {type(self.profiler_backend).__name__}"
+                )
+
+
+class _ConfigConstructorSignature(Signature):
+    """Report the nearest constructor without the diagnostic __new__ guard.
+
+    Python 3.10 otherwise prefers inherited __new__ over a nearer __init__.
+    A Signature also remains valid when functools.wraps copies the raw descriptor.
+    As with any __signature__, inspect's eval_str/follow_wrapped flags cannot
+    affect the constructor signature returned here.
+    """
+
+    __slots__ = ("_guard",)
+
+    def __init__(self, *args, guard=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._guard = guard
+
+    def __get__(self, instance, owner):
+        if instance is not None:
+            # Callable instances must retain their __call__ signature.
+            raise AttributeError("__signature__")
+        if type(owner).__call__ is not type.__call__:
+            # A metaclass's __call__ takes precedence over class constructors.
+            raise AttributeError("__signature__")
+        for cls in owner.__mro__:
+            own_new = vars(cls).get("__new__")
+            if own_new is not None and own_new is not self._guard:
+                # Let inspect handle a subclass's own allocation constructor.
+                break
+            if "__init__" in vars(cls):
+                try:
+                    constructor = signature(cls.__init__)
+                except NameError:
+                    # Let inspect honor the caller's format for lazy annotations.
+                    raise AttributeError("__signature__") from None
+                parameters = list(constructor.parameters.values())
+                if parameters and parameters[0].kind in (
+                    Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD,
+                ):
+                    parameters = parameters[1:]
+                return constructor.replace(parameters=parameters)
+        raise AttributeError("__signature__")
+
+
+_base_constructor = signature(PhysXConfig.__init__)
+PhysXConfig.__signature__ = _ConfigConstructorSignature(
+    list(_base_constructor.parameters.values())[1:],
+    return_annotation=_base_constructor.return_annotation,
+    guard=vars(PhysXConfig)["__new__"],
+)
 
 
 # ---------------------------------------------------------------------------
@@ -292,36 +372,27 @@ _FIELD_TO_ENTRY: dict[str, tuple] = {
     "collision_cylinder_custom_geometry": (_make_bool_entry,  _COLLISION_CYLINDER_CUSTOM_GEOMETRY, "/physics/collisionApproximateCylinders"),
     "num_threads":                       (_make_int32_entry, _NUM_THREADS,                        "/persistent/physics/numThreads"),
     "scene_multi_gpu_mode":              (_make_int32_entry, _SCENE_MULTI_GPU_MODE,               "/physics/sceneMultiGPUMode"),
-    "omnipvd_tcp_port":                  (_make_int32_entry, _OMNIPVD_TCP_PORT,                   "/physics/omniPvdTcpPort"),
-    "omnipvd_tcp_timeout_ms":            (_make_int32_entry, _OMNIPVD_TCP_TIMEOUT_MS,             "/physics/omniPvdTcpTimeoutMs"),
     "ovstage_read_pool_max_mb":          (_make_int32_entry, _OVSTAGE_READ_POOL_MAX_MB,          "/physics/ovstageReadPoolMaxMB"),
-    "omnipvd_output_enabled":            (_make_bool_entry,  _OMNIPVD_OUTPUT_ENABLED,             "/physics/omniPvdOutputEnabled"),
-    "nvtx_enabled":                      (_make_bool_entry,  _NVTX_ENABLED,                       "/physics/nvtxEnabled"),
-    "omnipvd_recording_capable":         (_make_bool_entry,  _OMNIPVD_RECORDING_CAPABLE,          "/physics/omniPvdRecordingCapable"),
-    "omnipvd_ovd_recording_directory":   (_make_string_entry, _OMNIPVD_OVD_RECORDING_DIRECTORY,   "/persistent/physics/omniPvdOvdRecordingDirectory"),
-    "omnipvd_transport":                 (_make_string_entry, _OMNIPVD_TRANSPORT,                 "/physics/omniPvdTransport"),
-    "omnipvd_tcp_address":               (_make_string_entry, _OMNIPVD_TCP_ADDRESS,               "/physics/omniPvdTcpAddress"),
+    "profiler_backend":                  (_make_int32_entry, _PROFILER_BACKEND,                   "/physics/profilerBackend"),
+    "profiler_output_path":              (_make_string_entry, _PROFILER_OUTPUT_PATH,              "/physics/profilerOutputPath"),
     "cooked_collider_cache_dir":         (_make_string_entry, _COOKED_COLLIDER_CACHE_DIRECTORY,   "/UJITSO/datastore/localCachePath"),
 }
-
-# Reverse lookup: carbonite_path -> field_name (for conflict detection)
-_KNOWN_CARBONITE_PATHS: dict[str, str] = {info[2]: name for name, info in _FIELD_TO_ENTRY.items()}
-
 
 
 def _to_c_config(config: PhysXConfig) -> list[ovphysx_config_entry_t]:
     """Convert a PhysXConfig dataclass to a list of C config entries."""
     entries: list[ovphysx_config_entry_t] = []
+    known_paths = {info[2]: name for name, info in _FIELD_TO_ENTRY.items()}
     for field_name, (factory, key, _) in _FIELD_TO_ENTRY.items():
         value = getattr(config, field_name)
         if value is not None:
             entries.append(factory(key, value))
     if config.carbonite_overrides:
         for carb_key, carb_value in config.carbonite_overrides.items():
-            if carb_key in _KNOWN_CARBONITE_PATHS:
+            if carb_key in known_paths:
                 raise ValueError(
                     f"carbonite_overrides key '{carb_key}' conflicts with typed field "
-                    f"'{_KNOWN_CARBONITE_PATHS[carb_key]}'. Use the typed field instead."
+                    f"'{known_paths[carb_key]}'. Use the typed field instead."
                 )
             entries.append(_make_carbonite_entry(carb_key, carb_value))
     return entries

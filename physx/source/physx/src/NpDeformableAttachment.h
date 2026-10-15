@@ -41,6 +41,12 @@ public:
 	static	bool	parseAttachment(const PxDeformableAttachmentData& data, AttachmentInfo& info);
 
 private:
+#if PX_CHECKED
+			bool	checkIndicesInRange() const;
+#endif
+
+	PxTransform		getRigidFrame(const PxTransform& pose) const;
+
 	NpInternalAttachmentType::Enum mInternalAttachmentType{ NpInternalAttachmentType::eUNDEFINED };
 
 	PxActor* mActor[2];
@@ -49,7 +55,9 @@ private:
 	PxArray<PxVec4> mCoords[2];
 	PxTransform mPose[2];
 
-	PxArray<PxU32> mHandles;
+	// The batch the attachment was added as, which is what removal and the pose update take. Invalid for
+	// an attachment that names no element, which adds nothing.
+	PxU32 mHandle{ PX_INVALID_U32 };
 	PxU32 mActorIndex[2];
 
 	bool mEnabled;

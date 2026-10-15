@@ -36,8 +36,7 @@ void appendCollisionGroupFromPath(AttachedStage& attachedStage,
     static const std::vector<std::string> kNoExclude;
     omni::physics::parse::ScanOptions scanOptions;
     scanOptions.descendantScope = omni::physics::parse::DescendantScope::eActive;
-    omni::physics::parse::ScannedStage scanned = omni::physics::parse::scanStage(
-        attachedStage.attachTarget(), scanRoots, kNoExclude, scanOptions,
+    omni::physics::parse::ScannedStage scanned = attachedStage.scanStage(scanRoots, kNoExclude, scanOptions,
         omni::physx::usdparser::iceDescriptorAllocator());
 
     const omni::physics::parse::IPhysicsSource* scannedSource = scanned.sourcePtr();

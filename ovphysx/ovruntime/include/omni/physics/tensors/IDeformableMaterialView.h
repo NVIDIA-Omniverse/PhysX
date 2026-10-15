@@ -3,6 +3,11 @@
 
 #pragma once
 
+// @implements REQ-ATTACH-VIEWS-001
+// @covers AC-4
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-3 AC-4
+
 #include "TensorDesc.h"
 
 #include <cstdint>
@@ -51,7 +56,8 @@ public:
     virtual bool setBendingDampingMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) = 0;
 
     virtual bool check() const = 0;
-    virtual void release() = 0;
+    // Returns false while runtime execution is busy; the view remains owned by the caller.
+    virtual bool release() = 0;
 
 protected:
     virtual ~IDeformableMaterialView() = default;

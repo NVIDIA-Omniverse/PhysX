@@ -66,7 +66,6 @@ static const float	gLinearDamping				= 0.1f;
 static const float	gAngularDamping				= 0.05f;
 static const float	gMaxLinearVelocity			= 100.0f;
 static const float	gMaxAngularVelocity			= 100.0f;
-static const float	gJointFrictionCoefficient	= 0.05f;
 static const PxU32	gNbIterPos					= 4;
 static const PxU32	gNbIterVel					= 1;
 
@@ -458,7 +457,6 @@ static void setupCommonLinkData(PxArticulationLinkDataRC& data, const PxTransfor
 	data.angularDamping						= gAngularDamping;
 	data.maxLinearVelocitySq				= gMaxLinearVelocity * gMaxLinearVelocity;
 	data.maxAngularVelocitySq				= gMaxAngularVelocity * gMaxAngularVelocity;
-	data.inboundJoint.frictionCoefficient	= gJointFrictionCoefficient;
 }
 
 #ifdef TEST_IMMEDIATE_JOINTS
@@ -749,7 +747,7 @@ void ImmediateScene::createScene()
 				linkData.inboundJoint.motion[PxArticulationAxis::eTWIST] = PxArticulationMotion::eFREE;
 				linkData.inboundJoint.drives[PxArticulationAxis::eTWIST].stiffness = 0.0f;
 				linkData.inboundJoint.drives[PxArticulationAxis::eTWIST].damping = 1000.0f;
-				linkData.inboundJoint.drives[PxArticulationAxis::eTWIST].maxForce = FLT_MAX;
+				linkData.inboundJoint.drives[PxArticulationAxis::eTWIST].envelope = PxPerformanceEnvelope(PX_MAX_F32);
 				linkData.inboundJoint.drives[PxArticulationAxis::eTWIST].driveType = PxArticulationDriveType::eFORCE;
 				linkData.inboundJoint.targetVel[PxArticulationAxis::eTWIST] = 4.0f;
 
@@ -851,7 +849,7 @@ void ImmediateScene::createScene()
 				{
 					linkData.inboundJoint.drives[PxArticulationAxis::eZ].stiffness = 100000.f;
 					linkData.inboundJoint.drives[PxArticulationAxis::eZ].damping = 0.f;
-					linkData.inboundJoint.drives[PxArticulationAxis::eZ].maxForce = PX_MAX_F32;
+					linkData.inboundJoint.drives[PxArticulationAxis::eZ].envelope = PxPerformanceEnvelope(PX_MAX_F32);
 					linkData.inboundJoint.drives[PxArticulationAxis::eZ].driveType = PxArticulationDriveType::eFORCE;
 				}
 

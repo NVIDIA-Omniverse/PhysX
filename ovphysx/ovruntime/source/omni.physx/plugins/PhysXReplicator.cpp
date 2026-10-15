@@ -1,12 +1,22 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-SERVICES-001
+// @covers AC-3
+
+// @implements REQ-REPLICATE-002
+// @covers AC-3 AC-5 AC-6
+
+// @implements REQ-ATTACH-LIFETIME-001
+// @covers AC-3
+
 /**
  * @implements REQ-PROPS-MAT-001
  * @covers AC-2 AC-3
- */
-
-/**
+ *
+ * @implements REQ-RUNTIME-ERROR-001
+ * @covers AC-3
+ *
  * @implements REQ-REPLICATE-001
  * @covers AC-2 AC-4 AC-6 AC-11 AC-12
  *
@@ -20,8 +30,11 @@
 // private in-memory representation (`sdfPathToInt`). External callers must use
 // `IPhysx::resolveObjectKey(path).handle`. See IPhysxReplicator.h.
 
+#include <omni/physx/RuntimeError.h>
+#include "ScopedNoticeLock.h"
 #include <PxPhysicsAPI.h>
 #include "PhysXReplicator.h"
+#include "RuntimeExecution.h"
 #include "OmniPhysX.h"
 #include "PhysXMirror.h"
 #include "PhysXTools.h"
@@ -232,55 +245,6 @@ namespace omni
             clear();
         }
 
-        bool PhysXReplicator::attach(uint64_t stageId, PhysXUsdPhysicsInterface* usdPhysicsInt, bool attachStage)
-        {
-            mExcludePathSet.clear();
-
-            // Create the AttachedStage/Source first so a live Source exists on both paths
-            // before replicationAttachFn fires below (a no-op on the ovstage path).
-            if (!usdparser::UsdLoad::getUsdLoad()->attachReplicatorCreateSource(stageId, usdPhysicsInt, attachStage))
-            {
-                return false;
-            }
-
-            // Both identities appear in this function on purpose, and they are not interchangeable.
-            // The callbacks below report an *attach* (ADR-0016), while attachReplicatorFinish()
-            // performs the USD attach's parse and needs a *stage* id -- the ADR-0013 survival
-            // clause for the entry points that name the stage object rather than the attach.
-            // kActiveAttach is a defensive fallback: the AttachedStage always exists by here.
-            auto reportedAttachHandle = [&]() -> AttachHandle
-            {
-                const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStage(stageId);
-                return attachedStage ? attachedStage->getAttachHandle() : kActiveAttach;
-            };
-
-            // Full parse about to happen, we need to exclude paths defined by the callback.
-            if (mCallback.replicationAttachFn)
-            {
-                uint32_t numPaths = 0;
-                uint64_t* paths = nullptr;
-                mCallback.replicationAttachFn(reportedAttachHandle(), numPaths, paths, mCallback.userData);
-                if (numPaths && paths)
-                {
-                    for (uint32_t i = 0; i < numPaths; i++)
-                    {
-                        mExcludePathSet.insert(omni::physics::parse::ObjectKey{ paths[i] });
-                    }
-                }
-            }
-            if (!usdparser::UsdLoad::getUsdLoad()->attachReplicatorFinish(stageId, mExcludePathSet, attachStage))
-            {
-                return false;
-            }
-
-            // Full parse is done, we can start to replicate notify the attach end
-            if (mCallback.replicationAttachEndFn)
-            {
-                mCallback.replicationAttachEndFn(reportedAttachHandle(), mCallback.userData);
-            }
-            return true;
-        }
-
         // Textual equivalent of SdfPath::ReplacePrefix: pathToUpdate is always replicatePath or
         // a namespace descendant of it, so a prefix-with-boundary-check replace is exact. A
         // non-matching pathToUpdate is returned unchanged, as ReplacePrefix would.
@@ -382,7 +346,7 @@ namespace omni
             // rejected the same way -- not silently narrowed to the explicit owner while the
             // ownerless body is later parsed into the default scene and omitted from replication
             // (mirrorHierarchy enumerates only the one resolved scene).
-            PhysXScene* defaultScene = OmniPhysX::getInstance().getPhysXSetup().getPhysXScene(0);
+            PhysXScene* defaultScene = attachedStage.getDefaultPhysXScene();
             const omni::physics::parse::ObjectKey defaultSceneKey =
                 defaultScene ? defaultScene->getSceneSdfPath() : omni::physics::parse::ObjectKey{};
 
@@ -479,10 +443,10 @@ namespace omni
             if (numReplications == 0)
                 return false;
 
-            AttachedStage* attachedStage = UsdLoad::getUsdLoad()->resolveAttach(attachHandle);
+            AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
             if (!attachedStage)
             {
-                CARB_LOG_ERROR("Attached Stage not found for replication. AttachHandle: %llu",
+                OVX_RUNTIME_ERROR("Attached Stage not found for replication. AttachHandle: %llu",
                                static_cast<unsigned long long>(attachHandle));
                 return false;
             }
@@ -504,7 +468,7 @@ namespace omni
                 const omni::physics::parse::IPhysicsSource* source = attachedStage->getSource();
                 if (source && !source->exists(topKey))
                 {
-                    CARB_LOG_ERROR("Prim to replicate not found in USD stage. AttachHandle: %llu",
+                    OVX_RUNTIME_ERROR("Prim to replicate not found in USD stage. AttachHandle: %llu",
                                    static_cast<unsigned long long>(attachHandle));
                     return false;
                 }
@@ -537,8 +501,7 @@ namespace omni
                 return result;
             };
 
-            internal::InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
-            PhysXSetup& physxSetupForSceneResolve = OmniPhysX::getInstance().getPhysXSetup();
+            internal::InternalPhysXDatabase& db = (*attachedStage).getInternalPhysXDatabase();
 
             // ADR-0016, "Replicator scene lookup" residue (2026-08-16 addendum): PhysXScenesMap is
             // keyed by a scene's runtime ObjectId, never by a stage id or an attach handle, so
@@ -556,12 +519,12 @@ namespace omni
             // used to cost). A mixed-scene subtree is rejected here, loudly, instead of silently
             // cloning only the part that happens to share the first-resolved scene.
             ObjectId resolvedSceneId = kInvalidObjectId;
-            if (physxSetupForSceneResolve.getPhysXScenes().size() > 1)
+            if (attachedStage->getPhysXScenes().size() > 1)
             {
                 omni::physics::parse::ObjectKey subtreeOwner;
                 if (!resolveSubtreeSimulationOwner(*attachedStage, topKey, subtreeOwner))
                 {
-                    CARB_LOG_ERROR(
+                    OVX_RUNTIME_ERROR(
                         "Cannot replicate '%s': its subtree contains bodies with different simulation owners "
                         "(physics:simulationOwner); a single replicate() call clones into exactly one PhysX "
                         "scene. AttachHandle: %llu",
@@ -573,7 +536,7 @@ namespace omni
                     resolvedSceneId = objectDb->findEntry(subtreeOwner, eScene);
                     if (resolvedSceneId == kInvalidObjectId)
                     {
-                        CARB_LOG_ERROR(
+                        OVX_RUNTIME_ERROR(
                             "Cannot replicate '%s': its simulation owner '%s' does not resolve to a registered "
                             "PhysX scene. AttachHandle: %llu",
                             attachedStage->textFor(topKey), attachedStage->textFor(subtreeOwner),
@@ -592,11 +555,11 @@ namespace omni
             {
                 resolvedSceneId = findSubtreeSceneId(db, *attachedStage, enumerateSubtree());
             }
-            PhysXScene* scene = physxSetupForSceneResolve.getPhysXScene(
+            PhysXScene* scene = attachedStage->getPhysXScene(
                 resolvedSceneId != kInvalidObjectId ? static_cast<size_t>(resolvedSceneId) : 0);
             if (!scene)
             {
-                CARB_LOG_ERROR("PhysX Scene not found for replication. AttachHandle: %llu",
+                OVX_RUNTIME_ERROR("PhysX Scene not found for replication. AttachHandle: %llu",
                                static_cast<unsigned long long>(attachHandle));
                 return false;
             }
@@ -667,14 +630,14 @@ namespace omni
                 CARB_PROFILE_ZONE(0, "PhysXReplicator::replicate::source");
                 PHYSICS_PROFILE("PhysXReplicator::replicate::source");
                 // Block the USD notification to get recursive callback
-                UsdLoad::getUsdLoad()->blockUSDUpdate(true);
+                { ScopedNoticeBlock blockNotices(*attachedStage, true, false);
 
                 const std::vector<std::string> updateRoots{ std::string(attachedStage->textFor(topKey)) };
-                loadPhysicsFromPrimitive(*attachedStage, updateRoots);
+                loadPhysicsFromPrimitive(*attachedStage, updateRoots, /*applyAttachmentExclusions=*/false);
                 // Process batched changes while USD notices remain blocked.
                 attachedStage->getPhysXPhysicsInterface()->finishSetup(*attachedStage);
 
-                UsdLoad::getUsdLoad()->blockUSDUpdate(false);
+                }
             }
             else
             {
@@ -709,7 +672,7 @@ namespace omni
                 // Nothing was created under the source, so physxPtrs would come out empty and the
                 // serializer would clone nothing while replicate() reported success. That silent
                 // empty clone is the failure mode this whole path has to avoid, so say so instead.
-                CARB_LOG_ERROR(
+                OVX_RUNTIME_ERROR(
                     "Nothing to replicate: no physics object was created under '%s' (AttachHandle: %llu). "
                     "The source subtree carries no physics, or it failed to parse.",
                     attachedStage->textFor(topKey), static_cast<unsigned long long>(attachHandle));
@@ -731,7 +694,7 @@ namespace omni
                 const ObjectId reDerivedSceneId = findSubtreeSceneId(db, *attachedStage, sourceSubtree);
                 if (reDerivedSceneId != kInvalidObjectId && reDerivedSceneId != resolvedSceneId)
                 {
-                    PhysXScene* resolvedScene = physxSetupForSceneResolve.getPhysXScene(static_cast<size_t>(reDerivedSceneId));
+                    PhysXScene* resolvedScene = attachedStage->getPhysXScene(static_cast<size_t>(reDerivedSceneId));
                     if (resolvedScene)
                     {
                         scene = resolvedScene;
@@ -903,6 +866,7 @@ namespace omni
                     std::vector<std::pair<PxRigidActor*, PxTransform>> rigidTransforms;
                     std::vector<std::pair<PxArticulationReducedCoordinate*, PxTransform>> articulationTransforms;
                     std::vector<InternalActor*> internalActors;
+                    std::vector<PxArticulationReducedCoordinate*> articulations;
                     std::vector<std::pair<PxActor*, const char*>> actorNames;
                     std::vector<std::pair<PxArticulationReducedCoordinate*, const char*>> articulationNames;
                     std::vector<std::pair<PxJoint*, const char*>> jointNames;
@@ -928,17 +892,17 @@ namespace omni
                 const auto resolveCloneKeys = [&](ProcessReplicationData& data)
                 {
                     data.objectKeys.resize(data.collection->getNbObjects());
-                    data.schemaKeys.resize(schemaAPIFlagsStorage.size());
                     data.shapeSourceKeys.resize(data.objectKeys.size());
+                    data.schemaKeys.resize(schemaAPIFlagsStorage.size());
                     for (uint32_t o = 0; o < data.objectKeys.size(); ++o)
                     {
                         const size_t id = replicatorIdForPxBase(data.collection->getObject(o));
                         if (id == SIZE_MAX)
                             continue;
-                        const omni::physics::parse::ObjectKey sourceKey = db.getRecords()[id].mKey;
+                        const InternalDatabase::Record& record = db.getRecords()[id];
+                        const omni::physics::parse::ObjectKey sourceKey = record.mKey;
                         data.objectKeys[o] = attachedStage->getSource()->replacePathPrefix(
                             sourceKey, replicateKey, data.newReplicateKey);
-                        const InternalDatabase::Record& record = db.getRecords()[id];
                         if (record.mType == ePTShape || record.mType == ePTCompoundShape)
                         {
                             const InternalShape* shape = static_cast<const InternalShape*>(record.mInternalPtr);
@@ -1214,6 +1178,7 @@ namespace omni
                             intArt->mEnableSelfCollision = cloneArticulation->mEnableSelfCollision;
                             intArt->mStaticRootBodyKey = cloneArticulation->mStaticRootBodyKey;
                             intArt->mAggregate = articulation.getAggregate();
+                            processReplicationData.articulations.push_back(&articulation);
 
                             const ObjectId outId = recordsIndex ? db.addRecordAtIndex(recordsIndex++, ePTArticulation, &articulation, intArt, newKey) : db.addRecord(ePTArticulation, &articulation, intArt, newKey);
                             processReplicationData.objectDbEntries.push_back({ newKey, eArticulation, outId });
@@ -1569,8 +1534,9 @@ namespace omni
                     for (uint32_t i = 0; i < numReplications; i++)
                     {
                         uint64_t newHierarchyPath = 0;
-                        if (mCallback.hierarchyRenameFn)
+                        if (!mCancelled.load(std::memory_order_acquire) && mCallback.hierarchyRenameFn)
                         {
+                            RuntimeCallbackScope callbackScope;
                             newHierarchyPath = mCallback.hierarchyRenameFn(path, i, mCallback.userData);
                         }
                         replicationOutData[i].newReplicateKey =
@@ -1675,10 +1641,10 @@ namespace omni
                     // setting as sufficient forced ovstage clones through the serial USD path
                     // and emitted a false warning despite having nowhere to write.
                     const bool hasDataWrite = attachedStage->getDataWrite() != nullptr;
-                    const bool updateUSD = hasDataWrite && OmniPhysX::getInstance().getCachedSettings().updateToUsd &&
-                        !(SimulationCallbacks::getSimulationCallbacks()->checkGlobalSimulationFlags(GlobalSimulationFlag::eTRANSFORMATION | GlobalSimulationFlag::eSKIP_WRITE));
+                    const bool updateUSD = hasDataWrite && attachedStage->getCachedSettings().updateToUsd &&
+                        !(attachedStage->getSimulationCallbacks().checkGlobalSimulationFlags(GlobalSimulationFlag::eTRANSFORMATION | GlobalSimulationFlag::eSKIP_WRITE));
                     const bool updateUSDVelocities =
-                        hasDataWrite && OmniPhysX::getInstance().getCachedSettings().updateVelocitiesToUsd;
+                        hasDataWrite && attachedStage->getCachedSettings().updateVelocitiesToUsd;
                     bool forceSyncReplication = false;
                     if (updateUSD || updateUSDVelocities)
                     {
@@ -1812,6 +1778,10 @@ namespace omni
                     CARB_PROFILE_ZONE(0, "PhysXReplicator::replicate:proccessReplicationData");
                     for (ProcessReplicationData& data : replicationOutData)
                     {
+                        // The attachment must release cloned articulations before
+                        // their serialized backing storage, independently of SDK shutdown.
+                        for (PxArticulationReducedCoordinate* articulation : data.articulations)
+                            scene->getInternalScene()->mArticulations.push_back(articulation);
                         for (InternalActor* ia : data.internalActors)
                         {
                             scene->getInternalScene()->addActor(*ia);
@@ -1892,7 +1862,8 @@ namespace omni
 
         bool registerReplicator(AttachHandle attachHandle, const IReplicatorCallback& callback)
         {
-            return OmniPhysX::getInstance().registerReplicator(attachHandle, callback);
+            RuntimeExecutionScope operation(attachHandle);
+            return operation && OmniPhysX::getInstance().registerReplicator(attachHandle, callback);
         }
 
         void unregisterReplicator(AttachHandle attachHandle)
@@ -1902,11 +1873,10 @@ namespace omni
 
         bool replicate(AttachHandle attachHandle, uint64_t path, uint32_t numReplications, bool useEnvIds)
         {
-            // No replicator on this attach is a query answer, not a resolution failure -- that is
-            // what isReplicatorStage() reports -- so it stays a quiet false. The diagnostic for an
-            // unresolvable handle (ADR-0016 Decision 3) is raised one level down, where the attach
-            // is actually resolved.
-            PhysXReplicator* replicator = OmniPhysX::getInstance().getReplicator(attachHandle);
+            RuntimeExecutionScope operation(attachHandle);
+            if (!operation || !UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle))
+                return false;
+            auto replicator = OmniPhysX::getInstance().getReplicator(attachHandle);
             if (replicator)
             {
                 return replicator->replicate(attachHandle, path, numReplications, useEnvIds);
@@ -1917,8 +1887,10 @@ namespace omni
         void isReplicatorStage(AttachHandle attachHandle, bool& replicated)
         {
             replicated = false;
-
-            PhysXReplicator* replicator = OmniPhysX::getInstance().getReplicator(attachHandle);
+            auto owner = UsdLoad::getUsdLoad()->acquireAttachment(attachHandle);
+            if (!owner)
+                return;
+            auto replicator = OmniPhysX::getInstance().getReplicator(attachHandle);
             if (replicator)
             {
                 replicated = true;

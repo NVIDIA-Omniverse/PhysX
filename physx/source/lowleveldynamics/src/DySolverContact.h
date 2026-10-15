@@ -120,25 +120,27 @@ struct SolverContactPointExt : public SolverContactPoint
 
 PX_COMPILE_TIME_ASSERT(sizeof(SolverContactPointExt) == 112);
 
-
 /**
 \brief A single friction constraint for the solver.
 */
 struct SolverContactFriction
 {
-	// PT: TODO: there's room for 3 floats in the padding bytes so we could just stick appliedForce / velMultiplier / bias there
-	// and avoid doing all the data packing / unpacking for these members...
-	Vec4V normalXYZ_appliedForceW;		//16
-	Vec4V raXnXYZ_velMultiplierW;		//32
-	Vec4V rbXnXYZ_biasW;				//48
-	PxReal targetVel;					//52
-	PxU32 mPad[3];						//64
+	// PT: appliedForce / velMultiplier / bias used to be packed into the W lanes of the three vectors, which
+	// cost a V4GetW shuffle per read and a V4SetW insert per write. They now live in what was padding, so the
+	// struct is still 64 bytes but the scalars are plain loads/stores.
+	Vec3V normal;			//16
+	Vec3V raXn;				//32
+	Vec3V rbXn;				//48
+	PxReal targetVel;		//52
+	PxReal appliedForce;	//56	used to be stored in W of previous Vecs
+	PxReal velMultiplier;	//60	used to be stored in W of previous Vecs
+	PxReal bias;			//64	used to be stored in W of previous Vecs
 
-	PX_FORCE_INLINE void setAppliedForce(const FloatV f)	{ normalXYZ_appliedForceW = V4SetW(normalXYZ_appliedForceW,f);	}
-	PX_FORCE_INLINE void setBias(const FloatV f)			{ rbXnXYZ_biasW = V4SetW(rbXnXYZ_biasW,f);						}
+	PX_FORCE_INLINE void setAppliedForce(const FloatV f)	{ FStore(f, &appliedForce);	}
+	PX_FORCE_INLINE void setBias(const FloatV f)			{ FStore(f, &bias);			}
 
-	PX_FORCE_INLINE Vec3V getNormal() const { return Vec3V_From_Vec4V(normalXYZ_appliedForceW); }
-	PX_FORCE_INLINE FloatV getAppliedForce() const { return V4GetW(normalXYZ_appliedForceW); }
+	PX_FORCE_INLINE Vec3V getNormal() const			{ return normal;				}
+	PX_FORCE_INLINE FloatV getAppliedForce() const	{ return FLoad(appliedForce);	}
 }; 
 
 PX_COMPILE_TIME_ASSERT(sizeof(SolverContactFriction) == 64);

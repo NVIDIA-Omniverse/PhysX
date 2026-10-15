@@ -2,8 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-CAPI-LOG-001
+ * @covers AC-7
+ *
  * @implements REQ-CAPI-CACHE-001
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5
+ *
+ * @implements REQ-CAPI-HOST-EXIT-001
+ * @covers AC-1 AC-2
  *
  * @implements REQ-PACKAGING-USDFREE-001
  * @covers AC-6
@@ -13,16 +19,27 @@
  *
  * @implements REQ-PACKAGING-CLOSURE-001
  * @covers AC-2
+ *
+ * @implements REQ-CAPI-THREADING-001
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5
+ *
+ * @implements REQ-CAPI-PROFILER-002
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7 AC-8 AC-9 AC-10 AC-11
+ *
+ * @implements REQ-CAPI-CONFIG-001
+ * @covers AC-9
  */
 
 #include "CarboniteLoader/CarboniteLoader.hpp"
+#include "internal/GlobalState.hpp"
 #include "ovphysx/ovphysx_types.h"
 #include "LogManager.hpp"
+#include "internal/sdk/ovphysxSDKSidecarLoader.hpp"
 #include <omni/physx/PhysXRuntime.h>
 
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <chrono>
 #include <mutex>
 #include <random>
 #include <string>
@@ -30,7 +47,6 @@
 #include <filesystem>
 #include <atomic>
 #include <system_error>
-#include <thread>
 #include <unordered_set>
 #include <vector>
 
@@ -54,8 +70,12 @@
 #include <carb/filesystem/IFileSystem.h>
 #include <carb/logging/Log.h>
 #include <carb/logging/Logger.h>
+#include <carb/profiler/Profile.h>
 #include <carb/settings/ISettings.h>
+
+#include "internal/Profiling.h"
 #include <carb/tasking/ITasking.h>
+#include <carb/thread/Util.h>
 #include <carb/tokens/ITokens.h>
 #include <omni/core/Omni.h>
 #include <omni/ext/IExt.h>
@@ -80,6 +100,18 @@ extern "C" bool carb_tasking_plugin_registerPlugin(carb::Framework*);
 extern "C" bool carb_tokens_plugin_registerPlugin(carb::Framework*);
 extern "C" bool carb_variant_plugin_registerPlugin(carb::Framework*);
 
+// Set by the build to whether carb.profiler-nvtx.static was found (see CMakeLists.txt).
+// A carb package without it builds without the sink rather than failing to configure.
+#ifndef OVPHYSX_CARB_NVTX_BACKEND
+    #define OVPHYSX_CARB_NVTX_BACKEND 0
+#endif
+
+#if OVPHYSX_CARB_NVTX_BACKEND
+// Carbonite's own NVTX profiler backend. Deliberately not in the list above: those
+// plugins are required, this one is registered only when NVTX profiling is asked for.
+extern "C" bool carb_profiler_nvtx_plugin_registerPlugin(carb::Framework*);
+#endif
+
 CARB_STATIC_BINARY_GLOBALS("omni_physx_sdk")
 
 bool isProcessGpuDisabled();
@@ -89,11 +121,9 @@ namespace ovphysx
 
 namespace
 {
-    static std::mutex g_bootstrapMutex;
-    static bool g_bootstrapDone = false;
-    // Live CarboniteLoaders holding the process-wide framework. Guards teardown of the
-    // process-private cooked-collider cache (see releaseProcessCacheDirLocked).
-    static std::atomic<int> g_activeLoaders{ 0 };
+#if CARB_PLATFORM_WINDOWS
+    void releaseProcessCacheAfterFrameworkShutdown(void*, void*);
+#endif
     // Note: /physics/suppressReadback (DirectGPU-API mode) is NOT managed here.
     // It is opt-in by the host, which sets the Carbonite setting before any
     // ovphysx call. ovphysx never writes it because DirectGPU is incompatible
@@ -125,15 +155,31 @@ namespace
         }                                                                      \
     }
 
-    static const PluginProbe kFoundationProbes[] = {
+    static const PluginProbe kBootstrapProbes[] = {
         OVPHYSX_PROBE("carb.dictionary.plugin", carb::dictionary::IDictionary),
         OVPHYSX_PROBE("carb.settings.plugin",   carb::settings::ISettings),
+    };
+
+    static const PluginProbe kTaskingProbes[] = {
+        OVPHYSX_PROBE("carb.tasking.plugin", carb::tasking::ITasking),
+    };
+
+    static const PluginProbe kPostTaskingProbes[] = {
         OVPHYSX_PROBE("carb.tokens.plugin",     carb::tokens::ITokens),
-        OVPHYSX_PROBE("carb.tasking.plugin",    carb::tasking::ITasking),
         OVPHYSX_PROBE("carb.filesystem.plugin", carb::filesystem::IFileSystem),
     };
 
 #undef OVPHYSX_PROBE
+
+    static constexpr char kTaskingThreadCountPath[] = "/plugins/carb.tasking.plugin/threadCount";
+    static constexpr char kTbbThreadCountPath[] = "/plugins/omni.tbb.globalcontrol/maxThreadCount";
+
+    // omni.tbb.globalcontrol exposes a marker interface whose acquisition runs
+    // plugin startup and constructs the process-wide tbb::global_control.
+    struct TbbGlobalControl
+    {
+        CARB_PLUGIN_INTERFACE("omni::tbb::IGlobalControl", 1, 0)
+    };
 
     // Probes each plugin's primary interface and logs the ones that did not
     // resolve. A false return is a fatal load-time error: ovphysx cannot
@@ -256,18 +302,19 @@ const std::string& CarboniteLoader::getLastError() const
 // user config before PhysX starts.
 bool CarboniteLoader::initialize()
 {
-    std::lock_guard<std::mutex> guard(g_bootstrapMutex);
+    CarboniteLoaderState& loaderState = globalState().carboniteLoader;
+    std::lock_guard<std::mutex> guard(loaderState.bootstrapMutex);
     if (m)
         m->lastError.clear();
     
-    if (g_bootstrapDone)
+    if (loaderState.bootstrapDone)
     {
         // Re-apply log level and register pending callbacks (level may change between instances)
         ovphysx::onCarboniteLoggingReady();
 
         // Re-populate the per-instance plugins path for subsequent instances.
         m->frameworkAcquired = true;
-        g_activeLoaders.fetch_add(1, std::memory_order_relaxed);
+        loaderState.activeLoaders.fetch_add(1, std::memory_order_relaxed);
         m->pluginsDir = omni::sdk::usd_schema_paths::getPluginsDirectory();
         if (m->pluginsDir.empty())
         {
@@ -344,7 +391,12 @@ bool CarboniteLoader::initialize()
             frameworkAlreadyExisted = true;
     }
     m->frameworkAcquired = true;
-    g_activeLoaders.fetch_add(1, std::memory_order_relaxed);
+    loaderState.activeLoaders.fetch_add(1, std::memory_order_relaxed);
+
+    // The sidecar DSO survives Linux framework release. Rebind its borrowed
+    // globals and source registration once per bootstrap, before policy replay.
+    if (!refreshInternalSidecarRuntime())
+        return false;
 
     // Apply the global log level and register any pending user callbacks.
     ovphysx::onCarboniteLoggingReady();
@@ -452,6 +504,7 @@ bool CarboniteLoader::initialize()
 
             if (foreignCount > 0)
             {
+                loaderState.ownsFramework = false;
                 // Coexistence is the default. The verifyLoadedInterfaces probes
                 // below produce a named-cause error if any expected interface
                 // fails to resolve at the version ovphysx was built against,
@@ -480,9 +533,7 @@ bool CarboniteLoader::initialize()
                     "version skew. Set OVPHYSX_COEXIST_REFUSE=1 to opt out.",
                     foreignCount, foreignExample.c_str());
 
-                // Another library (e.g. ovrtx) bootstrapped Carbonite before
-                // ovphysx was loaded. ovphysx never releases the framework, so
-                // teardown is owned by process exit.
+                // The foreign host owns this framework's teardown.
             }
             else
             {
@@ -501,12 +552,6 @@ bool CarboniteLoader::initialize()
 
     CARB_LOG_INFO("[CarboniteLoader] Plugins directory: %s", m->pluginsDir.c_str());
 
-    // Configure plugin search paths. The main plugins directory is always
-    // searched. "plugins/bin/deps" belongs to older install layouts and is
-    // added only when it exists, so those layouts keep working.
-    auto [searchPathStrings, searchPaths] = buildSearchPaths();
-    const size_t searchPathCount = searchPaths.size();
-    
     // Register the core Carbonite plugins. This has to happen before the GPU
     // and monitoring plugins load.
     // Static plugin registration is not idempotent: Carbonite requires unique
@@ -559,9 +604,9 @@ bool CarboniteLoader::initialize()
         }
     }
     if (!verifyLoadedInterfaces(framework,
-                                kFoundationProbes,
-                                sizeof(kFoundationProbes) / sizeof(kFoundationProbes[0]),
-                                "Foundation"))
+                                kBootstrapProbes,
+                                sizeof(kBootstrapProbes) / sizeof(kBootstrapProbes[0]),
+                                "Bootstrap"))
     {
         return false;
     }
@@ -615,42 +660,19 @@ bool CarboniteLoader::initialize()
     // before omni.physx.plugin starts. That lets PhysXFoundation avoid CUDA
     // probes during plugin startup, before IPhysxFoundation can be acquired.
 
-    // ========================================================================
-    // Load monitoring/system plugins before infrastructure plugins.
-    // ========================================================================
-    static const char* kMonitoringPlugins[] = {
-        "omni.platforminfo.plugin",
-    };
+#if CARB_PLATFORM_WINDOWS
+    // Windows retains Carbonite's ExitProcess hook: OVStage/Fabric still depend
+    // on it for safe DLL teardown. A framework release hook runs after dependency
+    // plugins have stopped, so cache removal cannot race datastore write-back.
+    if (!framework->addReleaseHook(nullptr, &releaseProcessCacheAfterFrameworkShutdown, nullptr))
     {
-        carb::PluginLoadingDesc desc = carb::PluginLoadingDesc::getDefault();
-        desc.loadedFileWildcards = kMonitoringPlugins;
-        desc.loadedFileWildcardCount = sizeof(kMonitoringPlugins) / sizeof(kMonitoringPlugins[0]);
-        desc.searchPaths = searchPaths.data();
-        desc.searchPathCount = static_cast<uint32_t>(searchPathCount);
-        framework->loadPlugins(desc);
+        CARB_LOG_ERROR("[CarboniteLoader] Failed to register process-private cache cleanup");
+        return false;
     }
-    
-    // ========================================================================
-    // Infrastructure plugins.
-    // ========================================================================
-    {
-        // Load global TBB control before PhysX plugins so the process-wide
-        // worker cap is established before runtime worker pools start.
-        static const char* kInfrastructurePlugins[] = {
-            "omni.tbb.globalcontrol.plugin",
-        };
-
-        carb::PluginLoadingDesc desc = carb::PluginLoadingDesc::getDefault();
-        desc.loadedFileWildcards = kInfrastructurePlugins;
-        desc.loadedFileWildcardCount = sizeof(kInfrastructurePlugins) / sizeof(kInfrastructurePlugins[0]);
-        desc.searchPaths = searchPaths.data();
-        desc.searchPathCount = static_cast<uint32_t>(searchPathCount);
-        framework->loadPlugins(desc);
-        CARB_LOG_INFO("[CarboniteLoader] Infrastructure plugins loaded");
-    }
-
-    g_bootstrapDone = true;
-    CARB_LOG_INFO("[CarboniteLoader] Initialization complete (base plugins)");
+#endif
+    loaderState.bootstrapDone = true;
+    CARB_LOG_INFO(
+        "[CarboniteLoader] Initialization complete (base plugins; tasking deferred until create config is applied)");
     return true;
 }
 
@@ -691,70 +713,76 @@ namespace
 // Linux venv. carb.datastore then logs two [Error] lines on every scene attach (NVBugs 6504275).
 // The fallback is a process-private temp dir, discarded on shutdown.
 
-// The process-private cache dir, empty when unused. The datastore and this directory are
-// process-wide and outlive any single instance, so cleanup is refcounted and happens when the
-// last loader shuts down, never while another instance may still be cooking against it. That
-// last-loader decision (the g_activeLoaders check in CarboniteLoader::shutdown()) and the cleanup
-// both run under g_bootstrapMutex, the same mutex initialize() holds across its g_activeLoaders
-// increment, so a concurrent ovphysx_create_instance() waits instead of becoming the new first
-// loader while the tree is still being removed. atexit is a best-effort backstop for callers
-// that never shut down. Abrupt termination may leave the directory behind.
-std::filesystem::path g_processCacheDir;
-
 std::string uniqueToken()
 {
     std::random_device rd;
     return std::to_string(rd()) + "-" + std::to_string(rd());
 }
 
-// Best effort with a short bounded retry. carb.ujitso.default/carb.datastore own the on-disk
-// write-back of a completed cook and there is no API to wait for it: ovphysx_wait_op() and
-// PhysX::wait_all() only drain the cook compute queue (the PhysxCookingComputeResult callback),
-// which can fire before the bytes are persisted. A cook that completes just before process exit
-// can therefore race this remove_all(). Retrying narrows that window for short write-backs but
-// does not close it, and on Windows the datastore may also hold files open. `retry=false` is
-// reserved for the late native atexit backstop, where retry sleeps would delay process
-// termination. The 5x20ms budget is an arbitrary starting point, not a measured write-back
-// duration.
-//
-// g_processCacheDir is deliberately not cleared on success: atexit fires after shutdown() and
-// may catch files the datastore writes between the shutdown remove_all and process exit.
-// remove_all on a missing path returns success, so the atexit call is always safe, and a failed
-// attempt leaves the path in place for a later retry.
-//
-// The caller must hold g_bootstrapMutex.
-void releaseProcessCacheDirLocked(bool retry)
+// The caller holds bootstrapMutex and has stopped the datastore. Waiting for a cook alone
+// is insufficient: the datastore owns background write-back and open cache files.
+void releaseProcessCacheDirLocked()
 {
-    if (g_processCacheDir.empty())
+    CarboniteLoaderState& loaderState = globalState().carboniteLoader;
+    if (loaderState.processCacheDir.empty())
         return;
-    const int kMaxAttempts = retry ? 5 : 1;
-    constexpr auto kRetryDelay = std::chrono::milliseconds(20);
     std::error_code ec;
-    for (int attempt = 0; attempt < kMaxAttempts; ++attempt)
+    std::filesystem::remove_all(loaderState.processCacheDir, ec);
+    if (!ec)
     {
-        std::filesystem::remove_all(g_processCacheDir, ec);
-        if (!ec)
-            return;
-        // A permission failure is not a transient write-back race and will not clear by
-        // waiting, so stop retrying.
-        if (ec == std::errc::permission_denied)
-            break;
-        if (attempt + 1 < kMaxAttempts)
-            std::this_thread::sleep_for(kRetryDelay);
+        loaderState.processCacheDir.clear();
+        return;
     }
-    CARB_LOG_WARN("[CarboniteLoader] Failed to remove process-private cache '%s': %s; "
-                  "it remains for the host's temp-directory cleanup.",
-                  g_processCacheDir.string().c_str(), ec.message().c_str());
+    // Carbonite has already stopped; report filesystem failures through the host's stderr.
+    std::fprintf(stderr, "[Warning] [CarboniteLoader] Failed to remove process-private cache '%s': %s; "
+                  "it remains for the host's temp-directory cleanup.\n",
+                  loaderState.processCacheDir.string().c_str(), ec.message().c_str());
 }
 
-// atexit backstop for callers that never call CarboniteLoader::shutdown(). Python destroys its
-// live instances from an earlier atexit callback and normally reaches the retrying shutdown path
-// first. Non-Python callers may still have a live loader here, so this last single attempt remains
-// best-effort and avoids adding retry latency during late process teardown.
+#if CARB_PLATFORM_WINDOWS
+void releaseProcessCacheAfterFrameworkShutdown(void*, void*)
+{
+    auto& loaderState = globalState().carboniteLoader;
+    std::lock_guard<std::mutex> guard(loaderState.bootstrapMutex);
+    releaseProcessCacheDirLocked();
+}
+#endif
+
+// Explicit shutdown runs this before host runtime finalization. The native exit registration
+// also covers C hosts that destroy their instances but omit ovphysx_shutdown().
 void releaseProcessCacheDirAtExit()
 {
-    std::lock_guard<std::mutex> guard(g_bootstrapMutex);
-    releaseProcessCacheDirLocked(/*retry=*/false);
+#if CARB_PLATFORM_WINDOWS
+    // Windows dependency shutdown belongs to Carbonite's ExitProcess hook.
+    // Releasing the framework here removes that hook and exposes OVStage/Fabric
+    // static-destructor crashes. The framework release hook removes the cache.
+    return;
+#else
+    CarboniteLoaderState& loaderState = globalState().carboniteLoader;
+    std::lock_guard<std::mutex> guard(loaderState.bootstrapMutex);
+
+    // Active native handles still own runtime objects. Explicit SDK shutdown leaves these
+    // handles for the caller to destroy; do not invalidate them from an exit backstop.
+    if (loaderState.activeLoaders.load(std::memory_order_acquire) != 0)
+        return;
+    // An external host may still use these plugins and their datastore.
+    if (!loaderState.ownsFramework)
+        return;
+    if (!loaderState.bootstrapDone)
+    {
+        releaseProcessCacheDirLocked();
+        return;
+    }
+    if (carb::getFramework())
+    {
+        omni::physx::runtime::shutdown();
+        ovphysx::onCarboniteLoggingStopped();
+        carb::releaseFrameworkAndShutdown();
+    }
+    loaderState.bootstrapDone = false;
+    releaseProcessCacheDirLocked();
+    loaderState.nvtxPluginRegistered = false;
+#endif
 }
 
 // Create a file in `dir` to prove this process can write there, then remove it. Exclusive
@@ -849,8 +877,9 @@ void configureUjitsoLocalCache(carb::settings::ISettings* settings)
                       "writable; cooking will not persist across runs.", configured);
     }
 
-    g_processCacheDir = createProcessCacheDir();
-    if (g_processCacheDir.empty())
+    CarboniteLoaderState& loaderState = globalState().carboniteLoader;
+    loaderState.processCacheDir = createProcessCacheDir();
+    if (loaderState.processCacheDir.empty())
     {
         // Nowhere writable at all. Suppress the local datastore rather than let
         // carb.ujitso.default fall back to its unwritable app-dir default.
@@ -860,21 +889,465 @@ void configureUjitsoLocalCache(carb::settings::ISettings* settings)
         return;
     }
 
-    // atexit as well as CarboniteLoader::shutdown(): shutdown is not guaranteed to run (callers
-    // may leave the instance alive and let the OS reclaim at process exit).
-    static std::once_flag cleanupOnce;
-    std::call_once(cleanupOnce, [] { std::atexit(&releaseProcessCacheDirAtExit); });
-
     // u8string: Carbonite setting strings are UTF-8, while path::string() would convert through
     // the Windows narrow code page and mangle a non-ASCII temp path.
-    const std::string dir = g_processCacheDir.u8string();
+    const std::string dir = loaderState.processCacheDir.u8string();
     settings->setString("/UJITSO/datastore/localCachePath", dir.c_str());
     CARB_LOG_INFO("[CarboniteLoader] No cooked-collider cache directory configured "
                   "(PhysXConfig.cooked_collider_cache_dir); using the process-private cache '%s'. "
                   "Cooked colliders are discarded at shutdown.", dir.c_str());
 }
 
+// ---------------------------------------------------------------------------
+// The profiler backend.
+//
+// Three emitters feed carb::profiler: the omni.physx runtime's CARB_PROFILE_* zones
+// over stage load, cooking and step orchestration; the ovphysx C API entry points;
+// and the PhysX SDK's non-detached zones, which the runtime bridges across. In a
+// kitless process none of them reach anybody -- no backend is ever loaded, so
+// g_carbProfiler stays null and every zone is a branch. Binding one backend here
+// publishes all three at once.
+//
+// Two are selectable. NVTX feeds an Nsight Systems capture and is linked statically.
+// The chrome-trace writer is carb.profiler-cpu, a shared plugin already in the
+// shipped plugin set, which writes its JSON when the profiler shuts down.
+//
+// One group of zones never arrives here at all: the PhysX SDK's detached
+// (cross-thread) zones, which IProfiler cannot express and the runtime therefore
+// drops. No capture has Basic.simulate or its sibling phases, whichever backend is
+// bound.
+//
+// Shared by live loaders: bound at most once per loader epoch, and released by
+// the last loader, which also writes the trace file. The datastore and its cache
+// instead remain until framework shutdown.
+// ---------------------------------------------------------------------------
+constexpr const char* kCarbNvtxPlugin = "carb.profiler-nvtx.plugin";
+constexpr const char* kCarbTracePlugin = "carb.profiler-cpu.plugin";
+
+// carb.profiler-cpu's own settings, read by the plugin when the profiler starts.
+constexpr const char* kTraceSaveProfile = "/plugins/carb.profiler-cpu.plugin/saveProfile";
+constexpr const char* kTraceCompressProfile = "/plugins/carb.profiler-cpu.plugin/compressProfile";
+constexpr const char* kTraceFilePath = "/plugins/carb.profiler-cpu.plugin/filePath";
+
+const char* profilerPluginName(int32_t backend)
+{
+    return backend == OVPHYSX_PROFILER_BACKEND_TRACE ? kCarbTracePlugin : kCarbNvtxPlugin;
+}
+
+// Messages emitted after profilerMutex is released. A log handler may call
+// back into ovphysx_get_global_config, which takes that same mutex.
+struct DeferredCarbLog
+{
+    enum class Level
+    {
+        eInfo,
+        eWarn,
+    };
+
+    struct Item
+    {
+        Level level;
+        std::string text;
+    };
+
+    std::vector<Item> items;
+
+    void info(const std::string& text) { items.push_back({Level::eInfo, text}); }
+    void warn(const std::string& text) { items.push_back({Level::eWarn, text}); }
+
+    void emit() const
+    {
+        for (const Item& item : items)
+        {
+            if (item.level == Level::eWarn)
+                CARB_LOG_WARN("%s", item.text.c_str());
+            else
+                CARB_LOG_INFO("%s", item.text.c_str());
+        }
+    }
+};
+
+std::string formatCarbLog(const char* text)
+{
+    return std::string(text);
+}
+
+template <typename... Args>
+std::string formatCarbLog(const char* fmt, Args... args)
+{
+    char buffer[768];
+    // The format string is a literal at every call site. It is a parameter
+    // here only so the formatted text can be stored until the profiler mutex
+    // is released.
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+    std::snprintf(buffer, sizeof(buffer), fmt, args...);
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+    return std::string(buffer);
+}
+
+// Every registered plugin that offers carb::profiler::IProfiler, by name. Logged when
+// the binding did not come out as intended, since the name a static plugin registers
+// under is the thing most likely to be wrong and is otherwise invisible.
+void logProfilerProviders(carb::Framework* framework, DeferredCarbLog& logs)
+{
+    const size_t count = framework->getPluginCount();
+    if (count == 0)
+        return;
+
+    std::vector<carb::PluginDesc> plugins(count);
+    framework->getPlugins(plugins.data());
+
+    const carb::InterfaceDesc wanted = carb::profiler::IProfiler::getInterfaceDesc();
+    for (const carb::PluginDesc& plugin : plugins)
+    {
+        for (size_t i = 0; i < plugin.interfaceCount; ++i)
+        {
+            if (plugin.interfaces[i].name && std::strcmp(plugin.interfaces[i].name, wanted.name) == 0)
+            {
+                logs.warn(formatCarbLog(
+                    "[CarboniteLoader]   carb::profiler::IProfiler provider: %s (provides v%u.%u, "
+                    "this build requests v%u.%u)",
+                    plugin.impl.name ? plugin.impl.name : "(unnamed)",
+                    plugin.interfaces[i].version.major, plugin.interfaces[i].version.minor,
+                    wanted.version.major, wanted.version.minor));
+            }
+        }
+    }
+}
+
+// Makes the selected backend's plugin available for acquisition. Returns false only
+// when the request cannot be honoured at all; the acquire in the caller is what proves
+// the plugin actually provides IProfiler.
+bool registerProfilerBackendPlugin(carb::Framework* framework,
+                                   const std::vector<const char*>& searchPaths,
+                                   int32_t backend,
+                                   DeferredCarbLog& logs)
+{
+    if (backend == OVPHYSX_PROFILER_BACKEND_TRACE)
+    {
+        // A shared plugin rather than a static one -- the carb package builds a static
+        // library for the NVTX backend only. Carbonite skips a plugin whose name is
+        // already loaded, so this is safe even if a host loaded it first.
+        const char* wildcards[] = { kCarbTracePlugin };
+        carb::PluginLoadingDesc desc = carb::PluginLoadingDesc::getDefault();
+        desc.loadedFileWildcards = wildcards;
+        desc.loadedFileWildcardCount = 1;
+        desc.searchPaths = searchPaths.data();
+        desc.searchPathCount = static_cast<uint32_t>(searchPaths.size());
+        framework->loadPlugins(desc);
+        return true;
+    }
+
+#if OVPHYSX_CARB_NVTX_BACKEND
+    CarboniteLoaderState& loaderState = globalState().carboniteLoader;
+    // At most once per framework: see nvtxPluginRegistered. A later loader epoch
+    // reuses the registration; Linux owned-framework shutdown resets the flag.
+    if (loaderState.nvtxPluginRegistered)
+    {
+        return true;
+    }
+
+    if (!carb_profiler_nvtx_plugin_registerPlugin(framework))
+    {
+        // Not fatal: the zones stay unpublished, which is no reason to fail instance
+        // creation. A profiling opt-in that quietly does nothing would be worse, hence
+        // the warning.
+        logs.warn(formatCarbLog(
+            "[CarboniteLoader] Could not register %s; the profile zones will not "
+            "appear in an NVTX capture",
+            kCarbNvtxPlugin));
+        return false;
+    }
+    loaderState.nvtxPluginRegistered = true;
+    return true;
+#else
+    CARB_UNUSED(framework);
+    CARB_UNUSED(searchPaths);
+    logs.warn(formatCarbLog(
+        "[CarboniteLoader] This build has no NVTX profiler backend (carb.profiler-nvtx.static "
+        "was absent at configure time); select the trace backend instead"));
+    return false;
+#endif
+}
+
+// Points carb.profiler-cpu at its destination. Must run before CARB_PROFILE_STARTUP():
+// the plugin reads these when the profiler starts.
+void configureTraceBackend(carb::settings::ISettings* settings, DeferredCarbLog& logs)
+{
+    settings->setBool(kTraceSaveProfile, true);
+
+    // Plain JSON, not the plugin's gzip. The point of this backend is an artifact a
+    // script can read without a decompression step; a caller who wants the space back
+    // can compress the file afterwards.
+    settings->setBool(kTraceCompressProfile, false);
+
+    const char* outputPath = settings->getStringBuffer(ovphysx::profiling::kSettingProfilerOutputPath);
+    if (outputPath && outputPath[0] != '\0')
+    {
+        settings->setString(kTraceFilePath, outputPath);
+        logs.info(formatCarbLog(
+            "[CarboniteLoader] Chrome trace will be written to '%s'", outputPath));
+    }
+    else
+    {
+        // Drop any destination an earlier epoch set. The plugin setting is process-global
+        // and outlives a loader epoch, so leaving it would send this run's trace to the
+        // previous run's file -- overwriting it, while the log below promises the
+        // default.
+        settings->destroyItem(kTraceFilePath);
+
+        // The plugin's own default is a timestamped ct-profile file in the working
+        // directory. Named in the log because an unconfigured run otherwise leaves the
+        // caller hunting for where the trace went.
+        logs.info(formatCarbLog(
+            "[CarboniteLoader] Chrome trace will be written to the plugin default "
+            "(ct-profile <date> <time>.json in the working directory); set "
+            "PhysXConfig.profiler_output_path or OVPHYSX_PROFILER_OUTPUT to choose"));
+    }
+}
+
+void enableProfilerBackendIfRequested(carb::Framework* framework, const std::vector<const char*>& searchPaths)
+{
+    CarboniteLoaderState& loaderState = globalState().carboniteLoader;
+    DeferredCarbLog logs;
+    std::unique_lock<std::mutex> guard(loaderState.profilerMutex);
+    // Declared after the lock so it runs first on every return: unlock, then log,
+    // then refresh. A handler that reads the bound profiler must not find this
+    // mutex still held, and refresh itself can log.
+    struct Flush
+    {
+        DeferredCarbLog& logs;
+        std::unique_lock<std::mutex>& guard;
+        bool refresh;
+        ~Flush()
+        {
+            if (guard.owns_lock())
+                guard.unlock();
+            logs.emit();
+            if (refresh)
+                omni::physx::runtime::refreshProfilerCallback();
+        }
+    } flush{logs, guard, false};
+
+    carb::settings::ISettings* settings = framework->tryAcquireInterface<carb::settings::ISettings>();
+    if (!settings)
+        return;
+
+    const int32_t selected = settings->getAsInt(ovphysx::profiling::kSettingProfilerBackend);
+    if (selected == OVPHYSX_PROFILER_BACKEND_NONE)
+    {
+        if (loaderState.profilerBackendActive)
+        {
+            // Asking for none while a backend is bound is the same case as asking for a
+            // different one: the bound backend keeps publishing until the last loader
+            // shuts down, because releasing it here would silence an instance that is
+            // still simulating.
+            logs.warn(formatCarbLog(
+                "[CarboniteLoader] Profiler backend '%s' is already bound process-wide; this "
+                "instance asked for none and the zones keep publishing to the bound one "
+                "until the last instance shuts down",
+                ovphysx::profiling::backendName(
+                    static_cast<ovphysx_profiler_backend_t>(loaderState.profilerBackendBound))));
+        }
+
+        // Tell the runtime either way. It caches the installed SDK callback from
+        // whenever it was last resolved, and the PhysX SDK is created once per direct-runtime lifecycle:
+        // returning without a refresh would leave the callback as the first instance
+        // left it. Flush runs the refresh after the mutex is released.
+        flush.refresh = true;
+        return;
+    }
+
+    const char* pluginName = profilerPluginName(selected);
+    carb::profiler::IProfiler* backend = nullptr;
+
+    if (!loaderState.profilerBackendActive)
+    {
+        loaderState.profilerBindFailed = false;
+        if (!registerProfilerBackendPlugin(framework, searchPaths, selected, logs))
+        {
+            loaderState.profilerBindFailed = true;
+            return;
+        }
+
+        if (selected == OVPHYSX_PROFILER_BACKEND_TRACE)
+            configureTraceBackend(settings, logs);
+
+        // Name it as this client's IProfiler, so the unqualified acquire inside
+        // registerProfilerForClient() resolves to this backend and not to whichever
+        // other one Carbonite finds -- the install tree ships more than one plugin
+        // providing this interface. Per-client, so a host tenant's own choice is
+        // untouched.
+        framework->setDefaultPlugin<carb::profiler::IProfiler>(pluginName);
+
+        // Then acquire it once through the *non-optional* entry point, which is what
+        // initializes a freshly registered plugin. registerProfilerForClient() acquires
+        // optionally, and an optional acquire returns null for a plugin that has not
+        // been initialized rather than initializing it -- so registering and binding
+        // without this call leaves the profiler unbound and every zone dropped, with
+        // no error anywhere.
+        backend = framework->acquireInterface<carb::profiler::IProfiler>(pluginName);
+        if (!backend)
+        {
+            logs.warn(formatCarbLog(
+                "[CarboniteLoader] %s did not provide carb::profiler::IProfiler; the "
+                "profile zones cannot reach it",
+                pluginName));
+            logProfilerProviders(framework, logs);
+            loaderState.profilerBindFailed = true;
+            return;
+        }
+
+        // Rebind rather than just register. registerProfilerForClient() is a one-shot
+        // per module, and this module's profiler may already be bound: its load hook
+        // binds whichever backend Carbonite loaded first. Deregistering first makes the
+        // re-registration resolve through the default just set, instead of keeping a
+        // binding that predates it.
+        carb::profiler::deregisterProfilerForClient();
+        carb::profiler::registerProfilerForClient();
+
+        // Zone masks in the runtime are mixed: most zones pass 0, which resolves to
+        // kCaptureMaskDefault (bit 1), while the PhysX SDK bridge uses 1 << 8. Capture
+        // everything rather than track that set. Set before startup, not after:
+        // IProfiler documents changing the mask on a started profiler as undefined.
+        CARB_PROFILE_SET_CAPTURE_MASK(carb::profiler::kCaptureMaskAll);
+        CARB_PROFILE_STARTUP();
+        loaderState.profilerBackendActive = true;
+        loaderState.profilerBackendBound = selected;
+        loaderState.profilerBindFailed = false;
+        loaderState.profilerHostOwned = false;
+        loaderState.profilerOutputPathCaptured = false;
+        loaderState.profilerBoundOutputPath.clear();
+        if (selected == OVPHYSX_PROFILER_BACKEND_TRACE)
+        {
+            const char* configured = settings->getStringBuffer(kTraceFilePath);
+            if (configured && configured[0] != '\0')
+            {
+                loaderState.profilerBoundOutputPath = configured;
+                loaderState.profilerOutputPathCaptured = true;
+            }
+        }
+
+        // The runtime installs the SDK profiler callback when it creates the PhysX
+        // SDK, which happens once per direct-runtime lifecycle: an
+        // instance that asks for profiling after an earlier one ran without it would
+        // otherwise find no callback installed, and every SDK zone would be dropped
+        // before reaching this backend. Flush runs it after the mutex is released.
+        flush.refresh = true;
+    }
+    else
+    {
+        // The first selection wins for the rest of the loader epoch, because the profiler
+        // is bound once and started once. Say so rather than let the caller conclude the
+        // setting was ignored when a capture comes back in the other format.
+        if (selected != loaderState.profilerBackendBound)
+        {
+            logs.warn(formatCarbLog(
+                "[CarboniteLoader] Profiler backend '%s' is already bound process-wide; this "
+                "instance asked for '%s' and will publish to the bound one",
+                ovphysx::profiling::backendName(
+                    static_cast<ovphysx_profiler_backend_t>(loaderState.profilerBackendBound)),
+                ovphysx::profiling::backendName(static_cast<ovphysx_profiler_backend_t>(selected))));
+        }
+        else if (selected == OVPHYSX_PROFILER_BACKEND_TRACE)
+        {
+            // The destination is configured on the plugin once, before it starts, so a
+            // later instance asking for a different file does not get one -- and would
+            // otherwise go looking for a trace that was never going to be written there.
+            const char* requested = settings->getStringBuffer(ovphysx::profiling::kSettingProfilerOutputPath);
+            const char* configured = settings->getStringBuffer(kTraceFilePath);
+            const bool configuredIsDefault = !configured || configured[0] == '\0';
+            if (requested && requested[0] != '\0' && (configuredIsDefault || std::strcmp(requested, configured) != 0))
+            {
+                logs.warn(formatCarbLog(
+                    "[CarboniteLoader] The chrome trace destination is already set to %s for this "
+                    "process; this instance asked for '%s', which is ignored. The trace is written "
+                    "to the bound destination when the last instance shuts down.",
+                    configuredIsDefault ? "the plugin default" : configured, requested));
+            }
+        }
+        backend = framework->tryAcquireInterface<carb::profiler::IProfiler>(
+            profilerPluginName(loaderState.profilerBackendBound));
+    }
+
+    // Reported on every creation that asks for profiling, not just the one that bound
+    // the backend: the binding is a process-wide fact decided once, but the instance
+    // asking now is the one whose capture depends on the answer. The alternative is not
+    // "nothing" -- a host that bound its own backend keeps the zones, and the only
+    // symptom is a capture missing rows, with nothing to explain why.
+    carb::profiler::IProfiler* active = carb::profiler::getProfiler();
+    if (loaderState.profilerBackendActive)
+        loaderState.profilerHostOwned = active == nullptr || active != backend;
+    if (active && active == backend)
+    {
+        logs.info(formatCarbLog(
+            "[CarboniteLoader] Profile zones are publishing to the '%s' backend",
+            ovphysx::profiling::backendName(
+                static_cast<ovphysx_profiler_backend_t>(loaderState.profilerBackendBound))));
+    }
+    else
+    {
+        if (!active)
+            logs.warn(formatCarbLog(
+                "[CarboniteLoader] No Carbonite profiler is bound for this module; the "
+                "profile zones reach no consumer"));
+        else
+            logs.warn(formatCarbLog(
+                "[CarboniteLoader] Another Carbonite profiler backend owns this process; the "
+                "profile zones go there rather than to the selected backend"));
+
+        // Which plugins can provide the interface at all. Only on the unhappy path,
+        // where the alternative is guessing from an empty capture.
+        logProfilerProviders(framework, logs);
+    }
+}
+
+void disableProfilerBackend()
+{
+    CarboniteLoaderState& loaderState = globalState().carboniteLoader;
+    std::lock_guard<std::mutex> guard(loaderState.profilerMutex);
+    if (!loaderState.profilerBackendActive)
+    {
+        loaderState.profilerBindFailed = false;
+        loaderState.profilerHostOwned = false;
+        loaderState.profilerOutputPathCaptured = false;
+        loaderState.profilerBoundOutputPath.clear();
+        return;
+    }
+
+    // Order matters for the trace backend: CARB_PROFILE_SHUTDOWN() is what makes
+    // carb.profiler-cpu write its JSON, so the file appears at this point and not
+    // before. Deregistering first would drop the interface pointer that writes it.
+    CARB_PROFILE_SHUTDOWN();
+    carb::profiler::deregisterProfilerForClient();
+    loaderState.profilerBackendActive = false;
+    loaderState.profilerBackendBound = OVPHYSX_PROFILER_BACKEND_NONE;
+    loaderState.profilerBindFailed = false;
+    loaderState.profilerHostOwned = false;
+    loaderState.profilerOutputPathCaptured = false;
+    loaderState.profilerBoundOutputPath.clear();
+}
+
 } // namespace
+
+BoundProfilerState boundProfilerState()
+{
+    CarboniteLoaderState& loaderState = globalState().carboniteLoader;
+    std::lock_guard<std::mutex> guard(loaderState.profilerMutex);
+    BoundProfilerState state;
+    state.active = loaderState.profilerBackendActive;
+    state.bindFailed = loaderState.profilerBindFailed;
+    state.hostOwned = loaderState.profilerHostOwned;
+    state.backend = loaderState.profilerBackendBound;
+    state.outputPathCaptured = loaderState.profilerOutputPathCaptured;
+    state.outputPath = loaderState.profilerBoundOutputPath;
+    return state;
+}
 
 // Load the Carbonite dependencies, then start the linked PhysX runtime.
 // IPhysxSimulation is provided directly by the runtime, not acquired from Carbonite.
@@ -896,6 +1369,15 @@ bool CarboniteLoader::loadPhysxPlugins()
         return false;
     }
 
+    // Before the reuse path below: the backend selection is resolved per instance
+    // creation, so an instance that turns profiling on in a process where an earlier
+    // one left it off still gets its zones published. Search paths are needed because
+    // the trace backend is a shared plugin that has to be found on disk.
+    {
+        auto [profilerSearchPathStrings, profilerSearchPaths] = buildSearchPaths();
+        enableProfilerBackendIfRequested(framework, profilerSearchPaths);
+    }
+
     // The linked PhysX runtime is process-wide. Repeated ovphysx instances use
     // its existing function table without repeating dependency setup.
     if (!m->physxSim)
@@ -908,6 +1390,126 @@ bool CarboniteLoader::loadPhysxPlugins()
 
     auto [searchPathStrings, searchPaths] = buildSearchPaths();
 
+    // Tasking and TBB establish their process-wide worker limits when their
+    // interfaces are acquired. initialize() therefore registers but deliberately
+    // does not acquire either interface, and ovphysx_create_instance() applies
+    // its config entries between initialize() and this call, so an
+    // application-supplied worker count is in place before either pool starts.
+    //
+    // ovphysx supplies no default of its own: an unconfigured pool keeps
+    // Carbonite's machine-sized default. A bounded default was measured on
+    // GPU-heavy replicated scenes and was slower than the machine-sized pool,
+    // so the count is left to the application.
+    carb::settings::ISettings* workerSettings =
+        framework->tryAcquireInterface<carb::settings::ISettings>();
+    if (!workerSettings)
+    {
+        m->lastError = "Cannot configure worker pools because Carbonite ISettings is unavailable";
+        CARB_LOG_ERROR("[CarboniteLoader] %s", m->lastError.c_str());
+        return false;
+    }
+
+    // An unset tasking count reads as zero and means "size to the machine".
+    // TBB distinguishes an absent setting from explicit zero; zero is invalid
+    // when present because tbb::global_control requires a positive limit.
+    const int32_t configuredTaskingThreads = workerSettings->getAsInt(kTaskingThreadCountPath);
+    const int32_t configuredTbbThreads = workerSettings->getAsInt(kTbbThreadCountPath);
+    const bool hasConfiguredTbbThreads =
+        workerSettings->isAccessibleAs(carb::dictionary::ItemType::eInt, kTbbThreadCountPath);
+    if (configuredTaskingThreads < 0 || configuredTbbThreads < 0 ||
+        (hasConfiguredTbbThreads && configuredTbbThreads == 0))
+    {
+        m->lastError =
+            "Worker thread counts are invalid: /plugins/carb.tasking.plugin/threadCount and "
+            "/plugins/omni.tbb.globalcontrol/maxThreadCount must be >= 0 and an explicit TBB limit must be > 0";
+        CARB_LOG_ERROR(
+            "[CarboniteLoader] %s (tasking=%d, TBB=%d)",
+            m->lastError.c_str(),
+            configuredTaskingThreads,
+            configuredTbbThreads);
+        return false;
+    }
+
+    carb::tasking::ITasking* existingTasking =
+        framework->tryAcquireExistingInterface<carb::tasking::ITasking>();
+    if (existingTasking)
+    {
+        CARB_LOG_INFO(
+            "[CarboniteLoader] Reusing pre-started carb.tasking pool with %u workers; "
+            "startup setting is %d and cannot resize it",
+            existingTasking->getDesc().threadCount,
+            configuredTaskingThreads);
+    }
+    else
+    {
+        CARB_LOG_INFO(
+            "[CarboniteLoader] Starting carb.tasking with configured threadCount=%d "
+            "(0 means size to the machine; available logical CPUs=%u)",
+            configuredTaskingThreads,
+            carb::thread::hardware_concurrency());
+    }
+
+    if (!verifyLoadedInterfaces(
+            framework, kTaskingProbes, sizeof(kTaskingProbes) / sizeof(kTaskingProbes[0]), "Tasking"))
+    {
+        m->lastError = "Carbonite tasking failed to start after worker configuration";
+        return false;
+    }
+
+    carb::tasking::ITasking* tasking =
+        framework->tryAcquireExistingInterface<carb::tasking::ITasking>();
+    CARB_LOG_INFO(
+        "[CarboniteLoader] Worker pools configured: carb.tasking effective=%u, TBB configured=%d",
+        tasking ? tasking->getDesc().threadCount : 0,
+        configuredTbbThreads);
+
+    if (!verifyLoadedInterfaces(
+            framework,
+            kPostTaskingProbes,
+            sizeof(kPostTaskingProbes) / sizeof(kPostTaskingProbes[0]),
+            "Post-tasking foundation"))
+    {
+        m->lastError = "Carbonite foundation interfaces failed after tasking startup";
+        return false;
+    }
+
+    // Establish TBB's process-wide cap before the PhysX runtime or cooking
+    // plugins can start TBB workers.
+    static const char* const kInfrastructurePlugins[] = {
+        "omni.tbb.globalcontrol.plugin",
+    };
+    carb::PluginLoadingDesc infrastructureDesc = carb::PluginLoadingDesc::getDefault();
+    infrastructureDesc.loadedFileWildcards = kInfrastructurePlugins;
+    infrastructureDesc.loadedFileWildcardCount =
+        sizeof(kInfrastructurePlugins) / sizeof(kInfrastructurePlugins[0]);
+    infrastructureDesc.searchPaths = searchPaths.data();
+    infrastructureDesc.searchPathCount = static_cast<uint32_t>(searchPaths.size());
+    framework->loadPlugins(infrastructureDesc);
+    TbbGlobalControl* tbbGlobalControl =
+        framework->tryAcquireInterface<TbbGlobalControl>("omni.tbb.globalcontrol.plugin");
+    if (!tbbGlobalControl)
+    {
+        m->lastError = "TBB global control failed to start after worker configuration";
+        CARB_LOG_ERROR("[CarboniteLoader] %s", m->lastError.c_str());
+        return false;
+    }
+    CARB_LOG_INFO(
+        "[CarboniteLoader] TBB global control started with configured maxThreadCount=%d",
+        configuredTbbThreads);
+
+    // Monitoring plugins may depend on tasking, so load them only after the
+    // configured tasking pool is running.
+    static const char* const kMonitoringPlugins[] = {
+        "omni.platforminfo.plugin",
+    };
+    carb::PluginLoadingDesc monitoringDesc = carb::PluginLoadingDesc::getDefault();
+    monitoringDesc.loadedFileWildcards = kMonitoringPlugins;
+    monitoringDesc.loadedFileWildcardCount =
+        sizeof(kMonitoringPlugins) / sizeof(kMonitoringPlugins[0]);
+    monitoringDesc.searchPaths = searchPaths.data();
+    monitoringDesc.searchPathCount = static_cast<uint32_t>(searchPaths.size());
+    framework->loadPlugins(monitoringDesc);
+
     // UJITSO local in-process cooked-collider cache (NVBugs 6262606). Without the UJITSO
     // plugins the cooking service finds no carb::ujitso::IRegistry and silently cooks
     // uncached, re-cooking every collider on every launch. Seed the local-only datastore
@@ -916,7 +1518,7 @@ bool CarboniteLoader::loadPhysxPlugins()
     if (auto* ujitsoSettings = framework->tryAcquireInterface<carb::settings::ISettings>())
         configureUjitsoLocalCache(ujitsoSettings);
 
-    static const char* kUjitsoPlugins[] = {
+    static const char* const kUjitsoPlugins[] = {
         "omni.blobkey.plugin",        // IBlobKey (no deps)
         "carb.datastore.plugin",      // datastore factories (needs IBlobKey)
         "carb.ujitsoagent.plugin",    // IFactory/IAgent/IService/IRegistry (carb.datasource-file is static)
@@ -963,7 +1565,7 @@ bool CarboniteLoader::loadPhysxPlugins()
             CARB_LOG_INFO("[CarboniteLoader] UJITSO cooked-collider cache active (local, in-process)");
     }
 
-    static const char* kRuntimeDependentPlugins[] = {
+    static const char* const kRuntimeDependentPlugins[] = {
         "omni.localcache.plugin",
         "omni.kvdb.plugin",
     };
@@ -1010,7 +1612,17 @@ bool CarboniteLoader::loadPhysxPlugins()
         return false;
     }
 
+    std::atexit(&releaseProcessCacheDirAtExit);
     return true;
+}
+
+void shutdownCarbonite()
+{
+    // Drain before taking bootstrapMutex: callbacks can query loader state. This API
+    // also updates the thread-local last error, so never call it from native atexit,
+    // which runs after C++ thread-local destructors on Linux.
+    ovphysx::shutdownLogCallback();
+    releaseProcessCacheDirAtExit();
 }
 
 void CarboniteLoader::shutdown()
@@ -1018,18 +1630,25 @@ void CarboniteLoader::shutdown()
     if (!m || !m->frameworkAcquired)
         return;
 
+    CarboniteLoaderState& loaderState = globalState().carboniteLoader;
     CARB_LOG_INFO("[CarboniteLoader] Shutdown starting (framework=%p)", static_cast<void*>(carb::getFramework()));
     m->physxSim = nullptr;
     m->frameworkAcquired = false;
-    // The process-private cooked-collider cache is process-wide, so only the last loader may
-    // remove it. An earlier one would pull it out from under an instance still cooking. The
-    // decrement and the cleanup share g_bootstrapMutex with initialize()'s g_activeLoaders
-    // increment, so a concurrent ovphysx_create_instance() cannot start reusing the cache dir
-    // while it is still being removed.
+    // The datastore outlives individual loaders. Keep its cache until SDK shutdown has
+    // stopped its background writers. The last-loader transition still releases profiling.
     {
-        std::lock_guard<std::mutex> guard(g_bootstrapMutex);
-        if (g_activeLoaders.fetch_sub(1, std::memory_order_acq_rel) == 1)
-            releaseProcessCacheDirLocked(/*retry=*/true);
+        std::lock_guard<std::mutex> guard(loaderState.bootstrapMutex);
+        if (loaderState.activeLoaders.fetch_sub(1, std::memory_order_acq_rel) == 1)
+        {
+            // Register after any lazy plugin startup during this lifecycle, so a C host
+            // that omits SDK shutdown can release Carbonite before its terminating hook.
+            std::atexit(&releaseProcessCacheDirAtExit);
+            // Same last-loader rule, and for the same reason: the profiler is
+            // process-wide, so dropping it on an arbitrary per-instance shutdown
+            // would silence the zones of an instance still running -- and, for the
+            // trace backend, would write the file while work was still being recorded.
+            disableProfilerBackend();
+        }
     }
     CARB_LOG_INFO("[CarboniteLoader] Shutdown complete");
 }

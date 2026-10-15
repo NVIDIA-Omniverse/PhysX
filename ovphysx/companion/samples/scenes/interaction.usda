@@ -1,0 +1,37 @@
+#usda 1.0
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+(metersPerUnit = 1
+ upAxis = "Z")
+def Xform "World" {
+    def PhysicsScene "Scene" {
+        float physics:gravityMagnitude = 0
+    }
+    def Cube "Body" (prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]) {
+        double size = 1
+        float physics:mass = 2
+        float physxRigidBody:linearDamping = 0
+        float physxRigidBody:angularDamping = 0
+        float3 physics:diagonalInertia = (1, 1, 1)
+        double3 xformOp:translate = (0, 0, 2)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+    def Cube "Wall" (prepend apiSchemas = ["PhysicsCollisionAPI"]) {
+        double size = 1
+        double3 xformOp:translate = (2, 0, 2)
+        double3 xformOp:scale = (1, 10, 10)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+    def PointInstancer "Instances" {
+        rel prototypes = </World/Instances/Box>
+        int[] protoIndices = [0, 0]
+        point3f[] positions = [(0, 10, 2), (0, 12, 2)]
+        quath[] orientations = [(1, 0, 0, 0), (1, 0, 0, 0)]
+        def Cube "Box" (prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsCollisionAPI", "PhysicsMassAPI", "PhysxRigidBodyAPI"]) {
+            double size = 1
+            float physics:mass = 2
+        float physxRigidBody:linearDamping = 0
+        float physxRigidBody:angularDamping = 0
+        }
+    }
+}

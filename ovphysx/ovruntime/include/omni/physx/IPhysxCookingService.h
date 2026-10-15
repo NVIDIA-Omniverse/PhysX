@@ -142,7 +142,7 @@ struct PhysxCookingComputeRequest
     // the runtime side resolves the attach and echoes the handle to PhysxCookingFinishedCallback. A
     // request driven by a stageless attach has an attachHandle and no primStageId.
     AttachHandle attachHandle = kNoAttach; //!< Attach to resolve and notify on completion, from @ref
-                                           //!< IPhysxSimulation::getAttachHandle() or kActiveAttach;
+                                           //!< IPhysxSimulation::attachOvstage();
                                            //!< kNoAttach when the request is not tied to an attach
 
     // Correlation keys only (REQ-COOK-SOURCE-001 AC-1) -- the onFinished continuation and debug

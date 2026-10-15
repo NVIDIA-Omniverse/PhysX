@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-"""CPU placement and aliasing coverage for ``PhysX.write``."""
+"""CPU placement and aliasing coverage for ``PhysX.write_sync``."""
 
 # @implements REQ-CAPI-WRITE-001
 # @covers AC-9
@@ -17,7 +17,7 @@ from test_utils import data_path, load_usd_with_ovstage
 
 
 def _read_positions(sdk):
-    with sdk.read(SimObjectType.RIGID_BODY, ["position"]) as result:
+    with sdk.read_sync(SimObjectType.RIGID_BODY, ["position"]) as result:
         assert result.groups
         return np.concatenate([g.tensors[0].numpy().reshape(g.prim_count, 3) for g in result.groups])
 
@@ -29,7 +29,7 @@ def test_cpu_write_returns_warp_aliases_and_round_trips(physx_sdk_cpu):
     before = _read_positions(physx_sdk_cpu)
     target = np.arange(before.size, dtype=np.float32).reshape(before.shape) + 200.0
 
-    with physx_sdk_cpu.write(SimObjectType.RIGID_BODY, "position") as session:
+    with physx_sdk_cpu.write_sync(SimObjectType.RIGID_BODY, "position") as session:
         assert session.groups
         row = 0
         for group in session.groups:
@@ -38,7 +38,7 @@ def test_cpu_write_returns_warp_aliases_and_round_trips(physx_sdk_cpu):
             assert tensor.size > 0, "the alias assertion applies to mapped non-empty storage"
             assert tensor.device.is_cpu
             tensor.assign(np.ascontiguousarray(target[row : row + group.prim_count]))
-            session.commit(group)
+            session.commit_sync(group)
             row += group.prim_count
         assert row == target.shape[0]
 

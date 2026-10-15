@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-PARSE-CORE-006
+// @covers AC-9
+
 /**
  * @implements REQ-PARSE-ART-001
  * @covers AC-4
@@ -69,7 +72,7 @@ void checkArticulationSceneID(AttachedStage& attachedStage,
         else
         {
             // If we're not forcing parse of a single scene, this is an actual error
-            if (OmniPhysX::getInstance().getISettings()->getStringBuffer(kSettingForceParseOnlySingleScene) == nullptr)
+            if (attachedStage.getParseOptions().forceSingleScenePath.empty())
             {
                 CARB_LOG_ERROR("parseArticulation: Failed to find physics simulation owner \"%s\".", attachedStage.textFor(ownerKey));
             }
@@ -124,7 +127,7 @@ void createArticulationObject(AttachedStage& attachedStage, omni::physics::parse
     }
 
     articulationId = id;
-    ICE_FREE(desc);
+    // Borrowed from the owning ScannedStage; no storage release here.
 }
 
 void createArticulationLink(AttachedStage& attachedStage,

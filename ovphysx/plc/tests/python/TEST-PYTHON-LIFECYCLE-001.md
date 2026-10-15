@@ -40,6 +40,8 @@ cannot be reinitialized safely within one Python process.
 
 ## When
 
+- Native destruction returns INVALID_STATE for a live companion lease, then succeeds on retry after close.
+
 - `destroy()` is called on the first real instance, its child binding is used,
   the second instance is used, and destruction is repeated on both instances.
 - Native destruction returns an error status.
@@ -71,6 +73,8 @@ cannot be reinitialized safely within one Python process.
   handoff and while the completed shutdown clears `SHUTTING_DOWN`.
 
 ## Then
+
+- `test_companion_lease_rejection_retains_owner_until_retry` preserves the Python owner on INVALID_STATE, reports both lease and concurrent-transition causes, and discharges ownership once on retry (REQ AC-2).
 
 - Successful destruction clears the parent handle, invalidates the child
   binding, decrements the process refcount once, leaves the simultaneous
@@ -119,3 +123,36 @@ cannot be reinitialized safely within one Python process.
 - An interruption during final-release handoff or final transition clear is
   propagated only after native shutdown completes and `SHUTTING_DOWN` and the
   process refcount are coherent (REQ AC-7).
+
+## Borrowed read storage
+
+`lifecycle_tests/test_read_borrow_destroy_cpu.py` and
+`lifecycle_tests/test_read_borrow_destroy_gpu.py` each run a real instance in an
+isolated process. A Warp slice outlives its source array and closed ReadResult.
+Destroy rejects before changing the handle or attachment; the slice remains
+readable before and after another simulation step. Dropping it permits checked,
+idempotent destruction (REQ AC-9).
+
+The isolated `lifecycle_tests/test_read_borrow_gc_cycle.py` regression creates an
+unreachable SDK-to-array-to-holder cycle and witnesses real native destruction
+and balanced lifecycle ownership, without an abandoned-handle warning.
+
+
+`test_gc_busy_finalizer_retains_owner_stage_until_native_admission` collects an
+owner while native destroy returns INVALID_STATE, checks the owner/Stage/token
+remain reachable, then admits destruction and verifies exactly-once cleanup.
+
+`test_gc_cycle_keeps_attached_stage_until_owner_teardown` builds an unreachable
+host/owner cycle through a bound-method callback, with a Stage stand-in whose
+finalizer records native stage destruction and is allocated first so a shared
+collection pass would finalize it first. For both immediate and busy-deferred
+finalization, native instance destruction precedes the Stage finalizer, and the
+Stage is not finalized while teardown is deferred (REQ AC-5).
+
+`test_process_exit_waits_for_in_flight_deferred_teardown` runs process-exit
+cleanup while a deferred worker is inside native destruction: exit waits, makes
+no concurrent native call, and releases lifecycle ownership and shuts down once
+after the worker completes. `test_process_exit_takes_over_busy_deferred_finalizer`
+runs exit while a worker is retrying a busy owner: the worker stops retrying,
+exit makes the final attempt itself, warns, retains the owner's handle and token,
+and skips process shutdown (REQ AC-8).

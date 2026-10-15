@@ -3,9 +3,9 @@
 
 """GPU SDF view lifecycle tests (NVBug 6473872).
 
-Regression guards for undisposed or stale SdfView handles across reset_stage()
-and detach_ovstage(). The stale-evaluate and live-view teardown tests are the
-regression evidence. Destroy-before-detach is a smoke test only.
+Regression guards for undisposed or stale SdfView handles across detach_ovstage().
+The stale-evaluate and live-view teardown tests are the regression evidence.
+Destroy-before-detach is a smoke test only.
 """
 
 import numpy as np
@@ -55,11 +55,11 @@ def test_sdf_view_destroy_before_detach_succeeds(physx_sdk):
     assert result[0, 1, 3] > 0
 
     sdf_view.destroy()
-    physx_sdk.detach_ovstage()
+    physx_sdk.wait_task(physx_sdk.detach_ovstage())
 
 
-def test_sdf_view_stale_evaluate_after_reset_stage_raises(physx_sdk):
-    """Reusing an SdfView across reset_stage must raise, not crash."""
+def test_sdf_view_stale_evaluate_after_detach_ovstage_raises(physx_sdk):
+    """Reusing an SdfView across detach_ovstage must raise, not crash."""
     _load_sdf_cube(physx_sdk)
 
     sdf_view = physx_sdk.create_sdf_view(
@@ -68,7 +68,7 @@ def test_sdf_view_stale_evaluate_after_reset_stage_raises(physx_sdk):
     in_gpu, out_gpu = _make_sdf_query_buffers()
     _evaluate_sdf_view(sdf_view, in_gpu, out_gpu)
 
-    physx_sdk.reset_stage()
+    physx_sdk.detach_ovstage()
     physx_sdk.wait_all()
 
     load_usd_with_ovstage(physx_sdk, data_path("sdf_cube.usda"))
@@ -79,8 +79,8 @@ def test_sdf_view_stale_evaluate_after_reset_stage_raises(physx_sdk):
         _evaluate_sdf_view(sdf_view, in_gpu, out_gpu)
 
 
-def test_sdf_view_reset_stage_with_live_view_does_not_crash(physx_sdk):
-    """reset_stage with an undisposed SdfView must not SIGSEGV the process."""
+def test_sdf_view_detach_ovstage_with_live_view_does_not_crash(physx_sdk):
+    """detach_ovstage with an undisposed SdfView must not SIGSEGV the process."""
     _load_sdf_cube(physx_sdk)
 
     sdf_view = physx_sdk.create_sdf_view(
@@ -89,7 +89,7 @@ def test_sdf_view_reset_stage_with_live_view_does_not_crash(physx_sdk):
     in_gpu, out_gpu = _make_sdf_query_buffers()
     _evaluate_sdf_view(sdf_view, in_gpu, out_gpu)
 
-    physx_sdk.reset_stage()
+    physx_sdk.detach_ovstage()
     physx_sdk.wait_all()
 
     with pytest.raises(RuntimeError, match="SDF view|stage changed|not found"):
@@ -111,14 +111,14 @@ def test_sdf_view_detach_with_live_view_does_not_crash(physx_sdk):
     in_gpu, out_gpu = _make_sdf_query_buffers()
     _evaluate_sdf_view(sdf_view, in_gpu, out_gpu)
 
-    physx_sdk.detach_ovstage()
+    physx_sdk.wait_task(physx_sdk.detach_ovstage())
 
     with pytest.raises(RuntimeError, match="SDF view|stage changed|not found"):
         _evaluate_sdf_view(sdf_view, in_gpu, out_gpu)
 
 
-def test_sdf_view_destroy_after_reset_stage_is_idempotent(physx_sdk):
-    """destroy() on a stale handle after reset_stage cleanup must not raise."""
+def test_sdf_view_destroy_after_detach_ovstage_is_idempotent(physx_sdk):
+    """destroy() on a stale handle after detach_ovstage cleanup must not raise."""
     _load_sdf_cube(physx_sdk)
 
     sdf_view = physx_sdk.create_sdf_view(
@@ -127,7 +127,7 @@ def test_sdf_view_destroy_after_reset_stage_is_idempotent(physx_sdk):
     in_gpu, out_gpu = _make_sdf_query_buffers()
     _evaluate_sdf_view(sdf_view, in_gpu, out_gpu)
 
-    physx_sdk.reset_stage()
+    physx_sdk.detach_ovstage()
     physx_sdk.wait_all()
 
     sdf_view.destroy()
@@ -135,7 +135,7 @@ def test_sdf_view_destroy_after_reset_stage_is_idempotent(physx_sdk):
 
 
 def test_sdf_view_new_view_after_reset_works(physx_sdk):
-    """After reset and reload, a freshly created SdfView must evaluate normally."""
+    """After detach and reload, a freshly created SdfView must evaluate normally."""
     _load_sdf_cube(physx_sdk)
 
     with physx_sdk.create_sdf_view(
@@ -144,7 +144,7 @@ def test_sdf_view_new_view_after_reset_works(physx_sdk):
         in_gpu, out_gpu = _make_sdf_query_buffers()
         _evaluate_sdf_view(sdf_view, in_gpu, out_gpu)
 
-    physx_sdk.reset_stage()
+    physx_sdk.detach_ovstage()
     physx_sdk.wait_all()
 
     _load_sdf_cube(physx_sdk)

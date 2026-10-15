@@ -4,12 +4,10 @@
 /**
  * ICE-backed `IDescriptorAllocator` for the parse library.
  *
- * Passed to `scanStage` / `ParseContext` so descriptors produced by the
- * parse-library are allocated through ICE from the start.  Matches the
- * consumer's existing `releaseDesc` / `releaseShapeDesc` release path
- * (both call `ICE_FREE_BASIC`) so descriptors can move out of
- * `ScannedStage` via `.release()` instead of being deep-copied at the
- * boundary.
+ * Passed to scanStage / ParseContext so descriptor storage uses ICE while
+ * DescPtr retains concrete destruction and the matching deallocation policy.
+ * Runtime consumers borrow from the owning scan or retain an owning result.
+ * Raw ICE_FREE on a parse descriptor skips its member destructors and is invalid.
  *
  * @implements REQ-PARSE-CORE-006
  * @covers AC-6

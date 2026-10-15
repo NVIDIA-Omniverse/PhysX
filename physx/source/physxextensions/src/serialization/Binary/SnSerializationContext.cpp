@@ -11,24 +11,42 @@ using namespace Sn;
 
 PxBase* DeserializationContext::resolveReference(PxU32 kind, size_t reference) const
 {
+	//A reference that is not in the map has no object behind it: the collection was serialized with a
+	//dangling reference (see e.g. NpShape::requiresObjects, which skips a material it cannot resolve, so
+	//nothing registers it), or the buffer has been damaged. Both lookups below used to guard the miss with an
+	//assert only and then dereference the NULL entry in a release build. Report it and return NULL, like the
+	//unknown-kind branch already does - the callers have to handle NULL either way.
+	//The assert is deliberately gone: this is a statement about the input, not about a PhysX invariant, so it
+	//must behave the same in every configuration instead of aborting a debug build on malformed data.
+	// ### DEFENSIVE (OMPE-109162)
 	SerialObjectIndex objIndex;
 	if (kind == PX_SERIAL_REF_KIND_PXBASE)
 	{
 		const InternalPtrRefMap::Entry* entry0 = mInternalPtrReferencesMap.find(reference);
-		PX_ASSERT(entry0);
+		if (!entry0)
+		{
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
+				"PxDeserializationContext::resolveReference: unknown object reference in the serialized data.");
+			return NULL;
+		}
 		objIndex = entry0->second;
 	}
 	else if (kind == PX_SERIAL_REF_KIND_MATERIAL_IDX)
 	{
 		const InternalHandle16RefMap::Entry* entry0 = mInternalHandle16ReferencesMap.find(PxU16(reference));
-		PX_ASSERT(entry0);
+		if (!entry0)
+		{
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
+				"PxDeserializationContext::resolveReference: unknown material reference %u in the serialized data.", PxU32(PxU16(reference)));
+			return NULL;
+		}
 		objIndex = entry0->second;
 	}
 	else
 	{
 		return NULL;
 	}
-	
+
 	bool isExternal;
 	PxU32 index = objIndex.getIndex(isExternal);
 	PxBase* base = NULL;

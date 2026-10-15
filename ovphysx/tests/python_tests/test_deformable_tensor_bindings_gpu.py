@@ -446,7 +446,8 @@ def test_sdf_view_cube_distance_signs_and_gradients(physx_sdk):
 
     # 2 query points: one just inside the +x face, one just outside.
     max_q = 2
-    sdf_view = physx_sdk.create_sdf_view(pattern="/World/Cube", max_query_points=max_q)
+    with pytest.warns(DeprecationWarning, match="SDF views are deprecated"):
+        sdf_view = physx_sdk.create_sdf_view(pattern="/World/Cube", max_query_points=max_q)
     assert sdf_view.count == 1
 
     # Points in the shape's local frame (cube half-extent 0.5).

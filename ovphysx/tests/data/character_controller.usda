@@ -1,0 +1,45 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def PhysicsScene "PhysicsScene"
+    {
+        vector3f physics:gravityDirection = (0, -1, 0)
+        float physics:gravityMagnitude = 10
+    }
+
+    def Capsule "Controller" (
+        prepend apiSchemas = ["CharacterControllerAPI", "PhysxCharacterControllerAPI"]
+    )
+    {
+        uniform token axis = "Y"
+        float3[] extent = [(-0.5, -1, -0.5), (0.5, 1, 0.5)]
+        double height = 1
+        uniform token physxCharacterController:upAxis = "Y"
+        double radius = 0.5
+        prepend rel simulationOwner = </World/PhysicsScene>
+        double3 xformOp:scale = (1, 1, 1)
+        double3 xformOp:translate = (0, 5, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Capsule "Other" (
+        prepend apiSchemas = ["CharacterControllerAPI", "PhysxCharacterControllerAPI"]
+    )
+    {
+        uniform token axis = "Y"
+        float3[] extent = [(-0.5, -1, -0.5), (0.5, 1, 0.5)]
+        double height = 1
+        uniform token physxCharacterController:upAxis = "Y"
+        double radius = 0.5
+        prepend rel simulationOwner = </World/PhysicsScene>
+        double3 xformOp:scale = (1, 1, 1)
+        double3 xformOp:translate = (10, 5, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+}

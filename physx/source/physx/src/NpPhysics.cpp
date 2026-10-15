@@ -634,7 +634,16 @@ static NpMaterialT* addMaterial(
 	else
 	{
 		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, error);
+
+		//setMaterial() has already cleared the index of a material it rejected, so destroying it here cannot
+		//unregister a slot it does not own: both NpMaterialManager::removeMaterial and NpScene::removeMaterial
+		//skip MATERIAL_INVALID_HANDLE. Getting that wrong is the material table corruption behind OMPE-109162,
+		//where a deserialized copy took the *source* material's slot down with it.
+		//onRefCountZero() dispatches on eOWNS_MEMORY, so this returns an owned material to the pool and
+		//destroys a deserialized one in place. Its caller must therefore not touch it again - which is why
+		//resolveReferences() reports the outcome instead of leaving it to be read back off the object.
 		m->release();
+
 		return NULL;
 	}
 }
@@ -1140,6 +1149,6 @@ PxPhysics* PxCreatePhysics(PxU32 version, PxFoundation& foundation, const physx:
 void PxAddCollectionToPhysics(const PxCollection& collection)
 {
 	NpFactory& factory = NpFactory::getInstance();
-	const Cm::Collection& c = static_cast<const Cm::Collection&>(collection);	
+	const Cm::Collection& c = static_cast<const Cm::Collection&>(collection);
     factory.addCollection(c);
 }

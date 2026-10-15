@@ -3,7 +3,9 @@
 
 /**
  * @implements REQ-CAPI-STEP-001
- * @covers AC-1 AC-2 AC-3
+ * @covers AC-1 AC-2
+ * @implements REQ-CAPI-TASK-001
+ * @covers AC-5 AC-6
  */
 
 #include <gtest/gtest.h>
@@ -28,15 +30,14 @@ protected:
     void SetUp() override
     {
         m_logLevel = ovphysx_get_log_level();
-        const ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-        ASSERT_EQ(ovphysx_create_instance(&args, &m_handle).status, OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(ovphysx_create_instance(&m_handle).status, OVPHYSX_API_SUCCESS);
         ASSERT_EQ(ovphysx_test_get_settings_bool("/physics/suppressReadback", &m_suppressReadback).status,
                   OVPHYSX_API_SUCCESS);
         m_restoreReadback = true;
         const ovphysx_config_entry_t readback = ovphysx_config_entry_carbonite(
             OVPHYSX_LITERAL("/physics/suppressReadback"),
             GetParam() ? OVPHYSX_LITERAL("true") : OVPHYSX_LITERAL("false"));
-        ASSERT_EQ(ovphysx_set_global_config(readback).status, OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(ovphysx_set_global_config_entry(readback).status, OVPHYSX_API_SUCCESS);
         if (!ovphysx::test_cuda::cudaAvailable())
         {
             if (ovphysxTestRequireCuda())
@@ -47,12 +48,9 @@ protected:
         ASSERT_TRUE(test_utils::attach_usd_with_ovstage(
             m_handle, "tests/data/boxes_falling_on_groundplane_gpu.usda"));
         ASSERT_EQ(ovphysx_step_sync(m_handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
-        ASSERT_EQ(ovphysx_step_n_sync(m_handle, 2, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
 
-        void* scenePointer = nullptr;
-        ASSERT_EQ(ovphysx_get_physx_ptr(m_handle, OVPHYSX_LITERAL("/World/physicsScene"),
-                                      OVPHYSX_PHYSX_TYPE_SCENE, &scenePointer).status,
-                  OVPHYSX_API_SUCCESS);
+        void* scenePointer = test_utils::read_physx_pointer(
+            m_handle, OVPHYSX_QUERY_TARGET_SCENE, "/World/physicsScene");
         ASSERT_NE(scenePointer, nullptr);
         physx::PxScene* scene = static_cast<physx::PxScene*>(scenePointer);
         ASSERT_TRUE(scene->getFlags().isSet(physx::PxSceneFlag::eENABLE_GPU_DYNAMICS));
@@ -82,12 +80,12 @@ protected:
             const ovphysx_config_entry_t readback = ovphysx_config_entry_carbonite(
                 OVPHYSX_LITERAL("/physics/suppressReadback"),
                 m_suppressReadback ? OVPHYSX_LITERAL("true") : OVPHYSX_LITERAL("false"));
-            EXPECT_EQ(ovphysx_set_global_config(readback).status, OVPHYSX_API_SUCCESS);
+            EXPECT_EQ(ovphysx_set_global_config_entry(readback).status, OVPHYSX_API_SUCCESS);
         }
         EXPECT_EQ(ovphysx_set_log_level(m_logLevel).status, OVPHYSX_API_SUCCESS);
     }
 
-    ovphysx_handle_t m_handle = 0;
+    ovphysx_instance_handle_t m_handle = 0;
     physx::PxCudaContext* m_cudaContext = nullptr;
     uint32_t m_logLevel = OVPHYSX_LOG_WARNING;
     bool m_suppressReadback = false;
@@ -104,37 +102,23 @@ TEST_P(GpuStepErrorGpuTest, SyncFailureSurvivesDisabledLogging)
     }
 }
 
-TEST_P(GpuStepErrorGpuTest, BatchFailureSurvivesDisabledLogging)
-{
-    for (int batch = 0; batch < 2; ++batch)
-    {
-        EXPECT_EQ(ovphysx_step_n_sync(m_handle, 2, 1.0f / 60.0f).status, OVPHYSX_API_ERROR);
-        const ovphysx_string_t error = ovphysx_get_last_error();
-        EXPECT_NE(std::string(error.ptr ? error.ptr : "", error.length).find("CUDA error 2"), std::string::npos);
-    }
-}
-
 TEST_P(GpuStepErrorGpuTest, AsyncFailureSurvivesDisabledLogging)
 {
-    for (bool waitAll : { false, true })
+    for (int step = 0; step < 2; ++step)
     {
-        for (int step = 0; step < 2; ++step)
+        const ovphysx_enqueue_result_t task = ovphysx_step(m_handle, 1.0f / 60.0f);
+        ASSERT_EQ(task.status, OVPHYSX_API_SUCCESS);
+        ovphysx_wait_task_result_t wait{};
+        EXPECT_EQ(ovphysx_wait_task(m_handle, task, OVPHYSX_TIMEOUT_INFINITE, &wait).status, OVPHYSX_API_ERROR);
+        EXPECT_EQ(wait.num_errors, 1u);
+        if (wait.num_errors == 1)
         {
-            const ovphysx_enqueue_result_t operation = ovphysx_step(m_handle, 1.0f / 60.0f);
-            ASSERT_EQ(operation.status, OVPHYSX_API_SUCCESS);
-            ovphysx_op_wait_result_t wait{};
-            const ovphysx_op_index_t target = waitAll ? OVPHYSX_OP_INDEX_ALL : operation.op_index;
-            EXPECT_EQ(ovphysx_wait_op(m_handle, target, OVPHYSX_TIMEOUT_INFINITE, &wait).status, OVPHYSX_API_ERROR);
-            EXPECT_EQ(wait.num_errors, 1u);
-            EXPECT_EQ(wait.lowest_pending_op_index, 0u);
-            if (wait.num_errors == 1)
-            {
-                EXPECT_EQ(wait.error_op_indices[0], operation.op_index);
-            }
-            const ovphysx_string_t error = ovphysx_get_last_op_error(operation.op_index);
-            EXPECT_NE(std::string(error.ptr ? error.ptr : "", error.length).find("CUDA error 2"), std::string::npos);
-            ovphysx_destroy_wait_result(&wait);
+            EXPECT_EQ(wait.error_tasks[0].op_index, task.op_index);
+            EXPECT_EQ(wait.error_tasks[0].instance, task.instance);
         }
+        const ovphysx_string_t error = ovphysx_get_last_task_error(m_handle, task);
+        EXPECT_NE(std::string(error.ptr ? error.ptr : "", error.length).find("CUDA error 2"), std::string::npos);
+        ovphysx_destroy_wait_task_result(&wait);
     }
 }
 

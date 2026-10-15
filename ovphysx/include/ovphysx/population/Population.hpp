@@ -652,23 +652,6 @@ struct PhysxDrivePerformanceEnvelopeAPIDefaults
     }
 };
 
-struct PhysxJointAPIDefaults
-{
-    float jointFriction{}; // physxJoint:jointFriction
-    float armature{}; // physxJoint:armature
-    float maxJointVelocity{}; // physxJoint:maxJointVelocity
-
-    static PhysxJointAPIDefaults resolved(const Units& u)
-    {
-        PhysxJointAPIDefaults d;
-        d.jointFriction = 0.0f;
-        d.armature = 0.0f;
-        d.maxJointVelocity = kFltMax;
-        (void)u;
-        return d;
-    }
-};
-
 struct PhysxJointAxisAPIDefaults
 {
     float armature{}; // physxJointAxis:<inst>:armature
@@ -860,7 +843,7 @@ struct PhysxSceneAPIDefaults
         d.enableStabilization = 0;
         d.enableGpudynamics = 1;
         d.enableEnhancedDeterminism = 0;
-        d.enableExternalForcesEveryIteration = 0;
+        d.enableExternalForcesEveryIteration = 1;
         d.invertCollisionGroupFilter = 0;
         d.reportKinematicKinematicPairs = 0;
         d.reportKinematicStaticPairs = 0;
@@ -993,7 +976,7 @@ struct CapsuleArgs
     std::optional<std::vector<std::string>> axis; // axis (token per prim)
 };
 
-/// Cone geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cone (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; OVPHYSX_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY defaults to true. Set it to false to use a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.
+/// Cone geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cone (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; OVPHYSX_GLOBAL_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY defaults to true. Set it to false to use a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.
 struct ConeArgs
 {
     std::optional<std::vector<double>> radius; // radius
@@ -1008,7 +991,7 @@ struct CubeArgs
     std::optional<std::vector<double>> size; // size
 };
 
-/// Cylinder geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cylinder (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; OVPHYSX_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY defaults to true. Set it to false to use a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.
+/// Cylinder geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cylinder (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; OVPHYSX_GLOBAL_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY defaults to true. Set it to false to use a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.
 struct CylinderArgs
 {
     std::optional<std::vector<double>> radius; // radius
@@ -1320,7 +1303,7 @@ struct PhysxCollisionAPIArgs
     std::optional<std::vector<float>> minTorsionalPatchRadius; // physxCollision:minTorsionalPatchRadius
 };
 
-/// Registers a rigid body (or every link of an articulation) for contact reporting. Read by the runtime at actor creation, not by the parse library; without the API in usd-schemas nothing is registered even if the attributes are authored.
+/// Registers a rigid actor (including a standalone static collider), or every link of an articulation, for contact reporting. A standalone static collider reports on CPU simulation and GPU dynamics with CPU readback; on DirectGPU its sensor row remains but reads zero force. On a separate child collider, the API enables sensor selection on CPU simulation and GPU dynamics with CPU readback but does not enable the owning body's reporting. Read by the runtime at actor creation, not by the parse library; without the API in usd-schemas nothing is registered even if the attributes are authored.
 struct PhysxContactReportAPIArgs
 {
     std::optional<std::vector<float>> threshold; // physxContactReport:threshold
@@ -1351,14 +1334,6 @@ struct PhysxDrivePerformanceEnvelopeAPIArgs
     std::optional<std::vector<float>> maxActuatorVelocity; // physxDrivePerformanceEnvelope:<inst>:maxActuatorVelocity
     std::optional<std::vector<float>> velocityDependentResistance; // physxDrivePerformanceEnvelope:<inst>:velocityDependentResistance
     std::optional<std::vector<float>> speedEffortGradient; // physxDrivePerformanceEnvelope:<inst>:speedEffortGradient
-};
-
-/// PhysX tuning shared by every joint type: joint friction, a joint-level armature seed and a joint-level maximum joint velocity. The two per-axis values are seeds that PhysxJointAxisAPI:<inst> may override per axis. All three only take effect on articulation joints; standalone PxJoints have no counterpart.
-struct PhysxJointAPIArgs
-{
-    std::optional<std::vector<float>> jointFriction; // physxJoint:jointFriction
-    std::optional<std::vector<float>> armature; // physxJoint:armature
-    std::optional<std::vector<float>> maxJointVelocity; // physxJoint:maxJointVelocity
 };
 
 /// Per-axis PhysX properties of an articulation joint (armature, maximum joint velocity, static, dynamic and viscous friction), applied as PhysxJointAxisAPI:<inst>. Only effective inside an articulation: on a standalone joint the runtime strips the API with a warning. Rotational instances are stored in degrees where the schema says so and the parser converts maxJointVelocity degrees to radians and multiplies viscousFrictionCoefficient by 57.29577951308232.
@@ -1569,7 +1544,6 @@ inline const ApiRule kApiRules[] = {
     { "PhysxConvexDecompositionCollisionAPI", false, { "Gprim" }, { "PhysicsCollisionAPI" }, {  } },
     { "PhysxConvexHullCollisionAPI", false, { "Gprim" }, { "PhysicsCollisionAPI" }, {  } },
     { "PhysxDrivePerformanceEnvelopeAPI", true, { "PhysicsJoint" }, { "PhysicsDriveAPI" }, { "angular", "linear", "rotX", "rotY", "rotZ" } },
-    { "PhysxJointAPI", false, { "PhysicsJoint" }, {  }, {  } },
     { "PhysxJointAxisAPI", true, { "PhysicsJoint" }, {  }, { "angular", "linear", "rotX", "rotY", "rotZ" } },
     { "PhysxLimitAPI", true, { "PhysicsJoint" }, {  }, { "angular", "linear", "cone", "distance", "transX", "transY", "transZ", "rotX", "rotY", "rotZ" } },
     { "PhysxMaterialAPI", false, { "Typed" }, { "PhysicsMaterialAPI" }, {  } },
@@ -1765,7 +1739,7 @@ public:
         return *this;
     }
 
-    /// Cone geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cone (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; OVPHYSX_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY defaults to true. Set it to false to use a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.
+    /// Cone geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cone (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; OVPHYSX_GLOBAL_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY defaults to true. Set it to false to use a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.
     PrimBatch& defineCone(const ConeArgs& args = {}, const TransformArgs& xf = {})
     {
         define("Cone", &xf);
@@ -1789,7 +1763,7 @@ public:
         return *this;
     }
 
-    /// Cylinder geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cylinder (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; OVPHYSX_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY defaults to true. Set it to false to use a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.
+    /// Cylinder geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cylinder (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; OVPHYSX_GLOBAL_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY defaults to true. Set it to false to use a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.
     PrimBatch& defineCylinder(const CylinderArgs& args = {}, const TransformArgs& xf = {})
     {
         define("Cylinder", &xf);
@@ -2331,7 +2305,7 @@ public:
         return *this;
     }
 
-    /// Registers a rigid body (or every link of an articulation) for contact reporting. Read by the runtime at actor creation, not by the parse library; without the API in usd-schemas nothing is registered even if the attributes are authored.
+    /// Registers a rigid actor (including a standalone static collider), or every link of an articulation, for contact reporting. A standalone static collider reports on CPU simulation and GPU dynamics with CPU readback; on DirectGPU its sensor row remains but reads zero force. On a separate child collider, the API enables sensor selection on CPU simulation and GPU dynamics with CPU readback but does not enable the owning body's reporting. Read by the runtime at actor creation, not by the parse library; without the API in usd-schemas nothing is registered even if the attributes are authored.
     PrimBatch& applyPhysxContactReportAPI(const PhysxContactReportAPIArgs& args = {})
     {
         apply("PhysxContactReportAPI");
@@ -2384,19 +2358,6 @@ public:
             addFixed(detail::instanced("physxDrivePerformanceEnvelope:<inst>:velocityDependentResistance", instance), *args.velocityDependentResistance, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE, "physxDrivePerformanceEnvelope:<inst>:velocityDependentResistance");
         if (args.speedEffortGradient)
             addFixed(detail::instanced("physxDrivePerformanceEnvelope:<inst>:speedEffortGradient", instance), *args.speedEffortGradient, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE, "physxDrivePerformanceEnvelope:<inst>:speedEffortGradient");
-        return *this;
-    }
-
-    /// PhysX tuning shared by every joint type: joint friction, a joint-level armature seed and a joint-level maximum joint velocity. The two per-axis values are seeds that PhysxJointAxisAPI:<inst> may override per axis. All three only take effect on articulation joints; standalone PxJoints have no counterpart.
-    PrimBatch& applyPhysxJointAPI(const PhysxJointAPIArgs& args = {})
-    {
-        apply("PhysxJointAPI");
-        if (args.jointFriction)
-            addFixed("physxJoint:jointFriction", *args.jointFriction, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
-        if (args.armature)
-            addFixed("physxJoint:armature", *args.armature, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
-        if (args.maxJointVelocity)
-            addFixed("physxJoint:maxJointVelocity", *args.maxJointVelocity, DLDataType{ kDLFloat, 32, 1 }, OVSTAGE_SEMANTIC_NONE);
         return *this;
     }
 

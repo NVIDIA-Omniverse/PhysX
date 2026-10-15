@@ -169,7 +169,7 @@ namespace physx {
 		readStridedBufferProperty<Triangle<PxU32> >( inReader, "triangles", theDesc.triangles, inAllocator);
 		PxU64 triCount;
 		readStridedBufferProperty<PxMaterialTableIndex>( inReader, "materialIndices", theDesc.materialIndices, triCount, inAllocator);
-		PxStridedData cookedData;
+		PxBoundedData cookedData;
 		cookedData.stride = sizeof(PxU8);
 		PxU64 dataSize;
 		readStridedBufferProperty<PxU8>( inReader, "CookedData", cookedData, dataSize, inAllocator);
@@ -270,7 +270,7 @@ namespace physx {
 		readStridedBufferProperty<Triangle<PxU32> >( inReader, "triangles", theDesc.triangles, inAllocator);
 		PxU64 triCount;
 		readStridedBufferProperty<PxMaterialTableIndex>( inReader, "materialIndices", theDesc.materialIndices, triCount, inAllocator);
-		PxStridedData cookedData;
+		PxBoundedData cookedData;
 		cookedData.stride = sizeof(PxU8);
 		PxU64 dataSize;
 		readStridedBufferProperty<PxU8>( inReader, "CookedData", cookedData, dataSize, inAllocator);
@@ -375,7 +375,7 @@ namespace physx {
 		readStridedBufferProperty<PxVec3>( inReader, "points", theDesc.points, inAllocator);
 		theDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
 
-		PxStridedData cookedData;
+		PxBoundedData cookedData;
 		cookedData.stride = sizeof(PxU8);
 		PxU64 dataSize;
 		readStridedBufferProperty<PxU8>( inReader, "CookedData", cookedData, dataSize, inAllocator);

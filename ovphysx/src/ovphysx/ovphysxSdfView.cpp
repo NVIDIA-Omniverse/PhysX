@@ -7,9 +7,13 @@
  *
  * @implements REQ-CAPI-PATTERN-001
  * @covers AC-2
+ *
+ * @implements REQ-CAPI-PROFILER-001
+ * @covers AC-5
  */
 
 #include "internal/sdk/ovphysxSDK.hpp"
+#include "internal/Profiling.h"
 #include "internal/sdk/DLPackConvert.h"
 #include "ovphysx/ovphysx_export.h"
 #include <omni/physics/tensors/ISdfShapeView.h>
@@ -23,7 +27,7 @@ using ovphysx::internal::dlToTensorDesc;
 using ovphysx::internal::getTensorApi;
 
 extern std::shared_mutex g_instances_mutex;
-extern InstanceData* get_instance_ptr(ovphysx_handle_t handle);
+extern InstanceData* get_instance_ptr(ovphysx_instance_handle_t handle);
 
 namespace
 {
@@ -35,6 +39,11 @@ void releaseSdfViewState(InstanceData::SdfViewState& state)
     {
         state.view->release();
         state.view = nullptr;
+    }
+    if (state.simView)
+    {
+        state.simView->release(false);
+        state.simView = nullptr;
     }
 }
 
@@ -50,7 +59,7 @@ ovphysx_result_t checkSdfViewStageValid(InstanceData* instance, const InstanceDa
 
 // Resolve sdf_handle and confirm it still belongs to the attached stage. Acquires
 // and releases both locks internally so callers can run it before unlocked work.
-ovphysx_result_t checkSdfViewUsable(ovphysx_handle_t handle, ovphysx_sdf_view_handle_t sdf_handle)
+ovphysx_result_t checkSdfViewUsable(ovphysx_instance_handle_t handle, ovphysx_sdf_view_handle_t sdf_handle)
 {
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);
     InstanceData* instance = get_instance_ptr(handle);
@@ -78,11 +87,12 @@ void ovphysx_sdf_view_cleanup_instance(InstanceData* instance)
 }
 
 OVPHYSX_API ovphysx_result_t ovphysx_create_sdf_view(
-    ovphysx_handle_t handle,
+    ovphysx_instance_handle_t handle,
     ovphysx_string_t pattern,
     uint32_t max_query_points,
     ovphysx_sdf_view_handle_t* out_handle)
 {
+    OVPHYSX_API_PROFILE_ZONE(create_sdf_view);
     if (!out_handle)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_handle is NULL");
     *out_handle = 0;
@@ -132,10 +142,9 @@ OVPHYSX_API ovphysx_result_t ovphysx_create_sdf_view(
     omni::physics::tensors::ISdfShapeView* sdfView =
         simView->createSdfShapeView(patternStr.c_str(), max_query_points);
 
-    simView->release(false);
-
     if (!sdfView)
     {
+        simView->release(false);
         std::ostringstream oss;
         oss << "Pattern '" << patternStr << "' did not match any SDF shapes";
         return set_error(OVPHYSX_API_ERROR, oss.str());
@@ -148,6 +157,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_create_sdf_view(
     state.attachHandle = instance->attachHandle;
     state.maxQueryPoints = max_query_points;
     state.view = sdfView;
+    state.simView = simView;
 
     const ovphysx_sdf_view_handle_t newHandle = ovphysx::internal::allocateOpaqueObjectHandle();
     if (newHandle == OVPHYSX_INVALID_HANDLE)
@@ -166,10 +176,11 @@ OVPHYSX_API ovphysx_result_t ovphysx_create_sdf_view(
 }
 
 OVPHYSX_API ovphysx_result_t ovphysx_sdf_view_get_count(
-    ovphysx_handle_t handle,
+    ovphysx_instance_handle_t handle,
     ovphysx_sdf_view_handle_t sdf_handle,
     uint32_t* out_count)
 {
+    OVPHYSX_API_PROFILE_ZONE(sdf_view_get_count);
     if (!out_count)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_count is NULL");
 
@@ -192,10 +203,11 @@ OVPHYSX_API ovphysx_result_t ovphysx_sdf_view_get_count(
 }
 
 OVPHYSX_API ovphysx_result_t ovphysx_sdf_view_get_max_query_points(
-    ovphysx_handle_t handle,
+    ovphysx_instance_handle_t handle,
     ovphysx_sdf_view_handle_t sdf_handle,
     uint32_t* out_max_query_points)
 {
+    OVPHYSX_API_PROFILE_ZONE(sdf_view_get_max_query_points);
     if (!out_max_query_points)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "out_max_query_points is NULL");
 
@@ -218,11 +230,12 @@ OVPHYSX_API ovphysx_result_t ovphysx_sdf_view_get_max_query_points(
 }
 
 OVPHYSX_API ovphysx_result_t ovphysx_evaluate_sdf(
-    ovphysx_handle_t handle,
+    ovphysx_instance_handle_t handle,
     ovphysx_sdf_view_handle_t sdf_handle,
     const DLTensor* query_points,
     DLTensor* out_distances_and_gradients)
 {
+    OVPHYSX_API_PROFILE_ZONE(evaluate_sdf);
     if (!query_points)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "query_points is NULL");
     if (!out_distances_and_gradients)
@@ -286,9 +299,10 @@ OVPHYSX_API ovphysx_result_t ovphysx_evaluate_sdf(
 }
 
 OVPHYSX_API ovphysx_result_t ovphysx_destroy_sdf_view(
-    ovphysx_handle_t handle,
+    ovphysx_instance_handle_t handle,
     ovphysx_sdf_view_handle_t sdf_handle)
 {
+    OVPHYSX_API_PROFILE_ZONE(destroy_sdf_view);
     omni_sdk_physx_wait_all_pending_internal(handle);
 
     std::shared_lock<std::shared_mutex> map_lock(g_instances_mutex);

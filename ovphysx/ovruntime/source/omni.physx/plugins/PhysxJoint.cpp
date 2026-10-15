@@ -1,57 +1,35 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-1 AC-2
+
 #include <omni/physx/IPhysxJoint.h>
 #include <PxPhysicsAPI.h>
 #include <common/foundation/CarbPhysXCast.h>
 #include "OmniPhysX.h"
+#include "usdLoad/LoadUsd.h"
+#include "RuntimeExecution.h"
+#include "AttachmentJointLookup.h"
 
 namespace omni
 {
 namespace physx
 {
 
-static carb::Float4 physxJointGetJointFramePhysxToUsdQuat(usdparser::ObjectId id)
+static carb::Float4 physxJointGetJointFramePhysxToUsdQuat(AttachHandle attach, usdparser::ObjectId id)
 {
-    PhysXType internalType = PhysXType::ePTRemoved;
-    internal::InternalPhysXDatabase& internalPhysXDatabase = OmniPhysX::getInstance().getInternalPhysXDatabase();
-    void* objectRecord = internalPhysXDatabase.getRecord(internalType, id);
-
-    if (objectRecord != nullptr && (internalType == PhysXType::ePTJoint || internalType == PhysXType::ePTLinkJoint))
-    {
-        internal::InternalDatabase::Record& jointRec = internalPhysXDatabase.getRecords()[id];
-        internal::InternalJoint* intJoint = static_cast<internal::InternalJoint*>(jointRec.mInternalPtr);
-
-        ::physx::PxQuat jointCorrection = intJoint->getLocalPoseFixupQuat();
-
-        return toFloat4(jointCorrection);
-    }
-
-    return carb::Float4{ 0, 0, 0, 1.f };
+    RuntimeExecutionScope operation(attach);
+    const usdparser::AttachedStage* owner = operation ? usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach) : nullptr;
+    return attachmentJoint::frameCorrection(owner, id);
 }
 
-static void physxJointGetJointStateData(usdparser::ObjectId id, JointStateData* jointStateData)
+static void physxJointGetJointStateData(AttachHandle attach, usdparser::ObjectId id, JointStateData* data)
 {
-    const internal::InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
-    memset(jointStateData, 0, sizeof(JointStateData));
-    if (id < db.getRecords().size())
-    {
-        const internal::InternalDatabase::Record& record = db.getRecords()[id];
-        if (record.mInternalPtr && record.mType == ePTLinkJoint)
-        {
-            const internal::InternalJoint* intJoint =
-                reinterpret_cast<const internal::InternalJoint*>(record.mInternalPtr);
-            jointStateData->body0IsParentLink = intJoint->mBody0IsParentLink;
-            for (int i = 0; i < 6; ++i)
-            {
-                jointStateData->enabled[i] = intJoint->mJointStates[i].enabled;
-                jointStateData->physxAxis[i] = intJoint->mJointStates[i].physxAxis;
-                jointStateData->convertToDegrees[i] = intJoint->mJointStates[i].convertToDegrees;
-                jointStateData->initialPosition[i] = intJoint->mJointStates[i].initialState.position;
-                jointStateData->initialVelocity[i] = intJoint->mJointStates[i].initialState.velocity;
-            }
-        }
-    }
+    RuntimeExecutionScope operation(attach);
+    const usdparser::AttachedStage* owner = operation ? usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach) : nullptr;
+    if (owner)
+        attachmentJoint::stateData(owner, id, data);
 }
 
 } // namespace physx

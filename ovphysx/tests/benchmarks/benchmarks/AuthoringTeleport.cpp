@@ -110,7 +110,7 @@ float authoringIterationY(int iteration)
 
 // Zeroes linear+angular velocity so residual fall speed from the timed loop
 // cannot drag the body below the written height during the single verify step.
-bool authoringZeroVelocity(ovphysx_handle_t handle, const char* row)
+bool authoringZeroVelocity(ovphysx_instance_handle_t handle, const char* row)
 {
     ovphysx_tensor_binding_handle_t binding = 0;
     ovphysx_tensor_binding_desc_t desc;

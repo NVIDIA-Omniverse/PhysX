@@ -9,22 +9,33 @@ type: integration
 
 ## Scenario
 
-Typed startup config preserves FILE defaults and rejects invalid TCP state.
+Retired typed and raw OVD startup keys are rejected with migration guidance.
 
 ## Given
 
-- Existing typed config values and FILE recording tests.
-- Valid and invalid typed and raw OmniPVD destination entries, including embedded NULs in submitted and
-  preloaded Carbonite strings.
+- Reserved bool slots 3/4, int32 slots 2/3, and string slots 0/2/3.
+- Raw OVD startup keys with slash-prefixed and slashless Carbonite paths.
+- Fresh and live-instance lifecycles, scoped capability values, and unrelated legacy keys.
 
 ## When
 
-- Config enums are compared with Python parity values and their named builders are compiled and used.
-- Instances are created with default FILE, invalid TCP, and live-runtime mutation cases.
+- Compare current config enums with Python parity values and compile the retained headers.
+- Submit each retired key through creation and post-create configuration, including valid old values.
+- Read the retired numeric keys through legacy typed getters.
+- Read scoped capability after rejection; exercise unrelated legacy configuration.
 
 ## Then
 
-- Existing key ordinals remain stable and all four appended fields are available (REQ AC-1).
-- Invalid tuples, exact-length strings containing embedded NULs, and live-runtime changes return their prescribed
-  errors (REQ AC-2).
-- Existing FILE tests still produce non-empty timestamped recordings without selecting a transport (REQ AC-3).
+- Retired startup builders/header are absent; reserved slots and unrelated key ordinals remain stable (REQ AC-1).
+- Every retired typed/raw key returns `OVPHYSX_API_INVALID_ARGUMENT`, with guidance to the global capability and explicit recording start, for both raw path spellings. Legacy typed getters reject retired slots with the same result and guidance (REQ AC-2).
+- Rejection leaves configured capability unchanged. `InheritedOutputEnabledDoesNotAutoStart` and `PlainCreateSupportsLateRecording` verify dormant create/attach separately; unrelated legacy keys retain their behavior (REQ AC-3).
+
+## Executable coverage
+
+`tests/c_unittests/test_omnipvd_recording.cpp`:
+
+- `OmniPvdGlobalConfig.RetiredOvdEntriesAreRejected`
+- `OmniPvdGlobalConfig.RetiredRawOvdPathsAreRejected`
+- `OmniPvdGlobalConfig.RetiredOvdGettersAreRejected`
+- `OmniPvdGlobalConfig.PlainCreateSupportsLateRecording`
+- `OmniPvdGlobalConfig.InheritedOutputEnabledDoesNotAutoStart`

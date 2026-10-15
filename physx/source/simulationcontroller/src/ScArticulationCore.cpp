@@ -14,11 +14,11 @@ Sc::ArticulationCore::ArticulationCore() : mSim(NULL)
 {
 	const PxTolerancesScale& scale = Physics::getInstance().getTolerancesScale();
 
-	mCore.solverIterationCounts		= 1<<8 | 4;
-	mCore.sleepThreshold			= 5e-5f * scale.speed * scale.speed;
-	mCore.freezeThreshold			= 5e-6f * scale.speed * scale.speed;
-	mCore.wakeCounter				= Physics::sWakeCounterOnCreation;
-	mCore.gpuRemapIndex				= 0xffffffff;
+	mCore.solverIterationCounts	= 1<<8 | 4;
+	mCore.sleepThreshold		= 5e-5f * scale.speed * scale.speed;
+	mCore.freezeThreshold		= 5e-6f * scale.speed * scale.speed;
+	mCore.wakeCounter			= Physics::sWakeCounterOnCreation;
+	mCore.gpuRemapIndex			= 0xffffffff;
 }
 
 Sc::ArticulationCore::~ArticulationCore()

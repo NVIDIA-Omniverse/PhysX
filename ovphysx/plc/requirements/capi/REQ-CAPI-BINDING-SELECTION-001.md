@@ -50,7 +50,7 @@ configuration setting; tensor bindings remain deprecated as documented in the AP
 
 - ovphysx/src/ovphysx/ovphysxTensorBinding.cpp
 - ovphysx/src/include/internal/sdk/ovphysxSDK.hpp
-- ovphysx/include/ovphysx/ovphysx.h
+- ovphysx/include/ovphysx/ovphysx_legacy.h
 
 ## Dependencies
 

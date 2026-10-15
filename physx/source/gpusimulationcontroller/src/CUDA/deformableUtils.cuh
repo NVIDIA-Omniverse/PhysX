@@ -12,7 +12,7 @@
 #include "PxsMaterialCombiner.h"
 #include "PxsDeformableVolumeMaterialCore.h"
 #include "PxsDeformableSurfaceMaterialCore.h"
-#include "PxgDeformableContactInfo.h"
+#include "PxgDeformableContactWriters.h"
 #include "PxgDeformableConstraints.h"
 #include "PxgFEMCloth.h"
 #include "PxgSoftBody.h"
@@ -216,16 +216,18 @@ PX_FORCE_INLINE __device__ static float4 barycentricProjectTri(const uint4 vertI
 	return a * barycentric.x + b * barycentric.y + c * barycentric.z;
 }
 
-PX_FORCE_INLINE __device__ void prepareDbRigidAttachment(
-	PxgDbRigidAttachmentBlock& block,
+PX_FORCE_INLINE __device__ void prepareRigidDbAttachment(
+	PxgRigidDbAttachmentBlock& block,
 	const PxVec3& point, PxReal deformableInvMass,
-	const PxVec3& rigidLocalPose, PxNodeIndex rigidId, PxU32 elemId,
-	const float4& baryOrType, PxU32 rigidBodyRefCount,
+	const PxVec3& rigidLocalPose, PxNodeIndex rigidId, PxU64 elemId,
+	const float4& barycentric, PxU32 rigidBodyRefCount,
 	const PxgConstraintPrepareDesc* prepareDesc, const PxU32* solverBodyIndices,
 	const PxgSolverSharedDescBase* sharedDesc,
 	float4* rigidDeltaVel, PxU32 workIndex, PxU32 numRigidAttachments)
 {
 	const PxU32 offset = threadIdx.x & 31;
+	// A vertex attachment has no barycentric, so its slot is left alone rather than filled with zeros.
+	const bool elemIsVertex = PxgGetDeformableFeatureType(elemId) == PxgDeformableRef::eVERTEX;
 	const PxgBodySim* bodySims = sharedDesc->mBodySimBufferDeviceData;
 	const PxgSolverBodyData* solverBodyData = prepareDesc->solverBodyDataPool;
 	const PxgSolverTxIData* solverDataTxIPool = prepareDesc->solverBodyTxIDataPool;
@@ -278,9 +280,10 @@ PX_FORCE_INLINE __device__ void prepareDbRigidAttachment(
 		block.raXn2_biasW[offset] = make_float4(raXn2.x, raXn2.y, raXn2.z, biasedErr2);
 		// Articulations don't use invMass0; set it to 1 so the linear impulse stays an impulse.
 		block.velMultiplierXYZ_invMassW[offset] = make_float4(velMultiplier0, velMultiplier1, velMultiplier2, 1.f);
-		block.elemId[offset] = elemId;
+		block.deformableRef[offset] = elemId;
 		block.rigidId[offset] = rigidId.getInd();
-		block.baryOrType[offset] = baryOrType;
+		if(!elemIsVertex)
+			block.barycentric[offset] = barycentric;
 		block.rigidBodyRefCount[offset] = rigidBodyRefCount;
 	}
 	else
@@ -330,9 +333,10 @@ PX_FORCE_INLINE __device__ void prepareDbRigidAttachment(
 		block.raXn1_biasW[offset] = make_float4(raXnSqrtInertia1.x, raXnSqrtInertia1.y, raXnSqrtInertia1.z, biasedErr1);
 		block.raXn2_biasW[offset] = make_float4(raXnSqrtInertia2.x, raXnSqrtInertia2.y, raXnSqrtInertia2.z, biasedErr2);
 		block.velMultiplierXYZ_invMassW[offset] = make_float4(velMultiplier0, velMultiplier1, velMultiplier2, invMass0);
-		block.elemId[offset] = elemId;
+		block.deformableRef[offset] = elemId;
 		block.rigidId[offset] = rigidId.getInd();
-		block.baryOrType[offset] = baryOrType;
+		if(!elemIsVertex)
+			block.barycentric[offset] = barycentric;
 		block.rigidBodyRefCount[offset] = rigidBodyRefCount;
 
 		if (rigidDeltaVel)
@@ -343,11 +347,11 @@ PX_FORCE_INLINE __device__ void prepareDbRigidAttachment(
 	}
 }
 
-PX_FORCE_INLINE __device__ void prepareDbRigidContact(PxgDbRigidContactBlock& block, const PxVec3& normal,
-												   PxgSolverSharedDescBase* sharedDesc, const PxVec3& p, PxReal pen, const PxVec3& delta,
-												   const PxNodeIndex& rigidId, const float4& barycentric,
-												   PxgConstraintPrepareDesc* prepareDesc, PxU32* solverBodyIndices, PxReal penBiasClampFEM,
-												   PxReal invDt, bool isTGS)
+PX_FORCE_INLINE __device__ void prepareRigidDbContact(PxgRigidDbContactBlock& block, const PxVec3& normal,
+													  PxgSolverSharedDescBase* sharedDesc, const PxVec3& p, PxReal pen, const PxVec3& delta,
+													  const PxNodeIndex& rigidId,
+													  PxgConstraintPrepareDesc* prepareDesc, PxU32* solverBodyIndices, PxReal penBiasClampFEM,
+													  PxReal invDt, bool isTGS)
 {
 	const PxU32 threadIndexInWarp = threadIdx.x & 31;
 
@@ -466,7 +470,6 @@ PX_FORCE_INLINE __device__ void prepareDbRigidContact(PxgDbRigidContactBlock& bl
 	block.raXnF1_resp[threadIndexInWarp] = raXnF1_resp;
 	block.fricTan0_invMass0[threadIndexInWarp] = make_float4(t0.x, t0.y, t0.z, invMass0);
 	block.maxPenBiasClamp[threadIndexInWarp] = PxMax(penBiasClampRigid, penBiasClampFEM);
-	block.barycentric[threadIndexInWarp] = barycentric;
 }
 
 } // namespace physx

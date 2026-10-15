@@ -36,8 +36,9 @@ from both artifacts. Packaging documentation does not change runtime behavior.
   documentation must not link to source-only `tests/` paths.
 
 - AC-3: A wheel or SDK built for release carries the rendered documentation
-  tree, with an `index.html` and the three downloadable C headers
-  (`ovphysx.h`, `ovphysx_types.h`, `ovphysx_config.h`). Producing either
+  tree, with an `index.html` and the downloadable C headers
+  (`ovphysx.h`, `ovphysx_types.h`, `ovphysx_config.h`, `ovphysx_legacy.h`,
+  `ovphysx_legacy_types.h`). Producing either
   artifact without it fails rather than succeeding with a smaller payload.
   Builds that opt out of rendering documentation are unaffected.
 
@@ -47,6 +48,7 @@ from both artifacts. Packaging documentation does not change runtime behavior.
 
 ## Code References
 
+- ovphysx/repo.toml
 - ovphysx/scripts/preprocess_docs.cmake
 - ovphysx/scripts/build_wheel.cmake
 - ovphysx/scripts/install.cmake

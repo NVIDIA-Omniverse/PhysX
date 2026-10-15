@@ -5,7 +5,7 @@
 
 # Two rigid-body Cubes on a fixed joint
 
-Multi-prim test composition: two Cube rigid bodies one unit apart (B translated +3 in x, half extents 0.5) joined by a PhysicsFixedJoint (all six axes locked) whose local frames meet halfway between them. The bodies are not verified; the joint prim is. Standalone joints are PxD6Joint at runtime (distance joints PxDistanceJoint); the PhysxJointAPI, PhysxJointAxisAPI, PhysicsJointStateAPI and PhysxDrivePerformanceEnvelopeAPI columns target the articulation joint and are unobservable here (NaN on both sides), see the articulation compositions. Owns no columns and generates no helper.
+Multi-prim test composition: two Cube rigid bodies one unit apart (B translated +3 in x, half extents 0.5) joined by a PhysicsFixedJoint (all six axes locked) whose local frames meet halfway between them. The bodies are not verified; the joint prim is. Standalone joints are PxD6Joint at runtime (distance joints PxDistanceJoint); the PhysxJointAxisAPI, PhysicsJointStateAPI and PhysxDrivePerformanceEnvelopeAPI columns target the articulation joint and are unobservable here (NaN on both sides), see the articulation compositions. Owns no columns and generates no helper.
 
 - **Form:** multi-prim; no helper, the contract test builds each prim with `PrimBatch`.
 
@@ -13,4 +13,4 @@ Multi-prim test composition: two Cube rigid bodies one unit apart (B translated 
 |---|---|---|---|---|---|
 | `/World/A` | [`Cube`](Cube.md) | [`PhysicsRigidBodyAPI`](PhysicsRigidBodyAPI.md), [`PhysicsCollisionAPI`](PhysicsCollisionAPI.md) | `size` |  | no |
 | `/World/B` | [`Cube`](Cube.md) | [`PhysicsRigidBodyAPI`](PhysicsRigidBodyAPI.md), [`PhysicsCollisionAPI`](PhysicsCollisionAPI.md) | `size`, `omni:xform` |  | no |
-| `/World/Joint` | [`PhysicsFixedJoint`](PhysicsFixedJoint.md) | [`PhysxJointAPI`](PhysxJointAPI.md) | `physics:localPos0`, `physics:localPos1` | `physics:body0` -> `/World/A`, `physics:body1` -> `/World/B` | yes |
+| `/World/Joint` | [`PhysicsFixedJoint`](PhysicsFixedJoint.md) | none | `physics:localPos0`, `physics:localPos1` | `physics:body0` -> `/World/A`, `physics:body1` -> `/World/B` | yes |

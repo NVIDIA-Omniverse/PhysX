@@ -11,7 +11,8 @@ type: integration
 
 Python process exit destroys a still-live `PhysX` instance before
 interpreter finalization and removes its process-private cooked-collider
-cache through the normal last-loader shutdown path.
+cache after SDK shutdown stops the datastore on Linux. Windows retains its
+framework for safe dependency DLL teardown; directory removal is best-effort.
 
 ## Given
 
@@ -32,8 +33,9 @@ cache through the normal last-loader shutdown path.
 
 - The Python `atexit` callback runs before interpreter finalization and
   destroys the retained instance (REQ AC-5).
-- The subprocess leaves no `ovphysx-cache-*` directory under the
-  redirected temp root on POSIX (REQ AC-5).
+- On Linux the subprocess leaves no `ovphysx-cache-*` directory under the
+  redirected temp root (REQ AC-5). Windows checks the cook and exit markers
+  without asserting best-effort directory removal.
 - Normal exit returns successfully; the `KeyboardInterrupt` case terminates
   non-successfully only after completing the cook and running cleanup
   (REQ AC-5).

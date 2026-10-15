@@ -63,8 +63,9 @@ namespace physx
 		PxgTypedCudaBuffer<PxU32>& getTempBlockCellsHistogram() { return mTempBlockCellsHistogramBuf; }
 		PxgTypedCudaBuffer<PxU32>& getTempHistogramCount() { return mTempHistogramCountBuf; }
 
-		PxgTypedCudaBuffer<PxgParticlePrimitiveContact>& getParticleContacts() { return mPrimitiveContactsBuf; }
-		PxgTypedCudaBuffer<PxU32>& getParticleContactCount() { return mPrimitiveContactCountBuf; }
+		PxgTypedCudaBuffer<PxgDeformablePairInfo>& getRigidParticleContactInfos() { return mRigidParticleContactInfoBuffer; }
+		PxgTypedCudaBuffer<float4>& getRigidParticleContactNormalPens() { return mRigidParticleContactNormalPenBuffer; }
+		PxgTypedCudaBuffer<PxU32>& getRigidParticleContactCount() { return mRigidParticleContactCountBuffer; }
 	
 		CUstream getStream() { return mStream; }
 		CUstream getFinalizeStream() { return mFinalizeStream; }
@@ -184,17 +185,24 @@ namespace physx
 		PxgTypedCudaBuffer<PxBounds3>	mTempBoundsBuf;
 
 		//-----------------------buffer for primitive vs particles contacts
-		PxgTypedCudaBuffer<PxgParticlePrimitiveContact> mPrimitiveContactsBuf;
-		PxgTypedCudaBuffer<PxU32>		mPrimitiveContactCountBuf;
+		// The rigid ids of this core's contacts in sorted order, gathered by RS_DOUBLE_COPY_VALUE alongside
+		// the by-particle ordering and read by accumulateRigidDeltas. The deformable cores take theirs from
+		// reorderRigidContacts instead.
+		PxgTypedCudaBuffer<PxNodeIndex>				mContactSortedByRigidBuffer;
+		PxgTypedCudaBuffer<PxgDeformablePairInfo>	mRigidParticleContactInfoBuffer;
+		PxgTypedCudaBuffer<float4>					mRigidParticleContactNormalPenBuffer;
+		PxgTypedCudaBuffer<PxU32>					mRigidParticleContactCountBuffer;
 
-		PxgTypedCudaBuffer<PxgParticlePrimitiveContact> mPrimitiveContactSortedByParticleBuf;
-		PxgTypedCudaBuffer<PxgParticlePrimitiveContact> mPrimitiveContactSortedByRigidBuf;
+		PxgTypedCudaBuffer<PxgDeformablePairInfo>	mRigidParticleContactInfoSortedByParticleBuffer;
+		PxgTypedCudaBuffer<float4>					mRigidParticleContactNormalPenSortedByParticleBuffer;
+		PxgTypedCudaBuffer<PxgDeformablePairInfo>	mRigidParticleContactInfoSortedByRigidBuffer;
+		PxgTypedCudaBuffer<float4>					mRigidParticleContactNormalPenSortedByRigidBuffer;
 
-		PxgTypedCudaBuffer<PxgParticleRigidContactBlock> mRigidContactBlocksSortedByParticle;
-		PxgTypedCudaBuffer<PxgParticleRigidContactBlock> mRigidContactBlocksSortedByRigid;
+		PxgTypedCudaBuffer<PxgRigidParticleContactBlock> mRigidParticleContactBlocksSortedByParticle;
+		PxgTypedCudaBuffer<PxgRigidParticleContactBlock> mRigidParticleContactBlocksSortedByRigid;
 
-		PxgTypedCudaBuffer<float2>		mPrimitiveConstraintAppliedParticleForces;
-		PxgTypedCudaBuffer<float2>		mPrimitiveConstraintAppliedRigidForces;
+		PxgTypedCudaBuffer<float2>		mRigidParticleAppliedParticleForcesBuffer;
+		PxgTypedCudaBuffer<float2>		mRigidParticleAppliedRigidForcesBuffer;
 
 		PxgTypedCudaBuffer<float4>		mDeltaVelParticleBuf;
 
@@ -202,7 +210,7 @@ namespace physx
 		PxgTypedCudaBuffer<PxVec4>		mTempBlockDeltaVelBuf;
 		PxgTypedCudaBuffer<PxU64>		mTempBlockRigidIdBuf;
 
-		PxgTypedCudaBuffer<PxU32>		mParticleRigidRefCount;
+		PxgTypedCudaBuffer<PxU32>		mRigidParticleRefCountBuffer;
 
 
 

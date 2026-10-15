@@ -60,6 +60,7 @@ public:
     // Called on stage detach so that pending requests don't leak across tests
     // (and don't hold dangling UsdStageWeakPtrs that can crash later).
     void cancelAllPendingRequests(PhysxPropertyQueryResult::Enum errorCode);
+    void cancelStageRequests(uint64_t stageId, PhysxPropertyQueryResult::Enum errorCode);
 
 private:
     // Lazily create mImpl once a USD reparse backend is installed (the loader installs it after

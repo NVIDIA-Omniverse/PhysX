@@ -47,7 +47,7 @@ extern "C" {
 * @return ovphysx_result_t with status and error info
 */
 OVPHYSX_API ovphysx_result_t ovphysx_find_prims(
-    ovphysx_handle_t handle,
+    ovphysx_instance_handle_t handle,
     ovphysx_string_t path_pattern,
     ovphysx_string_t attribute_name,
     ovphysx_prim_list_t* out_prim_list
@@ -64,7 +64,7 @@ OVPHYSX_API ovphysx_result_t ovphysx_find_prims(
 * @return ovphysx_result_t with status and error info
 */
 OVPHYSX_API ovphysx_result_t ovphysx_destroy_prim_list(
-    ovphysx_handle_t handle,
+    ovphysx_instance_handle_t handle,
     ovphysx_prim_list_t* prim_list
 );
 

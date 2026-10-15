@@ -15,6 +15,8 @@ preserving signed world scale while owning the cache and output ordinals.
 ## Given
 
 - A populated and attached ovstage, with current sealed world matrices.
+- OVStage returns float64 scalar-lane matrices with component axes `[N, 4, 4]`;
+  the publisher and test reader normalize descriptor shape and row stride.
 - CPU rigid bodies in two physics scenes, including a reflected and rotated
   body, a sheared body, and a body below a scaled parent; hierarchy computation
   is completed and sealed for the nested body before publication.
@@ -38,7 +40,8 @@ preserving signed world scale while owning the cache and output ordinals.
   read GPU rigid-body and articulation-link results back to CPU.
 - With CPU physics poses, the application authors a world matrix from CUDA
   storage and calls the helper without an intervening stage read, under null
-  and foreign caller contexts.
+  and foreign caller contexts. Repeated CPU publication uses a populated cache,
+  skipping scale capture while overwriting GPU-backed destination matrices.
 
 ## Then
 
@@ -47,7 +50,8 @@ preserving signed world scale while owning the cache and output ordinals.
   (REQ AC-1).
 - Each CPU matrix matches the native physics pose combined with signed scale
   from `omni::physx::decomposeMatrix`; nested world scale is `(1, 6, 1)`, and
-  matrix values have float64, 16-lane MATRIX storage (REQ AC-2).
+  publication uses float64, 16-lane MATRIX input and readback exposes the same
+  matrix components through the normalized read layout (REQ AC-2).
 - Publication leaves the write floor unchanged and does not advance the
   simulation; a subsequent unsealed source read fails explicitly (REQ AC-3).
 - The explicit cache retains scale across authored edits, the default path
@@ -58,7 +62,9 @@ preserving signed world scale while owning the cache and output ordinals.
   its original null or foreign context after each helper call (REQ AC-2,
   REQ AC-5).
 - CPU poses combined with GPU-authored source matrices preserve signed scale
-  and restore the null or foreign caller context (REQ AC-2, REQ AC-5).
+  and restore the null or foreign caller context, including cached CPU writes
+  into GPU-backed destination columns that can invoke CUDA inline (REQ AC-2,
+  REQ AC-5).
 - Missing input and stale attachment failures report zero completed matrices
   and nonempty error text; empty output succeeds with zero counts (REQ AC-6).
 - An unrelated stage is rejected without changing its matrices or binding the

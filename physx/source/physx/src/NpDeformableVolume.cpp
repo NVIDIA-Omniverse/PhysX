@@ -344,6 +344,10 @@ PxShape* NpDeformableVolume::getShape()
 
 bool NpDeformableVolume::attachShape(PxShape& shape)
 {
+	NP_WRITE_CHECK(getNpScene());
+	PX_CHECK_AND_RETURN_NULL(getNpScene() == NULL,
+		"PxDeformableVolume::attachShape: only allowed while the deformable volume is not part of a scene.");
+
 	NpShape* npShape = static_cast<NpShape*>(&shape);
 
 	PX_CHECK_AND_RETURN_NULL(npShape->getGeometryTypeFast() == PxGeometryType::eTETRAHEDRONMESH,
@@ -357,9 +361,14 @@ bool NpDeformableVolume::attachShape(PxShape& shape)
 	PX_CHECK_AND_RETURN_NULL(tetGeom.tetrahedronMesh != NULL,
 		"PxDeformableVolume::attachShape: PxTetrahedronMeshGeometry::tetrahedronMesh is NULL");
 
-	Gu::BVTetrahedronMesh* tetMesh = static_cast<Gu::BVTetrahedronMesh*>(tetGeom.tetrahedronMesh);
+	const Gu::TetrahedronMesh* tetMesh = Gu::_getTetraMeshData(tetGeom);
+	PX_CHECK_AND_RETURN_NULL(tetMesh->getBVTetrahedronMesh() != NULL,
+		"PxDeformableVolume::attachShape: the shape's tetrahedron mesh must be the collision mesh of a PxDeformableVolumeMesh, see PxDeformableVolumeMesh::getCollisionMesh()");
 	PX_CHECK_AND_RETURN_NULL(tetMesh->getNbTetrahedronsFast() <= PX_MAX_NB_DEFORMABLE_VOLUME_TET,
 		"PxDeformableVolume::attachShape: collision mesh consists of too many tetrahedrons, see PX_MAX_NB_DEFORMABLE_VOLUME_TET");
+	// Element filters encode a collision tetrahedron's vertex indices, so they are capped like the tetrahedra.
+	PX_CHECK_AND_RETURN_NULL(tetMesh->getNbVerticesFast() <= PX_MAX_NB_DEFORMABLE_VOLUME_VTX,
+		"PxDeformableVolume::attachShape: collision mesh consists of too many vertices, see PX_MAX_NB_DEFORMABLE_VOLUME_VTX");
 
 	PX_CHECK_AND_RETURN_NULL(npShape->getCore().mShapeCoreFlags & PxShapeCoreFlag::eDEFORMABLE_VOLUME_SHAPE,
 		"PxDeformableVolume::attachShape: shape must be a deformable volume shape!");
@@ -388,9 +397,9 @@ bool NpDeformableVolume::attachShape(PxShape& shape)
 
 void NpDeformableVolume::detachShape()
 {
-	PX_CHECK_MSG(getNpSceneFromActor(*this) == NULL,
-		"Detaching a shape from a PxDeformableVolume is currenly only allowed as long as it is not part of a scene. "
-		"Please remove the deformable volume from its scene first.");
+	NP_WRITE_CHECK(getNpScene());
+	PX_CHECK_AND_RETURN(getNpScene() == NULL,
+		"PxDeformableVolume::detachShape: only allowed while the deformable volume is not part of a scene.");
 
 	if (!mShape)
 		return;
@@ -512,15 +521,23 @@ void NpDeformableVolume::setKinematicTargetBufferD(const PxVec4* positions)
 
 bool NpDeformableVolume::attachSimulationMesh(PxTetrahedronMesh& simulationMesh, PxDeformableVolumeAuxData& deformableVolumeAuxData)
 {
+	NP_WRITE_CHECK(getNpScene());
+	PX_CHECK_AND_RETURN_NULL(getNpScene() == NULL,
+		"PxDeformableVolume::attachSimulationMesh: only allowed while the deformable volume is not part of a scene.");
+
 	Dy::DeformableVolumeCore& core = mCore.getCore();
 
 	PX_CHECK_AND_RETURN_NULL(core.simPositionInvMass == NULL, "PxDeformableVolume::attachSimulationMesh: simPositionInvMass already exists, overwrite not allowed, call detachSimulationMesh first");
 	PX_CHECK_AND_RETURN_NULL(core.simVelocity == NULL, "PxDeformableVolume::attachSimulationMesh: simVelocity already exists, overwrite not allowed, call detachSimulationMesh first");
 	Gu::TetrahedronMesh& tetMesh = static_cast<Gu::TetrahedronMesh&>(simulationMesh);
 	PX_CHECK_AND_RETURN_NULL(tetMesh.getNbTetrahedronsFast() <= PX_MAX_NB_DEFORMABLE_VOLUME_TET, "PxDeformableVolume::attachSimulationMesh: simulation mesh contains too many tetrahedrons, see PX_MAX_NB_DEFORMABLE_VOLUME_TET");
+	PX_CHECK_AND_RETURN_NULL(tetMesh.getNbVerticesFast() <= PX_MAX_NB_DEFORMABLE_VOLUME_VTX, "PxDeformableVolume::attachSimulationMesh: simulation mesh contains too many vertices, see PX_MAX_NB_DEFORMABLE_VOLUME_VTX");
 
 	mSimulationMesh = &tetMesh;
 	mAuxData = static_cast<Gu::DeformableVolumeAuxData*>(&deformableVolumeAuxData);
+	// Both are read for as long as they stay attached.
+	Cm::RefCountable_incRefCount(*mSimulationMesh);
+	Cm::RefCountable_incRefCount(*mAuxData);
 	const PxU32 numVertsGM = tetMesh.getNbVerticesFast();
 
 	createAllocator();
@@ -533,6 +550,10 @@ bool NpDeformableVolume::attachSimulationMesh(PxTetrahedronMesh& simulationMesh,
 
 void NpDeformableVolume::detachSimulationMesh()
 {
+	NP_WRITE_CHECK(getNpScene());
+	PX_CHECK_AND_RETURN(getNpScene() == NULL,
+		"PxDeformableVolume::detachSimulationMesh: only allowed while the deformable volume is not part of a scene.");
+
 	if (!mSimulationMesh)
 		return;
 
@@ -551,6 +572,8 @@ void NpDeformableVolume::detachSimulationMesh()
 		core.simVelocity = NULL;
 	}
 
+	Cm::RefCountable_decRefCount(*mSimulationMesh);
+	Cm::RefCountable_decRefCount(*mAuxData);
 	mSimulationMesh = NULL;
 	mAuxData = NULL;
 }

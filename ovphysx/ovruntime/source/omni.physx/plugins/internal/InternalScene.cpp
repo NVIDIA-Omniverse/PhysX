@@ -1,6 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-SERVICES-001
+// @covers AC-3
+
+// @implements REQ-ATTACH-RESOLVE-001
+// @covers AC-4
+
 /**
  * @implements REQ-WRITE-CORE-001
  * @covers AC-2 AC-6 AC-9
@@ -18,10 +24,13 @@
  * @covers AC-1 AC-5 AC-7
  *
  * @implements REQ-SIM-MULTISCENE-001
- * @covers AC-4
+ * @covers AC-4 AC-5
  *
  * @implements REQ-PARSE-BACKEND-001
  * @covers AC-9
+ *
+ * @implements REQ-SIM-LOCALVELOCITY-001
+ * @covers AC-7
  *
  * @implements REQ-WRITE-LOCALXFORM-001
  * @covers AC-1 AC-2 AC-4
@@ -53,17 +62,23 @@
  *
  * @implements REQ-BUILD-BRIDGE-001
  * @covers AC-5
+ *
  */
 
 #include <carb/profiler/Profile.h>
 
 #include <omni/physics/parse/KnownTokens.h>
 
+#include <atomic>
 #include <cstring>
 
 #include "InternalScene.h"
+#include "../RuntimeExecution.h"
 #include "InternalParticle.h"
 #include "InternalMimicJoint.h"
+
+#include "OmniPhysX.h"
+#include "Setup.h"
 
 #include "particles/PhysXParticlePost.h"
 #include <deformables/PhysXDeformablePost.h>
@@ -156,7 +171,7 @@ omni::physx::usdparser::ObjectId InternalScene::addVehicle(InternalVehicle& vehi
     mVehicleActorToVehicle.insert({vehicle.getRigidDynamicActor(), &vehicle});
     mVehicleSetEpoch++;
 
-    const ObjectId vehicleObjectId = OmniPhysX::getInstance().getInternalPhysXDatabase().addRecord(
+    const ObjectId vehicleObjectId = mAttachedStage.getInternalPhysXDatabase().addRecord(
         ePTVehicle, nullptr, &vehicle, vehicleKey);
 
     return vehicleObjectId;
@@ -297,7 +312,7 @@ bool InternalScene::removeDeformableAttachment(InternalDeformableAttachment& def
         std::iter_swap(it, --mDeformableAttachments.end());
         mDeformableAttachments.pop_back();
 
-        InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+        InternalPhysXDatabase& db = mAttachedStage.getInternalPhysXDatabase();
         CARB_ASSERT(attachment->mObjectId < db.getRecords().size());
         InternalDatabase::Record& objectRecord = db.getRecords()[attachment->mObjectId];
         objectRecord.setRemoved();
@@ -315,9 +330,9 @@ void InternalScene::removeDeformableAttachments(ObjectId objId)
     if (objId == kInvalidObjectId)
         return;
 
-    AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    AttachedStage* attachedStage = &mAttachedStage;
 
-    InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    InternalPhysXDatabase& db = mAttachedStage.getInternalPhysXDatabase();
     PhysXType internalType = ePTRemoved;
     InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objId);
     omni::physics::parse::ObjectKey key;
@@ -377,7 +392,7 @@ bool InternalScene::removeDeformableCollisionFilter(InternalDeformableCollisionF
         std::iter_swap(it, --mDeformableCollisionFilters.end());
         mDeformableCollisionFilters.pop_back();
 
-        InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+        InternalPhysXDatabase& db = mAttachedStage.getInternalPhysXDatabase();
         CARB_ASSERT(collisionFilter->mObjectId < db.getRecords().size());
         InternalDatabase::Record& objectRecord = db.getRecords()[collisionFilter->mObjectId];
         objectRecord.setRemoved();
@@ -395,9 +410,9 @@ void InternalScene::removeDeformableCollisionFilters(ObjectId objId)
     if (objId == kInvalidObjectId)
         return;
 
-    AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    AttachedStage* attachedStage = &mAttachedStage;
 
-    InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    InternalPhysXDatabase& db = mAttachedStage.getInternalPhysXDatabase();
     PhysXType internalType = ePTRemoved;
     InternalDatabase::Record* objectRecord = db.getFullRecord(internalType, objId);
     omni::physics::parse::ObjectKey key;
@@ -442,8 +457,8 @@ void InternalScene::swapDeformableCollisionFiltersRigidActor(::physx::PxRigidAct
     }
 }
 
-InternalScene::InternalScene(const PhysxSceneDesc& desc, ::physx::PxScene* scene)
-    : mEnabledVehicleCount(0), mVehicleSetEpoch(1),
+InternalScene::InternalScene(AttachedStage& attachedStage, const PhysxSceneDesc& desc, ::physx::PxScene* scene)
+    : mAttachedStage(attachedStage), mEnabledVehicleCount(0), mVehicleSetEpoch(1),
       mScene(scene), mVolumeDeformablePostSolveCallback(nullptr), mSurfaceDeformablePostSolveCallback(nullptr)
 {
     mSceneDesc = desc;
@@ -474,11 +489,11 @@ InternalScene::~InternalScene()
 
 void InternalScene::release()
 {
-    waitForSimulationCompletion(false);
+    waitForSimulationCompletion(mAttachedStage, false);
 
     // Reset the Picker before any actors are freed so applyManipCmd cannot
     // dereference dangling pointers (e.g. a grabbed articulation link).
-    OmniPhysX::getInstance().getRaycastManager().clearPickerForScene(mScene);
+    mAttachedStage.getRaycastManager().clearPickerForScene(mScene);
 
     for (size_t i = 0; i < mDeformableAttachments.size(); ++i)
     {
@@ -517,7 +532,7 @@ void InternalScene::release()
     mSurfaceDeformableBodies.clear();
     mSurfaceDeformableBodies.shrink_to_fit();
 
-    RaycastManager& rayMan = OmniPhysX::getInstance().getRaycastManager();
+    RaycastManager& rayMan = mAttachedStage.getRaycastManager();
     const uint32_t nbActors = uint32_t(mActors.size());
     for (uint32_t i = 0; i < nbActors; i++)
     {
@@ -605,11 +620,11 @@ namespace
 // but used here by resetStartProperties (which precedes that block).
 void writeLocalTransformMatrixToSink(AttachedStage& as, omni::physics::parse::ObjectKey key,
                                      const ::physx::PxMat44d& localMatrix, bool setScale);
-void writeArrayToSink(omni::physics::parse::ObjectKey key, omni::physics::parse::TokenId attr, const void* data,
+void writeArrayToSink(AttachedStage& owner, omni::physics::parse::ObjectKey key, omni::physics::parse::TokenId attr, const void* data,
                       size_t count, omni::physics::parse::DataType type);
-void writeMeshPointsToSink(omni::physics::parse::ObjectKey key, const carb::Float3* points, size_t count);
-void writeMeshVelocitiesToSink(omni::physics::parse::ObjectKey key, const carb::Float3* velocities, size_t count);
-void writeMeshExtentToSink(omni::physics::parse::ObjectKey key, const carb::Float3* extent, size_t count);
+void writeMeshPointsToSink(AttachedStage& owner, omni::physics::parse::ObjectKey key, const carb::Float3* points, size_t count);
+void writeMeshVelocitiesToSink(AttachedStage& owner, omni::physics::parse::ObjectKey key, const carb::Float3* velocities, size_t count);
+void writeMeshExtentToSink(AttachedStage& owner, omni::physics::parse::ObjectKey key, const carb::Float3* extent, size_t count);
 bool sourceHasArray(AttachedStage& as, omni::physics::parse::ObjectKey key, omni::physics::parse::TokenId attr,
                     omni::physics::parse::ReadTime readTime = omni::physics::parse::ReadTime::defaultTime());
 } // namespace
@@ -642,7 +657,7 @@ void InternalScene::resetStartProperties(bool useUsdUpdate, bool useVelocitiesUS
     // Ovstage source is read-only for ovruntime (see updateSimulationOutputs):
     // with no USD write sink the reset-on-stop write-back must not run.
     {
-        AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+        AttachedStage* as = &mAttachedStage;
         if (!as || !as->getDataWrite())
         {
             useUsdUpdate = false;
@@ -671,7 +686,7 @@ void InternalScene::resetStartProperties(bool useUsdUpdate, bool useVelocitiesUS
 
                     if (useUsdUpdate)
                     {
-                        AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+                        AttachedStage* as = &mAttachedStage;
                         // Object identity, not a UsdPrim resolve: ObjectKey equality is the
                         // backend-agnostic form of "is this the same prim" (a live USD resolve
                         // would agree, since keyFor()/pathFor() are a bijection for a given
@@ -701,7 +716,7 @@ void InternalScene::resetStartProperties(bool useUsdUpdate, bool useVelocitiesUS
             if (!particleSet->mNumParticles)
                 continue;
 
-            AttachedStage& as = *UsdLoad::getUsdLoad()->getActiveAttachedStage();
+            AttachedStage& as = *&mAttachedStage;
             const omni::physics::parse::ObjectKey particleKey = particleSet->mKey;
             const omni::physics::parse::IPhysicsSource* source = as.getSource();
 
@@ -724,13 +739,13 @@ void InternalScene::resetStartProperties(bool useUsdUpdate, bool useVelocitiesUS
             std::vector<carb::Float3> outPoints;
             copyBuffer(outPoints, &particleSet->mPositionSaveRestoreBuf[0],
                        uint32_t(particleSet->mPositionSaveRestoreBuf.size()), worldToLocal);
-            writeArrayToSink(particleKey, isPointInstancer ? tok.positions : tok.points,
+            writeArrayToSink(mAttachedStage, particleKey, isPointInstancer ? tok.positions : tok.points,
                              outPoints.data(), outPoints.size(), omni::physics::parse::DataType::e32Bit);
 
             std::vector<carb::Float3> outVelocities;
             copyBuffer(outVelocities, &particleSet->mVelocitySaveRestoreBuf[0],
                        uint32_t(particleSet->mVelocitySaveRestoreBuf.size()));
-            writeArrayToSink(particleKey, tok.velocities, outVelocities.data(), outVelocities.size(),
+            writeArrayToSink(mAttachedStage, particleKey, tok.velocities, outVelocities.data(), outVelocities.size(),
                              omni::physics::parse::DataType::e32Bit);
 
             if (sourceHasArray(as, particleKey, tok.physxParticleSimulationPoints))
@@ -738,7 +753,7 @@ void InternalScene::resetStartProperties(bool useUsdUpdate, bool useVelocitiesUS
                 std::vector<carb::Float3> outSimPositions;
                 copyBuffer(outSimPositions, &particleSet->mPositionSaveRestoreBuf[0],
                            uint32_t(particleSet->mPositionSaveRestoreBuf.size()), worldToLocal);
-                writeArrayToSink(particleKey, tok.physxParticleSimulationPoints,
+                writeArrayToSink(mAttachedStage, particleKey, tok.physxParticleSimulationPoints,
                                  outSimPositions.data(), outSimPositions.size(),
                                  omni::physics::parse::DataType::e32Bit);
             }
@@ -750,14 +765,14 @@ void InternalScene::resetStartProperties(bool useUsdUpdate, bool useVelocitiesUS
                 if (sourceHasArray(as, particleKey, tok.orientations))
                 {
                     std::vector<::physx::PxQuat> orientations(particleSet->mNumParticles, ::physx::PxQuat(0.0f, 0.0f, 0.0f, 1.0f));
-                    writeArrayToSink(particleKey, tok.orientations, orientations.data(), orientations.size(),
+                    writeArrayToSink(mAttachedStage, particleKey, tok.orientations, orientations.data(), orientations.size(),
                                      omni::physics::parse::DataType::e32Bit);
                 }
 
                 if (sourceHasArray(as, particleKey, tok.scales))
                 {
                     std::vector<carb::Float3> scales(particleSet->mNumParticles, carb::Float3{ 1.0f, 1.0f, 1.0f });
-                    writeArrayToSink(particleKey, tok.scales, scales.data(), scales.size(),
+                    writeArrayToSink(mAttachedStage, particleKey, tok.scales, scales.data(), scales.size(),
                                      omni::physics::parse::DataType::e32Bit);
                 }
             }
@@ -777,7 +792,7 @@ void InternalScene::resetStartProperties(bool useUsdUpdate, bool useVelocitiesUS
 
     // Deformable bodies store source-agnostic ObjectKeys; resolve mesh prims via
     // the active stage during this write-back.
-    AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    AttachedStage* attachedStage = &mAttachedStage;
     const omni::physics::parse::IPhysicsSource* deformableSource =
         attachedStage ? attachedStage->getSource() : nullptr;
     omni::physics::parse::KnownTokens tok;
@@ -804,7 +819,7 @@ void InternalScene::resetStartProperties(bool useUsdUpdate, bool useVelocitiesUS
                 getArrayValue(*attachedStage, skinKey, tok.points, omni::physics::parse::ReadTime::defaultTime(), points);
                 if (points.size() == range.y && srcSize >= range.x + range.y)
                 {
-                    writeMeshPointsToSink(skinKey, srcPtr + range.x, range.y);
+                    writeMeshPointsToSink(mAttachedStage, skinKey, srcPtr + range.x, range.y);
                 }
             }
         }
@@ -818,7 +833,7 @@ void InternalScene::resetStartProperties(bool useUsdUpdate, bool useVelocitiesUS
                 getArrayValue(*attachedStage, simKey, tok.points, omni::physics::parse::ReadTime::defaultTime(), points);
                 if (points.size() == srcSize)
                 {
-                    writeMeshPointsToSink(simKey, srcPtr, srcSize);
+                    writeMeshPointsToSink(mAttachedStage, simKey, srcPtr, srcSize);
                 }
             }
 
@@ -829,11 +844,11 @@ void InternalScene::resetStartProperties(bool useUsdUpdate, bool useVelocitiesUS
                 getArrayValue(*attachedStage, simKey, tok.velocities, omni::physics::parse::ReadTime::defaultTime(), velocities);
                 if (velocities.size() == srcSize)
                 {
-                    writeMeshVelocitiesToSink(simKey, srcPtr, srcSize);
+                    writeMeshVelocitiesToSink(mAttachedStage, simKey, srcPtr, srcSize);
                 }
                 else if (srcSize == 0) // for velocities, srcSize might be 0, which means no velocities
                 {
-                    writeMeshVelocitiesToSink(simKey, nullptr, 0);
+                    writeMeshVelocitiesToSink(mAttachedStage, simKey, nullptr, 0);
                 }
             }
 
@@ -846,12 +861,12 @@ void InternalScene::resetStartProperties(bool useUsdUpdate, bool useVelocitiesUS
                 getArrayValue(*attachedStage, collKey, tok.points, omni::physics::parse::ReadTime::defaultTime(), points);
                 if (points.size() == srcSize)
                 {
-                    writeMeshPointsToSink(collKey, srcPtr, srcSize);
+                    writeMeshPointsToSink(mAttachedStage, collKey, srcPtr, srcSize);
                 }
             }
 
             const std::vector<carb::Float3>& extent = deformableBody->mCollMeshExtentSaveRestoreBuf;
-            writeMeshExtentToSink(collKey, extent.data(), extent.size());
+            writeMeshExtentToSink(mAttachedStage, collKey, extent.data(), extent.size());
         }
     }
 
@@ -874,7 +889,7 @@ void InternalScene::resetStartProperties(bool useUsdUpdate, bool useVelocitiesUS
                 getArrayValue(*attachedStage, skinKey, tok.points, omni::physics::parse::ReadTime::defaultTime(), points);
                 if (points.size() == range.y && srcSize >= range.x + range.y)
                 {
-                    writeMeshPointsToSink(skinKey, srcPtr + range.x, range.y);
+                    writeMeshPointsToSink(mAttachedStage, skinKey, srcPtr + range.x, range.y);
                 }
             }
         }
@@ -888,7 +903,7 @@ void InternalScene::resetStartProperties(bool useUsdUpdate, bool useVelocitiesUS
                 getArrayValue(*attachedStage, simKey, tok.points, omni::physics::parse::ReadTime::defaultTime(), points);
                 if (points.size() == srcSize)
                 {
-                    writeMeshPointsToSink(simKey, srcPtr, srcSize);
+                    writeMeshPointsToSink(mAttachedStage, simKey, srcPtr, srcSize);
                 }
             }
 
@@ -899,16 +914,16 @@ void InternalScene::resetStartProperties(bool useUsdUpdate, bool useVelocitiesUS
                 getArrayValue(*attachedStage, simKey, tok.velocities, omni::physics::parse::ReadTime::defaultTime(), velocities);
                 if (velocities.size() == srcSize)
                 {
-                    writeMeshVelocitiesToSink(simKey, srcPtr, srcSize);
+                    writeMeshVelocitiesToSink(mAttachedStage, simKey, srcPtr, srcSize);
                 }
                 else if (srcSize == 0) // for velocities, srcSize might be 0, which means no velocities
                 {
-                    writeMeshVelocitiesToSink(simKey, nullptr, 0);
+                    writeMeshVelocitiesToSink(mAttachedStage, simKey, nullptr, 0);
                 }
             }
 
             const std::vector<carb::Float3>& extent = deformableBody->mSimMeshExtentSaveRestoreBuf;
-            writeMeshExtentToSink(simKey, extent.data(), extent.size());
+            writeMeshExtentToSink(mAttachedStage, simKey, extent.data(), extent.size());
         }
     }
 }
@@ -954,7 +969,7 @@ void InternalScene::updateVehicleOnRemovedShape(const PxRigidActor& rigidActor, 
 
 void InternalScene::updateVehicleTransforms(bool updateToUsd)
 {
-    SimulationCallbacks* cb = SimulationCallbacks::getSimulationCallbacks();
+    SimulationCallbacks* cb = &mAttachedStage.getSimulationCallbacks();
     const bool skipWriteTransforms = cb->checkGlobalSimulationFlags(GlobalSimulationFlag::eTRANSFORMATION | GlobalSimulationFlag::eSKIP_WRITE);
     TransformUpdateNotificationFn transformFn = cb->getTransformationWriteFn();
     void* cbUserData = cb->getUserData();
@@ -962,7 +977,7 @@ void InternalScene::updateVehicleTransforms(bool updateToUsd)
 
     // Wheel/shape prims are stored as source-agnostic keys; resolve to prims via
     // the active stage during this per-frame write-back.
-    AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    AttachedStage* attachedStage = &mAttachedStage;
 
     const uint32_t enabledVehicleCount = mEnabledVehicleCount;
     for (uint32_t i = 0; i < enabledVehicleCount; i++)
@@ -1016,6 +1031,7 @@ void InternalScene::updateVehicleTransforms(bool updateToUsd)
                                 // TransformUpdateNotificationFn's identifier is the raw
                                 // ObjectKey::handle, not an SdfPath-bit encoding (ADR-0018).
                                 // See ADR-0021 for the generation-tag staleness contract.
+                                RuntimeCallbackScope callbackScope;
                                 transformFn(wheelTMEntry.wheelRootKey.handle, fromPhysX(wheelGlobalPose.p),
                                             fromPhysX(wheelGlobalPose.q), cbUserData);
                             }
@@ -1088,13 +1104,13 @@ void accumulateSinkTransform(const ::physx::PxTransform& worldPose,
 }
 
 // Publish an accumulated transform batch through IPhysicsDataWrite in one call.
-void flushSinkTransforms(const std::vector<omni::physics::parse::ObjectKey>& keys,
+void flushSinkTransforms(AttachedStage& owner, const std::vector<omni::physics::parse::ObjectKey>& keys,
                          const std::vector<::physx::PxVec3>& positions,
                          const std::vector<::physx::PxQuat>& orientations)
 {
     if (keys.empty())
         return;
-    if (AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage())
+    if (AttachedStage* as = &owner)
     {
         if (omni::physics::parse::IPhysicsDataWrite* dw = as->getDataWrite())
         {
@@ -1116,13 +1132,13 @@ void flushSinkTransforms(const std::vector<omni::physics::parse::ObjectKey>& key
 
 // Publish an accumulated velocity batch (already transformed: local-space and
 // deg/s as appropriate) through IPhysicsDataWrite in one call.
-void flushSinkVelocities(const std::vector<omni::physics::parse::ObjectKey>& keys,
+void flushSinkVelocities(AttachedStage& owner, const std::vector<omni::physics::parse::ObjectKey>& keys,
                          const std::vector<::physx::PxVec3>& linear,
                          const std::vector<::physx::PxVec3>& angular)
 {
     if (keys.empty())
         return;
-    if (AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage())
+    if (AttachedStage* as = &owner)
     {
         if (omni::physics::parse::IPhysicsDataWrite* dw = as->getDataWrite())
         {
@@ -1203,7 +1219,7 @@ bool readInstancerArray(AttachedStage& as, omni::physics::parse::ObjectKey key, 
 // vec3; orientations are float xyzw quats, which the backend narrows to the
 // instancer schema's quath[]. have*/writeVel gate which channels this
 // instancer actually had a resolvable value for (see the call site).
-void flushInstancerArrays(omni::physics::parse::ObjectKey instancerKey,
+void flushInstancerArrays(AttachedStage& owner, omni::physics::parse::ObjectKey instancerKey,
                           bool havePositions, const std::vector<::physx::PxVec3>& positions,
                           bool haveOrientations, const std::vector<::physx::PxQuat>& orientations,
                           bool writeVel,
@@ -1212,7 +1228,7 @@ void flushInstancerArrays(omni::physics::parse::ObjectKey instancerKey,
 {
     if (!instancerKey.valid())
         return;
-    AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    AttachedStage* as = &owner;
     if (!as)
         return;
     omni::physics::parse::IPhysicsDataWrite* dw = as->getDataWrite();
@@ -1272,7 +1288,7 @@ void writeLocalTransformMatrixToSink(AttachedStage& as,
 // Publish one whole-array attribute through the source-agnostic sink. The
 // element shape is taken from the destination attribute in the backend; `type`
 // gives the source scalar precision.
-void writeArrayToSink(omni::physics::parse::ObjectKey key,
+void writeArrayToSink(AttachedStage& owner, omni::physics::parse::ObjectKey key,
                       omni::physics::parse::TokenId attr,
                       const void* data,
                       size_t count,
@@ -1280,7 +1296,7 @@ void writeArrayToSink(omni::physics::parse::ObjectKey key,
 {
     if (!key.valid() || (!data && count != 0))
         return;
-    AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    AttachedStage* as = &owner;
     if (!as || !as->getSource())
         return;
     if (omni::physics::parse::IPhysicsDataWrite* dw = as->getDataWrite())
@@ -1309,23 +1325,23 @@ bool sourceHasArray(AttachedStage& as,
 // ever crosses the sink as an untyped column, so the buffer type is the engine's
 // choice, not USD's. `count == 0` with a null pointer is the sink's "author an
 // empty array" reset.
-void writeMeshPointsToSink(omni::physics::parse::ObjectKey key, const carb::Float3* points, size_t count)
+void writeMeshPointsToSink(AttachedStage& owner, omni::physics::parse::ObjectKey key, const carb::Float3* points, size_t count)
 {
-    if (AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage())
+    if (AttachedStage* as = &owner)
         if (const omni::physics::parse::IPhysicsSource* src = as->getSource())
-            writeArrayToSink(key, src->internToken("points"), points, count, omni::physics::parse::DataType::e32Bit);
+            writeArrayToSink(owner, key, src->internToken("points"), points, count, omni::physics::parse::DataType::e32Bit);
 }
-void writeMeshVelocitiesToSink(omni::physics::parse::ObjectKey key, const carb::Float3* velocities, size_t count)
+void writeMeshVelocitiesToSink(AttachedStage& owner, omni::physics::parse::ObjectKey key, const carb::Float3* velocities, size_t count)
 {
-    if (AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage())
+    if (AttachedStage* as = &owner)
         if (const omni::physics::parse::IPhysicsSource* src = as->getSource())
-            writeArrayToSink(key, src->internToken("velocities"), velocities, count, omni::physics::parse::DataType::e32Bit);
+            writeArrayToSink(owner, key, src->internToken("velocities"), velocities, count, omni::physics::parse::DataType::e32Bit);
 }
-void writeMeshExtentToSink(omni::physics::parse::ObjectKey key, const carb::Float3* extent, size_t count)
+void writeMeshExtentToSink(AttachedStage& owner, omni::physics::parse::ObjectKey key, const carb::Float3* extent, size_t count)
 {
-    if (AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage())
+    if (AttachedStage* as = &owner)
         if (const omni::physics::parse::IPhysicsSource* src = as->getSource())
-            writeArrayToSink(key, src->internToken("extent"), extent, count, omni::physics::parse::DataType::e32Bit);
+            writeArrayToSink(owner, key, src->internToken("extent"), extent, count, omni::physics::parse::DataType::e32Bit);
 }
 } // namespace
 
@@ -1368,7 +1384,7 @@ void InternalScene::updateCctTransforms(bool updateToUsd)
         it++;
     }
 
-    flushSinkTransforms(sinkKeys, sinkPositions, sinkOrientations);
+    flushSinkTransforms(mAttachedStage, sinkKeys, sinkPositions, sinkOrientations);
 }
 
 // FIXME: outputVelocitiesLocalSpace is currently unused. It comes from the exposed IPhysX API.
@@ -1397,7 +1413,7 @@ void InternalScene::updateRigidBodyTransforms(bool updateToUsd,
     std::vector<::physx::PxVec3> linearVelocityValues;
     std::vector<::physx::PxVec3> angularVelocityValues;
 
-    SimulationCallbacks* cb = SimulationCallbacks::getSimulationCallbacks();
+    SimulationCallbacks* cb = &mAttachedStage.getSimulationCallbacks();
     const bool skipWriteTransforms = cb->checkGlobalSimulationFlags(GlobalSimulationFlag::eTRANSFORMATION | GlobalSimulationFlag::eSKIP_WRITE);
     const bool skipWriteVelocities = cb->checkGlobalSimulationFlags(GlobalSimulationFlag::eVELOCITY | GlobalSimulationFlag::eSKIP_WRITE);
     const bool velocitiesInRad = cb->checkGlobalSimulationFlags(GlobalSimulationFlag::eVELOCITY | GlobalSimulationFlag::eNOTIFY_IN_RADIANS);
@@ -1411,8 +1427,8 @@ void InternalScene::updateRigidBodyTransforms(bool updateToUsd,
     // setting
     if (!(skipWriteTransforms && skipWriteVelocities && !notifyTransforms && !notifyVelocities))
     {
-        InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
-        AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+        InternalPhysXDatabase& db = mAttachedStage.getInternalPhysXDatabase();
+        AttachedStage* attachedStage = &mAttachedStage;
 
         PxU32 nbActors = 0;
         PxActor** activeActors = mScene->getActiveActors(nbActors);
@@ -1483,6 +1499,7 @@ void InternalScene::updateRigidBodyTransforms(bool updateToUsd,
                             (actor->mFlags & InternalActorFlag::eNOTIFY_TRANSFORM && cb->getTransformationWriteFn()))
                         {
                             // Raw ObjectKey::handle -- see updateVehicleTransforms.
+                            RuntimeCallbackScope callbackScope;
                             transformFn(actor->mKey.handle, fromPhysX(transform.p), fromPhysX(transform.q),
                                 cbUserData);
                         }
@@ -1523,7 +1540,7 @@ void InternalScene::updateRigidBodyTransforms(bool updateToUsd,
 
                                             // Flush the previous instancer's accumulated positions/orientations
                                             // through the sink (velocities are flushed only at the end).
-                                            flushInstancerArrays(currInstancerKey, havePositions, positionValues,
+                                            flushInstancerArrays(mAttachedStage, currInstancerKey, havePositions, positionValues,
                                                                  haveOrientations, orientationValues, /*writeVel*/ false,
                                                                  haveLinVelAttr, linearVelocityValues, haveAngVelAttr,
                                                                  angularVelocityValues);
@@ -1680,6 +1697,7 @@ void InternalScene::updateRigidBodyTransforms(bool updateToUsd,
                                                               radToDeg(dyna->getAngularVelocity());
 
                                     // Raw ObjectKey::handle, as for transformFn above.
+                                    RuntimeCallbackScope callbackScope;
                                     velocityFn(actor->mKey.handle, fromPhysX(linVel), fromPhysX(angVel), cbUserData);
                                 }
 
@@ -1719,12 +1737,12 @@ void InternalScene::updateRigidBodyTransforms(bool updateToUsd,
 
         // Flush the rigid-body transform batch (incl. nested) through the sink in
         // one ancestor-first call.
-        flushSinkTransforms(sinkKeys, sinkPositions, sinkOrientations);
-        flushSinkVelocities(velKeys, velLinear, velAngular);
+        flushSinkTransforms(mAttachedStage, sinkKeys, sinkPositions, sinkOrientations);
+        flushSinkVelocities(mAttachedStage, velKeys, velLinear, velAngular);
     }
 
     // Flush the last instancer's accumulated arrays (incl. velocities) through the sink.
-    flushInstancerArrays(currInstancerKey, havePositions, positionValues, haveOrientations, orientationValues,
+    flushInstancerArrays(mAttachedStage, currInstancerKey, havePositions, positionValues, haveOrientations, orientationValues,
                          updateVelocitiesToUsd, haveLinVelAttr, linearVelocityValues, haveAngVelAttr,
                          angularVelocityValues);
 }
@@ -1732,9 +1750,9 @@ void InternalScene::updateRigidBodyTransforms(bool updateToUsd,
 void InternalScene::updateParticleTransforms(bool updateToUsd, bool updateVelocitiesToUsd, bool updateParticlesToUsd)
 {
     // 0 is disabled, 1/2 is selected/all
-    const bool debugVizEnabled = (OmniPhysX::getInstance().getCachedSettings().visualizationDisplayParticles > 0);
+    const bool debugVizEnabled = (mAttachedStage.getCachedSettings().visualizationDisplayParticles > 0);
 
-    SimulationCallbacks* cb = SimulationCallbacks::getSimulationCallbacks();
+    SimulationCallbacks* cb = &mAttachedStage.getSimulationCallbacks();
     const bool skipWriteTransforms = cb->checkGlobalSimulationFlags(GlobalSimulationFlag::eTRANSFORMATION | GlobalSimulationFlag::eSKIP_WRITE);
 
     for (size_t particleSystemIndex = 0; particleSystemIndex < mParticleSystems.size(); particleSystemIndex++)
@@ -1742,7 +1760,7 @@ void InternalScene::updateParticleTransforms(bool updateToUsd, bool updateVeloci
         InternalPbdParticleSystem* particleSystem = mParticleSystems[particleSystemIndex];
 
         // The postprocess registry is empty without a Kit viewport, so this returns eNone.
-        uint32_t postFlags = particles::getPostprocessStages(particleSystem->mKey);
+        uint32_t postFlags = particles::getPostprocessStages(mAttachedStage, particleSystem->mKey);
         bool particleSystemHasAnisotropy = postFlags & ParticlePostFlag::eAnisotropy;
         bool particleSystemHasSmoothing = postFlags & ParticlePostFlag::eSmoothing;
         bool particleSystemHasIsosurface = postFlags & ParticlePostFlag::eIsosurface;
@@ -1793,13 +1811,13 @@ void InternalScene::updateParticleTransforms(bool updateToUsd, bool updateVeloci
         PxVec4* anisotropyQ3 = nullptr;
         if (particleSystemHasAnisotropy)
         {
-            particles::getAnisotropy(anisotropyQ1, anisotropyQ2, anisotropyQ3, particleSystem->mKey);
+            particles::getAnisotropy(mAttachedStage, anisotropyQ1, anisotropyQ2, anisotropyQ3, particleSystem->mKey);
         }
 
         PxVec4* smoothedPos = nullptr;
         if (particleSystemHasSmoothing)
         {
-            smoothedPos = particles::getSmoothedPositions(particleSystem->mKey);
+            smoothedPos = particles::getSmoothedPositions(mAttachedStage, particleSystem->mKey);
         }
 
 
@@ -1814,7 +1832,7 @@ void InternalScene::updateParticleTransforms(bool updateToUsd, bool updateVeloci
             if (!particleSet->mNumParticles || !particleSet->mEnabled || !particleSet->mDownloadDirtyFlags)
                 continue;
 
-            AttachedStage& as = *UsdLoad::getUsdLoad()->getActiveAttachedStage();
+            AttachedStage& as = *&mAttachedStage;
             const omni::physics::parse::ObjectKey particleKey = particleSet->mKey;
             const omni::physics::parse::IPhysicsSource* source = as.getSource();
 
@@ -1839,7 +1857,7 @@ void InternalScene::updateParticleTransforms(bool updateToUsd, bool updateVeloci
             {
                 std::vector<carb::Float3> tmpVelocities;
                 copyBuffer(tmpVelocities, (const carb::Float4*)particleSet->mVelocities, particleSet->mNumParticles);
-                writeArrayToSink(particleKey, tok.velocities, tmpVelocities.data(),
+                writeArrayToSink(mAttachedStage, particleKey, tok.velocities, tmpVelocities.data(),
                                  tmpVelocities.size(), omni::physics::parse::DataType::e32Bit);
             }
 
@@ -1850,7 +1868,7 @@ void InternalScene::updateParticleTransforms(bool updateToUsd, bool updateVeloci
                 {
                     std::vector<carb::Float3> tmpSimPositions;
                     copyBuffer(tmpSimPositions, particleSet->mPositions, particleSet->mNumParticles, worldToLocal);
-                    writeArrayToSink(particleKey, tok.physxParticleSimulationPoints,
+                    writeArrayToSink(mAttachedStage, particleKey, tok.physxParticleSimulationPoints,
                                      tmpSimPositions.data(), tmpSimPositions.size(),
                                      omni::physics::parse::DataType::e32Bit);
                 }
@@ -1858,7 +1876,7 @@ void InternalScene::updateParticleTransforms(bool updateToUsd, bool updateVeloci
                 {
                     std::vector<carb::Float3> tmpPoints;
                     copyBuffer(tmpPoints, particleSet->mPositions, particleSet->mNumParticles, worldToLocal);
-                    writeArrayToSink(particleKey, pointsToken, tmpPoints.data(), tmpPoints.size(),
+                    writeArrayToSink(mAttachedStage, particleKey, pointsToken, tmpPoints.data(), tmpPoints.size(),
                                      omni::physics::parse::DataType::e32Bit);
                 }
             }
@@ -1868,7 +1886,7 @@ void InternalScene::updateParticleTransforms(bool updateToUsd, bool updateVeloci
                 PxU32 start = particleSet->mParticleBuffer->getFlatListStartIndex();
                 std::vector<carb::Float3> tmpPoints;
                 copyBuffer(tmpPoints, &smoothedPos[start], particleSet->mNumParticles, worldToLocal);
-                writeArrayToSink(particleKey, pointsToken, tmpPoints.data(), tmpPoints.size(),
+                writeArrayToSink(mAttachedStage, particleKey, pointsToken, tmpPoints.data(), tmpPoints.size(),
                                  omni::physics::parse::DataType::e32Bit);
             }
 
@@ -1892,11 +1910,11 @@ void InternalScene::updateParticleTransforms(bool updateToUsd, bool updateVeloci
 
                     if (source)
                     {
-                        writeArrayToSink(particleKey, source->internToken("anisotropyQ1"), tmpValuesQ1.data(),
+                        writeArrayToSink(mAttachedStage, particleKey, source->internToken("anisotropyQ1"), tmpValuesQ1.data(),
                                          tmpValuesQ1.size(), omni::physics::parse::DataType::e32Bit);
-                        writeArrayToSink(particleKey, source->internToken("anisotropyQ2"), tmpValuesQ2.data(),
+                        writeArrayToSink(mAttachedStage, particleKey, source->internToken("anisotropyQ2"), tmpValuesQ2.data(),
                                          tmpValuesQ2.size(), omni::physics::parse::DataType::e32Bit);
-                        writeArrayToSink(particleKey, source->internToken("anisotropyQ3"), tmpValuesQ3.data(),
+                        writeArrayToSink(mAttachedStage, particleKey, source->internToken("anisotropyQ3"), tmpValuesQ3.data(),
                                          tmpValuesQ3.size(), omni::physics::parse::DataType::e32Bit);
                     }
                 }
@@ -1915,9 +1933,9 @@ void InternalScene::updateParticleTransforms(bool updateToUsd, bool updateVeloci
                         tmpOrientations[i - start] = PxQuat(PxMat33(q1.getXYZ(), q2.getXYZ(), q3.getXYZ()));
                     }
 
-                    writeArrayToSink(particleKey, tok.scales, tmpScales.data(), tmpScales.size(),
+                    writeArrayToSink(mAttachedStage, particleKey, tok.scales, tmpScales.data(), tmpScales.size(),
                                      omni::physics::parse::DataType::e32Bit);
-                    writeArrayToSink(particleKey, tok.orientations, tmpOrientations.data(),
+                    writeArrayToSink(mAttachedStage, particleKey, tok.orientations, tmpOrientations.data(),
                                      tmpOrientations.size(), omni::physics::parse::DataType::e32Bit);
                 }
             }
@@ -1940,7 +1958,7 @@ void InternalScene::updateParticleTransforms(bool updateToUsd, bool updateVeloci
             particleSet->mDownloadDirtyFlags = 0;
         }
 
-        if (AttachedStage* diffuseAttachedStage = UsdLoad::getUsdLoad()->getActiveAttachedStage())
+        if (AttachedStage* diffuseAttachedStage = &mAttachedStage)
         {
             if (omni::physics::parse::IPhysicsDataWrite* dw = diffuseAttachedStage->getDataWrite())
             {
@@ -1953,7 +1971,7 @@ void InternalScene::updateParticleTransforms(bool updateToUsd, bool updateVeloci
         /* Isosurface */
         if ((updateToUsd || debugVizEnabled) && particleSystemHasIsosurface)
         {
-            particles::updateIsosurfaceMesh(particleSystem->mKey);
+            particles::updateIsosurfaceMesh(mAttachedStage, particleSystem->mKey);
         }
 
     }
@@ -1964,12 +1982,12 @@ void InternalScene::updateDeformableTransforms(bool updateToUsd, bool updateVelo
     if (mVolumeDeformableBodies.empty() && mSurfaceDeformableBodies.empty())
         return;
 
-    SimulationCallbacks* cb = SimulationCallbacks::getSimulationCallbacks();
+    SimulationCallbacks* cb = &mAttachedStage.getSimulationCallbacks();
     const bool skipWriteTransforms = cb->checkGlobalSimulationFlags(GlobalSimulationFlag::eTRANSFORMATION | GlobalSimulationFlag::eSKIP_WRITE);
     if (skipWriteTransforms)
         return;
 
-    PxCudaContextManager* cudaContextManager = OmniPhysX::getInstance().getPhysXSetup().getCudaContextManager();
+    PxCudaContextManager* cudaContextManager = mScene->getCudaContextManager();
     if (!cudaContextManager || !cudaContextManager->getCudaContext())
     {
         CARB_LOG_WARN_ONCE(
@@ -1980,7 +1998,7 @@ void InternalScene::updateDeformableTransforms(bool updateToUsd, bool updateVelo
 
     // Deformable bodies store source-agnostic ObjectKeys; resolve mesh prims via
     // the active stage during this write-back.
-    AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+    AttachedStage* attachedStage = &mAttachedStage;
     const omni::physics::parse::IPhysicsSource* deformableSource =
         attachedStage ? attachedStage->getSource() : nullptr;
     omni::physics::parse::KnownTokens tok;
@@ -2029,7 +2047,7 @@ void InternalScene::updateDeformableTransforms(bool updateToUsd, bool updateVelo
                 {
                     std::vector<carb::Float3> outPoints;
                     copyBuffer(outPoints, srcPtr + range.x, range.y, worldToSkinMesh);
-                    writeMeshPointsToSink(skinKey, outPoints.data(), outPoints.size());
+                    writeMeshPointsToSink(mAttachedStage, skinKey, outPoints.data(), outPoints.size());
                 }
             }
         }
@@ -2046,7 +2064,7 @@ void InternalScene::updateDeformableTransforms(bool updateToUsd, bool updateVelo
                 {
                     std::vector<carb::Float3> outPoints;
                     copyBuffer(outPoints, srcPtr, srcSize, worldToSimMesh);
-                    writeMeshPointsToSink(simKey, outPoints.data(), outPoints.size());
+                    writeMeshPointsToSink(mAttachedStage, simKey, outPoints.data(), outPoints.size());
                 }
             }
 
@@ -2058,7 +2076,7 @@ void InternalScene::updateDeformableTransforms(bool updateToUsd, bool updateVelo
                 {
                     std::vector<carb::Float3> velocities;
                     copyBuffer(velocities, srcPtr, srcSize);
-                    writeMeshVelocitiesToSink(simKey, velocities.data(), velocities.size());
+                    writeMeshVelocitiesToSink(mAttachedStage, simKey, velocities.data(), velocities.size());
                 }
             }
 
@@ -2074,14 +2092,14 @@ void InternalScene::updateDeformableTransforms(bool updateToUsd, bool updateVelo
                 {
                     std::vector<carb::Float3> outCollPoints;
                     copyBuffer(outCollPoints, srcPtr, srcSize, worldToCollMesh);
-                    writeMeshPointsToSink(collKey, outCollPoints.data(), outCollPoints.size());
+                    writeMeshPointsToSink(mAttachedStage, collKey, outCollPoints.data(), outCollPoints.size());
                 }
             }
 
             const PxBounds3 worldBounds = deformableBody->mDeformableVolume->getWorldBounds();
             carb::Float3 extent[2];
             computeTransformedExtent(worldBounds, worldToCollMesh, extent);
-            writeMeshExtentToSink(collKey, extent, 2);
+            writeMeshExtentToSink(mAttachedStage, collKey, extent, 2);
         }
     }
 
@@ -2112,7 +2130,7 @@ void InternalScene::updateDeformableTransforms(bool updateToUsd, bool updateVelo
                 {
                     std::vector<carb::Float3> outPoints;
                     copyBuffer(outPoints, srcPtr + range.x, range.y, worldToSkinMesh);
-                    writeMeshPointsToSink(skinKey, outPoints.data(), outPoints.size());
+                    writeMeshPointsToSink(mAttachedStage, skinKey, outPoints.data(), outPoints.size());
                 }
             }
         }
@@ -2129,7 +2147,7 @@ void InternalScene::updateDeformableTransforms(bool updateToUsd, bool updateVelo
                 {
                     std::vector<carb::Float3> outPoints;
                     copyBuffer(outPoints, srcPtr, uint32_t(points.size()), worldToSimMesh);
-                    writeMeshPointsToSink(simKey, outPoints.data(), outPoints.size());
+                    writeMeshPointsToSink(mAttachedStage, simKey, outPoints.data(), outPoints.size());
                 }
             }
 
@@ -2141,7 +2159,7 @@ void InternalScene::updateDeformableTransforms(bool updateToUsd, bool updateVelo
                 {
                     std::vector<carb::Float3> velocities;
                     copyBuffer(velocities, srcPtr, srcSize);
-                    writeMeshVelocitiesToSink(simKey, velocities.data(), velocities.size());
+                    writeMeshVelocitiesToSink(mAttachedStage, simKey, velocities.data(), velocities.size());
                 }
             }
 
@@ -2149,7 +2167,7 @@ void InternalScene::updateDeformableTransforms(bool updateToUsd, bool updateVelo
                 const PxBounds3 worldBounds = deformableBody->mDeformableSurface->getWorldBounds();
                 carb::Float3 extent[2];
                 computeTransformedExtent(worldBounds, worldToSimMesh, extent);
-                writeMeshExtentToSink(simKey, extent, 2);
+                writeMeshExtentToSink(mAttachedStage, simKey, extent, 2);
             }
         }
     }
@@ -2230,7 +2248,7 @@ void InternalScene::updateSimulationOutputs(bool updateToUsd,
     // null), so the per-frame USD write-back must not run -- it would otherwise
     // resolve to invalid UsdPrims and throw "Used null prim".
     {
-        AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+        AttachedStage* attachedStage = &mAttachedStage;
         if (!attachedStage || !attachedStage->getDataWrite())
         {
             updateToUsd = false;
@@ -2239,7 +2257,7 @@ void InternalScene::updateSimulationOutputs(bool updateToUsd,
         }
     }
 
-    ScopedNoticeBlock scopedNoticeBlock;
+    ScopedNoticeBlock scopedNoticeBlock(mAttachedStage);
 
     // Session-layer edit-context/change-block scaffolding around a full simulation-output
     // flush; a no-op on a backend without this concept. rawLayer() is a non-owning peek:
@@ -2249,7 +2267,7 @@ void InternalScene::updateSimulationOutputs(bool updateToUsd,
         const SimulationLayerHandle simLayer = omniPhysX.getSimulationLayer();
         void* simLayerHandle = simLayer.rawLayer();
 
-        AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+        AttachedStage* attachedStage = &mAttachedStage;
         omni::physics::parse::IPhysicsDataWrite* dw = attachedStage ? attachedStage->getDataWrite() : nullptr;
 
         if (dw)
@@ -2479,7 +2497,7 @@ void InternalJoint::updateArticulationJointLimitHigh(::physx::PxArticulationJoin
 }
 
 
-void InternalJoint::setArticulationDrivePositionTarget(::physx::PxArticulationJointReducedCoordinate* joint, ::physx::PxArticulationAxis::Enum axis, float positionTarget, omni::physics::parse::ObjectKey jointKey) const
+void InternalJoint::setArticulationDrivePositionTarget(::physx::PxArticulationJointReducedCoordinate* joint, ::physx::PxArticulationAxis::Enum axis, float positionTarget, const usdparser::AttachedStage* owner, omni::physics::parse::ObjectKey jointKey) const
 {
     if (positionTarget >= (2.0f * M_PI) || positionTarget <= -(2.0f * M_PI))
     {
@@ -2489,12 +2507,11 @@ void InternalJoint::setArticulationDrivePositionTarget(::physx::PxArticulationJo
         if(type == PxArticulationJointType::eREVOLUTE)
         {
             const float targetPosition = radToDeg(positionTarget);
-            const AttachedStage* as = UsdLoad::getUsdLoad()->getActiveAttachedStage();
             OMNI_LOG_WARN(
             kRoboticsLogChannel,
             "Physics USD: Drive position target set to %2.f on %s will be wrapped in [-360, 360] range."
             "Consider setting explicit limits to enable use of unwrapped joints",
-            targetPosition, as ? as->textFor(jointKey) : "");
+            targetPosition, owner ? owner->textFor(jointKey) : "");
             positionTarget = std::fmod(positionTarget, 2.0f * float(M_PI));  // map to [-360, 360] range here to avoid SDK Np warning
         }
     }
@@ -2541,6 +2558,46 @@ void InternalScene::debugDraw(omni::physx::OmniRenderBuffer& renderBuffer, uint6
                 const PxTransform splineWorldPose = actor->mActor->getGlobalPose() * actor->mSplineLocalSpace;
                 spline->draw(renderBuffer, splineWorldPose);
             }
+        }
+    }
+}
+
+void InternalScene::moveForcesForActor(const PxRigidActor* actor, InternalScene& target, PhysXScene& targetPhysXScene)
+{
+    if (!actor || &target == this)
+    {
+        return;
+    }
+
+    for (size_t i = mForces.size(); i--;)
+    {
+        InternalForce* force = mForces[i];
+        if (!force || force->mRigidActor != actor)
+        {
+            continue;
+        }
+
+        force->mPhysXScene = &targetPhysXScene;
+        target.mForces.push_back(force);
+        mForces[i] = mForces.back();
+        mForces.pop_back();
+    }
+}
+
+void omni::physx::internal::swapForceActorsAllScenes(const usdparser::AttachedStage& attachedStage, PxRigidActor* actor0, PxRigidActor* actor1)
+{
+    if (!actor0)
+    {
+        return;
+    }
+
+    const usdparser::AttachedStage::SceneMap& physxScenes = attachedStage.getPhysXScenes();
+    for (usdparser::AttachedStage::SceneMap::const_reference ref : physxScenes)
+    {
+        PhysXScene* physxScene = ref.second;
+        if (physxScene && physxScene->getInternalScene())
+        {
+            physxScene->getInternalScene()->swapForceActors(actor0, actor1);
         }
     }
 }

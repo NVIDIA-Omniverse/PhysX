@@ -6,14 +6,20 @@
 
 """Kinematic support sample: transform motion, surface velocity, and both."""
 
+# @implements REQ-CAPI-OVSTAGE-XFORM-001
+# @covers AC-1
+# @implements REQ-PYTHON-SAMPLE-002
+# @covers AC-1 AC-2
+
 from pathlib import Path
 
 import numpy as np
 import ovstage
 
 import ovphysx
+from ovphysx.samples.python_samples.schema_support import physx_schema_paths
 from ovphysx import PhysX
-from ovphysx.types import TensorType
+from ovphysx.types import SimObjectType
 
 
 _physx_schemas_registered = False
@@ -22,15 +28,10 @@ _physx_schemas_registered = False
 def attach_scene(physx, usd_path):
     if not ovstage.population.available():
         raise RuntimeError("ovstage population bridge is unavailable")
-    # ovphysx ships its PhysX USD schemas as codeless resources and does not register
-    # them itself. Register them with ovstage once, before the first population
-    # call in the process. The Newton USD schema (pip package newton-usd-schemas) is
-    # registered alongside when installed, so authored newton:* attributes reach the
-    # parser; this scene has none, and the package is not a wheel dependency, so
-    # don't require it.
+    # Register before population; this scene can omit the Newton provider.
     global _physx_schemas_registered
     if not _physx_schemas_registered:
-        schema_roots = [str(ovphysx.codeless_schema_root())]
+        schema_roots = [str(p) for p in physx_schema_paths()]
         try:
             schema_roots.append(str(ovphysx.newton_schema_root()))
         except FileNotFoundError:
@@ -40,30 +41,36 @@ def attach_scene(physx, usd_path):
     stage = ovstage.Stage("ovphysx-kinematic-support-sample")
     try:
         ovstage.population.open_usd(
-            stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.PHYSICS
+            stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.ALL
         )
         stage.advance_write_floor(ordinal=1).wait()
-        physx.attach_ovstage(stage, read_ordinal=1)
+        physx.wait_task(physx.attach_ovstage(stage, read_ordinal=1))
         return stage
     except Exception:
+        if physx.is_stage_attached(stage):
+            physx.wait_task(physx.detach_ovstage())
         stage.destroy()
         raise
 
 
-def make_binding(physx, path, tensor_type):
-    binding = physx.create_tensor_binding(pattern=path, tensor_type=tensor_type)
-    if binding.count != 1:
-        binding.destroy()
-        raise RuntimeError(f"Expected one rigid body at {path}, found {binding.count}")
-    return binding
+RIDERS = ("/World/TargetRider", "/World/ConveyorRider", "/World/CombinedRider")
 
 
-# NOTE: this sample uses the deprecated tensor-binding API. New code should use the session
-# read/write API (PhysX.read / PhysX.write).
-def read_x(binding):
-    poses = np.zeros(binding.shape, dtype=np.float32)
-    binding.read(poses)
-    return float(poses[0, 0])
+def read_rider_x(physx, stage):
+    """World x of each rider, in RIDERS order, through one read selected by the riders' paths."""
+    with ovstage.PathDictionary(stage) as paths:
+        handles = [paths.intern_path(path) for path in RIDERS]
+        x = {}
+        with physx.read_sync(SimObjectType.RIGID_BODY, ["position"], prim_paths=handles) as result:
+            for group in result.groups:
+                listed = paths.get_paths(group.prim_list)
+                positions = group.tensors[0].numpy().reshape(group.prim_count, -1)
+                for row in range(group.prim_count):
+                    x[paths.path_to_string(listed[group.prim_offset + row])] = float(positions[row, 0])
+    missing = [path for path in RIDERS if path not in x]
+    if missing:
+        raise RuntimeError(f"Expected a rigid body at each of {missing}")
+    return np.array([x[path] for path in RIDERS])
 
 
 class TransformWriter:
@@ -116,46 +123,38 @@ def main():
     PhysX.set_cpu_mode(True)
     physx = PhysX()
     stage = None
-    bindings = []
     writers = []
     try:
-        usd_path = Path(__file__).resolve().parent / ".." / "data" / "kinematic_support.usda"
+        # Prefer package data so a copied sample works. Fall back to the checked-in
+        # sample's adjacent data directory when package data is absent.
+        usd_path = Path(ovphysx.__file__).resolve().parent / "samples" / "data" / "kinematic_support.usda"
+        if not usd_path.is_file():
+            usd_path = Path(__file__).resolve().parent.parent / "data" / "kinematic_support.usda"
+        if not usd_path.is_file():
+            raise FileNotFoundError(f"ovphysx sample data is missing: {usd_path}")
         stage = attach_scene(physx, usd_path)
         physx.wait_all()
-
-        def add_binding(path, tensor_type):
-            binding = make_binding(physx, path, tensor_type)
-            bindings.append(binding)
-            return binding
 
         target_platform = TransformWriter(stage, "/World/TargetPlatform")
         writers.append(target_platform)
         combined_platform = TransformWriter(stage, "/World/CombinedPlatform")
         writers.append(combined_platform)
-        target_rider = add_binding("/World/TargetRider", TensorType.RIGID_BODY_POSE)
-        conveyor_rider = add_binding("/World/ConveyorRider", TensorType.RIGID_BODY_POSE)
-        combined_rider = add_binding("/World/CombinedRider", TensorType.RIGID_BODY_POSE)
 
         dt = 1.0 / 60.0
         for _ in range(10):
             physx.step_sync(dt)
 
-        start = np.array(
-            [read_x(target_rider), read_x(conveyor_rider), read_x(combined_rider)]
-        )
+        start = read_rider_x(physx, stage)
         for frame in range(1, 121):
             x = frame * dt
             ordinal = frame + 1
             target_platform.write_pose(x, 0.0, ordinal)
             combined_platform.write_pose(x, 16.0, ordinal)
             stage.advance_write_floor(ordinal=ordinal).wait()
-            physx.update_from_ovstage(ordinal, ordinal)
+            physx.wait_task(physx.update_from_ovstage(ordinal, ordinal))
             physx.step_sync(dt)
 
-        displacement = (
-            np.array([read_x(target_rider), read_x(conveyor_rider), read_x(combined_rider)])
-            - start
-        )
+        displacement = read_rider_x(physx, stage) - start
         target_dx, conveyor_dx, combined_dx = displacement
         print(
             "Rider displacement: "
@@ -171,10 +170,8 @@ def main():
     finally:
         for writer in reversed(writers):
             writer.destroy()
-        for binding in reversed(bindings):
-            binding.destroy()
         if stage is not None:
-            physx.detach_ovstage()
+            physx.wait_task(physx.detach_ovstage())
             stage.destroy()
         physx.destroy()
 

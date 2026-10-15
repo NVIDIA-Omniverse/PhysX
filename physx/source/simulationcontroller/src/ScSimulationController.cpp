@@ -32,14 +32,20 @@ class UpdateArticulationAfterIntegrationTask : public Cm::Task
 	const PxU32								mNbArticulations;
 	const PxReal							mDt;
 	const bool								mIsSleepingDisabled;
+#if PX_SUPPORT_GPU_PHYSX
+	const bool								mIsGPU;
+#endif
 	PxMutex&								mArticulationSleepLock;
 	volatile PxU32*							mCurrent;
 
 	PX_NOCOPY(UpdateArticulationAfterIntegrationTask)
 public:
 	UpdateArticulationAfterIntegrationTask(
-		const UpdateCachedParams& params,
-		PxU32 nbArticulations, PxReal dt, const PxNodeIndex* nodeIndices, IslandSim& islandSim, PinnableBitMap* changedAABBMgrActorHandles,
+		const UpdateCachedParams& params, PxU32 nbArticulations, PxReal dt,
+#if PX_SUPPORT_GPU_PHYSX
+		bool isGPU,
+#endif
+		const PxNodeIndex* nodeIndices, IslandSim& islandSim, PinnableBitMap* changedAABBMgrActorHandles,
 		bool isSleepingDisabled, PxMutex& articulationSleepLock, volatile PxU32* current
 	) :
 		Cm::Task(islandSim.getContextId()),
@@ -50,6 +56,9 @@ public:
 		mNbArticulations(nbArticulations),
 		mDt(dt),
 		mIsSleepingDisabled(isSleepingDisabled),
+#if PX_SUPPORT_GPU_PHYSX
+		mIsGPU(isGPU),
+#endif
 		mArticulationSleepLock(articulationSleepLock),
 		mCurrent(current)
 	{
@@ -61,7 +70,9 @@ public:
 
 		volatile PxU32* current = mCurrent;
 		const PxU32 nbToGo = mNbArticulations;
-
+#if PX_SUPPORT_GPU_PHYSX
+		const bool isGPU = mIsGPU;
+#endif
 		while(1)
 		{
 			const PxU32 index = PxU32(PxAtomicIncrement(reinterpret_cast<volatile PxI32*>(current))) - 1;
@@ -71,9 +82,28 @@ public:
 			ArticulationSim* articSim = getArticulationSim(mIslandSim, mNodeIndices[index]);
 			if(!sleepingDisabled)
 				articSim->sleepCheck(mDt, mArticulationSleepLock);
+			
+#if PX_SUPPORT_GPU_PHYSX
+			if(!isGPU)
+#endif
+			{
+				const Bp::AggregateHandle aggregateHandle = articSim->getAggregateHandle();
 
-			// PT: this is only executed in the CPU version so we can call the version that bypasses the virtual calls
-			articSim->updateCached(mParams, mChangedAABBMgrActorHandles, true, true);
+				// PT: we can skip the bitmap updates when the articulation is in an aggregate, as in this case the only
+				// thing we do when parsing the updated bitmap is fetch the aggregate from the articulation link and mark
+				// it as dirty. So instead we can simply mark the aggregate dirty directly (later in the sequential part).
+				PinnableBitMap* shapeChangedMap = aggregateHandle != PX_INVALID_U32 ? NULL : mChangedAABBMgrActorHandles;
+
+				// PT: this is only executed in the CPU version so we can call the version that bypasses the virtual calls
+				articSim->updateCached(mParams, shapeChangedMap, true, true);
+			}
+#if PX_SUPPORT_GPU_PHYSX
+			else
+			{
+				// PT: the virtual calls are only needed in the DirectGPU version (which doesn't reach this code) so we can still skip them here.
+				articSim->updateCached(mParams, mChangedAABBMgrActorHandles, true, true);
+			}
+#endif
 		}
 	}
 
@@ -97,6 +127,10 @@ void SimulationController::updateArticulationAfterIntegration(PxsContext* llCont
 	params.mTransformCache.setChangedState();
 	params.mBoundsArray.setChangedState();
 
+#if PX_SUPPORT_GPU_PHYSX
+	const bool isGPU = aabbManager->isGPUManager();
+#endif
+
 	const PxNodeIndex* activeArticulations = islandSim.getActiveNodes(Node::eARTICULATION_TYPE);
 
 	PinnableBitMap& changedAABBMgrActorHandles = aabbManager->getChangedAABBMgActorHandleMap();
@@ -113,14 +147,45 @@ void SimulationController::updateArticulationAfterIntegration(PxsContext* llCont
 		UpdateArticulationAfterIntegrationTask* task =
 			PX_PLACEMENT_NEW(flushPool.allocate(sizeof(UpdateArticulationAfterIntegrationTask)), UpdateArticulationAfterIntegrationTask)(params,
 				nbActiveArticulations, dt,
+#if PX_SUPPORT_GPU_PHYSX
+				isGPU,
+#endif
 				activeArticulations, islandSim, &changedAABBMgrActorHandles, isSleepingDisabled, mArticulationSleepLock, current);
 
 		startTask(task, continuation);
 	}
 
+#if PX_SUPPORT_GPU_PHYSX
+	if(!isGPU)
+#endif
+	{
+		PX_PROFILE_ZONE("SimulationController::updateArticulationAfterIntegration_serial_agg", llContext->getContextId());
+
+		// PT: this is the second part of what we started inside UpdateArticulationAfterIntegrationTask. We mark aggregates
+		// as dirty directly here, for next frame, instead of parsing the bitmap and re-discovering these aggregates during
+		// the broadphase update of next frame.
+
+		// PT: this part cannot run in tasks as it is not thread safe but it could potentially run in parallel with the CCD loop below.
+		// We could also eventually make "markAggregateAsDirty" thread safe, but the potential gains seem limited, as the number of articulations
+		// is usually low.
+
+		// PT: this cast is ok because the function is only executed for CPU sim
+		Bp::AABBManager& aabbMan = static_cast<Bp::AABBManager&>(*aabbManager);
+
+		for (PxU32 i = 0; i < nbActiveArticulations; i++)
+		{
+			const ArticulationSim* articSim = getArticulationSim(islandSim, activeArticulations[i]);
+
+			const Bp::AggregateHandle handle = articSim->getAggregateHandle();
+
+			if(handle != PX_INVALID_U32)
+				aabbMan.markAggregateAsDirty(handle);
+		}
+	}
+
 	if(llContext->getCCDFlag())
 	{
-		PX_PROFILE_ZONE("SimulationController::updateArticulationAfterIntegration_serial", llContext->getContextId());
+		PX_PROFILE_ZONE("SimulationController::updateArticulationAfterIntegration_serial_ccd", llContext->getContextId());
 
 		// PT: this lock protects "ccdBodies": ScAfterIntegrationTask pushes
 		// into that same array from worker threads under this very lock (see ScScene.cpp), and this code runs in parallel with it

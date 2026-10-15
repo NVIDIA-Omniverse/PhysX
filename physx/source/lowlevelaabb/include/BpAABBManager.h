@@ -177,8 +177,8 @@ namespace Bp
 					PersistentAggregateAggregatePair*	createPersistentAggregateAggregatePair(ShapeHandle volA, ShapeHandle volB);
 						void							updatePairs(PersistentPairs& p, BpCacheData* data = NULL);
 						void							handleOriginShift();
-
 	public:
+						void							markAggregateAsDirty(AggregateHandle aggregateHandle);
 						void							processBPCreatedPair(const BroadPhasePair& pair);
 						void							processBPDeletedPair(const BroadPhasePair& pair);
 

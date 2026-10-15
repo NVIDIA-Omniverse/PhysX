@@ -1,15 +1,21 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-3 AC-4
+// @implements REQ-ATTACH-VIEWS-001
+// @covers AC-1 AC-2
+
 /**
  * @implements REQ-TENSOR-VIEW-001
- * @covers AC-2 AC-5 AC-8
+ * @covers AC-2 AC-5 AC-8 AC-11
  */
 
 // clang-format off
 // clang-format on
 
 #include <carb/events/IEvents.h>
+#include <carb/dictionary/IDictionary.h>
 #include <carb/Framework.h>
 #include <carb/settings/ISettings.h>
 
@@ -27,6 +33,9 @@
 #include "gpu/CudaCommon.h"
 #include "GlobalsAreBad.h"
 #include "SimulationBackend.h"
+#include "PublicTensorViews.h"
+#include "RuntimeExecution.h"
+#include "usdLoad/LoadUsd.h"
 
 namespace omni
 {
@@ -45,40 +54,7 @@ omni::physx::IPhysxJoint* g_physxJoint = nullptr;
 namespace
 {
 
-// Simulation backend lifetime notes
-// ---------------------------------
-// - An explicit init/shutdown path (tensorsInit()/tensorsShutdown())
-//   lets us manage all Carbonite-dependent resources (event subscriptions, etc.).
-// - This guarantees that, when the static runtime is shut down, we release those resources
-//   *before* Carbonite tears down its core plugins.
-// - With this ordering, the default static destruction of g_simBackend at module
-//   unload becomes a no-op with respect to Carbonite and is safe.
-// - This design preserves existing Kit behavior while allowing custom packaging (Python wheels)
-//   to handle the lifetime of this plugin and the Carbonite framework explicitly, without
-//   shutdown crashes, intentional leaks, or skipped destructors.
-std::unique_ptr<omni::physx::tensors::SimulationBackend> g_simBackend;
 bool g_tensorsStarted = false;
-
-////////////////////////
-// Reset sim data for the currently attached stage, or full reset if none attached.
-//
-// Note: getAttachHandle() returns kNoAttach when more than one stage is attached
-// (it resolves the lone active attach). In multi-stage scenarios (e.g. concurrent
-// ovphysx instances) this path falls back to full reset(). For ovphysx usage,
-// per-attach teardown is handled explicitly via TensorApi::resetStage(handle)
-// called from ovphysx_detach_ovstage; this function serves the Kit single-stage
-// path and is a safety net only.
-void resetCurrentStage()
-{
-    if (g_simBackend && g_physxSimulation)
-    {
-        const omni::physics::tensors::AttachHandle attachHandle = g_physxSimulation->getAttachHandle();
-        if (attachHandle != omni::physics::tensors::kNoAttach)
-            g_simBackend->resetStage(attachHandle);
-        else
-            g_simBackend->reset();
-    }
-}
 
 class SimulationEventListener : public carb::events::IEventListener
 {
@@ -86,20 +62,15 @@ class SimulationEventListener : public carb::events::IEventListener
     {
         int eventType = int(e->type);
 
-        if (eventType == omni::physx::SimulationEvent::eStopped)
+        if (eventType == omni::physx::SimulationEvent::eStopped ||
+            eventType == omni::physx::SimulationEvent::ePhysicsObjectsReleased)
         {
-            resetCurrentStage();
-        }
-        else if (eventType == omni::physx::SimulationEvent::ePhysicsObjectsReleased)
-        {
-            // Scoped to the attach that was released -- resetStage(), never the
-            // whole-backend reset(). Must be keyed on the attach handle: the views
-            // are indexed per attach, so a raw USD stage id would match nothing and
-            // silently leave the views valid over freed actors (NvBugs 6583612).
-            const omni::physics::tensors::AttachHandle attachHandle =
-                g_physxSimulation ? g_physxSimulation->getAttachHandle() : omni::physics::tensors::kNoAttach;
-            if (g_simBackend && attachHandle != omni::physics::tensors::kNoAttach)
-                g_simBackend->resetStage(attachHandle);
+            carb::dictionary::IDictionary* dictionary = carb::getCachedInterface<carb::dictionary::IDictionary>();
+            const carb::dictionary::Item* identity = dictionary ? dictionary->getItem(e->payload, "attachHandle") : nullptr;
+            const omni::physics::tensors::AttachHandle attach = identity ?
+                static_cast<uint64_t>(dictionary->getAsInt64(identity)) : omni::physics::tensors::kNoAttach;
+            if (OmniPhysX::getInstance().tensorBackend && attach != omni::physics::tensors::kNoAttach)
+                OmniPhysX::getInstance().tensorBackend->resetStage(attach);
         }
     }
 
@@ -124,28 +95,14 @@ SimulationEventListener* g_simEventListener = nullptr;
 carb::events::IEventStreamPtr g_simEventStream;
 carb::events::ISubscriptionPtr g_simEventSubscription;
 /////////////////////////
-// Pre-step callbacks are driven by omni.physx events rather than IStageUpdate.
-omni::physx::SubscriptionId g_physxPreStepSubscriptionId = omni::physx::kInvalidSubscriptionId;
 
 } // end of anonymous namespace
 
 
 SimulationBackend* GetSimulationBackend()
 {
-    return g_simBackend.get();
-}
-
-void PhysxPreStepCallback(float elapsedTime, void* userData)
-{
-    if (g_simBackend)
-    {
-        g_simBackend->prePhysicsUpdate();
-    }
-}
-
-void onDetach(void* userData)
-{
-    resetCurrentStage();
+    auto* runtime = OmniPhysX::getInstanceCheck();
+    return runtime ? runtime->tensorBackend.get() : nullptr;
 }
 
 // Shared init/shutdown driven by the owner of the static PhysX runtime.
@@ -203,21 +160,14 @@ void tensorsInit()
         return;
     }
 
-    if (!g_simBackend)
+    if (!OmniPhysX::getInstance().tensorBackend)
     {
-        g_simBackend = std::make_unique<omni::physx::tensors::SimulationBackend>();
+        OmniPhysX::getInstance().tensorBackend = std::make_shared<omni::physx::tensors::SimulationBackend>();
     }
 
     g_simEventListener = new SimulationEventListener;
     g_simEventStream = g_physx->getSimulationEventStreamV2();
     g_simEventSubscription = g_simEventStream->createSubscriptionToPop(g_simEventListener, 0);
-
-    // Pre-physics callbacks go through omni.physx events, avoiding a dependency on omni.usd.
-    g_physxPreStepSubscriptionId = g_physx->subscribePhysicsOnStepEvents(true, 0, PhysxPreStepCallback, nullptr);
-    if (g_physxPreStepSubscriptionId == omni::physx::kInvalidSubscriptionId)
-    {
-        CARB_LOG_ERROR("Failed to subscribe to PhysX pre-step events");
-    }
 
     // Mark as successfully initialized only after all setup completes.
     // The backend is reached directly via GetSimulationBackend() from the
@@ -238,15 +188,9 @@ void tensorsShutdown()
     delete g_simEventListener;
     g_simEventListener = nullptr;
 
-    if (g_physxPreStepSubscriptionId != omni::physx::kInvalidSubscriptionId)
+    if (OmniPhysX::getInstance().tensorBackend)
     {
-        g_physx->unsubscribePhysicsOnStepEvents(g_physxPreStepSubscriptionId);
-        g_physxPreStepSubscriptionId = omni::physx::kInvalidSubscriptionId;
-    }
-
-    if (g_simBackend)
-    {
-        g_simBackend->shutdown();
+        OmniPhysX::getInstance().tensorBackend->shutdown();
     }
 
     g_physx = nullptr;
@@ -256,9 +200,9 @@ void tensorsShutdown()
 
     // Finally, destroy the simulation backend once all external references
     // (stage update nodes, PhysX callbacks) have been removed.
-    if (g_simBackend)
+    if (OmniPhysX::getInstance().tensorBackend)
     {
-        g_simBackend.reset();
+        OmniPhysX::getInstance().tensorBackend.reset();
     }
 }
 
@@ -284,24 +228,33 @@ namespace
 omni::physics::tensors::ISimulationView* CARB_ABI physxCreateSimulationView(
     omni::physics::tensors::AttachHandle attachHandle)
 {
+    omni::physx::RuntimeExecutionScope execution(attachHandle);
+    if (!execution)
+        return nullptr;
     omni::physx::tensors::SimulationBackend* backend = omni::physx::tensors::GetSimulationBackend();
-    return backend ? backend->createSimulationView(attachHandle) : nullptr;
+    return backend ? omni::physx::tensors::publicViews::wrap(backend->createSimulationView(attachHandle), attachHandle) : nullptr;
 }
 
-void CARB_ABI physxResetTensors()
+bool CARB_ABI physxUpdateArticulationsKinematic(omni::physics::tensors::AttachHandle attachHandle)
 {
-    if (omni::physx::tensors::SimulationBackend* backend = omni::physx::tensors::GetSimulationBackend())
-    {
-        backend->reset();
-    }
+    omni::physx::RuntimeExecutionScope operation(attachHandle);
+    if (!operation)
+        return false;
+    omni::physx::tensors::SimulationBackend* backend = omni::physx::tensors::GetSimulationBackend();
+    return backend ? backend->updateArticulationsKinematic(attachHandle) : false;
 }
 
-void CARB_ABI physxResetTensorsStage(omni::physics::tensors::AttachHandle attachHandle)
+bool CARB_ABI physxResetTensorsStage(omni::physics::tensors::AttachHandle attachHandle)
 {
+    omni::physx::RuntimeExecutionScope execution(attachHandle);
+    if (!execution || !omni::physx::usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle))
+        return false;
     if (omni::physx::tensors::SimulationBackend* backend = omni::physx::tensors::GetSimulationBackend())
     {
         backend->resetStage(attachHandle);
+        return true;
     }
+    return false;
 }
 } // anonymous namespace
 
@@ -310,6 +263,6 @@ void fillInterface(omni::physics::tensors::TensorApi& iface)
     memset(&iface, 0, sizeof(iface));
 
     iface.createSimulationView = physxCreateSimulationView;
-    iface.reset = physxResetTensors;
+    iface.updateArticulationsKinematic = physxUpdateArticulationsKinematic;
     iface.resetStage = physxResetTensorsStage;
 }

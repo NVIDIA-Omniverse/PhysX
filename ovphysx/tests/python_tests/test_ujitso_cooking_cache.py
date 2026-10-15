@@ -26,15 +26,18 @@ cold launch performs many convex-hull cooks.
 """
 
 # @implements REQ-CAPI-CACHE-001
-# @covers AC-1 AC-5
+# @covers AC-1 AC-3 AC-5
 # @implements REQ-PYTHON-LIFECYCLE-001
 # @covers AC-8
 
 import argparse
 import os
+from pathlib import Path
 import signal
 import subprocess
 import sys
+import tempfile
+import time
 
 import pytest
 from test_utils import load_usd_with_ovstage
@@ -42,6 +45,7 @@ from test_utils import load_usd_with_ovstage
 _COOK_OK = "OVPHYSX_UJITSO_COOK_OK"
 _PYTHON_ATEXIT_OK = "OVPHYSX_PYTHON_ATEXIT_OK"
 _NATIVE_SHUTDOWN_OK = "OVPHYSX_NATIVE_SHUTDOWN_OK"
+_NATIVE_DESTROY_OK = "OVPHYSX_NATIVE_DESTROY_OK"
 _WINDOWS_CONTROL_C_EXIT = 0xC000013A
 _WORKER_KEEPALIVE = None
 
@@ -63,6 +67,26 @@ def _dir_size(path: str) -> int:
             except OSError:
                 pass
     return total
+
+
+def _wait_for_cache_bytes(cache_dir: str, timeout_s: float = 5.0) -> None:
+    """Bounded wait for an initially empty ``cache_dir`` to become non-empty.
+
+    UJITSO writes the cooked-collider cache on its own background thread a few ms after
+    ``wait_all()`` returns, so a worker that exits immediately can leave the directory empty for the
+    parent to measure. Poll until it has bytes (or the timeout), which is what the empty-cache
+    assertions need. This only observes that *some* bytes landed -- it may catch a partially written
+    data bucket before its index entry -- not that the cache is complete or consistent. A directory
+    that already has bytes returns at once. Polling from the parent after the child exits cannot
+    substitute: the write needs the child's still-running threads.
+    """
+    # A directory that cannot receive the write (missing, or unwritable so ovphysx fell back to the
+    # process-private cache) will never fill, so skip rather than spin to the timeout.
+    if not os.path.isdir(cache_dir) or not os.access(cache_dir, os.W_OK):
+        return
+    deadline = time.monotonic() + timeout_s
+    while _dir_size(cache_dir) == 0 and time.monotonic() < deadline:
+        time.sleep(0.005)
 
 
 def _cook_launch(cache_dir: str | None, enable_cooking: bool, env: dict | None = None,
@@ -196,11 +220,20 @@ def test_unset_cache_dir_is_quiet_and_persists_nothing(tmp_path):
         f"STDOUT:\n{proc.stdout}\nSTDERR:\n{proc.stderr}"
     )
     leftovers = list(temp_root.glob("ovphysx-cache-*"))
-    if sys.platform == "win32":
-        # Windows refuses to unlink files the datastore may still have open, so cleanup is
-        # best-effort there and the OS reaps the temp tree instead. POSIX unlinks regardless.
-        return
-    assert not leftovers, f"process-private cache was not cleaned up at shutdown: {leftovers}"
+    if sys.platform != "win32":
+        assert not leftovers, f"process-private cache was not cleaned up at shutdown: {leftovers}"
+
+
+def test_private_cache_outlives_native_instance_destruction(tmp_path):
+    """A completed cook's datastore keeps its directory until SDK shutdown."""
+    temp_root = tmp_path / "tmp"
+    temp_root.mkdir()
+    proc = _cook_launch(None, enable_cooking=True, env=_private_cache_env(temp_root),
+                        mode="cache-before-shutdown")
+    assert "OVPHYSX_CACHE_ALIVE_BEFORE_SHUTDOWN" in proc.stdout
+    assert not _datastore_errors(proc), proc.stdout + proc.stderr
+    if sys.platform != "win32":
+        assert not list(temp_root.glob("ovphysx-cache-*"))
 
 
 def test_unset_cache_dir_shuts_down_with_live_read_array(tmp_path):
@@ -219,13 +252,17 @@ def test_unset_cache_dir_shuts_down_with_live_read_array(tmp_path):
         "Python atexit did not finish after destroying the instance with a live read array\n"
         f"STDOUT:\n{proc.stdout}\nSTDERR:\n{proc.stderr}"
     )
+    assert _NATIVE_DESTROY_OK in proc.stdout, (
+        "native instance destruction was skipped with a live read array\n"
+        f"STDOUT:\n{proc.stdout}\nSTDERR:\n{proc.stderr}"
+    )
     assert _NATIVE_SHUTDOWN_OK in proc.stdout, (
         "native ovphysx_shutdown() was not invoked while a read() array remained reachable; "
         "cache removal alone does not prove direct-runtime teardown\n"
         f"STDOUT:\n{proc.stdout}\nSTDERR:\n{proc.stderr}"
     )
+    leftovers = list(temp_root.glob("ovphysx-cache-*"))
     if sys.platform != "win32":
-        leftovers = list(temp_root.glob("ovphysx-cache-*"))
         assert not leftovers, f"live read-array exit left cache dirs behind: {leftovers}"
 
 
@@ -248,8 +285,8 @@ def test_unset_cache_dir_is_removed_after_keyboardinterrupt(tmp_path):
     assert _PYTHON_ATEXIT_OK in proc.stdout, (
         f"Python atexit did not run after KeyboardInterrupt\nSTDOUT:\n{proc.stdout}\nSTDERR:\n{proc.stderr}"
     )
+    leftovers = list(temp_root.glob("ovphysx-cache-*"))
     if sys.platform != "win32":
-        leftovers = list(temp_root.glob("ovphysx-cache-*"))
         assert not leftovers, f"KeyboardInterrupt left process-private cache dirs behind: {leftovers}"
 
 
@@ -269,10 +306,8 @@ def test_unset_cache_dir_destroys_all_live_instances_at_exit(tmp_path):
         "Python atexit did not finish destroying the live instances\n"
         f"STDOUT:\n{proc.stdout}\nSTDERR:\n{proc.stderr}"
     )
-    # POSIX only: on Windows the datastore may still hold cache files open, so
-    # removal is documented best-effort and leftovers are not a failure.
+    leftovers = list(temp_root.glob("ovphysx-cache-*"))
     if sys.platform != "win32":
-        leftovers = list(temp_root.glob("ovphysx-cache-*"))
         assert not leftovers, f"multi-instance exit left cache dirs behind: {leftovers}"
 
 
@@ -389,12 +424,8 @@ def test_non_ascii_cache_dir(tmp_path):
     )
 
 
-def test_cache_dir_is_not_reconfigurable_in_process(tmp_path):
-    """The configured directory is applied at first runtime bootstrap only.
-
-    Documented behavior, pinned here so it cannot change silently: the datastore is built once,
-    so a second PhysXConfig in the same process does not move the cache.
-    """
+def test_cache_dir_reconfiguration_follows_framework_lifetime(tmp_path):
+    """Linux rebuilds its datastore; Windows retains it until process exit."""
     first = tmp_path / "first"
     second = tmp_path / "second"
     first.mkdir()
@@ -403,10 +434,10 @@ def test_cache_dir_is_not_reconfigurable_in_process(tmp_path):
     _cook_launch(str(first), enable_cooking=True, mode="reconfigure", second_cache_dir=str(second))
 
     assert _dir_size(str(first)) > 0, "the first configured dir should hold the cooked colliders"
-    assert _dir_size(str(second)) == 0, (
-        "a later cooked_collider_cache_dir must not take effect in the same process; if this "
-        "fails the datastore became reconfigurable and the documented restriction is stale"
-    )
+    if sys.platform == "win32":
+        assert _dir_size(str(second)) == 0, "Windows retains its process-wide datastore until exit"
+    else:
+        assert _dir_size(str(second)) > 0, "the new lifecycle should use the second configured dir"
 
 
 def _retain_for_atexit(*objects) -> None:
@@ -441,16 +472,24 @@ def _install_python_atexit_ok_marker() -> None:
 
 
 def _install_native_shutdown_witness() -> None:
-    """Print when the ctypes ovphysx_shutdown entry is actually invoked."""
+    """Witness native instance destruction before the real process shutdown."""
     import ovphysx.api as api
 
     original_shutdown = api._lib.ovphysx_shutdown
+    original_destroy = api._lib.ovphysx_destroy_instance
+
+    def _witness_destroy(*args, **kwargs):
+        result = original_destroy(*args, **kwargs)
+        if result.status == 0:
+            print(_NATIVE_DESTROY_OK, flush=True)
+        return result
 
     def _witness_shutdown(*args, **kwargs):
         result = original_shutdown(*args, **kwargs)
         print(_NATIVE_SHUTDOWN_OK, flush=True)
         return result
 
+    api._lib.ovphysx_destroy_instance = _witness_destroy
     api._lib.ovphysx_shutdown = _witness_shutdown
 
 
@@ -476,6 +515,11 @@ def _worker(cache_dir: str | None, enable_cooking: bool, interrupt: bool = False
     physx = PhysX(config=config)
     load_usd_with_ovstage(physx, _DATA_USD)
     physx.wait_all()  # drain async collision cooking
+    if enable_cooking and cache_dir is not None:
+        # Hold the process until the cache has bytes on disk, so the parent's post-exit measurement
+        # is not racing the background write. The process-private fallback (cache_dir is None) writes
+        # nothing here, and disabled cooking writes nothing, so neither needs the wait.
+        _wait_for_cache_bytes(cache_dir)
     if cache_dir is None:
         # Keep this instance alive until process exit. Without this reference,
         # CPython may run __del__ as soon as _worker returns, which would test
@@ -512,7 +556,7 @@ def _worker_read_array_exit() -> None:
     load_usd_with_ovstage(physx, _DATA_USD)
     physx.wait_all()
     retained_arrays = []
-    with physx.read(SimObjectType.RIGID_BODY, ["position"]) as result:
+    with physx.read_sync(SimObjectType.RIGID_BODY, ["position"]) as result:
         if not result.groups:
             raise RuntimeError("read() returned no groups; cannot retain a process-lifecycle borrow")
         for group in result.groups:
@@ -545,11 +589,37 @@ def _worker_release_then_cook() -> None:
     print(_COOK_OK, flush=True)
 
 
+def _worker_cache_lifetime() -> None:
+    from ovphysx import PhysX
+    from ovphysx import api
+
+    PhysX.set_cpu_mode(True)
+    physx = PhysX()
+    load_usd_with_ovstage(physx, _DATA_USD)
+    physx.wait_all()
+    cache_dirs = list(Path(tempfile.gettempdir()).glob("ovphysx-cache-*"))
+    assert cache_dirs, "the test must create a private datastore"
+    original_destroy = api._lib.ovphysx_destroy_instance
+
+    def witness_destroy(*args):
+        result = original_destroy(*args)
+        assert result.status == 0
+        # The datastore still exists at this boundary even though its last instance is gone.
+        # Check the lifetime directly; no sleep or lucky background-write timing is needed.
+        assert all(path.is_dir() for path in cache_dirs), "cache removed before datastore shutdown"
+        print("OVPHYSX_CACHE_ALIVE_BEFORE_SHUTDOWN", flush=True)
+        return result
+
+    api._lib.ovphysx_destroy_instance = witness_destroy
+    physx.destroy()
+    print(_COOK_OK, flush=True)
+
+
 def _worker_reconfigure(first_dir: str, second_dir: str) -> None:
     """Configure cache dir A, cook, release, then configure B in the same process and cook.
 
-    Locks in the documented first-bootstrap-only behavior: the datastore is built once, so B is
-    not adopted. The parent asserts A received the data and B stayed empty.
+    The final Python destroy shuts down the SDK. Linux builds a fresh datastore
+    for the second lifecycle; Windows retains its process-wide datastore.
     """
     from ovphysx import PhysX, PhysXConfig
 
@@ -557,6 +627,7 @@ def _worker_reconfigure(first_dir: str, second_dir: str) -> None:
     first = PhysX(config=PhysXConfig(cooked_collider_cache_dir=first_dir))
     load_usd_with_ovstage(first, _DATA_USD)
     first.wait_all()
+    _wait_for_cache_bytes(first_dir)  # the parent asserts A is non-empty
     first.destroy()
 
     second = PhysX(config=PhysXConfig(cooked_collider_cache_dir=second_dir))
@@ -580,12 +651,15 @@ if __name__ == "__main__":
                 "keyboardinterrupt",
                 "two-live-exit",
                 "read-array-exit",
+                "cache-before-shutdown",
             ],
             default="cook",
         )
         parser.add_argument("--second-cache-dir", default=None)
         ns = parser.parse_args()
-        if ns.mode == "release-then-cook":
+        if ns.mode == "cache-before-shutdown":
+            _worker_cache_lifetime()
+        elif ns.mode == "release-then-cook":
             _worker_release_then_cook()
         elif ns.mode == "two-live-exit":
             _worker_two_live_exit()

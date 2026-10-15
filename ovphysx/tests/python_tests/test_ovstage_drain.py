@@ -32,7 +32,7 @@ def _drain_scalar(physx, stage, path, attr, value, ordinal):
                           is_array=False, prim_mode=ovstage.PrimMode.UPSERT).wait()
     q.release()
     stage.advance_write_floor(ordinal=ordinal).wait()
-    physx.update_from_ovstage(ordinal, ordinal)
+    physx.wait_task(physx.update_from_ovstage(ordinal, ordinal))
     physx.wait_all()
 
 
@@ -46,7 +46,7 @@ def _drain_scalar_multi(physx, stage, path_values, attr, ordinal):
                               is_array=False, prim_mode=ovstage.PrimMode.UPSERT).wait()
         q.release()
     stage.advance_write_floor(ordinal=ordinal).wait()
-    physx.update_from_ovstage(ordinal, ordinal)
+    physx.wait_task(physx.update_from_ovstage(ordinal, ordinal))
     physx.wait_all()
 
 
@@ -62,12 +62,12 @@ def _drain_array(physx, stage, path, attr, rows, ordinal):
                           prim_mode=ovstage.PrimMode.UPSERT, semantic=int(ovstage.AttributeSemantic.POINT)).wait()
     q.release()
     stage.advance_write_floor(ordinal=ordinal).wait()
-    physx.update_from_ovstage(ordinal, ordinal)
+    physx.wait_task(physx.update_from_ovstage(ordinal, ordinal))
     physx.wait_all()
 
 
 def _read(physx, obj_type, name, comp):
-    with physx.read(obj_type, [name], scope=ObjectScope.ALL) as r:
+    with physx.read_sync(obj_type, [name], scope=ObjectScope.ALL) as r:
         for g in r.groups:
             if g.tensors:
                 t = g.tensors[0]
@@ -91,8 +91,8 @@ def _rigid_usda(tmp_path):
 
 
 def _rigid_mixed_usda(tmp_path):
-    """One dynamic body and one kinematic body, both authoring physics:velocity -- the shape that puts a
-    key the drain skips (the kinematic one) and a key it services in the same batch."""
+    """One dynamic body and one kinematic body, both authoring physics:velocity. This is the shape that
+    puts a key the drain skips (the kinematic one) and a key it services in the same batch."""
     p = tmp_path / "drain_rigid_mixed.usda"
     p.write_text("\n".join([
         '#usda 1.0', '(', '    defaultPrim = "World"', '    metersPerUnit = 1', '    upAxis = "Z"', ')', '',
@@ -112,10 +112,10 @@ def _rigid_mixed_usda(tmp_path):
 
 def test_drain_rigid_velocity_mixed_kinematic(physx_sdk, tmp_path):
     """A velocity batch mixing a kinematic body (a key the drain SKIPS -> surface velocity on the parse path)
-    with a dynamic one must still drain the dynamic body's velocity through the backend -- the drain splits
+    with a dynamic one must still drain the dynamic body's velocity through the backend. The drain splits
     the batch rather than falling back whole. On this DirectGPU fixture the per-object host setter is inert,
-    so a whole-batch fallback (the pre-fix behavior) would leave the dynamic body at zero; the read-back of
-    the authored velocity is attributable to the backend drain alone."""
+    so a whole-batch fallback would leave the dynamic body at zero. The read-back of the authored velocity
+    is attributable to the backend drain alone."""
     stage = attach_usd_with_ovstage(physx_sdk, _rigid_mixed_usda(tmp_path))
     for _ in range(2):
         physx_sdk.step(1.0 / 60.0)
@@ -127,10 +127,10 @@ def test_drain_rigid_velocity_mixed_kinematic(physx_sdk, tmp_path):
 
     got = _read(physx_sdk, SimObjectType.RIGID_BODY, "linearVelocity", 3)
     assert got is not None
-    # EXACTLY one body holds the drained velocity -- the dynamic one; the kinematic body cannot hold a body
+    # EXACTLY one body holds the drained velocity, the dynamic one. The kinematic body cannot hold a body
     # velocity (its authored velocity becomes a surface/conveyor velocity on the parse path), so `== 1`
-    # effectively pins the match to /World/Dyn. A whole-batch fallback drops the dynamic velocity too (inert
-    # setter on GPU), leaving every row at zero -- no row would match.
+    # pins the match to /World/Dyn. A whole-batch fallback drops the dynamic velocity too (inert setter
+    # on GPU), leaving every row at zero, so no row would match.
     assert sum(1 for row in got if np.allclose(row, [7, 8, 9], atol=1e-3)) == 1, \
         "dynamic body's velocity dropped -- the mixed batch fell back to the inert per-object path"
 
@@ -153,11 +153,11 @@ def test_drain_rigid_velocity(physx_sdk, tmp_path):
 def test_drain_rigid_mass_frame_not_scattered(physx_sdk, tmp_path):
     """The mass frame (mass / centerOfMass / diagonalInertia) is coupled. The parse path recomputes it
     holistically, so the drain does NOT scatter it. It falls back to that recompute, which is applied at the
-    next step; with no step between the drain and the read, the read-backs are unchanged. Scattering these
-    (the reverted behavior) would move them immediately. A positive control then steps once and asserts the
-    recompute LANDED -- so "fell back to the recompute" is distinguished from "silently dropped" (which the
-    unchanged-with-no-step check alone cannot do, and which on this DirectGPU fixture would also cover a
-    recompute that never takes effect). The scene has no gravity, so the body itself does not move."""
+    next step. With no step between the drain and the read, the read-backs are unchanged. Scattering these
+    would move them immediately. A positive check then steps once and asserts the recompute LANDED, so
+    "fell back to the recompute" is distinguished from "silently dropped" (which the unchanged-with-no-step
+    check alone cannot do, and which on this DirectGPU fixture would also cover a recompute that never
+    takes effect). The scene has no gravity, so the body itself does not move."""
     stage = attach_usd_with_ovstage(physx_sdk, _rigid_usda(tmp_path))
     for _ in range(2):
         physx_sdk.step(1.0 / 60.0)
@@ -172,7 +172,7 @@ def test_drain_rigid_mass_frame_not_scattered(physx_sdk, tmp_path):
     assert np.allclose(_read(physx_sdk, SimObjectType.RIGID_BODY, "mass", 1)[0], mass0, atol=1e-4)
     assert np.allclose(_read(physx_sdk, SimObjectType.RIGID_BODY, "centerOfMassPosition", 3)[0], com0, atol=1e-4)
 
-    # Positive control: step once so the dirty-mass queue flushes, then the recompute must have landed the
+    # Positive check: step once so the dirty-mass queue flushes, then the recompute must have landed the
     # authored mass (5.0) and moved the COM to the authored (0.1,0.2,0.3) (this body has no local scale, so no
     # AC-10 rescale). A dropped key would leave both at their pre-drain values.
     physx_sdk.step(1.0 / 60.0)
@@ -232,13 +232,13 @@ def test_drain_particle_points(physx_sdk):
 def test_drain_deformable_pose_does_not_touch_live_state(physx_sdk):
     """`deformablePose:<inst>:omniphysics:points` is the sim mesh's BIND POSE, not live solver state, so the
     drain must NOT scatter it onto the running vertices. It falls back to the parse-path resync, whose
-    re-cook lands at the next step -- so with no step between the drain and the read, the live points are
-    unchanged. Scattering the bind pose here (the reverted behavior) would teleport them.
+    re-cook lands at the next step. With no step between the drain and the read, the live points are
+    unchanged. Scattering the bind pose here would teleport them.
 
-    NOTE: this case has NO positive control. A bind-pose change updates the sim mesh's REST configuration; the
+    NOTE: this case has NO positive check. A bind-pose change updates the sim mesh's REST configuration. The
     live points relax toward it over MANY solver steps, so a single step barely moves them (empirically the
     re-cooked live points still sit at the old pose after one step). There is thus no cheap short-horizon
-    oracle that separates "fell back to the resync" from "silently dropped" through the live-points read --
+    oracle that separates "fell back to the resync" from "silently dropped" through the live-points read,
     unlike the mass frame, whose recompute lands at the next step. The negative (no-step, unchanged) assertion
     stands on its own."""
     stage = attach_usd_with_ovstage(physx_sdk, data_path("volume_deformable_simple.usda"))

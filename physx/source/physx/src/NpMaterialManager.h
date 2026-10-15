@@ -45,7 +45,23 @@ namespace physx
 		{
 			const PxU32 poolID = mHandleManager.getNewID();
 			if (poolID >= MATERIAL_INVALID_HANDLE)
+			{
+				//Give the id back - it was never used for a material. Without this every rejected material burns
+				//one id permanently, so getNumUsedID(), i.e. PxPhysics::getNbMaterials(), keeps climbing past the
+				//number of materials that actually exist.
+				mHandleManager.freeID(poolID);
+
+				//This is the only place that assigns mMaterialIndex, so it is also the place that has to clear
+				//it. A deserialized material is a copy that still carries the *source* material's index, and
+				//leaving that in place means the destructor of this rejected material unregisters a slot it does
+				//not own - the material table corruption behind OMPE-109162.
+				mat.mMaterial.mMaterialIndex = MATERIAL_INVALID_HANDLE;
+
+				//No error is reported here on purpose: the sole caller, ::addMaterial() in NpPhysics.cpp, already
+				//reports this false return with a per-type message ("limit of 64K materials reached"), so the
+				//rejection is not silent and a second message would only duplicate it.
 				return false;
+			}
 
 			const PxU16 materialIndex = PxTo16(poolID);
 

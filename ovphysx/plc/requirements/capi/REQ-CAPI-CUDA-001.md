@@ -13,7 +13,7 @@ owner: ovphysx
 For an ovphysx instance created with a single explicit non-negative CUDA ordinal
 in `ovphysx_create_args.active_cuda_gpus`, direct
 `ovphysx_attach_ovstage()` must apply that ordinal to the physics runtime during
-the synchronous scene attachment. The explicit selection also disables
+scene attachment execution. The explicit selection also disables
 multi-GPU scene distribution for that attachment. This requirement defines the
 C API contract; backend configuration and test observation mechanisms are not
 part of it.
@@ -23,7 +23,7 @@ part of it.
 - AC-1: Given a valid non-negative ordinal `N` in
   `ovphysx_create_args.active_cuda_gpus`, a successful direct
   `ovphysx_attach_ovstage()` applies `N` as the runtime CUDA device selection
-  before the call returns.
+  before the attachment task completes successfully.
 - AC-2: An explicit single ordinal disables multi-GPU scene distribution for
   that attachment.
 

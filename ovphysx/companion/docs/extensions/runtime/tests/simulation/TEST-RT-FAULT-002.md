@@ -1,0 +1,40 @@
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+---
+id: TEST-RT-FAULT-002
+maps_to: REQ-RT-FAULT-001
+type: integration
+---
+
+## Coverage status
+
+Specification only — not implemented. See **Why not implemented** below.
+
+## Scenario
+
+A failed step or writeback cannot replay a partially applied interval. Verifies REQ-RT-FAULT-001 AC-2.
+
+## Given
+
+- The [runtime fixture and oracle conventions](../../README.md#fixture-and-oracle-conventions) apply; each active stage has exactly one physics scene.
+- Running single-scene session with a two-substep frame; parameterize a first-step operation failure and first-step success followed by output failure.
+
+## When
+
+- Inject the error, let the update exit, then submit another enabled update and observe timeline/backend events.
+
+## Then
+
+- Faulted prevents the second and later substeps/publications. A completed first step remains counted even if its output failed; an unconfirmed step is not counted as completed. No automatic retry or provider-success/presentation-ready event is emitted from timeline intent alone. (REQ-RT-FAULT-001 AC-2).
+
+## Why not implemented
+
+The ovphysx-backed Kit adapter and its lifecycle/ordinal instrumentation are not implemented in this companion design set. Existing component/legacy tests do not execute this new adapter scenario. Add the automated case with the adapter implementation; do not substitute passing legacy tests for this coverage.
+
+Starting points and differences to preserve are recorded in the [source comparison](../../README.md#legacy-behavior-and-current-api-evidence). Relevant inspected sources:
+
+- [test_step_and_write_to_ovstage.py](../../../../../../tests/python_tests/test_step_and_write_to_ovstage.py) — Utility tests for world matrices, instancer holes, shadow arrays, write failures and cache invalidation (current API reference).
+- [test_lifecycle_failure_injection.py](../../../../../../tests/python_tests/test_lifecycle_failure_injection.py) — Native failure, retained ownership and terminal lifecycle cases (current API reference).
+
+Mapped requirement: [REQ-RT-FAULT-001](../../requirements/simulation/REQ-RT-FAULT-001.md).

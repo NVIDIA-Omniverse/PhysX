@@ -5,7 +5,7 @@
 
 # PhysxContactReportAPI
 
-Registers a rigid body (or every link of an articulation) for contact reporting. Read by the runtime at actor creation, not by the parse library; without the API in usd-schemas nothing is registered even if the attributes are authored.
+Registers a rigid actor (including a standalone static collider), or every link of an articulation, for contact reporting. A standalone static collider reports on CPU simulation and GPU dynamics with CPU readback; on DirectGPU its sensor row remains but reads zero force. On a separate child collider, the API enables sensor selection on CPU simulation and GPU dynamics with CPU readback but does not enable the owning body's reporting. Read by the runtime at actor creation, not by the parse library; without the API in usd-schemas nothing is registered even if the attributes are authored.
 
 - **Applies to:** `Xformable`
 - **Read only when listed in `usd-schemas`.**
@@ -27,6 +27,7 @@ The threshold is published at its resolved value (raw fallback 1.0 when unauthor
 ## Interactions
 
 - **[`PhysicsRigidBodyAPI`](PhysicsRigidBodyAPI.md):** Registered once per rigid actor at creation; on an articulation root every link is registered with the same threshold and pairs.
+- **[`PhysicsCollisionAPI`](PhysicsCollisionAPI.md):** A separate child collider carrying PhysxContactReportAPI is eligible as a contact sensor on CPU simulation and GPU dynamics with CPU readback. Enable reporting on its owning body, owning articulation link, or articulation root as well to avoid depending on reports from the other actor in each contact pair. If neither actor reports matching contacts, the child sensor reads zero. Author threshold and reportPairs on the reporting actor or articulation root, not on the separate child collider. A standalone static collider is its own rigid actor and enables reporting on CPU simulation and GPU dynamics with CPU readback; on DirectGPU its sensor row remains but reads zero force. DirectGPU session queries omit separate child-collider rows; select a dynamic body or articulation link to read forces instead.
 - **[`stage_units`](stage_units.md):** The default threshold scales with the tolerances length; the authored value does not.
 
 ## Known divergences

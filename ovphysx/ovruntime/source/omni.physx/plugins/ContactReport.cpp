@@ -1,6 +1,15 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-1 AC-2 AC-4
+
+// @implements REQ-ATTACH-LIFETIME-001
+// @covers AC-3 AC-4
+
+// @implements REQ-ATTACH-RESOLVE-001
+// @covers AC-5
+
 /**
  * @implements REQ-PARSE-CONTACTREPORT-001
  * @covers AC-1 AC-2 AC-3
@@ -33,8 +42,8 @@ namespace physx
 {
     std::atomic<size_t> ContactReport::s_liveInstanceCount{ 0 };
 
-    ContactReport::ContactReport()
-        : mCurrentReportData(nullptr), mCurrentDataVector(nullptr), mReportFlushed(false)
+    ContactReport::ContactReport(AttachedStage& attachedStage)
+        : mAttachedStage(attachedStage), mCurrentReportData(nullptr), mCurrentDataVector(nullptr), mReportFlushed(false)
     {
         s_liveInstanceCount.fetch_add(1, std::memory_order_relaxed);
     }
@@ -48,9 +57,9 @@ namespace physx
     void ContactReport::resolvePairs()
     {
         const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-        const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+        const internal::InternalPhysXDatabase& db = mAttachedStage.getInternalPhysXDatabase();
         UnresolvedContactPairsMap::iterator itUnresolved = mUnresolvedContactPairsMap.begin();
-        AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+        AttachedStage* attachedStage = &mAttachedStage;
         if(!attachedStage)
             return;
 
@@ -327,9 +336,9 @@ namespace physx
         const std::vector<PxContactPairFrictionAnchor>& frictionAnchors)
     {
         const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-        const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+        const internal::InternalPhysXDatabase& db = mAttachedStage.getInternalPhysXDatabase();
         const std::vector<InternalDatabase::Record>& records = db.getRecords();
-        const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+        const AttachedStage* attachedStage = &mAttachedStage;
         const AttachHandle attachHandle = attachedStage ? attachedStage->getAttachHandle() : kNoAttach;
 
         Pair<void*> shapePair(nullptr, nullptr);
@@ -458,14 +467,14 @@ namespace physx
     void ContactReport::reportContactShapeRemoved(const ::physx::PxActor* actor0, const ::physx::PxShape* shape0, const ::physx::PxActor* actor1, const ::physx::PxShape* shape1, const PxContactPairFlags contactFlags)
     {
         OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-        const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+        const internal::InternalPhysXDatabase& db = mAttachedStage.getInternalPhysXDatabase();
 
         ReleasedObjectsMap::const_iterator actor0it = mReleaseActorsMap.find(actor0);
         ReleasedObjectsMap::const_iterator actor1it = mReleaseActorsMap.find(actor1);
         ReleasedObjectsMap::const_iterator shape0it = mReleaseShapesMap.find(shape0);
         ReleasedObjectsMap::const_iterator shape1it = mReleaseShapesMap.find(shape1);
         const std::vector<InternalDatabase::Record>& records = db.getRecords();
-        const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+        const AttachedStage* attachedStage = &mAttachedStage;
 
         // we need to send contact lost report for deleted objects
         omni::physics::parse::ObjectKey collider0Key;
@@ -535,7 +544,7 @@ namespace physx
         uint32_t faceIndex0, uint32_t faceIndex1, const PxMaterial* material0, const PxMaterial* material1, bool batch)
     {
         OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-        const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+        const internal::InternalPhysXDatabase& db = mAttachedStage.getInternalPhysXDatabase();
         carb::dictionary::IDictionary* iDictionary = omniPhysX.getIDictionary();
         const std::vector<InternalDatabase::Record>& records = db.getRecords();
         const AttachedStage* attachedStage = &scene->getAttachedStage();
@@ -582,7 +591,7 @@ namespace physx
     void ContactReport::flushContactReports()
     {
         const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-        const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+        const internal::InternalPhysXDatabase& db = mAttachedStage.getInternalPhysXDatabase();
 
         const std::vector<InternalDatabase::Record>& records = db.getRecords();
         mCurrentReportData = nullptr;
@@ -637,31 +646,35 @@ namespace physx
     {
         if (!mContactHeaderVector.empty() && !mReportFlushed)
         {
+            RuntimeCallbackScope callbackScope;
+            const OwnedContactRegistry& contacts = mAttachedStage.getSimulationCallbacks().getContactReportRegistry();
+            const OwnedFullContactRegistry& fullContacts = mAttachedStage.getSimulationCallbacks().getFullContactReportRegistry();
+            const OwnedContactRegistry::EventMap snapshot = contacts.snapshot();
+            const OwnedFullContactRegistry::EventMap fullSnapshot = fullContacts.snapshot();
+            for (const OwnedContactRegistry::EventMap::value_type& entry : snapshot)
             {
-                const ContactReportEventSubscriptionRegistry& contactReportRegistry =
-                    SimulationCallbacks::getSimulationCallbacks()->getContactReportRegistry();
-                ContactReportEventSubscriptionRegistry::EventMap::const_iterator it = contactReportRegistry.map.begin();
-                ContactReportEventSubscriptionRegistry::EventMap::const_iterator itEnd = contactReportRegistry.map.end();
-                while (it != itEnd)
+                if (!contacts.contains(entry.first))
+                    continue;
+                try
                 {
-                    it->second.first(mContactHeaderVector.data(), uint32_t(mContactHeaderVector.size()),
-                        mContactDataVector.data(), uint32_t(mContactDataVector.size()), it->second.second);
-                    it++;
+                    entry.second.first(mContactHeaderVector.data(), uint32_t(mContactHeaderVector.size()),
+                        mContactDataVector.data(), uint32_t(mContactDataVector.size()), entry.second.second);
                 }
+                catch (const std::exception& e) { CARB_LOG_ERROR("Physics contact callback threw: %s", e.what()); }
+                catch (...) { CARB_LOG_ERROR("Physics contact callback threw an unknown exception"); }
             }
-
+            for (const OwnedFullContactRegistry::EventMap::value_type& entry : fullSnapshot)
             {
-                const FullContactReportEventSubscriptionRegistry& contactReportRegistry =
-                    SimulationCallbacks::getSimulationCallbacks()->getFullContactReportRegistry();
-                FullContactReportEventSubscriptionRegistry::EventMap::const_iterator it = contactReportRegistry.map.begin();
-                FullContactReportEventSubscriptionRegistry::EventMap::const_iterator itEnd = contactReportRegistry.map.end();
-                while (it != itEnd)
+                if (!fullContacts.contains(entry.first))
+                    continue;
+                try
                 {
-                    it->second.first(mContactHeaderVector.data(), uint32_t(mContactHeaderVector.size()),
+                    entry.second.first(mContactHeaderVector.data(), uint32_t(mContactHeaderVector.size()),
                         mContactDataVector.data(), uint32_t(mContactDataVector.size()), mFrictionAnchorsDataVector.data(),
-                        uint32_t(mFrictionAnchorsDataVector.size()), it->second.second);
-                    it++;
+                        uint32_t(mFrictionAnchorsDataVector.size()), entry.second.second);
                 }
+                catch (const std::exception& e) { CARB_LOG_ERROR("Physics full-contact callback threw: %s", e.what()); }
+                catch (...) { CARB_LOG_ERROR("Physics full-contact callback threw an unknown exception"); }
             }
 
             mReportFlushed = true;
@@ -671,11 +684,11 @@ namespace physx
     void ContactReport::reportJointBreak(const ::physx::PxJoint* joint)
     {
         OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-        const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+        const internal::InternalPhysXDatabase& db = mAttachedStage.getInternalPhysXDatabase();
 
         const std::vector<InternalDatabase::Record>& records = db.getRecords();
         carb::dictionary::IDictionary* iDictionary = omniPhysX.getIDictionary();
-        const AttachedStage* attachedStage = UsdLoad::getUsdLoad()->getActiveAttachedStage();
+        const AttachedStage* attachedStage = &mAttachedStage;
 
         carb::events::IEventPtr eventPtr = omniPhysX.createSimulationEventV2(eJointBreak);
         createEventFromKey(eventPtr, "jointKey", iDictionary, attachedStage, records, joint->userData);
@@ -784,13 +797,13 @@ namespace physx
         if (!readContactReportParams(attachedStage, key, contactThreshold, targets, targetsAuthored))
             return;
 
-        attachedStage.getPhysXPhysicsInterface()->setDirty(true);
+        attachedStage.getPhysXPhysicsInterface()->setDirty(attachedStage, true);
         addContactReportPairs(ps, &rigidActor, targets, contactThreshold, targetsAuthored);
     }
     void changeContactReport(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey key, bool removed)
     {
         OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-        InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+        InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
         const ObjectIdMap* entries = attachedStage.getObjectDatabase()->getEntries(key);
         if (entries && !entries->empty())
@@ -808,7 +821,7 @@ namespace physx
                         PxArticulationReducedCoordinate* articulation = (PxArticulationReducedCoordinate*)objectRecord->mPtr;
                         if (articulation && articulation->getScene())
                         {
-                            PhysXScene* physxScene = OmniPhysX::getInstance().getPhysXSetup().getPhysXScene(size_t(articulation->getScene()->userData));
+                            PhysXScene* physxScene = OmniPhysX::getInstance().getPhysXSetup().findPhysXScene(articulation->getScene());
                             if (removed)
                             {
                                 if (physxScene)
@@ -837,7 +850,7 @@ namespace physx
                         PxRigidActor* rigidActor = (PxRigidActor*)objectRecord->mPtr;
                         if (rigidActor && rigidActor->getScene())
                         {
-                            PhysXScene* physxScene = OmniPhysX::getInstance().getPhysXSetup().getPhysXScene(size_t(rigidActor->getScene()->userData));                                
+                            PhysXScene* physxScene = OmniPhysX::getInstance().getPhysXSetup().findPhysXScene(rigidActor->getScene());
                             if (physxScene)
                             {
                                 if (removed)

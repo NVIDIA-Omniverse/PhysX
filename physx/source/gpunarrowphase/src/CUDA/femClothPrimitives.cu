@@ -21,7 +21,7 @@
 #include "PxgContactManager.h"
 #include "PxgConvexConvexShape.h"
 #include "PxgFEMCloth.h"
-#include "PxgDeformableContactInfo.h"
+#include "PxgDeformableContactWriters.h"
 #include "PxgNpKernelIndices.h"
 #include "PxgParticleSystem.h"
 #include "PxgSimulationCoreDesc.h"
@@ -246,7 +246,7 @@ __device__ static inline PxU32 fcSphereCollision(
 )
 {
 	float4* position_invMass = femCloth.mPosition_InvMass;
-	uint4* vertIndices = femCloth.mTriangleVertexIndices;
+	uint4* vertIndices = femCloth.mTriangleVertexIndices_ownedEdges;
 
 	const uint4 triIdx = vertIndices[triangleIdx];
 	const float4 af = position_invMass[triIdx.x];
@@ -286,7 +286,7 @@ __device__ static inline PxU32 fcCapsuleCollision(
 )
 {
 	float4* position_invMass = femCloth.mPosition_InvMass;
-	uint4* vertIndices = femCloth.mTriangleVertexIndices;
+	uint4* vertIndices = femCloth.mTriangleVertexIndices_ownedEdges;
 
 	const uint4 triIdx = vertIndices[triangleIdx];
 	const float4 af = position_invMass[triIdx.x];
@@ -502,17 +502,12 @@ void cloth_SphereContactGenLaunch(
 	const PxReal* PX_RESTRICT					restDistance,
 	const PxgShape* PX_RESTRICT					gpuShapes,
 	const PxgFEMCloth* PX_RESTRICT				femClothes,
-
 	const PxNodeIndex* PX_RESTRICT				shapeToRigidRemapTable,
-
 	PxU8* PX_RESTRICT							stackPtr,
 	PxU32* PX_RESTRICT							midphasePairsNum,
-
-	PxgRigidFilterPair*							filterPairs,
-	const PxU32									nbFilterPairs,
 	const PxU32									stackSizeBytes,
 	PxU32* PX_RESTRICT							stackSizeNeededOnDevice,
-	PxgFEMContactWriter							writer
+	PxgRigidDbContactWriter						writer
 )
 {
 	PxU32 globalThreadIdx = threadIdx.x + blockIdx.x*blockDim.x;
@@ -572,18 +567,8 @@ void cloth_SphereContactGenLaunch(
 			rigidMaterialIndex = rigidShape.materialIndex;
 
 			const PxgFEMCloth& femCloth = femClothes[femClothId];
-			uint4* vertIndices = femCloth.mTriangleVertexIndices;
-
-			const uint4 triIdx = vertIndices[triangleId];
-
-			const PxU32 clothMask0 = PxEncodeClothIndex(femClothId, triIdx.x);
-			const PxU32 clothMask1 = PxEncodeClothIndex(femClothId, triIdx.y);
-			const PxU32 clothMask2 = PxEncodeClothIndex(femClothId, triIdx.z);
-
-			//If we find all verts in the filter pair list, we don't need to generate contacts between the rigid shape and the triangle
-			bool skipTriangle = find(filterPairs, nbFilterPairs, rigidId.getInd(), clothMask0) && 
-								find(filterPairs, nbFilterPairs, rigidId.getInd(), clothMask1) &&
-								find(filterPairs, nbFilterPairs, rigidId.getInd(), clothMask2);
+			// A filter pair for this rigid and triangle suppresses contact generation between them.
+			bool skipTriangle = findRigidSurfaceTriangleFilter(femCloth.mRigidSurfaceFilterPairs, femCloth.mNumRigidSurfaceFilterPairs, rigidId, rigidCacheRef, femClothId, triangleId);
 			
 			if (!skipTriangle)
 			{
@@ -653,8 +638,8 @@ void cloth_SphereContactGenLaunch(
 
 		if (numContacts > 0)
 		{
-			PxU64 pairInd0 = rigidId.getInd();
-			PxU32 pairInd1 = PxEncodeClothIndex(femClothId, triangleId);
+			PxU64 rigidRef = rigidId.getInd();
+			PxU64 triRef = PxgEncodeDeformableTriangle(femClothId, triangleId);
 
 			const PxReal rest = restDistance[cmIdx];
 
@@ -663,7 +648,7 @@ void cloth_SphereContactGenLaunch(
 				const PxU32 index = startIndex + inclusiveSum + j;
 				float4 cont = contacts[j];
 				cont.w = rest;
-				writer.writeRigidVsDeformableContact(index, cont, normalPens[j], tBarycentric[j], pairInd0, pairInd1, rigidMaterialIndex, rigidId);
+				writer.writeSurfaceContact(index, cont, normalPens[j], rigidRef, rigidMaterialIndex, triRef, tBarycentric[j]);
 			}
 		}
 	}
@@ -677,20 +662,15 @@ void cloth_SphereContactGenLaunch(
 extern "C" __global__
 //__launch_bounds__(WARP_SIZE, 16)
 void cloth_SphereVertexContactGenLaunch(
-	PxU32 numWorkItems,
-	const PxgContactManagerInput* PX_RESTRICT cmInputs,
-	const PxsCachedTransform* PX_RESTRICT transformCache,
-	const PxReal* PX_RESTRICT contactDistance,
-	const PxReal* PX_RESTRICT restDistance,
-	const PxgShape* PX_RESTRICT gpuShapes,
-	PxgFEMCloth* PX_RESTRICT femClothes,
-
-	const PxNodeIndex* PX_RESTRICT			shapeToRigidRemapTable,
-
-	PxgRigidFilterPair*						filterPairs,
-	const PxU32								nbFilterPairs,
-
-	PxgFEMContactWriter					writer
+	PxU32										numWorkItems,
+	const PxgContactManagerInput* PX_RESTRICT	cmInputs,
+	const PxsCachedTransform* PX_RESTRICT		transformCache,
+	const PxReal* PX_RESTRICT					contactDistance,
+	const PxReal* PX_RESTRICT					restDistance,
+	const PxgShape* PX_RESTRICT					gpuShapes,
+	PxgFEMCloth* PX_RESTRICT					femClothes,
+	const PxNodeIndex* PX_RESTRICT				shapeToRigidRemapTable,
+	PxgRigidDbContactWriter						writer
 )
 {
 	//one block deal with one test
@@ -724,8 +704,8 @@ void cloth_SphereVertexContactGenLaunch(
 
 		float4 contact;
 		float4 normalPen;
-		PxU64 pairInd0;
-		PxU32 pairInd1;
+		PxU64 rigidRef;
+		PxU64 vertRef;
 		//float4 tBarycentric;
 
 		//const PxU32 numRequiredWarps = (numVerts + WARP_SIZE - 1) / WARP_SIZE;
@@ -750,15 +730,12 @@ void cloth_SphereVertexContactGenLaunch(
 
 			if (i < numVerts)
 			{
-				const PxU32 clothMask = PxEncodeClothIndex(femClothId, i);
-
 				//If we find the vert index in the filter pairs, we don't need to generate contacts between the rigid shape and the vertex
-				bool skipVertex = find(filterPairs, nbFilterPairs, rigidId.getInd(), clothMask);
+				bool skipVertex = findRigidSurfaceVertexFilter(femCloth.mRigidSurfaceFilterPairs, femCloth.mNumRigidSurfaceFilterPairs, rigidId, rigidCacheRef, femClothId, i);
 
 				if (!skipVertex)
 				{
 					contact = verts[i];
-					//tBarycentric = make_float4(0.f, 0.f, 0.f, 1.f);
 					const PxVec3 p(contact.x, contact.y, contact.z);
 
 					if (rigidType == PxGeometryType::eSPHERE)
@@ -791,8 +768,8 @@ void cloth_SphereVertexContactGenLaunch(
 
 				if (numContacts > 0)
 				{
-					pairInd0 = rigidId.getInd();
-					pairInd1 = PxEncodeClothIndex(femClothId, i);
+					rigidRef = rigidId.getInd();
+					vertRef = PxgEncodeDeformableVertex(femClothId, i);
 					contact.w = restDistance[cmIdx];
 				}
 			}
@@ -820,7 +797,7 @@ void cloth_SphereVertexContactGenLaunch(
 			if (numContacts > 0)
 			{
 				const PxU32 index = startIndex + threadOffset;
-				writer.writeRigidVsDeformableContact(index, contact, normalPen, make_float4(0.f, 0.f, 0.f, 1.f /*vertex contact*/), pairInd0, pairInd1, rigidMaterialIndex, rigidId);
+				writer.writeSurfaceContact(index, contact, normalPen, rigidRef, rigidMaterialIndex, vertRef);
 			}
 		}
 	}
@@ -830,20 +807,15 @@ void cloth_SphereVertexContactGenLaunch(
 extern "C" __global__
 //__launch_bounds__(WARP_SIZE, 16)
 void cloth_planeVertContactGenLaunch(
-	PxU32 numWorkItems,
-	const PxgContactManagerInput* PX_RESTRICT cmInputs,
-	const PxsCachedTransform* PX_RESTRICT transformCache,
-	const PxReal* PX_RESTRICT contactDistance,
-	const PxReal* PX_RESTRICT restDistance,
-	const PxgShape* PX_RESTRICT gpuShapes,
-	const PxgFEMCloth* PX_RESTRICT femClothes,
-
-	const PxNodeIndex* PX_RESTRICT shapeToRigidRemapTable,
-
-	PxgRigidFilterPair*				filterPairs,
-	const PxU32						nbFilterPairs,
-
-	PxgFEMContactWriter					writer				
+	PxU32										numWorkItems,
+	const PxgContactManagerInput* PX_RESTRICT	cmInputs,
+	const PxsCachedTransform* PX_RESTRICT		transformCache,
+	const PxReal* PX_RESTRICT					contactDistance,
+	const PxReal* PX_RESTRICT					restDistance,
+	const PxgShape* PX_RESTRICT					gpuShapes,
+	const PxgFEMCloth* PX_RESTRICT				femClothes,
+	const PxNodeIndex* PX_RESTRICT				shapeToRigidRemapTable,
+	PxgRigidDbContactWriter						writer
 )
 {
 	//one block deal with one test
@@ -875,8 +847,8 @@ void cloth_planeVertContactGenLaunch(
 
 		float4 contact;
 		float4 normalPen;
-		PxU64 pairInd0;
-		PxU32 pairInd1;
+		PxU64 rigidRef;
+		PxU64 vertRef;
 
 		/*
 		const PxU32 numRequiredWarps = (numVerts + WARP_SIZE - 1) / WARP_SIZE;
@@ -910,13 +882,11 @@ void cloth_planeVertContactGenLaunch(
 
 				if (numContacts > 0)
 				{
-					const PxU32 clothMask = PxEncodeClothIndex(femClothId, i);
-
 					//If we find the vert index in the filter pairs, we don't need to generate contacts between the rigid shape and the vertex
-					numContacts = find(filterPairs, nbFilterPairs, rigidId.getInd(), clothMask) ? 0 : numContacts;
+					numContacts = findRigidSurfaceVertexFilter(femCloth.mRigidSurfaceFilterPairs, femCloth.mNumRigidSurfaceFilterPairs, rigidId, rigidCacheRef, femClothId, i) ? 0 : numContacts;
 
-					pairInd0 = rigidId.getInd();
-					pairInd1 = PxEncodeClothIndex(femClothId, i);
+					rigidRef = rigidId.getInd();
+					vertRef = PxgEncodeDeformableVertex(femClothId, i);
 
 					const PxVec3 rigidP = clothP - normalPen.w * PxVec3(normalPen.x, normalPen.y, normalPen.z);
 					contact = make_float4(rigidP.x, rigidP.y, rigidP.z, restDistance[cmIdx]);
@@ -946,7 +916,7 @@ void cloth_planeVertContactGenLaunch(
 			if (numContacts > 0)
 			{
 				const PxU32 index = startIndex + threadOffset;
-				writer.writeRigidVsDeformableContact(index, contact, normalPen, make_float4(0.f, 0.f, 0.f, 1.f), pairInd0, pairInd1, rigidMaterialIndex, rigidId);
+				writer.writeSurfaceContact(index, contact, normalPen, rigidRef, rigidMaterialIndex, vertRef);
 			}
 		}
 	}
@@ -1600,7 +1570,7 @@ static __device__ void convexTriangleContactGen(
 	const PxNodeIndex rigidId,
 	const PxU32 femClothId,
 	const PxU32 triangleId,
-	PxgFEMContactWriter& writer,
+	PxgRigidDbContactWriter& writer,
 	PxgShape& rigidShape
 )
 {
@@ -1729,11 +1699,11 @@ static __device__ void convexTriangleContactGen(
 							const PxVec3 worldP = convexTransform.transform(pa);
 							const PxVec3 worldNormal = convexTransform.rotate(normal);
 
-							PxU64 pairInd0 = rigidId.getInd();
-							PxU32 pairInd1 = PxEncodeClothIndex(femClothId, triangleId);
+							PxU64 rigidRef = rigidId.getInd();
+							PxU64 triRef = PxgEncodeDeformableTriangle(femClothId, triangleId);
 
-							writer.writeRigidVsDeformableContact(ind, make_float4(worldP.x, worldP.y, worldP.z, rest), make_float4(worldNormal.x, worldNormal.y, worldNormal.z, sep),
-								barycentric, pairInd0, pairInd1, rigidShape.materialIndex, rigidId);
+							writer.writeSurfaceContact(ind, make_float4(worldP.x, worldP.y, worldP.z, rest), make_float4(worldNormal.x, worldNormal.y, worldNormal.z, sep),
+								rigidRef, rigidShape.materialIndex, triRef, barycentric);
 						}
 					}
 				}
@@ -1757,12 +1727,9 @@ __device__ static inline void clothConvexCollision(
 	const PxReal* PX_RESTRICT restDistance,
 	const PxgShape* PX_RESTRICT gpuShapes,
 	const PxgFEMCloth* PX_RESTRICT femClothes,
-
 	const PxNodeIndex* PX_RESTRICT shapeToRigidRemapTable,
 	ConvexTriangleScratch* s_scratch,
-	PxgRigidFilterPair* filterPairs,	
-	const PxU32 nbFilterPairs,
-	PxgFEMContactWriter& writer
+	PxgRigidDbContactWriter& writer
 )
 {
 	const PxU32 cmIdx = curPair.x;
@@ -1783,17 +1750,10 @@ __device__ static inline void clothConvexCollision(
 	const PxU32 clothId = clothShape.particleOrSoftbodyId;
 	const PxgFEMCloth &cloth = femClothes[clothId];
 
-	const uint4* triVertInds = cloth.mTriangleVertexIndices;
-	const uint4 triIdx = triVertInds[triangleIdx];
+	const uint4* triVertInds = cloth.mTriangleVertexIndices_ownedEdges;
 
-	const PxU32 clothMask0 = PxEncodeClothIndex(clothId, triIdx.x);
-	const PxU32 clothMask1 = PxEncodeClothIndex(clothId, triIdx.y);
-	const PxU32 clothMask2 = PxEncodeClothIndex(clothId, triIdx.z);
-
-	//If we find all verts in the filter pair list, we don't need to generate contacts between the rigid shape and the triangle
-	bool skipTriangle =	find(filterPairs, nbFilterPairs, rigidId.getInd(), clothMask0) &&
-						find(filterPairs, nbFilterPairs, rigidId.getInd(), clothMask1) &&
-						find(filterPairs, nbFilterPairs, rigidId.getInd(), clothMask2);
+	// A filter pair for this rigid and triangle suppresses contact generation between them.
+	bool skipTriangle = findRigidSurfaceTriangleFilter(cloth.mRigidSurfaceFilterPairs, cloth.mNumRigidSurfaceFilterPairs, rigidId, rigidCacheRef, clothId, triangleIdx);
 
 	if (skipTriangle)
 		return;
@@ -1883,14 +1843,9 @@ void cloth_convexContactGenLaunch(
 	const PxNodeIndex* PX_RESTRICT shapeToRigidRemapTable,
 	PxU8* PX_RESTRICT stackPtr,
 	PxU32* PX_RESTRICT midphasePairsNum,
-
-	PxgRigidFilterPair* clothRigidPairs,
-	const PxU32 numClothRigidPairs,
-
 	const PxU32 stackSizeBytes,
 	PxU32* PX_RESTRICT stackSizeNeededOnDevice,
-
-	PxgFEMContactWriter writer
+	PxgRigidDbContactWriter writer
 )
 {
 	const PxU32 warpIndex = threadIdx.y;
@@ -1924,8 +1879,6 @@ void cloth_convexContactGenLaunch(
 			femClothes,
 			shapeToRigidRemapTable,
 			(ConvexTriangleScratch*)s_WarpSharedMemory,
-			clothRigidPairs,
-			numClothRigidPairs,
 			writer
 		);
 	}
@@ -2133,9 +2086,7 @@ static __device__ void clothVertexConvexCollision(
 	PxgFEMCloth* PX_RESTRICT femClothes,
 	const PxNodeIndex* PX_RESTRICT shapeToRigidRemapTable,
 	ConvexScratch* s_scratch,
-	PxgRigidFilterPair* filterPairs,
-	const PxU32 nbFilterPairs,
-	PxgFEMContactWriter& writer
+	PxgRigidDbContactWriter& writer
 )
 {
 	const PxU32 cmIdx = curPair.x;
@@ -2156,10 +2107,8 @@ static __device__ void clothVertexConvexCollision(
 	const PxU32 clothId = clothShape.particleOrSoftbodyId;
 	PxgFEMCloth &cloth = femClothes[clothId];
 
-	const PxU32 clothMask = PxEncodeClothIndex(clothId, vertexIdx);
-
 	//If we find the vert index in the filter pairs, we don't need to generate contacts between the rigid shape and the vertex
-	if (find(filterPairs, nbFilterPairs, rigidId.getInd(), clothMask))
+	if (findRigidSurfaceVertexFilter(cloth.mRigidSurfaceFilterPairs, cloth.mNumRigidSurfaceFilterPairs, rigidId, rigidCacheRef, clothId, vertexIdx))
 		return;
 
 	const PxReal contactDist = contactDistance[clothCacheRef] + contactDistance[rigidCacheRef];
@@ -2200,8 +2149,8 @@ static __device__ void clothVertexConvexCollision(
 
 	if (threadIdx.x == 0 && (pen < contactDist))
 	{
-		PxU64 pairInd0 = rigidId.getInd();
-		PxU32 pairInd1 = PxEncodeClothIndex(clothId, vertexIdx);
+		PxU64 rigidRef = rigidId.getInd();
+		PxU64 vertRef = PxgEncodeDeformableVertex(clothId, vertexIdx);
 
 		float4 normalPen = make_float4(worldNormal.x, worldNormal.y, worldNormal.z, pen);
 		const PxReal rest = restDistances[cmIdx];
@@ -2209,8 +2158,7 @@ static __device__ void clothVertexConvexCollision(
 
 		{
 			PxU32 ind = atomicAdd(writer.totalContactCount, 1);
-			writer.writeRigidVsDeformableContact(ind, contact, normalPen, make_float4(0.f, 0.f, 0.f, 1.f /*1 in w indicates this is a vertex, not a triangle*/),
-				pairInd0, pairInd1, rigidShape.materialIndex, rigidId);
+			writer.writeSurfaceContact(ind, contact, normalPen, rigidRef, rigidShape.materialIndex, vertRef);
 		}
 	}
 }
@@ -2228,14 +2176,9 @@ void cloth_convexVertexContactGenLaunch(
 	const PxNodeIndex* PX_RESTRICT shapeToRigidRemapTable,
 	PxU8* PX_RESTRICT stackPtr,
 	PxU32* PX_RESTRICT midphasePairsNum,
-
-	PxgRigidFilterPair* clothAttachmentPairs,
-	const PxU32 nbClothAttachmentPairs,
-
 	const PxU32 stackSizeBytes,
 	PxU32* PX_RESTRICT stackSizeNeededOnDevice,	
-
-	PxgFEMContactWriter writer
+	PxgRigidDbContactWriter writer
 )
 {
 	const PxU32 warpIndex = threadIdx.y;
@@ -2267,8 +2210,6 @@ void cloth_convexVertexContactGenLaunch(
 			femClothes,
 			shapeToRigidRemapTable,
 			&s_WarpSharedMemory,
-			clothAttachmentPairs,
-			nbClothAttachmentPairs,
 			writer
 		);
 	}
@@ -2293,11 +2234,8 @@ void cloth_sdfMeshContactGenLaunch(
 	const PxgShape* PX_RESTRICT					gpuShapes,
 	const PxgFEMCloth* PX_RESTRICT				clothes,
 	const PxNodeIndex* PX_RESTRICT				shapeToRigidRemapTable,
-	
-	PxgRigidFilterPair*							filterPairs,
-	const PxU32									nbFilterPairs,
-
-	PxgFEMContactWriter							writer)
+	PxgRigidDbContactWriter						writer
+)
 {
 	__shared__ __align__(16) char sMesh0[sizeof(PxgTriangleMesh)];
 	PxgTriangleMesh& triangleMesh = reinterpret_cast<PxgTriangleMesh&>(*sMesh0);
@@ -2408,7 +2346,7 @@ void cloth_sdfMeshContactGenLaunch(
 	const PxU32 nbClothTriangles = cloth->mNbTriangles;
 	for (PxU32 i = 0; i < nbClothTriangles || numTrianglesToSubdividePerThread > 0;)
 	{
-		PxU32 nbFoundTriangles = findInterestingTrianglesA<32, 1024>(nbClothTriangles, cloth->mTriangleVertexIndices, cloth->mPosition_InvMass, unitScale, trimeshShape->scale,
+		PxU32 nbFoundTriangles = findInterestingTrianglesA<32, 1024>(nbClothTriangles, cloth->mTriangleVertexIndices_ownedEdges, cloth->mPosition_InvMass, unitScale, trimeshShape->scale,
 			cullScale, sdfTexture, clothToTrimeshTransform, i, triangleIndicesS, numTrianglesToSubdividePerThread, trianglesToSubdivide);
 		numTrianglesToSubdividePerThread = 0;
 		
@@ -2432,15 +2370,10 @@ void cloth_sdfMeshContactGenLaunch(
 		{
 			rigidId = shapeToRigidRemapTable[trimeshCacheRef];
 			
-			const uint4 triangle = cloth->mTriangleVertexIndices[ind];
-			const PxU32 clothMask0 = PxEncodeClothIndex(clothId, triangle.x);
-			const PxU32 clothMask1 = PxEncodeClothIndex(clothId, triangle.y);
-			const PxU32 clothMask2 = PxEncodeClothIndex(clothId, triangle.z);
+			const uint4 triangle = cloth->mTriangleVertexIndices_ownedEdges[ind];
 
-			//If we find all verts in the filter pair list, we don't need to generate contacts between the rigid shape and the triangle
-			bool skipTriangle =	find(filterPairs, nbFilterPairs, rigidId.getInd(), clothMask0) &&
-								find(filterPairs, nbFilterPairs, rigidId.getInd(), clothMask1) &&
-								find(filterPairs, nbFilterPairs, rigidId.getInd(), clothMask2);
+			// A filter pair for this rigid and triangle suppresses contact generation between them.
+			bool skipTriangle = findRigidSurfaceTriangleFilter(cloth->mRigidSurfaceFilterPairs, cloth->mNumRigidSurfaceFilterPairs, rigidId, trimeshCacheRef, clothId, ind);
 
 			if (!skipTriangle)
 			{
@@ -2463,7 +2396,7 @@ void cloth_sdfMeshContactGenLaunch(
 
 				if (subInd > 0)
 				{
-					getTriangleVertices(cloth->mTriangleVertexIndices, cloth->mPosition_InvMass, unitScale, clothToTrimeshTransform, ind, 0, v0, v1, v2);
+					getTriangleVertices(cloth->mTriangleVertexIndices_ownedEdges, cloth->mPosition_InvMass, unitScale, clothToTrimeshTransform, ind, 0, v0, v1, v2);
 					v0 = shape2Vertex(v0, trimeshShape->scale.scale, trimeshShape->scale.rotation);
 					v1 = shape2Vertex(v1, trimeshShape->scale.scale, trimeshShape->scale.rotation);
 					v2 = shape2Vertex(v2, trimeshShape->scale.scale, trimeshShape->scale.rotation);
@@ -2528,16 +2461,15 @@ void cloth_sdfMeshContactGenLaunch(
 			normal = trimeshToWorld.rotate(normal);
 			pos = trimeshToWorld.transform(pos);			
 
-			PxU64 pairInd0 = rigidId.getInd();
-			PxU32 pairInd1 = PxEncodeClothIndex(clothId, ind);
+			PxU64 rigidRef = rigidId.getInd();
+			PxU64 triRef = PxgEncodeDeformableTriangle(clothId, ind);
 
 			float4 normalPen = make_float4(normal.x, normal.y, normal.z, sep);
 			float4 contact = make_float4(pos.x, pos.y, pos.z, rest);
 
-			//writer.writeContact32(contactIndex, contact, normalPen, tBarycentric, pairInd0, pairInd1, PxU32(rigidId.getInd()));
-			writer.writeRigidVsDeformableContact(contactIndex, contact, normalPen, tBarycentric, pairInd0, pairInd1, trimeshShape->materialIndex, rigidId);
+			writer.writeSurfaceContact(contactIndex, contact, normalPen, rigidRef, trimeshShape->materialIndex, triRef, tBarycentric);
 
-			/*uint4 tri = cloth->mTriangleVertexIndices[ind];
+			/*uint4 tri = cloth->mTriangleVertexIndices_ownedEdges[ind];
 
 			pos = tBarycentric.x*PxLoad3(cloth->mPosition_InvMass[tri.x]) + tBarycentric.y*PxLoad3(cloth->mPosition_InvMass[tri.y]) + tBarycentric.z*PxLoad3(cloth->mPosition_InvMass[tri.z]);
 			PxVec3 end = pos + PxAbs(sep) * normal;
@@ -2564,14 +2496,11 @@ void cloth_heightfieldVertexContactGenLaunch(
 	const PxgShape* PX_RESTRICT gpuShapes,
 	PxgFEMCloth* PX_RESTRICT clothes,
 	const PxNodeIndex* PX_RESTRICT shapeToRigidRemapTable,
-
 	PxU8* PX_RESTRICT stackPtr,
 	PxU32* PX_RESTRICT midphasePairsNum,
-
-	PxgFEMContactWriter writer,
-
-	const PxU32				stackSizeBytes,
-	PxU32* PX_RESTRICT		stackSizeNeededOnDevice
+	PxgRigidDbContactWriter writer,
+	const PxU32 stackSizeBytes,
+	PxU32* PX_RESTRICT stackSizeNeededOnDevice
 )
 {
 	const PxU32 globalThreadIdx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -2591,8 +2520,8 @@ void cloth_heightfieldVertexContactGenLaunch(
 	for (PxU32 i = globalThreadIdx; i < paddedNumPairs; i += gridDim.x * blockDim.x)
 	{
 		bool hasContacts = false;
-		PxU64 pairInd0;
-		PxU32 pairInd1;
+		PxU64 rigidRef;
+		PxU64 vertRef;
 		float4 p1_;
 		PxVec3 n;
 		PxReal pen;
@@ -2615,7 +2544,10 @@ void cloth_heightfieldVertexContactGenLaunch(
 			PxgShape shape0 = gpuShapes[npWorkItem.shapeRef0];
 			PxgShape shape1 = gpuShapes[npWorkItem.shapeRef1];
 
-			assert(shape0.type = PxGeometryType::eTRIANGLEMESH && shape1.type == PxGeometryType::eHEIGHTFIELD);
+			// Either order, since the contact manager does not fix which side the cloth is on. The dispatch
+			// below tells them apart by the deformable id.
+			PX_ASSERT((shape0.type == PxGeometryType::eTRIANGLEMESH && shape1.type == PxGeometryType::eHEIGHTFIELD) ||
+				(shape1.type == PxGeometryType::eTRIANGLEMESH && shape0.type == PxGeometryType::eHEIGHTFIELD));
 
 			/*	PxGeometryType::Enum type0 = PxGeometryType::Enum(shape0.type);
 				PxGeometryType::Enum type1 = PxGeometryType::Enum(shape1.type);*/
@@ -2665,6 +2597,11 @@ void cloth_heightfieldVertexContactGenLaunch(
 			const PxU32 clothId = clothShape->particleOrSoftbodyId;
 			PxgFEMCloth* cloth = &clothes[clothShape->particleOrSoftbodyId];
 
+			// A filter pair for this rigid and vertex suppresses contact generation between them. Execution
+			// has to proceed so all threads participate in the ballot below.
+			const bool filtered = findRigidSurfaceVertexFilter(cloth->mRigidSurfaceFilterPairs,
+				cloth->mNumRigidSurfaceFilterPairs, rigidId, heightfieldTransformCacheRef, clothId, clothVertIndex);
+
 			//world space
 			//const float4 p_ = cloth->mPosition_InvMass[clothVertIndex];
 			const float4 p0_ = cloth->mPosition_InvMass[clothVertIndex]; //points before integration
@@ -2706,10 +2643,10 @@ void cloth_heightfieldVertexContactGenLaunch(
 			/*if (clothVertIndex == 1)
 				printf("idx %i cmIdx %i clothVertIndex %i triangleIdx %i\n", threadIdx.x, cmIdx, clothVertIndex, meshTriangleIdx);*/
 
-			if ((pen <= cDistance) && normal.dot(n) > 0.f)
+			if (!filtered && (pen <= cDistance) && normal.dot(n) > 0.f)
 			{
-				pairInd0 = rigidId.getInd();
-				pairInd1 = PxEncodeClothIndex(clothId, clothVertIndex);
+				rigidRef = rigidId.getInd();
+				vertRef = PxgEncodeDeformableVertex(clothId, clothVertIndex);
 
 				//hasContacts = true;
 				contact = make_float4(closestPt.x, closestPt.y, closestPt.z, restDistance[cmIdx]);
@@ -2720,7 +2657,7 @@ void cloth_heightfieldVertexContactGenLaunch(
 		if (hasContacts)
 		{
 			const PxU32 index = indexer.getIndex();
-			writer.writeRigidVsDeformableContact32(index, contact, make_float4(n.x, n.y, n.z, pen), make_float4(0.f, 0.f, 0.f, 1.f /*vertex contact*/), pairInd0, pairInd1, rigidMaterialIndex, PxU32(pairInd0));
+			writer.writeSurfaceContact(index, contact, make_float4(n.x, n.y, n.z, pen), rigidRef, rigidMaterialIndex, vertRef);
 		}
 	}
 
@@ -2742,8 +2679,7 @@ __device__ static inline void clothParticleCollision(
 	const PxgShape* PX_RESTRICT gpuShapes,
 	const PxgParticleSystem* PX_RESTRICT particleSystems,
 	const PxgFEMCloth* PX_RESTRICT clothes,
-
-	PxgFEMContactWriter& writer
+	PxgParticleDbContactWriter& writer
 )
 {
 	const PxU32 cmIdx = curPair.x;
@@ -2769,7 +2705,7 @@ __device__ static inline void clothParticleCollision(
 	const float4* sortedPose = reinterpret_cast<float4*>(particleSystem.mSortedPositions_InvMass);
 	const float4* meshVerts = cloth.mPosition_InvMass;
 
-	const uint4 triVertIdx = cloth.mTriangleVertexIndices[triangleIdx];
+	const uint4 triVertIdx = cloth.mTriangleVertexIndices_ownedEdges[triangleIdx];
 
 	const float4 a_ = meshVerts[triVertIdx.x];
 	const float4 b_ = meshVerts[triVertIdx.y];
@@ -2827,11 +2763,10 @@ __device__ static inline void clothParticleCollision(
 
 		//printf("idx %i index %i\n", threadIdx.x, index);
 
-		PxU64 pairInd0 = PxEncodeParticleIndex(particleSystemId, particleIndex);
-		PxU32 pairInd1 = PxEncodeClothIndex(clothId, triangleIdx);
+		PxU64 particleRef = PxgEncodeParticleRef(particleSystemId, particleIndex);
+		PxU64 triRef = PxgEncodeDeformableTriangle(clothId, triangleIdx);
 
-		writer.writeContact(index, make_float4(p.x, p.y, p.z, 0.f), make_float4(-n.x, -n.y, -n.z, pen), tBarycentric,
-			pairInd0, pairInd1, pairInd0);
+		writer.writeSurfaceContact(index, make_float4(p.x, p.y, p.z, 0.f), make_float4(-n.x, -n.y, -n.z, pen), particleRef, triRef, tBarycentric);
 	}
 }
 
@@ -2844,13 +2779,11 @@ void cloth_psContactGenLaunch(
 	const PxgShape* PX_RESTRICT gpuShapes,
 	const PxgParticleSystem* PX_RESTRICT particleSystems,
 	const PxgFEMCloth* PX_RESTRICT clothes,
-
 	const PxU32 stackSizeBytes,
 	PxU8* PX_RESTRICT stackPtr,
 	PxU32* PX_RESTRICT midphasePairsNum,
-	PxU32* PX_RESTRICT stackSizeNeededOnDevice,											//output
-
-	PxgFEMContactWriter writer
+	PxU32* PX_RESTRICT stackSizeNeededOnDevice,		//output
+	PxgParticleDbContactWriter writer
 )
 {
 	const PxU32 globalThreadIdx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -2888,13 +2821,11 @@ void cloth_meshVertexContactGenLaunch(
 	const PxgShape* PX_RESTRICT						gpuShapes,
 	PxgFEMCloth* PX_RESTRICT						clothes,
 	const PxNodeIndex* PX_RESTRICT					shapeToRigidRemapTable,
-
 	const PxU32										stackSizeBytes,
 	PxU8* PX_RESTRICT								stackPtr,
 	PxU32* PX_RESTRICT								midphasePairsNum,
-	PxU32* PX_RESTRICT								stackSizeNeededOnDevice,									//output
-
-	PxgFEMContactWriter						writer
+	PxU32* PX_RESTRICT								stackSizeNeededOnDevice,	//output
+	PxgRigidDbContactWriter							writer
 )
 {
 	const PxU32 globalThreadIdx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -2910,8 +2841,8 @@ void cloth_meshVertexContactGenLaunch(
 	for (PxU32 i = globalThreadIdx; i < paddedNumPairs; i += gridDim.x * blockDim.x)
 	{
 		bool hasContacts = false;
-		PxU64 pairInd0;
-		PxU32 pairInd1;
+		PxU64 rigidRef;
+		PxU64 vertRef;
 		float4 p1_;
 		PxVec3 n;
 		PxReal pen;
@@ -2986,6 +2917,11 @@ void cloth_meshVertexContactGenLaunch(
 			const PxU32 clothId = clothShape->particleOrSoftbodyId;
 			PxgFEMCloth* cloth = &clothes[clothShape->particleOrSoftbodyId];
 
+			// A filter pair for this rigid and vertex suppresses contact generation between them. Execution
+			// has to proceed so all threads participate in the ballot below.
+			const bool filtered = findRigidSurfaceVertexFilter(cloth->mRigidSurfaceFilterPairs,
+				cloth->mNumRigidSurfaceFilterPairs, rigidId, trimeshCacheRef, clothId, clothVertIndex);
+
 			//world space
 			const float4 p0_ = cloth->mPosition_InvMass[clothVertIndex]; //points before integration
 			p1_ = cloth->mPosition_InvMass[clothVertIndex];
@@ -3019,10 +2955,10 @@ void cloth_meshVertexContactGenLaunch(
 
 			const PxReal cDistance = contactDistance[trimeshCacheRef] + contactDistance[clothCacheRef];
 
-			if ((pen <= cDistance) && normal.dot(n) > 0.f)
+			if (!filtered && (pen <= cDistance) && normal.dot(n) > 0.f)
 			{
-				pairInd0 = rigidId.getInd();
-				pairInd1 = PxEncodeClothIndex(clothId, clothVertIndex);
+				rigidRef = rigidId.getInd();
+				vertRef = PxgEncodeDeformableVertex(clothId, clothVertIndex);
 
 				contact = make_float4(closestPt.x, closestPt.y, closestPt.z, restDistance[cmIdx]);
 				//hasContacts = true;
@@ -3034,8 +2970,8 @@ void cloth_meshVertexContactGenLaunch(
 		{
 			const PxU32 index = indexer.getIndex();
 
-			writer.writeRigidVsDeformableContact32(index, contact, make_float4(n.x, n.y, n.z, pen), make_float4(0.f, 0.f, 0.f, 1.f /*vertex contact*/),
-				pairInd0, pairInd1, rigidMaterialIndex, PxU32(pairInd0));
+			writer.writeSurfaceContact(index, contact, make_float4(n.x, n.y, n.z, pen),
+				rigidRef, rigidMaterialIndex, vertRef);
 		}
 	}
 
@@ -3048,20 +2984,15 @@ void cloth_meshVertexContactGenLaunch(
 extern "C" __global__
 __launch_bounds__(WARP_SIZE*16, 1)
 void cloth_boxVertexContactGenLaunch(
-	PxU32 numWorkItems,
-	const PxgContactManagerInput* PX_RESTRICT cmInputs,
-	const PxsCachedTransform* PX_RESTRICT transformCache,
-	const PxReal* PX_RESTRICT contactDistance,
-	const PxReal* PX_RESTRICT restDistance,
-	const PxgShape* PX_RESTRICT gpuShapes,
-	const PxgFEMCloth* PX_RESTRICT femClothes,
-
-	const PxNodeIndex* PX_RESTRICT	shapeToRigidRemapTable,
-
-	PxgRigidFilterPair*				filterPairs,
-	const PxU32						nbFilterPairs,
-
-	PxgFEMContactWriter		writer
+	PxU32										numWorkItems,
+	const PxgContactManagerInput* PX_RESTRICT	cmInputs,
+	const PxsCachedTransform* PX_RESTRICT		transformCache,
+	const PxReal* PX_RESTRICT					contactDistance,
+	const PxReal* PX_RESTRICT					restDistance,
+	const PxgShape* PX_RESTRICT					gpuShapes,
+	const PxgFEMCloth* PX_RESTRICT				femClothes,
+	const PxNodeIndex* PX_RESTRICT				shapeToRigidRemapTable,
+	PxgRigidDbContactWriter						writer
 )
 {
 	//one block deal with one test
@@ -3093,8 +3024,8 @@ void cloth_boxVertexContactGenLaunch(
 
 		float4 contact;
 		float4 normalPen;
-		PxU64 pairInd0;
-		PxU32 pairInd1;
+		PxU64 rigidRef;
+		PxU64 vertRef;
 
 		//const PxU32 numRequiredWarps = (numVerts + WARP_SIZE - 1) / WARP_SIZE;
 		//const PxU32 numRequiredThreads = numRequiredWarps * WARP_SIZE;
@@ -3125,10 +3056,8 @@ void cloth_boxVertexContactGenLaunch(
 
 			if (i < numVerts)
 			{
-				const PxU32 clothMask = PxEncodeClothIndex(femClothId, i);
-
 				//If we find the vert index in the filter pairs, we don't need to generate contacts between the rigid shape and the vertex
-				bool skipVertex = find(filterPairs, nbFilterPairs, rigidId.getInd(), clothMask);
+				bool skipVertex = findRigidSurfaceVertexFilter(femCloth.mRigidSurfaceFilterPairs, femCloth.mNumRigidSurfaceFilterPairs, rigidId, rigidCacheRef, femClothId, i);
 
 				if (!skipVertex)
 				{
@@ -3144,8 +3073,8 @@ void cloth_boxVertexContactGenLaunch(
 
 					if (numContacts)
 					{
-						pairInd0 = rigidId.getInd();
-						pairInd1 = PxEncodeClothIndex(femClothId, i); //vert id
+						rigidRef = rigidId.getInd();
+						vertRef = PxgEncodeDeformableVertex(femClothId, i);
 
 						const PxVec3 rigidP = clothP - normalPen.w * PxVec3(normalPen.x, normalPen.y, normalPen.z);
 						contact = make_float4(rigidP.x, rigidP.y, rigidP.z, restDistance[cmIdx]);
@@ -3178,7 +3107,7 @@ void cloth_boxVertexContactGenLaunch(
 			if (numContacts > 0)
 			{
 				const PxU32 index = startIndex + threadOffset;
-				writer.writeRigidVsDeformableContact(index, contact, normalPen, make_float4(0.f, 0.f, 0.f, 1.f), pairInd0, pairInd1, rigidMaterialIndex, rigidId);
+				writer.writeSurfaceContact(index, contact, normalPen, rigidRef, rigidMaterialIndex, vertRef);
 			}
 		}
 	}
@@ -3186,22 +3115,18 @@ void cloth_boxVertexContactGenLaunch(
 
 
 __device__ static inline void clothBoxTriangleCollision(
-	const PxU32 globalWarpIndex,
-	const PxReal toleranceLength,
+	const PxU32									globalWarpIndex,
+	const PxReal								toleranceLength,
 	const PxgContactManagerInput* PX_RESTRICT	cmInputs,
-	const uint4 curPair,
+	const uint4									curPair,
 	const PxsCachedTransform* PX_RESTRICT		transformCache,
 	const PxReal* PX_RESTRICT					contactDistance,
 	const PxReal* PX_RESTRICT					restDistance,
 	const PxgShape* PX_RESTRICT					gpuShapes,
 	const PxgFEMCloth* PX_RESTRICT				femClothes,
-
 	const PxNodeIndex* PX_RESTRICT				shapeToRigidRemapTable,
 	ConvexTriangleScratch*						s_scratch,
-	PxgRigidFilterPair*							filterPairs,
-	const PxU32									nbFilterPairs,
-
-	PxgFEMContactWriter&					writer
+	PxgRigidDbContactWriter&					writer
 )
 {
 	const PxU32 cmIdx = curPair.x;
@@ -3223,18 +3148,8 @@ __device__ static inline void clothBoxTriangleCollision(
 	
 	const PxgFEMCloth &cloth = femClothes[clothId];
 
-	uint4* vertIndices = cloth.mTriangleVertexIndices;
-
-	const uint4 triIdx = vertIndices[triangleIdx];
-
-	const PxU32 clothMask0 = PxEncodeClothIndex(clothId, triIdx.x);
-	const PxU32 clothMask1 = PxEncodeClothIndex(clothId, triIdx.y);
-	const PxU32 clothMask2 = PxEncodeClothIndex(clothId, triIdx.z);
-
-	//If we find all verts in the filter pair list, we don't need to generate contacts between the rigid shape and the triangle
-	bool skipTriangle =	find(filterPairs, nbFilterPairs, rigidId.getInd(), clothMask0) &&
-						find(filterPairs, nbFilterPairs, rigidId.getInd(), clothMask1) &&
-						find(filterPairs, nbFilterPairs, rigidId.getInd(), clothMask2);
+	// A filter pair for this rigid and triangle suppresses contact generation between them.
+	bool skipTriangle = findRigidSurfaceTriangleFilter(cloth.mRigidSurfaceFilterPairs, cloth.mNumRigidSurfaceFilterPairs, rigidId, rigidCacheRef, clothId, triangleIdx);
 
 	if (skipTriangle)
 		return;
@@ -3284,7 +3199,7 @@ __device__ static inline void clothBoxTriangleCollision(
 		const float4* trimeshVerts = cloth.mPosition_InvMass;
 		//s_scratch->trimeshVerts = trimeshVerts;
 
-		const uint4* triVertInds = cloth.mTriangleVertexIndices;
+		const uint4* triVertInds = cloth.mTriangleVertexIndices_ownedEdges;
 		//s_scratch->trimeshTriIndices = triVertInds;
 
 		uint4 triIndices = triVertInds[triangleIdx];
@@ -3329,24 +3244,19 @@ __device__ static inline void clothBoxTriangleCollision(
 
 extern "C" __global__
 void cloth_boxTriangleContactGenLaunch(
-	const PxReal tolerenceLength,
-	const PxgContactManagerInput* PX_RESTRICT cmInputs,
-	const PxsCachedTransform* PX_RESTRICT transformCache,
-	const PxReal* PX_RESTRICT contactDistance,
-	const PxReal* PX_RESTRICT restDistance,
-	const PxgShape* PX_RESTRICT gpuShapes,
-	const PxgFEMCloth* PX_RESTRICT femClothes,
-	const PxNodeIndex* PX_RESTRICT shapeToRigidRemapTable,
-
-	PxU8* PX_RESTRICT stackPtr,
-	PxU32* PX_RESTRICT midphasePairsNum,
-
-	PxgRigidFilterPair*				clothAttachmentPairs,
-	const PxU32						nbClothAttachmentPairs,
-	const PxU32				stackSizeBytes,
-	PxU32* PX_RESTRICT		stackSizeNeededOnDevice,
-
-	PxgFEMContactWriter		writer
+	const PxReal								tolerenceLength,
+	const PxgContactManagerInput* PX_RESTRICT	cmInputs,
+	const PxsCachedTransform* PX_RESTRICT		transformCache,
+	const PxReal* PX_RESTRICT					contactDistance,
+	const PxReal* PX_RESTRICT					restDistance,
+	const PxgShape* PX_RESTRICT					gpuShapes,
+	const PxgFEMCloth* PX_RESTRICT				femClothes,
+	const PxNodeIndex* PX_RESTRICT				shapeToRigidRemapTable,
+	PxU8* PX_RESTRICT							stackPtr,
+	PxU32* PX_RESTRICT							midphasePairsNum,
+	const PxU32									stackSizeBytes,
+	PxU32* PX_RESTRICT							stackSizeNeededOnDevice,
+	PxgRigidDbContactWriter						writer
 )
 {
 	const PxU32 warpIndex = threadIdx.y;
@@ -3391,8 +3301,6 @@ void cloth_boxTriangleContactGenLaunch(
 			femClothes,
 			shapeToRigidRemapTable,
 			(ConvexTriangleScratch*)s_WarpSharedMemory,
-			clothAttachmentPairs,
-			nbClothAttachmentPairs,
 			writer			
 		);
 	}
@@ -3621,14 +3529,11 @@ void cloth_heightfieldContactGenLaunch(
 	const PxgShape* PX_RESTRICT gpuShapes,
 	const PxgFEMCloth* PX_RESTRICT clothes,
 	const PxNodeIndex* PX_RESTRICT shapeToRigidRemapTable,
-
 	PxU8* PX_RESTRICT stackPtr,
 	PxU32* PX_RESTRICT midphasePairsNum,
-
 	const PxU32 stackSizeBytes,
 	PxU32* PX_RESTRICT stackSizeNeededOnDevice,
-
-	PxgFEMContactWriter	writer
+	PxgRigidDbContactWriter	writer
 )
 {
 	PxU32 globalThreadIdx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -3662,19 +3567,26 @@ void cloth_heightfieldContactGenLaunch(
 
 
 			const PxgContactManagerInput npWorkItem = cmInputs[cmIdx];
-			PxgShape clothShape = gpuShapes[npWorkItem.shapeRef0];
-			PxgShape heightfieldShape = gpuShapes[npWorkItem.shapeRef1];
+			const PxgShape shape0 = gpuShapes[npWorkItem.shapeRef0];
+			const PxgShape shape1 = gpuShapes[npWorkItem.shapeRef1];
+
+			// Which side of the pair the cloth is on is not fixed, so the two shapes are told apart by the
+			// deformable id rather than by position, the way cloth_meshContactGenLaunch and the vertex path do.
+			const bool clothIsShape0 = shape0.particleOrSoftbodyId != 0xffffffff;
+			const PxgShape& clothShape = clothIsShape0 ? shape0 : shape1;
+			const PxgShape& heightfieldShape = clothIsShape0 ? shape1 : shape0;
+			const PxU32 clothCacheRef = clothIsShape0 ? npWorkItem.transformCacheRef0 : npWorkItem.transformCacheRef1;
+			ref = clothIsShape0 ? npWorkItem.transformCacheRef1 : npWorkItem.transformCacheRef0;
 
 			rigidMaterialIndex = heightfieldShape.materialIndex;
 
-			ref = npWorkItem.transformCacheRef1;
 			PxsCachedTransform heightfieldTransformCache = transformCache[ref];
-			PxsCachedTransform clothTransformCache = transformCache[npWorkItem.transformCacheRef0];
+			PxsCachedTransform clothTransformCache = transformCache[clothCacheRef];
 
 			const PxTransform& hfTranform = heightfieldTransformCache.transform;
 			const PxTransform& clothTranform = clothTransformCache.transform;
 
-			const PxReal cDistance = contactDistance[npWorkItem.transformCacheRef0] + contactDistance[ref];
+			const PxReal cDistance = contactDistance[clothCacheRef] + contactDistance[ref];
 
 			PxU32* heightfieldData = reinterpret_cast<PxU32*>(heightfieldShape.hullOrMeshPtr);
 			const PxU32 nbRows = heightfieldData[0];
@@ -3693,19 +3605,29 @@ void cloth_heightfieldContactGenLaunch(
 			clothId = clothShape.particleOrSoftbodyId;
 
 			const PxgFEMCloth* cloth = &clothes[clothId];
-			const uint4 clothVertInd = cloth->mTriangleVertexIndices[clothTriangleIdx];
+			const uint4 clothVertInd = cloth->mTriangleVertexIndices_ownedEdges[clothTriangleIdx];
 
-			hasContact = staticTriangleVsClothCollision(localA0, localB0, localC0, cloth, clothVertInd, clothTriangleIdx,
-				clothTransformCache.transform, cDistance, c);
+			const PxNodeIndex rigidId = shapeToRigidRemapTable[ref];
+
+			// A filter pair for this rigid and triangle suppresses contact generation between them.
+			if (!findRigidSurfaceTriangleFilter(cloth->mRigidSurfaceFilterPairs, cloth->mNumRigidSurfaceFilterPairs,
+				rigidId, ref, clothId, clothTriangleIdx))
+			{
+				hasContact = staticTriangleVsClothCollision(localA0, localB0, localC0, cloth, clothVertInd, clothTriangleIdx,
+					clothTransformCache.transform, cDistance, c);
+			}
 		}
 
 		PxU32 index = globalScanExclusiveSingleWarp(hasContact, writer.totalContactCount);
 
 		if (hasContact)
 		{
-			PxNodeIndex rigidId = shapeToRigidRemapTable[ref];
-			writer.writeRigidVsDeformableContact32(index, make_float4(c.position.x, c.position.y, c.position.z, restDistance[cmIdx]),
-				make_float4(c.normal.x, c.normal.y, c.normal.z, c.separation), c.barycentric, rigidId.getInd(), PxEncodeClothIndex(clothId, clothTriangleIdx), rigidMaterialIndex, PxU32(rigidId.getInd()));
+			PxU64 rigidRef = shapeToRigidRemapTable[ref].getInd();
+			PxU64 triRef = PxgEncodeDeformableTriangle(clothId, clothTriangleIdx);
+
+			writer.writeSurfaceContact(index, make_float4(c.position.x, c.position.y, c.position.z, restDistance[cmIdx]),
+				make_float4(c.normal.x, c.normal.y, c.normal.z, c.separation),
+				rigidRef, rigidMaterialIndex, triRef, c.barycentric);
 		}
 	}
 
@@ -3727,17 +3649,11 @@ void cloth_meshContactGenLaunch(
 	const PxgShape* PX_RESTRICT					gpuShapes,
 	const PxgFEMCloth* PX_RESTRICT				clothes,
 	const PxNodeIndex* PX_RESTRICT				shapeToRigidRemapTable,
-
 	const PxU32									stackSizeBytes,
 	PxU8* PX_RESTRICT							stackPtr,
 	PxU32* PX_RESTRICT							midphasePairsNum,
-
-	PxgRigidFilterPair*							filterPairs,
-	const PxU32									nbFilterPairs,
-
 	PxU32* PX_RESTRICT							stackSizeNeededOnDevice,
-
-	PxgFEMContactWriter							writer
+	PxgRigidDbContactWriter						writer
 )
 {
 	const PxU32 stackSize = stackSizeBytes / sizeof(uint4);
@@ -3804,16 +3720,10 @@ void cloth_meshContactGenLaunch(
 			clothId = clothShape->particleOrSoftbodyId;
 
 			const PxgFEMCloth* cloth = &clothes[clothId];
-			const uint4 clothVertInd = cloth->mTriangleVertexIndices[clothTriangleIdx];
+			const uint4 clothVertInd = cloth->mTriangleVertexIndices_ownedEdges[clothTriangleIdx];
 
-			const PxU32 clothMask0 = PxEncodeClothIndex(clothId, clothVertInd.x);
-			const PxU32 clothMask1 = PxEncodeClothIndex(clothId, clothVertInd.y);
-			const PxU32 clothMask2 = PxEncodeClothIndex(clothId, clothVertInd.z);
-
-			//If we find all verts in the filter pair list, we don't need to generate contacts between the rigid shape and the triangle
-			bool skipTriangle =	find(filterPairs, nbFilterPairs, rigidId.getInd(), clothMask0) &&
-								find(filterPairs, nbFilterPairs, rigidId.getInd(), clothMask1) &&
-								find(filterPairs, nbFilterPairs, rigidId.getInd(), clothMask2);
+			// A filter pair for this rigid and triangle suppresses contact generation between them.
+			bool skipTriangle = findRigidSurfaceTriangleFilter(cloth->mRigidSurfaceFilterPairs, cloth->mNumRigidSurfaceFilterPairs, rigidId, trimeshCacheRef, clothId, clothTriangleIdx);
 
 			if (!skipTriangle)
 			{
@@ -3860,8 +3770,12 @@ void cloth_meshContactGenLaunch(
 
 		if (hasContact)
 		{
-			writer.writeRigidVsDeformableContact32(index, make_float4(c.position.x, c.position.y, c.position.z, restDistance[cmIdx]),
-				make_float4(c.normal.x, c.normal.y, c.normal.z, c.separation), c.barycentric, rigidId.getInd(), PxEncodeClothIndex(clothId, clothTriangleIdx), rigidMaterialIndex, PxU32(rigidId.getInd()));
+			PxU64 rigidRef = rigidId.getInd();
+			PxU64 triRef = PxgEncodeDeformableTriangle(clothId, clothTriangleIdx);
+
+			writer.writeSurfaceContact(index, make_float4(c.position.x, c.position.y, c.position.z, restDistance[cmIdx]),
+				make_float4(c.normal.x, c.normal.y, c.normal.z, c.separation),
+				rigidRef, rigidMaterialIndex, triRef, c.barycentric);
 		}
 	}
 

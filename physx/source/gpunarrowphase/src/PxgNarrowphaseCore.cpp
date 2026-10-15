@@ -1264,12 +1264,12 @@ void PxgGpuNarrowphaseCore::testSDKConvexCoreTetmeshGjkEpaGpu(
 	const PxReal* restDistanced = reinterpret_cast<PxReal*>(gpuManagers.mRestDistances.getDevicePtr());
 	PX_ASSERT(transformCache);
 	PxgSoftBodyCore* softBodyCore = mGpuContext->mGpuSoftBodyCore;
-	PxgFEMContactWriter writer = softBodyCore->createContactWriter();
+	PxgRigidDbContactWriter writer = softBodyCore->createRigidDbContactWriter();
 
 	CUstream softbodyStream = softBodyCore->getStream();
 
-	CUdeviceptr totalNumCountsd = softBodyCore->getRigidContactCount().getDevicePtr();
-	CUdeviceptr prevNumCountsd = softBodyCore->getPrevRigidContactCount().getDevicePtr();
+	CUdeviceptr totalNumCountsd = softBodyCore->getRigidDeformableContactCount().getDevicePtr();
+	CUdeviceptr prevNumCountsd = softBodyCore->getRigidDeformablePrevContactCount().getDevicePtr();
 	mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), softbodyStream);
 
 	CUresult result;
@@ -1302,9 +1302,9 @@ void PxgGpuNarrowphaseCore::testSDKConvexCoreTetmeshGjkEpaGpu(
 #endif
 	}
 	{
-		CUdeviceptr contactsd = softBodyCore->getRigidContacts().getDevicePtr();
-		CUdeviceptr barycentricsd = softBodyCore->getRigidBarycentrics().getDevicePtr();
-		CUdeviceptr contactInfosd = softBodyCore->getRigidContactInfos().getDevicePtr();
+		CUdeviceptr contactsd = softBodyCore->getRigidDeformableContacts().getDevicePtr();
+		CUdeviceptr barycentricsd = softBodyCore->getRigidDeformableBarycentrics().getDevicePtr();
+		CUdeviceptr contactInfosd = softBodyCore->getRigidDeformableContactInfos().getDevicePtr();
 
 		softbodyOtherContactApplyCollisionToSimMeshMapping(
 			contactsd,
@@ -1402,9 +1402,7 @@ void PxgGpuNarrowphaseCore::testSDKConvexCoreClothmeshGjkEpaGpu(
 	}
 
 	CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
-	CUdeviceptr filterPairs = simulationCore->getRigidClothFilters();
-	const PxU32 nbFilterPairs = simulationCore->getNbRigidClothFilters();
-	PxgFEMContactWriter writer = femClothCore->createContactWriter();
+	PxgRigidDbContactWriter writer = femClothCore->createRigidDbContactWriter();
 
 	// convex core contact generation
 	{
@@ -1419,8 +1417,6 @@ void PxgGpuNarrowphaseCore::testSDKConvexCoreClothmeshGjkEpaGpu(
 			PX_CUDA_KERNEL_PARAM(transformCached),
 			PX_CUDA_KERNEL_PARAM(contactDistanced),
 			PX_CUDA_KERNEL_PARAM(restDistanced),
-			PX_CUDA_KERNEL_PARAM(filterPairs),
-			PX_CUDA_KERNEL_PARAM(nbFilterPairs),
 			PX_CUDA_KERNEL_PARAM(stackSizeBytes),
 			PX_CUDA_KERNEL_PARAM(stackSizeNeededOnDevice),
 			PX_CUDA_KERNEL_PARAM(writer),
@@ -3420,12 +3416,13 @@ void PxgGpuNarrowphaseCore::testSDKConvexHeightfieldGpu(PxgGpuContactManagers& g
 }
 
 
-void initParticleContactWriter(PxgParticleContactWriter& writer, PxgParticleSystemCore* particleCore)
+void initRigidParticleContactWriter(PxgRigidParticleContactWriter& writer, PxgParticleSystemCore* particleCore)
 {
-	writer.particleContacts = particleCore->getParticleContacts().getTypedPtr();
-	writer.numTotalContacts = particleCore->getParticleContactCount().getTypedPtr();
+	writer.particleContactInfos = particleCore->getRigidParticleContactInfos().getTypedPtr();
+	writer.particleContactNormalPens = particleCore->getRigidParticleContactNormalPens().getTypedPtr();
+	writer.numTotalContacts = particleCore->getRigidParticleContactCount().getTypedPtr();
 
-	writer.contactSortedByParticle = particleCore->getContactSortedByParticle().getTypedPtr();
+	writer.contactSortedByParticle = particleCore->getContactByParticle().getTypedPtr();
 	writer.tempContactByParticle = particleCore->getTempContactByParticle().getTypedPtr();
 	writer.contactIndexSortedByParticle = particleCore->getContactRemapSortedByParticle().getTypedPtr();
 
@@ -3547,8 +3544,8 @@ void PxgGpuNarrowphaseCore::testSDKParticleSystemGpu(PxgGpuContactManagers& gpuM
 
 			CUfunction psCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::PS_PRIMITIVES_COLLISION);
 
-			PxgParticleContactWriter writer;
-			initParticleContactWriter(writer, particleCore);
+			PxgRigidParticleContactWriter writer;
+			initRigidParticleContactWriter(writer, particleCore);
 
 			PxCudaKernelParam kernelParams_stage[] =
 			{
@@ -3587,9 +3584,10 @@ void PxgGpuNarrowphaseCore::testSDKParticleSystemGpu(PxgGpuContactManagers& gpuM
 			{
 				printf("Particle numContacts %i\n", numContacts);
 
-				PxgParticlePrimitiveContact temp[1];
-				mCudaContext->memcpyDtoH(temp, reinterpret_cast<CUdeviceptr>(writer.particleContacts), sizeof(PxgParticlePrimitiveContact) * 1);
-				printf("Particle first contact: particleId: %llu, rigidId: %u\n", temp[0].particleId, PxU32(temp[0].rigidId >> 32));
+				PxgDeformablePairInfo temp[1];
+				mCudaContext->memcpyDtoH(temp, reinterpret_cast<CUdeviceptr>(writer.particleContactInfos), sizeof(PxgDeformablePairInfo) * 1);
+				printf("Particle first contact: particleId: %u, rigidId: %u\n", PxgGetParticleIndex(temp[0].ref1),
+					PxgGetRigidNode(temp[0].ref0).index());
 			}
 #endif
 #endif
@@ -3726,18 +3724,18 @@ void PxgGpuNarrowphaseCore::testSDKParticleSoftbody(PxgGpuContactManagers& gpuMa
 #endif
 	}
 
-	PxgDevicePointer<float4> contactsd = softBodyCore->getParticleContacts().getTypedDevicePtr();
-	PxgDevicePointer<float4> barycentricsd = softBodyCore->getParticleBarycentrics().getTypedDevicePtr();
-	PxgDevicePointer<PxgFemOtherContactInfo> contactInfosd = softBodyCore->getParticleContactInfos().getTypedDevicePtr();
+	PxgDevicePointer<float4> contactsd = softBodyCore->getParticleDeformableContacts().getTypedDevicePtr();
+	PxgDevicePointer<float4> barycentricsd = softBodyCore->getParticleDeformableBarycentrics().getTypedDevicePtr();
+	PxgDevicePointer<PxgDeformablePairInfo> contactInfosd = softBodyCore->getParticleDeformableContactInfos().getTypedDevicePtr();
 
-	PxgDevicePointer<PxU32> totalNumCountsd = softBodyCore->getParticleContactCount().getTypedDevicePtr();
-	PxgDevicePointer<PxU32> prevNumCountsd = softBodyCore->getPrevParticleContactCount().getTypedDevicePtr();
+	PxgDevicePointer<PxU32> totalNumCountsd = softBodyCore->getParticleDeformableContactCount().getTypedDevicePtr();
+	PxgDevicePointer<PxU32> prevNumCountsd = softBodyCore->getParticleDeformablePrevContactCount().getTypedDevicePtr();
 
 	{
 		PX_PROFILE_ZONE("PxgGpuNarrowphaseCore.testSDKParticleSoftbody.contactGen", 0);
 		mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), softbodyStream);
 
-		PxgFEMContactWriter writer = softBodyCore->createContactWriter(true);
+		PxgParticleDbContactWriter writer = softBodyCore->createParticleDbContactWriter();
 
 		CUfunction sbCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SB_PS_CG); //sb_psContactGenLaunch
 
@@ -3781,7 +3779,7 @@ void PxgGpuNarrowphaseCore::testSDKParticleSoftbody(PxgGpuContactManagers& gpuMa
 			PxArray<float4> normalPen(numContacts);
 			PxArray<float4> barcentric(numContacts);
 
-			CUdeviceptr normalPensd = softBodyCore->getParticleNormalPens().getDevicePtr();
+			CUdeviceptr normalPensd = softBodyCore->getParticleDeformableNormalPens().getDevicePtr();
 
 			mCudaContext->memcpyDtoH(points.begin(), contactsd, sizeof(float4) * numContacts);
 			mCudaContext->memcpyDtoH(normalPen.begin(), normalPensd, sizeof(float4) * numContacts);
@@ -3932,13 +3930,13 @@ void PxgGpuNarrowphaseCore::testSDKParticleFemCloth(PxgGpuContactManagers& gpuMa
 #endif
 	}
 
-	CUdeviceptr totalNumCountsd = clothCore->getParticleContactCount().getDevicePtr();
-	CUdeviceptr prevNumCountsd = clothCore->getPrevParticleContactCount().getDevicePtr();
+	CUdeviceptr totalNumCountsd = clothCore->getParticleDeformableContactCount().getDevicePtr();
+	CUdeviceptr prevNumCountsd = clothCore->getParticleDeformablePrevContactCount().getDevicePtr();
 
 	{
 		mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), clothStream);
 
-		PxgFEMContactWriter writer = clothCore->createContactWriter(true);
+		PxgParticleDbContactWriter writer = clothCore->createParticleDbContactWriter();
 
 		CUfunction clothCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_PS_CG);
 
@@ -3978,8 +3976,8 @@ void PxgGpuNarrowphaseCore::testSDKParticleFemCloth(PxgGpuContactManagers& gpuMa
 
 		if (numContacts > 0)
 		{
-			CUdeviceptr contactsd = clothCore->getParticleContacts().getDevicePtr();
-			CUdeviceptr normalPensd = clothCore->getParticleNormalPens().getDevicePtr();
+			CUdeviceptr contactsd = clothCore->getParticleDeformableContacts().getDevicePtr();
+			CUdeviceptr normalPensd = clothCore->getParticleDeformableNormalPens().getDevicePtr();
 
 			drawContacts(*renderOutput, contactsd, normalPensd, numContacts);
 		}
@@ -4073,9 +4071,10 @@ void PxgGpuNarrowphaseCore::testSDKConvexParticle(PxgGpuContactManagers& gpuMana
 	}
 
 	{
-		PxgParticlePrimitiveContact* contactsd = reinterpret_cast<PxgParticlePrimitiveContact*>(particleCore->getParticleContacts().getDevicePtr());
-		CUdeviceptr totalContactCountsd = particleCore->getParticleContactCount().getDevicePtr();
-		CUdeviceptr contactSortedByParticled = particleCore->getContactSortedByParticle().getDevicePtr();
+		PxgDeformablePairInfo* contactInfosd = reinterpret_cast<PxgDeformablePairInfo*>(particleCore->getRigidParticleContactInfos().getDevicePtr());
+		float4* contactNormalPensd = reinterpret_cast<float4*>(particleCore->getRigidParticleContactNormalPens().getDevicePtr());
+		CUdeviceptr totalContactCountsd = particleCore->getRigidParticleContactCount().getDevicePtr();
+		CUdeviceptr contactSortedByParticled = particleCore->getContactByParticle().getDevicePtr();
 		CUdeviceptr tempContactByParticleBitd = particleCore->getTempContactByParticle().getDevicePtr();
 		CUdeviceptr contactRemapSortedByParticled = particleCore->getContactRemapSortedByParticle().getDevicePtr();
 		CUdeviceptr contactByRigidd = particleCore->getContactByRigid().getDevicePtr();
@@ -4101,7 +4100,8 @@ void PxgGpuNarrowphaseCore::testSDKConvexParticle(PxgGpuContactManagers& gpuMana
 			PX_CUDA_KERNEL_PARAM(totalPairsd),
 			PX_CUDA_KERNEL_PARAM(particleSystemsd),
 			PX_CUDA_KERNEL_PARAM(shapeToRigidRemapTabled),
-			PX_CUDA_KERNEL_PARAM(contactsd),
+			PX_CUDA_KERNEL_PARAM(contactInfosd),
+			PX_CUDA_KERNEL_PARAM(contactNormalPensd),
 			PX_CUDA_KERNEL_PARAM(totalContactCountsd),
 			PX_CUDA_KERNEL_PARAM(contactSortedByParticled),
 			PX_CUDA_KERNEL_PARAM(tempContactByParticleBitd),
@@ -4189,8 +4189,8 @@ void PxgGpuNarrowphaseCore::testSDKParticleSdfTriMesh(PxgGpuContactManagers& gpu
 
 	CUresult result;
 
-	PxgParticleContactWriter writer;
-	initParticleContactWriter(writer, particleCore);
+	PxgRigidParticleContactWriter writer;
+	initRigidParticleContactWriter(writer, particleCore);
 
 	// Particle-Sdf-Trimesh Midphase and contact gen kernel
 	{
@@ -4253,8 +4253,8 @@ void PxgGpuNarrowphaseCore::testSDKParticleTriMesh(PxgGpuContactManagers& gpuMan
 
 	CUresult result;
 
-	PxgParticleContactWriter writer;
-	initParticleContactWriter(writer, particleCore);
+	PxgRigidParticleContactWriter writer;
+	initRigidParticleContactWriter(writer, particleCore);
 
 	// Particle-Trimesh Midphase and contact gen kernel
 	{
@@ -4350,8 +4350,8 @@ void PxgGpuNarrowphaseCore::testSDKParticleHeightfield(PxgGpuContactManagers& gp
 
 	CUresult result;
 
-	PxgParticleContactWriter writer;
-	initParticleContactWriter(writer, particleCore);
+	PxgRigidParticleContactWriter writer;
+	initRigidParticleContactWriter(writer, particleCore);
 
 	// Particle-Trimesh Midphase and contact gen kernel
 	{
@@ -4393,7 +4393,7 @@ void PxgGpuNarrowphaseCore::testSDKParticleHeightfield(PxgGpuContactManagers& gp
 void PxgGpuNarrowphaseCore::softbodyOtherContactApplyCollisionToSimMeshMapping(
 	PxgDevicePointer<float4> contactsd,
 	PxgDevicePointer<float4> barycentricsd,
-	PxgDevicePointer<PxgFemOtherContactInfo> contactInfosd,
+	PxgDevicePointer<PxgDeformablePairInfo> contactInfosd,
 	PxgDevicePointer<PxU32> totalNumCountsd,
 	PxgDevicePointer<PxU32> prevNumCountsd
 )
@@ -4430,11 +4430,13 @@ void PxgGpuNarrowphaseCore::softbodyOtherContactApplyCollisionToSimMeshMapping(
 }
 
 void PxgGpuNarrowphaseCore::softbodyFemContactApplyCollisionToSimMeshMapping(
-	PxgDevicePointer<float4> barycentrics0d, PxgDevicePointer<float4> barycentrics1d,
-	PxgDevicePointer<PxgFemFemContactInfo> contactInfosd, PxgDevicePointer<PxU32> totalNumCountsd, PxgDevicePointer<PxU32> prevNumCountsd,
+	PxgDevicePointer<float4> contactsd, PxgDevicePointer<float4> barycentrics0d, PxgDevicePointer<float4> barycentrics1d,
+	PxgDevicePointer<PxgDeformablePairInfo> contactInfosd, PxgDevicePointer<PxU32> totalNumCountsd, PxgDevicePointer<PxU32> prevNumCountsd,
 	bool isSelfCollision, bool isCloth)
 {
 	PX_ASSERT(!isSelfCollision || !isCloth);
+	// Side 0 is remapped for a volume pair alone, so a cloth pair may leave its barycentrics unprovided.
+	PX_ASSERT(barycentrics0d || isCloth);
 
 	PxgSimulationCore* simulationCore = mNphaseImplContext->getSimulationCore();
 	PxgSoftBodyCore* softBodyCore = mGpuContext->mGpuSoftBodyCore;
@@ -4449,6 +4451,7 @@ void PxgGpuNarrowphaseCore::softbodyFemContactApplyCollisionToSimMeshMapping(
 
 	PxCudaKernelParam kernelParams[] = {
 		PX_CUDA_KERNEL_PARAM(softBodiesd),
+		PX_CUDA_KERNEL_PARAM(contactsd),
 		PX_CUDA_KERNEL_PARAM(barycentrics0d),
 		PX_CUDA_KERNEL_PARAM(barycentrics1d),
 		PX_CUDA_KERNEL_PARAM(contactInfosd),
@@ -4582,18 +4585,15 @@ void PxgGpuNarrowphaseCore::testSDKSoftbody(PxgGpuContactManagers& gpuManagers, 
 	}
 
 	{
-		CUdeviceptr totalNumCountsd = softBodyCore->getRigidContactCount().getDevicePtr();
-		CUdeviceptr prevNumCountsd = softBodyCore->getPrevRigidContactCount().getDevicePtr();
+		CUdeviceptr totalNumCountsd = softBodyCore->getRigidDeformableContactCount().getDevicePtr();
+		CUdeviceptr prevNumCountsd = softBodyCore->getRigidDeformablePrevContactCount().getDevicePtr();
 		mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), softbodyStream);
 		CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 
 		//PxU32 preNumContacts;
 		//mCudaContext->memcpyDtoH(&preNumContacts, totalNumCountsd, sizeof(PxU32));
 
-		CUdeviceptr pairs = simulationCore->getRigidSoftBodyFilters();
-		const PxU32 nbPairs = simulationCore->getNbRigidSoftBodyFilters();
-
-		PxgFEMContactWriter writer = softBodyCore->createContactWriter();
+		PxgRigidDbContactWriter writer = softBodyCore->createRigidDbContactWriter();
 
 		CUfunction sbCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SB_PRIMITIVES_CG);
 
@@ -4610,10 +4610,8 @@ void PxgGpuNarrowphaseCore::testSDKSoftbody(PxgGpuContactManagers& gpuManagers, 
 			PX_CUDA_KERNEL_PARAM(gpuIntermStack),
 			PX_CUDA_KERNEL_PARAM(gpuMidphasePairsNumOnDevice),
 			PX_CUDA_KERNEL_PARAM(stackSizeBytes),
-			PX_CUDA_KERNEL_PARAM(pairs),
-			PX_CUDA_KERNEL_PARAM(nbPairs),
 			PX_CUDA_KERNEL_PARAM(stackSizeNeededOnDevice),
-			PX_CUDA_KERNEL_PARAM(writer)		
+			PX_CUDA_KERNEL_PARAM(writer)
 		};
 
 		PxU32 numWarpsPerBlock = MIDPHASE_WARPS_PER_BLOCK;
@@ -4684,11 +4682,11 @@ void PxgGpuNarrowphaseCore::testSDKSoftbody(PxgGpuContactManagers& gpuManagers, 
 	}
 
 	{
-		CUdeviceptr contactsd = softBodyCore->getRigidContacts().getDevicePtr();
-		CUdeviceptr barycentricsd = softBodyCore->getRigidBarycentrics().getDevicePtr();
-		CUdeviceptr contactInfosd = softBodyCore->getRigidContactInfos().getDevicePtr();
-		CUdeviceptr totalNumCountsd = softBodyCore->getRigidContactCount().getDevicePtr();
-		CUdeviceptr prevNumCountsd = softBodyCore->getPrevRigidContactCount().getDevicePtr();
+		CUdeviceptr contactsd = softBodyCore->getRigidDeformableContacts().getDevicePtr();
+		CUdeviceptr barycentricsd = softBodyCore->getRigidDeformableBarycentrics().getDevicePtr();
+		CUdeviceptr contactInfosd = softBodyCore->getRigidDeformableContactInfos().getDevicePtr();
+		CUdeviceptr totalNumCountsd = softBodyCore->getRigidDeformableContactCount().getDevicePtr();
+		CUdeviceptr prevNumCountsd = softBodyCore->getRigidDeformablePrevContactCount().getDevicePtr();
 
 		softbodyOtherContactApplyCollisionToSimMeshMapping(
 			contactsd,
@@ -4735,15 +4733,15 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodies(PxgGpuContactManagers& gpuManagers
 
 	PxgDevicePointer<PxgSoftBody> softBodiesd = simulationCore->getSoftBodyBuffer().getTypedDevicePtr();
 
-	PxgDevicePointer<float4> barycentrics0d = softBodyCore->getFemBarycentrics0().getTypedDevicePtr();
-	PxgDevicePointer<float4> barycentrics1d = softBodyCore->getFemBarycentrics1().getTypedDevicePtr();
-	PxgDevicePointer<PxgFemFemContactInfo> contactInfosd = softBodyCore->getVolumeContactOrVTContactInfos().getTypedDevicePtr();
-	PxgDevicePointer<PxU32> totalNumCountsd = softBodyCore->getVolumeContactOrVTContactCount().getTypedDevicePtr();
-	PxgDevicePointer<PxU32> prevNumCountsd = softBodyCore->getPrevFemContactCount().getTypedDevicePtr();
+	PxgDevicePointer<float4> barycentrics0d = softBodyCore->getVolumeVolumeBarycentrics0().getTypedDevicePtr();
+	PxgDevicePointer<float4> barycentrics1d = softBodyCore->getVolumeVolumeBarycentrics1().getTypedDevicePtr();
+	PxgDevicePointer<PxgDeformablePairInfo> contactInfosd = softBodyCore->getVolumeVolumeContactInfos().getTypedDevicePtr();
+	PxgDevicePointer<PxU32> totalNumCountsd = softBodyCore->getVolumeVolumeContactCount().getTypedDevicePtr();
+	PxgDevicePointer<PxU32> prevNumCountsd = softBodyCore->getVolumeVolumePrevContactCount().getTypedDevicePtr();
 
 	mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), softbodyStream);
 
-	PxgSoftBodyContactWriter writer = softBodyCore->createSoftBodyContactWriter();
+	PxgDbDbContactWriter writer = softBodyCore->createVolumeVolumeContactWriter();
 
 	CUresult result;
 
@@ -4825,8 +4823,8 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodies(PxgGpuContactManagers& gpuManagers
 #endif //GPU_NP_DEBUG
 	}
 
-	softbodyFemContactApplyCollisionToSimMeshMapping(barycentrics0d, barycentrics1d, 
-		contactInfosd, totalNumCountsd, prevNumCountsd, false, false);
+	softbodyFemContactApplyCollisionToSimMeshMapping(softBodyCore->getVolumeVolumeContacts().getTypedDevicePtr(),
+		barycentrics0d, barycentrics1d, contactInfosd, totalNumCountsd, prevNumCountsd, false, false);
 }
 
 void PxgGpuNarrowphaseCore::testSDKSoftbodyCloth(PxgGpuContactManagers& gpuManagers,
@@ -4878,14 +4876,11 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyCloth(PxgGpuContactManagers& gpuManag
 	PxgDevicePointer<PxgSoftBody> softBodiesd = simulationCore->getSoftBodyBuffer().getTypedDevicePtr();
 	PxgDevicePointer<PxgFEMCloth> femClothesd = simulationCore->getFEMClothBuffer().getTypedDevicePtr();
 
-	PxgDevicePointer<float4> contactsd = softBodyCore->getClothVsSoftBodyContacts().getTypedDevicePtr();
-	PxgDevicePointer<float4> barycentricsd1 = softBodyCore->getClothVsSoftBodyBarycentrics1().getTypedDevicePtr();
-	PxgDevicePointer<PxgFemFemContactInfo> contactInfosd = softBodyCore->getClothVsSoftBodyContactInfos().getTypedDevicePtr();
-	PxgDevicePointer<PxU32> totalNumCountsd = softBodyCore->getClothVsSoftBodyContactCount().getTypedDevicePtr();
-	PxgDevicePointer<PxU32> prevNumCountsd = softBodyCore->getPrevClothVsSoftBodyContactCount().getTypedDevicePtr();
-
-	CUdeviceptr pairs = simulationCore->getClothSoftBodyFilters();
-	const PxU32 nbPairs = simulationCore->getNbClothSoftBodyFilters();
+	PxgDevicePointer<float4> contactsd = softBodyCore->getSurfaceVolumeContacts().getTypedDevicePtr();
+	PxgDevicePointer<float4> barycentricsd1 = softBodyCore->getSurfaceVolumeBarycentrics1().getTypedDevicePtr();
+	PxgDevicePointer<PxgDeformablePairInfo> contactInfosd = softBodyCore->getSurfaceVolumeContactInfos().getTypedDevicePtr();
+	PxgDevicePointer<PxU32> totalNumCountsd = softBodyCore->getSurfaceVolumeContactCount().getTypedDevicePtr();
+	PxgDevicePointer<PxU32> prevNumCountsd = softBodyCore->getSurfaceVolumePrevContactCount().getTypedDevicePtr();
 
 	mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), softbodyStream);
 
@@ -4893,7 +4888,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyCloth(PxgGpuContactManagers& gpuManag
 
 	CUresult result;
 
-	PxgSoftBodyContactWriter writer = softBodyCore->createClothVsSoftBodyContactWriter(femClothCore->mMaxContacts);
+	PxgDbDbContactWriter writer = softBodyCore->createSurfaceVolumeContactWriter(femClothCore->mMaxContacts);
 
 	//!
 	//! softbody tet - cloth triangle collision
@@ -5003,8 +4998,6 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyCloth(PxgGpuContactManagers& gpuManag
 				PX_CUDA_KERNEL_PARAM(gpuIntermStack),
 				PX_CUDA_KERNEL_PARAM(gpuMidphasePairsNumOnDevice),
 				PX_CUDA_KERNEL_PARAM(stackSizeBytes),
-				PX_CUDA_KERNEL_PARAM(pairs),
-				PX_CUDA_KERNEL_PARAM(nbPairs),
 				PX_CUDA_KERNEL_PARAM(stackSizeNeededOnDevice),
 				PX_CUDA_KERNEL_PARAM(writer)
 			};
@@ -5029,7 +5022,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyCloth(PxgGpuContactManagers& gpuManag
 			{
 				PxU32 numContacts;
 				mCudaContext->memcpyDtoH(&numContacts, totalNumCountsd, sizeof(PxU32));
-				CUdeviceptr normalPensd = softBodyCore->getClothVsSoftBodyNormalPens().getDevicePtr();
+				CUdeviceptr normalPensd = softBodyCore->getSurfaceVolumeNormalPens().getDevicePtr();
 				drawContacts(*renderOutput, contactsd, normalPensd, numContacts);
 			}
 #endif
@@ -5105,8 +5098,6 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyCloth(PxgGpuContactManagers& gpuManag
 				PX_CUDA_KERNEL_PARAM(stackSizeBytes),
 				PX_CUDA_KERNEL_PARAM(gpuIntermStack),
 				PX_CUDA_KERNEL_PARAM(gpuMidphasePairsNumOnDevice),
-				PX_CUDA_KERNEL_PARAM(pairs),
-				PX_CUDA_KERNEL_PARAM(nbPairs),
 				PX_CUDA_KERNEL_PARAM(stackSizeNeededOnDevice),
 				PX_CUDA_KERNEL_PARAM(writer)
 			};
@@ -5130,7 +5121,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyCloth(PxgGpuContactManagers& gpuManag
 				PxU32 numContacts;
 				mCudaContext->memcpyDtoH(&numContacts, totalNumCountsd, sizeof(PxU32));
 
-				CUdeviceptr normalPensd = softBodyCore->getClothVsSoftBodyNormalPens().getDevicePtr();
+				CUdeviceptr normalPensd = softBodyCore->getSurfaceVolumeNormalPens().getDevicePtr();
 				drawContacts(*renderOutput, contactsd, normalPensd, numContacts);
 			}
 
@@ -5138,8 +5129,10 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyCloth(PxgGpuContactManagers& gpuManag
 		}
 	}
 
-	softbodyFemContactApplyCollisionToSimMeshMapping(contactsd, barycentricsd1, contactInfosd,
-		totalNumCountsd, prevNumCountsd, false, true);
+	// NULL for side 0: only the volume is remapped onto its simulation mesh here, the surface's own
+	// barycentric coming from contact generation and needing none.
+	softbodyFemContactApplyCollisionToSimMeshMapping(contactsd, PxgDevicePointer<float4>(0), barycentricsd1,
+		contactInfosd, totalNumCountsd, prevNumCountsd, false, true);
 
 	stackAlloc.reset();
 	stackAlloc.mMutex.unlock();
@@ -5178,19 +5171,16 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodySdfTrimesh(PxgGpuContactManagers& gpu
 	//initialize gpu variables
 	CUdeviceptr softBodiesd = simulationCore->getSoftBodyBuffer().getDevicePtr();
 
-	PxgFEMContactWriter writer = softBodyCore->createContactWriter();
+	PxgRigidDbContactWriter writer = softBodyCore->createRigidDbContactWriter();
 
 	CUresult result;
 
 
 	{
-		CUdeviceptr totalNumCountsd = softBodyCore->getRigidContactCount().getDevicePtr();
-		CUdeviceptr prevNumCountsd = softBodyCore->getPrevRigidContactCount().getDevicePtr();
+		CUdeviceptr totalNumCountsd = softBodyCore->getRigidDeformableContactCount().getDevicePtr();
+		CUdeviceptr prevNumCountsd = softBodyCore->getRigidDeformablePrevContactCount().getDevicePtr();
 		mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), softbodyStream);
 	}
-
-	CUdeviceptr filterPairs = simulationCore->getRigidSoftBodyFilters();
-	const PxU32 nbFilterPairs = simulationCore->getNbRigidSoftBodyFilters();
 
 	// soft body first midphase kernel(each output is the index to a bound in one tree and tetrahedron index in other tree)
 	{
@@ -5207,10 +5197,6 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodySdfTrimesh(PxgGpuContactManagers& gpu
 			PX_CUDA_KERNEL_PARAM(gpuShapes),
 			PX_CUDA_KERNEL_PARAM(softBodiesd),
 			PX_CUDA_KERNEL_PARAM(shapeToRigidRemapTabled),
-
-			PX_CUDA_KERNEL_PARAM(filterPairs),
-			PX_CUDA_KERNEL_PARAM(nbFilterPairs),
-
 			PX_CUDA_KERNEL_PARAM(writer)
 		};
 
@@ -5280,11 +5266,11 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodySdfTrimesh(PxgGpuContactManagers& gpu
 	}
 
 	{
-		PxgDevicePointer<float4> contactsd = softBodyCore->getRigidContacts().getTypedDevicePtr();
-		PxgDevicePointer<float4> barycentricsd = softBodyCore->getRigidBarycentrics().getTypedDevicePtr();
-		PxgDevicePointer<PxgFemOtherContactInfo> contactInfosd = softBodyCore->getRigidContactInfos().getTypedDevicePtr();
-		PxgDevicePointer<PxU32> totalNumCountsd = softBodyCore->getRigidContactCount().getTypedDevicePtr();
-		PxgDevicePointer<PxU32> prevNumCountsd = softBodyCore->getPrevRigidContactCount().getTypedDevicePtr();
+		PxgDevicePointer<float4> contactsd = softBodyCore->getRigidDeformableContacts().getTypedDevicePtr();
+		PxgDevicePointer<float4> barycentricsd = softBodyCore->getRigidDeformableBarycentrics().getTypedDevicePtr();
+		PxgDevicePointer<PxgDeformablePairInfo> contactInfosd = softBodyCore->getRigidDeformableContactInfos().getTypedDevicePtr();
+		PxgDevicePointer<PxU32> totalNumCountsd = softBodyCore->getRigidDeformableContactCount().getTypedDevicePtr();
+		PxgDevicePointer<PxU32> prevNumCountsd = softBodyCore->getRigidDeformablePrevContactCount().getTypedDevicePtr();
 
 		softbodyOtherContactApplyCollisionToSimMeshMapping(
 			contactsd,
@@ -5426,15 +5412,12 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyTrimesh(PxgGpuContactManagers& gpuMan
 	}
 
 	{
-		CUdeviceptr totalNumCountsd = softBodyCore->getRigidContactCount().getDevicePtr();
-		CUdeviceptr prevNumCountsd = softBodyCore->getPrevRigidContactCount().getDevicePtr();
+		CUdeviceptr totalNumCountsd = softBodyCore->getRigidDeformableContactCount().getDevicePtr();
+		CUdeviceptr prevNumCountsd = softBodyCore->getRigidDeformablePrevContactCount().getDevicePtr();
 		mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), softbodyStream);
 		CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 
-		CUdeviceptr pairs = simulationCore->getRigidSoftBodyFilters();
-		const PxU32 nbPairs = simulationCore->getNbRigidSoftBodyFilters();
-
-		PxgFEMContactWriter writer = softBodyCore->createContactWriter();
+		PxgRigidDbContactWriter writer = softBodyCore->createRigidDbContactWriter();
 
 		CUfunction sbmeshContactGenkernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SB_MESH_CG);
 
@@ -5451,8 +5434,6 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyTrimesh(PxgGpuContactManagers& gpuMan
 			PX_CUDA_KERNEL_PARAM(gpuIntermStack),
 			PX_CUDA_KERNEL_PARAM(gpuMidphasePairsNumOnDevice),
 			PX_CUDA_KERNEL_PARAM(stackSizeBytes),
-			PX_CUDA_KERNEL_PARAM(pairs),
-			PX_CUDA_KERNEL_PARAM(nbPairs),
 			PX_CUDA_KERNEL_PARAM(stackSizeNeededOnDevice),
 			PX_CUDA_KERNEL_PARAM(writer)
 		};
@@ -5484,8 +5465,8 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyTrimesh(PxgGpuContactManagers& gpuMan
 			PxArray<float4> points(numContacts);
 			PxArray<float4> normalPen(numContacts);
 
-			CUdeviceptr contactsd = softBodyCore->getRigidContacts().getDevicePtr();
-			CUdeviceptr normalPensd = softBodyCore->getRigidNormalPens().getDevicePtr();
+			CUdeviceptr contactsd = softBodyCore->getRigidDeformableContacts().getDevicePtr();
+			CUdeviceptr normalPensd = softBodyCore->getRigidDeformableNormalPens().getDevicePtr();
 
 			mCudaContext->memcpyDtoH(points.begin(), contactsd, sizeof(float4) * numContacts);
 			mCudaContext->memcpyDtoH(normalPen.begin(), normalPensd, sizeof(float4) * numContacts);
@@ -5588,11 +5569,11 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyTrimesh(PxgGpuContactManagers& gpuMan
 	}
 
 	{
-		CUdeviceptr contactsd = softBodyCore->getRigidContacts().getDevicePtr();
-		CUdeviceptr barycentricsd = softBodyCore->getRigidBarycentrics().getDevicePtr();
-		CUdeviceptr contactInfosd = softBodyCore->getRigidContactInfos().getDevicePtr();
-		CUdeviceptr totalNumCountsd = softBodyCore->getRigidContactCount().getDevicePtr();
-		CUdeviceptr prevNumCountsd = softBodyCore->getPrevRigidContactCount().getDevicePtr();
+		CUdeviceptr contactsd = softBodyCore->getRigidDeformableContacts().getDevicePtr();
+		CUdeviceptr barycentricsd = softBodyCore->getRigidDeformableBarycentrics().getDevicePtr();
+		CUdeviceptr contactInfosd = softBodyCore->getRigidDeformableContactInfos().getDevicePtr();
+		CUdeviceptr totalNumCountsd = softBodyCore->getRigidDeformableContactCount().getDevicePtr();
+		CUdeviceptr prevNumCountsd = softBodyCore->getRigidDeformablePrevContactCount().getDevicePtr();
 
 		softbodyOtherContactApplyCollisionToSimMeshMapping(
 			contactsd,
@@ -5736,17 +5717,17 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyHeightfield(PxgGpuContactManagers& gp
 	}
 
 	PxgSoftBodyCore* softBodyCore = mGpuContext->mGpuSoftBodyCore;
-	CUdeviceptr contactsd = softBodyCore->getRigidContacts().getDevicePtr();
-	CUdeviceptr contactInfosd = softBodyCore->getRigidContactInfos().getDevicePtr();
-	CUdeviceptr barycentricsd = softBodyCore->getRigidBarycentrics().getDevicePtr();
-	CUdeviceptr totalNumCountsd = softBodyCore->getRigidContactCount().getDevicePtr();
-	CUdeviceptr prevNumCountsd = softBodyCore->getPrevRigidContactCount().getDevicePtr();
+	CUdeviceptr contactsd = softBodyCore->getRigidDeformableContacts().getDevicePtr();
+	CUdeviceptr contactInfosd = softBodyCore->getRigidDeformableContactInfos().getDevicePtr();
+	CUdeviceptr barycentricsd = softBodyCore->getRigidDeformableBarycentrics().getDevicePtr();
+	CUdeviceptr totalNumCountsd = softBodyCore->getRigidDeformableContactCount().getDevicePtr();
+	CUdeviceptr prevNumCountsd = softBodyCore->getRigidDeformablePrevContactCount().getDevicePtr();
 	mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), softbodyStream);
 
 	{
 		CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 		
-		PxgFEMContactWriter writer = softBodyCore->createContactWriter();
+		PxgRigidDbContactWriter writer = softBodyCore->createRigidDbContactWriter();
 
 		CUfunction sbHFContactGenkernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::SB_HF_CG);
 
@@ -5791,7 +5772,7 @@ void PxgGpuNarrowphaseCore::testSDKSoftbodyHeightfield(PxgGpuContactManagers& gp
 			PxArray<float4> points(numContacts);
 			PxArray<float4> normalPen(numContacts);
 
-			CUdeviceptr normalPensd = softBodyCore->getRigidNormalPens().getDevicePtr();
+			CUdeviceptr normalPensd = softBodyCore->getRigidDeformableNormalPens().getDevicePtr();
 
 			mCudaContext->memcpyDtoH(points.begin(), contactsd, sizeof(float4) * numContacts);
 			mCudaContext->memcpyDtoH(normalPen.begin(), normalPensd, sizeof(float4) * numContacts);
@@ -6033,16 +6014,13 @@ void PxgGpuNarrowphaseCore::testSDKFemClothSphere(PxgGpuContactManagers& gpuMana
 #endif
 	}
 
-	CUdeviceptr totalNumCountsd = femClothCore->getRigidContactCount().getDevicePtr();
-	CUdeviceptr prevNumCountsd = femClothCore->getPrevRigidContactCount().getDevicePtr();
+	CUdeviceptr totalNumCountsd = femClothCore->getRigidDeformableContactCount().getDevicePtr();
+	CUdeviceptr prevNumCountsd = femClothCore->getRigidDeformablePrevContactCount().getDevicePtr();
 	mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), femClothStream);
 
 	CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 
-	CUdeviceptr pairs = simulationCore->getRigidClothFilters();
-	const PxU32 nbPairs = simulationCore->getNbRigidClothFilters();
-
-	PxgFEMContactWriter writer = femClothCore->createContactWriter();
+	PxgRigidDbContactWriter writer = femClothCore->createRigidDbContactWriter();
 
 	if (1)	//contact gen
 	{
@@ -6060,8 +6038,6 @@ void PxgGpuNarrowphaseCore::testSDKFemClothSphere(PxgGpuContactManagers& gpuMana
 			PX_CUDA_KERNEL_PARAM(shapeToRigidRemapTabled),
 			PX_CUDA_KERNEL_PARAM(gpuIntermStack),
 			PX_CUDA_KERNEL_PARAM(gpuMidphasePairsNumOnDevice),
-			PX_CUDA_KERNEL_PARAM(pairs),
-			PX_CUDA_KERNEL_PARAM(nbPairs),
 			PX_CUDA_KERNEL_PARAM(stackSizeBytes),
 			PX_CUDA_KERNEL_PARAM(stackSizeNeededOnDevice),
 			PX_CUDA_KERNEL_PARAM(writer)
@@ -6096,9 +6072,6 @@ void PxgGpuNarrowphaseCore::testSDKFemClothSphere(PxgGpuContactManagers& gpuMana
 			PX_CUDA_KERNEL_PARAM(gpuShapes),
 			PX_CUDA_KERNEL_PARAM(femClothesd),
 			PX_CUDA_KERNEL_PARAM(shapeToRigidRemapTabled),
-			PX_CUDA_KERNEL_PARAM(pairs),
-			PX_CUDA_KERNEL_PARAM(nbPairs),
-
 			PX_CUDA_KERNEL_PARAM(writer)
 		};
 
@@ -6152,14 +6125,11 @@ void PxgGpuNarrowphaseCore::testSDKFemClothPlane(PxgGpuContactManagers& gpuManag
 	CUresult result;
 
 	{
-		CUdeviceptr totalNumCountsd = femClothCore->getRigidContactCount().getDevicePtr();
-		CUdeviceptr prevNumCountsd = femClothCore->getPrevRigidContactCount().getDevicePtr();
+		CUdeviceptr totalNumCountsd = femClothCore->getRigidDeformableContactCount().getDevicePtr();
+		CUdeviceptr prevNumCountsd = femClothCore->getRigidDeformablePrevContactCount().getDevicePtr();
 		mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), femClothStream);
 
-		CUdeviceptr pairs = simulationCore->getRigidClothFilters();
-		const PxU32 nbPairs = simulationCore->getNbRigidClothFilters();
-
-		PxgFEMContactWriter writer = femClothCore->createContactWriter();
+		PxgRigidDbContactWriter writer = femClothCore->createRigidDbContactWriter();
 
 		CUfunction fcVertCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_PLANE_VERTEX_CG);
 		PxCudaKernelParam vertKernelParams[] =
@@ -6172,9 +6142,6 @@ void PxgGpuNarrowphaseCore::testSDKFemClothPlane(PxgGpuContactManagers& gpuManag
 			PX_CUDA_KERNEL_PARAM(gpuShapes),
 			PX_CUDA_KERNEL_PARAM(femClothesd),
 			PX_CUDA_KERNEL_PARAM(shapeToRigidRemapTabled),
-			PX_CUDA_KERNEL_PARAM(pairs),
-			PX_CUDA_KERNEL_PARAM(nbPairs),
-
 			PX_CUDA_KERNEL_PARAM(writer)
 		};
 
@@ -6291,17 +6258,15 @@ void PxgGpuNarrowphaseCore::testSDKFemClothBox(PxgGpuContactManagers& gpuManager
 	//contact gen
 	if (1)
 	{
-		CUdeviceptr totalNumCountsd = femClothCore->getRigidContactCount().getDevicePtr();
-		CUdeviceptr prevNumCountsd = femClothCore->getPrevRigidContactCount().getDevicePtr();
+		CUdeviceptr totalNumCountsd = femClothCore->getRigidDeformableContactCount().getDevicePtr();
+		CUdeviceptr prevNumCountsd = femClothCore->getRigidDeformablePrevContactCount().getDevicePtr();
 		mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), femClothStream);
 
 		CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 
-		CUdeviceptr pairs = simulationCore->getRigidClothFilters();
-		const PxU32 nbPairs = simulationCore->getNbRigidClothFilters();
 		CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_BOX_TRIANGLE_CG);
 
-		PxgFEMContactWriter writer = femClothCore->createContactWriter();
+		PxgRigidDbContactWriter writer = femClothCore->createRigidDbContactWriter();
 
 		PxCudaKernelParam kernelParams[] =
 		{
@@ -6315,8 +6280,6 @@ void PxgGpuNarrowphaseCore::testSDKFemClothBox(PxgGpuContactManagers& gpuManager
 			PX_CUDA_KERNEL_PARAM(shapeToRigidRemapTabled),
 			PX_CUDA_KERNEL_PARAM(gpuIntermStack),
 			PX_CUDA_KERNEL_PARAM(gpuMidphasePairsNumOnDevice),
-			PX_CUDA_KERNEL_PARAM(pairs),
-			PX_CUDA_KERNEL_PARAM(nbPairs),
 			PX_CUDA_KERNEL_PARAM(stackSizeBytes),
 			PX_CUDA_KERNEL_PARAM(stackSizeNeededOnDevice),
 			PX_CUDA_KERNEL_PARAM(writer)
@@ -6357,8 +6320,8 @@ void PxgGpuNarrowphaseCore::testSDKFemClothBox(PxgGpuContactManagers& gpuManager
 			PxArray<float4> points(numContacts);
 			PxArray<float4> normalPen(numContacts);
 
-			CUdeviceptr contactsd = femClothCore->getRigidContacts().getDevicePtr();
-			CUdeviceptr normalPensd = femClothCore->getRigidNormalPens().getDevicePtr();
+			CUdeviceptr contactsd = femClothCore->getRigidDeformableContacts().getDevicePtr();
+			CUdeviceptr normalPensd = femClothCore->getRigidDeformableNormalPens().getDevicePtr();
 
 			mCudaContext->memcpyDtoH(points.begin(), contactsd, sizeof(float4) * numContacts);
 			mCudaContext->memcpyDtoH(normalPen.begin(), normalPensd, sizeof(float4) * numContacts);
@@ -6387,16 +6350,13 @@ void PxgGpuNarrowphaseCore::testSDKFemClothBox(PxgGpuContactManagers& gpuManager
 
 	if (1)
 	{
-		CUdeviceptr totalNumCountsd = femClothCore->getRigidContactCount().getDevicePtr();
-		CUdeviceptr prevNumCountsd = femClothCore->getPrevRigidContactCount().getDevicePtr();
+		CUdeviceptr totalNumCountsd = femClothCore->getRigidDeformableContactCount().getDevicePtr();
+		CUdeviceptr prevNumCountsd = femClothCore->getRigidDeformablePrevContactCount().getDevicePtr();
 		mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), femClothStream);
 
 		CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 
-		CUdeviceptr pairs = simulationCore->getRigidClothFilters();
-		const PxU32 nbPairs = simulationCore->getNbRigidClothFilters();
-
-		PxgFEMContactWriter writer = femClothCore->createContactWriter();
+		PxgRigidDbContactWriter writer = femClothCore->createRigidDbContactWriter();
 
 		CUfunction fcBoxVertCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_BOX_VERTEX_COLLISION);
 		PxCudaKernelParam vertKernelParams[] =
@@ -6409,9 +6369,6 @@ void PxgGpuNarrowphaseCore::testSDKFemClothBox(PxgGpuContactManagers& gpuManager
 			PX_CUDA_KERNEL_PARAM(gpuShapes),
 			PX_CUDA_KERNEL_PARAM(femClothesd),
 			PX_CUDA_KERNEL_PARAM(shapeToRigidRemapTabled),
-			PX_CUDA_KERNEL_PARAM(pairs),
-			PX_CUDA_KERNEL_PARAM(nbPairs),
-
 			PX_CUDA_KERNEL_PARAM(writer)
 		};
 
@@ -6559,16 +6516,13 @@ void PxgGpuNarrowphaseCore::testSDKFemClothConvexes(PxgGpuContactManagers& gpuMa
 
 	//! contact gen
 	{
-		CUdeviceptr totalNumCountsd = femClothCore->getRigidContactCount().getDevicePtr();
-		CUdeviceptr prevNumCountsd = femClothCore->getPrevRigidContactCount().getDevicePtr();
+		CUdeviceptr totalNumCountsd = femClothCore->getRigidDeformableContactCount().getDevicePtr();
+		CUdeviceptr prevNumCountsd = femClothCore->getRigidDeformablePrevContactCount().getDevicePtr();
 		mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), femClothStream);
 
 		CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 
-		CUdeviceptr pairs = simulationCore->getRigidClothFilters();
-		const PxU32 nbPairs = simulationCore->getNbRigidClothFilters();
-
-		PxgFEMContactWriter writer = femClothCore->createContactWriter();
+		PxgRigidDbContactWriter writer = femClothCore->createRigidDbContactWriter();
 
 		CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_CONVEX_CG);
 		PxCudaKernelParam kernelParams[] =
@@ -6583,8 +6537,6 @@ void PxgGpuNarrowphaseCore::testSDKFemClothConvexes(PxgGpuContactManagers& gpuMa
 			PX_CUDA_KERNEL_PARAM(shapeToRigidRemapTabled),
 			PX_CUDA_KERNEL_PARAM(gpuIntermStack),
 			PX_CUDA_KERNEL_PARAM(gpuMidphasePairsNumOnDevice),
-			PX_CUDA_KERNEL_PARAM(pairs),
-			PX_CUDA_KERNEL_PARAM(nbPairs),
 			PX_CUDA_KERNEL_PARAM(stackSizeBytes),
 			PX_CUDA_KERNEL_PARAM(stackSizeNeededOnDevice),
 			PX_CUDA_KERNEL_PARAM(writer)
@@ -6610,8 +6562,8 @@ void PxgGpuNarrowphaseCore::testSDKFemClothConvexes(PxgGpuContactManagers& gpuMa
 
 		if (numContacts)
 		{
-			CUdeviceptr contactsd = femClothCore->getRigidContacts().getDevicePtr();
-			CUdeviceptr normalPensd = femClothCore->getRigidNormalPens().getDevicePtr();
+			CUdeviceptr contactsd = femClothCore->getRigidDeformableContacts().getDevicePtr();
+			CUdeviceptr normalPensd = femClothCore->getRigidDeformableNormalPens().getDevicePtr();
 
 			drawContacts(*renderOutput, contactsd, normalPensd, numContacts);
 		}
@@ -6711,16 +6663,13 @@ void PxgGpuNarrowphaseCore::testSDKFemClothConvexes(PxgGpuContactManagers& gpuMa
 	
 	//! contact gen		
 	{
-		CUdeviceptr totalNumCountsd = femClothCore->getRigidContactCount().getDevicePtr();
-		CUdeviceptr prevNumCountsd = femClothCore->getPrevRigidContactCount().getDevicePtr();
+		CUdeviceptr totalNumCountsd = femClothCore->getRigidDeformableContactCount().getDevicePtr();
+		CUdeviceptr prevNumCountsd = femClothCore->getRigidDeformablePrevContactCount().getDevicePtr();
 		mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), femClothStream);
 
 		CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 
-		CUdeviceptr pairs = simulationCore->getRigidClothFilters();
-		const PxU32 nbPairs = simulationCore->getNbRigidClothFilters();
-
-		PxgFEMContactWriter writer = femClothCore->createContactWriter();
+		PxgRigidDbContactWriter writer = femClothCore->createRigidDbContactWriter();
 
 		CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_CONVEX_VERTEX_COLLISION);
 		PxCudaKernelParam kernelParams[] =
@@ -6735,8 +6684,6 @@ void PxgGpuNarrowphaseCore::testSDKFemClothConvexes(PxgGpuContactManagers& gpuMa
 			PX_CUDA_KERNEL_PARAM(shapeToRigidRemapTabled),
 			PX_CUDA_KERNEL_PARAM(gpuIntermStack),
 			PX_CUDA_KERNEL_PARAM(gpuMidphasePairsNumOnDevice),
-			PX_CUDA_KERNEL_PARAM(pairs),
-			PX_CUDA_KERNEL_PARAM(nbPairs),			
 			PX_CUDA_KERNEL_PARAM(stackSizeBytes),
 			PX_CUDA_KERNEL_PARAM(stackSizeNeededOnDevice),
 			PX_CUDA_KERNEL_PARAM(writer)
@@ -6803,17 +6750,14 @@ void PxgGpuNarrowphaseCore::testSDKFemClothSdfTrimesh(PxgGpuContactManagers& gpu
 
 	CUdeviceptr femClothesd = simulationCore->getFEMClothBuffer().getDevicePtr();
 
-	CUdeviceptr totalNumCountsd = femClothCore->getRigidContactCount().getDevicePtr();
-	CUdeviceptr prevNumCountsd = femClothCore->getPrevRigidContactCount().getDevicePtr();
+	CUdeviceptr totalNumCountsd = femClothCore->getRigidDeformableContactCount().getDevicePtr();
+	CUdeviceptr prevNumCountsd = femClothCore->getRigidDeformablePrevContactCount().getDevicePtr();
 
 	mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), femClothStream);
 
 	CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 
-	CUdeviceptr pairs = simulationCore->getRigidClothFilters();
-	const PxU32 nbPairs = simulationCore->getNbRigidClothFilters();
-
-	PxgFEMContactWriter writer = femClothCore->createContactWriter();
+	PxgRigidDbContactWriter writer = femClothCore->createRigidDbContactWriter();
 
 	CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_SDF_MESH_CG);
 	PxCudaKernelParam kernelParams[] =
@@ -6826,10 +6770,6 @@ void PxgGpuNarrowphaseCore::testSDKFemClothSdfTrimesh(PxgGpuContactManagers& gpu
 		PX_CUDA_KERNEL_PARAM(gpuShapes),
 		PX_CUDA_KERNEL_PARAM(femClothesd),
 		PX_CUDA_KERNEL_PARAM(shapeToRigidRemapTabled),
-
-		PX_CUDA_KERNEL_PARAM(pairs),
-		PX_CUDA_KERNEL_PARAM(nbPairs),
-
 		PX_CUDA_KERNEL_PARAM(writer)
 	};
 
@@ -6965,17 +6905,14 @@ void PxgGpuNarrowphaseCore::testSDKFemClothTrimesh(PxgGpuContactManagers& gpuMan
 		//contact gen
 		if (1)
 		{
-			CUdeviceptr totalNumCountsd = femClothCore->getRigidContactCount().getDevicePtr();
-			CUdeviceptr prevNumCountsd = femClothCore->getPrevRigidContactCount().getDevicePtr();
+			CUdeviceptr totalNumCountsd = femClothCore->getRigidDeformableContactCount().getDevicePtr();
+			CUdeviceptr prevNumCountsd = femClothCore->getRigidDeformablePrevContactCount().getDevicePtr();
 
 			mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), femClothStream);
 
 			CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
-			
-			CUdeviceptr pairs = simulationCore->getRigidClothFilters();
-			const PxU32 nbPairs = simulationCore->getNbRigidClothFilters();
 
-			PxgFEMContactWriter writer = femClothCore->createContactWriter();
+			PxgRigidDbContactWriter writer = femClothCore->createRigidDbContactWriter();
 
 			CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_MESH_CG);
 			PxCudaKernelParam kernelParams[] =
@@ -6991,10 +6928,6 @@ void PxgGpuNarrowphaseCore::testSDKFemClothTrimesh(PxgGpuContactManagers& gpuMan
 				PX_CUDA_KERNEL_PARAM(stackSizeBytes),
 				PX_CUDA_KERNEL_PARAM(gpuIntermStack),
 				PX_CUDA_KERNEL_PARAM(gpuMidphasePairsNumOnDevice),
-
-				PX_CUDA_KERNEL_PARAM(pairs),
-				PX_CUDA_KERNEL_PARAM(nbPairs),
-
 				PX_CUDA_KERNEL_PARAM(stackSizeNeededOnDevice),
 				PX_CUDA_KERNEL_PARAM(writer)
 			};
@@ -7025,7 +6958,10 @@ void PxgGpuNarrowphaseCore::testSDKFemClothTrimesh(PxgGpuContactManagers& gpuMan
 		}
 	}
 
-	if (1)
+	// Not launched: cloth_meshVertexContactGenLaunch never raises its hasContacts flag, so the midphase and
+	// the contact gen traverse, compute closest points and write no contact. cloth_meshContactGenLaunch
+	// covers this pair on the triangle path alone.
+	if (0)
 	{
 		//initialize gpu variables
 		mCudaContext->memsetD32Async(gpuMidphasePairsNumOnDevice, 0, 1, femClothStream);
@@ -7110,14 +7046,14 @@ void PxgGpuNarrowphaseCore::testSDKFemClothTrimesh(PxgGpuContactManagers& gpuMan
 
 		//contact gen
 		{
-			CUdeviceptr totalNumCountsd = femClothCore->getRigidContactCount().getDevicePtr();
-			CUdeviceptr prevNumCountsd = femClothCore->getPrevRigidContactCount().getDevicePtr();
+			CUdeviceptr totalNumCountsd = femClothCore->getRigidDeformableContactCount().getDevicePtr();
+			CUdeviceptr prevNumCountsd = femClothCore->getRigidDeformablePrevContactCount().getDevicePtr();
 
 			mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), femClothStream);
 
 			CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 			
-			PxgFEMContactWriter writer = femClothCore->createContactWriter();
+			PxgRigidDbContactWriter writer = femClothCore->createRigidDbContactWriter();
 
 			CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_MESH_VERTEX_CG);
 			PxCudaKernelParam kernelParams[] =
@@ -7134,7 +7070,6 @@ void PxgGpuNarrowphaseCore::testSDKFemClothTrimesh(PxgGpuContactManagers& gpuMan
 				PX_CUDA_KERNEL_PARAM(gpuIntermStack),
 				PX_CUDA_KERNEL_PARAM(gpuMidphasePairsNumOnDevice),
 				PX_CUDA_KERNEL_PARAM(stackSizeNeededOnDevice),
-
 				PX_CUDA_KERNEL_PARAM(writer)
 			};
 
@@ -7159,8 +7094,8 @@ void PxgGpuNarrowphaseCore::testSDKFemClothTrimesh(PxgGpuContactManagers& gpuMan
 
 			if (numContacts > 0)
 			{
-				CUdeviceptr contactsd = femClothCore->getRigidContacts().getDevicePtr();
-				CUdeviceptr normalPensd = femClothCore->getRigidNormalPens().getDevicePtr();
+				CUdeviceptr contactsd = femClothCore->getRigidDeformableContacts().getDevicePtr();
+				CUdeviceptr normalPensd = femClothCore->getRigidDeformableNormalPens().getDevicePtr();
 
 				drawContacts(*renderOutput, contactsd, normalPensd, numContacts);
 			}
@@ -7304,14 +7239,14 @@ void PxgGpuNarrowphaseCore::testSDKFemClothHeightfield(PxgGpuContactManagers& gp
 
 		//contact gen
 		{
-			CUdeviceptr totalNumCountsd = femClothCore->getRigidContactCount().getDevicePtr();
-			CUdeviceptr prevNumCountsd = femClothCore->getPrevRigidContactCount().getDevicePtr();
+			CUdeviceptr totalNumCountsd = femClothCore->getRigidDeformableContactCount().getDevicePtr();
+			CUdeviceptr prevNumCountsd = femClothCore->getRigidDeformablePrevContactCount().getDevicePtr();
 
 			mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), femClothStream);
 
 			CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 			
-			PxgFEMContactWriter writer = femClothCore->createContactWriter();
+			PxgRigidDbContactWriter writer = femClothCore->createRigidDbContactWriter();
 
 			CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_HF_CG);
 			PxCudaKernelParam kernelParams[] =
@@ -7350,8 +7285,8 @@ void PxgGpuNarrowphaseCore::testSDKFemClothHeightfield(PxgGpuContactManagers& gp
 
 			if (0)
 			{
-				CUdeviceptr contactsd = femClothCore->getRigidContacts().getDevicePtr();
-				CUdeviceptr normalPensd = femClothCore->getRigidNormalPens().getDevicePtr();
+				CUdeviceptr contactsd = femClothCore->getRigidDeformableContacts().getDevicePtr();
+				CUdeviceptr normalPensd = femClothCore->getRigidDeformableNormalPens().getDevicePtr();
 
 				drawContacts(*renderOutput, contactsd, normalPensd, numContacts);
 			}
@@ -7360,7 +7295,10 @@ void PxgGpuNarrowphaseCore::testSDKFemClothHeightfield(PxgGpuContactManagers& gp
 		}
 	}
 
-	if (1)
+	// Not launched: cloth_heightfieldVertexContactGenLaunch never raises its hasContacts flag, so the
+	// midphase and the contact gen traverse, compute closest points and write no contact.
+	// cloth_heightfieldContactGenLaunch covers this pair on the triangle path alone.
+	if (0)
 	{
 		// fem cloth first midphase kernel(each output is the index to a bound in one tree and tetrahedron index in other tree)
 		{
@@ -7455,14 +7393,14 @@ void PxgGpuNarrowphaseCore::testSDKFemClothHeightfield(PxgGpuContactManagers& gp
 
 		//contact gen
 		{
-			CUdeviceptr totalNumCountsd = femClothCore->getRigidContactCount().getDevicePtr();
-			CUdeviceptr prevNumCountsd = femClothCore->getPrevRigidContactCount().getDevicePtr();
+			CUdeviceptr totalNumCountsd = femClothCore->getRigidDeformableContactCount().getDevicePtr();
+			CUdeviceptr prevNumCountsd = femClothCore->getRigidDeformablePrevContactCount().getDevicePtr();
 
 			mCudaContext->memcpyDtoDAsync(prevNumCountsd, totalNumCountsd, sizeof(PxU32), femClothStream);
 
 			CUdeviceptr shapeToRigidRemapTabled = mGpuShapesManager.mGpuShapesRemapTableBuffer.getDevicePtr();
 			
-			PxgFEMContactWriter writer = femClothCore->createContactWriter();
+			PxgRigidDbContactWriter writer = femClothCore->createRigidDbContactWriter();
 
 			CUfunction fcCollisionKernelFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::CLOTH_HF_VERTEX_CG);
 			PxCudaKernelParam kernelParams[] =
@@ -7504,8 +7442,8 @@ void PxgGpuNarrowphaseCore::testSDKFemClothHeightfield(PxgGpuContactManagers& gp
 
 			if (numContacts > 0)
 			{
-				CUdeviceptr contactsd = femClothCore->getRigidContacts().getDevicePtr();
-				CUdeviceptr normalPensd = femClothCore->getRigidNormalPens().getDevicePtr();
+				CUdeviceptr contactsd = femClothCore->getRigidDeformableContacts().getDevicePtr();
+				CUdeviceptr normalPensd = femClothCore->getRigidDeformableNormalPens().getDevicePtr();
 
 				drawContacts(*renderOutput, contactsd, normalPensd, numContacts);
 			}
@@ -7566,9 +7504,11 @@ bool PxgGpuNarrowphaseCore::isClothMeshGPUCompatible(const PxTriangleMeshGeometr
 	       _getMeshData(meshLL)->mAccumulatedTrianglesRef != NULL;
 }
 
-bool PxgGpuNarrowphaseCore::isTetMeshGPUCompatible(const BVTetrahedronMesh* meshData)
+bool PxgGpuNarrowphaseCore::isTetMeshGPUCompatible(const TetrahedronMesh* meshData)
 {
-	return meshData->isTetMeshGPUCompatible();
+	// Only a PxDeformableVolumeMesh's collision mesh owns the GPU data.
+	const BVTetrahedronMesh* bvMesh = meshData->getBVTetrahedronMesh();
+	return bvMesh && bvMesh->isTetMeshGPUCompatible();
 }
 
 PxU32 PxgGpuNarrowphaseCore::addHull(const ConvexHullData& hull)
@@ -7668,7 +7608,7 @@ void PxgGpuNarrowphaseCore::registerShape(const PxNodeIndex& nodeIndex, const Px
 	const bool isCompatibleConvex = type == PxGeometryType::eCONVEXMESH && shapeCore.mGeometry.get<const PxConvexMeshGeometryLL>().gpuCompatible;
 	const bool isCompatibleMesh = type == PxGeometryType::eTRIANGLEMESH && (isFemCloth || isMeshGPUCompatible(shapeCore.mGeometry.get<const PxTriangleMeshGeometryLL>()));
 	const bool isCompatibleHF = type == PxGeometryType::eHEIGHTFIELD;
-	const bool isCompatibleTetMesh = type == PxGeometryType::eTETRAHEDRONMESH && isTetMeshGPUCompatible(static_cast<const BVTetrahedronMesh*>(_getTetraMeshData(shapeCore.mGeometry.get<const PxTetrahedronMeshGeometryLL>())));
+	const bool isCompatibleTetMesh = type == PxGeometryType::eTETRAHEDRONMESH && isTetMeshGPUCompatible(_getTetraMeshData(shapeCore.mGeometry.get<const PxTetrahedronMeshGeometryLL>()));
 	const bool isCompatibleConvexCore = type == PxGeometryType::eCONVEXCORE && Gu::isGPUCompatible(shapeCore.mGeometry.get<const PxConvexCoreGeometry>());
 	PxU32 particleOrSoftbodyIndex = 0xffffffff;
 

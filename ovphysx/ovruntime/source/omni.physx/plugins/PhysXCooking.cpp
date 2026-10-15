@@ -1,6 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-1 AC-2
+
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-1
+
 /**
  * @implements REQ-PARSE-UNIFY-001
  * @covers AC-1
@@ -15,6 +21,8 @@
  * @covers AC-10
  */
 
+#include "AttachmentObjectLookup.h"
+#include "RuntimeExecution.h"
 #include <carb/logging/Log.h>
 
 #include <omni/physics/parse/KnownTokens.h>
@@ -113,6 +121,9 @@ namespace physx
 
     void releaseLocalMeshCache()
     {
+        RuntimeExecutionScope operation(kNoAttach);
+        if (!operation)
+            return;
         CookingDataAsync* cookingDataAsync = OmniPhysX::getInstance().getPhysXSetup().getCookingDataAsync();
 
         if (cookingDataAsync != nullptr)
@@ -137,13 +148,16 @@ namespace physx
         omni::physx::getMeshCache()->release();
     }
 
-    uint32_t getNbConvexMeshData(omni::physics::parse::ObjectKey key)
+    uint32_t getNbConvexMeshData(AttachHandle attach, omni::physics::parse::ObjectKey key)
     {
-        const internal::InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+        RuntimeExecutionScope operation(attach);
+        if (!operation)
+            return 0;
 
-        const usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
+        const usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach);
         if (!attachedStage)
             return 0;
+        const internal::InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
 
         uint32_t numMeshes = 0;
         void* physxPtr = (void*)(getObjectDataOrID<ObjectDataQueryType::ePHYSX_PTR>(key, ePTShape, db, *attachedStage));
@@ -170,16 +184,19 @@ namespace physx
         return numMeshes;
     }
 
-    void getConvexMeshData(omni::physics::parse::ObjectKey key, uint32_t convexIndex, ConvexMeshData& meshData)
+    void getConvexMeshData(AttachHandle attach, omni::physics::parse::ObjectKey key, uint32_t convexIndex, ConvexMeshData& meshData)
     {
+        RuntimeExecutionScope operation(attach);
+        if (!operation)
+            return;
         uint32_t numMeshes = 0;
-        const internal::InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
 
         PxConvexMesh* mesh = nullptr;
 
-        const usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
+        const usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach);
         if (!attachedStage)
             return;
+        const internal::InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
 
         void* physxPtr = (void*)(getObjectDataOrID<ObjectDataQueryType::ePHYSX_PTR>(key, ePTShape, db, *attachedStage));
         if (physxPtr)
@@ -213,25 +230,16 @@ namespace physx
 
         if (mesh)
         {
-            const ConvexMeshDataMap& meshMap = getMeshCache()->getConvexMeshDataMap();
-            ConvexMeshDataMap::const_iterator it = meshMap.find(mesh);
-            if (it != meshMap.end())
-            {
-                const ConvexMeshData& md = it->second;
-                meshData.indices = md.indices;
-                meshData.numPolygons = md.numPolygons;
-                meshData.numVertices = md.numVertices;
-                meshData.polygons = md.polygons;
-                meshData.vertices = md.vertices;
-                meshData.numIndices = md.numIndices;
-                return;
-            }
+            getMeshCache()->getConvexMeshData(mesh, meshData);
         }
     }
 
-    bool createConvexMesh(omni::physics::parse::ObjectKey key, uint32_t vertexLimit, ConvexMeshData& meshData)
+    bool createConvexMesh(AttachHandle attach, omni::physics::parse::ObjectKey key, uint32_t vertexLimit, ConvexMeshData& meshData)
     {
-        usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
+        RuntimeExecutionScope operation(attach);
+        if (!operation)
+            return false;
+        usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach);
         CookingDataAsync* cookingDataAsync = OmniPhysX::getInstance().getPhysXSetup().getCookingDataAsync();
         bool retVal = false;
         if (cookingDataAsync && attachedStage)
@@ -256,12 +264,7 @@ namespace physx
                     PxConvexMesh* convexMesh = cookingDataAsync->getConvexMesh(convexMeshDesc, key, *attachedStage, false);
                     if (convexMesh)
                     {
-                        const ConvexMeshDataMap& meshMap = getMeshCache()->getConvexMeshDataMap();
-                        ConvexMeshDataMap::const_iterator it = meshMap.find(convexMesh);
-                        if (it != meshMap.end())
-                        {
-                            meshData = it->second;
-                        }
+                        getMeshCache()->getConvexMeshData(convexMesh, meshData);
                         return true;
                     }
                     else
@@ -282,11 +285,18 @@ namespace physx
         return retVal;
     }
 
-    bool cookAutoDeformableBody(omni::physics::parse::ObjectKey deformableBodyKey)
+    bool cookAutoDeformableBody(omni::physics::AttachHandle attach, omni::physics::parse::ObjectKey deformableBodyKey)
     {
+        RuntimeExecutionScope operation(attach);
+        if (!operation)
+            return false;
+        usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach);
+        if (!attachedStage)
+            return false;
+
         // Resolved once for the diagnostics below; objectKeyToPath already returns ""
         // for an unresolvable key or no active attach (ADR-0019 boundary function).
-        const char* deformableBodyPathStr = omni::physx::runtime::getPhysxInterface().objectKeyToPath(deformableBodyKey);
+        const char* deformableBodyPathStr = attachmentLookup::pathFor(attachedStage, deformableBodyKey);
 
         //workaround to re-initialize cooking data async when it get's released in some circumstances
         //(memory stage tests), when scene parsing releases physics.
@@ -301,13 +311,6 @@ namespace physx
 
         bool success = false;
 
-        usdparser::AttachedStage* attachedStage = usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage();
-        if (!attachedStage)
-        {
-            CARB_LOG_ERROR("cookAutoDeformableBody: no attached stage for %s",
-                           deformableBodyPathStr);
-            return success;
-        }
 
         const omni::physics::parse::IPhysicsSource* source = attachedStage->getSource();
         const omni::physics::parse::KnownTokens& tok = attachedStage->getKnownTokens();
@@ -388,6 +391,13 @@ namespace physx
 
     bool precookMesh(AttachHandle attachHandle, omni::physics::parse::ObjectKey meshKey, const CookingParams& cookingParams, IPhysxCookingCallback* cb)
     {
+        RuntimeExecutionScope execution(attachHandle);
+        if (!execution)
+            return false;
+        usdparser::AttachedStage* attachedStage =
+            usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attachHandle);
+        if (!attachedStage)
+            return false;
         if (cookingParams.type == CookingParamsType::eUNDEFINED)
         {
             CARB_LOG_ERROR("IPhysxCooking::precookMesh undefined cooking params!");
@@ -400,25 +410,6 @@ namespace physx
         if (!cookingDataAsync)
         {
             CARB_LOG_ERROR("IPhysxCooking::precookMesh cooking not initialized, stage most likely not attached!");
-            return false;
-        }
-
-        usdparser::UsdLoad* usdLoad = usdparser::UsdLoad::getUsdLoad();
-        // The handle names the attach directly (ADR-0016 Decision 6), so the stageless special case
-        // that used to sit here is gone: it existed only because a stageless attach registers in
-        // mAttachedStages under key 0, so a caller holding the raw (nonzero) stage id missed and had
-        // to be rescued by "if the lone active attach is itself stageless, use it". A handle is
-        // nonzero for every live attach, stageless or not, and kActiveAttach expresses "the lone
-        // active attach" explicitly -- both halves of that workaround are now spelled by the
-        // parameter itself.
-        usdparser::AttachedStage* attachedStage = usdLoad->resolveAttach(attachHandle);
-        if (!attachedStage)
-        {
-            CARB_LOG_ERROR("IPhysxCooking::precookMesh could not resolve attach handle %llu: it is either kNoAttach, "
-                           "or a handle whose attach has since been detached (a handle is minted per attach and "
-                           "never reused). Pass IPhysxSimulation::getAttachHandle(), or kActiveAttach for the lone "
-                           "active attach.",
-                           static_cast<unsigned long long>(attachHandle));
             return false;
         }
 

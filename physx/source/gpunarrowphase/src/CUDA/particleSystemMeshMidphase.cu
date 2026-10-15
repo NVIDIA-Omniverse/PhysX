@@ -280,7 +280,7 @@ struct PsTreeContactGenTraverser
 		PxgParticleContactInfo* PX_RESTRICT oneWayContactInfos,		//output
 		PxNodeIndex* PX_RESTRICT oneWayContactNodeIndices,			//output
 		PxU32* PX_RESTRICT oneWayContactCounts,						//output
-		PxgParticleContactWriter& writer,		
+		PxgRigidParticleContactWriter& writer,
 		const bool isDiffuseParticlesThread,
 		const PxReal restDist
 		)
@@ -332,13 +332,13 @@ struct PsTreeContactGenTraverser
 
 				if (remaining && !isDiffuseParticlesThread)
 				{
-					PxU64 compressedParticleIndex = PxEncodeParticleIndex(particleSystemId, globalParticleIndex);
+					PxU64 particleRef = PxgEncodeParticleRef(particleSystemId, globalParticleIndex);
 
 					for (PxU32 i = id, index = startIndex; i < contactCount; ++i, ++index)
 					{
 						const PxVec3& normal = s_warpScratch->shLocalContacts[idxInWarp][i];
 						PxReal penetration = s_warpScratch->shLocalContactDepths[idxInWarp][i] - restDist;
-						writer.writeContact(index, PxVec4(normal, penetration), compressedParticleIndex, rigidId);
+						writer.writeContact(index, PxVec4(normal, penetration), rigidId, particleRef);
 					}
 				}
 			}
@@ -357,8 +357,7 @@ __device__ static inline void psSdfMeshMidphaseCollision(
 	const PxgShape* PX_RESTRICT gpuShapes,
 	PxgParticleSystem* particleSystems,
 	PxNodeIndex* PX_RESTRICT shapeToRigidRemapTable,
-
-	PxgParticleContactWriter& writer
+	PxgRigidParticleContactWriter& writer
 )
 {
 	__shared__ __align__(16) char sMesh[sizeof(PxgTriangleMesh)];
@@ -572,7 +571,7 @@ __device__ static inline void psSdfMeshMidphaseCollision(
 			PxVec4 normalPen(normal.x, normal.y, normal.z, finalSep/*sep - restDist + normal.dot(posPrev - pos)*/);
 
 			writer.writeContact(contactIndex, normalPen,
-				PxEncodeParticleIndex(particleSystemId, ind), rigidId);
+				rigidId, PxgEncodeParticleRef(particleSystemId, ind));
 		}
 	}
 }
@@ -592,7 +591,7 @@ __device__ static inline void psMeshMidphaseCollision(
 	PsMidphaseScratch*	s_warpScratch,
 	PxgParticleSystem* particleSystems,
 	PxNodeIndex* PX_RESTRICT shapeToRigidRemapTable,
-	PxgParticleContactWriter& writer
+	PxgRigidParticleContactWriter& writer
 )
 {
 	//thread index in warp
@@ -714,11 +713,9 @@ void ps_sdfMeshCollisonLaunch(
 	const PxReal* PX_RESTRICT					contactDistance,
 	const PxReal* PX_RESTRICT					restDistances,
 	const PxgShape* PX_RESTRICT					gpuShapes,
-
-	PxgParticleSystem* PX_RESTRICT				particleSystems,						//output
+	PxgParticleSystem* PX_RESTRICT				particleSystems,			//output
 	PxNodeIndex* PX_RESTRICT					shapeToRigidRemapTable,
-
-	PxgParticleContactWriter writer
+	PxgRigidParticleContactWriter				writer
 )
 {
 	psSdfMeshMidphaseCollision(
@@ -746,9 +743,9 @@ void ps_meshCollisonLaunch(
 	const PxReal* PX_RESTRICT					contactDistance,
 	const PxReal* PX_RESTRICT					restDistances,
 	const PxgShape* PX_RESTRICT					gpuShapes,
-	PxgParticleSystem* PX_RESTRICT				particleSystems,						//output
+	PxgParticleSystem* PX_RESTRICT				particleSystems,			//output
 	PxNodeIndex* PX_RESTRICT					shapeToRigidRemapTable,
-	PxgParticleContactWriter					writer
+	PxgRigidParticleContactWriter				writer
 )
 {
 	__shared__ __align__(16) PxU8 scratchMem[PS_MIDPHASE_COLLISION_WAPRS_PER_BLOCK][sizeof(PsMidphaseScratch)];

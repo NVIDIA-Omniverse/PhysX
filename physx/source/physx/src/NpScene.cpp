@@ -911,10 +911,8 @@ static PX_FORCE_INLINE bool addRigidActorT(T& rigidActor, PxArray<T*>& rigidActo
 	if(!isNoSimActor)
 		rigidActor.addConstraintsToScene();
 
-#if PX_SUPPORT_GPU_PHYSX
 	rigidActor.addAttachments(rigidActor);
 	rigidActor.addElementFilters(rigidActor);
-#endif
 
 	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxActor, worldBounds, static_cast<PxActor &>(rigidActor), rigidActor.getWorldBounds())
 	OMNI_PVD_ADD(OMNI_PVD_CONTEXT_HANDLE, PxScene, actors, static_cast<PxScene &>(*scene), static_cast<PxActor &>(rigidActor))
@@ -975,10 +973,8 @@ static PX_FORCE_INLINE void removeRigidActorT(T& rigidActor, NpScene* scene, boo
 		}
 	}
 
-#if PX_SUPPORT_GPU_PHYSX
 	rigidActor.removeAttachments(rigidActor, false);
 	rigidActor.removeElementFilters(rigidActor, false);
-#endif
 
 	rigidActor.getShapeManager().teardownAllSceneQuery(scene->getSQAPI(), rigidActor);
 	if(!isNoSimActor)
@@ -1813,6 +1809,13 @@ void NpScene::removeArticulationLink(NpArticulationLink& link, bool wakeOnLostTo
 {
 	NpArticulationJointReducedCoordinate* j = static_cast<NpArticulationJointReducedCoordinate*>(link.getInboundJoint());
 
+	// PT: OMPE-109164 - mirrors removeRigidActorT(): a link can be the rigid side of a deformable
+	// attachment or element filter, and those hold on to its BodyCore. scRemoveActor() below clears
+	// that core's sim, so they have to be torn down here while the sim is still alive. Otherwise the
+	// attachment outlives the link and whoever releases it next dereferences a null sim.
+	link.removeAttachments(link, false);
+	link.removeElementFilters(link, false);
+
 	link.removeConstraintsFromScene();
 	link.getShapeManager().teardownAllSceneQuery(getSQAPI(), link);
 
@@ -1950,6 +1953,10 @@ void NpScene::scRemoveAggregate(NpAggregate& agg)
 	PX_ASSERT(!isAPIWriteForbidden());
 
 	mScene.deleteAggregate(agg.getAggregateHandle());
+	// PT: the Bp aggregate is gone so its handle must not survive in the Np aggregate. The actors stay listed in the aggregate
+	// after PxScene::removeAggregate, and an articulation among them can be re-added to the scene on its own; nothing must
+	// pick up the stale handle in that case (see ScSceneFns<NpArticulationReducedCoordinate>::insert).
+	agg.setAggregateHandle(PX_INVALID_U32);
 	agg.setNpScene(NULL);
 #if PX_SUPPORT_PVD
 	mScenePvdClient.releasePvdInstance(&agg);
@@ -2406,14 +2413,6 @@ PxSolverType::Enum NpScene::getSolverType() const
 {
 	NP_READ_CHECK(this);
 	return mScene.getSolverType();
-}
-
-//FrictionModel 
-
-PxFrictionType::Enum NpScene::getFrictionType() const
-{
-	NP_READ_CHECK(this);
-	return PxFrictionType::ePATCH;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -4343,8 +4342,19 @@ template<> struct ScSceneFns<NpPBDParticleSystem>
 template<> struct ScSceneFns<NpArticulationReducedCoordinate>
 {
 	static PX_FORCE_INLINE void insert(Sc::Scene& s, NpArticulationReducedCoordinate& v, PxBounds3*, const BVH*, bool)
-	{ 
-		s.addArticulation(v.getCore(), v.getRoot()->getCore());
+	{
+		// PT: the sim caches the aggregate handle of the articulation. We read it from the root link's core, i.e. from the same
+		// place the link shapes get their aggregate membership from, so that the sim and the shapes cannot disagree. This ID is
+		// set on all links by NpAggregate::scAddActor when the aggregate is in a scene, and reset by NpAggregate::scRemoveActor,
+		// in particular by PxScene::removeAggregate, after which the articulation can legally be re-added to the scene on its own.
+		Sc::BodyCore& root = v.getRoot()->getCore();
+		const Bp::AggregateHandle h = root.getAggregateID();
+
+		// PT: the Np aggregate must agree with the link cores. If this fires, some path left a stale handle in NpAggregate
+		// (see NpScene::scRemoveAggregate).
+		PX_ASSERT(h == (v.mAggregate ? v.mAggregate->getAggregateHandle() : PX_INVALID_U32));
+
+		s.addArticulation(v.getCore(), root, h);
 	}
 	static PX_FORCE_INLINE void remove(Sc::Scene& s, NpArticulationReducedCoordinate& v, bool /*wakeOnLostTouch*/)
 	{
@@ -4901,7 +4911,6 @@ void NpScene::emitSceneStateToOmniPvd()
 
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, gravity, static_cast<PxScene &>(*this), getGravity())
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, flags,	static_cast<PxScene&>(*this), getFlags())
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, frictionType,	static_cast<PxScene&>(*this), getFrictionType())
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, broadPhaseType,	static_cast<PxScene&>(*this), getBroadPhaseType())
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, kineKineFilteringMode,	static_cast<PxScene&>(*this), getKinematicKinematicFilteringMode())
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, staticKineFilteringMode,	static_cast<PxScene&>(*this), getStaticKinematicFilteringMode())

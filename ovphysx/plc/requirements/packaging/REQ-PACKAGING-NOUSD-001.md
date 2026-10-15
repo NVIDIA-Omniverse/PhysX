@@ -196,11 +196,6 @@ extra surface rather than describing a hole in the product.
   `uint64_t` as the in-memory bit pattern of a USD path — the
   never-attached-foreign-stage collision-representation fallback — is USD-only,
   since no attached source exists to mint a portable key.
-- **The embedded runtime still imports one ovstage accessor that names USD.**
-  `OvstageParseBackend` imports `ovstage_get_usd_stage_id` from `libovstage`
-  to report a backing-stage identifier. It is a plain-integer ovstage C API,
-  not a USD type or library dependency, and ovstage marks it temporary; it is
-  outside this requirement.
 - **CI does not build both arms.** CI builds the default (`ON`) arm only, so
   AC-2's `OFF` half and AC-9 are verified by hand. See
   TEST-PACKAGING-NOUSD-001.

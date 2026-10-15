@@ -20,11 +20,10 @@ using namespace omni::physx::usdparser;
 using namespace omni::physx::internal;
 
 
-static const InternalDatabase::Record* getObjectRecord(omni::physx::PhysXType type,
+static const InternalDatabase::Record* getObjectRecord(const AttachedStage& attachedStage, omni::physx::PhysXType type,
     omni::physx::usdparser::ObjectId objectId)
 {
-    OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    omni::physx::internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    omni::physx::internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     return db.getFullTypedRecord(type, objectId);
 }
@@ -32,7 +31,7 @@ static const InternalDatabase::Record* getObjectRecord(omni::physx::PhysXType ty
 static InternalMimicJoint* getInternalMimicJoint(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::ObjectKey& key)
 {
-    const InternalDatabase::Record* objectRecord = getObjectRecord(ePTMimicJoint, objectId);
+    const InternalDatabase::Record* objectRecord = getObjectRecord(attachedStage, ePTMimicJoint, objectId);
     if (objectRecord)
     {
         key = objectRecord->mKey;

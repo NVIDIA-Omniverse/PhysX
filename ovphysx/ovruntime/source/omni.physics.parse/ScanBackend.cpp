@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-ATTACH-BACKENDS-001
+ * @covers AC-1 AC-4
+ */
+
+/**
  * @implements REQ-SIM-OVSTAGE-ATTACH-001
  * @covers AC-1
  *
@@ -46,13 +51,12 @@ std::unique_ptr<IScanBackend> takeScanBackend()
     return std::move(activeSlot());
 }
 
-ScannedStage scanStage(const parse::AttachTarget& target,
+ScannedStage scanStage(IScanBackend* backend, const parse::AttachTarget& target,
                        const std::vector<std::string>& scanRoots,
                        const std::vector<std::string>& excludePaths,
                        const parse::ScanOptions& options,
                        parse::IDescriptorAllocator& allocator)
 {
-    IScanBackend* backend = scanBackend();
     if (!backend)
         return {};
     // A backend scan failure is reported as an empty ScannedStage (null sourcePtr), never as

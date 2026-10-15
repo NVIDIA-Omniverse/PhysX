@@ -23,4 +23,7 @@ target_compile_definitions(physx_interop_cpp PRIVATE
 )
 if(WIN32)
     ovphysx_copy_runtime_dlls(physx_interop_cpp)
+    # OVStage is not copied (it loads its plugins relative to itself), so its
+    # directories have to reach the process through PATH.
+    ovphysx_set_ovstage_runtime_env(physx_interop_cpp)
 endif()

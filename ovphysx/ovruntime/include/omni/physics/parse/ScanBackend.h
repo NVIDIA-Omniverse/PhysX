@@ -1,6 +1,15 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-3 AC-4
+ */
+
+/**
+ * @implements REQ-ATTACH-BACKENDS-001
+ * @covers AC-1 AC-4
+ */
+
 /**
  * @implements REQ-BUILD-UNIBUILD-001
  * @covers AC-6
@@ -9,6 +18,7 @@
 #pragma once
 
 #include <omni/physics/parse/Allocator.h>
+#include <omni/physics/parse/DescriptorRangeExecutor.h>
 #include <omni/physics/parse/IPhysicsSource.h> // parse::DescendantScope
 #include <omni/physics/parse/IParseBackend.h> // parse::AttachTarget
 
@@ -20,6 +30,7 @@ namespace omni::physics::parse
 {
 
 class ScannedStage;
+class DescriptorBatchAllocator;
 
 struct ScanOptions
 {
@@ -32,6 +43,11 @@ struct ScanOptions
     // path-driven stage-load and prototype scans that descend through instance
     // proxies.
     DescendantScope descendantScope = DescendantScope::eActiveInstanced;
+
+    // Optional attach-owned pool; an ovstage scan retains it with its descriptors.
+    // Its upstream must match the scan allocator. Other backends may ignore it.
+    std::shared_ptr<DescriptorBatchAllocator> descriptorPool;
+    DescriptorExecutionOptions descriptorExecution;
 };
 
 // One registered whole-stage walker.
@@ -64,11 +80,9 @@ IScanBackend* scanBackend();
 // backend this way so detach reinstalls the exact same instance.
 std::unique_ptr<IScanBackend> takeScanBackend();
 
-// Dispatches to the registered scan backend with string-typed roots. Returns an
-// empty (source-less) scan when no backend is registered or the backend throws;
-// callers treat that as a clean fail-closed load. A plain USD attach installs the
-// USD scan backend through the reparse seam, so there is no native-walk fallback.
-ScannedStage scanStage(const parse::AttachTarget& target,
+// Dispatches to the explicitly selected provider. Null or a throwing provider
+// returns an empty scan; attachment calls pass their own backend.
+ScannedStage scanStage(IScanBackend* backend, const parse::AttachTarget& target,
                        const std::vector<std::string>& scanRoots,
                        const std::vector<std::string>& excludePaths,
                        const parse::ScanOptions& options,

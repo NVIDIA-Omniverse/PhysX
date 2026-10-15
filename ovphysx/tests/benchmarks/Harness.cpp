@@ -80,6 +80,12 @@ void parse(CmdLineParameters& result, const char* arg)
         result.slop = atol(arg + 7);
     else if (match(arg, "--sanity_check"))
         result.sanity = true;
+    // Before --profile: match() compares only as many characters as the reference, so
+    // --profile is a prefix of both of these and would claim them first.
+    else if (match(arg, "--profiler-output="))
+        result.profilerOutput = arg + 18;
+    else if (match(arg, "--profiler="))
+        result.profilerBackend = arg + 11;
     else if (match(arg, "--profile"))
         result.profile = true;
     else if (match(arg, "--threads="))
@@ -100,10 +106,6 @@ void parse(CmdLineParameters& result, const char* arg)
         result.verbose = true;
     else if (match(arg, "--hidden"))
         result.runHidden = true;
-    else if (match(arg, "--tracy"))
-        result.enableTracy = true;
-    else if (match(arg, "--nvtx"))
-        result.enableNvtx = true;
     else if (match(arg, "--kit_arguments="))
         result.kitArguments = arg + 16;
 }
@@ -137,8 +139,8 @@ CmdLineParameters getCommandLineOptions(int argc, char** argv, PrintfCbFunc prin
             "--sanity_check               Request sanity check output from benchmarks that support it\n"
             "--verbose                    Print the name of each benchmark as it executes (useful if something crashes!)\n"
             "--hidden                     Run benchmarks classified as 'hidden' as well.\n"
-            "--tracy                      Enable Tracy profiler and connect to Tracy server\n"
-            "--nvtx                       Emit NVTX ranges for capture with Nsight Systems\n"
+            "--profiler=<backend>         Publish profile zones: none (default), nvtx for Nsight Systems, or trace for a chrome trace\n"
+            "--profiler-output=<file>     Destination for --profiler=trace (default: ct-profile <date> <time>.json)\n"
             "--kit_arguments=<arguments>  Command line arguments to be passed into Kit (separated by ';')"
             "\n");
 
@@ -284,23 +286,32 @@ void harnessImpl(int argc, char** argv, PrintfCbFunc printCb)
         }
     }
 
-    // --nvtx sets the OVPHYSX_NVTX environment variable rather than passing a
-    // config entry down, so that bmInitialize keeps the signature it shares with
-    // the omni.physx harness. It has to happen before bmInitialize creates the
-    // PhysX instance. The setting is read while the PhysX SDK is created and
-    // cannot be turned on afterwards.
-    if (cmdLine.enableNvtx)
+    // --profiler and --profiler-output are sugar for the OVPHYSX_PROFILER and
+    // OVPHYSX_PROFILER_OUTPUT environment variables, set here rather than passed down as
+    // config entries so that bmInitialize keeps the signature it shares with the
+    // omni.physx harness. They have to happen before bmInitialize, which creates the
+    // PhysX instance: the backend is bound while the engine starts and cannot be
+    // selected afterwards. An unknown backend name is rejected by the resolver, which
+    // warns and leaves profiling off.
+    if (cmdLine.profilerBackend)
     {
 #if CARB_PLATFORM_WINDOWS
-        ::_putenv_s("OVPHYSX_NVTX", "1");
+        ::_putenv_s("OVPHYSX_PROFILER", cmdLine.profilerBackend);
 #else
-        ::setenv("OVPHYSX_NVTX", "1", 1);
+        ::setenv("OVPHYSX_PROFILER", cmdLine.profilerBackend, 1);
+#endif
+    }
+    if (cmdLine.profilerOutput)
+    {
+#if CARB_PLATFORM_WINDOWS
+        ::_putenv_s("OVPHYSX_PROFILER_OUTPUT", cmdLine.profilerOutput);
+#else
+        ::setenv("OVPHYSX_PROFILER_OUTPUT", cmdLine.profilerOutput, 1);
 #endif
     }
 
     bmInitialize(cmdLine.sanity, cmdLine.dataFolder, cmdLine.numThreads, cmdLine.forceGpu, cmdLine.directGpu,
-        cmdLine.profile,
-        cmdLine.enableTracy, kitArguments.data(), static_cast<uint32_t>(kitArguments.size()));
+        cmdLine.profile, kitArguments.data(), static_cast<uint32_t>(kitArguments.size()));
 
     // BmGlobals leaves the shared instance null when ovphysx_initialize() or
     // PhysX::create() fails, having only printed a diagnostic. Every row in

@@ -1,12 +1,17 @@
 // SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-1
+
 /**
  * @implements REQ-PUBLICAPI-001
  * @covers AC-18 AC-19 AC-44
  */
 
 #pragma once
+
+#include <omni/physics/AttachHandle.h>
 
 #include <carb/Defines.h>
 #include <carb/Types.h>
@@ -100,12 +105,12 @@ struct IPhysxPrivate
     /// TODO: move IPhysx::isReadbackSuppressed here?
 
 
-    /// Get the PhysX scene for the active simulation.
+    /// Get the selected attachment's default native scene.
     ///
-    /// NB: this method may be changed or removed once multiple scenes are supported.
+    /// An explicit attachment is required; invalid identity never selects a peer.
     ///
-    /// \return The PxScene pointer or null if there is no active simulation.
-    ::physx::PxScene*(CARB_ABI* getPhysXScene)();
+    /// \return The PxScene pointer, or null for an invalid owner, no default scene, or busy execution.
+    ::physx::PxScene*(CARB_ABI* getPhysXScene)(omni::physics::AttachHandle attach);
 
     /// Get the point instancer information for given ids.
     ///
@@ -113,12 +118,12 @@ struct IPhysxPrivate
     /// \param[in] numIds   Number of provided ids
     /// \param[out] data    Array of output data, the memory is allocated by the user and it needs to large enough
     ///                     to write information for each id, so size if numIds.
-    void(CARB_ABI* getRigidBodyInstancedData)(usdparser::ObjectId* ids, uint32_t numIds, InstancedData* data);
+    void(CARB_ABI* getRigidBodyInstancedData)(omni::physics::AttachHandle attach, usdparser::ObjectId* ids, uint32_t numIds, InstancedData* data);
 
-    /// Get the PhysX Cuda context manager for the current PhysX instance.
-    ///
-    /// \return The PxCudaContextManager pointer.
-    ::physx::PxCudaContextManager*(CARB_ABI* getCudaContextManager)();
+    /// Get the CUDA manager of an exact scene on the selected attachment.
+    /// The borrowed pointer remains valid only while that scene is alive.
+    /// Returns null for an unknown owner/scene or conflicting runtime entry.
+    ::physx::PxCudaContextManager*(CARB_ABI* getCudaContextManager)(omni::physics::AttachHandle attach, uint64_t sceneKey);
 
     /// Get the instanced PhysX pointers
     ///
@@ -130,20 +135,20 @@ struct IPhysxPrivate
     /// correct result
     ///
     /// \returns The number of the instanced pointers
-    uint32_t(CARB_ABI* getPhysXPtrInstanced)(omni::physics::parse::ObjectKey key, void** data, uint32_t dataSize, PhysXType type);
+    uint32_t(CARB_ABI* getPhysXPtrInstanced)(omni::physics::AttachHandle attach, omni::physics::parse::ObjectKey key, void** data, uint32_t dataSize, PhysXType type);
 
     // Get the internal surface deformable body data for the given object id
     ///
     /// \param[in] deformableId Deformable object ID (see getObjectId() to get the ID from a USD path)
     /// \param[out] data        Output internal surface deformable body data
-    void(CARB_ABI* getInternalSurfaceDeformableBodyData)(const usdparser::ObjectId deformableId,
+    void(CARB_ABI* getInternalSurfaceDeformableBodyData)(omni::physics::AttachHandle attach, const usdparser::ObjectId deformableId,
                                                          InternalSurfaceDeformableBodyData& data);
 
     // Get the internal volume deformable body data for the given object id
     ///
     /// \param[in] deformableId Deformable object ID (see getObjectId() to get the ID from a USD path)
     /// \param[out] data        Output internal volume deformable body data
-    void(CARB_ABI* getInternalVolumeDeformableBodyData)(const usdparser::ObjectId deformableId,
+    void(CARB_ABI* getInternalVolumeDeformableBodyData)(omni::physics::AttachHandle attach, const usdparser::ObjectId deformableId,
                                                         InternalVolumeDeformableBodyData& data);
 };
 

@@ -1321,25 +1321,6 @@ namespace Dy
 		}
 	}
 
-	void FeatherstoneArticulation::computeJointTransmittedFrictionForce(const ArticulationData& data, Cm::SpatialVectorF* PX_RESTRICT transmittedForce)
-	{
-		//const PxU32 linkCount = data.getLinkCount();
-		const PxU32 startIndex = data.getLinkCount() - 1;
-
-		const PxVec3* PX_RESTRICT rw = data.getRw();
-
-		for (PxU32 linkID = startIndex; linkID > 1; --linkID)
-		{
-			const ArticulationLink& link = data.getLink(linkID);
-
-			//joint force transmitted from parent to child
-			//transmittedForce[link.parent] += data.mChildToParent[linkID] *  transmittedForce[linkID];
-			transmittedForce[link.parent] += FeatherstoneArticulation::translateSpatialVector(rw[linkID], transmittedForce[linkID]);
-		}
-
-		transmittedForce[0] = Cm::SpatialVectorF::Zero();
-	}
-
 	void FeatherstoneArticulation::computeUnconstrainedVelocities(FeatherstoneArticulation* articulation,
 		PxReal dt, const PxVec3& gravity, PxReal invLengthScale, bool externalForcesEveryTgsIterationEnabled, bool tgs)
 	{
@@ -1365,6 +1346,8 @@ namespace Dy
 	void FeatherstoneArticulation::updateArticulation(ArticulationData& data, const PxVec3& gravity, const PxReal invLengthScale, const bool externalForcesEveryTgsIterationEnabled)
 	{
 		data.mIsExternalForcesEveryTgsIterationEnabled = externalForcesEveryTgsIterationEnabled;
+		if(externalForcesEveryTgsIterationEnabled && !data.mTgsExternalForces)
+			data.mTgsExternalForces = PX_ALLOCATE(Cm::SpatialVectorF, data.getLinkCount(), "mTgsExternalForces");
 
 		//Copy the link poses into a handy array.
 		//Update the link separation vectors with the latest link poses.
@@ -1398,8 +1381,10 @@ namespace Dy
 			const ArticulationJointCoreData* jointCoreData = data.mJointData;
 			const Cm::UnAlignedSpatialVector* jointDofMotionMatricesW = data.getWorldMotionMatrix();
 
+			const Cm::SpatialVector* linkExternalAccelsW = data.getExternalAccelerations();
+
 			//outputs
-			Cm::SpatialVector* linkExternalAccelsW = data.mExternalAcceleration;
+			Cm::SpatialVectorF* linkTgsExternalForcesW = data.getTgsExternalForces();
 			ArticulationLink* links = data.mLinks;
 			Cm::SpatialVectorF* linkMotionVelocitiesW = data.getMotionVelocities();
 			Cm::SpatialVectorF* linkMotionAccelerationsW = data.getMotionAccelerations();
@@ -1417,25 +1402,11 @@ namespace Dy
 				dt, invLengthScale, gravity, fixBase,
 				nbLinks,
 				linkAccumulatedPosesW, linkExternalAccelsW, linkRsW, jointDofMotionMatricesW, jointCoreData, externalForcesEveryTgsIterationEnabled,
-				links, linkMotionAccelerationsW, linkMotionVelocitiesW, linkZAExtForcesW, linkZAIntForcesW, linkCoriolisVectorsW,
+				links, linkMotionAccelerationsW, linkMotionVelocitiesW, linkZAExtForcesW, linkZAIntForcesW, linkTgsExternalForcesW, linkCoriolisVectorsW,
 				linkIsolatedSpatialArticulatedInertiasW, linkMasses, linkSpatialArticulatedInertiasW,
 				jointDofVelocities, comW, invMass);
 		}
 
-		{
-			const PxU32 linkCount = data.getLinkCount();
-			if (linkCount > 1)
-			{
-				const Cm::SpatialVectorF* ZAForcesExtW = data.getSpatialZAVectors();
-				const Cm::SpatialVectorF* ZAForcesIntW = data.getSpatialZAInternalVectors();
-				Cm::SpatialVectorF* ZAForcesTransmittedW = data.getTransmittedForces();
-				for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
-				{
-					ZAForcesTransmittedW[linkID] = ZAForcesExtW[linkID] + ZAForcesIntW[linkID];
-				}
-			}
-		}
-		
 		{
 			//Constant inputs.
 			const ArticulationLink* links = data.getLinks();
@@ -1471,7 +1442,7 @@ namespace Dy
 
 		{
 			//Constants
-			const PxArticulationFlags& flags = data.getArticulationFlags();
+			const PxArticulationFlags flags = data.getArticulationFlags();
 			const PxU32 linkCount = data.getLinkCount();
 			const ArticulationJointCoreData* jointData = data.getJointData();
 			const SpatialMatrix& baseInvSpatialArticulatedInertiaW = data.getBaseInvSpatialArticulatedInertiaW();
@@ -1520,7 +1491,7 @@ namespace Dy
 			PxReal* jointDofNewVelocities = data.getJointNewVelocities();
 
 			computeLinkAcceleration(
-					doIC, dt, 
+					doIC, dt,
 					fixBase,
 					links, linkCount, jointDatas,
 					linkSpatialZAForcesExtW, linkCoriolisForcesW, linkRsW,
@@ -1595,15 +1566,6 @@ namespace Dy
 		updateArticulation(data, gravity, invLengthScale, externalForcesEveryTgsIterationEnabled);
 	
 		const PxU32 linkCount = data.mLinkCount;
-		if (linkCount > 1)
-		{
-			//use individual zero acceleration force(we copy the initial Z value to the transmitted force buffers in initLink())
-			const Cm::SpatialVectorF* motionAccelerations = data.getMotionAccelerations();
-			Cm::SpatialVectorF* spatialZAVectors = data.getTransmittedForces();
-			computeZAForceInv(data, motionAccelerations, spatialZAVectors);
-			computeJointTransmittedFrictionForce(data, spatialZAVectors);
-		}
-
 		//the dirty flag is used in inverse dynamic
 		data.setDataDirty(true);
 
@@ -2249,7 +2211,7 @@ namespace Dy
 
 		for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
 		{
-			ArticulationLink& link = links[linkID];
+			const ArticulationLink& link = links[linkID];
 			PxsBodyCore* bodyCore = link.bodyCore;
 
 			bodyCore->linearVelocity = motionVelocities[linkID].bottom;

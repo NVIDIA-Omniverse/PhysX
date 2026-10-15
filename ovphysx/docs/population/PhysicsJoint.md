@@ -8,14 +8,14 @@
 Base joint between two rigid bodies (or one body and the world). Owns the columns every joint subtype reads: body relationships, local frames, enable flags, break limits and the articulation exclusion flag. A prim typed exactly PhysicsJoint is ALSO the D6 joint: it reads its per-axis limits, drives and states from the multi-apply PhysicsLimitAPI, PhysicsDriveAPI and PhysicsJointStateAPI instances and its rotational axis properties from PhysxJointAxisAPI:rotX/rotY/rotZ. Subtypes extend this component and add only their own columns.
 
 - **Type chain:** `Imageable`, `Typed`
-- **Applicable APIs:** [`PhysicsArticulationRootAPI`](PhysicsArticulationRootAPI.md), [`PhysicsDriveAPI`](PhysicsDriveAPI.md), [`PhysicsJointStateAPI`](PhysicsJointStateAPI.md), [`PhysicsLimitAPI`](PhysicsLimitAPI.md), [`PhysicsMaterialAPI`](PhysicsMaterialAPI.md), [`PhysxArticulationAPI`](PhysxArticulationAPI.md), [`PhysxDrivePerformanceEnvelopeAPI`](PhysxDrivePerformanceEnvelopeAPI.md), [`PhysxJointAPI`](PhysxJointAPI.md), [`PhysxJointAxisAPI`](PhysxJointAxisAPI.md), [`PhysxLimitAPI`](PhysxLimitAPI.md), [`PhysxMaterialAPI`](PhysxMaterialAPI.md), [`PhysxPhysicsDistanceJointAPI`](PhysxPhysicsDistanceJointAPI.md), [`PhysxSceneAPI`](PhysxSceneAPI.md)
+- **Applicable APIs:** [`PhysicsArticulationRootAPI`](PhysicsArticulationRootAPI.md), [`PhysicsDriveAPI`](PhysicsDriveAPI.md), [`PhysicsJointStateAPI`](PhysicsJointStateAPI.md), [`PhysicsLimitAPI`](PhysicsLimitAPI.md), [`PhysicsMaterialAPI`](PhysicsMaterialAPI.md), [`PhysxArticulationAPI`](PhysxArticulationAPI.md), [`PhysxDrivePerformanceEnvelopeAPI`](PhysxDrivePerformanceEnvelopeAPI.md), [`PhysxJointAxisAPI`](PhysxJointAxisAPI.md), [`PhysxLimitAPI`](PhysxLimitAPI.md), [`PhysxMaterialAPI`](PhysxMaterialAPI.md), [`PhysxPhysicsDistanceJointAPI`](PhysxPhysicsDistanceJointAPI.md), [`PhysxSceneAPI`](PhysxSceneAPI.md)
 - **Discovery:** by prim_type, probe `physics:localPos0`
 - **Transform columns:** none, not `Xformable`
 - **Uses blocks:** [`prim`](prim.md)
 
 ## What USD population writes
 
-Published whenever the prim type is one of the eight joint types the consumer enumerates (PhysicsJoint, PhysicsFixedJoint, PhysicsRevoluteJoint, PhysicsPrismaticJoint, PhysicsSphericalJoint, PhysicsDistanceJoint, PhysxPhysicsGearJoint, PhysxPhysicsRackAndPinionJoint) or a consumer-registered custom joint token. Every declared attribute of the type and of its applied APIs is published at its resolved value; body0/body1 and the other relationships only when authored. The producer additionally creates physxJoint:maxJointVelocity = FLT_MAX on every joint-typed prim when unauthored, whether or not PhysxJointAPI is applied (see PhysxJointAPI). purpose, visibility and proxyPrim are never published.
+Published whenever the prim type is one of the eight joint types the consumer enumerates (PhysicsJoint, PhysicsFixedJoint, PhysicsRevoluteJoint, PhysicsPrismaticJoint, PhysicsSphericalJoint, PhysicsDistanceJoint, PhysxPhysicsGearJoint, PhysxPhysicsRackAndPinionJoint) or a consumer-registered custom joint token. Every declared attribute of the type and of its applied APIs is published at its resolved value; body0/body1 and the other relationships only when authored. purpose, visibility and proxyPrim are never published.
 
 ## Columns
 
@@ -40,7 +40,6 @@ Published whenever the prim type is one of the eight joint types the consumer en
 - **[`prim`](prim.md):** When a body relationship is absent (or its target resolves to no enabled dynamic body) that side of the joint is anchored to the world: the authored local frame is used verbatim in world space and no body scale is baked into it. When a body resolves, its world scale, decomposed from the composed transform, is multiplied component-wise into localPos on that side.
 - **[`PhysicsRigidBodyAPI`](PhysicsRigidBodyAPI.md):** body0/body1 are resolved to the nearest enclosing prim with an enabling rigid body. Without an actor on at least one side no PhysX joint is created.
 - **[`PhysicsArticulationRootAPI`](PhysicsArticulationRootAPI.md):** A joint with one side anchored to the world (absent relationship, or a static, disabled or kinematic body) and excludeFromArticulation false becomes the fixed-base anchor of an articulation that contains its other body; the joint prim itself is elected root and fixBase is set.
-- **[`PhysxJointAPI`](PhysxJointAPI.md):** The producer creates physxJoint:maxJointVelocity = FLT_MAX on every joint-typed prim when unauthored, even without PhysxJointAPI in usd-schemas; the consumer ignores it unless the API is listed.
 - **[`PhysicsLimitAPI`](PhysicsLimitAPI.md):** Only a prim typed exactly PhysicsJoint (the D6) reads PhysicsLimitAPI:<inst>; typed joints read their own limit columns.
 - **[`PhysicsDriveAPI`](PhysicsDriveAPI.md):** The D6 reads PhysicsDriveAPI:transX..rotZ and :distance; revolute reads :angular, prismatic reads :linear; the other subtypes read no drive.
 

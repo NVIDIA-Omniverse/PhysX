@@ -404,7 +404,6 @@ void initPhysics(bool /*interactive*/)
 	sceneDesc.gpuMaxNumPartitions = 8;
 
 	sceneDesc.solverType = PxSolverType::eTGS;
-	sceneDesc.flags |= PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS;
 
 	gScene = gPhysics->createScene(sceneDesc);
 	PxPvdSceneClient* pvdClient = gScene->getScenePvdClient();

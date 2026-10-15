@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-// Low-load benchmarks measuring per-call overhead (dispatch, init, reset)
+// Low-load benchmarks measuring per-call overhead (dispatch, init, teardown)
 // rather than steady-state simulation cost. Useful for catching regressions
 // in cold paths that the Step.* benchmarks amortize away.
 
@@ -11,10 +11,12 @@
 #include "../framework/BmGlobals.h"
 #include "../framework/BmUtils.h"
 #include "../OvstageLoad.h"
+#include "../TaskCompletion.h"
 
 #include <ovphysx/experimental/ovphysx.hpp>
 
 #include <string>
+#include <stdexcept>
 
 
 void initLowLoad()
@@ -139,8 +141,8 @@ private:
     std::string mPath;
 };
 
-// reset: per-call cost of ovphysx_reset_stage against a loaded scene. Matters
-// for RL-style episode resets that hit this path frequently.
+// Detach: per-call teardown cost against a loaded scene. Episode poses are
+// restored separately through writes; detach releases the whole attachment.
 class LowLoad_Reset : public LowLoadBase
 {
 public:
@@ -151,7 +153,7 @@ public:
 
     void preStep() override
     {
-        // Load the scene before each measured reset.
+        // Load the scene before each measured detach.
         if (!mPhysX) return;
         const std::string path =
             BmGlobals::getInstance().getDataFolder() + "/basic_simulation.usda";
@@ -160,8 +162,8 @@ public:
 
     void step() override
     {
-        (void)ovphysx_reset_stage(mPhysX->handle());
-        mPhysX->waitAll();
+        if (bmCompleteTask(mPhysX->handle(), ovphysx_detach_ovstage(mPhysX->handle())).status != OVPHYSX_API_SUCCESS)
+            throw std::runtime_error("Stage detach task failed");
     }
 };
 

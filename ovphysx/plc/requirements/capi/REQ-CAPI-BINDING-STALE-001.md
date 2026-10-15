@@ -25,8 +25,7 @@ detect this staleness by comparing `instance->attachHandle` against
 `OVPHYSX_API_NOT_FOUND` before touching the (possibly dangling) views —
 the same contract `ovphysx_read_tensor_binding`,
 `ovphysx_write_tensor_binding`, `ovphysx_write_tensor_binding_masked`,
-`ovphysx_articulation_update_kinematic`, `ovphysx_rigid_body_view_wake_up`,
-`ovphysx_rigid_body_view_sleep`, and
+`ovphysx_rigid_body_view_wake_up`, `ovphysx_rigid_body_view_sleep`, and
 `ovphysx_tensor_binding_get_prim_paths` already honor. This requirement
 extends that contract to the binding metadata surface, so a caller that
 retains a binding handle across detach/reattach gets a consistent

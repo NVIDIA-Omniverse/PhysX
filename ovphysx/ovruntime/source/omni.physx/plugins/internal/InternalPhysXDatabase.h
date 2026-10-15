@@ -1,6 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-ATTACH-RESOLVE-001
+ * @covers AC-7, AC-11
+ */
+
 #pragma once
 
 #include "Internal.h"
@@ -51,7 +56,7 @@ using TransformsInstanceMap =
 class InternalPhysXDatabase : public InternalDatabase
 {
 public:
-    InternalPhysXDatabase();
+    explicit InternalPhysXDatabase(const usdparser::AttachedStage* attachedStage = nullptr);
     ~InternalPhysXDatabase();
 
     void release();
@@ -59,6 +64,7 @@ public:
     void resetStartProperties(bool useUsdUpdate, bool useVelocitiesUSDUpdate, bool outputVelocitiesLocalSpace);
 
     omni::physx::usdparser::ObjectId createTireFrictionTable(
+        const usdparser::AttachedStage& attachedStage,
         const omni::physx::usdparser::TireFrictionTableDesc& tireFrictionTableDesc);
 
     void addDirtyMassActor(size_t actorIndex);
@@ -139,6 +145,8 @@ public:
     PxJointMap mPxJointMap;
 
 private:
+    const usdparser::AttachedStage* mAttachedStage;
+
     std::vector<InternalActor*> mDirtyMassActorList;
     std::vector<InternalParticle*> mDirtyMassParticleList;
 

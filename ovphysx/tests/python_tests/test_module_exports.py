@@ -20,21 +20,21 @@ def test_module_all_exports():
 
     expected_exports = [
         "PhysX",
+        "Task",
+        "TaskError",
+        "TaskTimeoutError",
         "TensorType",
+        "ArticulationKinematicFlag",
         "ApiStatus",
         "OmniPvdDestination",
         "LogLevel",
         "BindingPrimMode",
         "SceneQueryMode",
         "SceneQueryGeometryType",
-        "ContactEventHeader",
-        "ContactPoint",
         "TensorBindingSpec",
         "DLDevice",
         "DLDataType",
         "DLTensor",
-        "codeless_schema_paths",
-        "codeless_schema_root",
         "newton_schema_root",
     ]
 
@@ -46,6 +46,7 @@ def test_intenum_types_importable_without_native():
     """TensorType and friends must be importable without triggering native loading."""
     from ovphysx.types import (
         ApiStatus,
+        ArticulationKinematicFlag,
         BindingPrimMode,
         LogLevel,
         SceneQueryGeometryType,
@@ -54,6 +55,8 @@ def test_intenum_types_importable_without_native():
     )
 
     assert TensorType.ARTICULATION_ROOT_POSE == 10
+    assert ArticulationKinematicFlag.POSITION == 1
+    assert ArticulationKinematicFlag.VELOCITY == 2
     assert ApiStatus.SUCCESS == 0
     assert LogLevel.DEFAULT == 0
     assert LogLevel.VERBOSE == 1
@@ -106,12 +109,13 @@ def test_tensor_type_iteration():
     assert len(members) > 40
 
 
-def test_operation_index_constants():
-    """Test OP_INDEX_ALL is accessible via lazy loading."""
-    import ovphysx
+def test_task_types_are_exported():
+    """Task receipt and exception types are available from the package."""
+    from ovphysx import Task, TaskError, TaskTimeoutError
 
-    assert hasattr(ovphysx, "OP_INDEX_ALL")
-    assert isinstance(ovphysx.OP_INDEX_ALL, int)
+    assert isinstance(Task, type)
+    assert issubclass(TaskError, RuntimeError)
+    assert issubclass(TaskTimeoutError, TimeoutError)
 
 
 def test_module_has_version_attribute():

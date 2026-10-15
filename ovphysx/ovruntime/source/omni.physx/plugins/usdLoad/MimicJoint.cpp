@@ -101,7 +101,7 @@ ObjectId createMimicJoint(AttachedStage& attachedStage, MimicJointDesc& desc)
 
             return id;
         }
-        else if (OmniPhysX::getInstance().getISettings()->getStringBuffer(kSettingForceParseOnlySingleScene) == nullptr)
+        else if (attachedStage.getParseOptions().forceSingleScenePath.empty())
         {
             // scristiano: if in forced parsing single scene mode, the joints may have not been created
             CARB_LOG_ERROR("Usd Physics: failed to find internal joint object for reference joint at prim "
@@ -110,7 +110,7 @@ ObjectId createMimicJoint(AttachedStage& attachedStage, MimicJointDesc& desc)
                 attachedStage.textFor(desc.referenceJointKey), attachedStage.textFor(desc.mimicJointKey));
         }
     }
-    else if (OmniPhysX::getInstance().getISettings()->getStringBuffer(kSettingForceParseOnlySingleScene) == nullptr)
+    else if (attachedStage.getParseOptions().forceSingleScenePath.empty())
     {
         // scristiano: if in forced parsing single scene mode, the joints may have not been created
         CARB_LOG_ERROR("Usd Physics: failed to find internal joint object for PhysxMimicJointAPI at %s. "

@@ -87,7 +87,7 @@ public:
 
     usdparser::ObjectId mMaterialId;
     uint32_t mFlags;
-    PhysXScene* mPhysXScene;
+    PhysXScene* mPhysXScene = nullptr;
 };
 
 class InternalParticleSet : public InternalParticle
@@ -138,7 +138,7 @@ public:
                                                                  bool diffuseEnabled,
                                                                  float maxDiffuseParticleMultiplier,
                                                                  ::physx::PxDiffuseParticleParams& diffuseParams,
-                                                                 PhysXSetup& physXSetup);
+                                                                 ::physx::PxCudaContextManager* cudaContextManager);
 
     void uploadParticles(CUstream stream);
     void fetchParticles(CUstream stream,
@@ -218,7 +218,7 @@ public:
     ~InternalPbdParticleSystem();
 
     ::physx::PxPBDParticleSystem* mPS;
-    PhysXScene* mPhysXScene;
+    PhysXScene* mPhysXScene = nullptr;
 
     usdparser::ObjectId mMaterialId;
     // Source-agnostic handle for the particle-system prim; the particles:: post-process

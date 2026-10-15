@@ -14,6 +14,8 @@
 
 #include "framework/UsdPCH.h"
 
+#include "../TaskCompletion.h"
+
 #include "../framework/BmBenchmark.h"
 #include "../framework/BmGlobals.h"
 #include "../OvstageLoad.h"
@@ -193,6 +195,12 @@ public:
         mVelocityBinding.destroy();
         if (mStageLoaded && mPhysX != nullptr)
         {
+            if (mArticulationQuery)
+            {
+                (void)bmCompleteTask(
+                    mPhysX->handle(), ovphysx_release_query(mPhysX->handle(), mArticulationQuery));
+                mArticulationQuery = 0;
+            }
             benchmarkClearOvstage(mPhysX, mStageAttachment);
         }
         if (mLogCallbackRegistered)
@@ -286,9 +294,9 @@ private:
             transform[6] = 1.0f;
         }
 
-        requireSuccess(mPhysX->clone("/World/envs/env_0", targets, transforms.data()), "clone Cartpole environments");
+        requireSuccess(mPhysX->clone("/World/envs/env_0", targets, transforms.data()).status, "clone Cartpole environments");
         ovphysx::physx::WaitResult cloneWait = mPhysX->waitAll();
-        if (cloneWait.hasErrors())
+        if (cloneWait.status() != OVPHYSX_API_SUCCESS)
         {
             throw std::runtime_error("Cartpole environment clone completed with asynchronous errors");
         }
@@ -296,6 +304,16 @@ private:
         mCudaDevice = kCudaDevice;
         requireCuda(cudaSetDevice(mCudaDevice), "cudaSetDevice");
         requireSuccess(ovphysx_warmup(mPhysX->handle()), "warm up Cartpole GPU scene");
+        requireSuccess(
+            bmCompleteTask(
+                mPhysX->handle(),
+                ovphysx_query(
+                    mPhysX->handle(),
+                    OVPHYSX_QUERY_TARGET_ARTICULATION,
+                    OVPHYSX_SCOPE_ALL,
+                    &mArticulationQuery,
+                    nullptr)),
+            "create Cartpole articulation query");
 
         createGpuBinding(
             OVPHYSX_TENSOR_ARTICULATION_DOF_ACTUATION_FORCE_F32,
@@ -409,13 +427,25 @@ private:
         }
     }
 
+    void refreshArticulationKinematics(const char* context)
+    {
+        requireSuccess(
+            bmCompleteTask(
+                mPhysX->handle(),
+                mPhysX->updateArticulationsKinematic(
+                    mArticulationQuery,
+                    OVPHYSX_ARTICULATION_KINEMATIC_POSITION |
+                        OVPHYSX_ARTICULATION_KINEMATIC_VELOCITY)),
+            context);
+    }
+
     void resetDofState()
     {
         mPositionBuffer.zero();
         mVelocityBuffer.zero();
         requireSuccess(mPositionBinding.write(mPositionTensor), "reset DOF position");
         requireSuccess(mVelocityBinding.write(mVelocityTensor), "reset DOF velocity");
-        requireSuccess(mPhysX->updateArticulationsKinematic(), "refresh Cartpole kinematics after reset");
+        refreshArticulationKinematics("refresh Cartpole kinematics after reset");
         mUseReverseEffort = false;
         failOnLoggedError("Cartpole reset");
     }
@@ -429,7 +459,7 @@ private:
             requireSuccess(mPositionTargetBinding.write(mPositionTargetTensor), "write Cartpole position target");
             requireSuccess(mVelocityTargetBinding.write(mVelocityTargetTensor), "write Cartpole velocity target");
             requireSuccess(ovphysx_step_sync(mPhysX->handle(), kPhysicsDt), "step Cartpole simulation");
-            requireSuccess(mPhysX->updateArticulationsKinematic(), "refresh Cartpole kinematics");
+            refreshArticulationKinematics("refresh Cartpole kinematics");
         }
 
         requireSuccess(mPositionBinding.read(mPositionTensor), "read Cartpole DOF position");
@@ -497,6 +527,7 @@ private:
     std::atomic<bool> mLoggedError{false};
     int mCudaDevice = 0;
     ovphysx::PhysX* mPhysX = nullptr;
+    ovphysx_query_handle_t mArticulationQuery = 0;
     ovphysx_sample_stage_attachment_t mStageAttachment{};
 
     ovphysx::TensorBinding mEffortBinding;
@@ -659,7 +690,7 @@ private:
             transform[6] = 1.0f;
         }
 
-        requireSuccess(mPhysX->clone("/World/envs/env_0", targets, transforms.data()), "clone Cartpole environments");
+        requireSuccess(mPhysX->clone("/World/envs/env_0", targets, transforms.data()).status, "clone Cartpole environments");
         waitForAll("complete Cartpole environment clone");
 
         requireCuda(cudaSetDevice(kCudaDevice), "cudaSetDevice");
@@ -708,7 +739,7 @@ private:
     {
         ovphysx::physx::WaitResult waitResult;
         requireSuccess(
-            ovphysx_wait_op(mPhysX->handle(), OVPHYSX_OP_INDEX_ALL, OVPHYSX_TIMEOUT_INFINITE, waitResult.get()),
+            waitResult.waitAll(mPhysX->handle(), OVPHYSX_TIMEOUT_INFINITE),
             operation);
         if (waitResult.hasErrors())
         {

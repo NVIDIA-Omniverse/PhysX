@@ -1,6 +1,14 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-VEHICLE-CONTROL-001
+// @covers AC-2 AC-3
+
+// @implements REQ-READ-VEHICLE-001
+// @covers AC-9
+// @implements REQ-INPUT-COVERAGE-001
+// @covers AC-20
+
 #pragma once
 
 #include "Internal.h"
@@ -18,6 +26,7 @@ namespace omni
 {
 namespace physx
 {
+namespace usdparser { class AttachedStage; }
 namespace internal
 {
 class InternalPhysXDatabase;
@@ -82,7 +91,7 @@ private:
     }
 
 public:
-    static InternalTireFrictionTable* create(const usdparser::TireFrictionTableDesc& tireFrictionTableDesc,
+    static InternalTireFrictionTable* create(const usdparser::AttachedStage& attachedStage, const usdparser::TireFrictionTableDesc& tireFrictionTableDesc,
                                              InternalPhysXDatabase&);
     static void release(InternalTireFrictionTable&);
 
@@ -157,7 +166,7 @@ public:
         // Keys carry identity (they resolve under any backend); the optional backing
         // UsdPrims (USD xform-op authoring only) are resolved internally, narrowly
         // fenced -- see InternalVehicle.cpp.
-        void init(omni::physics::parse::ObjectKey wheelRootKey_, omni::physics::parse::ObjectKey shapeKey_,
+        void init(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey wheelRootKey_, omni::physics::parse::ObjectKey shapeKey_,
                   const ::physx::PxShape*, usdparser::ObjectId shapeId);
 
         // Object-local transforms captured at load through
@@ -264,6 +273,9 @@ public:
     // cannot know the vehicle's kind -- the ovstage write, which is handed prims -- has to be able to
     // ask before calling, rather than relying on a debug-only check.
     bool isRawWheelControl() const;
+    bool hasDrive() const;
+    bool hasEngineDrive() const;
+    bool isTank() const;
 
     // the following block is for vehicles without drive
     void setControllerParams(const uint32_t wheelIndex, const usdparser::WheelControllerDesc&);
@@ -331,6 +343,10 @@ public:
     SteerParams mSteerParams; // for a vehicle with a controller
     InitialControllerValues* mInitialControllerValues; // allocated if vehicle has controller
     carb::Float3 mScale; // the total scale of the vehicle prim
+    // @implements REQ-VEHICLE-CONTROL-001
+    // @covers AC-2 AC-3
+    // Cached ground pointers are valid only for the records used by the completed vehicle update.
+    uint64_t mGroundQueryRecordEpoch = 0;
     uint32_t mBufferIndex; // position in mVehicles list of scene
     uint32_t mFlags;
 };

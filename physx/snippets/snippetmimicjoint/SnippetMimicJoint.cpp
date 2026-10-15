@@ -112,7 +112,6 @@ static PxArticulationReducedCoordinate* createArticulation(PxArticulationJointRe
 	linkAJoint->setMotion(gDriveAxis, PxArticulationMotion::eFREE);
 	linkAJoint->setParentPose(linkATransform);
 	linkAJoint->setChildPose(PxTransform(PxVec3(0.0f)));
-	linkAJoint->setFrictionCoefficient(0.0f);
 
 	//The inbound joint of linkB will be influenced only by the mimic joint.
 	PxArticulationLink* linkB = articulation->createLink(rootLink, PxTransform(PxIdentity));
@@ -142,11 +141,10 @@ static PxArticulationReducedCoordinate* createArticulation(PxArticulationJointRe
 	linkBJoint->setMotion(gMimicAxis, PxArticulationMotion::eFREE);
 	linkBJoint->setParentPose(linkBTransform);
 	linkBJoint->setChildPose(PxTransform(PxVec3(0.0f)));
-	linkBJoint->setFrictionCoefficient(0.0f);
 
 	//Drive linkAJoint with a very stiff position drive so that the target position is achieved in 1 simulation step.
 	driveJoint = linkAJoint;
-	driveJoint->setDriveParams(gDriveAxis, PxArticulationDrive(1e10f, 0.0f, PX_MAX_F32));
+	driveJoint->setDriveParams(gDriveAxis, PxArticulationDrive(1e10f, 0.0f, PxPerformanceEnvelope(PX_MAX_F32)));
 
 	//Mimic the drive with a mimic joint such that linkBJoint will follow linkAJoint
 	articulation->createMimicJoint(*linkAJoint, gDriveAxis, *linkBJoint, gMimicAxis, gMimicJointGearRatio, gMimicJointOffset);

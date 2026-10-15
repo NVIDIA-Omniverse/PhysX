@@ -66,8 +66,7 @@ static bool getFloatBounded(const usdparser::AttachedStage& attachedStage, omni:
 bool omni::physx::updateSpatialTendonStiffness(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     const InternalDatabase::Record* objectRecord = db.getFullTypedRecord(ePTTendonAttachment, objectId);
     if (!objectRecord)
@@ -103,8 +102,7 @@ bool omni::physx::updateSpatialTendonStiffness(AttachedStage& attachedStage, omn
 bool omni::physx::updateSpatialTendonDamping(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     const InternalDatabase::Record* objectRecord = db.getFullTypedRecord(ePTTendonAttachment, objectId);
     if (!objectRecord)
@@ -140,8 +138,7 @@ bool omni::physx::updateSpatialTendonDamping(AttachedStage& attachedStage, omni:
 bool omni::physx::updateSpatialTendonLimitStiffness(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     const InternalDatabase::Record* objectRecord = db.getFullTypedRecord(ePTTendonAttachment, objectId);
     if (!objectRecord)
@@ -177,8 +174,7 @@ bool omni::physx::updateSpatialTendonLimitStiffness(AttachedStage& attachedStage
 bool omni::physx::updateSpatialTendonOffset(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     const InternalDatabase::Record* objectRecord = db.getFullTypedRecord(ePTTendonAttachment, objectId);
     if (!objectRecord)
@@ -204,8 +200,7 @@ bool omni::physx::updateSpatialTendonOffset(AttachedStage& attachedStage, omni::
 bool omni::physx::updateSpatialTendonEnabled(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     const InternalDatabase::Record* objectRecord = db.getFullTypedRecord(ePTTendonAttachment, objectId);
     if (!objectRecord)
@@ -253,8 +248,7 @@ bool omni::physx::updateSpatialTendonEnabled(AttachedStage& attachedStage, omni:
 bool omni::physx::updateTendonAttachmentGearing(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     const InternalDatabase::Record* objectRecord = db.getFullTypedRecord(ePTTendonAttachment, objectId);
     if (!objectRecord)
@@ -279,8 +273,7 @@ bool omni::physx::updateTendonAttachmentGearing(AttachedStage& attachedStage, om
 bool omni::physx::updateTendonAttachmentLocalPos(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     const InternalDatabase::Record* objectRecord = db.getFullTypedRecord(ePTTendonAttachment, objectId);
     if (!objectRecord)
@@ -310,8 +303,7 @@ bool omni::physx::updateTendonAttachmentLocalPos(AttachedStage& attachedStage, o
 bool omni::physx::updateTendonAttachmentLeafRestLength(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     const InternalDatabase::Record* objectRecord = db.getFullTypedRecord(ePTTendonAttachment, objectId);
     if (!objectRecord)
@@ -344,8 +336,7 @@ bool omni::physx::updateTendonAttachmentLeafRestLength(AttachedStage& attachedSt
 bool omni::physx::updateTendonAttachmentLeafLowLimit(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     const InternalDatabase::Record* objectRecord = db.getFullTypedRecord(ePTTendonAttachment, objectId);
     if (!objectRecord)
@@ -379,8 +370,7 @@ bool omni::physx::updateTendonAttachmentLeafLowLimit(AttachedStage& attachedStag
 bool omni::physx::updateTendonAttachmentLeafHighLimit(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     const InternalDatabase::Record* objectRecord = db.getFullTypedRecord(ePTTendonAttachment, objectId);
     if (!objectRecord)
@@ -415,8 +405,7 @@ bool omni::physx::updateTendonAttachmentLeafHighLimit(AttachedStage& attachedSta
 bool omni::physx::updateFixedTendonStiffness(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     const InternalDatabase::Record* objectRecord = db.getFullTypedRecord(ePTFixedTendonAxis, objectId);
     if (!objectRecord)
@@ -452,8 +441,7 @@ bool omni::physx::updateFixedTendonStiffness(AttachedStage& attachedStage, omni:
 bool omni::physx::updateFixedTendonLimitStiffness(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     const InternalDatabase::Record* objectRecord = db.getFullTypedRecord(ePTFixedTendonAxis, objectId);
     if (!objectRecord)
@@ -489,8 +477,7 @@ bool omni::physx::updateFixedTendonLimitStiffness(AttachedStage& attachedStage, 
 bool omni::physx::updateFixedTendonDamping(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     const InternalDatabase::Record* objectRecord = db.getFullTypedRecord(ePTFixedTendonAxis, objectId);
     if (!objectRecord)
@@ -526,8 +513,7 @@ bool omni::physx::updateFixedTendonDamping(AttachedStage& attachedStage, omni::p
 bool omni::physx::updateFixedTendonOffset(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     const InternalDatabase::Record* objectRecord = db.getFullTypedRecord(ePTFixedTendonAxis, objectId);
     if (!objectRecord)
@@ -553,8 +539,7 @@ bool omni::physx::updateFixedTendonOffset(AttachedStage& attachedStage, omni::ph
 bool omni::physx::updateFixedTendonRestLength(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     const InternalDatabase::Record* objectRecord = db.getFullTypedRecord(ePTFixedTendonAxis, objectId);
     if (!objectRecord)
@@ -580,8 +565,7 @@ bool omni::physx::updateFixedTendonRestLength(AttachedStage& attachedStage, omni
 bool omni::physx::updateFixedTendonLowLimit(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     const InternalDatabase::Record* objectRecord = db.getFullTypedRecord(ePTFixedTendonAxis, objectId);
     if (!objectRecord)
@@ -616,8 +600,7 @@ bool omni::physx::updateFixedTendonLowLimit(AttachedStage& attachedStage, omni::
 bool omni::physx::updateFixedTendonHighLimit(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     const InternalDatabase::Record* objectRecord = db.getFullTypedRecord(ePTFixedTendonAxis, objectId);
     if (!objectRecord)
@@ -652,8 +635,7 @@ bool omni::physx::updateFixedTendonHighLimit(AttachedStage& attachedStage, omni:
 bool omni::physx::updateFixedTendonEnabled(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     const InternalDatabase::Record* objectRecord = db.getFullTypedRecord(ePTFixedTendonAxis, objectId);
     if (!objectRecord)
@@ -702,8 +684,7 @@ bool omni::physx::updateFixedTendonEnabled(AttachedStage& attachedStage, omni::p
 bool omni::physx::updateTendonAxisSingleGearing(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
     omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     const InternalDatabase::Record* objectRecord = db.getFullTypedRecord(ePTFixedTendonAxis, objectId);
     if (!objectRecord)
@@ -762,8 +743,7 @@ bool omni::physx::updateTendonAxisSingleGearing(AttachedStage& attachedStage, om
 bool omni::physx::updateTendonAxisSingleForceCoefficient(AttachedStage& attachedStage, omni::physx::usdparser::ObjectId objectId,
                                                          omni::physics::parse::TokenId property, omni::physics::parse::ReadTime timeCode)
 {
-    const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
-    const internal::InternalPhysXDatabase& db = omniPhysX.getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     const InternalDatabase::Record* objectRecord = db.getFullTypedRecord(ePTFixedTendonAxis, objectId);
     if (!objectRecord)

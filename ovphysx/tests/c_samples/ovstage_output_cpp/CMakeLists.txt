@@ -14,4 +14,7 @@ get_filename_component(OVPHYSX_TEST_DATA_DIR "${CMAKE_CURRENT_LIST_DIR}/../../da
 target_compile_definitions(ovstage_output_cpp PRIVATE OVPHYSX_TEST_DATA="${OVPHYSX_TEST_DATA_DIR}")
 if(WIN32)
     ovphysx_copy_runtime_dlls(ovstage_output_cpp)
+    # OVStage is not copied (it loads its plugins relative to itself), so its
+    # directories have to reach the process through PATH.
+    ovphysx_set_ovstage_runtime_env(ovstage_output_cpp)
 endif()

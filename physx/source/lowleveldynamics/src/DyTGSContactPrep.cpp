@@ -2124,6 +2124,10 @@ PxU32 setupSolverConstraintStep(
 
 				PX_ASSERT(orthoCount < 3);
 
+				//The basis entries are filled in the order the rows are stored in the constraint buffer.
+				//The writeback relies on this order: when it reconstructs the reported impulse, it assumes
+				//that basis entry k belongs to the k-th row that carries DY_SC_FLAG_ROT_EQ (see
+				//accumulate1dConstraintImpulsesOrtho, which asserts this pairing).
 				header->angOrthoAxis0_recipResponseW[orthoCount] =
 					PxVec4(angSqrtInvInertia0[i].x * prepDesc.invMassScales.angular0, angSqrtInvInertia0[i].y * prepDesc.invMassScales.angular0, angSqrtInvInertia0[i].z * prepDesc.invMassScales.angular0, recipUnitResponse);
 				header->angOrthoAxis1_Error[orthoCount].x = angSqrtInvInertia1[i].x*prepDesc.invMassScales.angular1;
@@ -2810,26 +2814,89 @@ void concludeContactStep(const PxSolverConstraintDesc& desc)
 	//PX_ASSERT(currPtr == last);
 }
 
-void writeBack1DStep(const PxSolverConstraintDesc& desc)
+//Accumulate the reported impulse of extended (articulation) rows with their stored Jacobians:
+//their ang0 holds the full angular term (see createImpulseResponseVector) and they are not
+//re-orthogonalized during solving, so no moment reconstruction must be added on top of ang0.
+static void accumulate1dConstraintImpulsesExt(const SolverConstraint1DHeaderStep* header, const SolverConstraint1DExtStep* rows, PxVec3& lin, PxVec3& ang)
+{
+	const PxU32 count = header->count;
+	for (PxU32 i = 0; i<count; i++)
+	{
+		const SolverConstraint1DExtStep& c = rows[i];
+		if (c.flags & DY_SC_FLAG_OUTPUT_FORCE)
+		{
+			lin += c.lin0 * c.appliedForce;
+			ang += c.ang0 * c.appliedForce;
+		}
+	}
+}
+
+//Accumulate the reported impulse of rigid-body rows with the same effective Jacobians the solve
+//applied the impulses through, including the on-the-fly orthogonalization against the
+//rotational-equality basis (see accumulate1dConstraintImpulseTGS).
+static void accumulate1dConstraintImpulsesOrtho(const SolverConstraint1DHeaderStep* header, const SolverConstraint1DStep* rows,
+	const PxMat33& sqrtInvInertia0, const PxMat33& sqrtInvInertia1, PxVec3& lin, PxVec3& ang)
+{
+	const PxU32 count = header->count;
+
+	//The rotational-equality basis the solve orthogonalizes against (sqrt-inverse-inertia space,
+	//see solve1DStep), and the raw angular Jacobians of the rows that built it, in build order.
+	PxVec3 angOrthoAxis0[3], angOrthoAxis1[3], orthoRawAxis[3];
+	PxReal angOrthoRecipResponse[3];
+	for (PxU32 k = 0; k < 3; k++)
+	{
+		const PxVec4& ax0 = header->angOrthoAxis0_recipResponseW[k];
+		const PxVec4& ax1 = header->angOrthoAxis1_Error[k];
+		angOrthoAxis0[k] = PxVec3(ax0.x, ax0.y, ax0.z);
+		angOrthoAxis1[k] = PxVec3(ax1.x, ax1.y, ax1.z);
+		angOrthoRecipResponse[k] = ax0.w;
+		orthoRawAxis[k] = PxVec3(0.0f);
+	}
+
+	for (PxU32 i = 0, k = 0; i < count && k < 3; i++)
+	{
+		if (rows[i].flags & DY_SC_FLAG_ROT_EQ)
+		{
+			orthoRawAxis[k] = rows[i].ang0;
+			//the prep fills the header basis in the same single pass over the same stored rows, so
+			//entry k is this row's angular Jacobian in sqrt-inverse-inertia space
+			PX_ASSERT((sqrtInvInertia0 * (rows[i].ang0 * header->angularInvMassScale0) - angOrthoAxis0[k]).magnitude() <= 1e-3f * (1.0f + angOrthoAxis0[k].magnitude()));
+			k++;
+		}
+	}
+
+	PxReal orthoImpulse[3] = { 0.0f, 0.0f, 0.0f };
+	for (PxU32 i = 0; i < count; i++)
+	{
+		const SolverConstraint1DStep& c = rows[i];
+		accumulate1dConstraintImpulseTGS(c.appliedForce, c.flags,
+			c.lin0, c.ang0, header->rAWorld, c.lin1, c.ang1, header->rBWorld,
+			sqrtInvInertia0, sqrtInvInertia1,
+			angOrthoAxis0, angOrthoAxis1, angOrthoRecipResponse,
+			lin, ang, orthoImpulse);
+	}
+
+	ang -= orthoRawAxis[0] * orthoImpulse[0] + orthoRawAxis[1] * orthoImpulse[1] + orthoRawAxis[2] * orthoImpulse[2];
+}
+
+void writeBack1DStep(const PxSolverConstraintDesc& desc, const PxTGSSolverBodyTxInertia* const txInertias)
 {
 	ConstraintWriteback* writeback = reinterpret_cast<ConstraintWriteback*>(desc.writeBack);
 	if (writeback)
 	{
-		SolverConstraint1DHeaderStep* header = reinterpret_cast<SolverConstraint1DHeaderStep*>(desc.constraint);
-		PxU8* base = desc.constraint + sizeof(SolverConstraint1DHeaderStep);
-		const PxU32 stride = header->type == DY_SC_TYPE_EXT_1D ? sizeof(SolverConstraint1DExtStep) : sizeof(SolverConstraint1DStep);
+		const SolverConstraint1DHeaderStep* header = reinterpret_cast<const SolverConstraint1DHeaderStep*>(desc.constraint);
+		const PxU8* rows = desc.constraint + sizeof(SolverConstraint1DHeaderStep);
 
-		PxVec3 lin(0), ang(0);
-		const PxU32 count = header->count;
-		for (PxU32 i = 0; i<count; i++)
+		PxVec3 lin(0.0f), ang(0.0f);
+		if (header->type == DY_SC_TYPE_EXT_1D)
 		{
-			const SolverConstraint1DStep* c = reinterpret_cast<SolverConstraint1DStep*>(base);
-			if (c->flags & DY_SC_FLAG_OUTPUT_FORCE)
-			{
-				lin += c->lin0 * c->appliedForce;
-				ang += (c->ang0 + c->lin0.cross(header->rAWorld)) * c->appliedForce;
-			}
-			base += stride;
+			//no tx-inertia data needed on this path: it may be NULL (see the articulation-internal entry point)
+			accumulate1dConstraintImpulsesExt(header, reinterpret_cast<const SolverConstraint1DExtStep*>(rows), lin, ang);
+		}
+		else
+		{
+			accumulate1dConstraintImpulsesOrtho(header, reinterpret_cast<const SolverConstraint1DStep*>(rows),
+				txInertias[desc.bodyADataIndex].sqrtInvInertia, txInertias[desc.bodyBDataIndex].sqrtInvInertia, lin, ang);
 		}
 
 		ang -= header->body0WorldOffset.cross(lin);
@@ -2841,6 +2908,12 @@ void writeBack1DStep(const PxSolverConstraintDesc& desc)
 		//we discard degenerate rows in the articulation constraint prep code.
 		//PX_ASSERT(desc.constraint + (desc.constraintLengthOver16 * 16) == base);
 	}
+}
+
+void writeBack1DStep(const PxSolverConstraintDesc& desc)
+{
+	//entry point for the articulation-internal constraints, which are always extended rows
+	writeBack1DStep(desc, NULL);
 }
 
 static FloatV solveExtContactsStep(SolverContactPointStepExt* contacts, const PxU32 nbContactPoints, const Vec3VArg contactNormal,
@@ -3296,6 +3369,7 @@ void solveExt1DBlock(DY_TGS_SOLVE_METHOD_PARAMS)
 
 void writeBackContact(DY_TGS_WRITEBACK_METHOD_PARAMS)
 {
+	PX_UNUSED(txInertias);
 	for (PxU32 i = hdr.startIndex, endIdx = hdr.startIndex + hdr.stride; i < endIdx; ++i)
 		writeBackContact(desc[i]);
 }
@@ -3303,7 +3377,7 @@ void writeBackContact(DY_TGS_WRITEBACK_METHOD_PARAMS)
 void writeBack1D(DY_TGS_WRITEBACK_METHOD_PARAMS)
 {
 	for (PxU32 i = hdr.startIndex, endIdx = hdr.startIndex + hdr.stride; i < endIdx; ++i)
-		writeBack1DStep(desc[i]);
+		writeBack1DStep(desc[i], txInertias);
 }
 
 void solveConclude1DBlock(DY_TGS_CONCLUDE_METHOD_PARAMS)

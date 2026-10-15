@@ -186,87 +186,54 @@ private:
     PXR_NS::UsdPrimRange::const_iterator mIter;
 };
 
-// Whole-subtree iteration that skips any prim whose path is in `excludePaths`,
-// together with its entire subtree (matches the legacy
-// `ReplicatorPrimIteratorRange` selective-load semantics). Constructs its own
-// range from `stage`/`root`/`predicate` so the root/exclude `scanStage` overload
-// can keep all USD traversal inside the backend (consumers pass only paths).
+// Exclude nested subtrees while preserving the legacy root-prim exception.
+// @implements REQ-PARSE-SCAN-001
+// @covers AC-5 AC-15
 class PrimIteratorExcludeRange : public PrimIteratorBase
 {
 public:
-    PrimIteratorExcludeRange(PXR_NS::UsdPrimRange range,
-                             const std::unordered_set<PXR_NS::SdfPath, PXR_NS::SdfPath::Hash>& excludePaths)
-        : mRange(std::move(range)), mExclude(excludePaths)
+    PrimIteratorExcludeRange(PrimIteratorBase& input,
+        const std::unordered_set<PXR_NS::SdfPath, PXR_NS::SdfPath::Hash>& excludePaths)
+        : mInput(input), mExclude(excludePaths)
     {
         reset();
     }
 
-    virtual void reset() override
+    void reset() override { mInput.reset(); skipExcluded(); }
+    bool atEnd() const override { return mInput.atEnd(); }
+    PXR_NS::UsdPrimRange::const_iterator getCurrent() override { return mInput.getCurrent(); }
+    void pruneChildren() override { mInput.pruneChildren(); }
+    void next() override
     {
-        // Match ReplicatorPrimIteratorRange: the root is yielded as-is; excluded
-        // subtrees are skipped on advance (next()).
-        mIter = mRange.begin();
-    }
-
-    virtual bool atEnd() const override
-    {
-        return mIter == mRange.end();
-    }
-
-    virtual void pruneChildren() override
-    {
-        CARB_ASSERT(!atEnd());
-        mIter.PruneChildren();
-    }
-
-    virtual PXR_NS::UsdPrimRange::const_iterator getCurrent() override
-    {
-        return mIter;
-    }
-
-    virtual void next() override
-    {
-        if (mIter != mRange.end())
-        {
-            bool validPrim = false;
-            while (!validPrim)
-            {
-                mIter++;
-                if (mIter != mRange.end())
-                {
-                    const PXR_NS::UsdPrim& prim = *mIter;
-                    // A root-prim exclude path is never pruned: the legacy
-                    // ReplicatorPrimIteratorRange walked stage->Traverse(), whose
-                    // first element is the stage's root prim, and reset() yielded
-                    // that first element unchecked.  So excluding a root prim
-                    // (e.g. clone()'s derived env root "/World" for a body parented
-                    // directly under it) was effectively a no-op and the subtree
-                    // was still parsed.  Preserve that: only prune non-root-prim
-                    // exclude paths.
-                    if (prim && !prim.GetPrimPath().IsRootPrimPath() &&
-                        mExclude.find(prim.GetPrimPath()) != mExclude.end())
-                    {
-                        mIter.PruneChildren();
-                    }
-                    else
-                    {
-                        validPrim = true;
-                    }
-                }
-                else
-                {
-                    validPrim = true;
-                }
-            }
-        }
+        if (!mInput.atEnd())
+            mInput.next();
+        skipExcluded();
     }
 
 private:
-    PXR_NS::UsdPrimRange mRange;
-    // Stored by value: the exclude set is tiny (replicator selective load) and a
-    // public-header iterator must not depend on the caller's set outliving it.
+    void skipExcluded()
+    {
+        while (!mInput.atEnd())
+        {
+            const PXR_NS::SdfPath path = mInput.getCurrent()->GetPath();
+            bool excluded = false;
+            for (const PXR_NS::SdfPath& root : mExclude)
+            {
+                if (!root.IsRootPrimPath() && path.HasPrefix(root))
+                {
+                    excluded = true;
+                    break;
+                }
+            }
+            if (!excluded)
+                return;
+            mInput.pruneChildren();
+            mInput.next();
+        }
+    }
+
+    PrimIteratorBase& mInput;
     std::unordered_set<PXR_NS::SdfPath, PXR_NS::SdfPath::Hash> mExclude;
-    PXR_NS::UsdPrimRange::const_iterator mIter;
 };
 
 } // namespace schema

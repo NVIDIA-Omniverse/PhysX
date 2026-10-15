@@ -24,7 +24,8 @@ namespace usdparser
 // omni::physics::parse::scanStage takes) and `excludePaths` is the ObjectKey-keyed
 // PathSet (LoadTools.h).
 bool loadFromStage(AttachedStage& attachedStage, const PathSet* excludePaths = nullptr);
-void loadPhysicsFromPrimitive(AttachedStage& attachedStage, const std::vector<std::string>& updateRoots);
+void loadPhysicsFromPrimitive(AttachedStage& attachedStage, const std::vector<std::string>& updateRoots,
+                              bool applyAttachmentExclusions = true);
 
 } // namespace usdparser
 } // namespace physx

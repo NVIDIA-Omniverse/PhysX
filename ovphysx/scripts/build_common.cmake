@@ -52,7 +52,7 @@ if(BUILD_TYPE_LOWER STREQUAL "debug" AND NOT OVPHYSX_USE_RELEASE_RUNTIME_DEPS)
 endif()
 unset(_OVPHYSX_RELEASE_RUNTIME_DEPS_VALUE)
 
-set(BUILD_PATH "${PROJECT_ROOT}/_build")
+include("${SCRIPT_DIR}/build_directory.cmake")
 
 # Compute a safe parallel-build job count, shared by every script that invokes
 # a compile (main build and the sample-test source builds). Building the
@@ -353,11 +353,15 @@ function(copy_filtered_extensions SOURCE_EXTS_DIR TARGET_EXT_CACHE DEPS_MANIFEST
     endforeach()
 endfunction()
 
-# Strip unstripped ELF binaries under a root directory.
+# Strip ELF symbols and compiler comments under a root directory.
 # Usage:
 #   strip_unstripped_elf_binaries(<root_dir> <label>)
 # - root_dir: directory tree to scan for *.so* files
 # - label: short text used in status/error messages
+#
+# readelf identifies ELF files, unstripped symbols (SYMTAB), and .comment. The
+# latter can contain private compiler build URLs even in stripped dependencies.
+# The pinned builder image has binutils and does not have the libmagic `file` tool.
 function(strip_unstripped_elf_binaries ROOT_DIR LABEL)
     if(WIN32)
         message(STATUS "Skipping ELF stripping for ${LABEL} on Windows")
@@ -365,17 +369,15 @@ function(strip_unstripped_elf_binaries ROOT_DIR LABEL)
     endif()
 
     execute_process(
-        COMMAND file --version
+        COMMAND readelf --version
         OUTPUT_QUIET
         ERROR_QUIET
-        RESULT_VARIABLE FILE_TOOL_RESULT
+        RESULT_VARIABLE READELF_TOOL_RESULT
     )
-    if(NOT FILE_TOOL_RESULT EQUAL 0)
+    if(NOT READELF_TOOL_RESULT EQUAL 0)
         message(FATAL_ERROR
-            "'file' not found -- required to detect unstripped ELF binaries in ${LABEL}.\n"
-            "It is the OS file-type utility (libmagic), not CMake's file() command, "
-            "and is absent from minimal container images.\n"
-            "Install it: apt-get install file  (RPM distros: dnf install file)")
+            "readelf not found -- required to detect unstripped ELF binaries in ${LABEL}.\n"
+            "Install binutils: apt-get install binutils")
     endif()
 
     # Probed here rather than at first use. A missing strip only surfaces as an
@@ -392,7 +394,7 @@ function(strip_unstripped_elf_binaries ROOT_DIR LABEL)
             "Install binutils: apt-get install binutils")
     endif()
 
-    message(STATUS "Stripping symbols from unstripped libraries in ${LABEL}...")
+    message(STATUS "Stripping symbols and compiler comments from libraries in ${LABEL}...")
     file(GLOB_RECURSE ELF_CANDIDATES "${ROOT_DIR}/*.so*")
     set(FILES_TO_STRIP "")
     set(FILE_INSPECTION_FAILURES "")
@@ -403,25 +405,32 @@ function(strip_unstripped_elf_binaries ROOT_DIR LABEL)
             continue()
         endif()
 
+        # One readelf call checks the ELF header, SYMTAB, and .comment sections.
+        # .dynsym (DYNSYM) stays after strip --strip-unneeded and is not a match.
         execute_process(
-            COMMAND file -b "${FILE_PATH}"
-            OUTPUT_VARIABLE FILE_DESC
+            COMMAND readelf -h -S -W "${FILE_PATH}"
+            OUTPUT_VARIABLE READELF_OUT
             OUTPUT_STRIP_TRAILING_WHITESPACE
-            ERROR_VARIABLE FILE_DESC_ERROR
-            RESULT_VARIABLE FILE_DESC_RESULT
+            ERROR_VARIABLE READELF_ERR
+            RESULT_VARIABLE READELF_RESULT
         )
-        if(NOT FILE_DESC_RESULT EQUAL 0)
-            string(STRIP "${FILE_DESC_ERROR}" FILE_DESC_ERROR_STRIPPED)
-            if(FILE_DESC_ERROR_STRIPPED STREQUAL "")
-                set(FILE_DESC_ERROR_STRIPPED "<no stderr output>")
+        if(NOT READELF_RESULT EQUAL 0)
+            # Non-ELF *.so* names are not strip candidates. Other readelf
+            # failures still stop the strip step.
+            if(READELF_ERR MATCHES "Not an ELF file|Failed to read file")
+                continue()
             endif()
-            list(APPEND FILE_INSPECTION_FAILURES "${FILE_PATH}: ${FILE_DESC_ERROR_STRIPPED}")
+            string(STRIP "${READELF_ERR}" READELF_ERR_STRIPPED)
+            if(READELF_ERR_STRIPPED STREQUAL "")
+                set(READELF_ERR_STRIPPED "<no stderr output>")
+            endif()
+            list(APPEND FILE_INSPECTION_FAILURES "${FILE_PATH}: ${READELF_ERR_STRIPPED}")
             continue()
         endif()
 
-        if(FILE_DESC MATCHES "ELF")
+        if(READELF_OUT MATCHES "ELF Header")
             math(EXPR ELF_FILES_COUNT "${ELF_FILES_COUNT} + 1")
-            if(FILE_DESC MATCHES "not stripped")
+            if(READELF_OUT MATCHES " SYMTAB " OR READELF_OUT MATCHES "[ ]\\.comment[ ]")
                 list(APPEND FILES_TO_STRIP "${FILE_PATH}")
             endif()
         endif()
@@ -429,11 +438,11 @@ function(strip_unstripped_elf_binaries ROOT_DIR LABEL)
 
     list(LENGTH FILE_INSPECTION_FAILURES FILE_INSPECTION_FAILURE_COUNT)
     if(FILE_INSPECTION_FAILURE_COUNT GREATER 0)
-        message(STATUS "Failed to inspect ${FILE_INSPECTION_FAILURE_COUNT} files with 'file -b' in ${LABEL}:")
+        message(STATUS "Failed to inspect ${FILE_INSPECTION_FAILURE_COUNT} files with readelf in ${LABEL}:")
         foreach(FAILED_INSPECTION ${FILE_INSPECTION_FAILURES})
             message(STATUS "  - ${FAILED_INSPECTION}")
         endforeach()
-        message(FATAL_ERROR "Cannot continue stripping in ${LABEL}: file inspection failed")
+        message(FATAL_ERROR "Cannot continue stripping in ${LABEL}: readelf inspection failed")
     endif()
 
     list(LENGTH FILES_TO_STRIP STRIP_COUNT)
@@ -442,7 +451,7 @@ function(strip_unstripped_elf_binaries ROOT_DIR LABEL)
         set(STRIP_FAILURES "")
         foreach(SO_FILE ${FILES_TO_STRIP})
             execute_process(
-                COMMAND strip --strip-unneeded "${SO_FILE}"
+                COMMAND strip --strip-unneeded --remove-section=.comment "${SO_FILE}"
                 OUTPUT_QUIET
                 ERROR_VARIABLE STRIP_ERROR
                 RESULT_VARIABLE STRIP_RESULT

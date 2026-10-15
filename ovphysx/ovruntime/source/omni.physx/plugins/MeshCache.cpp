@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-SERVICES-001
+// @covers AC-5
+
 #include "MeshCache.h"
 
 #include <common/utilities/MemoryMacros.h>
@@ -14,9 +17,11 @@ using namespace ::physx;
 using namespace omni::physx;
 
 MeshCache* gMeshCache = nullptr;
+std::mutex gMeshCacheMutex;
 
 MeshCache* omni::physx::getMeshCache()
 {
+    std::lock_guard<std::mutex> lock(gMeshCacheMutex);
     if (!gMeshCache)
     {
         gMeshCache = new MeshCache();
@@ -27,11 +32,14 @@ MeshCache* omni::physx::getMeshCache()
 
 void omni::physx::releaseMeshCache()
 {
-    SAFE_RELEASE(gMeshCache);
+    std::lock_guard<std::mutex> lock(gMeshCacheMutex);
+    delete gMeshCache;
+    gMeshCache = nullptr;
 }
 
 void MeshCache::release()
 {
+    std::lock_guard<carb::tasking::RecursiveMutexWrapper> lock(mMutex);
     {
         for (auto &i:mConvexMeshMap)
         {
@@ -104,6 +112,7 @@ ConvexMeshPolygon* MeshCache::getConvexMeshPolygons(::physx::PxConvexMesh* mesh)
 
 void MeshCache::addConvexMesh(const omni::physx::usdparser::MeshKey &crc, ::physx::PxConvexMesh* mesh)
 {
+    std::lock_guard<carb::tasking::RecursiveMutexWrapper> lock(mMutex);
     mesh->acquireReference();
     mConvexMeshMap[crc] = mesh;
 
@@ -116,6 +125,7 @@ void MeshCache::addConvexMesh(const omni::physx::usdparser::MeshKey &crc, ::phys
 
 void MeshCache::addConvexDecomposition(const omni::physx::usdparser::MeshKey &crc, const ConvexMeshVector& meshes)
 {
+    std::lock_guard<carb::tasking::RecursiveMutexWrapper> lock(mMutex);
     mConvexDecompositionMap[crc] = meshes;
     for (size_t i = 0; i < meshes.size(); i++)
     {
@@ -186,6 +196,7 @@ bool MeshCache::createRuntimeTriangleMesh(::physx::PxPhysics& physics,
                                           gsl::span<const uint32_t> inputTrianglesFaceMapping,
                                           ::physx::PxTriangleMesh** returnedMesh)
 {
+    std::lock_guard<carb::tasking::RecursiveMutexWrapper> lock(mMutex);
     CARB_PROFILE_ZONE(0, "MeshCache::createRuntimeTriangleMesh");
     using namespace ::physx;
     if (hasTriangleMesh(meshCRC))
@@ -214,6 +225,7 @@ bool MeshCache::createRuntimeTriangleMesh(::physx::PxPhysics& physics,
                 *returnedMesh = triangleMesh;
             }
             addTriangleMesh(meshCRC, triangleMesh, &inputTrianglesFaceMapping, true);
+            triangleMesh->release(); // Transfer the creation reference to the cache.
             return true;
         }
     }
@@ -227,6 +239,7 @@ bool MeshCache::createRuntimeTriangleMesh(::physx::PxPhysics& physics,
                 *returnedMesh = triangleMesh;
             }
             addTriangleMesh(meshCRC, triangleMesh, nullptr, false);
+            triangleMesh->release();
         }
         return true;
     }
@@ -238,6 +251,7 @@ bool MeshCache::createRuntimeSphereFill(::physx::PxPhysics& physics,
                                 omni::physx::PhysxCookedDataSpan inputCookedData,
                                 const omni::physx::usdparser::SpherePointsPhysxShapeDesc ** returnedMesh)
 {
+    std::lock_guard<carb::tasking::RecursiveMutexWrapper> lock(mMutex);
     CARB_PROFILE_ZONE(0, "MeshCache::createRuntimeSphereFill");
     using namespace ::physx;
 
@@ -274,6 +288,7 @@ bool MeshCache::createRuntimeConvexMesh(::physx::PxPhysics& physics,
                                         omni::physx::PhysxCookedDataSpan inputCookedData,
                                         ::physx::PxConvexMesh** returnedMesh)
 {
+    std::lock_guard<carb::tasking::RecursiveMutexWrapper> lock(mMutex);
     CARB_PROFILE_ZONE(0, "MeshCache::createRuntimeConvexMesh");
     using namespace ::physx;
     if(hasConvexMesh(crc))
@@ -289,6 +304,7 @@ bool MeshCache::createRuntimeConvexMesh(::physx::PxPhysics& physics,
     if (convexMesh)
     {
         addConvexMesh(crc, convexMesh);
+        convexMesh->release(); // Cache-hit and newly created results are both borrowed.
         if (returnedMesh)
         {
             *returnedMesh = convexMesh;
@@ -304,6 +320,7 @@ bool MeshCache::createRuntimeConvexDecomposition(::physx::PxPhysics& physics,
                                                  uint64_t inputCookedDataNumber,
                                                  std::vector<::physx::PxConvexMesh*>* returnedMeshes)
 {
+    std::lock_guard<carb::tasking::RecursiveMutexWrapper> lock(mMutex);
     CARB_PROFILE_ZONE(0, "MeshCache::createRuntimeConvexDecomposition");
     using namespace ::physx;
     if (hasConvexDecomposition(crc))
@@ -329,6 +346,9 @@ bool MeshCache::createRuntimeConvexDecomposition(::physx::PxPhysics& physics,
         return false;
     }
     addConvexDecomposition(crc, outputMeshes);
+    for (PxConvexMesh* mesh : outputMeshes)
+        if (mesh)
+            mesh->release();
     if(returnedMeshes)
     {
         *returnedMeshes = outputMeshes;
@@ -421,6 +441,7 @@ static void fillCollisionMeshFromTriangleMesh(PxTriangleMesh* pxMesh, omni::phys
 omni::physx::CollisionRepresentation* MeshCache::getCollisionRepresentation(usdparser::MeshKey crc,
                                                                             const omni::physx::usdparser::PhysxShapeDesc& desc)
 {
+    std::lock_guard<carb::tasking::RecursiveMutexWrapper> lock(mMutex);
     switch (desc.type)
     {
     case omni::physx::usdparser::eConvexMeshShape: {
@@ -445,8 +466,8 @@ omni::physx::CollisionRepresentation* MeshCache::getCollisionRepresentation(usdp
     break;
     case omni::physx::usdparser::eConvexMeshDecompositionShape: {
         omni::physx::usdparser::ConvexMeshDecompositionPhysxShapeDesc* convexDecompositionMeshDesc = (omni::physx::usdparser::ConvexMeshDecompositionPhysxShapeDesc*)&desc;
-        auto it = getConvexDecompositionMap().find(crc);
-        if (it == getConvexDecompositionMap().end())
+        auto it = mConvexDecompositionMap.find(crc);
+        if (it == mConvexDecompositionMap.end())
             return nullptr;
         const ConvexMeshVector& convexMeshes = it->second;
 

@@ -25,52 +25,45 @@ PxgFEMCore::PxgFEMCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaCo
 	PxgAllocatorDesc& allocDesc, PxgSimulationController* simController, PxgGpuContext* gpuContext,
 	const PxU32 maxContacts, const PxU32 collisionStackSize, bool isTGS, PxsHeapStats::Enum statType) :
 	PxgNonRigidCore(gpuKernelWrangler, cudaContextManager, allocDesc, simController, gpuContext, maxContacts, collisionStackSize, statType),
-	mRigidContactPointBuf(allocDesc.deviceAlloc, statType),
-	mRigidContactNormalPenBuf(allocDesc.deviceAlloc, statType),
-	mRigidContactBarycentricBuf(allocDesc.deviceAlloc, statType),
-	mRigidContactInfoBuf(allocDesc.deviceAlloc, statType),
-	mRigidTotalContactCountBuf(allocDesc.deviceAlloc, statType),
-	mRigidPrevContactCountBuf(allocDesc.deviceAlloc, statType),
-	mRigidSortedContactPointBuf(allocDesc.deviceAlloc, statType),
-	mRigidSortedContactNormalPenBuf(allocDesc.deviceAlloc, statType),
-	mRigidSortedContactBarycentricBuf(allocDesc.deviceAlloc, statType),
-	mRigidSortedRigidIdBuf(allocDesc.deviceAlloc, statType),
-	mRigidSortedContactInfoBuf(allocDesc.deviceAlloc, statType),
-	mFemRigidRefCount(allocDesc.deviceAlloc, statType),
-	mFemContactPointBuffer(allocDesc.deviceAlloc, statType),
-	mFemContactNormalPenBuffer(allocDesc.deviceAlloc, statType),
-	mFemContactBarycentric0Buffer(allocDesc.deviceAlloc, statType),
-	mFemContactBarycentric1Buffer(allocDesc.deviceAlloc, statType),
-	mVolumeContactOrVTContactInfoBuffer(allocDesc.deviceAlloc, statType),
-	mEEContactInfoBuffer(allocDesc.deviceAlloc, statType),
-	mVolumeContactOrVTContactCountBuffer(allocDesc.deviceAlloc, statType),
-	mEEContactCountBuffer(allocDesc.deviceAlloc, statType),
-	mPrevFemContactCountBuffer(allocDesc.deviceAlloc, statType),
+	mRigidDeformableContactPointBuffer(allocDesc.deviceAlloc, statType),
+	mRigidDeformableContactNormalPenBuffer(allocDesc.deviceAlloc, statType),
+	mRigidDeformableContactBarycentricBuffer(allocDesc.deviceAlloc, statType),
+	mRigidDeformableContactInfoBuffer(allocDesc.deviceAlloc, statType),
+	mRigidDeformableContactRigidMaterialBuffer(allocDesc.deviceAlloc, statType),
+	mRigidDeformableContactCountBuffer(allocDesc.deviceAlloc, statType),
+	mRigidDeformablePrevContactCountBuffer(allocDesc.deviceAlloc, statType),
+	mRigidDeformablePrevContactCountPinned(allocDesc.hostAlloc, statType),
+	mRigidDeformableSortedContactPointBuffer(allocDesc.deviceAlloc, statType),
+	mRigidDeformableSortedContactNormalPenBuffer(allocDesc.deviceAlloc, statType),
+	mRigidDeformableSortedContactBarycentricBuffer(allocDesc.deviceAlloc, statType),
+	mRigidDeformableSortedContactInfoBuffer(allocDesc.deviceAlloc, statType),
+	mRigidDeformableSortedContactRigidMaterialBuffer(allocDesc.deviceAlloc, statType),
+	mRigidDeformableSortedRigidIdBuffer(allocDesc.deviceAlloc, statType),
+	mRigidDeformableContactBlocks(allocDesc.deviceAlloc, statType),
+	mRigidDeformableAppliedForcesBuffer(allocDesc.deviceAlloc, statType),
+	mRigidDeformableRefCountBuffer(allocDesc.deviceAlloc, statType),
+	mParticleDeformableContactPointBuffer(allocDesc.deviceAlloc, statType),
+	mParticleDeformableContactNormalPenBuffer(allocDesc.deviceAlloc, statType),
+	mParticleDeformableContactBarycentricBuffer(allocDesc.deviceAlloc, statType),
+	mParticleDeformableContactInfoBuffer(allocDesc.deviceAlloc, statType),
+	mParticleDeformableContactCountBuffer(allocDesc.deviceAlloc, statType),
+	mParticleDeformablePrevContactCountBuffer(allocDesc.deviceAlloc, statType),
+	mParticleDeformablePrevContactCountPinned(allocDesc.hostAlloc, statType),
+	mParticleDeformableSortedContactPointBuffer(allocDesc.deviceAlloc, statType),
+	mParticleDeformableSortedContactNormalPenBuffer(allocDesc.deviceAlloc, statType),
+	mParticleDeformableSortedContactBarycentricBuffer(allocDesc.deviceAlloc, statType),
+	mParticleDeformableSortedContactInfoBuffer(allocDesc.deviceAlloc, statType),
+	mParticleDeformableContactBlocks(allocDesc.deviceAlloc, statType),
+	mParticleDeformableAppliedDeformableForcesBuffer(allocDesc.deviceAlloc, statType),
+	mParticleDeformableAppliedParticleForcesBuffer(allocDesc.deviceAlloc, statType),
 	mSpeculativeCCDContactOffset(allocDesc.deviceAlloc, statType),
-	mParticleContactPointBuffer(allocDesc.deviceAlloc, statType),
-	mParticleContactNormalPenBuffer(allocDesc.deviceAlloc, statType),
-	mParticleContactBarycentricBuffer(allocDesc.deviceAlloc, statType),
-	mParticleContactInfoBuffer(allocDesc.deviceAlloc, statType),
-	mParticleTotalContactCountBuffer(allocDesc.deviceAlloc, statType),
-	mPrevParticleContactCountBuffer(allocDesc.deviceAlloc, statType),
-	mParticleSortedContactPointBuffer(allocDesc.deviceAlloc, statType),
-	mParticleSortedContactBarycentricBuffer(allocDesc.deviceAlloc, statType),
-	mParticleSortedContactNormalPenBuffer(allocDesc.deviceAlloc, statType),
-	mParticleSortedContactInfoBuffer(allocDesc.deviceAlloc, statType),
-	mRigidContactBlocks(allocDesc.deviceAlloc, statType),
-	mParticleContactBlocks(allocDesc.deviceAlloc, statType),
-	mRigidFEMAppliedForcesBuf(allocDesc.deviceAlloc, statType),
-	mFemAppliedForcesBuf(allocDesc.deviceAlloc, statType),
-	mParticleAppliedFEMForcesBuf(allocDesc.deviceAlloc, statType),
-	mParticleAppliedParticleForcesBuf(allocDesc.deviceAlloc, statType),
 	mRigidDeltaVelBuf(allocDesc.deviceAlloc, statType),
 	mTempBlockDeltaVelBuf(allocDesc.deviceAlloc, statType),
 	mTempBlockRigidIdBuf(allocDesc.deviceAlloc, statType),
 	mTempCellsHistogramBuf(allocDesc.deviceAlloc, statType),
 	mTempBlockCellsHistogramBuf(allocDesc.deviceAlloc, statType),
 	mTempHistogramCountBuf(allocDesc.deviceAlloc, statType),
-	mIsTGS(isTGS),
-	mContactCountsPrevTimestep(allocDesc.hostAlloc, statType)
+	mIsTGS(isTGS)
 #if PX_ENABLE_SIM_STATS
 	, mContactCountStats(0)
 #else
@@ -80,58 +73,51 @@ PxgFEMCore::PxgFEMCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaCo
 {
 	mCudaContextManager->acquireContext();
 
-	mContactCountsPrevTimestep.resize(ContactCounts::eCOUNT, 0);
+	mRigidDeformablePrevContactCountPinned.get() = 0;
+	mParticleDeformablePrevContactCountPinned.get() = 0;
 
 	//fem vs rigid contact buffer
-	mRigidContactPointBuf.allocateElements(maxContacts, PX_FL);
-	mRigidContactNormalPenBuf.allocateElements(maxContacts, PX_FL);
-	mRigidContactBarycentricBuf.allocateElements(maxContacts, PX_FL);
-	mRigidContactInfoBuf.allocateElements(maxContacts, PX_FL);
+	mRigidDeformableContactPointBuffer.allocateElements(maxContacts, PX_FL);
+	mRigidDeformableContactNormalPenBuffer.allocateElements(maxContacts, PX_FL);
+	mRigidDeformableContactBarycentricBuffer.allocateElements(maxContacts, PX_FL);
+	mRigidDeformableContactInfoBuffer.allocateElements(maxContacts, PX_FL);
+	mRigidDeformableContactRigidMaterialBuffer.allocateElements(maxContacts, PX_FL);
 
-	// Initialize rigid contact info buffer to zero (no contacts)
-	mCudaContextManager->getCudaContext()->memsetD8(mRigidContactInfoBuf.getDevicePtr(), static_cast<unsigned char>(0x0), mRigidContactInfoBuf.getSize());
+	// Initialize rigid contact info and flags to zero (no contacts)
+	mCudaContextManager->getCudaContext()->memsetD8(mRigidDeformableContactInfoBuffer.getDevicePtr(), static_cast<unsigned char>(0x0), mRigidDeformableContactInfoBuffer.getSize());
 
-	mRigidSortedContactPointBuf.allocateElements(maxContacts, PX_FL);
-	mRigidSortedContactNormalPenBuf.allocateElements(maxContacts, PX_FL);
-	mRigidSortedContactBarycentricBuf.allocateElements(maxContacts, PX_FL);
-	mRigidSortedContactInfoBuf.allocateElements(maxContacts, PX_FL);
-	
+	// A vertex contact leaves its barycentric slot untouched, having none, while the sort copies the
+	// slot of every contact. Defined once here so that copy never reads an undefined one.
+	mCudaContextManager->getCudaContext()->memsetD8(mRigidDeformableContactBarycentricBuffer.getDevicePtr(), static_cast<unsigned char>(0x0), mRigidDeformableContactBarycentricBuffer.getSize());
+
+	mRigidDeformableSortedContactPointBuffer.allocateElements(maxContacts, PX_FL);
+	mRigidDeformableSortedContactNormalPenBuffer.allocateElements(maxContacts, PX_FL);
+	mRigidDeformableSortedContactBarycentricBuffer.allocateElements(maxContacts, PX_FL);
+	mRigidDeformableSortedContactInfoBuffer.allocateElements(maxContacts, PX_FL);
+	mRigidDeformableSortedContactRigidMaterialBuffer.allocateElements(maxContacts, PX_FL);
+
 	//PxNodeIndex is sizeof(PxU64)
-	mRigidSortedRigidIdBuf.allocateElements(maxContacts, PX_FL);
+	mRigidDeformableSortedRigidIdBuffer.allocateElements(maxContacts, PX_FL);
 
-	mRigidTotalContactCountBuf.allocateElements(1, PX_FL);
-	mRigidPrevContactCountBuf.allocateElements(1, PX_FL);
-
-	//fem vs fem contact buffer
-	mFemContactPointBuffer.allocateElements(maxContacts, PX_FL);
-	mFemContactNormalPenBuffer.allocateElements(maxContacts, PX_FL);
-	mFemContactBarycentric0Buffer.allocateElements(maxContacts, PX_FL);
-	mFemContactBarycentric1Buffer.allocateElements(maxContacts, PX_FL);
-
-	mVolumeContactOrVTContactInfoBuffer.allocateElements(maxContacts, PX_FL);
-	mEEContactInfoBuffer.allocateElements(maxContacts, PX_FL);
-	mVolumeContactOrVTContactCountBuffer.allocateElements(1, PX_FL);
-	mEEContactCountBuffer.allocateElements(1, PX_FL);
-	mPrevFemContactCountBuffer.allocateElements(1, PX_FL);
+	mRigidDeformableContactCountBuffer.allocateElements(1, PX_FL);
+	mRigidDeformablePrevContactCountBuffer.allocateElements(1, PX_FL);
 
 	//fem vs particle contact buffer
-	mParticleContactPointBuffer.allocateElements(maxContacts, PX_FL);
-	mParticleContactNormalPenBuffer.allocateElements(maxContacts, PX_FL);
-	mParticleContactBarycentricBuffer.allocateElements(maxContacts, PX_FL);
-	mParticleContactInfoBuffer.allocateElements(maxContacts, PX_FL);
-	mParticleTotalContactCountBuffer.allocateElements(1, PX_FL);
-	mPrevParticleContactCountBuffer.allocateElements(1, PX_FL);
+	mParticleDeformableContactPointBuffer.allocateElements(maxContacts, PX_FL);
+	mParticleDeformableContactNormalPenBuffer.allocateElements(maxContacts, PX_FL);
+	mParticleDeformableContactBarycentricBuffer.allocateElements(maxContacts, PX_FL);
+	mParticleDeformableContactInfoBuffer.allocateElements(maxContacts, PX_FL);
+	mParticleDeformableContactCountBuffer.allocateElements(1, PX_FL);
+	mParticleDeformablePrevContactCountBuffer.allocateElements(1, PX_FL);
 
-	mParticleSortedContactPointBuffer.allocateElements(maxContacts, PX_FL);
-	mParticleSortedContactNormalPenBuffer.allocateElements(maxContacts, PX_FL);
-	mParticleSortedContactBarycentricBuffer.allocateElements(maxContacts, PX_FL);
-	mParticleSortedContactInfoBuffer.allocateElements(maxContacts, PX_FL);
+	mParticleDeformableSortedContactPointBuffer.allocateElements(maxContacts, PX_FL);
+	mParticleDeformableSortedContactNormalPenBuffer.allocateElements(maxContacts, PX_FL);
+	mParticleDeformableSortedContactBarycentricBuffer.allocateElements(maxContacts, PX_FL);
+	mParticleDeformableSortedContactInfoBuffer.allocateElements(maxContacts, PX_FL);
 
-	////KS - this will now store an array of 3 floats - normal force + 2* friction force
-	mRigidFEMAppliedForcesBuf.allocateElements(maxContacts, PX_FL);
-	mFemAppliedForcesBuf.allocateElements(maxContacts, PX_FL);
-	mParticleAppliedFEMForcesBuf.allocateElements(maxContacts, PX_FL);
-	mParticleAppliedParticleForcesBuf.allocateElements(maxContacts, PX_FL);
+	mRigidDeformableAppliedForcesBuffer.allocateElements(maxContacts, PX_FL);
+	mParticleDeformableAppliedDeformableForcesBuffer.allocateElements(maxContacts, PX_FL);
+	mParticleDeformableAppliedParticleForcesBuffer.allocateElements(maxContacts, PX_FL);
 
 	//linear and angular delta change for rigid body
 	mRigidDeltaVelBuf.allocateElements(maxContacts * 2, PX_FL);
@@ -144,10 +130,11 @@ PxgFEMCore::PxgFEMCore(PxgCudaKernelWranglerManager* gpuKernelWrangler, PxCudaCo
 	mTempHistogramCountBuf.allocateElements(1, PX_FL);
 
 	//KS - we divide by 32 because this is a block data format
-	mRigidContactBlocks.allocateElements((maxContacts + 31) / 32, PX_FL);
-	mParticleContactBlocks.allocateElements((maxContacts + 31) / 32, PX_FL);
+	mRigidDeformableContactBlocks.allocateElements((maxContacts + 31) / 32, PX_FL);
+	mParticleDeformableContactBlocks.allocateElements((maxContacts + 31) / 32, PX_FL);
 
 	mCudaContext->eventCreate(&mFinalizeEvent, CU_EVENT_DISABLE_TIMING);
+
 
 	mCudaContextManager->releaseContext();
 }
@@ -160,12 +147,10 @@ PxgFEMCore::~PxgFEMCore()
 	mCudaContextManager->releaseContext();
 }
 
-void PxgFEMCore::copyContactCountsToHost()
+void PxgFEMCore::copyRigidAndParticleContactCountsToHost()
 {
-	PxgCudaHelpers::copyDToHAsync(*mCudaContextManager->getCudaContext(), &mContactCountsPrevTimestep[ContactCounts::eRIGID], reinterpret_cast<PxU32*>(getRigidContactCount().getDevicePtr()), 1, mStream);
-	PxgCudaHelpers::copyDToHAsync(*mCudaContextManager->getCudaContext(), &mContactCountsPrevTimestep[ContactCounts::eVOLUME_CONTACTOR_VT], reinterpret_cast<PxU32*>(getVolumeContactOrVTContactCount().getDevicePtr()), 1, mStream);
-	PxgCudaHelpers::copyDToHAsync(*mCudaContextManager->getCudaContext(), &mContactCountsPrevTimestep[ContactCounts::eEDGE_EDGE], reinterpret_cast<PxU32*>(getEEContactCount().getDevicePtr()), 1, mStream);
-	PxgCudaHelpers::copyDToHAsync(*mCudaContextManager->getCudaContext(), &mContactCountsPrevTimestep[ContactCounts::ePARTICLE], reinterpret_cast<PxU32*>(getParticleContactCount().getDevicePtr()), 1, mStream);
+	PxgCudaHelpers::copyDToHAsync(*mCudaContextManager->getCudaContext(), mRigidDeformablePrevContactCountPinned.data(), reinterpret_cast<PxU32*>(getRigidDeformableContactCount().getDevicePtr()), 1, mStream);
+	PxgCudaHelpers::copyDToHAsync(*mCudaContextManager->getCudaContext(), mParticleDeformablePrevContactCountPinned.data(), reinterpret_cast<PxU32*>(getParticleDeformableContactCount().getDevicePtr()), 1, mStream);
 
 	PxgCudaHelpers::copyDToHAsync(*mCudaContextManager->getCudaContext(), mStackSizeNeededPinned.data(), mStackSizeNeededOnDevice.getTypedPtr(), 1, mStream);
 }
@@ -179,22 +164,24 @@ void PxgFEMCore::reserveRigidDeltaVelBuf(PxU32 newCapacity)
 void PxgFEMCore::reorderRigidContacts()
 {
 	{
-		PxgDevicePointer<PxU32> totalContactCountsd = mRigidTotalContactCountBuf.getTypedDevicePtr();
+		PxgDevicePointer<PxU32> totalContactCountsd = mRigidDeformableContactCountBuffer.getTypedDevicePtr();
 
 		//rigid body and fem contacts
-		PxgDevicePointer<float4> contactsd = mRigidContactPointBuf.getTypedDevicePtr();
-		PxgDevicePointer<float4> normPensd = mRigidContactNormalPenBuf.getTypedDevicePtr();
-		PxgDevicePointer<float4> barycentricsd = mRigidContactBarycentricBuf.getTypedDevicePtr();
-		PxgDevicePointer<PxgFemOtherContactInfo> infosd = mRigidContactInfoBuf.getTypedDevicePtr();
-		PxgDevicePointer<float4> sortedContactsd = mRigidSortedContactPointBuf.getTypedDevicePtr();
-		PxgDevicePointer<float4> sortedNormPensd = mRigidSortedContactNormalPenBuf.getTypedDevicePtr();
-		PxgDevicePointer<float4> sortedBarycentricsd = mRigidSortedContactBarycentricBuf.getTypedDevicePtr();
-		PxgDevicePointer<PxgFemOtherContactInfo> sortedInfosd = mRigidSortedContactInfoBuf.getTypedDevicePtr();
+		PxgDevicePointer<float4> contactsd = mRigidDeformableContactPointBuffer.getTypedDevicePtr();
+		PxgDevicePointer<float4> normPensd = mRigidDeformableContactNormalPenBuffer.getTypedDevicePtr();
+		PxgDevicePointer<float4> barycentricsd = mRigidDeformableContactBarycentricBuffer.getTypedDevicePtr();
+		PxgDevicePointer<PxgDeformablePairInfo> infosd = mRigidDeformableContactInfoBuffer.getTypedDevicePtr();
+		PxgDevicePointer<PxU16> materialsd = mRigidDeformableContactRigidMaterialBuffer.getTypedDevicePtr();
+		PxgDevicePointer<float4> sortedContactsd = mRigidDeformableSortedContactPointBuffer.getTypedDevicePtr();
+		PxgDevicePointer<float4> sortedNormPensd = mRigidDeformableSortedContactNormalPenBuffer.getTypedDevicePtr();
+		PxgDevicePointer<float4> sortedBarycentricsd = mRigidDeformableSortedContactBarycentricBuffer.getTypedDevicePtr();
+		PxgDevicePointer<PxgDeformablePairInfo> sortedInfosd = mRigidDeformableSortedContactInfoBuffer.getTypedDevicePtr();
+		PxgDevicePointer<PxU16> sortedMaterialsd = mRigidDeformableSortedContactRigidMaterialBuffer.getTypedDevicePtr();
 
 		//sortedInfosd already store the rigid id. However, we are sharing the code with the particle system
 		//for rigid delta accumulation so we need to store the sorted rigid id as a PxU32 array. 
-		PxgDevicePointer<PxU64> sortedRigidsIdd = mRigidSortedRigidIdBuf.getTypedDevicePtr();
-		PxgDevicePointer<PxU32> remapByRigidd = mContactRemapSortedByRigidBuf.getTypedDevicePtr();
+		PxgDevicePointer<PxU64> sortedRigidsIdd = mRigidDeformableSortedRigidIdBuffer.getTypedDevicePtr();
+		PxgDevicePointer<PxU32> remapByRigidd = mContactRemapSortedByRigidBuffer.getTypedDevicePtr();
 
 		CUfunction reorderFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::FEM_REORDER_RS_CONTACTS);
 
@@ -204,12 +191,14 @@ void PxgFEMCore::reorderRigidContacts()
 			PX_CUDA_KERNEL_PARAM(normPensd),
 			PX_CUDA_KERNEL_PARAM(barycentricsd),
 			PX_CUDA_KERNEL_PARAM(infosd),
+			PX_CUDA_KERNEL_PARAM(materialsd),
 			PX_CUDA_KERNEL_PARAM(totalContactCountsd),
 			PX_CUDA_KERNEL_PARAM(remapByRigidd),
 			PX_CUDA_KERNEL_PARAM(sortedContactsd),
 			PX_CUDA_KERNEL_PARAM(sortedNormPensd),
 			PX_CUDA_KERNEL_PARAM(sortedBarycentricsd),
 			PX_CUDA_KERNEL_PARAM(sortedInfosd),
+			PX_CUDA_KERNEL_PARAM(sortedMaterialsd),
 			PX_CUDA_KERNEL_PARAM(sortedRigidsIdd)
 		};
 
@@ -302,38 +291,43 @@ void PxgFEMCore::accumulateRigidDeltas(PxgDevicePointer<PxgPrePrepDesc> prePrepD
 	}
 }
 
-PxgFEMContactWriter PxgFEMCore::createContactWriter(bool useParticleForSorting)
+PxgParticleDbContactWriter PxgFEMCore::createParticleDbContactWriter()
 {
 	//Ensure a rigid index has the same size as an encoded particle index
 	PX_COMPILE_TIME_ASSERT(sizeof(PxNodeIndex) == sizeof(PxU64));
 
-	PxgFEMContactWriter writer;
-	if (useParticleForSorting)
-	{
-		writer.outPoint = getParticleContacts().getTypedPtr();
-		writer.outNormalPen = getParticleNormalPens().getTypedPtr();
-		writer.outBarycentric = getParticleBarycentrics().getTypedPtr();
-		writer.outContactInfo = getParticleContactInfos().getTypedPtr();
-		writer.totalContactCount = getParticleContactCount().getTypedPtr();
+	PxgParticleDbContactWriter writer;
+	writer.outPoint = getParticleDeformableContacts().getTypedPtr();
+	writer.outNormalPen = getParticleDeformableNormalPens().getTypedPtr();
+	writer.outBarycentric = getParticleDeformableBarycentrics().getTypedPtr();
+	writer.outContactInfo = getParticleDeformableContactInfos().getTypedPtr();
+	writer.totalContactCount = getParticleDeformableContactCount().getTypedPtr();
 
-		writer.contactByX = getContactSortedByParticle().getTypedPtr();
-		writer.tempContactByX = getTempContactByParticle().getTypedPtr();
-		writer.contactIndexSortedByX = getContactRemapSortedByParticle().getTypedPtr();
-		writer.contactSortedByX = NULL; //Does not exist for particles
-	}
-	else
-	{
-		writer.outPoint = getRigidContacts().getTypedPtr();
-		writer.outNormalPen = getRigidNormalPens().getTypedPtr();
-		writer.outBarycentric = getRigidBarycentrics().getTypedPtr();
-		writer.outContactInfo = getRigidContactInfos().getTypedPtr();
-		writer.totalContactCount = getRigidContactCount().getTypedPtr();
+	writer.contactByParticle = getContactByParticle().getTypedPtr();
+	writer.tempContactByParticle = getTempContactByParticle().getTypedPtr();
+	writer.contactIndexSortedByParticle = getContactRemapSortedByParticle().getTypedPtr();
 
-		writer.contactByX = reinterpret_cast<PxU64*>(getContactByRigid().getTypedPtr());
-		writer.tempContactByX = getTempContactByRigid().getTypedPtr();
-		writer.contactIndexSortedByX = getContactRemapSortedByRigid().getTypedPtr();
-		writer.contactSortedByX = reinterpret_cast<PxU32*>(getContactSortedByRigid().getTypedPtr());
-	}
+	writer.maxNumContacts = mMaxContacts;
+	return writer;
+}
+
+PxgRigidDbContactWriter PxgFEMCore::createRigidDbContactWriter()
+{
+	//Ensure a rigid index has the same size as an encoded particle index
+	PX_COMPILE_TIME_ASSERT(sizeof(PxNodeIndex) == sizeof(PxU64));
+
+	PxgRigidDbContactWriter writer;
+	writer.outPoint = getRigidDeformableContacts().getTypedPtr();
+	writer.outNormalPen = getRigidDeformableNormalPens().getTypedPtr();
+	writer.outBarycentric = getRigidDeformableBarycentrics().getTypedPtr();
+	writer.outContactInfo = getRigidDeformableContactInfos().getTypedPtr();
+	writer.outRigidMaterialIndex = getRigidDeformableContactRigidMaterials().getTypedPtr();
+	writer.totalContactCount = getRigidDeformableContactCount().getTypedPtr();
+
+	writer.contactByRigid = reinterpret_cast<PxU64*>(getContactByRigid().getTypedPtr());
+	writer.tempContactByRigid = getTempContactByRigid().getTypedPtr();
+	writer.contactIndexSortedByRigid = getContactRemapSortedByRigid().getTypedPtr();
+
 	writer.maxNumContacts = mMaxContacts;
 	return writer;
 }

@@ -1,10 +1,20 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-BATCH-001
+ * @covers AC-3
+ */
+
 /**
  * @implements REQ-BUILD-UNIBUILD-001
  * @covers AC-3
  */
+
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-3 AC-4
+
+// @implements REQ-PROPERTYQUERY-001
+// @covers AC-1 AC-2
 
 // pxr-free PhysXPropertyQuery bridge (ADR-0027, seam #2): one source-agnostic translation
 // unit -- `omni.physx` compiles exactly one way, and USD parsing is a runtime-installed
@@ -43,6 +53,8 @@
 
 #include "OmniPhysX.h"
 #include "PhysXPropertyQuery.h"
+#include "RuntimeExecution.h"
+#include "usdLoad/LoadStage.h"
 
 #include <PxPhysicsAPI.h>
 
@@ -50,6 +62,7 @@
 #include <common/foundation/CarbPhysXCast.h> // fromPhysX(PxQuat)
 
 #include "Setup.h"
+#include <omni/physx/IPhysxSimulation.h>
 #include "ObjectDataQuery.h"
 #include "CookingDataAsync.h"
 #include "usdInterface/UsdInterface.h"       // PhysXUsdPhysicsInterface
@@ -74,13 +87,6 @@
 #include <vector>
 
 using namespace ::physx;
-
-// Defined at global scope elsewhere (PhysX.cpp); pxr-free signatures. Used by the
-// articulation synchronous fallback below.
-extern void forceLoadPhysicsFromUSD();
-extern void releasePhysicsObjects();
-extern bool physxSimulationAttach(long stageId);
-extern void physxSimulationDetach();
 
 namespace omni
 {
@@ -130,6 +136,9 @@ struct BaseRequest
 
 struct RigidBodyRequest : public BaseRequest
 {
+    // Requests are copied into asynchronous queues. Keep concrete descriptors,
+    // their allocator and source/mesh auxiliaries alive across those copies.
+    std::shared_ptr<omni::physics::parse::ScannedStage> parsedScan;
     omni::physics::parse::PhysxRigidBodyDesc* desc = { nullptr };
     // Collider path string + desc. The path string is the collider's source-native path,
     // used to encode the response usdPath (seam) and to re-mint the collider ObjectKey against
@@ -160,6 +169,8 @@ struct ArticulationRequest : public BaseRequest
 // facade at the bottom of this file forwards to it.
 struct PhysXPropertyQueryManagerImpl
 {
+    // query, pump and detach cancellation all hold configuration admission.
+    // Callbacks execute without a container mutex; runtime reentry is rejected.
     std::vector<RigidBodyRequest> rigidBodyRequests;
 
     bool allCollidersHaveBeenComputed(const RigidBodyRequest& rigidBodyRequest,
@@ -170,7 +181,7 @@ struct PhysXPropertyQueryManagerImpl
     bool reparseRigidBody(RigidBodyRequest& request);
     void executeQueryRigidBody(RigidBodyRequest& request);
     void executeQueryArticulation(ArticulationRequest& request);
-    void processArticulation(const usdparser::AttachedStage& attachedStage, ArticulationRequest& request);
+    bool processArticulation(const usdparser::AttachedStage& attachedStage, ArticulationRequest& request);
 
     void queryPrim(uint64_t stageId,
                    uint64_t primPathId,
@@ -178,6 +189,7 @@ struct PhysXPropertyQueryManagerImpl
                    const IPhysxPropertyQueryCallback& callbacks);
     void updateQueuedRequests();
     void cancelAllPendingRequests(PhysxPropertyQueryResult::Enum errorCode);
+    void cancelStageRequests(uint64_t stageId, PhysxPropertyQueryResult::Enum errorCode);
 };
 
 
@@ -198,6 +210,7 @@ void BaseRequest::callQueryFinished()
     releaseParsedData();
     if (callbacks.queryFinishedCallback)
     {
+        RuntimeCallbackScope callbackScope;
         callbacks.queryFinishedCallback(callbacks.userData);
     }
 }
@@ -215,24 +228,16 @@ void BaseRequest::returnWithError(PhysxPropertyQueryResult::Enum queryResult)
 
 void RigidBodyRequest::releaseParsedData()
 {
-    using namespace omni::physics::parse;
-    // NOTE: Placement delete is more correct as ICE_FREE will not call destructors of non trivial fields
-    // (std::vector<*> etc.)
-    ICE_PLACEMENT_DELETE(desc, PhysxRigidBodyDesc);
     desc = nullptr;
-    for (auto coll : colliders)
-    {
-        // NOTE: This one may leak memory anyway for non trivial fields (example std::vectors)
-        // declared in children (as PhysxShapeDesc destructor is not virtual)
-        ICE_PLACEMENT_DELETE(coll.second, PhysxShapeDesc);
-    }
     colliders.clear();
+    parsedScan.reset();
 }
 
 void RigidBodyRequest::sendRigidBodyResponse(const PhysxPropertyQueryRigidBodyResponse& response)
 {
     if (callbacks.rigidBodyCallback)
     {
+        RuntimeCallbackScope callbackScope;
         callbacks.rigidBodyCallback(response, callbacks.userData);
     }
 }
@@ -241,6 +246,7 @@ void RigidBodyRequest::sendColliderResponse(const PhysxPropertyQueryColliderResp
 {
     if (callbacks.colliderCallback)
     {
+        RuntimeCallbackScope callbackScope;
         callbacks.colliderCallback(response, callbacks.userData);
     }
 }
@@ -249,6 +255,7 @@ void ArticulationRequest::sendArticulationResponse(const PhysxPropertyQueryArtic
 {
     if (callbacks.articulationCallback)
     {
+        RuntimeCallbackScope callbackScope;
         callbacks.articulationCallback(response, callbacks.userData);
     }
 }
@@ -466,6 +473,14 @@ void PhysXPropertyQueryManagerImpl::updateQueuedRequests()
 {
     for (auto it = rigidBodyRequests.begin(); it != rigidBodyRequests.end();)
     {
+        // Reparse requests own private, unpublished attachments. The public owner
+        // pump intentionally cannot visit them; advance their cooking context here
+        // while this request retains its source and callback storage.
+        if (it->parseStage)
+        {
+            if (auto* cooking = OmniPhysX::getInstance().getPhysXSetup().getCookingDataAsync())
+                cooking->pump(*it->parseStage);
+        }
         if (rigidBodyRequestHasFinished(*it))
         {
             it = rigidBodyRequests.erase(it);
@@ -493,6 +508,26 @@ void PhysXPropertyQueryManagerImpl::cancelAllPendingRequests(PhysxPropertyQueryR
     detachFromStageUpdate();
 }
 
+void PhysXPropertyQueryManagerImpl::cancelStageRequests(uint64_t stageId, PhysxPropertyQueryResult::Enum errorCode)
+{
+    // Move matching work out before invoking callbacks: callbacks may enqueue new requests.
+    std::vector<RigidBodyRequest> canceled;
+    for (auto it = rigidBodyRequests.begin(); it != rigidBodyRequests.end();)
+    {
+        if (it->stageId == stageId)
+        {
+            canceled.push_back(std::move(*it));
+            it = rigidBodyRequests.erase(it);
+        }
+        else
+            ++it;
+    }
+    if (rigidBodyRequests.empty())
+        detachFromStageUpdate();
+    for (RigidBodyRequest& request : canceled)
+        request.returnWithError(errorCode);
+}
+
 void PhysXPropertyQueryManagerImpl::attachToStageUpdate()
 {
      OmniPhysX::getInstance().getStageUpdate().attachPropertyQueryStageUpdate();
@@ -503,9 +538,11 @@ void PhysXPropertyQueryManagerImpl::detachFromStageUpdate()
     OmniPhysX::getInstance().getStageUpdate().detachPropertyQueryStageUpdate();
 }
 
-void PhysXPropertyQueryManagerImpl::processArticulation(const usdparser::AttachedStage& attachedStage, ArticulationRequest& request)
+bool PhysXPropertyQueryManagerImpl::processArticulation(
+    const usdparser::AttachedStage& attachedStage, ArticulationRequest& request)
 {
     parse::IUsdReparse* reparse = reparseBackend();
+    std::vector<PhysxPropertyQueryArticulationResponse> responses;
 
     // Scoped query: visits every object under request.primPath (root inclusive).
     // Collected up front; the per-prim work below is a path-keyed object lookup
@@ -527,7 +564,7 @@ void PhysXPropertyQueryManagerImpl::processArticulation(const usdparser::Attache
             continue;
         }
 
-        const internal::InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+        const internal::InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
         PxArticulationReducedCoordinate* articulation =
             (PxArticulationReducedCoordinate*)getObjectDataOrID<ObjectDataQueryType::ePHYSX_PTR>(
                 subKey, ePTArticulation, db, attachedStage);
@@ -537,36 +574,48 @@ void PhysXPropertyQueryManagerImpl::processArticulation(const usdparser::Attache
             const PxU32 numLinks = articulation->getNbLinks();
             std::vector<PhysxPropertyQueryArticulationLink> articulationLinks;
             articulationLinks.resize(numLinks);
+            std::vector<bool> populatedLinks(numLinks, false);
             PxArticulationLink* link = nullptr;
             for (PxU32 i = 0; i < numLinks; i++)
             {
                 uint64_t linkName = 0;
                 uint64_t jointName = 0;
                 uint32_t jointDof = 0;
-                articulation->getLinks(&link, 1, i);
+                if (articulation->getLinks(&link, 1, i) != 1 || !link)
+                    return false;
+                const PxU32 linkIndex = link->getLinkIndex();
+                if (linkIndex >= numLinks || populatedLinks[linkIndex])
+                    return false;
                 if (link->getName() && reparse)
                 {
                     reparse->stringToLegacyPathBits(link->getName(), linkName);
                 }
 
                 PxArticulationJointReducedCoordinate* joint = link->getInboundJoint();
-                if (joint && joint->getName())
+                if (joint)
                 {
-                    if (reparse)
+                    if (joint->getName() && reparse)
                         reparse->stringToLegacyPathBits(joint->getName(), jointName);
                     jointDof = link->getInboundJointDof();
+                    if (jointDof == PX_INVALID_U32)
+                        return false;
                 }
 
-                articulationLinks[link->getLinkIndex()] = { linkName, jointName, jointDof };
+                articulationLinks[linkIndex] = { linkName, jointName, jointDof };
+                populatedLinks[linkIndex] = true;
             }
 
             PhysxPropertyQueryArticulationResponse response;
             response.usdStageId = request.stageId;
             response.usdPath = request.primPathId;
-            response.links = articulationLinks;
-            request.sendArticulationResponse(response);
+            response.links = std::move(articulationLinks);
+            responses.push_back(std::move(response));
         }
     }
+
+    for (const PhysxPropertyQueryArticulationResponse& response : responses)
+        request.sendArticulationResponse(response);
+    return true;
 }
 
 void PhysXPropertyQueryManagerImpl::executeQueryArticulation(ArticulationRequest& request)
@@ -604,48 +653,73 @@ void PhysXPropertyQueryManagerImpl::executeQueryArticulation(ArticulationRequest
         return;
     }
 
-    // Synchronous path for now; parses the whole stage. If already parsed, use the existing data.
-    if (usdparser::UsdLoad::getUsdLoad()->getActiveStageId() == static_cast<long>(request.stageId))
+    // A USD stage id is developer backing metadata. Require a unique match;
+    // ambiguity must never silently choose a live ovstage owner.
+    usdparser::UsdLoad& load = *usdparser::UsdLoad::getUsdLoad();
+    usdparser::AttachedStage* owner = nullptr;
+    for (const usdparser::AttachedStageMap::value_type& entry : load.getAttachedStages())
     {
-        const usdparser::AttachedStage* attachedStage =
-            usdparser::UsdLoad::getUsdLoad()->getAttachedStage(request.stageId);
-        if (attachedStage && !attachedStage->getPrimUpdateMap().isEmptyScene())
+        if (static_cast<uint64_t>(entry.second->getStageId()) != request.stageId)
+            continue;
+        if (owner)
         {
-            processArticulation(*attachedStage, request);
-
-            request.callQueryFinished();
+            request.returnWithError(PhysxPropertyQueryResult::eERROR_RUNTIME);
             return;
         }
-        else
+        owner = entry.second.get();
+    }
+    struct QueryOwnerCleanup
+    {
+        AttachHandle temporary = kNoAttach;
+        AttachHandle loadedObjects = kNoAttach;
+        ~QueryOwnerCleanup()
         {
-            forceLoadPhysicsFromUSD();
-            processArticulation(*attachedStage, request);
-            releasePhysicsObjects();
-
-            request.callQueryFinished();
-            return;
+            if (temporary != kNoAttach)
+                OmniPhysX::getInstance().physXDetach(temporary);
+            else if (loadedObjects != kNoAttach)
+                usdparser::UsdLoad::getUsdLoad()->releasePhysicsObjects(loadedObjects);
+        }
+    };
+    bool queried = false;
+    {
+        std::unique_ptr<RuntimeExecutionScope> temporaryOperation;
+        QueryOwnerCleanup cleanup;
+        if (!owner)
+        {
+            cleanup.temporary = OmniPhysX::getInstance().physXAttach(static_cast<long>(request.stageId), true);
+            owner = load.getAttachedStageByHandle(cleanup.temporary);
+            if (owner)
+            {
+                temporaryOperation = std::make_unique<RuntimeExecutionScope>(cleanup.temporary);
+                if (!*temporaryOperation)
+                    owner = nullptr;
+            }
+        }
+        else if (owner->getPrimUpdateMap().isEmptyScene())
+        {
+            cleanup.loadedObjects = owner->getAttachHandle();
+            InitialStagePopulationScope population(*owner->getPhysXPhysicsInterface(), *owner);
+            if (!usdparser::loadFromStage(*owner))
+                owner = nullptr;
+            else
+            {
+                owner->getPhysXPhysicsInterface()->finishSetup(*owner);
+                owner->getInternalPhysXDatabase().updateDirtyMassActors();
+            }
+        }
+        if (owner)
+        {
+            // Articulation link indices and inbound DOF counts are valid only when pending
+            // articulations enter their scene. A non-empty owner may still have pending setup
+            // immediately after attach, so finalize it before reading either value.
+            owner->getPhysXPhysicsInterface()->finishSetup(*owner);
+            queried = processArticulation(*owner, request);
         }
     }
-
-    if (!usdparser::UsdLoad::getUsdLoad()->getActiveStageId())
-    {
-        physxSimulationAttach(static_cast<long>(request.stageId));
-        const usdparser::AttachedStage* attachedStage =
-            usdparser::UsdLoad::getUsdLoad()->getAttachedStage(request.stageId);
-        if (attachedStage && !attachedStage->getPrimUpdateMap().isEmptyScene())
-        {
-            processArticulation(*attachedStage, request);
-        }
-        physxSimulationDetach();
-
+    if (queried)
         request.callQueryFinished();
-        return;
-    }
-
-    // A different stage is currently attached - we cannot satisfy the query against
-    // request.stageId without disturbing it. Fail explicitly so the caller's
-    // queryFinishedCallback fires instead of leaving the request hanging.
-    request.returnWithError(PhysxPropertyQueryResult::eERROR_RUNTIME);
+    else
+        request.returnWithError(PhysxPropertyQueryResult::eERROR_RUNTIME);
 }
 
 // Single-prim rigid-body reparse, pxr-free. Mirrors the former native parseRigidBodyNative,
@@ -659,8 +733,8 @@ bool PhysXPropertyQueryManagerImpl::reparseRigidBody(RigidBodyRequest& request)
     if (!reparse)
         return false;
 
-    // Owns the scan source for the whole reparse; `scanned` below has its own source and is
-    // destroyed first.
+    // Owns the session source for this call. The independent scan source moves
+    // into request.parsedScan and remains alive with the returned descriptors.
     parse::UsdReparseSessionPtr session = parse::openScopedStage(*reparse, request.stageId);
     if (!session)
         return false;
@@ -727,20 +801,11 @@ bool PhysXPropertyQueryManagerImpl::reparseRigidBody(RigidBodyRequest& request)
                 // Re-key into attachedStage's key-space + cooking dispatch + consumer state.
                 usdparser::translateScannedShape(attachedStage, scanned, desc,
                                                  attachedStage.keyFor(shapePath));
-                if (omni::physics::parse::PhysxShapeDesc* released = shapeUPtr.release())
-                    request.colliders.emplace_back(std::move(shapePath), released);
+                request.colliders.emplace_back(std::move(shapePath), desc);
             }
 
-            // Transfer the body desc out of scanned.bodies (ICE-allocated; released so the
-            // consumer-side ICE_PLACEMENT_DELETE matches).
-            for (auto& bodyUPtr : scanned.bodies)
-            {
-                if (bodyUPtr.get() == rbDesc)
-                {
-                    request.desc = bodyUPtr.release();
-                    break;
-                }
-            }
+            request.desc = rbDesc;
+            request.parsedScan = std::make_shared<parse::ScannedStage>(std::move(scanned));
             ok = request.desc != nullptr;
         }
     }
@@ -777,13 +842,22 @@ void PhysXPropertyQueryManagerImpl::executeQueryRigidBody(RigidBodyRequest& requ
         }
     }
 
-    if (usdparser::UsdLoad::getUsdLoad()->getActiveStageId() == static_cast<long>(request.stageId))
+    const usdparser::AttachedStage* attachedStage = nullptr;
+    for (const usdparser::AttachedStageMap::value_type& entry : usdparser::UsdLoad::getUsdLoad()->getAttachedStages())
     {
-        const usdparser::AttachedStage* attachedStage =
-            usdparser::UsdLoad::getUsdLoad()->getAttachedStage(request.stageId);
+        if (static_cast<uint64_t>(entry.second->getStageId()) != request.stageId)
+            continue;
         if (attachedStage)
         {
-            const internal::InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+            request.returnWithError(PhysxPropertyQueryResult::eERROR_RUNTIME);
+            return;
+        }
+        attachedStage = entry.second.get();
+    }
+    {
+        if (attachedStage)
+        {
+            const internal::InternalPhysXDatabase& db = attachedStage->getInternalPhysXDatabase();
             // ObjectKey (ADR-0019): the lookup uses the pxr-free getObjectDataOrID overload,
             // keyed by the request's path minted against this attach's source.
             const omni::physics::parse::ObjectKey primObjKey = attachedStage->keyFor(request.primPath);
@@ -1019,16 +1093,19 @@ void PhysXPropertyQueryManager::queryPrim(uint64_t stageId,
     {
         PhysxPropertyQueryRigidBodyResponse rbResponse;
         rbResponse.result = PhysxPropertyQueryResult::eERROR_INVALID_USD_STAGE;
+        RuntimeCallbackScope callbackScope;
         callbacks.rigidBodyCallback(rbResponse, callbacks.userData);
     }
     if (callbacks.colliderCallback)
     {
         PhysxPropertyQueryColliderResponse collResponse;
         collResponse.result = PhysxPropertyQueryResult::eERROR_INVALID_USD_STAGE;
+        RuntimeCallbackScope callbackScope;
         callbacks.colliderCallback(collResponse, callbacks.userData);
     }
     if (callbacks.queryFinishedCallback)
     {
+        RuntimeCallbackScope callbackScope;
         callbacks.queryFinishedCallback(callbacks.userData);
     }
 }
@@ -1037,6 +1114,12 @@ void PhysXPropertyQueryManager::updateQueuedRequests()
 {
     if (mImpl)
         mImpl->updateQueuedRequests();
+}
+
+void PhysXPropertyQueryManager::cancelStageRequests(uint64_t stageId, PhysxPropertyQueryResult::Enum errorCode)
+{
+    if (mImpl && stageId != 0)
+        mImpl->cancelStageRequests(stageId, errorCode);
 }
 
 void PhysXPropertyQueryManager::cancelAllPendingRequests(PhysxPropertyQueryResult::Enum errorCode)
@@ -1050,6 +1133,40 @@ void queryPrim(uint64_t stageId,
                PhysxPropertyQueryMode::Enum queryMode,
                const IPhysxPropertyQueryCallback& callbacks)
 {
+    RuntimeExecutionScope execution(kNoAttach);
+    if (!execution)
+    {
+        RigidBodyRequest rejected;
+        rejected.callbacks = callbacks;
+        rejected.returnWithError(PhysxPropertyQueryResult::eERROR_RUNTIME);
+        return;
+    }
+    std::shared_ptr<usdparser::AttachedStage> owner;
+    for (const usdparser::AttachedStageMap::value_type& entry : usdparser::UsdLoad::getUsdLoad()->getAttachedStages())
+    {
+        if (static_cast<uint64_t>(entry.second->getStageId()) != stageId)
+            continue;
+        if (owner)
+        {
+            RigidBodyRequest rejected;
+            rejected.callbacks = callbacks;
+            rejected.returnWithError(PhysxPropertyQueryResult::eERROR_RUNTIME);
+            return;
+        }
+        owner = entry.second;
+    }
+    std::unique_ptr<RuntimeExecutionScope> ownerOperation;
+    if (owner)
+    {
+        ownerOperation = std::make_unique<RuntimeExecutionScope>(owner->getAttachHandle());
+        if (!*ownerOperation)
+        {
+            RigidBodyRequest rejected;
+            rejected.callbacks = callbacks;
+            rejected.returnWithError(PhysxPropertyQueryResult::eERROR_RUNTIME);
+            return;
+        }
+    }
     OmniPhysX::getInstance().getPropertyQueryManager().queryPrim(stageId, primKey, queryMode, callbacks);
 }
 } // namespace physx

@@ -2,11 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PARSE-COL-005
+ * @covers AC-1 AC-5
+ *
  * @implements REQ-PARSE-SUBTREE-001
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5
- */
-
-/**
+ *
+ * @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-1 AC-2 AC-3 AC-6 AC-7
+ *
  * @implements REQ-PUBLICAPI-003
  * @covers AC-1 AC-2 AC-3 AC-4 AC-6
  *
@@ -17,13 +21,10 @@
  * @covers AC-1 AC-2 AC-3
  *
  * @implements REQ-PARSE-FEED-003
- * @covers AC-7 AC-8 AC-9 AC-10 AC-11 AC-12 AC-14
+ * @covers AC-7 AC-8 AC-9 AC-10 AC-11 AC-12 AC-14 AC-17
  *
  * @implements REQ-PARSE-FEED-005
  * @covers AC-7
- *
- * @implements REQ-PARSE-COL-005
- * @covers AC-1
  *
  * @implements REQ-LOAD-TOKENS-001
  * @covers AC-5
@@ -31,6 +32,7 @@
 #pragma once
 
 #include <omni/physics/parse/IPhysicsSource.h>
+#include "FrozenScalarBatch.h"
 
 // Flat ovstage C API (ovstage.h) + the ovx path dictionary. NOTE: ovstage.h and
 // ovstage_api/ovstage_api.h define the SAME types and must not both be included
@@ -39,6 +41,7 @@
 #include <ovstage/ovx_path_dictionary.h>
 
 #include <array>
+#include <algorithm>
 #include <deque>
 #include <functional>
 #include <map>
@@ -88,6 +91,8 @@ inline constexpr const char* kUsdParent = "usd-parent";     //!< parent prim pat
 inline constexpr const char* kUsdChildren = "usd-children"; //!< child prim paths (built-in metadata)
 inline constexpr const char* kUsdSchemas = "usd-schemas";   //!< applied schemas (built-in metadata)
 inline constexpr const char* kUsdPrimType = "usd-prim-type"; //!< prim type (built-in metadata)
+inline constexpr char kUsdTypeName[] = "usd-metadata:typeName"; //!< composed USD type, independent of rendering
+inline constexpr const char* kUsdPrototypes = "prototypes:usd-targets"; //!< ordered authored PointInstancer targets
 inline constexpr const char* kRootPrimPath = "/"; //!< root prim; ovstage 374259+ populates stage metadata here (usd-metadata: prefix)
 inline constexpr const char* kStageInfoPath = "/__ovstage_population_stage_info__"; //!< legacy prim holding stage units
 inline constexpr const char* kLegacyStageInfoPath = "/__ovpopulation_stage_info__"; //!< legacy prim holding stage units
@@ -140,6 +145,8 @@ inline std::string_view toUsdAttributeName(std::string_view column)
         return kLocalSpaceVelocitiesUsdField;
     if (column == kInactiveIds)
         return kInactiveIdsUsdField;
+    if (column == kUsdPrototypes)
+        return "prototypes";
     return column;
 }
 } // namespace conv
@@ -153,12 +160,13 @@ struct SchemaRowDelta
     std::vector<uint64_t> schemaTokens;
 };
 
-// One prim's `usd-prim-type` after a structural write, as the dictionary token id the column
+// One prim's built-in or authored type after a structural write, as the dictionary token id the column
 // carries; 0 when the column was tombstoned. Input of OvstageSource::applyPrimTypeDelta().
 struct PrimTypeRowDelta
 {
     ovx_primpath_t raw = 0;
     uint64_t typeToken = 0;
+    bool authored = false;
 };
 
 // The prim lists behind one read's groups, each fetched from the dictionary once and reused for
@@ -209,6 +217,9 @@ private:
 // the source degrades to an empty scan.
 // ---------------------------------------------------------------------------
 
+// Source-free decomposition shared by scalar reads and descriptor workers.
+void decomposeWorldTransform(const Matrix4d& world, Matrix3d& rotation, carb::Float3& scale) noexcept;
+
 class OvstageSource final : public IPhysicsSource
 {
 public:
@@ -219,6 +230,17 @@ public:
                   ovstage_ordinal_t readOrdinal = 1,
                   uint64_t usdStageId = 0);
     ~OvstageSource() override;
+
+    // Capture declared numeric columns and retain their read groups. Unknown or
+    // unsupported cache entries are resolved here, never during row reads.
+    FrozenScalarBatch freezeScalarBatch(const std::vector<ObjectKey>& keys,
+                                       const TokenId* attributes, size_t attributeCount) const;
+
+    // Acquire numeric columns directly, without materializing the source caches.
+    // Declared token columns are resolved to source TokenIds on the coordinator.
+    FrozenScalarBatch readScalarBatch(const std::vector<ObjectKey>& keys,
+                                     const TokenId* attributes, size_t attributeCount,
+                                     const TokenId* tokenAttributes = nullptr, size_t tokenCount = 0) const;
 
     // --- IPhysicsSource overrides (the pure-virtual contract) ---
 
@@ -237,8 +259,8 @@ public:
 
     ObjectKey getRootKey() const override;
     bool exists(ObjectKey key) const override;
-    // One usd-path read over a query built from the cold candidate paths in `keys`,
-    // instead of exists()'s one query per cold key. See IPhysicsSource::existsBatch.
+    // One path-list query from candidate handles and latest usd-path read for all cold keys,
+    // instead of exists()'s one round trip per cold key. See IPhysicsSource::existsBatch.
     void existsBatch(const std::vector<ObjectKey>& keys, std::vector<bool>& outExists) const override;
     // existsBatch() that reports whether every cold key was actually resolved (false: the live
     // query failed, so a `false` answer is not proof of absence).
@@ -346,10 +368,12 @@ public:
     // getLocalToWorldTransform transparently serve from the cache when a bucket is
     // active, so no parser churn.
     //
-    // prefetchBucket issues ONE read_attributes over a path-list query of all
-    // `keys` for all `attrNames` (the bucket's columns), decodes each prim's row
-    // out of the returned DLTensor columns, and caches them. While the bucket is
-    // active:
+    // prefetchBucket issues at most one read_attributes over a path-list query
+    // of all `keys`, decodes each prim's row, and caches it. Under a sealed
+    // load-cache window, the complete path-list vocabulary proves absent requested
+    // columns empty for these keys (USD-backed windows use the stage vocabulary).
+    // Computed columns and uncertain vocabulary keep the original requests.
+    // While the bucket is active:
     //   - scalar/vector reads for a bucket key hit the cache; a clean-bucket miss
     //     resolves to "unauthored" (empty) with no per-prim round trip;
     //   - transform reads hit cached world/local transform rows when ovpopulation
@@ -361,6 +385,15 @@ public:
     void prefetchBucket(const std::vector<ObjectKey>& keys,
                         const std::vector<std::string>& attrNames,
                         bool sealMissing = true) const;
+    // Load-window variant: include strict instance-ancestor backing rows in the same
+    // read, then alias missing logical scalar cells to the returned backing rows.
+    // Only instanceKeys x instanceAttrNames are resolved; other columns stay logical.
+    // Published values (including default/block sentinels) always win. Shared tensor
+    // storage and covered misses live until clearLoadCache(), across clearBucket().
+    void prefetchResolvedInstanceBucket(const std::vector<ObjectKey>& keys,
+                                        const std::vector<std::string>& attrNames,
+                                        const std::vector<ObjectKey>& instanceKeys,
+                                        const std::vector<std::string>& instanceAttrNames) const;
     // Deduped root-to-parent ancestor chain of `keys`, path-based (no ovstage query).
     // Shared by the walker's ancestor prefetch and AttachedStage's mass-update prefetch.
     std::vector<ObjectKey> collectAncestors(const std::vector<ObjectKey>& keys) const;
@@ -382,6 +415,9 @@ public:
     // incremental load lets the scan and every follow-up read share it (scanOvstage joins an
     // open window instead of replacing it).
     bool loadCacheActive() const;
+    // True only when every requested cell is authoritative in the current immutable
+    // load window. Lets the walker omit redundant family prefetch preparation.
+    bool loadCacheCovers(const std::vector<ObjectKey>& keys, const std::vector<std::string>& attrs) const;
     // Bulk hierarchy-read window: while open, forEachChild() trusts a complete child
     // cache's "no children" answer instead of a per-prim prefix query (O(prims^2) for a
     // pass that asks about every leaf). Separate from beginLoadCache() on purpose: this
@@ -431,6 +467,13 @@ public:
     BucketSnapshotPtr suspendBucket() const;
     void resumeBucket(BucketSnapshotPtr snapshot) const;
     void clearSchemaCache() const;
+
+    // Coordinator-only handoff after a completed scan, before runtime consumption.
+    // Moves complete discovery indexes for the same stageless snapshot, remapping
+    // schema TokenIds. The donor retains its tokens, path strings and mesh buffers
+    // for descriptor consumption. Neither source may be read or authored concurrently.
+    // Returns false without changing either source when snapshots are incompatible.
+    bool takeDiscoveryFrom(const OvstageSource& scan);
     // Patch the schema-membership memo for prims whose usd-schemas column was written since
     // the memo was filled, instead of dropping it: every memoised schema (and multi-apply base)
     // gains or loses each row's prim exactly; a schema nothing asked about yet needs no entry
@@ -462,7 +505,8 @@ public:
     // Patch the prim-type memo isA()/getTypeName() answer from: raw handles as the feed read
     // them, `typeToken` the usd-prim-type dictionary id (0 = tombstone -> forget). False on an
     // unresolvable handle -- the caller must then clearSchemaCache().
-    bool applyPrimTypeDelta(const std::vector<PrimTypeRowDelta>& rows) const;
+    bool applyPrimTypeDelta(const std::vector<PrimTypeRowDelta>& rows,
+                            std::unordered_set<uint64_t>* changed = nullptr) const;
     // Exact removal of tombstoned prims and their cached subtrees from the hierarchy,
     // membership, per-prim schema, type and existence memos. Assumes a tombstoned prim's
     // descendants are tombstoned too (USD / population semantics). True when applied exactly;
@@ -478,9 +522,10 @@ public:
         return mInstance;
     }
     bool collectSchemaKeys(TokenId schemaToken, std::vector<ObjectKey>& out) const;
-    // Keys whose usd-prim-type is `typeName`, from a whole-stage type index built once per source
-    // (one read at the read ordinal) and kept exact by applyPrimTypeDelta() / applyPrimRemoval();
-    // dropped by clearSchemaCache(). False when the index cannot be built: enumerate live instead.
+    // Keys whose usd-prim-type is `typeName`. A cold count query returns an absent family
+    // without reading type rows or retaining a negative answer. A populated family builds
+    // the whole-stage index once at the read ordinal; deltas keep it exact and
+    // clearSchemaCache() drops it. False on query/index failure: enumerate live instead.
     bool collectPrimTypeKeys(std::string_view typeName, std::vector<ObjectKey>& out) const;
     // Drop the stage-wide attribute-column vocabulary behind stageHasAttributeWithPrefix() /
     // stageHasAttributeColumn(), and the instance-material cache whose empty answer it gated.
@@ -582,6 +627,7 @@ private:
     // stored" (the store paths never record a null tensor), so no separate presence set is
     // needed; `covered` is the sealed-miss mark prefetchBucket() sets for every bucket key
     // of a cleanly read column.
+    friend struct OvstageSourceTestAccess;
     struct LoadCacheCell
     {
         CachedTensorRow scalar;
@@ -634,7 +680,7 @@ private:
     uint64_t getParentRaw(uint64_t raw) const;
     bool existsRaw(uint64_t raw) const;
     uint64_t geometryBackingKeyRaw(uint64_t raw) const;
-    AttrValue getAttributeAtTimeRaw(uint64_t raw, TokenId attr, ReadTime time) const;
+    AttrValue getAttributeAtTimeRaw(uint64_t raw, TokenId attr, ReadTime time, bool* complete = nullptr) const;
     void collectDescendantKeysRaw(uint64_t root, std::vector<uint64_t>& out) const;
     bool collectSchemaKeysRaw(TokenId schemaToken, std::vector<uint64_t>& out) const;
     void forEachChildRaw(uint64_t parent, const std::function<void(uint64_t)>& cb) const;
@@ -667,9 +713,9 @@ private:
     // Per-schema membership via one targeted, memoized `usd-schemas CONTAINS <name>` query;
     // never traverses the stage. Exact for concrete schemas and "Base:instance" names.
     const std::unordered_set<uint64_t>* schemaMembershipFromQuery(TokenId schemaToken) const;
-    // Membership for an unqualified multi-apply base ("PhysxLimitAPI"): union of per-instance
-    // queries over the fixed joint-DOF axis set, memoized. Returns nullptr for anything that
-    // is not a known joint-axis base so callers can fall back.
+    // Unqualified multi-apply membership reuses complete vocabulary when available.
+    // Otherwise known joint-axis bases use a memoized union of per-instance queries;
+    // arbitrary bases return nullptr so callers can use the general fallback.
     const std::unordered_set<uint64_t>* multiApplyBaseMembership(TokenId baseToken) const;
     // Read one prim's usd-schemas name list: from the per-prim memo when the whole-stage build
     // or a structural delta filled it, else one single-prim read (no whole-stage parse).
@@ -677,7 +723,7 @@ private:
     void readPrimSchemaNames(uint64_t raw, const std::function<void(std::string_view)>& fn) const;
     // The prim's own usd-prim-type as a source TokenId: memo first, else a read (memoised).
     // False when the prim has no type column.
-    bool primTypeTokenRaw(uint64_t raw, TokenId& out) const;
+    bool primTypeTokenRaw(uint64_t raw, TokenId& out, bool* complete = nullptr) const;
     // Purge one handle from every membership / per-prim memo (applyPrimRemoval helper).
     void purgeHandleFromMemos(uint64_t handle) const;
 
@@ -689,20 +735,33 @@ public:
     // Whether any prim authors the attribute column `name` exactly (same vocabulary).
     std::optional<bool> stageHasAttributeColumn(std::string_view name) const;
 
+    // PHYSICS population preserves the authored type separately from renderer types.
+    // Directly authored stages and older producers use the built-in type column.
+    std::optional<bool> hasAuthoredTypeColumn() const;
+    std::string_view attributeColumn(std::string_view name) const;
+
     // Whether any prim applies one of the named schemas. Exact for concrete schemas and
-    // "Base:instance" names (one count-only CONTAINS query); an unqualified multi-apply
+    // "Base:instance" names (cached discovery, otherwise a count-only CONTAINS query);
+    // an unqualified multi-apply
     // base matches when any instance of it is applied. Holds when every attribute is
     // unauthored. nullopt when the answer could not be determined.
-    std::optional<bool> stageHasAnySchema(const char* const* schemaNames, size_t nameCount) const;
+    // Set includeMultiApplyInstances=false when every name is a concrete single-apply
+    // schema or a qualified instance; then no arbitrary-instance vocabulary is needed.
+    // In that mode an unqualified name not known to be single-apply returns nullopt,
+    // including multi-apply bases, even when a complete vocabulary is already cached.
+    std::optional<bool> stageHasAnySchema(const char* const* schemaNames, size_t nameCount,
+                                        bool includeMultiApplyInstances = true) const;
 
 private:
     // One whole-stage read of the token-id column `column` at the read ordinal: fn(raw,
     // canonical, tokenValue) per element of every prim's row. False unless the read completed
     // cleanly.
     bool forEachStageTokenValue(std::string_view column,
-                                const std::function<void(uint64_t, uint64_t, uint64_t)>& fn) const;
+                                const std::function<void(uint64_t, uint64_t, uint64_t)>& fn,
+                                bool prefetchJointRelationships = false) const;
     // forEachStageTokenValue over usd-schemas: one call per applied schema element.
-    bool forEachStageSchemaValue(const std::function<void(uint64_t, uint64_t, uint64_t)>& fn) const;
+    bool forEachStageSchemaValue(const std::function<void(uint64_t, uint64_t, uint64_t)>& fn,
+                                bool prefetchJointRelationships = false) const;
     // The whole-stage usd-prim-type index behind collectPrimTypeKeys(); fills mPrimTypeByRaw from
     // the same rows. Latched: a failed build is not retried until clearSchemaCache().
     bool buildPrimTypeIndex() const;
@@ -720,10 +779,12 @@ private:
     // Read attribute `attrName` for the single prim `raw` at the read ordinal and
     // invoke `fn` with the first read group's DLTensor + prim count. Returns
     // false if the source is unconfigured or the attribute has no data. Handles
-    // are all released before returning.
+    // are all released before returning. Optional `complete` distinguishes a
+    // successful absent row from an enqueue/wait/fetch failure.
     bool withAttributeTensor(uint64_t raw,
                              std::string_view attrName,
-                             const std::function<void(const DLTensor&, uint32_t primCount)>& fn) const;
+                             const std::function<void(const DLTensor&, uint32_t primCount)>& fn,
+                             bool* complete = nullptr) const;
     void loadUnits();
 
     // Mint a BufferHandle backed by an owned byte copy of `data` (the cooking
@@ -770,6 +831,27 @@ private:
     // tokens (path_dictionary.h), so every successful intern result is permanent.
     // std::less<> gives allocation-free string_view lookups.
     mutable std::map<std::string, ovx_token_t, std::less<>> mOvxTokenMemo;
+    struct PrefetchAttribute
+    {
+        TokenId id;
+        ovx_token_t token;
+        std::string column;
+        bool world;
+        bool local;
+        bool reset;
+        bool computed;
+    };
+    struct PrefetchPlan
+    {
+        std::vector<std::string> names;
+        std::vector<PrefetchAttribute> attributes;
+        bool complete = true;
+    };
+    // Bounded source-local plans contain no rows, layout indices or absence proofs.
+    // Failed token resolution makes a plan non-reusable; the next call retries.
+    const PrefetchPlan& prefetchPlan(const std::vector<std::string>& names, PrefetchPlan& temporary) const;
+    mutable std::vector<PrefetchPlan> mPrefetchPlans;
+
 
     // The ObjectKey <-> ovx_primpath_t intern table (generation + the raw<->
     // local-index mapping), shared with every other OvstageSource wrapping the
@@ -792,7 +874,9 @@ private:
     mutable bool mBucketTransformsComplete = true;
     mutable std::unordered_set<uint64_t> mBucketKeys;
     mutable std::unordered_map<uint64_t, uint32_t> mBucketRows;
-    mutable std::unordered_set<uint32_t> mBucketAttributeIds;
+    // Bucket columns are small and built as a batch. Retain contiguous storage
+    // across clearBucket() instead of allocating one hash node per attribute.
+    mutable std::vector<uint32_t> mBucketAttributeIds;
     mutable std::unordered_map<uint64_t, std::unordered_map<uint32_t, AttrValue>> mBucketScalars;
     mutable std::unordered_map<uint64_t, Matrix4d> mBucketWorldTransforms;
     mutable std::unordered_map<uint64_t, Matrix4d> mBucketLocalTransforms;
@@ -815,7 +899,14 @@ private:
     // Enables forEachChildRaw()'s complete-child-cache leaf fast path outside a load-cache
     // window. Hierarchy-only: unlike mLoadCacheActive it never seals an attribute miss.
     mutable bool mHierarchyBulkRead = false;
-    mutable std::deque<ovstage_read_group_t> mLoadCacheGroups;
+    struct RetainedReadGroups
+    {
+        explicit RetainedReadGroups(ovstage_instance_t* value) : instance(value) {}
+        ~RetainedReadGroups();
+        ovstage_instance_t* instance;
+        std::deque<ovstage_read_group_t> groups;
+    };
+    mutable std::shared_ptr<RetainedReadGroups> mLoadCacheGroups;
     // The load-cache table (REQ-PARSE-FEED-005 AC-7): one flat record per prim instead of a
     // hash node per (handle, attribute) cell. mLoadCachePrimIndex maps both the raw handle
     // and its canonical alias to the same record; mLoadCacheAttrIndex maps a TokenId.id
@@ -827,6 +918,8 @@ private:
     mutable uint32_t mLoadCachePrimCount = 0;
     mutable std::vector<uint32_t> mLoadCacheAttrIndex;
     mutable uint32_t mLoadCacheAttrCount = 0;
+    // Complete whole-stage relationship columns share one absence mark per column.
+    mutable std::unordered_set<uint32_t> mLoadCacheCompleteRelationships;
     mutable uint32_t mPrefetchSerial = 0;
     // Composed world transforms memoized during the load walk. Unlike
     // LoadCachePrim::world (raw data-plane omni:fabric:worldMatrix rows), this
@@ -861,6 +954,10 @@ private:
     mutable bool mSchemaCacheBuilt = false;
     mutable bool mSchemaCacheComplete = false;
     mutable std::unordered_map<uint32_t, bool> mSchemaMayExistCache;
+    // Positive OR answers in exact-name mode, keyed by the requested names. A count
+    // query cannot assign membership to an individual name; retaining the OR avoids
+    // repeating it for every point instancer. Structural schema edits/removals drop it.
+    mutable std::unordered_set<std::string> mExactSchemaPresence;
     mutable std::unordered_map<uint32_t, std::unordered_set<uint64_t>> mSchemaMembershipCache;
     mutable std::unordered_map<uint64_t, std::vector<uint32_t>> mSchemasByPrimCache;
     mutable std::unordered_map<uint32_t, std::unordered_set<uint64_t>> mMultiApplyMembershipCache;
@@ -868,6 +965,7 @@ private:
     // raw / canonical handle -> usd-prim-type dictionary token id, filled by isA()/getTypeName()
     // reads and the feed's applyPrimTypeDelta(); dropped by clearSchemaCache().
     mutable std::unordered_map<uint64_t, uint64_t> mPrimTypeByRaw;
+    mutable std::unordered_set<uint64_t> mAuthoredTypeHandles;
     // usd-prim-type dictionary token -> handles (raw and canonical alias) carrying it, from one
     // whole-stage read (buildPrimTypeIndex); patched by applyPrimTypeDelta() / applyPrimRemoval(),
     // dropped by clearSchemaCache(). Complete or unusable: an empty entry means no prim has the type.
@@ -880,6 +978,7 @@ private:
     // stageHasAttributeColumn(); dropped by invalidateAttributeVocabulary() (every drain start)
     // and clearSchemaCache(). Only ever a superset of the columns readable at the read ordinal, so
     // a "no such column" answer is exact.
+    mutable std::optional<bool> mAuthoredTypeColumnPresent;
     mutable bool mAttributeVocabularyBuilt = false;
     mutable std::unordered_set<std::string> mAttributeVocabulary;
 

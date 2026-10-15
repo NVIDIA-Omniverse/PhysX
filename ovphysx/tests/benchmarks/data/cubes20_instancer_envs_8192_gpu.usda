@@ -1,0 +1,12 @@
+#usda 1.0
+(
+    subLayers = [@cubes20_instancer_envs_8192.usda@]
+)
+over "World"
+{
+    over "physicsScene"
+    {
+        bool physxScene:enableGPUDynamics = true
+        token physxScene:broadphaseType = "GPU"
+    }
+}

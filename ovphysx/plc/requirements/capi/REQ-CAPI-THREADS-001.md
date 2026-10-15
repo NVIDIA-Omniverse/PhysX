@@ -19,7 +19,7 @@ a dispatcher while scenes are attached.
 
 - AC-1: **Dispatcher configuration.** In a fresh process with supporting tasking
   capacity of at least N, passing `ovphysx_config_entry_num_threads(N)` to
-  `ovphysx_create_instance()` gives an attached scene a CPU dispatcher reporting
+  `ovphysx_create_instance_with_args()` gives an attached scene a CPU dispatcher reporting
   N workers for N in {1, 2, 4, 8}. Applying subsequent ovstage inputs and stepping
   completes without changing that count.
 - AC-2: **Canonical setting.** The typed setter and
@@ -35,7 +35,7 @@ a dispatcher while scenes are attached.
 ## Code References
 
 - `ovphysx/src/ovphysx/ovphysx.cpp`: `s_int32KeyPaths`, typed setter/getter.
-- `ovphysx/include/ovphysx/ovphysx_config.h`: `ovphysx_config_entry_num_threads`.
+- `ovphysx/include/ovphysx/ovphysx_legacy_config.h`: `ovphysx_config_entry_num_threads`.
 - `ovphysx/python/ovphysx/config.py`: typed field paths and conflict validation.
 - `ovphysx/tests/c_unittests/test_solver_thread_count.cpp`.
 - `ovphysx/scripts/test_cpp.cmake`: one process per requested count.

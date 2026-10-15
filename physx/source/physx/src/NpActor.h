@@ -23,6 +23,14 @@ namespace physx
 		return const_cast<Sc::BodyCore*>(core);
 	}
 
+	// The core of any rigid actor, including a PxRigidStatic, for which getBodyCore returns NULL.
+	const Sc::RigidCore* getRigidCore(const PxRigidActor* actor);
+	PX_FORCE_INLINE Sc::RigidCore* getRigidCore(PxRigidActor* actor)
+	{
+		const Sc::RigidCore* core = getRigidCore(static_cast<const PxRigidActor*>(actor));
+		return const_cast<Sc::RigidCore*>(core);
+	}
+
 class NpActor : public NpBase
 {
 public:
@@ -42,6 +50,13 @@ public:
 
 					void					removeElementFilters(PxActor& owner, bool removeConnectors);
 					void					addElementFilters(PxActor& owner);
+#else
+					// Nothing to attach or filter without deformables.
+	PX_FORCE_INLINE	void					removeAttachments(PxActor&, bool)		{}
+	PX_FORCE_INLINE	void					addAttachments(PxActor&)				{}
+
+	PX_FORCE_INLINE	void					removeElementFilters(PxActor&, bool)	{}
+	PX_FORCE_INLINE	void					addElementFilters(PxActor&)				{}
 #endif
 
 					NpAggregate*			getNpAggregate(PxU32& index)	const;
@@ -181,6 +196,22 @@ public:
 	};
 	static const NpOffsets					sNpOffsets;
 };
+
+// The element filters of a PxRigidStatic are keyed on the transform cache ids of its shapes in the scene, so
+// they are rebuilt around whatever hands the shapes new ids: a shape attached or detached, or the shapes
+// reinserted. Detaching removes the pairs of every shape, attaching rebuilds them from the shapes present.
+// The filters of a body are keyed on its node and are left alone.
+PX_INLINE void detachStaticElementFilters(NpActor& ro)
+{
+	if(ro.getNpType() == NpType::eRIGID_STATIC)
+		ro.removeElementFilters(*ro.getScRigidCore().getPxActor(), false);
+}
+
+PX_INLINE void attachStaticElementFilters(NpActor& ro)
+{
+	if(ro.getNpType() == NpType::eRIGID_STATIC)
+		ro.addElementFilters(*ro.getScRigidCore().getPxActor());
+}
 
 }
 

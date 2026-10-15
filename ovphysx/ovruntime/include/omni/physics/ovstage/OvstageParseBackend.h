@@ -3,15 +3,12 @@
 
 /**
  * @implements REQ-PARSE-BACKEND-001
- * @covers AC-2
+ * @covers AC-2 AC-6
  */
 #pragma once
 
-// ovstage parse backend (ADR-0002, selected via ADR-0005). It builds an
-// OvstageSource for a populated ovstage instance instead of a USD stage.
-// IPhysxSimulation::attachOvstage installs it for the attachment and restores
-// the USD backend on detach. Direct backend tests may install it manually while
-// no stage is attached.
+// Ovstage parse backend. Each runtime attachment owns its provider and scanner.
+// Developer backend tests can construct providers directly.
 //
 // Factory only — the concrete backend type stays private to the
 // omni.physics.ovstage library.
@@ -35,11 +32,11 @@ namespace ovstage
 //
 // ADR-0005 describes nativeStage as "the ovstage instance" for this backend;
 // in practice the source also needs the application-owned path dictionary and
-// the attach-time backing candidate. So nativeStage is a pointer to this small
+// an optional explicit developer backing id. So nativeStage points to this small
 // backend-specific struct rather than the bare instance. The read ordinal and
 // normalized resident backing id are separate AttachTarget fields. The producer
-// keeps this payload alive until detach after a successful attachment. A false
-// attach result retains no reference to the payload.
+// retains the referenced instance and dictionary through detach. The runtime
+// copies this descriptor at attach; a false attach result retains no references.
 struct OvstageAttach
 {
     ovstage_instance_t* instance = nullptr;
@@ -47,11 +44,11 @@ struct OvstageAttach
     // NOTE: the sealed read ordinal is no longer carried here. It is passed
     // explicitly through IPhysxSimulation::attachOvstage(payload, readOrdinal)
     // and reaches the backends via AttachTarget::readOrdinal.
-    // Candidate backing USD stage id (omni::fabric / UsdUtilsStageCache id).
-    // The attach-time runtime validates this candidate, or queries a Fabric-backed
-    // instance when it is zero, and carries only the normalized locally resident id
-    // in AttachTarget::residentBackingStageId. Parse and scan never consume this
-    // raw candidate directly. 0 = query the instance.
+    // Optional developer compatibility stage (UsdUtilsStageCache id), supplied
+    // explicitly by a USD-aware caller. The runtime classifies local residency
+    // before carrying it in AttachTarget::residentBackingStageId.
+    // 0 = ovstage-only attach; never query the instance for a backing USD stage.
+    // Production ovphysx always supplies 0.
     uint64_t usdStageId = 0;
 };
 
@@ -70,13 +67,6 @@ static_assert(offsetof(OvstageAttach, usdStageId) == 16, "OvstageAttach::usdStag
 // `AttachTarget::nativeStage` as a `const OvstageAttach*`. The write sink is
 // null by design; configured sources create a pull-based change feed.
 std::unique_ptr<omni::physics::parse::IParseBackend> makeOvstageParseBackend();
-
-// Resolve the backing USD stage id for an ovstage attach payload (a
-// `const OvstageAttach*`) while preserving the ovstage status. A null instance
-// is invalid. For a valid instance, an explicit non-zero
-// OvstageAttach::usdStageId returns OVSTAGE_OK without querying the instance;
-// otherwise the result from ovstage_get_usd_stage_id is returned.
-ovstage_api_status_t queryBackingUsdStageId(const void* attachPayload, uint64_t& outStageId);
 
 } // namespace ovstage
 } // namespace physics

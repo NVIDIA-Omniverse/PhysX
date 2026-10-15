@@ -37,6 +37,7 @@ endif()
 
 include("${SCRIPT_DIR}/crossplatform_helpers.cmake")
 include("${SCRIPT_DIR}/build_common.cmake")
+include("${SCRIPT_DIR}/fetch_test_schemas.cmake")
 
 set(SAMPLE_DIR "${PROJECT_ROOT}/tests/c_samples/hello_world_source_link")
 set(SAMPLE_BUILD_DIR "${PROJECT_ROOT}/_build/sample_tests/c_samples/hello_world_source_link")
@@ -68,8 +69,8 @@ endif()
 set(_SOURCE_LINK_OVSTAGE_ARGS)
 if(DEFINED OVSTAGE_DIR AND EXISTS "${OVSTAGE_DIR}")
     list(APPEND _SOURCE_LINK_OVSTAGE_ARGS "-DOVSTAGE_DIR=${OVSTAGE_DIR}")
-elseif(EXISTS "${PROJECT_ROOT}/_build/CMakeCache.txt")
-    file(STRINGS "${PROJECT_ROOT}/_build/CMakeCache.txt" _OVSTAGE_CACHE_LINE REGEX "^OVSTAGE_DIR(:[^=]*)?=")
+elseif(EXISTS "${BUILD_PATH}/CMakeCache.txt")
+    file(STRINGS "${BUILD_PATH}/CMakeCache.txt" _OVSTAGE_CACHE_LINE REGEX "^OVSTAGE_DIR(:[^=]*)?=")
     if(_OVSTAGE_CACHE_LINE)
         list(GET _OVSTAGE_CACHE_LINE 0 _OVSTAGE_CACHE_LINE_FIRST)
         string(REGEX REPLACE "^[^=]+=" "" _OVSTAGE_CACHE_DIR "${_OVSTAGE_CACHE_LINE_FIRST}")
@@ -135,7 +136,7 @@ endif()
 list(GET SAMPLE_EXECUTABLE_LIST 0 SAMPLE_EXECUTABLE)
 message(STATUS "Found executable: ${SAMPLE_EXECUTABLE}")
 
-# Run using the installed SDK layout for runtime config/schema/plugin discovery.
+# Run using the installed SDK layout for runtime plugin discovery.
 # The executable still finds its linked build-tree libraries via RPATH/DLL copy.
 # OVPHYSX_LIB only anchors ovphysx runtime discovery at the installed SDK.
 if(WIN32)

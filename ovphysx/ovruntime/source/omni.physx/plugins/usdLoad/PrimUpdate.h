@@ -2,13 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * @implements REQ-PROPS-MAT-001
- * @covers AC-2
- */
-
-/**
  * @implements REQ-SIM-BODY-INPUT-001
  * @covers AC-2 AC-3 AC-5 AC-6
+ * @implements REQ-PROPS-MAT-001
+ * @covers AC-2
  */
 
 #pragma once

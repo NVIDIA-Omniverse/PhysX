@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-ATTACH-BACKENDS-001
+ * @covers AC-4
+ */
+
+/**
  * @implements REQ-BUILD-UNIBUILD-001
  * @covers AC-3
  */
@@ -86,6 +91,7 @@ bool AttachedStage::rebuildUsdSource()
     if (!reparse)
         return false;
 
+    mScanBackend = reparse->makeScanBackend();
     omni::physics::parse::SourceBundle bundle = reparse->createSourceFromHandle(mStage.storage());
     mSource = std::move(bundle.source);
     mDataWrite = std::move(bundle.write);

@@ -89,6 +89,12 @@ NpShapeManager::NpShapeManager() :
 NpShapeManager::NpShapeManager(const PxEMPTY) :
 	mShapes			(PxEmpty)
 {
+	//Not part of the serialized image: the exported bytes carry the source process' pointer, and nothing on the
+	//import path used to overwrite it. PruningStructure::resolveReferences now re-points its actors back at
+	//itself, mirroring build(), so the non-NULL value that NpScene::addCollection() uses as its routing flag is
+	//restored where it is meant to be - and an actor whose pruning structure is not in the collection, or whose
+	//load never got that far, is left with NULL instead of a foreign address (OMPE-109162).
+	mPruningStructure = NULL;
 }
 
 NpShapeManager::~NpShapeManager() 
@@ -124,7 +130,12 @@ static PX_INLINE void onShapeAttach(NpActor& ro, NpShape& shape)
 	PX_ASSERT(!npScene->isAPIWriteForbidden());
 
 	if(!(ro.getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION)))
+	{
+		// The pairs are removed for the shapes present before the change and rebuilt for those after it.
+		detachStaticElementFilters(ro);
 		ro.getScRigidCore().addShapeToScene(shape.getCore());
+		attachStaticElementFilters(ro);
+	}
 
 #if PX_SUPPORT_PVD
 	npScene->getScenePvdClientInternal().createPvdInstance(&shape, *ro.getScRigidCore().getPxActor()); 
@@ -145,7 +156,12 @@ static PX_INLINE void onShapeDetach(NpActor& ro, NpShape& shape, bool wakeOnLost
 	npScene->getScenePvdClientInternal().releasePvdInstance(&shape, *ro.getScRigidCore().getPxActor());
 #endif
 	if(!(ro.getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION)))
+	{
+		// The pairs are removed while the shape still has its transform cache id and rebuilt for the rest.
+		detachStaticElementFilters(ro);
 		ro.getScRigidCore().removeShapeFromScene(shape.getCore(), wakeOnLostTouch);
+		attachStaticElementFilters(ro);
+	}
 
 	shape.setSceneIfExclusive(NULL);
 

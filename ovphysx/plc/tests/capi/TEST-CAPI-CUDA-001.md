@@ -10,7 +10,7 @@ type: integration
 ## Scenario
 
 Direct OVStage attachment propagates an explicit `active_cuda_gpus` ordinal
-during synchronous scene attachment. The regression runs in an isolated
+during scene attachment execution. The regression runs in an isolated
 process so no earlier attachment can change the private selector state.
 
 ## Given
@@ -27,12 +27,12 @@ process so no earlier attachment can change the private selector state.
 
 - `ovphysx_attach_ovstage()` attaches the populated OVStage.
 - The internal selector and public typed multi-GPU mode are read after the
-  synchronous call returns.
+  attachment task completes successfully.
 
 ## Then
 
 - OVStage attachment succeeds.
 - The internal observation reports `0`, demonstrating that the public request
-  reached the attach-time selector before the call returned (REQ AC-1).
+  reached the attach-time selector before the task completed (REQ AC-1).
 - Multi-GPU scene distribution is `0` (REQ AC-2).
 - The attached OVStage and ovphysx instance are destroyed without a stage leak.

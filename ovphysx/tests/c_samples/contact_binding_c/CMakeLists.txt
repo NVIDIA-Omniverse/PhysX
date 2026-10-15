@@ -36,4 +36,7 @@ target_compile_definitions(contact_binding_c PRIVATE
 )
 if(WIN32)
     ovphysx_copy_runtime_dlls(contact_binding_c)
+    # OVStage is not copied (it loads its plugins relative to itself), so its
+    # directories have to reach the process through PATH.
+    ovphysx_set_ovstage_runtime_env(contact_binding_c)
 endif()

@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-PARSE-CORE-006
+// @covers AC-9
+
 /**
  * @implements REQ-PARSE-MASS-001
  * @covers AC-2 AC-3
@@ -240,7 +243,7 @@ struct UsdLoadRigidBodyMass : public AbstractComputeRigidBodyMass
 
     virtual PhysXUsdPhysicsInterface::MassInformation getShapeMassInfo(usdparser::ObjectId objectId) override
     {
-        return mAttachedStage.getPhysXPhysicsInterface()->getShapeMassInfo(objectId);
+        return mAttachedStage.getPhysXPhysicsInterface()->getShapeMassInfo(mAttachedStage, objectId);
     }
 
 private:
@@ -269,7 +272,7 @@ void RequestRigidBodyMassUpdate(AttachedStage& attachedStage, pp::ObjectKey body
                 // We assume that the body is dynamic. Caller's responsibility to check.
                 RigidBodyMass physicsMassInfo =
                     computeRigidBodyMass(&crbmInterface, *source, bodyKey, it->second, &attachedStage.getKnownTokens());
-                attachedStage.getPhysXPhysicsInterface()->updateMass(
+                attachedStage.getPhysXPhysicsInterface()->updateMass(attachedStage,
                     bodyKey, it->second, physicsMassInfo.mass, physicsMassInfo.inertia, physicsMassInfo.centerOfMass, physicsMassInfo.principalAxes);
             }
         it++;
@@ -423,7 +426,7 @@ RigidBodyMass computeRigidBodyMass(AbstractComputeRigidBodyMass* crbmInterface, 
 
                 // Set mass to 1.0f as UsdPhysics spec says
                 if (massDesc.mass < 0.0f)
-                {                    
+                {
                     massDesc.mass = 1.0f;
                 }
 
@@ -484,9 +487,9 @@ void RequestParticleMassUpdate(AttachedStage& attachedStage, omni::physics::pars
                     if (omni::physics::parse::DescPtr<omni::physics::parse::ParticleSetDesc> scanDesc =
                             omni::physics::parse::parseParticleSet(ctx, particleKey))
                     {
-                        ParticleSetDesc* desc = buildParticleSetDescRuntime(attachedStage, *scanDesc);
-                        attachedStage.getPhysXPhysicsInterface()->updateParticleMass(particleKey, it->second, *desc);
-                        omni::physx::usdparser::releaseDesc(desc);
+                        omni::physics::parse::DescPtr<ParticleSetDesc> desc = omni::physics::parse::adoptDesc(
+                            iceDescriptorAllocator(), buildParticleSetDescRuntime(attachedStage, *scanDesc));
+                        attachedStage.getPhysXPhysicsInterface()->updateParticleMass(attachedStage, particleKey, it->second, *desc);
                     }
                 }
             }

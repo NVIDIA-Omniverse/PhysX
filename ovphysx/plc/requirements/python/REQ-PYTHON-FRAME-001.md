@@ -12,10 +12,10 @@ owner: ovphysx
 
 `ovphysx.utils.step_and_write_to_ovstage(physx, *, dt, output_ordinal,
 cache=None, outputs=None)` composes the three calls a producer otherwise writes by hand --
-one `PhysX.step_sync`, the matching `PhysX.read` output selections, and the
+one `PhysX.step_sync`, the matching `PhysX.read_sync` output selections, and the
 OVStage write-back -- into one opt-in utility call. It is not a method on the
 core `PhysX` API and is not re-exported from the top-level `ovphysx` package.
-It adds no native surface: it forwards each output read group's interned
+It forwards each output read group's interned
 `prim_list` through an OVStage query into `Stage.write_attribute` (the group
 shape ADR-0007 defines), then seals the write with one
 `Stage.advance_write_floor`. `outputs` selects which
@@ -53,7 +53,16 @@ re-ingest its own output as an authored edit. The utility never calls
   `ovstage.Stage`; a raw-handle attachment is rejected with `RuntimeError`. If
   supplied, `cache` must be a live `OvStageOutputCache` owned by the same
   `PhysX` instance and exact attachment; a closed cache, different instance,
-  or detach/reattach cycle is rejected with `RuntimeError`. The
+  or detach/reattach cycle is rejected with `RuntimeError`, including native
+  transitions reusing the same Stage. The utility retains an ordinary native
+  query, checks native attachment state against the Python Stage at creation,
+  and checks that query's original attachment through private
+  `PhysX._is_query_valid()` before reuse. This native check drains pending
+  execution without collecting task outcomes and returns only a boolean; the
+  dictionary comes from the attached Stage. `PhysX.query_shared_dictionary()`
+  is removed without adding a public query validity method. It releases the query
+  on close; collection or rejected release defers cleanup to the owning thread.
+  It never retrieves an internal attach identity. The
   function and cache are defined in `ovphysx.utils`; they are absent from the
   `PhysX` runtime class and stub and from
   the top-level `ovphysx` exports. It validates that `outputs` (or the documented
@@ -62,15 +71,15 @@ re-ingest its own output as an authored edit. The utility never calls
   attribute-name strings. It does not itself validate `output_ordinal` or
   whether each attribute name is recognised: ordinal type/range checking is
   `Stage.write_attribute`/`advance_write_floor`'s responsibility, and
-  attribute-name semantics are `PhysX.read`'s. An invalid mapping, key, cache,
+  attribute-name semantics are `PhysX.read_sync`'s. An invalid mapping, key, cache,
   or value type raises `TypeError`; an invalid pose selection raises
   `ValueError`. Any helper preflight failure calls
-  `step_sync`, `read`, or a stage write method zero times. For
+  `step_sync`, `read_sync`, or a stage write method zero times. For
   transform-producing object types, `position` and `orientation` must be
   selected together. A missing or malformed source `omni:fabric:worldMatrix`
   fails after the physics read identifies that prim and before that type writes.
 - AC-2: On success the utility calls `physx.step_sync(dt)` exactly once, then
-  calls `PhysX.read` once per selected object type -- the caller's `outputs`
+  calls the waiting adapter `PhysX.read_sync` once per selected object type -- the caller's `outputs`
   if given, else the documented per-type default set -- in mapping-iteration
   order, and never calls `update_from_ovstage`.
 - AC-3: For each read result, groups with `is_delete` set or with no tensors
@@ -117,8 +126,9 @@ re-ingest its own output as an authored edit. The utility never calls
   unchanged; the query that was already opened for that group is still
   released before the exception propagates, no compensating write or
   rollback is attempted, and `advance_write_floor` is not called, so the
-  output ordinal is never sealed on a partial write. The utility adds no new
-  native entry point: `step_sync`, `read`, `attach_ovstage`, and
+  output ordinal is never sealed on a partial write. Attachment validity uses
+  retained queries and native `is_stage_attached` state; `step_sync`,
+  `read_sync`, `attach_ovstage`, and
   `update_from_ovstage` are unchanged and remain independently usable before
   and after a call.
 
@@ -129,9 +139,12 @@ re-ingest its own output as an authored edit. The utility never calls
 ## Code References
 
 - ovphysx/python/ovphysx/utils/simulation.py (`OvStageOutputCache`, `step_and_write_to_ovstage`)
+- ovphysx/python/ovphysx/api.py (`is_stage_attached`, `_is_query_valid`, query capture/release, deferred cleanup)
+- ovphysx/python/ovphysx/_bindings.py (native attachment-state and private query-validity bindings)
 - ovphysx/python/ovphysx/_utils_kernels.py
 - ovphysx/python/ovphysx/utils/simulation.pyi
 - ovphysx/tests/python_tests/test_step_and_write_to_ovstage.py
+- ovphysx/tests/python_tests/test_lifecycle.py (native transition coverage)
 - ovphysx/tests/python_tests/test_type_stubs.py
 - ovphysx/tests/python_samples/output_read.py
 

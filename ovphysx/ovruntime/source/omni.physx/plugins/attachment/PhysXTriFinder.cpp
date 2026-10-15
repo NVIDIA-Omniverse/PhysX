@@ -27,7 +27,7 @@ namespace omni
             float separation;
         };
 
-        PxBounds3 triBound(const PxU32* tri, const PxTypedStridedData<const PxVec3>& vertices)
+        PxBounds3 triBound(const PxU32* tri, const PxTypedBoundedData<const PxVec3>& vertices)
         {
             PxVec3 min = vertices.at(tri[0]);
             PxVec3 max = min;
@@ -45,7 +45,7 @@ namespace omni
             return PxBounds3(min, max);
         }
 
-        PxBVH* createBVH(const PxTypedStridedData<const PxVec3>& vertices, const PxU32* tris, PxU32 numTris, PxBounds3& bvhBounds, PxReal fatten = 1e-6)
+        PxBVH* createBVH(const PxTypedBoundedData<const PxVec3>& vertices, const PxU32* tris, PxU32 numTris, PxBounds3& bvhBounds, PxReal fatten = 1e-6)
         {
             PxBounds3* bounds = new PxBounds3[numTris];
             bvhBounds.setEmpty();
@@ -154,7 +154,7 @@ namespace omni
         {
             PxBVH* mBvh;
             PxReal mAbsToleranceSqr;
-            PxTypedStridedData<const PxVec3> mVertices;
+            PxTypedBoundedData<const PxVec3> mVertices;
             PxU32 mNumVertices;
             const PxU32* mTris;
             PxU32 mNumTris;
@@ -163,7 +163,7 @@ namespace omni
             PxArray<PxVec3> mVerticesCopy;
             PxArray<PxU32> mTrisCopy;
 
-            TriFinder(const PxTypedStridedData<const PxVec3>& vertices, PxU32 numVertices, const PxU32* tris, PxU32 numTris, bool bMakeCopy, PxReal tolerance = 1e-5f);
+            TriFinder(const PxTypedBoundedData<const PxVec3>& vertices, PxU32 numVertices, const PxU32* tris, PxU32 numTris, bool bMakeCopy, PxReal tolerance = 1e-5f);
 
             //Returns -1 if no tri was found
             int findTri(const PxVec3& queryPoint, PxVec3& bary);
@@ -171,7 +171,7 @@ namespace omni
             PxArray<ProximityInfo> overlap(const PxGeometry& geom, const PxTransform& geomPos, const PxReal overlapOffset, PxTriangleMeshPoissonSampler* triMeshSampler);
         };
 
-        TriFinder::TriFinder(const PxTypedStridedData<const PxVec3>& vertices, PxU32 numVertices, const PxU32* tris, PxU32 numTris, bool bMakeCopy, float tolerance) :
+        TriFinder::TriFinder(const PxTypedBoundedData<const PxVec3>& vertices, PxU32 numVertices, const PxU32* tris, PxU32 numTris, bool bMakeCopy, float tolerance) :
             mVertices(vertices), mTris(tris), mNumTris(numTris)
         {
             if (bMakeCopy)
@@ -181,7 +181,7 @@ namespace omni
                 {
                     mVerticesCopy[i] = mVertices.at(i);
                 }
-                mVertices = PxTypedStridedData<const PxVec3>(mVerticesCopy.begin());
+                mVertices = PxTypedBoundedData<const PxVec3>(mVerticesCopy.begin());
                 mNumVertices = numVertices;
 
                 mTrisCopy.assign(tris, tris + (PxU64(numTris) * 3));
@@ -446,7 +446,7 @@ namespace omni
         uint64_t createTriFinder(const carb::Float3* points, const uint32_t pointsSize, const uint32_t* indices, const uint32_t indicesSize, bool bMakeCopy)
         {
             CARB_ASSERT(indicesSize % 3 == 0);
-            PxTypedStridedData<const PxVec3> stridedData(reinterpret_cast<const PxVec3*>(points));
+            PxTypedBoundedData<const PxVec3> stridedData(reinterpret_cast<const PxVec3*>(points));
             TriFinder* triFinder = ICE_NEW(TriFinder)(stridedData, pointsSize, (const PxU32*)indices, indicesSize / 3, bMakeCopy);
             return uint64_t(triFinder);
         }
@@ -454,7 +454,7 @@ namespace omni
         uint64_t createTriFinder(const carb::Float4* points, const uint32_t pointsSize, const uint32_t* indices, const uint32_t indicesSize, bool bMakeCopy)
         {
             CARB_ASSERT(indicesSize % 3 == 0);
-            PxTypedStridedData<const PxVec3> stridedData(reinterpret_cast<const PxVec3*>(points), sizeof(carb::Float4));
+            PxTypedBoundedData<const PxVec3> stridedData(reinterpret_cast<const PxVec3*>(points), sizeof(carb::Float4));
             TriFinder* triFinder = ICE_NEW(TriFinder)(stridedData, pointsSize, (const PxU32*)indices, indicesSize / 3, bMakeCopy);
             return uint64_t(triFinder);
         }

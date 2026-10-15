@@ -371,8 +371,8 @@ __device__ void psPrimitivesCollision(
 	const PxU32								workIndex,
 	const PxU32								totalComparision,
 	const PxNodeIndex*						shapeToRigidRemapTable,
-	PxgParticleContactWriter&				writer
-)										
+	PxgRigidParticleContactWriter&			writer
+)
 {
 	PxU32 startIndex = 0xFFFFFFFF;
 	PxU32 endIndex = 0;
@@ -423,7 +423,7 @@ __device__ void psPrimitivesCollision(
 		bool intersect = false;
 		PxVec3 normal;
 		PxReal distance;
-		PxU64 compressedParticleIndex = 0;
+		PxU64 particleRef = 0;
 
 		if(startIndex != EMPTY_CELL)
 		{
@@ -446,7 +446,7 @@ __device__ void psPrimitivesCollision(
 					cVolumePos = currentPos;
 				}
 
-				compressedParticleIndex = PxEncodeParticleIndex(particleSystemId, particleIndex);
+				particleRef = PxgEncodeParticleRef(particleSystemId, particleIndex);
 				intersect = particlePrimitiveCollision(currentPos, cVolumePos, cVolumeRadius, transform0, type0, scale0, shape0, enableCCD, normal, distance);
 			}
 		}
@@ -468,7 +468,7 @@ __device__ void psPrimitivesCollision(
 		if (intersect)
 		{
 			const PxU32 index = contactStartIndex + contactIndex;
-			writer.writeContact(index, PxVec4(normal, distance - restDistance), compressedParticleIndex, rigidId);
+			writer.writeContact(index, PxVec4(normal, distance - restDistance), rigidId, particleRef);
 		}
 	}
 }
@@ -790,7 +790,8 @@ __device__ void psConvexCollision(
 	const PxsMaterialData* PX_RESTRICT		materials,
 	const PxU32								workIndex,
 	const PxNodeIndex*						shapeToRigidRemapTable,
-	PxgParticlePrimitiveContact*			contacts,								//output
+	PxgDeformablePairInfo*					contactInfos,							//output
+	float4*									contactNormalPens,						//output
 	PxI32*									numTotalContacts,						//output
 	PxU64*									contactSortedByParticle,				//output
 	PxU32*									tempContactByParticle,					//output
@@ -895,19 +896,15 @@ __device__ void psConvexCollision(
 
 				if (index < maxContacts)
 				{
-
-					//write to particle primitives contact buffer
-					PxgParticlePrimitiveContact& contact = contacts[index];
-
-					const PxU64 compressedParticleIndex = PxEncodeParticleIndex(particleSystemId, particleIndex);
+					const PxU64 particleRef = PxgEncodeParticleRef(particleSystemId, particleIndex);
 					if (threadIdx.x == 0)
 					{
 						const PxU64 value = rigidId.getInd();
 						contactByRigid[index] = value;
 						tempContactByRigid[index] = PxU32(value & 0xffffffff);
 						contactRemapSortedByRigid[index] = index;
-						contactSortedByParticle[index] = compressedParticleIndex;
-						tempContactByParticle[index] = PxGetParticleIndex(compressedParticleIndex);
+						contactSortedByParticle[index] = particleRef;
+						tempContactByParticle[index] = PxgGetParticleIndex(particleRef);
 						contactRemapSortedByParticle[index] = index;
 					}
 
@@ -930,14 +927,14 @@ __device__ void psConvexCollision(
 					if (threadIdx.x < 4)
 					{
 
-						float* normalPen = &(contact.normal_pen.x);
+						float* normalPen = &(contactNormalPens[index].x);
 						PxReal outCP = threadIdx.x < 3 ? (-normal) : pen;
 						normalPen[threadIdx.x] = outCP;
 
 						if (threadIdx.x == 0)
 						{
-							contact.particleId = compressedParticleIndex;
-							contact.rigidId = rigidId.getInd();
+							contactInfos[index].ref0 = PxgEncodeRigidNode(rigidId);
+							contactInfos[index].ref1 = particleRef;
 						}
 					}
 				}
@@ -1165,8 +1162,8 @@ extern "C" __global__ void ps_primitivesCollisionLaunch(
 	const PxU32*								totalNumPairs,
 	PxgParticleSystem* PX_RESTRICT				particleSystems,
 	const PxNodeIndex*							shapeToRigidRemapTable,
-	PxgParticleContactWriter					writer	
-	)
+	PxgRigidParticleContactWriter				writer
+)
 {
 	
 	const PxU32 totalComparision = *totalNumPairs;
@@ -1446,7 +1443,8 @@ extern "C" __global__ void ps_convexCollisionLaunch(
 	const PxU32*								totalNumPairs,
 	PxgParticleSystem* PX_RESTRICT				particleSystems,
 	const PxNodeIndex*							shapeToRigidRemapTable,			//IG::NodeIndex
-	PxgParticlePrimitiveContact* PX_RESTRICT	particleContacts,				//output
+	PxgDeformablePairInfo* PX_RESTRICT			particleContactInfos,			//output
+	float4* PX_RESTRICT							particleContactNormalPens,		//output
 	PxI32*										numParticleContacts,			//output
 	PxU64*										contactSortedByParticle,		//output
 	PxU32*										tempContactByParticle,			//output
@@ -1529,7 +1527,8 @@ extern "C" __global__ void ps_convexCollisionLaunch(
 				particleSystemId, cDistance, restDistance,
 				materials, workIndex,
 				shapeToRigidRemapTable,
-				particleContacts,
+				particleContactInfos,
+				particleContactNormalPens,
 				numParticleContacts, 
 				contactSortedByParticle,
 				tempContactByParticle,
@@ -1649,12 +1648,15 @@ extern "C" __global__ void ps_convexDiffuseCollisionLaunch(
 }
 
 extern "C" __global__ void ps_reorderPrimitiveContactsLaunch(
-	const PxgParticlePrimitiveContact* PX_RESTRICT particleContacts,
+	const PxgDeformablePairInfo* PX_RESTRICT particleContactInfos,
+	const float4* PX_RESTRICT particleContactNormalPens,
 	const PxI32* numParticleContacts,
 	const PxU32* remapByRigid,
 	const PxU32* remapByParticle,
-	PxgParticlePrimitiveContact* PX_RESTRICT sortedContactsByRigid,					//output
-	PxgParticlePrimitiveContact* PX_RESTRICT sortedContactsByParticle				//output
+	PxgDeformablePairInfo* PX_RESTRICT sortedContactInfosByRigid,		//output
+	float4* PX_RESTRICT sortedContactNormalPensByRigid,					//output
+	PxgDeformablePairInfo* PX_RESTRICT sortedContactInfosByParticle,	//output
+	float4* PX_RESTRICT sortedContactNormalPensByParticle				//output
 	)
 {
 	
@@ -1672,7 +1674,12 @@ extern "C" __global__ void ps_reorderPrimitiveContactsLaunch(
 		if (index >= totalNumContacts)
 			return;
 
-		sortedContactsByParticle[index] = particleContacts[remapByParticle[index]];
-		sortedContactsByRigid[index] = particleContacts[remapByRigid[index]];
+		const PxU32 byParticle = remapByParticle[index];
+		sortedContactInfosByParticle[index] = particleContactInfos[byParticle];
+		sortedContactNormalPensByParticle[index] = particleContactNormalPens[byParticle];
+
+		const PxU32 byRigid = remapByRigid[index];
+		sortedContactInfosByRigid[index] = particleContactInfos[byRigid];
+		sortedContactNormalPensByRigid[index] = particleContactNormalPens[byRigid];
 	}
 }

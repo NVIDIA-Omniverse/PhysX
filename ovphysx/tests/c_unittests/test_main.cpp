@@ -90,8 +90,7 @@ public:
         destroySharedCpuInstance();
         if (m_initialized)
         {
-            // Balance ovphysx_initialize(), drain the direct runtime, and
-            // leave Carbonite resident for its process-exit hook.
+            // Balance ovphysx_initialize() and complete the platform's SDK shutdown.
             const ovphysx_result_t shutdownResult = ovphysx_shutdown();
             if (shutdownResult.status != OVPHYSX_API_SUCCESS)
             {

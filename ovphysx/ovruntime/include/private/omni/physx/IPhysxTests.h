@@ -1,12 +1,17 @@
 // SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-1
+
 /**
  * @implements REQ-PUBLICAPI-001
  * @covers AC-25
  */
 
 #pragma once
+
+#include <omni/physics/AttachHandle.h>
 
 #include <carb/Defines.h>
 #include <carb/Types.h>
@@ -75,15 +80,15 @@ struct BatchedContactBufferStats
 
 struct IPhysxUnitTests
 {
-    void(CARB_ABI* update)(float elapsedSecs, float currentTime);
+    RuntimeResult(CARB_ABI* update)(AttachHandle attach, float elapsedSecs, float currentTime);
 
     PhysicsStats(CARB_ABI* getPhysicsStats)();
 
-    BatchedContactBufferStats(CARB_ABI* getBatchedContactBufferStats)();
+    BatchedContactBufferStats(CARB_ABI* getBatchedContactBufferStats)(AttachHandle attach);
 
-    float(CARB_ABI* getMassInformation)(const char* path, carb::Float3& inertia, carb::Float3& com);
+    float(CARB_ABI* getMassInformation)(AttachHandle attach, const char* path, carb::Float3& inertia, carb::Float3& com);
 
-    void(CARB_ABI* getMaterialsPaths)(const TestPathArg& path, std::vector<TestPathArg>& materials);
+    void(CARB_ABI* getMaterialsPaths)(AttachHandle attach, const TestPathArg& path, std::vector<TestPathArg>& materials);
 
     void(CARB_ABI* startLoggerCheck)(const char* message, bool expectedResult, bool partialStringMatch);
 
@@ -98,7 +103,7 @@ struct IPhysxUnitTests
     // ADR-0019); it is retyped here purely to keep both ABI declarations matching that single
     // implementer's signature, not as a scope decision for IPhysxUnitTests/IPhysxBenchmarks (which
     // stay SdfPath-typed -- test-only code is explicitly out of ADR-0019's scope).
-    uint32_t(CARB_ABI* getPhysXPtrInstanced)(omni::physics::parse::ObjectKey key, void** data, uint32_t dataSize, PhysXType type);
+    uint32_t(CARB_ABI* getPhysXPtrInstanced)(omni::physics::AttachHandle attach, omni::physics::parse::ObjectKey key, void** data, uint32_t dataSize, PhysXType type);
 
     void(CARB_ABI* updateCooking)();
 
@@ -107,7 +112,18 @@ struct IPhysxUnitTests
     // Number of InternalActor entries registered with the given physics scene. Exposed so tests can
     // assert that the per-scene actor bookkeeping follows a simulation owner change; returns 0 if the
     // path does not resolve to a scene.
-    size_t(CARB_ABI* getSceneInternalActorCount)(const TestPathArg& scenePath);
+    size_t(CARB_ABI* getSceneInternalActorCount)(AttachHandle attach, const TestPathArg& scenePath);
+
+    // Looks up the InternalForce registered for a PhysxForceAPI prim. Returns false when the path has
+    // no force; otherwise writes the PxRigidActor the force is bound to - which must be null once that
+    // body has been released, rather than left dangling (NVBugs 6583666) - to outRigidActor.
+    // TestPathArg for the same ABI reason as getSceneInternalActorCount above.
+    bool(CARB_ABI* getForceRigidActor)(AttachHandle attach, const TestPathArg& forcePath, void** outRigidActor);
+
+    // Number of InternalForce entries registered with the given physics scene, so tests can assert
+    // that the per-scene force bookkeeping follows a simulation owner change the way the actor
+    // bookkeeping does; returns 0 if the path does not resolve to a scene.
+    size_t(CARB_ABI* getSceneInternalForceCount)(AttachHandle attach, const TestPathArg& scenePath);
 
     // REQ-SIM-SCENEQUERY-001 observability: raycastFilterExcludeInvisible::preFilter() and the
     // per-query KnownTokens::intern() call site in raycastSingle() (Raycast.cpp) each increment a
@@ -129,15 +145,15 @@ typedef void (*ProfileStatsNotificationFn)(const std::vector<PhysicsProfileStats
 
 struct IPhysxBenchmarks
 {
-    void(CARB_ABI* update)(float elapsedSecs, float currentTime);
+    RuntimeResult(CARB_ABI* update)(AttachHandle attach, float elapsedSecs, float currentTime);
 
-    void(CARB_ABI* updateUsd)();
+    RuntimeResult(CARB_ABI* updateUsd)(AttachHandle attach);
 
     long int(CARB_ABI* createEmptyStage)();
 
-    long(CARB_ABI* loadTargetStage)(const char* path);
+    long(CARB_ABI* loadTargetStage)(const char* path, AttachHandle& attach);
 
-    bool(CARB_ABI* loadTargetStage_Id)(long id);
+    bool(CARB_ABI* loadTargetStage_Id)(long id, AttachHandle& attach);
 
     void(CARB_ABI* setThreadCount)(uint32_t threadCount);
 

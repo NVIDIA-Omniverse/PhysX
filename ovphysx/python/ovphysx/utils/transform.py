@@ -13,6 +13,7 @@ helpers encapsulate that.
 """
 
 import logging
+import math
 import typing
 
 from pxr import Gf, Usd, UsdGeom
@@ -83,10 +84,16 @@ def get_basis(up_axis):
 def get_unit_scale_factor(stage):
     """Get the stage's units-per-meter scale factor.
 
+    Non-positive or non-finite metersPerUnit values log a warning and use
+    1.0 meter per unit, without changing the stage metadata.
+
     Args:
         stage: The Usd.Stage to query.
     """
     metersPerUnit = UsdGeom.GetStageMetersPerUnit(stage)
+    if not math.isfinite(metersPerUnit) or metersPerUnit <= 0.0:
+        logger.warning("Invalid metersPerUnit %r; falling back to 1.0", metersPerUnit)
+        return 1.0
     scaleFactor = 1.0 / metersPerUnit
     return scaleFactor
 
@@ -191,6 +198,10 @@ def _get_or_create_xform_op(
     dstOp = UsdGeom.XformOp(xformable.GetPrim().GetAttribute(op_name))
     if not dstOp:
         dstOp = xformable.AddXformOp(op_type, op_precision_if_create)
+    else:
+        orderedOps = xformable.GetOrderedXformOps()
+        if op_name not in (op.GetOpName() for op in orderedOps):
+            xformable.SetXformOpOrder(orderedOps + [dstOp], xformable.GetResetXformStack())
     return dstOp
 
 

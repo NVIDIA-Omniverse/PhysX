@@ -9,7 +9,7 @@ type: integration
 
 ## Scenario
 
-A native consumer resolves the OVStage release recorded by the SDK's
+A native consumer resolves an OVStage compatible with the SDK's
 generated package configuration without consulting documentation.
 
 ## Given
@@ -21,20 +21,24 @@ generated package configuration without consulting documentation.
 
 ## When
 
-- Generate package configurations from two different pins and configure
+- Generate package configurations from different pins, including a full
+  native build/hash pin and a semantic version, and configure
   consumers with matching, older, newer-patch, and different-minor OVStage
   packages using `find_package(ovphysx REQUIRED CONFIG)`.
+- Allow fetching with a compatible supplied newer-patch package; disable
+  fetching when checking unavailable packages, including a quiet lookup.
 - Try a matching package without the schema-registration declaration.
 - Generate metadata from missing, malformed, and duplicate assignments,
   or a missing pin source file.
 
 ## Then
 
-- Matching releases configure successfully, expose the full pin and its
+- Matching and compatible newer-patch releases configure successfully, expose the full pin and its
   three-component CMake version, and propagate `ovstage::ovstage` through
-  the SDK target (REQ AC-1, AC-2).
-- Mismatched releases fail configuration and identify the required
-  version; a missing schema-registration API still fails (REQ AC-2).
+  the SDK target without downloading (REQ AC-1, AC-2).
+- Incompatible releases fail required configuration and identify the required
+  version when fetching is disabled; a quiet lookup reports not-found
+  without aborting. A missing schema-registration API still fails (REQ AC-2).
 - Invalid or missing pin inputs fail metadata generation (REQ AC-3).
 
 The tests exercise regeneration explicitly. The main build's

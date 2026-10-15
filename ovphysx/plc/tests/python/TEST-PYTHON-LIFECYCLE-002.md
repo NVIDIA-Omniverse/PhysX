@@ -42,8 +42,10 @@ finalization.
   unregister or replace that callback (REQ AC-8).
 - A two-instance process discharges both lifecycle tokens and reaches final
   process shutdown without hanging or crashing (REQ AC-8).
-- The read-array subprocess invokes native `ovphysx_shutdown()` before
-  interpreter teardown, not only cache removal (REQ AC-8).
+- The read-array subprocess destroys its native instance and invokes
+  `ovphysx_shutdown()` before interpreter teardown, not only cache removal.
+  This private process-exit path bypasses the explicit-destroy live-array
+  precondition because exit ends all borrowed lifetimes (REQ AC-8 and AC-9).
 - Unhashable and equal-hashable subclasses are each tracked distinctly and
   can be constructed without `TypeError` (REQ AC-8).
 - The normal-exit subprocess succeeds, while the `KeyboardInterrupt` subprocess

@@ -34,10 +34,10 @@ void queryRestConfigurationPerTriangle(float4& triangleRestPosInv, PxU32 vi0, Px
 // others
 void queryVertexIndicesAndTriangleIndexPairs(PxArray<uint4>& vertexIndicesAndTriangleIndexPair, PxU32 vi0, PxU32 vi1, PxU32 vi2, PxU32 ti);
 
-void encodeType0EdgeInformation(uint4* triangleIndices, PxU32 triIndex, bool isEdge0Authored, bool isEdge1Authored, bool isEdge2Authored);
-void queryTrianglesWithActiveEdges(PxArray<bool>& trianglesWithActiveEdges, uint4* triangleIndices, PxU32 nbVertices, PxU32 nbTriangles,
-								   const PxArray<PxU32>& innerTriangles, const PxArray<PxU32>& borderTriangles, PxU32 maxEdgesPerVertex);
-PxU32 getType0NumAuthoredEdgesInTriangle(PxU32 edgeAuthorship);
+void encodeEdgeOwnership(PxU8* edgeOwnershipNibbles, PxU32 triIndex, bool ownsEdge0, bool ownsEdge1, bool ownsEdge2);
+void computeEdgeOwnership(PxArray<bool>& triangleUsed, PxArray<PxU8>& edgeOwnershipNibbles, const uint4* triangleVertexIndices,
+						  PxU32 nbVertices, PxU32 nbTriangles, const PxArray<PxU32>& innerTriangles,
+						  const PxArray<PxU32>& borderTriangles, PxU32 maxEdgesPerVertex);
 
 /*******************************************************************************
  *
@@ -85,26 +85,31 @@ PxU32 PxgFEMClothUtil::loadOutTriangleMesh(void* mem, const Gu::TriangleMesh* tr
 	return bv32Tree->mNbPackedNodes;
 }
 
-PxU32 PxgFEMClothUtil::initialTriangleData(PxgFEMCloth& femCloth, PxArray<uint2>& trianglePairTriangleIndices,
-										   PxArray<uint4>& trianglePairVertexIndices, const Gu::TriangleMesh* triangleMesh,
-										   const PxU16* materialHandles, PxsDeformableSurfaceMaterialData* materials,
-										   const PxU32 nbMaterials, Cm::VirtualAllocatorCallback& hostAlloc)
+// Derives the mesh topology a cloth needs, the bending triangle pairs and the edge ownership deciding
+// which triangle tests each shared edge. It reads the mesh and nothing else, so it can run before a
+// cloth exists on the GPU.
+static void computeTriangleTopology(const Gu::TriangleMesh& triangleMesh, PxArray<PxU8>& edgeOwnershipNibbles,
+									PxArray<uint2>& trianglePairTriangleIndices, PxArray<uint4>& trianglePairVertexIndices)
 {
-	const PxU32 nbTriangles = triangleMesh->getNbTrianglesFast();
-	const PxU32 nbVertices = triangleMesh->getNbVerticesFast();
+	const PxU32 nbTriangles = triangleMesh.getNbTrianglesFast();
+	const PxU32 nbVertices = triangleMesh.getNbVerticesFast();
 
-	const PxU16* materialIndices = triangleMesh->getMaterials();
-	PxU16* destMaterialIndices = femCloth.mMaterialIndices;
-	float* destDynamicFrictions = femCloth.mDynamicFrictions;
+	// Temporary triangle vertex indices
+	PxArray<uint4> triangleVertexIndices(nbTriangles);
 
-	const PxU32* vertAccumulatedTriangleRefs = triangleMesh->getAccumulatedTriangleRef();
-	const PxU32 nbTriangleReferences = triangleMesh->getNbTriangleReferences();
+	if(triangleMesh.has16BitIndices())
+	{
+		const PxU16* const triangleInds = reinterpret_cast<PxU16*>(triangleMesh.mGRB_triIndices);
+		for(PxU32 i = 0; i < nbTriangles; ++i)
+			triangleVertexIndices[i] = make_uint4(triangleInds[3 * i + 0], triangleInds[3 * i + 1], triangleInds[3 * i + 2], 0);
+	}
+	else
+	{
+		const PxU32* const triangleInds = reinterpret_cast<PxU32*>(triangleMesh.mGRB_triIndices);
+		for(PxU32 i = 0; i < nbTriangles; ++i)
+			triangleVertexIndices[i] = make_uint4(triangleInds[3 * i + 0], triangleInds[3 * i + 1], triangleInds[3 * i + 2], 0);
+	}
 
-	PxMemZero(destDynamicFrictions, sizeof(float) * nbVertices);
-
-	uint4* triangleVertexIndices = femCloth.mTriangleVertexIndices;
-
-	// Copy triangle indices and query triangle pairs
 	PxArray<uint4> vertexIndicesAndTriangleIndexPair;
 	const PxU32 nbConservativeTrianglePairs = 3 * nbTriangles;
 	vertexIndicesAndTriangleIndexPair.reserve(nbConservativeTrianglePairs);
@@ -112,60 +117,10 @@ PxU32 PxgFEMClothUtil::initialTriangleData(PxgFEMCloth& femCloth, PxArray<uint2>
 	trianglePairTriangleIndices.reserve(nbConservativeTrianglePairs);
 	trianglePairVertexIndices.reserve(nbConservativeTrianglePairs);
 
-	const PxU32* gpuToCpuFaceRemap = triangleMesh->mGRB_faceRemap;
-
-	if(triangleMesh->has16BitIndices())
+	for(PxU32 i = 0; i < nbTriangles; ++i)
 	{
-		const PxU16* const triangleInds = reinterpret_cast<PxU16*>(triangleMesh->mGRB_triIndices);
-
-		for(PxU32 i = 0; i < nbTriangles; ++i)
-		{
-			const PxU16 vInd0 = triangleInds[3 * i + 0];
-			const PxU16 vInd1 = triangleInds[3 * i + 1];
-			const PxU16 vInd2 = triangleInds[3 * i + 2];
-
-			triangleVertexIndices[i].x = vInd0;
-			triangleVertexIndices[i].y = vInd1;
-			triangleVertexIndices[i].z = vInd2;
-			triangleVertexIndices[i].w = 0; // Reserving the w-component to store edge information.
-
-			initialMaterialData(materialIndices, materialHandles, materials, gpuToCpuFaceRemap, i, vInd0, vInd1, vInd2, nbMaterials,
-								destMaterialIndices, destDynamicFrictions);
-			queryVertexIndicesAndTriangleIndexPairs(vertexIndicesAndTriangleIndexPair, triangleVertexIndices[i].x,
-													triangleVertexIndices[i].y, triangleVertexIndices[i].z, i);
-		}
-	}
-	else
-	{
-		const PxU32* const triangleInds = reinterpret_cast<PxU32*>(triangleMesh->mGRB_triIndices);
-
-		for(PxU32 i = 0; i < nbTriangles; ++i)
-		{
-			const PxU32 vInd0 = triangleInds[3 * i + 0];
-			const PxU32 vInd1 = triangleInds[3 * i + 1];
-			const PxU32 vInd2 = triangleInds[3 * i + 2];
-
-			triangleVertexIndices[i].x = vInd0;
-			triangleVertexIndices[i].y = vInd1;
-			triangleVertexIndices[i].z = vInd2;
-			triangleVertexIndices[i].w = 0; // Reserving the w-component to store edge information.
-
-			initialMaterialData(materialIndices, materialHandles, materials, gpuToCpuFaceRemap, i, vInd0, vInd1, vInd2, nbMaterials,
-								destMaterialIndices, destDynamicFrictions);
-			queryVertexIndicesAndTriangleIndexPairs(vertexIndicesAndTriangleIndexPair, triangleVertexIndices[i].x,
-													triangleVertexIndices[i].y, triangleVertexIndices[i].z, i);
-		}
-	}
-
-	for(PxU32 i = 0; i < nbVertices; ++i)
-	{
-		PxU32 nbRefs = 0;
-		if((i + 1) < nbVertices)
-			nbRefs = vertAccumulatedTriangleRefs[i + 1] - vertAccumulatedTriangleRefs[i];
-		else
-			nbRefs = nbTriangleReferences - vertAccumulatedTriangleRefs[i];
-
-		destDynamicFrictions[i] /= nbRefs;
+		queryVertexIndicesAndTriangleIndexPairs(vertexIndicesAndTriangleIndexPair, triangleVertexIndices[i].x,
+												triangleVertexIndices[i].y, triangleVertexIndices[i].z, i);
 	}
 
 	// "unordered" triangle-pairs
@@ -183,7 +138,6 @@ PxU32 PxgFEMClothUtil::initialTriangleData(PxgFEMCloth& femCloth, PxArray<uint2>
 	IndexPredicate indexPredicate(nbVertices);
 	PxSort(vertexIndicesAndTriangleIndexPair.begin(), vertexIndicesAndTriangleIndexPair.size(), indexPredicate);
 
-	PxU32 elementIndex = 0;
 	PxU32 numBendPairs = 0;
 	bool isNewEdge = false;
 
@@ -249,7 +203,6 @@ PxU32 PxgFEMClothUtil::initialTriangleData(PxgFEMCloth& femCloth, PxArray<uint2>
 
 					trianglePairVertexIndices.pushBack(uint4{ vi0, vi1, vi2, vi3 });
 					trianglePairTriangleIndices.pushBack(uint2{ ti0, ti1 });
-					++elementIndex;
 				}
 
 				innerTriangles.pushBack(vertexIndicesAndTriangleIndexPair[i].w);
@@ -261,40 +214,36 @@ PxU32 PxgFEMClothUtil::initialTriangleData(PxgFEMCloth& femCloth, PxArray<uint2>
 			{
 				const PxU32 tempVi2 = vertexIndicesAndTriangleIndexPair[e].x;
 				const PxU32 tempVi3 = vertexIndicesAndTriangleIndexPair[e].y;
-				const PxU32 tempAuthoringTriangle = vertexIndicesAndTriangleIndexPair[e].w;
+				const PxU32 tempOwningTriangle = vertexIndicesAndTriangleIndexPair[e].w;
 
 				++numEdgesPerVertex[tempVi2];
 				++numEdgesPerVertex[tempVi3];
 				++borderEdgeCount;
-				borderTriangles.pushBack(tempAuthoringTriangle);
+				borderTriangles.pushBack(tempOwningTriangle);
 			}
 		}
 		else if (isNewEdge)
 		{
 			// An edge can belong to multiple triangles, potentially resulting in the same edge being visited multiple times during triangle iteration.
-			// By assigning edge authorship to each triangle, we ensure that each edge is processed only once during iteration.
-			// Here, mark the authorship of outer (border) edges within the triangles.
+			// By assigning each edge to one triangle, we ensure that each edge is processed only once during iteration.
+			// Here, mark the ownership of outer (border) edges within the triangles.
 
 			for(PxU32 de = 0; de < (isLastIter ? 2u : 1u); ++de)
 			{
 				const PxU32 newE = prevE + de;
 				const PxU32 vi2 = vertexIndicesAndTriangleIndexPair[newE].x;
 				const PxU32 vi3 = vertexIndicesAndTriangleIndexPair[newE].y;
-				const PxU32 authoringTriangle = vertexIndicesAndTriangleIndexPair[newE].w;
+				const PxU32 owningTriangle = vertexIndicesAndTriangleIndexPair[newE].w;
 
 				++numEdgesPerVertex[vi2];
 				++numEdgesPerVertex[vi3];
 				++borderEdgeCount;
-				borderTriangles.pushBack(authoringTriangle);
+				borderTriangles.pushBack(owningTriangle);
 			}
 
 			numBendPairs = 0;
 		}
 	}
-
-	femCloth.mNbVerts = nbVertices;
-	femCloth.mNbTriangles = nbTriangles;
-	femCloth.mNbTrianglePairs = elementIndex;
 
 	PxU32 maxEdgesPerVertex = 0;
 	for (PxU32 v = 0; v < nbVertices; ++v)
@@ -302,96 +251,109 @@ PxU32 PxgFEMClothUtil::initialTriangleData(PxgFEMCloth& femCloth, PxArray<uint2>
 		maxEdgesPerVertex = PxMax(numEdgesPerVertex[v], maxEdgesPerVertex);
 	}
 
-	// Query triangles that should participate in PAIR0 edge encoding.
-	// This minimizes the number of triangles needed to cover all edges.
-	PxArray<bool> pair0_isActiveTriangle;
-	queryTrianglesWithActiveEdges(pair0_isActiveTriangle, triangleVertexIndices, nbVertices, nbTriangles, innerTriangles, borderTriangles,
-								  maxEdgesPerVertex);
+	// Compute the edge ownership per triangle such that the number of triangles having any edges assigned is minimized.
+	PxArray<bool> triangleUsed;
+	computeEdgeOwnership(triangleUsed, edgeOwnershipNibbles, triangleVertexIndices.begin(), nbVertices, nbTriangles, innerTriangles, borderTriangles,
+						 maxEdgesPerVertex);
+}
 
-	PxArray<PxU32> pair0_trianglesWithActiveEdges;
-	pair0_trianglesWithActiveEdges.reserve(nbTriangles);
+PxgDeformableSurfaceTopology::PxgDeformableSurfaceTopology(const Gu::TriangleMesh& triangleMesh)
+{
+	computeTriangleTopology(triangleMesh, mEdgeOwnershipNibbles, mTrianglePairTriangleIndices, mTrianglePairVertexIndices);
+}
 
-	for(PxU32 pair = 0; pair < 2; ++pair)
+void PxgDeformableSurfaceTopology::releaseUploadData()
+{
+	mTrianglePairTriangleIndices.reset();
+	mTrianglePairVertexIndices.reset();
+}
+
+PxU32 PxgFEMClothUtil::initialTriangleData(PxgFEMCloth& femCloth, const Gu::TriangleMesh* triangleMesh,
+										   const PxgDeformableSurfaceTopology& topology,
+										   const PxU16* materialHandles, PxsDeformableSurfaceMaterialData* materials,
+										   const PxU32 nbMaterials, Cm::VirtualAllocatorCallback& hostAlloc)
+{
+	const PxU32 nbTriangles = triangleMesh->getNbTrianglesFast();
+	const PxU32 nbVertices = triangleMesh->getNbVerticesFast();
+
+	const PxU16* materialIndices = triangleMesh->getMaterials();
+	PxU16* destMaterialIndices = femCloth.mMaterialIndices;
+	float* destDynamicFrictions = femCloth.mDynamicFrictions;
+
+	const PxU32* vertAccumulatedTriangleRefs = triangleMesh->getAccumulatedTriangleRef();
+	const PxU32 nbTriangleReferences = triangleMesh->getNbTriangleReferences();
+
+	PxMemZero(destDynamicFrictions, sizeof(float) * nbVertices);
+
+	uint4* triangleVertexIndices_ownedEdges = femCloth.mTriangleVertexIndices_ownedEdges;
+
+	const PxU32* gpuToCpuFaceRemap = triangleMesh->mGRB_faceRemap;
+	if(triangleMesh->has16BitIndices())
 	{
-		const PxU32 vertex0Bit = (pair == 0) ? EdgeEncoding::TYPE0_VERTEX0_ACTIVE_POS : EdgeEncoding::TYPE1_VERTEX0_ACTIVE_POS;
-		const PxU32 vertex1Bit = (pair == 0) ? EdgeEncoding::TYPE0_VERTEX1_ACTIVE_POS : EdgeEncoding::TYPE1_VERTEX1_ACTIVE_POS;
-		const PxU32 vertex2Bit = (pair == 0) ? EdgeEncoding::TYPE0_VERTEX2_ACTIVE_POS : EdgeEncoding::TYPE1_VERTEX2_ACTIVE_POS;
+		const PxU16* const triangleInds = reinterpret_cast<PxU16*>(triangleMesh->mGRB_triIndices);
 
-		const PxU32 edgeBasePos = (pair == 0) ? EdgeEncoding::TYPE0_EDGE_BASE_POS : EdgeEncoding::TYPE1_EDGE_BASE_POS;
-
-		// Track globally whether a vertex was already marked active
-		PxArray<bool> vertexMarked(nbVertices, false);
-
-		for(PxU32 t = 0; t < nbTriangles; ++t)
+		for(PxU32 i = 0; i < nbTriangles; ++i)
 		{
-			// Mark active vertices
-			{
-				uint4& tri = triangleVertexIndices[t];
-				PxU32& triW = tri.w;
+			const PxU16 vInd0 = triangleInds[3 * i + 0];
+			const PxU16 vInd1 = triangleInds[3 * i + 1];
+			const PxU16 vInd2 = triangleInds[3 * i + 2];
 
-				const PxU32 v0 = tri.x;
-				const PxU32 v1 = tri.y;
-				const PxU32 v2 = tri.z;
+			triangleVertexIndices_ownedEdges[i] = make_uint4(vInd0, vInd1, vInd2, topology.getEdgeOwnershipBits(i));
 
-				// Edge 0 (v0-v1)
-				if(triW & (1U << (edgeBasePos + 0)))
-				{
-					if(!vertexMarked[v0])
-					{
-						triW |= (1U << vertex0Bit);
-						vertexMarked[v0] = true;
-					}
-					if(!vertexMarked[v1])
-					{
-						triW |= (1U << vertex1Bit);
-						vertexMarked[v1] = true;
-					}
-				}
-
-				// Edge 1 (v1-v2)
-				if (triW & (1U << (edgeBasePos + 1)))
-				{
-					if (!vertexMarked[v1])
-					{
-						triW |= (1U << vertex1Bit);
-						vertexMarked[v1] = true;
-					}
-					if (!vertexMarked[v2])
-					{
-						triW |= (1U << vertex2Bit);
-						vertexMarked[v2] = true;
-					}
-				}
-
-				// Edge 2 (v2-v0)
-				if (triW & (1U << (edgeBasePos + 2)))
-				{
-					if (!vertexMarked[v2])
-					{
-						triW |= (1U << vertex2Bit);
-						vertexMarked[v2] = true;
-					}
-					if (!vertexMarked[v0])
-					{
-						triW |= (1U << vertex0Bit);
-						vertexMarked[v0] = true;
-					}
-				}
-			}
-
-			// Saving pair0 active triangles
-			if (pair == 0 && pair0_isActiveTriangle[t])
-			{
-				pair0_trianglesWithActiveEdges.pushBack(t);
-			}
+			initialMaterialData(materialIndices, materialHandles, materials, gpuToCpuFaceRemap, i, vInd0, vInd1, vInd2, nbMaterials,
+								destMaterialIndices, destDynamicFrictions);
 		}
 	}
-	femCloth.mNbTrianglesWithActiveEdges = pair0_trianglesWithActiveEdges.size();
+	else
+	{
+		const PxU32* const triangleInds = reinterpret_cast<PxU32*>(triangleMesh->mGRB_triIndices);
 
-	femCloth.mTrianglesWithActiveEdges = reinterpret_cast<PxU32*>(
-		hostAlloc.allocate(sizeof(PxU32) * pair0_trianglesWithActiveEdges.size(), PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
+		for(PxU32 i = 0; i < nbTriangles; ++i)
+		{
+			const PxU32 vInd0 = triangleInds[3 * i + 0];
+			const PxU32 vInd1 = triangleInds[3 * i + 1];
+			const PxU32 vInd2 = triangleInds[3 * i + 2];
 
-	PxMemCopy(femCloth.mTrianglesWithActiveEdges, &pair0_trianglesWithActiveEdges[0], sizeof(PxU32)* pair0_trianglesWithActiveEdges.size());
+			triangleVertexIndices_ownedEdges[i] = make_uint4(vInd0, vInd1, vInd2, topology.getEdgeOwnershipBits(i));
+
+			initialMaterialData(materialIndices, materialHandles, materials, gpuToCpuFaceRemap, i, vInd0, vInd1, vInd2, nbMaterials,
+								destMaterialIndices, destDynamicFrictions);
+		}
+	}
+
+	for(PxU32 i = 0; i < nbVertices; ++i)
+	{
+		PxU32 nbRefs = 0;
+		if((i + 1) < nbVertices)
+			nbRefs = vertAccumulatedTriangleRefs[i + 1] - vertAccumulatedTriangleRefs[i];
+		else
+			nbRefs = nbTriangleReferences - vertAccumulatedTriangleRefs[i];
+
+		destDynamicFrictions[i] /= nbRefs;
+	}
+
+	// Create compacted list of triangles that at least own one edge.
+	PxArray<PxU32> trianglesWithOwnedEdges;
+	trianglesWithOwnedEdges.reserve(nbTriangles);
+
+	for(PxU32 t = 0; t < nbTriangles; ++t)
+	{
+		if(topology.getEdgeOwnershipBits(t))
+			trianglesWithOwnedEdges.pushBack(t);
+	}
+
+	const PxU32 elementIndex = topology.getNbTrianglePairs();
+
+	femCloth.mNbVerts = nbVertices;
+	femCloth.mNbTriangles = nbTriangles;
+	femCloth.mNbTrianglePairs = elementIndex;
+
+	femCloth.mNbTrianglesWithOwnedEdges = trianglesWithOwnedEdges.size();
+
+	femCloth.mTrianglesWithOwnedEdges = reinterpret_cast<PxU32*>(
+		hostAlloc.allocate(sizeof(PxU32) * trianglesWithOwnedEdges.size(), PxsHeapStats::eSIMULATION_FEMCLOTH, PX_FL));
+
+	PxMemCopy(femCloth.mTrianglesWithOwnedEdges, &trianglesWithOwnedEdges[0], sizeof(PxU32) * trianglesWithOwnedEdges.size());
 
 	return elementIndex;
 }
@@ -495,7 +457,7 @@ void PxgFEMClothUtil::computeNonSharedTriangleConfiguration(PxgFEMCloth& femClot
 		const PxU32 index = activeTriangleIndices[orderedNonSharedTriangles[it]];
 		PX_ASSERT(index < femCloth.mNbTriangles);
 
-		const uint4& triangleVertexIndex = femCloth.mTriangleVertexIndices[index];
+		const uint4& triangleVertexIndex = femCloth.mTriangleVertexIndices_ownedEdges[index];
 		const PxU32 vi0 = triangleVertexIndex.x;
 		const PxU32 vi1 = triangleVertexIndex.y;
 		const PxU32 vi2 = triangleVertexIndex.z;
@@ -742,11 +704,16 @@ void queryVertexIndicesAndTriangleIndexPairs(PxArray<uint4>& vertexIndicesAndTri
 	}
 }
 
-void queryTrianglesWithActiveEdges(PxArray<bool>& triangleUsed, uint4* triangleVertexIndices, PxU32 nbVertices, PxU32 nbTriangles,
-								   const PxArray<PxU32>& innerTriangles, const PxArray<PxU32>& borderTriangles, PxU32 maxEdgesPerVertex)
+void computeEdgeOwnership(PxArray<bool>& triangleUsed, PxArray<PxU8>& edgeOwnershipNibbles, const uint4* triangleVertexIndices,
+						  PxU32 nbVertices, PxU32 nbTriangles, const PxArray<PxU32>& innerTriangles,
+						  const PxArray<PxU32>& borderTriangles, PxU32 maxEdgesPerVertex)
 {
 	triangleUsed.clear();
 	triangleUsed.resize(nbTriangles, false);
+
+	// Two triangles to a byte, three bits to a nibble. Zeroed because a triangle owning no edge is never encoded.
+	edgeOwnershipNibbles.clear();
+	edgeOwnershipNibbles.resize((nbTriangles + 1) / 2, 0);
 
 	PxArray<PxArray<PxU32> > edgeList(nbVertices);
 	PxArray<PxU32> edgeCount(nbVertices, 0);
@@ -828,7 +795,7 @@ void queryTrianglesWithActiveEdges(PxArray<bool>& triangleUsed, uint4* triangleV
 				++edgeCount[vMin];
 			}
 
-			encodeType0EdgeInformation(triangleVertexIndices, triIdx, edge0, edge1, edge2);
+			encodeEdgeOwnership(edgeOwnershipNibbles.begin(), triIdx, edge0, edge1, edge2);
 		}
 	}
 
@@ -899,84 +866,20 @@ void queryTrianglesWithActiveEdges(PxArray<bool>& triangleUsed, uint4* triangleV
 					++edgeCount[vMin];
 				}
 
-				encodeType0EdgeInformation(triangleVertexIndices, triIdx, edge0, edge1, edge2);
+				encodeEdgeOwnership(edgeOwnershipNibbles.begin(), triIdx, edge0, edge1, edge2);
 			}
 		}
 	}
 }
 
-void setType0EdgeSlot(PxU32& edgeAuthorship, PxU32 slotIndex, PxU32 edgeIndex)
+// Store the three edge ownership bits for a given triangle index to the one nibble per triangle format
+void encodeEdgeOwnership(PxU8* edgeOwnershipNibbles, PxU32 triIndex, bool ownsEdge0, bool ownsEdge1, bool ownsEdge2)
 {
-	if(slotIndex == 0)
-	{
-		edgeAuthorship &= ~EdgeEncodingMask::TYPE0_FIRST_EDGE_MASK;
-		edgeAuthorship |= (edgeIndex << EdgeEncoding::TYPE0_FIRST_EDGE_POS);
-	}
-	else if(slotIndex == 1)
-	{
-		edgeAuthorship &= ~EdgeEncodingMask::TYPE0_SECOND_EDGE_MASK;
-		edgeAuthorship |= (edgeIndex << EdgeEncoding::TYPE0_SECOND_EDGE_POS);
-	}
-	else if(slotIndex == 2)
-	{
-		edgeAuthorship &= ~EdgeEncodingMask::TYPE0_THIRD_EDGE_MASK;
-		edgeAuthorship |= (edgeIndex << EdgeEncoding::TYPE0_THIRD_EDGE_POS);
-	}
-}
+	const PxU32 bits = (ownsEdge0 ? 1u : 0u) | (ownsEdge1 ? 2u : 0u) | (ownsEdge2 ? 4u : 0u);
+	const PxU32 shift = 4 * (triIndex & 1);
 
-void encodeType0EdgeInformation(uint4* triangleIndices, PxU32 triIndex, bool isEdge0Authored, bool isEdge1Authored, bool isEdge2Authored)
-{
-	PxU32& edgeAuthorship = triangleIndices[triIndex].w;
-
-	// Clear PAIR0 region (lower 16 bits only)
-	edgeAuthorship &= 0xFFFF0000;
-
-	PxU32 authoredCount = 0;
-
-	// --- Edge 0: (v0, v1) ---
-	if(isEdge0Authored)
-	{
-		// Set edge presence bit
-		edgeAuthorship |= (1U << EdgeEncoding::TYPE0_EDGE_BASE_POS);
-
-		// Set edge slot
-		setType0EdgeSlot(edgeAuthorship, authoredCount, 0);
-
-		++authoredCount;
-	}
-
-	// --- Edge 1: (v1, v2) ---
-	if(isEdge1Authored)
-	{
-		edgeAuthorship |= (1U << (EdgeEncoding::TYPE0_EDGE_BASE_POS + 1));
-
-		setType0EdgeSlot(edgeAuthorship, authoredCount, 1);
-
-		++authoredCount;
-	}
-
-	// --- Edge 2: (v2, v0) ---
-	if(isEdge2Authored)
-	{
-		edgeAuthorship |= (1U << (EdgeEncoding::TYPE0_EDGE_BASE_POS + 2));
-
-		setType0EdgeSlot(edgeAuthorship, authoredCount, 2);
-
-		++authoredCount;
-	}
-
-	// Clamp authored edge count
-	if(authoredCount > 3)
-		authoredCount = 3;
-
-	// Encode final authored count in PAIR0
-	edgeAuthorship &= ~EdgeEncodingMask::TYPE0_AUTH_COUNT_MASK;
-	edgeAuthorship |= (authoredCount << EdgeEncoding::TYPE0_AUTH_COUNT_POS);
-}
-
-PxU32 getType0NumAuthoredEdgesInTriangle(PxU32 edgeAuthorship)
-{
-	return (edgeAuthorship & EdgeEncodingMask::TYPE0_AUTH_COUNT_MASK) >> EdgeEncoding::TYPE0_AUTH_COUNT_POS;
+	PxU8& packed = edgeOwnershipNibbles[triIndex >> 1];
+	packed = PxU8((packed & ~(0xFu << shift)) | (bits << shift));
 }
 
 void PxgFEMCloth::deallocate(Cm::VirtualAllocatorCallback& hostAlloc)
@@ -1011,8 +914,8 @@ void PxgFEMCloth::deallocate(Cm::VirtualAllocatorCallback& hostAlloc)
 	}
 
 	hostAlloc.deallocate(mTriMeshData);
-	hostAlloc.deallocate(mTrianglesWithActiveEdges);
-	hostAlloc.deallocate(mTriangleVertexIndices);
+	hostAlloc.deallocate(mTrianglesWithOwnedEdges);
+	hostAlloc.deallocate(mTriangleVertexIndices_ownedEdges);
 
 	hostAlloc.deallocate(mMaterialIndices);
 	hostAlloc.deallocate(mDynamicFrictions);

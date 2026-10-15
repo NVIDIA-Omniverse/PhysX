@@ -38,8 +38,8 @@ void PxgCudaBuffer::allocate(const PxU64 size, const char* filename, PxI32 line)
 			PX_UNUSED(filename);
 			PX_UNUSED(line);
 			PxCudaContextManager& contextManager = mDeviceAlloc.getAllocator()->mContextManager;
-			PxU8* ptr = reinterpret_cast<PxU8*>(mPtr);
-			contextManager.freeDeviceBuffer(ptr);
+			PxScopedCudaLock _lock(contextManager);
+			contextManager.getCudaContext()->memFree(mPtr);
 			mPtr = NULL;
 #else
 			mDeviceAlloc.deallocate(reinterpret_cast<void*>(mPtr));
@@ -52,7 +52,8 @@ void PxgCudaBuffer::allocate(const PxU64 size, const char* filename, PxI32 line)
 #if MEMCHECK_SUPPORT
 		{
 			PxCudaContextManager& contextManager = mDeviceAlloc.getAllocator()->mContextManager;
-			mPtr = CUdeviceptr(contextManager.allocDeviceBuffer<PxU8>(PxU32(mSize)));
+			PxScopedCudaLock _lock(contextManager);
+			contextManager.getCudaContext()->memAlloc(&mPtr, mSize);
 			PX_ASSERT(mPtr);
 		}
 #else
@@ -86,7 +87,8 @@ void PxgCudaBuffer::allocateCopyOldDataAsync(const PxU64 size, PxCudaContext* cu
 		PX_UNUSED(filename);
 		PX_UNUSED(line);
 		PxCudaContextManager& contextManager = mDeviceAlloc.getAllocator()->mContextManager;
-		mPtr = CUdeviceptr(contextManager.allocDeviceBuffer<PxU8>(PxU32(mSize)));
+		PxScopedCudaLock _lock(contextManager);
+		contextManager.getCudaContext()->memAlloc(&mPtr, mSize);
 		PX_ASSERT(mPtr);
 #else
 		mPtr = reinterpret_cast<CUdeviceptr>(mDeviceAlloc.allocate(mSize, mStatGroup, filename, line));
@@ -112,8 +114,8 @@ void PxgCudaBuffer::deallocate()
 	{
 #if MEMCHECK_SUPPORT
 		PxCudaContextManager& contextManager = mDeviceAlloc.getAllocator()->mContextManager;
-		PxU8* ptr = reinterpret_cast<PxU8*>(mPtr);
-		contextManager.freeDeviceBuffer(ptr);
+		PxScopedCudaLock _lock(contextManager);
+		contextManager.getCudaContext()->memFree(mPtr);
 #else
 		mDeviceAlloc.deallocate(reinterpret_cast<void*>(mPtr));
 #endif

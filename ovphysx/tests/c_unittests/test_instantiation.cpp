@@ -82,10 +82,10 @@ TEST(CreateInstanceValidation, RejectsNullConfigEntriesWithNonzeroCount)
 {
     ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
     args.config_entry_count = 1;
-    const ovphysx_handle_t sentinel = UINT64_MAX;
-    ovphysx_handle_t handle = sentinel;
+    const ovphysx_instance_handle_t sentinel = UINT64_MAX;
+    ovphysx_instance_handle_t handle = sentinel;
 
-    const ovphysx_result_t result = ovphysx_create_instance(&args, &handle);
+    const ovphysx_result_t result = ovphysx_create_instance_with_args(&args, &handle);
 
     EXPECT_EQ(result.status, OVPHYSX_API_INVALID_ARGUMENT);
     EXPECT_EQ(handle, sentinel);
@@ -104,8 +104,8 @@ static ovphysx_api_status_t try_create_with_gpus(const char* gpus)
 {
     ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
     args.active_cuda_gpus = ovphysx_cstr(gpus);
-    ovphysx_handle_t handle = 0;
-    ovphysx_result_t result = ovphysx_create_instance(&args, &handle);
+    ovphysx_instance_handle_t handle = 0;
+    ovphysx_result_t result = ovphysx_create_instance_with_args(&args, &handle);
     if (result.status == OVPHYSX_API_SUCCESS && handle)
         ovphysx_destroy_instance(handle);
     return result.status;
@@ -183,8 +183,8 @@ TEST(ActiveCudaGpusAttachTest, DirectOvstageAttachPropagatesExplicitOrdinal)
     args.config_entries = &staleMultiGpuMode;
     args.config_entry_count = 1;
 
-    ovphysx_handle_t handle = OVPHYSX_INVALID_HANDLE;
-    const ovphysx_result_t createResult = ovphysx_create_instance(&args, &handle);
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    const ovphysx_result_t createResult = ovphysx_create_instance_with_args(&args, &handle);
     if (createResult.status != OVPHYSX_API_SUCCESS)
     {
         ADD_FAILURE() << "Failed to create an instance with active_cuda_gpus=0";
@@ -279,7 +279,7 @@ struct ScopedDirectGpu
 {
     ~ScopedDirectGpu()
     {
-        EXPECT_EQ(ovphysx_set_global_config(ovphysx_config_entry_carbonite(
+        EXPECT_EQ(ovphysx_set_global_config_entry(ovphysx_config_entry_carbonite(
                       OVPHYSX_LITERAL("/physics/suppressReadback"),
                       OVPHYSX_LITERAL("false"))).status,
                   OVPHYSX_API_SUCCESS);
@@ -297,9 +297,8 @@ TEST(ActiveCudaGpusAttachTest, CreateLogEmptyVsMinusOneAcrossRecreate)
     ScopedLogCapture logCapture;
     ASSERT_EQ(ovphysx_log_capture_start().status, OVPHYSX_API_SUCCESS);
 
-    ovphysx_create_args emptyArgs = OVPHYSX_CREATE_ARGS_DEFAULT;
-    ovphysx_handle_t handle = OVPHYSX_INVALID_HANDLE;
-    ASSERT_EQ(ovphysx_create_instance(&emptyArgs, &handle).status, OVPHYSX_API_SUCCESS);
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&handle).status, OVPHYSX_API_SUCCESS);
     EXPECT_TRUE(ovphysx_log_capture_find(OVPHYSX_LOG_INFO, "active_cuda_gpus=no_override"))
         << "empty active_cuda_gpus must log no_override, not auto";
     EXPECT_FALSE(ovphysx_log_capture_find(OVPHYSX_LOG_INFO, "active_cuda_gpus=auto"));
@@ -311,7 +310,7 @@ TEST(ActiveCudaGpusAttachTest, CreateLogEmptyVsMinusOneAcrossRecreate)
 
     ovphysx_create_args autoArgs = OVPHYSX_CREATE_ARGS_DEFAULT;
     autoArgs.active_cuda_gpus = OVPHYSX_LITERAL("-1");
-    ASSERT_EQ(ovphysx_create_instance(&autoArgs, &handle).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_create_instance_with_args(&autoArgs, &handle).status, OVPHYSX_API_SUCCESS);
     EXPECT_TRUE(ovphysx_log_capture_find(OVPHYSX_LOG_INFO, "active_cuda_gpus=-1"))
         << "explicit -1 must log the ordinal, not no_override/auto";
     ASSERT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
@@ -320,9 +319,9 @@ TEST(ActiveCudaGpusAttachTest, CreateLogEmptyVsMinusOneAcrossRecreate)
     ovphysx_log_capture_stop();
     ASSERT_EQ(ovphysx_log_capture_start().status, OVPHYSX_API_SUCCESS);
 
-    ASSERT_EQ(ovphysx_create_instance(&emptyArgs, &handle).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_create_instance(&handle).status, OVPHYSX_API_SUCCESS);
     EXPECT_TRUE(ovphysx_log_capture_find(OVPHYSX_LOG_INFO, "active_cuda_gpus=no_override"))
-        << "empty recreate after -1 must still log create-args intent as no_override";
+        << "default recreate after -1 must still log no_override";
     EXPECT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
 }
 
@@ -337,6 +336,10 @@ TEST(ActiveCudaGpusAttachTest, CreateLogEmptyVsMinusOneAcrossRecreate)
 // The case therefore checks first that it is the only test in the process and
 // skips when it is not, so a wrong gtest filter cannot make it a silent
 // ordinal-0 run.
+// CATEGORY-3 GAP (retires with the binding, no session port yet): this reads a GPU binding into a host
+// buffer on CUDA ordinal 1. The binding host-staging path has no session equivalent, and a session version
+// (a DirectGPU session read on device 1) needs a two-GPU machine to run. Tracked in
+// PLAN-tensor-binding-deprecation (Blocked/deferred: "Session read on a non-zero CUDA ordinal").
 TEST(ActiveCudaGpusAttachTest, DirectGpuHostReadOnNonZeroOrdinal)
 {
     // Process isolation is the case's precondition, not something it can arrange, so
@@ -358,9 +361,8 @@ TEST(ActiveCudaGpusAttachTest, DirectGpuHostReadOnNonZeroOrdinal)
     // ordinal selected process-wide.
     bool haveTwoDevices = false;
     {
-        ovphysx_create_args probeArgs = OVPHYSX_CREATE_ARGS_DEFAULT;
-        ovphysx_handle_t probeHandle = OVPHYSX_INVALID_HANDLE;
-        ASSERT_EQ(ovphysx_create_instance(&probeArgs, &probeHandle).status, OVPHYSX_API_SUCCESS);
+        ovphysx_instance_handle_t probeHandle = OVPHYSX_INVALID_HANDLE;
+        ASSERT_EQ(ovphysx_create_instance(&probeHandle).status, OVPHYSX_API_SUCCESS);
 
         omni::physx::IOptionalCuda* probeCuda = ovphysx::test_cuda::getCuda();
         int deviceCount = 0;
@@ -383,8 +385,8 @@ TEST(ActiveCudaGpusAttachTest, DirectGpuHostReadOnNonZeroOrdinal)
     args.config_entries = &directGpu;
     args.config_entry_count = 1;
 
-    ovphysx_handle_t handle = OVPHYSX_INVALID_HANDLE;
-    ASSERT_EQ(ovphysx_create_instance(&args, &handle).status, OVPHYSX_API_SUCCESS);
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance_with_args(&args, &handle).status, OVPHYSX_API_SUCCESS);
 
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(
         handle, OVPHYSX_SOURCE_DIR "/tests/data/boxes_falling_on_groundplane_gpu.usda"));

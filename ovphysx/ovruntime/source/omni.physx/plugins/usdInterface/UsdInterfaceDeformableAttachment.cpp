@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-RESOLVE-001
+// @covers AC-3
+
 /**
  * @implements REQ-PARSE-CONSUMER-001
  * @covers AC-24
@@ -39,7 +42,6 @@ using namespace ::physx;
 using namespace omni::physx::internal;
 using namespace omni::physx;
 
-extern ObjectId getObjectId(omni::physics::parse::ObjectKey key, PhysXType type);
 
 // createDeformableAttachment/createDeformableCollisionFilter below are ObjectKey-native and
 // unconditional: every read routes through IPhysicsSource/getArrayValue/KnownTokens already,
@@ -93,11 +95,11 @@ void copyVtxToPhysx(InternalDeformableAttachment::AttachmentData& attachmentData
     attachmentData.targetType = PxDeformableAttachmentTargetType::eVERTEX;
 }
 
-void convertVtxToPhysx(InternalDeformableAttachment::AttachmentData& attachmentData, const std::vector<int32_t>& vtxIndices)
+void convertVtxToPhysx(const usdparser::AttachedStage& attachedStage, InternalDeformableAttachment::AttachmentData& attachmentData, const std::vector<int32_t>& vtxIndices)
 {
     if (attachmentData.physxType == ePTDeformableSurface)
     {
-        InternalSurfaceDeformableBody* internalPtr = omni::physx::getInternalPtr<InternalSurfaceDeformableBody>(ePTDeformableSurface, attachmentData.objId);
+        InternalSurfaceDeformableBody* internalPtr = omni::physx::getInternalPtr<InternalSurfaceDeformableBody>(attachedStage.getInternalPhysXDatabase(), ePTDeformableSurface, attachmentData.objId);
 
         std::vector<PxU32> vtxIds;
         std::vector<PxU32> triIds;
@@ -113,7 +115,7 @@ void convertVtxToPhysx(InternalDeformableAttachment::AttachmentData& attachmentD
     }
     else if (attachmentData.physxType == ePTDeformableVolume)
     {
-        InternalVolumeDeformableBody* internalPtr = omni::physx::getInternalPtr<InternalVolumeDeformableBody>(ePTDeformableVolume, attachmentData.objId);
+        InternalVolumeDeformableBody* internalPtr = omni::physx::getInternalPtr<InternalVolumeDeformableBody>(attachedStage.getInternalPhysXDatabase(), ePTDeformableVolume, attachmentData.objId);
 
         std::vector<PxU32> vtxIds;
         std::vector<PxU32> tetIds;
@@ -282,7 +284,7 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableAttachment(usdparser::Attache
                 return kInvalidObjectId;
             }
 
-            internalDeformableAttachment = ICE_NEW(InternalDeformableAttachment)(attachmentKey, effectiveDesc);
+            internalDeformableAttachment = ICE_NEW(InternalDeformableAttachment)(attachedStage, attachmentKey, effectiveDesc);
             if (!internalDeformableAttachment->isValid())
             {
                 SAFE_DELETE_SINGLE(internalDeformableAttachment);
@@ -307,7 +309,7 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableAttachment(usdparser::Attache
                 return kInvalidObjectId;
             }
 
-            internalDeformableAttachment = ICE_NEW(InternalDeformableAttachment)(attachmentKey, effectiveDesc);
+            internalDeformableAttachment = ICE_NEW(InternalDeformableAttachment)(attachedStage, attachmentKey, effectiveDesc);
             if (!internalDeformableAttachment->isValid())
             {
                 SAFE_DELETE_SINGLE(internalDeformableAttachment);
@@ -334,7 +336,7 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableAttachment(usdparser::Attache
                 return kInvalidObjectId;
             }
 
-            internalDeformableAttachment = ICE_NEW(InternalDeformableAttachment)(attachmentKey, effectiveDesc);
+            internalDeformableAttachment = ICE_NEW(InternalDeformableAttachment)(attachedStage, attachmentKey, effectiveDesc);
             if (!internalDeformableAttachment->isValid())
             {
                 SAFE_DELETE_SINGLE(internalDeformableAttachment);
@@ -344,11 +346,11 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableAttachment(usdparser::Attache
             // PhysX SDK does not natively support vtx to vtx attachment so we need to convert them to tri/tet id with barycentrics.
             std::vector<int32_t> vtxIndices0;
             readArray(tok.omniphysicsVtxIndicesSrc0, vtxIndices0);
-            convertVtxToPhysx(internalDeformableAttachment->mData[0], vtxIndices0);
+            convertVtxToPhysx(attachedStage, internalDeformableAttachment->mData[0], vtxIndices0);
 
             std::vector<int32_t> vtxIndices1;
             readArray(tok.omniphysicsVtxIndicesSrc1, vtxIndices1);
-            convertVtxToPhysx(internalDeformableAttachment->mData[1], vtxIndices1);
+            convertVtxToPhysx(attachedStage, internalDeformableAttachment->mData[1], vtxIndices1);
 
             break;
         }
@@ -360,7 +362,7 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableAttachment(usdparser::Attache
                 return kInvalidObjectId;
             }
 
-            internalDeformableAttachment = ICE_NEW(InternalDeformableAttachment)(attachmentKey, effectiveDesc);
+            internalDeformableAttachment = ICE_NEW(InternalDeformableAttachment)(attachedStage, attachmentKey, effectiveDesc);
             if (!internalDeformableAttachment->isValid())
             {
                 SAFE_DELETE_SINGLE(internalDeformableAttachment);
@@ -370,7 +372,7 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableAttachment(usdparser::Attache
             // PhysX SDK does not natively support vtx for deformable/deformable attachment so we need to convert the vtx deformable to tri/tet id with barycentrics.
             std::vector<int32_t> vtxIndices;
             readArray(tok.omniphysicsVtxIndicesSrc0, vtxIndices);
-            convertVtxToPhysx(internalDeformableAttachment->mData[0], vtxIndices);
+            convertVtxToPhysx(attachedStage, internalDeformableAttachment->mData[0], vtxIndices);
 
             std::vector<int32_t> triIndices;
             std::vector<carb::Float3> triCoords;
@@ -388,7 +390,7 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableAttachment(usdparser::Attache
                 return kInvalidObjectId;
             }
 
-            internalDeformableAttachment = ICE_NEW(InternalDeformableAttachment)(attachmentKey, effectiveDesc);
+            internalDeformableAttachment = ICE_NEW(InternalDeformableAttachment)(attachedStage, attachmentKey, effectiveDesc);
             if (!internalDeformableAttachment->isValid())
             {
                 SAFE_DELETE_SINGLE(internalDeformableAttachment);
@@ -398,7 +400,7 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableAttachment(usdparser::Attache
             // PhysX SDK does not natively support vtx for deformable/deformable attachment so we need to convert the vtx deformable to tri/tet id with barycentrics.
             std::vector<int32_t> vtxIndices;
             readArray(tok.omniphysicsVtxIndicesSrc0, vtxIndices);
-            convertVtxToPhysx(internalDeformableAttachment->mData[0], vtxIndices);
+            convertVtxToPhysx(attachedStage, internalDeformableAttachment->mData[0], vtxIndices);
 
             std::vector<int32_t> tetIndices;
             std::vector<carb::Float3> tetCoords;
@@ -424,7 +426,7 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableAttachment(usdparser::Attache
         internalDeformableAttachment->setCreateAttachmentEvent();
     }
 
-    const ObjectId objId = OmniPhysX::getInstance().getInternalPhysXDatabase().addRecord(ePTDeformableAttachment, nullptr, internalDeformableAttachment, attachmentKey);
+    const ObjectId objId = attachedStage.getInternalPhysXDatabase().addRecord(ePTDeformableAttachment, nullptr, internalDeformableAttachment, attachmentKey);
     attachedStage.registerObjectId(attachmentKey, ObjectType::eDeformableAttachment, objId);
 
     internalDeformableAttachment->mObjectId = objId;
@@ -453,12 +455,12 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableAttachment(usdparser::Attache
 
 namespace
 {
-    void mapToPhysxFilterIndices(std::vector<uint32_t>& elemCounts, std::vector<uint32_t>& elemIndices,
+    void mapToPhysxFilterIndices(const usdparser::AttachedStage& attachedStage, std::vector<uint32_t>& elemCounts, std::vector<uint32_t>& elemIndices,
         const InternalDeformableCollisionFilter::CollisionFilterData& filterData, const uint32_t numDeformableElems)
     {
         if (filterData.physxType == ePTDeformableSurface)
         {
-            InternalSurfaceDeformableBody* surface = getInternalPtr<InternalSurfaceDeformableBody>(ePTDeformableSurface, (ObjectId)filterData.actor->userData);
+            InternalSurfaceDeformableBody* surface = getInternalPtr<InternalSurfaceDeformableBody>(attachedStage.getInternalPhysXDatabase(), ePTDeformableSurface, (ObjectId)filterData.actor->userData);
             if (surface && numDeformableElems == (uint32_t)surface->mSimToPhysxTriMap.size())
             {
                 for (uint32_t i = 0; i < elemIndices.size(); ++i)
@@ -469,7 +471,7 @@ namespace
         }
         else if (filterData.physxType == ePTDeformableVolume)
         {
-            InternalVolumeDeformableBody* volume = omni::physx::getInternalPtr<InternalVolumeDeformableBody>(ePTDeformableVolume, (ObjectId)filterData.actor->userData);
+            InternalVolumeDeformableBody* volume = omni::physx::getInternalPtr<InternalVolumeDeformableBody>(attachedStage.getInternalPhysXDatabase(), ePTDeformableVolume, (ObjectId)filterData.actor->userData);
             if (volume && numDeformableElems == (uint32_t)volume->mCollMeshSurfaceTriToTetMap.size())
             {
                 const PxTetrahedronMesh& tetMesh = *volume->mDeformableVolumeMesh->getCollisionMesh();
@@ -625,7 +627,7 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableCollisionFilter(usdparser::At
     if (generatedData)
         effectiveDesc.enabled = generatedData->enabled;
 
-    InternalDeformableCollisionFilter* internalDeformableCollisionFilter = ICE_NEW(InternalDeformableCollisionFilter)(collisionFilterKey, effectiveDesc);
+    InternalDeformableCollisionFilter* internalDeformableCollisionFilter = ICE_NEW(InternalDeformableCollisionFilter)(attachedStage, collisionFilterKey, effectiveDesc);
     if (!internalDeformableCollisionFilter->isValid())
     {
         SAFE_DELETE_SINGLE(internalDeformableCollisionFilter);
@@ -658,7 +660,7 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableCollisionFilter(usdparser::At
         return kInvalidObjectId;
     }
 
-    mapToPhysxFilterIndices(groupElemCounts0, groupElemIndices0, internalDeformableCollisionFilter->mData[0], numCollMeshElems0);
+    mapToPhysxFilterIndices(attachedStage, groupElemCounts0, groupElemIndices0, internalDeformableCollisionFilter->mData[0], numCollMeshElems0);
 
     internalDeformableCollisionFilter->mData[0].groupElementCounts.assign(groupElemCounts0.begin(), groupElemCounts0.end());
     internalDeformableCollisionFilter->mData[0].groupElementIndices.assign(groupElemIndices0.begin(), groupElemIndices0.end());
@@ -674,7 +676,7 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableCollisionFilter(usdparser::At
         return kInvalidObjectId;
     }
 
-    mapToPhysxFilterIndices(groupElemCounts1, groupElemIndices1, internalDeformableCollisionFilter->mData[1], numCollMeshElems1);
+    mapToPhysxFilterIndices(attachedStage, groupElemCounts1, groupElemIndices1, internalDeformableCollisionFilter->mData[1], numCollMeshElems1);
 
     internalDeformableCollisionFilter->mData[1].groupElementCounts.assign(groupElemCounts1.begin(), groupElemCounts1.end());
     internalDeformableCollisionFilter->mData[1].groupElementIndices.assign(groupElemIndices1.begin(), groupElemIndices1.end());
@@ -687,7 +689,7 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableCollisionFilter(usdparser::At
         internalDeformableCollisionFilter->setCreateCollisionFilterEvent();
     }
 
-    const ObjectId objId = OmniPhysX::getInstance().getInternalPhysXDatabase().addRecord(ePTDeformableCollisionFilter, nullptr, internalDeformableCollisionFilter, collisionFilterKey);
+    const ObjectId objId = attachedStage.getInternalPhysXDatabase().addRecord(ePTDeformableCollisionFilter, nullptr, internalDeformableCollisionFilter, collisionFilterKey);
     attachedStage.registerObjectId(collisionFilterKey, ObjectType::eDeformableCollisionFilter, objId);
 
     internalDeformableCollisionFilter->mObjectId = objId;
@@ -714,14 +716,14 @@ ObjectId PhysXUsdPhysicsInterface::createDeformableCollisionFilter(usdparser::At
     return objId;
 }
 
-void PhysXUsdPhysicsInterface::processDeformableAttachmentShapeEvents()
+void PhysXUsdPhysicsInterface::processDeformableAttachmentShapeEvents(const usdparser::AttachedStage& attachedStage)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
 
     std::vector<internal::InternalDeformableAttachment*> attachmentsToRemove;
 
-    const PhysXScenesMap& physxScenes = omniPhysX.getPhysXSetup().getPhysXScenes();
-    for (PhysXScenesMap::const_reference ref : physxScenes)
+    const usdparser::AttachedStage::SceneMap& physxScenes = attachedStage.getPhysXScenes();
+    for (usdparser::AttachedStage::SceneMap::const_reference ref : physxScenes)
     {
         PhysXScene* sc = ref.second;
 
@@ -744,14 +746,14 @@ void PhysXUsdPhysicsInterface::processDeformableAttachmentShapeEvents()
     }
 }
 
-void PhysXUsdPhysicsInterface::processDeformableCollisionFilterShapeEvents()
+void PhysXUsdPhysicsInterface::processDeformableCollisionFilterShapeEvents(const usdparser::AttachedStage& attachedStage)
 {
     const OmniPhysX& omniPhysX = OmniPhysX::getInstance();
 
     std::vector<internal::InternalDeformableCollisionFilter*> collisionFiltersToRemove;
 
-    const PhysXScenesMap& physxScenes = omniPhysX.getPhysXSetup().getPhysXScenes();
-    for (PhysXScenesMap::const_reference ref : physxScenes)
+    const usdparser::AttachedStage::SceneMap& physxScenes = attachedStage.getPhysXScenes();
+    for (usdparser::AttachedStage::SceneMap::const_reference ref : physxScenes)
     {
         PhysXScene* sc = ref.second;
 

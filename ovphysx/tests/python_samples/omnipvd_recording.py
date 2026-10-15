@@ -8,9 +8,9 @@
 OmniPVD recording sample: capture physics internals to .ovd files.
 
 This sample demonstrates how to:
-1. Configure OmniPVD recording via settings
+1. Enable recording capability before runtime creation
 2. Load a USD scene and run simulation
-3. Produce a timestamped .ovd file for offline inspection in Kit
+3. Record to an exact .ovd file for offline inspection in Kit
 
 The resulting .ovd file can be opened in a compatible Kit application with the
 OmniPVD extension (Window > Extensions > omni.physx.pvd) to inspect
@@ -20,13 +20,17 @@ compatibility policy.
 """
 
 # [tutorial-start]
+# @implements REQ-CAPI-OVSTAGE-XFORM-001
+# @covers AC-1
+
 import glob
 import os
 import tempfile
 from pathlib import Path
 
 import ovphysx
-from ovphysx import PhysX, PhysXConfig
+from ovphysx.samples.python_samples.schema_support import physx_schema_paths
+from ovphysx import GlobalConfigKey, OmniPvdDestination, PhysX, set_global_config
 
 
 _physx_schemas_registered = False
@@ -38,24 +42,23 @@ def attach_scene(physx, usd_path, stage_name):
     if not ovstage.population.available():
         raise RuntimeError("ovstage population bridge is unavailable")
 
-    # ovphysx ships its PhysX USD schemas as codeless resources and does not register
-    # them itself. Register them with ovstage once, before the first population
-    # call in the process. The Newton USD schema (pip package newton-usd-schemas)
-    # is registered alongside so authored newton:* attributes reach the parser.
+    # Register external PhysX and Newton schemas before the first population.
     global _physx_schemas_registered
     if not _physx_schemas_registered:
         ovstage.population.register_usd_schemas(
-            [str(ovphysx.codeless_schema_root()), str(ovphysx.newton_schema_root())]
+            [*[str(p) for p in physx_schema_paths()], str(ovphysx.newton_schema_root())]
         )
         _physx_schemas_registered = True
     stage = ovstage.Stage(stage_name)
     ordinal = 1
     try:
-        ovstage.population.open_usd(stage, str(usd_path), ordinal=ordinal, domains=ovstage.PopulationDomain.PHYSICS)
+        ovstage.population.open_usd(stage, str(usd_path), ordinal=ordinal, domains=ovstage.PopulationDomain.ALL)
         stage.advance_write_floor(ordinal=ordinal).wait()
-        physx.attach_ovstage(stage, read_ordinal=ordinal)
+        physx.wait_task(physx.attach_ovstage(stage, read_ordinal=ordinal))
         return stage
     except Exception:
+        if physx.is_stage_attached(stage):
+            physx.wait_task(physx.detach_ovstage())
         stage.destroy()
         raise
 
@@ -64,16 +67,9 @@ def attach_scene(physx, usd_path, stage_name):
 output_dir = tempfile.mkdtemp(prefix="ovphysx_pvd_")
 print(f"OmniPVD recording directory: {output_dir}")
 
-# Initialize PhysX with OmniPVD recording enabled.
-# IMPORTANT: Both config fields must be passed at initialization, before the
-# physics engine is created internally. The recording directory must be
-# a valid, writable path.
-physx = PhysX(
-    config=PhysXConfig(
-        omnipvd_ovd_recording_directory=output_dir,
-        omnipvd_output_enabled=True,
-    )
-)
+# Capability must exist before the shared runtime creates PxPhysics.
+set_global_config(GlobalConfigKey.OVD_RECORDING_CAPABLE, True)
+physx = PhysX()
 
 # Prefer package data so a copied sample works. Fall back to the checked-in
 # sample's adjacent data directory when package data is absent.
@@ -91,6 +87,7 @@ print(f"Loading USD scene: {usd_path}")
 
 stage = attach_scene(physx, usd_path, "ovphysx-omnipvd-sample")
 physx.wait_all()
+physx.start_recording(OmniPvdDestination.file(str(Path(output_dir) / "capture.ovd")))
 
 # Run the simulation. OmniPVD captures each frame automatically.
 dt = 1.0 / 60.0
@@ -102,15 +99,15 @@ for i in range(n_steps):
 
 print("Simulation complete.")
 
-# Destroying the instance finalizes the recording:
-# the runtime renames tmp.ovd -> <timestamp>_rec.ovd.
-physx.detach_ovstage()
+# Stop finalizes the exact destination before releasing the borrowed stage.
+physx.stop_recording()
+physx.wait_task(physx.detach_ovstage())
 stage.destroy()
 physx.destroy()
 print("Runtime cleanup complete; recording retained for inspection")
 
 # List the produced .ovd files
-ovd_files = glob.glob(os.path.join(output_dir, "*_rec.ovd"))
+ovd_files = glob.glob(os.path.join(output_dir, "*.ovd"))
 if ovd_files:
     print(f"\nRecorded {len(ovd_files)} OVD file(s):")
     for f in ovd_files:

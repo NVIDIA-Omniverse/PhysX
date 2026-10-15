@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-1 AC-2 AC-3 AC-5
+ *
  * @implements REQ-PARSE-CORE-003
  * @covers AC-5
  *
@@ -10,6 +13,7 @@
  */
 
 #include <omni/physics/parse/ParseContext.h>
+#include <omni/physics/parse/PreparedJoint.h>
 
 namespace omni::physics::parse
 {
@@ -42,6 +46,12 @@ const KnownTokens& ParseContext::knownTokens()
         }
     }
     return *mKnownTokensRef;
+}
+
+const JointReadTokens& ParseContext::jointReadTokens()
+{
+    if (!mJointReadTokens) mJointReadTokens = std::make_shared<JointReadTokens>(mSource);
+    return *mJointReadTokens;
 }
 
 uint32_t ParseContext::registerEnvId(TokenId token)

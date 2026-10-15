@@ -32,6 +32,16 @@ replacement, concurrency, and reentrant-call conditions.
 - A terminal shutdown is started while an accepted callback and a concurrent
   replacement transition are blocked.
 - Shutdown is also called while a live handle remains for explicit destruction.
+- `GlobalLifecycle.CallbackAfterLiveShutdownWaitsForNextBootstrap` installs a new
+  callback after live-handle shutdown. Test records are emitted before and after
+  the next bootstrap; only the latter reach the pending callback.
+- `GlobalLifecycle.SidecarLogPolicySurvivesFrameworkRestart` emits the existing
+  sidecar invalid-path diagnostic at NONE, INFO, then NONE across three complete
+  lifecycles. It must be visible only at INFO, including after framework restart.
+- In a dedicated process before initialization, the library level is set to
+  VERBOSE, default console output is disabled, and a callback is registered.
+  Two initialize/create/destroy/shutdown cycles each register their own callback
+  before initialization and emit records before and after shutdown.
 
 ## Then
 
@@ -57,7 +67,22 @@ replacement, concurrency, and reentrant-call conditions.
   satisfying AC-3 and the shutdown half of AC-6.
 - Live-handle shutdown also disables and drains callback delivery before the
   retained handle is explicitly destroyed, pinning the callback/user-data
-  lifetime boundary in AC-3 and AC-6.
+  lifetime boundary in AC-3 and AC-6. Shutdown closes logger registration until
+  bootstrap, so a late replacement cannot attach to the retiring framework and
+  leave stale registration state for the next lifecycle. The live-handle regression
+  checks this gate on both retained-framework and release-capable platforms.
+- A focused Linux debugger probe additionally installs a callback through the public
+  setter at entry to `releaseProcessCacheDirAtExit`, after `shutdownLogCallback`
+  returns. The next lifecycle must deliver records. This exercises the precise
+  late-replacement teardown window without adding a production synchronization hook;
+  it is manual qualification, not an automated CI test.
+- Both lifecycle cycles preserve the configured level and stored default-output
+  preference. Each pre-initialize callback receives the emitted WARNING test
+  record while its instance is live; shutdown disables it, and later emissions
+  and the next cycle do not deliver to the retired registration
+  (`GlobalLifecycle.PreInitLoggingConfigSurvivesLifecycleCycles`).
+  This checks AC-3 and AC-6 across repeated bootstrap use without treating
+  shutdown as a reset of process logging preferences.
 - A real internal-sidecar invalid-path record and a real `omni.physx` runtime
   warning follow AC-7's controlled-source policy; the runtime warning is visible
   at WARNING, reports the `omni.physx` channel, and is absent at NONE.

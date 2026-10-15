@@ -868,7 +868,8 @@ void immArticulation::initJointCore(Dy::ArticulationJointCore& core, const PxArt
 	{
 		core.setLimit(PxArticulationAxis::Enum(i), inboundJoint.limits[i]);
 		core.setDrive(PxArticulationAxis::Enum(i), inboundJoint.drives[i]);
-		core.setMaxJointVelocity(inboundJoint.maxJointVelocity[i]);
+		core.setMaxJointVelocity(PxArticulationAxis::Enum(i), inboundJoint.maxJointVelocity[i]);
+		core.setFrictionParams(PxArticulationAxis::Enum(i), inboundJoint.frictionParams[i]);
 
 		// See Sc::ArticulationJointCore::setTargetP and Sc::ArticulationJointCore::setTargetV
 		if(binP[i]!=0xffffffff)
@@ -885,7 +886,6 @@ void immArticulation::initJointCore(Dy::ArticulationJointCore& core, const PxArt
 		core.motion[i] = PxU8(inboundJoint.motion[i]);
 	}
 
-	core.setFrictionCoefficient(inboundJoint.frictionCoefficient);
 	core.setJointType(inboundJoint.type);
 }
 
@@ -1249,7 +1249,6 @@ bool immediate::PxGetJointData(const PxArticulationLinkHandle& link, PxArticulat
 
 	data.parentPose				= core.parentPose;
 	data.childPose				= core.childPose;
-	data.frictionCoefficient	= core.frictionCoefficient;
 	data.type					= PxArticulationJointType::Enum(core.jointType);
 	for(PxU32 i=0;i<PxArticulationAxis::eCOUNT;i++)
 	{
@@ -1262,6 +1261,7 @@ bool immediate::PxGetJointData(const PxArticulationLinkHandle& link, PxArticulat
 		data.jointPos[i]	= core.jointPos[i];
 		data.jointVel[i]	= core.jointVel[i];
 		data.maxJointVelocity[i] = core.maxJointVelocity[i];
+		data.frictionParams[i] = core.frictionParams[i];
 	}
 	return true;
 }
@@ -1304,15 +1304,13 @@ bool immediate::PxSetJointData(const PxArticulationLinkHandle& link, const PxArt
 		immArt->mJCalcDirty = true;
 	}
 
-	// PT: TODO: do we need to recompute jcalc for these?
-	core.frictionCoefficient	= data.frictionCoefficient;
-
 	for(PxU32 i=0;i<PxArticulationAxis::eCOUNT;i++)
 	{
 		// PT: we don't need to recompute jcalc for these
 		core.limits[i]	= data.limits[i];
 		core.drives[i]	= data.drives[i];
 		core.maxJointVelocity[i] = data.maxJointVelocity[i];
+		core.frictionParams[i] = data.frictionParams[i];
 
 		core.jointPos[i] = data.jointPos[i];
 		core.jointVel[i] = data.jointVel[i];
@@ -1697,7 +1695,7 @@ void immediate::PxSolveConstraintsTGS(const PxConstraintBatchHeader* batchHeader
 			const PxConstraintBatchHeader& batch = batchHeaders[a];
 			solveTable[batch.constraintType](batch, solverConstraintDescs, txInertias, 0.0f, elapsedTime);
 			if(!nbVelocityIterations)
-				writebackTable[batch.constraintType](batch, solverConstraintDescs);
+				writebackTable[batch.constraintType](batch, solverConstraintDescs, txInertias);
 		}
 	}
 }

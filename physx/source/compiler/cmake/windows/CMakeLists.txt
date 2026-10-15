@@ -97,8 +97,17 @@ IF(NOT PX_GENERATE_GPU_PROJECTS_ONLY AND NOT PX_GENERATE_GPU_PROJECTS)
   SET(DISABLE_CUDA_DEF "DISABLE_CUDA_PHYSX")
 ENDIF()
 
+# Windows SDK 10.0.26100 changed the NAN macro in corecrt_math.h to __builtin_nanf("0")
+# for every C++ translation unit. The VS2017 (v141) front-end mis-parses that intrinsic
+# when it appears more than once in a single expression (C2143/C2059, or an internal
+# compiler error C1001 for direct-initialization). _UCRT_NOISY_NAN is the UCRT's own
+# switch back to the arithmetic NAN definition that older SDKs used.
+IF(MSVC AND MSVC_VERSION LESS 1920)
+	SET(UCRT_NAN_FLAG "_UCRT_NOISY_NAN")
+ENDIF()
+
 # Now set PHYSX_WINDOWS_COMPILE_DEFS including the additional definition if applicable.
-SET(PHYSX_WINDOWS_COMPILE_DEFS "WIN32;${WIN64_FLAG};${SCALAR_MATH_FLAG};_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;${PHYSX_AUTOBUILD};${PUBLIC_RELEASE_FLAG};${DISABLE_CUDA_DEF}"
+SET(PHYSX_WINDOWS_COMPILE_DEFS "WIN32;${WIN64_FLAG};${SCALAR_MATH_FLAG};_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;${PHYSX_AUTOBUILD};${PUBLIC_RELEASE_FLAG};${DISABLE_CUDA_DEF};${UCRT_NAN_FLAG}"
     CACHE INTERNAL "Base PhysX preprocessor definitions")
 
 IF(CMAKE_CL_64 AND PX_BUILDPVDRUNTIME)
@@ -177,7 +186,6 @@ ELSE()
 	INCLUDE(PhysX.cmake)
 	INCLUDE(PhysXCharacterKinematic.cmake)
 	INCLUDE(PhysXCommon.cmake)
-	INCLUDE(PhysXCooking.cmake)
 	INCLUDE(PhysXExtensions.cmake)
 	INCLUDE(PhysXVehicle.cmake)
 	INCLUDE(SceneQuery.cmake)
@@ -189,7 +197,6 @@ ELSE()
 	SET_PROPERTY(TARGET PhysX PROPERTY FOLDER "PhysX SDK")
 	SET_PROPERTY(TARGET PhysXCharacterKinematic PROPERTY FOLDER "PhysX SDK")
 	SET_PROPERTY(TARGET PhysXCommon PROPERTY FOLDER "PhysX SDK")
-	SET_PROPERTY(TARGET PhysXCooking PROPERTY FOLDER "PhysX SDK")
 	SET_PROPERTY(TARGET PhysXExtensions PROPERTY FOLDER "PhysX SDK")
 	SET_PROPERTY(TARGET PhysXVehicle PROPERTY FOLDER "PhysX SDK")
 	SET_PROPERTY(TARGET LowLevel PROPERTY FOLDER "PhysX SDK")
@@ -203,9 +210,9 @@ ELSE()
 
 
 	IF(PX_GENERATE_STATIC_LIBRARIES)
-		SET(PHYSXDISTRO_LIBS PhysXFoundation PhysX PhysXCharacterKinematic PhysXPvdSDK PhysXCommon PhysXCooking PhysXExtensions PhysXVehicle)
+		SET(PHYSXDISTRO_LIBS PhysXFoundation PhysX PhysXCharacterKinematic PhysXPvdSDK PhysXCommon PhysXExtensions PhysXVehicle)
 	ELSE()
-		SET(PHYSXDISTRO_LIBS PhysXFoundation PhysX PhysXCharacterKinematic PhysXPvdSDK PhysXCommon PhysXCooking PhysXExtensions PhysXVehicle PhysXTask)
+		SET(PHYSXDISTRO_LIBS PhysXFoundation PhysX PhysXCharacterKinematic PhysXPvdSDK PhysXCommon PhysXExtensions PhysXVehicle PhysXTask)
 	ENDIF()
 
 	# Only install the legacy PhysXSDK export set in standalone mode (PX_ENABLE_INSTALL not defined).

@@ -1174,7 +1174,7 @@ void physx::Ext::generateTetmesh(const PxBoundedData& inputPoints, const PxBound
 	for (PxI32 i = 0; i < PxI32(points.size()); ++i)
 	{
 		if(map[i] != i)
-			points[i] = PxVec3d(PxF64(NAN), PxF64(NAN), PxF64(NAN));
+			points[i] = PxVec3d(PxF64(NAN));
 	}
 	for (PxU32 i = 0; i < tris.size(); ++i)
 	{

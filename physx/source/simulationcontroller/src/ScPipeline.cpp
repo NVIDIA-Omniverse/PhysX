@@ -632,9 +632,12 @@ namespace
 				ShapeSimBase* s0 = reinterpret_cast<ShapeSimBase*>(pair.mUserData1);
 				ShapeSimBase* s1 = reinterpret_cast<ShapeSimBase*>(pair.mUserData0);
 
-				//### PT: DEFENSIVE coding for OMPE-71676
+				//### DEFENSIVE coding for OMPE-71676
 				if(!s0 || !s1)
+				{
+					outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "OnOverlapCreatedTask: null shape in created overlap. Skipping.");
 					continue;
+				}
 
 				ElementSimInteraction* interaction = mNPhaseCore->createRbElementInteraction(mFinfo[i], *s0, *s1, *currentCm, *currentSI, *currentEI, false);
 				if(interaction)
@@ -1299,6 +1302,18 @@ void Sc::Scene::finishBroadPhaseStage2(PxU32 ccdPass)
 				ElementSim* volume0 = reinterpret_cast<ElementSim*>(p->mUserData0);
 				ElementSim* volume1 = reinterpret_cast<ElementSim*>(p->mUserData1);
 
+				//### DEFENSIVE coding for OMPE-103063 (cf. OMPE-71676)
+				//The conversion pass in AABBManager::postBpStage3 nulls a pair whose volume id was out
+				//of range, and a shape removed between push and conversion can null one too. Must come
+				//before findInteraction(), which dereferences both volumes.
+				if(!volume0 || !volume1)
+				{
+					outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "Sc::Scene: null volume in destroyed overlap. Skipping.");
+					p->mPairUserData = NULL;	//keep the bookkeeping processLostContacts3 reads consistent
+					p++;
+					continue;
+				}
+
 				//KS - this is a bit ugly. We split the "onOverlapRemoved" for shape interactions to parallelize it and that means
 				//that we have to call each of the individual stages of the remove here.
 
@@ -1344,8 +1359,11 @@ void Sc::Scene::finishBroadPhaseStage2(PxU32 ccdPass)
 
 				p->mPairUserData = NULL;
 
-				//KS - this is a bit ugly. 
-				mNPhaseCore->onOverlapRemoved(volume0, volume1, ccdPass, NULL, outputs);
+				if(volume0 && volume1)	//### DEFENSIVE coding for OMPE-103063 (cf. OMPE-71676)
+					mNPhaseCore->onOverlapRemoved(volume0, volume1, ccdPass, NULL, outputs);	//KS - this is a bit ugly.
+				else
+					outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "Sc::Scene: null volume in destroyed overlap. Skipping.");
+
 				p++;
 			}
 		}
@@ -2133,6 +2151,17 @@ static PX_FORCE_INLINE void findInteractions(const NPhaseCore& core, PxU32 count
 		// PT: it seems very questionable to store this within the BP structures at this point. If anything
 		// we should have stored that there when the overlap was created, and we wouldn't have to look for the
 		// interaction here.
+		// ### DEFENSIVE: OMPE-103063 - findInteractions() is the first consumer of the destroyed-overlap
+		// array (it fills mPairUserData for processLostContacts2/3), so an unvalidated pair faults here
+		// before any of the guards further down the pipeline can run.
+		if(!volume0 || !volume1)
+		{
+			outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "Sc::Scene: null volume in destroyed overlap. Skipping.");
+			overlaps->mPairUserData = NULL;
+			overlaps++;
+			continue;
+		}
+
 		overlaps->mPairUserData = core.findInteraction(volume0, volume1);
 		overlaps++;
 	}
@@ -2412,7 +2441,11 @@ void Sc::Scene::processLostContacts3(PxBaseTask* /*continuation*/)
 				ElementSim* volume0 = reinterpret_cast<ElementSim*>(p->mUserData0);
 				ElementSim* volume1 = reinterpret_cast<ElementSim*>(p->mUserData1);
 
-				mNPhaseCore->onOverlapRemoved(volume0, volume1, false, p->mPairUserData, outputs);
+				if(volume0 && volume1)	//### DEFENSIVE coding for OMPE-103063 (cf. OMPE-71676)
+					mNPhaseCore->onOverlapRemoved(volume0, volume1, false, p->mPairUserData, outputs);
+				else
+					outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "Sc::Scene: null volume in destroyed overlap. Skipping.");
+
 				p++;
 			}
 		}
@@ -2424,8 +2457,12 @@ void Sc::Scene::processLostContacts3(PxBaseTask* /*continuation*/)
 			{
 				ElementSim* volume0 = reinterpret_cast<ElementSim*>(p->mUserData0);
 				ElementSim* volume1 = reinterpret_cast<ElementSim*>(p->mUserData1);
+				
+				if(volume0 && volume1)	//### DEFENSIVE coding for OMPE-103063 (cf. OMPE-71676)
+					mNPhaseCore->onOverlapRemoved(volume0, volume1, false, NULL, outputs);
+				else
+					outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "Sc::Scene: null volume in destroyed overlap. Skipping.");
 
-				mNPhaseCore->onOverlapRemoved(volume0, volume1, false, NULL, outputs);
 				p++;
 			}
 		}

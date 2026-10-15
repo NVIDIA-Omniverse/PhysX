@@ -10,7 +10,6 @@
 #include "ScArticulationTendonSim.h"
 #include "ScArticulationMimicJointSim.h"
 #include "ScScene.h"
-#include "ScShapeSim.h"
 #include "DyIslandManager.h"
 
 using namespace physx;
@@ -24,12 +23,13 @@ ArticulationSim* Sc::getArticulationSim(const IslandSim& islandSim, PxNodeIndex 
 	return static_cast<ArticulationSim*>(getArticulationFromIG(islandSim, nodeIndex));
 }
 
-Sc::ArticulationSim::ArticulationSim(ArticulationCore& core, Scene& scene, BodyCore& root) : 
+Sc::ArticulationSim::ArticulationSim(ArticulationCore& core, Scene& scene, BodyCore& root, Bp::AggregateHandle handle) :
 	mScene						(scene),
 	mCore						(core),
 	mLinks						("ScArticulationSim::links"),
 	mBodies						("ScArticulationSim::bodies"),
 	mJoints						("ScArticulationSim::joints"),
+	mAggregateHandle			(handle),
 	mIsLLArticulationInitialized(false)
 {
 	mLinks.reserve(16);

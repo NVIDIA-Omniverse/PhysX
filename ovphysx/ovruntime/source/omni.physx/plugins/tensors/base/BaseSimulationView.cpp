@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-VIEWS-001
+// @covers AC-1 AC-2 AC-3
+
 /**
  * @implements REQ-REPLICATE-001
  * @covers AC-7
@@ -28,6 +31,18 @@
  *
  * @implements REQ-PUBLICAPI-001
  * @covers AC-5 AC-34 AC-35 AC-36 AC-37 AC-38 AC-40 AC-47 AC-48 AC-49 AC-50
+ *
+ * @implements REQ-READ-SELECT-001
+ * @covers AC-1 AC-2 AC-7 AC-8
+ *
+ * @implements REQ-TENSOR-MATERIAL-001
+ * @covers AC-1
+ *
+ * @implements REQ-TENSOR-MATERIAL-002
+ * @covers AC-3
+ *
+ * @implements REQ-READ-SDF-001
+ * @covers AC-1 AC-6 AC-7
  */
 
 #include "tensors/base/BaseSimulationView.h"
@@ -47,15 +62,19 @@
 
 #include "usdLoad/LoadUsd.h"
 #include "usdLoad/AttachedStage.h"
+#include "usdInterface/UsdInterface.h"
 #include "usdLoad/LoadTools.h"
 #include "utils/PrimPathGrammar.h"
 #include "PhysXTools.h"
 
 #include "OmniPhysX.h"
+#include "PhysXScene.h"
 #include <omni/physx/PhysXRuntime.h>
 #include "internal/InternalScene.h"
 #include "internal/Internal.h"
 #include "ObjectDataQuery.h"
+#include "AttachmentObjectLookup.h"
+#include "AttachmentJointLookup.h"
 
 #include <algorithm>
 #include <chrono>
@@ -423,31 +442,30 @@ void BaseSimulationView::setNoMatchLoggingQuiet(bool quiet)
 }
 
 BaseSimulationView::BaseSimulationView(usdparser::AttachedStage* attachedStage,
-                                       PxScene* scene,
-                                       bool notifyWhenSimStopped)
+                                       PxScene* scene)
     : mAttachedStage(attachedStage)
+    , mAttachHandle(attachedStage ? attachedStage->getAttachHandle() : omni::physics::kNoAttach)
     , mScene(scene)
     , mSimData(std::make_shared<BaseSimulationData>())
-    , mSelectionRecordEpoch(internal::recordLifetimeEpoch())
+    , mSelectionRecordEpoch(internal::recordLifetimeEpoch(mScene))
     , mSelectionReadOrdinal(attachedStage ? attachedStage->attachTarget().readOrdinal : 0)
     , mSelectionRecursiveLeafMatch(isRecursiveLeafPatternMatchEnabled())
 {
     omni::physx::IPhysicsObjectChangeCallback callback;
     callback.objectDestructionNotifyFn = onPhysXObjectDeletedCallback;
     callback.allObjectsDestructionNotifyFn = onAllPhysXObjectDeletedCallback;
-    // OMPE-106802: opt out of the simulation-stopped delivery gate. The scenes this view caches are released
-    // while object change notifications are turned off for the shutdown ("do not send these notifications when
-    // the simulation is to end"), so with the default the callbacks above never fire on that path: the view
-    // stays valid holding a freed PxScene and the next call through it dereferences the dead scene.
-    callback.stopCallbackWhenSimStopped = false;
     callback.userData = this;
-    callback.stopCallbackWhenSimStopped = !notifyWhenSimStopped;
-    subscriptionObjId = g_physx->subscribeObjectChangeNotifications(callback);
+    // AC-10: opt out of the simulation-stopped delivery gate. The scenes and actors a
+    // view caches are released while object-change notifications are turned off for shutdown ("do not
+    // send these notifications when the simulation is to end"), so with the gate on the callbacks above
+    // never fire on that path: the view stays valid holding a freed PxScene that its next getter reads.
+    callback.stopCallbackWhenSimStopped = false;
+    subscriptionObjId = getPhysXUsdPhysicsInterface().subscribeToObjectChangeNotifications(callback, attachedStage->getAttachHandle());
 }
 
 bool BaseSimulationView::isSelectionCurrent() const
 {
-    return isValid && mSelectionRecordEpoch == internal::recordLifetimeEpoch() &&
+    return isValid && mSelectionRecordEpoch == internal::recordLifetimeEpoch(mScene) &&
            mSelectionReadOrdinal == (mAttachedStage ? mAttachedStage->attachTarget().readOrdinal : 0) &&
            mSelectionRecursiveLeafMatch == isRecursiveLeafPatternMatchEnabled();
 }
@@ -476,7 +494,7 @@ void* BaseSimulationView::resolvePhysXPtr(const usdparser::AttachedStage* attach
         return nullptr;
     }
     return (void*)(getObjectDataOrID<ObjectDataQueryType::ePHYSX_PTR>(
-        key, type, OmniPhysX::getInstance().getInternalPhysXDatabase(), *attachedStage));
+        key, type, attachedStage->getInternalPhysXDatabase(), *attachedStage));
 }
 
 usdparser::ObjectId BaseSimulationView::resolveObjectId(const usdparser::AttachedStage* attachedStage,
@@ -487,7 +505,7 @@ usdparser::ObjectId BaseSimulationView::resolveObjectId(const usdparser::Attache
         return usdparser::kInvalidObjectId;
     }
     return usdparser::ObjectId(getObjectDataOrID<ObjectDataQueryType::eOBJECT_ID>(
-        key, type, OmniPhysX::getInstance().getInternalPhysXDatabase(), *attachedStage));
+        key, type, attachedStage->getInternalPhysXDatabase(), *attachedStage));
 }
 
 
@@ -560,14 +578,12 @@ BaseSimulationView::~BaseSimulationView()
     }
 }
 
-void BaseSimulationView::onPhysXObjectDeletedCallback(omni::physics::parse::ObjectKey key,
-                                                      usdparser::ObjectId objectId,
-                                                      PhysXType type,
-                                                      void* userData)
+void BaseSimulationView::onPhysXObjectDeletedCallback(const omni::physx::PhysicsObjectChangeEvent& event, void* userData)
 {
+    const omni::physx::PhysXType type = event.type;
     auto sim = (BaseSimulationView*)userData;
     omni::physx::IPhysx* physx = omni::physx::tensors::g_physx;
-    if (physx && sim)
+    if (physx && sim && sim->mAttachHandle == event.attach)
     {
         // no need to check further and print warning if the sim is already invalidated
         if (!sim->getValid())
@@ -575,56 +591,60 @@ void BaseSimulationView::onPhysXObjectDeletedCallback(omni::physics::parse::Obje
 
         if (type == ePTActor)
         {
-            PxRigidBody* actor = static_cast<PxRigidBody*>(physx->getPhysXPtrFast(objectId));
+            PxRigidBody* actor = static_cast<PxRigidBody*>(event.nativeObject);
             if (sim->hasRigidBody(actor))
             {
                 CARB_LOG_WARN(
                     "prim '%s' was deleted while being used by a tensor view class. The physics.tensors simulationView was invalidated.",
-                    physx->objectKeyToPath(key));
+                    event.path);
                 sim->invalidate();
             }
         }
         if (type == ePTArticulation)
         {
-            auto arti = static_cast<PxArticulationReducedCoordinate*>(physx->getPhysXPtrFast(objectId));
+            PxArticulationReducedCoordinate* arti = static_cast<PxArticulationReducedCoordinate*>(event.nativeObject);
             if (sim->hasArticulation(arti))
             {
                 CARB_LOG_WARN(
                     "prim '%s' was deleted while being used by a tensor view class. The physics.tensors simulationView was invalidated.",
-                    physx->objectKeyToPath(key));
+                    event.path);
                 sim->invalidate();
             }
         }
         if (type == ePTLink)
         {
-            auto link = static_cast<PxArticulationLink*>(physx->getPhysXPtrFast(objectId));
-            if (sim->hasLink(link))
+            PxArticulationLink* link = static_cast<PxArticulationLink*>(event.nativeObject);
+            // A rigid-body view can hold an articulation link: getRigidBodyAtPath resolves a link or
+            // articulation root as a rigid body and inserts it into rigidBodies (not links). A
+            // PxArticulationLink is a PxRigidBody, so a destroyed link must also invalidate views that
+            // hold it that way -- otherwise the view is stranded on the freed link.
+            if (sim->hasLink(link) || sim->hasRigidBody(static_cast<PxRigidBody*>(link)))
             {
                 CARB_LOG_WARN(
                     "prim '%s' was deleted while being used by a link in a tensor view class. The physics.tensors simulationView was invalidated.",
-                    physx->objectKeyToPath(key));
+                    event.path);
                 sim->invalidate();
             }
         }
         if (type == ePTShape)
         {
-            auto shape = static_cast<PxShape*>(physx->getPhysXPtrFast(objectId));
+            PxShape* shape = static_cast<PxShape*>(event.nativeObject);
             if (sim->hasShape(shape))
             {
                 CARB_LOG_WARN(
                     "prim '%s' was deleted while being used by a shape in a tensor view class. The physics.tensors simulationView was invalidated.",
-                    physx->objectKeyToPath(key));
+                    event.path);
                 sim->invalidate();
             }
         }
         if (type == ePTDeformableVolume || type == ePTDeformableSurface)
         {
-            auto body = static_cast<PxDeformableBody*>(physx->getPhysXPtrFast(objectId));
+            PxDeformableBody* body = static_cast<PxDeformableBody*>(event.nativeObject);
             if (sim->hasDeformableBody(body))
             {
                 CARB_LOG_WARN(
                     "prim '%s' was deleted while being used by a deformable body in a tensor view class. The physics.tensors simulationView was invalidated.",
-                    physx->objectKeyToPath(key));
+                    event.path);
                 sim->invalidate();
             }
         }
@@ -633,12 +653,12 @@ void BaseSimulationView::onPhysXObjectDeletedCallback(omni::physics::parse::Obje
         // its bodies or shapes were touched.
         if (type == ePTScene)
         {
-            PxScene* scene = static_cast<PxScene*>(physx->getPhysXPtrFast(objectId));
+            PxScene* scene = static_cast<PxScene*>(event.nativeObject);
             if (sim->hasScene(scene))
             {
                 CARB_LOG_WARN(
                     "physics scene '%s' was deleted while being used by a tensor view class. The physics.tensors simulationView was invalidated.",
-                    physx->objectKeyToPath(key));
+                    event.path);
                 sim->invalidate();
                 sim->mScene = nullptr;
             }
@@ -646,10 +666,10 @@ void BaseSimulationView::onPhysXObjectDeletedCallback(omni::physics::parse::Obje
     }
 }
 
-void BaseSimulationView::onAllPhysXObjectDeletedCallback(void* userData)
+void BaseSimulationView::onAllPhysXObjectDeletedCallback(omni::physics::AttachHandle attach, void* userData)
 {
     auto sim = (BaseSimulationView*)userData;
-    if (sim)
+    if (sim && sim->mAttachHandle == attach)
     {
         // no need to check further and print warning if the sim is already invalidated
         if (!sim->getValid())
@@ -745,9 +765,13 @@ Subspace* BaseSimulationView::findSubspaceForPath(const std::string& path) const
     return nullptr;
 }
 
-void BaseSimulationView::findMatchingPaths(const std::string& pattern_, std::vector<omni::physics::parse::ObjectKey>& keysRet)
+// The two-pass resolver bodies live as free functions so the session query resolves selection
+// through the exact same code path as the tensor-binding views (see the header). The members
+// forward to them; behaviour is unchanged (pinned by TestTensorReplicatedMatcher).
+void resolveMatchingObjectKeys(const usdparser::AttachedStage* attachedStage, const std::string& pattern_,
+                               std::vector<omni::physics::parse::ObjectKey>& keysRet)
 {
-    if (!mAttachedStage)
+    if (!attachedStage)
     {
         return;
     }
@@ -762,7 +786,7 @@ void BaseSimulationView::findMatchingPaths(const std::string& pattern_, std::vec
     // Authoring order (when the backend publishes one -- REQ-PARSE-CORE-003 AC-6:
     // ovstage does not) still comes first here, exactly as it did through the old
     // stage-conditional branch.
-    const omni::physics::parse::IPhysicsSource* src = mAttachedStage->getSource();
+    const omni::physics::parse::IPhysicsSource* src = attachedStage->getSource();
     if (src)
     {
         findMatchingObjectKeys(*src, pattern_, isRecursiveLeafPatternMatchEnabled(), keysRet);
@@ -777,7 +801,7 @@ void BaseSimulationView::findMatchingPaths(const std::string& pattern_, std::vec
     // present, so nothing is appended and the source-pass ordering above is preserved
     // unchanged.
     std::vector<omni::physics::parse::ObjectKey> internalMatches;
-    findMatchingKeysInternalDb(mAttachedStage, pattern_, isRecursiveLeafPatternMatchEnabled(), internalMatches);
+    findMatchingKeysInternalDb(attachedStage, pattern_, isRecursiveLeafPatternMatchEnabled(), internalMatches);
     if (!internalMatches.empty())
     {
         std::unordered_set<omni::physics::parse::ObjectKey, omni::physics::parse::ObjectKey::Hash> seen(
@@ -792,32 +816,33 @@ void BaseSimulationView::findMatchingPaths(const std::string& pattern_, std::vec
     }
 }
 
-void BaseSimulationView::findMatchingPathsBatch(const std::vector<std::string>& patterns,
-                                                std::vector<std::vector<omni::physics::parse::ObjectKey>>& keysRet)
+void resolveMatchingObjectKeysBatch(const usdparser::AttachedStage* attachedStage,
+                                    const std::vector<std::string>& patterns,
+                                    std::vector<std::vector<omni::physics::parse::ObjectKey>>& keysRet)
 {
     keysRet.clear();
     keysRet.resize(patterns.size());
-    if (!mAttachedStage)
+    if (!attachedStage)
     {
         return;
     }
 
     // Source-routed pass, batched across the whole pattern list -- see
-    // findMatchingPaths's comment for why this runs unconditionally against
-    // mAttachedStage->getSource() rather than being gated on a raw UsdStage.
-    const omni::physics::parse::IPhysicsSource* src = mAttachedStage->getSource();
+    // resolveMatchingObjectKeys's comment for why this runs unconditionally against
+    // getSource() rather than being gated on a raw UsdStage.
+    const omni::physics::parse::IPhysicsSource* src = attachedStage->getSource();
     if (src)
     {
         findMatchingObjectKeysBatch(*src, patterns, isRecursiveLeafPatternMatchEnabled(), keysRet);
     }
 
-    // Internal-DB pass, same shape as findMatchingPaths: appended per-pattern
+    // Internal-DB pass, same shape as resolveMatchingObjectKeys: appended per-pattern
     // (it is not the source of the O(N) round-trip cost this batching exists
     // for, so it is not itself batched -- see findMatchingKeysInternalDb).
     for (size_t i = 0; i < patterns.size(); ++i)
     {
         std::vector<omni::physics::parse::ObjectKey> internalMatches;
-        findMatchingKeysInternalDb(mAttachedStage, patterns[i], isRecursiveLeafPatternMatchEnabled(), internalMatches);
+        findMatchingKeysInternalDb(attachedStage, patterns[i], isRecursiveLeafPatternMatchEnabled(), internalMatches);
         if (internalMatches.empty())
         {
             continue;
@@ -832,6 +857,17 @@ void BaseSimulationView::findMatchingPathsBatch(const std::vector<std::string>& 
             }
         }
     }
+}
+
+void BaseSimulationView::findMatchingPaths(const std::string& pattern_, std::vector<omni::physics::parse::ObjectKey>& keysRet)
+{
+    resolveMatchingObjectKeys(mAttachedStage, pattern_, keysRet);
+}
+
+void BaseSimulationView::findMatchingPathsBatch(const std::vector<std::string>& patterns,
+                                                std::vector<std::vector<omni::physics::parse::ObjectKey>>& keysRet)
+{
+    resolveMatchingObjectKeysBatch(mAttachedStage, patterns, keysRet);
 }
 
 
@@ -1477,39 +1513,102 @@ ObjectType BaseSimulationView::getObjectType(const char* path)
     return ObjectType::eInvalid;
 }
 
+PxArticulationReducedCoordinate* resolveOwningArticulation(const usdparser::AttachedStage* attachedStage,
+                                                           omni::physics::parse::ObjectKey key)
+{
+    if (PxArticulationReducedCoordinate* arti = static_cast<PxArticulationReducedCoordinate*>(
+            BaseSimulationView::resolvePhysXPtr(attachedStage, key, omni::physx::ePTArticulation)))
+    {
+        return arti;
+    }
+    if (PxArticulationLink* link = static_cast<PxArticulationLink*>(
+            BaseSimulationView::resolvePhysXPtr(attachedStage, key, omni::physx::ePTLink)))
+    {
+        return &static_cast<PxArticulationReducedCoordinate&>(link->getArticulation());
+    }
+    if (PxArticulationJointReducedCoordinate* joint = static_cast<PxArticulationJointReducedCoordinate*>(
+            BaseSimulationView::resolvePhysXPtr(attachedStage, key, omni::physx::ePTLinkJoint)))
+    {
+        return &static_cast<PxArticulationReducedCoordinate&>(joint->getChildArticulationLink().getArticulation());
+    }
+    return nullptr;
+}
+
+PxShape* sdfShapeFor(const usdparser::AttachedStage* attachedStage, omni::physics::parse::ObjectKey key, bool warn)
+{
+    const omni::physics::parse::IPhysicsSource* src = attachedStage ? attachedStage->getSource() : nullptr;
+    // Only needed for the warning messages below.
+    const std::string path = (warn && attachedStage) ? attachedStage->textFor(key) : "";
+
+    if (src && src->exists(key))
+    {
+        // The attachment's bound batch: the session query resolves its rows whenever the attachment's records
+        // change, so interning here would cost a whole vocabulary per examined shape (REQ-SIM-SCENEQUERY-001).
+        const omni::physics::parse::KnownTokens& tok = attachedStage->getKnownTokens();
+        const bool collisionApi = src->hasSchema(key, tok.physicsCollisionAPI);
+        const bool SDFMeshApi = src->hasSchema(key, tok.physxSDFMeshCollisionAPI);
+        if (!SDFMeshApi || !collisionApi)
+        {
+            if (warn)
+                CARB_LOG_WARN("Failed to find CollisionAPI and PhysxSDFMeshCollisionAPI for prim at ('%s')",
+                              path.c_str());
+            return nullptr;
+        }
+    }
+    else
+    {
+        // No object at this path in the source (e.g. a runtime clone). The shape
+        // is validated by the PhysX pointer lookup below (returns null if no
+        // shape is found) and the SDF-validity check that follows. Objects the
+        // source does know still take the strict schema path above.
+    }
+
+    // A runtime clone can have a real PhysX shape with no live source object, so the
+    // PhysX pointer lookup below uses `key` directly -- the same key resolves both
+    // branches now.
+    PxShape* shape =
+        static_cast<PxShape*>(BaseSimulationView::resolvePhysXPtr(attachedStage, key, omni::physx::ePTShape));
+    if (!shape)
+    {
+        if (warn)
+            CARB_LOG_WARN("Failed to find a mesh at '%s'", path.c_str());
+        return nullptr;
+    }
+
+    bool hasSDF = false;
+    const PxGeometry& geom = shape->getGeometry();
+    if (geom.getType() == PxGeometryType::eTRIANGLEMESH)
+    {
+        const PxTriangleMeshGeometry& triangleMeshGeom = static_cast<const PxTriangleMeshGeometry&>(geom);
+        if (triangleMeshGeom.isValid())
+        {
+            hasSDF = triangleMeshGeom.triangleMesh->getSDF() != NULL;
+
+            if (hasSDF)
+            {
+                PxU32 dimX, dimY, dimZ;
+                triangleMeshGeom.triangleMesh->getSDFDimensions(dimX, dimY, dimZ);
+                hasSDF = dimX > 0 && dimY > 0 && dimZ > 0;
+            }
+        }
+    }
+
+    if (!hasSDF)
+    {
+        if (warn)
+            CARB_LOG_WARN("Failed to find a valid SDF mesh for prim at ('%s')", path.c_str());
+        return nullptr;
+    }
+    return shape;
+}
+
 bool BaseSimulationView::getArticulationAtPath(omni::physics::parse::ObjectKey key, ArticulationEntry& entryRet)
 {
     if (!g_physx)
     {
         return false;
     }
-    // check if it's an articulation
-    PxArticulationReducedCoordinate* arti =
-        (PxArticulationReducedCoordinate*)resolvePhysXPtr(mAttachedStage, key, omni::physx::ePTArticulation);
-    if (arti)
-    {
-    }
-    else
-    {
-        // check if it's an articulation link
-        PxArticulationLink* link = (PxArticulationLink*)resolvePhysXPtr(mAttachedStage, key, omni::physx::ePTLink);
-        if (link)
-        {
-            arti = &static_cast<PxArticulationReducedCoordinate&>(link->getArticulation());
-        }
-        else
-        {
-            // check if it's an articulation joint
-            PxArticulationJointReducedCoordinate* joint =
-                (PxArticulationJointReducedCoordinate*)resolvePhysXPtr(mAttachedStage, key, omni::physx::ePTLinkJoint);
-            if (joint)
-            {
-                arti =
-                    &static_cast<PxArticulationReducedCoordinate&>(joint->getChildArticulationLink().getArticulation());
-            }
-        }
-    }
-
+    PxArticulationReducedCoordinate* arti = resolveOwningArticulation(mAttachedStage, key);
     if (!arti)
     {
         return false;
@@ -1582,7 +1681,7 @@ bool BaseSimulationView::buildArticulationEntry(PxArticulationReducedCoordinate*
     std::string canonicalPath;
     if (g_physx)
     {
-        canonicalPath = g_physx->objectKeyToPath(g_physx->getObjectKeyForId(objectId));
+        canonicalPath = attachmentLookup::pathFor(mAttachedStage, attachmentLookup::keyForObject(mAttachedStage, objectId));
     }
 
     //
@@ -1607,7 +1706,7 @@ bool BaseSimulationView::buildArticulationEntry(PxArticulationReducedCoordinate*
         // get link info
         PxArticulationLink* link = links[i];
         size_t linkId = reinterpret_cast<size_t>(link->userData);
-        std::string linkName = storagePathName(g_physx->objectKeyToPath(g_physx->getObjectKeyForId(linkId)));
+        std::string linkName = storagePathName(attachmentLookup::pathFor(mAttachedStage, attachmentLookup::keyForObject(mAttachedStage, linkId)));
 
         // To avoid duplicate name
         PxU32 result = metatype.findLinkIndex(linkName.c_str());
@@ -1645,10 +1744,10 @@ bool BaseSimulationView::buildArticulationEntry(PxArticulationReducedCoordinate*
         if (joint)
         {
             size_t jointId = reinterpret_cast<size_t>(joint->userData);
-            const omni::physics::parse::ObjectKey jointKey = g_physx->getObjectKeyForId(jointId);
+            const omni::physics::parse::ObjectKey jointKey = attachmentLookup::keyForObject(mAttachedStage, jointId);
             // storagePathName/plain string are pxr-free and identical to SdfPath::GetName()/
             // GetString() for a plain canonical prim path, so this is unconditional.
-            const std::string jointPath = g_physx->objectKeyToPath(jointKey);
+            const std::string jointPath = attachmentLookup::pathFor(mAttachedStage, jointKey);
             std::string jointName = storagePathName(jointPath);
 
             // To avoid duplicate name
@@ -1670,7 +1769,7 @@ bool BaseSimulationView::buildArticulationEntry(PxArticulationReducedCoordinate*
             jointDesc.name = jointName;
             const usdparser::ObjectId objectId = resolveObjectId(mAttachedStage, jointKey, ePTLinkJoint);
             omni::physx::JointStateData jointStateData;
-            g_physxJoint->getJointStateData(objectId, &jointStateData);
+            attachmentJoint::stateData(mAttachedStage, objectId, &jointStateData);
 
             // Parsed joint-drive descriptor from the internal DB (carries the
             // DrivePerformanceEnvelope flag). We read the envelope flag from here
@@ -1678,7 +1777,7 @@ bool BaseSimulationView::buildArticulationEntry(PxArticulationReducedCoordinate*
             // whose joint prims are absent from the parse source.
             const internal::InternalJoint* intJoint = nullptr;
             {
-                const internal::InternalPhysXDatabase& physxDb = OmniPhysX::getInstance().getInternalPhysXDatabase();
+                const internal::InternalPhysXDatabase& physxDb = mAttachedStage->getInternalPhysXDatabase();
                 if (objectId < physxDb.getRecords().size())
                 {
                     const internal::InternalDatabase::Record& rec = physxDb.getRecords()[objectId];
@@ -1688,7 +1787,7 @@ bool BaseSimulationView::buildArticulationEntry(PxArticulationReducedCoordinate*
             }
             jointDesc.body0IsParent = jointStateData.body0IsParentLink;
             body0IsParent = jointStateData.body0IsParentLink;
-            physxToUsdRotation = g_physxJoint->getJointFramePhysxToUsdQuat(jointId);
+            physxToUsdRotation = attachmentJoint::frameCorrection(mAttachedStage, jointId);
             rotationQuat = PxQuat(physxToUsdRotation.x, physxToUsdRotation.y, physxToUsdRotation.z, physxToUsdRotation.w);
 
             PxArticulationLink& parentLink = joint->getParentArticulationLink();
@@ -1812,8 +1911,8 @@ bool BaseSimulationView::buildArticulationEntry(PxArticulationReducedCoordinate*
     {
         if (dofImpl.joint)
         {
-            dofImpl.path = g_physx->objectKeyToPath(
-                g_physx->getObjectKeyForId(reinterpret_cast<size_t>(dofImpl.joint->userData)));
+            dofImpl.path = attachmentLookup::pathFor(mAttachedStage,
+                attachmentLookup::keyForObject(mAttachedStage, reinterpret_cast<size_t>(dofImpl.joint->userData)));
         }
     }
     entryRet.linkPaths.resize(entryRet.links.size());
@@ -1821,8 +1920,8 @@ bool BaseSimulationView::buildArticulationEntry(PxArticulationReducedCoordinate*
     {
         if (entryRet.links[linkIdx])
         {
-            entryRet.linkPaths[linkIdx] = g_physx->objectKeyToPath(
-                g_physx->getObjectKeyForId(reinterpret_cast<size_t>(entryRet.links[linkIdx]->userData)));
+            entryRet.linkPaths[linkIdx] = attachmentLookup::pathFor(mAttachedStage,
+                attachmentLookup::keyForObject(mAttachedStage, reinterpret_cast<size_t>(entryRet.links[linkIdx]->userData)));
         }
     }
     entryRet.incomingJointPhysxToUsdRotations = physxToUsdRotations;
@@ -2011,7 +2110,7 @@ bool BaseSimulationView::getVolumeDeformableBodyAtPath(omni::physics::parse::Obj
     // fill it) and stored them as source-agnostic ObjectKeys, so this resolves with or
     // without a backing USD stage and cannot disagree with what was actually simulated.
     const internal::InternalVolumeDeformableBody* internalBody =
-        getInternalPtr<internal::InternalVolumeDeformableBody>(
+        getInternalPtr<internal::InternalVolumeDeformableBody>(mAttachedStage->getInternalPhysXDatabase(),
             omni::physx::ePTDeformableVolume, resolveObjectId(mAttachedStage, key, omni::physx::ePTDeformableVolume));
     if (!internalBody || !internalBody->mSimMeshKey.valid() || !internalBody->mCollMeshKey.valid())
     {
@@ -2153,7 +2252,7 @@ bool BaseSimulationView::getSurfaceDeformableBodyAtPath(omni::physics::parse::Ob
     // mesh: createSurfaceDeformableBody rejects a descriptor whose collision mesh differs
     // from its sim mesh, so the body existing at all means the two coincide.
     const internal::InternalSurfaceDeformableBody* internalBody =
-        getInternalPtr<internal::InternalSurfaceDeformableBody>(
+        getInternalPtr<internal::InternalSurfaceDeformableBody>(mAttachedStage->getInternalPhysXDatabase(),
             omni::physx::ePTDeformableSurface, resolveObjectId(mAttachedStage, key, omni::physx::ePTDeformableSurface));
     if (!internalBody || !internalBody->mSimMeshKey.valid())
     {
@@ -2282,35 +2381,28 @@ bool BaseSimulationView::getRigidContactSensorAtPath(omni::physics::parse::Objec
     const omni::physics::parse::IPhysicsSource* src = mAttachedStage ? mAttachedStage->getSource() : nullptr;
     const std::string pathStr = mAttachedStage ? mAttachedStage->textFor(key) : "";
 
+    bool hasContactReportApi = false;
     if (src && src->exists(key))
     {
         omni::physics::parse::KnownTokens tok;
         tok.intern(*src);
-        const bool hasContactReportApi = src->hasSchema(key, tok.physxContactReportAPI);
-        if (!hasContactReportApi)
-        {
-            CARB_LOG_WARN("Failed to find contact report API at '%s'", pathStr.c_str());
-            return false;
-        }
+        hasContactReportApi = src->hasSchema(key, tok.physxContactReportAPI);
     }
-    else
+    else if (mAttachedStage)
     {
-        // No object at this path in the source. Runtime clones can have a real
-        // PhysX actor without a source object exposing the copied
-        // PhysxContactReportAPI metadata; the source actor's contact-report
-        // registration is mirrored by the PhysX replicator, so such paths are
-        // validated by the runtime PhysX pointer lookup below (which returns
-        // false if no link/actor/shape is found). Objects the source does know
-        // still take the strict schema path above.
+        // Runtime clones have no source object; the replicator copies the
+        // schema flags from each corresponding source object into ObjectDb.
+        const usdparser::ObjectDb* objectDb = mAttachedStage->getObjectDatabase();
+        hasContactReportApi = objectDb &&
+            (objectDb->getSchemaAPIs(key) & usdparser::SchemaAPIFlag::eContactReportAPI) != 0;
+    }
+    if (!hasContactReportApi)
+    {
+        CARB_LOG_WARN("Failed to find contact report API at '%s'", pathStr.c_str());
+        return false;
     }
 
     // figure out if it's a rigid dynamic, articulation link, or shape
-    //
-    // A runtime clone can have a real PhysX actor with no live source object (see the
-    // comment above), so the PhysX pointer lookups below use `key` directly -- the
-    // same key resolves both branches now, so the separate sensorKey/lookupKey split
-    // a prior increment's keyFor-on-entry retype needed is gone (both were always the
-    // same `mAttachedStage->keyFor(path)` computation).
     PxArticulationLink* link = nullptr;
     PxRigidDynamic* rd = nullptr;
     PxShape* shape = nullptr;
@@ -2335,7 +2427,7 @@ bool BaseSimulationView::getRigidContactSensorAtPath(omni::physics::parse::Objec
     {
         // for articulation links specify names for later to match with the articulation meta type
         size_t linkId = reinterpret_cast<size_t>(link->userData);
-        std::string name = storagePathName(g_physx->objectKeyToPath(g_physx->getObjectKeyForId(linkId)));
+        std::string name = storagePathName(attachmentLookup::pathFor(mAttachedStage, attachmentLookup::keyForObject(mAttachedStage, linkId)));
         uint32_t currSize = (uint32_t)mSimData->mUniqueRCNames2Idx.size();
         if (mSimData->mUniqueRCNames2Idx.find(name) == mSimData->mUniqueRCNames2Idx.end())
         {
@@ -2366,66 +2458,12 @@ bool BaseSimulationView::getRigidContactSensorAtPath(omni::physics::parse::Objec
 
 bool BaseSimulationView::getSDFShapeAtPath(omni::physics::parse::ObjectKey key, SdfShapeEntry& entryRet)
 {
-    const omni::physics::parse::IPhysicsSource* src = mAttachedStage ? mAttachedStage->getSource() : nullptr;
-    // Only needed for the warning messages below.
-    const std::string path = mAttachedStage ? mAttachedStage->textFor(key) : "";
-
-    if (src && src->exists(key))
-    {
-        omni::physics::parse::KnownTokens tok;
-        tok.intern(*src);
-        const bool collisionApi = src->hasSchema(key, tok.physicsCollisionAPI);
-        const bool SDFMeshApi = src->hasSchema(key, tok.physxSDFMeshCollisionAPI);
-        if (!SDFMeshApi || !collisionApi)
-        {
-            CARB_LOG_WARN("Failed to find CollisionAPI and PhysxSDFMeshCollisionAPI for prim at ('%s')", path.c_str());
-            return false;
-        }
-    }
-    else
-    {
-        // No object at this path in the source (e.g. a runtime clone). The shape
-        // is validated by the PhysX pointer lookup below (returns false if no
-        // shape is found) and the SDF-validity check that follows. Objects the
-        // source does know still take the strict schema path above.
-    }
-
-    // A runtime clone can have a real PhysX shape with no live source object, so the
-    // PhysX pointer lookup below uses `key` directly -- the same key resolves both
-    // branches now (see getRigidContactSensorAtPath's equivalent note).
-    PxShape* shape = static_cast<PxShape*>(resolvePhysXPtr(mAttachedStage, key, omni::physx::ePTShape));
+    PxShape* const shape = sdfShapeFor(mAttachedStage, key, /*warn=*/true);
     if (!shape)
-    {
-        CARB_LOG_WARN("Failed to find a mesh at '%s'", path.c_str());
         return false;
-    }
-
-    bool hasSDF = false;
-    const PxGeometry& geom = shape->getGeometry();
-    if(geom.getType() == PxGeometryType::eTRIANGLEMESH)
-    {
-        const PxTriangleMeshGeometry& triangleMeshGeom = static_cast<const PxTriangleMeshGeometry&>(geom);
-        if(triangleMeshGeom.isValid())
-        {
-            hasSDF = triangleMeshGeom.triangleMesh->getSDF() != NULL;
-
-            if(hasSDF)
-            {
-                PxU32 dimX, dimY, dimZ;
-                triangleMeshGeom.triangleMesh->getSDFDimensions(dimX, dimY, dimZ);
-                hasSDF = dimX > 0 && dimY > 0 && dimZ > 0;
-            }
-        }
-    }
-
-    if (!hasSDF)
-    {
-        CARB_LOG_WARN("Failed to find a valid SDF mesh for prim at ('%s')", path.c_str());
-        return false;
-    }
 
     entryRet.shape = shape;
-    entryRet.path = path;
+    entryRet.path = mAttachedStage ? mAttachedStage->textFor(key) : "";
     entryRet.subspace = findSubspaceForPath(entryRet.path);
     return true;
 }
@@ -2438,13 +2476,7 @@ const ArticulationMetatype* BaseSimulationView::getUniqueArticulationMetatype(co
 
 bool BaseSimulationView::setGravity(const carb::Float3& gravity)
 {
-    if (!g_physxPrivate)
-    {
-        CARB_LOG_ERROR("%s: Failed to aquire PhysX private interface", __FUNCTION__);
-        return false;
-    }
-
-    PxScene* scene = g_physxPrivate->getPhysXScene();
+    PxScene* scene = mAttachedStage ? mScene : nullptr;
     if (!scene)
     {
         CARB_LOG_ERROR("%s: Failed to get physics scene. Is the simulation active?", __FUNCTION__);
@@ -2458,13 +2490,7 @@ bool BaseSimulationView::setGravity(const carb::Float3& gravity)
 
 bool BaseSimulationView::getGravity(carb::Float3& gravity)
 {
-    if (!g_physxPrivate)
-    {
-        CARB_LOG_ERROR("%s: Failed to aquire PhysX private interface", __FUNCTION__);
-        return false;
-    }
-
-    PxScene* scene = g_physxPrivate->getPhysXScene();
+    PxScene* scene = mAttachedStage ? mScene : nullptr;
     if (!scene)
     {
         CARB_LOG_ERROR("%s: Failed to get physics scene. Is the simulation active?", __FUNCTION__);
@@ -2534,7 +2560,7 @@ bool BaseSimulationView::check() const
     return result;
 }
 
-void BaseSimulationView::release(bool recursive)
+bool BaseSimulationView::release(bool recursive)
 {
     if (recursive)
     {
@@ -2548,6 +2574,7 @@ void BaseSimulationView::release(bool recursive)
         releaseChildViews(mSDFViews);
     }
     delete this;
+    return true;
 }
 
 void BaseSimulationView::_onChildRelease(const BaseSdfShapeView* sdfView)
@@ -2633,7 +2660,7 @@ void BaseSimulationView::step(float dt)
         return;
     }
 
-    PxScene* scene = g_physxPrivate->getPhysXScene();
+    PxScene* scene = mAttachedStage ? mScene : nullptr;
     if (!scene)
     {
         CARB_LOG_ERROR("%s: Failed to get physics scene. Is the simulation active?", __FUNCTION__);
@@ -2651,6 +2678,8 @@ void BaseSimulationView::step(float dt)
 #endif
 
     // step the physx scene directly
+    if (PhysXScene* const physxScene = OmniPhysX::getInstance().getPhysXSetup().findPhysXScene(scene))
+        physxScene->noteSimulateLaunch();
     scene->simulate(dt);
     scene->fetchResults(true);
 
@@ -2669,7 +2698,8 @@ void BaseSimulationView::step(float dt)
 
     if (auto* backend = GetSimulationBackend())
     {
-        backend->incrementStepCount();
+        if (mAttachedStage)
+            backend->incrementStepCount(mAttachedStage->getAttachHandle());
     }
 }
 
@@ -2679,7 +2709,8 @@ PxMaterial* BaseSimulationView::createSharedMaterial(float staticFriction,
                                                      float damping,
                                                      PxCombineMode::Enum frictionCombineMode,
                                                      PxCombineMode::Enum restitutionCombineMode,
-                                                     PxCombineMode::Enum dampingCombineMode)
+                                                     PxCombineMode::Enum dampingCombineMode,
+                                                     PxMaterialFlags flags)
 {
     if (static_cast<int>(frictionCombineMode) >= static_cast<int>(PxCombineMode::Enum::eN_VALUES))
     {
@@ -2698,7 +2729,7 @@ PxMaterial* BaseSimulationView::createSharedMaterial(float staticFriction,
     }
 
     const std::string key = makeMaterialKey(staticFriction, dynamicFriction, restitution, damping,
-                                            frictionCombineMode, restitutionCombineMode, dampingCombineMode);
+                                            frictionCombineMode, restitutionCombineMode, dampingCombineMode, flags);
 
     std::unordered_map<std::string, PxMaterial*>::const_iterator got = mMaterials.find(key);
 
@@ -2720,16 +2751,27 @@ PxMaterial* BaseSimulationView::createSharedMaterial(float staticFriction,
         }
         else
         {
-            if (g_physxPrivate)
+            if (mAttachedStage && mScene)
             {
-                PxPhysics& physics = g_physxPrivate->getPhysXScene()->getPhysics();
+                PxPhysics& physics = mScene->getPhysics();
                 material = physics.createMaterial(staticFriction, dynamicFriction, restitution);
+                if (!material)
+                {
+                    // Null on the 64K material cap (PxU16 index, NVBug 6778091) or, in checked
+                    // builds, on invalid values; PhysX logs the reason, so warn once and bail.
+                    CARB_LOG_WARN_ONCE(
+                        "createSharedMaterial: PxPhysics::createMaterial failed, see the preceding PhysX "
+                        "error (e.g. 64K material limit reached, or invalid friction/restitution); "
+                        "affected shapes keep their current materials.");
+                    return nullptr;
+                }
                 material->setDamping(damping);
             }
         }
 
         if (material) {
             // Assign the new values to the material
+            material->setFlags(flags);
             material->setFrictionCombineMode(frictionCombineMode);
             material->setRestitutionCombineMode(restitutionCombineMode);
             material->setDampingCombineMode(dampingCombineMode);
@@ -2760,7 +2802,8 @@ std::string BaseSimulationView::makeMaterialKey(float staticFriction,
                                                 float damping,
                                                 PxCombineMode::Enum frictionCombineMode,
                                                 PxCombineMode::Enum restitutionCombineMode,
-                                                PxCombineMode::Enum dampingCombineMode)
+                                                PxCombineMode::Enum dampingCombineMode,
+                                                PxMaterialFlags flags)
 {
     // %.9g round-trips an IEEE-754 single-precision value exactly, so distinct
     // float32 inputs always produce distinct keys (unlike "%.6f", which
@@ -2780,6 +2823,8 @@ std::string BaseSimulationView::makeMaterialKey(float staticFriction,
     snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(restitutionCombineMode));
     key += std::string(keybuffer) + "_";
     snprintf(keybuffer, 100, "%1d", static_cast<uint8_t>(dampingCombineMode));
+    key += std::string(keybuffer) + "_";
+    snprintf(keybuffer, 100, "%u", static_cast<unsigned int>(static_cast<PxU16>(flags)));
     key += std::string(keybuffer);
     return key;
 }

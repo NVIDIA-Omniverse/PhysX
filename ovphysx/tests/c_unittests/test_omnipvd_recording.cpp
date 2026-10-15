@@ -2,11 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-CAPI-OVD-NAMES-001
+ * @covers AC-1 AC-2 AC-4
+ *
  * @implements REQ-CAPI-OMNIPVD-001
  * @covers AC-1 AC-2 AC-3
  *
+ * @implements REQ-CAPI-CONFIG-001
+ * @covers AC-2 AC-4 AC-5 AC-7
+ *
  * @implements REQ-OMNIPVD-TRANSPORT-001
- * @covers AC-1 AC-2 AC-3 AC-4 AC-5
+ * @covers AC-2 AC-3
  *
  * @implements REQ-CAPI-OMNIPVD-LATE-001
  * @covers AC-2 AC-3 AC-4 AC-5 AC-6 AC-7 AC-8 AC-9 AC-10 AC-11
@@ -15,15 +21,12 @@
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7 AC-8 AC-9 AC-10
  */
 
-// End-to-end tests for OmniPVD OVD recording via ovphysx typed config.
-//
-// OmniPVD recording is initialized during createPhysics() which runs inside
-// ovphysx_create_instance(). Config must therefore be passed via create_args.
+// End-to-end tests for explicit OmniPVD recording. The modern process-global
+// capability is configured before first create; create and attach remain dormant.
 // These tests use standalone TEST() (not PhysXTestFixture) to control the
 // full instance lifecycle.
 
 #include <gtest/gtest.h>
-#include "AsyncEventManager/AsyncEventManager.h"
 #include "OmniPvdFileReadStream.h"
 #include "OmniPvdLibraryFunctions.h"
 #include "OmniPvdReader.h"
@@ -31,6 +34,7 @@
 #include "ovphysx/ovphysx.h"
 #include "ovphysx/ovphysx_config.h"
 #include "ovphysxTestHelpers.h"
+#include "ovphysx_test_utils.h"
 #include "global_test_environment.h"
 #include "test_utilities.h"
 
@@ -42,6 +46,7 @@
 #include <filesystem>
 #include <fstream>
 #include <future>
+#include <set>
 #include <string>
 #include <thread>
 #include <vector>
@@ -93,27 +98,13 @@ static void shutdown_test_socket(test_socket_t socket)
 // Helpers
 // ---------------------------------------------------------------------------
 
-// Count files matching *_rec.ovd in the given directory.
-static int count_ovd_files(const std::string& dir)
-{
-    int count = 0;
-    std::error_code ec;
-    for (const auto& entry : fs::directory_iterator(dir, ec))
-    {
-        const auto name = entry.path().filename().string();
-        if (name.size() > 8 && name.substr(name.size() - 8) == "_rec.ovd")
-            ++count;
-    }
-    return count;
-}
-
 static ovphysx_api_status_t create_with_config(const ovphysx_config_entry_t* entries, uint32_t count)
 {
     ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
     args.config_entries = entries;
     args.config_entry_count = count;
-    ovphysx_handle_t handle = OVPHYSX_INVALID_HANDLE;
-    const ovphysx_result_t result = ovphysx_create_instance(&args, &handle);
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    const ovphysx_result_t result = ovphysx_create_instance_with_args(&args, &handle);
     if (result.status == OVPHYSX_API_SUCCESS)
     {
         EXPECT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
@@ -121,45 +112,23 @@ static ovphysx_api_status_t create_with_config(const ovphysx_config_entry_t* ent
     return result.status;
 }
 
-static void reset_omnipvd_startup_config()
+static ovphysx_result_t create_recording_capable_instance(ovphysx_instance_handle_t& handle)
 {
-    destroySharedCpuInstance();
-    ASSERT_EQ(ovphysx_set_global_config(ovphysx_config_entry_omnipvd_output_enabled(false)).status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_set_global_config(
-        ovphysx_config_entry_omnipvd_ovd_recording_directory(OVPHYSX_LITERAL(""))).status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_set_global_config(
-        ovphysx_config_entry_omnipvd_transport(OVPHYSX_OMNIPVD_TRANSPORT_FILE_NAME)).status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_set_global_config(
-        ovphysx_config_entry_omnipvd_tcp_address(OVPHYSX_LITERAL(""))).status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_set_global_config(ovphysx_config_entry_omnipvd_tcp_port(0)).status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_set_global_config(ovphysx_config_entry_omnipvd_tcp_timeout_ms(0)).status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_set_global_config(
-        ovphysx_config_entry_omnipvd_recording_capable(false)).status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_set_global_config(ovphysx_config_entry_carbonite(
-        OVPHYSX_LITERAL("/physics/omniPvdIsOVDStage"), OVPHYSX_LITERAL("false"))).status,
-        OVPHYSX_API_SUCCESS);
+    // Each OmniPvdRecording case has a fresh process. Later instances in the
+    // same case use the already-latched capability without trying to change it.
+    static bool configured = false;
+    if (!configured)
+    {
+        const ovphysx_result_t result = ovphysx_set_global_config(
+            OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE, ovphysx_config_value_bool(true));
+        if (result.status != OVPHYSX_API_SUCCESS)
+            return result;
+        configured = true;
+    }
+    return ovphysx_create_instance(&handle);
 }
 
-static ovphysx_result_t create_recording_capable_instance(ovphysx_handle_t& handle)
-{
-    const ovphysx_config_entry_t config[] = {
-        ovphysx_config_entry_omnipvd_ovd_recording_directory(OVPHYSX_LITERAL("")),
-        ovphysx_config_entry_omnipvd_transport(OVPHYSX_OMNIPVD_TRANSPORT_FILE_NAME),
-        ovphysx_config_entry_omnipvd_tcp_address(OVPHYSX_LITERAL("")),
-        ovphysx_config_entry_omnipvd_tcp_port(0),
-        ovphysx_config_entry_omnipvd_tcp_timeout_ms(0),
-        ovphysx_config_entry_omnipvd_recording_capable(true),
-        ovphysx_config_entry_omnipvd_output_enabled(false),
-        ovphysx_config_entry_carbonite(
-            OVPHYSX_LITERAL("/physics/omniPvdIsOVDStage"), OVPHYSX_LITERAL("false")),
-    };
-    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-    args.config_entries = config;
-    args.config_entry_count = static_cast<uint32_t>(std::size(config));
-    return ovphysx_create_instance(&args, &handle);
-}
-
-static ovphysx_result_t start_file_recording(ovphysx_handle_t handle, const fs::path& path)
+static ovphysx_result_t start_file_recording(ovphysx_instance_handle_t handle, const fs::path& path)
 {
     const std::string pathString = path.string();
     const ovphysx_omnipvd_destination_t destination = {
@@ -169,10 +138,10 @@ static ovphysx_result_t start_file_recording(ovphysx_handle_t handle, const fs::
         0,
         0,
     };
-    return ovphysx_start_recording(handle, &destination);
+    return ovphysx_ovd_start_recording(handle, &destination);
 }
 
-static ::testing::AssertionResult create_stepped_recording_instance(ovphysx_handle_t& handle)
+static ::testing::AssertionResult create_stepped_recording_instance(ovphysx_instance_handle_t& handle)
 {
     const ovphysx_result_t createResult = create_recording_capable_instance(handle);
     if (createResult.status != OVPHYSX_API_SUCCESS || handle == OVPHYSX_INVALID_HANDLE)
@@ -224,6 +193,13 @@ struct OvdCommandSummary
 {
     size_t createObjectCount{ 0 };
     size_t destroyObjectCount{ 0 };
+    size_t sceneObjectCount{ 0 };
+    size_t actorObjectCount{ 0 };
+    std::set<OmniPvdClassHandle> sceneClasses;
+    std::set<OmniPvdClassHandle> actorClasses;
+    std::set<std::pair<OmniPvdContextHandle, OmniPvdObjectHandle>> liveSceneObjects;
+    std::vector<uint64_t> startFrameIds;
+    std::vector<uint64_t> stopFrameIds;
     size_t stopFrameCount{ 0 };
     bool hasVehicleSchema{ false };
     bool hasVehicleObject{ false };
@@ -263,11 +239,21 @@ static ::testing::AssertionResult read_ovd_commands(const fs::path& path, OvdCom
             summary.lastCommand = command;
             summary.createObjectCount += command == OmniPvdCommand::eCREATE_OBJECT;
             summary.destroyObjectCount += command == OmniPvdCommand::eDESTROY_OBJECT;
+            if (command == OmniPvdCommand::eSTART_FRAME)
+                summary.startFrameIds.push_back(reader->getFrameTimeStart());
+            if (command == OmniPvdCommand::eSTOP_FRAME)
+                summary.stopFrameIds.push_back(reader->getFrameTimeStop());
             summary.stopFrameCount += command == OmniPvdCommand::eSTOP_FRAME;
             summary.hasVehicleSchema |= command == OmniPvdCommand::eREGISTER_CLASS &&
                                         std::strcmp(reader->getClassName(), "DirectDrivetrain") == 0;
             if (command == OmniPvdCommand::eREGISTER_CLASS)
             {
+                if (std::strcmp(reader->getClassName(), "PxScene") == 0)
+                    summary.sceneClasses.insert(reader->getClassHandle());
+                if (std::strcmp(reader->getClassName(), "PxRigidDynamic") == 0 ||
+                    std::strcmp(reader->getClassName(), "PxRigidStatic") == 0 ||
+                    std::strcmp(reader->getClassName(), "PxArticulationLink") == 0)
+                    summary.actorClasses.insert(reader->getClassHandle());
                 for (uint32_t i = 0; i < static_cast<uint32_t>(std::size(kPhysXExtensionsClassNames)); ++i)
                 {
                     if (std::strcmp(reader->getClassName(), kPhysXExtensionsClassNames[i]) == 0)
@@ -294,6 +280,12 @@ static ::testing::AssertionResult read_ovd_commands(const fs::path& path, OvdCom
                 reader->getClassHandle() == summary.physXMaterialFrictionClassHandle;
             if (command == OmniPvdCommand::eCREATE_OBJECT)
             {
+                const bool scene = summary.sceneClasses.count(reader->getClassHandle()) != 0;
+                const bool actor = summary.actorClasses.count(reader->getClassHandle()) != 0;
+                summary.sceneObjectCount += scene;
+                summary.actorObjectCount += actor;
+                if (scene || actor)
+                    summary.liveSceneObjects.emplace(reader->getContextHandle(), reader->getObjectHandle());
                 for (uint32_t i = 0; i < static_cast<uint32_t>(std::size(kPhysXExtensionsClassNames)); ++i)
                 {
                     if (summary.physXExtensionsClassHandles[i] != OMNI_PVD_INVALID_HANDLE &&
@@ -303,6 +295,8 @@ static ::testing::AssertionResult read_ovd_commands(const fs::path& path, OvdCom
                     }
                 }
             }
+            if (command == OmniPvdCommand::eDESTROY_OBJECT)
+                summary.liveSceneObjects.erase({reader->getContextHandle(), reader->getObjectHandle()});
         }
     }
     stream->closeStream();
@@ -353,8 +347,12 @@ static ::testing::AssertionResult has_physics_commands(
                << summary.physXExtensionsSchemaMask << ", object mask "
                << summary.physXExtensionsObjectMask << "): " << path;
     }
-    if (teardown && (summary.destroyObjectCount == 0 || summary.lastCommand != OmniPvdCommand::eDESTROY_OBJECT))
-        return ::testing::AssertionFailure() << "OVD teardown did not end with DESTROY_OBJECT: " << path;
+    // Detach retires scenes and actors while the shared SDK can remain alive.
+    // Verify their matching destruction instead of assuming SDK destruction is
+    // the last serialized command (collection removals may follow it).
+    if (teardown && (summary.destroyObjectCount == 0 || summary.sceneObjectCount == 0 ||
+                     summary.actorObjectCount == 0 || !summary.liveSceneObjects.empty()))
+        return ::testing::AssertionFailure() << "OVD teardown did not destroy all recorded scenes and actors: " << path;
     return ::testing::AssertionSuccess();
 }
 
@@ -518,193 +516,338 @@ static ::testing::AssertionResult with_refused_loopback_tcp(Producer&& producer)
     return ::testing::AssertionSuccess();
 }
 
-// Create an instance, load USD, step, destroy. Returns the number of
-// *_rec.ovd files found in output_dir after destruction.
-static ::testing::AssertionResult run_recording_workflow(
-    const std::string& output_dir,
-    bool enable_pvd,
-    bool output_enabled_first,
-    int& out_ovd_count,
-    bool output_enabled_as_carbonite = false)
+static ::testing::AssertionResult recording_capability_is(bool expected)
 {
-    reset_omnipvd_startup_config();
-    out_ovd_count = 0;
-
-    ovphysx_config_entry_t output_enabled_entry;
-    if (output_enabled_as_carbonite)
-    {
-        // The logical view ends before '!' to verify raw keys need not be null-terminated.
-        static constexpr char output_enabled_path_storage[] = "/physics/omniPvdOutputEnabled!";
-        const ovphysx_string_t output_enabled_path = {
-            output_enabled_path_storage,
-            sizeof(output_enabled_path_storage) - 2,
-        };
-        const ovphysx_string_t value =
-            enable_pvd ? OVPHYSX_LITERAL("true") : OVPHYSX_LITERAL("false");
-        output_enabled_entry = ovphysx_config_entry_carbonite(
-            output_enabled_path, value);
-    }
-    else
-    {
-        output_enabled_entry = ovphysx_config_entry_omnipvd_output_enabled(enable_pvd);
-    }
-
-    // Configure OmniPVD via config entries passed at instance creation.
-    ovphysx_config_entry_t config[2];
-    if (output_enabled_first)
-    {
-        config[0] = output_enabled_entry;
-        config[1] = ovphysx_config_entry_omnipvd_ovd_recording_directory(make_ovx_string(output_dir.c_str()));
-    }
-    else
-    {
-        config[0] = ovphysx_config_entry_omnipvd_ovd_recording_directory(make_ovx_string(output_dir.c_str()));
-        config[1] = output_enabled_entry;
-    }
-
-    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-    args.config_entries = config;
-    args.config_entry_count = 2;
-    ovphysx_handle_t handle = 0;
-    ovphysx_result_t r = ovphysx_create_instance(&args, &handle);
-    if (r.status != OVPHYSX_API_SUCCESS || handle == 0)
-        return ::testing::AssertionFailure() << "Failed to create PhysX instance";
-
-    if (!attach_usd_with_ovstage(handle, "tests/data/simple_physics_scene.usda"))
-    {
-        ovphysx_destroy_instance(handle);
-        return ::testing::AssertionFailure() << "Failed to load USD scene";
-    }
-
-    const float dt = 1.0f / 60.0f;
-    for (int i = 0; i < 5; ++i)
-    {
-        r = ovphysx_step_sync(handle, dt);
-        if (r.status != OVPHYSX_API_SUCCESS)
-        {
-            destroy_ovstage_test_attachments(handle);
-            ovphysx_destroy_instance(handle);
-            return ::testing::AssertionFailure() << "Simulation step " << i << " failed";
-        }
-    }
-
-    // Destroying the instance triggers writeOutOmniPVDFile(), which renames
-    // tmp.ovd to <timestamp>_rec.ovd.
-    destroy_ovstage_test_attachments(handle);
-    ovphysx_destroy_instance(handle);
-
-    out_ovd_count = count_ovd_files(output_dir);
+    ovphysx_config_value_t value{};
+    const ovphysx_result_t result = ovphysx_get_global_config(
+        OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE, &value);
+    if (result.status != OVPHYSX_API_SUCCESS)
+        return ::testing::AssertionFailure() << "Recording capability getter failed: " << result.status;
+    if (value.type != OVPHYSX_CONFIG_VALUE_BOOL)
+        return ::testing::AssertionFailure() << "Recording capability returned type " << value.type;
+    if (value.value.bool_value != expected)
+        return ::testing::AssertionFailure() << "Recording capability was " << value.value.bool_value
+                                            << "; expected " << expected;
     return ::testing::AssertionSuccess();
 }
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
-
-TEST(OmniPvdStartupConfig, InvalidTcpTupleIsRejected)
+// Each case owns initialization and runs in a fresh process: modern startup
+// settings remain frozen after the last instance is destroyed until shutdown.
+TEST(OmniPvdGlobalConfig, PendingBoolValueRejectsWrongTypes)
 {
-    reset_omnipvd_startup_config();
-    const ovphysx_config_entry_t invalid_configs[][4] = {
-        { ovphysx_config_entry_omnipvd_transport(OVPHYSX_LITERAL("unknown")) },
-        { ovphysx_config_entry_omnipvd_transport(OVPHYSX_LITERAL("")) },
-        { ovphysx_config_entry_omnipvd_transport(OVPHYSX_OMNIPVD_TRANSPORT_TCP_NAME),
-          ovphysx_config_entry_omnipvd_tcp_address(OVPHYSX_LITERAL("")),
-          ovphysx_config_entry_omnipvd_tcp_port(5425) },
-        { ovphysx_config_entry_omnipvd_transport(OVPHYSX_OMNIPVD_TRANSPORT_TCP_NAME),
-          ovphysx_config_entry_omnipvd_tcp_address(OVPHYSX_LITERAL("127.0.0.1")),
-          ovphysx_config_entry_omnipvd_tcp_port(0) },
-        { ovphysx_config_entry_omnipvd_transport(OVPHYSX_OMNIPVD_TRANSPORT_TCP_NAME),
-          ovphysx_config_entry_omnipvd_tcp_address(OVPHYSX_LITERAL("127.0.0.1")),
-          ovphysx_config_entry_omnipvd_tcp_port(65536) },
-        { ovphysx_config_entry_omnipvd_transport(OVPHYSX_OMNIPVD_TRANSPORT_TCP_NAME),
-          ovphysx_config_entry_omnipvd_tcp_address(OVPHYSX_LITERAL("127.0.0.1")),
-          ovphysx_config_entry_omnipvd_tcp_port(5425),
-          ovphysx_config_entry_omnipvd_tcp_timeout_ms(-1) },
+    EXPECT_TRUE(recording_capability_is(false));
+    const ovphysx_config_value_t wrongTypes[] = {
+        ovphysx_config_value_int64(0),
+        ovphysx_config_value_double(0.0),
+        ovphysx_config_value_string(OVPHYSX_LITERAL("false")),
     };
-    const uint32_t counts[] = { 1, 1, 3, 3, 3, 4 };
-    for (size_t i = 0; i < std::size(invalid_configs); ++i)
+    for (bool enabled : { true, false })
     {
-        SCOPED_TRACE(i);
-        EXPECT_EQ(create_with_config(invalid_configs[i], counts[i]), OVPHYSX_API_INVALID_ARGUMENT);
-        reset_omnipvd_startup_config();
+        SCOPED_TRACE(enabled);
+        ASSERT_EQ(ovphysx_set_global_config(
+            OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE,
+            ovphysx_config_value_bool(enabled)).status, OVPHYSX_API_SUCCESS);
+        EXPECT_TRUE(recording_capability_is(enabled));
+        for (const ovphysx_config_value_t& wrongType : wrongTypes)
+        {
+            SCOPED_TRACE(wrongType.type);
+            EXPECT_EQ(ovphysx_set_global_config(
+                OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE, wrongType).status,
+                OVPHYSX_API_INVALID_ARGUMENT);
+            EXPECT_TRUE(recording_capability_is(enabled));
+        }
     }
 }
 
-TEST(OmniPvdStartupConfig, GlobalTupleIsAlwaysValidated)
+TEST(OmniPvdGlobalConfig, RetiredOvdEntriesAreRejected)
 {
-    reset_omnipvd_startup_config();
     ASSERT_EQ(ovphysx_set_global_config(
-        ovphysx_config_entry_omnipvd_tcp_address(OVPHYSX_LITERAL("127.0.0.1"))).status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_set_global_config(ovphysx_config_entry_omnipvd_tcp_port(5425)).status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_set_global_config(
-        ovphysx_config_entry_omnipvd_transport(OVPHYSX_OMNIPVD_TRANSPORT_TCP_NAME)).status, OVPHYSX_API_SUCCESS);
-    EXPECT_EQ(create_with_config(nullptr, 0), OVPHYSX_API_SUCCESS);
-
-    reset_omnipvd_startup_config();
-    ASSERT_EQ(ovphysx_set_global_config(
-        ovphysx_config_entry_omnipvd_transport(OVPHYSX_OMNIPVD_TRANSPORT_TCP_NAME)).status, OVPHYSX_API_SUCCESS);
-    EXPECT_EQ(create_with_config(nullptr, 0), OVPHYSX_API_INVALID_ARGUMENT);
-    reset_omnipvd_startup_config();
-}
-
-TEST(OmniPvdStartupConfig, SecondCreateCannotApplyRecordingKeys)
-{
-    ovphysx_handle_t first_handle = OVPHYSX_INVALID_HANDLE;
-    ASSERT_EQ(create_recording_capable_instance(first_handle).status, OVPHYSX_API_SUCCESS);
-
-    const ovphysx_config_entry_t second_configs[] = {
-        ovphysx_config_entry_omnipvd_transport(OVPHYSX_OMNIPVD_TRANSPORT_FILE_NAME),
-        ovphysx_config_entry_omnipvd_recording_capable(true),
+        OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE,
+        ovphysx_config_value_bool(true)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_initialize().status, OVPHYSX_API_SUCCESS);
+    const ovphysx_config_entry_t retiredEntries[] = {
+        ovphysx_config_entry_bool(static_cast<ovphysx_config_bool_t>(3), false),
+        ovphysx_config_entry_bool(static_cast<ovphysx_config_bool_t>(4), false),
+        ovphysx_config_entry_int32(static_cast<ovphysx_config_int32_t>(2), 5425),
+        ovphysx_config_entry_int32(static_cast<ovphysx_config_int32_t>(3), 1000),
+        ovphysx_config_entry_string(static_cast<ovphysx_config_string_t>(0), OVPHYSX_LITERAL("")),
+        ovphysx_config_entry_string(static_cast<ovphysx_config_string_t>(2), OVPHYSX_LITERAL("file")),
+        ovphysx_config_entry_string(static_cast<ovphysx_config_string_t>(3), OVPHYSX_LITERAL("127.0.0.1")),
     };
-    for (const ovphysx_config_entry_t& second_config : second_configs)
-        EXPECT_EQ(create_with_config(&second_config, 1), OVPHYSX_API_ERROR);
-    ASSERT_EQ(ovphysx_destroy_instance(first_handle).status, OVPHYSX_API_SUCCESS);
-    reset_omnipvd_startup_config();
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    for (bool liveInstance : { false, true })
+    {
+        SCOPED_TRACE(liveInstance);
+        if (liveInstance)
+        {
+            ASSERT_EQ(ovphysx_create_instance(&handle).status, OVPHYSX_API_SUCCESS);
+        }
+        for (const ovphysx_config_entry_t& entry : retiredEntries)
+        {
+            SCOPED_TRACE(entry.key_type);
+            EXPECT_EQ(ovphysx_set_global_config_entry(entry).status, OVPHYSX_API_INVALID_ARGUMENT);
+            const ovphysx_string_t error = ovphysx_get_last_error();
+            EXPECT_NE(std::string(error.ptr, error.length).find("OVD_RECORDING_CAPABLE"), std::string::npos);
+            EXPECT_EQ(create_with_config(&entry, 1), OVPHYSX_API_INVALID_ARGUMENT);
+            EXPECT_TRUE(recording_capability_is(true));
+        }
+    }
+    EXPECT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_shutdown().status, OVPHYSX_API_SUCCESS);
 }
 
-TEST(OmniPvdStartupConfig, RejectsEmbeddedNullAliases)
+TEST(OmniPvdGlobalConfig, RetiredRawOvdPathsAreRejected)
 {
-    reset_omnipvd_startup_config();
-    static constexpr char transport_value[] = { 't', 'c', 'p', '\0', 'x' };
-    static constexpr char directory_value[] = { 'a', '\0', 'b' };
-    static constexpr char raw_key[] = "/physics/omniPvdTcpPort\0alias";
-    static constexpr char raw_value[] = { '5', '4', '2', '5', '\0', 'x' };
-    const ovphysx_config_entry_t configs[] = {
-        ovphysx_config_entry_omnipvd_transport({ transport_value, sizeof(transport_value) }),
-        ovphysx_config_entry_omnipvd_ovd_recording_directory({ directory_value, sizeof(directory_value) }),
-        ovphysx_config_entry_carbonite({ raw_key, sizeof(raw_key) - 1 }, OVPHYSX_LITERAL("5425")),
-        ovphysx_config_entry_carbonite(OVPHYSX_LITERAL("/physics/omniPvdTcpPort"),
-                                      { raw_value, sizeof(raw_value) }),
+    ASSERT_EQ(ovphysx_set_global_config(
+        OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE,
+        ovphysx_config_value_bool(true)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_initialize().status, OVPHYSX_API_SUCCESS);
+    const char* pathsAndValues[][2] = {
+        { "/physics/omniPvdRecordingCapable", "false" },
+        { "/physics/omniPvdOutputEnabled", "true" },
+        { "/persistent/physics/omniPvdOvdRecordingDirectory", "" },
+        { "/physics/omniPvdTransport", "file" },
+        { "/physics/omniPvdTcpAddress", "127.0.0.1" },
+        { "/physics/omniPvdTcpPort", "5425" },
+        { "/physics/omniPvdTcpTimeoutMs", "1000" },
     };
-    for (const ovphysx_config_entry_t& config : configs)
-        EXPECT_EQ(create_with_config(&config, 1), OVPHYSX_API_INVALID_ARGUMENT);
-    reset_omnipvd_startup_config();
+    for (const char* const* pathAndValue : pathsAndValues)
+    {
+        for (size_t prefixLength : { size_t(0), size_t(1) })
+        {
+            // Exclude the trailing sentinel from the borrowed view: matching
+            // must honor its length, not require a null-terminated C string.
+            const std::string storage = std::string(pathAndValue[0] + prefixLength) + "!";
+            const ovphysx_string_t path = { storage.data(), storage.size() - 1 };
+            SCOPED_TRACE(storage);
+            const ovphysx_config_entry_t entry = ovphysx_config_entry_carbonite(
+                path, make_ovx_string(pathAndValue[1]));
+            EXPECT_EQ(ovphysx_set_global_config_entry(entry).status, OVPHYSX_API_INVALID_ARGUMENT);
+            EXPECT_EQ(create_with_config(&entry, 1), OVPHYSX_API_INVALID_ARGUMENT);
+            EXPECT_TRUE(recording_capability_is(true));
+        }
+    }
+    ASSERT_EQ(ovphysx_shutdown().status, OVPHYSX_API_SUCCESS);
 }
 
-TEST(OmniPvdStartupConfig, PreloadedEmbeddedNullDestinationIsRejected)
+TEST(OmniPvdGlobalConfig, RetiredOvdGettersAreRejected)
 {
-    reset_omnipvd_startup_config();
-    static constexpr char malformedTransport[] = { 'f', 'i', 'l', 'e', '\0', 'x' };
+    ASSERT_EQ(ovphysx_initialize().status, OVPHYSX_API_SUCCESS);
+    bool boolValue = false;
+    for (int slot : { 3, 4 })
+    {
+        EXPECT_EQ(ovphysx_get_global_config_bool(
+            static_cast<ovphysx_config_bool_t>(slot), &boolValue).status, OVPHYSX_API_INVALID_ARGUMENT);
+        const ovphysx_string_t error = ovphysx_get_last_error();
+        EXPECT_NE(std::string(error.ptr, error.length).find("OVD_RECORDING_CAPABLE"), std::string::npos);
+    }
+    int32_t intValue = 0;
+    for (int slot : { 2, 3 })
+    {
+        EXPECT_EQ(ovphysx_get_global_config_int32(
+            static_cast<ovphysx_config_int32_t>(slot), &intValue).status, OVPHYSX_API_INVALID_ARGUMENT);
+        const ovphysx_string_t error = ovphysx_get_last_error();
+        EXPECT_NE(std::string(error.ptr, error.length).find("ovphysx_ovd_start_recording"), std::string::npos);
+    }
+    char buffer[64]{};
+    for (int slot : { 0, 2, 3 })
+    {
+        ovphysx_string_t value = { buffer, sizeof(buffer) };
+        size_t requiredSize = 0;
+        EXPECT_EQ(ovphysx_get_global_config_string(
+            static_cast<ovphysx_config_string_t>(slot), &value, &requiredSize).status,
+            OVPHYSX_API_INVALID_ARGUMENT);
+        const ovphysx_string_t error = ovphysx_get_last_error();
+        EXPECT_NE(std::string(error.ptr, error.length).find("ovphysx_ovd_start_recording"), std::string::npos);
+    }
+    EXPECT_EQ(ovphysx_shutdown().status, OVPHYSX_API_SUCCESS);
+}
+
+TEST(OmniPvdGlobalConfig, PlainCreateSupportsLateRecording)
+{
+    const fs::path capturePath = fs::temp_directory_path() / "ovphysx_global_capability_late.ovd";
+    std::error_code ec;
+    fs::remove(capturePath, ec);
+    ASSERT_EQ(ovphysx_set_global_config(
+        OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE,
+        ovphysx_config_value_bool(true)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_initialize().status, OVPHYSX_API_SUCCESS);
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&handle).status, OVPHYSX_API_SUCCESS);
+    EXPECT_TRUE(recording_capability_is(true));
+    bool recording = true;
+    ASSERT_EQ(ovphysx_ovd_is_recording(handle, &recording).status, OVPHYSX_API_SUCCESS);
+    EXPECT_FALSE(recording);
+    ASSERT_TRUE(attach_usd_with_ovstage(handle, "tests/data/simple_physics_scene.usda"));
+    ASSERT_EQ(ovphysx_step_sync(handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
+
+    recording = true;
+    ASSERT_EQ(ovphysx_ovd_is_recording(handle, &recording).status, OVPHYSX_API_SUCCESS);
+    EXPECT_FALSE(recording);
+    EXPECT_FALSE(fs::exists(capturePath));
+    ASSERT_EQ(start_file_recording(handle, capturePath).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_ovd_is_recording(handle, &recording).status, OVPHYSX_API_SUCCESS);
+    EXPECT_TRUE(recording);
+    ASSERT_EQ(ovphysx_step_sync(handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_ovd_stop_recording(handle).status, OVPHYSX_API_SUCCESS);
+    EXPECT_TRUE(has_physics_commands(capturePath));
+
+    destroy_ovstage_test_attachments(handle);
+    EXPECT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_shutdown().status, OVPHYSX_API_SUCCESS);
+    fs::remove(capturePath, ec);
+}
+
+TEST(OmniPvdGlobalConfig, InheritedOutputEnabledDoesNotAutoStart)
+{
+    // Model a host that seeds the old output flag before the next runtime starts.
+    // The raw-setting fixture bootstraps Carbonite after full SDK shutdown.
+    ASSERT_EQ(ovphysx_initialize().status, OVPHYSX_API_SUCCESS);
+    ovphysx_instance_handle_t primer = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&primer).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_destroy_instance(primer).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_shutdown().status, OVPHYSX_API_SUCCESS);
+    const fs::path directory = fs::temp_directory_path() / "ovphysx_inherited_output";
+    const fs::path capturePath = directory / "explicit.ovd";
+    std::error_code ec;
+    fs::remove_all(directory, ec);
+    fs::create_directories(directory, ec);
+    ASSERT_FALSE(ec);
+    const std::string directoryString = directory.string();
     ASSERT_TRUE(ovphysx_set_raw_string_setting_for_test_internal(
-        "/physics/omniPvdTransport", malformedTransport, sizeof(malformedTransport)));
-    EXPECT_EQ(create_with_config(nullptr, 0), OVPHYSX_API_INVALID_ARGUMENT);
-    reset_omnipvd_startup_config();
+        "/persistent/physics/omniPvdOvdRecordingDirectory",
+        directoryString.data(), directoryString.size()));
+    ASSERT_TRUE(ovphysx_set_raw_string_setting_for_test_internal(
+        "/physics/omniPvdOutputEnabled", "true", 4));
+    ASSERT_EQ(ovphysx_set_global_config(
+        OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE,
+        ovphysx_config_value_bool(true)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_initialize().status, OVPHYSX_API_SUCCESS);
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&handle).status, OVPHYSX_API_SUCCESS);
+    bool recording = true;
+    ASSERT_EQ(ovphysx_ovd_is_recording(handle, &recording).status, OVPHYSX_API_SUCCESS);
+    EXPECT_FALSE(recording);
+    ASSERT_TRUE(attach_usd_with_ovstage(handle, "tests/data/simple_physics_scene.usda"));
+    ASSERT_EQ(ovphysx_ovd_is_recording(handle, &recording).status, OVPHYSX_API_SUCCESS);
+    EXPECT_FALSE(recording);
+    EXPECT_TRUE(fs::is_empty(directory));
+    ASSERT_EQ(start_file_recording(handle, capturePath).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_step_sync(handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_ovd_stop_recording(handle).status, OVPHYSX_API_SUCCESS);
+    EXPECT_TRUE(has_physics_commands(capturePath));
+    EXPECT_TRUE(destroy_ovstage_test_attachments(handle));
+    EXPECT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_shutdown().status, OVPHYSX_API_SUCCESS);
+    fs::remove_all(directory, ec);
 }
 
-TEST(OmniPvdStartupConfig, RawTcpNumericsRequireExactInt32)
+TEST(OmniPvdGlobalConfig, InheritedOutputEnabledDoesNotProvideCapability)
 {
-    reset_omnipvd_startup_config();
-    const ovphysx_config_entry_t configs[] = {
-        ovphysx_config_entry_carbonite(
-            OVPHYSX_LITERAL("/physics/omniPvdTcpPort"), OVPHYSX_LITERAL("1.5")),
-        ovphysx_config_entry_carbonite(
-            OVPHYSX_LITERAL("/physics/omniPvdTcpTimeoutMs"), OVPHYSX_LITERAL("not-a-number")),
-        ovphysx_config_entry_carbonite(
-            OVPHYSX_LITERAL("/physics/omniPvdTcpPort"), OVPHYSX_LITERAL("2147483648")),
-    };
-    for (const ovphysx_config_entry_t& config : configs)
-        EXPECT_EQ(create_with_config(&config, 1), OVPHYSX_API_INVALID_ARGUMENT);
-    reset_omnipvd_startup_config();
+    ASSERT_EQ(ovphysx_initialize().status, OVPHYSX_API_SUCCESS);
+    ovphysx_instance_handle_t primer = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&primer).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_destroy_instance(primer).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_shutdown().status, OVPHYSX_API_SUCCESS);
+
+    const fs::path directory = fs::temp_directory_path() / "ovphysx_inherited_output_no_capability";
+    std::error_code ec;
+    fs::remove_all(directory, ec);
+    fs::create_directories(directory, ec);
+    ASSERT_FALSE(ec);
+    const std::string directoryString = directory.string();
+    ASSERT_TRUE(ovphysx_set_raw_string_setting_for_test_internal(
+        "/persistent/physics/omniPvdOvdRecordingDirectory",
+        directoryString.data(), directoryString.size()));
+    ASSERT_TRUE(ovphysx_set_raw_string_setting_for_test_internal(
+        "/physics/omniPvdOutputEnabled", "true", 4));
+
+    // Do not set the modern key: inherited output must not create a provider.
+    ASSERT_TRUE(recording_capability_is(false));
+    ASSERT_EQ(ovphysx_initialize().status, OVPHYSX_API_SUCCESS);
+    struct LogCaptureGuard
+    {
+        uint32_t originalLevel = ovphysx_get_log_level();
+        ~LogCaptureGuard()
+        {
+            ovphysx_log_capture_stop();
+            ovphysx_set_log_level(originalLevel);
+        }
+    } logCapture;
+    ASSERT_EQ(ovphysx_set_log_level(OVPHYSX_LOG_WARNING).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_log_capture_start().status, OVPHYSX_API_SUCCESS);
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&handle).status, OVPHYSX_API_SUCCESS);
+    EXPECT_TRUE(ovphysx_log_capture_find(OVPHYSX_LOG_WARNING, "OVD_RECORDING_CAPABLE"));
+    EXPECT_TRUE(recording_capability_is(false));
+    ASSERT_TRUE(attach_usd_with_ovstage(handle, "tests/data/simple_physics_scene.usda"));
+    EXPECT_TRUE(recording_capability_is(false));
+    bool recording = true;
+    ASSERT_EQ(ovphysx_ovd_is_recording(handle, &recording).status, OVPHYSX_API_SUCCESS);
+    EXPECT_FALSE(recording);
+    EXPECT_EQ(start_file_recording(handle, directory / "must_not_record.ovd").status,
+              OVPHYSX_API_INVALID_STATE);
+    const ovphysx_string_t error = ovphysx_get_last_error();
+    EXPECT_NE(std::string(error.ptr, error.length).find("OVD_RECORDING_CAPABLE"), std::string::npos);
+    EXPECT_TRUE(fs::is_empty(directory));
+
+    EXPECT_TRUE(destroy_ovstage_test_attachments(handle));
+    EXPECT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_shutdown().status, OVPHYSX_API_SUCCESS);
+    fs::remove_all(directory, ec);
+}
+
+TEST(OmniPvdGlobalConfig, ModernWritesStayFrozenUntilShutdown)
+{
+    ASSERT_EQ(ovphysx_initialize().status, OVPHYSX_API_SUCCESS);
+    const ovphysx_config_entry_t invalidThreads = ovphysx_config_entry_num_threads(256);
+    EXPECT_EQ(create_with_config(&invalidThreads, 1), OVPHYSX_API_INVALID_ARGUMENT);
+    ASSERT_EQ(ovphysx_set_global_config(
+        OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE,
+        ovphysx_config_value_bool(true)).status, OVPHYSX_API_SUCCESS);
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&handle).status, OVPHYSX_API_SUCCESS);
+
+    EXPECT_EQ(ovphysx_set_global_config(
+        OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE,
+        ovphysx_config_value_bool(false)).status, OVPHYSX_API_INVALID_STATE);
+    EXPECT_TRUE(recording_capability_is(true));
+    ASSERT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_set_global_config(
+        OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE,
+        ovphysx_config_value_bool(false)).status, OVPHYSX_API_INVALID_STATE);
+    EXPECT_TRUE(recording_capability_is(true));
+
+    ASSERT_EQ(ovphysx_shutdown().status, OVPHYSX_API_SUCCESS);
+    EXPECT_TRUE(recording_capability_is(true));
+    ASSERT_EQ(ovphysx_set_global_config(
+        OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE,
+        ovphysx_config_value_bool(false)).status, OVPHYSX_API_SUCCESS);
+    EXPECT_TRUE(recording_capability_is(false));
+}
+
+TEST(OmniPvdGlobalConfig, ShutdownWithLiveInstanceKeepsModernWritesFrozen)
+{
+    ASSERT_EQ(ovphysx_initialize().status, OVPHYSX_API_SUCCESS);
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&handle).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_shutdown().status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_set_global_config(
+        OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE,
+        ovphysx_config_value_bool(true)).status, OVPHYSX_API_INVALID_STATE);
+    EXPECT_TRUE(recording_capability_is(false));
+    ASSERT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_set_global_config(
+        OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE,
+        ovphysx_config_value_bool(true)).status, OVPHYSX_API_INVALID_STATE);
+    EXPECT_TRUE(recording_capability_is(false));
+
+    ASSERT_EQ(ovphysx_initialize().status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_shutdown().status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_set_global_config(
+        OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE,
+        ovphysx_config_value_bool(true)).status, OVPHYSX_API_SUCCESS);
+    EXPECT_TRUE(recording_capability_is(true));
 }
 
 TEST(OmniPvdColdCreation, DefaultInstanceHasNoProviderAndRejectsLateStart)
@@ -713,21 +856,17 @@ TEST(OmniPvdColdCreation, DefaultInstanceHasNoProviderAndRejectsLateStart)
         fs::temp_directory_path() / "ovphysx_default_must_not_record.ovd";
     std::error_code ec;
     fs::remove(capturePath, ec);
-    ovphysx_handle_t handle = OVPHYSX_INVALID_HANDLE;
-    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-    ASSERT_EQ(ovphysx_create_instance(&args, &handle).status, OVPHYSX_API_SUCCESS);
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&handle).status, OVPHYSX_API_SUCCESS);
 
     ovphysx_result_t startResult = start_file_recording(handle, capturePath);
     EXPECT_EQ(startResult.status, OVPHYSX_API_INVALID_STATE);
     const ovphysx_string_t error = ovphysx_get_last_error();
-    EXPECT_NE(std::string(error.ptr, error.length).find("omnipvd_recording_capable"), std::string::npos);
+    EXPECT_NE(std::string(error.ptr, error.length).find("OVD_RECORDING_CAPABLE"), std::string::npos);
 
     ASSERT_TRUE(attach_usd_with_ovstage(handle, "tests/data/simple_physics_scene.usda"));
     ASSERT_EQ(ovphysx_step_sync(handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
-    void* physicsPtr = nullptr;
-    ASSERT_EQ(ovphysx_get_physx_ptr(
-        handle, { nullptr, 0 }, OVPHYSX_PHYSX_TYPE_PHYSICS, &physicsPtr).status,
-        OVPHYSX_API_SUCCESS);
+    void* physicsPtr = test_utils::read_physics_singleton(handle);
     ASSERT_NE(physicsPtr, nullptr);
     EXPECT_EQ(static_cast<physx::PxPhysics*>(physicsPtr)->getOmniPvd(), nullptr);
 
@@ -735,38 +874,11 @@ TEST(OmniPvdColdCreation, DefaultInstanceHasNoProviderAndRejectsLateStart)
     EXPECT_EQ(startResult.status, OVPHYSX_API_INVALID_STATE);
     const ovphysx_string_t attachedError = ovphysx_get_last_error();
     EXPECT_NE(
-        std::string(attachedError.ptr, attachedError.length).find("omnipvd_recording_capable"), std::string::npos);
+        std::string(attachedError.ptr, attachedError.length).find("OVD_RECORDING_CAPABLE"), std::string::npos);
 
     destroy_ovstage_test_attachments(handle);
     EXPECT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
     fs::remove(capturePath, ec);
-}
-
-TEST(OmniPvdColdCreation, OvdPlaybackOutputDoesNotInstallProvider)
-{
-    const ovphysx_config_entry_t config[] = {
-        ovphysx_config_entry_omnipvd_output_enabled(true),
-        ovphysx_config_entry_omnipvd_recording_capable(false),
-        ovphysx_config_entry_carbonite(
-            OVPHYSX_LITERAL("/physics/omniPvdIsOVDStage"), OVPHYSX_LITERAL("true")),
-    };
-    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-    args.config_entries = config;
-    args.config_entry_count = static_cast<uint32_t>(std::size(config));
-    ovphysx_handle_t handle = OVPHYSX_INVALID_HANDLE;
-    ASSERT_EQ(ovphysx_create_instance(&args, &handle).status, OVPHYSX_API_SUCCESS);
-    ASSERT_TRUE(attach_usd_with_ovstage(handle, "tests/data/simple_physics_scene.usda"));
-    ASSERT_EQ(ovphysx_step_sync(handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
-
-    void* physicsPtr = nullptr;
-    ASSERT_EQ(ovphysx_get_physx_ptr(
-        handle, { nullptr, 0 }, OVPHYSX_PHYSX_TYPE_PHYSICS, &physicsPtr).status,
-        OVPHYSX_API_SUCCESS);
-    ASSERT_NE(physicsPtr, nullptr);
-    EXPECT_EQ(static_cast<physx::PxPhysics*>(physicsPtr)->getOmniPvd(), nullptr);
-
-    destroy_ovstage_test_attachments(handle);
-    EXPECT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
 }
 
 TEST(OmniPvdRecording, LateFileRecordingRejectsActiveTakeoverAndCanRestart)
@@ -780,12 +892,12 @@ TEST(OmniPvdRecording, LateFileRecordingRejectsActiveTakeoverAndCanRestart)
     fs::create_directories(directory, ec);
     ASSERT_FALSE(ec);
 
-    ovphysx_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
     ASSERT_TRUE(create_stepped_recording_instance(handle));
     bool recording = true;
-    EXPECT_EQ(ovphysx_is_recording(handle, &recording).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_ovd_is_recording(handle, &recording).status, OVPHYSX_API_SUCCESS);
     EXPECT_FALSE(recording);
-    EXPECT_EQ(ovphysx_stop_recording(handle).status, OVPHYSX_API_INVALID_STATE);
+    EXPECT_EQ(ovphysx_ovd_stop_recording(handle).status, OVPHYSX_API_INVALID_STATE);
 
     const ovphysx_omnipvd_destination_t invalidDestination = {
         OVPHYSX_OMNIPVD_TRANSPORT_FILE,
@@ -794,11 +906,19 @@ TEST(OmniPvdRecording, LateFileRecordingRejectsActiveTakeoverAndCanRestart)
         0,
         0,
     };
-    EXPECT_EQ(ovphysx_start_recording(handle, &invalidDestination).status, OVPHYSX_API_INVALID_ARGUMENT);
+    EXPECT_EQ(ovphysx_ovd_start_recording(handle, &invalidDestination).status, OVPHYSX_API_INVALID_ARGUMENT);
 
     ASSERT_EQ(start_file_recording(handle, firstPath).status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_is_recording(handle, &recording).status, OVPHYSX_API_SUCCESS);
+    const ovphysx_enqueue_result_t pending = ovphysx_step(handle, 1.0f / 60.0f);
+    ASSERT_EQ(pending.status, OVPHYSX_API_SUCCESS);
+
+    ASSERT_EQ(ovphysx_ovd_is_recording(handle, &recording).status, OVPHYSX_API_SUCCESS);
     EXPECT_TRUE(recording);
+    ovphysx_wait_task_result_t waited{};
+    EXPECT_EQ(ovphysx_wait_task(handle, pending, OVPHYSX_TIMEOUT_INFINITE, &waited).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(waited.num_errors, 0u);
+    ovphysx_destroy_wait_task_result(&waited);
+
     ASSERT_EQ(ovphysx_step_sync(handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
 
     EXPECT_EQ(start_file_recording(handle, retargetPath).status, OVPHYSX_API_INVALID_STATE);
@@ -806,59 +926,52 @@ TEST(OmniPvdRecording, LateFileRecordingRejectsActiveTakeoverAndCanRestart)
     EXPECT_NE(std::string(error.ptr, error.length).find("already active"), std::string::npos);
     EXPECT_FALSE(fs::exists(retargetPath));
 
-    ovphysx_create_args peerArgs = OVPHYSX_CREATE_ARGS_DEFAULT;
-    ovphysx_handle_t peerHandle = OVPHYSX_INVALID_HANDLE;
-    ASSERT_EQ(ovphysx_create_instance(&peerArgs, &peerHandle).status, OVPHYSX_API_SUCCESS);
+    ovphysx_instance_handle_t peerHandle = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&peerHandle).status, OVPHYSX_API_SUCCESS);
     EXPECT_EQ(start_file_recording(peerHandle, retargetPath).status, OVPHYSX_API_INVALID_STATE);
     error = ovphysx_get_last_error();
     EXPECT_NE(std::string(error.ptr, error.length).find("already active"), std::string::npos);
     bool peerRecording = true;
-    EXPECT_EQ(ovphysx_is_recording(peerHandle, &peerRecording).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_ovd_is_recording(peerHandle, &peerRecording).status, OVPHYSX_API_SUCCESS);
     EXPECT_FALSE(peerRecording);
-    EXPECT_EQ(ovphysx_stop_recording(peerHandle).status, OVPHYSX_API_INVALID_STATE);
+    EXPECT_EQ(ovphysx_ovd_stop_recording(peerHandle).status, OVPHYSX_API_INVALID_STATE);
     EXPECT_EQ(ovphysx_destroy_instance(peerHandle).status, OVPHYSX_API_SUCCESS);
-    EXPECT_EQ(ovphysx_is_recording(handle, &recording).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(ovphysx_ovd_is_recording(handle, &recording).status, OVPHYSX_API_SUCCESS);
     EXPECT_TRUE(recording);
     EXPECT_FALSE(fs::exists(retargetPath));
 
-    ASSERT_EQ(ovphysx_stop_recording(handle).status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_is_recording(handle, &recording).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_ovd_stop_recording(handle).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_ovd_is_recording(handle, &recording).status, OVPHYSX_API_SUCCESS);
     EXPECT_FALSE(recording);
     ASSERT_TRUE(fs::exists(firstPath));
     EXPECT_TRUE(has_physics_commands(firstPath));
-    EXPECT_EQ(ovphysx_start_recording(handle, &invalidDestination).status, OVPHYSX_API_INVALID_ARGUMENT);
+    EXPECT_EQ(ovphysx_ovd_start_recording(handle, &invalidDestination).status, OVPHYSX_API_INVALID_ARGUMENT);
     peerHandle = OVPHYSX_INVALID_HANDLE;
-    ASSERT_EQ(ovphysx_create_instance(&peerArgs, &peerHandle).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_create_instance(&peerHandle).status, OVPHYSX_API_SUCCESS);
 
-    const size_t eventBaseline = async_get_active_event_count();
     const ovphysx_enqueue_result_t startStep = ovphysx_step(handle, 1.0f / 60.0f);
     ASSERT_EQ(startStep.status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(async_get_active_event_count(), eventBaseline + 1);
     ASSERT_EQ(start_file_recording(peerHandle, retargetPath).status, OVPHYSX_API_SUCCESS);
-    EXPECT_EQ(async_get_active_event_count(), eventBaseline);
-    EXPECT_TRUE(waitForOperationSuccess(handle, startStep.op_index, 0));
+    EXPECT_TRUE(waitForTaskSuccess(handle, startStep, 0));
     peerRecording = false;
-    ASSERT_EQ(ovphysx_is_recording(peerHandle, &peerRecording).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_ovd_is_recording(peerHandle, &peerRecording).status, OVPHYSX_API_SUCCESS);
     EXPECT_TRUE(peerRecording);
     recording = true;
-    ASSERT_EQ(ovphysx_is_recording(handle, &recording).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_ovd_is_recording(handle, &recording).status, OVPHYSX_API_SUCCESS);
     EXPECT_FALSE(recording);
 
     const ovphysx_enqueue_result_t stopStep = ovphysx_step(handle, 1.0f / 60.0f);
     ASSERT_EQ(stopStep.status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(async_get_active_event_count(), eventBaseline + 1);
-    ASSERT_EQ(ovphysx_stop_recording(peerHandle).status, OVPHYSX_API_SUCCESS);
-    EXPECT_EQ(async_get_active_event_count(), eventBaseline);
-    EXPECT_TRUE(waitForOperationSuccess(handle, stopStep.op_index, 0));
+    ASSERT_EQ(ovphysx_ovd_stop_recording(peerHandle).status, OVPHYSX_API_SUCCESS);
+    EXPECT_TRUE(waitForTaskSuccess(handle, stopStep, 0));
     ASSERT_TRUE(fs::exists(retargetPath));
     EXPECT_TRUE(has_physics_commands(retargetPath));
 
     ASSERT_EQ(start_file_recording(peerHandle, destroyPath).status, OVPHYSX_API_SUCCESS);
     const ovphysx_enqueue_result_t destroyStep = ovphysx_step(handle, 1.0f / 60.0f);
     ASSERT_EQ(destroyStep.status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(async_get_active_event_count(), eventBaseline + 1);
     ASSERT_EQ(ovphysx_destroy_instance(peerHandle).status, OVPHYSX_API_SUCCESS);
-    EXPECT_TRUE(waitForOperationSuccess(handle, destroyStep.op_index, 0));
+    EXPECT_TRUE(waitForTaskSuccess(handle, destroyStep, 0));
     ASSERT_TRUE(fs::exists(destroyPath));
     // The peer owns the stream, not the live stage. Destroy finalizes the
     // recording without tearing down the stage owner's PhysX objects.
@@ -880,7 +993,7 @@ TEST(OmniPvdRecording, ActiveDetachFinalizesAndReattachCanRecord)
     fs::create_directories(directory, ec);
     ASSERT_FALSE(ec);
 
-    ovphysx_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
     ASSERT_EQ(create_recording_capable_instance(handle).status, OVPHYSX_API_SUCCESS);
     ASSERT_EQ(start_file_recording(handle, beforeDetachPath).status, OVPHYSX_API_INVALID_STATE);
     ovphysx_string_t error = ovphysx_get_last_error();
@@ -889,9 +1002,8 @@ TEST(OmniPvdRecording, ActiveDetachFinalizesAndReattachCanRecord)
 
     ASSERT_TRUE(attach_usd_with_ovstage(handle, "tests/data/simple_physics_scene.usda"));
     ASSERT_EQ(ovphysx_step_sync(handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
-    ovphysx_create_args peerArgs = OVPHYSX_CREATE_ARGS_DEFAULT;
-    ovphysx_handle_t peerHandle = OVPHYSX_INVALID_HANDLE;
-    ASSERT_EQ(ovphysx_create_instance(&peerArgs, &peerHandle).status, OVPHYSX_API_SUCCESS);
+    ovphysx_instance_handle_t peerHandle = OVPHYSX_INVALID_HANDLE;
+    ASSERT_EQ(ovphysx_create_instance(&peerHandle).status, OVPHYSX_API_SUCCESS);
     ASSERT_EQ(start_file_recording(peerHandle, beforeDetachPath).status, OVPHYSX_API_SUCCESS);
     ASSERT_EQ(ovphysx_step_sync(handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
     ASSERT_TRUE(destroy_ovstage_test_attachments(handle));
@@ -899,10 +1011,10 @@ TEST(OmniPvdRecording, ActiveDetachFinalizesAndReattachCanRecord)
     EXPECT_TRUE(has_physics_commands(beforeDetachPath, true));
 
     bool recording = true;
-    ASSERT_EQ(ovphysx_is_recording(handle, &recording).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_ovd_is_recording(handle, &recording).status, OVPHYSX_API_SUCCESS);
     EXPECT_FALSE(recording);
     recording = true;
-    ASSERT_EQ(ovphysx_is_recording(peerHandle, &recording).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_ovd_is_recording(peerHandle, &recording).status, OVPHYSX_API_SUCCESS);
     EXPECT_FALSE(recording);
     ASSERT_EQ(start_file_recording(handle, whileDetachedPath).status, OVPHYSX_API_INVALID_STATE);
     error = ovphysx_get_last_error();
@@ -911,16 +1023,20 @@ TEST(OmniPvdRecording, ActiveDetachFinalizesAndReattachCanRecord)
     ASSERT_TRUE(attach_usd_with_ovstage(handle, "tests/data/simple_physics_scene.usda"));
     ASSERT_EQ(ovphysx_step_sync(handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
 
+    recording = true;
+    ASSERT_EQ(ovphysx_ovd_is_recording(handle, &recording).status, OVPHYSX_API_SUCCESS);
+    EXPECT_FALSE(recording);
+    EXPECT_FALSE(fs::exists(afterReattachPath));
     const ovphysx_api_status_t restartStatus = start_file_recording(handle, afterReattachPath).status;
     EXPECT_EQ(restartStatus, OVPHYSX_API_SUCCESS);
     if (restartStatus == OVPHYSX_API_SUCCESS)
     {
         EXPECT_EQ(ovphysx_step_sync(handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
         recording = true;
-        EXPECT_EQ(ovphysx_is_recording(peerHandle, &recording).status, OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(ovphysx_ovd_is_recording(peerHandle, &recording).status, OVPHYSX_API_SUCCESS);
         EXPECT_FALSE(recording);
-        EXPECT_EQ(ovphysx_stop_recording(peerHandle).status, OVPHYSX_API_INVALID_STATE);
-        EXPECT_EQ(ovphysx_stop_recording(handle).status, OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(ovphysx_ovd_stop_recording(peerHandle).status, OVPHYSX_API_INVALID_STATE);
+        EXPECT_EQ(ovphysx_ovd_stop_recording(handle).status, OVPHYSX_API_SUCCESS);
         ASSERT_TRUE(fs::exists(afterReattachPath));
         EXPECT_TRUE(has_physics_commands(afterReattachPath));
     }
@@ -941,11 +1057,11 @@ TEST(OmniPvdRecording, FailedLateFileOpenCanRetryAndActiveDestroyFinalizes)
     fs::create_directories(directory, ec);
     ASSERT_FALSE(ec);
 
-    ovphysx_handle_t handle = OVPHYSX_INVALID_HANDLE;
+    ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
     ASSERT_TRUE(create_stepped_recording_instance(handle));
     EXPECT_EQ(start_file_recording(handle, directory).status, OVPHYSX_API_ERROR);
     bool recording = true;
-    ASSERT_EQ(ovphysx_is_recording(handle, &recording).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_ovd_is_recording(handle, &recording).status, OVPHYSX_API_SUCCESS);
     EXPECT_FALSE(recording);
 
     const ::testing::AssertionResult refusedTcp = with_refused_loopback_tcp(
@@ -957,9 +1073,9 @@ TEST(OmniPvdRecording, FailedLateFileOpenCanRetryAndActiveDestroyFinalizes)
                 port,
                 1000,
             };
-            EXPECT_EQ(ovphysx_start_recording(handle, &tcpDestination).status, OVPHYSX_API_ERROR);
+            EXPECT_EQ(ovphysx_ovd_start_recording(handle, &tcpDestination).status, OVPHYSX_API_ERROR);
             bool tcpRecording = true;
-            EXPECT_EQ(ovphysx_is_recording(handle, &tcpRecording).status, OVPHYSX_API_SUCCESS);
+            EXPECT_EQ(ovphysx_ovd_is_recording(handle, &tcpRecording).status, OVPHYSX_API_SUCCESS);
             EXPECT_FALSE(tcpRecording);
         });
     ASSERT_TRUE(refusedTcp) << refusedTcp.message();
@@ -971,11 +1087,11 @@ TEST(OmniPvdRecording, FailedLateFileOpenCanRetryAndActiveDestroyFinalizes)
     ASSERT_TRUE(fs::exists(capturePath));
     EXPECT_TRUE(has_physics_commands(capturePath, true));
 
-    ovphysx_handle_t nextHandle = OVPHYSX_INVALID_HANDLE;
+    ovphysx_instance_handle_t nextHandle = OVPHYSX_INVALID_HANDLE;
     ASSERT_TRUE(create_stepped_recording_instance(nextHandle));
     ASSERT_EQ(start_file_recording(nextHandle, nextCapturePath).status, OVPHYSX_API_SUCCESS);
     ASSERT_EQ(ovphysx_step_sync(nextHandle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
-    ASSERT_EQ(ovphysx_stop_recording(nextHandle).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(ovphysx_ovd_stop_recording(nextHandle).status, OVPHYSX_API_SUCCESS);
     destroy_ovstage_test_attachments(nextHandle);
     ASSERT_EQ(ovphysx_destroy_instance(nextHandle).status, OVPHYSX_API_SUCCESS);
     ASSERT_TRUE(fs::exists(nextCapturePath));
@@ -983,48 +1099,18 @@ TEST(OmniPvdRecording, FailedLateFileOpenCanRetryAndActiveDestroyFinalizes)
     fs::remove_all(directory, ec);
 }
 
-// Positive path: a recording directory plus enable produces at least one non-empty .ovd file.
-TEST(OmniPvdRecording, OvdFileProducedWhenEnabled)
+TEST(OmniPvdRecording, ExplicitTcpCanStopAndRestartToFile)
 {
-    auto tmp_dir = fs::temp_directory_path() / "ovphysx_pvd_cpp_test_enabled";
-    fs::create_directories(tmp_dir);
-    // Clean up any leftover files from previous runs.
-    std::error_code ec;
-    for (const auto& entry : fs::directory_iterator(tmp_dir, ec))
-        fs::remove(entry.path());
-
-    int ovd_count = 0;
-    ASSERT_TRUE(run_recording_workflow(
-        tmp_dir.string(), /*enable_pvd=*/true, /*output_enabled_first=*/false, ovd_count));
-    EXPECT_GE(ovd_count, 1)
-        << "Expected at least one *_rec.ovd file in " << tmp_dir;
-
-    // Every produced file must contain physics commands.
-    for (const auto& entry : fs::directory_iterator(tmp_dir, ec))
-    {
-        const auto name = entry.path().filename().string();
-        if (name.size() > 8 && name.substr(name.size() - 8) == "_rec.ovd")
-        {
-            EXPECT_TRUE(has_physics_commands(entry.path(), false, true));
-        }
-    }
-
-    fs::remove_all(tmp_dir, ec);
-}
-
-TEST(OmniPvdRecording, StartupTcpCanStopAndRestartToLateFile)
-{
-    const fs::path directory = fs::temp_directory_path() / "ovphysx_pvd_startup_tcp_late_file";
-    const fs::path tcpCapturePath = directory / "startup_tcp.ovd";
-    const fs::path capturePath = directory / "after_startup_tcp.ovd";
+    const fs::path directory = fs::temp_directory_path() / "ovphysx_pvd_explicit_tcp_file";
+    const fs::path tcpCapturePath = directory / "explicit_tcp.ovd";
+    const fs::path capturePath = directory / "after_explicit_tcp.ovd";
     const fs::path restartedCapturePath = directory / "after_late_file_restart.ovd";
     std::error_code ec;
     fs::remove_all(directory, ec);
     fs::create_directories(directory, ec);
     ASSERT_FALSE(ec);
-    // Keep this transition test on one TCP session. The source Vehicle fixture uses
-    // centimetres, which legitimately rebuilds PxPhysics (and reconnects startup TCP)
-    // when it is attached after the default metre-scale bootstrap.
+    // Normalize the source Vehicle fixture's centimetres to the bootstrap's
+    // metre scale so this test covers transport transitions only.
     const fs::path vehiclePath = directory / "vehicle_meters.usda";
     std::ifstream vehicleSource(
         OVPHYSX_SOURCE_DIR "/ovruntime/data/usd/tests/Physics/Vehicle_Schema_Tests/Vehicle.usda");
@@ -1127,22 +1213,8 @@ def Xform "Vehicle2" (
     TcpCaptureResult captureResult;
     const ::testing::AssertionResult captured = capture_loopback_tcp(
         [&capturePath, &restartedCapturePath, &vehiclePathString](uint16_t port) -> ovphysx_api_status_t {
-            ovphysx_config_entry_t config[] = {
-                ovphysx_config_entry_omnipvd_ovd_recording_directory(OVPHYSX_LITERAL("")),
-                ovphysx_config_entry_omnipvd_transport(OVPHYSX_OMNIPVD_TRANSPORT_TCP_NAME),
-                ovphysx_config_entry_omnipvd_tcp_address(OVPHYSX_LITERAL("127.0.0.1")),
-                ovphysx_config_entry_omnipvd_tcp_port(port),
-                ovphysx_config_entry_omnipvd_tcp_timeout_ms(3000),
-                ovphysx_config_entry_omnipvd_recording_capable(true),
-                ovphysx_config_entry_omnipvd_output_enabled(true),
-                ovphysx_config_entry_carbonite(
-                    OVPHYSX_LITERAL("/physics/omniPvdIsOVDStage"), OVPHYSX_LITERAL("false")),
-            };
-            ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-            args.config_entries = config;
-            args.config_entry_count = static_cast<uint32_t>(std::size(config));
-            ovphysx_handle_t handle = OVPHYSX_INVALID_HANDLE;
-            const ovphysx_result_t created = ovphysx_create_instance(&args, &handle);
+            ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+            const ovphysx_result_t created = create_recording_capable_instance(handle);
             if (created.status != OVPHYSX_API_SUCCESS)
                 return created.status;
 
@@ -1151,7 +1223,16 @@ def Xform "Vehicle2" (
                 ovphysx_destroy_instance(handle);
                 return OVPHYSX_API_ERROR;
             }
-            ovphysx_api_status_t status = ovphysx_step_sync(handle, 1.0f / 60.0f).status;
+            bool dormant = true;
+            EXPECT_EQ(ovphysx_ovd_is_recording(handle, &dormant).status, OVPHYSX_API_SUCCESS);
+            EXPECT_FALSE(dormant);
+            const ovphysx_omnipvd_destination_t destination = {
+                OVPHYSX_OMNIPVD_TRANSPORT_TCP, OVPHYSX_LITERAL(""),
+                OVPHYSX_LITERAL("127.0.0.1"), port, 3000,
+            };
+            ovphysx_api_status_t status = ovphysx_ovd_start_recording(handle, &destination).status;
+            if (status == OVPHYSX_API_SUCCESS)
+                status = ovphysx_step_sync(handle, 1.0f / 60.0f).status;
             void* extensionsFixture = nullptr;
             if (status == OVPHYSX_API_SUCCESS &&
                 !ovphysx_create_extensions_fixture_for_test_internal(handle, &extensionsFixture))
@@ -1160,12 +1241,12 @@ def Xform "Vehicle2" (
             }
             bool recording = false;
             if (status == OVPHYSX_API_SUCCESS)
-                status = ovphysx_is_recording(handle, &recording).status;
+                status = ovphysx_ovd_is_recording(handle, &recording).status;
             EXPECT_TRUE(recording);
             if (status == OVPHYSX_API_SUCCESS && !recording)
                 status = OVPHYSX_API_INVALID_STATE;
 
-            const ovphysx_api_status_t stopStatus = ovphysx_stop_recording(handle).status;
+            const ovphysx_api_status_t stopStatus = ovphysx_ovd_stop_recording(handle).status;
             EXPECT_EQ(stopStatus, OVPHYSX_API_SUCCESS);
             if (status == OVPHYSX_API_SUCCESS)
                 status = stopStatus;
@@ -1175,7 +1256,7 @@ def Xform "Vehicle2" (
                 for (uint32_t i = 0; fileStatus == OVPHYSX_API_SUCCESS && i < stepCount; ++i)
                     fileStatus = ovphysx_step_sync(handle, 1.0f / 60.0f).status;
                 if (fileStatus == OVPHYSX_API_SUCCESS)
-                    fileStatus = ovphysx_stop_recording(handle).status;
+                    fileStatus = ovphysx_ovd_stop_recording(handle).status;
                 return fileStatus;
             };
             if (status == OVPHYSX_API_SUCCESS)
@@ -1228,143 +1309,87 @@ def Xform "Vehicle2" (
     fs::remove_all(directory, ec);
 }
 
-// Entry order must remain irrelevant after a previous instance has started the
-// process-wide runtime and installed the OmniPVD output-setting subscription.
-TEST(OmniPvdRecording, OvdFileProducedWhenOutputEntryComesFirstOnWarmRuntime)
+// Both spellings must be real linkable exports throughout the compatibility window.
+// @implements REQ-CAPI-OVD-NAMES-001
+// @covers AC-1 AC-2
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable: 4996)
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+TEST(OmniPvdRecording, PublicExportCompatibility)
 {
-    reset_omnipvd_startup_config();
-    // Establish a known disabled/empty state while also ensuring the retained
-    // process-wide runtime is already active before the order-under-test create.
-    ovphysx_config_entry_t primer_config[] = {
-        ovphysx_config_entry_omnipvd_ovd_recording_directory(OVPHYSX_LITERAL("")),
-        ovphysx_config_entry_omnipvd_output_enabled(false),
-    };
-    ovphysx_create_args primer_args = OVPHYSX_CREATE_ARGS_DEFAULT;
-    primer_args.config_entries = primer_config;
-    primer_args.config_entry_count = 2;
-    ovphysx_handle_t primer_handle = 0;
-    ASSERT_EQ(ovphysx_create_instance(&primer_args, &primer_handle).status, OVPHYSX_API_SUCCESS);
-    ASSERT_NE(primer_handle, 0u);
-    ASSERT_EQ(ovphysx_destroy_instance(primer_handle).status, OVPHYSX_API_SUCCESS);
-
-    auto tmp_dir = fs::temp_directory_path() / "ovphysx_pvd_cpp_test_output_first";
-    std::error_code ec;
-    fs::remove_all(tmp_dir, ec);
-    fs::create_directories(tmp_dir, ec);
-    ASSERT_FALSE(ec) << "Failed to create test directory: " << tmp_dir;
-
-    int ovd_count = 0;
-    ASSERT_TRUE(run_recording_workflow(
-        tmp_dir.string(), /*enable_pvd=*/true, /*output_enabled_first=*/true, ovd_count));
-    EXPECT_GE(ovd_count, 1)
-        << "Config entry order must not affect OmniPVD recording in " << tmp_dir;
-
-    for (const auto& entry : fs::directory_iterator(tmp_dir, ec))
+    const ovphysx_instance_handle_t instance = OVPHYSX_INVALID_HANDLE;
+    const ovphysx_handle_t legacyInstance = instance;
+    EXPECT_EQ(sizeof(legacyInstance), sizeof(uint64_t));
+    EXPECT_EQ(ovphysx_ovd_start_recording(instance, nullptr).status,
+              ovphysx_start_recording(legacyInstance, nullptr).status);
+    EXPECT_EQ(ovphysx_ovd_stop_recording(instance).status,
+              ovphysx_stop_recording(legacyInstance).status);
+    bool recording = true;
+    bool legacyRecording = true;
+    EXPECT_EQ(ovphysx_ovd_is_recording(instance, &recording).status,
+              ovphysx_is_recording(legacyInstance, &legacyRecording).status);
+    EXPECT_FALSE(recording);
+    EXPECT_FALSE(legacyRecording);
+    EXPECT_EQ(ovphysx_ovd_is_recording(instance, nullptr).status,
+              ovphysx_is_recording(legacyInstance, nullptr).status);
+}
+// Exercise both export families before any simulation step. Unlike invalid-handle
+// parity alone, the state transitions detect a forwarding alias wired to the wrong call.
+TEST(OmniPvdRecording, PublicExportsCaptureFirstSimulationFrame)
+{
+    for (bool legacy : { false, true })
     {
-        const auto name = entry.path().filename().string();
-        if (name.size() > 8 && name.substr(name.size() - 8) == "_rec.ovd")
-        {
-            EXPECT_TRUE(has_physics_commands(entry.path(), false, true));
-        }
+        SCOPED_TRACE(legacy ? "legacy exports" : "canonical exports");
+        const fs::path path = fs::temp_directory_path() /
+            (legacy ? "ovphysx_legacy_first_frame.ovd" : "ovphysx_canonical_first_frame.ovd");
+        std::error_code ec;
+        fs::remove(path, ec);
+
+        ovphysx_instance_handle_t handle = OVPHYSX_INVALID_HANDLE;
+        ASSERT_EQ(create_recording_capable_instance(handle).status, OVPHYSX_API_SUCCESS);
+        ASSERT_TRUE(attach_usd_with_ovstage(handle, "tests/data/simple_physics_scene.usda"));
+        const std::string pathString = path.string();
+        const ovphysx_omnipvd_destination_t destination = {
+            OVPHYSX_OMNIPVD_TRANSPORT_FILE, make_ovx_string(pathString.c_str()), OVPHYSX_LITERAL(""), 0, 0,
+        };
+        ASSERT_EQ((legacy ? ovphysx_start_recording(handle, &destination) :
+                            ovphysx_ovd_start_recording(handle, &destination)).status,
+                  OVPHYSX_API_SUCCESS);
+        bool recording = false;
+        bool legacyRecording = false;
+        ASSERT_EQ(ovphysx_ovd_is_recording(handle, &recording).status, OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(ovphysx_is_recording(handle, &legacyRecording).status, OVPHYSX_API_SUCCESS);
+        EXPECT_TRUE(recording);
+        EXPECT_EQ(legacyRecording, recording);
+
+        ASSERT_EQ(ovphysx_step_sync(handle, 1.0f / 60.0f).status, OVPHYSX_API_SUCCESS);
+        ASSERT_EQ((legacy ? ovphysx_stop_recording(handle) : ovphysx_ovd_stop_recording(handle)).status,
+                  OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(ovphysx_ovd_is_recording(handle, &recording).status, OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(ovphysx_is_recording(handle, &legacyRecording).status, OVPHYSX_API_SUCCESS);
+        EXPECT_FALSE(recording);
+        EXPECT_EQ(legacyRecording, recording);
+
+        // Parse after stop, before detach/destroy: stop itself must finalize the file.
+        OvdCommandSummary summary;
+        ASSERT_TRUE(read_ovd_commands(path, summary));
+        EXPECT_GT(summary.createObjectCount, 0u);
+        // PhysX records pre-sim (odd) and post-sim (even) frames per step.
+        // The snapshot opens frame 1; one step completes 1 and 2 and opens 3.
+        EXPECT_EQ(summary.startFrameIds, (std::vector<uint64_t>{ 1, 2, 3 }));
+        EXPECT_EQ(summary.stopFrameIds, (std::vector<uint64_t>{ 1, 2 }));
+        EXPECT_TRUE(destroy_ovstage_test_attachments(handle));
+        EXPECT_EQ(ovphysx_destroy_instance(handle).status, OVPHYSX_API_SUCCESS);
+        fs::remove(path, ec);
     }
-
-    fs::remove_all(tmp_dir, ec);
 }
 
-TEST(OmniPvdRecording, OvdFileProducedWhenRawOutputEntryComesFirstOnWarmRuntime)
-{
-    reset_omnipvd_startup_config();
-    ovphysx_config_entry_t primer_config[] = {
-        ovphysx_config_entry_omnipvd_ovd_recording_directory(OVPHYSX_LITERAL("")),
-        ovphysx_config_entry_omnipvd_output_enabled(false),
-    };
-    ovphysx_create_args primer_args = OVPHYSX_CREATE_ARGS_DEFAULT;
-    primer_args.config_entries = primer_config;
-    primer_args.config_entry_count = 2;
-    ovphysx_handle_t primer_handle = 0;
-    ASSERT_EQ(ovphysx_create_instance(&primer_args, &primer_handle).status, OVPHYSX_API_SUCCESS);
-    ASSERT_NE(primer_handle, 0u);
-    ASSERT_EQ(ovphysx_destroy_instance(primer_handle).status, OVPHYSX_API_SUCCESS);
-
-    auto tmp_dir = fs::temp_directory_path() / "ovphysx_pvd_cpp_test_raw_output_first";
-    std::error_code ec;
-    fs::remove_all(tmp_dir, ec);
-    fs::create_directories(tmp_dir, ec);
-    ASSERT_FALSE(ec) << "Failed to create test directory: " << tmp_dir;
-
-    int ovd_count = 0;
-    ASSERT_TRUE(run_recording_workflow(
-        tmp_dir.string(),
-        /*enable_pvd=*/true,
-        /*output_enabled_first=*/true,
-        ovd_count,
-        /*output_enabled_as_carbonite=*/true));
-    EXPECT_GE(ovd_count, 1)
-        << "Raw Carbonite config entry order must not affect OmniPVD recording in " << tmp_dir;
-
-    fs::remove_all(tmp_dir, ec);
-}
-
-// Negative path: recording disabled produces no .ovd files.
-TEST(OmniPvdRecording, NoOvdFileWhenDisabled)
-{
-    auto tmp_dir = fs::temp_directory_path() / "ovphysx_pvd_cpp_test_disabled";
-    fs::create_directories(tmp_dir);
-    std::error_code ec;
-    for (const auto& entry : fs::directory_iterator(tmp_dir, ec))
-        fs::remove(entry.path());
-
-    int ovd_count = 0;
-    ASSERT_TRUE(run_recording_workflow(
-        tmp_dir.string(), /*enable_pvd=*/false, /*output_enabled_first=*/false, ovd_count));
-    EXPECT_EQ(ovd_count, 0)
-        << "Expected no *_rec.ovd files when recording is disabled";
-
-    fs::remove_all(tmp_dir, ec);
-}
-
-// Negative path: enable with an empty directory string must not crash and produces no .ovd file.
-TEST(OmniPvdRecording, EmptyDirectoryDoesNotCrash)
-{
-    reset_omnipvd_startup_config();
-    ovphysx_config_entry_t config[] = {
-        ovphysx_config_entry_omnipvd_ovd_recording_directory(OVPHYSX_LITERAL("")),
-        ovphysx_config_entry_omnipvd_output_enabled(true),
-    };
-
-    ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-    args.config_entries = config;
-    args.config_entry_count = 2;
-    ovphysx_handle_t handle = 0;
-    ovphysx_result_t r = ovphysx_create_instance(&args, &handle);
-    // Instance creation should succeed even with misconfigured OmniPVD.
-    ASSERT_EQ(r.status, OVPHYSX_API_SUCCESS);
-
-    r = ovphysx_step_sync(handle, 1.0f / 60.0f);
-
-    ovphysx_destroy_instance(handle);
-    // Reaching this point without a crash is the pass condition.
-}
-
-// Directory auto-creation: a non-existent nested path is created by the runtime.
-TEST(OmniPvdRecording, DirectoryAutoCreated)
-{
-    auto base_dir = fs::temp_directory_path() / "ovphysx_pvd_cpp_test_autocreate";
-    auto nested_dir = base_dir / "sub" / "recordings";
-
-    // Ensure the directory does NOT exist before the test.
-    std::error_code ec;
-    fs::remove_all(base_dir, ec);
-    ASSERT_FALSE(fs::exists(nested_dir));
-
-    int ovd_count = 0;
-    ASSERT_TRUE(run_recording_workflow(
-        nested_dir.string(), /*enable_pvd=*/true, /*output_enabled_first=*/false, ovd_count));
-
-    EXPECT_TRUE(fs::is_directory(nested_dir))
-        << "Expected the runtime to auto-create " << nested_dir;
-    EXPECT_GE(ovd_count, 1)
-        << "Expected at least one *_rec.ovd file in auto-created directory";
-
-    fs::remove_all(base_dir, ec);
-}
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#elif defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif

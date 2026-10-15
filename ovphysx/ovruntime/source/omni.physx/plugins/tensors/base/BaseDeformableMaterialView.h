@@ -54,7 +54,7 @@ public:
     bool setBendingDampingMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
 
     bool check() const override;
-    void release() override;
+    bool release() override;
 
     //
     // helpers

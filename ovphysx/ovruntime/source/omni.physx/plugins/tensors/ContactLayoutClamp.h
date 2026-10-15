@@ -1,6 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-TENSOR-CONTACT-002
+ * @covers AC-3
+ */
+
 #pragma once
 
 // Clamps a (count, startIndex) contact/friction layout pair to a capacity, in a form both the

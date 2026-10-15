@@ -8,24 +8,25 @@ with Warp-array output and downstream DLPack interoperability. It wraps NVIDIA
 PhysX and provides:
 
 - ovstage attachment plus rigid-body / articulation simulation
-- Same-device `warp.array` output on CPU and CUDA through `PhysX.read()` / `read_tokens()`
+- Same-device `warp.array` output on CPU and CUDA through session reads (`PhysX.read()` / `read_sync()`)
 - Downstream zero-copy framework interoperability through Warp's DLPack support
 - Environment cloning for batched reinforcement-learning workloads
 
 ## Quick start
 
 ```bash
-pip install ovphysx newton-usd-schemas
+pip install ovphysx physx-usd-schemas newton-usd-schemas
 ```
 
 `newton-usd-schemas` is the Newton USD schema the snippet below registers next
-to ovphysx's own; scenes that author no `newton:*` attributes can leave it out
+to the external PhysX schemas; scenes that author no `newton:*` attributes can leave it out
 and drop the `newton_schema_root()` entry.
 
 ```python
 from pathlib import Path
 
 import ovphysx
+from ovphysx.samples.python_samples.schema_support import physx_schema_paths
 import ovstage
 from ovphysx import PhysX
 
@@ -38,24 +39,21 @@ usd_path = (
 if not usd_path.is_file():
     raise FileNotFoundError(f"ovphysx sample data is missing: {usd_path}")
 
-# ovphysx ships its PhysX USD schemas as codeless resources and never registers
-# them itself; register them with ovstage before the first population call. The
-# Newton USD schema (pip install newton-usd-schemas) goes in the same call so
-# authored newton:* attributes reach the parser.
+# Register external PhysX and Newton schemas before the first population.
 ovstage.population.register_usd_schemas(
-    [str(ovphysx.codeless_schema_root()), str(ovphysx.newton_schema_root())]
+    [*[str(p) for p in physx_schema_paths()], str(ovphysx.newton_schema_root())]
 )
 stage = ovstage.Stage("scene")
 ovstage.population.open_usd(
-    stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.PHYSICS
+    stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.ALL
 )
 # attach_ovstage() reads at a sealed ordinal.
 stage.advance_write_floor(ordinal=1).wait()
 
 physx = PhysX()
-physx.attach_ovstage(stage, read_ordinal=1)
+physx.wait_task(physx.attach_ovstage(stage, read_ordinal=1))
 physx.step_sync(1.0 / 60.0)
-physx.detach_ovstage()
+physx.wait_task(physx.detach_ovstage())
 physx.destroy()
 stage.destroy()
 ```

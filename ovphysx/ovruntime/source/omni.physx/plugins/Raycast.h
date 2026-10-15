@@ -1,6 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-IO-001
+// @covers AC-2
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-1 AC-2
+
 /**
  * @implements REQ-SIM-SCENEQUERY-001
  * @covers AC-1 AC-2
@@ -46,7 +51,9 @@ struct ManipCmd
     Type type;
     State state;
     ExecutionType exec;
-    float acceleration;
+    float acceleration = 0.0f;
+    float pickingForce = 0.0f;
+    bool ignoreInvisible = false;
 };
 
 struct DeformableId
@@ -105,11 +112,12 @@ struct Picker
 class RaycastManager
 {
 public:
-    RaycastManager();
+    explicit RaycastManager(const usdparser::AttachedStage& owner);
 
     ~RaycastManager();
 
-    void onUpdateRaycasts(float elapsedSecs) const;
+    void onUpdateRaycasts(float elapsedSecs);
+    void handleRaycastInput(const float* orig, const float* dir, bool input);
     void handleInteractionEvent(const float* orig, const float* dir, PhysicsInteractionEvent interactionEvent);
     bool interactiveActorRaycast(const carb::Float3* origin, const carb::Float3* direction);
     void clearPicker(const ::physx::PxRigidActor* rb);
@@ -125,11 +133,24 @@ private:
     void grab(const float* orig, const float* dir);
 
 private:
+    void applyManipCmd(const ManipCmd& cmd, float delta_time);
+    void startPickingDeformable(PickType::Enum type, const DeformableId& id, ::physx::PxReal distance, const ::physx::PxVec3& hitPoint);
+    void updatePickingDeformable(const ::physx::PxVec3& target);
+    void releasePickingDeformable();
+    const usdparser::AttachedStage& mOwner;
+    float manipDist = 0.0f;
+    ::physx::PxVec3 grabbingLocalPoint{0.0f};
+    float grabbingDistance = 0.0f;
+    float grabbingSavedAngularDamping = 0.0f;
+    bool grabInProgress = false;
+    bool pushInProgress = false;
+    bool lastInput = false;
+    PhysicsInteractionEvent lastEvent = PhysicsInteractionEvent::eNone;
     mutable LockingList<ManipCmd> mManipCmdBuffer;
     Picker picker;
 };
 
-void handleRaycast(const float* orig, const float* dir, bool input);
+void handleRaycast(AttachHandle attach, const float* orig, const float* dir, bool input);
 
 // KnownTokens is batch-interned once by the caller (see raycastSingle()) and
 // handed in by const reference -- preFilter() runs once per broad-phase
@@ -138,9 +159,9 @@ void handleRaycast(const float* orig, const float* dir, bool input);
 class raycastFilterExcludeInvisible : ::physx::PxQueryFilterCallback
 {
 public:
-    raycastFilterExcludeInvisible(const omni::physics::parse::IPhysicsSource* source,
+    raycastFilterExcludeInvisible(const internal::InternalPhysXDatabase& database, const omni::physics::parse::IPhysicsSource* source,
                                   const omni::physics::parse::KnownTokens& tokens)
-        : mSource(source), mTokens(tokens){};
+        : mDatabase(database), mSource(source), mTokens(tokens){};
     ~raycastFilterExcludeInvisible(){};
 
     virtual ::physx::PxQueryHitType::Enum preFilter(const ::physx::PxFilterData& filterData0,
@@ -157,6 +178,7 @@ public:
     }
 
 private:
+    const internal::InternalPhysXDatabase& mDatabase;
     const omni::physics::parse::IPhysicsSource* mSource;
     const omni::physics::parse::KnownTokens& mTokens;
 };

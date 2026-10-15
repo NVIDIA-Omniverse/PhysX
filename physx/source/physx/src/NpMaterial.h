@@ -24,7 +24,7 @@ class NpMaterial : public PxMaterial, public PxUserAllocated
 public:
 // PX_SERIALIZATION            
 									NpMaterial(PxBaseFlags baseFlags) : PxMaterial(baseFlags), mMaterial(PxEmpty) {}
-	virtual		void				resolveReferences(PxDeserializationContext& context);
+	virtual		bool				resolveReferences(PxDeserializationContext& context);
 	static		NpMaterial*			createObject(PxU8*& address, PxDeserializationContext& context);
 
 				void				preExportDataReset() { Cm::RefCountable_preExportDataReset(*this); }

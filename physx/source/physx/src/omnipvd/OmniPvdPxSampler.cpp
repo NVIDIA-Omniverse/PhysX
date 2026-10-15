@@ -1067,8 +1067,6 @@ void streamArticulationJoint(OmniPvdWriter* pvdWriter, const OmniPvdPxCoreRegist
 	PxReal armatures[degreesOfFreedom];
 	for (PxU32 ax = 0; ax < degreesOfFreedom; ++ax)
 		armatures[ax] = jointRef.getArmature(static_cast<PxArticulationAxis::Enum>(ax));
-	PxReal coefficient = jointRef.getFrictionCoefficient();
-	PxReal maxJointV = jointRef.getMaxJointVelocity();
 	PxReal positions[degreesOfFreedom];
 	for (PxU32 ax = 0; ax < degreesOfFreedom; ++ax)
 		positions[ax] = jointRef.getJointPosition(static_cast<PxArticulationAxis::Enum>(ax));
@@ -1089,9 +1087,6 @@ void streamArticulationJoint(OmniPvdWriter* pvdWriter, const OmniPvdPxCoreRegist
 	PxReal dampings[degreesOfFreedom];
 	for (PxU32 ax = 0; ax < degreesOfFreedom; ++ax)
 		dampings[ax] = jointRef.getDriveParams(static_cast<PxArticulationAxis::Enum>(ax)).damping;
-	PxReal maxforces[degreesOfFreedom];
-	for (PxU32 ax = 0; ax < degreesOfFreedom; ++ax)
-		maxforces[ax] = jointRef.getDriveParams(static_cast<PxArticulationAxis::Enum>(ax)).maxForce;
 	PxReal maxefforts[degreesOfFreedom];
 	for (PxU32 ax = 0; ax < degreesOfFreedom; ++ax)
 		maxefforts[ax] = jointRef.getDriveParams(static_cast<PxArticulationAxis::Enum>(ax)).envelope.maxEffort;
@@ -1142,13 +1137,11 @@ void streamArticulationJoint(OmniPvdWriter* pvdWriter, const OmniPvdPxCoreRegist
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, childRotation, jointRef, jointChildPose.q);
 	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, motion, jointRef, motions, degreesOfFreedom);
 	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, armature, jointRef, armatures, degreesOfFreedom);
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, frictionCoefficient, jointRef, coefficient);
 	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, staticFrictionEffort,
 								jointRef, staticfrictionefforts, degreesOfFreedom);
 	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, dynamicFrictionEffort, jointRef, dynamicfrictionefforts, degreesOfFreedom);
 	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate,
 								viscousFrictionCoefficient, jointRef, viscousFrictionCoefficients, degreesOfFreedom);
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, maxJointVelocity, jointRef, maxJointV);
 	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate,
 								maxJointDofVelocity, jointRef, maxJointDofV, degreesOfFreedom);
 	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, jointPosition, jointRef, positions, degreesOfFreedom);
@@ -1158,7 +1151,6 @@ void streamArticulationJoint(OmniPvdWriter* pvdWriter, const OmniPvdPxCoreRegist
 	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, limitHigh, jointRef, highlimits, degreesOfFreedom);
 	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, driveStiffness, jointRef, stiffnesss, degreesOfFreedom);
 	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, driveDamping, jointRef, dampings, degreesOfFreedom);
-	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, driveMaxForce, jointRef, maxforces, degreesOfFreedom);
 	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, driveMaxEffort, jointRef, maxefforts, degreesOfFreedom);
 	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, driveMaxActuatorVelocity, jointRef, maxactuatorvelocities, degreesOfFreedom);
 	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, driveVelocityDependentResistance, jointRef, velocitydependentresistances, degreesOfFreedom);

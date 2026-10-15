@@ -1,12 +1,14 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-CAPI-OVSTAGE-SCHEMA-001
+# @covers AC-2 AC-4
 # @implements REQ-PYTHON-UTILS-001
 # @covers AC-1 AC-10 AC-14
 
-"""Access to ovphysx's *codeless* PhysX USD schemas.
+"""Authoring with codeless PhysX USD schemas.
 
-ovphysx ships the PhysX and Omni deformable schemas as codeless artifacts: a
+The external physx-usd-schemas package supplies codeless artifacts: a
 ``plugInfo.json`` and ``generatedSchema.usda`` per module. API schemas are
 applied by their *schema identifier* and their properties are reached by name::
 
@@ -30,9 +32,8 @@ silently ineffective and the process it happened in cannot be repaired: there
 is no reload, no reset, and a second :func:`register_schemas` call reports
 success while changing nothing. Getting the order wrong costs a restart.
 
-Under ovphysx's own bundled runtime, ``import ovphysx`` handles this by
-appending to ``OV_PXR_PLUGINPATH_2511``. Under a stock ``usd-core`` -- which is
-what ``pxr`` resolves to in an authoring process -- call :func:`register_schemas`
+ovphysx does not load USD or register schemas on import. In a stock
+``usd-core`` authoring process, call :func:`register_schemas`
 as the first thing in the program, or preset ``PXR_PLUGINPATH_NAME`` before the
 process starts. Presetting the environment variable is the only route that also
 works inside a host that has already initialized USD, because USD reads it
@@ -64,10 +65,7 @@ __all__ = [
     "set_rel",
 ]
 
-# One always-present applied API per codeless schema root ovphysx ships. The
-# roots are separate USD plugins and register independently, so probing only the
-# PhysX one would report success while the Omni deformable schemas -- which the
-# deformable helpers author against -- were missing.
+# Probe both independent plugins so partial registration cannot pass.
 _SENTINEL_IDENTIFIERS = (
     "PhysxRigidBodyAPI",
     "OmniPhysicsDeformableBodyAPI",
@@ -85,7 +83,7 @@ _REGISTRATION_HINT = (
     "register nothing usable. Fix the ordering and start again, either by "
     "calling register_schemas() before anything in the process opens a stage or "
     "touches the schema registry, or by presetting PXR_PLUGINPATH_NAME to "
-    "os.pathsep.join(str(p) for p in ovphysx.codeless_schema_paths()) before the "
+    "the external physx-usd-schemas resource directories before the "
     "process starts. Preset the environment variable if USD may already be "
     "initialized by a host or another library, since that is the only route that "
     "does not depend on running first."
@@ -97,8 +95,25 @@ class CodelessSchemaError(RuntimeError):
     """A codeless PhysX schema could not be applied, removed or authored."""
 
 
+def _schema_paths():
+    from importlib import metadata
+    from pathlib import Path
+
+    try:
+        provider = metadata.distribution("physx-usd-schemas")
+    except metadata.PackageNotFoundError:
+        raise FileNotFoundError("Install physx-usd-schemas from PyPI") from None
+    paths = [Path(provider.locate_file(f"physx_usd_schemas/{module}/resources"))
+             for module in ("PhysxSchema", "OmniUsdPhysicsDeformableSchema")]
+    for path in paths:
+        if not all((path / name).is_file() for name in ("plugInfo.json", "generatedSchema.usda")):
+            raise FileNotFoundError(f"Incomplete PhysX schema provider at {path}; reinstall physx-usd-schemas")
+
+    return paths
+
+
 def register_schemas(verify: bool = False):
-    """Register ovphysx's codeless PhysX schemas with the active USD runtime.
+    """Register the external codeless PhysX schemas with the active USD runtime.
 
     Intended for authoring processes running on a stock ``usd-core``. Call it
     before opening any stage or querying the schema registry; USD builds that
@@ -125,19 +140,19 @@ def register_schemas(verify: bool = False):
         schemas were already registered.
 
     Raises:
-        FileNotFoundError: If the staged codeless schema tree cannot be found.
-            See :func:`ovphysx.codeless_schema_paths`.
+        FileNotFoundError: If the external provider or its resources are missing.
+            Install physx-usd-schemas from PyPI.
         CodelessSchemaError: If ``verify`` is set and any of the schema roots did
             not reach the schema registry, because something built it first or
-            because that root is not staged.
+            because its resources are missing.
     """
     from pxr import Plug
 
-    from .. import codeless_schema_paths
+    paths = _schema_paths()
 
     registry = Plug.Registry()
     registered = []
-    for path in codeless_schema_paths():
+    for path in paths:
         registered.extend(registry.RegisterPlugins(str(path)))
     if verify:
         # Only under `verify`: the probe builds the schema registry, which is
@@ -156,8 +171,7 @@ def register_schemas(verify: bool = False):
 def schema_is_registered() -> bool:
     """Whether the codeless PhysX schemas are visible to the schema registry.
 
-    Every schema root ovphysx ships has to be there: a partial registration --
-    the PhysX schemas without the Omni deformable ones, say -- answers False.
+    Returns False if either the PhysX or Omni deformable plugin is missing.
 
     Note that calling this *builds* the schema registry if it does not exist
     yet, which locks out every later schema plugin registration in the process,

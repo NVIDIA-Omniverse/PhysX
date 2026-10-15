@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-1 AC-2
+
 /**
  * @implements REQ-PUBLICAPI-001
  * @covers AC-44
@@ -10,6 +13,7 @@
 #include "PhysXScene.h"
 #include "PhysXPrivate.h"
 #include "PhysXTools.h"
+#include "RuntimeExecution.h"
 
 #include "ObjectDataQuery.h"
 
@@ -22,10 +26,11 @@ namespace omni
 namespace physx
 {
 
-PxScene* privGetPhysXScene()
+PxScene* privGetPhysXScene(AttachHandle attach)
 {
-    // A.B. Multi scenes support
-    PhysXScene* ps = OmniPhysX::getInstance().getPhysXSetup().getPhysXScene(0);
+    RuntimeExecutionScope operation(attach);
+    const usdparser::AttachedStage* owner = operation ? usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach) : nullptr;
+    PhysXScene* ps = owner ? owner->getDefaultPhysXScene() : nullptr;
 
     if (ps != nullptr)
     {
@@ -35,9 +40,13 @@ PxScene* privGetPhysXScene()
     return nullptr;
 }
 
-void primGetRigidBodyInstancedData(usdparser::ObjectId* ids, uint32_t numIds, InstancedData* dataArray)
+void primGetRigidBodyInstancedData(AttachHandle attach, usdparser::ObjectId* ids, uint32_t numIds, InstancedData* dataArray)
 {
-    const internal::InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    if (!ids || !dataArray)
+        return;
+    RuntimeExecutionScope operation(attach);
+    const usdparser::AttachedStage* owner = operation ? usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach) : nullptr;
+    const internal::InternalPhysXDatabase* database = owner ? &owner->getInternalPhysXDatabase() : nullptr;
 
     for (uint32_t i = 0; i < numIds; i++)
     {
@@ -46,9 +55,9 @@ void primGetRigidBodyInstancedData(usdparser::ObjectId* ids, uint32_t numIds, In
         data.instanceIndex = internal::kInvalidUint32_t;
         data.instancerPath = 0;
 
-        if (id < db.getRecords().size())
+        if (database && id < database->getRecords().size())
         {
-            const internal::InternalDatabase::Record& record = db.getRecords()[id];
+            const internal::InternalDatabase::Record& record = database->getRecords()[id];
             if (record.mInternalPtr && record.mType == ePTActor)
             {
                 internal::InternalActor* intActor = reinterpret_cast<internal::InternalActor*>(record.mInternalPtr);
@@ -72,9 +81,18 @@ void primGetRigidBodyInstancedData(usdparser::ObjectId* ids, uint32_t numIds, In
     }
 }
 
-PxCudaContextManager* privGetCudaContextManager()
+PxCudaContextManager* privGetCudaContextManager(AttachHandle attach, uint64_t sceneKey)
 {
-    return OmniPhysX::getInstance().getPhysXSetup().getCudaContextManager();
+    RuntimeExecutionScope operation(attach, true);
+    if (!operation)
+        return nullptr;
+    const std::shared_ptr<usdparser::AttachedStage> owner = usdparser::UsdLoad::getUsdLoad()->acquireAttachment(attach);
+    if (!owner)
+        return nullptr;
+    for (const usdparser::AttachedStage::SceneMap::value_type& entry : owner->getPhysXScenes())
+        if (entry.second->getSceneSdfPath().handle == sceneKey)
+            return entry.second->getScene()->getCudaContextManager();
+    return nullptr;
 }
 
 } // namespace physx

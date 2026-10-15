@@ -132,7 +132,7 @@ static void createScissorLift()
 	gDriveJoint->setJointType(PxArticulationJointType::ePRISMATIC);
 	gDriveJoint->setMotion(PxArticulationAxis::eZ, PxArticulationMotion::eLIMITED);
 	gDriveJoint->setLimitParams(PxArticulationAxis::eZ, PxArticulationLimit(-1.4f, 0.2f));
-	gDriveJoint->setDriveParams(PxArticulationAxis::eZ, PxArticulationDrive(gDriveStiffness, gDriveDamping, PX_MAX_F32));
+	gDriveJoint->setDriveParams(PxArticulationAxis::eZ, PxArticulationDrive(gDriveStiffness, gDriveDamping, PxPerformanceEnvelope(PX_MAX_F32)));
 	gDriveJoint->setParentPose(PxTransform(PxVec3(0.f, 0.25f, 0.9f)));
 	gDriveJoint->setChildPose(PxTransform(PxVec3(0.f, -0.05f, 0.f)));
 

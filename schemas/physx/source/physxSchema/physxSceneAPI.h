@@ -521,11 +521,13 @@ public:
     // --------------------------------------------------------------------- //
     // ENABLEEXTERNALFORCESEVERYITERATION
     // --------------------------------------------------------------------- //
-    /// Enables greater TGS solver stability.
+    /// Deprecated: applying gravity and other external forces in every TGS solver iteration is the default and will be the only TGS behavior once the attribute is removed.
+    /// Enables greater TGS solver stability by applying gravity and other external forces in every solver position iteration instead of once per simulation step.
+    /// Has no effect with the PGS solver.
     ///
     /// | ||
     /// | -- | -- |
-    /// | Declaration | `bool physxScene:enableExternalForcesEveryIteration = 0` |
+    /// | Declaration | `bool physxScene:enableExternalForcesEveryIteration = 1` |
     /// | C++ Type | bool |
     /// | \ref Usd_Datatypes "Usd Type" | SdfValueTypeNames->Bool |
     UsdAttribute GetEnableExternalForcesEveryIterationAttr() const

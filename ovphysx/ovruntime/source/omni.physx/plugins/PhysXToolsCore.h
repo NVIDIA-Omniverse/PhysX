@@ -6,6 +6,11 @@
  * @covers AC-14
  */
 
+/**
+ * @implements REQ-SIM-LOCALVELOCITY-001
+ * @covers AC-2 AC-4 AC-5
+ */
+
 #pragma once
 
 // pxr-free half of PhysXTools.h, split out so USD-free consumers (ADR-0018) can pull in the
@@ -75,6 +80,33 @@ inline carb::Float3 radToDeg(const carb::Float3& a)
 {
     return carb::Float3{ 57.29577951308232286465f * a.x, 57.29577951308232286465f * a.y,
                          57.29577951308232286465f * a.z };
+}
+
+// Local-space velocity -> world, for `physics:localSpaceVelocities`.
+//
+// One mapping for every producer of a local-frame velocity: ordinary-body loading
+// (ParseBody.cpp `fillDynamicBody`), ordinary-body property updates
+// (PhysXRigidBodyPropertiesUpdate.cpp), point-instancer loading (PointInstancer.cpp)
+// and point-instancer array updates (PhysXPointInstancerPropertiesUpdate.cpp). The
+// frame is the body's own world pose, so an instance is mapped the same way whether
+// the value arrives at attach or as a runtime edit of the instancer arrays, and the
+// same way once the instance has turned (NVBug 6904619).
+//
+// Linear velocity is a direction in the body's scaled local axes: scale first, then
+// rotate. Angular velocity is a pseudovector along a local axis, so it is rotated
+// without scaling. `InternalScene.cpp`'s velocity write-back inverts exactly this
+// (`rotateInv` + `divideByScale`), which makes the round trip the identity.
+inline ::physx::PxVec3 localToWorldLinearVelocity(const ::physx::PxQuat& worldRotation,
+                                                  const carb::Float3& worldScale,
+                                                  const ::physx::PxVec3& localVelocity)
+{
+    return worldRotation.rotate(localVelocity.multiply(::physx::PxVec3(worldScale.x, worldScale.y, worldScale.z)));
+}
+
+inline ::physx::PxVec3 localToWorldAngularVelocity(const ::physx::PxQuat& worldRotation,
+                                                   const ::physx::PxVec3& localAngularVelocity)
+{
+    return worldRotation.rotate(localAngularVelocity);
 }
 
 namespace internal

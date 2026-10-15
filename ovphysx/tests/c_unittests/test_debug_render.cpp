@@ -1,99 +1,30 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-// C-boundary tests for the PhysX debug-render API (ovphysx_debug_render_*).
-//
-// The argument checks all run before the stage forward, and the getters read an
-// ovphysx-side cache, so a bare instance without an attached USD stage is enough to
-// exercise every check here. The draw-buffer population itself is covered end-to-end
-// by the BlokyNext consumer suite, which needs a stepped scene.
+/**
+ * @implements REQ-CAPI-DEBUG-RENDER-001
+ * @covers AC-1 AC-2 AC-3 AC-4 AC-6 AC-7 AC-8 AC-9
+ */
 
 #include <gtest/gtest.h>
 #include "ovphysx/ovphysx.h"
 #include "ovphysx/ovphysx_types.h"
-#include "ovphysxTestHelpers.h"
+#include "debug_render_session_shim.h"
 #include "global_test_environment.h"
+#include "test_utilities.h"
 
-#include <atomic>
 #include <cmath>
 #include <limits>
 
 namespace
 {
-std::atomic<int> g_scopeCalls{0};
-std::atomic<uint32_t> g_lastScopeCount{0};
-std::atomic<bool> g_lastScopeWasNull{false};
-
-void recordScopeCall(const ovx_primpath_t* tokens, uint32_t count)
-{
-    g_scopeCalls.fetch_add(1, std::memory_order_relaxed);
-    g_lastScopeCount.store(count, std::memory_order_relaxed);
-    g_lastScopeWasNull.store(tokens == nullptr, std::memory_order_relaxed);
-}
-
-bool scopeSuccess(const ovx_primpath_t* tokens, uint32_t count)
-{
-    recordScopeCall(tokens, count);
-    return true;
-}
-
-bool scopeFalse(const ovx_primpath_t* tokens, uint32_t count)
-{
-    recordScopeCall(tokens, count);
-    return false;
-}
-
-ovphysx_result_t failingUserTask(ovphysx_handle_t, ovphysx_op_index_t, void*)
-{
-    return {OVPHYSX_API_ERROR};
-}
-
-struct SidecarSlotsGuard
-{
-    ovphysx_test_set_viz_scope_tokens_fn previousScope;
-
-    explicit SidecarSlotsGuard(ovphysx_test_set_viz_scope_tokens_fn scope)
-        : previousScope(ovphysx_exchange_set_viz_scope_tokens_internal(scope))
-    {
-        g_scopeCalls.store(0, std::memory_order_relaxed);
-        g_lastScopeCount.store(0, std::memory_order_relaxed);
-        g_lastScopeWasNull.store(false, std::memory_order_relaxed);
-    }
-
-    ~SidecarSlotsGuard()
-    {
-        ovphysx_exchange_set_viz_scope_tokens_internal(previousScope);
-    }
-};
-
-struct OvstageAttachmentStateGuard
-{
-    ovphysx_handle_t handle;
-    bool configured;
-
-    explicit OvstageAttachmentStateGuard(ovphysx_handle_t h, int64_t stageId)
-        : handle(h)
-        , configured(ovphysx_set_ovstage_attachment_state_internal(h, true, stageId))
-    {
-    }
-
-    ~OvstageAttachmentStateGuard()
-    {
-        if (configured)
-            ovphysx_set_ovstage_attachment_state_internal(handle, false, 0);
-    }
-};
-
-// Bare instance without a stage. Argument validation and the cached getters do not
-// require one.
 struct DebugRenderTest : public ::testing::Test
 {
-    ovphysx_handle_t h = 0;
+    ovphysx_instance_handle_t h = 0;
     void SetUp() override
     {
-        ovphysx_create_args args = OVPHYSX_CREATE_ARGS_DEFAULT;
-        ovphysx_result_t r = ovphysx_create_instance(&args, &h);
-        ASSERT_EQ(r.status, OVPHYSX_API_SUCCESS);
+        ovphysx_result_t created = ovphysx_create_instance(&h);
+        ASSERT_EQ(created.status, OVPHYSX_API_SUCCESS);
         ASSERT_NE(h, 0u);
     }
     void TearDown() override
@@ -106,285 +37,214 @@ struct DebugRenderTest : public ::testing::Test
     }
 };
 
-constexpr float kNaN = std::numeric_limits<float>::quiet_NaN();
-constexpr float kInf = std::numeric_limits<float>::infinity();
 } // namespace
 
-// set_parameter must reject NONE (0) and out-of-range values before forwarding. omni.physx
-// applies `visMask |= (1ull << param)` unchecked (param >= 64 is UB) and param 0 collides
-// with the eSCALE slot in the enable loop.
 TEST_F(DebugRenderTest, SetParameterRejectsNoneAndOutOfRange)
 {
-    EXPECT_EQ(ovphysx_debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_NONE, 1.0f).status,
+    EXPECT_EQ(debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_NONE, 1.0f).status,
               OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(ovphysx_debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_COUNT, 1.0f).status,
+    EXPECT_EQ(debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_COUNT, 1.0f).status,
               OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(ovphysx_debug_render_set_parameter(h, 64u, 1.0f).status, OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(ovphysx_debug_render_set_parameter(h, 1000000u, 1.0f).status, OVPHYSX_API_INVALID_ARGUMENT);
-    // The value must be finite and non-negative.
-    EXPECT_EQ(ovphysx_debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, -1.0f).status,
-              OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(ovphysx_debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, kNaN).status,
-              OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(ovphysx_debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, kInf).status,
-              OVPHYSX_API_INVALID_ARGUMENT);
-}
-
-TEST_F(DebugRenderTest, GetParameterRejectsBadArgs)
-{
-    float value = 1.0f;
-    EXPECT_EQ(ovphysx_debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_NONE, &value).status,
-              OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(ovphysx_debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_COUNT, &value).status,
-              OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(ovphysx_debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, nullptr).status,
-              OVPHYSX_API_INVALID_ARGUMENT);
-}
-
-TEST_F(DebugRenderTest, SetScaleRejectsNonFiniteAndNegative)
-{
-    EXPECT_EQ(ovphysx_debug_render_set_scale(h, kNaN).status, OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(ovphysx_debug_render_set_scale(h, kInf).status, OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(ovphysx_debug_render_set_scale(h, -kInf).status, OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(ovphysx_debug_render_set_scale(h, -1.0f).status, OVPHYSX_API_INVALID_ARGUMENT);
-}
-
-TEST_F(DebugRenderTest, GetScaleRejectsNull)
-{
-    EXPECT_EQ(ovphysx_debug_render_get_scale(h, nullptr).status, OVPHYSX_API_INVALID_ARGUMENT);
-}
-
-// A NULL, non-finite, or inverted (min > max on any axis) culling box is INVALID_ARGUMENT.
-// omni.physx would silently drop an invalid box via bounds.isValid() and still return SUCCESS.
-TEST_F(DebugRenderTest, SetCullingBoxRejectsBadArgs)
-{
-    const float mn[3] = { 0.f, 0.f, 0.f };
-    const float mx[3] = { 1.f, 1.f, 1.f };
-    EXPECT_EQ(ovphysx_debug_render_set_culling_box(h, nullptr, mx).status, OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(ovphysx_debug_render_set_culling_box(h, mn, nullptr).status, OVPHYSX_API_INVALID_ARGUMENT);
-    const float nan3[3] = { 0.f, kNaN, 0.f };
-    EXPECT_EQ(ovphysx_debug_render_set_culling_box(h, nan3, mx).status, OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(ovphysx_debug_render_set_culling_box(h, mn, nan3).status, OVPHYSX_API_INVALID_ARGUMENT);
-    const float inverted[3] = { 2.f, 2.f, 2.f }; // min > max (mx = 1,1,1) on every axis
-    EXPECT_EQ(ovphysx_debug_render_set_culling_box(h, inverted, mx).status, OVPHYSX_API_INVALID_ARGUMENT);
-}
-
-// The buffer getters must reject a NULL typed out-pointer as well as a NULL count pointer.
-TEST_F(DebugRenderTest, GettersRejectNullOutPointers)
-{
-    const ovphysx_debug_point_t* pts = nullptr;
-    const ovphysx_debug_line_t* lns = nullptr;
-    const ovphysx_debug_triangle_t* tris = nullptr;
-    uint32_t n = 0u;
-    EXPECT_EQ(ovphysx_debug_render_get_points(h, nullptr, &n).status, OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(ovphysx_debug_render_get_points(h, &pts, nullptr).status, OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(ovphysx_debug_render_get_lines(h, nullptr, &n).status, OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(ovphysx_debug_render_get_lines(h, &lns, nullptr).status, OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(ovphysx_debug_render_get_triangles(h, nullptr, &n).status, OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(ovphysx_debug_render_get_triangles(h, &tris, nullptr).status, OVPHYSX_API_INVALID_ARGUMENT);
-}
-
-// The cached getters round-trip the last value requested through ovphysx (set/get
-// pairing). Each assertion sets the state it checks, so it is independent of the
-// prior contents of the process-global cache and of test ordering.
-TEST_F(DebugRenderTest, ParameterAndScaleGettersRoundTrip)
-{
-    float value = -1.0f;
-
-    // A distinct non-default value proves the float path (not a bool round-trip).
-    ovphysx_debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, 2.5f);
-    ASSERT_EQ(ovphysx_debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, &value).status,
+    ASSERT_EQ(debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, 2.5f).status,
               OVPHYSX_API_SUCCESS);
-    EXPECT_FLOAT_EQ(value, 2.5f);
-
-    // A parameter that was never set this run reads back off (entry-independent).
-    ovphysx_debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_SDF, 0.0f);
-    ASSERT_EQ(ovphysx_debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_SDF, &value).status,
-              OVPHYSX_API_SUCCESS);
-    EXPECT_FLOAT_EQ(value, 0.0f);
-    // BODY_AXES keeps its value. The entries are independent.
-    ASSERT_EQ(ovphysx_debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, &value).status,
-              OVPHYSX_API_SUCCESS);
-    EXPECT_FLOAT_EQ(value, 2.5f);
-
-    // Back off.
-    ovphysx_debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, 0.0f);
-    ASSERT_EQ(ovphysx_debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, &value).status,
-              OVPHYSX_API_SUCCESS);
-    EXPECT_FLOAT_EQ(value, 0.0f);
-
-    // Scale round-trips, including the valid boundary value 0.0.
-    float scale = -1.0f;
-    ovphysx_debug_render_set_scale(h, 2.5f);
-    ASSERT_EQ(ovphysx_debug_render_get_scale(h, &scale).status, OVPHYSX_API_SUCCESS);
-    EXPECT_FLOAT_EQ(scale, 2.5f);
-
-    ovphysx_debug_render_set_scale(h, 0.0f);
-    ASSERT_EQ(ovphysx_debug_render_get_scale(h, &scale).status, OVPHYSX_API_SUCCESS);
-    EXPECT_FLOAT_EQ(scale, 0.0f);
-}
-
-// With no USD stage attached, the validate-then-forward calls return OVPHYSX_API_ERROR
-// ("no USD stage loaded") after their argument checks pass. An unavailable interface or
-// function pointer is a no-op SUCCESS, but a missing stage is an ERROR. set_parameter and
-// set_scale still write the ovphysx-side cache before the stage check, which is why the
-// round-trip getters above read SUCCESS on the same bare instance.
-TEST_F(DebugRenderTest, ValidCallsReturnErrorWithoutStage)
-{
-    EXPECT_EQ(ovphysx_debug_render_enable(h, true).status, OVPHYSX_API_ERROR);
-    EXPECT_EQ(ovphysx_debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_WORLD_AXES, 1.0f).status,
+    EXPECT_EQ(debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, -1.0f).status,
               OVPHYSX_API_ERROR);
-    EXPECT_EQ(ovphysx_debug_render_set_scale(h, 1.0f).status, OVPHYSX_API_ERROR);
-    const float mn[3] = { 0.f, 0.f, 0.f };
-    const float mx[3] = { 1.f, 1.f, 1.f };
-    EXPECT_EQ(ovphysx_debug_render_set_culling_box(h, mn, mx).status, OVPHYSX_API_ERROR);
+    EXPECT_EQ(debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES,
+                                                 std::numeric_limits<float>::quiet_NaN()).status,
+              OVPHYSX_API_ERROR);
+    float value = 0.0f;
+    ASSERT_EQ(debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, &value).status,
+              OVPHYSX_API_SUCCESS);
+    EXPECT_FLOAT_EQ(value, 2.5f);
 }
 
-TEST_F(DebugRenderTest, InvalidHandleAndWaitFailureDoNotForwardTokenScope)
+TEST_F(DebugRenderTest, RejectedCommitSpendsTheGroup)
 {
-    SidecarSlotsGuard slots(&scopeSuccess);
-    ovx_primpath_t token = 0x1234u;
-    const ovphysx_handle_t invalidHandle = static_cast<ovphysx_handle_t>(~0ull);
-    EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(invalidHandle, &token, 1u).status,
-              OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(g_scopeCalls.load(std::memory_order_relaxed), 0);
+    ASSERT_EQ(debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, 2.5f).status,
+              OVPHYSX_API_SUCCESS);
 
-    ovphysx_user_task_desc_t task{};
-    task.run = &failingUserTask;
-    const ovphysx_enqueue_result_t queued = ovphysx_add_user_task(h, &task);
-    ASSERT_EQ(queued.status, OVPHYSX_API_ERROR);
-    ASSERT_NE(queued.op_index, 0u);
-    EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(h, &token, 1u).status, OVPHYSX_API_ERROR);
-    EXPECT_EQ(g_scopeCalls.load(std::memory_order_relaxed), 0);
+    ovphysx_query_handle_t query = 0;
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_query(h, OVPHYSX_QUERY_TARGET_DEBUG_RENDER, OVPHYSX_SCOPE_ALL, &query, nullptr)).status,
+              OVPHYSX_API_SUCCESS);
+    ovphysx_write_handle_t write = 0;
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_write(h, query, &OVPHYSX_NAME_DEBUG_BODY_AXES, 1, &write, nullptr)).status,
+              OVPHYSX_API_SUCCESS);
+    ovphysx_fetched_write_group_t written{};
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_fetch_write_next(h, write, &written)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_NE(written.group, nullptr);
+    ASSERT_NE(written.group->data.tensors, nullptr);
+    ASSERT_NE(written.group->data.tensors[0].data, nullptr);
+    *static_cast<float*>(written.group->data.tensors[0].data) = -1.0f;
+
+    ovstage_cuda_sync_t sync{};
+    EXPECT_EQ(test_utils::complete_task(h, ovphysx_commit_group(h, write, written.group, sync)).status, OVPHYSX_API_ERROR);
+    EXPECT_NE(test_utils::last_task_error().find("spent"), std::string::npos);
+    EXPECT_EQ(test_utils::complete_task(h, ovphysx_commit_group(h, write, written.group, sync)).status, OVPHYSX_API_ERROR);
+    EXPECT_NE(test_utils::last_task_error().find("not live"), std::string::npos);
+
+    float value = 0.0f;
+    ASSERT_EQ(debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, &value).status,
+              OVPHYSX_API_SUCCESS);
+    EXPECT_FLOAT_EQ(value, 2.5f);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_write(h, write)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_query(h, query)).status, OVPHYSX_API_SUCCESS);
 }
 
-TEST_F(DebugRenderTest, TokenScopeValidatesBeforeForwardAndRequiresOvstage)
+TEST_F(DebugRenderTest, ParameterAndScaleRoundTripWithoutStage)
 {
-    SidecarSlotsGuard slots(&scopeSuccess);
-    const ovx_primpath_t valid = 0x1234u;
+    ASSERT_EQ(debug_render_set_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, 2.5f).status,
+              OVPHYSX_API_SUCCESS);
+    float value = 0.0f;
+    ASSERT_EQ(debug_render_get_parameter(h, OVPHYSX_DEBUG_RENDER_PARAM_BODY_AXES, &value).status,
+              OVPHYSX_API_SUCCESS);
+    EXPECT_FLOAT_EQ(value, 2.5f);
+
+    ASSERT_EQ(debug_render_set_scale(h, 0.25f).status, OVPHYSX_API_SUCCESS);
+    float scale = 0.0f;
+    ASSERT_EQ(debug_render_get_scale(h, &scale).status, OVPHYSX_API_SUCCESS);
+    EXPECT_FLOAT_EQ(scale, 0.25f);
+}
+
+TEST_F(DebugRenderTest, GeometryReadIsEmptyWithoutScenes)
+{
+    ovphysx_query_handle_t query = 0;
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_query(h, OVPHYSX_QUERY_TARGET_DEBUG_RENDER, OVPHYSX_SCOPE_ALL, &query, nullptr)).status,
+              OVPHYSX_API_SUCCESS);
+    const ovx_string_or_token_t attributes[] = { OVPHYSX_NAME_DEBUG_LINE_POSITION, OVPHYSX_NAME_DEBUG_LINE_COLOR };
+    ovphysx_read_handle_t read = 0;
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_read(h, query, attributes, 2, &read, nullptr)).status, OVPHYSX_API_SUCCESS);
+    const ovstage_read_group_t* position = nullptr;
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_fetch_read_next(h, read, &position)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_NE(position, nullptr);
+    ASSERT_NE(position->data.tensors, nullptr);
+    EXPECT_EQ(position->data.tensors[0].shape[0], 0);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_group(h, read, position->read_group_id)).status, OVPHYSX_API_SUCCESS);
+    const ovstage_read_group_t* color = nullptr;
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_fetch_read_next(h, read, &color)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_NE(color, nullptr);
+    EXPECT_EQ(color->data.tensors[0].shape[0], 0);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_group(h, read, color->read_group_id)).status, OVPHYSX_API_SUCCESS);
+    const ovstage_read_group_t* done = nullptr;
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_fetch_read_next(h, read, &done)).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(done, nullptr);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_read(h, read)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_query(h, query)).status, OVPHYSX_API_SUCCESS);
+}
+
+TEST_F(DebugRenderTest, UnknownWriteAttributeFails)
+{
+    ovphysx_query_handle_t query = 0;
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_query(h, OVPHYSX_QUERY_TARGET_DEBUG_RENDER, OVPHYSX_SCOPE_ALL, &query, nullptr)).status,
+              OVPHYSX_API_SUCCESS);
+    const ovx_string_or_token_t attribute{ 0, { "notAnAttribute", sizeof("notAnAttribute") - 1 } };
+    ovphysx_write_handle_t write = 0;
+    EXPECT_NE(test_utils::complete_task(h, ovphysx_write(h, query, &attribute, 1, &write, nullptr)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_query(h, query)).status, OVPHYSX_API_SUCCESS);
+}
+
+TEST_F(DebugRenderTest, UnknownReadAttributeFailsWithoutShiftingColumns)
+{
+    ovphysx_query_handle_t query = 0;
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_query(h, OVPHYSX_QUERY_TARGET_DEBUG_RENDER, OVPHYSX_SCOPE_ALL, &query, nullptr)).status,
+              OVPHYSX_API_SUCCESS);
+    const ovx_string_or_token_t unknown{ 0, { "notAnAttribute", sizeof("notAnAttribute") - 1 } };
+    const ovx_string_or_token_t bad[] = { OVPHYSX_NAME_DEBUG_LINE_POSITION, unknown, OVPHYSX_NAME_DEBUG_LINE_COLOR };
+    ovphysx_read_handle_t read = 0;
+    EXPECT_EQ(test_utils::complete_task(h, ovphysx_read(h, query, bad, 3, &read, nullptr)).status, OVPHYSX_API_ERROR);
+
+    const ovx_string_or_token_t attributes[] = { OVPHYSX_NAME_DEBUG_SCALE, OVPHYSX_NAME_DEBUG_ENABLED };
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_read(h, query, attributes, 2, &read, nullptr)).status, OVPHYSX_API_SUCCESS);
+    const ovstage_read_group_t* scale = nullptr;
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_fetch_read_next(h, read, &scale)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_NE(scale, nullptr);
+    EXPECT_EQ(scale->data.tensors[0].dtype.code, kDLFloat);
+    const ovstage_read_group_t* enabled = nullptr;
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_fetch_read_next(h, read, &enabled)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_NE(enabled, nullptr);
+    EXPECT_EQ(enabled->data.tensors[0].dtype.code, kDLUInt);
+    EXPECT_EQ(scale->attribute, 0u);
+    EXPECT_EQ(enabled->attribute, 0u);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_group(h, read, scale->read_group_id)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_group(h, read, enabled->read_group_id)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_read(h, read)).status, OVPHYSX_API_SUCCESS);
+
+    ovx_string_or_token_t tokenOnly{};
+    tokenOnly.token = 11u;
+    EXPECT_EQ(test_utils::complete_task(h, ovphysx_read(h, query, &tokenOnly, 1, &read, nullptr)).status, OVPHYSX_API_ERROR);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_query(h, query)).status, OVPHYSX_API_SUCCESS);
+}
+
+TEST_F(DebugRenderTest, ScopeRoundTripAndInvalidToken)
+{
+    const ovx_primpath_t tokens[] = { 11u, 22u };
+    ASSERT_EQ(debug_render_set_scope_tokens(h, tokens, 2u).status, OVPHYSX_API_SUCCESS);
     const ovx_primpath_t invalid = OVX_INVALID_PRIMPATH;
-    EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(h, nullptr, 0u).status, OVPHYSX_API_ERROR);
-    EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(h, &valid, 1u).status, OVPHYSX_API_ERROR);
-    EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(h, &invalid, 1u).status,
-              OVPHYSX_API_INVALID_ARGUMENT);
-    EXPECT_EQ(g_scopeCalls.load(std::memory_order_relaxed), 0);
+    EXPECT_EQ(debug_render_set_scope_tokens(h, &invalid, 1u).status, OVPHYSX_API_ERROR);
+    ASSERT_EQ(debug_render_set_scope_tokens(h, nullptr, 0u).status, OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(debug_render_set_scope_tokens(h, tokens, 4097u).status, OVPHYSX_API_ERROR);
 }
 
-TEST_F(DebugRenderTest, TokenScopeFailsClosedOnMissingOrFalseSidecar)
+TEST_F(DebugRenderTest, UnsetCullingBoxReadsEmptyAndEmptyCommitClears)
 {
-    ASSERT_TRUE(test_utils::attach_usd_with_ovstage(h, "tests/data/minimal_scene.usda"));
-    ovx_primpath_t token = 0x1234u;
-
-    {
-        SidecarSlotsGuard slots(nullptr);
-        EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(h, nullptr, 0u).status, OVPHYSX_API_ERROR);
-        EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(h, &token, 1u).status, OVPHYSX_API_ERROR);
-    }
-    {
-        SidecarSlotsGuard slots(&scopeFalse);
-        EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(h, nullptr, 0u).status, OVPHYSX_API_ERROR);
-        EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(h, &token, 1u).status, OVPHYSX_API_ERROR);
-        EXPECT_EQ(g_scopeCalls.load(std::memory_order_relaxed), 2);
-    }
-}
-
-TEST_F(DebugRenderTest, TokenScopePropagatesSuccessfulSidecarStatus)
-{
-    ASSERT_TRUE(test_utils::attach_usd_with_ovstage(h, "tests/data/minimal_scene.usda"));
-    SidecarSlotsGuard slots(&scopeSuccess);
-    ovx_primpath_t token = 0x1234u;
-    EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(h, &token, 1u).status, OVPHYSX_API_SUCCESS);
-    EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(h, nullptr, 0u).status, OVPHYSX_API_SUCCESS);
-    EXPECT_EQ(g_scopeCalls.load(std::memory_order_relaxed), 2);
-}
-
-TEST_F(DebugRenderTest, TokenScopeAcceptsOvstageAttachmentWithZeroUsdStageId)
-{
-    SidecarSlotsGuard slots(&scopeSuccess);
-    OvstageAttachmentStateGuard attachment(h, 0);
-    ASSERT_TRUE(attachment.configured);
-
-    const ovx_primpath_t token = 0x1234u;
-    EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(h, &token, 1u).status,
-              OVPHYSX_API_SUCCESS);
-    EXPECT_EQ(ovphysx_debug_render_set_scope_tokens(h, nullptr, 0u).status,
-              OVPHYSX_API_SUCCESS);
-    EXPECT_EQ(g_scopeCalls.load(std::memory_order_relaxed), 2);
-    EXPECT_EQ(g_lastScopeCount.load(std::memory_order_relaxed), 0u);
-    EXPECT_TRUE(g_lastScopeWasNull.load(std::memory_order_relaxed));
-}
-
-TEST_F(DebugRenderTest, DebugRenderAcceptsOvstageAttachmentWithZeroUsdStageId)
-{
-    OvstageAttachmentStateGuard attachment(h, 0);
-    ASSERT_TRUE(attachment.configured);
-
-    EXPECT_EQ(ovphysx_debug_render_enable(h, true).status, OVPHYSX_API_SUCCESS);
-    EXPECT_EQ(ovphysx_debug_render_enable(h, false).status, OVPHYSX_API_SUCCESS);
-}
-
-TEST_F(DebugRenderTest, DestroyClearsTokenScopeAfterPendingOperationFails)
-{
-    SidecarSlotsGuard slots(&scopeSuccess);
-    ASSERT_TRUE(ovphysx_set_ovstage_attachment_state_internal(h, true, 0));
-
-    const ovx_primpath_t token = 0x1234u;
-    ASSERT_EQ(ovphysx_debug_render_set_scope_tokens(h, &token, 1u).status,
+    ovphysx_query_handle_t query = 0;
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_query(h, OVPHYSX_QUERY_TARGET_DEBUG_RENDER, OVPHYSX_SCOPE_ALL, &query, nullptr)).status,
               OVPHYSX_API_SUCCESS);
 
-    ovphysx_user_task_desc_t task{};
-    task.run = &failingUserTask;
-    const ovphysx_enqueue_result_t queued = ovphysx_add_user_task(h, &task);
-    ASSERT_EQ(queued.status, OVPHYSX_API_ERROR);
-    ASSERT_NE(queued.op_index, 0u);
+    const ovx_string_or_token_t attribute = OVPHYSX_NAME_DEBUG_CULLING_BOX;
+    ovphysx_read_handle_t read = 0;
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_read(h, query, &attribute, 1, &read, nullptr)).status, OVPHYSX_API_SUCCESS);
+    const ovstage_read_group_t* group = nullptr;
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_fetch_read_next(h, read, &group)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_NE(group, nullptr);
+    ASSERT_NE(group->data.tensors, nullptr);
+    EXPECT_EQ(group->data.tensors[0].shape[0], 0);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_group(h, read, group->read_group_id)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_read(h, read)).status, OVPHYSX_API_SUCCESS);
 
-    EXPECT_EQ(ovphysx_destroy_instance(h).status, OVPHYSX_API_SUCCESS);
-    h = 0;
-    EXPECT_EQ(g_scopeCalls.load(std::memory_order_relaxed), 2);
-    EXPECT_EQ(g_lastScopeCount.load(std::memory_order_relaxed), 0u);
-    EXPECT_TRUE(g_lastScopeWasNull.load(std::memory_order_relaxed));
+    const float min_box[3] = { -1.0f, -2.0f, -3.0f };
+    const float max_box[3] = { 4.0f, 5.0f, 6.0f };
+    ASSERT_EQ(debug_render_set_culling_box(h, min_box, max_box).status, OVPHYSX_API_SUCCESS);
+
+    ovphysx_write_handle_t write = 0;
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_write(h, query, &attribute, 1, &write, nullptr)).status, OVPHYSX_API_SUCCESS);
+    ovphysx_fetched_write_group_t written{};
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_fetch_write_next(h, write, &written)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_NE(written.group, nullptr);
+    ASSERT_NE(written.group->data.tensors, nullptr);
+    ASSERT_NE(written.group->data.tensors[0].data, nullptr);
+    ASSERT_EQ(written.group->data.tensors[0].shape[0], 7);
+    static_cast<float*>(written.group->data.tensors[0].data)[0] = 0.0f;
+    ovstage_cuda_sync_t sync{};
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_commit_group(h, write, written.group, sync)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_write(h, write)).status, OVPHYSX_API_SUCCESS);
+
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_read(h, query, &attribute, 1, &read, nullptr)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_fetch_read_next(h, read, &group)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_NE(group, nullptr);
+    EXPECT_EQ(group->data.tensors[0].shape[0], 0);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_group(h, read, group->read_group_id)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_read(h, read)).status, OVPHYSX_API_SUCCESS);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_query(h, query)).status, OVPHYSX_API_SUCCESS);
 }
 
-// Every visualization parameter must round-trip independently through the cached values.
-// ParameterAndScaleGettersRoundTrip only covers two entries, so this exercises the whole
-// range PARAM_WORLD_AXES (1) .. COUNT-1 with a distinct value per parameter. set_parameter
-// returns ERROR on this stageless instance but writes the cache before the stage check,
-// so the cached getter still round-trips.
-TEST_F(DebugRenderTest, AllVisualizationParameterValuesRoundTripIndependently)
+TEST_F(DebugRenderTest, SharedDictionaryIsNullWithoutStage)
 {
-    const uint32_t first = OVPHYSX_DEBUG_RENDER_PARAM_WORLD_AXES;
-    const uint32_t last = OVPHYSX_DEBUG_RENDER_PARAM_COUNT - 1;
+    ovphysx_query_handle_t query = 0;
+    ovstage_query_result_t summary{};
+    summary.attribute_count = 1;
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_query(h, OVPHYSX_QUERY_TARGET_DEBUG_RENDER, OVPHYSX_SCOPE_ALL, &query, &summary)).status,
+              OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(summary.attribute_count, 0u);
+    ASSERT_EQ(test_utils::complete_task(h, ovphysx_release_query(h, query)).status, OVPHYSX_API_SUCCESS);
+}
 
-    // Each parameter must read back its own distinct value.
-    for (uint32_t p = first; p <= last; ++p)
-    {
-        ovphysx_debug_render_set_parameter(h, (ovphysx_debug_render_parameter_t)p, float(p));
-        float value = -1.0f;
-        ASSERT_EQ(ovphysx_debug_render_get_parameter(h, (ovphysx_debug_render_parameter_t)p, &value).status,
-                  OVPHYSX_API_SUCCESS);
-        EXPECT_FLOAT_EQ(value, float(p)) << "parameter " << p << " did not read back";
-    }
-
-    // Independence: with all entries set, every parameter still reads its own value.
-    for (uint32_t p = first; p <= last; ++p)
-    {
-        float value = -1.0f;
-        ovphysx_debug_render_get_parameter(h, (ovphysx_debug_render_parameter_t)p, &value);
-        EXPECT_FLOAT_EQ(value, float(p)) << "parameter " << p << " was clobbered while setting another";
-    }
-
-    // Clearing in ascending order must leave every higher parameter untouched.
-    for (uint32_t p = first; p <= last; ++p)
-    {
-        ovphysx_debug_render_set_parameter(h, (ovphysx_debug_render_parameter_t)p, 0.0f);
-        float value = -1.0f;
-        ovphysx_debug_render_get_parameter(h, (ovphysx_debug_render_parameter_t)p, &value);
-        EXPECT_FLOAT_EQ(value, 0.0f) << "parameter " << p << " did not clear";
-        for (uint32_t q = p + 1; q <= last; ++q)
-        {
-            float other = -1.0f;
-            ovphysx_debug_render_get_parameter(h, (ovphysx_debug_render_parameter_t)q, &other);
-            EXPECT_FLOAT_EQ(other, float(q)) << "clearing parameter " << p << " disturbed parameter " << q;
-        }
-    }
+TEST_F(DebugRenderTest, WritabilityClassifiesSettingsAndGeometry)
+{
+    ovphysx_writability_t access = OVPHYSX_WRITABILITY_UNCLASSIFIED;
+    ASSERT_EQ(ovphysx_writability(OVPHYSX_QUERY_TARGET_DEBUG_RENDER, &OVPHYSX_NAME_DEBUG_BODY_AXES, &access).status,
+              OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(access, OVPHYSX_WRITABILITY_WRITABLE);
+    ASSERT_EQ(ovphysx_writability(OVPHYSX_QUERY_TARGET_DEBUG_RENDER, &OVPHYSX_NAME_DEBUG_POINT_POSITION, &access).status,
+              OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(access, OVPHYSX_WRITABILITY_READ_ONLY);
 }

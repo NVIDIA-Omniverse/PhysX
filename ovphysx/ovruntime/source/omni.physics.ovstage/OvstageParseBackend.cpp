@@ -3,7 +3,7 @@
 
 /**
  * @implements REQ-PARSE-BACKEND-001
- * @covers AC-2
+ * @covers AC-2 AC-6
  */
 
 #include <omni/physics/ovstage/OvstageParseBackend.h>
@@ -36,12 +36,12 @@ public:
         if (!target.nativeStage)
             return bundle;
 
-        // nativeStage is a const OvstageAttach* (instance + path dictionary +
-        // raw backing candidate). Backing identity is classified once, before
-        // session mutation, and carried on AttachTarget. Do not query the raw
-        // payload here: an error or nonresident id must not become a local USD
-        // fallback after attach has started.
+        // nativeStage carries the instance and dictionary. An optional explicit
+        // developer backing id is classified by the runtime before source creation;
+        // zero never asks ovstage for its private USD stage.
         const OvstageAttach* attach = static_cast<const OvstageAttach*>(target.nativeStage);
+        if (!attach->instance)
+            return bundle;
 
         ovx_path_dictionary_t* dict = attach->dict ? attach->dict : ovstage_get_path_dictionary(attach->instance);
         const ovstage_ordinal_t readOrdinal =
@@ -62,26 +62,6 @@ public:
 std::unique_ptr<parse::IParseBackend> makeOvstageParseBackend()
 {
     return std::make_unique<OvstageParseBackend>();
-}
-
-ovstage_api_status_t queryBackingUsdStageId(const void* attachPayload, uint64_t& outStageId)
-{
-    outStageId = 0;
-    if (!attachPayload)
-        return OVSTAGE_ERROR_INVALID_ARGUMENT;
-    const OvstageAttach* attach = static_cast<const OvstageAttach*>(attachPayload);
-    if (!attach->instance)
-        return OVSTAGE_ERROR_INVALID_ARGUMENT;
-
-    // Preserve an explicit consumer-supplied candidate. Residency and zero-id
-    // validation belong to the attach-time runtime classifier, not this query.
-    if (attach->usdStageId != 0)
-    {
-        outStageId = attach->usdStageId;
-        return OVSTAGE_OK;
-    }
-
-    return ovstage_get_usd_stage_id(attach->instance, &outStageId);
 }
 
 } // namespace ovstage

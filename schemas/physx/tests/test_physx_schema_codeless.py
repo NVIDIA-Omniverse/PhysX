@@ -41,7 +41,6 @@ ORIGINAL_SINGLE_APPLY_API_CLASSES = (
     ("PhysxConvexHullCollisionAPI", "PhysxConvexHullCollisionAPI"),
     ("PhysxDiffuseParticlesAPI", "PhysxDiffuseParticlesAPI"),
     ("PhysxForceAPI", "PhysxForceAPI"),
-    ("PhysxJointAPI", "PhysxJointAPI"),
     ("PhysxMaterialAPI", "PhysxMaterialAPI"),
     ("PhysxMeshMergeCollisionAPI", "PhysxMeshMergeCollisionAPI"),
     ("PhysxPBDMaterialAPI", "PhysxPBDMaterialAPI"),
@@ -191,7 +190,7 @@ class PhysxSchemaCodelessTests(unittest.TestCase):
         cls._plugin_tempdir.cleanup()
 
     def test_all_original_generated_classes_are_available(self):
-        self.assertEqual(len(_all_original_class_names()), 71)
+        self.assertEqual(len(_all_original_class_names()), 70)
         for class_name in _all_original_class_names():
             with self.subTest(class_name=class_name):
                 schema_cls = getattr(self.PhysxSchema, class_name, None)
@@ -419,7 +418,7 @@ class PhysxSchemaCodelessTests(unittest.TestCase):
                         self.assertEqual(type(created_property).__name__, expected_type_name)
                         self.assertEqual(type(fetched_property).__name__, expected_type_name)
 
-        self.assertEqual(total_properties, 412)
+        self.assertEqual(total_properties, 409)
 
     def test_original_custom_methods_are_available(self):
         stage = Usd.Stage.CreateInMemory()

@@ -5,7 +5,11 @@
 # Tutorial marker comments below define the included range.
 
 # [tutorial-start]
+# @implements REQ-CAPI-OVSTAGE-XFORM-001
+# @covers AC-1
+
 import ovphysx
+from ovphysx.samples.python_samples.schema_support import physx_schema_paths
 from ovphysx import PhysX
 from pathlib import Path
 
@@ -20,25 +24,24 @@ def attach_scene(physx, usd_path):
     if not ovstage.population.available():
         raise RuntimeError("ovstage population bridge is unavailable")
 
-    # ovphysx ships its PhysX USD schemas as codeless resources and does not register
-    # them itself. Register them with ovstage once, before the first population
-    # call in the process. The Newton USD schema (pip package newton-usd-schemas)
-    # is registered alongside so authored newton:* attributes reach the parser.
+    # Register external PhysX and Newton schemas before the first population.
     global _physx_schemas_registered
     if not _physx_schemas_registered:
         ovstage.population.register_usd_schemas(
-            [str(ovphysx.codeless_schema_root()), str(ovphysx.newton_schema_root())]
+            [*[str(p) for p in physx_schema_paths()], str(ovphysx.newton_schema_root())]
         )
         _physx_schemas_registered = True
     stage = ovstage.Stage("ovphysx-hello-world")
     ordinal = 1
     try:
-        ovstage.population.open_usd(stage, str(usd_path), ordinal=ordinal, domains=ovstage.PopulationDomain.PHYSICS)
+        ovstage.population.open_usd(stage, str(usd_path), ordinal=ordinal, domains=ovstage.PopulationDomain.ALL)
         stage.advance_write_floor(ordinal=ordinal).wait()
-        physx.attach_ovstage(stage, read_ordinal=ordinal)
+        physx.wait_task(physx.attach_ovstage(stage, read_ordinal=ordinal))
         print("Loaded scene through ovstage")
         return stage
     except Exception:
+        if physx.is_stage_attached(stage):
+            physx.wait_task(physx.detach_ovstage())
         stage.destroy()
         raise
 
@@ -61,7 +64,7 @@ try:
     print("Simulation step completed successfully")
 finally:
     if stage is not None:
-        physx.detach_ovstage()
+        physx.wait_task(physx.detach_ovstage())
         stage.destroy()
     physx.destroy()
     print("Cleanup complete")

@@ -356,7 +356,7 @@ void cloth_refitBoundLaunch(
 	if (idx == 0 && warpIndex == 0)
 	{
 		s_warpScratch->meshVerts = gFemCloth.mPosition_InvMass;
-		s_warpScratch->meshVertsIndices = gFemCloth.mTriangleVertexIndices;
+		s_warpScratch->meshVertsIndices = gFemCloth.mTriangleVertexIndices_ownedEdges;
 
 		const PxU32 & nbBv32PackedNodes = nbVerts_nbTriangle_maxDepth_nbBv32TreeNodes.w;
 
@@ -956,7 +956,7 @@ void cloth_accumulateInPlaneDampingDeltaVelocity(
 		//if (threadIdx.x == 0)
 		//	printf("damping: %f\n", dampingFactor);
 
-		uint4 triangle = femCloth.mTriangleVertexIndices[globalThreadIndex];
+		uint4 triangle = femCloth.mTriangleVertexIndices_ownedEdges[globalThreadIndex];
 
 		PxReal invMassA, invMassB, invMassC;
 		PxVec3 pA = PxLoad3(femCloth.mPosition_InvMass[triangle.x], invMassA);

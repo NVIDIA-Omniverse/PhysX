@@ -1,0 +1,14 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    subLayers = [@cubes20_envs.usda@]
+)
+
+over "World"
+{
+    over "physicsScene"
+    {
+        bool physxScene:enableGPUDynamics = false
+        token physxScene:broadphaseType = "MBP"
+    }
+}

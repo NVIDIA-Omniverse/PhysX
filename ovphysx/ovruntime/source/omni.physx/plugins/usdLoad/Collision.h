@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-IO-001
+// @covers AC-3
+
 #pragma once
 
 #include <private/omni/physx/PhysxUsd.h>
@@ -107,13 +110,12 @@ BoundingBoxPhysxShapeDesc*    computeBoundingBoxShape(const std::vector<carb::Fl
 // release collision shape desc - specialized function, has to release more memory
 // A.B. TODO - this is most likely leaking when used from debug draw
 // we should try to move the release into a destructor probably
-void releaseShapeDesc(PhysxShapeDesc* desc);
 
-void notifyStageReset(void);
+void notifyStageReset(const AttachedStage& owner);
 // ObjectKey-native entry point: the one external caller (CookingDataAsync.cpp's
 // addPrimRefreshSet) already holds the ObjectKey directly and previously
 // materialized a PXR_NS::SdfPath purely to call this.
-void invalidateMeshKeyCache(omni::physics::parse::ObjectKey key);
+void invalidateMeshKeyCache(const AttachedStage& owner, omni::physics::parse::ObjectKey key);
 } // namespace usdparser
 } // namespace physx
 } // namespace omni

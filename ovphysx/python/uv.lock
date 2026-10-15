@@ -42,7 +42,7 @@ name = "importlib-metadata"
 version = "8.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "zipp" },
+    { name = "zipp", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/76/66/650a33bd90f786193e4de4b3ad86ea60b53c89b669a5c7be931fac31cdb0/importlib_metadata-8.7.0.tar.gz", hash = "sha256:d13b81ad223b890aa16c5471f2ac3056cf76c5f10f82d6f9292f0b415f389000", size = 56641, upload-time = "2025-04-27T15:29:01.736Z" }
 wheels = [
@@ -277,7 +277,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "ovstage", specifier = "==0.2.1.385922" },
+    { name = "ovstage", specifier = "==0.3.0.1791986420", index = "https://pypi.org/simple" },
     { name = "packaging", specifier = ">=20,<24" },
     { name = "warp-lang", specifier = ">=1.16,<2" },
 ]
@@ -291,12 +291,12 @@ dev = [
 
 [[package]]
 name = "ovstage"
-version = "0.2.1.385922"
-source = { registry = "../_build/target-deps/ovstage_wheel" }
+version = "0.3.0.1791986420"
+source = { registry = "https://pypi.org/simple" }
 wheels = [
-    { path = "ovstage-0.2.1.385922-py3-none-manylinux_2_35_aarch64.whl" },
-    { path = "ovstage-0.2.1.385922-py3-none-manylinux_2_35_x86_64.whl" },
-    { path = "ovstage-0.2.1.385922-py3-none-win_amd64.whl" },
+    { url = "https://files.pythonhosted.org/packages/f9/ae/f7348aec410a971f4126bd7b4cca92fcec25b7cca60f92267f5c98cc2ba2/ovstage-0.3.0.1791986420-py3-none-manylinux_2_35_aarch64.whl", hash = "sha256:1b9f983320a45703adab4bf72c9c17419728b9a874c300ae026abe46397f89dd", size = 64550686, upload-time = "2026-10-15T03:53:22.19Z" },
+    { url = "https://files.pythonhosted.org/packages/c8/d1/bebef33ec7c2fd2f7e776109092517b9ab2a4374fccca29b6c3351be77aa/ovstage-0.3.0.1791986420-py3-none-manylinux_2_35_x86_64.whl", hash = "sha256:35aa0c10c47549c495e65896356ce3b910041d2eaa602888f092f7e300586cf8", size = 66832291, upload-time = "2026-10-15T03:53:46.247Z" },
+    { url = "https://files.pythonhosted.org/packages/65/73/445749e2534e8fbd78a9f2ad2cc44d83cfd121a9bbdf459737c06c27adcd/ovstage-0.3.0.1791986420-py3-none-win_amd64.whl", hash = "sha256:400df4b7dc916edefa6f832aa11b674deb8a4d6831bba9ad3849169236b80c46", size = 38037230, upload-time = "2026-10-15T03:53:02.713Z" },
 ]
 
 [[package]]

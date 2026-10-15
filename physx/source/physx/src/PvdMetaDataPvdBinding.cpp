@@ -615,7 +615,6 @@ void PvdMetaDataBinding::sendAllProperties(PvdDataStream& inStream, const PxScen
 		theDesc.broadPhaseType					= inScene.getBroadPhaseType();
 		theDesc.broadPhaseCallback				= inScene.getBroadPhaseCallback();
 		theDesc.limits							= inScene.getLimits();
-		theDesc.frictionType					= inScene.getFrictionType();
 //		PxSolverType::Enum SolverType;
 		theDesc.bounceThresholdVelocity			= inScene.getBounceThresholdVelocity();
 		theDesc.frictionOffsetThreshold			= inScene.getFrictionOffsetThreshold();

@@ -13,7 +13,7 @@
 #include "PxgContactManager.h"
 #include "PxgConvexConvexShape.h"
 #include "PxgPersistentContactManifold.h"
-#include "PxgDeformableContactInfo.h"
+#include "PxgDeformableContactWriters.h"
 #include "PxgSoftBody.h"
 #include "PxgFEMCloth.h"
 
@@ -171,22 +171,24 @@ struct TestOutput
 	{
 		PxU32 contactByteOffset = 0xFFFFFFFF;
 		PxU32 forceAndIndiceByteOffset = 0xFFFFFFFF;
+		const bool patchRequested = nbContacts > 0;
 
 		if (nbContacts)
 		{
 			contactByteOffset = atomicAdd(&(patchAndContactCounters->contactsBytes), sizeof(PxContact) * nbContacts);
 			forceAndIndiceByteOffset = atomicAdd(&(patchAndContactCounters->forceAndIndiceBytes), sizeof(PxU32) * nbContacts);
 
-			if ((contactByteOffset + sizeof(PxContact)) > contactBytesLimit)
+			if ((contactByteOffset + sizeof(PxContact) * nbContacts) > contactBytesLimit)
 			{
 				patchAndContactCounters->setOverflowError(PxgPatchAndContactCounters::CONTACT_BUFFER_OVERFLOW);
 				contactByteOffset = 0xFFFFFFFF; //overflow
 			}
 
-			if ((forceAndIndiceByteOffset + sizeof(PxU32)) > forceBytesLimit)
+			if ((forceAndIndiceByteOffset + sizeof(PxU32) * nbContacts) > forceBytesLimit)
 			{
 				patchAndContactCounters->setOverflowError(PxgPatchAndContactCounters::FORCE_BUFFER_OVERFLOW);
 				forceAndIndiceByteOffset = 0xFFFFFFFF; //overflow
+				contactByteOffset = 0xFFFFFFFF;
 			}
 		}
 
@@ -209,6 +211,7 @@ struct TestOutput
 		{
 			output.contactForces = NULL;
 			output.contactPoints = NULL;
+			nbContacts = 0;
 		}
 
 		PxU32 allflags = reinterpret_cast<PxU32*>(&(output.allflagsStart))[0];
@@ -239,7 +242,7 @@ struct TestOutput
 		cmOutputs[testIndex].nbContacts = nbContacts;
 
 		PxU32 patchIndex = 0xFFFFFFFF;
-		if (nbContacts)
+		if (patchRequested)
 		{
 			patchIndex = atomicAdd(&(patchAndContactCounters->patchesBytes), sizeof(PxContactPatch));
 
@@ -257,10 +260,12 @@ struct TestOutput
 				touchChangeFlags[testIndex] = previouslyHadTouch;
 				patchChangeFlags[testIndex] = prevPatches != 0;
 			}
-			else
+			else if (nbContacts)
 			{
 				output.contactPatches = startContactPatches + patchIndex;
 			}
+			else
+				patchIndex = 0xFFFFFFFF;
 		}
 
 		insertIntoPatchStream(materials, patchStream, shape0, shape1, patchIndex, normal, nbContacts);
@@ -289,22 +294,24 @@ struct TestOutput
 
 		PxU8 numPatches = PxU8(contact.numPatches());
 		PxU16 numPoints = PxU16(contact.numPoints());
+		const PxU8 nbRequestedPatches = numPatches;
 
 		if (numPoints)
 		{
 			contactByteOffset = atomicAdd(&(patchAndContactCounters->contactsBytes), sizeof(PxContact) * numPoints);
 			forceAndIndiceByteOffset = atomicAdd(&(patchAndContactCounters->forceAndIndiceBytes), sizeof(PxU32) * numPoints);
 
-			if ((contactByteOffset + sizeof(PxContact)) > contactBytesLimit)
+			if ((contactByteOffset + sizeof(PxContact) * numPoints) > contactBytesLimit)
 			{
 				patchAndContactCounters->setOverflowError(PxgPatchAndContactCounters::CONTACT_BUFFER_OVERFLOW);
 				contactByteOffset = 0xFFFFFFFF; //overflow
 			}
 
-			if ((forceAndIndiceByteOffset + sizeof(PxU32)) > forceBytesLimit)
+			if ((forceAndIndiceByteOffset + sizeof(PxU32) * numPoints) > forceBytesLimit)
 			{
 				patchAndContactCounters->setOverflowError(PxgPatchAndContactCounters::FORCE_BUFFER_OVERFLOW);
 				forceAndIndiceByteOffset = 0xFFFFFFFF; //overflow
+				contactByteOffset = 0xFFFFFFFF;
 			}
 		}
 
@@ -330,6 +337,8 @@ struct TestOutput
 		{
 			output.contactForces = NULL;
 			output.contactPoints = NULL;
+			numPoints = 0;
+			numPatches = 0;
 		}
 
 		PxU32 allflags = reinterpret_cast<PxU32*>(&(output.allflagsStart))[0];
@@ -358,11 +367,11 @@ struct TestOutput
 		output.nbContacts = numPoints;
 
 		PxU32 patchIndex = 0xFFFFFFFF;
-		if (numPatches)
+		if (nbRequestedPatches)
 		{
-			patchIndex = atomicAdd(&(patchAndContactCounters->patchesBytes), numPatches * sizeof(PxContactPatch));
+			patchIndex = atomicAdd(&(patchAndContactCounters->patchesBytes), nbRequestedPatches * sizeof(PxContactPatch));
 
-			if ((patchIndex + numPatches * sizeof(PxContactPatch)) > patchBytesLimit)
+			if ((patchIndex + nbRequestedPatches * sizeof(PxContactPatch)) > patchBytesLimit)
 			{
 				patchAndContactCounters->setOverflowError(PxgPatchAndContactCounters::PATCH_BUFFER_OVERFLOW);
 				patchIndex = 0xFFFFFFFF; //overflow
@@ -376,10 +385,12 @@ struct TestOutput
 				touchChangeFlags[testIndex] = previouslyHadTouch;
 				patchChangeFlags[testIndex] = prevPatches != 0;
 			}
-			else
+			else if (numPatches)
 			{
 				output.contactPatches = startContactPatches + patchIndex;
 			}
+			else
+				patchIndex = 0xFFFFFFFF;
 		}
 
 		if (patchIndex != 0xFFFFFFFF)
@@ -590,7 +601,7 @@ struct TrimeshBvh
 		PxU8* trimeshGeomPtr = reinterpret_cast<PxU8*>(femCloth.mTriMeshData);
 		trimeshGeomPtr += sizeof(uint4); // skip nbVerts_nbTets_maxDepth_nbBv32TreeNodes
 		trimeshVerts = femCloth.mPosition_InvMass;
-		trimeshTriIndices = femCloth.mTriangleVertexIndices;
+		trimeshTriIndices = femCloth.mTriangleVertexIndices_ownedEdges;
 		bv32PackedNodes = reinterpret_cast<const Gu::BV32DataPacked*>(trimeshGeomPtr);
 	}
 
@@ -1067,7 +1078,7 @@ extern "C" __global__ void convexCoreTetmeshNphase_Kernel32(
 	const PxsCachedTransform * PX_RESTRICT transformCache,
 	const PxReal * PX_RESTRICT contactDistance,
 	const PxReal * PX_RESTRICT restDistance,
-	PxgFEMContactWriter writer
+	PxgRigidDbContactWriter writer
 )
 {
 	assert(blockDim.x == WARP_SIZE);
@@ -1092,7 +1103,8 @@ extern "C" __global__ void convexCoreTetmeshNphase_Kernel32(
 		TestTetmesh tetmesh;
 		PxNodeIndex rigidId;
 		PxU32 softbodyId;
-		PxgFEMContactWriter writer;
+		const PxgSoftBody* softbody;
+		PxgRigidDbContactWriter writer;
 
 		__device__ static _Shared& cast(PxU8* ptr)
 			{ return *reinterpret_cast<_Shared*>(ptr); }
@@ -1118,6 +1130,7 @@ extern "C" __global__ void convexCoreTetmeshNphase_Kernel32(
 		PX_PLACEMENT_NEW(&tetmesh, TestTetmesh(TetmeshBvh(in.shape1, softbodies)));
 		_sh.rigidId = shapeToRigidRemapTable[_sh.in.cacheRef0];
 		_sh.softbodyId = _sh.in.shape1.particleOrSoftbodyId;
+		_sh.softbody = &softbodies[_sh.softbodyId];
 		_sh.writer = writer;
 	}
 
@@ -1134,13 +1147,16 @@ extern "C" __global__ void convexCoreTetmeshNphase_Kernel32(
 			PxReal dists[Gu::MAX_CONVEX_CONTACTS];
 			PxU32 numPoints = 0;
 
-			if (tetIndex != 0xffffffff)
+			// A filter pair for this rigid and tetrahedron suppresses contact generation between them.
+			if (tetIndex != 0xffffffff &&
+				!findRigidVolumeFilter(sh.softbody->mRigidVolumeFilterPairs, sh.softbody->mNumRigidVolumeFilterPairs,
+					sh.rigidId, sh.in.cacheRef0, sh.softbodyId, tetIndex))
 				numPoints = Gu::generateContacts(sh.convex, tet, sh.in.contactDist, normal, points, dists);
 
 			if (numPoints)
 			{
-				const PxU64 pairInd0 = sh.rigidId.getInd();
-				const PxU32 pairInd1 = PxEncodeSoftBodyIndex(sh.softbodyId, tetIndex);
+				const PxU64 rigidRef = sh.rigidId.getInd();
+				const PxU64 tetRef = PxgEncodeDeformableTetrahedron(sh.softbodyId, tetIndex);
 				const PxU32 index = atomicAdd(sh.writer.totalContactCount, numPoints);
 				for (PxU32 i = 0; i < numPoints; ++i)
 				{
@@ -1148,8 +1164,8 @@ extern "C" __global__ void convexCoreTetmeshNphase_Kernel32(
 					if (dists[i] < 0) dists[i] *= 0.4f; // VR @@@ add fake ERP. it overshoots otherwise
 					const float4 posRest = make_float4(point.x, point.y, point.z, sh.in.restDist);
 					const float4 normDist = make_float4(-normal.x, -normal.y, -normal.z, dists[i]);
-					sh.writer.writeRigidVsDeformableContactNoBarycentric(index + i, posRest, normDist, pairInd0,
-						pairInd1, pairInd0, sh.in.shape0.materialIndex);
+					sh.writer.writeVolumeContact(index + i, posRest, normDist,
+						rigidRef, sh.in.shape0.materialIndex, tetRef);
 				}
 			}
 		}
@@ -1169,11 +1185,9 @@ void convexCoreClothmeshNphase_Kernel32(
 	const PxsCachedTransform * PX_RESTRICT transformCache,
 	const PxReal * PX_RESTRICT contactDistance,
 	const PxReal * PX_RESTRICT restDistance,
-	const PxgRigidFilterPair * PX_RESTRICT filterPairs,
-	const PxU32 nbFilterPairs,
 	const PxU32 stackSizeBytes,
 	PxU32 * PX_RESTRICT stackSizeNeededOnDevice,
-	PxgFEMContactWriter writer
+	PxgRigidDbContactWriter writer
 )
 {
 	const PxU32 threadIndex = blockIdx.x * blockDim.x + threadIdx.x;
@@ -1194,13 +1208,11 @@ void convexCoreClothmeshNphase_Kernel32(
 
 		const PxNodeIndex rigidId = shapeToRigidRemapTable[in.cacheRef0];
 		const PxU32 clothId = in.shape1.particleOrSoftbodyId;
-		const TrimeshBvh bvh(femClothes[clothId]);
+		const PxgFEMCloth& cloth = femClothes[clothId];
+		const TrimeshBvh bvh(cloth);
 
 		const PxU64 rigidInd = rigidId.getInd();
-		const uint4 vertInds = bvh.getTriIndices(triIndex);
-		if (find(filterPairs, nbFilterPairs, rigidInd, PxEncodeClothIndex(clothId, vertInds.x)) &&
-			find(filterPairs, nbFilterPairs, rigidInd, PxEncodeClothIndex(clothId, vertInds.y)) &&
-			find(filterPairs, nbFilterPairs, rigidInd, PxEncodeClothIndex(clothId, vertInds.z)))
+		if (findRigidSurfaceTriangleFilter(cloth.mRigidSurfaceFilterPairs, cloth.mNumRigidSurfaceFilterPairs, rigidId, in.cacheRef0, clothId, triIndex))
 			continue;
 
 		const PxTransform transform0in1 = in.transform1.transformInv(in.transform0);
@@ -1225,17 +1237,21 @@ void convexCoreClothmeshNphase_Kernel32(
 
 		if (numPoints)
 		{
-			const PxU64 pairInd0 = rigidInd;
-			const PxU32 pairInd1 = PxEncodeClothIndex(clothId, triIndex);
+			const PxU64 rigidRef = rigidInd;
+			const PxU64 triRef = PxgEncodeDeformableTriangle(clothId, triIndex);
 			const PxU32 index = atomicAdd(writer.totalContactCount, numPoints);
 			for (PxU32 i = 0; i < numPoints; ++i)
 			{
 				const PxVec3 point = points[i] + normal * dists[i] * 0.5f;
 				const float4 posRest = make_float4(point.x, point.y, point.z, in.restDist);
 				const float4 normDist = make_float4(-normal.x, -normal.y, -normal.z, dists[i]);
-				const float4 barycentric = bvh.getTriBarycentric(triIndex, point);
-				writer.writeRigidVsDeformableContact(index + i, posRest, normDist, barycentric, pairInd0,
-					pairInd1, in.shape0.materialIndex, rigidId);
+				// generateContacts returns the midpoint of the two witness points, so the cloth's own witness
+				// is half a separation back along the normal. Taken anywhere else, the barycentric of a
+				// separated contact lands outside the triangle and the impulse reaches the wrong vertices.
+				const PxVec3 clothPoint = points[i] - normal * dists[i] * 0.5f;
+				const float4 barycentric = bvh.getTriBarycentric(triIndex, clothPoint);
+				writer.writeSurfaceContact(index + i, posRest, normDist,
+					rigidRef, in.shape0.materialIndex, triRef, barycentric);
 			}
 		}
 	}

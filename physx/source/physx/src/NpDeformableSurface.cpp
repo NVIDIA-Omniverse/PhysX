@@ -334,6 +334,10 @@ PxShape* NpDeformableSurface::getShape()
 
 bool NpDeformableSurface::attachShape(PxShape& shape)
 {
+	NP_WRITE_CHECK(getNpScene());
+	PX_CHECK_AND_RETURN_NULL(getNpScene() == NULL,
+		"PxDeformableSurface::attachShape: only allowed while the deformable surface is not part of a scene.");
+
 	NpShape* npShape = static_cast<NpShape*>(&shape);
 
 	PX_CHECK_AND_RETURN_NULL(npShape->getGeometryTypeFast() == PxGeometryType::eTRIANGLEMESH,
@@ -392,6 +396,10 @@ bool NpDeformableSurface::attachShape(PxShape& shape)
 
 void NpDeformableSurface::detachShape()
 {
+	NP_WRITE_CHECK(getNpScene());
+	PX_CHECK_AND_RETURN(getNpScene() == NULL,
+		"PxDeformableSurface::detachShape: only allowed while the deformable surface is not part of a scene.");
+
 	if (!mShape)
 		return;
 

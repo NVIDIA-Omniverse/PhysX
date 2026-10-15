@@ -1,0 +1,3323 @@
+{
+  "source_commit": "e48e40f4b1dd23262bad3cdbf3e554d59ee959e6",
+  "nodes": [
+    {
+      "type": "OgnCharacterController",
+      "version": 1,
+      "requirement": "REQ-UX-CCT-001",
+      "inputs": {
+        "activate": {
+          "type": "execution",
+          "description": "Activate Character Controller on a Capsule. This can be done on e.g. Simulation Start Play event."
+        },
+        "deactivate": {
+          "type": "execution",
+          "description": "Deactivate Character Controller on a Capsule. This can be done on e.g. Simulation Stop Play event."
+        },
+        "gravity": {
+          "type": "bool",
+          "description": "Enable Gravity",
+          "uiName": "Enable Gravity",
+          "default": true
+        },
+        "speed": {
+          "type": "int",
+          "description": "Speed in units/s",
+          "uiName": "Speed",
+          "default": 500
+        },
+        "setupControls": {
+          "type": "token",
+          "description": "Setup controls: Auto will use default WASD/mouse/gamepad controls or Controls Settings keybinds if connected. Manual will skip control setup completely, leaving it to the user to do manually.",
+          "uiName": "Setup Controls",
+          "default": "Auto",
+          "metadata": {
+            "allowedTokens": [
+              "Auto",
+              "Manual"
+            ]
+          }
+        },
+        "controlsSettings": {
+          "type": "bundle",
+          "optional": true,
+          "description": "Use Controls Settings to rebind controls."
+        },
+        "capsulePath": {
+          "type": "path",
+          "description": "Connect a path of a capsule to use as a character controller. Use Spawn Capsule node to dynamically spawn a capsule for you if needed.",
+          "uiName": "Capsule Path"
+        },
+        "fpCameraPathToken": {
+          "type": "token",
+          "description": "If a camera path is connected the character controller with use first person camera mode",
+          "optional": true,
+          "uiName": "First Person Camera Path"
+        }
+      },
+      "outputs": {
+        "done": {
+          "type": "execution",
+          "description": "The output execution",
+          "uiName": "Done"
+        }
+      },
+      "state": {
+        "$comment": "The existence of this state section, even if it contains no attributes, means there is internal state that is entirely managed by the node"
+      }
+    },
+    {
+      "type": "OgnControlsSettings",
+      "version": 2,
+      "requirement": "REQ-UX-CCT-001",
+      "inputs": {
+        "forward": {
+          "type": "token",
+          "description": "Move Forward",
+          "uiName": "Move Forward",
+          "default": "W",
+          "metadata": {
+            "allowedTokens": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E",
+              "F",
+              "G",
+              "H",
+              "I",
+              "J",
+              "K",
+              "L",
+              "M",
+              "N",
+              "O",
+              "P",
+              "Q",
+              "R",
+              "S",
+              "T",
+              "U",
+              "V",
+              "W",
+              "X",
+              "Y",
+              "Z",
+              "Apostrophe",
+              "Backslash",
+              "Backspace",
+              "CapsLock",
+              "Comma",
+              "Del",
+              "Down",
+              "End",
+              "Enter",
+              "Equal",
+              "Escape",
+              "F1",
+              "F10",
+              "F11",
+              "F12",
+              "F2",
+              "F3",
+              "F4",
+              "F5",
+              "F6",
+              "F7",
+              "F8",
+              "F9",
+              "GraveAccent",
+              "Home",
+              "Insert",
+              "Key0",
+              "Key1",
+              "Key2",
+              "Key3",
+              "Key4",
+              "Key5",
+              "Key6",
+              "Key7",
+              "Key8",
+              "Key9",
+              "Left",
+              "LeftAlt",
+              "LeftBracket",
+              "LeftControl",
+              "LeftShift",
+              "LeftSuper",
+              "Menu",
+              "Minus",
+              "NumLock",
+              "Numpad0",
+              "Numpad1",
+              "Numpad2",
+              "Numpad3",
+              "Numpad4",
+              "Numpad5",
+              "Numpad6",
+              "Numpad7",
+              "Numpad8",
+              "Numpad9",
+              "NumpadAdd",
+              "NumpadDel",
+              "NumpadDivide",
+              "NumpadEnter",
+              "NumpadEqual",
+              "NumpadMultiply",
+              "NumpadSubtract",
+              "PageDown",
+              "PageUp",
+              "Pause",
+              "Period",
+              "PrintScreen",
+              "Right",
+              "RightAlt",
+              "RightBracket",
+              "RightControl",
+              "RightShift",
+              "RightSuper",
+              "ScrollLock",
+              "Semicolon",
+              "Slash",
+              "Space",
+              "Tab",
+              "Up"
+            ]
+          }
+        },
+        "backward": {
+          "type": "token",
+          "description": "Move Backward",
+          "uiName": "Move Backward",
+          "default": "S",
+          "metadata": {
+            "allowedTokens": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E",
+              "F",
+              "G",
+              "H",
+              "I",
+              "J",
+              "K",
+              "L",
+              "M",
+              "N",
+              "O",
+              "P",
+              "Q",
+              "R",
+              "S",
+              "T",
+              "U",
+              "V",
+              "W",
+              "X",
+              "Y",
+              "Z",
+              "Apostrophe",
+              "Backslash",
+              "Backspace",
+              "CapsLock",
+              "Comma",
+              "Del",
+              "Down",
+              "End",
+              "Enter",
+              "Equal",
+              "Escape",
+              "F1",
+              "F10",
+              "F11",
+              "F12",
+              "F2",
+              "F3",
+              "F4",
+              "F5",
+              "F6",
+              "F7",
+              "F8",
+              "F9",
+              "GraveAccent",
+              "Home",
+              "Insert",
+              "Key0",
+              "Key1",
+              "Key2",
+              "Key3",
+              "Key4",
+              "Key5",
+              "Key6",
+              "Key7",
+              "Key8",
+              "Key9",
+              "Left",
+              "LeftAlt",
+              "LeftBracket",
+              "LeftControl",
+              "LeftShift",
+              "LeftSuper",
+              "Menu",
+              "Minus",
+              "NumLock",
+              "Numpad0",
+              "Numpad1",
+              "Numpad2",
+              "Numpad3",
+              "Numpad4",
+              "Numpad5",
+              "Numpad6",
+              "Numpad7",
+              "Numpad8",
+              "Numpad9",
+              "NumpadAdd",
+              "NumpadDel",
+              "NumpadDivide",
+              "NumpadEnter",
+              "NumpadEqual",
+              "NumpadMultiply",
+              "NumpadSubtract",
+              "PageDown",
+              "PageUp",
+              "Pause",
+              "Period",
+              "PrintScreen",
+              "Right",
+              "RightAlt",
+              "RightBracket",
+              "RightControl",
+              "RightShift",
+              "RightSuper",
+              "ScrollLock",
+              "Semicolon",
+              "Slash",
+              "Space",
+              "Tab",
+              "Up"
+            ]
+          }
+        },
+        "left": {
+          "type": "token",
+          "description": "Move Left",
+          "uiName": "Move Left",
+          "default": "A",
+          "metadata": {
+            "allowedTokens": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E",
+              "F",
+              "G",
+              "H",
+              "I",
+              "J",
+              "K",
+              "L",
+              "M",
+              "N",
+              "O",
+              "P",
+              "Q",
+              "R",
+              "S",
+              "T",
+              "U",
+              "V",
+              "W",
+              "X",
+              "Y",
+              "Z",
+              "Apostrophe",
+              "Backslash",
+              "Backspace",
+              "CapsLock",
+              "Comma",
+              "Del",
+              "Down",
+              "End",
+              "Enter",
+              "Equal",
+              "Escape",
+              "F1",
+              "F10",
+              "F11",
+              "F12",
+              "F2",
+              "F3",
+              "F4",
+              "F5",
+              "F6",
+              "F7",
+              "F8",
+              "F9",
+              "GraveAccent",
+              "Home",
+              "Insert",
+              "Key0",
+              "Key1",
+              "Key2",
+              "Key3",
+              "Key4",
+              "Key5",
+              "Key6",
+              "Key7",
+              "Key8",
+              "Key9",
+              "Left",
+              "LeftAlt",
+              "LeftBracket",
+              "LeftControl",
+              "LeftShift",
+              "LeftSuper",
+              "Menu",
+              "Minus",
+              "NumLock",
+              "Numpad0",
+              "Numpad1",
+              "Numpad2",
+              "Numpad3",
+              "Numpad4",
+              "Numpad5",
+              "Numpad6",
+              "Numpad7",
+              "Numpad8",
+              "Numpad9",
+              "NumpadAdd",
+              "NumpadDel",
+              "NumpadDivide",
+              "NumpadEnter",
+              "NumpadEqual",
+              "NumpadMultiply",
+              "NumpadSubtract",
+              "PageDown",
+              "PageUp",
+              "Pause",
+              "Period",
+              "PrintScreen",
+              "Right",
+              "RightAlt",
+              "RightBracket",
+              "RightControl",
+              "RightShift",
+              "RightSuper",
+              "ScrollLock",
+              "Semicolon",
+              "Slash",
+              "Space",
+              "Tab",
+              "Up"
+            ]
+          }
+        },
+        "right": {
+          "type": "token",
+          "description": "Move Right",
+          "uiName": "Move Right",
+          "default": "D",
+          "metadata": {
+            "allowedTokens": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E",
+              "F",
+              "G",
+              "H",
+              "I",
+              "J",
+              "K",
+              "L",
+              "M",
+              "N",
+              "O",
+              "P",
+              "Q",
+              "R",
+              "S",
+              "T",
+              "U",
+              "V",
+              "W",
+              "X",
+              "Y",
+              "Z",
+              "Apostrophe",
+              "Backslash",
+              "Backspace",
+              "CapsLock",
+              "Comma",
+              "Del",
+              "Down",
+              "End",
+              "Enter",
+              "Equal",
+              "Escape",
+              "F1",
+              "F10",
+              "F11",
+              "F12",
+              "F2",
+              "F3",
+              "F4",
+              "F5",
+              "F6",
+              "F7",
+              "F8",
+              "F9",
+              "GraveAccent",
+              "Home",
+              "Insert",
+              "Key0",
+              "Key1",
+              "Key2",
+              "Key3",
+              "Key4",
+              "Key5",
+              "Key6",
+              "Key7",
+              "Key8",
+              "Key9",
+              "Left",
+              "LeftAlt",
+              "LeftBracket",
+              "LeftControl",
+              "LeftShift",
+              "LeftSuper",
+              "Menu",
+              "Minus",
+              "NumLock",
+              "Numpad0",
+              "Numpad1",
+              "Numpad2",
+              "Numpad3",
+              "Numpad4",
+              "Numpad5",
+              "Numpad6",
+              "Numpad7",
+              "Numpad8",
+              "Numpad9",
+              "NumpadAdd",
+              "NumpadDel",
+              "NumpadDivide",
+              "NumpadEnter",
+              "NumpadEqual",
+              "NumpadMultiply",
+              "NumpadSubtract",
+              "PageDown",
+              "PageUp",
+              "Pause",
+              "Period",
+              "PrintScreen",
+              "Right",
+              "RightAlt",
+              "RightBracket",
+              "RightControl",
+              "RightShift",
+              "RightSuper",
+              "ScrollLock",
+              "Semicolon",
+              "Slash",
+              "Space",
+              "Tab",
+              "Up"
+            ]
+          }
+        },
+        "up": {
+          "type": "token",
+          "description": "Move Up or Jump (depending if gravity is enabled for this Character Controller)",
+          "uiName": "Move Up or Jump",
+          "default": "E",
+          "metadata": {
+            "allowedTokens": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E",
+              "F",
+              "G",
+              "H",
+              "I",
+              "J",
+              "K",
+              "L",
+              "M",
+              "N",
+              "O",
+              "P",
+              "Q",
+              "R",
+              "S",
+              "T",
+              "U",
+              "V",
+              "W",
+              "X",
+              "Y",
+              "Z",
+              "Apostrophe",
+              "Backslash",
+              "Backspace",
+              "CapsLock",
+              "Comma",
+              "Del",
+              "Down",
+              "End",
+              "Enter",
+              "Equal",
+              "Escape",
+              "F1",
+              "F10",
+              "F11",
+              "F12",
+              "F2",
+              "F3",
+              "F4",
+              "F5",
+              "F6",
+              "F7",
+              "F8",
+              "F9",
+              "GraveAccent",
+              "Home",
+              "Insert",
+              "Key0",
+              "Key1",
+              "Key2",
+              "Key3",
+              "Key4",
+              "Key5",
+              "Key6",
+              "Key7",
+              "Key8",
+              "Key9",
+              "Left",
+              "LeftAlt",
+              "LeftBracket",
+              "LeftControl",
+              "LeftShift",
+              "LeftSuper",
+              "Menu",
+              "Minus",
+              "NumLock",
+              "Numpad0",
+              "Numpad1",
+              "Numpad2",
+              "Numpad3",
+              "Numpad4",
+              "Numpad5",
+              "Numpad6",
+              "Numpad7",
+              "Numpad8",
+              "Numpad9",
+              "NumpadAdd",
+              "NumpadDel",
+              "NumpadDivide",
+              "NumpadEnter",
+              "NumpadEqual",
+              "NumpadMultiply",
+              "NumpadSubtract",
+              "PageDown",
+              "PageUp",
+              "Pause",
+              "Period",
+              "PrintScreen",
+              "Right",
+              "RightAlt",
+              "RightBracket",
+              "RightControl",
+              "RightShift",
+              "RightSuper",
+              "ScrollLock",
+              "Semicolon",
+              "Slash",
+              "Space",
+              "Tab",
+              "Up"
+            ]
+          }
+        },
+        "down": {
+          "type": "token",
+          "description": "Move Down",
+          "uiName": "Move Down",
+          "default": "Q",
+          "metadata": {
+            "allowedTokens": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E",
+              "F",
+              "G",
+              "H",
+              "I",
+              "J",
+              "K",
+              "L",
+              "M",
+              "N",
+              "O",
+              "P",
+              "Q",
+              "R",
+              "S",
+              "T",
+              "U",
+              "V",
+              "W",
+              "X",
+              "Y",
+              "Z",
+              "Apostrophe",
+              "Backslash",
+              "Backspace",
+              "CapsLock",
+              "Comma",
+              "Del",
+              "Down",
+              "End",
+              "Enter",
+              "Equal",
+              "Escape",
+              "F1",
+              "F10",
+              "F11",
+              "F12",
+              "F2",
+              "F3",
+              "F4",
+              "F5",
+              "F6",
+              "F7",
+              "F8",
+              "F9",
+              "GraveAccent",
+              "Home",
+              "Insert",
+              "Key0",
+              "Key1",
+              "Key2",
+              "Key3",
+              "Key4",
+              "Key5",
+              "Key6",
+              "Key7",
+              "Key8",
+              "Key9",
+              "Left",
+              "LeftAlt",
+              "LeftBracket",
+              "LeftControl",
+              "LeftShift",
+              "LeftSuper",
+              "Menu",
+              "Minus",
+              "NumLock",
+              "Numpad0",
+              "Numpad1",
+              "Numpad2",
+              "Numpad3",
+              "Numpad4",
+              "Numpad5",
+              "Numpad6",
+              "Numpad7",
+              "Numpad8",
+              "Numpad9",
+              "NumpadAdd",
+              "NumpadDel",
+              "NumpadDivide",
+              "NumpadEnter",
+              "NumpadEqual",
+              "NumpadMultiply",
+              "NumpadSubtract",
+              "PageDown",
+              "PageUp",
+              "Pause",
+              "Period",
+              "PrintScreen",
+              "Right",
+              "RightAlt",
+              "RightBracket",
+              "RightControl",
+              "RightShift",
+              "RightSuper",
+              "ScrollLock",
+              "Semicolon",
+              "Slash",
+              "Space",
+              "Tab",
+              "Up"
+            ]
+          }
+        },
+        "mouseSensitivity": {
+          "type": "float",
+          "description": "Mouse Sensitivity Multiplier",
+          "uiName": "Sensitivity - Mouse",
+          "default": 25
+        },
+        "gamepadSensitivity": {
+          "type": "float",
+          "description": "Gamepad Sensitivity Multiplier",
+          "uiName": "Sensitivity - Gamepad",
+          "default": 25
+        }
+      },
+      "outputs": {
+        "control_settings": {
+          "type": "bundle",
+          "description": [
+            "Bundle with control settings to connect to the Character Controller node's Controls Settings input."
+          ]
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "OgnSpawnCapsule",
+      "version": 1,
+      "requirement": "REQ-UX-CCT-001",
+      "inputs": {
+        "spawn": {
+          "type": "execution",
+          "description": "Spawn"
+        },
+        "capsulePos": {
+          "type": "float[3]",
+          "description": "Capsule Position",
+          "default": [
+            0,
+            0,
+            0
+          ],
+          "uiName": "Position"
+        },
+        "capsuleHeight": {
+          "type": "float",
+          "description": "Capsule Height",
+          "default": 100,
+          "uiName": "Height"
+        },
+        "capsuleRadius": {
+          "type": "float",
+          "description": "Capsule Radius",
+          "default": 50,
+          "uiName": "Radius"
+        }
+      },
+      "outputs": {
+        "done": {
+          "type": "execution",
+          "description": "Activated after the capsule is spawned",
+          "uiName": "Done"
+        },
+        "path": {
+          "type": "path",
+          "description": "Path",
+          "uiName": "Path"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.GenerateContacts",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-IMMEDIATE-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "shape0": {
+          "type": "token",
+          "description": "Shape 0.",
+          "uiName": "Shape 0"
+        },
+        "shape1": {
+          "type": "token",
+          "description": "Shape 1.",
+          "uiName": "Shape 1"
+        },
+        "contactDistance": {
+          "type": "float",
+          "description": "Contact Distance.",
+          "uiName": "Contact Distance",
+          "default": 0.01
+        },
+        "meshContactMargin": {
+          "type": "float",
+          "description": "Mesh Contact Margin.",
+          "uiName": "Mesh Contact Margin",
+          "default": 0.01
+        },
+        "toleranceLength": {
+          "type": "float",
+          "description": "Tolerance Length.",
+          "uiName": "Tolerance Length",
+          "default": 0.1
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "contactCount": {
+          "description": [
+            "The number of contacts."
+          ],
+          "type": "int"
+        },
+        "contactPoints": {
+          "description": [
+            "Contact positions."
+          ],
+          "type": "pointf[3][]"
+        },
+        "contactNormals": {
+          "description": [
+            "Contact normals."
+          ],
+          "type": "normalf[3][]"
+        },
+        "contactDepths": {
+          "description": [
+            "Contact depths."
+          ],
+          "type": "float[]"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.OnContactEventAdvanced",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-EVENT-001",
+      "inputs": {
+        "bodyPaths": {
+          "type": "token[]",
+          "description": "Body prim paths to check against.",
+          "uiName": "Body Paths",
+          "optional": true,
+          "metadata": {
+            "literalOnly": "1"
+          }
+        },
+        "targetBodies": {
+          "type": "target",
+          "description": "Body prims to check against.",
+          "uiName": "Body Prims",
+          "optional": true,
+          "metadata": {
+            "literalOnly": "1",
+            "allowMultiInputs": "1"
+          }
+        }
+      },
+      "outputs": {
+        "foundExecOut": {
+          "type": "execution",
+          "description": "Output execution trigger for contact found events. Note that the node only evaluates and triggers for contact events where one of the bodies have the Contact Report API applied."
+        },
+        "persistsExecOut": {
+          "type": "execution",
+          "description": "Output execution trigger for contact persists events. Note that the node only evaluates and triggers for contact events where one of the bodies have the Contact Report API applied."
+        },
+        "lostExecOut": {
+          "type": "execution",
+          "description": "Output execution trigger for contact lost events. Note that the node only evaluates and triggers for contact events where one of the bodies have the Contact Report API applied."
+        },
+        "contactingBody": {
+          "uiName": "Contacting Body",
+          "description": [
+            "Path of the physics body that came in contact with a node input body to trigger the contact event."
+          ],
+          "type": "token"
+        },
+        "inputBody": {
+          "uiName": "Input Body",
+          "description": [
+            "Path of the node input physics body that triggered the contact event."
+          ],
+          "type": "token"
+        },
+        "contactingCollider": {
+          "uiName": "Contacting Collider",
+          "description": [
+            "Path to the collider of the contacting physics body."
+          ],
+          "type": "token"
+        },
+        "inputBodyCollider": {
+          "uiName": "Input Body Collider",
+          "description": [
+            "Path to the collider of the input body."
+          ],
+          "type": "token"
+        },
+        "contactingFaces": {
+          "uiName": "Contacting Faces",
+          "description": [
+            "Contact face indexes for the contacting collider."
+          ],
+          "type": "int[]"
+        },
+        "inputBodyFaces": {
+          "uiName": "Input Body Faces",
+          "description": [
+            "Contact face indexes for the input body collider."
+          ],
+          "type": "int[]"
+        },
+        "contactingMaterials": {
+          "uiName": "Contacting Materials",
+          "description": [
+            "Contact material indexes for the contacting collider."
+          ],
+          "type": "int[]"
+        },
+        "inputBodyMaterials": {
+          "uiName": "Input Body Materials",
+          "description": [
+            "Contact material indexes for input body collider."
+          ],
+          "type": "int[]"
+        },
+        "contactPoints": {
+          "uiName": "Points",
+          "description": [
+            "Contact point positions."
+          ],
+          "type": "pointf[3][]"
+        },
+        "contactNormals": {
+          "uiName": "Normals",
+          "description": [
+            "Contact point normals."
+          ],
+          "type": "normalf[3][]"
+        },
+        "contactDepths": {
+          "uiName": "Depths",
+          "description": [
+            "Contact point depths."
+          ],
+          "type": "float[]"
+        },
+        "contactImpulses": {
+          "uiName": "Impulses",
+          "description": [
+            "Contact point impulses."
+          ],
+          "type": "vectorf[3][]"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.OnContactEventBasic",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-EVENT-001",
+      "inputs": {
+        "bodyPaths": {
+          "type": "token[]",
+          "description": "Body prim paths to check against.",
+          "uiName": "Body Paths",
+          "optional": true,
+          "metadata": {
+            "literalOnly": "1"
+          }
+        },
+        "targetBodies": {
+          "type": "target",
+          "description": "Body prims to check against.",
+          "uiName": "Body Prims",
+          "optional": true,
+          "metadata": {
+            "literalOnly": "1",
+            "allowMultiInputs": "1"
+          }
+        }
+      },
+      "outputs": {
+        "foundExecOut": {
+          "type": "execution",
+          "description": "Output execution trigger for contact found events. Note that the node only evaluates and triggers for contact events where one of the bodies have the Contact Report API applied."
+        },
+        "persistsExecOut": {
+          "type": "execution",
+          "description": "Output execution trigger for contact persists events. Note that the node only evaluates and triggers for contact events where one of the bodies have the Contact Report API applied."
+        },
+        "lostExecOut": {
+          "type": "execution",
+          "description": "Output execution trigger for contact lost events. Note that the node only evaluates and triggers for contact events where one of the bodies have the Contact Report API applied."
+        },
+        "contactingBody": {
+          "uiName": "Contacting Body",
+          "description": [
+            "Path of the physics body that came in contact with a node input body to trigger the contact event."
+          ],
+          "type": "token"
+        },
+        "inputBody": {
+          "uiName": "Input Body",
+          "description": [
+            "Path of the node input physics body that triggered the contact event."
+          ],
+          "type": "token"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.ImmediateComputeBoundsOverlaps",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-IMMEDIATE-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "primsBundle": {
+          "type": "bundle",
+          "memoryType": "cpu",
+          "description": "The prims of interest.\nIt must be a bundle with one or more prim children.\nConnect with 'Compute Bounding Boxes' or with\n'Read Prims' checking 'Compute bounding box'.\nFor each child prim reads the:\n - 'sourcePrimPath'\n - 'bboxMinCorner'\n - 'bboxMaxCorner'\n(and optionally 'bboxTransform' and 'worldMatrix') attributes."
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "overlapsPair0": {
+          "description": [
+            "Array of tokens where the one at a given index is the first body in an identified overlap pair (the second is at corresponding index in 'overlapsPair1' output)."
+          ],
+          "memoryType": "cpu",
+          "type": "token[]"
+        },
+        "overlapsPair1": {
+          "description": [
+            "Array of tokens where the one at a given index is the second body in an identified overlap pair (the first is at corresponding index in 'overlapsPair0' output)."
+          ],
+          "memoryType": "cpu",
+          "type": "token[]"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.ImmediateComputeGeometryBounds",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-IMMEDIATE-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "primsBundle": {
+          "type": "bundle",
+          "memoryType": "cpu",
+          "description": "The prims of interest. It must be a bundle with one or more prim children.\nCurrently only meshes prim are supported (sourcePrimType == 'Mesh').\nFrom each Mesh prim child reads:\n - 'sourecePrimPath'\n - 'sourcePrimType'\n - 'points'\n - 'faceVertexIndices'\n - 'faceVertexCounts'\n - 'worldMatrix'\nand (optionally) 'meshHash', 'physics:approximation'"
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "primsBundle": {
+          "type": "bundle",
+          "memoryType": "cpu",
+          "description": "The same bundle passed as input\nwith the following attributes added:\n - bboxMaxCorner\n - bboxMinCorner\n - meshHash"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.ImmediateComputeGeometryOverlaps",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-IMMEDIATE-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "primsBundle": {
+          "type": "bundle",
+          "memoryType": "cpu",
+          "description": "The prims of interest. It must be a bundle with one or more prim children.\nCurrently only meshes prim are supported (sourcePrimType == 'Mesh').\nOverlap check is always executed with trianagle mesh approximation for both items of a pair unless\nthe (optional) 'physics:approximation' is set to different type (can be 'convex mesh' for example).\nFrom each Mesh prim child reads:\n - 'sourecePrimPath'\n - 'sourcePrimType'\n - 'points'\n - 'faceVertexIndices'\n - 'faceVertexCounts'\n - 'worldMatrix'\n - 'sourcePrimPath'\n(and optionally 'holeIndices', 'orientation', 'meshKey' and 'physics:approximation') attributes"
+        },
+        "overlapsPair0": {
+          "description": [
+            "Path of the first geometry from the Prims Bundle to check for overlap with corresponding item at same index in overlapsPair1 input attribute."
+          ],
+          "memoryType": "cpu",
+          "type": "token[]"
+        },
+        "overlapsPair1": {
+          "description": [
+            "Path of the second geometry from the Prims Bundle to check for overlap with corresponding item at same index in overlapsPair0 input attribute."
+          ],
+          "memoryType": "cpu",
+          "type": "token[]"
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "overlaps": {
+          "description": [
+            "Array of booleans where 'True' value signals that a corresponding pair of meshes in overlapsPair0 and overlapsPair1 input arrays at the same index do actually overlap."
+          ],
+          "memoryType": "cpu",
+          "type": "bool[]"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.ImmediateComputeGeometryPenetrations",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-IMMEDIATE-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "primsBundle": {
+          "type": "bundle",
+          "memoryType": "cpu",
+          "description": "The prims of interest. It must be a bundle with one or more prim children.\nCurrently only meshes prim are supported (sourcePrimType == 'Mesh').\nPenetration vectors are not computed when both sides of a pair use triangle mesh approximation.\nPenetration computation only works if the (optional) 'physics:approximation'\nof one of the two overlap pair to check is not 'triangle mesh' (can be 'convex mesh').\nFrom each Mesh prim child reads:\n - 'sourecePrimPath'\n - 'sourcePrimType'\n - 'points'\n - 'faceVertexIndices'\n - 'faceVertexCounts'\n - 'worldMatrix'\n - 'sourcePrimPath'\n(and optionally 'holeIndices', 'orientation', 'meshKey' and 'physics:approximation') attributes"
+        },
+        "overlapsPair0": {
+          "description": [
+            "Path of the first geometry from the Prims Bundle to check for penetration with corresponding item at same index in overlapsPair1 input attribute."
+          ],
+          "memoryType": "cpu",
+          "type": "token[]"
+        },
+        "overlapsPair1": {
+          "description": [
+            "Path of the second geometry from the Prims Bundle to check for penetration with corresponding item at same index in overlapsPair0 input attribute"
+          ],
+          "memoryType": "cpu",
+          "type": "token[]"
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "overlaps": {
+          "description": [
+            "Array of booleans where 'True' value signals that a corresponding pair of meshes in overlapsPair0 and overlapsPair1 input arrays at the same index do actually overlap."
+          ],
+          "memoryType": "cpu",
+          "type": "bool[]"
+        },
+        "penetrationVectors": {
+          "description": [
+            "Array of penetration normals of the corresponding pair of meshes in overlapsPair0 and overlapsPair1 input arrays at the same index."
+          ],
+          "memoryType": "cpu",
+          "type": "normalf[3][]"
+        },
+        "penetrationDepths": {
+          "description": [
+            "Array of penetration depths values of the corresponding pair of meshes in overlapsPair0 and overlapsPair1 input arrays at the same index."
+          ],
+          "memoryType": "cpu",
+          "type": "float[]"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.ImmediateComputeGeometryRaycastHits",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-IMMEDIATE-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "origin": {
+          "type": [
+            "pointf[3]",
+            "pointd[3]"
+          ],
+          "description": "Ray origin",
+          "uiName": "Origin",
+          "unvalidated": true
+        },
+        "direction": {
+          "type": [
+            "vectorf[3]",
+            "vectord[3]"
+          ],
+          "description": "Ray direction vector",
+          "uiName": "Direction",
+          "unvalidated": true
+        },
+        "raycastRange": {
+          "type": [
+            "float",
+            "double"
+          ],
+          "description": "Raycast distance. Use negative for infinite. If omitted, infinity is used.",
+          "uiName": "Distance",
+          "unvalidated": true
+        },
+        "bothSides": {
+          "type": "bool",
+          "description": "Sets whether backfaces of meshes should be included in checks.",
+          "uiName": "Both sides",
+          "default": false
+        },
+        "primsBundle": {
+          "type": "bundle",
+          "uiName": "Prims bundle (optional)",
+          "memoryType": "cpu",
+          "description": "The prims of interest as a bundle. It must be a bundle with one or more prim children.\nCurrently only meshes prim are supported (sourcePrimType == 'Mesh').\nFrom each Mesh prim child reads:\n - 'sourcePrimPath'\n - 'sourcePrimType'\n - 'points'\n - 'faceVertexIndices'\n - 'faceVertexCounts'\n - 'worldMatrix'\n - 'sourcePrimPath'\n(and optionally 'holeIndices', 'orientation', 'meshKey' and 'physics:approximation') attributes",
+          "optional": true
+        },
+        "prims": {
+          "description": [
+            "Prims of interest (currently only supports mesh prims). \nNote: if this input is present, the Prims bundle input is ignored."
+          ],
+          "memoryType": "cpu",
+          "type": "target",
+          "optional": true,
+          "metadata": {
+            "allowMultiInputs": "1"
+          }
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "primsHit": {
+          "uiName": "Prims hit",
+          "description": [
+            "A list of prims that are hit by the input ray."
+          ],
+          "type": "target"
+        },
+        "positions": {
+          "description": [
+            "A list of positions of the points hit."
+          ],
+          "type": "pointf[3][]"
+        },
+        "normals": {
+          "description": [
+            "A list of surface normals of the points hit."
+          ],
+          "type": "normalf[3][]"
+        },
+        "distances": {
+          "description": [
+            "A list of distances from the origin to the points hit."
+          ],
+          "uiName": "Hit distances",
+          "type": "float[]"
+        },
+        "faceIndexes": {
+          "description": [
+            "A list of the face indexes of the points hit."
+          ],
+          "type": "int[]"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.ImmediateComputeMeshIntersectingFaces",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-IMMEDIATE-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "primsBundle": {
+          "type": "bundle",
+          "memoryType": "cpu",
+          "description": "The prims of interest. It must be a bundle with one or more prim children.\nCurrently only meshes prim are supported (sourcePrimType == 'Mesh').\nFrom each Mesh prim child reads:\n - 'sourcePrimPath'\n - 'sourcePrimType'\n - 'points'\n - 'faceVertexIndices'\n - 'faceVertexCounts'\n - 'worldMatrix'\n - 'sourcePrimPath'\n(and optionally 'holeIndices', 'orientation', 'meshKey' and 'physics:approximation') attributes"
+        },
+        "overlapsPair0": {
+          "description": [
+            "Path of the first geometry from the Prims Bundle to check for intesection with corresponding item at same index in overlapsPair1 input attribute."
+          ],
+          "memoryType": "cpu",
+          "type": "token[]"
+        },
+        "overlapsPair1": {
+          "description": [
+            "Path of the second geometry from the Prims Bundle to check for intesection with corresponding item at same index in overlapsPair0 input attribute"
+          ],
+          "memoryType": "cpu",
+          "type": "token[]"
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "overlaps": {
+          "description": [
+            "Array of booleans where 'True' value signals that a corresponding pair of meshes in overlapsPair0 and overlapsPair1 input arrays at the same index do actually overlap."
+          ],
+          "memoryType": "cpu",
+          "type": "bool[]"
+        },
+        "faceIndices": {
+          "description": [
+            "Bundle of child prims with faces0 / faces1 attributes containing indices of faces in source meshes that intersect each other"
+          ],
+          "memoryType": "cpu",
+          "type": "bundle"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.ImmediateGenerateGeometryContacts",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-IMMEDIATE-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "primsBundle": {
+          "type": "bundle",
+          "memoryType": "cpu",
+          "description": "The prims of interest. It must be a bundle with one or more prim children.\nCurrently only meshes prim are supported (sourcePrimType == 'Mesh').\nFrom each Mesh prim child reads:\n - 'sourecePrimPath'\n - 'sourcePrimType'\n - 'points'\n - 'faceVertexIndices'\n - 'faceVertexCounts'\n - 'worldMatrix'\n - 'sourcePrimPath'\n(and optionally 'holeIndices', 'orientation', 'meshKey' and 'physics:approximation') attributes"
+        },
+        "overlapsPair0": {
+          "description": [
+            "Path of the first geometry from the Prims Bundle to check for contactwith corresponding item at same index in overlapsPair1 input attribute."
+          ],
+          "memoryType": "cpu",
+          "type": "token[]"
+        },
+        "overlapsPair1": {
+          "description": [
+            "Path of the second geometry from the Prims Bundle to check for contactwith corresponding item at same index in overlapsPair0 input attribute"
+          ],
+          "memoryType": "cpu",
+          "type": "token[]"
+        },
+        "contactDistance": {
+          "type": "float",
+          "description": "Contact Distance.",
+          "memoryType": "cpu",
+          "uiName": "Contact Distance",
+          "default": 0.01
+        },
+        "meshContactMargin": {
+          "type": "float",
+          "description": "Mesh Contact Margin.",
+          "memoryType": "cpu",
+          "uiName": "Mesh Contact Margin",
+          "default": 0.01
+        },
+        "toleranceLength": {
+          "type": "float",
+          "description": "Tolerance Length.",
+          "memoryType": "cpu",
+          "uiName": "Tolerance Length",
+          "default": 0.1
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "contacts": {
+          "description": [
+            "Bundle of Child bundles containg contacts for each pair. Child Bundles are named prim0...primN that can be extracted with 'Extract Prim'. Each child bundle has 'points', 'normals' and 'depths' attributes. "
+          ],
+          "memoryType": "cpu",
+          "type": "bundle"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.PropertyQueryRigidBody",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-PROPERTY-001",
+      "inputs": {
+        "prim": {
+          "type": "target",
+          "description": "Prim to query the properties of. This must be a rigid body.",
+          "uiName": "Prim"
+        },
+        "timeout": {
+          "type": "int",
+          "description": "Query timeout in milliseconds.",
+          "uiName": "Timeout",
+          "default": 10000,
+          "metadata": {
+            "literalOnly": "1"
+          }
+        },
+        "use_local_frame": {
+          "type": "bool",
+          "description": "If set to true, output coordinates are provided in the rigid body's local frame of reference.",
+          "uiName": "Output in local frame",
+          "default": false,
+          "metadata": {
+            "literalOnly": "1"
+          }
+        }
+      },
+      "outputs": {
+        "centerOfMass": {
+          "uiName": "Center of mass",
+          "description": [
+            "The center of mass of the input rigid body"
+          ],
+          "type": "float[3]"
+        },
+        "mass": {
+          "uiName": "Mass",
+          "description": [
+            "The total mass of the input rigid body."
+          ],
+          "type": "float"
+        },
+        "diagonalInertia": {
+          "uiName": "Diagonal inertia",
+          "description": [
+            "The diagonal inertia of the input rigid body (note: the return value is the inertia tensor relative to the principal axes.)"
+          ],
+          "type": "float[3]"
+        },
+        "principalAxes": {
+          "uiName": "Principal axes",
+          "description": [
+            "The principal axes for the inertia tensor of the input rigid body (note: the return value is always in the rigid body's local frame.)"
+          ],
+          "type": "float[4]"
+        },
+        "AABBMin": {
+          "uiName": "Bounds min",
+          "description": [
+            "A list of lower bounds coordinates of the colliders of the input rigid body."
+          ],
+          "type": "float[3]"
+        },
+        "AABBMax": {
+          "uiName": "Bounds max",
+          "description": [
+            "A list of upper bounds coordinates of the colliders of the input rigid body."
+          ],
+          "type": "float[3]"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.SceneQueryOverlapBoxAll",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-QUERY-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "position": {
+          "type": [
+            "pointf[3]",
+            "pointd[3]"
+          ],
+          "description": "Box center position.",
+          "uiName": "Position",
+          "unvalidated": true
+        },
+        "dimensions": {
+          "type": [
+            "float[3]",
+            "double[3]"
+          ],
+          "description": "Box dimensions",
+          "uiName": "Dimensions",
+          "unvalidated": true
+        },
+        "rotation": {
+          "type": [
+            "float[3]",
+            "double[3]"
+          ],
+          "description": "Box rotation in XYZ order Euler angles.",
+          "uiName": "Rotation",
+          "unvalidated": true
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "colliderPrimPaths": {
+          "uiName": "Collider Prim Paths (deprecated)",
+          "description": [
+            "A list of paths of the collider prims that overlap the input box. Deprecated, please use the Collider Prims output instead."
+          ],
+          "type": "token[]",
+          "deprecated": "Use the Collider Prims output instead"
+        },
+        "colliderPrims": {
+          "uiName": "Collider Prims",
+          "description": [
+            "A list of collider prims that overlap the input box."
+          ],
+          "type": "target"
+        },
+        "bodyPrimPaths": {
+          "uiName": "Body Prim Paths (deprecated)",
+          "description": [
+            "A list of paths of the associated body prims for the collider prims that overlap the input box. Deprecated, please use the Body Prims output instead."
+          ],
+          "type": "token[]",
+          "deprecated": "Use the Body Prims output instead"
+        },
+        "bodyPrims": {
+          "uiName": "Body Prims",
+          "description": [
+            "A list of the associated body prims for the collider prims that overlap the input box."
+          ],
+          "type": "target"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.SceneQueryOverlapBoxAny",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-QUERY-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "position": {
+          "type": [
+            "pointf[3]",
+            "pointd[3]"
+          ],
+          "description": "Box center position.",
+          "uiName": "Position",
+          "unvalidated": true
+        },
+        "dimensions": {
+          "type": [
+            "float[3]",
+            "double[3]"
+          ],
+          "description": "Box dimensions",
+          "uiName": "Dimensions",
+          "unvalidated": true
+        },
+        "rotation": {
+          "type": [
+            "float[3]",
+            "double[3]"
+          ],
+          "description": "Box rotation in XYZ order Euler angles",
+          "uiName": "Rotation",
+          "unvalidated": true
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "overlap": {
+          "description": [
+            "Returns true if any colliders overlap with the input box."
+          ],
+          "type": "bool"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.SceneQueryOverlapPrimAll",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-QUERY-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "primPath": {
+          "type": "token",
+          "description": "Prim path to check against. This must be a geometric type (UsdGeom). Deprecated, please use the Prim input instead.",
+          "uiName": "Prim Path (deprecated)",
+          "deprecated": "Use the Prim input instead."
+        },
+        "prim": {
+          "type": "target",
+          "description": "Prim to check against. This must be a geometric type (UsdGeom).",
+          "uiName": "Prim"
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "colliderPrimPaths": {
+          "uiName": "Collider Prim Paths (deprecated)",
+          "description": [
+            "A list of paths of the collider prims that overlap the input Prim. Deprecated, please use the Collider Prims output instead."
+          ],
+          "type": "token[]",
+          "deprecated": "Use the Collider Prims output instead"
+        },
+        "colliderPrims": {
+          "uiName": "Collider Prims",
+          "description": [
+            "A list of collider prims that overlap the input Prim."
+          ],
+          "type": "target"
+        },
+        "bodyPrimPaths": {
+          "uiName": "Body Prim Paths (deprecated)",
+          "description": [
+            "A list of paths of the associated body prims for the collider prims that overlap the input Prim. Deprecated, please use the Body Prims output instead."
+          ],
+          "type": "token[]",
+          "deprecated": "Use the Body Prims output instead"
+        },
+        "bodyPrims": {
+          "uiName": "Body Prims",
+          "description": [
+            "A list of the associated body prims for the collider prims that overlap the input Prim."
+          ],
+          "type": "target"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.SceneQueryOverlapPrimAny",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-QUERY-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "primPath": {
+          "type": "token",
+          "description": "Prim path to check against. This must be a geometric type (UsdGeom). Deprecated, please use the Prim input instead.",
+          "uiName": "Prim Path (deprecated)",
+          "deprecated": "Use the Prim input instead."
+        },
+        "prim": {
+          "type": "target",
+          "description": "Prim to check against. This must be a geometric type (UsdGeom).",
+          "uiName": "Prim"
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "overlap": {
+          "description": [
+            "Returns true if any colliders overlap with the input Prim."
+          ],
+          "type": "bool"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.SceneQueryOverlapSphereAll",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-QUERY-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "position": {
+          "type": [
+            "pointf[3]",
+            "pointd[3]"
+          ],
+          "description": "Sphere center position.",
+          "uiName": "Position",
+          "unvalidated": true
+        },
+        "radius": {
+          "type": [
+            "float",
+            "double"
+          ],
+          "description": "Sphere radius",
+          "uiName": "Radius",
+          "unvalidated": true
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "colliderPrimPaths": {
+          "uiName": "Collider Prim Paths (deprecated)",
+          "description": [
+            "A list of paths of the collider prims that overlap the input sphere. Deprecated, please use the Collider Prims output instead."
+          ],
+          "type": "token[]",
+          "deprecated": "Use the Collider Prims output instead"
+        },
+        "colliderPrims": {
+          "uiName": "Collider Prims",
+          "description": [
+            "A list of collider prims that overlap the input sphere."
+          ],
+          "type": "target"
+        },
+        "bodyPrimPaths": {
+          "uiName": "Body Prim Paths (deprecated)",
+          "description": [
+            "A list of paths of the associated body prims for the collider prims that overlap the input sphere. Deprecated, please use the Body Prims output instead."
+          ],
+          "type": "token[]",
+          "deprecated": "Use the Body Prims output instead"
+        },
+        "bodyPrims": {
+          "uiName": "Body Prims",
+          "description": [
+            "A list of the associated body prims for the collider prims that overlap the input sphere."
+          ],
+          "type": "target"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.SceneQueryOverlapSphereAny",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-QUERY-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "position": {
+          "type": [
+            "pointf[3]",
+            "pointd[3]"
+          ],
+          "description": "Sphere center position.",
+          "uiName": "Position",
+          "unvalidated": true
+        },
+        "radius": {
+          "type": [
+            "float",
+            "double"
+          ],
+          "description": "Sphere radius",
+          "uiName": "Radius",
+          "unvalidated": true
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "overlap": {
+          "description": [
+            "Returns true if any colliders overlap with the input sphere."
+          ],
+          "type": "bool"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.SceneQueryRaycastAll",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-QUERY-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "origin": {
+          "type": [
+            "pointf[3]",
+            "pointd[3]"
+          ],
+          "description": "Ray origin",
+          "uiName": "Origin",
+          "unvalidated": true
+        },
+        "direction": {
+          "type": [
+            "vectorf[3]",
+            "vectord[3]"
+          ],
+          "description": "Ray direction vector",
+          "uiName": "Direction",
+          "unvalidated": true
+        },
+        "raycastRange": {
+          "type": [
+            "float",
+            "double"
+          ],
+          "description": "Raycast distance. Use negative for infinite. If omitted, infinity is used.",
+          "uiName": "Distance",
+          "unvalidated": true
+        },
+        "bothSides": {
+          "type": "bool",
+          "description": "Sets whether backfaces of colliders should be included in checks.",
+          "uiName": "Both sides",
+          "default": false
+        },
+        "sortByDistance": {
+          "type": "bool",
+          "description": "Enable to sort outputs by distance.",
+          "uiName": "Sort by distance",
+          "default": false
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "colliderPrimPaths": {
+          "uiName": "Collider Prim Paths (deprecated)",
+          "description": [
+            "A list of paths of the collider prims that are hit by the input ray. Deprecated, please use the Collider Prims output instead."
+          ],
+          "type": "token[]",
+          "deprecated": "Use the Collider Prims output instead"
+        },
+        "colliderPrims": {
+          "uiName": "Collider Prims",
+          "description": [
+            "A list of collider prims that are hit by the input ray."
+          ],
+          "type": "target"
+        },
+        "bodyPrimPaths": {
+          "uiName": "Body Prim Paths (deprecated)",
+          "description": [
+            "A list of paths of the associated body prims for the collider prims that are hit by the input ray. Deprecated, please use the Body Prims output instead."
+          ],
+          "type": "token[]",
+          "deprecated": "Use the Body Prims output instead"
+        },
+        "bodyPrims": {
+          "uiName": "Body Prims",
+          "description": [
+            "A list of the associated body prims for the collider prims that are hit by the input ray."
+          ],
+          "type": "target"
+        },
+        "positions": {
+          "description": [
+            "A list of positions of the points hit."
+          ],
+          "type": "pointf[3][]"
+        },
+        "normals": {
+          "description": [
+            "A list of surface normals of the points hit."
+          ],
+          "type": "normalf[3][]"
+        },
+        "distances": {
+          "description": [
+            "A list of distances from the origin to the points hit."
+          ],
+          "uiName": "Hit distances",
+          "type": "float[]"
+        },
+        "faceIndexes": {
+          "description": [
+            "A list of the face indexes of the points hit."
+          ],
+          "type": "int[]"
+        },
+        "materialPaths": {
+          "uiName": "Material Paths (deprecated)",
+          "description": [
+            "A list of paths of the physics materials at the points hit. Deprecated, please use the Material Prims output instead."
+          ],
+          "type": "token[]",
+          "deprecated": "Use the Material Prims output instead"
+        },
+        "materialPrims": {
+          "uiName": "Material Prims",
+          "description": [
+            "A list of physics material Prims at the points hit."
+          ],
+          "type": "target"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.SceneQueryRaycastAny",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-QUERY-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "origin": {
+          "type": [
+            "pointf[3]",
+            "pointd[3]"
+          ],
+          "description": "Ray origin",
+          "uiName": "Origin",
+          "unvalidated": true
+        },
+        "direction": {
+          "type": [
+            "vectorf[3]",
+            "vectord[3]"
+          ],
+          "description": "Ray direction vector",
+          "uiName": "Direction",
+          "unvalidated": true
+        },
+        "raycastRange": {
+          "type": [
+            "float",
+            "double"
+          ],
+          "description": "Raycast distance. Use negative for infinite. If omitted, infinity is used.",
+          "uiName": "Distance",
+          "unvalidated": true
+        },
+        "bothSides": {
+          "type": "bool",
+          "description": "Sets whether backfaces of colliders should be included in checks.",
+          "uiName": "Both sides",
+          "default": false
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "hit": {
+          "description": [
+            "Returns true if any colliders are hit by the input ray."
+          ],
+          "type": "bool"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.SceneQueryRaycastClosest",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-QUERY-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "origin": {
+          "type": [
+            "pointf[3]",
+            "pointd[3]"
+          ],
+          "description": "Ray origin",
+          "uiName": "Origin",
+          "unvalidated": true
+        },
+        "direction": {
+          "type": [
+            "vectorf[3]",
+            "vectord[3]"
+          ],
+          "description": "Ray direction vector",
+          "uiName": "Direction",
+          "unvalidated": true
+        },
+        "raycastRange": {
+          "type": [
+            "float",
+            "double"
+          ],
+          "description": "Raycast distance. Use negative for infinite. If omitted, infinity is used.",
+          "uiName": "Distance",
+          "unvalidated": true
+        },
+        "bothSides": {
+          "type": "bool",
+          "description": "Sets whether backfaces of colliders should be included in checks.",
+          "uiName": "Both Sides",
+          "default": false
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "hit": {
+          "description": [
+            "Returns true if any colliders are hit by the input ray."
+          ],
+          "type": "bool"
+        },
+        "colliderPrimPath": {
+          "uiName": "Collider Prim Path (deprecated)",
+          "description": [
+            "Path of the closest collider prim that is hit by the input ray. Deprecated, please use the Collider Prim output instead."
+          ],
+          "type": "token",
+          "deprecated": "Use the Collider Prim output instead"
+        },
+        "colliderPrim": {
+          "uiName": "Collider Prim",
+          "description": [
+            "Closest collider prim that is hit by the input ray."
+          ],
+          "type": "target"
+        },
+        "bodyPrimPath": {
+          "uiName": "Body Prim Path (deprecated)",
+          "description": [
+            "Path of the associated body prim of the closest collider prim hit by the input ray. Deprecated, please use the Body Prim output instead."
+          ],
+          "type": "token",
+          "deprecated": "Use the Body Prim output instead"
+        },
+        "bodyPrim": {
+          "uiName": "Body Prim",
+          "description": [
+            "Associated body prim of the closest collider prim hit by the input ray."
+          ],
+          "type": "target"
+        },
+        "position": {
+          "description": [
+            "The position of the point hit."
+          ],
+          "type": "pointf[3]"
+        },
+        "normal": {
+          "description": [
+            "The surface normal of the point hit."
+          ],
+          "type": "normalf[3]"
+        },
+        "distance": {
+          "uiName": "Hit Distance",
+          "description": [
+            "The distance from the origin to the point hit."
+          ],
+          "type": "float"
+        },
+        "faceIndex": {
+          "description": [
+            "The face index of the point hit."
+          ],
+          "type": "int"
+        },
+        "materialPath": {
+          "uiName": "Material Path (deprecated)",
+          "description": [
+            "Path of the physics material at the point hit. Deprecated, please use the Material Prim output instead."
+          ],
+          "type": "token",
+          "deprecated": "Use the Material Prim output instead"
+        },
+        "materialPrim": {
+          "uiName": "Material Prim",
+          "description": [
+            "Physics material Prim at the point hit."
+          ],
+          "type": "target"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.SceneQuerySweepBoxAll",
+      "version": 2,
+      "requirement": "REQ-UX-GRAPH-QUERY-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "origin": {
+          "type": [
+            "pointf[3]",
+            "pointd[3]"
+          ],
+          "description": "Ray origin",
+          "uiName": "Origin",
+          "unvalidated": true
+        },
+        "direction": {
+          "type": [
+            "vectorf[3]",
+            "vectord[3]"
+          ],
+          "description": "Ray direction vector",
+          "uiName": "Direction",
+          "unvalidated": true
+        },
+        "dimensions": {
+          "type": [
+            "float[3]",
+            "double[3]"
+          ],
+          "description": "Box dimensions",
+          "uiName": "Dimensions",
+          "unvalidated": true
+        },
+        "rotation": {
+          "type": [
+            "float[3]",
+            "double[3]"
+          ],
+          "description": "Box rotation in XYZ order Euler angles.",
+          "uiName": "Rotation",
+          "unvalidated": true
+        },
+        "sweepRange": {
+          "type": [
+            "float",
+            "double"
+          ],
+          "description": "Sweep distance. Use negative for infinite. If omitted, infinity is used.",
+          "uiName": "Distance",
+          "unvalidated": true
+        },
+        "bothSides": {
+          "type": "bool",
+          "description": "Sets whether backfaces of colliders should be included in checks.",
+          "uiName": "Both Sides",
+          "default": false
+        },
+        "sortByDistance": {
+          "type": "bool",
+          "description": "Enable to sort outputs by distance.",
+          "uiName": "Sort By Distance",
+          "default": false
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "colliderPrims": {
+          "uiName": "Collider Prims",
+          "description": [
+            "A list of collider prims that are hit by the sweep."
+          ],
+          "type": "target"
+        },
+        "bodyPrims": {
+          "uiName": "Body Prims",
+          "description": [
+            "A list of the associated body prims for the collider prims that are hit by the sweep."
+          ],
+          "type": "target"
+        },
+        "positions": {
+          "description": [
+            "A list of positions of the points hit."
+          ],
+          "type": "pointf[3][]"
+        },
+        "normals": {
+          "description": [
+            "A list of surface normals of the points hit."
+          ],
+          "type": "normalf[3][]"
+        },
+        "distances": {
+          "description": [
+            "A list of distances from the origin to the points hit."
+          ],
+          "uiName": "Hit Distances",
+          "type": "float[]"
+        },
+        "faceIndexes": {
+          "description": [
+            "A list of the face indexes of the points hit."
+          ],
+          "type": "int[]"
+        },
+        "materialPrims": {
+          "uiName": "Material Prims",
+          "description": [
+            "A list of physics material Prims at the points hit."
+          ],
+          "type": "target"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.SceneQuerySweepBoxAny",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-QUERY-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "origin": {
+          "type": [
+            "pointf[3]",
+            "pointd[3]"
+          ],
+          "description": "Sweep origin",
+          "uiName": "Origin",
+          "unvalidated": true
+        },
+        "direction": {
+          "type": [
+            "vectorf[3]",
+            "vectord[3]"
+          ],
+          "description": "Sweep direction vector",
+          "uiName": "Direction",
+          "unvalidated": true
+        },
+        "dimensions": {
+          "type": [
+            "float[3]",
+            "double[3]"
+          ],
+          "description": "Box dimensions",
+          "uiName": "Dimensions",
+          "unvalidated": true
+        },
+        "rotation": {
+          "type": [
+            "float[3]",
+            "double[3]"
+          ],
+          "description": "Box rotation in XYZ order Euler angles.",
+          "uiName": "Rotation",
+          "unvalidated": true
+        },
+        "sweepRange": {
+          "type": [
+            "float",
+            "double"
+          ],
+          "description": "Sweep distance. Use negative for infinite. If omitted, infinity is used.",
+          "uiName": "Distance",
+          "unvalidated": true
+        },
+        "bothSides": {
+          "type": "bool",
+          "description": "Sets whether backfaces of colliders should be included in checks.",
+          "uiName": "Both Sides",
+          "default": false
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "hit": {
+          "description": [
+            "Returns true if any colliders are hit by the input sweep."
+          ],
+          "type": "bool"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.SceneQuerySweepBoxClosest",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-QUERY-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "origin": {
+          "type": [
+            "pointf[3]",
+            "pointd[3]"
+          ],
+          "description": "Sweep origin",
+          "uiName": "Origin",
+          "unvalidated": true
+        },
+        "direction": {
+          "type": [
+            "vectorf[3]",
+            "vectord[3]"
+          ],
+          "description": "Sweep direction vector",
+          "uiName": "Direction",
+          "unvalidated": true
+        },
+        "dimensions": {
+          "type": [
+            "float[3]",
+            "double[3]"
+          ],
+          "description": "Box dimensions",
+          "uiName": "Dimensions",
+          "unvalidated": true
+        },
+        "rotation": {
+          "type": [
+            "float[3]",
+            "double[3]"
+          ],
+          "description": "Box rotation in XYZ order Euler angles.",
+          "uiName": "Rotation",
+          "unvalidated": true
+        },
+        "sweepRange": {
+          "type": [
+            "float",
+            "double"
+          ],
+          "description": "Sweep maximum distance. Use negative for infinite. If omitted, infinity is used.",
+          "uiName": "Distance",
+          "unvalidated": true
+        },
+        "bothSides": {
+          "type": "bool",
+          "description": "Sets whether backfaces of colliders should be included in checks.",
+          "uiName": "Both sides",
+          "default": false
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "hit": {
+          "description": [
+            "Returns true if any colliders are hit by the sweep."
+          ],
+          "type": "bool"
+        },
+        "colliderPrim": {
+          "uiName": "Collider Prim",
+          "description": [
+            "Closest collider prim that is hit by the sweep."
+          ],
+          "type": "target"
+        },
+        "bodyPrim": {
+          "uiName": "Body Prim",
+          "description": [
+            "Associated body prim of the closest collider prim hit by the sweep."
+          ],
+          "type": "target"
+        },
+        "position": {
+          "description": [
+            "The position of the point hit."
+          ],
+          "type": "pointf[3]"
+        },
+        "normal": {
+          "description": [
+            "The surface normal of the point hit."
+          ],
+          "type": "normalf[3]"
+        },
+        "distance": {
+          "description": [
+            "The distance from the origin to the point hit."
+          ],
+          "uiName": "Hit Distance",
+          "type": "float"
+        },
+        "faceIndex": {
+          "description": [
+            "The face index of the point hit."
+          ],
+          "type": "int"
+        },
+        "materialPrim": {
+          "uiName": "Material Prim",
+          "description": [
+            "Physics material Prim at the point hit."
+          ],
+          "type": "target"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.SceneQuerySweepPrimAll",
+      "version": 2,
+      "requirement": "REQ-UX-GRAPH-QUERY-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "prim": {
+          "type": "target",
+          "description": "Prim to check against. This must be a geometric type (UsdGeom).",
+          "uiName": "Prim"
+        },
+        "direction": {
+          "type": [
+            "vectorf[3]",
+            "vectord[3]"
+          ],
+          "description": "Ray direction vector",
+          "uiName": "Direction",
+          "unvalidated": true
+        },
+        "sweepRange": {
+          "type": [
+            "float",
+            "double"
+          ],
+          "description": "Sweep distance. Use negative for infinite. If omitted, infinity is used.",
+          "uiName": "Distance",
+          "unvalidated": true
+        },
+        "bothSides": {
+          "type": "bool",
+          "description": "Sets whether backfaces of colliders should be included in checks.",
+          "uiName": "Both Sides",
+          "default": false
+        },
+        "sortByDistance": {
+          "type": "bool",
+          "description": "Enable to sort outputs by distance.",
+          "uiName": "Sort By Distance",
+          "default": false
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "colliderPrims": {
+          "uiName": "Collider Prims",
+          "description": [
+            "A list of collider prims that are hit by the sweep."
+          ],
+          "type": "target"
+        },
+        "bodyPrims": {
+          "uiName": "Body Prims",
+          "description": [
+            "A list of the associated body prims for the collider prims that are hit by the sweep."
+          ],
+          "type": "target"
+        },
+        "positions": {
+          "description": [
+            "A list of positions of the points hit."
+          ],
+          "type": "pointf[3][]"
+        },
+        "normals": {
+          "description": [
+            "A list of surface normals of the points hit."
+          ],
+          "type": "normalf[3][]"
+        },
+        "distances": {
+          "description": [
+            "A list of distances from the origin to the points hit."
+          ],
+          "uiName": "Hit Distances",
+          "type": "float[]"
+        },
+        "faceIndexes": {
+          "description": [
+            "A list of the face indexes of the points hit."
+          ],
+          "type": "int[]"
+        },
+        "materialPrims": {
+          "uiName": "Material Prims",
+          "description": [
+            "A list of physics material Prims at the points hit."
+          ],
+          "type": "target"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.SceneQuerySweepPrimAny",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-QUERY-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "prim": {
+          "type": "target",
+          "description": "Prim to check against. This must be a geometric type (UsdGeom).",
+          "uiName": "Prim"
+        },
+        "direction": {
+          "type": [
+            "vectorf[3]",
+            "vectord[3]"
+          ],
+          "description": "Sweep direction vector",
+          "uiName": "Direction",
+          "unvalidated": true
+        },
+        "sweepRange": {
+          "type": [
+            "float",
+            "double"
+          ],
+          "description": "Sweep distance. Use negative for infinite. If omitted, infinity is used.",
+          "uiName": "Distance",
+          "unvalidated": true
+        },
+        "bothSides": {
+          "type": "bool",
+          "description": "Sets whether backfaces of colliders should be included in checks.",
+          "uiName": "Both Sides",
+          "default": false
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "hit": {
+          "description": [
+            "Returns true if any colliders are hit by the input sweep."
+          ],
+          "type": "bool"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.SceneQuerySweepPrimClosest",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-QUERY-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "prim": {
+          "type": "target",
+          "description": "Prim to check against. This must be a geometric type (UsdGeom).",
+          "uiName": "Prim"
+        },
+        "direction": {
+          "type": [
+            "vectorf[3]",
+            "vectord[3]"
+          ],
+          "description": "Sweep direction vector",
+          "uiName": "Direction",
+          "unvalidated": true
+        },
+        "sweepRange": {
+          "type": [
+            "float",
+            "double"
+          ],
+          "description": "Sweep maximum distance. Use negative for infinite. If omitted, infinity is used.",
+          "uiName": "Distance",
+          "unvalidated": true
+        },
+        "bothSides": {
+          "type": "bool",
+          "description": "Sets whether backfaces of colliders should be included in checks.",
+          "uiName": "Both sides",
+          "default": false
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "hit": {
+          "description": [
+            "Returns true if any colliders are hit by the sweep."
+          ],
+          "type": "bool"
+        },
+        "colliderPrim": {
+          "uiName": "Collider Prim",
+          "description": [
+            "Closest collider prim that is hit by the sweep."
+          ],
+          "type": "target"
+        },
+        "bodyPrim": {
+          "uiName": "Body Prim",
+          "description": [
+            "Associated body prim of the closest collider prim hit by the sweep."
+          ],
+          "type": "target"
+        },
+        "position": {
+          "description": [
+            "The position of the point hit."
+          ],
+          "type": "pointf[3]"
+        },
+        "normal": {
+          "description": [
+            "The surface normal of the point hit."
+          ],
+          "type": "normalf[3]"
+        },
+        "distance": {
+          "description": [
+            "The distance from the origin to the point hit."
+          ],
+          "uiName": "Hit Distance",
+          "type": "float"
+        },
+        "faceIndex": {
+          "description": [
+            "The face index of the point hit."
+          ],
+          "type": "int"
+        },
+        "materialPrim": {
+          "uiName": "Material Prim",
+          "description": [
+            "Physics material Prim at the point hit."
+          ],
+          "type": "target"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.SceneQuerySweepSphereAll",
+      "version": 2,
+      "requirement": "REQ-UX-GRAPH-QUERY-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "origin": {
+          "type": [
+            "pointf[3]",
+            "pointd[3]"
+          ],
+          "description": "Ray origin",
+          "uiName": "Origin",
+          "unvalidated": true
+        },
+        "direction": {
+          "type": [
+            "vectorf[3]",
+            "vectord[3]"
+          ],
+          "description": "Ray direction vector",
+          "uiName": "Direction",
+          "unvalidated": true
+        },
+        "radius": {
+          "type": [
+            "float",
+            "double"
+          ],
+          "description": "Sphere radius",
+          "uiName": "Radius",
+          "unvalidated": true
+        },
+        "sweepRange": {
+          "type": [
+            "float",
+            "double"
+          ],
+          "description": "Sweep distance. Use negative for infinite. If omitted, infinity is used.",
+          "uiName": "Distance",
+          "unvalidated": true
+        },
+        "bothSides": {
+          "type": "bool",
+          "description": "Sets whether backfaces of colliders should be included in checks.",
+          "uiName": "Both Sides",
+          "default": false
+        },
+        "sortByDistance": {
+          "type": "bool",
+          "description": "Enable to sort outputs by distance.",
+          "uiName": "Sort By Distance",
+          "default": false
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "colliderPrimPaths": {
+          "uiName": "Collider Prim Paths (deprecated)",
+          "description": [
+            "A list of paths of the collider prims that are hit by the sweep. Deprecated, please use the Collider Prims output instead."
+          ],
+          "type": "token[]",
+          "deprecated": "Use the Collider Prims output instead"
+        },
+        "colliderPrims": {
+          "uiName": "Collider Prims",
+          "description": [
+            "A list of collider prims that are hit by the sweep."
+          ],
+          "type": "target"
+        },
+        "bodyPrimPaths": {
+          "uiName": "Body Prim Paths (deprecated)",
+          "description": [
+            "A list of paths of the associated body prims for the collider prims that are hit by the sweep. Deprecated, please use the Body Prims output instead."
+          ],
+          "type": "token[]",
+          "deprecated": "Use the Body Prims output instead"
+        },
+        "bodyPrims": {
+          "uiName": "Body Prims",
+          "description": [
+            "A list of the associated body prims for the collider prims that are hit by the sweep."
+          ],
+          "type": "target"
+        },
+        "positions": {
+          "description": [
+            "A list of positions of the points hit."
+          ],
+          "type": "pointf[3][]"
+        },
+        "normals": {
+          "description": [
+            "A list of surface normals of the points hit."
+          ],
+          "type": "normalf[3][]"
+        },
+        "distances": {
+          "description": [
+            "A list of distances from the origin to the points hit."
+          ],
+          "uiName": "Hit Distances",
+          "type": "float[]"
+        },
+        "faceIndexes": {
+          "description": [
+            "A list of the face indexes of the points hit."
+          ],
+          "type": "int[]"
+        },
+        "materialPaths": {
+          "uiName": "Material Paths (deprecated)",
+          "description": [
+            "A list of paths of the physics materials at the points hit. Deprecated, please use the Material Prims output instead."
+          ],
+          "type": "token[]",
+          "deprecated": "Use the Material Prims output instead"
+        },
+        "materialPrims": {
+          "uiName": "Material Prims",
+          "description": [
+            "A list of physics material Prims at the points hit."
+          ],
+          "type": "target"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.SceneQuerySweepSphereAny",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-QUERY-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "origin": {
+          "type": [
+            "pointf[3]",
+            "pointd[3]"
+          ],
+          "description": "Sweep origin",
+          "uiName": "Origin",
+          "unvalidated": true
+        },
+        "direction": {
+          "type": [
+            "vectorf[3]",
+            "vectord[3]"
+          ],
+          "description": "Sweep direction vector",
+          "uiName": "Direction",
+          "unvalidated": true
+        },
+        "radius": {
+          "type": [
+            "float",
+            "double"
+          ],
+          "description": "Sphere radius",
+          "uiName": "Radius",
+          "unvalidated": true
+        },
+        "sweepRange": {
+          "type": [
+            "float",
+            "double"
+          ],
+          "description": "Sweep distance. Use negative for infinite. If omitted, infinity is used.",
+          "uiName": "Distance",
+          "unvalidated": true
+        },
+        "bothSides": {
+          "type": "bool",
+          "description": "Sets whether backfaces of colliders should be included in checks.",
+          "uiName": "Both Sides",
+          "default": false
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "hit": {
+          "description": [
+            "Returns true if any colliders are hit by the input sweep."
+          ],
+          "type": "bool"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.SceneQuerySweepSphereClosest",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-QUERY-001",
+      "inputs": {
+        "execIn": {
+          "type": "execution",
+          "description": "Input execution"
+        },
+        "origin": {
+          "type": [
+            "pointf[3]",
+            "pointd[3]"
+          ],
+          "description": "Sweep origin",
+          "uiName": "Origin",
+          "unvalidated": true
+        },
+        "direction": {
+          "type": [
+            "vectorf[3]",
+            "vectord[3]"
+          ],
+          "description": "Sweep direction vector",
+          "uiName": "Direction",
+          "unvalidated": true
+        },
+        "radius": {
+          "type": [
+            "float",
+            "double"
+          ],
+          "description": "Sphere radius",
+          "uiName": "Radius",
+          "unvalidated": true
+        },
+        "sweepRange": {
+          "type": [
+            "float",
+            "double"
+          ],
+          "description": "Sweep maximum distance. Use negative for infinite. If omitted, infinity is used.",
+          "uiName": "Distance",
+          "unvalidated": true
+        },
+        "bothSides": {
+          "type": "bool",
+          "description": "Sets whether backfaces of colliders should be included in checks.",
+          "uiName": "Both sides",
+          "default": false
+        }
+      },
+      "outputs": {
+        "execOut": {
+          "type": "execution",
+          "description": "Output execution"
+        },
+        "hit": {
+          "description": [
+            "Returns true if any colliders are hit by the sweep."
+          ],
+          "type": "bool"
+        },
+        "colliderPrimPath": {
+          "uiName": "Collider Prim Path (deprecated)",
+          "description": [
+            "Path of the closest collider prim that is hit by the sweep. Deprecated, please use the Collider Prim output instead."
+          ],
+          "type": "token",
+          "deprecated": "Use the Collider Prim output instead"
+        },
+        "colliderPrim": {
+          "uiName": "Collider Prim",
+          "description": [
+            "Closest collider prim that is hit by the sweep."
+          ],
+          "type": "target"
+        },
+        "bodyPrimPath": {
+          "uiName": "Body Prim Path (deprecated)",
+          "description": [
+            "Path of the associated body prim of the closest collider prim hit by the sweep. Deprecated, please use the Body Prim output instead."
+          ],
+          "type": "token",
+          "deprecated": "Use the Body Prim output instead"
+        },
+        "bodyPrim": {
+          "uiName": "Body Prim",
+          "description": [
+            "Associated body prim of the closest collider prim hit by the sweep."
+          ],
+          "type": "target"
+        },
+        "position": {
+          "description": [
+            "The position of the point hit."
+          ],
+          "type": "pointf[3]"
+        },
+        "normal": {
+          "description": [
+            "The surface normal of the point hit."
+          ],
+          "type": "normalf[3]"
+        },
+        "distance": {
+          "description": [
+            "The distance from the origin to the point hit."
+          ],
+          "uiName": "Hit Distance",
+          "type": "float"
+        },
+        "faceIndex": {
+          "description": [
+            "The face index of the point hit."
+          ],
+          "type": "int"
+        },
+        "materialPath": {
+          "uiName": "Material Path (deprecated)",
+          "description": [
+            "Path of the physics material at the point hit. Deprecated, please use the Material Prim output instead."
+          ],
+          "type": "token",
+          "deprecated": "Use the Material Prim output instead"
+        },
+        "materialPrim": {
+          "uiName": "Material Prim",
+          "description": [
+            "Physics material Prim at the point hit."
+          ],
+          "type": "target"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "omni.physx.graph.OnTriggerCollider",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-EVENT-001",
+      "inputs": {
+        "triggersRelationships": {
+          "type": "target",
+          "uiName": "Triggers Relationships",
+          "optional": true,
+          "description": [
+            "Specify one or more Prims with an applied TriggerAPI to monitor their trigger events"
+          ],
+          "metadata": {
+            "literalOnly": "1",
+            "allowMultiInputs": "1"
+          }
+        },
+        "triggersPaths": {
+          "type": "token[]",
+          "uiName": "Triggers Paths",
+          "optional": true,
+          "description": [
+            "Specify one or more paths to Prims with applied TriggerAPI to monitor their trigger events"
+          ],
+          "metadata": {
+            "literalOnly": "1"
+          }
+        },
+        "listenToAllTriggers": {
+          "type": "bool",
+          "uiName": "Listen To All Triggers",
+          "optional": true,
+          "description": [
+            "If True the node will trigger whenever a trigger events happens, ignoring the list of provided paths in \"Triggers Relationships\" and \"Triggers Paths\""
+          ],
+          "metadata": {
+            "literalOnly": "1"
+          }
+        }
+      },
+      "outputs": {
+        "enterExecOut": {
+          "type": "execution",
+          "description": "Output execution when enter event is emitted"
+        },
+        "leaveExecOut": {
+          "type": "execution",
+          "description": "Output execution when leave event is emitted"
+        },
+        "triggerCollider": {
+          "uiName": "Trigger Collider",
+          "description": [
+            "Path of Collider Prim containing the TriggerAPI that has emitted the trigger event. It will not be updated if none of the two execution pins are wired."
+          ],
+          "type": "token"
+        },
+        "otherCollider": {
+          "uiName": "Other Collider",
+          "description": [
+            "Path of the Collider Prim that has entered the volume of the Collider Prim marked as trigger. It will not be updated if none of the two execution pins are wired."
+          ],
+          "type": "token"
+        },
+        "triggerBody": {
+          "uiName": "Trigger Body",
+          "description": [
+            "Path of Body containing Collider Prim that has emitted the trigger event. It will not be updated if none of the two execution pins are wired."
+          ],
+          "type": "token"
+        },
+        "otherBody": {
+          "uiName": "Other Body",
+          "description": [
+            "Path of Body containing the Collider Prim that has entered the volume of the Collider Prim marked as trigger. It will not be updated if none of the two execution pins are wired."
+          ],
+          "type": "token"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "VehicleGetDriveState",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-VEHICLE-001",
+      "inputs": {
+        "vehiclePath": {
+          "type": "token",
+          "description": "The USD path of the vehicle prim to get the drive state for",
+          "uiName": "Vehicle USD Path"
+        }
+      },
+      "outputs": {
+        "accelerator": {
+          "type": "float",
+          "description": "The state of the accelerator pedal (in range [0, 1])",
+          "uiName": "Accelerator"
+        },
+        "brake0": {
+          "type": "float",
+          "description": "The state of the brake0 control (in range [0, 1])",
+          "uiName": "Brake0"
+        },
+        "brake1": {
+          "type": "float",
+          "description": "The state of the brake1 control (in range [0, 1])",
+          "uiName": "Brake1"
+        },
+        "steer": {
+          "type": "float",
+          "description": "The state of the steering wheel (in range [-1, 1])",
+          "uiName": "Steer"
+        },
+        "currentGear": {
+          "type": "int",
+          "description": "The current gear",
+          "uiName": "Current Gear"
+        },
+        "targetGear": {
+          "type": "int",
+          "description": "The target gear",
+          "uiName": "Target Gear"
+        },
+        "automaticTransmission": {
+          "type": "bool",
+          "description": "The state of the automatic transmission",
+          "uiName": "Automatic Transmission"
+        },
+        "engineRotationSpeed": {
+          "type": "float",
+          "description": "The engine rotation speed in radians per second",
+          "uiName": "Engine Rotation Speed"
+        }
+      },
+      "state": {}
+    },
+    {
+      "type": "VehicleGetWheelState",
+      "version": 1,
+      "requirement": "REQ-UX-GRAPH-VEHICLE-001",
+      "inputs": {
+        "vehicleWheelAttachmentPaths": {
+          "type": "token[]",
+          "description": "The USD path of the vehicle prims to get the wheel state for",
+          "uiName": "Wheel Attachment USD Paths"
+        }
+      },
+      "outputs": {
+        "wheelRotationSpeeds": {
+          "type": "float[]",
+          "description": "The wheel rotation speeds in radians per second",
+          "uiName": "Wheel Rotation Speeds"
+        },
+        "wheelRotationAngles": {
+          "type": "float[]",
+          "description": "The wheel rotation angles in radians",
+          "uiName": "Wheel Rotation Angles"
+        },
+        "wheelSteerAngles": {
+          "type": "float[]",
+          "description": "The wheel steer angles in radians",
+          "uiName": "Wheel Steer Angles"
+        },
+        "groundPlanes": {
+          "type": "float[4][]",
+          "description": "The ground planes under the wheels stored in [nx,ny,nz,d] format ",
+          "uiName": "Wheel Ground Planes"
+        },
+        "groundHitPositions": {
+          "type": "float[3][]",
+          "description": "The ground hit positions under the wheels stored in (x,y,z) format ",
+          "uiName": "Ground Hit Positions"
+        },
+        "groundPhysXActors": {
+          "type": "token[]",
+          "description": "The physx actors under the wheels",
+          "uiName": "Ground Hit PhysX Actors"
+        },
+        "groundPhysXShapes": {
+          "type": "token[]",
+          "description": "The physx shapes under the wheels",
+          "uiName": "Ground Hit PhysX Shapes"
+        },
+        "groundPhysXMaterials": {
+          "type": "token[]",
+          "description": "The physx materials under the wheels",
+          "uiName": "Ground Hit PhysX Materials"
+        },
+        "groundContactStates": {
+          "type": "bool[]",
+          "description": "True if the wheel touches the ground, false if not",
+          "uiName": "Ground Contact State"
+        },
+        "suspensionJounces": {
+          "type": "float[]",
+          "description": "The jounce of the suspensions with zero meaning fully elongated",
+          "uiName": "Suspension Jounces"
+        },
+        "suspensionForces": {
+          "type": "float[3][]",
+          "description": "The force developing on the suspensions",
+          "uiName": "Suspension Forces"
+        },
+        "tireFrictions": {
+          "type": "float[]",
+          "description": "The friction values applied to the tires",
+          "uiName": "Tire Friction Values"
+        },
+        "tireLongitudinalSlips": {
+          "type": "float[]",
+          "description": "The tire longitudinal slips",
+          "uiName": "Tire Longitudinal Slips"
+        },
+        "tireLateralSlips": {
+          "type": "float[]",
+          "description": "The tire lateral slips",
+          "uiName": "Tire Lateral Slips"
+        },
+        "tireLongitudinalDirections": {
+          "type": "float[3][]",
+          "description": "The longitudinal directions of the tires",
+          "uiName": "Tire Longitudinal Directions"
+        },
+        "tireLateralDirections": {
+          "type": "float[3][]",
+          "description": "The lateral directions of the tires",
+          "uiName": "Tire Lateral Directions"
+        },
+        "tireForces": {
+          "type": "float[3][]",
+          "description": "The forces developing on the tires",
+          "uiName": "Tire Forces"
+        }
+      },
+      "state": {}
+    }
+  ]
+}

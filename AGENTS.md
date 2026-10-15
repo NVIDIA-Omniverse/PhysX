@@ -23,6 +23,5 @@ tasks (scene loading, environment cloning, tensor bindings, resetting).
 | [`physx/`](physx/) | PhysX SDK — C++ real-time physics engine |
 | [`blast/`](blast/) | Blast SDK — destruction and fracture simulation |
 | [`flow/`](flow/) | Flow SDK — fluid and fire simulation |
-| [`omni/`](omni/) | Omniverse PhysX extensions for Kit-based apps |
 
 Each subfolder has its own README with build and usage instructions.

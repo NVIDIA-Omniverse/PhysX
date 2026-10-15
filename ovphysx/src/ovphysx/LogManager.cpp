@@ -13,6 +13,9 @@
  *
  * @implements REQ-RUNTIME-ERROR-001
  * @covers AC-2
+ *
+ * @implements REQ-CAPI-PROFILER-001
+ * @covers AC-5
  */
 
 // LogManager: global log level, one application callback, and test capture.
@@ -21,7 +24,11 @@
 // capture. Both are registered with Carbonite's ILogging when available.
 
 #include "LogManager.hpp"
+#include "internal/GlobalState.hpp"
+#include "internal/LogManagerState.hpp"
+#include "internal/Profiling.h"
 #include "ovphysx/ovphysx.h"
+#include "ovphysx/ovphysx_config.h"
 #include "internal/sdk/ovphysxSDK.hpp"
 
 #include <carb/logging/Logger.h>
@@ -120,75 +127,12 @@ uint32_t fromCarbLogLevel(int32_t carbLevel)
     }
 }
 
-// ============================================================================
-// Global state
-// ============================================================================
+using ovphysx::CallbackRegistration;
+using ovphysx::ChannelRule;
+using ovphysx::DispatchNode;
+using ovphysx::LogCaptureLogger;
 
-// The public logging contract is process-wide, so the level, sole callback,
-// and Carbonite logger registration are necessarily module state. Lock order:
-// readiness/control, then user-logger registration, then callback state, then
-// the registration drain and dispatch acceptance mutexes. Never hold callback
-// state or registration drain locks while invoking user code or waiting for a
-// prior registration to drain.
-
-std::atomic<uint32_t> g_logLevel{OVPHYSX_LOG_WARNING};
-// Never reset to false: Carbonite is process-lifetime once initialized
-// (CarboniteLoader::g_bootstrapDone follows the same pattern). getLogging()
-// therefore remains valid for the rest of the process, so callers of
-// ovphysx_set_log_level() after init can safely update the threshold.
-std::atomic<bool> g_carboniteReady{false};
-// Controls whether Carbonite's built-in console logger is active. True by
-// default, matching Carbonite's initial state. The user may disable it to
-// avoid doubled output when a custom callback also writes to the console.
-// Stored eagerly and applied when Carbonite initializes (or immediately if
-// already initialized).
-bool g_defaultOutputEnabled = true;
-
-// ============================================================================
-// Application callback
-// ============================================================================
-
-struct ChannelRule
-{
-    std::string channel;
-    ovphysx_log_level_t minSeverity;
-};
-
-struct CallbackRegistration
-{
-    ovphysx_log_callback_t callback = nullptr;
-    void* user_data = nullptr;
-    ovphysx_log_level_t minSeverity = OVPHYSX_LOG_WARNING;
-    std::vector<ChannelRule> channelRules;
-    std::mutex invokeMutex;
-    std::mutex drainMutex;
-    std::condition_variable drainCv;
-    uint64_t inFlight = 0;
-};
-
-std::mutex g_callbackMutex;
-std::condition_variable g_callbackTransitionCv;
-std::shared_ptr<CallbackRegistration> g_callback;
-bool g_callbackTransition = false;
-std::mutex g_carboniteReadyControlMutex;
-
-struct DispatchNode
-{
-    uint64_t ticket = 0;
-    bool complete = false;
-    std::shared_ptr<DispatchNode> next;
-};
-
-// Each accepted delivery owns one node until the contiguous completion prefix
-// advances past it. This allocation is the bounded bookkeeping cost that lets
-// flush observe an exact point-in-time barrier even when registrations overlap,
-// without holding a state mutex while application code runs.
-std::mutex g_dispatchMutex;
-std::condition_variable g_dispatchCv;
-uint64_t g_dispatchAccepted = 0;
-uint64_t g_dispatchCompleted = 0;
-std::shared_ptr<DispatchNode> g_dispatchHead;
-DispatchNode* g_dispatchTail = nullptr;
+// Recursion suppression belongs to the current thread, not the process owner.
 thread_local bool t_inDispatch = false;
 
 bool isValidLogLevel(ovphysx_log_level_t level)
@@ -302,174 +246,174 @@ ovphysx_log_level_t thresholdForChannel(
     return threshold;
 }
 
-struct UserCallbackLogger : public carb::logging::Logger2
+} // anonymous namespace
+
+void ovphysx::UserCallbackLogger::handleMessage(const carb::logging::LogMessage& msg)
 {
-    void handleMessage(const carb::logging::LogMessage& msg) override
+    ovphysx::LogManagerState& state = ovphysx::globalState().logging;
+    std::shared_ptr<CallbackRegistration> registration;
+    std::shared_ptr<DispatchNode> dispatchNode;
+    uint64_t dispatchTicket = 0;
+    bool registrationAccepted = false;
+    bool dispatchAccepted = false;
+    try
     {
-        std::shared_ptr<CallbackRegistration> registration;
-        std::shared_ptr<DispatchNode> dispatchNode;
-        uint64_t dispatchTicket = 0;
-        bool registrationAccepted = false;
-        bool dispatchAccepted = false;
-        try
+        if (t_inDispatch)
+            return;
+
+        const ovphysx_log_level_t level = static_cast<ovphysx_log_level_t>(fromCarbLogLevel(msg.level));
+
+        std::string channelText;
         {
-            if (t_inDispatch)
+            std::lock_guard<std::mutex> stateLock(state.callbackMutex);
+            registration = state.callback;
+            if (!registration)
                 return;
 
-            const ovphysx_log_level_t level = static_cast<ovphysx_log_level_t>(fromCarbLogLevel(msg.level));
-
-            std::string channelText;
+            // Carbonite owns msg.source. Copy it only after confirming that
+            // delivery is active so a serialized callback receives stable,
+            // NUL-terminated channel storage while it waits its turn.
+            channelText = msg.source ? msg.source : "";
+            if (level < thresholdForChannel(
+                    registration->minSeverity, registration->channelRules, channelText))
             {
-                std::lock_guard<std::mutex> stateLock(g_callbackMutex);
-                registration = g_callback;
-                if (!registration)
-                    return;
-
-                // Carbonite owns msg.source. Copy it only after confirming that
-                // delivery is active so a serialized callback receives stable,
-                // NUL-terminated channel storage while it waits its turn.
-                channelText = msg.source ? msg.source : "";
-                if (level < thresholdForChannel(
-                        registration->minSeverity, registration->channelRules, channelText))
-                {
-                    return;
-                }
-                dispatchNode = std::make_shared<DispatchNode>();
-                {
-                    std::scoped_lock<std::mutex, std::mutex> acceptanceLock(
-                        registration->drainMutex, g_dispatchMutex);
-                    if (g_dispatchAccepted == UINT64_MAX)
-                        return;
-                    ++registration->inFlight;
-                    registrationAccepted = true;
-                    dispatchTicket = ++g_dispatchAccepted;
-                    dispatchNode->ticket = dispatchTicket;
-                    if (g_dispatchTail)
-                        g_dispatchTail->next = dispatchNode;
-                    else
-                        g_dispatchHead = dispatchNode;
-                    g_dispatchTail = dispatchNode.get();
-                    dispatchAccepted = true;
-                }
+                return;
             }
-
+            dispatchNode = std::make_shared<DispatchNode>();
             {
-                std::lock_guard<std::mutex> invokeLock(registration->invokeMutex);
-                const bool previousInDispatch = t_inDispatch;
-                t_inDispatch = true;
-                const char* message = msg.message ? msg.message : "";
-                double timestamp = 0.0;
-                if (CARB_INCLUDES_MEMBER(msg.sizeOf, carb::logging::LogMessage::timestampNsSinceUnixEpoch) &&
-                    msg.timestampNsSinceUnixEpoch.count() > 0)
-                {
-                    timestamp = static_cast<double>(msg.timestampNsSinceUnixEpoch.count()) / 1000000000.0;
-                }
+                std::scoped_lock<std::mutex, std::mutex> acceptanceLock(
+                    registration->drainMutex, state.dispatchMutex);
+                if (state.dispatchAccepted == UINT64_MAX)
+                    return;
+                ++registration->inFlight;
+                registrationAccepted = true;
+                dispatchTicket = ++state.dispatchAccepted;
+                dispatchNode->ticket = dispatchTicket;
+                if (state.dispatchTail)
+                    state.dispatchTail->next = dispatchNode;
                 else
-                {
-                    const std::chrono::duration<double> sinceEpoch =
-                        std::chrono::system_clock::now().time_since_epoch();
-                    timestamp = sinceEpoch.count();
-                }
-                try
-                {
-                    // Errors from application code belong to its nested calls, not the operation logging here.
-                    omni::physx::RuntimeErrorScope callbackErrors;
-                    registration->callback(
-                        level,
-                        ovphysx_cstr(message),
-                        ovphysx_cstr(channelText.c_str()),
-                        timestamp,
-                        registration->user_data);
-                }
-                catch (...)
-                {
-                    // C ABI callbacks must not throw. Swallow defensively so
-                    // state and drain accounting cannot remain wedged.
-                }
-                t_inDispatch = previousInDispatch;
+                    state.dispatchHead = dispatchNode;
+                state.dispatchTail = dispatchNode.get();
+                dispatchAccepted = true;
             }
+        }
 
+        {
+            std::lock_guard<std::mutex> invokeLock(registration->invokeMutex);
+            const bool previousInDispatch = t_inDispatch;
+            t_inDispatch = true;
+            const char* message = msg.message ? msg.message : "";
+            double timestamp = 0.0;
+            if (CARB_INCLUDES_MEMBER(msg.sizeOf, carb::logging::LogMessage::timestampNsSinceUnixEpoch) &&
+                msg.timestampNsSinceUnixEpoch.count() > 0)
+            {
+                timestamp = static_cast<double>(msg.timestampNsSinceUnixEpoch.count()) / 1000000000.0;
+            }
+            else
+            {
+                const std::chrono::duration<double> sinceEpoch =
+                    std::chrono::system_clock::now().time_since_epoch();
+                timestamp = sinceEpoch.count();
+            }
+            try
+            {
+                // Errors from application code belong to its nested calls, not the operation logging here.
+                omni::physx::RuntimeErrorScope callbackErrors;
+                registration->callback(
+                    level,
+                    ovphysx_cstr(message),
+                    ovphysx_cstr(channelText.c_str()),
+                    timestamp,
+                    registration->user_data);
+            }
+            catch (...)
+            {
+                // C ABI callbacks must not throw. Swallow defensively so
+                // state and drain accounting cannot remain wedged.
+            }
+            t_inDispatch = previousInDispatch;
+        }
+
+        {
+            std::lock_guard<std::mutex> drainLock(registration->drainMutex);
+            --registration->inFlight;
+        }
+        registrationAccepted = false;
+        registration->drainCv.notify_all();
+        {
+            std::lock_guard<std::mutex> dispatchLock(state.dispatchMutex);
+            dispatchNode->complete = true;
+            while (state.dispatchHead && state.dispatchHead->complete)
+            {
+                state.dispatchCompleted = state.dispatchHead->ticket;
+                state.dispatchHead = state.dispatchHead->next;
+            }
+            if (!state.dispatchHead)
+                state.dispatchTail = nullptr;
+        }
+        dispatchAccepted = false;
+        state.dispatchCv.notify_all();
+    }
+    catch (...)
+    {
+        // Carbonite Logger2 callbacks must not throw. If an exception
+        // occurs after acceptance, retire both counters so flush/replace
+        // cannot remain wedged.
+        if (registrationAccepted && registration)
+        {
             {
                 std::lock_guard<std::mutex> drainLock(registration->drainMutex);
-                --registration->inFlight;
+                if (registration->inFlight != 0)
+                    --registration->inFlight;
             }
-            registrationAccepted = false;
             registration->drainCv.notify_all();
-            {
-                std::lock_guard<std::mutex> dispatchLock(g_dispatchMutex);
-                dispatchNode->complete = true;
-                while (g_dispatchHead && g_dispatchHead->complete)
-                {
-                    g_dispatchCompleted = g_dispatchHead->ticket;
-                    g_dispatchHead = g_dispatchHead->next;
-                }
-                if (!g_dispatchHead)
-                    g_dispatchTail = nullptr;
-            }
-            dispatchAccepted = false;
-            g_dispatchCv.notify_all();
         }
-        catch (...)
+        if (dispatchAccepted && dispatchNode && dispatchTicket != 0)
         {
-            // Carbonite Logger2 callbacks must not throw. If an exception
-            // occurs after acceptance, retire both counters so flush/replace
-            // cannot remain wedged.
-            if (registrationAccepted && registration)
             {
+                std::lock_guard<std::mutex> dispatchLock(state.dispatchMutex);
+                dispatchNode->complete = true;
+                while (state.dispatchHead && state.dispatchHead->complete)
                 {
-                    std::lock_guard<std::mutex> drainLock(registration->drainMutex);
-                    if (registration->inFlight != 0)
-                        --registration->inFlight;
+                    state.dispatchCompleted = state.dispatchHead->ticket;
+                    state.dispatchHead = state.dispatchHead->next;
                 }
-                registration->drainCv.notify_all();
+                if (!state.dispatchHead)
+                    state.dispatchTail = nullptr;
             }
-            if (dispatchAccepted && dispatchNode && dispatchTicket != 0)
-            {
-                {
-                    std::lock_guard<std::mutex> dispatchLock(g_dispatchMutex);
-                    dispatchNode->complete = true;
-                    while (g_dispatchHead && g_dispatchHead->complete)
-                    {
-                        g_dispatchCompleted = g_dispatchHead->ticket;
-                        g_dispatchHead = g_dispatchHead->next;
-                    }
-                    if (!g_dispatchHead)
-                        g_dispatchTail = nullptr;
-                }
-                g_dispatchCv.notify_all();
-            }
-            t_inDispatch = false;
+            state.dispatchCv.notify_all();
         }
+        t_inDispatch = false;
     }
-};
+}
 
-static UserCallbackLogger g_userLogger;
-static bool g_userLoggerRegistered = false;
-std::mutex g_userLoggerRegistrationMutex;
+namespace
+{
 
 void syncUserLoggerRegistration()
 {
-    std::lock_guard<std::mutex> registrationLock(g_userLoggerRegistrationMutex);
+    ovphysx::LogManagerState& state = ovphysx::globalState().logging;
+    std::lock_guard<std::mutex> registrationLock(state.userLoggerRegistrationMutex);
     bool shouldRegister = false;
     {
-        std::lock_guard<std::mutex> callbackLock(g_callbackMutex);
-        shouldRegister = static_cast<bool>(g_callback);
+        std::lock_guard<std::mutex> callbackLock(state.callbackMutex);
+        shouldRegister = static_cast<bool>(state.callback);
     }
-    shouldRegister = shouldRegister && g_carboniteReady.load(std::memory_order_acquire);
+    shouldRegister = shouldRegister && state.carboniteReady.load(std::memory_order_acquire);
 
-    if (shouldRegister == g_userLoggerRegistered)
+    if (shouldRegister == state.userLoggerRegistered)
         return;
     if (carb::logging::ILogging* logging = carb::logging::getLogging())
     {
         if (shouldRegister)
         {
-            logging->addLogger(&g_userLogger);
-            g_userLoggerRegistered = true;
+            logging->addLogger(&state.userLogger);
+            state.userLoggerRegistered = true;
         }
         else
         {
-            logging->removeLogger(&g_userLogger);
-            g_userLoggerRegistered = false;
+            logging->removeLogger(&state.userLogger);
+            state.userLoggerRegistered = false;
         }
     }
 }
@@ -478,28 +422,29 @@ ovphysx_result_t replaceLogCallback(
     std::shared_ptr<CallbackRegistration> replacement,
     bool waitForTransition)
 {
+    ovphysx::LogManagerState& state = ovphysx::globalState().logging;
     bool ownsTransition = false;
     try
     {
         std::shared_ptr<CallbackRegistration> previous;
         bool transitionBusy = false;
         {
-            std::unique_lock<std::mutex> stateLock(g_callbackMutex);
+            std::unique_lock<std::mutex> stateLock(state.callbackMutex);
             if (waitForTransition)
             {
-                g_callbackTransitionCv.wait(stateLock, [] { return !g_callbackTransition; });
+                state.callbackTransitionCv.wait(stateLock, [&state] { return !state.callbackTransition; });
             }
-            else if (g_callbackTransition)
+            else if (state.callbackTransition)
             {
                 transitionBusy = true;
             }
 
             if (!transitionBusy)
             {
-                g_callbackTransition = true;
+                state.callbackTransition = true;
                 ownsTransition = true;
-                previous = g_callback;
-                g_callback = std::move(replacement);
+                previous = state.callback;
+                state.callback = std::move(replacement);
             }
         }
         if (transitionBusy)
@@ -511,11 +456,11 @@ ovphysx_result_t replaceLogCallback(
             previous->drainCv.wait(drainLock, [&previous] { return previous->inFlight == 0; });
         }
         {
-            std::lock_guard<std::mutex> stateLock(g_callbackMutex);
-            g_callbackTransition = false;
+            std::lock_guard<std::mutex> stateLock(state.callbackMutex);
+            state.callbackTransition = false;
             ownsTransition = false;
         }
-        g_callbackTransitionCv.notify_all();
+        state.callbackTransitionCv.notify_all();
         syncUserLoggerRegistration();
         return success();
     }
@@ -525,10 +470,10 @@ ovphysx_result_t replaceLogCallback(
         {
             if (ownsTransition)
             {
-                std::lock_guard<std::mutex> stateLock(g_callbackMutex);
-                g_callbackTransition = false;
+                std::lock_guard<std::mutex> stateLock(state.callbackMutex);
+                state.callbackTransition = false;
             }
-            g_callbackTransitionCv.notify_all();
+            state.callbackTransitionCv.notify_all();
             return set_error(OVPHYSX_API_ERROR, "Unable to configure log callback");
         }
         catch (...)
@@ -542,47 +487,38 @@ ovphysx_result_t replaceLogCallback(
 // Test capture Logger2
 // ============================================================================
 
-struct LogCaptureLogger : public carb::logging::Logger2
-{
-    void handleMessage(const carb::logging::LogMessage& msg) override
-    {
-        std::lock_guard<std::mutex> g(m_mutex);
-        uint32_t level = fromCarbLogLevel(msg.level);
-        m_messages[level].push_back(msg.message);
-    }
-
-    bool find(uint32_t level, const char* substring) const
-    {
-        std::lock_guard<std::mutex> g(m_mutex);
-        std::unordered_map<uint32_t, std::vector<std::string>>::const_iterator it = m_messages.find(level);
-        if (it == m_messages.end()) return false;
-        for (const std::string& message : it->second)
-            if (message.find(substring) != std::string::npos)
-                return true;
-        return false;
-    }
-
-    uint32_t count(uint32_t level) const
-    {
-        std::lock_guard<std::mutex> g(m_mutex);
-        std::unordered_map<uint32_t, std::vector<std::string>>::const_iterator it = m_messages.find(level);
-        return it != m_messages.end() ? static_cast<uint32_t>(it->second.size()) : 0;
-    }
-
-    void clear()
-    {
-        std::lock_guard<std::mutex> g(m_mutex);
-        m_messages.clear();
-    }
-
-private:
-    mutable std::mutex m_mutex;
-    std::unordered_map<uint32_t, std::vector<std::string>> m_messages;
-};
-
-static LogCaptureLogger* g_captureLogger = nullptr;
-
 } // anonymous namespace
+
+void ovphysx::LogCaptureLogger::handleMessage(const carb::logging::LogMessage& msg)
+{
+    std::lock_guard<std::mutex> g(m_mutex);
+    uint32_t level = fromCarbLogLevel(msg.level);
+    m_messages[level].push_back(msg.message);
+}
+
+bool ovphysx::LogCaptureLogger::find(uint32_t level, const char* substring) const
+{
+    std::lock_guard<std::mutex> g(m_mutex);
+    std::unordered_map<uint32_t, std::vector<std::string>>::const_iterator it = m_messages.find(level);
+    if (it == m_messages.end()) return false;
+    for (const std::string& message : it->second)
+        if (message.find(substring) != std::string::npos)
+            return true;
+    return false;
+}
+
+uint32_t ovphysx::LogCaptureLogger::count(uint32_t level) const
+{
+    std::lock_guard<std::mutex> g(m_mutex);
+    std::unordered_map<uint32_t, std::vector<std::string>>::const_iterator it = m_messages.find(level);
+    return it != m_messages.end() ? static_cast<uint32_t>(it->second.size()) : 0;
+}
+
+void ovphysx::LogCaptureLogger::clear()
+{
+    std::lock_guard<std::mutex> g(m_mutex);
+    m_messages.clear();
+}
 
 // ============================================================================
 // Internal API (called by CarboniteLoader)
@@ -593,32 +529,32 @@ namespace ovphysx
 
 void onCarboniteLoggingReady()
 {
-    std::lock_guard<std::mutex> readyLock(g_carboniteReadyControlMutex);
+    ovphysx::LogManagerState& state = ovphysx::globalState().logging;
+    std::lock_guard<std::mutex> readyLock(state.carboniteReadyControlMutex);
 
     if (carb::logging::ILogging* logging = carb::logging::getLogging())
     {
         // Ovruntime is linked into libovphysx instead of loaded as a Carbonite
         // plugin, so its named channel has no static registrar. Register it
         // explicitly before applying the stored per-source policy. This runs on
-        // every instance creation, but registration is process-wide and the
-        // framework is never released, so do it exactly once: re-registering
+        // every instance creation, but register only once per framework: re-registering
         // would re-add the same channel pointer on each new instance.
-        static bool sRuntimeSourceRegistered = false;
-        if (!sRuntimeSourceRegistered)
+        if (!state.runtimeSourceRegistered)
         {
-            sRuntimeSourceRegistered = true;
+            state.runtimeSourceRegistered = true;
             logging->registerSource(kDefaultChannel.name, setPhysxRuntimeLogLevel);
+            if (state.captureLogger)
+                logging->addLogger(state.captureLogger);
         }
 
         // Latched separately: omniGetLogWithoutAcquire() can still be null on an
         // early call, and folding this into the flag above would skip the channel
         // add permanently once the source registration has been latched.
-        static bool sRuntimeChannelAdded = false;
-        if (!sRuntimeChannelAdded)
+        if (!state.runtimeChannelAdded)
         {
             if (omni::log::ILog* omniLog = omniGetLogWithoutAcquire())
             {
-                sRuntimeChannelAdded = true;
+                state.runtimeChannelAdded = true;
                 omniLog->addChannel(
                     kDefaultChannel.name,
                     reinterpret_cast<omni::log::Level*>(&kDefaultChannel.level),
@@ -628,14 +564,14 @@ void onCarboniteLoggingReady()
 
         // Apply only to ovphysx's named target sources. Unnamed and other
         // non-target process sources retain their own policies.
-        const uint32_t level = g_logLevel.load(std::memory_order_acquire);
+        const uint32_t level = state.logLevel.load(std::memory_order_acquire);
         applyCarboniteLogLevel(logging, level);
 
         // Apply stored default-output preference (user may have called
         // ovphysx_enable_default_log_output(false) before Carbonite init).
         // Carbonite starts with the default logger registered, which matches
-        // g_defaultOutputEnabled == true, so only the false case needs action.
-        if (!g_defaultOutputEnabled)
+        // state.defaultOutputEnabled == true, so only the false case needs action.
+        if (!state.defaultOutputEnabled)
         {
             if (carb::logging::StandardLogger2* defLogger = logging->getDefaultLogger())
                 logging->removeLogger(defLogger->getLogger());
@@ -645,15 +581,34 @@ void onCarboniteLoggingReady()
     // Publish readiness only after the stored policies have been applied.
     // Setters take this same mutex, so they cannot interleave an add/remove or
     // threshold update with initialization and leave the side effect stale.
-    g_carboniteReady.store(true, std::memory_order_release);
+    state.carboniteReady.store(true, std::memory_order_release);
 
     syncUserLoggerRegistration();
+}
+
+void onCarboniteLoggingStopped()
+{
+    LogManagerState& state = globalState().logging;
+    std::lock_guard<std::mutex> readyLock(state.carboniteReadyControlMutex);
+    state.carboniteReady.store(false, std::memory_order_release);
+    state.runtimeSourceRegistered = false;
+    state.runtimeChannelAdded = false;
 }
 
 ovphysx_result_t shutdownLogCallback()
 {
     if (carb::logging::ILogging* logging = carb::logging::getLogging())
         logging->flushLogs();
+    LogManagerState& state = globalState().logging;
+    {
+        std::lock_guard<std::mutex> readyLock(state.carboniteReadyControlMutex);
+        state.carboniteReady.store(false, std::memory_order_release);
+    }
+    // Close registration before draining: a late replacement must remain
+    // pending until bootstrap, rather than attach to a framework being released.
+    // removeLogger waits for executing callbacks. Hold neither readiness nor
+    // bootstrapMutex while removing it: callbacks may query loader/settings state.
+    syncUserLoggerRegistration();
     // Public replacements reject an overlapping transition. Shutdown cannot
     // fail after runtime teardown solely because one was already draining, so
     // wait to own the transition and then disable the callback directly.
@@ -665,14 +620,9 @@ bool isInLogCallback()
     return t_inDispatch;
 }
 
-} // namespace ovphysx
-
-// ============================================================================
-// Public C API -- Log level
-// ============================================================================
-
-extern "C" OVPHYSX_API ovphysx_result_t ovphysx_set_log_level(uint32_t level)
+ovphysx_result_t setLogLevel(uint32_t level)
 {
+    ovphysx::LogManagerState& state = ovphysx::globalState().logging;
     if (t_inDispatch)
         return set_error(OVPHYSX_API_ERROR, "Cannot set log level from within a log callback");
 
@@ -683,40 +633,37 @@ extern "C" OVPHYSX_API ovphysx_result_t ovphysx_set_log_level(uint32_t level)
         return set_error(OVPHYSX_API_INVALID_ARGUMENT, "Level out of range (0-5); no change applied");
     }
 
-    std::lock_guard<std::mutex> readyLock(g_carboniteReadyControlMutex);
-    const uint32_t effectiveLevel = static_cast<uint32_t>(effectiveLogLevel(static_cast<ovphysx_log_level_t>(level)));
-    g_logLevel.store(effectiveLevel, std::memory_order_release);
+    std::lock_guard<std::mutex> readyLock(state.carboniteReadyControlMutex);
+    const uint32_t effectiveLevel =
+        static_cast<uint32_t>(effectiveLogLevel(static_cast<ovphysx_log_level_t>(level)));
+    state.logLevel.store(effectiveLevel, std::memory_order_release);
 
-    if (g_carboniteReady.load(std::memory_order_acquire))
+    if (state.carboniteReady.load(std::memory_order_acquire))
     {
         if (carb::logging::ILogging* logging = carb::logging::getLogging())
-        {
             applyCarboniteLogLevel(logging, effectiveLevel);
-        }
     }
 
     return success();
 }
 
-extern "C" OVPHYSX_API uint32_t ovphysx_get_log_level(void)
+uint32_t getLogLevel()
 {
-    return g_logLevel.load(std::memory_order_acquire);
+    ovphysx::LogManagerState& state = ovphysx::globalState().logging;
+    return state.logLevel.load(std::memory_order_acquire);
 }
 
-// ============================================================================
-// Public C API -- Default console output
-// ============================================================================
-
-extern "C" OVPHYSX_API ovphysx_result_t ovphysx_enable_default_log_output(bool enable)
+ovphysx_result_t setDefaultLogOutput(bool enable)
 {
+    ovphysx::LogManagerState& state = ovphysx::globalState().logging;
     if (t_inDispatch)
         return set_error(OVPHYSX_API_ERROR, "Cannot change default log output from within a log callback");
 
-    std::lock_guard<std::mutex> readyLock(g_carboniteReadyControlMutex);
-    const bool wasEnabled = g_defaultOutputEnabled;
-    g_defaultOutputEnabled = enable;
+    std::lock_guard<std::mutex> readyLock(state.carboniteReadyControlMutex);
+    const bool wasEnabled = state.defaultOutputEnabled;
+    state.defaultOutputEnabled = enable;
 
-    if (wasEnabled != enable && g_carboniteReady.load(std::memory_order_acquire))
+    if (wasEnabled != enable && state.carboniteReady.load(std::memory_order_acquire))
     {
         carb::logging::ILogging* logging = carb::logging::getLogging();
         if (logging)
@@ -735,6 +682,50 @@ extern "C" OVPHYSX_API ovphysx_result_t ovphysx_enable_default_log_output(bool e
     return success();
 }
 
+bool getDefaultLogOutput()
+{
+    ovphysx::LogManagerState& state = ovphysx::globalState().logging;
+    std::lock_guard<std::mutex> readyLock(state.carboniteReadyControlMutex);
+    return state.defaultOutputEnabled;
+}
+
+} // namespace ovphysx
+
+// ============================================================================
+// Public C API -- Log level
+// ============================================================================
+
+extern "C" OVPHYSX_API ovphysx_result_t ovphysx_set_log_level(uint32_t level)
+{
+    OVPHYSX_API_PROFILE_ZONE(set_log_level);
+    return ovphysx_set_global_config(
+        OVPHYSX_GLOBAL_CONFIG_LOG_LEVEL,
+        ovphysx_config_value_int64(static_cast<int64_t>(level)));
+}
+
+extern "C" OVPHYSX_API uint32_t ovphysx_get_log_level(void)
+{
+    OVPHYSX_API_PROFILE_ZONE(get_log_level);
+    ovphysx_config_value_t value = {};
+    const ovphysx_result_t result =
+        ovphysx_get_global_config(OVPHYSX_GLOBAL_CONFIG_LOG_LEVEL, &value);
+    return result.status == OVPHYSX_API_SUCCESS ?
+        static_cast<uint32_t>(value.value.int64_value) :
+        ovphysx::getLogLevel();
+}
+
+// ============================================================================
+// Public C API -- Default console output
+// ============================================================================
+
+extern "C" OVPHYSX_API ovphysx_result_t ovphysx_enable_default_log_output(bool enable)
+{
+    OVPHYSX_API_PROFILE_ZONE(enable_default_log_output);
+    return ovphysx_set_global_config(
+        OVPHYSX_GLOBAL_CONFIG_DEFAULT_LOG_OUTPUT,
+        ovphysx_config_value_bool(enable));
+}
+
 // ============================================================================
 // Public C API -- Callback registration
 // ============================================================================
@@ -745,6 +736,7 @@ extern "C" OVPHYSX_API ovphysx_result_t ovphysx_set_log_callback(
     ovphysx_log_callback_t callback,
     void* user_data)
 {
+    OVPHYSX_API_PROFILE_ZONE(set_log_callback);
     if (t_inDispatch)
         return set_error(OVPHYSX_API_ERROR, "Cannot set log callback from within a callback");
 
@@ -785,21 +777,23 @@ extern "C" OVPHYSX_API ovphysx_result_t ovphysx_set_log_callback(
 
 extern "C" OVPHYSX_API ovphysx_result_t ovphysx_flush_log(ovphysx_timeout_t timeout_ns)
 {
+    OVPHYSX_API_PROFILE_ZONE(flush_log);
     if (t_inDispatch)
         return set_error(OVPHYSX_API_ERROR, "Cannot flush log from within a callback");
 
-    std::unique_lock<std::mutex> lock(g_dispatchMutex);
-    const uint64_t target = g_dispatchAccepted;
+    ovphysx::LogManagerState& state = ovphysx::globalState().logging;
+    std::unique_lock<std::mutex> lock(state.dispatchMutex);
+    const uint64_t target = state.dispatchAccepted;
     if (timeout_ns == OVPHYSX_TIMEOUT_INFINITE)
-        g_dispatchCv.wait(lock, [target] { return g_dispatchCompleted >= target; });
+        state.dispatchCv.wait(lock, [&state, target] { return state.dispatchCompleted >= target; });
     else
     {
         const uint64_t maximumNs = static_cast<uint64_t>(std::numeric_limits<int64_t>::max());
         const int64_t boundedNs = static_cast<int64_t>(timeout_ns > maximumNs ? maximumNs : timeout_ns);
-        if (!g_dispatchCv.wait_for(
+        if (!state.dispatchCv.wait_for(
                 lock,
                 std::chrono::nanoseconds(boundedNs),
-                [target] { return g_dispatchCompleted >= target; }))
+                [&state, target] { return state.dispatchCompleted >= target; }))
             return set_error(OVPHYSX_API_TIMEOUT, "Timed out waiting for log delivery");
     }
 
@@ -812,49 +806,54 @@ extern "C" OVPHYSX_API ovphysx_result_t ovphysx_flush_log(ovphysx_timeout_t time
 
 extern "C" OVPHYSX_API ovphysx_result_t ovphysx_log_capture_start(void)
 {
-    if (g_captureLogger)
+    ovphysx::LogManagerState& state = ovphysx::globalState().logging;
+    if (state.captureLogger)
         return success(); // already capturing
 
     carb::logging::ILogging* logging = carb::logging::getLogging();
     if (!logging)
         return set_error(OVPHYSX_API_ERROR, "Carbonite logging not available");
 
-    g_captureLogger = new LogCaptureLogger();
-    logging->addLogger(g_captureLogger);
+    state.captureLogger = new LogCaptureLogger();
+    logging->addLogger(state.captureLogger);
     return success();
 }
 
 extern "C" OVPHYSX_API void ovphysx_log_capture_stop(void)
 {
-    if (!g_captureLogger)
+    ovphysx::LogManagerState& state = ovphysx::globalState().logging;
+    if (!state.captureLogger)
         return;
 
     if (carb::logging::ILogging* logging = carb::logging::getLogging())
-        logging->removeLogger(g_captureLogger);
+        logging->removeLogger(state.captureLogger);
 
-    delete g_captureLogger;
-    g_captureLogger = nullptr;
+    delete state.captureLogger;
+    state.captureLogger = nullptr;
 }
 
 extern "C" OVPHYSX_API bool ovphysx_log_capture_find(uint32_t level, const char* substring)
 {
-    if (!g_captureLogger || !substring)
+    ovphysx::LogManagerState& state = ovphysx::globalState().logging;
+    if (!state.captureLogger || !substring)
         return false;
-    return g_captureLogger->find(level, substring);
+    return state.captureLogger->find(level, substring);
 }
 
 extern "C" OVPHYSX_API uint32_t ovphysx_log_capture_count(uint32_t level)
 {
-    if (!g_captureLogger)
+    ovphysx::LogManagerState& state = ovphysx::globalState().logging;
+    if (!state.captureLogger)
         return 0;
-    return g_captureLogger->count(level);
+    return state.captureLogger->count(level);
 }
 
 extern "C" OVPHYSX_API void ovphysx_log_emit_test_messages(void)
 {
+    ovphysx::LogManagerState& state = ovphysx::globalState().logging;
     // Fatal is needed only to prove that NONE suppresses Carbonite's highest
     // severity. Avoid injecting fatal records into unrelated logging tests.
-    if (g_logLevel.load(std::memory_order_acquire) == OVPHYSX_LOG_NONE)
+    if (state.logLevel.load(std::memory_order_acquire) == OVPHYSX_LOG_NONE)
         CARB_LOG_FATAL("[LogTest] FATAL test message");
     CARB_LOG_ERROR("[LogTest] ERROR test message");
     CARB_LOG_WARN("[LogTest] WARNING test message");

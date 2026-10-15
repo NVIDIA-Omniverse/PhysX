@@ -54,6 +54,9 @@ bool looksLikePathString(std::string_view s);
 // ("^(token)$", so '|' alternation stays anchored) before compiling. A token that
 // fails to compile as a POSIX ERE degrades to "never matches" rather than throwing,
 // mirroring TfPatternMatcher::Match's failure mode on an invalid pattern.
+// On libstdc++, plain literals and '*'/'?' globs use an iterative fast path;
+// other components use the breadth-first regex executor. Neither recurses over
+// the subject name. The grammar and pattern-length bound are shared by both.
 //
 // A token longer than omni::physics::tensors::kMaxPathPatternComponentLength is not
 // compiled at all and never matches either: libstdc++'s std::regex compiler recurses
@@ -73,6 +76,8 @@ public:
 
 private:
     std::regex mRegex;
+    std::string mSimplePattern;
+    bool mSimple = false;
     bool mValid = false;
 };
 

@@ -30,13 +30,13 @@ without retaining a previous call's error (REQ AC-1, AC-2, AC-3).
 
 ## Then
 
-- The first C API call returns `OVPHYSX_API_ERROR`; its last error contains
+- The first C API call returns an accepted task; its failed wait retains
   the update context and the first cause, without replacing it with the second
   cause (REQ AC-1).
-- The second call returns `OVPHYSX_API_ERROR`; its last error contains the
+- The second call returns an accepted task; its failed wait retains the
   update context and neither earlier cause (REQ AC-2).
-- The final call returns `OVPHYSX_API_SUCCESS` and leaves an empty public
-  error despite the recorded diagnostic (REQ AC-3).
+- The final call returns an accepted task that completes successfully despite
+  the recorded diagnostic (REQ AC-3).
 
 ## Why not implemented
 

@@ -1777,6 +1777,7 @@ static __device__ inline void writeContactsToStream4threads(
 				{
 					patchAndContactCounters->setOverflowError(PxgPatchAndContactCounters::FORCE_BUFFER_OVERFLOW);
 					forceAndIndiceByteOffset = 0xFFFFFFFF; //overflow
+					contactByteOffset = 0xFFFFFFFF;
 				}
 			}
 			
@@ -3049,22 +3050,24 @@ __device__ void convexPlaneNphase_kernel_core(
 
 	PxU32 contactByteOffset = 0xFFFFFFFF;
 	PxU32 forceAndIndiceByteOffset = 0xFFFFFFFF;
+	const bool patchRequested = nbContacts > 0;
 
 	if (nbContacts && threadIdx.x == 0)
 	{
 		contactByteOffset = atomicAdd(&(patchAndContactCounters->contactsBytes), sizeof(PxContact) * nbContacts);
 		forceAndIndiceByteOffset = atomicAdd(&(patchAndContactCounters->forceAndIndiceBytes), sizeof(PxU32) * nbContacts);
 
-		if ((contactByteOffset + sizeof(PxContact)) > contactBytesLimit)
+		if ((contactByteOffset + sizeof(PxContact) * nbContacts) > contactBytesLimit)
 		{
 			patchAndContactCounters->setOverflowError(PxgPatchAndContactCounters::CONTACT_BUFFER_OVERFLOW);
 			contactByteOffset = 0xFFFFFFFF; //overflow
 		}
 		
-		if ((forceAndIndiceByteOffset + sizeof(PxU32)) > forceBytesLimit)
+		if ((forceAndIndiceByteOffset + sizeof(PxU32) * nbContacts) > forceBytesLimit)
 		{
 			patchAndContactCounters->setOverflowError(PxgPatchAndContactCounters::FORCE_BUFFER_OVERFLOW);
 			forceAndIndiceByteOffset = 0xFFFFFFFF; //overflow
+			contactByteOffset = 0xFFFFFFFF;
 		}
 	}
 
@@ -3092,6 +3095,7 @@ __device__ void convexPlaneNphase_kernel_core(
 	{
 		output->contactForces = NULL;
 		output->contactPoints = NULL;
+		nbContacts = 0;
 	}
 
 	PxU32 allflags = reinterpret_cast<PxU32*>(&((cmOutputs + globalElementIndex)->allflagsStart))[0];
@@ -3127,7 +3131,7 @@ __device__ void convexPlaneNphase_kernel_core(
 
 	//fill in patch information
 	PxU32 patchIndex = 0xFFFFFFFF;
-	if (nbContacts && threadIdx.x == 0)
+	if (patchRequested && threadIdx.x == 0)
 	{
 		patchIndex = atomicAdd(&(patchAndContactCounters->patchesBytes), sizeof(PxContactPatch));
 
@@ -3148,10 +3152,12 @@ __device__ void convexPlaneNphase_kernel_core(
 			touchChangeFlags[globalElementIndex] = previouslyHadTouch;
 			patchChangeFlags[globalElementIndex] = prevPatches != 0;
 		}
-		else
+		else if (nbContacts)
 		{
 			(cmOutputs + globalElementIndex)->contactPatches = startContactPatches + patchIndex;
 		}
+		else
+			patchIndex = 0xFFFFFFFF;
 	}
 
 	if (threadIdx.x == 0)

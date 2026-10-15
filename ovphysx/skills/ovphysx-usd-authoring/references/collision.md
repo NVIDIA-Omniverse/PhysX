@@ -23,7 +23,7 @@ full definition):
 For the complete attribute set with types and default values, see the schema, not
 this list (it would drift): core `Physics*` attributes are defined by the OpenUSD
 `UsdPhysics` schema (stock `usd-core`); PhysX-specific `Physx*` attributes are in
-ovphysx's shipped codeless `generatedSchema.usda`. Both are rendered in the
+the external provider's codeless `generatedSchema.usda`. Both are rendered in the
 [Omni Physics documentation](https://docs.omniverse.nvidia.com/kit/docs/omni_physics/latest/index.html).
 
 ## Primitive vs Mesh Colliders

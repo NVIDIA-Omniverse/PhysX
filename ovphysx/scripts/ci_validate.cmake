@@ -3,22 +3,30 @@
 
 # @implements REQ-PACKAGING-TESTDEPS-001
 # @covers AC-5 AC-6
+# @implements REQ-PACKAGING-TESTRESULT-001
+# @covers AC-3
 
 # CI validation script.
 cmake_minimum_required(VERSION 3.16)
 
 get_filename_component(SCRIPT_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
 get_filename_component(PROJECT_ROOT "${SCRIPT_DIR}/.." ABSOLUTE)
+message(STATUS "Validating test-result guards (ovphysx)")
+execute_process(
+    COMMAND "${CMAKE_COMMAND}" -P "${PROJECT_ROOT}/tests/cmake/test_result_guards.cmake"
+    RESULT_VARIABLE TEST_RESULT_GUARDS_RESULT
+)
+if(NOT TEST_RESULT_GUARDS_RESULT STREQUAL "0")
+    message(FATAL_ERROR "ovphysx test-result guard tests failed (exit code: ${TEST_RESULT_GUARDS_RESULT})")
+endif()
 
 # ---------------------------------------------------------------------------
 # uv.lock validation
 #
-# ovstage is pinned by version but must resolve from the build-staged local wheels
-# each lock names relative to its own directory, not from PyPI URLs. An accidental
-# `uv run` without find-links/--locked can rewrite a lock with no version bump.
-# Locks the public source drop leaves out are skipped there.
+# ovstage must resolve from an index URL and carry a sha256 per wheel, so uv verifies what
+# it installs (ADR-0033).
 # ---------------------------------------------------------------------------
-message(STATUS "Validating checked-in uv.lock files (ovstage source)")
+message(STATUS "Validating uv.lock files (ovstage index + hashes)")
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 execute_process(
     COMMAND "${Python3_EXECUTABLE}" "${SCRIPT_DIR}/validate_python_test_uv_lock.py"

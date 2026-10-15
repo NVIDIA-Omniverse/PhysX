@@ -32,14 +32,14 @@ class ContactInventoryDefinitionTests(unittest.TestCase):
         self.assertEqual(
             [(row.name, row.device) for row in rows],
             [
-                ("ContactReport.persistent_pairs_512_step_read_cpu", "cpu"),
-                ("ContactReport.persistent_pairs_512_step_read_gpu", "gpu"),
+                ("ContactReport.net_force_512_read_cpu", "cpu"),
+                ("ContactReport.net_force_512_read_gpu", "gpu"),
             ],
         )
         self.assertEqual(contact.canonical_report_name(rows[0]), rows[0].name)
         self.assertEqual(
             contact.canonical_report_name(rows[1]),
-            "ContactReport.persistent_pairs_512_step_read_gpu_GPU",
+            "ContactReport.net_force_512_read_gpu_GPU",
         )
 
     def test_committed_inventory_and_frozen_l1b_union_are_collision_free(self):
@@ -55,7 +55,7 @@ class ContactInventoryDefinitionTests(unittest.TestCase):
                     {
                         "rows": [
                             {
-                                "name": "ContactReport.persistent_pairs_512_step_read_cpu",
+                                "name": "ContactReport.net_force_512_read_cpu",
                                 "device": "cpu",
                             }
                         ]
@@ -91,7 +91,7 @@ class ContactInventoryDefinitionTests(unittest.TestCase):
 
     def test_union_rejects_cross_inventory_substring(self):
         contact_rows = contact.load_contact_inventory(str(CONTACT_INVENTORY))
-        producer_rows = [shared.InventoryRow("ContactReport.persistent_pairs_512", "cpu")]
+        producer_rows = [shared.InventoryRow("ContactReport.net_force_512", "cpu")]
         with self.assertRaises(contact.ContactInventoryError) as context:
             contact.validate_inventory_union(producer_rows, contact_rows)
         self.assertIn("substring collision", str(context.exception))
@@ -137,8 +137,8 @@ class ContactListTests(unittest.TestCase):
 
 
 class SharedReportContractTests(unittest.TestCase):
-    cpu = "ContactReport.persistent_pairs_512_step_read_cpu"
-    gpu = "ContactReport.persistent_pairs_512_step_read_gpu_GPU"
+    cpu = "ContactReport.net_force_512_read_cpu"
+    gpu = "ContactReport.net_force_512_read_gpu_GPU"
 
     @staticmethod
     def report(*rows):
@@ -163,7 +163,7 @@ class SharedReportContractTests(unittest.TestCase):
             "zero": (self.report(self.metric(self.cpu, 0)), self.cpu),
             "malformed": (self.report(f"{self.cpu} not-a-metric"), self.cpu),
             "gpu-undecorated": (
-                self.report(self.metric("ContactReport.persistent_pairs_512_step_read_gpu")),
+                self.report(self.metric("ContactReport.net_force_512_read_gpu")),
                 self.gpu,
             ),
             "cpu-decorated": (self.report(self.metric(self.cpu + "_GPU")), self.cpu),
@@ -180,7 +180,7 @@ class SharedReportContractTests(unittest.TestCase):
     def test_no_metrics_accepts_headers_and_diagnostics(self):
         contact.verify_no_metrics(
             "Name Avg Memory\n"
-            "Benchmark ContactReport.persistent_pairs_512_step_read_gpu failed to initialize, skipping.\n"
+            "Benchmark ContactReport.net_force_512_read_gpu failed to initialize, skipping.\n"
         )
 
     def test_no_metrics_cli_rejects_missing_report_by_default(self):
@@ -205,14 +205,14 @@ class ContactSkipTests(unittest.TestCase):
 
     def test_cpu_pass_requires_exact_undecorated_gpu_skip(self):
         log = (
-            "Benchmark ContactReport.persistent_pairs_512_step_read_gpu "
+            "Benchmark ContactReport.net_force_512_read_gpu "
             "failed to initialize, skipping.\n"
         )
         contact.verify_skipped_once(self.rows, log, "gpu", "cpu")
 
     def test_gpu_pass_requires_exact_decorated_cpu_skip(self):
         log = (
-            "Benchmark ContactReport.persistent_pairs_512_step_read_cpu_GPU "
+            "Benchmark ContactReport.net_force_512_read_cpu_GPU "
             "failed to initialize, skipping.\n"
         )
         contact.verify_skipped_once(self.rows, log, "cpu", "gpu")
@@ -223,7 +223,7 @@ class ContactSkipTests(unittest.TestCase):
 
     def test_rejects_duplicate_skip(self):
         line = (
-            "Benchmark ContactReport.persistent_pairs_512_step_read_gpu "
+            "Benchmark ContactReport.net_force_512_read_gpu "
             "failed to initialize, skipping.\n"
         )
         with self.assertRaises(contact.ContactInventoryError):
@@ -231,7 +231,7 @@ class ContactSkipTests(unittest.TestCase):
 
     def test_rejects_wrong_gpu_pass_decoration(self):
         log = (
-            "Benchmark ContactReport.persistent_pairs_512_step_read_cpu "
+            "Benchmark ContactReport.net_force_512_read_cpu "
             "failed to initialize, skipping.\n"
         )
         with self.assertRaises(contact.ContactInventoryError):

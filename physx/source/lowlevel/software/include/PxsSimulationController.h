@@ -17,6 +17,7 @@
 #include "PxParticleSystem.h"
 #include "PxArticulationTendonData.h"
 #include "PxNodeIndex.h"
+#include "PxDeformableAttachment.h"
 
 namespace physx
 {
@@ -116,49 +117,41 @@ namespace physx
 		virtual void setSoftBodyWakeCounter(Dy::DeformableVolume* /*deformableVolume*/) 	{}
 
 
-		virtual PxU32 addRigidAttachment(Dy::DeformableVolume* /*deformableVolume*/, const PxNodeIndex& /*softBodyNodeIndex*/,
-			PxsRigidBody* /*rigidBody*/, const PxNodeIndex& /*rigidNodeIndex*/, PxU32 /*vertIndex*/, const PxVec3& /*actorSpacePose*/,
-			const bool /*isActive*/, bool /*doConversion*/) 	{ return 0; }
-		virtual void removeRigidAttachment(Dy::DeformableVolume* /*deformableVolume*/, PxU32 /*handle*/) 	{}
+		virtual PxU32 addVolumeRigidAttachments(Dy::DeformableVolume* /*deformableVolume*/, PxsRigidBody* /*rigidBody*/, const PxNodeIndex& /*rigidNodeIndex*/,
+			PxDeformableAttachmentTargetType::Enum /*feature*/, const PxU32* /*indices*/, const PxVec4* /*barycentrics*/,
+			const PxTransform& /*frame*/, const PxVec4* /*coords*/, PxU32 /*count*/, const bool /*isActive*/)	{ return PX_INVALID_U32; }
+		virtual void removeVolumeRigidAttachments(Dy::DeformableVolume* /*deformableVolume*/, PxU32 /*handle*/) 	{}
 
-		virtual void addTetRigidFilter(Dy::DeformableVolume* /*deformableVolume*/,
-			const PxNodeIndex& /*rigidNodeIndex*/, PxU32 /*tetId*/) 	{}
+		virtual PxU32 addVolumeVolumeAttachments(Dy::DeformableVolume* /*deformableVolume0*/, PxDeformableAttachmentTargetType::Enum /*feature0*/,
+			const PxU32* /*indices0*/, const PxVec4* /*barycentrics0*/, Dy::DeformableVolume* /*deformableVolume1*/,
+			PxDeformableAttachmentTargetType::Enum /*feature1*/, const PxU32* /*indices1*/, const PxVec4* /*barycentrics1*/,
+			PxU32 /*count*/, const bool /*addToActive*/)	{ return PX_INVALID_U32; }
+		virtual void removeVolumeVolumeAttachments(Dy::DeformableVolume* /*deformableVolume0*/, PxU32 /*handle*/) 	{}
 
-		virtual PxU32 addTetRigidAttachment(Dy::DeformableVolume* /*deformableVolume*/,
-			PxsRigidBody* /*rigidBody*/, const PxNodeIndex& /*rigidNodeIndex*/, PxU32 /*tetIdx*/,
-			const PxVec4& /*barycentrics*/, const PxVec3& /*actorSpacePose*/,
-			const bool /*isActive*/, bool /*doConversion*/) { return 0; }
+		virtual PxU32 addVolumeSurfaceAttachments(Dy::DeformableVolume* /*deformableVolume*/, PxDeformableAttachmentTargetType::Enum /*feature0*/,
+			const PxU32* /*indices0*/, const PxVec4* /*barycentrics0*/, Dy::DeformableSurface* /*deformableSurface*/,
+			PxDeformableAttachmentTargetType::Enum /*feature1*/, const PxU32* /*indices1*/, const PxVec4* /*barycentrics1*/,
+			PxU32 /*count*/, const bool /*isActive*/)	{ return PX_INVALID_U32; }
+		virtual void removeVolumeSurfaceAttachments(Dy::DeformableVolume* /*deformableVolume*/,PxU32 /*handle*/) 	{}
 
-		virtual void removeTetRigidFilter(Dy::DeformableVolume* /*deformableVolume*/, 
-			const PxNodeIndex& /*rigidNodeIndex*/, PxU32 /*tetId*/) 	{}
+		virtual void addVolumeRigidFilters(Dy::DeformableVolume* /*deformableVolume*/,
+			const PxNodeIndex& /*rigidNodeIndex*/, PxU32* /*tetIndices*/, PxU32 /*tetIndicesSize*/) 	{}
+		virtual void removeVolumeRigidFilters(Dy::DeformableVolume* /*deformableVolume*/,
+			const PxNodeIndex& /*rigidNodeIndex*/, PxU32* /*tetIndices*/, PxU32 /*tetIndicesSize*/) 	{}
 
-		virtual void addSoftBodyFilter(Dy::DeformableVolume* /*deformableVolume0*/, Dy::DeformableVolume* /*deformableVolume1*/, PxU32 /*tetIdx0*/, 
-			PxU32 /*tetIdx1*/) 	{}
-		virtual void removeSoftBodyFilter(Dy::DeformableVolume* /*deformableVolume0*/, Dy::DeformableVolume* /*deformableVolume1*/, PxU32 /*tetIdx0*/,
-			PxU32 /*tetId1*/) 	{}
-		virtual void addSoftBodyFilters(Dy::DeformableVolume* /*deformableVolume0*/, Dy::DeformableVolume* /*deformableVolume1*/, PxU32* /*tetIndices0*/, PxU32* /*tetIndices1*/,
+		// A PxRigidStatic has no node. Its filters reference its shapes by transform cache id.
+		virtual void addVolumeStaticShapeFilters(Dy::DeformableVolume* /*deformableVolume*/,
+			const PxU32* /*shapeCacheIds*/, PxU32 /*nbShapes*/, PxU32* /*tetIndices*/, PxU32 /*tetIndicesSize*/) 	{}
+		virtual void removeVolumeStaticShapeFilters(Dy::DeformableVolume* /*deformableVolume*/,
+			const PxU32* /*shapeCacheIds*/, PxU32 /*nbShapes*/, PxU32* /*tetIndices*/, PxU32 /*tetIndicesSize*/) 	{}
+
+		virtual void addVolumeVolumeFilters(Dy::DeformableVolume* /*deformableVolume0*/, Dy::DeformableVolume* /*deformableVolume1*/, PxU32* /*tetIndices0*/, PxU32* /*tetIndices1*/,
 			PxU32 /*tetIndicesSize*/) 	{}
-		virtual void removeSoftBodyFilters(Dy::DeformableVolume* /*deformableVolume0*/, Dy::DeformableVolume* /*deformableVolume1*/, PxU32* /*tetIndices0*/, PxU32* /*tetIndices1*/,
+		virtual void removeVolumeVolumeFilters(Dy::DeformableVolume* /*deformableVolume0*/, Dy::DeformableVolume* /*deformableVolume1*/, PxU32* /*tetIndices0*/, PxU32* /*tetIndices1*/,
 			PxU32 /*tetIndicesSize*/) 	{}
 
-		virtual PxU32 addSoftBodyAttachment(Dy::DeformableVolume* /*deformableVolume0*/, Dy::DeformableVolume* /*deformableVolume1*/, PxU32 /*tetIdx0*/, PxU32 /*tetIdx1*/,
-			const PxVec4& /*tetBarycentric0*/, const PxVec4& /*tetBarycentric1*/,
-			const bool /*isActive*/, bool /*doConversion*/) { return 0; }
-
-		virtual void removeSoftBodyAttachment(Dy::DeformableVolume* /*deformableVolume0*/, PxU32 /*handle*/) 	{}
-
-		virtual void addClothFilter(Dy::DeformableVolume* /*deformableVolume*/, Dy::DeformableSurface* /*deformableSurface*/, PxU32 /*triIdx*/, PxU32 /*tetIdx*/) 	{}
-		virtual void removeClothFilter(Dy::DeformableVolume* /*deformableVolume*/, Dy::DeformableSurface* /*deformableSurface*/, PxU32 /*triIdx*/, PxU32 /*tetIdx*/) 	{}
-
-		virtual void addVertClothFilter(Dy::DeformableVolume* /*deformableVolume*/, Dy::DeformableSurface* /*deformableSurface*/, PxU32 /*vertIdx*/, PxU32 /*tetIdx*/) 	{}
-		virtual void removeVertClothFilter(Dy::DeformableVolume* /*deformableVolume*/, Dy::DeformableSurface* /*deformableSurface*/, PxU32 /*vertIdx*/, PxU32 /*tetIdx*/) 	{}
-
-		virtual PxU32 addClothAttachment(Dy::DeformableVolume* /*deformableVolume*/, Dy::DeformableSurface* /*deformableSurface*/, PxU32 /*triIdx*/,
-			const PxVec4& /*triBarycentric*/, PxU32 /*tetIdx*/, const PxVec4& /*tetBarycentric*/,
-			const bool /*isActive*/, bool /*doConversion*/) { return 0; }
-
-		virtual void removeClothAttachment(Dy::DeformableVolume* /*deformableVolume*/,PxU32 /*handle*/) 	{}
-
+		virtual void addVolumeSurfaceFilters(Dy::DeformableVolume* /*deformableVolume*/, Dy::DeformableSurface* /*deformableSurface*/, PxU32* /*triIndices*/, PxU32* /*tetIndices*/, PxU32 /*indicesSize*/) 	{}
+		virtual void removeVolumeSurfaceFilters(Dy::DeformableVolume* /*deformableVolume*/, Dy::DeformableSurface* /*deformableSurface*/, PxU32* /*triIndices*/, PxU32* /*tetIndices*/, PxU32 /*indicesSize*/) 	{}
 		virtual void addFEMCloth(Dy::DeformableSurface*, const PxNodeIndex&) {}
 		virtual void releaseFEMCloth(Dy::DeformableSurface*) 	{}
 		virtual void releaseDeferredFEMClothIds() 	{}
@@ -166,32 +159,29 @@ namespace physx
 		virtual void deactivateCloth(Dy::DeformableSurface*) 	{}
 		virtual void setClothWakeCounter(Dy::DeformableSurface*) 	{}
 
-		virtual PxU32 addRigidAttachment(Dy::DeformableSurface* /*cloth*/, const PxNodeIndex& /*clothNodeIndex*/,
-			PxsRigidBody* /*rigidBody*/, const PxNodeIndex& /*rigidNodeIndex*/, PxU32 /*vertIndex*/, const PxVec3& /*actorSpacePose*/,
-			const bool /*isActive*/) 	{ return 0; }
-		virtual void removeRigidAttachment(Dy::DeformableSurface* /*cloth*/, PxU32 /*handle*/) 	{}
+		virtual PxU32 addSurfaceRigidAttachments(Dy::DeformableSurface* /*deformableSurface*/, PxsRigidBody* /*rigidBody*/, const PxNodeIndex& /*rigidNodeIndex*/,
+			PxDeformableAttachmentTargetType::Enum /*feature*/, const PxU32* /*indices*/, const PxVec4* /*barycentrics*/,
+			const PxTransform& /*frame*/, const PxVec4* /*coords*/, PxU32 /*count*/, const bool /*isActive*/)	{ return PX_INVALID_U32; }
+		virtual void removeSurfaceRigidAttachments(Dy::DeformableSurface* /*cloth*/, PxU32 /*handle*/) 	{}
 
-		virtual void addTriRigidFilter(Dy::DeformableSurface* /*deformableSurface*/,
-			const PxNodeIndex& /*rigidNodeIndex*/, PxU32 /*triIdx*/) 	{}
+		virtual PxU32 addSurfaceSurfaceAttachments(Dy::DeformableSurface* /*deformableSurface0*/, PxDeformableAttachmentTargetType::Enum /*feature0*/,
+			const PxU32* /*indices0*/, const PxVec4* /*barycentrics0*/, Dy::DeformableSurface* /*deformableSurface1*/,
+			PxDeformableAttachmentTargetType::Enum /*feature1*/, const PxU32* /*indices1*/, const PxVec4* /*barycentrics1*/,
+			PxU32 /*count*/, const bool /*addToActive*/)	{ return PX_INVALID_U32; }
+		virtual void removeSurfaceSurfaceAttachments(Dy::DeformableSurface* /*deformableSurface*/, PxU32 /*handle*/) 	{}
 
-		virtual void removeTriRigidFilter(Dy::DeformableSurface* /*deformableSurface*/, 
-			const PxNodeIndex& /*rigidNodeIndex*/, PxU32 /*triIdx*/) 	{}
+		virtual void addSurfaceRigidFilters(Dy::DeformableSurface* /*deformableSurface*/,
+			const PxNodeIndex& /*rigidNodeIndex*/, PxU32* /*triIndices*/, PxU32 /*triIndicesSize*/) 	{}
+		virtual void removeSurfaceRigidFilters(Dy::DeformableSurface* /*deformableSurface*/,
+			const PxNodeIndex& /*rigidNodeIndex*/, PxU32* /*triIndices*/, PxU32 /*triIndicesSize*/) 	{}
 
-		virtual PxU32 addTriRigidAttachment(Dy::DeformableSurface* /*deformableSurface*/,
-			PxsRigidBody* /*rigidBody*/, const PxNodeIndex& /*rigidNodeIndex*/, PxU32 /*triIdx*/, const PxVec4& /*barycentrics*/,
-			const PxVec3& /*actorSpacePose*/,
-			const bool /*isActive*/) { return 0; }
+		virtual void addSurfaceStaticShapeFilters(Dy::DeformableSurface* /*deformableSurface*/,
+			const PxU32* /*shapeCacheIds*/, PxU32 /*nbShapes*/, PxU32* /*triIndices*/, PxU32 /*triIndicesSize*/) 	{}
+		virtual void removeSurfaceStaticShapeFilters(Dy::DeformableSurface* /*deformableSurface*/,
+			const PxU32* /*shapeCacheIds*/, PxU32 /*nbShapes*/, PxU32* /*triIndices*/, PxU32 /*triIndicesSize*/) 	{}
 
-		virtual void removeTriRigidAttachment(Dy::DeformableSurface* /*deformableSurface*/, PxU32 /*handle*/) 	{}
-
-		virtual void addClothFilter(Dy::DeformableSurface* /*deformableSurface0*/, Dy::DeformableSurface* /*deformableSurface1*/, PxU32 /*triIdx0*/, PxU32 /*triIdx1*/) 	{}
-		virtual void removeClothFilter(Dy::DeformableSurface* /*deformableSurface0*/, Dy::DeformableSurface* /*deformableSurface1*/, PxU32 /*triIdx0*/, PxU32 /*triIdx1*/) 	{}
-
-		virtual PxU32 addTriClothAttachment(Dy::DeformableSurface* /*deformableSurface0*/, Dy::DeformableSurface* /*deformableSurface1*/, PxU32 /*triIdx0*/, PxU32 /*triIdx1*/,
-			const PxVec4& /*triBarycentric0*/, const PxVec4& /*triBarycentric1*/, const bool /*addToActive*/) { return 0; }
-
-		virtual void removeTriClothAttachment(Dy::DeformableSurface* /*deformableSurface*/, PxU32 /*handle*/) 	{}
-
+		virtual void addSurfaceSurfaceFilters(Dy::DeformableSurface* /*deformableSurface0*/, Dy::DeformableSurface* /*deformableSurface1*/, PxU32* /*triIndices0*/, PxU32* /*triIndices1*/, PxU32 /*triIndicesSize*/) 	{}
+		virtual void removeSurfaceSurfaceFilters(Dy::DeformableSurface* /*deformableSurface0*/, Dy::DeformableSurface* /*deformableSurface1*/, PxU32* /*triIndices0*/, PxU32* /*triIndices1*/, PxU32 /*triIndicesSize*/) 	{}
 		virtual void addParticleSystem(Dy::ParticleSystem* /*particleSystem*/, const PxNodeIndex& /*nodeIndex*/) 	{}
 		virtual void releaseParticleSystem(Dy::ParticleSystem* /*particleSystem*/) 	{}
 		virtual void releaseDeferredParticleSystemIds() 	{}

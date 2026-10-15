@@ -642,10 +642,11 @@ namespace physx
 		CUdeviceptr activeParticelSystemd = getActiveParticleSystemBuffer().getDevicePtr();
 		const PxU32 nbActiveParticles = mSimController->getBodySimManager().mActivePBDParticleSystems.size();
 
-		CUdeviceptr totalContactCountsd = getParticleContactCount().getDevicePtr();
-		CUdeviceptr contactsd = mPrimitiveContactSortedByParticleBuf.getDevicePtr();
-		CUdeviceptr contactBlocksd = mRigidContactBlocksSortedByParticle.getDevicePtr();
-		CUdeviceptr appliedForced = mPrimitiveConstraintAppliedParticleForces.getDevicePtr();
+		CUdeviceptr totalContactCountsd = getRigidParticleContactCount().getDevicePtr();
+		CUdeviceptr contactInfosd = mRigidParticleContactInfoSortedByParticleBuffer.getDevicePtr();
+		CUdeviceptr contactNormalPensd = mRigidParticleContactNormalPenSortedByParticleBuffer.getDevicePtr();
+		CUdeviceptr contactBlocksd = mRigidParticleContactBlocksSortedByParticle.getDevicePtr();
+		CUdeviceptr appliedForced = mRigidParticleAppliedParticleForcesBuffer.getDevicePtr();
 		void* nullContactDeltaV = NULL;
 
 		//prepare primitive constraints sorted by particle id
@@ -655,7 +656,8 @@ namespace physx
 			PxCudaKernelParam kernelParams[] =
 			{
 				PX_CUDA_KERNEL_PARAM(particleSystemd),
-				PX_CUDA_KERNEL_PARAM(contactsd),
+				PX_CUDA_KERNEL_PARAM(contactInfosd),
+				PX_CUDA_KERNEL_PARAM(contactNormalPensd),
 				PX_CUDA_KERNEL_PARAM(totalContactCountsd),
 				PX_CUDA_KERNEL_PARAM(contactBlocksd),
 				PX_CUDA_KERNEL_PARAM(prePrepDescd),
@@ -709,15 +711,16 @@ namespace physx
 		{
 
 			CUdeviceptr pairCountd = mTempHistogramCountBuf.getDevicePtr();
-			CUdeviceptr startd = mTempContactBuf.getDevicePtr();
-			CUdeviceptr	endd = mTempContactRemapBuf.getDevicePtr();
+			CUdeviceptr startd = mTempContactBuffer.getDevicePtr();
+			CUdeviceptr	endd = mTempContactRemapBuffer.getDevicePtr();
 
 			const CUfunction rigidDensityFunction = mGpuKernelWranglerManager->getCuFunction(PxgKernelIds::PS_ACCUMULATE_RIGID_DENSITY);
 
 			PxCudaKernelParam kernelParams[] =
 			{
 				PX_CUDA_KERNEL_PARAM(particleSystemd),
-				PX_CUDA_KERNEL_PARAM(contactsd),
+				PX_CUDA_KERNEL_PARAM(contactInfosd),
+				PX_CUDA_KERNEL_PARAM(contactNormalPensd),
 				PX_CUDA_KERNEL_PARAM(pairCountd),
 				PX_CUDA_KERNEL_PARAM(startd),
 				PX_CUDA_KERNEL_PARAM(endd)

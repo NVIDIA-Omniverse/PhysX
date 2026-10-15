@@ -84,6 +84,7 @@ namespace physx
 		virtual			void				releaseDeferredAggregateIds()	PX_OVERRIDE;
 		virtual			void				setGPUStateChanged()			PX_OVERRIDE	{ mGPUStateChanged = true;			}
 		virtual			void				setPersistentStateChanged()		PX_OVERRIDE	{ mPersistentStateChanged = true;	}
+		virtual			bool				isGPUManager()		const		PX_OVERRIDE	{ return true;						}
 		//~AABBManagerBase
 
 						void				markAggregateBoundsBitmap();

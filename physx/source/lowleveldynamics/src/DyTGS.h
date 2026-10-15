@@ -24,7 +24,7 @@ namespace physx
 
 		#define DY_TGS_SOLVE_METHOD_PARAMS		const PxConstraintBatchHeader& hdr, const PxSolverConstraintDesc* desc, const PxTGSSolverBodyTxInertia* const txInertias, PxReal minPenetration, PxReal elapsedTime
 		#define DY_TGS_CONCLUDE_METHOD_PARAMS	const PxConstraintBatchHeader& hdr, const PxSolverConstraintDesc* desc, const PxTGSSolverBodyTxInertia* const txInertias, PxReal elapsedTime
-		#define DY_TGS_WRITEBACK_METHOD_PARAMS	const PxConstraintBatchHeader& hdr, const PxSolverConstraintDesc* desc
+		#define DY_TGS_WRITEBACK_METHOD_PARAMS	const PxConstraintBatchHeader& hdr, const PxSolverConstraintDesc* desc, const PxTGSSolverBodyTxInertia* const txInertias
 
 		typedef void (*TGSSolveBlockMethod)		(DY_TGS_SOLVE_METHOD_PARAMS);
 		typedef void (*TGSSolveConcludeMethod)	(DY_TGS_CONCLUDE_METHOD_PARAMS);

@@ -22,6 +22,7 @@ import os
 import shutil
 
 import pytest
+from schema_support import physx_schema_paths
 
 # Set by the CMake test step, which runs this suite against a staged install
 # tree. There, a schema tree that cannot be registered is a broken test stage
@@ -30,9 +31,8 @@ import pytest
 # out of the run while still reporting a pass.
 REQUIRE_CODELESS_SCHEMAS = os.environ.get("OVPHYSX_REQUIRE_CODELESS_SCHEMAS") == "1"
 
-# The two codeless schema roots ovphysx ships, which register as independent USD
-# plugins. `codeless._SENTINEL_IDENTIFIERS` carries one always-present applied
-# API from each.
+# Each resource directory is a separate USD plugin, with one applied API in
+# codeless._SENTINEL_IDENTIFIERS to verify registration.
 PHYSX_SCHEMA_MODULE = "PhysxSchema"
 DEFORMABLE_SCHEMA_MODULE = "OmniUsdPhysicsDeformableSchema"
 
@@ -83,7 +83,7 @@ def pytest_configure(config):
 
 @pytest.fixture(scope="session")
 def codeless_schemas():
-    """Register ovphysx's codeless PhysX schemas before any stage is opened.
+    """Register the external codeless PhysX schemas before any stage is opened.
 
     Deliberately not autouse: the cases that only inspect the subpackage's
     surface need no schemas, and would otherwise skip alongside the authoring
@@ -97,8 +97,8 @@ def codeless_schemas():
       runtime is the py-less ovstage one, so a declared dependency would put a
       second USD library in the same process. See REQ-PYTHON-UTILS-001, "Why
       `pxr` is caller-supplied".
-    - No staged schema tree. `codeless_schema_paths()` resolves the wheel or
-      `_install/` layout, so a raw source checkout has nothing to register.
+    - No installed provider. Metadata discovery requires the application to
+      install `physx-usd-schemas` independently.
 
     Under `OVPHYSX_REQUIRE_CODELESS_SCHEMAS=1` both become failures instead: see
     REQUIRE_CODELESS_SCHEMAS above.
@@ -112,7 +112,7 @@ def codeless_schemas():
         codeless.register_schemas()
     except FileNotFoundError as exc:
         # Not fatal on its own: the schemas may already be registered through
-        # ovphysx's own plugin path in this process.
+        # an application-supplied plugin path in this process.
         staging_error = exc
 
     if not codeless.schema_is_registered():
@@ -134,7 +134,7 @@ def stage(codeless_schemas):
 
 @pytest.fixture(scope="session")
 def half_staged_schema_root(tmp_path_factory):
-    """A schema tree carrying one of ovphysx's two codeless roots and not the other.
+    """A schema tree carrying only the PhysX plugin, for partial registration tests.
 
     No install layout produces this state, so it is built here: the PhysX root is
     copied in and the Omni deformable one is left out. It is what shows that a
@@ -152,10 +152,8 @@ def half_staged_schema_root(tmp_path_factory):
     """
     pytest.importorskip("pxr", reason="ovphysx.utils requires a caller-supplied USD runtime")
 
-    import ovphysx
-
     try:
-        staged = ovphysx.codeless_schema_paths()
+        staged = physx_schema_paths()
     except FileNotFoundError as exc:
         _unavailable(f"codeless schemas not staged in this layout: {exc}")
 

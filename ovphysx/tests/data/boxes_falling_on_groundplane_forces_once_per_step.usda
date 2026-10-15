@@ -1,0 +1,21 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    timeCodesPerSecond = 60
+    upAxis = "Z"
+    subLayers = [
+        @./boxes_falling_on_groundplane.usda@
+    ]
+)
+
+# boxes_falling_on_groundplane.usda with external forces applied once per step, for tests that expect it.
+over "World"
+{
+    over "physicsScene" (
+        prepend apiSchemas = ["PhysxSceneAPI"]
+    )
+    {
+        bool physxScene:enableExternalForcesEveryIteration = 0
+    }
+}

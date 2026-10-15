@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-DEFORM-SKIN-001
+// @covers AC-1 AC-2
+
 #include "PhysXDeformablePost.h"
 #include "PhysXDefines.h"
 #include "gpu/PxPhysicsGpu.h"
@@ -52,6 +55,8 @@ void VolumeDeformableSkinningData::packageSkinningData(PxTetmeshSkinningGpuData&
 
     packagedData.guideVerticesD.data = reinterpret_cast<PxVec3*>(mDeformableVolume->getSimPositionInvMassBufferD());
     packagedData.guideVerticesD.stride = sizeof(PxVec4);
+    const PxTetrahedronMesh* simulationMesh = mDeformableVolume->getSimulationMesh();
+    packagedData.guideVerticesD.count = simulationMesh ? simulationMesh->getNbVertices() : 0;
     packagedData.guideTetrahedraD = mGuideTetrahedraD;
     packagedData.skinningInfoPerVertexD = mSkinningEmbeddingInfoD;
     packagedData.skinnedVerticesD.count = mNumSkinnedVertices;

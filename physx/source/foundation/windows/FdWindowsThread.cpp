@@ -185,7 +185,12 @@ PxThreadImpl::~PxThreadImpl()
 {
 	if(getThread(this)->state == ThreadImpl::Started)
 		kill();
-	CloseHandle(getThread(this)->thread);
+
+	const HANDLE handle = getThread(this)->thread;
+	if (handle)
+	{
+		CloseHandle(handle);
+	}
 }
 
 void PxThreadImpl::start(uint32_t stackSize, PxRunnable* runnable)

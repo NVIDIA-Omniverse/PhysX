@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-BATCH-001
+ * @covers AC-1 AC-2
+ */
+
 #include <omni/physics/parse/ArticulationGraph.h>
 
 #include <carb/logging/Log.h>
@@ -208,33 +212,24 @@ ObjectKey getCenterOfGraph(const ArticulationLinkMap& map, const std::vector<Obj
     return chosen;
 }
 
-void emitArticulationDesc(IDescriptorAllocator& allocator,
-                          const KeySet& jointKeys,
+struct PendingArticulation
+{
+    const ArticulationRootInput* root;
+    ObjectKey articulationKey, rootKey;
+    bool fixBase;
+    KeySet joints, bodies;
+};
+
+void emitArticulationDesc(const KeySet& jointKeys,
                           const ArticulationRootInput& root,
                           ObjectKey articulationKey,
                           ObjectKey rootKey,
                           const KeySet& articulatedJoints,
                           const KeySet& articulatedBodies,
-                          std::vector<DescPtr<PhysxArticulationDesc>>& out)
+                          std::vector<PendingArticulation>& pending)
 {
-    DescPtr<PhysxArticulationDesc> desc = allocateDesc<PhysxArticulationDesc>(allocator);
-    if (!desc)
-        return;
-    desc->articulationPrim = articulationKey;
-    desc->solverPositionIterationCount = root.fields.solverPositionIterationCount;
-    desc->solverVelocityIterationCount = root.fields.solverVelocityIterationCount;
-    desc->sleepThreshold = root.fields.sleepThreshold;
-    desc->stabilizationThreshold = root.fields.stabilizationThreshold;
-    desc->selfCollision = root.fields.selfCollision;
-    desc->rootPrim = rootKey;
-    desc->fixBaseKey = rootKey;
-    // fixBase = the elected root is itself a joint (the floating-base pattern: the
-    // articulation is anchored to world via a fixed joint).
-    desc->fixBase = rootKey.valid() && jointKeys.count(rootKey) != 0;
-    desc->articulatedJoints = articulatedJoints;
-    desc->articulatedBodies = articulatedBodies;
-    desc->sourceFilteredCollisions = root.sourceFilteredCollisions;
-    out.push_back(std::move(desc));
+    pending.push_back({ &root, articulationKey, rootKey, rootKey.valid() && jointKeys.count(rootKey) != 0,
+                        articulatedJoints, articulatedBodies });
 }
 
 } // namespace
@@ -249,6 +244,7 @@ void buildArticulations(IPhysicsSource& source,
     if (roots.empty())
         return;
 
+    std::vector<PendingArticulation> pending;
     const auto C = [&](ObjectKey k) { return source.canonicalKey(k); };
 
     // Bodies keyed canonically.
@@ -429,8 +425,8 @@ void buildArticulations(IPhysicsSource& source,
                 }
 
                 if (linkKey.valid())
-                    emitArticulationDesc(allocator, jointKeys, r, artKey, linkKey, articulatedJoints,
-                                         articulatedBodies, outArticulations);
+                    emitArticulationDesc(jointKeys, r, artKey, linkKey, articulatedJoints,
+                                         articulatedBodies, pending);
             }
         }
         else
@@ -450,8 +446,8 @@ void buildArticulations(IPhysicsSource& source,
                             articulatedBodies.insert(c);
                 }
             for (const ObjectKey& rootKey : rootPrims)
-                emitArticulationDesc(allocator, jointKeys, r, artKey, rootKey, articulatedJoints,
-                                     articulatedBodies, outArticulations);
+                emitArticulationDesc(jointKeys, r, artKey, rootKey, articulatedJoints,
+                                     articulatedBodies, pending);
         }
 
         // ArticulationRootAPI applied but nothing aggregable → one default desc
@@ -459,9 +455,34 @@ void buildArticulations(IPhysicsSource& source,
         if (rootPrims.empty() && articulationLinkMaps.empty())
         {
             const KeySet empty;
-            emitArticulationDesc(allocator, jointKeys, r, artKey, artKey, empty, empty, outArticulations);
+            emitArticulationDesc(jointKeys, r, artKey, artKey, empty, empty, pending);
         }
     }
+    // Root election may emit several disjoint components per authored root.
+    // Reserve from the completed component list, never from root prim count.
+    if (!reserveDescriptors<PhysxArticulationDesc>(allocator, pending.size()))
+        throw std::bad_alloc();
+    outArticulations.reserve(outArticulations.size() + pending.size());
+    for (PendingArticulation& entry : pending)
+    {
+        DescPtr<PhysxArticulationDesc> desc = allocateDesc<PhysxArticulationDesc>(allocator);
+        if (!desc) continue;
+        const ArticulationRootInput& root = *entry.root;
+        desc->articulationPrim = entry.articulationKey;
+        desc->solverPositionIterationCount = root.fields.solverPositionIterationCount;
+        desc->solverVelocityIterationCount = root.fields.solverVelocityIterationCount;
+        desc->sleepThreshold = root.fields.sleepThreshold;
+        desc->stabilizationThreshold = root.fields.stabilizationThreshold;
+        desc->selfCollision = root.fields.selfCollision;
+        desc->rootPrim = entry.rootKey;
+        desc->fixBaseKey = entry.rootKey;
+        desc->fixBase = entry.fixBase;
+        desc->articulatedJoints = std::move(entry.joints);
+        desc->articulatedBodies = std::move(entry.bodies);
+        desc->sourceFilteredCollisions = root.sourceFilteredCollisions;
+        outArticulations.push_back(std::move(desc));
+    }
+
 }
 
 } // namespace omni::physics::parse

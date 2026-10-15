@@ -21,12 +21,15 @@ _EXPECTED_SIGNATURES = {
         ("self",),
         ("config", "ignore_version_mismatch", "active_cuda_gpus"),
     ),
-    "PhysX.wait_op": (("self", "op_index"), ("timeout_ns",)),
+    "PhysX.wait_task": (("self", "task"), ("timeout_ns",)),
     "PhysX.wait_all": (("self",), ("timeout_ns",)),
     "PhysX.attach_ovstage": (("self", "stage"), ("read_ordinal",)),
-    "PhysX.read": (("self", "object_type", "attribute_names"), ("scope",)),
-    "PhysX.read_tokens": (("self", "object_type", "attribute_tokens"), ("scope",)),
-    "PhysX.get_contact_report": (("self",), ("include_friction_anchors", "copy")),
+    "PhysX.query": (("self", "object_type"), ("scope", "prim_paths", "pattern", "contacts", "metadata")),
+    "PhysX.read": (("self", "query", "attributes"), ("metadata",)),
+    "PhysX.write": (("self", "query", "attributes"), ("metadata",)),
+    "PhysX.read_sync": (("self", "object_type", "attribute_names"), ("scope", "prim_paths", "pattern", "contacts", "metadata")),
+    "PhysX.read_tokens_sync": (("self", "object_type", "attribute_tokens"), ("scope", "prim_paths", "pattern", "contacts", "metadata")),
+    "PhysX.write_sync": (("self", "object_type", "attributes"), ("scope", "prim_paths", "pattern", "metadata", "values")),
     "enable_python_logging": (("logger_name",), ("min_severity", "channel_filter")),
 }
 
@@ -34,12 +37,15 @@ _EXPECTED_SIGNATURES = {
 def _runtime_callables():
     return {
         "PhysX.__init__": PhysX.__init__,
-        "PhysX.wait_op": PhysX.wait_op,
+        "PhysX.wait_task": PhysX.wait_task,
         "PhysX.wait_all": PhysX.wait_all,
         "PhysX.attach_ovstage": PhysX.attach_ovstage,
+        "PhysX.query": PhysX.query,
         "PhysX.read": PhysX.read,
-        "PhysX.read_tokens": PhysX.read_tokens,
-        "PhysX.get_contact_report": PhysX.get_contact_report,
+        "PhysX.write": PhysX.write,
+        "PhysX.read_sync": PhysX.read_sync,
+        "PhysX.read_tokens_sync": PhysX.read_tokens_sync,
+        "PhysX.write_sync": PhysX.write_sync,
         "enable_python_logging": enable_python_logging,
     }
 

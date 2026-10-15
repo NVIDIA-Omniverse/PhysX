@@ -2859,6 +2859,7 @@ void solveContact4(DY_TGS_SOLVE_METHOD_PARAMS)
 
 void writeBackContact4(DY_TGS_WRITEBACK_METHOD_PARAMS)
 {
+	PX_UNUSED(txInertias);
 	writeBackContact4_Block(desc + hdr.startIndex);
 }
 
@@ -3314,104 +3315,88 @@ void solve1D4(DY_TGS_SOLVE_METHOD_PARAMS)
 	solve1DStep4(desc + hdr.startIndex, txInertias, elapsedTime);
 }
 
+static PX_FORCE_INLINE PxVec3 loadLane(const Vec4VArg x, const Vec4VArg y, const Vec4VArg z, const PxU32 lane)
+{
+	PX_ALIGN(16, PxF32 fx[4]);
+	PX_ALIGN(16, PxF32 fy[4]);
+	PX_ALIGN(16, PxF32 fz[4]);
+	V4StoreA(x, fx);
+	V4StoreA(y, fy);
+	V4StoreA(z, fz);
+	return PxVec3(fx[lane], fy[lane], fz[lane]);
+}
+
+static PX_FORCE_INLINE PxReal loadLane(const Vec4VArg v, const PxU32 lane)
+{
+	PX_ALIGN(16, PxF32 f[4]);
+	V4StoreA(v, f);
+	return f[lane];
+}
+
 void writeBack1D4(DY_TGS_WRITEBACK_METHOD_PARAMS)
 {
-	ConstraintWriteback* writeback0 = reinterpret_cast<ConstraintWriteback*>(desc[hdr.startIndex].writeBack);
-	ConstraintWriteback* writeback1 = reinterpret_cast<ConstraintWriteback*>(desc[hdr.startIndex + 1].writeBack);
-	ConstraintWriteback* writeback2 = reinterpret_cast<ConstraintWriteback*>(desc[hdr.startIndex + 2].writeBack);
-	ConstraintWriteback* writeback3 = reinterpret_cast<ConstraintWriteback*>(desc[hdr.startIndex + 3].writeBack);
+	//The reported impulse must be reconstructed with the same effective Jacobians the solve applied
+	//the impulses through (see accumulate1dConstraintImpulseTGS and the scalar writeBack1DStep).
+	//This is a once-per-step cold path, so the reconstruction runs per lane in scalar code: the
+	//orthogonalization mixes per-lane inertia tensors, which do not map well to the SoA layout.
+	const SolverConstraint1DHeaderStep4* header = reinterpret_cast<const SolverConstraint1DHeaderStep4*>(desc[hdr.startIndex].constraint);
+	const SolverConstraint1DStep4* rows = reinterpret_cast<const SolverConstraint1DStep4*>(desc[hdr.startIndex].constraint + sizeof(SolverConstraint1DHeaderStep4));
 
-	if (writeback0 || writeback1 || writeback2 || writeback3)
+	const PxU32 count = header->count;
+
+	for (PxU32 lane = 0; lane < 4; lane++)
 	{
-		SolverConstraint1DHeaderStep4* header = reinterpret_cast<SolverConstraint1DHeaderStep4*>(desc[hdr.startIndex].constraint);
-		SolverConstraint1DStep4* base = reinterpret_cast<SolverConstraint1DStep4*>(desc[hdr.startIndex].constraint + sizeof(SolverConstraint1DHeaderStep4));
+		const PxSolverConstraintDesc& laneDesc = desc[hdr.startIndex + lane];
+		ConstraintWriteback* writeback = reinterpret_cast<ConstraintWriteback*>(laneDesc.writeBack);
+		if (!writeback)
+			continue;
 
-		const Vec4V zero = V4Zero();
-		Vec4V linX(zero), linY(zero), linZ(zero);
-		Vec4V angX(zero), angY(zero), angZ(zero);
+		const PxMat33& sqrtInvInertia0 = txInertias[laneDesc.bodyADataIndex].sqrtInvInertia;
+		const PxMat33& sqrtInvInertia1 = txInertias[laneDesc.bodyBDataIndex].sqrtInvInertia;
 
-		const PxU32 count = header->count;
-		for (PxU32 i = 0; i<count; i++)
+		const PxVec3 rAWorld = loadLane(header->rAWorld[0], header->rAWorld[1], header->rAWorld[2], lane);
+		const PxVec3 rBWorld = loadLane(header->rBWorld[0], header->rBWorld[1], header->rBWorld[2], lane);
+
+		//The rotational-equality basis the solve orthogonalizes against (sqrt-inverse-inertia space,
+		//see solve1DStep4), and the raw angular Jacobians of the rows that built it, in build order.
+		PxVec3 angOrthoAxis0[3], angOrthoAxis1[3], orthoRawAxis[3];
+		PxReal angOrthoRecipResponse[3];
+		for (PxU32 k = 0; k < 3; k++)
 		{
-			const SolverConstraint1DStep4* c = base;
-
-			//Load in flags
-			const VecI32V flags = I4LoadU(reinterpret_cast<const PxI32*>(&c->flags[0]));
-			//Work out masks
-			const VecI32V mask = I4Load(DY_SC_FLAG_OUTPUT_FORCE);
-
-			const VecI32V masked = VecI32V_And(flags, mask);
-			const BoolV isEq = VecI32V_IsEq(masked, mask);
-
-			const Vec4V appliedForce = V4Sel(isEq, c->appliedForce, zero);
-
-			linX = V4MulAdd(c->lin0[0], appliedForce, linX);
-			linY = V4MulAdd(c->lin0[1], appliedForce, linY);
-			linZ = V4MulAdd(c->lin0[2], appliedForce, linZ);
-
-			//#6 ang0 was zeroed at prep time for linear rows: reconstruct their angular Jacobian
-			// from lin0 x rAWorld, matching the scalar writeBack1DStep. That convention is
-			// sign-opposite to the rA x lin0 reconstruction in solve1DStep4 and to the
-			// body0WorkOffset x lin correction below: the reported force deliberately follows
-			// the scalar path so block and scalar stay identical, see PX-5320.
-			const Vec4V ang0X = V4Add(c->ang0[0], V4NegMulSub(c->lin0[2], header->rAWorld[1], V4Mul(c->lin0[1], header->rAWorld[2])));
-			const Vec4V ang0Y = V4Add(c->ang0[1], V4NegMulSub(c->lin0[0], header->rAWorld[2], V4Mul(c->lin0[2], header->rAWorld[0])));
-			const Vec4V ang0Z = V4Add(c->ang0[2], V4NegMulSub(c->lin0[1], header->rAWorld[0], V4Mul(c->lin0[0], header->rAWorld[1])));
-
-			angX = V4MulAdd(ang0X, appliedForce, angX);
-			angY = V4MulAdd(ang0Y, appliedForce, angY);
-			angZ = V4MulAdd(ang0Z, appliedForce, angZ);
-
-			base++;
+			angOrthoAxis0[k] = loadLane(header->angOrthoAxis0X[k], header->angOrthoAxis0Y[k], header->angOrthoAxis0Z[k], lane);
+			angOrthoAxis1[k] = loadLane(header->angOrthoAxis1X[k], header->angOrthoAxis1Y[k], header->angOrthoAxis1Z[k], lane);
+			angOrthoRecipResponse[k] = loadLane(header->angOrthoRecipResponse[k], lane);
+			orthoRawAxis[k] = PxVec3(0.0f);
 		}
 
-		//We need to do the cross product now
-		//#6 corrected component indices to form body0WorkOffset x lin
-		angX = V4Sub(angX, V4NegMulSub(header->body0WorkOffset[2], linY, V4Mul(header->body0WorkOffset[1], linZ)));
-		angY = V4Sub(angY, V4NegMulSub(header->body0WorkOffset[0], linZ, V4Mul(header->body0WorkOffset[2], linX)));
-		angZ = V4Sub(angZ, V4NegMulSub(header->body0WorkOffset[1], linX, V4Mul(header->body0WorkOffset[0], linY)));
-
-		const Vec4V linLenSq = V4MulAdd(linZ, linZ, V4MulAdd(linY, linY, V4Mul(linX, linX)));
-		const Vec4V angLenSq = V4MulAdd(angZ, angZ, V4MulAdd(angY, angY, V4Mul(angX, angX)));
-
-		const Vec4V linLen = V4Sqrt(linLenSq);
-		const Vec4V angLen = V4Sqrt(angLenSq);
-
-		const BoolV broken = BOr(V4IsGrtr(linLen, header->linBreakImpulse), V4IsGrtr(angLen, header->angBreakImpulse));
-
-		PX_ALIGN(16, PxU32 iBroken[4]);
-		BStoreA(broken, iBroken);
-
-		Vec4V lin0, lin1, lin2, lin3;
-		Vec4V ang0, ang1, ang2, ang3;
-
-		PX_TRANSPOSE_34_44(linX, linY, linZ, lin0, lin1, lin2, lin3);
-		PX_TRANSPOSE_34_44(angX, angY, angZ, ang0, ang1, ang2, ang3);
-
-		if (writeback0)
+		//the prep fills the header basis in the same single pass over the same stored rows, so entry k
+		//is the k-th DY_SC_FLAG_ROT_EQ row's angular Jacobian (asserted in accumulate1dConstraintImpulsesOrtho)
+		for (PxU32 i = 0, k = 0; i < count && k < 3; i++)
 		{
-			V3StoreU(Vec3V_From_Vec4V_WUndefined(lin0), writeback0->linearImpulse);
-			V3StoreU(Vec3V_From_Vec4V_WUndefined(ang0), writeback0->angularImpulse);
-			writeback0->broken = header->breakable[0] ? PxU32(iBroken[0] != 0) : 0;
+			if (rows[i].flags[lane] & DY_SC_FLAG_ROT_EQ)
+				orthoRawAxis[k++] = loadLane(rows[i].ang0[0], rows[i].ang0[1], rows[i].ang0[2], lane);
 		}
-		if (writeback1)
+
+		PxVec3 lin(0.0f), ang(0.0f);
+		PxReal orthoImpulse[3] = { 0.0f, 0.0f, 0.0f };
+		for (PxU32 i = 0; i < count; i++)
 		{
-			V3StoreU(Vec3V_From_Vec4V_WUndefined(lin1), writeback1->linearImpulse);
-			V3StoreU(Vec3V_From_Vec4V_WUndefined(ang1), writeback1->angularImpulse);
-			writeback1->broken = header->breakable[1] ? PxU32(iBroken[1] != 0) : 0;
+			const SolverConstraint1DStep4& c = rows[i];
+			accumulate1dConstraintImpulseTGS(loadLane(c.appliedForce, lane), c.flags[lane],
+				loadLane(c.lin0[0], c.lin0[1], c.lin0[2], lane), loadLane(c.ang0[0], c.ang0[1], c.ang0[2], lane), rAWorld,
+				loadLane(c.lin1[0], c.lin1[1], c.lin1[2], lane), loadLane(c.ang1[0], c.ang1[1], c.ang1[2], lane), rBWorld,
+				sqrtInvInertia0, sqrtInvInertia1,
+				angOrthoAxis0, angOrthoAxis1, angOrthoRecipResponse,
+				lin, ang, orthoImpulse);
 		}
-		if (writeback2)
-		{
-			V3StoreU(Vec3V_From_Vec4V_WUndefined(lin2), writeback2->linearImpulse);
-			V3StoreU(Vec3V_From_Vec4V_WUndefined(ang2), writeback2->angularImpulse);
-			writeback2->broken = header->breakable[2] ? PxU32(iBroken[2] != 0) : 0;
-		}
-		if (writeback3)
-		{
-			V3StoreU(Vec3V_From_Vec4V_WUndefined(lin3), writeback3->linearImpulse);
-			V3StoreU(Vec3V_From_Vec4V_WUndefined(ang3), writeback3->angularImpulse);
-			writeback3->broken = header->breakable[3] ? PxU32(iBroken[3] != 0) : 0;
-		}
+
+		ang -= orthoRawAxis[0] * orthoImpulse[0] + orthoRawAxis[1] * orthoImpulse[1] + orthoRawAxis[2] * orthoImpulse[2];
+		ang -= loadLane(header->body0WorkOffset[0], header->body0WorkOffset[1], header->body0WorkOffset[2], lane).cross(lin);
+
+		writeback->linearImpulse = lin;
+		writeback->angularImpulse = ang;
+		writeback->broken = header->breakable[lane] ? PxU32(lin.magnitude() > loadLane(header->linBreakImpulse, lane) ||
+		                                                    ang.magnitude() > loadLane(header->angBreakImpulse, lane)) : 0;
 	}
 }
 

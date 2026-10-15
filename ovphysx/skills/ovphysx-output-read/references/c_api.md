@@ -5,62 +5,89 @@ Read this file for the native C output-read branch.
 ## Handle Sequence
 
 ```text
-ovphysx_query(type, scope)
-  -> optional ovphysx_fetch_query_result
-  -> optional ovphysx_query_shared_dictionary
-  -> ovphysx_read(attributes)
-  -> ovphysx_fetch_read_next until OVPHYSX_API_END_OF_ITERATION
+ovphysx_query(type, scope, &query, &query_result or NULL) -> wait_task
+  -> ovphysx_read(query, attributes, count, &read, &read_result or NULL) -> wait_task
+  -> ovphysx_fetch_read_next -> wait_task; stop on a null group
        -> consume group
-       -> ovphysx_release_group
-  -> ovphysx_release_read
-  -> ovphysx_release_query
+       -> ovphysx_release_group -> wait_task
+  -> ovphysx_release_read -> wait_task
+  -> ovphysx_release_query -> wait_task
 ```
 
-`OVPHYSX_API_END_OF_ITERATION` is normal exhaustion. Every other non-success
-status is an error. A successful query always has a nonzero handle, including an
-empty match; an empty read reaches end-of-iteration immediately.
+Query, read, fetch-next and release return `ovphysx_enqueue_result_t`.
+The receipt status reports admission, including accepted work that fails while
+executing inline. Wait on the receipt before using output handles, results or
+groups. A successful fetch with a null output group means normal exhaustion; a
+failed wait is an error. An empty query has a nonzero query handle and produces no
+groups. `ovphysx_query_selection` takes the same final optional result.
 
-Release every fetched group before releasing its read session. Release the read
-before its query on both success and error paths. Retrieve the same-thread error
-string before cleanup if a failure must be reported.
+Release every fetched group, then the read and query handles, after external
+consumers have completed, including on error paths. Releases also return tasks that must be collected. Accepted release
+ends caller use even if cleanup fails; do not resubmit it. Rejected release
+retains caller ownership. Task error strings belong to the wait result: copy or
+report them before `ovphysx_destroy_wait_task_result`. Keep input arrays and
+output slots alive through their task's completion.
 
 ## Discovery and Selector Semantics
 
-`ovphysx_fetch_query_result()` reports the produced attribute tokens and total
-prim count. Its arrays belong to the query until `ovphysx_release_query()`.
-`ovphysx_query_shared_dictionary()` returns the runtime-owned ovstage path
-dictionary that resolves the query's tokens and prim lists; the caller does not
-free it. A group's `prim_list` and `attribute` are interned integers, not paths or
-names. The getter hands back a `void*`; cast it to `ovx_path_dictionary_t*`, then resolve
-with the helpers in `<ovstage/ovx_path_dictionary.h>` — `get_paths` + `path_to_string`
-for the prim paths, `token_to_string` for the emitted attribute name:
+A non-NULL `ovstage_query_result_t*` passed to `ovphysx_query` receives a
+discovery snapshot taken at creation: the total prim count and the tokens of the
+attributes the object type can read (its vocabulary, not a promise that each one
+emits a group for this match). Its attribute array belongs to the query until its
+release is accepted.
+Its `query_result_id` and `all_handle` are zero and are not OVStage resources; never
+pass them to OVStage. A non-NULL `ovphysx_read_result_t*` passed to `ovphysx_read`
+receives one row per requested attribute, in request order: the canonical token
+(`OVX_INVALID_TOKEN` for a name the type cannot read), the group count, and
+`omission_reasons` bits (`OVPHYSX_READ_OMISSION_UNSUPPORTED_ATTRIBUTE`,
+`..._UNSUPPORTED_CONFIGURATION`, `..._NOT_READY`) that tell an empty match from
+unsupported or not-yet-ready data. Its rows stay valid until the read release is
+accepted. NULL skips either summary. A duplicate request, or a token that does not
+resolve in the attached Stage's dictionary, fails the read task.
+
+A group's `prim_list` and `attribute` are interned integers, not paths or names.
+They belong to the path dictionary of the ovstage Stage you attached; get it with
+`ovstage_get_path_dictionary(stage)` and do not free it. Resolve an emitted
+attribute through the public dictionary API:
 
 ```c
-void* dict_void = NULL;
-ovphysx_query_shared_dictionary(handle, query, &dict_void);
-ovx_path_dictionary_t* dict = (ovx_path_dictionary_t*)dict_void;
+#include <ovphysx/ovphysx.h>
+#include <ovstage/ovstage.h>
+#include <ovx/path_dictionary/path_dictionary.h>
+#include <stdio.h>
 
-/* for each fetched ovstage_read_group_t* g: */
-ovx_string_t attr = { 0 };
-ovx_path_dictionary_token_to_string(dict, g->attribute, &attr);      /* "position" (EMITTED name) */
-
-const ovx_primpath_t* prims = NULL;
-size_t count = 0;
-ovx_path_dictionary_get_paths(dict, g->prims.list, &prims, &count);  /* count == rows */
-for (size_t i = 0; i < count; ++i) {
-    ovx_string_t path = { 0 };
-    ovx_path_dictionary_path_to_string(dict, prims[i], &path);       /* "/World/Sphere1" -- row i */
+static int print_group_attribute(ovstage_instance_t* stage, const ovstage_read_group_t* group)
+{
+    path_dictionary_instance_t* dict = ovstage_get_path_dictionary(stage);
+    if (!dict)
+        return 0;
+    ovx_string_t name = { 0 };
+    const ovx_api_result_t result =
+        path_dictionary_get_strings_from_tokens(dict, &group->attribute, 1, &name);
+    if (result.status != OVX_API_SUCCESS) {
+        if (result.error.ptr)
+            path_dictionary_release_error(dict, result.error);
+        return 0;
+    }
+    printf("%.*s\n", (int)name.length, name.ptr);
+    return 1;
 }
 ```
 
-`get_paths` returns a thread-local buffer valid only until the next `get_paths` call, so
-finish the loop before resolving another list. The shipped `c_samples/output_read_c` sample
-does exactly this (see `dump_group`).
+The returned name belongs to the dictionary and must not be freed. To resolve
+prim paths, fetch handles with `path_dictionary_get_paths_from_path_list`, obtain
+their component tokens with `path_dictionary_get_tokens_from_paths`, and resolve
+those tokens with `path_dictionary_get_strings_from_tokens`. These calls write
+to caller-provided arrays; check their returned counts and release any returned
+error with `path_dictionary_release_error`.
 
-The query is a lazy selector over simulated type and scope. Membership and
-column values are evaluated against the latest completed step when discovery or
-read occurs. A step between query and read makes the read observe the newer
-step. Before using `OVPHYSX_SCOPE_ACTIVE` or relying on its discovery count,
+A whole-type query is a selector over simulated type and scope. Each read
+session evaluates its membership and column values against the latest completed
+step when it opens, so a step between query and read makes the read observe the
+newer step. The optional query result is a creation-time snapshot and never
+updates. A selected query (`ovphysx_query_selection`) keeps the membership it
+resolved at creation. An open read session stays valid after its query is
+released. Before using `OVPHYSX_SCOPE_ACTIVE` or relying on its discovery count,
 read [Scope and layout constraints](scope_and_layout.md); support differs by
 object type.
 
@@ -68,7 +95,8 @@ object type.
 
 `ovphysx_fetch_read_next()` returns a producer-owned
 `ovstage_read_group_t const*`. The group struct and stage-derived prim list remain
-valid until the group or read session is released. Numeric tensor, prim-index-map,
+valid until the group or read session is released, or the attachment is retired,
+whichever happens first. Numeric tensor, prim-index-map,
 data-index-map, mask, and CUDA-event storage remains valid until the read session is released.
 
 Preserve these fields when forwarding a group:
@@ -81,24 +109,45 @@ Forwarding `cuda_sync` is not the same as honouring it. On a DirectGPU scene the
 covered types emit **device-resident** (`kDLCUDA`) tensors, handed over before their
 producing work has necessarily completed.
 
-`ovphysx_cuda_stream_wait_event(stream, event)` is the ordering call, so honouring
-the contract costs no CUDA dependency of your own — it routes through the driver
-shim ovphysx already loads. Pass the stream as `uintptr_t`: `0` is the NULL stream,
-`1` the legacy default, `2` the per-thread default, anything else a `CUstream`.
+Use CUDA's `cuStreamWaitEvent` or `cudaStreamWaitEvent` to order your stream after
+the group's nonzero event, and check the returned CUDA status. A zero event means
+there is nothing to wait for. The event is borrowed; do not destroy it.
 
-The loop below is `.cu`, not `.c` — the launch syntax is CUDA C++. Compile it as CUDA;
-the ovphysx calls themselves are plain C and need no such thing.
+The loop below uses the CUDA runtime and a caller-provided kernel launcher.
+Compile it as C++; the ovphysx calls themselves use the C API.
 
-```cuda
-/* Compile as CUDA (.cu): the launch syntax below is CUDA C++. The ovphysx calls are plain C.
- *
- * Supplied by you: a kernel over one dense float column, and one over a host column. */
+```cpp
+#include <ovphysx/ovphysx.h>
+#include <cuda_runtime_api.h>
+#include <stdio.h>
+
+static ovphysx_result_t finish_task(ovphysx_instance_handle_t handle, ovphysx_enqueue_result_t task)
+{
+    ovphysx_result_t status = { task.status };
+    ovphysx_wait_task_result_t result = {};
+    if (task.status == OVPHYSX_API_SUCCESS)
+        status = ovphysx_wait_task(handle, task, OVPHYSX_TIMEOUT_INFINITE, &result);
+    for (size_t i = 0; i < result.num_errors; ++i) {
+        const ovphysx_string_t error = ovphysx_get_last_task_error(handle, result.error_tasks[i]);
+        fprintf(stderr, "%.*s\n", (int)error.length, error.ptr ? error.ptr : "");
+    }
+    if (status.status != OVPHYSX_API_SUCCESS && !result.num_errors) {
+        const ovphysx_string_t error = ovphysx_get_last_error();
+        fprintf(stderr, "%.*s\n", (int)error.length, error.ptr ? error.ptr : "");
+    }
+    ovphysx_destroy_wait_task_result(&result);
+    return status;
+}
+
+/* Supplied by the caller: a CUDA kernel launcher and a host column consumer. */
 extern void launch_my_kernel(const float* rows, int64_t rowCount, cudaStream_t stream);
 extern void consume_host_rows(const DLTensor* t);
 
-/* Consumes every group of one read, then releases the read and the query. Returns 1 on success.
+/* Consumes every group of one read, then releases the read and the query.
+ * Returns 1 on success, -1 for an unproven consumer wait, or 0 for another failure.
+ * The -1 result retains both handles for caller-owned recovery.
  * `handle` and `query` are yours; `read` is the session ovphysx_read() handed back. */
-static int consume_read(ovphysx_handle_t handle,
+static int consume_read(ovphysx_instance_handle_t handle,
                         ovphysx_query_handle_t query,
                         ovphysx_read_handle_t read,
                         cudaStream_t myStream)
@@ -107,8 +156,8 @@ static int consume_read(ovphysx_handle_t handle,
 
     for (;;) {
         const ovstage_read_group_t* g = NULL;
-        const ovphysx_result_t r = ovphysx_fetch_read_next(handle, read, &g);
-        if (r.status == OVPHYSX_API_END_OF_ITERATION)
+        const ovphysx_result_t r = finish_task(handle, ovphysx_fetch_read_next(handle, read, &g));
+        if (r.status == OVPHYSX_API_SUCCESS && !g)
             break;                       /* exhausted -- NOT an error */
         if (r.status != OVPHYSX_API_SUCCESS) {
             ok = 0;                      /* a real failure; do not treat it as end-of-data */
@@ -116,14 +165,16 @@ static int consume_read(ovphysx_handle_t handle,
         }
 
         /* Ordered ONCE per group, not per tensor: cuda_sync describes the whole group, and a
-         * group is device-uniform. Only needed when reading on your OWN stream -- the
-         * default/null stream is already ordered after the producer work. Wait, do not destroy:
-         * the event belongs to the read session. A zero wait_event is a no-op success. */
+         * group is device-uniform. Only the legacy default/null stream of the producing
+         * context is already ordered after the producer work; any other stream needs this
+         * wait. Wait, do not destroy: the event belongs to the read session. Skip a
+         * zero wait_event because CUDA does not accept a null event. */
         int groupOk = 1;
-        if (g->data.tensor_count > 0 && g->data.tensors[0].device.device_type == kDLCUDA) {
-            const ovphysx_result_t w =
-                ovphysx_cuda_stream_wait_event((uintptr_t)myStream, g->data.cuda_sync.wait_event);
-            if (w.status != OVPHYSX_API_SUCCESS)
+        if (g->data.tensor_count > 0 && g->data.tensors[0].device.device_type == kDLCUDA &&
+            g->data.cuda_sync.wait_event != 0) {
+            const cudaError_t w = cudaStreamWaitEvent(
+                myStream, (cudaEvent_t)g->data.cuda_sync.wait_event, 0);
+            if (w != cudaSuccess)
                 groupOk = 0;
         }
 
@@ -153,7 +204,7 @@ static int consume_read(ovphysx_handle_t handle,
 
         /* Released on EVERY path out of the group, including the failure above: breaking out
          * first would leak this group's prim list for the life of the session. */
-        if (ovphysx_release_group(handle, read, g->read_group_id).status != OVPHYSX_API_SUCCESS)
+        if (finish_task(handle, ovphysx_release_group(handle, read, g->read_group_id)).status != OVPHYSX_API_SUCCESS)
             groupOk = 0;
 
         if (!groupOk) {
@@ -170,25 +221,30 @@ static int consume_read(ovphysx_handle_t handle,
      * Unconditional: a failed loop may still have launched kernels over columns that are about
      * to be freed. */
     if (cudaStreamSynchronize(myStream) != cudaSuccess)
-        ok = 0;
+        return -1;
 
     /* One cleanup path, and every status checked. Both run even after a failure -- the session
      * and query own memory regardless of how the loop ended. */
-    if (ovphysx_release_read(handle, read).status != OVPHYSX_API_SUCCESS)
+    if (finish_task(handle, ovphysx_release_read(handle, read)).status != OVPHYSX_API_SUCCESS)
         ok = 0;
-    if (ovphysx_release_query(handle, query).status != OVPHYSX_API_SUCCESS)
+    if (finish_task(handle, ovphysx_release_query(handle, query)).status != OVPHYSX_API_SUCCESS)
         ok = 0;
 
     return ok;
 }
 ```
 
+On `-1`, the helper keeps the read and query alive because consumer completion is unknown.
+The caller still owns both handles and must establish completion before releasing the session
+or destroying its instance. On `0`, consumers have finished but another operation failed;
+stop using these resources and destroy the instance before continuing, since a rejected release
+can retain caller ownership. Accepted releases must not be resubmitted.
+
 Copying each column to your own memory inside the loop works equally well and lets the
 session go earlier; the synchronize is the cheaper option when the read is consumed once.
 
-The wait is issued in the calling thread's current CUDA context and ovphysx does not
-push its own, so the context-relative sentinels `1` and `2` resolve against **your**
-context — the one that queued the work being ordered.
+Issue the CUDA wait with the consumer's context current. Context-relative default
+stream handles refer to that context; ovphysx does not choose the consumer stream.
 
 `cuda_sync.stream` is always `0` — the read never asks a consumer to drain a stream.
 Release each group when done with it, then the session; a device column's memory
@@ -207,14 +263,13 @@ That difference decides how many tensors to read, and taking `tensors[0]` is wro
 for half of them:
 
 ```c
-if (g->is_array) {
-    // One tensor per prim: tensor_count == prims.count, tensors[i] is prim i's own
-    // variable-length array. A joint read over 16k joints is ONE group with 16k
-    // tensors -- reading only tensors[0] gets the first joint and reports nothing.
-    for (uint32_t i = 0; i < g->data.tensor_count; ++i)
-        consume(&g->data.tensors[i]);
-} else {
-    // Every prim stacked into one tensor: tensor_count == 1, row i is prim i.
-    consume(&g->data.tensors[0]);
+#include <ovphysx/ovphysx.h>
+
+extern void consume(const DLTensor* tensor);
+
+static void consume_group(const ovstage_read_group_t* group)
+{
+    for (uint32_t i = 0; i < group->data.tensor_count; ++i)
+        consume(&group->data.tensors[i]);
 }
 ```

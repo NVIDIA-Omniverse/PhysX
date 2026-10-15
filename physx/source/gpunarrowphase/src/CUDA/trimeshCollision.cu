@@ -354,6 +354,7 @@ void trimeshPlaneNarrowphase(
 				{
 					patchAndContactCounters->setOverflowError(PxgPatchAndContactCounters::FORCE_BUFFER_OVERFLOW);
 					forceAndIndiceByteOffset = 0xFFFFFFFF; //overflow
+					contactByteOffset = 0xFFFFFFFF;
 				}
 			}
 		}
@@ -604,15 +605,16 @@ void trimeshHeightfieldNarrowphase(
 				contactByteOffset = atomicAdd(&(patchAndContactCounters->contactsBytes), sizeof(PxContact) * nbContacts);
 				forceAndIndiceByteOffset = atomicAdd(&(patchAndContactCounters->forceAndIndiceBytes), sizeof(PxU32) * nbContacts);
 
-				if ((contactByteOffset + sizeof(PxContact)) > contactBytesLimit)
+				if ((contactByteOffset + sizeof(PxContact) * nbContacts) > contactBytesLimit)
 				{
 					patchAndContactCounters->setOverflowError(PxgPatchAndContactCounters::CONTACT_BUFFER_OVERFLOW);
 					contactByteOffset = 0xFFFFFFFF; //overflow
 				}
-				else if ((forceAndIndiceByteOffset + sizeof(PxU32)) > forceBytesLimit)
+				if ((forceAndIndiceByteOffset + sizeof(PxU32) * nbContacts) > forceBytesLimit)
 				{
 					patchAndContactCounters->setOverflowError(PxgPatchAndContactCounters::FORCE_BUFFER_OVERFLOW);
 					forceAndIndiceByteOffset = 0xFFFFFFFF; //overflow
+					contactByteOffset = 0xFFFFFFFF;
 				}
 			}
 		}

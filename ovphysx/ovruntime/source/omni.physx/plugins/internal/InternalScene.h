@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-RESOLVE-001
+// @covers AC-4
+
 /**
  * @implements REQ-PROPS-MAT-001
  * @covers AC-2
@@ -258,12 +261,12 @@ public:
     void updateArticulationJointLimitHigh(::physx::PxArticulationJointReducedCoordinate* joint,
                                           ::physx::PxArticulationAxis::Enum axis,
                                           float usdHighLimit) const;
-    // jointKey is diagnostic-logging-only: resolved to text via the active AttachedStage
-    // (never null, empty string on miss/no attach -- AttachedStage::textFor's contract).
+    // Resolve diagnostic text only in the warning branch.
     void setArticulationDrivePositionTarget(::physx::PxArticulationJointReducedCoordinate* joint,
                                             ::physx::PxArticulationAxis::Enum axis,
                                             float positionTarget,
-                                            omni::physics::parse::ObjectKey jointKey = omni::physics::parse::ObjectKey{}) const;
+                                            const usdparser::AttachedStage* owner = nullptr,
+                                            omni::physics::parse::ObjectKey jointKey = {}) const;
     void setArticulationDriveVelocityTarget(::physx::PxArticulationJointReducedCoordinate* joint,
                                             ::physx::PxArticulationAxis::Enum axis,
                                             float velocityTarget) const;
@@ -311,11 +314,15 @@ public:
 
 class InternalScene : public Allocateable
 {
+    usdparser::AttachedStage& mAttachedStage;
+
 public:
-    InternalScene(const usdparser::PhysxSceneDesc& desc, ::physx::PxScene* scene);
+    InternalScene(usdparser::AttachedStage& attachedStage, const usdparser::PhysxSceneDesc& desc, ::physx::PxScene* scene);
     ~InternalScene();
 
     void release();
+
+    usdparser::AttachedStage& getAttachedStage() const { return mAttachedStage; }
 
     const usdparser::PhysxSceneDesc& getSceneDesc() const
     {
@@ -431,6 +438,11 @@ public:
         }
     }
 
+    // Hands every force attached to `actor` over to `target`. mForces membership has to follow the
+    // body: the entry decides which scene applies the force each step, so a force left behind writes
+    // to an actor another scene now simulates (NVBugs 6583666).
+    void moveForcesForActor(const ::physx::PxRigidActor* actor, InternalScene& target, PhysXScene& targetPhysXScene);
+
     CUstream getDeformableCopyStream();
     void syncDeformableCopyStream(::physx::PxCudaContextManager* cudaContextManager);
 
@@ -519,6 +531,17 @@ private:
     bool mDeformableCopyStreamDirty;
 };
 
+// Retargets every InternalForce back pointer naming actor0 to actor1 (null to drop it), across all
+// scenes.
+//
+// moveForcesForActor above keeps mForces membership with the body, so the owning scene is the
+// expected place to find a force. This sweep is the defensive counterpart: it does not depend on
+// that invariant holding, and it covers the release paths that have no InternalActor handle to
+// resolve a scene from - changeRigidActorType() releases sourceActor whether or not it is still in
+// a scene. Membership originally did not follow a simulation owner change at all, which is how a
+// force ended up registered with a different scene than InternalActor::mPhysXScene named; the
+// scene-scoped fixup then missed it and left mRigidActor naming a released actor (NVBugs 6583666).
+void swapForceActorsAllScenes(const usdparser::AttachedStage& attachedStage, ::physx::PxRigidActor* actor0, ::physx::PxRigidActor* actor1);
 
 } // namespace internal
 } // namespace physx

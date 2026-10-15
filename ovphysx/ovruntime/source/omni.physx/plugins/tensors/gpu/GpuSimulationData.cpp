@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-VIEWS-001
+// @covers AC-1 AC-3
+
 /**
  * @implements REQ-PUBLICAPI-001
  * @covers AC-5
@@ -9,6 +12,7 @@
 // clang-format off
 // clang-format on
 
+#include "AttachmentObjectLookup.h"
 #include "tensors/gpu/GpuSimulationData.h"
 
 #include "tensors/CommonTypes.h"
@@ -136,9 +140,9 @@ namespace
 // keyToLegacyPathInt, factored out once here rather than repeating this at each
 // of the three actor-collection call sites below (rigid dynamics / statics /
 // articulation links).
-bool legacyPathIdForObject(size_t objectId, uint64_t& pathIdOut)
+bool legacyPathIdForObject(omni::physics::AttachHandle attach, size_t objectId, uint64_t& pathIdOut)
 {
-    omni::physics::parse::ObjectKey objectKey = g_physx->getObjectKeyForId(objectId);
+    omni::physics::parse::ObjectKey objectKey = attachmentLookup::keyForObject(usdparser::UsdLoad::getUsdLoad()->getAttachedStageByHandle(attach), objectId);
     if (!objectKey.valid())
     {
         return false;
@@ -434,7 +438,7 @@ bool GpuSimulationData::init(PxScene* scene)
         // Source-backed read (IPhysicsSource::getAttributeAtTime via PhysXTools.h's
         // pxr-free getValue overload), not USD-specific -- works identically on the
         // UsdSource backend.
-        omni::physics::parse::ObjectKey sceneKey = g_physx->getObjectKeyForId(sceneObjectId);
+        omni::physics::parse::ObjectKey sceneKey = attachmentLookup::keyForObject(attachedStage, sceneObjectId);
         if (sceneKey.valid())
         {
             unsigned value = 0;
@@ -478,7 +482,7 @@ bool GpuSimulationData::init(PxScene* scene)
                 {
                     size_t objectId = reinterpret_cast<size_t>(actor->userData);
                     uint64_t pathId;
-                    if (legacyPathIdForObject(objectId, pathId))
+                    if (legacyPathIdForObject(mAttachHandle, objectId, pathId))
                     {
                         GpuActorPathIdPair pair;
                         pair.actor = actor;
@@ -501,7 +505,7 @@ bool GpuSimulationData::init(PxScene* scene)
                 {
                     size_t objectId = reinterpret_cast<size_t>(actor->userData);
                     uint64_t pathId;
-                    if (legacyPathIdForObject(objectId, pathId))
+                    if (legacyPathIdForObject(mAttachHandle, objectId, pathId))
                     {
                         GpuActorPathIdPair pair;
                         pair.actor = actor;
@@ -526,7 +530,7 @@ bool GpuSimulationData::init(PxScene* scene)
                     {
                         size_t objectId = reinterpret_cast<size_t>(link->userData);
                         uint64_t pathId;
-                        if (legacyPathIdForObject(objectId, pathId))
+                        if (legacyPathIdForObject(mAttachHandle, objectId, pathId))
                         {
                             GpuActorPathIdPair pair;
                             pair.actor = link;
@@ -657,7 +661,7 @@ GpuSimulationData::~GpuSimulationData()
 
 bool GpuSimulationData::checkApiReady(const char* function) const
 {
-    if (mBackend.getStepCount() < 1)
+    if (mBackend.getStepCount(mAttachHandle) < 1)
     {
         CARB_LOG_ERROR("GPU tensor function %s can only be called after at least one simulation step was performed!", function);
         return false;
@@ -717,7 +721,7 @@ void GpuSimulationData::enableGpuUsageWarnings(bool enable)
 void GpuSimulationData::updateContactReports()
 {
     // avoid processing contacts multiple times during a step
-    int64_t timestamp = mBackend.getTimestamp();
+    int64_t timestamp = mBackend.getTimestamp(mAttachHandle);
     if (mRigidContactTimestamp >= timestamp)
     {
         return;

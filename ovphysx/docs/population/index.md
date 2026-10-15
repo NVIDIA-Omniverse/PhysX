@@ -54,11 +54,10 @@ the same contract and write these columns for you.
 - [`PhysicsRigidBodyAPI`](PhysicsRigidBodyAPI.md): Makes an Xformable prim a rigid body.
 - [`PhysxArticulationAPI`](PhysxArticulationAPI.md): PhysX tuning of a reduced-coordinate articulation, applied on the same prim as PhysicsArticulationRootAPI.
 - [`PhysxCollisionAPI`](PhysxCollisionAPI.md): PhysX contact tuning for a collision shape.
-- [`PhysxContactReportAPI`](PhysxContactReportAPI.md): Registers a rigid body (or every link of an articulation) for contact reporting.
+- [`PhysxContactReportAPI`](PhysxContactReportAPI.md): Registers a rigid actor (including a standalone static collider), or every link of an articulation, for contact reporting.
 - [`PhysxConvexDecompositionCollisionAPI`](PhysxConvexDecompositionCollisionAPI.md): Convex decomposition cooking parameters for a Mesh collider with physics:approximation convexDecomposition.
 - [`PhysxConvexHullCollisionAPI`](PhysxConvexHullCollisionAPI.md): Convex hull cooking parameters for a Mesh collider with physics:approximation convexHull.
 - [`PhysxDrivePerformanceEnvelopeAPI`](PhysxDrivePerformanceEnvelopeAPI.md): Actuator performance envelope of one joint drive (maximum actuator velocity, velocity-dependent resistance, speed-effort gradient), applied as PhysxDrivePerformanceEnvelopeAPI:<inst> alongside PhysicsDriveAPI:<inst>.
-- [`PhysxJointAPI`](PhysxJointAPI.md): PhysX tuning shared by every joint type: joint friction, a joint-level armature seed and a joint-level maximum joint velocity.
 - [`PhysxJointAxisAPI`](PhysxJointAxisAPI.md): Per-axis PhysX properties of an articulation joint (armature, maximum joint velocity, static, dynamic and viscous friction), applied as PhysxJointAxisAPI:<inst>.
 - [`PhysxLimitAPI`](PhysxLimitAPI.md): PhysX tuning of one joint limit (restitution, bounce threshold, soft-limit spring), applied as PhysxLimitAPI:<inst>.
 - [`PhysxMaterialAPI`](PhysxMaterialAPI.md): PhysX tuning for a physics material: combine modes and compliant contact.
@@ -140,7 +139,6 @@ PhysxContactReportAPI
 PhysxConvexDecompositionCollisionAPI
 PhysxConvexHullCollisionAPI
 PhysxDrivePerformanceEnvelopeAPI
-PhysxJointAPI
 PhysxJointAxisAPI
 PhysxLimitAPI
 PhysxMaterialAPI

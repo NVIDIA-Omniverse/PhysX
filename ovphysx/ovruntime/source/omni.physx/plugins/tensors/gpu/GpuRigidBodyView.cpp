@@ -20,10 +20,10 @@
  * @covers AC-1 AC-2 AC-4
  *
  * @implements REQ-INPUT-DEVICE-001
- * @covers AC-1 AC-1b AC-2 AC-3 AC-8
+ * @covers AC-1 AC-1b AC-2 AC-3 AC-8 AC-9
  *
  * @implements REQ-INPUT-CORE-001
- * @covers AC-4 AC-10
+ * @covers AC-4 AC-5 AC-10
  */
 
 #include "tensors/gpu/CudaKernels.h"
@@ -183,6 +183,7 @@ GpuRigidBodyView::GpuRigidBodyView(GpuSimulationView* sim,
 
     mNumArtis = PxU32(artiIndices.size());
     mNumArtiRoots = numArtiRoots;
+    mNumLinkRecords = PxU32(linkMap.size());
     if (mNumRds > 0 || mNumArtis > 0)
     {
         // cMass is indexed by entry/record index (see updateCMassData and submitRbForcesKernel's
@@ -287,6 +288,8 @@ GpuRigidBodyView::~GpuRigidBodyView()
         for (OvStageRowsSlot& rowsSlot : mOvStageRows)
             CHECK_CUDA(cudaFree(rowsSlot.dev));
         CHECK_CUDA(cudaFree(mOvStageWrenchDev));
+        CHECK_CUDA(cudaFree(mOvStageLinkWrenchArtisDev));
+        CHECK_CUDA(cudaFree(mOvStageLinkWrenchRowArtiDev));
         CHECK_CUDA(cudaFree(mOvStagePackedDev));
         CHECK_CUDA(cudaFree(mOvStageIdxDev));
         CHECK_CUDA(cudaFree(mDirtyArtiGpuIndices));
@@ -763,7 +766,8 @@ bool GpuRigidBodyView::ovStageWriteBuffers(const char* const attribName,
         // A session reaches this with a live write in flight whenever a later group needs MORE rows
         // than an earlier one, which is routine: one attribute write emits the
         // standalone group AND one array group per instancer, and those sizes differ.
-        waitOvStageWriteDone();
+        if (!waitOvStageWriteDone())
+            return false;
         if (mOvStagePackedDev)
             CHECK_CU(getCudaShim()->memFree(reinterpret_cast<uintptr_t>(mOvStagePackedDev), &status));
         if (mOvStageIdxDev)
@@ -1562,24 +1566,24 @@ bool GpuRigidBodyView::setVelocityColumnOvStage(const char* const attribName,
     return true;
 }
 
-void GpuRigidBodyView::waitOvStageWriteDone() const
+bool GpuRigidBodyView::waitOvStageWriteDone() const
 {
     if (!mGpuSimData)
-        return;
+        return true;
     CUevent done = mGpuSimData->mApplySignalEvents[ApplyEvent::eRdData];
     if (!done)
-        return;
+        return true;
     PhysxCudaContextGuard ctxGuard(mGpuSimData->mCudaContextManager);
     // Waits for whatever last recorded this event, which is at least as late as our last write. That
     // is over-waiting when a sibling raced in, never under-waiting, which is the safe direction for
     // a guard standing between an in-flight read and a free.
-    CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(done), nullptr));
+    return CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(done), nullptr));
 }
 
 bool GpuRigidBodyView::setPositionsOvStage(const TensorDesc* srcTensor,
                                            const PxU32* outRecordIdx,
                                            const PxU32 numOutputs,
-                                           const uint64_t rowsToken)
+                                           const uint64_t rowsToken, bool)
 {
     return setPoseColumnOvStage("position", srcTensor, /*wantOrientation*/ false, outRecordIdx, numOutputs, rowsToken);
 }
@@ -1587,7 +1591,7 @@ bool GpuRigidBodyView::setPositionsOvStage(const TensorDesc* srcTensor,
 bool GpuRigidBodyView::setOrientationsOvStage(const TensorDesc* srcTensor,
                                               const PxU32* outRecordIdx,
                                               const PxU32 numOutputs,
-                                              const uint64_t rowsToken)
+                                              const uint64_t rowsToken, bool)
 {
     return setPoseColumnOvStage("orientation", srcTensor, /*wantOrientation*/ true, outRecordIdx, numOutputs,
                                 rowsToken);
@@ -1608,7 +1612,7 @@ bool GpuRigidBodyView::setLinkWrenchOvStage(const char* const attribName,
                                            const PxU32* const outRecordIdx,
                                            const PxU32 numOutputs,
                                            const uint64_t rowsToken,
-                                           const PxU32 comps)
+                                           const PxU32 comps, bool wholeSet)
 {
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
     GPUAPI_CHECK_READY(mGpuSimData, false);
@@ -1640,22 +1644,90 @@ bool GpuRigidBodyView::setLinkWrenchOvStage(const char* const attribName,
     if (!getComsCacheStateValid())
         updateCMassData();
 
-    const PxU32 blockLinks = mNumArtis * mGpuSimData->mMaxLinks;
+    // A whole-set write (`wholeSet`) that names every link record in this view writes every articulation, so it
+    // applies the whole view (rowCompactArg == nullptr) and skips the host dedup. `wholeSet` alone covers only the
+    // links the attachment owns; this view also holds articulations created directly through PhysX. Otherwise the
+    // written articulations are resolved on the host from the query's records and, when they are a subset, only
+    // they are applied, so every other articulation's input from earlier this step survives. Scratch is cached
+    // on the view.
+    PxArticulationGPUIndex* applyIndices = mArtiIndicesDev;
+    PxU32 applyCount = mNumArtis;
+    const PxU32* rowCompactArg = nullptr;
+    const bool coversView = wholeSet && numOutputs == mNumLinkRecords;
+    if (!coversView)
+    {
+        std::vector<PxU32>& artiToCompact = mLinkWrenchArtiToCompact;                 // tensorArtiIdx -> compact slot
+        std::vector<PxArticulationGPUIndex>& writtenArtis = mLinkWrenchWrittenArtis;  // compact slot -> GPU index
+        std::vector<PxU32>& rowCompactArti = mLinkWrenchRowCompact;                   // written row -> compact slot
+        artiToCompact.assign(mNumArtis, 0xffffffffu);
+        writtenArtis.clear();
+        rowCompactArti.resize(numOutputs);
+        for (PxU32 i = 0; i < numOutputs; ++i)
+        {
+            const GpuRigidBodyRecord& r = rbRecords[outRecordIdx[i]];
+            PxU32 slot = (r.tensorArtiIdx < mNumArtis) ? artiToCompact[r.tensorArtiIdx] : 0xffffffffu;
+            if (slot == 0xffffffffu)
+            {
+                slot = static_cast<PxU32>(writtenArtis.size());
+                if (r.tensorArtiIdx < mNumArtis)
+                    artiToCompact[r.tensorArtiIdx] = slot;
+                writtenArtis.push_back(r.physxArtiIdx);
+            }
+            rowCompactArti[i] = slot;
+        }
+        const PxU32 numWrittenArtis = static_cast<PxU32>(writtenArtis.size());
+        if (numWrittenArtis == 0)
+            return true; // no resolvable articulation among the written rows -- nothing to apply
 
-    // ZERO FIRST, and this is the one place the link route's semantics differ from the rigid one.
-    //
-    // The rigid path writes only the rows it packed. Here the data block covers the whole view, so a
-    // link this query did not match would otherwise carry whatever the block held. There is no
-    // read-modify-write available to preserve it either: a force is write-only, so PhysX offers no
-    // read to recover a current value from.
-    //
-    // Zero is the honest fill BECAUSE the attribute is a per-step control input that PhysX clears
-    // after every step: a link written zero is in the state it would have been in had nothing been
-    // applied. The caveat is real and worth stating -- if something else applied a force to an
-    // unmatched link earlier in the SAME step, this clears it.
-    CHECK_CUDA(cudaMemsetAsync(mGpuSimData->mLinkForcesDev, 0, size_t(blockLinks) * sizeof(PxVec3), nullptr));
+        // A true subset: upload the per-row compact slots and the written-articulation index list (host-known,
+        // so a plain upload, not the device->host readback the binding's masked path pays). Grown-and-cached
+        // like mOvStageWrenchDev; freed in the destructor. A grow of the index buffer waits on the link-force
+        // apply signal first, since PhysX reads it asynchronously (ADR-0008 D7). If the dedup finds EVERY
+        // articulation written, the whole-view defaults above already stand and no upload is needed -- the
+        // runtime safety net for an over-broad !wholeSet (it cannot wrongly clear, only miss the fast path).
+        if (numWrittenArtis != mNumArtis)
+        {
+            if (numOutputs > mOvStageLinkWrenchRowArtiCapacity)
+            {
+                if (mOvStageLinkWrenchRowArtiDev)
+                    CHECK_CUDA(cudaFree(mOvStageLinkWrenchRowArtiDev));
+                mOvStageLinkWrenchRowArtiDev = nullptr;
+                mOvStageLinkWrenchRowArtiCapacity = 0;
+                if (!CHECK_CUDA(cudaMalloc((void**)&mOvStageLinkWrenchRowArtiDev, size_t(numOutputs) * sizeof(PxU32))))
+                    return false;
+                mOvStageLinkWrenchRowArtiCapacity = numOutputs;
+            }
+            if (numWrittenArtis > mOvStageLinkWrenchArtisCapacity)
+            {
+                CUevent forcesDone = mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiLinkForces];
+                if (mOvStageLinkWrenchArtisDev && forcesDone)
+                    CHECK_CU(getCudaShim()->eventSynchronize(reinterpret_cast<uintptr_t>(forcesDone), nullptr));
+                if (mOvStageLinkWrenchArtisDev)
+                    CHECK_CUDA(cudaFree(mOvStageLinkWrenchArtisDev));
+                mOvStageLinkWrenchArtisDev = nullptr;
+                mOvStageLinkWrenchArtisCapacity = 0;
+                if (!CHECK_CUDA(cudaMalloc((void**)&mOvStageLinkWrenchArtisDev,
+                                           size_t(numWrittenArtis) * sizeof(PxArticulationGPUIndex))))
+                    return false;
+                mOvStageLinkWrenchArtisCapacity = numWrittenArtis;
+            }
+            CHECK_CUDA(cudaMemcpyAsync(mOvStageLinkWrenchRowArtiDev, rowCompactArti.data(),
+                                       size_t(numOutputs) * sizeof(PxU32), cudaMemcpyHostToDevice, nullptr));
+            CHECK_CUDA(cudaMemcpyAsync(mOvStageLinkWrenchArtisDev, writtenArtis.data(),
+                                       size_t(numWrittenArtis) * sizeof(PxArticulationGPUIndex),
+                                       cudaMemcpyHostToDevice, nullptr));
+            applyIndices = mOvStageLinkWrenchArtisDev;
+            applyCount = numWrittenArtis;
+            rowCompactArg = mOvStageLinkWrenchRowArtiDev;
+        }
+    }
+
+    // Zero only the blocks the apply pushes: the whole view, or the written articulations' compact blocks.
+    // A written articulation's unnamed links are zeroed with it; an unwritten one is not applied at all.
+    const PxU32 zeroLinks = applyCount * mGpuSimData->mMaxLinks;
+    CHECK_CUDA(cudaMemsetAsync(mGpuSimData->mLinkForcesDev, 0, size_t(zeroLinks) * sizeof(PxVec3), nullptr));
     if (comps == 9)
-        CHECK_CUDA(cudaMemsetAsync(mGpuSimData->mLinkTorquesDev, 0, size_t(blockLinks) * sizeof(PxVec3), nullptr));
+        CHECK_CUDA(cudaMemsetAsync(mGpuSimData->mLinkTorquesDev, 0, size_t(zeroLinks) * sizeof(PxVec3), nullptr));
 
     // Link poses, needed only by the wrench conversion. Read into the shared link-transform buffer,
     // so this takes the ADR-0008 Decision 7 start event that buffer's protocol requires.
@@ -1679,7 +1751,7 @@ bool GpuRigidBodyView::setLinkWrenchOvStage(const char* const attribName,
     if (!submitLinkWrenchOvStage(mGpuSimData->mLinkForcesDev, mGpuSimData->mLinkTorquesDev,
                                   static_cast<const float*>(srcTensor->data),
                                   mGpuSimData->mLinkOrRootTransformsDev, cMassLocalPosePosDev, mRbRecordsDev,
-                                  rowsDev, numOutputs, mGpuSimData->mMaxLinks, comps))
+                                  rowsDev, rowCompactArg, numOutputs, mGpuSimData->mMaxLinks, comps))
     {
         CARB_LOG_ERROR("%s: ovstage link scatter failed", attribName);
         return false;
@@ -1687,21 +1759,24 @@ bool GpuRigidBodyView::setLinkWrenchOvStage(const char* const attribName,
     if (comps == 9)
         mGpuSimData->recordKernelDone(SharedDeviceBuffer::eLinkOrRootTransforms);
 
-    // mArtiIndicesDev and mNumArtis: the whole view, so the count is known on the host and no
-    // compaction runs. The tensor binding's equivalent calls fillArtiFT, which takes its count off
-    // the device -- the host block this path exists without.
+    // applyIndices[slot] is the PhysX GPU index of the articulation whose (compact or whole-view) block the
+    // scatter filled, and applyCount is the host-known number applied. On the sparse path PhysX touches ONLY
+    // the written articulations' link forces and leaves every other articulation's input from earlier this
+    // step in place; on the write-all path this is the whole view. Either way, no device->host readback --
+    // the count came from the host-side query, not a device compaction (the binding's fillArtiFT block).
     CHECK_CU(getCudaShim()->eventRecord(
         reinterpret_cast<uintptr_t>(mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiLinkForces]), uintptr_t(0),
         nullptr));
     scene->getDirectGPUAPI().setArticulationData(
-        (void*)mGpuSimData->mLinkForcesDev, mArtiIndicesDev, PxArticulationGPUAPIWriteType::eLINK_FORCE, mNumArtis,
-        mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiLinkForces],
+        (void*)mGpuSimData->mLinkForcesDev, applyIndices, PxArticulationGPUAPIWriteType::eLINK_FORCE,
+        applyCount, mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiLinkForces],
         mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiLinkForces]);
     if (comps == 9)
     {
         scene->getDirectGPUAPI().setArticulationData(
-            (void*)mGpuSimData->mLinkTorquesDev, mArtiIndicesDev, PxArticulationGPUAPIWriteType::eLINK_TORQUE,
-            mNumArtis, mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiLinkTorques],
+            (void*)mGpuSimData->mLinkTorquesDev, applyIndices,
+            PxArticulationGPUAPIWriteType::eLINK_TORQUE, applyCount,
+            mGpuSimData->mApplyWaitEvents[ApplyEvent::eArtiLinkTorques],
             mGpuSimData->mApplySignalEvents[ApplyEvent::eArtiLinkTorques]);
     }
 
@@ -1722,13 +1797,13 @@ bool GpuRigidBodyView::setLinkWrenchOvStage(const char* const attribName,
 bool GpuRigidBodyView::setWrenchesOvStage(const TensorDesc* const srcTensor,
                                          const PxU32* const outRecordIdx,
                                          const PxU32 numOutputs,
-                                         const uint64_t rowsToken)
+                                         const uint64_t rowsToken, bool wholeSet)
 {
     // A LINK query cannot use the rigid-dynamic packed path -- a link has no rd index to pack, and
     // ovStageWriteBuffers rejects exactly that. Detected from the first row's record rather than
     // passed in: a query is one object type, so the rows are all links or all rigid dynamics.
     if (ovStageRowsAreLinks(outRecordIdx, numOutputs))
-        return setLinkWrenchOvStage("wrench", srcTensor, outRecordIdx, numOutputs, rowsToken, 9u);
+        return setLinkWrenchOvStage("wrench", srcTensor, outRecordIdx, numOutputs, rowsToken, 9u, wholeSet);
 
     CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
     GPUAPI_CHECK_READY(mGpuSimData, false);
@@ -1828,13 +1903,13 @@ bool GpuRigidBodyView::setWrenchesOvStage(const TensorDesc* const srcTensor,
 bool GpuRigidBodyView::setForcesOvStage(const TensorDesc* srcTensor,
                                        const PxU32* outRecordIdx,
                                        const PxU32 numOutputs,
-                                       const uint64_t rowsToken)
+                                       const uint64_t rowsToken, bool wholeSet)
 {
     // A LINK query cannot use the rigid-dynamic packed path -- a link has no rd index to pack, and
     // ovStageWriteBuffers rejects exactly that. Detected from the first row's record rather than
     // passed in: a query is one object type, so the rows are all links or all rigid dynamics.
     if (ovStageRowsAreLinks(outRecordIdx, numOutputs))
-        return setLinkWrenchOvStage("force", srcTensor, outRecordIdx, numOutputs, rowsToken, 3u);
+        return setLinkWrenchOvStage("force", srcTensor, outRecordIdx, numOutputs, rowsToken, 3u, wholeSet);
 
     // Routed through the vec3-column path, whose name says "velocity" only because velocity was its
     // first caller: what it actually does is hand a dense [N,3] column and a packed index list to one
@@ -1852,7 +1927,7 @@ bool GpuRigidBodyView::setForcesOvStage(const TensorDesc* srcTensor,
 bool GpuRigidBodyView::setLinearVelocitiesOvStage(const TensorDesc* srcTensor,
                                                   const PxU32* outRecordIdx,
                                                   const PxU32 numOutputs,
-                                                  const uint64_t rowsToken)
+                                                  const uint64_t rowsToken, bool)
 {
     return setVelocityColumnOvStage("linearVelocity", srcTensor, PxRigidDynamicGPUAPIWriteType::eLINEAR_VELOCITY,
                                     outRecordIdx, numOutputs, rowsToken);
@@ -1861,7 +1936,7 @@ bool GpuRigidBodyView::setLinearVelocitiesOvStage(const TensorDesc* srcTensor,
 bool GpuRigidBodyView::setAngularVelocitiesOvStage(const TensorDesc* srcTensor,
                                                    const PxU32* outRecordIdx,
                                                    const PxU32 numOutputs,
-                                                   const uint64_t rowsToken)
+                                                   const uint64_t rowsToken, bool)
 {
     return setVelocityColumnOvStage("angularVelocity", srcTensor, PxRigidDynamicGPUAPIWriteType::eANGULAR_VELOCITY,
                                     outRecordIdx, numOutputs, rowsToken);
@@ -1920,12 +1995,6 @@ bool GpuRigidBodyView::getAccelerations(const TensorDesc* dstTensor) const
         PxRigidDynamicGPUAPIReadType::eANGULAR_ACCELERATION, PxArticulationGPUAPIReadType::eLINK_LINEAR_ACCELERATION,
         PxArticulationGPUAPIReadType::eLINK_ANGULAR_ACCELERATION, mNumRds, mNumArtis, getCount(), mGpuSimData->mMaxLinks, mDevice,
         mGpuSimData);
-}
-
-bool GpuRigidBodyView::setKinematicTargets(const TensorDesc* srcTensor, const TensorDesc* indexTensor)
-{
-    CARB_LOG_ERROR("GPU Rigid Body View kinematic target setting not implemented.");
-    return false;
 }
 
 bool GpuRigidBodyView::setTransforms(const TensorDesc* srcTensor, const TensorDesc* indexTensor)
@@ -2441,14 +2510,13 @@ bool GpuRigidBodyView::MethodName##Masked(const TensorDesc* src, const TensorDes
 }
 
 // Non-const masked setters (DirectGPU paths -- GPU mask/indices)
-GPU_RB_MASKED_SETTER(setKinematicTargets, )
 GPU_RB_MASKED_SETTER(setTransforms, )
 GPU_RB_MASKED_SETTER(setVelocities, )
 GPU_RB_MASKED_SETTER(applyForces, )
 GPU_RB_MASKED_SETTER(setMasses, )
 GPU_RB_MASKED_SETTER(setCOMs, )
 GPU_RB_MASKED_SETTER(setInertias, )
-// setDisable*/material/rest/contact/compliant Masked: BaseRigidBodyView
+// setKinematicTargets/setDisable*/material/rest/contact/compliant Masked: BaseRigidBodyView
 
 #undef GPU_RB_MASKED_SETTER
 
@@ -2492,7 +2560,7 @@ bool requireHostTensor(const TensorDesc* desc, const char* tensorName, const cha
 } // namespace
 
 
-// setDisable*/material/rest/contact/compliant Masked: BaseRigidBodyView
+// setKinematicTargets/setDisable*/material/rest/contact/compliant Masked: BaseRigidBodyView
 
 
 // OMPE-103213: require host tensors -- no silent GPU staging. The base setter owns the

@@ -335,26 +335,10 @@ PX_FORCE_INLINE __device__ static bool closestPtEdgeEdge(const PxVec3& e0v0, con
 	return true;
 }
 
-// Type0: minimal triangle set covering all edges and vertices (compact encoding)
-// Type1: more uniformly distributed edges and vertices across triangles (balanced encoding)
-PX_FORCE_INLINE __device__ static bool isType0EdgeActive(PxU32 edgeAuthorship, PxU32 localEdgeIndex)
+// triangleEdgeOwnership indicates in its three low bits which edges the triangle is responsible for.
+PX_FORCE_INLINE __device__ static bool ownsEdge(PxU32 triangleEdgeOwnership, PxU32 localEdgeIndex)
 {
-	return (edgeAuthorship & (1U << (EdgeEncoding::TYPE0_EDGE_BASE_POS + localEdgeIndex))) != 0;
-}
-
-PX_FORCE_INLINE __device__ static bool isType1EdgeActive(PxU32 edgeAuthorship, PxU32 localEdgeIndex)
-{
-	return (edgeAuthorship & (1U << (EdgeEncoding::TYPE1_EDGE_BASE_POS + localEdgeIndex))) != 0;
-}
-
-PX_FORCE_INLINE __device__ static bool isType0VertexActive(PxU32 edgeAuthorship, PxU32 localVertexIndex)
-{
-	return (edgeAuthorship & (1U << (EdgeEncoding::TYPE0_VERTEX0_ACTIVE_POS + localVertexIndex))) != 0;
-}
-
-PX_FORCE_INLINE __device__ static bool isType1VertexActive(PxU32 edgeAuthorship, PxU32 localVertexIndex)
-{
-	return (edgeAuthorship & (1U << (EdgeEncoding::TYPE1_VERTEX0_ACTIVE_POS + localVertexIndex))) != 0;
+	return (triangleEdgeOwnership & (1U << localEdgeIndex)) != 0;
 }
 
 } // namespace physx

@@ -4,11 +4,14 @@
 /**
  * @implements REQ-PARSE-CONSUMER-001
  * @covers AC-7
+ * @implements REQ-CUSTOM-LIFETIME-001
+ * @covers AC-2 AC-5
  */
 
 #pragma once
 
 #include <private/omni/physx/PhysxUsd.h>
+#include <omni/physics/parse/Allocator.h>
 #include "LoadTools.h"
 
 #include <memory>
@@ -60,6 +63,7 @@ struct TargetDesc
     // path.  Null when the legacy listener path is used (descs
     // managed by ICE_PLACEMENT_NEW / ICE_FREE in that case).
     std::unique_ptr<omni::physics::parse::ScannedStage> scannedStage;
+    omni::physics::parse::DescPtr<StaticPhysxRigidBodyDesc> generatedBody;
 };
 
 using TargetDescVector = std::vector<TargetDesc>;

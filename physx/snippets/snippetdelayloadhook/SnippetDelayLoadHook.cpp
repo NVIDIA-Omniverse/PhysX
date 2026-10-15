@@ -140,7 +140,7 @@ void unloadPhysicsExplicitely()
 	FreeLibrary(foundationLibrary);
 }
 
-// Overriding the PxDelayLoadHook allows the load of a custom name dll inside PhysX, PhysXCommon and PhysXCooking dlls
+// Overriding the PxDelayLoadHook allows the load of a custom name dll inside PhysX and PhysXCommon dlls
 struct SnippetDelayLoadHook : public PxDelayLoadHook
 {
 	virtual const char* getPhysXFoundationDllName() const 

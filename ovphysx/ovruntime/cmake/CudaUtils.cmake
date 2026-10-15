@@ -13,16 +13,14 @@ if(NOT DEFINED CUDA_DIR)
 endif()
 
 # --- Global CUDA setup ---
-# CUDA architectures targeted by all ovruntime CUDA builds.
-# Every listed arch is compiled to SASS. The highest arch additionally gets a
-# PTX entry on the Windows custom-command path (see ovruntime_target_add_cuda_sources
-# below); on Linux, CMAKE_CUDA_ARCHITECTURES with plain numbers already emits PTX
-# for every arch. The PTX entry is what lets the driver JIT-compile for GPUs
-# released after this list was last updated (forward compatibility). Mirrors the
-# gencode pattern used by PhysX in physx/source/compiler/cmakegpu/CMakeLists.txt.
-# Update this list when a new compute capability ships and bump the highest arch
-# accordingly. Requires nvcc >= 12.8 for sm_100 / sm_120 (Blackwell).
-set(OVRUNTIME_CUDA_ARCHITECTURES 52 53 60 61 62 70 72 75 80 86 87 89 90 100 120)
+# Match the full PhysX SDK architecture set: the explicit SASS list in
+# physx/source/compiler/cmakegpu/CMakeLists.txt plus the default SM 75 in
+# physx/compiler/{internal,public}/CMakeLists.txt. Keep this list in sync with
+# those settings. Volta (SM 70) is the minimum supported architecture.
+# Emit SASS and PTX for every arch on both platforms, matching PhysX's
+# GENERATE_ARCH_CODE_LIST helper. PTX provides forward compatibility via driver
+# JIT compilation. Requires nvcc >= 12.8 for SM 100 / SM 120 (Blackwell).
+set(OVRUNTIME_CUDA_ARCHITECTURES 70 75 80 86 89 90 100 120)
 
 if(WIN32)
     # On Windows with the Visual Studio generator, enable_language(CUDA) requires the VS
@@ -62,18 +60,12 @@ function(ovruntime_target_add_cuda_sources _target)
     cmake_parse_arguments(ARG "" "" "SOURCES;INCLUDE_DIRS" ${ARGN})
 
     if(WIN32)
-        # Build -gencode flags: SASS (code=sm_X) for every listed arch, plus a
-        # PTX (code=compute_X) entry for the highest arch so the driver can
-        # JIT-compile for newer GPUs not in the list (forward compatibility).
-        # Without this PTX fallback, anything newer than the highest sm_X here
-        # fails the first kernel launch with cudaErrorNoKernelImageForDevice.
+        # Match the SASS + PTX emitted by native CMake CUDA compilation and PhysX.
         set(_arch_flags "")
         foreach(_sm IN LISTS OVRUNTIME_CUDA_ARCHITECTURES)
-            list(APPEND _arch_flags "-gencode" "arch=compute_${_sm},code=sm_${_sm}")
+            list(APPEND _arch_flags "-gencode"
+                "arch=compute_${_sm},code=[compute_${_sm},sm_${_sm}]")
         endforeach()
-        list(GET OVRUNTIME_CUDA_ARCHITECTURES -1 _highest_sm)
-        list(APPEND _arch_flags "-gencode"
-            "arch=compute_${_highest_sm},code=compute_${_highest_sm}")
 
         # Standard ovruntime include paths — present for every CUDA target.
         set(_std_incs

@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-SERVICES-001
+// @covers AC-5
+
 /**
  * @implements REQ-PARSE-CONSUMER-001
  * @covers AC-2 AC-3 AC-4 AC-5
@@ -277,25 +280,11 @@ void dispatchScannedShapeCooking(
             d->meshKey = result.meshKey;
         };
 
-        // SDF cooking gate: scanStage's eSdf approximation branch
-        // populated both triangleMeshCookingParams AND sdfMeshCookingParams.
-        // The cooking service dispatches differently based on whether
-        // SDF is enabled.  Re-call parseSdfMeshCookingExt to recover
-        // the isValidSDF flag (it's idempotent on already-populated
-        // params).  Matches legacy usdLoad/Collision.cpp:1163-1174.
-        bool isValidSDF = false;
-        if (omni::physics::parse::IPhysicsSource* parseSrc = attachedStage.getSource())
-        {
-            omni::physics::parse::ParseContext parseCtx(*parseSrc, iceDescriptorAllocator());
-            parseCtx.adoptKnownTokens(attachedStage.getKnownTokens());
-            // The context reads through the attach source, so it needs the attach-space key
-            // (desc->sourceGprim is still scan-space here; a USD attach source rejects it).
-            isValidSDF = omni::physics::parse::parseSdfMeshCookingExt(
-                parseCtx,
-                meshKey,
-                d->sdfMeshCookingParams);
-        }
-        if (isValidSDF)
+        // The walker has resolved the effective approximation, including default
+        // SDF parameters when only approximation="sdf" is authored. Hash exactly
+        // the parameters realization consumes; re-reading an optional schema
+        // can otherwise give an SDF mesh the plain-triangle cache key.
+        if (d->sdfMeshCookingParams.sdfResolution > 0)
         {
             cookingService->requestSdfMeshCookedData(
                 nullptr, request, d->triangleMeshCookingParams, d->sdfMeshCookingParams);

@@ -183,9 +183,10 @@ bool BaseVolumeDeformableBodyView::check() const
     return result;
 }
 
-void BaseVolumeDeformableBodyView::release()
+bool BaseVolumeDeformableBodyView::release()
 {
     delete this;
+    return true;
 }
 
 void BaseVolumeDeformableBodyView::_onParentRelease()

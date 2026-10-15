@@ -77,6 +77,17 @@ public:
     // Inverse dynamics columns (REQ-READ-INVDYN-001). Unlike the getters above, the caller supplies the
     // column width in dstTensor->dims[1]: it is a function of the selected articulations' topology,
     // not of the attribute. A width that does not match what the selected rows need is rejected.
+    //
+    // Every requested inverse dynamics column in one pass, sharing the setup each would otherwise redo per
+    // column: commonInit is run ONCE per articulation instead of once per column, and the mass matrix
+    // and Coriolis term the centroidal column is defined against are computed once and reused rather
+    // than recomputed. The single-column entry points below are one-column cases of this.
+    bool getInverseDynamicsColumnsOvStage(const InverseDynamicsColumnRequest* columns,
+                                   ::physx::PxU32 numColumns,
+                                   const ::physx::PxU32* rows,
+                                   ::physx::PxU32 count,
+                                   uint64_t rowsToken) const;
+
     bool getJacobiansOvStage(const TensorDesc* dstTensor,
                              const ::physx::PxU32* rows,
                              ::physx::PxU32 count,
@@ -288,7 +299,6 @@ public:
     bool setDofDampingsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
     bool setDofMaxForcesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
     bool setDofDriveModelPropertiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
-    bool setDofFrictionCoefficientsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
     bool setDofFrictionPropertiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
     bool setDofMaxVelocitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
     bool setDofArmaturesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
@@ -315,12 +325,14 @@ public:
                                           const TensorDesc* maskTensor) const override;
 
 private:
-    // Coriolis and gravity differ only in which compute call fills the cache and which array it
-    // fills; everything else, including the per-dof sign flip, is shared.
-    bool getGeneralizedForceColumnOvStage(const TensorDesc* dstTensor,
-                                          const ::physx::PxU32* rows,
-                                          ::physx::PxU32 count,
-                                          bool gravity) const;
+    // A single inverse dynamics column expressed as the one-column case of getInverseDynamicsColumnsOvStage, so the
+    // validation, compute, and extraction live there and nowhere else. The public single-column
+    // getters above forward here.
+    bool getInverseDynamicsColumnOvStage(InverseDynamicsColumn column,
+                                  const TensorDesc* dstTensor,
+                                  const ::physx::PxU32* rows,
+                                  ::physx::PxU32 count,
+                                  uint64_t rowsToken) const;
 
     bool getMassCentersOvStage(const TensorDesc* dstTensor,
                                const ::physx::PxU32* rows,

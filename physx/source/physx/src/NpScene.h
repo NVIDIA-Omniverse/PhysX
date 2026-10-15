@@ -95,24 +95,25 @@ struct NpInternalAttachmentType
 	{
 		eUNDEFINED,
 		eSURFACE_TYPE = 0x10000000,
-		eSURFACE_TRI_RIGID_BODY,
+		eSURFACE_TRI_RIGID_ACTOR,
 		eSURFACE_TRI_GLOBAL_POSE,
 		eSURFACE_TRI_SURFACE_TRI,
-		eSURFACE_TRI_SURFACE_VTX,	// Not Implemented
-		eSURFACE_VTX_RIGID_BODY,
+		eSURFACE_TRI_SURFACE_VTX,
+		eSURFACE_VTX_RIGID_ACTOR,
 		eSURFACE_VTX_GLOBAL_POSE,
-		eSURFACE_VTX_SURFACE_VTX,	// Not Implemented
+		eSURFACE_VTX_SURFACE_VTX,
 		eVOLUME_TYPE = 0x20000000,
-		eVOLUME_TET_RIGID_BODY,
+		eVOLUME_TET_RIGID_ACTOR,
 		eVOLUME_TET_GLOBAL_POSE,
 		eVOLUME_TET_VOLUME_TET,
-		eVOLUME_TET_VOLUME_VTX,		// Not Implemented
+		eVOLUME_TET_VOLUME_VTX,
 		eVOLUME_TET_SURFACE_TRI,
-		eVOLUME_TET_SURFACE_VTX,	// Not Implemented
-		eVOLUME_VTX_RIGID_BODY,
+		eVOLUME_TET_SURFACE_VTX,
+		eVOLUME_VTX_RIGID_ACTOR,
 		eVOLUME_VTX_GLOBAL_POSE,
-		eVOLUME_VTX_VOLUME_VTX,		// Not Implemented
-		eVOLUME_VTX_SURFACE_VTX,	// Not Implemented
+		eVOLUME_VTX_VOLUME_VTX,
+		eVOLUME_VTX_SURFACE_TRI,
+		eVOLUME_VTX_SURFACE_VTX,
 	};
 };
 
@@ -222,9 +223,6 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 
 	// Multiclient 
 	virtual			PxClientID						createClient()	PX_OVERRIDE PX_FINAL;
-
-	// FrictionModel
-	virtual			PxFrictionType::Enum			getFrictionType() const	PX_OVERRIDE PX_FINAL;
 
 	// Callbacks
 	virtual			void							setSimulationEventCallback(PxSimulationEventCallback* callback)		PX_OVERRIDE PX_FINAL;

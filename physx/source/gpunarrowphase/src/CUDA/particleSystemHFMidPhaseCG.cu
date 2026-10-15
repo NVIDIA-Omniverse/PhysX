@@ -62,7 +62,7 @@ __device__ static inline void psHeightfieldMidphaseCollision(
 	const PxU32 particleIndex,
 	const bool isDiffuse,
 	const bool isTGS,
-	PxgParticleContactWriter& writer
+	PxgRigidParticleContactWriter& writer
 )
 {
 	const PxReal contactDist = sScratch->contactDist;
@@ -224,13 +224,13 @@ __device__ static inline void psHeightfieldMidphaseCollision(
 	PxU32 remaining = contactCounts - contactWritten;
 	if ((remaining > 0) && !isDiffuse)
 	{
-		PxU64 compressedParticleIndex = PxEncodeParticleIndex(sScratch->particleSystemId, particleIndex);
+		PxU64 particleRef = PxgEncodeParticleRef(sScratch->particleSystemId, particleIndex);
 		PxU32 contactStartIndex = atomicAdd(writer.numTotalContacts, remaining);
 		PxU32 contactEndIndex = contactStartIndex + remaining;
 		for (PxU32 contactIndex = contactStartIndex, src = 0; contactIndex < contactEndIndex; contactIndex++, src++)
 		{
 			float4 contact = sPerParticleTempContacts[src];
-			writer.writeContact(contactIndex, PxVec4(contact.x, contact.y, contact.z, contact.w), compressedParticleIndex, sScratch->rigidId);
+			writer.writeContact(contactIndex, PxVec4(contact.x, contact.y, contact.z, contact.w), sScratch->rigidId, particleRef);
 		}
 	}
 }
@@ -246,7 +246,7 @@ extern "C" __global__ void ps_heightfieldCollisonLaunch(
 	const PxgShape* PX_RESTRICT gpuShapes,
 	PxgParticleSystem* PX_RESTRICT particleSystems,
 	PxNodeIndex* PX_RESTRICT shapeToRigidRemapTable,
-	PxgParticleContactWriter writer
+	PxgRigidParticleContactWriter writer
 )
 {
 	__shared__ __align__(16) PxU8 sData[sizeof(PsHeightfieldScratch)];

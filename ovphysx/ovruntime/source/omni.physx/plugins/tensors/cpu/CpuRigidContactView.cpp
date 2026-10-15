@@ -151,10 +151,10 @@ void CpuRigidContactView::accumulatePairImpulse(PxVec3& impulse,
 }
 
 bool CpuRigidContactView::getNetForces(const TensorDesc* dstTensor,
-                                      float dt,
-                                      ForceComponent component,
-                                      const char* description,
-                                      const char* functionName) const
+                                       float dt,
+                                       ForceComponent component,
+                                       const char* description,
+                                       const char* functionName) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
 
@@ -193,8 +193,8 @@ bool CpuRigidContactView::getNetForces(const TensorDesc* dstTensor,
 }
 
 bool CpuRigidContactView::getForceMatrix(const TensorDesc* dstTensor, float dt, ForceComponent component,
-                                      const char* description,
-                                      const char* functionName) const
+                                         const char* description,
+                                         const char* functionName) const
 {
     CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
 

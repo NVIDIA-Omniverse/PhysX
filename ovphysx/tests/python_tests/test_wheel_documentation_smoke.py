@@ -10,6 +10,39 @@ import pytest
 from wheel_documentation_smoke import _broken_relative_links, validate
 
 
+@pytest.mark.parametrize("fence", ["```", "~~~"])
+def test_fenced_code_is_not_scanned_as_links(tmp_path: Path, fence: str) -> None:
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "index.md").write_text(
+        f"{fence}cpp\n"
+        "const auto cleanup = [&](uint64_t& handle, auto function) {};\n"
+        "[example](not-a-link.md)\n"
+        f"{fence}\n"
+        "[missing](missing.md)\n",
+        encoding="utf-8",
+    )
+
+    assert _broken_relative_links(tmp_path) == ["docs/index.md:5: missing.md"]
+
+
+@pytest.mark.parametrize("opener, non_closer", [
+    ("````", "```"), ("~~~", "```"), ("```", "~~~"), ("```", "```cpp"),
+])
+def test_code_fence_requires_matching_closer(tmp_path: Path, opener: str, non_closer: str) -> None:
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "index.md").write_text(
+        f"{opener}\n{non_closer}\n"
+        "[example](not-a-link.md)\n"
+        f"{opener}\n"
+        "[missing](missing.md)\n",
+        encoding="utf-8",
+    )
+
+    assert _broken_relative_links(tmp_path) == ["docs/index.md:5: missing.md"]
+
+
 def test_supported_markdown_destinations_with_whitespace(tmp_path: Path) -> None:
     package_root = tmp_path / "package"
     docs = package_root / "docs"
@@ -125,7 +158,16 @@ def _add_rendered_docs(package_root: Path, *, headers: bool = True) -> Path:
     downloads.mkdir(parents=True)
     (rendered / "index.html").write_text("<html></html>\n", encoding="utf-8")
     if headers:
-        for name in ("ovphysx.h", "ovphysx_types.h", "ovphysx_config.h"):
+        for name in (
+            "ovphysx.h",
+            "ovphysx_attributes.h",
+            "ovphysx_types.h",
+            "ovphysx_config.h",
+            "ovphysx_geometry_query.h",
+            "ovphysx_legacy.h",
+            "ovphysx_legacy_config.h",
+            "ovphysx_legacy_types.h",
+        ):
             (downloads / name).write_text("/* header */\n", encoding="utf-8")
     return rendered
 

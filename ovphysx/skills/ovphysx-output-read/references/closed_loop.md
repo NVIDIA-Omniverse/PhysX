@@ -3,12 +3,6 @@
 Read this file only when physics output is written back into the attached
 ovstage Stage.
 
-An ordinal identifies a batch of stage changes. Advancing the write floor
-seals that batch for readers; refer to [ovstage Integration](../../../docs/ovstage_integration.md).
-DLPack describes tensor storage exchanged between libraries. Warp is the Python
-array library used by ovphysx output reads. A point instancer represents many
-object instances as arrays on one prim rather than one prim per instance.
-
 ## Ordinal Ownership, Not Magic Parity
 
 Application controls flow from ovstage into physics. Physics output flows back
@@ -41,7 +35,7 @@ For each frame:
 1. Author control attributes at the next control ordinal.
 2. Advance the ovstage write floor to seal that ordinal.
 3. Pass only a sealed, control-only ordinal range to
-   `update_from_ovstage()` / `ovphysx_update_from_ovstage()`.
+   `update_from_ovstage()` / `ovphysx_update_from_ovstage()` and wait for its task.
 4. Complete the simulation step.
 5. Read physics output and write it at the next output ordinal.
 6. Seal the output ordinal for downstream readers.
@@ -54,25 +48,29 @@ Use the group's interned prim list rather than rebuilding paths. Use the emitted
 attribute token rather than assuming it equals the requested semantic name. Both are
 interned integers; resolve them through `ovstage.PathDictionary(stage)` —
 `get_path_strings(group.prim_list)` for the prim paths and `token_to_string(group.attribute)`
-for the emitted name (refer to [Python Output Read](python.md)). Forward `semantic` and `is_array`;
+for the emitted name (see `references/python.md`). Forward `semantic` and `is_array`;
 tensor count and shape do not determine whether the attribute is an array.
 
 In C, the group's DLPack tensors are borrowed and can feed the ovstage write
 payload without repacking. Wait for the write to finish before releasing the
 group. In Python, every non-empty numeric column is a borrowed `warp.array` on
-its native CPU or CUDA device. `prim_list`, `attribute`, and the shared
-dictionary remain context-bound. If a Python ovstage write path needs DLPack
+its native CPU or CUDA device. `prim_list`, `attribute`, and
+`result.dictionary` remain bound to the open result and its live attachment. Detach
+retires that identity metadata. If a Python ovstage write path needs DLPack
 lanes rather than Warp's trailing component dimension, perform that
 conversion while the source array and result context are live.
 
 A device column is handed over before its producing work has necessarily
 completed. Feeding one straight back into a write is safe only if the write is
 ordered after that work: native C callers wait on `cuda_sync.wait_event` for
-their destination stream, while `PhysX.read()` has already ordered the event
-onto Warp's current stream before returning to Python. If Python work later
-moves to another stream, establish an explicit Warp stream dependency first.
-The covered types also need at least one completed step on a GPU sim before they
-emit anything.
+their destination stream, while the Python frontend has already ordered the
+event onto the Warp stream that was current when the group's arrays were built
+(inside `read_sync()`, or at the first `wait()` / `result` access of a
+`fetch_next()` operation). If Python work later moves to another stream,
+establish an explicit Warp stream dependency first.
+DirectGPU rigid bodies, articulation links, whole articulations, and joint DOFs
+need at least one completed step before they emit groups. Other types have their
+own availability rules; inspect the optional read summary when readiness matters.
 
 Point-instancer `position` and `orientation` requests emit `positions` and
 `orientations` in instancer-local space.

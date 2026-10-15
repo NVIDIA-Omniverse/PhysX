@@ -142,31 +142,34 @@ refuse to run without both flags:
     --verbose
 ```
 
-The `ContactReport.*` pair does the opposite: its GPU row requires conventional
-GPU dynamics and rejects DirectGPU. A contact is one place where two collision
-shapes touch. After each physics step, a contact report is the list of touching
-pairs plus the point, normal, separation, and impulse data generated for those
-touches. This fixture intentionally expects no friction anchors. Run the CPU
-and GPU rows in separate fresh processes:
+The `ContactReport.*` pair reads contact-sensor net force through the public
+session API; its GPU row is a DirectGPU lane for the same reason, because the
+net-force columns are device-resident only under DirectGPU. A contact sensor
+reports the net force a body receives where it touches other shapes. Each
+measured call queries all contact sensors and reads their two net-force
+attributes — `netNormalContactForce` and `netFrictionContactForce` — while the
+simulation step runs untimed in `preStep()`. Run the CPU and GPU rows in
+separate fresh processes:
 
 ```bash
 ./_build/linux-x86_64/release/ovphysx_benchmarks \
     --hidden \
-    --filter=ContactReport.persistent_pairs_512_step_read_cpu \
+    --filter=ContactReport.net_force_512_read_cpu \
     --report=_build/contact_report_cpu.txt \
     --verbose
 
 ./_build/linux-x86_64/release/ovphysx_benchmarks \
     --forceGpu \
+    --directGpu \
     --hidden \
-    --filter=ContactReport.persistent_pairs_512_step_read_gpu \
+    --filter=ContactReport.net_force_512_read_gpu \
     --report=_build/contact_report_gpu.txt \
     --verbose
 ```
 
-Do not add `--directGpu` to the second command. That mode disables the host
-simulation-state readback path used by the public raw getter, so the row fails
-instead of publishing a misleading zero or fallback measurement.
+The second command needs both `--forceGpu` and `--directGpu`. The net-force
+columns are device-resident only under DirectGPU; under `--forceGpu` alone the
+GPU row is still selected but skips without publishing a metric.
 
 `OutputRead` rows fail closed like the rest of the suite. A read that does not complete returns
 early and therefore times FAST, so a failed setup, a failed read, or a drain that stops resolving
@@ -217,7 +220,8 @@ CLI mirrors the shared harness:
 | `--detail` | Include per-step times in the report. |
 | `--verbose` | Print each benchmark name as it executes. |
 | `--hidden` | Also run benchmarks flagged hidden. |
-| `--nvtx` | Emit NVTX ranges so the run can be captured with Nsight Systems (equivalent to `OVPHYSX_NVTX=1`). Refer to [NVTX Profiling](../../docs/tutorials/nvtx_profiling.md). |
+| `--profiler=<backend>` | Publish profile zones: `none` (default), `nvtx` for an Nsight Systems capture, or `trace` for a chrome trace JSON. Equivalent to `OVPHYSX_PROFILER`. Refer to [Profiling](../../docs/tutorials/profiling.md). |
+| `--profiler-output=<file>` | Destination for `--profiler=trace`. Equivalent to `OVPHYSX_PROFILER_OUTPUT`; unset writes a timestamped `ct-profile` file to the working directory. |
 
 ## Benchmark inventory
 
@@ -235,11 +239,13 @@ descriptions, and per-row notes are authored in the source-controlled side-car
 `scripts/benchmark_summary_analysis.json`; add or refresh an entry there directly, in the same
 shape as its existing entries.
 
-**Teardown:** `bmTerminate()` previously faulted after the report file was written and closed.
-`~BmGlobals()` cleared `g_carbFramework` -- this binary's own module-local Carbonite pointer, not a
-borrowed one -- before `delete mPhysX` and `ovphysx_shutdown()`, both of which log through it. It is
-now cleared last, and only when this object acquired it. `bmDestroyGlobals()` is idempotent and
-nulls the shared instance. Step 10 of `scripts/test_benchmark_contract.cmake` requires a clean exit
+**Teardown:** the benchmark executable owns a static Carbonite framework separate from the SDK's.
+`~BmGlobals()` destroys the PhysX instance, calls `ovphysx_shutdown()`, then releases the framework
+it acquired while its static state is still alive. Merely clearing its pointer leaves framework
+destruction until CRT shutdown and can crash after the report was written.
+`bmDestroyGlobals()` is idempotent and nulls the shared instance. Windows benchmark smoke requires
+a clean process exit even when the report is complete; an access violation fails the job.
+Step 10 of `scripts/test_benchmark_contract.cmake` requires a clean exit
 from a CPU `OutputRead` row, so a teardown regression fails the job rather than going unnoticed.
 Step 10c adds the DirectGPU row under the same contract, opt-in behind
 `OVPHYSX_BENCHMARK_CONTRACT_DIRECTGPU=1` — exported by the benchmark CI job, skipped by a plain
@@ -342,6 +348,62 @@ python3 tests/benchmarks/data/gen_cubes20.py > \
 python3 tests/benchmarks/data/gen_cubes20.py --envs > \
     tests/benchmarks/data/cubes20_envs.usda
 ```
+
+### OutputWrite validity
+
+`OutputWrite.*_cpu` contains 33 normal-suite rows. The write sessions fill
+all tensors, including per-joint arrays and padded per-shape columns. Readable
+columns use owned snapshots captured before warm-up; pose bindings also read
+initial poses, so repeated writes preserve the separated scene instead of
+moving every body to one position. Force and wrench inputs are zero.
+
+Binding warm-up uses the matching object type and attribute. The coverage check
+compares scalar counts except for pose-versus-position pairs, where seven-wide
+and three-wide tensors must reach the same nonzero number of objects. Their
+timings compare different payload widths and are not a throughput ratio.
+DirectGPU session rows include a host-to-device payload copy; their binding
+counterparts use device inputs. These timings describe different producer
+locations and must not be interpreted as an isolated comparison of API overhead.
+
+The compound, instancer and tendon fixtures are committed alongside
+`gen_cubes20_compound.py`, `gen_cubes20_instancer.py` and
+`gen_cartpole_tendon_probe.py`. Each generator emits CPU and GPU variants;
+CPU variants explicitly select CPU dynamics and MBP. The rigid and Cartpole
+write rows use `cubes20_write_cpu.usda` and `cartpole_write_cpu.usda`, which
+apply that CPU policy over the shared fixtures.
+
+Instancer rows load fully authored 1024/8192-environment scenes because
+replicator clones lose instancer identity. Warm-up requires one twenty-instance
+ARRAY group per environment. GPU variants overlay the same CPU geometry.
+The scene stays loaded across all five measured runs to avoid repeated parsing;
+each run creates and warms new sessions and snapshots the current simulation
+state. Simulation state can evolve between runs; these are repeated writes on
+one scene, not five independently reloaded scenes.
+
+Regenerate the restored fixtures from the ovphysx root:
+
+```bash
+python3 tests/benchmarks/data/gen_cubes20_compound.py > tests/benchmarks/data/cubes20_compound_envs.usda
+python3 tests/benchmarks/data/gen_cubes20_compound.py --gpu > tests/benchmarks/data/cubes20_compound_envs_gpu.usda
+python3 tests/benchmarks/data/gen_cubes20_instancer.py --envs 1024 > tests/benchmarks/data/cubes20_instancer_envs_1024.usda
+python3 tests/benchmarks/data/gen_cubes20_instancer.py --envs 1024 --gpu > tests/benchmarks/data/cubes20_instancer_envs_1024_gpu.usda
+python3 tests/benchmarks/data/gen_cubes20_instancer.py --envs 8192 > tests/benchmarks/data/cubes20_instancer_envs_8192.usda
+python3 tests/benchmarks/data/gen_cubes20_instancer.py --envs 8192 --gpu > tests/benchmarks/data/cubes20_instancer_envs_8192_gpu.usda
+python3 tests/benchmarks/data/gen_cartpole_tendon_probe.py --cpu > tests/benchmarks/data/cartpole_tendon_probe_cpu.usda
+python3 tests/benchmarks/data/gen_cartpole_tendon_probe.py > tests/benchmarks/data/cartpole_tendon_probe.usda
+```
+
+After build and install, run the focused contract:
+
+```bash
+cmake -P scripts/test_output_write_contract.cmake
+```
+
+It runs eight representative CPU rows with shortened sample counts, requires
+positive timings and a clean exit, rejects contact-capacity overflow, and
+checks that missing scene data or an ordinary-body instancer replacement fails
+without publishing a timing. The normal
+benchmark contract also invokes it. It preserves the developer baseline.
 
 ### Single-threaded baseline
 
@@ -447,17 +509,18 @@ step by 1/60 second.
 
 Compare a WriteScaling row only with the other WriteScaling row. Its preserved
 prototype boundary waits for the OVStage write, releases the query, waits for
-the scoped floor, updates physics, and uses `step()` plus `waitAll()`.
-Authoring's OVStage lanes use the later single-seal-wait shape (the seal covers
-the write transitively) and `ovphysx_step_sync()`, which bypasses asynchronous
-operation machinery. The resulting numbers differ for reasons other than body
-count or API choice and are not comparable across the two families.
+the scoped floor, updates physics and waits for its task, and uses `step()`
+plus `waitAll()`. Authoring's OVStage lanes use a single seal wait (the seal
+covers the write transitively), then update physics and wait for its task.
+Their `ovphysx_step_sync()` bypasses task machinery for the simulation step.
+The resulting numbers differ for reasons other than body count or API choice
+and are not comparable across the two families.
 
 Within the WriteScaling pair, the OVStage lane creates and releases a path-list
 query on every measured step and waits separately for the write, query release,
-and scoped floor before stepping. The tensor lane reuses one persistent
-`[N,6]` binding and has only its write-completion wait before the common
-asynchronous step/wait. The observed gap therefore compares the two end-to-end
+scoped floor, and physics-update task before stepping. The tensor lane reuses
+one persistent `[N,6]` binding and has only its write-completion wait before the
+common asynchronous step/wait. The observed gap therefore compares the two end-to-end
 control paths, including addressing, query lifetime, and synchronization; it
 is not a pure write-cost difference. Keep both rows on the same plot only for
 that end-to-end path comparison, never to attribute the delta to the write
@@ -504,7 +567,8 @@ generated scene that already holds 1,280 static Cube colliders. Everything up to
 and including the thirteen waited UPSERT writes, plus one waited `omni:xform`
 write that carries the same pose, is outside the timer; the timed sample is the
 seal (`ovstage_advance_write_floor` plus its wait), the
-`ovphysx_update_from_ovstage` drain, and one `ovphysx_step_sync(1/60 s)`. The
+`ovphysx_update_from_ovstage` drain and its task completion, and one
+`ovphysx_step_sync(1/60 s)`. The
 `omni:xform` write exists because ovphysx resolves a created prim's local
 transform from that data-plane matrix, not from the `xformOp:*` columns, so the
 spawn columns alone realize the body at the identity pose; the existing
@@ -533,50 +597,98 @@ FrameCore/fpp repository (`pipelines/ovphysx`, `OVPHYSX_SUITE=high_scale_hidden`
 and run on a recurring schedule on the L40S/EPYC 7313P cohort; that run
 produces and validates the default 20-by-5 statistic.
 
-### ContactReport persistent-pair rows
+### CPU movement commands without simulation timing
+
+`WriteOnly.*_cpu` answers: **how long does it take to tell all the boxes their
+new speed and direction?** It measures command delivery into physics, including
+completion waits, while excluding the subsequent simulation step. Lower is
+better. The existing WriteScaling panels continue to measure write plus step.
+
+There are two paths at each of 4,096, 8,192 and 16,384 boxes:
+
+| Path | Inside the timer |
+|---|---|
+| OVStage | Create the query, write linear velocity and wait, release the query and wait, seal velocity changes and wait, apply them to physics and wait for the task. |
+| Direct tensor | Write through the persistent velocity binding and wait for completion. |
+
+Scene setup, value generation, warmup, simulation and correctness readback are
+outside the timer. The simulation still advances after each timed write.
+Both paths must prove that every body received the distinctive test velocity.
+They share the existing CPU fixture and 20-step, five-run trimmed statistic.
+The tensor path writes linear and zeroed angular velocity; OVStage writes only
+linear velocity. Their ratio describes these complete command paths, including
+query lifetime and waits, rather than equal-sized memory copies.
+
+All six rows are hidden and belong to `tests/write_only_inventory.json`.
+Run them from the ovphysx root after building and installing the SDK:
+
+```bash
+./_build/linux-x86_64/release/ovphysx_benchmarks \
+    --hidden \
+    --filter='WriteOnly.*_cpu' \
+    --data=tests/data \
+    --report=_build/write_only.txt \
+    --verbose
+```
+
+The contract checks the exact hidden list, isolation from existing inventories,
+no output without `--hidden`, and rejection of all six rows under `--forceGpu`.
+Both 4,096-body paths run on every contract invocation with one step and three
+runs, including their correctness readback. Set
+`OVPHYSX_BENCHMARK_CONTRACT_WRITE_ONLY=1` when running
+`scripts/test_benchmark_contract.cmake` to include the 8,192/16,384-body rows too.
+The default measurements are collected by FrameCore/fpp's separate
+`write_only_hidden` suite. Thresholds must use fresh measurements of these rows
+on the matching build and hardware; enabling alarm delivery is separate work.
+Do not subtract independently measured rows to estimate simulation time or
+compare this ratio numerically with a persistent-query, all-scope-seal test.
+
+### ContactReport net-force rows
 
 The two hidden ContactReport rows are a separate L1 contract, not additions to
 the eighteen-row Authoring/WriteScaling inventory. Both are
 lower-is-better absolute latencies. The CPU row is reported under its raw name;
 the GPU harness appends `_GPU`, producing
-`ContactReport.persistent_pairs_512_step_read_gpu_GPU`.
+`ContactReport.net_force_512_read_gpu_GPU`.
 
-The generated scene has 512 isolated cells. Each cell contains one awake
-dynamic reporting sphere overlapping one static sphere. Cell spacing prevents
-cross-pair contacts; zero gravity, disabled sleeping, and disabled contact
-solving keep every overlap present without solver motion. The reporter applies
-`PhysxContactReportAPI` with threshold zero. CPU explicitly uses CPU dynamics
-and MBP. GPU explicitly uses GPU dynamics and GPU broadphase. Its three
+The generated scene has 512 dynamic boxes resting on one static ground slab. The
+boxes are spaced so no box touches a neighbour, so every contact is a
+box-on-ground resting contact. Gravity is enabled, and each box applies
+`PhysxContactReportAPI` with threshold zero and `physxRigidBody:sleepThreshold =
+0` so a settled body keeps reporting its support contact. The ground slab has no
+contact-report schema and is not a sensor. Each box is therefore one contact
+sensor whose net normal force resists its own weight. CPU explicitly uses CPU
+dynamics and MBP. GPU explicitly uses GPU dynamics and GPU broadphase. Its three
 authored capacities are pinned to the exact schema defaults: 524288 rigid
 contacts, 81920 rigid patches, and 262144 found/lost pairs.
 
-Each timer starts immediately before
-`ovphysx_step_sync(instance, 1.0f / 60.0f)` and stops immediately after the
-following `ovphysx_get_contact_report()` call returns.
+The simulation step is advanced in the harness `preStep()` hook, outside the
+timed region, so the row measures the read path only and not step-plus-read.
+Each timed sample covers one
+`ovphysx_query(OVPHYSX_QUERY_TARGET_CONTACT_SENSOR, OVPHYSX_SCOPE_ALL)`, one
+`ovphysx_read()` of the two attributes `netNormalContactForce` and
+`netFrictionContactForce`, and the fetch/release drain of every group.
 
-Generation, population, attachment, expected-path construction, warm-up, and
-semantic validation are outside the timer. Warm-up is bounded at 32 steps and
-ends only after three consecutive structurally valid, all-persistent reports
-contain exactly 512 headers, 512 points, and zero friction anchors. Each row
-then uses 20 measured step indices and five runs.
+Generation, population, attachment, and warm-up are outside the timer. Warm-up
+is bounded at 48 steps and ends only after three consecutive reads return the
+full 512-sensor set. Each row then uses 20 measured step indices and five runs,
+so the default run executes 100 timed calls.
 
-The getter returns borrowed buffers. Validation therefore finishes before the
-next simulation step can invalidate them. It requires exactly 512 persistent
-pair headers and 512 points, the current attach handle, the exact authored
-Reporter/Static identity set, a complete non-overlapping point partition, zero
-global and per-header friction anchors, and finite point positions, normals,
-impulses, and separations with sane normal length and separation range. Any
-mismatch or API error suppresses the row and makes the process fail.
+The semantic gate requires that every warm-up and pre-step task, query, read,
+fetch, and release task completes, that the drain reaches the end-of-iteration
+sentinel, and that the net-force group carries exactly 512 contact-sensor rows
+on the expected device (CPU or CUDA). Any mismatch or API error suppresses the
+row and makes the process fail.
 
-This fixture deliberately covers one contact point per pair/header, zero
-friction anchors from its `solveContact=false` shape, and one default-material
-case. It does not cover multi-point manifolds, friction-anchor report payloads,
-or material diversity.
+This fixture deliberately covers the two net-force attributes over one
+default-material resting-box scene. It does not cover multi-point manifolds,
+per-contact report payloads, or material diversity.
 
-`--forceGpu` selects the requested GPU row, but ovphysx has no public query for
-the realized simulation device. Known CPU-fallback and contact-capacity warning
-messages fail the row; silence is negative fallback evidence, not positive GPU
-proof. DirectGPU is outside this contract. The rows also exclude scene attach,
+The GPU row is a DirectGPU lane, run with `--forceGpu --directGpu`, because the
+net-force columns are device-resident only under DirectGPU; under `--forceGpu`
+alone the row is selected on the GPU pass but skips without a metric. The GPU
+row requires CUDA-backed net-force tensors, so a scene that falls back to CPU
+fails the row. The rows also exclude scene attach,
 contact-report parameter parsing, contact solving, Contact Binding, transport,
 and application-loop cost.
 
@@ -609,14 +721,15 @@ used only to prove that the default 20-by-5 run executed 100 timed calls.
 
 ### Who owns which rows
 
-Four inventories, with different jobs:
+Five inventories, with different jobs:
 
 | File | Covers | Contract |
 |------|--------|----------|
 | `tests/producer_inventory.json` | the frozen L1B `Authoring.*` / `WriteScaling.*` rows | exact row set, all hidden; steps 1–9 |
 | `tests/outputread_inventory.json` | the `OutputRead.*` matrix (15 CPU visible, 19 DirectGPU hidden) | exact row set, per-row `hidden`, and an `owner` per row; steps 10–10d |
-| `tests/contact_report_inventory.json` | the two hidden `ContactReport.*` rows | exact row set, CPU plus conventional GPU; the ContactReport section |
-| `tests/high_scale_inventory.json` | the five hidden `WriteScalingHighN.*` / `RuntimeSpawnScaling.*` CPU rows | exact row set, all hidden, collision-free union with the other three inventories (also against harness-decorated record names); the high-scale section |
+| `tests/contact_report_inventory.json` | the two hidden `ContactReport.*` rows | exact row set, CPU plus DirectGPU; the ContactReport section |
+| `tests/high_scale_inventory.json` | the five hidden `WriteScalingHighN.*` / `RuntimeSpawnScaling.*` CPU rows | exact row set, all hidden, collision-free union with the other inventories (also against harness-decorated record names); the high-scale section |
+| `tests/write_only_inventory.json` | six hidden `WriteOnly.*` CPU rows | command completion without simulation; exact list, hidden-row and GPU rejection controls, default 4,096-body positive pair; larger rows opt-in |
 
 `OutputRead` is a performance family rather than a frozen numeric contract. Its
 rows are gated on behaviour (clean exit, a published metric, fail-closed on

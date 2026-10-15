@@ -135,7 +135,7 @@ namespace Gu
 	PX_PHYSX_COMMON_API bool intersectBoxVsMesh_BV4		(const Box& box,			const TriangleMesh& triMesh, const PxTransform& meshTransform, const PxMeshScale& meshScale, LimitedResults* results);
 	PX_PHYSX_COMMON_API bool intersectCapsuleVsMesh_BV4	(const Capsule& capsule,	const TriangleMesh& triMesh, const PxTransform& meshTransform, const PxMeshScale& meshScale, LimitedResults* results);
 	PX_PHYSX_COMMON_API void intersectOBB_BV4(const TriangleMesh* mesh, const Box& obb, MeshHitCallback<PxGeomRaycastHit>& callback, bool bothTriangleSidesCollide, bool checkObbIsAligned);
-	PX_PHYSX_COMMON_API void intersectOBB_BV4(const TetrahedronMesh* mesh, const Box& obb, TetMeshHitCallback<PxGeomRaycastHit>& callback);
+	PX_PHYSX_COMMON_API void intersectOBB_BV4(const BVTetrahedronMesh* mesh, const Box& obb, TetMeshHitCallback<PxGeomRaycastHit>& callback);
 	PX_PHYSX_COMMON_API bool sweepCapsule_MeshGeom_BV4(	const TriangleMesh* mesh, const PxTriangleMeshGeometry& triMeshGeom, const PxTransform& pose,
 									const Gu::Capsule& lss, const PxVec3& unitDir, PxReal distance,
 									PxGeomSweepHit& sweepHit, PxHitFlags hitFlags, PxReal inflation);
@@ -293,10 +293,10 @@ namespace Midphase
 		gMidphaseBoxCBOverlapTable[index](mesh, obb, callback, bothTriangleSidesCollide, checkObbIsAligned);
 	}
 
-	// \param[in]	mesh						tetrahedron mesh
+	// \param[in]	mesh						collision mesh of a deformable volume, the only tetrahedron mesh with a midphase tree
 	// \param[in]	box							box
 	// \param[in]	callback					callback object, called each time a hit is found
-	PX_FORCE_INLINE void intersectOBB(const TetrahedronMesh* mesh, const Box& obb, TetMeshHitCallback<PxGeomRaycastHit>& callback)
+	PX_FORCE_INLINE void intersectOBB(const BVTetrahedronMesh* mesh, const Box& obb, TetMeshHitCallback<PxGeomRaycastHit>& callback)
 	{
 		intersectOBB_BV4(mesh, obb, callback);
 	}

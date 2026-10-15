@@ -25,8 +25,8 @@ def test_tensor_binding_write_mask_alternating(physx_sdk_cpu):
     sdk = physx_sdk_cpu
 
     usd_path = os.path.join(_TEST_DIR, "data", "two_articulations.usda")
-    op = load_usd_with_ovstage(sdk, usd_path)
-    sdk.wait_op(op)
+    load_usd_with_ovstage(sdk, usd_path)
+    sdk.wait_all()
 
     binding = sdk.create_tensor_binding(
         "/World/articulation*",
@@ -52,7 +52,7 @@ def test_tensor_binding_write_mask_alternating(physx_sdk_cpu):
     finally:
         binding.destroy()
         destroy_ovstage_test_attachments(sdk)
-        sdk.reset_stage()
+        sdk.detach_ovstage()
         sdk.wait_all()
 
 
@@ -65,8 +65,8 @@ def test_tensor_binding_write_mask_wrench_cpu(physx_sdk_cpu):
     sdk = physx_sdk_cpu
 
     usd_path = os.path.join(_TEST_DIR, "data", "boxes_falling_on_groundplane.usda")
-    op = load_usd_with_ovstage(sdk, usd_path)
-    sdk.wait_op(op)
+    load_usd_with_ovstage(sdk, usd_path)
+    sdk.wait_all()
 
     binding = sdk.create_tensor_binding(
         "/World/Cube*",
@@ -81,7 +81,7 @@ def test_tensor_binding_write_mask_wrench_cpu(physx_sdk_cpu):
 
         # Step once so the sim is warmed up
         op = sdk.step(dt)
-        sdk.wait_op(op)
+        sdk.wait_task(op)
 
         src = np.zeros((N, 9), dtype=np.float32)
         src[0, :3] = [0.0, 100.0, 0.0]  # upward force on body 0
@@ -91,22 +91,22 @@ def test_tensor_binding_write_mask_wrench_cpu(physx_sdk_cpu):
 
         # Stepping consumes the forces and must not error.
         op = sdk.step(dt)
-        sdk.wait_op(op)
+        sdk.wait_task(op)
 
         mask_all = np.ones(N, dtype=np.bool_)
         binding.write(src, mask=mask_all)
         op = sdk.step(dt)
-        sdk.wait_op(op)
+        sdk.wait_task(op)
 
         # An all-false mask is a no-op.
         mask_none = np.zeros(N, dtype=np.bool_)
         binding.write(src, mask=mask_none)
         op = sdk.step(dt)
-        sdk.wait_op(op)
+        sdk.wait_task(op)
     finally:
         binding.destroy()
         destroy_ovstage_test_attachments(sdk)
-        sdk.reset_stage()
+        sdk.detach_ovstage()
         sdk.wait_all()
 
 
@@ -115,8 +115,8 @@ def test_tensor_binding_write_indices_full_tensor_semantics(physx_sdk_cpu):
     sdk = physx_sdk_cpu
 
     usd_path = os.path.join(_TEST_DIR, "data", "two_articulations.usda")
-    op = load_usd_with_ovstage(sdk, usd_path)
-    sdk.wait_op(op)
+    load_usd_with_ovstage(sdk, usd_path)
+    sdk.wait_all()
 
     binding = sdk.create_tensor_binding(
         "/World/articulation*",
@@ -144,5 +144,5 @@ def test_tensor_binding_write_indices_full_tensor_semantics(physx_sdk_cpu):
     finally:
         binding.destroy()
         destroy_ovstage_test_attachments(sdk)
-        sdk.reset_stage()
+        sdk.detach_ovstage()
         sdk.wait_all()

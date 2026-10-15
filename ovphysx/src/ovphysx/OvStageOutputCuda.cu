@@ -31,8 +31,20 @@ bool checkCuda(cudaError_t status, const char* operation, std::string& error)
 
 } // namespace
 
-OutputCudaContextScope::OutputCudaContextScope() : mCuda(omni::physx::runtime::tryGetOptionalCudaInterface())
+OutputCudaContextScope::OutputCudaContextScope() : OutputCudaContextScope(nullptr)
 {
+}
+
+OutputCudaContextScope::OutputCudaContextScope(const OutputCudaBuffers* buffers)
+    : mCuda(omni::physx::runtime::tryGetOptionalCudaInterface())
+{
+    if (buffers)
+    {
+        mReady = mPushed = mCuda && buffers->mPrimary && mCuda->ctxPushCurrent(buffers->mPrimary, nullptr);
+        return;
+    }
+    // CPU publication can overwrite a GPU-backed column and invoke CUDA inline.
+    // Preserve the caller context even when no CUDA output buffer is needed.
     if (!mCuda || !mCuda->cudaAvailable())
     {
         mReady = true;
@@ -45,17 +57,6 @@ OutputCudaContextScope::OutputCudaContextScope() : mCuda(omni::physx::runtime::t
         mReady = mPushed = mCuda->ctxPushCurrent(current, nullptr);
     else
         mReady = mRestoreNull = true;
-}
-
-OutputCudaContextScope::OutputCudaContextScope(const OutputCudaBuffers* buffers)
-{
-    if (!buffers)
-    {
-        mReady = true;
-        return;
-    }
-    mCuda = omni::physx::runtime::tryGetOptionalCudaInterface();
-    mReady = mPushed = mCuda && buffers->mPrimary && mCuda->ctxPushCurrent(buffers->mPrimary, nullptr);
 }
 
 OutputCudaContextScope::~OutputCudaContextScope()

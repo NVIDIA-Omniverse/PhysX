@@ -17,9 +17,12 @@
 #include "NpDeformableSurface.h"
 #include "NpDeformableVolume.h"
 
+// Element index reserved as a wildcard, indicating all elements of the actor. Substituted when a
+// filter group specifies no element indices, and not exposed through the API.
 #define PX_ELEMENT_FILTER_ALL	0x000fffff
 
-// Assume they are the same for now. This can potentially change in the future.
+// The GPU element filter encoding reuses this value as its own wildcard, so the equality is load
+// bearing rather than incidental. See PxgDeformableRef::ANY_FEATURE.
 PX_COMPILE_TIME_ASSERT(PX_ELEMENT_FILTER_ALL == PX_MAX_NB_DEFORMABLE_VOLUME_TET && PX_ELEMENT_FILTER_ALL == PX_MAX_NB_DEFORMABLE_SURFACE_TRI);
 
 using namespace physx;
@@ -51,7 +54,7 @@ NpInternalAttachmentType::Enum getInternalAttachmentType(const PxDeformableEleme
 		{
 			if (data.actor[actorIndex[1]]->is<PxRigidActor>())
 			{
-				return NpInternalAttachmentType::eSURFACE_TRI_RIGID_BODY;
+				return NpInternalAttachmentType::eSURFACE_TRI_RIGID_ACTOR;
 			}
 			else if (data.actor[actorIndex[1]]->is<PxDeformableSurface>())
 			{
@@ -64,7 +67,7 @@ NpInternalAttachmentType::Enum getInternalAttachmentType(const PxDeformableEleme
 		{
 			if (data.actor[actorIndex[1]]->is<PxRigidActor>())
 			{
-				return NpInternalAttachmentType::eVOLUME_TET_RIGID_BODY;
+				return NpInternalAttachmentType::eVOLUME_TET_RIGID_ACTOR;
 			}
 			else if (data.actor[actorIndex[1]]->is<PxDeformableSurface>())
 			{
@@ -82,6 +85,29 @@ NpInternalAttachmentType::Enum getInternalAttachmentType(const PxDeformableEleme
 	return NpInternalAttachmentType::eUNDEFINED;
 }
 
+#if PX_CHECKED
+
+// Whether any group of this actor references specific elements, meaning its element count is greater
+// than 0. An empty group is the wildcard for all elements of the actor.
+static bool isReferencingSpecificElements(const PxTypedBoundedData<const PxU32>& groupElementCounts)
+{
+	for (PxU32 i = 0; i < groupElementCounts.count; i++)
+	{
+		if (groupElementCounts.at(i) > 0)
+			return true;
+	}
+
+	return false;
+}
+
+#endif // PX_CHECKED
+
+// How many element indices are left in the array from 'start'.
+static PxU32 getRemainingElements(const PxTypedBoundedData<const PxU32>& groupElementIndices, PxU32 start)
+{
+	return groupElementIndices.count > start ? groupElementIndices.count - start : 0;
+}
+
 bool NpDeformableElementFilter::parseElementFilter(const PxDeformableElementFilterData& data, ElementFilterInfo& info)
 {
 	NpInternalAttachmentType::Enum& internalAttachmentType = info.internalAttachmentType;
@@ -91,33 +117,70 @@ bool NpDeformableElementFilter::parseElementFilter(const PxDeformableElementFilt
 
 	if (internalAttachmentType != NpInternalAttachmentType::eUNDEFINED)
 	{
-		// For filtering deformable vs rigid, we allow the group count array to be empty for rigids
+		// An actor with no groups at all is filtered as a whole against every group of the other actor,
+		// which is always the form a rigid takes.
 		PX_CHECK_AND_RETURN_VAL
 		(
 			(data.groupElementCounts[actorIndex[0]].count == data.groupElementCounts[actorIndex[1]].count) ||
-			(data.actor[actorIndex[1]]->is<PxRigidActor>() && data.groupElementCounts[actorIndex[1]].count == 0),
+			(data.groupElementCounts[actorIndex[0]].count == 0) || (data.groupElementCounts[actorIndex[1]].count == 0),
 			"PxDeformableElementFilter: Number of element groups are not equal for both actors.",
 			NULL
 		);
 
-		// No support for wild card filtering against rigid body
-		if (internalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_RIGID_BODY || internalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_RIGID_BODY)
+		if (internalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_RIGID_ACTOR || internalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_RIGID_ACTOR)
 		{
-			PxTypedBoundedData<const PxU32> groupElementCounts = data.groupElementCounts[actorIndex[0]];
+			// Filtering against a rigid relates to the whole actor, so the rigid has no elements for an index
+			// to address. Indices given for it are dropped when the filter pairs are built, and a group count
+			// above 0 would result in the expansion looking up non-existing indices.
+			PX_CHECK_AND_RETURN_VAL
+			(
+				data.groupElementIndices[actorIndex[1]].count == 0 &&
+				!isReferencingSpecificElements(data.groupElementCounts[actorIndex[1]]),
+				"PxDeformableElementFilter: a rigid actor is filtered as a whole, so it supports no element indices "
+				"and no element group count above 0.",
+				NULL
+			);
 
-			for (PxU32 i = 0; i < groupElementCounts.count; i++)
+		}
+
+		// A filter has to reference at least one element on at least one of the two actors. An empty group is
+		// the wildcard for all elements of its actor, not a reference to a specific one.
+		PX_CHECK_AND_RETURN_VAL
+		(
+			isReferencingSpecificElements(data.groupElementCounts[actorIndex[0]]) || isReferencingSpecificElements(data.groupElementCounts[actorIndex[1]]),
+			"PxDeformableElementFilter: a filter has to reference at least one specific element on at least one "
+			"of the two actors. To suppress all collisions between two actors, use PxShape- or PxActor-level "
+			"collision filtering with a PxSimulationFilterShader instead.",
+			NULL
+		);
+
+		// Likewise, every group pair has to reference at least one specific element on at least one of the
+		// two actors. Where one actor supplies no groups its side of every pair is considered as the
+		// wildcard. Therefore the groups of the other actor each have to reference at least one specific
+		// element.
+		{
+			const PxU32 groupCount0 = data.groupElementCounts[actorIndex[0]].count;
+			const PxU32 groupCount1 = data.groupElementCounts[actorIndex[1]].count;
+			const PxU32 groupCount = PxMax(groupCount0, groupCount1);
+
+			for (PxU32 i = 0; i < groupCount; i++)
 			{
-				if (groupElementCounts.at(i) == 0)
-				{
-					PX_CHECK_AND_RETURN_VAL(false, "PxDeformableElementFilter: No support for deformable group element count of 0 when filtering against a rigid body", NULL);
-				}
+				PX_CHECK_AND_RETURN_VAL
+				(
+					(groupCount0 > 0 && data.groupElementCounts[actorIndex[0]].at(i) > 0) ||
+					(groupCount1 > 0 && data.groupElementCounts[actorIndex[1]].at(i) > 0),
+					"PxDeformableElementFilter: every group pair has to reference at least one specific element on at "
+					"least one of the two actors. To suppress all collisions between two actors, use PxShape- or "
+					"PxActor-level collision filtering with a PxSimulationFilterShader instead.",
+					NULL
+				);
 			}
 		}
 
 		switch (internalAttachmentType)
 		{
-			case NpInternalAttachmentType::eSURFACE_TRI_RIGID_BODY:
-			case NpInternalAttachmentType::eVOLUME_TET_RIGID_BODY:
+			case NpInternalAttachmentType::eSURFACE_TRI_RIGID_ACTOR:
+			case NpInternalAttachmentType::eVOLUME_TET_RIGID_ACTOR:
 			case NpInternalAttachmentType::eSURFACE_TRI_SURFACE_TRI:
 			case NpInternalAttachmentType::eVOLUME_TET_VOLUME_TET:
 			case NpInternalAttachmentType::eVOLUME_TET_SURFACE_TRI:
@@ -135,33 +198,92 @@ bool NpDeformableElementFilter::parseElementFilter(const PxDeformableElementFilt
 	return false;
 }
 
+#if PX_CHECKED
+
+// Number of elements an element filter addresses on a deformable actor. A surface is filtered by the
+// triangles of the mesh it simulates and a volume by the tetrahedra of its collision mesh, and both
+// of those are the shape's geometry, so the geometry type is the element kind.
+//
+// A count of zero refuses every index. PxScene::addActor rejects a deformable without a shape, so
+// zero is the answer for a state a filter being enabled cannot be in, rather than one to accept
+// unchecked.
+static PxU32 getElementCount(PxDeformableBody& body)
+{
+	PxShape* shape = body.getShape();
+	if (shape == NULL)
+		return 0;
+
+	const PxGeometry& geometry = shape->getGeometry();
+
+	if (geometry.getType() == PxGeometryType::eTRIANGLEMESH)
+	{
+		const PxTriangleMesh* mesh = static_cast<const PxTriangleMeshGeometry&>(geometry).triangleMesh;
+		return mesh ? mesh->getNbTriangles() : 0;
+	}
+
+	if (geometry.getType() == PxGeometryType::eTETRAHEDRONMESH)
+	{
+		const PxTetrahedronMesh* mesh = static_cast<const PxTetrahedronMeshGeometry&>(geometry).tetrahedronMesh;
+		return mesh ? mesh->getNbTetrahedrons() : 0;
+	}
+
+	return 0;
+}
+
+// An index past the end of the mesh reads the mesh's element indices out of bounds when the filter
+// pairs are built. Checked here rather than at creation so that it does not depend on whether the
+// mesh happened to be attached yet, and so that swapping in a smaller mesh is caught when the filter
+// is enabled again. The wildcard needs no exemption, since it is substituted into the pairwise
+// indices for an empty group while these are the indices the caller supplied.
+bool NpDeformableElementFilter::checkIndicesInRange() const
+{
+	for (PxU32 i = 0; i < 2; i++)
+	{
+		PxDeformableBody* body = mActor[i]->is<PxDeformableBody>();
+		if (body == NULL)
+			continue;
+
+		const PxU32 count = getElementCount(*body);
+
+		for (PxU32 j = 0; j < mIndices[i].size(); j++)
+		{
+			if (mIndices[i][j] >= count)
+				return false;
+		}
+	}
+
+	return true;
+}
+
+#endif // PX_CHECKED
+
 void NpDeformableElementFilter::addElementFilter()
 {
 	if (!getSceneFromActors() || mEnabled)
 		return;
 
+	PX_CHECK_AND_RETURN(checkIndicesInRange(),
+		"PxDeformableElementFilter: element index is out of range for the deformable body's collision mesh. Element filter is ignored.");
+
 	switch (mInternalAttachmentType)
 	{
-		case NpInternalAttachmentType::eSURFACE_TRI_RIGID_BODY:
-		case NpInternalAttachmentType::eVOLUME_TET_RIGID_BODY:
+		case NpInternalAttachmentType::eSURFACE_TRI_RIGID_ACTOR:
+		case NpInternalAttachmentType::eVOLUME_TET_RIGID_ACTOR:
 		{
 			PxActor* actor0 = mActor[mActorIndex[0]];
 
 			PxRigidActor* actor1 = mActor[mActorIndex[1]]->is<PxRigidActor>();
-			Sc::BodyCore* core1 = getBodyCore(actor1);
+			Sc::RigidCore* core1 = getRigidCore(actor1);
 
-			for (PxU32 i = 0; i < mPairwiseIndices[mActorIndex[0]].size(); i++)
+			PxArray<PxU32>& indices = mPairwiseIndices[mActorIndex[0]];
+
+			if (mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_RIGID_ACTOR)
 			{
-				PxU32 id = mPairwiseIndices[mActorIndex[0]][i];
-
-				if (mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_RIGID_BODY)
-				{
-					getDeformableVolumeCore(actor0)->addTetRigidFilter(core1, id);
-				}
-				else if (mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_RIGID_BODY)
-				{
-					getDeformableSurfaceCore(actor0)->addTriRigidFilter(core1, id);
-				}
+				getDeformableVolumeCore(actor0)->addRigidFilters(core1, indices.begin(), indices.size());
+			}
+			else if (mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_RIGID_ACTOR)
+			{
+				getDeformableSurfaceCore(actor0)->addRigidFilters(core1, indices.begin(), indices.size());
 			}
 
 			break;
@@ -174,26 +296,21 @@ void NpDeformableElementFilter::addElementFilter()
 			PxActor* actor0 = mActor[mActorIndex[0]];
 			PxActor* actor1 = mActor[mActorIndex[1]];
 
+			PxU32* indices0 = mPairwiseIndices[mActorIndex[0]].begin();
+			PxU32* indices1 = mPairwiseIndices[mActorIndex[1]].begin();
+			const PxU32 indicesSize = mPairwiseIndices[mActorIndex[0]].size();
+
 			if (mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_VOLUME_TET)
 			{
-				getDeformableVolumeCore(actor0)->addSoftBodyFilters(*getDeformableVolumeCore(actor1), mPairwiseIndices[mActorIndex[1]].begin(), mPairwiseIndices[mActorIndex[0]].begin(), mPairwiseIndices[mActorIndex[0]].size());
+				getDeformableVolumeCore(actor0)->addVolumeFilters(*getDeformableVolumeCore(actor1), indices1, indices0, indicesSize);
 			}
-			else
+			else if (mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_SURFACE_TRI)
 			{
-				for (PxU32 i = 0; i < mPairwiseIndices[mActorIndex[0]].size(); i++)
-				{
-					PxU32 id0 = mPairwiseIndices[mActorIndex[0]][i];
-					PxU32 id1 = mPairwiseIndices[mActorIndex[1]][i];
-
-					if (mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_SURFACE_TRI)
-					{
-						getDeformableSurfaceCore(actor0)->addClothFilter(getDeformableSurfaceCore(actor1), id1, id0);
-					}
-					else if (mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_SURFACE_TRI)
-					{
-						getDeformableVolumeCore(actor0)->addClothFilter(*getDeformableSurfaceCore(actor1), id1, id0);
-					}
-				}
+				getDeformableSurfaceCore(actor0)->addSurfaceFilters(getDeformableSurfaceCore(actor1), indices1, indices0, indicesSize);
+			}
+			else if (mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_SURFACE_TRI)
+			{
+				getDeformableVolumeCore(actor0)->addSurfaceFilters(*getDeformableSurfaceCore(actor1), indices1, indices0, indicesSize);
 			}
 			break;
 		}
@@ -215,25 +332,22 @@ void NpDeformableElementFilter::removeElementFilter()
 
 	switch (mInternalAttachmentType)
 	{
-		case NpInternalAttachmentType::eSURFACE_TRI_RIGID_BODY:
-		case NpInternalAttachmentType::eVOLUME_TET_RIGID_BODY:
+		case NpInternalAttachmentType::eSURFACE_TRI_RIGID_ACTOR:
+		case NpInternalAttachmentType::eVOLUME_TET_RIGID_ACTOR:
 		{
 			PxActor* actor0 = mActor[mActorIndex[0]];
-			const PxArray<PxU32>& indices = mPairwiseIndices[mActorIndex[0]];
+			PxArray<PxU32>& indices = mPairwiseIndices[mActorIndex[0]];
 
 			PxRigidActor* actor1 = mActor[mActorIndex[1]]->is<PxRigidActor>();
-			Sc::BodyCore* core1 = getBodyCore(actor1);
+			Sc::RigidCore* core1 = getRigidCore(actor1);
 
-			for (PxU32 i = 0; i < indices.size(); i++)
+			if (mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_RIGID_ACTOR)
 			{
-				if (mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_RIGID_BODY)
-				{
-					getDeformableVolumeCore(actor0)->removeTetRigidFilter(core1, indices[i]);
-				}
-				else if (mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_RIGID_BODY)
-				{
-					getDeformableSurfaceCore(actor0)->removeTriRigidFilter(core1, indices[i]);
-				}
+				getDeformableVolumeCore(actor0)->removeRigidFilters(core1, indices.begin(), indices.size());
+			}
+			else if (mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_RIGID_ACTOR)
+			{
+				getDeformableSurfaceCore(actor0)->removeRigidFilters(core1, indices.begin(), indices.size());
 			}
 
 			break;
@@ -246,26 +360,21 @@ void NpDeformableElementFilter::removeElementFilter()
 			PxActor* actor0 = mActor[mActorIndex[0]];
 			PxActor* actor1 = mActor[mActorIndex[1]];
 
+			PxU32* indices0 = mPairwiseIndices[mActorIndex[0]].begin();
+			PxU32* indices1 = mPairwiseIndices[mActorIndex[1]].begin();
+			const PxU32 indicesSize = mPairwiseIndices[mActorIndex[0]].size();
+
 			if (mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_VOLUME_TET)
 			{
-				getDeformableVolumeCore(actor0)->removeSoftBodyFilters(*getDeformableVolumeCore(actor1), mPairwiseIndices[mActorIndex[1]].begin(), mPairwiseIndices[mActorIndex[0]].begin(), mPairwiseIndices[mActorIndex[0]].size());
+				getDeformableVolumeCore(actor0)->removeVolumeFilters(*getDeformableVolumeCore(actor1), indices1, indices0, indicesSize);
 			}
-			else
+			else if (mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_SURFACE_TRI)
 			{
-				for (PxU32 i = 0; i < mPairwiseIndices[mActorIndex[0]].size(); i++)
-				{
-					PxU32 id0 = mPairwiseIndices[mActorIndex[0]][i];
-					PxU32 id1 = mPairwiseIndices[mActorIndex[1]][i];
-
-					if (mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_SURFACE_TRI)
-					{
-						getDeformableSurfaceCore(actor0)->removeClothFilter(getDeformableSurfaceCore(actor1), id1, id0);
-					}
-					else if (mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_SURFACE_TRI)
-					{
-						getDeformableVolumeCore(actor0)->removeClothFilter(*getDeformableSurfaceCore(actor1), id1, id0);
-					}
-				}
+				getDeformableSurfaceCore(actor0)->removeSurfaceFilters(getDeformableSurfaceCore(actor1), indices1, indices0, indicesSize);
+			}
+			else if (mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_SURFACE_TRI)
+			{
+				getDeformableVolumeCore(actor0)->removeSurfaceFilters(*getDeformableSurfaceCore(actor1), indices1, indices0, indicesSize);
 			}
 			break;
 		}
@@ -299,6 +408,13 @@ NpScene* NpDeformableElementFilter::getSceneFromActors()
 	return NULL;
 }
 
+// A connector identifies the filter rather than the slot, so a filter referencing one actor in both
+// slots registers a single connector, through slot 0.
+static PX_FORCE_INLINE bool ownsConnector(PxActor* const (&actor)[2], PxU32 slot)
+{
+	return actor[slot] != NULL && (slot == 0 || actor[1] != actor[0]);
+}
+
 NpDeformableElementFilter::NpDeformableElementFilter(const PxDeformableElementFilterData& data, const ElementFilterInfo& info)
 	: PxDeformableElementFilter(PxConcreteType::eDEFORMABLE_ELEMENT_FILTER, PxBaseFlag::eOWNS_MEMORY | PxBaseFlag::eIS_RELEASABLE), NpBase(NpType::eDEFORMABLE_ELEMENT_FILTER)
 {
@@ -308,8 +424,8 @@ NpDeformableElementFilter::NpDeformableElementFilter(const PxDeformableElementFi
 	// Expand groups to pairwise elements
 	switch (info.internalAttachmentType)
 	{
-		case NpInternalAttachmentType::eSURFACE_TRI_RIGID_BODY:
-		case NpInternalAttachmentType::eVOLUME_TET_RIGID_BODY:
+		case NpInternalAttachmentType::eSURFACE_TRI_RIGID_ACTOR:
+		case NpInternalAttachmentType::eVOLUME_TET_RIGID_ACTOR:
 		case NpInternalAttachmentType::eSURFACE_TRI_SURFACE_TRI:
 		case NpInternalAttachmentType::eVOLUME_TET_VOLUME_TET:
 		case NpInternalAttachmentType::eVOLUME_TET_SURFACE_TRI:
@@ -317,13 +433,29 @@ NpDeformableElementFilter::NpDeformableElementFilter(const PxDeformableElementFi
 			PxU32 elementStartIndex0 = 0;
 			PxU32 elementStartIndex1 = 0;
 
-			for (PxU32 i = 0; i < data.groupElementCounts[info.actorIndex[0]].count; i++)
+			// An actor with no groups is filtered as a whole, so the other actor's groups set the count and
+			// every group of it pairs with the wildcard.
+			const PxU32 nbGroups = PxMax(data.groupElementCounts[info.actorIndex[0]].count,
+				data.groupElementCounts[info.actorIndex[1]].count);
+
+			for (PxU32 i = 0; i < nbGroups; i++)
 			{
-				PxU32 elementCount0 = data.groupElementCounts[info.actorIndex[0]].at(i);
+				PxU32 elementCount0 = 0;
 				PxU32 elementCount1 = 0;
+
+				if (data.groupElementCounts[info.actorIndex[0]].count != 0)
+					elementCount0 = data.groupElementCounts[info.actorIndex[0]].at(i);
 
 				if (data.groupElementCounts[info.actorIndex[1]].count != 0)
 					elementCount1 = data.groupElementCounts[info.actorIndex[1]].at(i);
+
+				// The element indices are not validated against the counts, and parseElementFilter's checks
+				// compile out in release, so a count reaching past its index array is clamped to what is
+				// there. The group falls back to the wildcard instead of reading out of bounds.
+				elementCount0 = PxMin(elementCount0,
+					getRemainingElements(data.groupElementIndices[info.actorIndex[0]], elementStartIndex0));
+				elementCount1 = PxMin(elementCount1,
+					getRemainingElements(data.groupElementIndices[info.actorIndex[1]], elementStartIndex1));
 
 				bool isElementCountZero0 = (elementCount0 == 0);
 				bool isElementCountZero1 = (elementCount1 == 0);
@@ -380,7 +512,7 @@ NpDeformableElementFilter::NpDeformableElementFilter(const PxDeformableElementFi
 		mActorIndex[i] = info.actorIndex[i];
 
 		// Add connector
-		if (mActor[i])
+		if (ownsConnector(mActor, i))
 			NpActor::getFromPxActor(*mActor[i]).addConnector(NpConnectorType::eElementFilter, this, "PxDeformableElementFilter: Element filter already added");
 	}
 
@@ -410,7 +542,7 @@ void NpDeformableElementFilter::release()
 	for (PxU32 i = 0; i < 2; i++)
 	{
 		// Remove connector
-		if (mActor[i])
+		if (ownsConnector(mActor, i))
 		{
 			PxDeformableElementFilter* buffer[1];
 

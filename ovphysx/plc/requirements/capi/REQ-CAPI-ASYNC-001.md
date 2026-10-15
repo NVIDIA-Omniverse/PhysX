@@ -31,8 +31,8 @@ and the simulation-operation wait behavior.
   readiness check without waiting for readiness. If the operation is pending,
   it returns `OVPHYSX_API_TIMEOUT`, reports the lowest pending operation, and
   leaves that operation unconsumed.
-- AC-4: A simulation-operation wait with a finite positive timeout uses the
-  generic tracked-operation path and waits for readiness only up to that budget.
+- AC-4: A simulation-operation wait with a finite positive timeout waits for
+  simulation readiness only up to that budget.
   If the budget expires while the operation remains pending, it returns
   `OVPHYSX_API_TIMEOUT`, reports the lowest pending operation, and leaves that
   operation unconsumed. Readiness observed by the final boundary check proceeds
@@ -40,8 +40,8 @@ and the simulation-operation wait behavior.
   finalization extends total call duration beyond the readiness budget.
 - AC-5: A simulation-operation wait with `OVPHYSX_TIMEOUT_INFINITE` treats the
   sentinel literally as unbounded and returns only after the operation reaches
-  a terminal state. An eligible single simulation operation may use the direct
-  blocking-sync fast path only for this infinite-wait case.
+  a terminal state. The pending simulation uses blocking
+  `fetchResults` directly only for this infinite-wait case.
 
 ## Test References
 

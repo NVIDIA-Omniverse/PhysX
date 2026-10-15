@@ -1,6 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * @implements REQ-CAPI-LOG-001
+ * @covers AC-7
+ */
+
 // SDK-side dynamic loader for the internal sidecar.
 //
 // Resolves the sidecar shared object (libovphysx_internal.so / ovphysx_internal.dll)
@@ -36,6 +41,14 @@
 // The sidecar header mirrors OvxCommitFailure so the C layer can read the out-param without
 // depending on ovruntime. This is the one translation unit that sees both, so it is where the copy
 // is held to the original.
+static_assert(static_cast<uint32_t>(omni::physx::kOvxReadOmissionUnsupportedAttribute) ==
+                  OVPHYSX_READ_OMISSION_UNSUPPORTED_ATTRIBUTE,
+              "Read omission attribute values must agree across the sidecar boundary");
+static_assert(static_cast<uint32_t>(omni::physx::kOvxReadOmissionUnsupportedConfiguration) ==
+                  OVPHYSX_READ_OMISSION_UNSUPPORTED_CONFIGURATION,
+              "Read omission configuration values must agree across the sidecar boundary");
+static_assert(static_cast<uint32_t>(omni::physx::kOvxReadOmissionNotReady) == OVPHYSX_READ_OMISSION_NOT_READY,
+              "Read omission readiness values must agree across the sidecar boundary");
 static_assert(static_cast<int32_t>(omni::physx::kOvxCommitFailureNotLive) == kOvphysxCommitFailureNotLive,
               "OvxCommitFailure::NotLive and its sidecar mirror disagree");
 static_assert(static_cast<int32_t>(omni::physx::kOvxCommitFailurePublish) == kOvphysxCommitFailurePublish,
@@ -84,6 +97,34 @@ void logSidecarSource(const char* reason)
 }
 
 } // namespace
+
+bool refreshInternalSidecarRuntime()
+{
+    std::lock_guard<std::mutex> lock(s_sidecarLoadMutex);
+    const SidecarHandle handle = s_sidecarHandle.load(std::memory_order_acquire);
+    if (!handle)
+        return true;
+
+    using SetFrameworkFn = void (*)(carb::Framework*);
+    using SetBuiltInsFn = void (*)(omni::core::ITypeFactory*, omni::log::ILog*, omni::structuredlog::IStructuredLog*);
+    const SetFrameworkFn setFramework =
+        reinterpret_cast<SetFrameworkFn>(doSidecarSym(handle, "ovphysx_internal_set_framework"));
+    const SetBuiltInsFn setBuiltIns =
+        reinterpret_cast<SetBuiltInsFn>(doSidecarSym(handle, "ovphysx_internal_set_omni_builtins"));
+    carb::Framework* framework = carb::getFramework();
+    omni::core::ITypeFactory* typeFactory =
+        static_cast<omni::core::ITypeFactory*>(omniGetBuiltInWithoutAcquire(OmniBuiltIn::eITypeFactory));
+    if (!setFramework || !setBuiltIns || !framework || !typeFactory)
+    {
+        CARB_LOG_ERROR("Internal sidecar: cannot refresh runtime context after framework bootstrap");
+        return false;
+    }
+    setFramework(framework);
+    setBuiltIns(typeFactory,
+        static_cast<omni::log::ILog*>(omniGetBuiltInWithoutAcquire(OmniBuiltIn::eILog)),
+        static_cast<omni::structuredlog::IStructuredLog*>(omniGetBuiltInWithoutAcquire(OmniBuiltIn::eIStructuredLog)));
+    return true;
+}
 
 bool loadInternalSidecar() {
     std::lock_guard<std::mutex> lock(s_sidecarLoadMutex);
@@ -168,9 +209,9 @@ bool loadInternalSidecar() {
         s_sidecarHandle.store(nullptr, std::memory_order_release);
         // Clear every resolved pointer so a partial-load failure cannot leave
         // stale function pointers visible to wrappers on the next call.
-        g_sidecarGetPhysXPtr.store(nullptr, std::memory_order_release);
-        g_sidecarUpdateKinematic.store(nullptr, std::memory_order_release);
         g_sidecarOutputQuery.store(nullptr, std::memory_order_release);
+        g_sidecarOutputQuerySelected.store(nullptr, std::memory_order_release);
+        g_sidecarOutputQueryContacts.store(nullptr, std::memory_order_release);
         g_sidecarReadOutputs.store(nullptr, std::memory_order_release);
         g_sidecarFetchReadNext.store(nullptr, std::memory_order_release);
         g_sidecarReleaseRead.store(nullptr, std::memory_order_release);
@@ -190,6 +231,8 @@ bool loadInternalSidecar() {
         g_sidecarGetDebugPoints.store(nullptr, std::memory_order_release);
         g_sidecarGetDebugLines.store(nullptr, std::memory_order_release);
         g_sidecarGetDebugTriangles.store(nullptr, std::memory_order_release);
+        g_sidecarDebugRenderApply.store(nullptr, std::memory_order_release);
+        g_sidecarDebugRenderCopy.store(nullptr, std::memory_order_release);
         s_sidecarLoadedPath.clear();  // re-opens the loaded gate at the top of loadInternalSidecar()
     };
 
@@ -273,14 +316,13 @@ bool loadInternalSidecar() {
     // OvxPhysicsRead.o into libovphysx and resolves it internally. The sidecar has no
     // OvruntimePhysX of its own and the owner's symbols are hidden, so without this
     // injection ovphysx_query() would silently fail to open every output read.
-    using SetOvxReadAccessorsFn = void (*)(void*, void*, void*, void*, void*, void*, void*, void*);
+    using SetOvxReadAccessorsFn = void (*)(void*, void*, void*, void*, void*, void*, void*);
     SetOvxReadAccessorsFn setOvxReadAccessors =
         (SetOvxReadAccessorsFn)doSidecarSym(handle, "ovphysx_internal_set_ovx_read_accessors");
     if (setOvxReadAccessors)
     {
         setOvxReadAccessors(reinterpret_cast<void*>(&omni::physx::ovxQuery),
-                            reinterpret_cast<void*>(&omni::physx::ovxFetchQueryResult),
-                            reinterpret_cast<void*>(&omni::physx::ovxQueryDictionary),
+                            reinterpret_cast<void*>(&omni::physx::ovxQuerySelected),
                             reinterpret_cast<void*>(&omni::physx::ovxReadAttributes),
                             reinterpret_cast<void*>(&omni::physx::ovxFetchReadNext),
                             reinterpret_cast<void*>(&omni::physx::ovxReleaseGroup),
@@ -293,6 +335,20 @@ bool loadInternalSidecar() {
                       "ovstage-native output read (ovphysx_query) will be unavailable.");
     }
 
+    // The contact query (ADR-0044), injected by its own setter so the read setter's ABI is unchanged.
+    using SetOvxContactAccessorsFn = void (*)(void*);
+    SetOvxContactAccessorsFn setOvxContactAccessors =
+        (SetOvxContactAccessorsFn)doSidecarSym(handle, "ovphysx_internal_set_ovx_contact_accessors");
+    if (setOvxContactAccessors)
+    {
+        setOvxContactAccessors(reinterpret_cast<void*>(&omni::physx::ovxQueryContacts));
+    }
+    else
+    {
+        CARB_LOG_WARN("Internal sidecar: ovphysx_internal_set_ovx_contact_accessors not found; "
+                      "the contact query (ovphysx_query_contacts) will be unavailable.");
+    }
+
     // The write half (ADR-0012), injected the same way and for the same reason: the entry points
     // live in the owner's statically-linked OvruntimePhysX and the sidecar has none of its own.
     using SetOvxWriteAccessorsFn = void (*)(void*, void*, void*, void*);
@@ -300,7 +356,7 @@ bool loadInternalSidecar() {
         (SetOvxWriteAccessorsFn)doSidecarSym(handle, "ovphysx_internal_set_ovx_write_accessors");
     if (setOvxWriteAccessors)
     {
-        setOvxWriteAccessors(reinterpret_cast<void*>(&omni::physx::ovxWriteAttribute),
+        setOvxWriteAccessors(reinterpret_cast<void*>(&omni::physx::ovxWriteAttributes),
                              reinterpret_cast<void*>(&omni::physx::ovxFetchWriteNext),
                              reinterpret_cast<void*>(&omni::physx::ovxCommitGroup),
                              reinterpret_cast<void*>(&omni::physx::ovxReleaseWrite));
@@ -311,49 +367,30 @@ bool loadInternalSidecar() {
                       "the app-to-physics write (ovphysx_write) will be unavailable.");
     }
 
-    auto getPhysXPtr = (OvphysxSidecarGetPhysXPtrFn)doSidecarSym(handle, "ovphysx_internal_get_physx_ptr");
-    if (!getPhysXPtr) {
-        CARB_LOG_WARN("Internal sidecar loaded but 'ovphysx_internal_get_physx_ptr' not found - "
-                      "PhysX object pointer lookup will be unavailable");
-    }
-    g_sidecarGetPhysXPtr.store(getPhysXPtr, std::memory_order_release);
-
-    auto updateKinematic = (OvphysxSidecarUpdateKinematicFn)doSidecarSym(handle, "ovphysx_internal_update_kinematic");
-    if (!updateKinematic) {
-        // Required: ovphysx_articulation_update_kinematic is a public API
-        // backed by this symbol. A warn-and-continue policy would mark the
-        // sidecar as loaded but defer the actual failure to the first user
-        // call. Treat as a fatal load error so callers see the sidecar as
-        // not-loaded and can react / report cleanly.
-        CARB_LOG_ERROR("Internal sidecar loaded but 'ovphysx_internal_update_kinematic' not found - "
-                       "ovphysx_articulation_update_kinematic cannot work. Sidecar may be outdated.");
-        unload();
-        return false;
-    }
-    g_sidecarUpdateKinematic.store(updateKinematic, std::memory_order_release);
-
     // Physics output read (ADR-0007). Optional: warn-and-continue so an older
     // sidecar still loads. The public read API reports "not loaded" if missing.
     {
         auto outputQuery = (OvphysxSidecarOutputQueryFn)doSidecarSym(handle, "ovphysx_internal_output_query");
-        auto fetchQueryResult = (OvphysxSidecarFetchQueryResultFn)doSidecarSym(handle, "ovphysx_internal_fetch_query_result");
-        auto queryDictionary = (OvphysxSidecarQueryDictionaryFn)doSidecarSym(handle, "ovphysx_internal_query_dictionary");
+        auto outputQuerySelected =
+            (OvphysxSidecarOutputQuerySelectedFn)doSidecarSym(handle, "ovphysx_internal_output_query_selected");
+        auto outputQueryContacts =
+            (OvphysxSidecarOutputQueryContactsFn)doSidecarSym(handle, "ovphysx_internal_output_query_contacts");
         auto readOutputs = (OvphysxSidecarReadOutputsFn)doSidecarSym(handle, "ovphysx_internal_read_outputs");
         auto fetchReadNext = (OvphysxSidecarFetchReadNextFn)doSidecarSym(handle, "ovphysx_internal_fetch_read_next");
         auto releaseGroup = (OvphysxSidecarReleaseGroupFn)doSidecarSym(handle, "ovphysx_internal_release_group");
         auto releaseRead = (OvphysxSidecarReleaseReadFn)doSidecarSym(handle, "ovphysx_internal_release_read");
         auto releaseQuery = (OvphysxSidecarReleaseQueryFn)doSidecarSym(handle, "ovphysx_internal_release_query");
-        if (!outputQuery || !fetchQueryResult || !queryDictionary || !readOutputs || !fetchReadNext || !releaseGroup ||
+        if (!outputQuery || !outputQuerySelected || !readOutputs || !fetchReadNext || !releaseGroup ||
             !releaseRead || !releaseQuery)
         {
             CARB_LOG_WARN("Internal sidecar loaded but the physics output read entry points "
-                          "(ovphysx_internal_output_query/fetch_query_result/query_dictionary/read_outputs/"
+                          "(ovphysx_internal_output_query/output_query_selected/read_outputs/"
                           "fetch_read_next/release_*) were not all found - ovphysx_query/ovphysx_read will be "
                           "unavailable. Sidecar may be outdated.");
         }
         g_sidecarOutputQuery.store(outputQuery, std::memory_order_release);
-        g_sidecarFetchQueryResult.store(fetchQueryResult, std::memory_order_release);
-        g_sidecarQueryDictionary.store(queryDictionary, std::memory_order_release);
+        g_sidecarOutputQuerySelected.store(outputQuerySelected, std::memory_order_release);
+        g_sidecarOutputQueryContacts.store(outputQueryContacts, std::memory_order_release);
         g_sidecarReadOutputs.store(readOutputs, std::memory_order_release);
         g_sidecarFetchReadNext.store(fetchReadNext, std::memory_order_release);
         g_sidecarReleaseGroup.store(releaseGroup, std::memory_order_release);
@@ -392,7 +429,7 @@ bool loadInternalSidecar() {
 
     // Debug-visualization bridge symbols. Warn-and-continue (non-fatal): an older
     // sidecar without them simply leaves debug viz unavailable (the main-lib calls
-    // no-op to SUCCESS), matching the get_physx_ptr / object-change policy.
+    // no-op to SUCCESS), matching the object-change policy.
     auto enableViz = (OvphysxSidecarEnableVisualizationFn)doSidecarSym(handle, "ovphysx_internal_enable_visualization");
     if (!enableViz) {
         CARB_LOG_WARN("Internal sidecar loaded but 'ovphysx_internal_enable_visualization' not found - "
@@ -415,6 +452,10 @@ bool loadInternalSidecar() {
         (OvphysxSidecarGetDebugBufferFn)doSidecarSym(handle, "ovphysx_internal_get_debug_lines"), std::memory_order_release);
     g_sidecarGetDebugTriangles.store(
         (OvphysxSidecarGetDebugBufferFn)doSidecarSym(handle, "ovphysx_internal_get_debug_triangles"), std::memory_order_release);
+    g_sidecarDebugRenderApply.store(
+        (OvphysxSidecarDebugRenderApplyFn)doSidecarSym(handle, "ovphysx_internal_debug_render_apply"), std::memory_order_release);
+    g_sidecarDebugRenderCopy.store(
+        (OvphysxSidecarDebugRenderCopyFn)doSidecarSym(handle, "ovphysx_internal_debug_render_copy"), std::memory_order_release);
 
     // Publish the handle + loaded-path gate only now that the full handshake
     // succeeded. Until this point, resolveSidecarSymbol() returns nullptr

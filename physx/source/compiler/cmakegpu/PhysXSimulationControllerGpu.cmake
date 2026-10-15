@@ -24,7 +24,6 @@ SET(PHYXGPU_SIMCONTROLLER_HEADERS
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgArticulationTendon.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgSoftBody.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgSoftBodyBuffer.h
-	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgDeformableContactInfo.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgDeformableConstraints.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgFEMCloth.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgFEMClothBuffer.h
@@ -36,6 +35,8 @@ SET(PHYXGPU_SIMCONTROLLER_HEADERS
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgShapeSimManager.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgSimulationController.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgAttachmentManager.h
+	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgDeformableContactWriters.h
+	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgDeformableFilterManager.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgSimulationCoreDesc.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgSimulationCoreKernelIndices.h
 	${PHYSX_SOURCE_DIR}/gpusimulationcontroller/include/PxgParticleSystemCoreKernelIndices.h
@@ -110,6 +111,8 @@ SET(PHYXGPU_SIMCONTROLLER_SOURCE
 	${GPUSIMCTRL_SOURCE_DIR}/PxgSimulationCore.cpp
 	${GPUSIMCTRL_SOURCE_DIR}/PxgJointManager.cpp
 	${GPUSIMCTRL_SOURCE_DIR}/PxgShapeSimManager.cpp
+	${GPUSIMCTRL_SOURCE_DIR}/PxgAttachmentManager.cpp
+	${GPUSIMCTRL_SOURCE_DIR}/PxgDeformableFilterManager.cpp
 	${GPUSIMCTRL_SOURCE_DIR}/PxgSimulationController.cpp
 	${GPUSIMCTRL_SOURCE_DIR}/PxgParticleSystemCore.cpp
 	${GPUSIMCTRL_SOURCE_DIR}/PxgPBDParticleSystemCore.cpp

@@ -34,6 +34,9 @@
  *
  * @implements REQ-INPUT-DEVICE-001
  * @covers AC-1 AC-2
+ *
+ * @implements REQ-TENSOR-VIEW-001
+ * @covers AC-7
  */
 
 #include "tensors/gpu/CudaKernels.h"
@@ -1136,11 +1139,11 @@ bool GpuArticulationView::getGeneralizedForceColumnOvStage(const TensorDesc* dst
     }
 
     const char* label = gravity ? "articulation gravity force" : "articulation coriolis force";
+    const InverseDynamicsColumn dc = gravity ? InverseDynamicsColumn::eGravityForce : InverseDynamicsColumn::eCoriolisForce;
     PxU32 width = 0;
     if (!checkTensorDevice(*dstTensor, mDevice, label, __FUNCTION__) ||
         !checkTensorFloat32(*dstTensor, label, __FUNCTION__) ||
-        !checkInverseDynamicsColumn(*dstTensor, rows, count, InverseDynamicsColumn::eGeneralizedForce, width, label,
-                                    __FUNCTION__) ||
+        !checkInverseDynamicsColumn(*dstTensor, rows, count, dc, width, label, __FUNCTION__) ||
         !checkTensorSizeExact(*dstTensor, count * width, label, __FUNCTION__) || count == 0)
     {
         return false;
@@ -3292,6 +3295,7 @@ bool GpuArticulationView::getGravityCompensationForces(const TensorDesc* dstTens
 
 bool GpuArticulationView::getLinkIncomingJointForce(const TensorDesc* dstTensor) const
 {
+    CHECK_VALID_DATA_SIM_RETURN(mGpuSimData, mSim, false);
     GPUAPI_CHECK_READY(mGpuSimData, false);
 
     if (!dstTensor || !dstTensor->data)
@@ -3316,7 +3320,7 @@ bool GpuArticulationView::getLinkIncomingJointForce(const TensorDesc* dstTensor)
     // returns zeros until the first simulate() populates the buffer.
     if (SimulationBackend* backend = GetSimulationBackend())
     {
-        if (backend->getStepCount() == 0)
+        if (backend->getStepCount(mGpuSimData->mAttachHandle) == 0)
         {
             if (!CHECK_CUDA(cudaMemset(dstTensor->data, 0,
                                        getCount() * mMaxLinks * 6u * sizeof(float))))
@@ -3399,7 +3403,7 @@ bool GpuArticulationView::getDofProjectedJointForces(const TensorDesc* dstTensor
     // zeros until the first simulate() populates the buffer.
     if (SimulationBackend* backend = GetSimulationBackend())
     {
-        if (backend->getStepCount() == 0)
+        if (backend->getStepCount(mGpuSimData->mAttachHandle) == 0)
         {
             if (!CHECK_CUDA(cudaMemset(dstTensor->data, 0,
                                        getCount() * mMaxDofs * sizeof(float))))
@@ -4267,7 +4271,6 @@ GPU_ARTI_MASKED_SETTER(setDofStiffnesses, )
 GPU_ARTI_MASKED_SETTER(setDofDampings, )
 GPU_ARTI_MASKED_SETTER(setDofMaxForces, )
 GPU_ARTI_MASKED_SETTER(setDofDriveModelProperties, )
-GPU_ARTI_MASKED_SETTER(setDofFrictionCoefficients, )
 GPU_ARTI_MASKED_SETTER(setDofFrictionProperties, )
 GPU_ARTI_MASKED_SETTER(setDofMaxVelocities, )
 GPU_ARTI_MASKED_SETTER(setDofArmatures, )

@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-IO-001
+// @covers AC-1 AC-3
+
 /**
  * @implements REQ-MATH-001
  * @covers AC-9
@@ -100,7 +103,10 @@ public:
      *
      * @return : Returns the number of cooking tasks still active/pending
      */
+    // Process-wide drain for shutdown and diagnostics.
     virtual uint32_t pump(void) = 0;
+    // Simulation advances only its owning attachment's cooking queue.
+    virtual uint32_t pump(omni::physx::usdparser::AttachedStage& owner) = 0;
 
     /**
      * This method returns the PhysX PxConvexMesh associated with this USD prim if available.
@@ -308,19 +314,6 @@ public:
     virtual uint32_t cancelAllTasks(void) = 0;
 
     /**
-     * This method is used to indicate to the cooking interface to ignore USD change events.
-     * Normally CookingDataAsync listens for collision related attribute changes to know if
-     * an asset needs to be recooked due to different property values. However, sometimes
-     * property changes are being done by omni.physx itself, rather than because a user
-     * made a change via the editor. Calling this method signal to the CookingDataAsnc
-     * interface whether it should, or should not, pay attention to notice handler change events.
-     *
-     * @param blocked : If true then the notice handler should ignore property changes. If false, the default, it will
-     * process changes.
-     */
-    virtual void blockUSDUpdate(bool blocked) = 0;
-
-    /**
      * Returns the total number of cooking tasks which have been performed since the
      * start of the application. This is used by debug visualization (omni.physx.ui) to
      * know whether or not it should refresh the debug visualization of a primitive because
@@ -411,7 +404,10 @@ public:
 
     virtual void resetLocalMeshCacheContents() = 0;
 
+    // Source-free diagnostic requests use the process context.
     virtual omni::physx::PhysxCookingAsyncContext getCookingAsyncContext() = 0;
+    virtual omni::physx::PhysxCookingAsyncContext getCookingAsyncContext(
+        const omni::physx::usdparser::AttachedStage& owner) = 0;
 
     virtual omni::physx::PhysxCookingStatistics getCookingStatistics() const = 0;
 protected:

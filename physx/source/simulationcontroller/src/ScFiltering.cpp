@@ -136,7 +136,9 @@ static PX_INLINE PxPairFlags checkRbPairFlags(	const ShapeSimBase& s0, const Sha
 
 #if PX_CHECKED
 	// we want to avoid to run contact generation for pairs that should not get resolved or have no contact/trigger reports
-	if (!(PxU32(pairFlags) & (PxPairFlag::eSOLVE_CONTACT | ShapeInteraction::CONTACT_REPORT_EVENTS)))
+	// note: when the Direct GPU API is used, report callbacks are not supported but contact data can be read from the device
+	//       directly, thus there should be no warning since it is legitimate to get contact information that way.
+	if ((!isDirectGPU) && (!(PxU32(pairFlags) & (PxPairFlag::eSOLVE_CONTACT | ShapeInteraction::CONTACT_REPORT_EVENTS))))
 		outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "Filtering: Pair with no contact/trigger reports detected, nor is PxPairFlag::eSOLVE_CONTACT set. It is recommended to suppress/kill such pairs for performance reasons.");
 	else if(!(pairFlags & (PxPairFlag::eDETECT_DISCRETE_CONTACT | PxPairFlag::eDETECT_CCD_CONTACT)))
 		outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "Filtering: Pair did not request either eDETECT_DISCRETE_CONTACT or eDETECT_CCD_CONTACT. It is recommended to suppress/kill such pairs for performance reasons.");

@@ -29,7 +29,7 @@ every supported Python version.
   link.
 - Run with `--require-rendered-docs`, which CI sets through
   `OVPHYSX_REQUIRE_HTML_DOCS`, it additionally checks the rendered `docs/html`
-  tree: its `index.html` and the three downloadable C headers.
+  tree: its `index.html` and the downloadable C headers.
 
 ## Then
 
@@ -39,6 +39,9 @@ every supported Python version.
   tests or escapes its package root, and every other inline artifact-scoped
   relative link resolves. C/C++ header links tracked by NVBug 6560076 remain
   explicitly outside the wheel check (REQ AC-2).
+- Link-like text inside backtick or tilde code fences is ignored; real links
+  after the matching closing fence are checked. Unit tests include C++ lambda
+  syntax and mismatched or shorter closing fences (REQ AC-2).
 - Under `--require-rendered-docs`, an artifact missing the rendered tree, its
   index page, or any downloadable C header is rejected; without the flag such an
   artifact still passes, so a local build that never rendered the documentation

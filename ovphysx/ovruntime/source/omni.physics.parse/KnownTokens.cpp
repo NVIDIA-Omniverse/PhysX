@@ -148,11 +148,6 @@ void KnownTokens::intern(const IPhysicsSource& source)
     physicsBreakForce = source.internToken("physics:breakForce");
     physicsBreakTorque = source.internToken("physics:breakTorque");
 
-    // PhysxJointAPI extensions
-    physxJointAPI = source.internToken("PhysxJointAPI");
-    physxJointJointFriction = source.internToken("physxJoint:jointFriction");
-    physxJointArmature = source.internToken("physxJoint:armature");
-    physxJointMaxJointVelocity = source.internToken("physxJoint:maxJointVelocity");
     newtonVelocityLimit = source.internToken("newton:velocityLimit");
     newtonArmature = source.internToken("newton:armature");
     newtonFriction = source.internToken("newton:friction");
@@ -760,11 +755,6 @@ void KnownTokens::intern(const IPhysicsSource& source)
     physicsDriveAPIRotX = source.internToken("PhysicsDriveAPI:rotX");
     physicsDriveAPIRotY = source.internToken("PhysicsDriveAPI:rotY");
     physicsDriveAPIRotZ = source.internToken("PhysicsDriveAPI:rotZ");
-    driveMaxForceAngular = source.internToken("drive:angular:physics:maxForce");
-    driveMaxForceLinear = source.internToken("drive:linear:physics:maxForce");
-    driveMaxForceRotX = source.internToken("drive:rotX:physics:maxForce");
-    driveMaxForceRotY = source.internToken("drive:rotY:physics:maxForce");
-    driveMaxForceRotZ = source.internToken("drive:rotZ:physics:maxForce");
 
     // Non-D6 joint gate tokens (revolute/prismatic/spherical/distance) so the per-joint
     // hasSchema gate reads a cached TokenId; D6 per-axis instances intern at runtime.

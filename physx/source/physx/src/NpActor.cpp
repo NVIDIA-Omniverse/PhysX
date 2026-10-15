@@ -29,6 +29,14 @@ using namespace physx;
 
 ///////////////////////////////////////////////////////////////////////////////
 
+const Sc::RigidCore* physx::getRigidCore(const PxRigidActor* actor)
+{
+	if(actor && actor->getConcreteType() == PxConcreteType::eRIGID_STATIC)
+		return &static_cast<const NpRigidStatic*>(actor)->getCore();
+
+	return getBodyCore(actor);
+}
+
 const Sc::BodyCore* physx::getBodyCore(const PxRigidActor* actor)
 {
 	const Sc::BodyCore* core = NULL;

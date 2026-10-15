@@ -51,16 +51,19 @@ The cooked-collider cache location is **application-provided**.
 2. ovphysx reads **no environment variable** to select a cache location, and persists to no
    location of its own choosing.
 3. When the app configures nothing, ovphysx cooks to a **process-private** directory under
-   the OS temp dir and removes it at process exit. Nothing survives the process, so the
-   "nothing is persisted" contract holds; the directory exists only because the datastore
-   requires a valid writable path. The OS temp root itself follows the platform
+   the OS temp dir. Linux SDK shutdown stops the owned datastore and removes the
+   directory; Windows retains the datastore until process exit and removal is
+   best-effort. This is temporary working storage, not a persistent application cache;
+   the directory exists because the datastore requires a valid writable path. The OS temp root itself follows the platform
    `TMPDIR`/`TMP`/`TEMP` convention — that is temp-file placement, not a persistent cache
    location, and is the one exception to (2).
 4. The same process-private fallback is used when a configured directory cannot be created
    or written, so an unusable configuration degrades quietly instead of being handed back to
    the datastore to fail on.
-5. The configured directory is applied at **first runtime bootstrap** in a process. The
-   datastore is built once, so a later `PhysXConfig` in the same process does not move it.
+5. The configured directory is applied at **first runtime bootstrap per framework**.
+   Later instances sharing that datastore cannot move it. Complete Linux SDK shutdown
+   releases the owned framework, so the next lifecycle can use a new directory.
+   Windows retains its original datastore and directory for the process lifetime.
 
 **Out of scope:** Hub / Nucleus / GRPC datastores (ovphysx is local and in-process only);
 cache eviction policy, which is `carb.datastore`'s bounded disk GC; and any persistent
@@ -83,10 +86,13 @@ default location (see Open questions).
 
 **Costs**
 - An app that configures nothing re-cooks every run. Deliberate — persistence is opt-in.
-- The fallback directory needs a lifecycle: it is process-wide, so it is removed only at
-  process exit, never from a per-instance `CarboniteLoader::shutdown()`.
-- Removal is best-effort on Windows, where the datastore may still hold files open; the OS
-  reclaims the temp tree instead.
+- The fallback directory follows the datastore lifetime, never an individual loader.
+  Linux SDK shutdown releases the owned framework and stops its writers before removal.
+  A native exit backstop handles hosts that destroy instances but omit SDK shutdown.
+- Windows retains the framework until exit. Its release hook attempts removal after
+  datastore shutdown, but other terminating exit hooks can prevent that attempt.
+  Leftovers require the host's temp-directory cleanup; immediate OS reclamation is
+  not guaranteed. Foreign-host frameworks remain the host's teardown responsibility.
 
 **Lifecycle**
 - Revisit if UJITSO gains a memory-only datastore mode, which would remove the need for a

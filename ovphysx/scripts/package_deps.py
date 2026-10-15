@@ -9,7 +9,6 @@ Sources (kitless, no extsPhysics/exts trees):
   - ovruntime _install/<cfg>/bin/     : PhysX runtime .plugin.so + PhysXGpu
   - carb_sdk_static/_build/<cfg>/      : no-libcarb Carbonite plugin shims
   - ovruntime_deps_<config>/.../plugins/ : datastore, UJITSO, blobkey, omni.usd
-  - usd_ext_physics/                  : codeless PhysX schema definitions (data only)
   - exact OVSTAGE_DIR/bin/plugins/    : validates the application-owned USD resolver
 
 No OpenUSD library, USD plugin registry, or USD dependency closure (TBB,
@@ -24,7 +23,6 @@ Creates:
       +-- plugins/           <- ALL .so files here (flat!)
       |   +-- libomni.physx.*.so
       |   +-- bin/deps/      <- (currently unused, reserved)
-      +-- schemas/physx/     <- codeless PhysX USD schemas (root plugInfo.json + <Module>/resources/)
 
 Usage:
     python scripts/package_deps.py --build-dir=_build --install-dir=_install \
@@ -228,24 +226,6 @@ def _resolve_ovstage_plugins_dir(ovstage_runtime_dir: Path) -> Path:
     return plugins_dir
 
 
-def _export_codeless_schemas(schema_share_dir: Path, out_dir: Path) -> list[str]:
-    """Stage the codeless PhysX schema tree. See scripts/export_codeless_schema.py."""
-    import importlib.util
-
-    script_dir = Path(__file__).resolve().parent
-    spec = importlib.util.spec_from_file_location("export_codeless_schema", script_dir / "export_codeless_schema.py")
-    if spec is None or spec.loader is None:  # pragma: no cover - defensive
-        raise RuntimeError("Could not load export_codeless_schema.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    exported = module.export_codeless_schemas(schema_share_dir, out_dir)
-    if not exported:
-        raise RuntimeError(
-            f"No PhysX schema modules found under {schema_share_dir}; the codeless schema payload would be empty."
-        )
-    return exported
-
-
 def merge_ovstage_notices(
     ovstage_dir: Path,
     ovstage_runtime_dir: Path,
@@ -331,84 +311,6 @@ def merge_ovstage_notices(
             temp_archive.unlink()
 
     return [archive_name for _, archive_name in payloads]
-
-
-def _load_schema_verifier():
-    try:
-        from verify_schema_package import verify_schema_package
-
-        return verify_schema_package
-    except ImportError:
-        # Allow importing package_deps.py from contexts where the scripts dir
-        # is not on sys.path by loading the verifier directly.
-        import importlib.util
-
-        script_dir = Path(__file__).resolve().parent
-        spec = importlib.util.spec_from_file_location("verify_schema_package", script_dir / "verify_schema_package.py")
-        if spec is None or spec.loader is None:  # pragma: no cover - defensive
-            raise RuntimeError("Could not load verify_schema_package.py")
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module.verify_schema_package
-
-
-def _verify_codeless_schema_package(schema_dir: Path) -> list[str]:
-    verify_schema_package = _load_schema_verifier()
-    return verify_schema_package(schema_dir)
-
-
-def _select_schema_package_dir(
-    omni_physics_dir: Path,
-    omni_physics_tdeps: Path,
-    prefer_local_schema: bool = False,
-) -> Path:
-    """Choose the codeless schema package tree for ovphysx packaging.
-
-    Defaults to the prebuilt codeless usd_ext_physics package pulled by
-    ovruntime. --devschema is an explicit developer override that swaps in a
-    local schemas/physx build. Either way the chosen tree is verified as a
-    valid codeless schema before being accepted, failing fast otherwise.
-    """
-    # omni_physics_dir is a symlink to ovruntime. Resolve it to get the real ovphysx/ parent.
-    ovruntime_real = omni_physics_dir.resolve()
-
-    if prefer_local_schema:
-        # Devschema path: accept a local schema tree only when it verifies as a
-        # valid codeless schema. schemas/physx is codeless: build.sh stages a
-        # single flat, config- and platform-neutral tree at schema/_build/schema.
-        local_schema_base = ovruntime_real.parent.parent / "schemas" / "physx" / "_build"
-        local_schema_candidates: list[Path] = [local_schema_base / "schema"]
-
-        for candidate in local_schema_candidates:
-            if not candidate.exists():
-                continue
-            errors = _verify_codeless_schema_package(candidate)
-            if not errors:
-                print(f"  Using local (devschema) schema: {candidate}")
-                return candidate
-        searched = ", ".join(str(p) for p in local_schema_candidates) or str(local_schema_base)
-        raise RuntimeError(
-            "A local schema build was explicitly requested (--devschema), but no valid codeless local schema tree "
-            f"was found. Checked: {searched}. Rebuild schemas/physx or retry without --devschema."
-        )
-
-    packman_schema_dir = omni_physics_tdeps / "usd_ext_physics"
-    if not packman_schema_dir.exists():
-        raise RuntimeError(
-            f"Schema package not found at {packman_schema_dir}. Re-run "
-            "ovruntime/pull_dependencies, "
-            "or rerun packaging with --devschema if you intentionally want a local schema build."
-        )
-
-    # This is the second line of defense after build.cmake's post-pull check and
-    # protects direct `cmake -P scripts/install.cmake` invocations too.
-    errors = _verify_codeless_schema_package(packman_schema_dir)
-    if errors:
-        joined = "\n  - ".join(errors)
-        raise RuntimeError(f"Schema package at {packman_schema_dir} is not a valid codeless schema:\n  - {joined}")
-
-    print(f"  Using packman schema (codeless): {packman_schema_dir}")
-    return packman_schema_dir
 
 
 # ---------------------------------------------------------------------------
@@ -640,7 +542,6 @@ def package_deps(
     ovstage_dir: Path,
     ovstage_runtime_dir: Path,
     config: str = "release",
-    devschema: bool = False,
     verbose: bool = False,
     license_archive_required: bool = True,
 ) -> bool:
@@ -659,7 +560,6 @@ def package_deps(
     print(f"[Config] OVStage root: {ovstage_dir}")
     print(f"[Config] OVStage runtime: {ovstage_runtime_dir}")
     print("[Config] Static Carbonite: ON")
-    print(f"[Config] Devschema override: {'ON' if devschema else 'OFF'}")
 
     plugins_dest = install_dir / "plugins"
     if plugins_dest.exists():
@@ -673,8 +573,7 @@ def package_deps(
     skip_lib_patterns = list(manifest.get("packaging", {}).get("skip_shared_libs", []))
     skip_lib_patterns.extend(["libcarb.so", "libcarb.so.*", "carb.dll", "carb.lib", "carb.pdb"])
 
-    # omni_physics symlink -> ovruntime. Used to reach infrastructure plugins
-    # and usd_ext_physics.
+    # omni_physics symlink -> ovruntime. Used to reach infrastructure plugins.
     omni_physics_dir = target_deps / "omni_physics"
     omni_physics_tdeps = omni_physics_dir / "_build" / "target-deps"
     # infra_pkg / infra_plugins_dir are config-scoped: some plugin binaries
@@ -685,11 +584,6 @@ def package_deps(
     infra_label = "ovruntime_deps"
     platform_build = _resolve_platform_build(omni_physics_tdeps / infra_pkg / "_build")
     infra_plugins_dir = omni_physics_tdeps / infra_pkg / "_build" / platform_build / config / "plugins"
-    usd_ext_physics_dir = _select_schema_package_dir(
-        omni_physics_dir,
-        omni_physics_tdeps,
-        prefer_local_schema=devschema,
-    )
 
     # ------------------------------------------------------------------
     # libcarb is statically linked into ovphysx. The remaining Carbonite
@@ -746,9 +640,6 @@ def package_deps(
     # ------------------------------------------------------------------
     # Infrastructure plugins
     # ------------------------------------------------------------------
-    # usd_ext_physics is codeless, so there are no native schema libs to stage
-    # here. Its schema definitions (share/) are exported to schemas/physx below.
-    # ovphysx is py-less and does not ship the schema's Python.
     print(f"\nCopying {infra_label} plugins...")
 
     # Infrastructure subdirectories still owned by ovphysx. Fabric, USDRT,
@@ -800,18 +691,10 @@ def package_deps(
         raise RuntimeError(f"OVStage USD resolver registry is missing: {resolver_plug_info}")
     print("  [OK] OVStage USD resolver: validated, not staged (provided by the application's OVStage)")
 
-    # ------------------------------------------------------------------
-    # Codeless PhysX USD schemas (data only, ovphysx never loads or registers them)
-    # ------------------------------------------------------------------
-    # ovphysx ships its PhysX schema definitions as codeless USD plugins under
-    # <install>/schemas/physx so the application can register them with the USD
-    # runtime it owns (ovstage_population_register_usd_schemas() for ovstage,
-    # PXR_PLUGINPATH_NAME / PlugRegistry for a stock OpenUSD). No USD library and
-    # no USD plugin registry is staged into plugins/.
-    print("\nExporting codeless PhysX USD schemas...")
-    schema_share_dir = usd_ext_physics_dir / "share" / "usd" / "plugins"
-    exported_modules = _export_codeless_schemas(schema_share_dir, install_dir / "schemas" / "physx")
-    print(f"  [OK] Exported {len(exported_modules)} codeless schema module(s): {', '.join(exported_modules)}")
+    # Remove bundled schemas left by an earlier install.
+    obsolete_schemas = install_dir / "schemas" / "physx"
+    if obsolete_schemas.exists():
+        shutil.rmtree(obsolete_schemas)
 
     license_archive = build_dir / "PACKAGE-LICENSES" / "ovphysx-LICENSES.zip"
     notice_entries = merge_ovstage_notices(
@@ -891,11 +774,6 @@ def main():
         help="Build configuration name for packman deps (default: release)",
     )
     parser.add_argument(
-        "--devschema",
-        action="store_true",
-        help="Use a local schemas/physx build as the schema source instead of the packman package.",
-    )
-    parser.add_argument(
         "--no-license-archive",
         action="store_true",
         help="Tolerate a missing ovphysx-LICENSES.zip (public source drop: "
@@ -929,7 +807,6 @@ def main():
         ovstage_dir=args.ovstage_dir,
         ovstage_runtime_dir=args.ovstage_runtime_dir,
         config=args.config,
-        devschema=args.devschema,
         verbose=args.verbose,
         license_archive_required=not args.no_license_archive,
     )

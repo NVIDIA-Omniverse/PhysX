@@ -332,7 +332,6 @@ namespace physx
 
 		PxgSpatialVectorBlock			mMotionAcceleration;
 		PxgSpatialVectorBlock			mMotionAccelerationInternal;
-		PxgSpatialVectorBlock			mBiasForce;
 
 		PxReal							mDeltaScale[32];
 
@@ -453,8 +452,6 @@ namespace physx
 		
 		// drive 
 		PxReal						mDriveImpulse[32];
-		PxReal						mConstraintMaxImpulse[32];
-		PxReal						mMaxForce[32];
 		PxU32						mDriveType[32];
 		PxReal						mMaxEffort[32];
 		PxReal						mMaxActuatorVelocity[32];
@@ -474,11 +471,6 @@ namespace physx
 
 		PxReal						mAccumulatedFrictionImpulse[32];
 
-		//old friction
-		PxReal						mMaxDeprecatedFrictionForce[32];
-		PxReal						mDeprecatedFrictionCoefficient[32];
-
-		//new friction
 		PxReal						mStaticFrictionEffort[32];
 		PxReal						mDynamicFrictionEffort[32];
 		PxReal						mViscousFrictionCoefficient[32];

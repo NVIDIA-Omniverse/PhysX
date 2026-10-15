@@ -16,11 +16,10 @@
 
 static int run(void)
 {
-  // Create a PhysX instance with the default arguments.
-  ovphysx_create_args create_args = OVPHYSX_CREATE_ARGS_DEFAULT;
-  ovphysx_handle_t handle = 0;
+  // Create a PhysX instance.
+  ovphysx_instance_handle_t handle = 0;
   
-  ovphysx_result_t result = ovphysx_create_instance(&create_args, &handle);
+  ovphysx_result_t result = ovphysx_create_instance(&handle);
   if (result.status != OVPHYSX_API_SUCCESS) {
     fprintf(stderr, "Failed to create PhysX instance\n");
   ovphysx_shutdown();
@@ -48,11 +47,11 @@ static int run(void)
   }
 
   // Wait for the step to complete and check it reported no errors.
-  ovphysx_op_wait_result_t step_wait_result = {0};
-  ovphysx_result_t step_wait_status = ovphysx_wait_op(
-      handle, step_result.op_index, OVPHYSX_TIMEOUT_INFINITE, &step_wait_result);
+  ovphysx_wait_task_result_t step_wait_result = {0};
+  ovphysx_result_t step_wait_status = ovphysx_wait_task(
+      handle, step_result, OVPHYSX_TIMEOUT_INFINITE, &step_wait_result);
   int step_ok = (step_wait_status.status == OVPHYSX_API_SUCCESS && step_wait_result.num_errors == 0);
-  ovphysx_destroy_wait_result(&step_wait_result);
+  ovphysx_destroy_wait_task_result(&step_wait_result);
   if (!step_ok) {
     fprintf(stderr, "Simulation step failed\n");
     ovphysx_sample_destroy_stage(handle, &stage_attachment);

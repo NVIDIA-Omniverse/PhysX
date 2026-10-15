@@ -11,13 +11,15 @@
 #include "foundation/PxMat33.h"
 #include "foundation/PxBounds3.h"
 
+// Defines PxgDeformablePairInfo, used by a member below.
+#include "PxgSimulationCoreDesc.h"
+
 namespace physx
 {
 
 struct PxgAllocatorDesc;
 struct PxgMat33Block;
 struct PxgSpatialVectorBlock;
-class PxgNonRigidFilterPair;
 
 class PxgSoftBodyBuffer : public PxUserAllocated
 {
@@ -63,7 +65,9 @@ public:
 	PxgTypedCudaBuffer<PxU16>			orderedMaterialIndices;
 	PxgTypedCudaBuffer<PxU16>			materialIndices;
 	PxgTypedCudaBuffer<PxBounds3>		packedNodeBounds; //for refit
-	PxgTypedCudaBuffer<PxgNonRigidFilterPair> filterPairs;
+	PxgTypedCudaBuffer<PxgDeformablePairInfo> rigidVolumeFilterPairs;
+	PxgTypedCudaBuffer<PxgDeformablePairInfo> volumeVolumeFilterPairs;
+	PxgTypedCudaBuffer<PxgDeformablePairInfo> volumeSurfaceFilterPairs;
 };
 
 }

@@ -16,6 +16,9 @@
 # @implements REQ-CAPI-BENCHMARK-005
 # @covers AC-1 AC-2 AC-3 AC-4
 #
+# @implements REQ-CAPI-BENCHMARK-007
+# @covers AC-1 AC-2 AC-3 AC-4
+#
 # ovphysx benchmark producer contract.
 #
 # This is a producer contract, not a performance run. It does not compare
@@ -72,6 +75,7 @@ cmake_minimum_required(VERSION 3.16)
 get_filename_component(SCRIPT_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
 include("${SCRIPT_DIR}/crossplatform_helpers.cmake")
 include("${SCRIPT_DIR}/build_common.cmake")
+include("${SCRIPT_DIR}/fetch_test_schemas.cmake")
 
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
@@ -89,6 +93,8 @@ set(OUTPUT_READ_INVENTORY_JSON "${INVENTORY_TESTS_DIR}/outputread_inventory.json
 set(CONTACT_INVENTORY_JSON "${INVENTORY_TESTS_DIR}/contact_report_inventory.json")
 set(CONTACT_FAMILY_FILTER "ContactReport.*")
 set(HIGH_SCALE_INVENTORY_JSON "${INVENTORY_TESTS_DIR}/high_scale_inventory.json")
+set(WRITE_ONLY_INVENTORY_JSON "${INVENTORY_TESTS_DIR}/write_only_inventory.json")
+set(WRITE_ONLY_FAMILY_FILTER "WriteOnly.*")
 # Two families on purpose. Neither matches the frozen L1B family filter above.
 set(HIGH_SCALE_FAMILY_FILTER "WriteScalingHighN.*:RuntimeSpawnScaling.*")
 set(CARTPOLE_SOURCE "${PROJECT_ROOT}/tests/benchmarks/benchmarks/LabCartpole.cpp")
@@ -236,8 +242,8 @@ string(REPLACE ":" ";" GPU_ROW_NAMES "${GPU_ROW_FILTER}")
 run_verify_contact_inventory(
     check-definition "${CONTACT_INVENTORY_JSON}" "${PRODUCER_INVENTORY_JSON}"
 )
-set(CONTACT_CPU_ROW "ContactReport.persistent_pairs_512_step_read_cpu")
-set(CONTACT_GPU_ROW "ContactReport.persistent_pairs_512_step_read_gpu")
+set(CONTACT_CPU_ROW "ContactReport.net_force_512_read_cpu")
+set(CONTACT_GPU_ROW "ContactReport.net_force_512_read_gpu")
 set(CONTACT_CPU_COMMAND "${CONTACT_CPU_ROW}")
 set(CONTACT_GPU_COMMAND "${CONTACT_GPU_ROW}_GPU")
 
@@ -1175,44 +1181,24 @@ message(STATUS "--- contact D: GPU row is selected and suppressed in a CPU pass 
 run_contact_wrong_device(gpu_on_cpu "${CONTACT_GPU_ROW}" gpu cpu)
 
 if("$ENV{OVPHYSX_BENCHMARK_CONTRACT_GPU}" STREQUAL "1")
-    message(STATUS "--- contact E: positive conventional-GPU row and 100 timed calls ---")
-    run_contact_positive(gpu "${CONTACT_GPU_ROW}" "${CONTACT_GPU_COMMAND}" --forceGpu)
+    message(STATUS "--- contact E: positive DirectGPU row and 100 timed calls ---")
+    run_contact_positive(gpu "${CONTACT_GPU_ROW}" "${CONTACT_GPU_COMMAND}" --forceGpu --directGpu)
 
     message(STATUS "--- contact F: CPU row is selected and suppressed in a GPU pass ---")
-    run_contact_wrong_device(cpu_on_gpu "${CONTACT_CPU_ROW}" cpu gpu --forceGpu)
+    run_contact_wrong_device(cpu_on_gpu "${CONTACT_CPU_ROW}" cpu gpu --forceGpu --directGpu)
 
-    # DirectGPU is unsupported for this report path and must fail without a metric.
-    message(STATUS "--- contact G: DirectGPU is rejected without publishing ---")
-    set(CONTACT_DIRECT_GPU_REPORT "${RESULTS_DIR}/contact_direct_gpu_report.txt")
-    file(REMOVE "${CONTACT_DIRECT_GPU_REPORT}")
-    execute_process(
-        COMMAND "${BENCHMARK_BINARY}"
-            "--hidden" "--forceGpu" "--directGpu"
-            "--filter=${CONTACT_GPU_ROW}"
-            "--data=${PROJECT_ROOT}/tests/data"
-            "--report=${CONTACT_DIRECT_GPU_REPORT}"
-            "--verbose"
-        WORKING_DIRECTORY "${PROJECT_ROOT}" TIMEOUT 300
-        RESULT_VARIABLE _CONTACT_DIRECT_GPU_RC
-        OUTPUT_VARIABLE _CONTACT_DIRECT_GPU_STDOUT ERROR_VARIABLE _CONTACT_DIRECT_GPU_STDERR
-    )
-    if(_CONTACT_DIRECT_GPU_RC EQUAL 0)
-        message(FATAL_ERROR
-            "DirectGPU ContactReport refusal unexpectedly exited zero")
-    endif()
-    set(_CONTACT_DIRECT_GPU_LOG_TEXT "${_CONTACT_DIRECT_GPU_STDOUT}${_CONTACT_DIRECT_GPU_STDERR}")
-    if(NOT _CONTACT_DIRECT_GPU_LOG_TEXT MATCHES "reject DirectGPU")
-        message(FATAL_ERROR
-            "DirectGPU ContactReport refusal did not report its mode error:\n${_CONTACT_DIRECT_GPU_LOG_TEXT}")
-    endif()
-    run_verify_contact_inventory(check-no-metrics "${CONTACT_DIRECT_GPU_REPORT}" --allow-missing)
+    # The net-force columns are device-resident on a DirectGPU scene, so the GPU
+    # row requires --directGpu: with --forceGpu alone it is selected on the GPU
+    # pass, skipped, and publishes no metric (it does not error).
+    message(STATUS "--- contact G: GPU row requires DirectGPU; --forceGpu alone selects and skips it ---")
+    run_contact_wrong_device(gpu_needs_directgpu "${CONTACT_GPU_ROW}" gpu gpu --forceGpu)
 else()
     message(STATUS
-        "--- contact E-G: conventional-GPU and DirectGPU-refusal contracts skipped "
+        "--- contact E-G: DirectGPU positive and DirectGPU-required contracts skipped "
         "(set OVPHYSX_BENCHMARK_CONTRACT_GPU=1 on a GPU host) ---")
 endif()
 
-message(STATUS "ovphysx ContactReport benchmark contract: PASSED (2 hidden rows; CPU plus conventional GPU)")
+message(STATUS "ovphysx ContactReport benchmark contract: PASSED (2 hidden rows; CPU plus DirectGPU)")
 
 # ---------------------------------------------------------------------------
 # High-scale diagnostics: the separate five-row hidden inventory
@@ -1224,13 +1210,13 @@ message(STATUS "ovphysx ContactReport benchmark contract: PASSED (2 hidden rows;
 message(STATUS "")
 message(STATUS "=== ovphysx high-scale diagnostics contract (separate five-row inventory) ===")
 
-# All four inventories share one strstr()-matched baseline lookup, so their
+# The committed inventories share one strstr()-matched baseline lookup; their
 # union must be free of duplicate and substring-colliding names, including
 # names that would only collide once the harness decorates a record.
 message(STATUS "--- high-scale A: inventory union is collision-free ---")
 run_verify_inventory(check-union
     "${PRODUCER_INVENTORY_JSON}" "${OUTPUT_READ_INVENTORY_JSON}"
-    "${HIGH_SCALE_INVENTORY_JSON}" "${CONTACT_INVENTORY_JSON}")
+    "${HIGH_SCALE_INVENTORY_JSON}" "${CONTACT_INVENTORY_JSON}" "${WRITE_ONLY_INVENTORY_JSON}")
 
 run_verify_inventory(counts "${HIGH_SCALE_INVENTORY_JSON}")
 set(_HIGH_SCALE_COUNTS "${VERIFY_STDOUT}")
@@ -1341,3 +1327,146 @@ else()
 endif()
 
 message(STATUS "ovphysx high-scale diagnostics contract: PASSED (${HIGH_SCALE_TOTAL} hidden CPU rows)")
+
+# Write-only measurements have their own hidden inventory and CPU smoke run.
+run_verify_inventory(counts "${WRITE_ONLY_INVENTORY_JSON}")
+set(_WRITE_ONLY_COUNTS "${VERIFY_STDOUT}")
+string(REGEX MATCH "TOTAL=([0-9]+)" _ "${_WRITE_ONLY_COUNTS}")
+set(WRITE_ONLY_TOTAL "${CMAKE_MATCH_1}")
+string(REGEX MATCH "CPU=([0-9]+)" _ "${_WRITE_ONLY_COUNTS}")
+set(WRITE_ONLY_CPU "${CMAKE_MATCH_1}")
+if(NOT WRITE_ONLY_TOTAL OR NOT WRITE_ONLY_TOTAL STREQUAL WRITE_ONLY_CPU)
+    message(FATAL_ERROR
+        "write-only inventory must be CPU-only (TOTAL=${WRITE_ONLY_TOTAL}, CPU=${WRITE_ONLY_CPU}):\n"
+        "${_WRITE_ONLY_COUNTS}")
+endif()
+run_verify_inventory(filter "${WRITE_ONLY_INVENTORY_JSON}" --device cpu)
+set(WRITE_ONLY_ROW_FILTER "${VERIFY_STDOUT}")
+if(NOT WRITE_ONLY_ROW_FILTER)
+    message(FATAL_ERROR "Write-only inventory produced an empty CPU filter")
+endif()
+message(STATUS "  Inventory rows:   ${WRITE_ONLY_TOTAL} (all CPU)")
+message(STATUS "  Row filter:       ${WRITE_ONLY_ROW_FILTER}")
+
+# The scoped --list must name exactly the inventory's rows, every one hidden.
+message(STATUS "--- write-only B: exact hidden executable inventory ---")
+set(WRITE_ONLY_LIST_OUTPUT "${RESULTS_DIR}/write_only_list_output.txt")
+file(REMOVE "${WRITE_ONLY_LIST_OUTPUT}")
+execute_process(
+    COMMAND "${BENCHMARK_BINARY}" "--list" "--filter=${WRITE_ONLY_FAMILY_FILTER}"
+    WORKING_DIRECTORY "${PROJECT_ROOT}" TIMEOUT 120
+    RESULT_VARIABLE _WRITE_ONLY_LIST_RC
+    OUTPUT_FILE "${WRITE_ONLY_LIST_OUTPUT}" ERROR_VARIABLE _WRITE_ONLY_LIST_STDERR
+)
+if(NOT _WRITE_ONLY_LIST_RC EQUAL 0)
+    message(FATAL_ERROR
+        "write-only --list failed (exit ${_WRITE_ONLY_LIST_RC}):\n${_WRITE_ONLY_LIST_STDERR}")
+endif()
+run_verify_inventory(check-list "${WRITE_ONLY_INVENTORY_JSON}" "${WRITE_ONLY_LIST_OUTPUT}")
+
+# Omitting --hidden must select no write-only row even though an empty run
+# exits zero.
+message(STATUS "--- write-only C: hidden-row vacuity control ---")
+set(WRITE_ONLY_VACUITY_REPORT "${RESULTS_DIR}/write_only_vacuity_report.txt")
+file(REMOVE "${WRITE_ONLY_VACUITY_REPORT}")
+execute_process(
+    COMMAND "${BENCHMARK_BINARY}"
+        "--filter=${WRITE_ONLY_FAMILY_FILTER}"
+        "--data=${PROJECT_ROOT}/tests/data"
+        "--report=${WRITE_ONLY_VACUITY_REPORT}"
+        "--verbose"
+    WORKING_DIRECTORY "${PROJECT_ROOT}" TIMEOUT 300
+    RESULT_VARIABLE _WRITE_ONLY_VACUITY_RC
+    OUTPUT_VARIABLE _WRITE_ONLY_VACUITY_STDOUT ERROR_VARIABLE _WRITE_ONLY_VACUITY_STDERR
+)
+file(WRITE "${RESULTS_DIR}/write_only_vacuity.log" "${_WRITE_ONLY_VACUITY_STDOUT}${_WRITE_ONLY_VACUITY_STDERR}")
+if(NOT _WRITE_ONLY_VACUITY_RC EQUAL 0)
+    message(FATAL_ERROR
+        "write-only vacuity control exited non-zero (${_WRITE_ONLY_VACUITY_RC}); expected a clean run that "
+        "simply selected nothing. log: ${RESULTS_DIR}/write_only_vacuity.log")
+endif()
+run_verify_inventory(check-vacuity "${WRITE_ONLY_INVENTORY_JSON}" "${WRITE_ONLY_VACUITY_REPORT}")
+
+# GPU mode must select and reject every CPU-only row before scene construction.
+set(WRITE_ONLY_GPU_REPORT "${RESULTS_DIR}/write_only_gpu_report.txt")
+set(WRITE_ONLY_GPU_LOG "${RESULTS_DIR}/write_only_gpu.log")
+file(REMOVE "${WRITE_ONLY_GPU_REPORT}" "${WRITE_ONLY_GPU_LOG}")
+execute_process(
+    COMMAND "${BENCHMARK_BINARY}" "--hidden" "--forceGpu"
+        "--filter=${WRITE_ONLY_FAMILY_FILTER}"
+        "--data=${PROJECT_ROOT}/tests/data" "--report=${WRITE_ONLY_GPU_REPORT}" "--verbose"
+    WORKING_DIRECTORY "${PROJECT_ROOT}" TIMEOUT 120
+    RESULT_VARIABLE _WRITE_ONLY_GPU_RC
+    OUTPUT_VARIABLE _WRITE_ONLY_GPU_STDOUT ERROR_VARIABLE _WRITE_ONLY_GPU_STDERR
+)
+file(WRITE "${WRITE_ONLY_GPU_LOG}" "${_WRITE_ONLY_GPU_STDOUT}${_WRITE_ONLY_GPU_STDERR}")
+if(NOT _WRITE_ONLY_GPU_RC EQUAL 0)
+    message(FATAL_ERROR "write-only GPU rejection failed (${_WRITE_ONLY_GPU_RC}); log: ${WRITE_ONLY_GPU_LOG}")
+endif()
+string(REPLACE ":" ";" _WRITE_ONLY_GPU_ROWS "${WRITE_ONLY_ROW_FILTER}")
+list(TRANSFORM _WRITE_ONLY_GPU_ROWS APPEND "_GPU")
+run_verify_inventory(check-skipped "${WRITE_ONLY_GPU_LOG}" ${_WRITE_ONLY_GPU_ROWS})
+run_verify_inventory(check-unpublished "${WRITE_ONLY_GPU_REPORT}" ${_WRITE_ONLY_GPU_ROWS})
+
+# Exercise both new timer paths at 4,096 bodies on every contract run. Only
+# the larger scenes need an opt-in. Use the existing Python dependency for
+# JSON selection, keeping this script compatible with the CMake 3.16 floor.
+set(WRITE_ONLY_SELECTED_INVENTORY "${RESULTS_DIR}/write_only_selected_inventory.json")
+execute_process(
+    COMMAND "${Python3_EXECUTABLE}" -c
+        "import json, sys
+from pathlib import Path
+rows = json.loads(Path(sys.argv[1]).read_text())['rows']
+if sys.argv[3] != '1':
+    rows = [row for row in rows if row['name'].endswith('_4096_cpu')]
+Path(sys.argv[2]).write_text(json.dumps({'rows': rows}))"
+        "${WRITE_ONLY_INVENTORY_JSON}" "${WRITE_ONLY_SELECTED_INVENTORY}"
+        "$ENV{OVPHYSX_BENCHMARK_CONTRACT_WRITE_ONLY}"
+    RESULT_VARIABLE _WRITE_ONLY_SELECT_RC ERROR_VARIABLE _WRITE_ONLY_SELECT_STDERR
+)
+if(NOT _WRITE_ONLY_SELECT_RC EQUAL 0)
+    message(FATAL_ERROR "write-only inventory selection failed: ${_WRITE_ONLY_SELECT_STDERR}")
+endif()
+run_verify_inventory(filter "${WRITE_ONLY_SELECTED_INVENTORY}" --device cpu)
+set(WRITE_ONLY_POSITIVE_FILTER "${VERIFY_STDOUT}")
+set(WRITE_ONLY_TIMEOUT 600)
+if("$ENV{OVPHYSX_BENCHMARK_CONTRACT_WRITE_ONLY}" STREQUAL "1")
+    set(WRITE_ONLY_TIMEOUT 7200)
+endif()
+
+message(STATUS "--- write-only D: positive CPU run (${WRITE_ONLY_POSITIVE_FILTER}) ---")
+set(WRITE_ONLY_REPORT "${RESULTS_DIR}/write_only_positive_report.txt")
+file(REMOVE "${WRITE_ONLY_REPORT}")
+baseline_txn_begin()
+execute_process(
+    COMMAND "${BENCHMARK_BINARY}"
+        "--hidden"
+        "--regenerate"
+        "--filter=${WRITE_ONLY_POSITIVE_FILTER}"
+        "--steps=1"
+        "--runs=3"
+        "--data=${PROJECT_ROOT}/tests/data"
+        "--report=${WRITE_ONLY_REPORT}"
+        "--verbose"
+    WORKING_DIRECTORY "${PROJECT_ROOT}" TIMEOUT ${WRITE_ONLY_TIMEOUT}
+    RESULT_VARIABLE _WRITE_ONLY_RC
+    OUTPUT_VARIABLE _WRITE_ONLY_STDOUT ERROR_VARIABLE _WRITE_ONLY_STDERR
+)
+baseline_txn_commit()
+file(WRITE "${RESULTS_DIR}/write_only_positive.log" "${_WRITE_ONLY_STDOUT}${_WRITE_ONLY_STDERR}")
+message(STATUS "Exit code (write-only positive run): ${_WRITE_ONLY_RC}")
+if(NOT _WRITE_ONLY_RC EQUAL 0)
+    message(FATAL_ERROR
+        "write-only positive run failed (exit ${_WRITE_ONLY_RC}); log: ${RESULTS_DIR}/write_only_positive.log")
+endif()
+if(_WRITE_ONLY_STDOUT MATCHES "benchmark failure\\(s\\)")
+    message(FATAL_ERROR
+        "write-only positive run recorded a failure on a run that should be clean; "
+        "log: ${RESULTS_DIR}/write_only_positive.log")
+endif()
+run_verify_inventory(check-report "${WRITE_ONLY_SELECTED_INVENTORY}" "${WRITE_ONLY_REPORT}" --device cpu)
+
+message(STATUS "ovphysx write-only diagnostics contract: PASSED (${WRITE_ONLY_TOTAL} hidden CPU rows)")
+
+# The normal write families must pass before accepting their performance data.
+include("${CMAKE_CURRENT_LIST_DIR}/test_output_write_contract.cmake")

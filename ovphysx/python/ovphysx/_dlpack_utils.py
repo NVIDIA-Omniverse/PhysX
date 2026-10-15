@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-PYTHON-BINDING-SYNC-001
+# @covers AC-1 AC-2 AC-3
+
 """
 DLPack utility functions for tensor interoperability.
 
@@ -73,6 +76,41 @@ def copy_dltensor(dl_tensor: DLTensor) -> DLTensor:
     return copied
 
 
+def synchronize_tensor_producer(obj) -> object | None:
+    """Wait for producer work and return any capsule acquired for stream handoff."""
+    is_warp = type(obj).__module__.partition(".")[0] == "warp"
+    if is_warp:
+        if not getattr(getattr(obj, "device", None), "is_cuda", False):
+            return None
+        device = obj.device
+    else:
+        if not hasattr(obj, "__dlpack__") or not hasattr(obj, "__dlpack_device__"):
+            return None
+        device_type, device_id = obj.__dlpack_device__()
+        if device_type not in (DLDeviceType.kDLCUDA, DLDeviceType.kDLCUDAManaged):
+            return None
+        device = f"cuda:{device_id}"
+    import warp as wp
+
+    # PhysX may use another CUDA context. Finish the producer's handoff on
+    # Warp's stream before native access; retain the original capsule metadata.
+    stream = wp.get_stream(device)
+    capsule = None
+    try:
+        with wp.ScopedDevice(stream.device):
+            if not is_warp:
+                capsule = obj.__dlpack__(stream=int(stream.cuda_stream or 1))
+            ready = stream.record_event()
+            wp.synchronize_event(ready)
+            # Check this handoff, not work another caller enqueues after it.
+            # Warp logs CUDA wait errors, so require completion before proceeding.
+            if not ready.is_complete:
+                raise RuntimeError(f"CUDA producer work on {stream.device} did not complete")
+        return capsule
+    finally:
+        del capsule
+
+
 def acquire_dltensor(obj) -> tuple[DLTensor, object | None]:
     """Extract DLTensor and a keepalive reference (if needed).
 
@@ -90,9 +128,12 @@ def acquire_dltensor(obj) -> tuple[DLTensor, object | None]:
     if isinstance(obj, DLTensor):
         return obj, None
 
+    capsule = synchronize_tensor_producer(obj)
+
     # __dlpack__ protocol (NumPy >= 1.22, PyTorch, etc.)
     if hasattr(obj, "__dlpack__"):
-        capsule = obj.__dlpack__()
+        if capsule is None:
+            capsule = obj.__dlpack__()
         try:
             if PyCapsule_IsValid(capsule, b"dltensor") != 1:
                 raise TypeError("__dlpack__() did not return a valid 'dltensor' capsule")

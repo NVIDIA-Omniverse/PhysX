@@ -11,7 +11,7 @@
 """Regression tests for scripts/package_deps.py.
 
 These tests cover the source of truth for the SDK/wheel native files:
-codeless schema selection and export, py-less and USD-free dependency staging,
+external schema delivery, py-less and USD-free dependency staging,
 and the OVStage runtime validation. They intentionally exercise the Python
 packaging helper directly so policy failures are caught before a full install or
 wheel build.
@@ -30,7 +30,6 @@ SCRIPTS_DIR = Path(__file__).resolve().parents[2] / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 import package_deps as package_deps_module  # noqa: E402
-import verify_schema_package as verify_schema_package_module  # noqa: E402
 
 
 def test_resolver_and_client_have_no_direct_packman_coordinates():
@@ -149,9 +148,6 @@ def _create_package_deps_layout(tmp_path: Path) -> dict[str, Path]:
 
     ovphysx_root = tmp_path / "ovphysx"
     ovruntime_root = ovphysx_root / "ovruntime"
-    # Codeless schema: a single flat, config- and platform-neutral tree.
-    local_schema_root = tmp_path / "schemas" / "physx" / "_build" / "schema"
-    (local_schema_root / "share" / "usd" / "plugins").mkdir(parents=True)
     (ovruntime_root / "_install" / "release").mkdir(parents=True)
     (ovruntime_root / "_install" / "debug").mkdir(parents=True)
 
@@ -175,8 +171,6 @@ def _create_package_deps_layout(tmp_path: Path) -> dict[str, Path]:
             "omni.usd",
         ):
             (ovruntime_deps_root / subdir).mkdir(parents=True, exist_ok=True)
-    packman_schema_root = ovruntime_tdeps / "usd_ext_physics"
-    (packman_schema_root / "share" / "usd" / "plugins").mkdir(parents=True)
 
     target_deps = build_dir / "target-deps"
 
@@ -230,30 +224,16 @@ def _create_package_deps_layout(tmp_path: Path) -> dict[str, Path]:
         "install_dir": install_dir,
         "manifest_path": manifest_path,
         "ovruntime_root": ovruntime_root,
-        "local_schema_root": local_schema_root,
-        "packman_schema_root": packman_schema_root,
         "ovstage_dir": ovstage_dir,
     }
 
 
 def _patch_package_deps_copy_steps(
     monkeypatch,
-    recorded_schema_share_dirs: list[Path] | None = None,
     recorded_plugin_labels: list[str] | None = None,
     recorded_shared_lib_labels: list[str] | None = None,
-    fake_export: bool = True,
 ) -> None:
     monkeypatch.setattr(package_deps_module, "copy_carbonite_plugins", lambda *args, **kwargs: 0)
-
-    # The codeless schema ships no native lib; its selection is observable only
-    # through the schema_share_dir handed to the codeless export.
-    def _fake_export_codeless_schemas(schema_share_dir, out_dir):
-        if recorded_schema_share_dirs is not None and schema_share_dir is not None:
-            recorded_schema_share_dirs.append(Path(schema_share_dir))
-        return ["PhysxSchema"]
-
-    if fake_export:
-        monkeypatch.setattr(package_deps_module, "_export_codeless_schemas", _fake_export_codeless_schemas)
 
     def _fake_copy_plugin_libs(source_dir, dest_dir, skip_patterns=None, verbose=False, label=""):
         if recorded_plugin_labels is not None:
@@ -283,38 +263,11 @@ def test_package_deps_has_no_python_runtime_copy_helper():
     assert not hasattr(package_deps_module, "copy_python_runtime_libs")
 
 
-def test_package_deps_uses_packman_schema_by_default(tmp_path, monkeypatch):
-    if platform.system() == "Windows":
-        pytest.skip("package_deps layout test exercises POSIX symlink semantics")
-
-    layout = _create_package_deps_layout(tmp_path)
-    monkeypatch.setattr(verify_schema_package_module, "verify_schema_package", lambda *args, **kwargs: [])
-
-    recorded_schema_share_dirs: list[Path] = []
-    _patch_package_deps_copy_steps(monkeypatch, recorded_schema_share_dirs)
-
-    success = package_deps_module.package_deps(
-        manifest_path=layout["manifest_path"],
-        build_dir=layout["build_dir"],
-        install_dir=layout["install_dir"],
-        ovruntime_install_dir=layout["ovruntime_root"] / "_install" / "release",
-        ovstage_dir=layout["ovstage_dir"],
-        ovstage_runtime_dir=layout["ovstage_dir"] / "bin",
-        config="release",
-        verbose=False,
-    )
-
-    assert success is True
-    expected_share = (layout["packman_schema_root"] / "share" / "usd" / "plugins").resolve()
-    assert [path.resolve() for path in recorded_schema_share_dirs] == [expected_share]
-
-
 def test_package_deps_excludes_non_owned_runtime_payloads(tmp_path, monkeypatch):
     if platform.system() == "Windows":
         pytest.skip("package_deps layout test exercises POSIX symlink semantics")
 
     layout = _create_package_deps_layout(tmp_path)
-    monkeypatch.setattr(verify_schema_package_module, "verify_schema_package", lambda *args, **kwargs: [])
 
     recorded_plugin_labels: list[str] = []
     _patch_package_deps_copy_steps(
@@ -361,12 +314,11 @@ def test_installed_cmake_config_omits_retired_gpu_plugin_path():
 def test_package_deps_stages_no_usd_payload(tmp_path, monkeypatch):
     """REQ-PACKAGING-USDFREE-001 AC-4: no USD library, USD dependency closure, or
     USD plugin registry is staged. OVStage brings its own USD runtime.
-    ovphysx ships only its codeless schema definitions."""
+    Schema definitions are application-owned too."""
     if platform.system() == "Windows":
         pytest.skip("package_deps layout test exercises POSIX symlink semantics")
 
     layout = _create_package_deps_layout(tmp_path)
-    monkeypatch.setattr(verify_schema_package_module, "verify_schema_package", lambda *args, **kwargs: [])
 
     recorded_shared_lib_labels: list[str] = []
     _patch_package_deps_copy_steps(monkeypatch, recorded_shared_lib_labels=recorded_shared_lib_labels)
@@ -393,35 +345,17 @@ def test_package_deps_stages_no_usd_payload(tmp_path, monkeypatch):
         assert not hasattr(package_deps_module, removed_helper)
 
 
-def test_package_deps_exports_codeless_schemas_into_install_tree(tmp_path, monkeypatch):
-    """The only schema payload is the codeless tree under <install>/schemas/physx:
-    a root include registry plus normalized resource plugins per module."""
+def test_package_deps_removes_obsolete_bundled_schemas(tmp_path, monkeypatch):
+    """The SDK no longer delivers schemas, including on incremental installs."""
     if platform.system() == "Windows":
         pytest.skip("package_deps layout test exercises POSIX symlink semantics")
 
     layout = _create_package_deps_layout(tmp_path)
-    monkeypatch.setattr(verify_schema_package_module, "verify_schema_package", lambda *args, **kwargs: [])
-    _patch_package_deps_copy_steps(monkeypatch, fake_export=False)
+    _patch_package_deps_copy_steps(monkeypatch)
 
-    module_resources = layout["packman_schema_root"] / "share" / "usd" / "plugins" / "PhysxSchema" / "resources"
-    module_resources.mkdir(parents=True)
-    (module_resources / "plugInfo.json").write_text(
-        json.dumps(
-            {
-                "Plugins": [
-                    {
-                        "Name": "physxSchema",
-                        "Type": "library",
-                        "LibraryPath": "@PLUG_INFO_LIBRARY_PATH@",
-                        "Root": "..",
-                        "ResourcePath": "resources",
-                        "Info": {"Types": {"PhysxSchemaPhysxRigidBodyAPI": {"schemaKind": "singleApplyAPI"}}},
-                    }
-                ]
-            }
-        )
-    )
-    (module_resources / "generatedSchema.usda").write_text("#usda 1.0\n")
+    obsolete = layout["install_dir"] / "schemas" / "physx"
+    obsolete.mkdir(parents=True)
+    (obsolete / "generatedSchema.usda").write_text("obsolete")
 
     success = package_deps_module.package_deps(
         manifest_path=layout["manifest_path"],
@@ -435,12 +369,7 @@ def test_package_deps_exports_codeless_schemas_into_install_tree(tmp_path, monke
     )
 
     assert success is True
-    schema_root = layout["install_dir"] / "schemas" / "physx"
-    assert json.loads((schema_root / "plugInfo.json").read_text()) == {"Includes": ["*/resources/"]}
-    exported = json.loads((schema_root / "PhysxSchema" / "resources" / "plugInfo.json").read_text())
-    assert exported["Plugins"][0]["Type"] == "resource"
-    assert "LibraryPath" not in exported["Plugins"][0]
-    assert (schema_root / "PhysxSchema" / "resources" / "generatedSchema.usda").is_file()
+    assert not obsolete.exists()
     assert not (layout["install_dir"] / "plugins" / "usd").exists()
 
 
@@ -449,7 +378,6 @@ def test_package_deps_errors_when_infra_payload_is_empty(tmp_path, monkeypatch):
         pytest.skip("package_deps layout test exercises POSIX symlink semantics")
 
     layout = _create_package_deps_layout(tmp_path)
-    monkeypatch.setattr(verify_schema_package_module, "verify_schema_package", lambda *args, **kwargs: [])
 
     ovruntime_deps_root = (
         layout["ovruntime_root"]
@@ -467,7 +395,6 @@ def test_package_deps_errors_when_infra_payload_is_empty(tmp_path, monkeypatch):
 
     monkeypatch.setattr(package_deps_module, "copy_carbonite_plugins", lambda *a, **k: 0)
     monkeypatch.setattr(package_deps_module, "_copy_plugin_libs", lambda *a, **k: 0)
-    monkeypatch.setattr(package_deps_module, "_export_codeless_schemas", lambda *a, **k: ["PhysxSchema"])
     monkeypatch.setattr(package_deps_module, "_copy_shared_libs", lambda *a, **k: 0)
 
     with pytest.raises(RuntimeError, match="infrastructure plugin payload"):
@@ -488,10 +415,8 @@ def test_package_deps_does_not_require_omniclient_payload(tmp_path, monkeypatch)
         pytest.skip("package_deps layout test exercises POSIX symlink semantics")
 
     layout = _create_package_deps_layout(tmp_path)
-    monkeypatch.setattr(verify_schema_package_module, "verify_schema_package", lambda *args, **kwargs: [])
     monkeypatch.setattr(package_deps_module, "copy_carbonite_plugins", lambda *a, **k: 0)
     monkeypatch.setattr(package_deps_module, "_copy_plugin_libs", lambda *a, **k: 0)
-    monkeypatch.setattr(package_deps_module, "_export_codeless_schemas", lambda *a, **k: ["PhysxSchema"])
     monkeypatch.setattr(package_deps_module, "_copy_shared_libs", lambda *a, **k: 0)
     client_dir = layout["ovstage_dir"] / "bin" / "plugins" / "omni.client.lib"
     for client_file in client_dir.iterdir():
@@ -531,7 +456,6 @@ def test_package_deps_rejects_incomplete_ovstage_runtime(tmp_path, monkeypatch, 
         pytest.skip("package_deps layout test exercises Linux OVStage filenames")
 
     layout = _create_package_deps_layout(tmp_path)
-    monkeypatch.setattr(verify_schema_package_module, "verify_schema_package", lambda *args, **kwargs: [])
     _patch_package_deps_copy_steps(monkeypatch)
     (layout["ovstage_dir"] / relative_path).unlink()
 
@@ -637,85 +561,3 @@ def test_merge_ovstage_notices_rejects_empty_notice(tmp_path):
 
     with pytest.raises(RuntimeError, match="empty files"):
         package_deps_module.merge_ovstage_notices(ovstage_dir, ovstage_dir / "bin", license_archive, install_dir)
-
-
-def test_package_deps_rejects_non_codeless_packman_schema(tmp_path, monkeypatch):
-    if platform.system() == "Windows":
-        pytest.skip("package_deps layout test exercises POSIX symlink semantics")
-
-    layout = _create_package_deps_layout(tmp_path)
-    monkeypatch.setattr(
-        verify_schema_package_module,
-        "verify_schema_package",
-        lambda *args, **kwargs: [
-            "PhysxSchema: unexpected native schema library libphysxSchema.so; the schema is codeless."
-        ],
-    )
-
-    _patch_package_deps_copy_steps(monkeypatch)
-
-    with pytest.raises(RuntimeError, match="is not a valid codeless schema"):
-        package_deps_module.package_deps(
-            manifest_path=layout["manifest_path"],
-            build_dir=layout["build_dir"],
-            install_dir=layout["install_dir"],
-            ovruntime_install_dir=layout["ovruntime_root"] / "_install" / "release",
-            ovstage_dir=layout["ovstage_dir"],
-            ovstage_runtime_dir=layout["ovstage_dir"] / "bin",
-            config="release",
-            verbose=False,
-        )
-
-
-def test_package_deps_devschema_uses_flat_local_schema(tmp_path, monkeypatch):
-    if platform.system() == "Windows":
-        pytest.skip("package_deps layout test exercises POSIX symlink semantics")
-
-    layout = _create_package_deps_layout(tmp_path)
-    monkeypatch.setattr(verify_schema_package_module, "verify_schema_package", lambda *args, **kwargs: [])
-
-    recorded_schema_share_dirs: list[Path] = []
-    _patch_package_deps_copy_steps(monkeypatch, recorded_schema_share_dirs)
-
-    # The codeless local schema is config-neutral, so a debug build selects the
-    # same flat schema/_build/schema tree as release.
-    success = package_deps_module.package_deps(
-        manifest_path=layout["manifest_path"],
-        build_dir=layout["build_dir"],
-        install_dir=layout["install_dir"],
-        ovruntime_install_dir=layout["ovruntime_root"] / "_install" / "debug",
-        ovstage_dir=layout["ovstage_dir"],
-        ovstage_runtime_dir=layout["ovstage_dir"] / "bin",
-        config="debug",
-        devschema=True,
-        verbose=False,
-    )
-
-    assert success is True
-    expected_share = (layout["local_schema_root"] / "share" / "usd" / "plugins").resolve()
-    assert [path.resolve() for path in recorded_schema_share_dirs] == [expected_share]
-
-
-def test_package_deps_devschema_requires_valid_codeless_local_schema(tmp_path, monkeypatch):
-    if platform.system() == "Windows":
-        pytest.skip("package_deps layout test exercises POSIX symlink semantics")
-
-    layout = _create_package_deps_layout(tmp_path)
-    monkeypatch.setattr(
-        verify_schema_package_module,
-        "verify_schema_package",
-        lambda *args, **kwargs: ["local schema is not codeless"],
-    )
-
-    with pytest.raises(RuntimeError, match="no valid codeless local schema tree"):
-        package_deps_module.package_deps(
-            manifest_path=layout["manifest_path"],
-            build_dir=layout["build_dir"],
-            install_dir=layout["install_dir"],
-            ovruntime_install_dir=layout["ovruntime_root"] / "_install" / "release",
-            ovstage_dir=layout["ovstage_dir"],
-            ovstage_runtime_dir=layout["ovstage_dir"] / "bin",
-            config="release",
-            devschema=True,
-            verbose=False,
-        )

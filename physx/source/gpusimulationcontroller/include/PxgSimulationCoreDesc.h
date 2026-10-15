@@ -6,21 +6,12 @@
 
 #include "foundation/PxSimpleTypes.h"
 #include "foundation/PxVec3.h"
+#include "PxNodeIndex.h"
 #include "DyVArticulation.h"
 #include "PxDeformableSurface.h"
 #include "PxDeformableVolume.h"
 
 #include <vector_types.h>
-
-#define PXG_CHECK_BITSHIFT_32(lowmask, highmask, bitshift) \
-	((1 << bitshift) - 1 == lowmask) && (0xffffffff >> bitshift == highmask)
-
-#define PXG_BITSHIFT_TET_ID 20
-#define PXG_BITSHIFT_ELEMENT_ID 20
-
-PX_COMPILE_TIME_ASSERT(PX_MAX_NB_DEFORMABLE_SURFACE_TRI == PX_MAX_NB_DEFORMABLE_SURFACE_VTX);
-PX_COMPILE_TIME_ASSERT(PXG_CHECK_BITSHIFT_32(PX_MAX_NB_DEFORMABLE_SURFACE_TRI, PX_MAX_NB_DEFORMABLE_SURFACE, PXG_BITSHIFT_ELEMENT_ID));
-PX_COMPILE_TIME_ASSERT(PXG_CHECK_BITSHIFT_32(PX_MAX_NB_DEFORMABLE_VOLUME_TET, PX_MAX_NB_DEFORMABLE_VOLUME, PXG_BITSHIFT_TET_ID));
 
 namespace physx
 {
@@ -36,7 +27,6 @@ namespace physx
 	struct PxgD6JointData;
 	struct PxgConstraintPrePrep;
 	class PxgArticulation;
-	class PxNodeIndex;
 	class PxgArticulationTendon;
 	class PxGpuSpatialTendonData;
 	class PxGpuFixedTendonData;
@@ -79,151 +69,324 @@ namespace physx
 		
 	}PX_ALIGN_SUFFIX(16);
 
-	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 PxEncodeClothIndex(const PxU32 clothId, const PxU32 elementId)
+	// Wrapper to align syntactically with PxgDeformablePairInfo related encoder functions.
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU64 PxgEncodeRigidNode(const PxNodeIndex& nodeIndex)
 	{
-		// elementId can be PX_MAX_NB_DEFORMABLE_SURFACE_TRI/PX_MAX_NB_DEFORMABLE_SURFACE_VTX to get at mask for "any tri or vtx"
-		PX_ASSERT(clothId < PX_MAX_NB_DEFORMABLE_SURFACE);
-		PX_ASSERT(elementId <= PX_MAX_NB_DEFORMABLE_SURFACE_TRI); 
-		PX_ASSERT(elementId <= PX_MAX_NB_DEFORMABLE_SURFACE_VTX);
-		return (clothId << PXG_BITSHIFT_ELEMENT_ID) | elementId;
+		return nodeIndex.getInd();
 	}
 
-	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 PxEncodeSoftBodyIndex(const PxU32 softBodyId, const PxU32 tetId)
+	// Wrapper to align syntactically with PxgDeformablePairInfo related accessor functions.
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxNodeIndex PxgGetRigidNode(const PxU64 ref)
 	{
-		// tetId can be PX_MAX_NB_DEFORMABLE_VOLUME_TET to get at mask for "any tet"
-		PX_ASSERT(softBodyId < PX_MAX_NB_DEFORMABLE_VOLUME);
-		PX_ASSERT(tetId <= PX_MAX_NB_DEFORMABLE_VOLUME_TET); 
-		return (softBodyId << PXG_BITSHIFT_TET_ID) | tetId;
+		return PxNodeIndex(ref);
 	}
 
-	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU64 PxEncodeParticleIndex(const PxU32 particleSystemId, const PxU32 particleId)
+	// The element filter reference of one shape of a PxRigidStatic. Every static shares PX_INVALID_NODE, so a
+	// filter against one is keyed on its shapes' transform cache ids. The low word stays PX_INVALID_NODE, which
+	// marks a static in a PxNodeIndex, so the reference differs from that of any body or articulation link. The
+	// high word holds the transform cache id plus one, so it also differs from PxgEncodeRigidNode(PxNodeIndex()),
+	// the world frame reference of attachments. Only filter pairs hold these references and none is decoded.
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU64 PxgEncodeStaticShapeRef(const PxU32 transformCacheId)
 	{
-		PX_ASSERT(particleSystemId < 0xffffffff);
-		PX_ASSERT(particleId < 0xffffffff);
-		return (PxU64(particleSystemId) << 32ull) | particleId; 
+		PX_ASSERT(transformCacheId != PX_INVALID_U32); // the one value whose increment would wrap onto the world reference
+		return PxU64(PX_INVALID_NODE) | ((PxU64(transformCacheId) + 1) << 32);
 	}
 
-	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 PxGetSoftBodyElementIndex(const PxU32 compressedId)
+	// The element filter reference of a rigid shape, from the node index the shape maps to and its transform
+	// cache id. Bodies and articulation links are keyed on the node, statics on the shape.
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU64 PxgEncodeRigidFilterRef(const PxNodeIndex& rigidId, const PxU32 transformCacheId)
 	{
-		return PX_MAX_NB_DEFORMABLE_VOLUME_TET & compressedId;
+		return rigidId.isStaticBody() ? PxgEncodeStaticShapeRef(transformCacheId) : PxgEncodeRigidNode(rigidId);
 	}
 
-	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 PxGetSoftBodyId(const PxU32 compressedId)
+	/**
+	\brief The layout of a deformable participant, and the kind of mesh feature it carries.
+
+	    [deformable:30][active:1][invalid:1][type:3][localEdge:2][featureId:27]
+	       63..34         bit 33    bit 32   31..29    28..27         26..0
+
+	- deformable: the deformable's GPU index. Whether that is a volume or a surface is defined by the
+	  referencing code. Written by PxgEncodeDeformable* and read by PxgGetDeformableId.
+	- active: marks whether the contact pair is active in the solver, and may change during the solve.
+	  Written by PxgSetActivePairInfo and read by PxgIsActivePairInfo.
+	- invalid: marks a contact that is not valid, determined before the solve starts. Written by
+	  PxgEncodeInvalidDeformableRef and PxgInvalidatePairInfo, read by PxgIsValidPairInfo.
+	- type: mesh feature type, see the Enum below. Written by PxgEncodeDeformable* and read by
+	  PxgGetDeformableFeatureType.
+	- localEdge: enumerates an edge relative to a triangle, only relevant with eTRIANGLE_EDGE. Written by
+	  PxgEncodeDeformableTriangleEdge and read by PxgGetDeformableEdgeLocalIndex.
+	- featureId: the vertex, triangle or tetrahedron index, the triangle of a triangle edge, or
+	  ANY_FEATURE for an element filter that matches any of them. Written by PxgEncodeDeformable* and
+	  read by PxgGetDeformableFeatureId.
+	*/
+	struct PxgDeformableRef
 	{
-		return compressedId >> PXG_BITSHIFT_TET_ID;
-	}
-
-	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 PxGetClothElementIndex(const PxU32 compressedId)
-	{
-		return PX_MAX_NB_DEFORMABLE_SURFACE_TRI & compressedId;
-	}
-
-	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 PxGetClothId(const PxU32 compressedId)
-	{
-		return compressedId >> PXG_BITSHIFT_ELEMENT_ID;
-	}
-
-	PX_CUDA_CALLABLE PX_FORCE_INLINE bool PxGetIsVertexType(const float4& baryOrType)
-	{
-		return (baryOrType.x == 0.0f && baryOrType.y == 0.0f && baryOrType.z == 0.0f && baryOrType.w == 0.0f);
-	}
-
-	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 PxGetParticleIndex(const PxU64 compressedId)
-	{
-		return (0xffffffff) & compressedId;
-	}
-
-	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 PxGetParticleSystemId(const PxU64 compressedId)
-	{
-		return compressedId >> 32;
-	}
-
-	PX_ALIGN_PREFIX(16)
-	class PxgRigidFilterPair
-	{
-	public:
-		PX_CUDA_CALLABLE PxgRigidFilterPair() : index2(0)
-		{}
-
-		PxU64 index0; //rigid body index will always in index0
-		PxU64 index1;		
-		PxU32 index2;
-		PxU32 pading[3];
-
-		PX_CUDA_CALLABLE PxI32 compare(const PxgRigidFilterPair& other) const
+		enum Enum
 		{
-			if (index0 < other.index0)
-				return -1;
-			if (index0 > other.index0)
-				return 1;
-			if (index1 < other.index1)
-				return -1;
-			if (index1 > other.index1)
-				return 1;
-			if (index2 < other.index2)
-				return -1;
-			if (index2 > other.index2)
-				return 1;
-			return 0;
-		}
-	}PX_ALIGN_SUFFIX(16);
+			eVERTEX = 0,
+			eTRIANGLE,
+			eTETRAHEDRON,
+			eTRIANGLE_EDGE, // the only kind that fills in the local edge selector
 
+			eLAST
+		};
 
-	// Host-staged rigid-deformable (soft body or cloth) attachment. Uploaded on dirtyRigidAttachments
-	// and baked into PxgDbRigidAttachmentBlock by the rigid-attach prep kernel.
-	class PxgFEMRigidAttachment : public PxgRigidFilterPair
-	{
-	public:
-		PxVec3 localPose0;
-		// Mass-splitting: count of active attachments sharing this rigid. Computed on the host at
-		// attachment-update time. Co-located with localPose0 so the pair fills one 16-byte slot.
-		PxU32 rigidBodyRefCount;
+		// Static allocation of bits, compile time asserted below.
+		static constexpr PxU32 TYPE_BITS = 3;
+		static constexpr PxU32 LOCAL_EDGE_BITS = 2;
+		static constexpr PxU32 LOCAL_EDGE_MASK = (1u << LOCAL_EDGE_BITS) - 1;
+		static constexpr PxU32 FEATURE_ID_BITS = 32 - TYPE_BITS - LOCAL_EDGE_BITS;
+		static constexpr PxU32 FEATURE_ID_MASK = (1u << FEATURE_ID_BITS) - 1;
 
-		float4 baryOrType1;
+		static constexpr PxU64 INVALID_FLAG = PxU64(1) << 32;
+		static constexpr PxU64 ACTIVE_FLAG = PxU64(1) << 33;
+
+		static constexpr PxU32 DEFORMABLE_SHIFT = 34;
+		static constexpr PxU32 DEFORMABLE_BITS = 64 - DEFORMABLE_SHIFT;
+
+		// Limits dictated by the public API macros, as opposed to FEATURE_ID_MASK, which is the field's
+		// capacity.
+		static constexpr PxU32 MAX_NB_DEFORMABLES = PX_MAX_NB_DEFORMABLE_SURFACE;
+		static constexpr PxU32 MAX_NB_FEATURES = PX_MAX_NB_DEFORMABLE_SURFACE_TRI;
+
+		// Reserved id rather than a flag, so that it survives a bitwise key comparison unchanged.
+		static constexpr PxU32 ANY_FEATURE = MAX_NB_FEATURES;
 	};
-	
+	PX_COMPILE_TIME_ASSERT(PxgDeformableRef::eLAST <= (1 << PxgDeformableRef::TYPE_BITS));
+
+	// The bounds above stand for these caps, so raising one alone breaks the build on purpose. Three
+	// equalities against one anchor pin all four element caps, which is why the volume pair is not
+	// compared to itself.
+	PX_COMPILE_TIME_ASSERT(PX_MAX_NB_DEFORMABLE_SURFACE_TRI == PX_MAX_NB_DEFORMABLE_SURFACE_VTX);
+	PX_COMPILE_TIME_ASSERT(PX_MAX_NB_DEFORMABLE_SURFACE_TRI == PX_MAX_NB_DEFORMABLE_VOLUME_TET);
+	PX_COMPILE_TIME_ASSERT(PX_MAX_NB_DEFORMABLE_SURFACE_TRI == PX_MAX_NB_DEFORMABLE_VOLUME_VTX);
+	PX_COMPILE_TIME_ASSERT(PX_MAX_NB_DEFORMABLE_SURFACE == PX_MAX_NB_DEFORMABLE_VOLUME);
+
+	// The wildcard has to fit the field it shares with real element ids. Every allowed element staying
+	// below it follows from where it is defined, so the condition worth guarding is this one.
+	PX_COMPILE_TIME_ASSERT(PxgDeformableRef::ANY_FEATURE <= PxgDeformableRef::FEATURE_ID_MASK);
+
+	// Statically assert validity of the bit assignments.
+	PX_COMPILE_TIME_ASSERT(PxgDeformableRef::INVALID_FLAG == (PxU64(1) << 32));
+	PX_COMPILE_TIME_ASSERT(PxgDeformableRef::ACTIVE_FLAG == (PxgDeformableRef::INVALID_FLAG << 1));
+	PX_COMPILE_TIME_ASSERT(PxgDeformableRef::DEFORMABLE_SHIFT == 34);
+	PX_COMPILE_TIME_ASSERT(PxU64(PxgDeformableRef::MAX_NB_DEFORMABLES)
+		<= (PxU64(1) << PxgDeformableRef::DEFORMABLE_BITS));
+
+	// Encodes a deformable GPU index, a feature type and a feature id. The local edge selector is left to
+	// PxgEncodeDeformableTriangleEdge, and both flags are left clear, so the result is inactive and valid.
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU64 PxgEncodeDeformableRef(const PxU32 deformableId,
+		const PxgDeformableRef::Enum type, const PxU32 featureId)
+	{
+		PX_ASSERT(deformableId < PxgDeformableRef::MAX_NB_DEFORMABLES);
+		// A real element, or the element filter wildcard. A producer that resolves no feature calls
+		// PxgEncodeInvalidDeformableRef rather than passing a reserved index here.
+		PX_ASSERT(featureId < PxgDeformableRef::MAX_NB_FEATURES
+			|| featureId == PxgDeformableRef::ANY_FEATURE);
+		return (PxU64(deformableId) << PxgDeformableRef::DEFORMABLE_SHIFT)
+			| (PxU64(type) << (PxgDeformableRef::FEATURE_ID_BITS + PxgDeformableRef::LOCAL_EDGE_BITS))
+			| featureId;
+	}
+
+	// Encodes an invalid reference for a deformable, holding its id and no feature. The flag only
+	// applies to ref1 of the pair, read by PxgIsValidPairInfo.
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU64 PxgEncodeInvalidDeformableRef(const PxU32 deformableId)
+	{
+		PX_ASSERT(deformableId < PxgDeformableRef::MAX_NB_DEFORMABLES);
+		return (PxU64(deformableId) << PxgDeformableRef::DEFORMABLE_SHIFT)
+			| PxgDeformableRef::INVALID_FLAG;
+	}
+
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU64 PxgEncodeDeformableVertex(const PxU32 deformableId, const PxU32 vertexId)
+	{
+		return PxgEncodeDeformableRef(deformableId, PxgDeformableRef::eVERTEX, vertexId);
+	}
+
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU64 PxgEncodeDeformableTriangle(const PxU32 deformableId, const PxU32 triangleId)
+	{
+		return PxgEncodeDeformableRef(deformableId, PxgDeformableRef::eTRIANGLE, triangleId);
+	}
+
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU64 PxgEncodeDeformableTetrahedron(const PxU32 deformableId, const PxU32 tetrahedronId)
+	{
+		return PxgEncodeDeformableRef(deformableId, PxgDeformableRef::eTETRAHEDRON, tetrahedronId);
+	}
+
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU64 PxgEncodeDeformableTriangleEdge(const PxU32 deformableId,
+		const PxU32 triangleId, const PxU32 localEdge)
+	{
+		PX_ASSERT(localEdge <= PxgDeformableRef::LOCAL_EDGE_MASK);
+		return PxgEncodeDeformableRef(deformableId, PxgDeformableRef::eTRIANGLE_EDGE, triangleId)
+			| (PxU64(localEdge) << PxgDeformableRef::FEATURE_ID_BITS);
+	}
+
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 PxgGetDeformableId(const PxU64 ref)
+	{
+		return PxU32(ref >> PxgDeformableRef::DEFORMABLE_SHIFT);
+	}
+
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxgDeformableRef::Enum PxgGetDeformableFeatureType(const PxU64 ref)
+	{
+		return PxgDeformableRef::Enum(
+			PxU32(ref) >> (PxgDeformableRef::FEATURE_ID_BITS + PxgDeformableRef::LOCAL_EDGE_BITS));
+	}
+
+	// Vertex, triangle or tetrahedron index, and the triangle of a triangle edge.
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 PxgGetDeformableFeatureId(const PxU64 ref)
+	{
+		return PxU32(ref) & PxgDeformableRef::FEATURE_ID_MASK;
+	}
+
+	// Reads as PxgGetDeformableFeatureId, and records at the call site which kind is being read.
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 PxgGetDeformableEdgeTriangle(const PxU64 ref)
+	{
+		return PxgGetDeformableFeatureId(ref);
+	}
+
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 PxgGetDeformableEdgeLocalIndex(const PxU64 ref)
+	{
+		return (PxU32(ref) >> PxgDeformableRef::FEATURE_ID_BITS) & PxgDeformableRef::LOCAL_EDGE_MASK;
+	}
+
+	/**
+	\brief The layout of a particle participant.
+
+	    [systemId:30][active:1][invalid:1][   particleIndex:32   ]
+	      63..34       bit 33    bit 32            31..0
+
+	- systemId: the particle system's GPU index. Written by PxgEncodeParticleRef and read by
+	  PxgGetParticleSystemId.
+	- active and invalid: currently unused. No particle path writes or reads either one.
+	- particleIndex: the particle's index within its system. Written by PxgEncodeParticleRef and read
+	  by PxgGetParticleIndex.
+
+	The system id is stored above the flag bits, at the offset PxgDeformableRef uses for the deformable
+	id. Both kinds therefore hold the flags in the same two bits, which is what allows either one in
+	ref1. Asserted below.
+	*/
+	struct PxgParticleRef
+	{
+		static constexpr PxU64 INVALID_FLAG = PxU64(1) << 32;
+		static constexpr PxU64 ACTIVE_FLAG = PxU64(1) << 33;
+
+		static constexpr PxU32 SYSTEM_SHIFT = 34;
+		static constexpr PxU32 SYSTEM_BITS = 64 - SYSTEM_SHIFT;
+	};
+
+	// The two layouts have to keep agreeing, so that the pair accessors can read ref1 without knowing
+	// which kind of reference it holds.
+	PX_COMPILE_TIME_ASSERT(PxgParticleRef::INVALID_FLAG == PxgDeformableRef::INVALID_FLAG);
+	PX_COMPILE_TIME_ASSERT(PxgParticleRef::ACTIVE_FLAG == PxgDeformableRef::ACTIVE_FLAG);
+	PX_COMPILE_TIME_ASSERT(PxgParticleRef::SYSTEM_SHIFT == PxgDeformableRef::DEFORMABLE_SHIFT);
+
+	// A particle participant is its system id over its index within that system, the last of the three
+	// participant kinds a pair can hold. Both flag bits are left clear.
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU64 PxgEncodeParticleRef(const PxU32 particleSystemId, const PxU32 particleId)
+	{
+		PX_ASSERT(particleSystemId < (1u << PxgParticleRef::SYSTEM_BITS));
+		PX_ASSERT(particleId < 0xffffffff);
+		return (PxU64(particleSystemId) << PxgParticleRef::SYSTEM_SHIFT) | particleId;
+	}
+
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 PxgGetParticleIndex(const PxU64 ref)
+	{
+		return (0xffffffff) & ref;
+	}
+
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 PxgGetParticleSystemId(const PxU64 ref)
+	{
+		return PxU32(ref >> PxgParticleRef::SYSTEM_SHIFT);
+	}
+
+	// The key the contact radix sort's first stage takes, narrowed from the participant the contacts are
+	// grouped by, which is a rigid or a particle. PxNodeIndex and PxgParticleRef both keep that index in
+	// their low 32 bits, so one narrowing serves both. A second stage sorts the high 32 bits after it.
+	// Contacts are never grouped by a deformable, whose low bits hold a feature descriptor, not an index.
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 PxgGetContactSortKey(const PxU64 participantRef)
+	{
+		return PxU32(participantRef);
+	}
+
+	// Two participant references, serving contacts, element filters and attachments alike. A word holds
+	// a deformable feature, a rigid PxNodeIndex or a particle index, and which kind occupies which word
+	// is the convention of the code that writes and reads the pair rather than a property of the pair.
+	struct PX_ALIGN_PREFIX(16) PxgDeformablePairInfo
+	{
+		PxU64 ref0;
+		PxU64 ref1;
+	} PX_ALIGN_SUFFIX(16);
+
+	PX_COMPILE_TIME_ASSERT(sizeof(PxgDeformablePairInfo) == 16);
+
+	// True while the pair is usable. Only ref1 is probed, which is sound for either kind that can occupy
+	// it: a deformable feature and a particle put the flags in the same two bits, asserted above. ref0
+	// cannot be probed alongside it, because a rigid PxNodeIndex spends that bit on isArticulation() and
+	// every articulation contact would read as invalid.
+	PX_CUDA_CALLABLE PX_FORCE_INLINE bool PxgIsValidPairInfo(const PxgDeformablePairInfo& pair)
+	{
+		return (pair.ref1 & PxgDeformableRef::INVALID_FLAG) == 0;
+	}
+
+	// Marks the pair as invalid after it has been initialized. The flag is only applied to ref1, read by
+	// PxgIsValidPairInfo. The operation is not thread safe.
+	PX_CUDA_CALLABLE PX_FORCE_INLINE void PxgInvalidatePairInfo(PxgDeformablePairInfo& pair)
+	{
+		pair.ref1 |= PxgDeformableRef::INVALID_FLAG;
+	}
+
+	// The activity decided by the pre-count pass, which the solve then reads, so both run against one
+	// decision taken on the same positions. The two rigid-deformable paths latch it instead of rewriting
+	// it each iteration, which keeps a contact solving while it still holds an impulse to release.
+	PX_CUDA_CALLABLE PX_FORCE_INLINE bool PxgIsActivePairInfo(const PxgDeformablePairInfo& pair)
+	{
+		return (pair.ref1 & PxgDeformableRef::ACTIVE_FLAG) != 0;
+	}
+
+	// Only the owner of a contact may call this, one thread per contact in the pre-count pass. It
+	// rewrites ref1 in full, so a second writer would lose the identity rather than just the flag.
+	PX_CUDA_CALLABLE PX_FORCE_INLINE void PxgSetActivePairInfo(PxgDeformablePairInfo& pair, const bool active)
+	{
+		pair.ref1 = active ? (pair.ref1 | PxgDeformableRef::ACTIVE_FLAG)
+						   : (pair.ref1 & ~PxgDeformableRef::ACTIVE_FLAG);
+	}
+
+	// A total order over the whole pair, for the element filter arrays: they are sorted on the host and
+	// binary-searched on the device for membership, never for a range. The identity itself needs no
+	// order, so this is a free function rather than a method.
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxI32 PxgComparePairInfo(const PxgDeformablePairInfo& a, const PxgDeformablePairInfo& b)
+	{
+		if (a.ref0 < b.ref0)
+			return -1;
+		if (a.ref0 > b.ref0)
+			return 1;
+		if (a.ref1 < b.ref1)
+			return -1;
+		if (a.ref1 > b.ref1)
+			return 1;
+		return 0;
+	}
+
+	// Host-staged attachment, baked into PxgRigidDbAttachmentBlock or PxgDbDbAttachmentBlock by the
+	// matching prep kernel. ref1 is always a deformable feature. ref0 is a rigid PxNodeIndex for a
+	// rigid-deformable attachment and a deformable feature otherwise.
 	PX_ALIGN_PREFIX(16)
-	class PxgNonRigidFilterPair
+	class PxgDeformableAttachment
 	{
 	public:
-		PX_CUDA_CALLABLE PxgNonRigidFilterPair() : index2(0) // : referenceCount(0)
-		{}
+		PxgDeformablePairInfo pair;
 
-		PxU64 index0;
-		PxU32 index1;
-		PxU32 index2;
-		
+		// Weights of the triangle or tetrahedron ref0 identifies. Where ref0 is a rigid this is the
+		// attachment point in its local frame instead, with w unused.
+		float4 barycentricOrPosition0;
 
-		PX_CUDA_CALLABLE PxI32 compare(const PxgNonRigidFilterPair& other) const
-		{
-			if (index0 < other.index0)
-				return -1;
-			if (index0 > other.index0)
-				return 1;
-			if (index1 < other.index1)
-				return -1;
-			if (index1 > other.index1)
-				return 1;
-			if (index2 < other.index2)
-				return -1;
-			if (index2 > other.index2)
-				return 1;
-			return 0;
-		}
+		// Weights of the attached triangle's or tetrahedron's vertices. Unread when ref1 identifies a
+		// vertex.
+		float4 barycentric1;
 	}PX_ALIGN_SUFFIX(16);
 
-	PX_ALIGN_PREFIX(16)
-	class PxgFEMFEMAttachment
-	{
-	public:
-		float4 barycentricCoordinates0;
-		float4 barycentricCoordinates1;
-		PxU64  index0;
-		PxU32  index1;
-
-	}PX_ALIGN_SUFFIX(16);
-
-	PX_COMPILE_TIME_ASSERT(sizeof(PxgFEMFEMAttachment) % 16 == 0);
+	// The record is uploaded as an array sized by sizeof, so a field added here costs memory per
+	// attachment without any call site noticing.
+	PX_COMPILE_TIME_ASSERT(sizeof(PxgDeformableAttachment) == 48);
 
 	struct PxgUpdateArticulationDesc
 	{

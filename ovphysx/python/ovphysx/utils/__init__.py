@@ -55,7 +55,7 @@ import this subpackage. Submodules load on first attribute access, so
 that has ``ovstage`` but no USD at all -- which is what the ``output_read``
 sample does.
 
-ovphysx ships the PhysX schemas *codeless*, so PhysX API schemas are applied by
+PhysX schemas are *codeless*, so PhysX API schemas are applied by
 identifier and their properties authored by name; core ``UsdPhysics`` schemas
 still use their typed bindings.
 Register the schemas before opening any stage::

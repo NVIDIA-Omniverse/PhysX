@@ -31,7 +31,26 @@ UjitsoProcessManager::~UjitsoProcessManager()
 {
     CARB_PROFILE_ZONE(0, "UjitsoProcessManager::~UjitsoProcessManager");
 
-    cancelAll();
+    std::lock_guard<carb::tasking::MutexWrapper> queueLock(m_queueMutex);
+    // Drain without scheduling pending work. cancel(false) suppresses application
+    // callbacks; onComplete releases the request and its captured inputs.
+    for (auto& entry : m_ownerMap)
+    {
+        if (entry.second)
+        {
+            entry.second->cancel(false);
+            entry.second->onComplete();
+        }
+    }
+    m_ownerMap.clear();
+    for (auto* process : m_queue)
+    {
+        process->cancel(false);
+        process->onComplete();
+    }
+    m_queue.clear();
+    m_processMap.clear();
+    m_requestMap.clear();
 }
 
 void UjitsoProcessManager::setMaxRunningProcessCount(size_t maxRunningProcessCount)

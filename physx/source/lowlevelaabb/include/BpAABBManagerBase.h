@@ -251,6 +251,7 @@ namespace Bp
 		virtual			void					releaseDeferredAggregateIds() = 0;
 		virtual			void					setGPUStateChanged()			{}
 		virtual			void					setPersistentStateChanged()		{}
+		virtual			bool					isGPUManager()			const	{ return false;	}
 
 #if PX_ENABLE_SIM_STATS
 						PxU32					getGpuDynamicsLostFoundPairsStats()				{ return mGpuDynamicsLostFoundPairsStats; }
@@ -259,7 +260,6 @@ namespace Bp
 #else
 	PX_CATCH_UNDEFINED_ENABLE_SIM_STATS
 #endif
-
 
 	protected:
 						void					reserveShapeSpace(PxU32 nbShapes);

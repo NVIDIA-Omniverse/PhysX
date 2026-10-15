@@ -186,7 +186,6 @@ static void initScene()
 	sceneDesc.staticStructure = PxPruningStructureType::eDYNAMIC_AABB_TREE;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
-	sceneDesc.flags |= PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS;
 	sceneDesc.broadPhaseType = PxBroadPhaseType::eGPU;
 	sceneDesc.solverType = PxSolverType::eTGS;
 	gScene = gPhysics->createScene(sceneDesc);

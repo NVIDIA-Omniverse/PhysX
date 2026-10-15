@@ -24,6 +24,24 @@ from types import SimpleNamespace
 import pytest
 
 
+def _mock_empty_task_collection(monkeypatch, api):
+    # These lifecycle tests fabricate instance handles without native task queues.
+    from ovphysx.types import ApiStatus
+
+    monkeypatch.setattr(api._lib, "ovphysx_wait_all", lambda *_args: SimpleNamespace(status=ApiStatus.SUCCESS))
+    monkeypatch.setattr(api._lib, "ovphysx_destroy_wait_task_result", lambda _result: None)
+
+
+def _init_fake_session_state(physx):
+    import weakref
+
+    physx._pending_read_lock = threading.Lock()
+    physx._pending_read_releases = []
+    physx._pending_write_lock = threading.Lock()
+    physx._pending_write_releases = []
+    physx._live_read_holders = weakref.WeakSet()
+
+
 class _InterruptAfterLoggingTransitionClaim:
     """Inject one interruption as a logging-transition lock is released."""
 
@@ -294,14 +312,14 @@ def test_none_suppresses_owned_runtime_warnings():
 
             import ovphysx
 
-            ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+            from schema_support import physx_schema_paths
+            ovstage.population.register_usd_schemas([str(p) for p in physx_schema_paths()])
             level = getattr(ovphysx.LogLevel, sys.argv[2])
             expect_gpu_warning = level == ovphysx.LogLevel.WARNING
             ovphysx.PhysX.set_cpu_mode(True)
             ovphysx.set_log_level(level)
             ovphysx.enable_python_logging(logger.name)
             physx = ovphysx.PhysX(ignore_version_mismatch=True)
-            attached = False
             try:
                 ovstage.population.open_usd(
                     stage,
@@ -310,13 +328,12 @@ def test_none_suppresses_owned_runtime_warnings():
                     domains=ovstage.PopulationDomain.PHYSICS,
                 )
                 stage.advance_write_floor(ordinal=1).wait()
-                physx.attach_ovstage(stage, read_ordinal=1)
-                attached = True
+                physx.wait_task(physx.attach_ovstage(stage, read_ordinal=1))
                 physx.step(1.0 / 60.0)
                 physx.wait_all()
             finally:
-                if attached:
-                    physx.detach_ovstage()
+                if physx.is_stage_attached(stage):
+                    physx.wait_task(physx.detach_ovstage())
                 stage.destroy()
                 physx.destroy()
                 ovphysx.disable_python_logging()
@@ -360,6 +377,7 @@ def test_none_does_not_consume_gpu_fallback_once_latch():
         import sys
 
         import ovphysx
+        from schema_support import physx_schema_paths
         import ovstage
 
         gpu_warning = "GPU broadphase requires a CUDA context manager; falling back to ePABP."
@@ -377,24 +395,21 @@ def test_none_does_not_consume_gpu_fallback_once_latch():
 
         def run_attach(physx, stage):
             from ovphysx.types import ObjectScope, SimObjectType
-
-            attached = False
             try:
-                physx.attach_ovstage(stage, read_ordinal=1)
-                attached = True
+                physx.wait_task(physx.attach_ovstage(stage, read_ordinal=1))
                 physx.wait_all()
                 # Exercise the runtime read path. The GPU-fallback warning fires during the scene
                 # setup that wait_all drains, so capturing it does not depend on the read itself.
-                with physx.read(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL):
+                with physx.read_sync(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL):
                     pass
             finally:
-                if attached:
-                    physx.detach_ovstage()
+                if physx.is_stage_attached(stage):
+                    physx.wait_task(physx.detach_ovstage())
 
         # ovstage owns libovstage.so; construct it before PhysX so attach can
         # reuse the loaded USD closure.
         stage = ovstage.Stage("ovphysx-once-latch-test")
-        ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+        ovstage.population.register_usd_schemas([str(p) for p in physx_schema_paths()])
         ovphysx.PhysX.set_cpu_mode(True)
         ovphysx.set_log_level(ovphysx.LogLevel.NONE)
         ovphysx.enable_python_logging(logger.name)
@@ -463,13 +478,13 @@ def test_warning_does_not_override_host_global_disable():
 
         stage = ovstage.Stage("ovphysx-host-global-disable-test")
         import ovphysx
+        from schema_support import physx_schema_paths
         from ovphysx._bindings import _lib
 
-        ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])
+        ovstage.population.register_usd_schemas([str(p) for p in physx_schema_paths()])
         ovphysx.PhysX.set_cpu_mode(True)
         ovphysx.enable_python_logging(logger.name)
         physx = ovphysx.PhysX(ignore_version_mismatch=True)
-        attached = False
         try:
             _lib.ovphysx_log_set_global_enabled_for_test(False)
             if _lib.ovphysx_log_get_global_enabled_for_test():
@@ -486,8 +501,7 @@ def test_warning_does_not_override_host_global_disable():
                 domains=ovstage.PopulationDomain.PHYSICS,
             )
             stage.advance_write_floor(ordinal=1).wait()
-            physx.attach_ovstage(stage, read_ordinal=1)
-            attached = True
+            physx.wait_task(physx.attach_ovstage(stage, read_ordinal=1))
             physx.wait_all()
             leaked = [record for record in records if gpu_warning in record[0]]
             if leaked:
@@ -495,8 +509,8 @@ def test_warning_does_not_override_host_global_disable():
         finally:
             # Restore host-owned process state before teardown can log.
             _lib.ovphysx_log_set_global_enabled_for_test(True)
-            if attached:
-                physx.detach_ovstage()
+            if physx.is_stage_attached(stage):
+                physx.wait_task(physx.detach_ovstage())
             stage.destroy()
             physx.destroy()
             ovphysx.disable_python_logging()
@@ -790,6 +804,7 @@ def test_callback_side_shutdown_does_not_wait_for_logging_transition(monkeypatch
     monkeypatch.setattr(_api, "_python_log_logger_name", "test-callback-shutdown")
     monkeypatch.setattr(_api, "_python_log_retained_callbacks", ())
     monkeypatch.setattr(_api, "_python_log_callback_transition", False)
+    _mock_empty_task_collection(monkeypatch, _api)
     monkeypatch.setattr(
         _api._lib,
         "ovphysx_destroy_instance",
@@ -803,6 +818,7 @@ def test_callback_side_shutdown_does_not_wait_for_logging_transition(monkeypatch
     monkeypatch.setattr(_api._lib, "ovphysx_shutdown", successful_shutdown)
 
     physx = PhysX.__new__(PhysX)
+    _init_fake_session_state(physx)
     physx._lib = _api._lib
     physx._omni_physx_sdk_handle = ctypes.c_uint64(17)
     physx._attached_ovstage = None
@@ -935,7 +951,7 @@ def test_concurrent_physx_construction_waits_for_initialization(monkeypatch):
             if done is not None:
                 done.set()
 
-    def create_instance(args, out_handle):
+    def create_instance(out_handle):
         with create_lock:
             handle = 101 + len(create_calls)
             create_calls.append(handle)
@@ -944,6 +960,7 @@ def test_concurrent_physx_construction_waits_for_initialization(monkeypatch):
 
     monkeypatch.setattr(_api._lib, "ovphysx_initialize", initialize)
     monkeypatch.setattr(_api._lib, "ovphysx_create_instance", create_instance)
+    _mock_empty_task_collection(monkeypatch, _api)
     monkeypatch.setattr(
         _api._lib,
         "ovphysx_destroy_instance",
@@ -1014,6 +1031,56 @@ def test_constructor_failure_before_ownership_emits_no_resource_warning(monkeypa
 
     assert initialize_calls == []
     assert not any(issubclass(item.category, ResourceWarning) for item in caught)
+
+
+def test_constructor_config_failure_destroys_native_handle_before_shutdown(monkeypatch):
+    """A post-create config failure must not leave a live handle during shutdown."""
+    import ctypes
+
+    import ovphysx.api as _api
+    from ovphysx import PhysX
+    from ovphysx._bindings import ovphysx_string_t
+    from ovphysx.types import ApiStatus
+
+    events = []
+
+    def create_instance(out_handle):
+        ctypes.cast(out_handle, ctypes.POINTER(ctypes.c_uint64))[0] = 401
+        return SimpleNamespace(status=ApiStatus.SUCCESS)
+
+    monkeypatch.setattr(_api, "_check_version_match", lambda: None)
+    monkeypatch.setattr(
+        _api,
+        "_acquire_process_lifecycle",
+        lambda owner: setattr(owner, "_lifecycle_acquired", True),
+    )
+    monkeypatch.setattr(
+        _api,
+        "_release_process_lifecycle",
+        lambda: events.append(("release-lifecycle", None)),
+    )
+    monkeypatch.setattr(_api._lib, "ovphysx_create_instance", create_instance)
+    monkeypatch.setattr(
+        _api._lib,
+        "ovphysx_set_config",
+        lambda *_args: SimpleNamespace(status=ApiStatus.INVALID_ARGUMENT),
+    )
+    monkeypatch.setattr(
+        _api._lib,
+        "ovphysx_get_last_error",
+        lambda: ovphysx_string_t("injected config failure"),
+    )
+    _mock_empty_task_collection(monkeypatch, _api)
+    monkeypatch.setattr(
+        _api._lib,
+        "ovphysx_destroy_instance",
+        lambda handle: events.append(("destroy", handle))
+        or SimpleNamespace(status=ApiStatus.SUCCESS),
+    )
+    with pytest.raises(ValueError, match="injected config failure"):
+        PhysX(active_cuda_gpus="invalid")
+
+    assert events == [("destroy", 401), ("release-lifecycle", None)]
 
 
 def test_shared_lifecycle_token_exit_interruption_releases_public_constructor(monkeypatch):
@@ -1122,12 +1189,13 @@ def test_callback_dependency_construction_does_not_deadlock_final_shutdown(monke
         lambda: initialize_calls.append(True) or SimpleNamespace(status=ApiStatus.SUCCESS),
     )
 
-    def create_instance(args, out_handle):
+    def create_instance(out_handle):
         create_calls.append(True)
         ctypes.cast(out_handle, ctypes.POINTER(ctypes.c_uint64))[0] = 73
         return SimpleNamespace(status=ApiStatus.SUCCESS)
 
     monkeypatch.setattr(_api._lib, "ovphysx_create_instance", create_instance)
+    _mock_empty_task_collection(monkeypatch, _api)
     monkeypatch.setattr(
         _api._lib,
         "ovphysx_destroy_instance",
@@ -1287,13 +1355,14 @@ def test_callback_dependency_construction_does_not_deadlock_initialization(monke
         status = ApiStatus.SUCCESS if callback_done.wait(timeout=5) else ApiStatus.ERROR
         return SimpleNamespace(status=status)
 
-    def create_instance(args, out_handle):
+    def create_instance(out_handle):
         create_calls.append(True)
         ctypes.cast(out_handle, ctypes.POINTER(ctypes.c_uint64))[0] = 89
         return SimpleNamespace(status=ApiStatus.SUCCESS)
 
     monkeypatch.setattr(_api._lib, "ovphysx_initialize", initializing_with_callback)
     monkeypatch.setattr(_api._lib, "ovphysx_create_instance", create_instance)
+    _mock_empty_task_collection(monkeypatch, _api)
     monkeypatch.setattr(
         _api._lib,
         "ovphysx_destroy_instance",
@@ -1895,6 +1964,7 @@ def test_process_shutdown_defers_condition_interruption_until_released(monkeypat
     monkeypatch.setattr(_api, "_python_log_logger_name", "test-interrupted-shutdown")
     monkeypatch.setattr(_api, "_python_log_retained_callbacks", ())
     monkeypatch.setattr(_api, "_python_log_callback_transition", True)
+    _mock_empty_task_collection(monkeypatch, _api)
     monkeypatch.setattr(
         _api._lib,
         "ovphysx_destroy_instance",
@@ -1918,6 +1988,7 @@ def test_process_shutdown_defers_condition_interruption_until_released(monkeypat
     monkeypatch.setattr(_api._lib, "ovphysx_shutdown", observing_shutdown)
 
     physx = PhysX.__new__(PhysX)
+    _init_fake_session_state(physx)
     physx._lib = _api._lib
     physx._omni_physx_sdk_handle = ctypes.c_uint64(23)
     physx._attached_ovstage = None

@@ -1074,7 +1074,8 @@ static __device__ void conclude1DBlockTGS(const PxgBlockConstraintBatch& batch, 
 
 
 static __device__ void writeBack1DBlockTGS(const PxgBlockConstraintBatch& batch, const PxU32 threadIndex, const PxgTGSBlockSolverConstraint1DHeader* PX_RESTRICT headers,
-	PxgTGSBlockSolverConstraint1DCon* PX_RESTRICT rowsCon, PxgConstraintWriteback* constraintWriteBacks)
+	PxgTGSBlockSolverConstraint1DCon* PX_RESTRICT rowsCon, PxgConstraintWriteback* constraintWriteBacks,
+	const PxgSolverTxIData& iData0, const PxgSolverTxIData& iData1)
 {
 	const PxgTGSBlockSolverConstraint1DHeader* PX_RESTRICT  header = &headers[batch.mConstraintBatchIndex];
 	PxgTGSBlockSolverConstraint1DCon* conBase = &rowsCon[batch.startConstraintIndex];
@@ -1091,28 +1092,88 @@ static __device__ void writeBack1DBlockTGS(const PxgBlockConstraintBatch& batch,
 	{
 		PxgConstraintWriteback& writeback = constraintWriteBacks[forceWritebackOffset];
 
-		PxVec3 linVel(0), angVel(0);
-		for (PxU32 i = 0; i < numRows; ++i)
-		{
-			PxgTGSBlockSolverConstraint1DCon& con = conBase[i];
-		
-			if (con.flags[threadIndex] & DY_SC_FLAG_OUTPUT_FORCE)
-			{
-				const float4 lin0XYZ_ErrorW = con.lin0XYZ_initBiasOrCoeff0[threadIndex];
-				const float4 ang0WriteBack_VMW = con.ang0XYZ_velMultiplierOrCoeff2[threadIndex];
+		const float4 rAWorld_invMass0D0 = header->rAWorld_invMass0D0[threadIndex];
+		const PxVec3 body0WorldOffset(rAWorld_invMass0D0.x, rAWorld_invMass0D0.y, rAWorld_invMass0D0.z);
 
-				const PxVec3 lin0(lin0XYZ_ErrorW.x, lin0XYZ_ErrorW.y, lin0XYZ_ErrorW.z);
-				const PxVec3 ang0WriteBack(ang0WriteBack_VMW.x, ang0WriteBack_VMW.y, ang0WriteBack_VMW.z);
-				const PxReal appliedForce = con.appliedForce[threadIndex];
-				linVel += lin0 * appliedForce;
-				angVel += ang0WriteBack *appliedForce;
+		PxVec3 linVel(0), angVel(0);
+
+		if (batch.constraintType == PxgSolverConstraintDesc::eCONSTRAINT_1D)
+		{
+			//The reported impulse must be reconstructed with the same effective Jacobians the solve
+			//applied the impulses through (see Dy::accumulate1dConstraintImpulseTGS and solve1DBlockTGS).
+			const float4 rBWorld_invMass1D1 = header->rBWorld_invMass1D1[threadIndex];
+			const PxVec3 rBWorld(rBWorld_invMass1D1.x, rBWorld_invMass1D1.y, rBWorld_invMass1D1.z);
+
+			//The rotational-equality basis the solve orthogonalizes against (sqrt-inverse-inertia
+			//space, see solve1DBlockTGS), and the raw angular Jacobians of the rows that built it,
+			//in build order.
+			PxVec3 angOrthoAxis0[3], angOrthoAxis1[3], orthoRawAxis[3];
+			PxReal angOrthoRecipResponse[3];
+			for (PxU32 k = 0; k < 3; k++)
+			{
+				const float4 ax0 = header->angOrthoAxis0_recipResponseW[k][threadIndex];
+				const float4 ax1 = header->angOrthoAxis1_ErrorW[k][threadIndex];
+				angOrthoAxis0[k] = PxVec3(ax0.x, ax0.y, ax0.z);
+				angOrthoAxis1[k] = PxVec3(ax1.x, ax1.y, ax1.z);
+				angOrthoRecipResponse[k] = ax0.w;
+				orthoRawAxis[k] = PxVec3(0.f);
+			}
+
+			//the prep fills the header basis in the same single pass over the same stored rows, so entry k
+			//is the k-th DY_SC_FLAG_ROT_EQ row's angular Jacobian (asserted in the CPU twin,
+			//accumulate1dConstraintImpulsesOrtho in DyTGSContactPrep.cpp)
+			for (PxU32 i = 0, k = 0; i < numRows && k < 3; ++i)
+			{
+				if (conBase[i].flags[threadIndex] & DY_SC_FLAG_ROT_EQ)
+				{
+					const float4 ang0 = conBase[i].ang0XYZ_velMultiplierOrCoeff2[threadIndex];
+					orthoRawAxis[k++] = PxVec3(ang0.x, ang0.y, ang0.z);
+				}
+			}
+
+			PxReal orthoImpulse[3] = { 0.f, 0.f, 0.f };
+			for (PxU32 i = 0; i < numRows; ++i)
+			{
+				PxgTGSBlockSolverConstraint1DCon& con = conBase[i];
+
+				const float4 lin0XYZ = con.lin0XYZ_initBiasOrCoeff0[threadIndex];
+				const float4 lin1XYZ = con.lin1XYZ_biasScaleOrCoeff1[threadIndex];
+				const float4 ang0XYZ = con.ang0XYZ_velMultiplierOrCoeff2[threadIndex];
+				const float4 ang1XYZ = con.ang1XYZ_velTargetOrCoeff3[threadIndex];
+
+				Dy::accumulate1dConstraintImpulseTGS(con.appliedForce[threadIndex], con.flags[threadIndex],
+					PxVec3(lin0XYZ.x, lin0XYZ.y, lin0XYZ.z), PxVec3(ang0XYZ.x, ang0XYZ.y, ang0XYZ.z), body0WorldOffset,
+					PxVec3(lin1XYZ.x, lin1XYZ.y, lin1XYZ.z), PxVec3(ang1XYZ.x, ang1XYZ.y, ang1XYZ.z), rBWorld,
+					iData0.sqrtInvInertia, iData1.sqrtInvInertia,
+					angOrthoAxis0, angOrthoAxis1, angOrthoRecipResponse,
+					linVel, angVel, orthoImpulse);
+			}
+
+			angVel -= orthoRawAxis[0] * orthoImpulse[0] + orthoRawAxis[1] * orthoImpulse[1] + orthoRawAxis[2] * orthoImpulse[2];
+		}
+		else
+		{
+			//Articulation joint rows store the full angular term in ang0 and are not re-orthogonalized
+			//during solving: accumulate with the stored Jacobians.
+			for (PxU32 i = 0; i < numRows; ++i)
+			{
+				PxgTGSBlockSolverConstraint1DCon& con = conBase[i];
+
+				if (con.flags[threadIndex] & DY_SC_FLAG_OUTPUT_FORCE)
+				{
+					const float4 lin0XYZ_ErrorW = con.lin0XYZ_initBiasOrCoeff0[threadIndex];
+					const float4 ang0WriteBack_VMW = con.ang0XYZ_velMultiplierOrCoeff2[threadIndex];
+
+					const PxVec3 lin0(lin0XYZ_ErrorW.x, lin0XYZ_ErrorW.y, lin0XYZ_ErrorW.z);
+					const PxVec3 ang0WriteBack(ang0WriteBack_VMW.x, ang0WriteBack_VMW.y, ang0WriteBack_VMW.z);
+					const PxReal appliedForce = con.appliedForce[threadIndex];
+					linVel += lin0 * appliedForce;
+					angVel += ang0WriteBack *appliedForce;
+				}
 			}
 		}
 
-		const float4 body0WorldOffset_InvMass0D0 = header->rAWorld_invMass0D0[threadIndex];
-		const PxVec3 body0WorldOffset(body0WorldOffset_InvMass0D0.x, body0WorldOffset_InvMass0D0.y, body0WorldOffset_InvMass0D0.z);
 		angVel -= body0WorldOffset.cross(linVel);
-
 
 		const PxU32 broken = breakable ? PxU32((linVel.magnitude() > header->linBreakImpulse[threadIndex]) || (angVel.magnitude() > header->angBreakImpulse[threadIndex])) : 0;
 		writeback.angularImpulse = make_float4(angVel.x, angVel.y, angVel.z, 0.f);

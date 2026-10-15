@@ -225,7 +225,7 @@ protected:
             return;
         }
         ovstage_instance_t* stage = mStageAttachment.stage;
-        const ovphysx_handle_t handle = mPhysX->handle();
+        const ovphysx_instance_handle_t handle = mPhysX->handle();
 
         ovstage_population_usd_reference_handle_t reference = 0;
         const ovstage_population_enqueue_result_t add = ovstage_population_add_usd_reference_from_string(

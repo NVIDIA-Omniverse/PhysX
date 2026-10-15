@@ -35,7 +35,7 @@ ObjectId createJoint(AttachedStage& attachedStage, omni::physics::parse::ObjectK
         if (desc->jointEnabled && (body0 == kInvalidObjectId && body1 == kInvalidObjectId))
         {
             // scristiano: if in forced parsing single scene mode, the bodies may have not been created
-            if (OmniPhysX::getInstance().getISettings()->getStringBuffer(kSettingForceParseOnlySingleScene) == nullptr)
+            if (attachedStage.getParseOptions().forceSingleScenePath.empty())
             {
                 REPORT_PHYSICS_ERROR("PhysicsUSD: CreateJoint - no bodies defined at body0 and body1, joint prim: %s", primPathText);
             }
@@ -47,7 +47,7 @@ ObjectId createJoint(AttachedStage& attachedStage, omni::physics::parse::ObjectK
                 if (!body0Dynamic)
                 {
                     // scristiano: if in forced parsing single scene mode, the bodies may have not been created
-                    if (OmniPhysX::getInstance().getISettings()->getStringBuffer(kSettingForceParseOnlySingleScene) == nullptr)
+                    if (attachedStage.getParseOptions().forceSingleScenePath.empty())
                     {
                         REPORT_PHYSICS_ERROR("PhysicsUSD: CreateJoint - cannot create a joint between static bodies, joint prim: %s", primPathText);
                     }
@@ -59,7 +59,7 @@ ObjectId createJoint(AttachedStage& attachedStage, omni::physics::parse::ObjectK
                 if (!body1Dynamic)
                 {
                     // scristiano: if in forced parsing single scene mode, the bodies may have not been created
-                    if (OmniPhysX::getInstance().getISettings()->getStringBuffer(kSettingForceParseOnlySingleScene) == nullptr)
+                    if (attachedStage.getParseOptions().forceSingleScenePath.empty())
                     {
                         REPORT_PHYSICS_ERROR("PhysicsUSD: CreateJoint - cannot create a joint between static bodies, joint prim: %s", primPathText);
                     }

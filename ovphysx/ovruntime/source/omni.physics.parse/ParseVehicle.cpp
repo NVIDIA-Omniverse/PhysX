@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+/** @implements REQ-PARSE-PARALLEL-001
+ * @covers AC-1 AC-2
+ */
+
 /**
  * @implements REQ-PARSE-VEH-ROOT-001
  * @covers AC-1 AC-2 AC-3
@@ -16,6 +20,8 @@
 
 #include <omni/physics/parse/IPhysicsSource.h>
 #include <omni/physics/parse/ParseApi.h>
+#include <omni/physics/parse/PreparedVehicle.h>
+#include <stdexcept>
 #include <omni/physics/parse/ParseContext.h>
 
 #include <carb/logging/Log.h>
@@ -30,12 +36,12 @@ namespace
 
 constexpr int kMaxSubstepCount = 255;
 
-bool readFloatRequired(IPhysicsSource& src, ObjectKey key, const char* attrName,
-                       const std::string& owner, float& out)
+bool readFloatRequired(PreparedVehicleReader& src, ObjectKey key, const char* attrName,
+                       const std::string& owner, float& out, VehicleFillStatus& status)
 {
-    if (!src.getAttribute(key, src.internToken(attrName), out))
+    if (!src.getAttribute(key, src.attribute(attrName), out))
     {
-        CARB_LOG_ERROR("Usd Physics: prim \"%s\" needs to have attribute \"%s\" defined.",
+        VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\" needs to have attribute \"%s\" defined.",
                        owner.c_str(), attrName);
         return false;
     }
@@ -46,12 +52,45 @@ bool readFloatRequired(IPhysicsSource& src, ObjectKey key, const char* attrName,
 
 // @implements REQ-PARSE-VEH-ROOT-001
 // @covers AC-1 AC-2 AC-3
-DescPtr<VehicleDesc> parseVehicle(ParseContext& ctx, ObjectKey key, const VehicleInfo& info)
+PreparedVehicle prepareVehicle(ParseContext& ctx, ObjectKey key, const VehicleInfo& info)
 {
-    IPhysicsSource& src = ctx.source();
-    const std::string ownerName(src.sourceKeyToString(key));
+    PreparedVehicle input;
+    input.key = key;
+    input.info = info;
+    input.reads = prepareVehicleReads(ctx.source(), key, {
+        { "physxVehicle:highForwardSpeedSubStepCount", VehicleAttributeType::integer },
+        { "physxVehicle:lateralStickyTireDamping", VehicleAttributeType::floating },
+        { "physxVehicle:lateralStickyTireThresholdSpeed", VehicleAttributeType::floating },
+        { "physxVehicle:limitSuspensionExpansionVelocity", VehicleAttributeType::boolean },
+        { "physxVehicle:longitudinalStickyTireDamping", VehicleAttributeType::floating },
+        { "physxVehicle:longitudinalStickyTireThresholdSpeed", VehicleAttributeType::floating },
+        { "physxVehicle:longitudinalStickyTireThresholdTime", VehicleAttributeType::floating },
+        { "physxVehicle:lowForwardSpeedSubStepCount", VehicleAttributeType::integer },
+        { "physxVehicle:minActiveLongitudinalSlipDenominator", VehicleAttributeType::floating },
+        { "physxVehicle:minLateralSlipDenominator", VehicleAttributeType::floating },
+        { "physxVehicle:minLongitudinalSlipDenominator", VehicleAttributeType::floating },
+        { "physxVehicle:minPassiveLongitudinalSlipDenominator", VehicleAttributeType::floating },
+        { "physxVehicle:subStepThresholdLongitudinalSpeed", VehicleAttributeType::floating },
+        { "physxVehicle:vehicleEnabled", VehicleAttributeType::boolean }
+    });
+    return input;
+}
 
-    DescPtr<VehicleDesc> desc = allocateDesc<VehicleDesc>(ctx.descriptorAllocator());
+void prepareVehicleStorage(const PreparedVehicle& input, VehicleDesc& output)
+{
+    (void)input; (void)output;
+}
+
+bool fillVehicle(const PreparedVehicle& input, VehicleDesc& output, VehicleFillStatus& status) noexcept
+{
+    PreparedVehicleReader src(input.reads, status);
+    [[maybe_unused]] ObjectKey key = input.key;
+    [[maybe_unused]] const VehicleInfo& info = input.info;
+
+
+    const std::string& ownerName = src.sourceKeyToString(key);
+
+    VehicleDesc* desc = &output;
     desc->bodyId = kInvalidObjectId;
     desc->drive = nullptr;
     desc->differential = nullptr;
@@ -68,23 +107,23 @@ DescPtr<VehicleDesc> parseVehicle(ParseContext& ctx, ObjectKey key, const Vehicl
 
     // vehicleEnabled (bool, required by schema fallback)
     desc->enabled = true;
-    src.getAttribute(key, src.internToken("physxVehicle:vehicleEnabled"), desc->enabled);
+    src.getAttribute(key, src.attribute("physxVehicle:vehicleEnabled"), desc->enabled);
 
     // limitSuspensionExpansionVelocity (bool)
     desc->limitSuspensionExpansionVelocity = false;
-    src.getAttribute(key, src.internToken("physxVehicle:limitSuspensionExpansionVelocity"),
+    src.getAttribute(key, src.attribute("physxVehicle:limitSuspensionExpansionVelocity"),
                      desc->limitSuspensionExpansionVelocity);
 
     // subStepThresholdLongitudinalSpeed: default 5.0 * lengthScale
     {
         float v;
-        if (src.getAttribute(key, src.internToken("physxVehicle:subStepThresholdLongitudinalSpeed"), v))
+        if (src.getAttribute(key, src.attribute("physxVehicle:subStepThresholdLongitudinalSpeed"), v))
         {
             if (!(v >= 0.0f) || !(v < FLT_MAX))
             {
-                CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"subStepThresholdLongitudinalSpeed\" out of range.",
+                VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"subStepThresholdLongitudinalSpeed\" out of range.",
                                ownerName.c_str());
-                return {};
+                return false;
             }
             desc->subStepThresholdLongitudinalSpeed = v;
         }
@@ -96,18 +135,18 @@ DescPtr<VehicleDesc> parseVehicle(ParseContext& ctx, ObjectKey key, const Vehicl
 
     auto readSubStepCount = [&](const char* attrName, int defaultVal, int& out) -> bool {
         int64_t iv;
-        if (src.getAttribute(key, src.internToken(attrName), iv))
+        if (src.getAttribute(key, src.attribute(attrName), iv))
         {
             int n = static_cast<int>(iv);
             if (!(n > 0))
             {
-                CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"%s\" needs to be positive.",
+                VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"%s\" needs to be positive.",
                                ownerName.c_str(), attrName);
                 return false;
             }
             if (n > kMaxSubstepCount)
             {
-                CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"%s\" needs to be smaller or equal %d. "
+                VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"%s\" needs to be smaller or equal %d. "
                                "Value will be clamped.", ownerName.c_str(), attrName, kMaxSubstepCount);
                 n = kMaxSubstepCount;
             }
@@ -120,42 +159,42 @@ DescPtr<VehicleDesc> parseVehicle(ParseContext& ctx, ObjectKey key, const Vehicl
         return true;
     };
 
-    if (!readSubStepCount("physxVehicle:lowForwardSpeedSubStepCount",  3, desc->lowForwardSpeedSubStepCount))  return {};
-    if (!readSubStepCount("physxVehicle:highForwardSpeedSubStepCount", 1, desc->highForwardSpeedSubStepCount)) return {};
+    if (!readSubStepCount("physxVehicle:lowForwardSpeedSubStepCount",  3, desc->lowForwardSpeedSubStepCount))  return false;
+    if (!readSubStepCount("physxVehicle:highForwardSpeedSubStepCount", 1, desc->highForwardSpeedSubStepCount)) return false;
 
     // minPassiveLongitudinalSlipDenominator: required; sentinel 0 →
     // fall back to deprecated minLongitudinalSlipDenominator (default
     // 4.0 * lengthScale).
     {
         float v;
-        if (!src.getAttribute(key, src.internToken("physxVehicle:minPassiveLongitudinalSlipDenominator"), v))
+        if (!src.getAttribute(key, src.attribute("physxVehicle:minPassiveLongitudinalSlipDenominator"), v))
         {
-            CARB_LOG_ERROR("Usd Physics: prim \"%s\" needs to have attribute \"minPassiveLongitudinalSlipDenominator\" defined.",
+            VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\" needs to have attribute \"minPassiveLongitudinalSlipDenominator\" defined.",
                            ownerName.c_str());
-            return {};
+            return false;
         }
         desc->minPassiveLongitudinalSlipDenominator = v;
         if (v != 0.0f)
         {
             if (!(v > 0.0f))
             {
-                CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"minPassiveLongitudinalSlipDenominator\" needs to be positive.",
+                VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"minPassiveLongitudinalSlipDenominator\" needs to be positive.",
                                ownerName.c_str());
-                return {};
+                return false;
             }
         }
         else
         {
-            CARB_LOG_WARN("Usd Physics: prim \"%s\": attribute \"minLongitudinalSlipDenominator\" "
+            VEHICLE_LOG_WARN(status, "Usd Physics: prim \"%s\": attribute \"minLongitudinalSlipDenominator\" "
                           "is deprecated. Please use minPassiveLongitudinalSlipDenominator instead.", ownerName.c_str());
             float dv;
-            if (src.getAttribute(key, src.internToken("physxVehicle:minLongitudinalSlipDenominator"), dv))
+            if (src.getAttribute(key, src.attribute("physxVehicle:minLongitudinalSlipDenominator"), dv))
             {
                 if (!(dv >= 0.0f) || !(dv < FLT_MAX))
                 {
-                    CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"minLongitudinalSlipDenominator\" out of range.",
+                    VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"minLongitudinalSlipDenominator\" out of range.",
                                    ownerName.c_str());
-                    return {};
+                    return false;
                 }
                 desc->minLongitudinalSlipDenominator = dv;
             }
@@ -168,9 +207,9 @@ DescPtr<VehicleDesc> parseVehicle(ParseContext& ctx, ObjectKey key, const Vehicl
 
     auto readActiveSlipOrDefault = [&](const char* attrName, float scaledDefault, float& outField) -> bool {
         float v;
-        if (!src.getAttribute(key, src.internToken(attrName), v))
+        if (!src.getAttribute(key, src.attribute(attrName), v))
         {
-            CARB_LOG_ERROR("Usd Physics: prim \"%s\" needs to have attribute \"%s\" defined.",
+            VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\" needs to have attribute \"%s\" defined.",
                            ownerName.c_str(), attrName);
             return false;
         }
@@ -178,7 +217,7 @@ DescPtr<VehicleDesc> parseVehicle(ParseContext& ctx, ObjectKey key, const Vehicl
         {
             if (!(v > 0.0f))
             {
-                CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"%s\" needs to be positive.",
+                VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"%s\" needs to be positive.",
                                ownerName.c_str(), attrName);
                 return false;
             }
@@ -193,16 +232,16 @@ DescPtr<VehicleDesc> parseVehicle(ParseContext& ctx, ObjectKey key, const Vehicl
 
     if (!readActiveSlipOrDefault("physxVehicle:minActiveLongitudinalSlipDenominator",
                                  0.1f * info.lengthScale, desc->minActiveLongitudinalSlipDenominator))
-        return {};
+        return false;
     if (!readActiveSlipOrDefault("physxVehicle:minLateralSlipDenominator",
                                  1.0f * info.lengthScale, desc->minLateralSlipDenominator))
-        return {};
+        return false;
 
     auto readStickyThresholdSpeed = [&](const char* attrName, float& outField) -> bool {
         float v;
-        if (!src.getAttribute(key, src.internToken(attrName), v))
+        if (!src.getAttribute(key, src.attribute(attrName), v))
         {
-            CARB_LOG_ERROR("Usd Physics: prim \"%s\" needs to have attribute \"%s\" defined.",
+            VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\" needs to have attribute \"%s\" defined.",
                            ownerName.c_str(), attrName);
             return false;
         }
@@ -210,7 +249,7 @@ DescPtr<VehicleDesc> parseVehicle(ParseContext& ctx, ObjectKey key, const Vehicl
         {
             if (!(v >= 0.0f))
             {
-                CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"%s\" needs to be non-negative.",
+                VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"%s\" needs to be non-negative.",
                                ownerName.c_str(), attrName);
                 return false;
             }
@@ -225,19 +264,19 @@ DescPtr<VehicleDesc> parseVehicle(ParseContext& ctx, ObjectKey key, const Vehicl
 
     if (!readStickyThresholdSpeed("physxVehicle:longitudinalStickyTireThresholdSpeed",
                                   desc->longitudinalStickyTireThresholdSpeed))
-        return {};
+        return false;
 
     auto readNonNegFloat = [&](const char* attrName, float& out) -> bool {
         float v;
-        if (!src.getAttribute(key, src.internToken(attrName), v))
+        if (!src.getAttribute(key, src.attribute(attrName), v))
         {
-            CARB_LOG_ERROR("Usd Physics: prim \"%s\" needs to have attribute \"%s\" defined.",
+            VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\" needs to have attribute \"%s\" defined.",
                            ownerName.c_str(), attrName);
             return false;
         }
         if (!(v >= 0.0f) || !(v < FLT_MAX))
         {
-            CARB_LOG_ERROR("Usd Physics: prim \"%s\": attribute \"%s\" out of range.",
+            VEHICLE_LOG_ERROR(status, "Usd Physics: prim \"%s\": attribute \"%s\" out of range.",
                            ownerName.c_str(), attrName);
             return false;
         }
@@ -245,20 +284,41 @@ DescPtr<VehicleDesc> parseVehicle(ParseContext& ctx, ObjectKey key, const Vehicl
         return true;
     };
 
-    if (!readNonNegFloat("physxVehicle:longitudinalStickyTireThresholdTime",  desc->longitudinalStickyTireThresholdTime))  return {};
-    if (!readNonNegFloat("physxVehicle:longitudinalStickyTireDamping",        desc->longitudinalStickyTireDamping))        return {};
+    if (!readNonNegFloat("physxVehicle:longitudinalStickyTireThresholdTime",  desc->longitudinalStickyTireThresholdTime))  return false;
+    if (!readNonNegFloat("physxVehicle:longitudinalStickyTireDamping",        desc->longitudinalStickyTireDamping))        return false;
 
     if (!readStickyThresholdSpeed("physxVehicle:lateralStickyTireThresholdSpeed",
                                   desc->lateralStickyTireThresholdSpeed))
-        return {};
+        return false;
 
     // lateralStickyTireThresholdTime + lateralStickyTireDamping —
     // note ThresholdTime reads the longitudinal attribute (the
     // schema-side name has a documented historical mismatch).
-    if (!readNonNegFloat("physxVehicle:longitudinalStickyTireThresholdTime",  desc->lateralStickyTireThresholdTime))  return {};
-    if (!readNonNegFloat("physxVehicle:lateralStickyTireDamping",             desc->lateralStickyTireDamping))        return {};
+    if (!readNonNegFloat("physxVehicle:longitudinalStickyTireThresholdTime",  desc->lateralStickyTireThresholdTime))  return false;
+    if (!readNonNegFloat("physxVehicle:lateralStickyTireDamping",             desc->lateralStickyTireDamping))        return false;
 
-    return desc;
+    return true;
 }
+
+void finishVehicleStorage(VehicleDesc& output, const VehicleFillStatus& status)
+{
+    (void)output; (void)status;
+}
+
+DescPtr<VehicleDesc> parseVehicle(ParseContext& ctx, ObjectKey key, const VehicleInfo& info)
+{
+    const PreparedVehicle input = prepareVehicle(ctx, key, info);
+    DescPtr<VehicleDesc> output = allocateDesc<VehicleDesc>(ctx.descriptorAllocator());
+    if (!output) return {};
+    prepareVehicleStorage(input, *output);
+    VehicleFillStatus status;
+    const bool valid = fillVehicle(input, *output, status);
+    status.report();
+    if (status.incomplete) throw std::logic_error("Incomplete prepared vehicle input or storage");
+    if (!valid) return {};
+    finishVehicleStorage(*output, status);
+    return output;
+}
+
 
 } // namespace omni::physics::parse

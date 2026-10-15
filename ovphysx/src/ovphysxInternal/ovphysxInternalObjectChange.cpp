@@ -7,6 +7,9 @@
  *
  * @implements REQ-CAPI-STRING-001
  * @covers AC-4
+ *
+ * @implements REQ-CAPI-OBJCHANGE-001
+ * @covers AC-1
  */
 
 // Sidecar object-change subscription bridge.
@@ -30,10 +33,12 @@
 #include <string>
 
 OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_subscribe_object_changes(
+    uint64_t attach,
     ovphysx_internal_object_created_fn on_created,
     ovphysx_internal_object_destroyed_fn on_destroyed,
     ovphysx_internal_all_objects_destroyed_fn on_all_destroyed,
-    void* user_data)
+    void* user_data,
+    void* lifetime_keep)
 {
     // Failure sentinel matches OVPHYSX_INVALID_SUBSCRIPTION_ID in the public
     // ABI (UINT64_MAX), not omni::physx::kInvalidSubscriptionId (0xFFffFFffFF).
@@ -50,6 +55,15 @@ OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_subscribe_object_changes(
             return kInvalid;
         }
 
+        if (!lifetime_keep)
+        {
+            CARB_LOG_ERROR("Internal sidecar: object-change subscribe missing lifetime keep");
+            return kInvalid;
+        }
+        const std::shared_ptr<OvphysxObjectChangeLifetime>& lifetime =
+            *static_cast<const std::shared_ptr<OvphysxObjectChangeLifetime>*>(lifetime_keep);
+        const OvphysxObjectChangeKeep keep(lifetime);
+
         omni::physx::IPhysicsObjectChangeCallback callback;
         callback.userData = user_data;
         // ovphysx has no Kit-style "simulation stopped" mode. omni.physx gates
@@ -62,32 +76,32 @@ OVPHYSX_INTERNAL_API uint64_t ovphysx_internal_subscribe_object_changes(
         if (on_created)
         {
             callback.objectCreationNotifyFn =
-                [physx, on_created](omni::physics::parse::ObjectKey key, omni::physx::usdparser::ObjectId /*objectId*/,
-                                     omni::physx::PhysXType type, void* userData) {
-                    const std::string s(physx->objectKeyToPath(key));
-                    on_created(s.data(), s.size(), static_cast<int>(type), userData);
+                [on_created, keep](const omni::physx::PhysicsObjectChangeEvent& event, void* userData) {
+                    const std::string path(event.path ? event.path : "");
+                    on_created(path.data(), path.size(), static_cast<int>(event.type), userData);
                 };
         }
         if (on_destroyed)
         {
             callback.objectDestructionNotifyFn =
-                [physx, on_destroyed](omni::physics::parse::ObjectKey key, omni::physx::usdparser::ObjectId /*objectId*/,
-                                       omni::physx::PhysXType type, void* userData) {
-                    const std::string s(physx->objectKeyToPath(key));
-                    on_destroyed(s.data(), s.size(), static_cast<int>(type), userData);
+                [on_destroyed, keep](const omni::physx::PhysicsObjectChangeEvent& event, void* userData) {
+                    const std::string path(event.path ? event.path : "");
+                    on_destroyed(path.data(), path.size(), static_cast<int>(event.type), userData);
                 };
         }
         if (on_all_destroyed)
         {
             callback.allObjectsDestructionNotifyFn =
-                [on_all_destroyed](void* userData) { on_all_destroyed(userData); };
+                [on_all_destroyed, keep](omni::physics::AttachHandle, void* userData) {
+                    on_all_destroyed(userData);
+                };
         }
 
         // omni::physx does not return kInvalidSubscriptionId from a successful
         // registry add, but passing that 40-bit value through would let the
         // ovphysx side mistake it for a live subscription ID. Map it to kInvalid
         // (UINT64_MAX) at the boundary.
-        const omni::physx::SubscriptionId id = physx->subscribeObjectChangeNotifications(callback);
+        const omni::physx::SubscriptionId id = physx->subscribeObjectChangeNotifications(attach, callback);
         if (id == omni::physx::kInvalidSubscriptionId)
             return kInvalid;
         return static_cast<uint64_t>(id);

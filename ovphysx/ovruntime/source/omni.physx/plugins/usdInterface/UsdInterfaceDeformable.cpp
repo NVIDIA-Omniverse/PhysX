@@ -90,7 +90,7 @@ void computePointExtent(const std::vector<carb::Float3>& points, std::vector<car
     extent = { minPoint, maxPoint };
 }
 
-bool setVolumeDeformableMass(PxDeformableVolume& deformableVolume, PxVec4* simMeshPositionInvMassH,
+bool setVolumeDeformableMass(const omni::physics::parse::SourceUnits& sourceUnits, PxDeformableVolume& deformableVolume, PxVec4* simMeshPositionInvMassH,
     const float bodyMass, const float* materialDensity)
 {
     float mass;
@@ -104,7 +104,7 @@ bool setVolumeDeformableMass(PxDeformableVolume& deformableVolume, PxVec4* simMe
         // set default if neither deformable mass nor material density are specified:
         if (density <= 0.0f)
         {
-            density = getScaledDensity(usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage()->getSourceUnits(), defaultDensitySi);
+            density = getScaledDensity(sourceUnits, defaultDensitySi);
         }
     }
 
@@ -123,7 +123,7 @@ bool setVolumeDeformableMass(PxDeformableVolume& deformableVolume, PxVec4* simMe
     return true;
 }
 
-bool setSurfaceDeformableMass(PxDeformableSurface& deformableSurface, PxVec4* simMeshPositionInvMassH,
+bool setSurfaceDeformableMass(const omni::physics::parse::SourceUnits& sourceUnits, PxDeformableSurface& deformableSurface, PxVec4* simMeshPositionInvMassH,
     const float bodyMass, const float* materialDensity, const float materialThickness)
 {
     float mass;
@@ -145,7 +145,7 @@ bool setSurfaceDeformableMass(PxDeformableSurface& deformableSurface, PxVec4* si
         // set default if neither deformable mass nor material density are specified:
         if (density <= 0.0f)
         {
-            density = getScaledDensity(usdparser::UsdLoad::getUsdLoad()->getActiveAttachedStage()->getSourceUnits(), defaultDensitySi);
+            density = getScaledDensity(sourceUnits, defaultDensitySi);
         }
     }
 
@@ -437,11 +437,11 @@ namespace omni
 namespace physx
 {
 
-extern bool checkScenes();
+extern bool checkScenes(const AttachedStage& attachedStage);
 
 bool PhysXUsdPhysicsInterface::updateDeformableBodyMass(const usdparser::AttachedStage& attachedStage, ObjectId objectId)
 {
-    InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType type;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(type, objectId);
@@ -492,7 +492,7 @@ bool PhysXUsdPhysicsInterface::updateDeformableBodyMass(const usdparser::Attache
         if (deformableSurfaceMaterial)
         {
             PxDeformableSurface* deformableSurface = (PxDeformableSurface*)deformableBody;
-            if (!setSurfaceDeformableMass(*deformableSurface, intDeformableBody->mSimMeshPositionInvMassH,
+            if (!setSurfaceDeformableMass(attachedStage.getSourceUnits(), *deformableSurface, intDeformableBody->mSimMeshPositionInvMassH,
                                           intDeformableBody->mBodyMass, matDensityPtr,
                                           deformableSurfaceMaterial->getThickness()))
             {
@@ -510,7 +510,7 @@ bool PhysXUsdPhysicsInterface::updateDeformableBodyMass(const usdparser::Attache
     else if (type == PhysXType::ePTDeformableVolume)
     {
         PxDeformableVolume* deformableVolume = (PxDeformableVolume*)deformableBody;
-        if (!setVolumeDeformableMass(*deformableVolume, intDeformableBody->mSimMeshPositionInvMassH,
+        if (!setVolumeDeformableMass(attachedStage.getSourceUnits(), *deformableVolume, intDeformableBody->mSimMeshPositionInvMassH,
             intDeformableBody->mBodyMass, matDensityPtr))
         {
             CARB_LOG_ERROR("updateDeformableBodyMass: %s failed to update volume deformable mass.",
@@ -535,7 +535,7 @@ bool PhysXUsdPhysicsInterface::updateDeformableBodyMass(const usdparser::Attache
 
 bool PhysXUsdPhysicsInterface::updateDeformableBodyPositions(usdparser::AttachedStage& attachedStage, const ObjectId objectId)
 {
-    InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType;
     const InternalDatabase::Record* objectFullRecord = db.getFullRecord(internalType, objectId);
@@ -619,7 +619,7 @@ bool PhysXUsdPhysicsInterface::updateDeformableBodyPositions(usdparser::Attached
 
 bool PhysXUsdPhysicsInterface::updateDeformableBodyVelocities(usdparser::AttachedStage& attachedStage, const ObjectId objectId)
 {
-    InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType internalType;
     const InternalDatabase::Record* objectFullRecord = db.getFullRecord(internalType, objectId);
@@ -696,7 +696,7 @@ bool PhysXUsdPhysicsInterface::updateDeformableBodyVelocities(usdparser::Attache
 
 bool PhysXUsdPhysicsInterface::updateDeformableRestOffset(const usdparser::AttachedStage& attachedStage, const ObjectId objectId, float value)
 {
-    InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType type;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(type, objectId);
@@ -740,7 +740,7 @@ bool PhysXUsdPhysicsInterface::updateDeformableRestOffset(const usdparser::Attac
 
 bool PhysXUsdPhysicsInterface::updateDeformableContactOffset(const usdparser::AttachedStage& attachedStage, const ObjectId objectId, float value)
 {
-    InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType type;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(type, objectId);
@@ -784,7 +784,7 @@ bool PhysXUsdPhysicsInterface::updateDeformableContactOffset(const usdparser::At
 
 bool PhysXUsdPhysicsInterface::updateDeformableSelfCollisionFilterDistance(const usdparser::AttachedStage& attachedStage, const ObjectId objectId, float value)
 {
-    InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    InternalPhysXDatabase& db = attachedStage.getInternalPhysXDatabase();
 
     PhysXType type;
     const InternalDatabase::Record* objectRecord = db.getFullRecord(type, objectId);
@@ -841,8 +841,8 @@ ObjectId getDeformableMaterialId(const PhysXScene& scene, const PhysxDeformableB
 PxDeformableVolumeMaterial* getVolumeDeformableBodyMaterial(InternalDeformableMaterial*& internalMaterial,
     const PhysXScene& scene, ObjectId materialId)
 {
-    internalMaterial = getInternalPtr<InternalDeformableMaterial>(PhysXType::ePTDeformableVolumeMaterial, materialId);
-    PxDeformableVolumeMaterial* material = getPtr<PxDeformableVolumeMaterial>(PhysXType::ePTDeformableVolumeMaterial, materialId);
+    internalMaterial = getInternalPtr<InternalDeformableMaterial>(scene.getAttachedStage().getInternalPhysXDatabase(), PhysXType::ePTDeformableVolumeMaterial, materialId);
+    PxDeformableVolumeMaterial* material = getPtr<PxDeformableVolumeMaterial>(scene.getAttachedStage().getInternalPhysXDatabase(), PhysXType::ePTDeformableVolumeMaterial, materialId);
     if (!material)
     {
         // Default material migth not have InternalDeformableMaterial wrapper and valid ObjectId
@@ -854,8 +854,8 @@ PxDeformableVolumeMaterial* getVolumeDeformableBodyMaterial(InternalDeformableMa
 PxDeformableSurfaceMaterial* getSurfaceDeformableBodyMaterial(InternalDeformableMaterial*& internalMaterial,
     const PhysXScene& scene, ObjectId materialId)
 {
-    internalMaterial = getInternalPtr<InternalDeformableMaterial>(PhysXType::ePTDeformableSurfaceMaterial, materialId);
-    PxDeformableSurfaceMaterial* material = getPtr<PxDeformableSurfaceMaterial>(PhysXType::ePTDeformableSurfaceMaterial, materialId);
+    internalMaterial = getInternalPtr<InternalDeformableMaterial>(scene.getAttachedStage().getInternalPhysXDatabase(), PhysXType::ePTDeformableSurfaceMaterial, materialId);
+    PxDeformableSurfaceMaterial* material = getPtr<PxDeformableSurfaceMaterial>(scene.getAttachedStage().getInternalPhysXDatabase(), PhysXType::ePTDeformableSurfaceMaterial, materialId);
     if (!material)
     {
         // Default material migth not have InternalDeformableMaterial wrapper and valid ObjectId
@@ -868,7 +868,7 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
     omni::physics::parse::ObjectKey bodyKey, PhysxVolumeDeformableBodyDesc const& desc)
 {
     PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
-    PhysXScene* scene = physxSetup.getPhysXScene(desc.sceneId);
+    PhysXScene* scene = attachedStage.getPhysXScene(desc.sceneId);
     if (!scene || !scene->isFullGpuPipelineAvailable())
     {
         PhysXUsdPhysicsInterface::reportLoadError(
@@ -877,7 +877,7 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
         return kInvalidObjectId;
     }
 
-    if (!checkScenes())
+    if (!checkScenes(attachedStage))
     {
         PhysXUsdPhysicsInterface::reportLoadError(
             usdparser::ErrorCode::eError, "No physics scene created, please add physics scene into stage!");
@@ -980,7 +980,7 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
     internalBody->mPhysXScene = scene;
     if (!desc.bodyEnabled)
     {
-        ObjectId objectId = OmniPhysX::getInstance().getInternalPhysXDatabase().addRecord(
+        ObjectId objectId = attachedStage.getInternalPhysXDatabase().addRecord(
             ePTDeformableVolume, nullptr, internalBody, bodyKey);
 
         scene->getInternalScene()->mVolumeDeformableBodies.push_back(internalBody);
@@ -1104,7 +1104,7 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
 
     PxShapeFlags shapeFlags = PxShapeFlag::eSCENE_QUERY_SHAPE | PxShapeFlag::eSIMULATION_SHAPE;
 
-    if (OmniPhysX::getInstance().isDebugVisualizationEnabled())
+    if (attachedStage.isDebugVisualizationEnabled())
         shapeFlags |= PxShapeFlag::eVISUALIZATION;
 
     PxTetrahedronMeshGeometry geometry(collisionTetMesh);
@@ -1181,12 +1181,12 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
         internalBody->mCollMeshPositionInvMassH,
         collMeshRestPositionH);
 
-    if (!setVolumeDeformableMass(*deformableVolume, internalBody->mSimMeshPositionInvMassH,
+    if (!setVolumeDeformableMass(attachedStage.getSourceUnits(), *deformableVolume, internalBody->mSimMeshPositionInvMassH,
         internalBody->mBodyMass, internalMaterial ? &internalMaterial->mDensity : nullptr))
     {
         CARB_LOG_WARN("Failed to aquire mass/density for volume deformable body! Prim(%s)\n", attachedStage.textFor(bodyKey));
         ICE_FREE(internalBody);
-        PX_PINNED_HOST_FREE(cudaContextManager, collMeshRestPositionH);
+        PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, collMeshRestPositionH);
         return kInvalidObjectId;
     }
 
@@ -1243,17 +1243,17 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
     computePointExtent(collMeshPoints.empty() ? simMeshPoints : collMeshPoints,
                        internalBody->mCollMeshExtentSaveRestoreBuf);
 
-    ObjectId objectId = OmniPhysX::getInstance().getInternalPhysXDatabase().addRecord(
+    ObjectId objectId = attachedStage.getInternalPhysXDatabase().addRecord(
         ePTDeformableVolume, deformableVolume, internalBody, bodyKey);
 
     deformableVolume->userData = (void*)objectId;
-    if (mExposePrimNames)
+    if (attachedStage.getParseOptions().exposePrimNames)
         deformableVolume->setName(attachedStage.textFor(bodyKey));
 
     if (internalBody->mSimMeshKey != internalBody->mBodyKey)
     {
         //registering sub objects that need change handling 
-        ObjectId simulationId = OmniPhysX::getInstance().getInternalPhysXDatabase().addRecord(
+        ObjectId simulationId = attachedStage.getInternalPhysXDatabase().addRecord(
             ePTDeformableVolume, deformableVolume, internalBody, simMeshKey);
         attachedStage.getObjectDatabase()->findOrCreateEntry(
             simMeshKey, attachedStage.textFor(simMeshKey), eVolumeDeformableBody, simulationId);
@@ -1261,7 +1261,7 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
     if (internalBody->mCollMeshKey != internalBody->mSimMeshKey)
     {
         //registering sub objects that need change handling
-        ObjectId collisionId = OmniPhysX::getInstance().getInternalPhysXDatabase().addRecord(
+        ObjectId collisionId = attachedStage.getInternalPhysXDatabase().addRecord(
             ePTDeformableVolume, deformableVolume, internalBody, collMeshKey);
         attachedStage.getObjectDatabase()->findOrCreateEntry(
             collMeshKey, attachedStage.textFor(collMeshKey), eVolumeDeformableBody, collisionId);
@@ -1276,7 +1276,7 @@ ObjectId PhysXUsdPhysicsInterface::createVolumeDeformableBody(usdparser::Attache
     PxScopedCudaLock _lock(*cudaContextManager);
     PxCudaContext* cudaCtx = cudaContextManager->getCudaContext();
     cudaCtx->streamSynchronize(internalBody->mPhysXScene->getInternalScene()->getDeformableCopyStream());
-    PX_PINNED_HOST_FREE(cudaContextManager, collMeshRestPositionH);
+    PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, collMeshRestPositionH);
 
     // Skinning mesh setup
     if (numAllSkinMeshPoints > 0)
@@ -1358,7 +1358,7 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
     omni::physics::parse::ObjectKey bodyKey, PhysxSurfaceDeformableBodyDesc const& desc)
 {
     PhysXSetup& physxSetup = OmniPhysX::getInstance().getPhysXSetup();
-    PhysXScene* scene = physxSetup.getPhysXScene(desc.sceneId);
+    PhysXScene* scene = attachedStage.getPhysXScene(desc.sceneId);
     if (!scene || !scene->isFullGpuPipelineAvailable())
     {
         PhysXUsdPhysicsInterface::reportLoadError(
@@ -1367,7 +1367,7 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
         return kInvalidObjectId;
     }
 
-    if (!checkScenes())
+    if (!checkScenes(attachedStage))
     {
         PhysXUsdPhysicsInterface::reportLoadError(
             usdparser::ErrorCode::eError, "No physics scene created, please add physics scene into stage!");
@@ -1448,7 +1448,7 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
     internalBody->mPhysXScene = scene;
     if (!desc.bodyEnabled)
     {
-        ObjectId objectId = OmniPhysX::getInstance().getInternalPhysXDatabase().addRecord(
+        ObjectId objectId = attachedStage.getInternalPhysXDatabase().addRecord(
             ePTDeformableSurface, nullptr, internalBody, bodyKey);
         scene->getInternalScene()->mSurfaceDeformableBodies.push_back(internalBody);
         return objectId;
@@ -1627,7 +1627,7 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
 
         PxShapeFlags shapeFlags = PxShapeFlag::eSCENE_QUERY_SHAPE | PxShapeFlag::eSIMULATION_SHAPE;
 
-        if (OmniPhysX::getInstance().isDebugVisualizationEnabled())
+        if (attachedStage.isDebugVisualizationEnabled())
             shapeFlags |= PxShapeFlag::eVISUALIZATION;
 
         PxDeformableSurfaceMaterial* materialPtr = material;
@@ -1713,9 +1713,9 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
     internalBody->mNumSimMeshVertices = uint32_t(simMeshPoints.size());
     internalBody->mNumSkinMeshVertices = uint32_t(numAllSkinMeshPoints);
 
-    internalBody->mSimMeshPositionInvMassH = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, triangleMesh->getNbVertices());
-    internalBody->mSimMeshVelocityH = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, triangleMesh->getNbVertices());
-    PxVec4* simMeshRestPositionH = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, triangleMesh->getNbVertices());
+    internalBody->mSimMeshPositionInvMassH = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, triangleMesh->getNbVertices());
+    internalBody->mSimMeshVelocityH = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, triangleMesh->getNbVertices());
+    PxVec4* simMeshRestPositionH = PxCudaHelpersExt::allocPinnedHostBuffer<PxVec4>(*cudaContextManager, triangleMesh->getNbVertices());
 
     bool zeroVelocities = desc.startsAsleep || simMeshVelocities.empty() ||
                           simMeshVelocities.size() != internalBody->mNumSimMeshVertices;
@@ -1739,14 +1739,14 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
     //    internalBody->mCollMeshPositionInvMassH,
     //    collMeshRestPositionH);
 
-    if (!setSurfaceDeformableMass(*deformableSurface, internalBody->mSimMeshPositionInvMassH,
+    if (!setSurfaceDeformableMass(attachedStage.getSourceUnits(), *deformableSurface, internalBody->mSimMeshPositionInvMassH,
         internalBody->mBodyMass, internalMaterial ? &internalMaterial->mDensity : nullptr, material->getThickness()))
     {
         CARB_LOG_WARN("Failed to aquire mass/density for surface deformable body! Prim(%s)\n", attachedStage.textFor(bodyKey));
         ICE_FREE(internalBody);
         deformableSurface->release();
         triangleMesh->release();
-        PX_PINNED_HOST_FREE(cudaContextManager, simMeshRestPositionH);
+        PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, simMeshRestPositionH);
         return kInvalidObjectId;
     }
 
@@ -1780,17 +1780,17 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
     // which prims they should be set and updated.
     computePointExtent(simMeshPoints, internalBody->mSimMeshExtentSaveRestoreBuf);
 
-    ObjectId objectId = OmniPhysX::getInstance().getInternalPhysXDatabase().addRecord(
+    ObjectId objectId = attachedStage.getInternalPhysXDatabase().addRecord(
         ePTDeformableSurface, deformableSurface, internalBody, bodyKey);
 
     deformableSurface->userData = (void*)objectId;
-    if (mExposePrimNames)
+    if (attachedStage.getParseOptions().exposePrimNames)
         deformableSurface->setName(attachedStage.textFor(bodyKey));
 
     if (internalBody->mSimMeshKey != internalBody->mBodyKey)
     {
         //registering sub objects that need change handling
-        ObjectId simulationId = OmniPhysX::getInstance().getInternalPhysXDatabase().addRecord(
+        ObjectId simulationId = attachedStage.getInternalPhysXDatabase().addRecord(
             ePTDeformableSurface, deformableSurface, internalBody, simMeshKey);
         attachedStage.getObjectDatabase()->findOrCreateEntry(
             simMeshKey, attachedStage.textFor(simMeshKey), eSurfaceDeformableBody, simulationId);
@@ -1805,7 +1805,7 @@ ObjectId PhysXUsdPhysicsInterface::createSurfaceDeformableBody(usdparser::Attach
     PxScopedCudaLock _lock(*cudaContextManager);
     PxCudaContext* cudaCtx = cudaContextManager->getCudaContext();
     cudaCtx->streamSynchronize(internalBody->mPhysXScene->getInternalScene()->getDeformableCopyStream());
-    PX_PINNED_HOST_FREE(cudaContextManager, simMeshRestPositionH);
+    PxCudaHelpersExt::freePinnedHostBuffer(*cudaContextManager, simMeshRestPositionH);
 
     if (numAllSkinMeshPoints > 0)
     {

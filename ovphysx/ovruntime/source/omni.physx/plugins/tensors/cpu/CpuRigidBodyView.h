@@ -76,18 +76,18 @@ public:
     bool setPositionsOvStage(const TensorDesc* srcTensor,
                              const ::physx::PxU32* outRecordIdx,
                              ::physx::PxU32 numOutputs,
-                             uint64_t rowsToken);
+                             uint64_t rowsToken, bool wholeSet);
     bool setOrientationsOvStage(const TensorDesc* srcTensor,
                                 const ::physx::PxU32* outRecordIdx,
                                 ::physx::PxU32 numOutputs,
-                                uint64_t rowsToken);
+                                uint64_t rowsToken, bool wholeSet);
     // CPU counterpart of GpuRigidBodyView::setWrenchesOvStage. Same [N,9] layout and the same
     // torque-about-COM conversion, expressed through PxRigidBodyExt rather than by hand so the host
     // path cannot drift from PhysX's own definition of "force at a point".
     bool setWrenchesOvStage(const TensorDesc* srcTensor,
                             const ::physx::PxU32* outRecordIdx,
                             ::physx::PxU32 numOutputs,
-                            uint64_t rowsToken);
+                            uint64_t rowsToken, bool wholeSet);
 
     // CPU counterpart of GpuRigidBodyView::setForcesOvStage. addForce, not setForce: PhysX
     // ACCUMULATES within a step and clears at the end of it, which is the write-only contract.
@@ -97,18 +97,17 @@ public:
     bool setForcesOvStage(const TensorDesc* srcTensor,
                           const ::physx::PxU32* outRecordIdx,
                           ::physx::PxU32 numOutputs,
-                          uint64_t rowsToken);
+                          uint64_t rowsToken, bool wholeSet);
 
     bool setLinearVelocitiesOvStage(const TensorDesc* srcTensor,
                                     const ::physx::PxU32* outRecordIdx,
                                     ::physx::PxU32 numOutputs,
-                                    uint64_t rowsToken);
+                                    uint64_t rowsToken, bool wholeSet);
     bool setAngularVelocitiesOvStage(const TensorDesc* srcTensor,
                                      const ::physx::PxU32* outRecordIdx,
                                      ::physx::PxU32 numOutputs,
-                                     uint64_t rowsToken);
+                                     uint64_t rowsToken, bool wholeSet);
 
-    bool setKinematicTargets(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
     bool setTransforms(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
     bool setVelocities(const TensorDesc* srcTensor, const TensorDesc* indexTensor) override;
 
@@ -120,7 +119,6 @@ public:
                                          const bool isGlobal) override;
 
     // Masked variants
-    bool setKinematicTargetsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
     bool setTransformsMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
     bool setVelocitiesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;
     bool applyForcesMasked(const TensorDesc* srcTensor, const TensorDesc* maskTensor) override;

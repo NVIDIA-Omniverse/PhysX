@@ -7,13 +7,17 @@
  */
 
 #include <ovphysx/experimental/OvStageOutput.hpp>
+#include <ovphysx/experimental/Helpers.hpp>
+#include <ovphysx/ovphysx_attributes.h>
 
 #include "OvStageOutputCuda.h"
 #include "OvStageOutputMath.h"
 #include "internal/sdk/ovphysxSDK.hpp"
 
 #include <common/foundation/MatrixTools.h>
+#include <carb/logging/Log.h>
 #include <ovstage/ovstage_api/ovstage_api.h>
+#include <ovstage/ovstage_api/ovstage_tensor_utils.h>
 #include <ovx/path_dictionary/path_dictionary.h>
 
 #include <algorithm>
@@ -49,6 +53,39 @@ void checkPhysics(ovphysx_result_t result)
         const ovphysx_string_t error = ovphysx_get_last_error();
         throw OutputFailure(result.status, std::string(error.ptr, error.length));
     }
+}
+
+void waitPhysics(ovphysx_instance_handle_t instance, ovphysx_enqueue_result_t task)
+{
+    checkPhysics({ task.status });
+    ovphysx::physx::WaitResult result;
+    const ovphysx_api_status_t status = result.waitTask(instance, task);
+    if (status == OVPHYSX_API_SUCCESS)
+        return;
+    const ovphysx_string_t error = result.hasErrors() ?
+        ovphysx_get_last_task_error(instance, task) : ovphysx_get_last_error();
+    throw OutputFailure(status, std::string(error.ptr ? error.ptr : "", error.length));
+}
+
+void cleanupPhysics(ovphysx_instance_handle_t instance, ovphysx_enqueue_result_t task) noexcept
+{
+    ovphysx::physx::WaitResult result;
+    const ovphysx_api_status_t status = task.status == OVPHYSX_API_SUCCESS ?
+        result.waitTask(instance, task) : task.status;
+    if (status == OVPHYSX_API_SUCCESS)
+        return;
+    const ovphysx_string_t error = result.hasErrors() ?
+        ovphysx_get_last_task_error(instance, task) : ovphysx_get_last_error();
+    CARB_LOG_ERROR("Physics output cleanup failed (%d): %.*s", static_cast<int>(status),
+                   static_cast<int>(error.length), error.ptr ? error.ptr : "");
+}
+
+void finishPhysicsRelease(ovphysx_instance_handle_t instance, uint64_t& resource, ovphysx_enqueue_result_t task)
+{
+    // Accepted releases transfer cleanup responsibility even when they fail.
+    if (task.status == OVPHYSX_API_SUCCESS)
+        resource = 0;
+    waitPhysics(instance, task);
 }
 
 void checkDictionary(path_dictionary_instance_t* dictionary, ovx_api_result_t result)
@@ -136,26 +173,26 @@ struct StageGroup
 
 struct PhysicsRead
 {
-    ovphysx_handle_t instance;
+    ovphysx_instance_handle_t instance;
     ovphysx_query_handle_t query = 0;
     ovphysx_read_handle_t read = 0;
 
-    explicit PhysicsRead(ovphysx_handle_t value) : instance(value)
+    explicit PhysicsRead(ovphysx_instance_handle_t value) : instance(value)
     {
     }
     ~PhysicsRead()
     {
         if (read)
-            ovphysx_release_read(instance, read);
+            cleanupPhysics(instance, ovphysx_release_read(instance, read));
         if (query)
-            ovphysx_release_query(instance, query);
+            cleanupPhysics(instance, ovphysx_release_query(instance, query));
     }
     void finish()
     {
         if (read)
-            checkPhysics(ovphysx_release_read(instance, std::exchange(read, 0)));
+            finishPhysicsRelease(instance, read, ovphysx_release_read(instance, read));
         if (query)
-            checkPhysics(ovphysx_release_query(instance, std::exchange(query, 0)));
+            finishPhysicsRelease(instance, query, ovphysx_release_query(instance, query));
     }
 };
 
@@ -172,7 +209,7 @@ struct PosePair
 {
     const ovstage_read_group_t* position = nullptr;
     const ovstage_read_group_t* orientation = nullptr;
-    ovphysx_sim_object_type_t type;
+    ovphysx_query_target_t type;
     CacheEntry* entry = nullptr;
 };
 
@@ -239,26 +276,24 @@ const DLTensor& poseTensor(const ovstage_read_group_t& group, uint16_t lanes)
     return tensor;
 }
 
-void gather(PhysicsRead& session,
-            ovphysx_sim_object_type_t type,
-            ovx_token_t positionToken,
-            ovx_token_t orientationToken,
-            std::vector<PosePair>& pairs,
-            OvStageOutputResult& result)
+void collectPoseGroups(PhysicsRead& session,
+                       ovphysx_query_target_t type,
+                       ovx_token_t positionToken,
+                       ovx_token_t orientationToken,
+                       std::vector<PosePair>& pairs,
+                       OvStageOutputResult& result)
 {
-    checkPhysics(ovphysx_query(session.instance, type, OVPHYSX_SCOPE_ALL, &session.query));
+    waitPhysics(session.instance, ovphysx_query(session.instance, type, OVPHYSX_SCOPE_ALL, &session.query, nullptr));
     if (!session.query)
         return;
     const ovx_string_or_token_t attributes[] = { { positionToken, {} }, { orientationToken, {} } };
-    checkPhysics(ovphysx_read(session.instance, session.query, attributes, 2, &session.read));
+    waitPhysics(session.instance, ovphysx_read(session.instance, session.query, attributes, 2, &session.read, nullptr));
     for (;;)
     {
         const ovstage_read_group_t* group = nullptr;
-        const ovphysx_result_t fetch = ovphysx_fetch_read_next(session.instance, session.read, &group);
-        if (fetch.status == OVPHYSX_API_END_OF_ITERATION)
+        waitPhysics(session.instance, ovphysx_fetch_read_next(session.instance, session.read, &group));
+        if (!group)
             break;
-        checkPhysics(fetch);
-        require(group != nullptr, "Missing physics output group");
         if (group->is_delete || !group->prims.count)
             continue;
         if (group->is_array)
@@ -279,6 +314,8 @@ void gather(PhysicsRead& session,
         }
         const ovstage_read_group_t*& column = group->attribute == positionToken ? pair->position : pair->orientation;
         require(!column, "Duplicate pose column for a prim group");
+        // Later fetches preserve this borrowed group and its CPU or CUDA tensor storage.
+        // The caller keeps the read session alive until pose processing is finished.
         column = group;
     }
 }
@@ -313,7 +350,11 @@ void captureScales(ovstage_instance_t* stage,
             continue;
         require(!value.is_array && value.data.tensor_count == 1 && value.data.tensors,
                 "worldMatrix must be a fixed matrix column");
-        const DLTensor& tensor = value.data.tensors[0];
+        // OVStage reads expose component axes (N, 4, 4). Fold only the
+        // descriptor, including its row stride; the borrowed payload stays pinned.
+        DLTensor tensor{};
+        int64_t layout[2]{};
+        checkStage(stage, ovstage_tensor_to_write(&value.data.tensors[0], &tensor, layout));
         require(tensor.data && tensor.ndim == 1 && tensor.shape && tensor.shape[0] > 0 && tensor.dtype.code == kDLFloat &&
                     tensor.dtype.bits == 64 && tensor.dtype.lanes == 16 && (!tensor.strides || tensor.strides[0] > 0),
                 "worldMatrix must contain float64 matrices with 16 lanes");
@@ -356,7 +397,7 @@ void captureScales(ovstage_instance_t* stage,
 
 struct OvStageOutputCache::Impl
 {
-    ovphysx_handle_t instance = 0;
+    ovphysx_instance_handle_t instance = 0;
     ovstage_instance_t* stage = nullptr;
     uint64_t attachment = 0;
     ovx_token_t tokens[3]{};
@@ -374,7 +415,7 @@ void OvStageOutputCache::refresh()
     m_impl->entries.clear();
 }
 
-OvStageOutputResult writeWorldTransformsToOvstage(ovphysx_handle_t instance,
+OvStageOutputResult writeWorldTransformsToOvstage(ovphysx_instance_handle_t instance,
                                                   ovstage_instance_t* stage,
                                                   ovstage_ordinal_t outputOrdinal,
                                                   OvStageOutputCache* cache)
@@ -411,8 +452,8 @@ OvStageOutputResult writeWorldTransformsToOvstage(ovphysx_handle_t instance,
         PhysicsRead rigid(instance);
         PhysicsRead links(instance);
         std::vector<PosePair> pairs;
-        gather(rigid, OVPHYSX_OBJECT_RIGID_BODY, state.tokens[0], state.tokens[1], pairs, result);
-        gather(links, OVPHYSX_OBJECT_ARTICULATION_LINK, state.tokens[0], state.tokens[1], pairs, result);
+        collectPoseGroups(rigid, OVPHYSX_QUERY_TARGET_RIGID_BODY, state.tokens[0], state.tokens[1], pairs, result);
+        collectPoseGroups(links, OVPHYSX_QUERY_TARGET_ARTICULATION_LINK, state.tokens[0], state.tokens[1], pairs, result);
 
         // Capture every missing scale and validate every pose before the first write.
         // Stage read views cannot remain live while writes address the same rows.
@@ -487,7 +528,7 @@ OvStageOutputResult writeWorldTransformsToOvstage(ovphysx_handle_t instance,
         for (const PosePair& pair : pairs)
         {
             CacheEntry& entry = *pair.entry;
-            // OVStage can execute GPU writes inline on this thread.
+            // OVStage can invoke CUDA inline even when CPU data overwrites a GPU-backed column.
             detail::OutputCudaContextScope context(entry.cuda.get());
             if (!context.active())
                 throw OutputFailure(OVPHYSX_API_ERROR, "Could not acquire the CUDA context for world-matrix publication");

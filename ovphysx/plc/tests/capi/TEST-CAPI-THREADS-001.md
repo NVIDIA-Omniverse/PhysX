@@ -26,7 +26,7 @@ CPU dispatcher instead of only round-tripping the configuration store.
 - Create an instance with a typed request for 1, 2, 4, or 8 workers and attach.
 - Populate and seal a later ordinal adding a moving rigid body, apply its inputs,
   verify the actor exists, and run ten steps.
-- Independently write 3 to `/persistent/physics/numThreads` through the raw config
+- Detach the scene, then independently write 3 to `/persistent/physics/numThreads` through the raw config
   API and read the typed setting.
 - Run `test_carbonite_overrides_conflicts_typed_path` in
   `tests/python_tests/cpu_tests/test_physxconfig_validation.py` for the canonical path.

@@ -41,9 +41,9 @@ extern void initContactReport();
 
 
 void bmInitialize(bool sanityCheck, const char* dataFolder, int32_t numThreads, bool forceGpu, bool directGpu,
-    bool profile, bool enableTracy, const char** kitArguments, uint32_t kitArgumentCount)
+    bool profile, const char** kitArguments, uint32_t kitArgumentCount)
 {
-    bmCreateGlobals(sanityCheck, dataFolder, numThreads, forceGpu, directGpu, profile, enableTracy,
+    bmCreateGlobals(sanityCheck, dataFolder, numThreads, forceGpu, directGpu, profile,
         kitArguments, kitArgumentCount);
 
     initSmoke();

@@ -96,22 +96,19 @@ public:
 	// Internal API
 	//---------------------------------------------------------------------------------
 
-	PxU32						addRigidAttachment(Sc::BodyCore* core, PxU32 vertId, const PxVec3& actorSpacePose);
-	void						removeRigidAttachment(Sc::BodyCore* core, PxU32 handle);
+	PxU32						addRigidAttachments(Sc::BodyCore* core, PxDeformableAttachmentTargetType::Enum feature,
+									const PxU32* indices, const PxVec4* barycentrics, const PxTransform& frame, const PxVec4* coords, PxU32 count);
+	void						removeRigidAttachments(Sc::BodyCore* core, PxU32 handle);
 
-	void						addTriRigidFilter(Sc::BodyCore* core, PxU32 triIdx);
-	void						removeTriRigidFilter(Sc::BodyCore* core, PxU32 triIdx);
+	PxU32						addSurfaceAttachments(Sc::DeformableSurfaceCore* otherCore, PxDeformableAttachmentTargetType::Enum feature0, const PxU32* indices0, const PxVec4* barycentrics0,
+									PxDeformableAttachmentTargetType::Enum feature1, const PxU32* indices1, const PxVec4* barycentrics1, PxU32 count);
+	void						removeSurfaceAttachments(Sc::DeformableSurfaceCore* otherCore, PxU32 handle);
 
-	PxU32						addTriRigidAttachment(Sc::BodyCore* core, PxU32 triIdx, const PxVec4& barycentric,
-									const PxVec3& actorSpacePose);
-	void						removeTriRigidAttachment(Sc::BodyCore* core, PxU32 handle);
+	void						addRigidFilters(Sc::RigidCore* core, PxU32* triIndices, PxU32 triIndicesSize);
+	void						removeRigidFilters(Sc::RigidCore* core, PxU32* triIndices, PxU32 triIndicesSize);
 
-	void						addClothFilter(Sc::DeformableSurfaceCore* otherCore, PxU32 otherTriIdx, PxU32 triIdx);
-	void						removeClothFilter(Sc::DeformableSurfaceCore* otherCore, PxU32 otherTriIdx0, PxU32 triIdx);
-
-	PxU32						addClothAttachment(Sc::DeformableSurfaceCore* otherCore, PxU32 otherTriIdx, const PxVec4& otherTriBarycentric, PxU32 triIdx, 
-									const PxVec4& triBarycentric);
-	void						removeClothAttachment(Sc::DeformableSurfaceCore* otherCore, PxU32 handle);
+	void						addSurfaceFilters(Sc::DeformableSurfaceCore* otherCore, PxU32* otherTriIndices, PxU32* triIndices, PxU32 triIndicesSize);
+	void						removeSurfaceFilters(Sc::DeformableSurfaceCore* otherCore, PxU32* otherTriIndices, PxU32* triIndices, PxU32 triIndicesSize);
 
 	void						addMaterial(const PxU16 handle);
 	void						clearMaterials();

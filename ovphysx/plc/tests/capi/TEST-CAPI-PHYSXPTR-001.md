@@ -3,52 +3,38 @@
 
 ---
 id: TEST-CAPI-PHYSXPTR-001
-maps_to: REQ-CAPI-PHYSXPTR-001
-type: integration
+title: Native PhysX Pointers Through Reads
+status: implemented
+owner: ovphysx
+requirement: REQ-CAPI-PHYSXPTR-001
 ---
 
-## Scenario
+## Environment
 
-The public PhysX pointer API retrieves the pathless process-wide
-`PxPhysics` pointer without weakening validation for path-bound object
-types. Regression for NVBug 6530143.
-
-## Given
-
-- A valid ovphysx instance with a rigid-body stage attached and stepped.
-- The same valid instance before a stage is attached.
-- Zero-length selectors `{ NULL, 0 }` and `{ "", 0 }`.
-- A non-empty selector, an embedded-NUL selector, a malformed
-  `{ NULL, 1 }` selector, and a path-bound `SCENE` lookup.
-- The experimental C++ typed `physx::PxPhysics` accessor.
+- A stepped ovphysx instance with an attached USD scene.
+- Fixtures: `boxes_falling_on_groundplane.usda`, `kinematic_support.usda`,
+  `two_articulations.usda`, `revolute_joint_scene.usda`,
+  `convex_decomposition_shape.usda`.
+- GPU particle coverage uses `particles_simple.usda` when GPU tests are enabled.
 
 ## When
 
-- `ovphysx_get_physx_ptr` queries `PHYSICS` with each zero-length
-  representation.
-- The lookup is repeated after a completed simulation step.
-- `PHYSICS` is queried with a non-empty selector.
-- A non-`PHYSICS` type is queried with a zero-length selector.
-- `PHYSICS` is queried with the embedded-NUL selector.
-- The malformed selector is submitted.
-- The pathless lookup is attempted before attachment, after reset, and
-  after direct detachment.
-- The C++ wrapper queries `physx::PxPhysics` with an empty string.
+- **Physics row (AC-1).** `test_physx_ptr.cpp` reads `OVPHYSX_QUERY_TARGET_PHYSICS`
+  and checks one non-null address whose path is `/`, then checks the
+  same address after a step.
+- **Path-bound kinds (AC-2, AC-3, AC-5).** The same file reads scene, rigid
+  actor, shape, material, articulation, link, articulation joint, standalone
+  joint, and compound shape. A missing actor path and an articulation joint
+  queried as a standalone joint are absent. Distinct cubes and distinct
+  articulations have distinct addresses. A scene address is unchanged across
+  ten steps.
+- **No column (AC-3).** A rigid-body read of `physxPointer` returns no rows.
+- **Lifetime (AC-4).** Before attach the physics row is absent. Detach makes it
+  absent again, including after a second attach/detach cycle.
+- **Documentation (AC-6).** Inspect `docs/developer_guide.md`.
 
 ## Then
 
-- Both zero-length `PHYSICS` calls succeed and return the same non-null
-  pointer (AC-1, AC-2).
-- The pointer remains identical after the completed step (AC-2).
-- Every invalid selector/type combination returns
-  `OVPHYSX_API_INVALID_ARGUMENT` with null output (AC-3).
-- The pre-attachment, post-reset, and post-detachment lookups fail with
-  null output, and a previously returned pointer is never dereferenced or
-  released after a lifecycle boundary (AC-4).
-- The C++ trait maps to `OVPHYSX_PHYSX_TYPE_PHYSICS`, and the typed lookup
-  succeeds with a non-null pointer (AC-5).
-- `ovphysx_get_physx_ptr` and `docs/developer_guide.md` document that toggling
-  `eDISABLE_SIMULATION` on a returned actor pointer is unsupported and undefined
-  for DirectGPU I/O, and name the official disable paths (AC-6). DirectGPU
-  disable/read/write coverage through the official ovstage path lives in
-  `test_directgpu_disabled_body.cpp`.
+- Live objects yield a non-null host `uint64`.
+- Missing objects and unsupported query types yield no pointer row.
+- Detach stops the address from being reacquired.

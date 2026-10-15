@@ -12,9 +12,9 @@ namespace omni
 namespace physx
 {
 PhysicsStats getPhysicsStats();
-BatchedContactBufferStats getBatchedContactBufferStats();
-float getMassInformation(const char* path, carb::Float3& inertia, carb::Float3& com);
-void getMaterialsPaths(const TestPathArg& path, std::vector<TestPathArg>& materials);
+BatchedContactBufferStats getBatchedContactBufferStats(AttachHandle attach);
+float getMassInformation(AttachHandle attach, const char* path, carb::Float3& inertia, carb::Float3& com);
+void getMaterialsPaths(AttachHandle attach, const TestPathArg& path, std::vector<TestPathArg>& materials);
 void startLoggerCheck(const char* message, bool expectedResult, bool partialStringMatch);
 void startLoggerCheckForMultiple(std::vector<std::string>& messages,
                                  bool expectedResult,
@@ -22,7 +22,9 @@ void startLoggerCheckForMultiple(std::vector<std::string>& messages,
                                  bool partialStringMatch);
 bool endLoggerCheck();
 bool isCudaLibPresent();
-size_t getSceneInternalActorCount(const TestPathArg& scenePath);
+size_t getSceneInternalActorCount(AttachHandle attach, const TestPathArg& scenePath);
+bool getForceRigidActor(AttachHandle attach, const TestPathArg& forcePath, void** outRigidActor);
+size_t getSceneInternalForceCount(AttachHandle attach, const TestPathArg& scenePath);
 
 } // namespace physx
 } // namespace omni

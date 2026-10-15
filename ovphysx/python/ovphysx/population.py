@@ -83,7 +83,6 @@ API_APPLIES_TO = {
     'PhysxConvexDecompositionCollisionAPI': ('Gprim',),
     'PhysxConvexHullCollisionAPI': ('Gprim',),
     'PhysxDrivePerformanceEnvelopeAPI': ('PhysicsJoint',),
-    'PhysxJointAPI': ('PhysicsJoint',),
     'PhysxJointAxisAPI': ('PhysicsJoint',),
     'PhysxLimitAPI': ('PhysicsJoint',),
     'PhysxMaterialAPI': ('Typed',),
@@ -116,7 +115,6 @@ API_REQUIRES = {
     'PhysxConvexDecompositionCollisionAPI': ('PhysicsCollisionAPI',),
     'PhysxConvexHullCollisionAPI': ('PhysicsCollisionAPI',),
     'PhysxDrivePerformanceEnvelopeAPI': ('PhysicsDriveAPI',),
-    'PhysxJointAPI': (),
     'PhysxJointAxisAPI': (),
     'PhysxLimitAPI': (),
     'PhysxMaterialAPI': ('PhysicsMaterialAPI',),
@@ -396,11 +394,6 @@ def resolved_defaults(component: str, meters_per_unit: float = 1.0, kilograms_pe
             'physxDrivePerformanceEnvelope:<inst>:velocityDependentResistance': 0.0,
             'physxDrivePerformanceEnvelope:<inst>:speedEffortGradient': 0.0,
         },
-        'PhysxJointAPI': {
-            'physxJoint:jointFriction': 0.0,
-            'physxJoint:armature': 0.0,
-            'physxJoint:maxJointVelocity': FLT_MAX,
-        },
         'PhysxJointAxisAPI': {
             'physxJointAxis:<inst>:armature': 0.0,
             'physxJointAxis:<inst>:maxJointVelocity': FLT_MAX,
@@ -460,7 +453,7 @@ def resolved_defaults(component: str, meters_per_unit: float = 1.0, kilograms_pe
             'physxScene:enableStabilization': False,
             'physxScene:enableGPUDynamics': True,
             'physxScene:enableEnhancedDeterminism': False,
-            'physxScene:enableExternalForcesEveryIteration': False,
+            'physxScene:enableExternalForcesEveryIteration': True,
             'physxScene:invertCollisionGroupFilter': False,
             'physxScene:reportKinematicKinematicPairs': False,
             'physxScene:reportKinematicStaticPairs': False,
@@ -665,7 +658,7 @@ class PrimBatch:
         return self
 
     def define_cone(self, *, local_matrix=None, reset_xform_stack=None, world_matrix=None, radius=None, height=None, margin=None, axis=None):
-        """Cone geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cone (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; OVPHYSX_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY defaults to true. Set it to false to use a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.
+        """Cone geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cone (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; OVPHYSX_GLOBAL_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY defaults to true. Set it to false to use a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.
 
         ``local_matrix`` is (N, 16) row-major, identity when omitted. ``world_matrix`` is
         optional and must be the composed world transform if given.
@@ -693,7 +686,7 @@ class PrimBatch:
         return self
 
     def define_cylinder(self, *, local_matrix=None, reset_xform_stack=None, world_matrix=None, radius=None, height=None, margin=None, axis=None):
-        """Cylinder geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cylinder (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; OVPHYSX_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY defaults to true. Set it to false to use a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.
+        """Cylinder geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cylinder (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; OVPHYSX_GLOBAL_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY defaults to true. Set it to false to use a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.
 
         ``local_matrix`` is (N, 16) row-major, identity when omitted. ``world_matrix`` is
         optional and must be the composed world transform if given.
@@ -1211,7 +1204,7 @@ class PrimBatch:
         return self
 
     def apply_physx_contact_report_api(self, *, threshold=None, report_pairs=None):
-        """Registers a rigid body (or every link of an articulation) for contact reporting. Read by the runtime at actor creation, not by the parse library; without the API in usd-schemas nothing is registered even if the attributes are authored."""
+        """Registers a rigid actor (including a standalone static collider), or every link of an articulation, for contact reporting. A standalone static collider reports on CPU simulation and GPU dynamics with CPU readback; on DirectGPU its sensor row remains but reads zero force. On a separate child collider, the API enables sensor selection on CPU simulation and GPU dynamics with CPU readback but does not enable the owning body's reporting. Read by the runtime at actor creation, not by the parse library; without the API in usd-schemas nothing is registered even if the attributes are authored."""
         self._apply('PhysxContactReportAPI')
         if threshold is not None:
             self._add('physxContactReport:threshold', threshold, 'float32', 1, None)
@@ -1258,17 +1251,6 @@ class PrimBatch:
             self._add('physxDrivePerformanceEnvelope:<inst>:velocityDependentResistance'.replace('<inst>', instance), velocity_dependent_resistance, 'float32', 1, None, 'physxDrivePerformanceEnvelope:<inst>:velocityDependentResistance')
         if speed_effort_gradient is not None:
             self._add('physxDrivePerformanceEnvelope:<inst>:speedEffortGradient'.replace('<inst>', instance), speed_effort_gradient, 'float32', 1, None, 'physxDrivePerformanceEnvelope:<inst>:speedEffortGradient')
-        return self
-
-    def apply_physx_joint_api(self, *, joint_friction=None, armature=None, max_joint_velocity=None):
-        """PhysX tuning shared by every joint type: joint friction, a joint-level armature seed and a joint-level maximum joint velocity. The two per-axis values are seeds that PhysxJointAxisAPI:<inst> may override per axis. All three only take effect on articulation joints; standalone PxJoints have no counterpart."""
-        self._apply('PhysxJointAPI')
-        if joint_friction is not None:
-            self._add('physxJoint:jointFriction', joint_friction, 'float32', 1, None)
-        if armature is not None:
-            self._add('physxJoint:armature', armature, 'float32', 1, None)
-        if max_joint_velocity is not None:
-            self._add('physxJoint:maxJointVelocity', max_joint_velocity, 'float32', 1, None)
         return self
 
     def apply_physx_joint_axis_api(self, instance: str, *, armature=None, max_joint_velocity=None, static_friction_effort=None, dynamic_friction_effort=None, viscous_friction_coefficient=None):

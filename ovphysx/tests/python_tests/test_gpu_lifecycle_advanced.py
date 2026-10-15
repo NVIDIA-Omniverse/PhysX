@@ -10,7 +10,7 @@
 # @implements REQ-CAPI-WRITE-001
 # @covers AC-1 AC-5a AC-9
 # @maps_to TEST-CAPI-WRITE-001
-# PARTIALLY DEPRECATED (tensor-binding-deprecation): test_prim_paths_gpu_binding and test_prim_paths_gpu_zero_count_binding exercise the binding's own prim_paths / count accessors, which retire with the binding and have no session-read equivalent. The warmup-read and GPU-without-DirectGPU tests here use PhysX.read, and the ContactBinding tests are a separate API that stays.
+# PARTIALLY DEPRECATED (tensor-binding-deprecation): test_prim_paths_gpu_binding and test_prim_paths_gpu_zero_count_binding exercise the binding's own prim_paths / count accessors, which retire with the binding and have no session-read equivalent. The warmup-read and GPU-without-DirectGPU tests here use PhysX.read_sync, and the ContactBinding tests are a separate API that stays.
 
 """GPU-mode lifecycle and state-management tests.
 
@@ -19,8 +19,6 @@ conftest:
   - warmup explicit timing / idempotency / after-reset behaviour
   - prim_paths on GPU bindings
   - ContactBinding GPU properties and unfiltered error paths
-  - step_n_sync n=0/-1 boundary on GPU
-  - get_contact_report on GPU
   - GPU mode WITHOUT DirectGPU (no suppressReadback) via a separate fixture
 """
 
@@ -86,10 +84,10 @@ def test_warmup_multiple_calls_idempotent(physx_sdk):
 
 
 def test_warmup_after_reset_triggers_again(physx_sdk):
-    """After reset+reload, an explicit warmup must succeed (GPU state re-initializes)."""
+    """After detach+reload, an explicit warmup must succeed (GPU state re-initializes)."""
     _load_rb(physx_sdk, warmup=True)
 
-    physx_sdk.reset_stage()
+    physx_sdk.detach_ovstage()
     physx_sdk.wait_all()
 
     load_usd_with_ovstage(physx_sdk, data_path("boxes_falling_on_groundplane.usda"))
@@ -97,7 +95,7 @@ def test_warmup_after_reset_triggers_again(physx_sdk):
 
     physx_sdk.warmup()
 
-    # After reset + reload + warmup, a read session must open and yield the rigid-body poses.
+    # After detach + reload + warmup, a read session must open and yield the rigid-body poses.
     assert read_rigid_body_poses(physx_sdk).shape[0] > 0, "expected rigid-body poses after warmup"
 
 
@@ -199,54 +197,6 @@ def test_contact_binding_unfiltered_read_normal_force_matrix_raises_gpu(physx_sd
 
 
 # ---------------------------------------------------------------------------
-# step_n_sync boundary on GPU
-# ---------------------------------------------------------------------------
-
-
-def test_step_n_sync_zero_raises_gpu(physx_sdk):
-    """step_n_sync(n=0) must raise RuntimeError on GPU instance."""
-    _load_rb(physx_sdk)
-    with pytest.raises(RuntimeError):
-        physx_sdk.step_n_sync(n=0, dt=1.0 / 60.0)
-
-
-def test_step_n_sync_negative_raises_gpu(physx_sdk):
-    """step_n_sync(n=-1) must raise RuntimeError on GPU instance."""
-    _load_rb(physx_sdk)
-    with pytest.raises(RuntimeError):
-        physx_sdk.step_n_sync(n=-1, dt=1.0 / 60.0)
-
-
-# ---------------------------------------------------------------------------
-# get_contact_report on GPU
-# ---------------------------------------------------------------------------
-
-
-def test_get_contact_report_gpu(physx_sdk):
-    """get_contact_report on GPU after a step must return a dict with
-    num_headers >= 0 and accessible struct fields."""
-    load_usd_with_ovstage(physx_sdk, data_path("boxes_falling_on_groundplane.usda"))
-    physx_sdk.wait_all()
-    physx_sdk.warmup()
-    for _ in range(20):  # let boxes fall and generate contacts
-        physx_sdk.step_sync(1.0 / 60.0)
-
-    report = physx_sdk.get_contact_report(include_friction_anchors=False)
-    assert isinstance(report, dict)
-    assert "num_headers" in report
-    assert isinstance(report["num_headers"], int)
-    assert report["num_headers"] >= 0
-    assert "num_points" in report
-    assert isinstance(report["num_points"], int)
-
-    if report["num_headers"] > 0:
-        h = report["headers"][0]
-        assert hasattr(h, "actor0")
-        assert hasattr(h, "actor1")
-        assert hasattr(h, "numContactData")
-
-
-# ---------------------------------------------------------------------------
 # GPU mode WITHOUT DirectGPU (no suppressReadback)
 # Runs in a subprocess to avoid polluting the shared GPU session.
 # ---------------------------------------------------------------------------
@@ -255,8 +205,8 @@ def test_get_contact_report_gpu(physx_sdk):
 def test_gpu_mode_without_directgpu():
     """GPU instance WITHOUT suppressReadback must support session read and write.
 
-    GPU without DirectGPU is the default. This subprocess verifies PhysX.read
-    and the disableGravity simulation effect through PhysX.write.
+    GPU without DirectGPU is the default. This subprocess verifies PhysX.read_sync
+    and the disableGravity simulation effect through PhysX.write_sync.
     """
     _tests_dir = os.path.dirname(os.path.abspath(__file__))
     _data_dir = os.path.join(_tests_dir, "..", "data")
@@ -289,7 +239,7 @@ def test_gpu_mode_without_directgpu():
         binding.read(buf)  # must succeed without DirectGPU
         assert buf.shape[1] == 7
         binding.destroy()
-        with physx.read(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
+        with physx.read_sync(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
             # The rigid-body pose column must read back without DirectGPU. Check every partition's
             # column, not just groups[0] -- the first-group-only shape is the one that keeps regressing.
             assert result.groups, "read returned no groups"
@@ -297,33 +247,33 @@ def test_gpu_mode_without_directgpu():
                 assert g.tensors and g.tensors[0].shape[1] == 3
 
         def write_uniform(attribute, value, dtype):
-            with physx.write(SimObjectType.RIGID_BODY, attribute) as session:
+            with physx.write_sync(SimObjectType.RIGID_BODY, attribute) as session:
                 assert session.groups
                 for group in session.groups:
                     tensor = group.tensors[0]
                     tensor.assign(np.full(tensor.shape, value, dtype=dtype))
-                    session.commit(group)
+                    session.commit_sync(group)
 
         def read_positions():
-            with physx.read(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
+            with physx.read_sync(SimObjectType.RIGID_BODY, ["position"], scope=ObjectScope.ALL) as result:
                 assert result.groups
                 return np.concatenate([group.tensors[0].numpy() for group in result.groups])
 
         def read_velocities():
-            with physx.read(SimObjectType.RIGID_BODY, ["linearVelocity"], scope=ObjectScope.ALL) as result:
+            with physx.read_sync(SimObjectType.RIGID_BODY, ["linearVelocity"], scope=ObjectScope.ALL) as result:
                 assert result.groups
                 return np.concatenate([group.tensors[0].numpy() for group in result.groups])
 
         def write_alternating_disable_gravity():
             offset = 0
-            with physx.write(SimObjectType.RIGID_BODY, "disableGravity") as session:
+            with physx.write_sync(SimObjectType.RIGID_BODY, "disableGravity") as session:
                 assert session.groups
                 for group in session.groups:
                     tensor = group.tensors[0]
                     values = np.zeros(tensor.shape, dtype=np.uint8)
                     values.reshape(-1)[(offset % 2)::2] = 1
                     tensor.assign(values)
-                    session.commit(group)
+                    session.commit_sync(group)
                     offset += values.size
 
         before_velocity = read_velocities()
@@ -375,7 +325,7 @@ def test_prestep_write_applies_without_directgpu():
         assert not PhysX.get_cpu_mode(), "process is hard CPU-only; this case is GPU-with-readback"
         load_usd_with_ovstage(physx, usd_path)
         physx.wait_all()
-        with physx.write(SimObjectType.RIGID_BODY, "position") as w:
+        with physx.write_sync(SimObjectType.RIGID_BODY, "position") as w:
             assert w.groups, "expected writable groups before the first step"
             float_off = 0
             chunks = []
@@ -385,14 +335,14 @@ def test_prestep_write_applies_without_directgpu():
                 g.tensors[0].assign(np.ascontiguousarray(block).reshape(g.tensors[0].shape))
                 cuda = next((t for t in g.tensors if t.size and t.device.is_cuda), None)
                 if cuda is None:
-                    w.commit(g)
+                    w.commit_sync(g)
                 else:
                     stream = wp.get_stream(cuda.device)
-                    w.commit(g, cuda_stream=int(stream.cuda_stream or 1))
+                    w.commit_sync(g, cuda_stream=int(stream.cuda_stream or 1))
                 chunks.append(block)
                 float_off += n * 3
             target = np.concatenate(chunks)
-        with physx.read(SimObjectType.RIGID_BODY, ["position"]) as r:
+        with physx.read_sync(SimObjectType.RIGID_BODY, ["position"]) as r:
             assert r.groups, "GPU-with-readback can read before the first step"
             got = np.concatenate([g.tensors[0].numpy().reshape(g.prim_count, -1) for g in r.groups])
         assert got.shape == target.shape
@@ -415,3 +365,60 @@ def test_prestep_write_applies_without_directgpu():
             pytest.skip("GPU not available in this environment")
         pytest.fail(f"GPU-with-readback pre-step write failed:\nSTDOUT: {result.stdout}\nSTDERR: {result.stderr}")
     assert "GPU_PRESTEP_WRITE_OK" in result.stdout
+
+
+@pytest.mark.parametrize(
+    "object_type,attribute,pattern,value",
+    [
+        ("ARTICULATION", "rootPosition", "/World/articulation2", [2.5, 0.0, 30.0]),
+        ("ARTICULATION_LINK", "mass", "/World/articulation2/articulationLink0", [2.0]),
+        ("ARTICULATION_JOINT", "jointPosition", "/World/articulation2/articulatedRevoluteJoint1", [0.05]),
+    ],
+    ids=["root", "link", "joint"],
+)
+def test_articulation_prestep_write_applies_without_directgpu(object_type, attribute, pattern, value):
+    """GPU with readback: an articulation write as the first operation applies before the first step."""
+    _tests_dir = os.path.dirname(os.path.abspath(__file__))
+    _data_dir = os.path.join(_tests_dir, "..", "data")
+    script = textwrap.dedent(f"""
+        import os, sys
+        sys.path.insert(0, {repr(_tests_dir)})
+        import numpy as np
+        import warp as wp
+        from ovphysx import PhysX
+        from ovphysx.types import SimObjectType
+        from test_utils import load_usd_with_ovstage
+
+        if wp.get_cuda_device_count() == 0:
+            raise RuntimeError("No CUDA devices found")
+        physx = PhysX()
+        assert not PhysX.get_cpu_mode(), "process is hard CPU-only; this case is GPU-with-readback"
+        load_usd_with_ovstage(physx, os.path.join({repr(_data_dir)}, "mixed_base_articulations_gpu.usda"))
+        physx.wait_all()
+        object_type = SimObjectType.{object_type}
+        target = np.asarray({value!r}, dtype=np.float32)
+        with physx.write_sync(object_type, {attribute!r}, pattern={pattern!r}) as w:
+            assert len(w.groups) == 1, "expected one writable group before the first step"
+            g = w.groups[0]
+            g.tensors[0].assign(target.reshape(g.tensors[0].shape))
+            cuda = next((t for t in g.tensors if t.size and t.device.is_cuda), None)
+            if cuda is None:
+                w.commit_sync(g)
+            else:
+                w.commit_sync(g, cuda_stream=int(wp.get_stream(cuda.device).cuda_stream or 1))
+        with physx.read_sync(object_type, [{attribute!r}], pattern={pattern!r}) as r:
+            assert len(r.groups) == 1, "GPU-with-readback can read before the first step"
+            got = r.groups[0].tensors[0].numpy().reshape(-1)
+        assert np.allclose(got, target, rtol=0, atol=1e-5), got
+        print("GPU_ARTICULATION_PRESTEP_WRITE_OK")
+    """)
+
+    result = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True, timeout=120)
+    if result.returncode != 0:
+        combined = result.stdout + result.stderr
+        if any(kw in combined for kw in ["GPU_NOT_AVAILABLE", "CUDA driver not available", "No CUDA devices found"]):
+            pytest.skip("GPU not available in this environment")
+        pytest.fail(
+            f"GPU-with-readback articulation pre-step write failed:\nSTDOUT: {result.stdout}\nSTDERR: {result.stderr}"
+        )
+    assert "GPU_ARTICULATION_PRESTEP_WRITE_OK" in result.stdout

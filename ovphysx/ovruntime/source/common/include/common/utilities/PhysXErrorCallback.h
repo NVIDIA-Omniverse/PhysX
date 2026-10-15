@@ -27,9 +27,6 @@ public:
         : mErrorEventType(0),
           mNumErrors(0),
           mMaxNumErrors(0xffffffff)
-#if PX_SUPPORT_GPU_PHYSX        
-        , mCudaContextManager(nullptr)
-#endif        
     {
     }
 
@@ -85,22 +82,7 @@ public:
                 {
                     sendTooManyErrorsStopSimulationEvent();
                 }
-#if PX_SUPPORT_GPU_PHYSX
-                // Ignore out-of-memory errors: they can occur before a valid scene exists, where we fall back
-                // to CPU and must not stop the timeline. We still catch real errors via the abort case above.
 
-                if (mCudaContextManager)
-                {
-                    physx::PxCUresult error = mCudaContextManager->getCudaContext()->getLastError();
-                    if ((error > 0) && (error != CUDA_OUT_OF_MEMORY))
-                    {
-                        CARB_LOG_ERROR(
-                            "Cuda context manager error, simulation will be stopped and new cuda context manager will be created.");
-                        sendErrorEvent(mEventStream, omni::physx::ePhysxCudaError,
-                                       std::make_pair("errorString", customErrMsg.c_str()));
-                    }
-                }
-#endif
             }
             mNumErrors++;
         }
@@ -111,12 +93,7 @@ public:
         mEventStream = eventStream;
     }
 
-#if PX_SUPPORT_GPU_PHYSX            
-    void setCudaContextManager(::physx::PxCudaContextManager* man)
-    {
-        mCudaContextManager = man;
-    }
-#endif
+
 
     void invalidateEventStream()
     {
@@ -153,7 +130,5 @@ private:
     carb::events::EventType         mErrorEventType;
     uint32_t                        mNumErrors;
     uint32_t                        mMaxNumErrors;
-#if PX_SUPPORT_GPU_PHYSX            
-    ::physx::PxCudaContextManager*  mCudaContextManager;
-#endif
+
 };

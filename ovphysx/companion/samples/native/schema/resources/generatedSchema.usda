@@ -1,0 +1,26 @@
+#usda 1.0
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+class CompanionSpringJoint "CompanionSpringJoint"
+{
+    rel physics:body0
+    rel physics:body1
+    point3f physics:localPos0 = (0, 0, 0)
+    point3f physics:localPos1 = (0, 0, 0)
+    quatf physics:localRot0 = (1, 0, 0, 0)
+    quatf physics:localRot1 = (1, 0, 0, 0)
+    bool physics:jointEnabled = true
+    bool physics:collisionEnabled = false
+    uniform bool physics:excludeFromArticulation = true
+    float physics:breakForce = inf
+    float physics:breakTorque = inf
+    float companion:stiffness = 50
+    float companion:damping = 2
+    float companion:restLength = 1
+}
+
+class "CompanionBallAPI"
+{
+    float companion:radius = 0.5
+}

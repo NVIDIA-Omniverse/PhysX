@@ -70,7 +70,7 @@ reported no contacts and to size a replacement binding for a complete read.
 
 ## Code References
 
-- ovphysx/include/ovphysx/ovphysx.h (`ovphysx_read_raw_contact_data` extended signature)
+- ovphysx/include/ovphysx/ovphysx_legacy.h (`ovphysx_read_raw_contact_data` extended signature)
 - ovphysx/src/ovphysx/ovphysxContactBinding.cpp
 - ovphysx/python/ovphysx/_bindings.py
 - ovphysx/python/ovphysx/api.py (`ContactBinding.read_raw_contact_data`)

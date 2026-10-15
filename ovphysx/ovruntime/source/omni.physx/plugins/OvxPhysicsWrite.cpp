@@ -1,29 +1,44 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-3 AC-4
+
 /**
  * @implements REQ-INPUT-CORE-001
- * @covers AC-6 AC-10 AC-12
+ * @covers AC-5 AC-6 AC-10 AC-12 AC-13
  *
  * @implements REQ-INPUT-DEVICE-001
- * @covers AC-1 AC-1a AC-1b AC-3
+ * @covers AC-1 AC-1a AC-1b AC-3 AC-9 AC-10 AC-13
  *
  * @implements REQ-INPUT-COVERAGE-001
- * @covers AC-7 AC-8 AC-9 AC-12 AC-13 AC-14 AC-15 AC-16
+ * @covers AC-6 AC-7 AC-8 AC-9 AC-12 AC-13 AC-14 AC-15 AC-16 AC-18 AC-19 AC-20 AC-21
  *
  * @implements REQ-SIM-OVSTAGE-WRITEAPPLY-001
  * @covers AC-1 AC-2 AC-3 AC-4 AC-5 AC-6 AC-7 AC-8 AC-9 AC-10 AC-12 AC-13
  *
+ * @implements REQ-PROPS-LINK-001
+ * @covers AC-4
+ *
  * @implements REQ-RUNTIME-ERROR-001
  * @covers AC-3 AC-4
+ *
+ * @implements REQ-READ-CCT-001
+ * @covers AC-2 AC-4 AC-5
+ *
+ * @implements REQ-READ-SELECT-001
+ * @covers AC-4
+ *
+ * @implements REQ-READ-SDF-001
+ * @covers AC-2
  *
  * ADR-0012: the app -> physics write, the return direction of OvxPhysicsRead.cpp.
  *
  * WHAT IS HERE: the session -- handle table, group registry, the commit/discard lifecycle, the
  * address-stability rule that makes commit-by-pointer decidable, and rigid-body group planning.
  *
- * SCOPE: four object types, each with its own attribute table, because each reaches DIFFERENT state
- * through a different view -- not because the vocabulary differs.
+ * SCOPE: each object type has its own attribute table because each reaches different state
+ * through a different view or runtime record -- not because the vocabulary differs.
  *
  *   kOvxRigidBody          per-body state and properties, through a rigid view.
  *   kOvxArticulationLink   the same per-body set MINUS what PhysX cannot write on a link. A
@@ -49,7 +64,16 @@
  * bargain the read makes.
  */
 
+/**
+ * @implements REQ-ATTACH-IO-001
+ * @covers AC-2
+ */
+
+#include "RuntimeExecution.h"
+#include "DebugRenderSession.h"
+#include "usdLoad/LoadUsd.h"
 #include <omni/physx/IOvxPhysicsWrite.h>
+#include <characterkinematic/PxController.h>
 #include <omni/physx/RuntimeError.h>
 #include <omni/physx/IOvxPhysicsRead.h> // OvxAttr names, OvxObjectType, kOvx* scopes
 #include <omni/physics/parse/IChangeFeed.h> // ChangeBatch/ColumnView -- the ovstage drain's apply input
@@ -61,10 +85,15 @@
 
 #include "OmniPhysX.h"
 #include "usdLoad/AttachedStage.h"
+#include "usdLoad/LoadUsd.h"
 #include <common/foundation/MatrixTools.h> // affineInverse -- a prim transform may carry scale
 
 #include "internal/Internal.h" // recordLifetimeEpoch
+#include "internal/InternalVehicle.h"
+#include "internal/InternalScene.h"
+#include "tensors/base/BaseVehicleView.h"
 #include "internal/InternalActor.h" // InternalActorFlag::eLOCALSPACE_VELOCITIES -- the local-frame velocity guard
+#include "PhysXScene.h" // scene timestep for PxController::move
 #include "internal/InternalParticle.h" // InternalParticleSet -- the particle write's destination
 #include "internal/InternalDeformable.h" // InternalDeformableBody -- the sim-mesh reframe
 #include "tensors/PointSetReframe.h" // PointSetTransform
@@ -91,17 +120,23 @@
 #include <carb/logging/Log.h>
 
 #include <algorithm> // std::find
+#include <cmath>
 #include <cstdio>
 #include <cstdint>
+#include <exception>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 using namespace ::physx;
+using omni::physx::usdparser::AttachedStage;
+using omni::physx::usdparser::UsdLoad;
+using omni::physx::internal::InternalScene;
 using omni::physx::cudaShimWrappers::getCudaShim;
 using omni::physics::parse::IPhysicsSource;
 using omni::physics::parse::ObjectKey;
@@ -149,18 +184,25 @@ struct WriteAttributeRow
     // Device-path attributes name a method per backend; host-only ones name a single
     // BaseRigidBodyView method in `baseWrite` instead, since there is no device variant to differ.
     // Exactly one of the two is set, which is what `hostOnly` selects between.
+    // The trailing bool is `wholeSet`: true when the write names every row the attachment owns (scope
+    // kOvxAll, no selection, no disabled/controller filtering), so a setter that confirms this covers its
+    // own view can skip subset bookkeeping. Only the link-wrench/force path reads it today; the others
+    // accept and ignore it.
     bool (omni::physx::tensors::GpuRigidBodyView::*gpuWrite)(const omni::physics::tensors::TensorDesc*,
                                                              const PxU32*,
                                                              PxU32,
-                                                             uint64_t);
+                                                             uint64_t,
+                                                             bool);
     bool (omni::physx::tensors::CpuRigidBodyView::*cpuWrite)(const omni::physics::tensors::TensorDesc*,
                                                              const PxU32*,
                                                              PxU32,
-                                                             uint64_t);
+                                                             uint64_t,
+                                                             bool);
     bool (omni::physx::tensors::BaseRigidBodyView::*baseWrite)(const omni::physics::tensors::TensorDesc*,
                                                               const PxU32*,
                                                               PxU32,
-                                                              uint64_t);
+                                                              uint64_t,
+                                                              bool);
 };
 
 constexpr omni::physics::tensors::TensorDataType kF32 = omni::physics::tensors::TensorDataType::eFloat32;
@@ -210,6 +252,18 @@ constexpr WriteAttributeRow kRigidWriteAttributes[] = {
       &omni::physx::tensors::BaseRigidBodyView::setDisableGravitiesOvStage },
     { OvxAttr::kDisableSimulation, 1, false, kU8, true, false, false, nullptr, nullptr,
       &omni::physx::tensors::BaseRigidBodyView::setDisableSimulationsOvStage },
+    // Wake / sleep control. Write-only (no read column), and host-only uint8 like disableSimulation:
+    // wakeUp/putToSleep are CPU-side PhysX calls with no device write type, so one base setter serves
+    // it and it is REFUSED on a DirectGPU scene in planRigidGroup (CONDITIONAL). linkWritable is false:
+    // a link cannot wake or sleep on its own -- the whole articulation does, as a unit.
+    { OvxAttr::kWake, 1, false, kU8, true, false, false, nullptr, nullptr,
+      &omni::physx::tensors::BaseRigidBodyView::setWakeStatesOvStage },
+    // Kinematic target, split POINT + QUATERNION and read-modify-written per half, like the COM pose
+    // above. linkWritable is false: only a kinematic PxRigidDynamic has a target, never a link.
+    { OvxAttr::kKinematicTargetPosition, 3, false, kF32, true, false, false, nullptr, nullptr,
+      &omni::physx::tensors::BaseRigidBodyView::setKinematicTargetPositionsOvStage },
+    { OvxAttr::kKinematicTargetOrientation, 4, false, kF32, true, false, false, nullptr, nullptr,
+      &omni::physx::tensors::BaseRigidBodyView::setKinematicTargetOrientationsOvStage },
 
     // Per-shape: `components` is 0 because the width is the widest body in this session.
     { OvxAttr::kStaticFriction, 0, false, kF32, true, true, true, nullptr, nullptr,
@@ -406,11 +460,7 @@ const DeformableMaterialWriteRow* findDeformableMaterialWriteAttribute(std::stri
     return nullptr;
 }
 
-// The kOvxVehicleWheel control table (ADR-0012).
-//
-// These serve vehicles WITHOUT a drive, whose control surface is per wheel. A vehicle WITH a drive is
-// accelerated and steered as a whole, and its commands live on the VEHICLE prim -- which this
-// selector does not address, and which needs a per-vehicle type the read has not defined.
+// Raw-wheel controls and whole-vehicle controls use separate selectors.
 struct VehicleWriteAttributeRow
 {
     const char* token;
@@ -427,6 +477,61 @@ const VehicleWriteAttributeRow* findVehicleWriteAttribute(std::string_view token
 {
     for (const VehicleWriteAttributeRow& row : kVehicleWriteAttributes)
         if (token == row.token)
+            return &row;
+    return nullptr;
+}
+
+// Character-controller movement. Host-only: PxController::move is a CPU call, and on a
+// DirectGPU scene its kinematic target is not uploaded. The written vector is a world-space
+// displacement applied once, at commit, with the owning scene's timestep.
+struct CctWriteAttributeRow
+{
+    const char* token;
+    uint32_t components;
+};
+
+constexpr CctWriteAttributeRow kCctWriteAttributes[] = {
+    { OvxAttr::kMove, 3 },
+};
+
+const CctWriteAttributeRow* findCctWriteAttribute(std::string_view token)
+{
+    for (const CctWriteAttributeRow& row : kCctWriteAttributes)
+        if (token == row.token)
+            return &row;
+    return nullptr;
+}
+
+struct VehicleControlAttributeRow
+{
+    const char* token;
+    omni::physx::tensors::BaseVehicleView::VehicleControl control;
+    omni::physics::tensors::TensorDataType dtype;
+};
+
+constexpr VehicleControlAttributeRow kVehicleControlAttributes[] = {
+    { OvxAttr::kAccelerator, omni::physx::tensors::BaseVehicleView::VehicleControl::eAccelerator,
+      omni::physics::tensors::TensorDataType::eFloat32 },
+    { OvxAttr::kBrake0, omni::physx::tensors::BaseVehicleView::VehicleControl::eBrake0,
+      omni::physics::tensors::TensorDataType::eFloat32 },
+    { OvxAttr::kBrake1, omni::physx::tensors::BaseVehicleView::VehicleControl::eBrake1,
+      omni::physics::tensors::TensorDataType::eFloat32 },
+    { OvxAttr::kSteer, omni::physx::tensors::BaseVehicleView::VehicleControl::eSteer,
+      omni::physics::tensors::TensorDataType::eFloat32 },
+    { OvxAttr::kRequestedGear, omni::physx::tensors::BaseVehicleView::VehicleControl::eRequestedGear,
+      omni::physics::tensors::TensorDataType::eInt32 },
+    { OvxAttr::kThrust0, omni::physx::tensors::BaseVehicleView::VehicleControl::eThrust0,
+      omni::physics::tensors::TensorDataType::eFloat32 },
+    { OvxAttr::kThrust1, omni::physx::tensors::BaseVehicleView::VehicleControl::eThrust1,
+      omni::physics::tensors::TensorDataType::eFloat32 },
+    { OvxAttr::kResetToRestState, omni::physx::tensors::BaseVehicleView::VehicleControl::eResetToRestState,
+      omni::physics::tensors::TensorDataType::eUint8 },
+};
+
+const VehicleControlAttributeRow* findVehicleControlAttribute(std::string_view name)
+{
+    for (const VehicleControlAttributeRow& row : kVehicleControlAttributes)
+        if (name == row.token)
             return &row;
     return nullptr;
 }
@@ -463,8 +568,21 @@ const WriteAttributeRow* findRigidWriteAttribute(std::string_view token)
 // indistinguishable from a live one.
 struct GroupSlot
 {
+    explicit GroupSlot(AttachHandle owner) : attach(owner)
+    {
+    }
+
+    GroupSlot(const GroupSlot&) = delete;
+    GroupSlot& operator=(const GroupSlot&) = delete;
+
     ovstage_map_group_t group{};
+    size_t attributeIndex = 0;
     bool committed = false;
+    // Set while an ACCEPTED commit's producer handoff (ovstage_cuda_sync_t) is not proven complete:
+    // the caller's stream or event may still be writing this slot's storage, host floats included,
+    // so release quarantines the whole slot instead of freeing it. Cleared only once every supplied
+    // dependency has completed on the host (honourCallerSync).
+    bool producerUnproven = false;
 
     // Storage the CALLER fills, aliased by group.data.tensors[0]. Host or device by the scene's
     // pipeline, matching what the read emits for the same scene, so a caller can hand a column
@@ -492,6 +610,8 @@ struct GroupSlot
     std::vector<int64_t> shapes;
     std::vector<DLTensor> tensors;
     ovx_primpath_list_t list = OVX_INVALID_PRIMPATH_LIST;
+    ovx_path_dictionary_t* listDictionary = nullptr;
+    AttachHandle attach;
 
     // The scatter destination. Bodies are NOT dereferenced before commit -- they name what to
     // re-resolve, and commit re-resolves rows against a generation taken at that moment, because a
@@ -503,6 +623,11 @@ struct GroupSlot
     // The resolved column width. Equals row->components except for a per-shape attribute, where it
     // is the widest body in this session and therefore a property of the session, not of the row.
     uint32_t comp = 0;
+    // True when this group names every row the attachment owns (scope kOvxAll, no selection, no disabled /
+    // controller filtering). Handed to the write setter, which takes the link-wrench whole-view fast path
+    // only when that also covers its view -- the view can hold articulations the attachment does not own.
+    // Conservative: any filtering leaves it false (the sparse path is always correct, just slower).
+    bool wholeSet = false;
 
     // Joint groups only. `numOut` is the flat DOF count the column carries (the sum of every slice),
     // and `recsDev` is the uploaded per-output record list the scatter indexes through -- device
@@ -510,6 +635,10 @@ struct GroupSlot
     const JointWriteAttributeRow* jointRow = nullptr;
     CUdeviceptr recsDev = 0;
     uint32_t numOut = 0;
+    // When a prim-set selection compacted the joint records, the CPU scatter re-derives the shared cache
+    // by default and would mismatch the compacted column; this holds the filtered records so the scatter
+    // applies exactly the selected DOFs. Empty for a whole-set write (the scatter keeps re-deriving).
+    std::vector<omni::physx::tensors::ArticulationDofOvStageRecord> recsHost;
 
     // Articulation-root groups only. `artis` names what to re-resolve at commit, exactly as `bodies`
     // does for a rigid group and for the same reason: a superset row resolved at plan time addresses
@@ -520,12 +649,27 @@ struct GroupSlot
     uint64_t rowsVersion = 0;
 
     // Tendon groups only. `tendonFixed` picks the kind, which decides both the PhysX struct and
-    // whether limit / rest length are addressable at all.
+    // whether limit / rest length are addressable at all. `tendonRecsHost`, like the joint `recsHost`,
+    // holds the prim-set-compacted record list so the host scatter applies exactly the selected tendons
+    // instead of re-reading the full shared cache by row index; empty for a whole-set write.
     const TendonWriteAttributeRow* tendonRow = nullptr;
     bool tendonFixed = false;
+    std::vector<omni::physx::tensors::ArticulationTendonOvStageRecord> tendonRecsHost;
 
-    // Vehicle wheel groups only.
+    // Vehicle groups capture their selected wheel records or whole-vehicle indices at planning.
+    // Commit validates the captured epoch and generation before using these row mappings.
     const VehicleWriteAttributeRow* vehicleRow = nullptr;
+    const VehicleControlAttributeRow* vehicleControlRow = nullptr;
+    std::vector<omni::physx::tensors::VehicleWheelOvStageRecord> vehicleRecsHost;
+    std::vector<uint32_t> wholeVehicleRecs;
+    std::vector<int32_t> vehicleGears;
+    std::vector<uint8_t> vehicleCommands;
+    uint64_t vehicleSetEpoch = 0;
+    uint64_t vehicleGeneration = 0;
+
+    // Character-controller groups only. Host-only, one fixed group. `keys` names
+    // controllers to re-resolve at commit; no runtime pointer crosses the session.
+    const CctWriteAttributeRow* cctRow = nullptr;
 
     // Joint DOF PROPERTY groups only (ADR-0012). Host-resident by construction.
     const JointPropertyWriteRow* jointPropRow = nullptr;
@@ -543,8 +687,9 @@ struct GroupSlot
     // Deformable sim-mesh groups only (ADR-0012). One group per BODY, device-resident: the
     // destination is PhysX's own buffer, so this is a device scatter plus markDirty.
     bool isDeformable = false;
-    bool deformableVolume = false;   // which concrete type `deformableBody` is
-    bool deformableVelocity = false; // false = points
+    bool deformableVolume = false;          // which concrete type `deformableBody` is
+    bool deformableVelocity = false;        // false = points
+    bool deformableKinematicTarget = false; // vec4 per node into the runtime-owned buffer; volume only
     // Parallel, one entry per body in this group. ONE group covers every body of the kind, with one
     // tensor each sharing a single allocation -- the shape the read emits, so a column can be read
     // and handed straight back. A group per body cost 128 device allocations, fills and frees where
@@ -577,18 +722,67 @@ struct GroupSlot
     // pointer into it would dangle.
     bool cacheable = false;
     ovx::RigidReadCacheKey cacheKey{};
+
+    void releaseList()
+    {
+        if (list != OVX_INVALID_PRIMPATH_LIST)
+        {
+            // The dictionary is borrowed from this exact attachment. A late native release
+            // must not dereference it after detach has destroyed the owner.
+            UsdLoad* load = UsdLoad::getUsdLoadIfCreated();
+            if (listDictionary && load && load->getAttachedStageByHandle(attach))
+                ovx_path_dictionary_destroy_path_list(listDictionary, list);
+            list = OVX_INVALID_PRIMPATH_LIST;
+        }
+    }
+
+    ~GroupSlot()
+    {
+        // Own the list before any subsequent vector allocation or session adoption can throw.
+        releaseList();
+        // Covers both an unpublished plan that failed and storage retained past
+        // detach. Normal session release clears the allocations first.
+        if (!ctxMgr)
+            return;
+        if (PxCudaContext* cu = ctxMgr->getCudaContext())
+        {
+            PxScopedCudaLock lock(*ctxMgr);
+            if (deviceData && !borrowed)
+                cu->memFree(deviceData);
+            if (recsDev)
+                cu->memFree(recsDev);
+        }
+        ctxMgr->release();
+    }
 };
 
 struct WriteSession
 {
-    OvxOutputQueryHandle query = 0;
-    std::string attribute; // one per session; the group type carries no attribute field
+    uint64_t attach = 0;
+    uint64_t recordEpoch = 0;
+    std::string attribute; // Current attribute while building a plan.
+    std::vector<std::string> attributeNames;
+    std::vector<OvxWriteAttributeResult> attributeResults;
     std::vector<std::unique_ptr<GroupSlot>> groups;
     size_t nextFetch = 0;
     ovx_path_dictionary_t* dict = nullptr;
+
+    // The query's explicit selection or its ACTIVE membership snapshot, captured
+    // once at session open. All group planners compact against this same set.
+    // An empty set with hasSelection is a valid selection matching nothing.
+    bool hasSelection = false;
+    std::unordered_set<ObjectKey, ObjectKey::Hash> selectionKeys;
+    bool debugRender = false;
+    uint64_t debugOwner = 0;
+    debug_render::WriteKind debugKind = debug_render::WriteKind::Scale;
+    int debugParam = -1;
+    bool admits(const ObjectKey& k) const
+    {
+        return !hasSelection || selectionKeys.find(k) != selectionKeys.end();
+    }
 };
 
-std::mutex g_mutex; // guards g_writes and g_nextWriteHandle, as OvxPhysicsRead.cpp does
+ // guards g_writes and g_nextWriteHandle, as OvxPhysicsRead.cpp does
 std::unordered_map<OvxWriteHandle, WriteSession> g_writes;
 OvxWriteHandle g_nextWriteHandle = 1; // 0 is the invalid sentinel
 
@@ -613,8 +807,18 @@ GroupSlot* findLiveGroup(WriteSession& s, const ovstage_map_group_t* g)
     return nullptr;
 }
 
+// Sentinel for planRigidGroup's wholeSetScope: "no distinct write scope was supplied, use `scope`."
+// 0xFFFFFFFF is neither kOvxAll (0) nor kOvxActive (1), so it can never be a real scope.
+constexpr uint32_t kWholeSetScopeFromCache = 0xFFFFFFFFu;
+
 // Build one scene's group: allocate the column the caller fills, name the prims it covers, and stamp
 // the DLTensor. Residence follows the scene's pipeline, exactly as the read's does.
+//
+// `scope` is the CACHE discriminator (cache key + cacheable gate). `wholeSetScope` is the query's REAL
+// scope, used only for the whole-set test: the link path forces `scope` to kOvxActive so a link session
+// cannot share the rigid cache, which would otherwise report every link write as a subset and keep the
+// host dedup on even for a kOvxAll write. It defaults to `scope` -- the rigid callers, where the two
+// coincide -- so only the link path need pass its true query scope.
 bool planRigidGroup(WriteSession& s,
                     IPhysicsSource& source,
                     PxScene* scene,
@@ -622,13 +826,44 @@ bool planRigidGroup(WriteSession& s,
                     const std::vector<ObjectKey>& keys,
                     const WriteAttributeRow& row,
                     uint32_t scope,
-                    bool allocate = true)
+                    bool allocate = true,
+                    uint32_t wholeSetScope = kWholeSetScopeFromCache)
 {
     if (bodies.size() != keys.size())
     {
         OVX_RUNTIME_ERROR("ovxWriteAttribute: rigid-body and key lists disagree for '%s' (%zu bodies, %zu keys); "
                    "nothing was planned.",
                    s.attribute.c_str(), bodies.size(), keys.size());
+        return false;
+    }
+
+    // Kinematic target is INERT on a DirectGPU scene, so refuse it there rather than accept a silent
+    // no-op. PhysX leaves PxRigidDynamic::setKinematicTarget unguarded (it has no counterpart in
+    // PxRigidDynamicGPUAPIWriteType), so the CPU call succeeds and updates the CPU actor -- but under
+    // eENABLE_DIRECT_GPU_API the CPU-integrated kinematic pose is never uploaded to the device, so the
+    // body does not move in the device-authoritative simulation (proven: the driven platform's device
+    // pose stays put and a resting box is not carried). CPU scenes and GPU scenes with CPU readback
+    // drive it normally.
+    if (scene->getFlags().isSet(PxSceneFlag::eENABLE_DIRECT_GPU_API) &&
+        (std::string_view(row.token) == OvxAttr::kKinematicTargetPosition ||
+         std::string_view(row.token) == OvxAttr::kKinematicTargetOrientation))
+    {
+        OVX_RUNTIME_ERROR("ovxWriteAttribute: '%s' is not applied on a DirectGPU scene -- a kinematic target is "
+                   "integrated on the CPU and not uploaded to the device. Drive the body on a CPU scene "
+                   "or a GPU scene with CPU readback.",
+                   row.token);
+        return false;
+    }
+
+    // DirectGPU requires eDISABLE_SLEEPING and does not support this CPU-side wake/sleep command.
+    // Preserve the conditional rejection. CPU scenes and GPU scenes with CPU readback support it.
+    if (scene->getFlags().isSet(PxSceneFlag::eENABLE_DIRECT_GPU_API) &&
+        std::string_view(row.token) == OvxAttr::kWake)
+    {
+        OVX_RUNTIME_ERROR("ovxWriteAttribute: '%s' is not applied on a DirectGPU scene -- sleeping is "
+                   "disabled under eENABLE_DIRECT_GPU_API. Use this command on a CPU scene or a GPU "
+                   "scene with CPU readback.",
+                   row.token);
         return false;
     }
 
@@ -644,7 +879,52 @@ bool planRigidGroup(WriteSession& s,
     const bool filterDisabled = scene->getFlags().isSet(PxSceneFlag::eENABLE_DIRECT_GPU_API) &&
                                 std::string_view(row.token) != OvxAttr::kDisableSimulation &&
                                 (!disableHintBackend || disableHintBackend->sceneMayHaveDisabledRigidDynamics(scene));
-    const ovx::EnabledRigidBodies enabled(bodies, keys, filterDisabled);
+    // Prim-set selection: plan only the selected bodies; unselected superset rows are never scattered and
+    // stay bit-identical (REQ-READ-SELECT-001 AC-4). Covers the standalone rigid AND articulation-link
+    // write paths, which both reach here.
+    std::vector<PxRigidBody*> selBodies;
+    std::vector<ObjectKey> selKeys;
+    const std::vector<PxRigidBody*>* useBodies = &bodies;
+    const std::vector<ObjectKey>* useKeys = &keys;
+    if (s.hasSelection)
+    {
+        const std::vector<size_t> keep = ovx::selectedIndices(s, keys);
+        selBodies = ovx::gatherByIndices(bodies, keep);
+        selKeys = ovx::gatherByIndices(keys, keep);
+        useBodies = &selBodies;
+        useKeys = &selKeys;
+    }
+
+    // A controller proxy is a kinematic dynamic, but rigid-body writes must not drive it:
+    // position / velocity / kinematic-target setters desync PxController from its actor.
+    // The read still reports that actor's global pose.
+    AttachedStage* cctOwner = UsdLoad::getUsdLoad()->getAttachedStageByHandle(s.attach);
+    const std::vector<omni::physx::internal::InternalDatabase::Record>* cctRecords =
+        cctOwner ? &cctOwner->getInternalPhysXDatabase().getRecords() : nullptr;
+    std::vector<PxRigidBody*> withoutControllers;
+    std::vector<ObjectKey> withoutControllerKeys;
+    withoutControllers.reserve(useBodies->size());
+    withoutControllerKeys.reserve(useKeys->size());
+    for (size_t i = 0; i < useBodies->size(); ++i)
+    {
+        PxRigidBody* body = (*useBodies)[i];
+        const size_t id = body ? reinterpret_cast<size_t>(body->userData) : static_cast<size_t>(-1);
+        if (cctRecords && id < cctRecords->size() && (*cctRecords)[id].mType == ePTCct)
+        {
+            auto* cct = static_cast<omni::physx::internal::InternalCct*>((*cctRecords)[id].mInternalPtr);
+            if (cct && cct->mActor == body)
+                continue;
+        }
+        withoutControllers.push_back(body);
+        withoutControllerKeys.push_back((*useKeys)[i]);
+    }
+    // Dropping controller proxies is a subset, same as a selection: storing it in
+    // g_rigidReadCache would make the next whole-set rigid read omit those prims.
+    const bool droppedControllers = withoutControllers.size() != useBodies->size();
+    useBodies = &withoutControllers;
+    useKeys = &withoutControllerKeys;
+
+    const ovx::EnabledRigidBodies enabled(*useBodies, *useKeys, filterDisabled);
     const bool anyDisabled = enabled.anyDisabled();
     const std::vector<PxRigidBody*>& outputBodies = enabled.bodies();
     const std::vector<ObjectKey>& outputKeys = enabled.keys();
@@ -652,7 +932,7 @@ bool planRigidGroup(WriteSession& s,
     if (n == 0)
         return true; // no group: none matched, or every match is disabled (REQ-INPUT-CORE-001 AC-10)
 
-    std::unique_ptr<GroupSlot> slot(new GroupSlot());
+    std::unique_ptr<GroupSlot> slot(new GroupSlot(s.attach));
     slot->scene = scene;
     slot->bodies = outputBodies;
     slot->keys = outputKeys;
@@ -696,6 +976,9 @@ bool planRigidGroup(WriteSession& s,
             OVX_RUNTIME_ERROR("ovxWriteAttribute: DirectGPU scene has no CUDA context; no group emitted.");
             return false;
         }
+        slot->ctxMgr = ctxMgr;
+        ctxMgr->acquireReference();
+        slot->deviceOrdinal = ctxMgr->getDevice();
         PxScopedCudaLock _lock(*ctxMgr);
         cu->memAlloc(&slot->deviceData, bytes);
         if (!slot->deviceData)
@@ -703,8 +986,6 @@ bool planRigidGroup(WriteSession& s,
             OVX_RUNTIME_ERROR("ovxWriteAttribute: column allocation failed (%zu floats).", floats);
             return false;
         }
-        slot->ctxMgr = ctxMgr;
-        slot->deviceOrdinal = ctxMgr->getDevice();
     }
     else if (allocate)
     {
@@ -719,9 +1000,18 @@ bool planRigidGroup(WriteSession& s,
     const ovx::RigidReadCacheKey cacheKey{
         scene, static_cast<int>(omni::physx::tensors::RigidBodyType::eRigidDynamic), scope
     };
-    // Keep the cache's structural census intact while membership is temporarily filtered.
-    const bool cacheable = (scope == kOvxAll && !anyDisabled);
-    ovx_path_dictionary_t* dict = nullptr;
+    // Keep the cache's structural census intact while membership is temporarily filtered: a prim-set
+    // selection plans only its subset, so folding that subset into the shared g_rigidReadCache would make
+    // a later whole read (or write) see only the selected prims (REQ-READ-SELECT-001 AC-5). The
+    // controller filter is the same kind of subset (REQ-READ-CCT-001 AC-3).
+    const bool cacheable = (scope == kOvxAll && !anyDisabled && !s.hasSelection && !droppedControllers);
+    // wholeSet keys on the query's REAL scope: the link path forces `scope` to kOvxActive for the cache
+    // key only. The link-wrench setter skips its host dedup only when this group also names every link
+    // record in its view. (For links anyDisabled/droppedControllers are always false, so this reduces to
+    // the real scope and the selection flag.)
+    const uint32_t effWholeSetScope = (wholeSetScope == kWholeSetScopeFromCache) ? scope : wholeSetScope;
+    slot->wholeSet = (effWholeSetScope == kOvxAll && !anyDisabled && !s.hasSelection && !droppedControllers);
+    ovx_path_dictionary_t*& dict = slot->listDictionary;
     bool built = false;
     if (cacheable)
     {
@@ -733,7 +1023,7 @@ bool planRigidGroup(WriteSession& s,
             if (ce.generation != generation || ce.keys != outputKeys || ce.handles.size() != outputKeys.size())
             {
                 ce.generation = generation;
-                ce.dbEpoch = omni::physx::internal::recordLifetimeEpoch();
+                ce.dbEpoch = omni::physx::internal::recordLifetimeEpoch(scene);
                 ce.keys = outputKeys;
                 ce.bodies = outputBodies;
                 ce.handles.clear();
@@ -803,6 +1093,10 @@ bool planJointGroup(WriteSession& s,
                     PxScene* scene,
                     const JointWriteAttributeRow& row)
 {
+    InternalScene* owningScene = ovx::internalSceneOf(scene);
+    if (!owningScene)
+        return false;
+    AttachedStage& owner = owningScene->getAttachedStage();
     omni::physx::tensors::SimulationBackend* backend = omni::physx::tensors::GetSimulationBackend();
     if (!backend)
         return false;
@@ -813,7 +1107,7 @@ bool planJointGroup(WriteSession& s,
     // read's walk, shared -- so the two directions still enumerate one joint set -- but a write API
     // has no business demanding the caller issue a read to make it work. Idempotent and epoch-gated,
     // so this costs an epoch comparison once the cache is warm.
-    if (!ovx::refreshArticulationCache(ovx::allPhysicsScenes()))
+    if (!ovx::refreshArticulationCache(owner, ovx::allPhysicsScenes(owner)))
     {
         OVX_RUNTIME_ERROR("ovxWriteAttribute: the articulation structural walk failed; nothing was written.");
         return false;
@@ -856,8 +1150,46 @@ bool planJointGroup(WriteSession& s,
     if (jc.slices.empty())
         return true;
 
-    const uint32_t numOut = static_cast<uint32_t>(jc.recs.size());
-    std::unique_ptr<GroupSlot> slot(new GroupSlot());
+    // Prim-set selection: plan and scatter only the admitted joints. A joint write is an array group over
+    // a flat DOF column, so the filtered rows must be COMPACTED (recomputed slice offsets) -- otherwise
+    // the scatter would apply uninitialised column entries to the unselected joints. The shared jc cache
+    // is never mutated (REQ-READ-SELECT-001 AC-4/AC-5); unselected joints stay bit-identical.
+    std::vector<omni::physx::tensors::ArticulationDofOvStageRecord> selRecs;
+    std::vector<ovx::JointSlice> selSlices;
+    std::vector<ObjectKey> selSliceKeys;
+    std::vector<ovx_primpath_t> selSliceHandles;
+    const std::vector<omni::physx::tensors::ArticulationDofOvStageRecord>* jRecs = &jc.recs;
+    const std::vector<ovx::JointSlice>* jSlices = &jc.slices;
+    const std::vector<ObjectKey>* jSliceKeys = &jc.sliceKeys;
+    const std::vector<ovx_primpath_t>* jSliceHandles = &jc.sliceHandles;
+    if (s.hasSelection)
+    {
+        const bool haveH = jc.sliceHandles.size() == jc.slices.size();
+        const std::vector<size_t> keep = ovx::selectedIndices(s, jc.sliceKeys);
+        uint32_t off = 0;
+        for (size_t si : keep)
+        {
+            const ovx::JointSlice& sl = jc.slices[si];
+            for (uint32_t d = 0; d < sl.count; ++d)
+                selRecs.push_back(jc.recs[sl.offset + d]);
+            ovx::JointSlice ns = sl;
+            ns.offset = off;
+            selSlices.push_back(ns);
+            selSliceKeys.push_back(jc.sliceKeys[si]);
+            if (haveH)
+                selSliceHandles.push_back(jc.sliceHandles[si]);
+            off += sl.count;
+        }
+        if (selSlices.empty())
+            return true; // none of this scene's joints are in the selection
+        jRecs = &selRecs;
+        jSlices = &selSlices;
+        jSliceKeys = &selSliceKeys;
+        jSliceHandles = &selSliceHandles;
+    }
+
+    const uint32_t numOut = static_cast<uint32_t>(jRecs->size());
+    std::unique_ptr<GroupSlot> slot(new GroupSlot(s.attach));
     slot->scene = scene;
     slot->jointRow = &row;
     slot->numOut = numOut;
@@ -868,38 +1200,43 @@ bool planJointGroup(WriteSession& s,
         PxCudaContext* cu = ctxMgr ? ctxMgr->getCudaContext() : nullptr;
         if (!cu)
             return false;
+        slot->ctxMgr = ctxMgr;
+        ctxMgr->acquireReference();
+        slot->deviceOrdinal = ctxMgr->getDevice();
         PxScopedCudaLock _lock(*ctxMgr);
         cu->memAlloc(&slot->deviceData, size_t(numOut) * sizeof(float));
         cu->memAlloc(&slot->recsDev,
                      size_t(numOut) * sizeof(omni::physx::tensors::ArticulationDofOvStageRecord));
         if (!slot->deviceData || !slot->recsDev)
             return false;
-        cu->memcpyHtoD(slot->recsDev, jc.recs.data(),
+        cu->memcpyHtoD(slot->recsDev, jRecs->data(),
                        size_t(numOut) * sizeof(omni::physx::tensors::ArticulationDofOvStageRecord));
-        slot->ctxMgr = ctxMgr;
-        slot->deviceOrdinal = ctxMgr->getDevice();
     }
     else
     {
         slot->floats.assign(numOut, 0.0f);
+        // See recsHost: the CPU scatter re-derives the shared cache by default, so hand it the compacted
+        // records when a selection filtered them.
+        if (s.hasSelection)
+            slot->recsHost = selRecs;
     }
 
-    ovx_path_dictionary_t* dict = nullptr;
-    const bool haveHandles = jc.sliceHandles.size() == jc.slices.size();
-    slot->list = haveHandles ? omni::physics::ovstage::buildPathListFromHandles(source, jc.sliceHandles.data(),
-                                                                               jc.sliceHandles.size(), &dict) :
-                               omni::physics::ovstage::buildPathList(source, jc.sliceKeys.data(),
-                                                                     jc.sliceKeys.size(), &dict);
+    ovx_path_dictionary_t*& dict = slot->listDictionary;
+    const bool haveHandles = jSliceHandles->size() == jSlices->size();
+    slot->list = haveHandles ? omni::physics::ovstage::buildPathListFromHandles(source, jSliceHandles->data(),
+                                                                               jSliceHandles->size(), &dict) :
+                               omni::physics::ovstage::buildPathList(source, jSliceKeys->data(),
+                                                                     jSliceKeys->size(), &dict);
     if (slot->list == OVX_INVALID_PRIMPATH_LIST || !dict)
         return false;
     s.dict = dict;
 
     // One tensor per joint, each a window onto its own slice of the flat column.
-    slot->shapes.resize(jc.slices.size());
-    slot->tensors.assign(jc.slices.size(), DLTensor{});
-    for (size_t si = 0; si < jc.slices.size(); ++si)
+    slot->shapes.resize(jSlices->size());
+    slot->tensors.assign(jSlices->size(), DLTensor{});
+    for (size_t si = 0; si < jSlices->size(); ++si)
     {
-        const ovx::JointSlice& sl = jc.slices[si];
+        const ovx::JointSlice& sl = (*jSlices)[si];
         slot->shapes[si] = static_cast<int64_t>(sl.count);
         DLTensor& t = slot->tensors[si];
         t.data = gpu ? reinterpret_cast<void*>(slot->deviceData + size_t(sl.offset) * sizeof(float)) :
@@ -915,7 +1252,7 @@ bool planJointGroup(WriteSession& s,
     ovstage_map_group_t& g = slot->group;
     g.prims.list = slot->list;
     g.prims.offset = 0;
-    g.prims.count = static_cast<uint32_t>(jc.slices.size());
+    g.prims.count = static_cast<uint32_t>(jSlices->size());
     g.prims.index_map = nullptr;
     g.data.tensors = slot->tensors.data();
     g.data.tensor_count = static_cast<uint32_t>(slot->tensors.size());
@@ -944,7 +1281,7 @@ bool planArticulationGroup(WriteSession& s,
     if (n == 0)
         return true; // this scene owns no matching articulations -- not a failure
 
-    std::unique_ptr<GroupSlot> slot(new GroupSlot());
+    std::unique_ptr<GroupSlot> slot(new GroupSlot(s.attach));
     slot->scene = scene;
     slot->artis = artis;
     slot->keys = keys;
@@ -964,6 +1301,9 @@ bool planArticulationGroup(WriteSession& s,
             OVX_RUNTIME_ERROR("ovxWriteAttribute: DirectGPU scene has no CUDA context; no group emitted.");
             return false;
         }
+        slot->ctxMgr = ctxMgr;
+        ctxMgr->acquireReference();
+        slot->deviceOrdinal = ctxMgr->getDevice();
         PxScopedCudaLock _lock(*ctxMgr);
         cu->memAlloc(&slot->deviceData, bytes);
         if (!slot->deviceData)
@@ -971,8 +1311,6 @@ bool planArticulationGroup(WriteSession& s,
             OVX_RUNTIME_ERROR("ovxWriteAttribute: articulation column allocation failed (%zu bytes).", bytes);
             return false;
         }
-        slot->ctxMgr = ctxMgr;
-        slot->deviceOrdinal = ctxMgr->getDevice();
     }
     else
     {
@@ -982,7 +1320,7 @@ bool planArticulationGroup(WriteSession& s,
     // No shared cache entry here. g_rigidReadCache is keyed by a RigidBodyType, which an articulation
     // is not, and the read has no articulation cache to share yet (its TASK-04 is what would add
     // one). Building the list outright is correct and leaves nothing to invalidate wrongly.
-    ovx_path_dictionary_t* dict = nullptr;
+    ovx_path_dictionary_t*& dict = slot->listDictionary;
     slot->list = omni::physics::ovstage::buildPathList(source, keys.data(), keys.size(), &dict);
     if (slot->list == OVX_INVALID_PRIMPATH_LIST || !dict)
     {
@@ -1080,16 +1418,42 @@ bool planTendonGroup(WriteSession& s,
     }
     tc.generation = generation;
 
-    const uint32_t numOut = static_cast<uint32_t>(tc.recs.size());
+    // Prim-set selection compacts the record list to the admitted tendons. The shared cache (tc.recs /
+    // tc.keys / tc.handles) stays FULL -- folding a subset into it would corrupt a later whole-set read
+    // or write over the same scene (REQ-READ-SELECT-001 AC-5). The compacted records ride on the slot:
+    // recsDev for the GPU scatter, tendonRecsHost for the host one, both indexed [0, numOut) against the
+    // caller's compacted column.
+    std::vector<omni::physx::tensors::ArticulationTendonOvStageRecord> selRecs;
+    std::vector<ObjectKey> selKeys;
+    std::vector<ovx_primpath_t> selHandles;
+    const bool cacheHaveHandles = tc.handles.size() == tc.keys.size();
+    if (s.hasSelection)
+    {
+        const std::vector<size_t> keep = ovx::selectedIndices(s, tc.keys);
+        selRecs = ovx::gatherByIndices(tc.recs, keep);
+        selKeys = ovx::gatherByIndices(tc.keys, keep);
+        if (cacheHaveHandles)
+            selHandles = ovx::gatherByIndices(tc.handles, keep);
+    }
+    const std::vector<omni::physx::tensors::ArticulationTendonOvStageRecord>& recsUse =
+        s.hasSelection ? selRecs : tc.recs;
+    const std::vector<ObjectKey>& keysUse = s.hasSelection ? selKeys : tc.keys;
+    const std::vector<ovx_primpath_t>& handlesUse = s.hasSelection ? selHandles : tc.handles;
+
+    const uint32_t numOut = static_cast<uint32_t>(recsUse.size());
+    if (numOut == 0)
+        return true; // a selection that admits none of this scene's tendons emits no group -- not a failure
     const uint32_t comp = omni::physx::tensors::tendonPropertyComponents(row.prop);
 
-    std::unique_ptr<GroupSlot> slot(new GroupSlot());
+    std::unique_ptr<GroupSlot> slot(new GroupSlot(s.attach));
     slot->scene = scene;
     slot->tendonRow = &row;
     slot->tendonFixed = fixed;
     slot->numOut = numOut;
     slot->comp = comp;
-    slot->keys = tc.keys;
+    slot->keys = keysUse;
+    if (s.hasSelection)
+        slot->tendonRecsHost = selRecs; // the host scatter applies exactly these, not the full cache
 
     const size_t bytes = size_t(numOut) * comp * sizeof(float);
     if (gpu)
@@ -1098,28 +1462,29 @@ bool planTendonGroup(WriteSession& s,
         PxCudaContext* cu = ctxMgr ? ctxMgr->getCudaContext() : nullptr;
         if (!cu)
             return false;
+        slot->ctxMgr = ctxMgr;
+        ctxMgr->acquireReference();
+        slot->deviceOrdinal = ctxMgr->getDevice();
         PxScopedCudaLock _lock(*ctxMgr);
         cu->memAlloc(&slot->deviceData, bytes);
         cu->memAlloc(&slot->recsDev,
                      size_t(numOut) * sizeof(omni::physx::tensors::ArticulationTendonOvStageRecord));
         if (!slot->deviceData || !slot->recsDev)
             return false;
-        cu->memcpyHtoD(slot->recsDev, tc.recs.data(),
+        cu->memcpyHtoD(slot->recsDev, recsUse.data(),
                        size_t(numOut) * sizeof(omni::physx::tensors::ArticulationTendonOvStageRecord));
-        slot->ctxMgr = ctxMgr;
-        slot->deviceOrdinal = ctxMgr->getDevice();
     }
     else
     {
         slot->floats.assign(size_t(numOut) * comp, 0.0f);
     }
 
-    ovx_path_dictionary_t* dict = nullptr;
-    const bool haveHandles = tc.handles.size() == tc.keys.size();
+    ovx_path_dictionary_t*& dict = slot->listDictionary;
+    const bool haveHandles = handlesUse.size() == keysUse.size();
     slot->list = haveHandles ?
-                     omni::physics::ovstage::buildPathListFromHandles(source, tc.handles.data(),
-                                                                     tc.handles.size(), &dict) :
-                     omni::physics::ovstage::buildPathList(source, tc.keys.data(), tc.keys.size(), &dict);
+                     omni::physics::ovstage::buildPathListFromHandles(source, handlesUse.data(),
+                                                                     handlesUse.size(), &dict) :
+                     omni::physics::ovstage::buildPathList(source, keysUse.data(), keysUse.size(), &dict);
     if (slot->list == OVX_INVALID_PRIMPATH_LIST || !dict)
         return false;
     s.dict = dict;
@@ -1149,48 +1514,155 @@ bool planTendonGroup(WriteSession& s,
     return true;
 }
 
-// One scene's vehicle-wheel control group: a FIXED group, one row per wheel prim carrying one float.
-// Mirrors the vehicle read's emit, which is fixed for the same reason -- a wheel has one value per
-// control, not an array.
-bool planVehicleGroup(WriteSession& s,
-                      IPhysicsSource& source,
-                      PxScene* scene,
-                      const VehicleWriteAttributeRow& row)
+// One CPU scalar column per scene, with immutable row identity until commit.
+bool planVehicleDataGroup(WriteSession& s, IPhysicsSource& source, PxScene* scene,
+                          const VehicleWriteAttributeRow* wheel,
+                          const VehicleControlAttributeRow* vehicle)
 {
-    // The read's enumeration, shared. Not refreshed here, unlike the articulation and tendon
-    // accessors: the vehicle walk needs a CpuSimulationView and the scene's InternalScene, which the
-    // read holds at that point and this does not. So a session opened before any vehicle read on
-    // this scene reports the miss rather than deriving a second enumeration that could disagree.
-    ovx::VehicleReadCacheEntry* vc = ovx::vehicleCacheEntry(scene);
-    if (!vc)
+    omni::physx::tensors::BaseVehicleView* view = nullptr;
+    ovx::VehicleReadCacheEntry* cache = ovx::refreshVehicleCache(source, scene, &view);
+    if (!cache)
     {
-        OVX_RUNTIME_ERROR("ovxWriteAttribute: no vehicle enumeration cached for this scene -- read a wheel "
-                   "attribute once before writing one, so both directions agree on the wheel set.");
+        OVX_RUNTIME_ERROR("ovxWriteAttributes: vehicle host view unavailable; nothing was opened.");
         return false;
     }
-    if (vc->recs.empty())
-        return true; // this scene owns no vehicle wheels -- not a failure
-
-    // Vehicles are CPU-only and permanently so: their suspension and sticky-tire constraints are
-    // custom PxConstraints with a CPU solver-prep function PhysX refuses under DirectGPU. So there is
-    // no device column to emit here and no GPU branch to write -- BaseVehicleView has no Gpu/Cpu
-    // derivatives for the same reason.
-    const uint32_t numOut = static_cast<uint32_t>(vc->recs.size());
-
-    std::unique_ptr<GroupSlot> slot(new GroupSlot());
+    const std::vector<ObjectKey>& keys = vehicle ? cache->vehicleKeys : cache->keys;
+    const std::vector<ovx_primpath_t>& handles = vehicle ? cache->vehicleHandles : cache->handles;
+    const std::vector<size_t> selected = ovx::selectedIndices(s, keys);
+    if (selected.empty())
+        return true;
+    if (!view)
+        return false;
+    using VehicleControl = omni::physx::tensors::BaseVehicleView::VehicleControl;
+    const std::vector<omni::physx::tensors::VehicleEntry>& entries = view->getEntries();
+    for (size_t index : selected)
+    {
+        const uint32_t row = vehicle ? static_cast<uint32_t>(index) : cache->recs[index].viewVehicleIdx;
+        const omni::physx::internal::InternalVehicle& target = *entries[row].vehicle;
+        const bool compatible = wheel ? !target.hasDrive() :
+            vehicle->control == VehicleControl::eResetToRestState ? true :
+            (vehicle->control == VehicleControl::eThrust0 || vehicle->control == VehicleControl::eThrust1) ?
+                target.isTank() : target.hasDrive();
+        if (!compatible)
+        {
+            OVX_RUNTIME_ERROR("ovxWriteAttributes: '%s' is incompatible with a selected vehicle; nothing was opened.",
+                              wheel ? wheel->token : vehicle->token);
+            return false;
+        }
+    }
+    std::unique_ptr<GroupSlot> slot(new GroupSlot(s.attach));
     slot->scene = scene;
-    slot->vehicleRow = &row;
-    slot->numOut = numOut;
+    slot->vehicleRow = wheel;
+    slot->vehicleControlRow = vehicle;
+    slot->vehicleSetEpoch = cache->setEpoch;
+    slot->vehicleGeneration = cache->generation;
+    slot->numOut = static_cast<uint32_t>(selected.size());
     slot->comp = 1;
-    slot->keys = vc->keys;
-    slot->floats.assign(numOut, 0.0f);
+    slot->keys = ovx::gatherByIndices(keys, selected);
+    if (vehicle)
+        slot->wholeVehicleRecs.assign(selected.begin(), selected.end());
+    else
+        slot->vehicleRecsHost = ovx::gatherByIndices(cache->recs, selected);
 
-    ovx_path_dictionary_t* dict = nullptr;
-    const bool haveHandles = vc->handles.size() == vc->keys.size();
-    slot->list = haveHandles ? omni::physics::ovstage::buildPathListFromHandles(source, vc->handles.data(),
-                                                                               vc->handles.size(), &dict) :
-                               omni::physics::ovstage::buildPathList(source, vc->keys.data(), vc->keys.size(),
-                                                                    &dict);
+    ovx_path_dictionary_t*& dict = slot->listDictionary;
+    if (handles.size() == keys.size())
+    {
+        const std::vector<ovx_primpath_t> selectedHandles = ovx::gatherByIndices(handles, selected);
+        slot->list = omni::physics::ovstage::buildPathListFromHandles(source, selectedHandles.data(),
+                                                                     selectedHandles.size(), &dict);
+    }
+    else
+        slot->list = omni::physics::ovstage::buildPathList(source, slot->keys.data(), slot->keys.size(), &dict);
+    if (slot->list == OVX_INVALID_PRIMPATH_LIST || !dict)
+        return false;
+    s.dict = dict;
+    slot->shapes.assign(1, static_cast<int64_t>(slot->numOut));
+    slot->tensors.assign(1, DLTensor{});
+    DLTensor& tensor = slot->tensors[0];
+    tensor.dtype = { kDLFloat, 32, 1 };
+    if (vehicle && vehicle->dtype == omni::physics::tensors::TensorDataType::eInt32)
+    {
+        slot->vehicleGears.assign(slot->numOut, 0);
+        tensor.data = slot->vehicleGears.data();
+        tensor.dtype = { kDLInt, 32, 1 };
+    }
+    else if (vehicle && vehicle->dtype == omni::physics::tensors::TensorDataType::eUint8)
+    {
+        slot->vehicleCommands.assign(slot->numOut, 0);
+        tensor.data = slot->vehicleCommands.data();
+        tensor.dtype = { kDLUInt, 8, 1 };
+    }
+    else
+    {
+        slot->floats.assign(slot->numOut, 0.0f);
+        tensor.data = slot->floats.data();
+    }
+    tensor.device = { kDLCPU, 0 };
+    tensor.ndim = 1;
+    tensor.shape = slot->shapes.data();
+    ovstage_map_group_t& group = slot->group;
+    group.prims.list = slot->list;
+    group.prims.count = slot->numOut;
+    group.data.tensors = slot->tensors.data();
+    group.data.tensor_count = 1;
+    s.groups.push_back(std::move(slot));
+    return true;
+}
+
+// PxController::move drives the proxy with setKinematicTarget. That CPU target is not
+// uploaded on a DirectGPU scene, so the write is refused before a group exists.
+bool cctMoveRejectedOnDirectGpu(const std::vector<omni::physx::ovx::CctOvStageRow>& rows, const char* api)
+{
+    for (const omni::physx::ovx::CctOvStageRow& cctRow : rows)
+    {
+        const PxRigidActor* actor = cctRow.internal ? cctRow.internal->mActor : nullptr;
+        const PxScene* scene = actor ? actor->getScene() : nullptr;
+        if (scene && scene->getFlags().isSet(PxSceneFlag::eENABLE_DIRECT_GPU_API))
+        {
+            OVX_RUNTIME_ERROR("%s: 'move' is not applied on a DirectGPU scene -- "
+                              "PxController::move updates its proxy through setKinematicTarget, and that "
+                              "CPU target is not uploaded under eENABLE_DIRECT_GPU_API.",
+                              api);
+            return true;
+        }
+    }
+    return false;
+}
+
+// One fixed host group covering the in-scope character controllers this session admits.
+bool planCctGroup(WriteSession& s, AttachedStage& owner, IPhysicsSource& source, uint32_t scope,
+                  const CctWriteAttributeRow& row)
+{
+    std::vector<omni::physx::ovx::CctOvStageRow> rows;
+    if (!omni::physx::ovx::enumerateCctRows(owner, scope, rows))
+        return false;
+    if (s.hasSelection)
+    {
+        std::vector<omni::physx::ovx::CctOvStageRow> admitted;
+        admitted.reserve(rows.size());
+        for (const omni::physx::ovx::CctOvStageRow& cctRow : rows)
+            if (s.admits(cctRow.key))
+                admitted.push_back(cctRow);
+        rows.swap(admitted);
+    }
+    if (rows.empty())
+        return true;
+    if (cctMoveRejectedOnDirectGpu(rows, "ovxWriteAttribute"))
+        return false;
+
+    const uint32_t numOut = static_cast<uint32_t>(rows.size());
+    std::unique_ptr<GroupSlot> slot(new GroupSlot(s.attach));
+    slot->cctRow = &row;
+    slot->numOut = numOut;
+    slot->comp = row.components;
+    slot->keys.reserve(numOut);
+    for (const omni::physx::ovx::CctOvStageRow& cctRow : rows)
+        slot->keys.push_back(cctRow.key);
+
+    slot->floats.assign(size_t(numOut) * row.components, 0.0f);
+
+    ovx_path_dictionary_t*& dict = slot->listDictionary;
+    slot->list = omni::physics::ovstage::buildPathList(source, slot->keys.data(), slot->keys.size(), &dict);
     if (slot->list == OVX_INVALID_PRIMPATH_LIST || !dict)
         return false;
     s.dict = dict;
@@ -1201,7 +1673,7 @@ bool planVehicleGroup(WriteSession& s,
     t.data = static_cast<void*>(slot->floats.data());
     t.device = DLDevice{ kDLCPU, 0 };
     t.ndim = 1;
-    t.dtype = DLDataType{ kDLFloat, 32, 1 };
+    t.dtype = DLDataType{ kDLFloat, 32, static_cast<uint16_t>(row.components) };
     t.shape = slot->shapes.data();
     t.strides = nullptr;
     t.byte_offset = 0;
@@ -1237,7 +1709,7 @@ bool planInstancerGroup(WriteSession& s,
     if (arrayLength == 0)
         return true;
 
-    std::unique_ptr<GroupSlot> slot(new GroupSlot());
+    std::unique_ptr<GroupSlot> slot(new GroupSlot(s.attach));
     slot->isInstancer = true;
     slot->scene = scene;
     slot->instancerView = view;
@@ -1259,6 +1731,9 @@ bool planInstancerGroup(WriteSession& s,
             OVX_RUNTIME_ERROR("ovxWriteAttribute: DirectGPU scene has no CUDA context; no instancer group.");
             return false;
         }
+        slot->ctxMgr = ctxMgr;
+        ctxMgr->acquireReference();
+        slot->deviceOrdinal = ctxMgr->getDevice();
         PxScopedCudaLock _lock(*ctxMgr);
         cu->memAlloc(&slot->deviceData, bytes);
         if (!slot->deviceData)
@@ -1266,15 +1741,13 @@ bool planInstancerGroup(WriteSession& s,
             OVX_RUNTIME_ERROR("ovxWriteAttribute: instancer column allocation failed (%zu bytes).", bytes);
             return false;
         }
-        slot->ctxMgr = ctxMgr;
-        slot->deviceOrdinal = ctxMgr->getDevice();
     }
     else
     {
         slot->floats.assign(size_t(arrayLength) * comp, 0.0f);
     }
 
-    ovx_path_dictionary_t* dict = nullptr;
+    ovx_path_dictionary_t*& dict = slot->listDictionary;
     slot->list = omni::physics::ovstage::buildPathList(source, &key, 1, &dict);
     if (slot->list == OVX_INVALID_PRIMPATH_LIST || !dict)
         return false;
@@ -1330,7 +1803,8 @@ bool planDeformableGroup(WriteSession& s,
                          PxScene* scene,
                          bool isVolume,
                          const ovx::DeformableWriteTargets& targets,
-                         bool velocity)
+                         bool velocity,
+                         bool kinematicTarget = false)
 {
     if (targets.bodies.empty())
         return true;
@@ -1343,12 +1817,15 @@ bool planDeformableGroup(WriteSession& s,
         return false;
     }
 
-    std::unique_ptr<GroupSlot> slot(new GroupSlot());
+    std::unique_ptr<GroupSlot> slot(new GroupSlot(s.attach));
     slot->isDeformable = true;
     slot->deformableVolume = isVolume;
     slot->deformableVelocity = velocity;
+    slot->deformableKinematicTarget = kinematicTarget;
     slot->scene = scene;
-    slot->comp = 3u;
+    // Kinematic target is a PxVec4 per node (xyz + w active-flag); points/velocities are vec3.
+    const uint32_t comp = kinematicTarget ? 4u : 3u;
+    slot->comp = comp;
 
     // The column is COMPACT and the meshes are ragged, so each body's slice starts where the last
     // one ended -- the same layout the read's gather writes into, and the reason a tensor carries a
@@ -1358,17 +1835,22 @@ bool planDeformableGroup(WriteSession& s,
     {
         if (!targets.bodies[i] || !targets.internals[i] || targets.counts[i] == 0)
             continue;
+        if (s.hasSelection && !s.admits(targets.keys[i]))
+            continue; // prim-set selection: leave unselected deformable bodies out of the group
         slot->deformableBodies.push_back(targets.bodies[i]);
         slot->deformableInternals.push_back(targets.internals[i]);
         slot->deformableCounts.push_back(targets.counts[i]);
         slot->deformableFloatOffsets.push_back(totalFloats);
         slot->keys.push_back(targets.keys[i]);
-        totalFloats += size_t(targets.counts[i]) * 3u;
+        totalFloats += size_t(targets.counts[i]) * comp;
     }
     if (slot->deformableBodies.empty())
         return true;
     slot->numOut = static_cast<uint32_t>(slot->deformableBodies.size());
 
+    slot->ctxMgr = ctxMgr;
+    ctxMgr->acquireReference();
+    slot->deviceOrdinal = ctxMgr->getDevice();
     {
         PxScopedCudaLock _lock(*ctxMgr);
         cu->memAlloc(&slot->deviceData, totalFloats * sizeof(float));
@@ -1378,10 +1860,8 @@ bool planDeformableGroup(WriteSession& s,
         OVX_RUNTIME_ERROR("ovxWriteAttribute: deformable column allocation failed (%zu floats).", totalFloats);
         return false;
     }
-    slot->ctxMgr = ctxMgr;
-    slot->deviceOrdinal = ctxMgr->getDevice();
 
-    ovx_path_dictionary_t* dict = nullptr;
+    ovx_path_dictionary_t*& dict = slot->listDictionary;
     slot->list = omni::physics::ovstage::buildPathList(source, slot->keys.data(), slot->keys.size(), &dict);
     if (slot->list == OVX_INVALID_PRIMPATH_LIST || !dict)
         return false;
@@ -1396,7 +1876,7 @@ bool planDeformableGroup(WriteSession& s,
         t.data = reinterpret_cast<void*>(slot->deviceData);
         t.device = DLDevice{ kDLCUDA, slot->deviceOrdinal };
         t.ndim = 1;
-        t.dtype = DLDataType{ kDLFloat, 32, 3 };
+        t.dtype = DLDataType{ kDLFloat, 32, static_cast<uint16_t>(comp) };
         t.shape = &slot->shapes[i];
         t.strides = nullptr;
         t.byte_offset = slot->deformableFloatOffsets[i] * sizeof(float);
@@ -1418,19 +1898,10 @@ bool planDeformableGroup(WriteSession& s,
 
 // Publish a deformable sim-mesh column into PhysX's device buffers (ADR-0012). One group carries
 // every body, so this walks them.
-// Defined below; forward-declared so these device/host scatter paths can honour the caller's producer
-// handoff before reading the column, exactly as the sibling scatter paths do (ADR-0012 Decision 3).
-void honourCallerSync(const GroupSlot& slot, ovstage_cuda_sync_t sync);
-
-bool scatterDeformableGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
+bool scatterDeformableGroup(GroupSlot& slot)
 {
     if (!slot.ctxMgr || slot.deformableBodies.size() != slot.numOut)
         return false;
-
-    // Before the kernel below reads the caller's device column (slot.deviceData): order behind the
-    // producer that filled it, as every sibling scatter path does. Without this, an async producer
-    // fill can be read here mid-write.
-    honourCallerSync(slot, writeDoneSync);
 
     PxScopedCudaLock _lock(*slot.ctxMgr);
     for (uint32_t i = 0; i < slot.numOut; ++i)
@@ -1502,6 +1973,242 @@ bool scatterDeformableGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
     return true;
 }
 
+// The kinematic-target commit (volume only). Unlike scatterDeformableGroup, the destination is the
+// runtime-owned per-body buffer PhysX ADOPTS (not a getSim*BufferD buffer driven by markDirty): it is
+// lazily allocated here, scattered into, then handed to setKinematicTargetBufferD ONCE with
+// ePARTIALLY_KINEMATIC raised. Subsequent writes only re-fill it (PhysX re-reads it in place), which is how
+// a node can go free->driven at any time.
+//
+// Driving is MONOTONIC: a node never returns to free simulation. PhysX pins a driven node by zeroing its
+// inverse mass and never restores it, so releasing a node would leave it frozen; rather than resume a drive
+// we cannot cleanly end, a write that marks any already-driven node free is refused (the no-unpin preflight),
+// and the drive is never torn down. So the flag, once raised, stays raised for the body's life.
+//
+// This commit reads one int per body back to the host (the kernel's active flag) to know when a body's first
+// node becomes kinematic, so it is not fully non-blocking -- a bounded, per-commit cost the read path never
+// pays.
+bool scatterKinematicTargetGroup(GroupSlot& slot)
+{
+    if (!slot.ctxMgr || slot.deformableBodies.size() != slot.numOut)
+        return false;
+
+    // Exclusivity preflight (REQ-INPUT-COVERAGE-001 AC-16), BEFORE anything is allocated or scattered.
+    // A volume consumes kinematic targets through EITHER of two flags (PxDeformableVolume.h:253-257):
+    // PxDeformableVolumeFlag::ePARTIALLY_KINEMATIC (per-node, the w lane selects driven vs free -- what this
+    // write raises) or PxDeformableBodyFlag::eKINEMATIC (whole body, every node treated as a target -- raised
+    // on any USD volume authored kinematicBody=true). Both, plus the adopted setKinematicTargetBufferD
+    // pointer, are a SINGLE per-body slot the deprecated tensor binding's GpuVolumeDeformableBodyView also
+    // drives. This write tracks only its own belief (mKinematicTargetActive) and never raises eKINEMATIC, so
+    // either flag present without that belief means another path owns the slot; taking it over would swap the
+    // adopted pointer to our buffer and clobber that path's targets -- silently, under a success return. The
+    // refusal MUST precede the scatter: the scatter re-fills mSimMeshKinematicTargetsD in place, and for a
+    // body we already drive PhysX re-reads that pointer every step, so a post-scatter check would let the
+    // already-driven body's new targets go live before it refuses, with no rollback. Because the scatter is
+    // what reveals which nodes this write actually drives, refusing here is conservative -- it declines the
+    // whole commit even for a write that drives no node over a body another path owns, which is the correct
+    // call anyway. Re-filling a body this write already drives (mKinematicTargetActive) is not a conflict.
+    for (uint32_t i = 0; i < slot.numOut; ++i)
+    {
+        PxDeformableBody* body = slot.deformableBodies[i];
+        omni::physx::internal::InternalVolumeDeformableBody* internal =
+            static_cast<omni::physx::internal::InternalVolumeDeformableBody*>(slot.deformableInternals[i]);
+        PxDeformableVolume* volume = body ? body->is<PxDeformableVolume>() : nullptr;
+        if (!body || !internal || !volume)
+        {
+            OVX_RUNTIME_ERROR("ovxCommitGroup: kinematic target is a volume-deformable write; body is not one.");
+            return false;
+        }
+        // Whole-body kinematic (kinematicBody=true): we never raise eKINEMATIC, so its presence is always
+        // another path -- unconditional conflict, independent of mKinematicTargetActive.
+        if (volume->getDeformableBodyFlags().isSet(PxDeformableBodyFlag::eKINEMATIC))
+        {
+            OVX_RUNTIME_ERROR("ovxCommitGroup: a volume deformable in this kinematic-target write is authored "
+                       "fully kinematic (PxDeformableBodyFlag::eKINEMATIC, i.e. kinematicBody=true): PhysX "
+                       "already treats every node as a target, so this per-node write would add "
+                       "ePARTIALLY_KINEMATIC and swap the adopted target buffer over a body another path "
+                       "already drives. Refused; nothing was written.");
+            return false;
+        }
+        if (!internal->mKinematicTargetActive &&
+            volume->getDeformableVolumeFlags().isSet(PxDeformableVolumeFlag::ePARTIALLY_KINEMATIC))
+        {
+            OVX_RUNTIME_ERROR("ovxCommitGroup: a volume deformable in this kinematic-target write is already "
+                       "kinematically driven through another path (ePARTIALLY_KINEMATIC is raised, e.g. by "
+                       "a GpuVolumeDeformableBodyView from the tensor binding). The two share one per-body "
+                       "target slot, so this write refuses to take it over rather than clobber the other "
+                       "drive. Nothing was written.");
+            return false;
+        }
+    }
+
+    PxCudaContext* cu = slot.ctxMgr->getCudaContext();
+    if (!cu)
+        return false;
+
+    PxScopedCudaLock _lock(*slot.ctxMgr);
+
+    // No-unpin preflight (the monotonic rule). A node may go free->driven at any time, but never driven->free:
+    // PhysX pins a driven node by zeroing its inverse mass and never restores it (setKinematicTargetBufferD
+    // (nullptr) only drops the pointer), so a released node would stay frozen. Rather than resume a drive we
+    // cannot cleanly end, we forbid the transition. This runs BEFORE the scatter overwrites the live buffer
+    // PhysX re-reads: for every body already carrying targets, compare the incoming column against the live
+    // buffer and refuse the whole commit (nothing mutated) if any currently-driven node is marked free. A
+    // body on its first write has no prior targets, so nothing can be un-pinned.
+    {
+        CUdeviceptr unpinDev = 0;
+        cu->memAlloc(&unpinDev, slot.numOut * sizeof(int));
+        if (!unpinDev)
+        {
+            OVX_RUNTIME_ERROR("ovxCommitGroup: kinematic-target unpin-check allocation failed.");
+            return false;
+        }
+        if (cu->memsetD32(unpinDev, 0, slot.numOut) != 0)
+        {
+            OVX_RUNTIME_ERROR("ovxCommitGroup: kinematic-target unpin-check zero-fill failed; nothing applied.");
+            cu->memFree(unpinDev);
+            return false;
+        }
+        int* const unpinD = reinterpret_cast<int*>(unpinDev);
+        for (uint32_t i = 0; i < slot.numOut; ++i)
+        {
+            omni::physx::internal::InternalVolumeDeformableBody* internal =
+                static_cast<omni::physx::internal::InternalVolumeDeformableBody*>(slot.deformableInternals[i]);
+            if (!internal->mSimMeshKinematicTargetsD)
+                continue; // first write to this body: no prior targets, so no node can be un-pinned
+            const float* const src =
+                reinterpret_cast<const float*>(slot.deviceData) + slot.deformableFloatOffsets[i];
+            if (!omni::physx::tensors::detectKinematicUnpinColumnOvStage(
+                    internal->mSimMeshKinematicTargetsD, src, slot.deformableCounts[i], unpinD + i))
+            {
+                OVX_RUNTIME_ERROR("ovxCommitGroup: kinematic-target unpin check failed.");
+                cu->memFree(unpinDev);
+                return false;
+            }
+        }
+        std::vector<int> unpin(slot.numOut, 0);
+        const ::physx::PxCUresult copyRes = cu->memcpyDtoH(unpin.data(), unpinDev, slot.numOut * sizeof(int));
+        cu->memFree(unpinDev);
+        if (copyRes != 0)
+        {
+            OVX_RUNTIME_ERROR("ovxCommitGroup: kinematic-target unpin-check readback failed; nothing applied.");
+            return false;
+        }
+        for (uint32_t i = 0; i < slot.numOut; ++i)
+        {
+            if (unpin[i])
+            {
+                OVX_RUNTIME_ERROR("ovxCommitGroup: a kinematic-target write marks an already-driven volume-deformable "
+                           "node free (w != 0). A node may become kinematic at any time but can never return to "
+                           "free simulation -- PhysX does not restore the inverse mass it zeroed to pin the node. "
+                           "Keep every already-driven node active. Nothing was written.");
+                return false;
+            }
+        }
+    }
+
+    // One "any node active" flag per body, filled by the scatter kernel.
+    CUdeviceptr anyActiveDev = 0;
+    cu->memAlloc(&anyActiveDev, slot.numOut * sizeof(int));
+    if (!anyActiveDev)
+    {
+        OVX_RUNTIME_ERROR("ovxCommitGroup: kinematic-target active-flag allocation failed.");
+        return false;
+    }
+    // Checked, unlike the bulk data copies elsewhere in this file: this buffer is a CONTROL decision, not
+    // data. A dropped zero-fill leaves it uninitialised, so the scatter kernel's atomicMax reads garbage
+    // and the drive loop below acts on it — raising (or failing to raise) the drive on the wrong bodies while
+    // still returning success. The read path guards the same shape (a failed column fill is invisible downstream).
+    if (cu->memsetD32(anyActiveDev, 0, slot.numOut) != 0)
+    {
+        OVX_RUNTIME_ERROR("ovxCommitGroup: kinematic-target active-flag zero-fill failed; nothing was applied.");
+        cu->memFree(anyActiveDev);
+        return false;
+    }
+    int* const anyActiveD = reinterpret_cast<int*>(anyActiveDev);
+
+    for (uint32_t i = 0; i < slot.numOut; ++i)
+    {
+        // Non-null and volume-typed: the exclusivity pre-pass above validated every body.
+        omni::physx::internal::InternalVolumeDeformableBody* internal =
+            static_cast<omni::physx::internal::InternalVolumeDeformableBody*>(slot.deformableInternals[i]);
+
+        const uint32_t count = slot.deformableCounts[i];
+        // Lazily allocate the runtime-owned buffer on the first write; undriven bodies never pay.
+        if (!internal->mSimMeshKinematicTargetsD)
+        {
+            CUdeviceptr buf = 0;
+            cu->memAlloc(&buf, size_t(count) * sizeof(PxVec4));
+            if (!buf)
+            {
+                OVX_RUNTIME_ERROR("ovxCommitGroup: kinematic-target buffer allocation failed (%u nodes).", count);
+                cu->memFree(anyActiveDev);
+                return false;
+            }
+            internal->mSimMeshKinematicTargetsD = reinterpret_cast<PxVec4*>(buf);
+        }
+
+        // Targets arrive sim-mesh-local, the frame the read publishes them in -- the same reframe the
+        // points write inverts.
+        omni::physx::tensors::PointSetTransform xf{};
+        const PxMat44d l2w = omni::physx::affineInverse(internal->mWorldToSimMesh);
+        const double* const srcM = l2w.front();
+        for (int c = 0; c < 16; ++c)
+            xf.m[c] = float(srcM[c]);
+
+        const float* const src =
+            reinterpret_cast<const float*>(slot.deviceData) + slot.deformableFloatOffsets[i];
+        if (!omni::physx::tensors::submitKinematicTargetColumnOvStage(
+                internal->mSimMeshKinematicTargetsD, src, xf, count, /*reframe*/ true, anyActiveD + i))
+        {
+            OVX_RUNTIME_ERROR("ovxCommitGroup: kinematic-target scatter failed.");
+            cu->memFree(anyActiveDev);
+            return false;
+        }
+    }
+
+    std::vector<int> anyActive(slot.numOut, 0);
+    // Checked for the same reason as the zero-fill above: a dropped readback leaves anyActive all-zero, so a
+    // body whose first node just became kinematic would not get its drive raised, yet the commit would still
+    // return success -- the asymmetric half where a lost copy corrupts a control decision rather than data.
+    const ::physx::PxCUresult copyRes =
+        cu->memcpyDtoH(anyActive.data(), anyActiveDev, slot.numOut * sizeof(int)); // syncs on the scatters above
+    cu->memFree(anyActiveDev);
+    if (copyRes != 0)
+    {
+        OVX_RUNTIME_ERROR("ovxCommitGroup: kinematic-target active-flag readback failed.");
+        return false;
+    }
+
+    for (uint32_t i = 0; i < slot.numOut; ++i)
+    {
+        omni::physx::internal::InternalVolumeDeformableBody* internal =
+            static_cast<omni::physx::internal::InternalVolumeDeformableBody*>(slot.deformableInternals[i]);
+        PxDeformableVolume* volume = slot.deformableBodies[i]->is<PxDeformableVolume>();
+        if (!anyActive[i])
+            continue;
+
+        // Raise the drive once, when the body's first node becomes kinematic; PhysX re-reads the adopted
+        // buffer in place on later writes, which is how newly-driven nodes (free->driven) take effect. There
+        // is no inverse branch: a driven node never returns to free (the no-unpin preflight guarantees it),
+        // so the flag, once raised, stays raised for the body's life.
+        if (!internal->mKinematicTargetActive)
+        {
+            volume->setDeformableVolumeFlag(PxDeformableVolumeFlag::ePARTIALLY_KINEMATIC, true);
+            volume->setKinematicTargetBufferD(internal->mSimMeshKinematicTargetsD);
+            internal->mKinematicTargetActive = true;
+        }
+
+        // Wake the body so the drive actually takes effect. PhysX does not count setting or updating the
+        // kinematic target as a sleep-affecting change, and a sleeping body is skipped by the solver -- so a
+        // volume that started asleep or has since settled would accept the target and read it back without
+        // ever moving. This holds for in-place target updates too, so it runs on every driving commit, not
+        // just the first. Same reason the disableGravity write wakes; a positive wake counter resumes sim.
+        if (PxScene* scene = volume->getScene())
+            volume->setWakeCounter(scene->getWakeCounterResetValue());
+    }
+    return true;
+}
+
 // The kOvxDeformableMaterial group (ADR-0012): one FIXED tensor stacking every material this
 // attribute can serve, one f32 per prim.
 //
@@ -1514,11 +2221,14 @@ bool scatterDeformableGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
 // properties and the DOF properties host-only.
 bool planDeformableMaterialGroup(WriteSession& s, IPhysicsSource& source, const DeformableMaterialWriteRow& row)
 {
+    ovx::SourceContext context;
+    if (!ovx::getSourceContext(s.attach, "material write", context))
+        return false;
     std::vector<ObjectKey> keys;
     std::vector<PxDeformableMaterial*> materials;
 
     omni::physx::internal::InternalPhysXDatabase& db =
-        omni::physx::OmniPhysX::getInstance().getInternalPhysXDatabase();
+        context.stage->getInternalPhysXDatabase();
     for (const omni::physx::internal::InternalDatabase::Record& rec : db.getRecords())
     {
         const bool recordSaysSurface = rec.mType == omni::physx::ePTDeformableSurfaceMaterial;
@@ -1539,6 +2249,8 @@ bool planDeformableMaterialGroup(WriteSession& s, IPhysicsSource& source, const 
         }
         if (row.surfaceOnly && !surface)
             continue; // a volume material has no such property, so it takes no row -- as in the read
+        if (s.hasSelection && !s.admits(rec.mKey))
+            continue; // prim-set selection: only admitted materials take a row
         keys.push_back(rec.mKey);
         materials.push_back(material);
     }
@@ -1547,7 +2259,7 @@ bool planDeformableMaterialGroup(WriteSession& s, IPhysicsSource& source, const 
 
     const uint32_t numOut = static_cast<uint32_t>(keys.size());
 
-    std::unique_ptr<GroupSlot> slot(new GroupSlot());
+    std::unique_ptr<GroupSlot> slot(new GroupSlot(s.attach));
     slot->deformableMatRow = &row;
     slot->materials = std::move(materials);
     slot->keys = keys;
@@ -1555,7 +2267,7 @@ bool planDeformableMaterialGroup(WriteSession& s, IPhysicsSource& source, const 
     slot->comp = 1u;
     slot->floats.assign(size_t(numOut), 0.0f);
 
-    ovx_path_dictionary_t* dict = nullptr;
+    ovx_path_dictionary_t*& dict = slot->listDictionary;
     slot->list = omni::physics::ovstage::buildPathList(source, keys.data(), keys.size(), &dict);
     if (slot->list == OVX_INVALID_PRIMPATH_LIST || !dict)
         return false;
@@ -1587,13 +2299,10 @@ bool planDeformableMaterialGroup(WriteSession& s, IPhysicsSource& source, const 
 }
 
 // Publish one deformable-material column (ADR-0012).
-bool scatterDeformableMaterialGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
+bool scatterDeformableMaterialGroup(GroupSlot& slot)
 {
     if (!slot.deformableMatRow || slot.materials.size() != slot.numOut)
         return false;
-    // Honour the caller's producer handoff before reading the column, even on the host path -- a caller
-    // may have produced a host column with a CUDA op and handed the event over.
-    honourCallerSync(slot, writeDoneSync);
     const float* const src = slot.floats.data();
     for (uint32_t i = 0; i < slot.numOut; ++i)
     {
@@ -1622,7 +2331,7 @@ bool planParticleGroup(WriteSession& s,
     if (targets.sets.empty())
         return true;
 
-    std::unique_ptr<GroupSlot> slot(new GroupSlot());
+    std::unique_ptr<GroupSlot> slot(new GroupSlot(s.attach));
     slot->isParticle = true;
     slot->particleVelocity = velocity;
     slot->scene = scene;
@@ -1633,6 +2342,8 @@ bool planParticleGroup(WriteSession& s,
     {
         if (!targets.sets[i] || targets.counts[i] == 0)
             continue;
+        if (s.hasSelection && !s.admits(targets.keys[i]))
+            continue; // prim-set selection: leave unselected particle sets out of the group
         slot->particleSets.push_back(targets.sets[i]);
         slot->particleCounts.push_back(targets.counts[i]);
         slot->particleFloatOffsets.push_back(totalFloats);
@@ -1644,7 +2355,7 @@ bool planParticleGroup(WriteSession& s,
     slot->numOut = static_cast<uint32_t>(slot->particleSets.size());
     slot->floats.assign(totalFloats, 0.0f);
 
-    ovx_path_dictionary_t* dict = nullptr;
+    ovx_path_dictionary_t*& dict = slot->listDictionary;
     slot->list = omni::physics::ovstage::buildPathList(source, slot->keys.data(), slot->keys.size(), &dict);
     if (slot->list == OVX_INVALID_PRIMPATH_LIST || !dict)
         return false;
@@ -1687,18 +2398,15 @@ bool planParticleGroup(WriteSession& s,
 // falling back. Each drain scatter path (rigid, vehicle, joint, particle) sets it at its own commit point; a
 // new drain scatter path must do the same. applyOvstageValueBatch resets it before dispatch and reads it
 // afterward: a scatter that committed part of a batch and then failed means the drain must NOT fall back
-// (that would double-apply the committed part). The write-session commit path sets it too, harmlessly -- only
-// applyOvstageValueBatch reads it, and it resets first. thread_local so concurrent instances do not race.
+// (that would double-apply the committed part). ovxCommitGroup also resets it before dispatch and reads it
+// to distinguish vehicle preflight rejection from a possible partial write. thread_local avoids instance races.
 thread_local bool t_scatterCommitAttempted = false;
 
 // Publish a particle column into each set's staging array (ADR-0012).
-bool scatterParticleGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
+bool scatterParticleGroup(GroupSlot& slot)
 {
     if (slot.particleSets.size() != slot.numOut)
         return false;
-    // Honour the caller's producer handoff before reading the column, even on the host path -- a caller
-    // may have produced a host column with a CUDA op and handed the event over.
-    honourCallerSync(slot, writeDoneSync);
 
     for (uint32_t g = 0; g < slot.numOut; ++g)
     {
@@ -1812,11 +2520,15 @@ bool planJointPropertyGroup(WriteSession& s,
                             PxScene* scene,
                             const JointPropertyWriteRow& row)
 {
+    InternalScene* owningScene = ovx::internalSceneOf(scene);
+    if (!owningScene)
+        return false;
+    AttachedStage& owner = owningScene->getAttachedStage();
     omni::physx::tensors::SimulationBackend* backend = omni::physx::tensors::GetSimulationBackend();
     if (!backend)
         return false;
 
-    if (!ovx::refreshArticulationCache(ovx::allPhysicsScenes()))
+    if (!ovx::refreshArticulationCache(owner, ovx::allPhysicsScenes(owner)))
     {
         OVX_RUNTIME_ERROR("ovxWriteAttribute: the articulation structural walk failed; nothing was written.");
         return false;
@@ -1862,36 +2574,76 @@ bool planJointPropertyGroup(WriteSession& s,
     if (jc.slices.empty())
         return true;
 
-    const uint32_t numOut = static_cast<uint32_t>(jc.recs.size());
+    // Prim-set selection: plan/scatter only the admitted joints. Compact the records (recomputed slice
+    // offsets) so the caller fills, and the scatter applies, exactly those DOFs; the shared jc cache is
+    // never mutated (REQ-READ-SELECT-001 AC-4/AC-5). Host-only, so the compacted records ride on recsHost.
+    std::vector<omni::physx::tensors::ArticulationDofOvStageRecord> selRecs;
+    std::vector<ovx::JointSlice> selSlices;
+    std::vector<ObjectKey> selSliceKeys;
+    std::vector<ovx_primpath_t> selSliceHandles;
+    const std::vector<ovx::JointSlice>* jSlices = &jc.slices;
+    const std::vector<ObjectKey>* jSliceKeys = &jc.sliceKeys;
+    const std::vector<ovx_primpath_t>* jSliceHandles = &jc.sliceHandles;
+    if (s.hasSelection)
+    {
+        const bool haveH = jc.sliceHandles.size() == jc.slices.size();
+        const std::vector<size_t> keep = ovx::selectedIndices(s, jc.sliceKeys);
+        uint32_t off = 0;
+        for (size_t si : keep)
+        {
+            const ovx::JointSlice& sl = jc.slices[si];
+            for (uint32_t d = 0; d < sl.count; ++d)
+                selRecs.push_back(jc.recs[sl.offset + d]);
+            ovx::JointSlice ns = sl;
+            ns.offset = off;
+            selSlices.push_back(ns);
+            selSliceKeys.push_back(jc.sliceKeys[si]);
+            if (haveH)
+                selSliceHandles.push_back(jc.sliceHandles[si]);
+            off += sl.count;
+        }
+        if (selSlices.empty())
+            return true; // none of this scene's joints are in the selection
+        jSlices = &selSlices;
+        jSliceKeys = &selSliceKeys;
+        jSliceHandles = &selSliceHandles;
+    }
+
+    const uint32_t numOut =
+        s.hasSelection ? static_cast<uint32_t>(selRecs.size()) : static_cast<uint32_t>(jc.recs.size());
     const uint32_t comp = omni::physx::tensors::dofPropertyComponents(row.prop);
     const bool isByte = omni::physx::tensors::dofPropertyIsByte(row.prop);
 
-    std::unique_ptr<GroupSlot> slot(new GroupSlot());
+    std::unique_ptr<GroupSlot> slot(new GroupSlot(s.attach));
     slot->scene = scene;
     slot->jointPropRow = &row;
     slot->numOut = numOut;
     slot->comp = comp;
     const size_t bytes = size_t(numOut) * comp * (isByte ? 1u : 4u);
     slot->floats.assign(bytes / 4 + (bytes % 4 ? 1 : 0), 0.0f);
+    // See recsHost: the CPU property scatter re-derives the shared cache by default; hand it the compacted
+    // records when a selection filtered them.
+    if (s.hasSelection)
+        slot->recsHost = selRecs;
 
-    ovx_path_dictionary_t* dict = nullptr;
-    const bool haveHandles = jc.sliceHandles.size() == jc.slices.size();
-    slot->list = haveHandles ? omni::physics::ovstage::buildPathListFromHandles(source, jc.sliceHandles.data(),
-                                                                               jc.sliceHandles.size(), &dict) :
-                               omni::physics::ovstage::buildPathList(source, jc.sliceKeys.data(),
-                                                                     jc.sliceKeys.size(), &dict);
+    ovx_path_dictionary_t*& dict = slot->listDictionary;
+    const bool haveHandles = jSliceHandles->size() == jSlices->size();
+    slot->list = haveHandles ? omni::physics::ovstage::buildPathListFromHandles(source, jSliceHandles->data(),
+                                                                               jSliceHandles->size(), &dict) :
+                               omni::physics::ovstage::buildPathList(source, jSliceKeys->data(),
+                                                                     jSliceKeys->size(), &dict);
     if (slot->list == OVX_INVALID_PRIMPATH_LIST || !dict)
         return false;
     s.dict = dict;
 
     // One tensor per joint, each a window onto its own slice of the flat column -- the DOF-state
     // shape, because a property is per (joint, axis) just as a position is.
-    slot->shapes.resize(jc.slices.size());
-    slot->tensors.assign(jc.slices.size(), DLTensor{});
+    slot->shapes.resize(jSlices->size());
+    slot->tensors.assign(jSlices->size(), DLTensor{});
     char* const base = reinterpret_cast<char*>(slot->floats.data());
-    for (size_t si = 0; si < jc.slices.size(); ++si)
+    for (size_t si = 0; si < jSlices->size(); ++si)
     {
-        const ovx::JointSlice& sl = jc.slices[si];
+        const ovx::JointSlice& sl = (*jSlices)[si];
         slot->shapes[si] = static_cast<int64_t>(sl.count);
         DLTensor& t = slot->tensors[si];
         t.data = base + size_t(sl.offset) * comp * (isByte ? 1u : 4u);
@@ -1907,7 +2659,7 @@ bool planJointPropertyGroup(WriteSession& s,
     ovstage_map_group_t& g = slot->group;
     g.prims.list = slot->list;
     g.prims.offset = 0;
-    g.prims.count = static_cast<uint32_t>(jc.slices.size());
+    g.prims.count = static_cast<uint32_t>(jSlices->size());
     g.prims.index_map = nullptr;
     g.data.tensors = slot->tensors.data();
     g.data.tensor_count = static_cast<uint32_t>(slot->tensors.size());
@@ -1918,18 +2670,105 @@ bool planJointPropertyGroup(WriteSession& s,
     return true;
 }
 
+// Validate the complete request before allocating any writable group. The same
+// authoritative write rows are used below to select each scatter implementation.
+bool acceptsWriteAttribute(uint32_t type, const std::string& name)
+{
+    switch (type)
+    {
+    case kOvxRigidBody:
+        return findRigidWriteAttribute(name) != nullptr;
+    case kOvxArticulationLink:
+    {
+        const WriteAttributeRow* row = findRigidWriteAttribute(name);
+        return row && row->linkWritable;
+    }
+    case kOvxArticulation:
+        return findArtiWriteAttribute(name) != nullptr;
+    case kOvxArticulationJoint:
+        return findJointPropertyWriteAttribute(name) || findJointWriteAttribute(name);
+    case kOvxFixedTendon:
+    case kOvxSpatialTendon:
+    {
+        const TendonWriteAttributeRow* row = findTendonWriteAttribute(name);
+        return row && (type == kOvxFixedTendon || !row->fixedOnly);
+    }
+    case kOvxVehicleWheel:
+        return findVehicleWriteAttribute(name) != nullptr;
+    case kOvxCharacterController:
+        return findCctWriteAttribute(name) != nullptr;
+    case kOvxVehicle:
+        return findVehicleControlAttribute(name) != nullptr;
+    case kOvxDeformableVolume:
+        return name == OvxAttr::kPoints || name == OvxAttr::kVelocities || name == OvxAttr::kKinematicTarget;
+    case kOvxDeformableSurface:
+    case kOvxParticleSet:
+        return name == OvxAttr::kPoints || name == OvxAttr::kVelocities;
+    case kOvxDeformableMaterial:
+        return findDeformableMaterialWriteAttribute(name) != nullptr;
+    default:
+        return false;
+    }
+}
+
+// Keep whole-request validation as informative as the per-type group planners.
+// The request index and resolved name are added by the caller.
+const char* writeAttributeRejectionReason(uint32_t type, const std::string& name)
+{
+    switch (type)
+    {
+    case kOvxRigidBody:
+        return "rigid bodies do not accept this attribute.";
+    case kOvxArticulationLink:
+        return findRigidWriteAttribute(name) ?
+            "this attribute is not writable on an articulation link. PhysX has no link write for it -- "
+            "move the articulation through its root pose and jointPosition instead. Link mass, inertia, "
+            "centreOfMass*, disableGravity and the per-shape properties are writable." :
+            "articulation links do not accept this attribute.";
+    case kOvxArticulation:
+        return "articulations do not accept this attribute. Root state is 'rootPosition', 'rootOrientation', "
+            "'rootLinearVelocity' and 'rootAngularVelocity'; joint state goes through "
+            "kOvxArticulationJoint and link properties through kOvxArticulationLink.";
+    case kOvxArticulationJoint:
+        return "articulation joints do not accept this attribute.";
+    case kOvxFixedTendon:
+        return "fixed tendons do not accept this attribute.";
+    case kOvxSpatialTendon:
+        return findTendonWriteAttribute(name) ?
+            "this attribute does not exist on a spatial tendon -- the schema places it on the leaf "
+            "attachment. It is writable on kOvxFixedTendon." :
+            "spatial tendons do not accept this attribute.";
+    case kOvxVehicle:
+        return "vehicles accept accelerator, brake0, brake1, steer, requestedGear, tank thrust0/thrust1, "
+            "and resetToRestState; other drive state is read-only.";
+    case kOvxVehicleWheel:
+        return "vehicle wheels do not accept this attribute. A wheel's pose is derived from the chassis, "
+            "its suspension and its steer angle every step. The wheel's controls are writable: "
+            "'driveTorque', 'brakeTorque' and 'steerAngle'.";
+    case kOvxDeformableVolume:
+    case kOvxDeformableSurface:
+        return "deformable bodies do not accept this attribute. They accept 'points' and 'velocities' "
+            "(and 'kinematicTarget' on a volume deformable). 'restPoints' is authored geometry the solver "
+            "never rewrites.";
+    case kOvxParticleSet:
+        return "particle sets do not accept this attribute. They accept 'points' and 'velocities'.";
+    case kOvxDeformableMaterial:
+        return "deformable materials do not accept this attribute.";
+    case kOvxCharacterController:
+        return "character controllers accept only 'move'.";
+    case kOvxSdfShape:
+        // Query-only (ADR-0048): nothing about the shape is an input a write could carry.
+        return "SDF shapes have no writable attribute; evaluate them with ovxEvaluateSdfShapes.";
+    default:
+        return "this object type is not writable.";
+    }
+}
+
 // Plan the groups this session hands out: resolve the query to its matched bodies and split them by
 // owning scene, the way the read splits its columns. Returns false if the attribute is not writable
 // for the queried type, or if a group could not be built.
-bool planGroups(WriteSession& s)
+bool planGroups(WriteSession& s, uint32_t type, uint32_t scope, AttachedStage& owner)
 {
-    uint32_t type = 0;
-    uint32_t scope = 0;
-    if (!ovx::queryTypeScope(s.query, type, scope))
-    {
-        OVX_RUNTIME_ERROR("ovxWriteAttribute: invalid query handle %llu.", (unsigned long long)s.query);
-        return false;
-    }
     // Articulation LINKS accept the attributes PhysX can set on a link, and refuse the rest BY NAME.
     //
     // This was a type-level refusal, on the reasoning that PhysX exposes no link-pose write. True,
@@ -1959,24 +2798,26 @@ bool planGroups(WriteSession& s)
             return false;
         }
 
-        ovx::ActiveContext lctx;
-        if (!ovx::getActiveContext("ovxWriteAttribute", lctx))
+        ovx::SourceContext lctx;
+        if (!ovx::getSourceContext(s.attach, "ovxWriteAttribute", lctx))
             return false;
         // The read's link enumeration, shared: a write must cover exactly the links a read covers --
         // including the ACTIVE set, which the scan now takes rather than rebuilding, so the two
         // directions cannot disagree about which actors moved.
         ovx::RigidRecordScan linkScan;
         const ovx::ActiveActorSet linkActive =
-            (scope == kOvxActive) ? ovx::collectActiveActors() : ovx::ActiveActorSet{};
-        ovx::scanLinkRecords(scope, linkActive, linkScan);
-        for (PxScene* scene : ovx::allPhysicsScenes())
+            (scope == kOvxActive) ? ovx::collectActiveActors(owner) : ovx::ActiveActorSet{};
+        ovx::scanLinkRecords(owner, scope, linkActive, linkScan);
+        for (PxScene* scene : ovx::allPhysicsScenes(owner))
         {
             const ovx::RigidSceneBucket* bucket = ovx::bucketForScene(linkScan, scene);
             if (!bucket)
                 continue;
-            // kOvxAll only for the shared cache: its key carries a type, and a link session must not
-            // collide with the rigid one over the same scene.
-            if (!planRigidGroup(s, *lctx.source, scene, bucket->bodies, bucket->keys, *lrow, kOvxActive))
+            // kOvxActive only for the shared cache: its key carries a type, and a link session must not
+            // collide with the rigid one over the same scene. The whole-set test, though, needs the REAL
+            // query scope -- passed separately so a kOvxAll link write can still skip the host dedup.
+            if (!planRigidGroup(s, *lctx.source, scene, bucket->bodies, bucket->keys, *lrow, kOvxActive,
+                                /*allocate=*/true, /*wholeSetScope=*/scope))
                 return false;
         }
         return true;
@@ -1994,14 +2835,14 @@ bool planGroups(WriteSession& s)
                        s.attribute.c_str());
             return false;
         }
-        ovx::ActiveContext actx;
-        if (!ovx::getActiveContext("ovxWriteAttribute", actx))
+        ovx::SourceContext actx;
+        if (!ovx::getSourceContext(s.attach, "ovxWriteAttribute", actx))
             return false;
         // The read's structural walk, not a second one: it enumerates the same ePTArticulation
         // records AND detects duplicate or inconsistent ones, which an independent scan here did
         // not. Sharing it is what keeps a root write addressing the prims a root read reports.
-        const std::vector<PxScene*> artiScenes = ovx::allPhysicsScenes();
-        if (!ovx::refreshArticulationCache(artiScenes))
+        const std::vector<PxScene*> artiScenes = ovx::allPhysicsScenes(owner);
+        if (!ovx::refreshArticulationCache(owner, artiScenes))
         {
             OVX_RUNTIME_ERROR("ovxWriteAttribute: the articulation structural walk failed; nothing was written.");
             return false;
@@ -2020,9 +2861,8 @@ bool planGroups(WriteSession& s)
                            "for this scene; nothing was written.");
                 return false;
             }
-            // kOvxActive narrows to what the solver moved. Deliberately NOT the active-actor set:
-            // getActiveActors reports ACTORS, so an articulation's links appear in it and the
-            // articulation never does -- testing membership there would narrow this to nothing.
+            // ACTIVE membership was resolved from the query's shared root/active-link
+            // rule at session open; do not replace it with a current sleeping check.
             std::vector<PxArticulationReducedCoordinate*> artis;
             std::vector<ObjectKey> keys;
             artis.reserve(entry->rootArtis.size());
@@ -2032,8 +2872,8 @@ bool planGroups(WriteSession& s)
                 PxArticulationReducedCoordinate* arti = entry->rootArtis[i];
                 if (!arti || arti->getScene() != scene)
                     continue;
-                if (scope == kOvxActive && arti->isSleeping())
-                    continue;
+                if (!s.admits(entry->rootKeys[i]))
+                    continue; // prim-set selection: leave unselected articulations unwritten
                 artis.push_back(arti);
                 keys.push_back(entry->rootKeys[i]);
             }
@@ -2063,10 +2903,10 @@ bool planGroups(WriteSession& s)
                        s.attribute.c_str());
             return false;
         }
-        ovx::ActiveContext tctx;
-        if (!ovx::getActiveContext("ovxWriteAttribute", tctx))
+        ovx::SourceContext tctx;
+        if (!ovx::getSourceContext(s.attach, "ovxWriteAttribute", tctx))
             return false;
-        for (PxScene* scene : ovx::allPhysicsScenes())
+        for (PxScene* scene : ovx::allPhysicsScenes(owner))
             if (!planTendonGroup(s, *tctx.source, scene, fixed, *trow))
                 return false;
         return true;
@@ -2077,10 +2917,10 @@ bool planGroups(WriteSession& s)
         // Properties first: the two tables are disjoint, and a property is the larger set.
         if (const JointPropertyWriteRow* prow = findJointPropertyWriteAttribute(s.attribute))
         {
-            ovx::ActiveContext pctx;
-            if (!ovx::getActiveContext("ovxWriteAttribute", pctx))
+            ovx::SourceContext pctx;
+            if (!ovx::getSourceContext(s.attach, "ovxWriteAttribute", pctx))
                 return false;
-            for (PxScene* scene : ovx::allPhysicsScenes())
+            for (PxScene* scene : ovx::allPhysicsScenes(owner))
                 if (!planJointPropertyGroup(s, *pctx.source, scene, *prow))
                     return false;
             return true;
@@ -2092,52 +2932,31 @@ bool planGroups(WriteSession& s)
                        s.attribute.c_str());
             return false;
         }
-        ovx::ActiveContext jctx;
-        if (!ovx::getActiveContext("ovxWriteAttribute", jctx))
+        ovx::SourceContext jctx;
+        if (!ovx::getSourceContext(s.attach, "ovxWriteAttribute", jctx))
             return false;
-        for (PxScene* scene : ovx::allPhysicsScenes())
+        for (PxScene* scene : ovx::allPhysicsScenes(owner))
             if (!planJointGroup(s, *jctx.source, scene, *jrow))
                 return false;
         return true;
     }
 
-    // Vehicle wheels are refused BY NAME with the reason, not through the catch-all below (ADR-0012).
-    //
-    // A wheel's world transform is DERIVED -- composed each step from the chassis body plus
-    // suspension compression and steer angle -- so a written pose is overwritten by the next step.
-    // Exactly the argument that makes articulation link poses unwritable, and BaseVehicleView
-    // reflects it: the view exposes getWheelTransformsOvStage and no setter of any kind.
-    //
-    // This is a DECLARED EXCLUSION under REQ-INPUT-COVERAGE-001 AC-4, not an unimplemented type. The
-    // distinction is the whole point of naming it here: "not writable yet" invites someone to
-    // implement it, and there is nothing to implement.
-    // Vehicle wheels refuse per ATTRIBUTE, the same shape kOvxArticulationLink settled into and for
-    // the same reason: some of what this type exposes is an OUTPUT the solver produces and some is an
-    // INPUT it consumes.
-    //
-    //   position / orientation   REFUSED, permanently. A wheel's transform is composed each step from
-    //                            the chassis, the suspension and the steer angle, so a written value
-    //                            is overwritten by the next step. BaseVehicleView reflects this: it
-    //                            exposes a getter and, until W10, no setter at all. Declared under
-    //                            REQ-INPUT-COVERAGE-001 AC-4 -- an exclusion, not a gap.
-    //   driveTorque / brakeTorque / steerAngle   ACCEPTED. Inputs the next step reads.
-    if (type == kOvxVehicleWheel)
+    if (type == kOvxVehicleWheel || type == kOvxVehicle)
     {
-        const VehicleWriteAttributeRow* vrow = findVehicleWriteAttribute(s.attribute);
-        if (!vrow)
+        const VehicleWriteAttributeRow* wheel = type == kOvxVehicleWheel ?
+            findVehicleWriteAttribute(s.attribute) : nullptr;
+        const VehicleControlAttributeRow* vehicle = type == kOvxVehicle ?
+            findVehicleControlAttribute(s.attribute) : nullptr;
+        if (!wheel && !vehicle)
         {
-            OVX_RUNTIME_ERROR("ovxWriteAttribute: '%s' is not writable on a vehicle wheel, and will not be. A "
-                       "wheel's pose is derived from the chassis, its suspension and its steer angle "
-                       "every step, so a written value is overwritten by the next one. The wheel's "
-                       "CONTROLS are writable: 'driveTorque', 'brakeTorque' and 'steerAngle'.",
-                       s.attribute.c_str());
+            OVX_RUNTIME_ERROR("ovxWriteAttribute: '%s' is not a writable vehicle control.", s.attribute.c_str());
             return false;
         }
-        ovx::ActiveContext vctx;
-        if (!ovx::getActiveContext("ovxWriteAttribute", vctx))
+        ovx::SourceContext context;
+        if (!ovx::getSourceContext(s.attach, "ovxWriteAttribute", context))
             return false;
-        for (PxScene* scene : ovx::allPhysicsScenes())
-            if (!planVehicleGroup(s, *vctx.source, scene, *vrow))
+        for (PxScene* scene : ovx::allPhysicsScenes(owner))
+            if (!planVehicleDataGroup(s, *context.source, scene, wheel, vehicle))
                 return false;
         return true;
     }
@@ -2147,35 +2966,31 @@ bool planGroups(WriteSession& s)
     if (type == kOvxDeformableVolume || type == kOvxDeformableSurface)
     {
         const bool velocity = (s.attribute == OvxAttr::kVelocities);
-        if (!velocity && s.attribute != OvxAttr::kPoints)
+        const bool isVolume = (type == kOvxDeformableVolume);
+        // kinematicTarget is a VOLUME-only write: PxDeformableVolume::setKinematicTargetBufferD, driven
+        // through a runtime-owned per-body buffer (InternalVolumeDeformableBody::mSimMeshKinematicTargetsD)
+        // that outlives the write session -- the ownership the AC-4 exclusion lacked. Surface deformables
+        // have no such API here, so the name is refused for them.
+        const bool kinematicTarget = (s.attribute == OvxAttr::kKinematicTarget) && isVolume;
+        if (!velocity && s.attribute != OvxAttr::kPoints && !kinematicTarget)
         {
-            // Two names are refused for DIFFERENT reasons, and both are declared exclusions under
-            // REQ-INPUT-COVERAGE-001 AC-4 rather than gaps:
-            //
             //   restPoints       authored geometry the solver never rewrites -- read-only.
-            //   kinematicTarget  PhysX takes this as setKinematicTargetBufferD(const PxVec4*), which
-            //                    ADOPTS a buffer the caller must keep alive for as long as the body
-            //                    uses it. A write session's column is freed at release, so handing
-            //                    one over would leave PhysX reading freed device memory. Serving it
-            //                    needs an owned per-body buffer with a lifetime this API does not
-            //                    have -- a design question, not an unwritten scatter.
+            //   kinematicTarget  volume-only; refused here only on a SURFACE deformable.
             OVX_RUNTIME_ERROR("ovxWriteAttribute: deformable bodies do not accept attribute '%s'. They accept "
-                       "'points' and 'velocities'. 'restPoints' is authored geometry the solver never "
-                       "rewrites. 'kinematicTarget' is set by handing PhysX a buffer it keeps, which a "
-                       "write session cannot supply because its column is freed at release.",
+                       "'points' and 'velocities' (and 'kinematicTarget' on a volume deformable). "
+                       "'restPoints' is authored geometry the solver never rewrites.",
                        s.attribute.c_str());
             return false;
         }
-        const bool isVolume = (type == kOvxDeformableVolume);
-        ovx::ActiveContext dctx;
-        if (!ovx::getActiveContext("ovxWriteAttribute", dctx))
+        ovx::SourceContext dctx;
+        if (!ovx::getSourceContext(s.attach, "ovxWriteAttribute", dctx))
             return false;
-        for (PxScene* scene : ovx::allPhysicsScenes())
+        for (PxScene* scene : ovx::allPhysicsScenes(owner))
         {
             ovx::DeformableWriteTargets targets;
             if (!ovx::deformableWriteTargets(scene, isVolume, targets))
                 return false;
-            if (!planDeformableGroup(s, *dctx.source, scene, isVolume, targets, velocity))
+            if (!planDeformableGroup(s, *dctx.source, scene, isVolume, targets, velocity, kinematicTarget))
                 return false;
         }
         return true;
@@ -2192,8 +3007,8 @@ bool planGroups(WriteSession& s)
                        s.attribute.c_str());
             return false;
         }
-        ovx::ActiveContext mctx;
-        if (!ovx::getActiveContext("ovxWriteAttribute", mctx))
+        ovx::SourceContext mctx;
+        if (!ovx::getSourceContext(s.attach, "ovxWriteAttribute", mctx))
             return false;
         return planDeformableMaterialGroup(s, *mctx.source, *mrow);
     }
@@ -2211,10 +3026,10 @@ bool planGroups(WriteSession& s)
                        s.attribute.c_str());
             return false;
         }
-        ovx::ActiveContext pctx;
-        if (!ovx::getActiveContext("ovxWriteAttribute", pctx))
+        ovx::SourceContext pctx;
+        if (!ovx::getSourceContext(s.attach, "ovxWriteAttribute", pctx))
             return false;
-        for (PxScene* scene : ovx::allPhysicsScenes())
+        for (PxScene* scene : ovx::allPhysicsScenes(owner))
         {
             ovx::ParticleWriteTargets targets;
             if (!ovx::particleWriteTargets(scene, scope, targets))
@@ -2223,6 +3038,23 @@ bool planGroups(WriteSession& s)
                 return false;
         }
         return true;
+    }
+
+    if (type == kOvxCharacterController)
+    {
+        const CctWriteAttributeRow* crow = findCctWriteAttribute(s.attribute);
+        if (!crow)
+        {
+            OVX_RUNTIME_ERROR("ovxWriteAttribute: character controllers do not accept attribute '%s'. "
+                              "They accept 'move'. Pose is the rigid-body position and orientation "
+                              "of the controller prim.",
+                              s.attribute.c_str());
+            return false;
+        }
+        ovx::SourceContext cctx;
+        if (!ovx::getSourceContext(s.attach, "ovxWriteAttributes", cctx))
+            return false;
+        return planCctGroup(s, owner, *cctx.source, scope, *crow);
     }
 
     if (type != kOvxRigidBody)
@@ -2238,14 +3070,14 @@ bool planGroups(WriteSession& s)
         return false;
     }
 
-    ovx::ActiveContext ctx;
-    if (!ovx::getActiveContext("ovxWriteAttribute", ctx))
+    ovx::SourceContext ctx;
+    if (!ovx::getSourceContext(s.attach, "ovxWriteAttribute", ctx))
         return false;
 
     // Deferred: only walked if a scene actually needs it, and skipped entirely per scene when the
     // shared cache already describes it.
-    ovx::LazyRigidScan lazy{ scope };
-    const std::vector<PxScene*> scenes = ovx::allPhysicsScenes();
+    ovx::LazyRigidScan lazy{ owner, scope };
+    const std::vector<PxScene*> scenes = ovx::allPhysicsScenes(owner);
     ovx::purgeDeadRigidReadCacheEntries(scenes);
     for (PxScene* scene : scenes)
     {
@@ -2262,7 +3094,7 @@ bool planGroups(WriteSession& s)
                                      ovx::RigidReadCacheKeyHash>::iterator hit =
                 ovx::g_rigidReadCache.find(cacheKey);
             if (hit != ovx::g_rigidReadCache.end() &&
-                hit->second.dbEpoch == omni::physx::internal::recordLifetimeEpoch() &&
+                hit->second.dbEpoch == omni::physx::internal::recordLifetimeEpoch(scene) &&
                 !hit->second.bodies.empty() && hit->second.bodies.size() == hit->second.keys.size())
             {
                 if (!planRigidGroup(s, *ctx.source, scene, hit->second.bodies, hit->second.keys, *row, scope))
@@ -2275,8 +3107,9 @@ bool planGroups(WriteSession& s)
         if (!bucket)
             continue; // this scene owns no standalone bodies
         // Stored before the group is built, exactly as the read stores it before the emit: the emit
-        // is what stamps the generation these belong to, alongside the rows and handles.
-        if (scope == kOvxAll)
+        // is what stamps the generation these belong to, alongside the rows and handles. A selected
+        // write stays off the shared cache (REQ-READ-SELECT-001 AC-5); planRigidGroup filters the bucket.
+        if (scope == kOvxAll && !s.hasSelection)
             ovx::g_rigidReadCache[cacheKey].bodies = bucket->bodies;
         if (!planRigidGroup(s, *ctx.source, scene, bucket->bodies, bucket->keys, *row, scope))
             return false;
@@ -2306,6 +3139,8 @@ bool planGroups(WriteSession& s)
                 continue; // this scene has no instancers -- not a failure
             for (uint32_t i = 0; i < targets.keys.size(); ++i)
             {
+                if (s.hasSelection && !s.admits(targets.keys[i]))
+                    continue; // prim-set selection: only admitted instancers publish their array
                 if (!planInstancerGroup(s, *ctx.source, scene, targets.view, targets.keys[i],
                                         targets.arrayLengths[i], i, column, instComp))
                     return false;
@@ -2315,41 +3150,44 @@ bool planGroups(WriteSession& s)
     return true;
 }
 
-// Publish one filled group to the engine: re-resolve its bodies to superset rows, then hand the
-// column to the view method its attribute names.
+// The caller's producer handoff for one ACCEPTED commit (ovstage_cuda_sync_t). The two fields are
+// independent dependencies and both are honoured when both are set: a nonzero `stream` is drained, a
+// nonzero `wait_event` is waited for. `stream` names the PRODUCER's stream; it is never used as a
+// stream for this runtime's own work.
 //
-// Rows are resolved HERE, not at plan time. A row indexes the superset view's ordering, and the
-// backend takes a fresh generation whenever that view is rebuilt -- so a row cached across the
-// caller's fill would address the view as it was when the group was handed out, and scatter this
-// group's values into whatever occupies those rows now. One retry, with the row mapping inside it:
-// a null view means the cache was found stale and dropped, so a second attempt rebuilds.
-// Honour the caller's producer handoff BEFORE anything reads the column. Both knobs, because either
-// can carry the dependency (ovstage_cuda_sync_t: stream drains, wait_event waits). Applied on the
-// host path too: a caller may have produced a HOST column with a CUDA kernel and handed the event
-// over, and ignoring it there would read the buffer mid-write.
-void honourCallerSync(const GroupSlot& slot, ovstage_cuda_sync_t sync)
+// Blocking for every column residency: true means every supplied dependency has COMPLETED, observed
+// on the host. That orders every consumer that follows on any stream or context -- the host scatters,
+// the view kernels on the engine's default stream, and the PhysX DirectGPU work gated behind them --
+// without relying on any stream's implicit ordering. The calling thread pays for it: it waits for the
+// event, and for ALL work queued on the named stream, not only the fill.
+//
+// No engine context is pushed. A context-relative sentinel such as 1 (the legacy default stream) is
+// therefore resolved in the CALLER's current context, the one its producer's default stream belongs
+// to; an explicit stream or event handle names its own context. When the driver rejects a handle --
+// no current context for a sentinel included -- that rejection is the result, not a retry elsewhere.
+//
+// Called once per accepted commit, before any preflight can refuse the spent group. Any failure,
+// including a nonempty handoff with no CUDA driver, leaves `producerUnproven` set: nothing proves the
+// producer has stopped writing this slot's storage, so release quarantines it. The handles are
+// borrowed for this call only and are never retried later -- the caller may destroy them once the
+// commit returns.
+bool honourCallerSync(GroupSlot& slot, const char* attributeName, ovstage_cuda_sync_t sync)
 {
-    if ((!sync.stream && !sync.wait_event) || !getCudaShim())
-        return;
-    if (slot.ctxMgr)
-    {
-        PxScopedCudaLock _lock(*slot.ctxMgr);
-        if (sync.wait_event)
-            getCudaShim()->streamWaitEvent(uintptr_t(0), sync.wait_event, 0, nullptr);
-        if (sync.stream)
-            getCudaShim()->streamSynchronize(sync.stream == 1 ? uintptr_t(0) : sync.stream, nullptr);
-    }
-    else if (sync.wait_event)
-    {
-        // No context of ours to push: wait on the event outright rather than stream-order it.
-        getCudaShim()->eventSynchronize(sync.wait_event, nullptr);
-    }
+    slot.producerUnproven = sync.stream != 0 || sync.wait_event != 0;
+    if (!slot.producerUnproven)
+        return true;
+    char who[192];
+    std::snprintf(who, sizeof(who), "ovxCommitGroup: request %zu ('%.128s')", slot.attributeIndex, attributeName);
+    if (!ovx::waitForCallerProducer(sync, who, "nothing was read or written"))
+        return false;
+    slot.producerUnproven = false;
+    return true;
 }
 
 // Publish a joint group: hand the flat DOF column and the record list to the articulation view.
 // No row re-resolution here -- a DOF record names (view row, dof index), and the records were derived
 // under the generation the view still reports; the acquire below is what re-checks that.
-bool scatterJointGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
+bool scatterJointGroup(GroupSlot& slot)
 {
     if (slot.numOut == 0)
         return true;
@@ -2357,8 +3195,6 @@ bool scatterJointGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
     if (!backend)
         return false;
     const bool gpu = slot.deviceOrdinal >= 0;
-
-    honourCallerSync(slot, writeDoneSync);
 
     omni::physics::tensors::TensorDesc td;
     td.device = slot.deviceOrdinal;
@@ -2401,14 +3237,20 @@ bool scatterJointGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
         return false;
     }
     const ovx::ArticulationReadCacheEntry& jc = *jcPtr;
-    if (jc.recs.size() != slot.numOut)
+    // A selected write carries its own compacted records (recsHost, snapshotted at plan time); a whole-set
+    // write re-derives jc.recs here. Scatter through whichever describes this group's column.
+    const bool useSlotRecs = !slot.recsHost.empty();
+    const omni::physx::tensors::ArticulationDofOvStageRecord* const recs =
+        useSlotRecs ? slot.recsHost.data() : jc.recs.data();
+    const size_t recCount = useSlotRecs ? slot.recsHost.size() : jc.recs.size();
+    if (recCount != slot.numOut)
     {
         OVX_RUNTIME_ERROR("ovxCommitGroup: the joint record list moved since this group was planned; "
                    "nothing was written.");
         return false;
     }
     t_scatterCommitAttempted = true; // past every pre-commit check; this setter is the commit point
-    return (av->*slot.jointRow->cpuWrite)(&td, jc.recs.data(), slot.numOut);
+    return (av->*slot.jointRow->cpuWrite)(&td, recs, slot.numOut);
 }
 
 // Publish an articulation-root group: re-resolve its articulations to superset rows, then hand the
@@ -2418,7 +3260,7 @@ bool scatterJointGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
 // indexes the superset view's ordering, and the backend takes a fresh generation whenever it rebuilds
 // that view, so a row cached across the caller's fill would address the view as it was when the group
 // was handed out and scatter this group's values into whatever occupies those rows now.
-bool scatterArticulationGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
+bool scatterArticulationGroup(GroupSlot& slot)
 {
     if (slot.artis.empty())
         return true; // nothing to publish -- not a failure
@@ -2429,8 +3271,6 @@ bool scatterArticulationGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync
         return false;
     }
     const bool gpu = slot.deviceOrdinal >= 0;
-
-    honourCallerSync(slot, writeDoneSync);
 
     const std::unordered_map<const PxArticulationReducedCoordinate*, PxU32>* artiRowMap = nullptr;
     const std::vector<omni::physx::tensors::ArticulationEntry>* entries = nullptr;
@@ -2489,7 +3329,7 @@ bool scatterArticulationGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync
 // Publish a tendon group: hand the column and the record list to the articulation view. No row
 // re-resolution here -- a tendon record names (view row, tendon slot), derived under the generation
 // the plan captured, and the acquire below is what re-checks it.
-bool scatterTendonGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
+bool scatterTendonGroup(GroupSlot& slot)
 {
     if (slot.numOut == 0)
         return true;
@@ -2497,8 +3337,6 @@ bool scatterTendonGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
     if (!backend)
         return false;
     const bool gpu = slot.deviceOrdinal >= 0;
-
-    honourCallerSync(slot, writeDoneSync);
 
     omni::physics::tensors::TensorDesc td;
     td.device = slot.deviceOrdinal;
@@ -2533,75 +3371,67 @@ bool scatterTendonGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
         OVX_RUNTIME_ERROR("ovxCommitGroup: superset articulation view unavailable; nothing was written.");
         return false;
     }
-    // Host records live in the shared cache; the host path has no device upload to read them from.
+    // A selected write carries its own compacted records (tendonRecsHost, snapshotted at plan time); a
+    // whole-set write re-reads the shared cache (the host path has no device upload to read them from).
     ovx::TendonReadCacheEntry& tc = ovx::tendonCacheEntry(slot.scene, slot.tendonFixed);
-    if (tc.recs.size() != slot.numOut)
+    const bool useSlotRecs = !slot.tendonRecsHost.empty();
+    const omni::physx::tensors::ArticulationTendonOvStageRecord* recs =
+        useSlotRecs ? slot.tendonRecsHost.data() : tc.recs.data();
+    const size_t recCount = useSlotRecs ? slot.tendonRecsHost.size() : tc.recs.size();
+    if (recCount != slot.numOut)
     {
         OVX_RUNTIME_ERROR("ovxCommitGroup: the tendon record list moved since this group was planned; "
                    "nothing was written.");
         return false;
     }
     return slot.tendonFixed ?
-               av->setFixedTendonPropertiesOvStage(&td, tc.recs.data(), slot.numOut, slot.tendonRow->prop) :
-               av->setSpatialTendonPropertiesOvStage(&td, tc.recs.data(), slot.numOut, slot.tendonRow->prop);
+               av->setFixedTendonPropertiesOvStage(&td, recs, slot.numOut, slot.tendonRow->prop) :
+               av->setSpatialTendonPropertiesOvStage(&td, recs, slot.numOut, slot.tendonRow->prop);
 }
 
-// Publish a vehicle wheel-control group. Host-only by construction -- see planVehicleGroup.
-bool scatterVehicleGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
+// Publish only the row mapping captured at open; equal counts do not prove identity.
+bool scatterVehicleGroup(GroupSlot& slot)
 {
-    if (slot.numOut == 0)
-        return true;
     omni::physx::tensors::SimulationBackend* backend = omni::physx::tensors::GetSimulationBackend();
-    if (!backend)
-        return false;
-
-    honourCallerSync(slot, writeDoneSync);
-
-    omni::physx::internal::InternalScene* internalScene = nullptr;
-    for (const ovx::ScenePair& p : ovx::allPhysicsScenesWithInternal())
+    omni::physx::internal::InternalScene* internalScene = ovx::internalSceneOf(slot.scene);
+    uint64_t generation = 0;
+    omni::physx::tensors::CpuSimulationView* sceneView =
+        backend ? backend->acquireCpuSceneView(slot.scene, &generation) : nullptr;
+    if (!internalScene || !sceneView || generation != slot.vehicleGeneration ||
+        internalScene->mVehicleSetEpoch != slot.vehicleSetEpoch)
     {
-        // ScenePair is a std::pair<PxScene*, InternalScene*>, not a named struct.
-        if (p.first == slot.scene)
-        {
-            internalScene = p.second;
-            break;
-        }
-    }
-    omni::physx::tensors::CpuSimulationView* sv = backend->acquireCpuSceneView(slot.scene);
-    omni::physx::tensors::BaseVehicleView* vv =
-        (sv && internalScene) ? sv->vehicleView(*internalScene) : nullptr;
-    if (!vv)
-    {
-        OVX_RUNTIME_ERROR("ovxCommitGroup: vehicle view unavailable; nothing was written.");
+        OVX_RUNTIME_ERROR("ovxCommitGroup: vehicle membership changed; nothing was written. Reopen the write.");
         return false;
     }
-    const ovx::VehicleReadCacheEntry* vc = ovx::vehicleCacheEntry(slot.scene);
-    if (!vc || vc->recs.size() != slot.numOut)
-    {
-        OVX_RUNTIME_ERROR("ovxCommitGroup: the vehicle wheel list moved since this group was planned; "
-                   "nothing was written.");
+    omni::physx::tensors::BaseVehicleView* view = sceneView->vehicleView(*internalScene);
+    if (!view)
         return false;
-    }
-
-    omni::physics::tensors::TensorDesc td;
-    td.device = -1;
-    td.dtype = omni::physics::tensors::TensorDataType::eFloat32;
-    td.numDims = 1;
-    td.dims[0] = static_cast<int>(slot.numOut);
-    td.data = static_cast<void*>(slot.floats.data());
-
-    t_scatterCommitAttempted = true; // past every pre-commit check; this setter is the commit point
-    return vv->setWheelControlOvStage(*internalScene, vc->recs.data(), slot.numOut, slot.vehicleRow->control,
-                                      &td);
+    omni::physics::tensors::TensorDesc tensor;
+    tensor.device = -1;
+    tensor.dtype = slot.vehicleControlRow ? slot.vehicleControlRow->dtype :
+        omni::physics::tensors::TensorDataType::eFloat32;
+    tensor.numDims = 1;
+    tensor.dims[0] = static_cast<int>(slot.numOut);
+    tensor.data = slot.tensors[0].data;
+    t_scatterCommitAttempted = true;
+    const bool applied = slot.vehicleControlRow ?
+        view->setVehicleControlOvStage(*internalScene, slot.wholeVehicleRecs.data(), slot.numOut,
+                                       slot.vehicleControlRow->control, &tensor) :
+        view->setWheelControlOvStage(*internalScene, slot.vehicleRecsHost.data(), slot.numOut,
+                                     slot.vehicleRow->control, &tensor);
+    // Both setters return false only during whole-batch preflight. An exception after entering
+    // a setter leaves the flag raised, preserving the conservative partial-publication handling.
+    if (!applied)
+        t_scatterCommitAttempted = false;
+    return applied;
 }
 
 // Publish one instancer's array. The view applies the hole contract -- a slot with no live body is
 // skipped -- and inverts the reframe; see BasePointInstancerView::setInstancerColumnsOvStage.
-bool scatterInstancerGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
+bool scatterInstancerGroup(GroupSlot& slot)
 {
     if (slot.numOut == 0 || !slot.instancerView)
         return true;
-    honourCallerSync(slot, writeDoneSync);
 
     const void* const src = slot.deviceData ? reinterpret_cast<const void*>(slot.deviceData) :
                                               static_cast<const void*>(slot.floats.data());
@@ -2610,17 +3440,22 @@ bool scatterInstancerGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
 }
 
 // Publish a joint-property group. Host-only by construction -- see planJointPropertyGroup.
-bool scatterJointPropertyGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
+bool scatterJointPropertyGroup(GroupSlot& slot)
 {
     if (slot.numOut == 0)
         return true;
     omni::physx::tensors::SimulationBackend* backend = omni::physx::tensors::GetSimulationBackend();
     if (!backend)
         return false;
-    honourCallerSync(slot, writeDoneSync);
 
     const ovx::ArticulationReadCacheEntry* jc = ovx::articulationCacheEntry(slot.scene);
-    if (!jc || jc->recs.size() != slot.numOut)
+    // A selected write carries its own compacted records (recsHost, snapshotted at plan time); a whole-set
+    // write re-derives jc->recs here. Scatter through whichever describes this group's column.
+    const bool useSlotRecs = !slot.recsHost.empty();
+    const omni::physx::tensors::ArticulationDofOvStageRecord* const recs =
+        useSlotRecs ? slot.recsHost.data() : (jc ? jc->recs.data() : nullptr);
+    const size_t recCount = useSlotRecs ? slot.recsHost.size() : (jc ? jc->recs.size() : 0);
+    if ((!jc && !useSlotRecs) || recCount != slot.numOut)
     {
         OVX_RUNTIME_ERROR("ovxCommitGroup: the joint record list moved since this group was planned; "
                    "nothing was written.");
@@ -2659,29 +3494,113 @@ bool scatterJointPropertyGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSyn
     td.dims[0] = static_cast<int>(slot.numOut * slot.comp);
     td.data = static_cast<void*>(slot.floats.data());
 
-    return av->setDofPropertyOvStage(slot.jointPropRow->prop, jc->recs.data(), slot.numOut, &td);
+    return av->setDofPropertyOvStage(slot.jointPropRow->prop, recs, slot.numOut, &td);
 }
 
-bool scatterGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
+// Each committed move calls PxController::move once, with the owning scene's timestep.
+// Nothing is stored for a later step to replay. Collision flags are intentionally discarded:
+// exposing them is still an open product question.
+bool scatterCctGroup(AttachedStage& owner, GroupSlot& slot)
 {
+    if (slot.numOut == 0 || !slot.cctRow)
+        return true;
+
+    std::vector<omni::physx::ovx::CctOvStageRow> currentRows;
+    if (!omni::physx::ovx::enumerateCctRows(owner, kOvxAll, currentRows))
+        return false;
+    std::unordered_map<ObjectKey, uint32_t, ObjectKey::Hash> keyToRow;
+    keyToRow.reserve(currentRows.size());
+    for (uint32_t i = 0; i < currentRows.size(); ++i)
+        keyToRow.emplace(currentRows[i].key, i);
+    std::vector<omni::physx::ovx::CctOvStageRow> resolved;
+    resolved.reserve(slot.keys.size());
+    for (const ObjectKey& key : slot.keys)
+    {
+        const auto found = keyToRow.find(key);
+        if (found == keyToRow.end())
+        {
+            OVX_RUNTIME_ERROR("ovxCommitGroup: a character controller was removed since this group was planned; "
+                              "nothing was written.");
+            return false;
+        }
+        resolved.push_back(currentRows[found->second]);
+    }
+    const float* values = reinterpret_cast<const float*>(slot.floats.data());
+    const size_t count = size_t(slot.numOut) * slot.cctRow->components;
+    for (size_t k = 0; k < count; ++k)
+    {
+        if (!PxIsFinite(values[k]))
+        {
+            OVX_RUNTIME_ERROR("ovxCommitGroup: character-controller '%s' values must be finite; "
+                              "nothing was written.",
+                              slot.cctRow->token);
+            return false;
+        }
+    }
+    if (cctMoveRejectedOnDirectGpu(resolved, "ovxCommitGroup"))
+        return false;
+
+    std::vector<float> timesteps(slot.numOut, 0.0f);
+    for (uint32_t i = 0; i < slot.numOut; ++i)
+    {
+        const omni::physx::internal::InternalCct* cct = resolved[i].internal;
+        const PhysXScene* scene = cct ? cct->mPhysXScene : nullptr;
+        const uint32_t stepsPerSecond = scene ? scene->getTimeStepsPerSeconds() : 0;
+        if (!resolved[i].controller || stepsPerSecond == 0)
+        {
+            OVX_RUNTIME_ERROR("ovxCommitGroup: character-controller '%s' has no simulator timestep; "
+                              "nothing was written.",
+                              slot.cctRow->token);
+            return false;
+        }
+        timesteps[i] = 1.0f / static_cast<float>(stepsPerSecond);
+    }
+
+    t_scatterCommitAttempted = true;
+    const PxControllerFilters filters;
+    for (uint32_t i = 0; i < slot.numOut; ++i)
+    {
+        const float* v = values + size_t(i) * 3;
+        const PxVec3 displacement(v[0], v[1], v[2]);
+        // A finite zero still calls move. rideOnTouchedObject runs inside move(), so a
+        // stationary write is how a controller follows a kinematic platform it is standing on.
+        // Collision flags stay unpublished. Exposing them is still an open product question.
+        resolved[i].controller->move(displacement, 0.0f, timesteps[i], filters);
+    }
+    return true;
+}
+
+// Publish one filled group to the engine: re-resolve its bodies to superset rows, then hand the
+// column to the view method its attribute names.
+//
+// Rows are resolved HERE, not at plan time. A row indexes the superset view's ordering, and the
+// backend takes a fresh generation whenever that view is rebuilt -- so a row cached across the
+// caller's fill would address the view as it was when the group was handed out, and scatter this
+// group's values into whatever occupies those rows now. One retry, with the row mapping inside it:
+// a null view means the cache was found stale and dropped, so a second attempt rebuilds.
+bool scatterGroup(AttachedStage& owner, GroupSlot& slot)
+{
+    if (slot.cctRow)
+        return scatterCctGroup(owner, slot);
     if (slot.jointRow)
-        return scatterJointGroup(slot, writeDoneSync);
+        return scatterJointGroup(slot);
     if (slot.jointPropRow)
-        return scatterJointPropertyGroup(slot, writeDoneSync);
+        return scatterJointPropertyGroup(slot);
     if (slot.isDeformable)
-        return scatterDeformableGroup(slot, writeDoneSync);
+        return slot.deformableKinematicTarget ? scatterKinematicTargetGroup(slot) :
+                                                scatterDeformableGroup(slot);
     if (slot.deformableMatRow)
-        return scatterDeformableMaterialGroup(slot, writeDoneSync);
+        return scatterDeformableMaterialGroup(slot);
     if (slot.isParticle)
-        return scatterParticleGroup(slot, writeDoneSync);
+        return scatterParticleGroup(slot);
     if (slot.isInstancer)
-        return scatterInstancerGroup(slot, writeDoneSync);
-    if (slot.vehicleRow)
-        return scatterVehicleGroup(slot, writeDoneSync);
+        return scatterInstancerGroup(slot);
+    if (slot.vehicleRow || slot.vehicleControlRow)
+        return scatterVehicleGroup(slot);
     if (slot.tendonRow)
-        return scatterTendonGroup(slot, writeDoneSync);
+        return scatterTendonGroup(slot);
     if (slot.artiRow)
-        return scatterArticulationGroup(slot, writeDoneSync);
+        return scatterArticulationGroup(slot);
     if (slot.bodies.empty())
         return true; // nothing to publish -- not a failure
 
@@ -2761,7 +3680,7 @@ bool scatterGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
                     if (ce->keys != slot.keys)
                         ce->handles.clear();
                     ce->generation = generation;
-                    ce->dbEpoch = omni::physx::internal::recordLifetimeEpoch();
+                    ce->dbEpoch = omni::physx::internal::recordLifetimeEpoch(slot.scene);
                     ce->keys = slot.keys;
                     ce->bodies = slot.bodies;
                     ce->rows = rows;
@@ -2806,9 +3725,6 @@ bool scatterGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
         }
     }
 
-    // A refused live group is spent too, so finish its producer handoff before rejecting it.
-    honourCallerSync(slot, writeDoneSync);
-
     // Past every pre-commit check; the setter below is the commit point (see t_scatterCommitAttempted).
     t_scatterCommitAttempted = true;
 
@@ -2828,7 +3744,7 @@ bool scatterGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
             sceneIsGpu ? static_cast<omni::physx::tensors::BaseRigidBodyView*>(gpuView) :
                   static_cast<omni::physx::tensors::BaseRigidBodyView*>(cpuView);
         const bool written =
-            (base->*slot.row->baseWrite)(&td, rows.data(), static_cast<uint32_t>(rows.size()), rowsToken);
+            (base->*slot.row->baseWrite)(&td, rows.data(), static_cast<uint32_t>(rows.size()), rowsToken, slot.wholeSet);
         if (written && sceneIsGpu && std::string_view(slot.row->token) == OvxAttr::kDisableSimulation)
         {
             // The base setter changes a host actor flag and cannot notify the GPU view itself.
@@ -2840,8 +3756,10 @@ bool scatterGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
     }
 
     if (sceneIsGpu)
-        return (gpuView->*slot.row->gpuWrite)(&td, rows.data(), static_cast<uint32_t>(rows.size()), rowsToken);
-    return (cpuView->*slot.row->cpuWrite)(&td, rows.data(), static_cast<uint32_t>(rows.size()), rowsToken);
+        return (gpuView->*slot.row->gpuWrite)(&td, rows.data(), static_cast<uint32_t>(rows.size()), rowsToken,
+                                              slot.wholeSet);
+    return (cpuView->*slot.row->cpuWrite)(&td, rows.data(), static_cast<uint32_t>(rows.size()), rowsToken,
+                                          slot.wholeSet);
 }
 
 // Free everything a session's groups own: the device column each was allocated, and the prim list
@@ -2850,117 +3768,423 @@ bool scatterGroup(GroupSlot& slot, ovstage_cuda_sync_t writeDoneSync)
 //
 // Each group holds its OWN list -- groups are per scene and no two scenes cover the same prims -- so
 // there is nothing to refcount here, unlike the read, where several attributes share one list.
-void releaseGroupStorage(WriteSession& s)
+bool releaseGroupStorage(WriteSession& s)
 {
     // Wait for any device write still in flight BEFORE freeing the columns it reads from. The RIGID
     // velocity paths hand the caller's column to PhysX directly, so a free here without this is a
     // use-after-free on device memory. The read blocks in the same place and for the same reason
     // (ovxReleaseRead): at release, never at the operation itself.
     //
-    // Only rigid groups need it, and that is a property of WHAT PHYSX HOLDS rather than a shortcut.
-    // A joint or articulation-root write scatters the caller's column into a PhysX-owned scratch and
-    // hands PhysX only that scratch, so nothing PhysX may still be reading points at the column
-    // being freed -- and cuMemFree synchronizes the device anyway, which covers our own kernel.
-    // Stated rather than left to the loop's shape: relying on an unrelated view's wait to cover a
-    // path is exactly how a use-after-free hides.
+    // These waits protect columns consumed directly by the rigid scene view. Joint and
+    // articulation-root writes publish through PhysX-owned scratch instead; their own scatter
+    // work retains the existing context-scoped deallocation path.
+    bool released = true;
+    std::vector<std::pair<PxScene*, bool>> sceneCompletion;
     omni::physx::tensors::SimulationBackend* backend = omni::physx::tensors::GetSimulationBackend();
     if (backend)
     {
-        std::vector<PxScene*> waited;
         for (const std::unique_ptr<GroupSlot>& slot : s.groups)
         {
-            if (!slot->committed || slot->deviceOrdinal < 0 || !slot->scene || !slot->row)
+            if (!slot || !slot->committed || slot->deviceOrdinal < 0 || !slot->row)
                 continue;
-            if (std::find(waited.begin(), waited.end(), slot->scene) != waited.end())
+            if (!slot->scene)
+            {
+                released = false;
                 continue;
-            waited.push_back(slot->scene);
-            omni::physx::tensors::GpuSimulationView* sv = backend->acquireSceneView(slot->scene);
-            const std::unordered_map<const PxRigidBody*, PxU32>* rowMap = nullptr;
-            if (omni::physx::tensors::GpuRigidBodyView* view = sv ? sv->supersetRigidView(&rowMap) : nullptr)
-                view->waitOvStageWriteDone();
+            }
+            if (std::find_if(sceneCompletion.begin(), sceneCompletion.end(),
+                             [&slot](const std::pair<PxScene*, bool>& entry) { return entry.first == slot->scene; }) !=
+                sceneCompletion.end())
+                continue;
+            sceneCompletion.emplace_back(slot->scene, false);
+            PhysXScene* sceneOwner = OmniPhysX::getInstance().getPhysXSetup().findPhysXScene(slot->scene);
+            if (sceneOwner && sceneOwner->getAttachedStage().getAttachHandle() == s.attach &&
+                sceneOwner->getAttachedStage().recordVersion.load(std::memory_order_relaxed) == s.recordEpoch)
+            {
+                omni::physx::tensors::GpuSimulationView* sv = backend->acquireSceneView(slot->scene);
+                const std::unordered_map<const PxRigidBody*, PxU32>* rowMap = nullptr;
+                omni::physx::tensors::GpuRigidBodyView* view = sv ? sv->supersetRigidView(&rowMap) : nullptr;
+                sceneCompletion.back().second = view && view->waitOvStageWriteDone();
+            }
+            else if (slot->ctxMgr && slot->ctxMgr->getCudaContext())
+            {
+                // Retirement destroys the view and its events, and reset can reuse a scene address
+                // within the same attachment. Confirm completion on the retained context when the
+                // original scene generation no longer matches; teardown waits can have failed.
+                PxScopedCudaLock lock(*slot->ctxMgr);
+                IOptionalCuda* const cuda = getCudaShim();
+                sceneCompletion.back().second = cuda && cuda->cudaAvailable() && cuda->ctxSynchronize(nullptr);
+            }
+            if (!sceneCompletion.back().second)
+                released = false;
         }
     }
 
-    for (const std::unique_ptr<GroupSlot>& slot : s.groups)
+    if (!backend)
     {
+        for (const std::unique_ptr<GroupSlot>& slot : s.groups)
+            if (slot && slot->committed && slot->deviceOrdinal >= 0 && slot->row)
+                released = false;
+    }
+    if (!released)
+    {
+        OVX_RUNTIME_ERROR("Write release could not confirm device completion; affected committed rigid buffers are quarantined");
+    }
+    for (std::unique_ptr<GroupSlot>& slot : s.groups)
+    {
+        if (!slot)
+            continue; // quarantined by an earlier pass
+        slot->releaseList();
+        if (slot->producerUnproven)
+        {
+            // An accepted commit whose producer handoff was never proven complete. The caller's stream
+            // or event may still be writing this slot's storage, and the caller may already have
+            // destroyed those borrowed handles, so there is nothing left to wait on. Keep everything --
+            // host floats, device column, record buffer and the context reference -- by leaking the
+            // whole slot on purpose: its destructor must not run. Allocation-free, so it cannot fail.
+            released = false;
+            OVX_RUNTIME_ERROR("Write release kept a committed group's storage: its producer handoff was never "
+                              "proven complete, so the buffer is quarantined");
+            static_cast<void>(slot.release());
+            continue;
+        }
+        bool deviceUseComplete = true;
+        if (slot->committed && slot->isDeformable && !slot->deformableKinematicTarget)
+        {
+            // The deformable scatter consumes the column on the default stream. It has no
+            // rigid-view completion event, and release must check completion before freeing it.
+            deviceUseComplete = false;
+            if (slot->ctxMgr && slot->ctxMgr->getCudaContext())
+            {
+                PxScopedCudaLock lock(*slot->ctxMgr);
+                IOptionalCuda* const cuda = getCudaShim();
+                deviceUseComplete = cuda && cuda->cudaAvailable() && cuda->streamSynchronize(0, nullptr);
+            }
+            if (!deviceUseComplete)
+            {
+                released = false;
+                OVX_RUNTIME_ERROR("Write release could not confirm deformable scatter completion; buffers are quarantined");
+            }
+        }
         // A borrowed column is the caller's (the ovstage drain's zero-copy path) -- deviceData points
         // into it, so the session must not free it. recsDev, when present, is always session-owned.
-        if (slot->deviceData && slot->ctxMgr && !slot->borrowed)
+        if (slot->deviceData && !slot->borrowed)
         {
-            if (PxCudaContext* cu = slot->ctxMgr->getCudaContext())
+            // A failed rigid scene wait cannot quarantine an uncommitted group or a group whose
+            // own scene completed. Deformable columns use the default-stream result above.
+            if (slot->committed && slot->deviceOrdinal >= 0 && slot->row)
             {
-                PxScopedCudaLock _lock(*slot->ctxMgr);
-                cu->memFree(slot->deviceData);
-                if (slot->recsDev)
-                    cu->memFree(slot->recsDev); // joint groups own their uploaded record list too
+                const auto completion = std::find_if(
+                    sceneCompletion.begin(), sceneCompletion.end(),
+                    [&slot](const std::pair<PxScene*, bool>& entry) { return entry.first == slot->scene; });
+                deviceUseComplete = completion != sceneCompletion.end() && completion->second;
+            }
+            PxCudaContext* cu = slot->ctxMgr ? slot->ctxMgr->getCudaContext() : nullptr;
+            if (cu && deviceUseComplete)
+            {
+                PxScopedCudaLock lock(*slot->ctxMgr);
+                const bool dataFreed = cu->memFree(slot->deviceData) == CUDA_SUCCESS;
+                const bool recordsFreed = !slot->recsDev || cu->memFree(slot->recsDev) == CUDA_SUCCESS;
+                if (!dataFreed || !recordsFreed)
+                {
+                    released = false;
+                    OVX_RUNTIME_ERROR("Write release could not reclaim a CUDA buffer");
+                }
+            }
+            else if (!cu)
+            {
+                released = false;
+                OVX_RUNTIME_ERROR("Write release lost its CUDA context; buffers are quarantined");
             }
             slot->deviceData = 0;
             slot->recsDev = 0;
         }
-        if (slot->list != OVX_INVALID_PRIMPATH_LIST && s.dict)
-        {
-            ovx_path_dictionary_destroy_path_list(s.dict, slot->list);
-            slot->list = OVX_INVALID_PRIMPATH_LIST;
-        }
     }
+    return released;
 }
 
 } // namespace
 
+static AttachHandle writeOwner(OvxWriteHandle write)
+{
+    std::lock_guard<carb::tasking::RecursiveMutexWrapper> lock(omni::physx::ovx::outputCacheMutex());
+    auto it = g_writes.find(write);
+    if (it == g_writes.end())
+        return omni::physics::kNoAttach;
+    // Debug settings follow the instance's current attach, matching queryOwner().
+    if (it->second.debugRender)
+        return debug_render::currentAttach(it->second.debugOwner);
+    return it->second.attach;
+}
+static AttachHandle writeQueryOwner(OvxOutputQueryHandle query)
+{
+    uint64_t attach = 0;
+    uint32_t type = 0, scope = 0;
+    omni::physx::ovx::queryTypeScope(query, attach, type, scope);
+    return attach;
+}
+
 extern "C"
 {
 
-OMNI_OVX_WRITE_API OvxWriteHandle ovxWriteAttribute(OvxOutputQueryHandle query, const ovx_string_or_token_t* attr)
+OMNI_OVX_WRITE_API OvxWriteHandle ovxWriteAttributes(OvxOutputQueryHandle query,
+                                                      const ovx_string_or_token_t* attributes,
+                                                      size_t attributeCount,
+                                                      OvxWriteResult* outSummary)
+try
 {
-    if (query == 0 || !attr)
+    if (outSummary)
+        *outSummary = {};
+    RuntimeExecutionScope execution(writeQueryOwner(query));
+    if (!execution)
+        return 0;
+    if (!query || !attributes || !attributeCount)
     {
-        OVX_RUNTIME_ERROR("ovxWriteAttribute: a valid query handle and attribute are required.");
+        OVX_RUNTIME_ERROR("ovxWriteAttributes: a query and nonempty attribute array are required.");
         return 0;
     }
-
-    std::lock_guard<std::mutex> lock(g_mutex);
-
-    // A session carries exactly one attribute, so a name is required rather than optional.
-    // Interned-token-only attributes resolve once the dictionary lookup lands with the query
-    // plumbing; a token with no string is not rejected here so that the eventual token path is not
-    // accidentally forbidden by this stage.
+    std::lock_guard<carb::tasking::RecursiveMutexWrapper> lock(ovx::outputCacheMutex());
     WriteSession s;
-    s.query = query;
-    if (attr->string.ptr && attr->string.length)
-        s.attribute.assign(attr->string.ptr, attr->string.length);
-
-    if (!planGroups(s))
+    uint64_t debugInstance = 0;
+    uint64_t debugAttach = 0;
+    if (omni::physx::ovx::debugRenderQuery(query, debugInstance, debugAttach))
     {
-        releaseGroupStorage(s); // a later scene failed after earlier ones allocated
-        return 0;
+        if (attributeCount != 1)
+        {
+            OVX_RUNTIME_ERROR("ovxWriteAttributes: a debug-render write takes one attribute.");
+            return 0;
+        }
+        const ovx_string_or_token_t* attr = &attributes[0];
+        if (attr->string.ptr && attr->string.length)
+            s.attribute.assign(attr->string.ptr, attr->string.length);
+        ovx_path_dictionary_t* dictionary = nullptr;
+        if (debugAttach != 0)
+        {
+            ovx::SourceContext stage;
+            if (ovx::getSourceContext(debugAttach, "ovxWriteAttribute", stage))
+                omni::physics::ovstage::buildPathList(*stage.source, nullptr, 0, &dictionary);
+        }
+        debug_render::WritePlan plan;
+        std::string error;
+        if (!debug_render::planWrite(debugInstance, dictionary, attr, plan, error))
+        {
+            OVX_RUNTIME_ERROR("%s", error.c_str());
+            return 0;
+        }
+        auto slot = std::make_unique<GroupSlot>(debugAttach);
+        slot->floats.clear();
+        slot->shapes.push_back(plan.column.shape[0]);
+        if (plan.column.ndim > 1)
+            slot->shapes.push_back(plan.column.shape[1]);
+        slot->tensors.assign(1, DLTensor{});
+        DLTensor& tensor = slot->tensors[0];
+        tensor.device = DLDevice{ kDLCPU, 0 };
+        tensor.ndim = plan.column.ndim;
+        tensor.dtype = plan.column.dtype;
+        tensor.strides = nullptr;
+        tensor.byte_offset = 0;
+        if (plan.column.dtype.code == kDLFloat)
+        {
+            slot->floats.resize(plan.column.bytes.size() / sizeof(float));
+            if (!plan.column.bytes.empty())
+                std::memcpy(slot->floats.data(), plan.column.bytes.data(), plan.column.bytes.size());
+            tensor.data = slot->floats.empty() ? nullptr : static_cast<void*>(slot->floats.data());
+        }
+        else
+        {
+            slot->floats.resize((plan.column.bytes.size() + sizeof(float) - 1) / sizeof(float));
+            if (!plan.column.bytes.empty())
+                std::memcpy(slot->floats.data(), plan.column.bytes.data(), plan.column.bytes.size());
+            tensor.data = plan.column.bytes.empty() ? nullptr : static_cast<void*>(slot->floats.data());
+        }
+        slot->group.data.tensors = slot->tensors.data();
+        slot->group.data.tensor_count = 1;
+        s.debugRender = true;
+        s.debugOwner = debugInstance;
+        s.debugKind = plan.kind;
+        s.debugParam = plan.param;
+        s.attach = debugAttach;
+        s.groups.push_back(std::move(slot));
+        const OvxWriteHandle handle = g_nextWriteHandle++;
+        g_writes.emplace(handle, std::move(s));
+        return handle;
     }
 
-    const OvxWriteHandle h = g_nextWriteHandle++;
-    g_writes.emplace(h, std::move(s));
+    uint32_t type = 0, scope = 0;
+    if (!ovx::queryTypeScope(query, s.attach, type, scope))
+    {
+        OVX_RUNTIME_ERROR("ovxWriteAttributes: invalid query handle.");
+        return 0;
+    }
+    s.dict = ovx::queryDictionaryLocked(query);
+    if (!s.dict)
+    {
+        OVX_RUNTIME_ERROR("ovxWriteAttributes: query has no live owner dictionary.");
+        return 0;
+    }
+    s.hasSelection = ovx::querySelection(query, s.selectionKeys);
+    AttachedStage* owner = UsdLoad::getUsdLoad()->getAttachedStageByHandle(s.attach);
+    if (!owner)
+        return 0;
+    s.recordEpoch = owner->getInternalPhysXDatabase().recordEpoch();
+    s.attributeNames.reserve(attributeCount);
+    if (outSummary)
+        s.attributeResults.resize(attributeCount);
+    std::unordered_set<std::string> seen;
+    for (size_t i = 0; i < attributeCount; ++i)
+    {
+        const ovx_string_or_token_t& attribute = attributes[i];
+        ovx_string_t name = attribute.string;
+        if (attribute.token != OVX_INVALID_TOKEN &&
+            ovx_path_dictionary_token_to_string(s.dict, attribute.token, &name) != OVX_OK)
+        {
+            OVX_RUNTIME_ERROR("ovxWriteAttributes: request %zu has an unresolvable token.", i);
+            return 0;
+        }
+        if (!name.ptr || !name.length || std::memchr(name.ptr, 0, name.length))
+        {
+            OVX_RUNTIME_ERROR("ovxWriteAttributes: request %zu has an invalid attribute name.", i);
+            return 0;
+        }
+        s.attributeNames.emplace_back(name.ptr, name.length);
+        const std::string& canonical = s.attributeNames.back();
+        if (!seen.insert(canonical).second)
+        {
+            OVX_RUNTIME_ERROR("ovxWriteAttributes: request %zu duplicates '%s'.", i, canonical.c_str());
+            return 0;
+        }
+        if (!acceptsWriteAttribute(type, canonical))
+        {
+            OVX_RUNTIME_ERROR("ovxWriteAttributes: request %zu ('%s'): %s",
+                              i, canonical.c_str(), writeAttributeRejectionReason(type, canonical));
+            return 0;
+        }
+        if (outSummary &&
+            ovx_path_dictionary_intern_token(s.dict, name, &s.attributeResults[i].attribute) != OVX_OK)
+        {
+            OVX_RUNTIME_ERROR("ovxWriteAttributes: request %zu token interning failed.", i);
+            return 0;
+        }
+    }
+    size_t totalPrimCount = 0;
+    const bool snapshotActiveMembership = scope == kOvxActive &&
+        (type == kOvxArticulation || type == kOvxVehicleWheel || type == kOvxVehicle ||
+         type == kOvxDeformableVolume || type == kOvxDeformableSurface);
+    if (snapshotActiveMembership)
+    {
+        // These planners share ALL caches with reads. Compact from the query's
+        // authoritative active set rather than treating every cached row as active.
+        if (!ovx::queryMembershipLocked(query, s.selectionKeys))
+            return 0;
+        s.hasSelection = true;
+        if (outSummary)
+            totalPrimCount = s.selectionKeys.size();
+    }
+    else if (outSummary && !ovx::queryTotalPrimCountLocked(query, totalPrimCount))
+    {
+        return 0;
+    }
+    // Unpublished groups own their allocations directly; unwinding or an early return
+    // reclaims them without the waits needed for a committed session.
+    for (size_t i = 0; i < attributeCount; ++i)
+    {
+        s.attribute = s.attributeNames[i];
+        // One attribute may emit several groups; label only the groups it appends.
+        const size_t firstGroup = s.groups.size();
+        // Empty selections need no scene/backend preflight after name validation.
+        if ((!s.hasSelection || !s.selectionKeys.empty()) && !planGroups(s, type, scope, *owner))
+        {
+            OVX_RUNTIME_ERROR("ovxWriteAttributes: planning request %zu ('%s') failed; no session was published.",
+                              i, s.attribute.c_str());
+            return 0;
+        }
+        if (outSummary)
+            s.attributeResults[i].groupCount = s.groups.size() - firstGroup;
+        for (size_t group = firstGroup; group < s.groups.size(); ++group)
+            s.groups[group]->attributeIndex = i;
+    }
+    if (owner->getInternalPhysXDatabase().recordEpoch() != s.recordEpoch)
+    {
+        OVX_RUNTIME_ERROR("ovxWriteAttributes: attachment changed while planning.");
+        return 0;
+    }
+    // Reserve the map node before transferring any owned group storage.
+    const OvxWriteHandle h = g_nextWriteHandle;
+    if (!h)
+    {
+        OVX_RUNTIME_ERROR("ovxWriteAttributes: write handle space exhausted.");
+        return 0;
+    }
+    const std::pair<std::unordered_map<OvxWriteHandle, WriteSession>::iterator, bool> inserted =
+        g_writes.try_emplace(h);
+    if (!inserted.second)
+    {
+        OVX_RUNTIME_ERROR("ovxWriteAttributes: write handle space exhausted.");
+        return 0;
+    }
+    ++g_nextWriteHandle;
+    inserted.first->second = std::move(s);
+    const WriteSession& published = inserted.first->second;
+    if (outSummary)
+    {
+        outSummary->totalPrimCount = totalPrimCount;
+        outSummary->attributeCount = published.attributeResults.size();
+        outSummary->attributes = published.attributeResults.data();
+    }
     return h;
 }
-
-OMNI_OVX_WRITE_API OvxWriteStatus ovxFetchWriteNext(OvxWriteHandle write, const ovstage_map_group_t** outGroup)
+catch (const std::exception& error)
 {
+    if (outSummary)
+        *outSummary = {};
+    OVX_RUNTIME_ERROR("ovxWriteAttributes: write creation failed: %s", error.what());
+    return 0;
+}
+catch (...)
+{
+    if (outSummary)
+        *outSummary = {};
+    OVX_RUNTIME_ERROR("ovxWriteAttributes: write creation failed with an exception.");
+    return 0;
+}
+
+OMNI_OVX_WRITE_API OvxWriteStatus ovxFetchWriteNext(OvxWriteHandle write, OvxFetchedWriteGroup* outGroup)
+{
+    RuntimeExecutionScope execution(writeOwner(write));
+    if (!execution)
+        return kOvxWriteStatusBusy;
     if (!outGroup)
     {
         OVX_RUNTIME_ERROR("ovxFetchWriteNext: outGroup is null.");
         return kOvxWriteStatusError;
     }
-    *outGroup = nullptr;
+    *outGroup = {};
 
-    std::lock_guard<std::mutex> lock(g_mutex);
+    std::lock_guard<carb::tasking::RecursiveMutexWrapper> lock(omni::physx::ovx::outputCacheMutex());
     WriteSession* s = findSession(write);
-    if (!s)
+    if (s && s->debugRender)
     {
-        OVX_RUNTIME_ERROR("ovxFetchWriteNext: invalid write session handle.");
+        if (s->nextFetch >= s->groups.size())
+            return kOvxWriteStatusEndOfIteration;
+        GroupSlot* slot = s->groups[s->nextFetch++].get();
+        slot->tensors[0].shape = slot->shapes.data();
+        slot->group.data.tensors = slot->tensors.data();
+        slot->group.data.tensor_count = 1;
+        *outGroup = {&slot->group, 0};
+        return kOvxWriteStatusOk;
+    }
+    AttachedStage* owner = s ? UsdLoad::getUsdLoad()->getAttachedStageByHandle(s->attach) : nullptr;
+    if (!owner || owner->getInternalPhysXDatabase().recordEpoch() != s->recordEpoch)
+    {
+        OVX_RUNTIME_ERROR("ovxFetchWriteNext: invalid or retired write session owner.");
         return kOvxWriteStatusError; // a bad handle is a failure to iterate, not exhaustion
     }
 
     if (s->nextFetch >= s->groups.size())
         return kOvxWriteStatusEndOfIteration;
 
-    *outGroup = &s->groups[s->nextFetch++]->group;
+    const GroupSlot& slot = *s->groups[s->nextFetch++];
+    *outGroup = {&slot.group, slot.attributeIndex};
     return kOvxWriteStatusOk;
 }
 
@@ -2969,6 +4193,14 @@ OMNI_OVX_WRITE_API bool ovxCommitGroup(OvxWriteHandle write,
                                        ovstage_cuda_sync_t writeDoneSync,
                                        OvxCommitFailure* outFailure)
 {
+    RuntimeExecutionScope execution(writeOwner(write));
+    if (!execution)
+    {
+        if (outFailure)
+            *outFailure = kOvxCommitFailureBusy;
+        return false;
+    }
+
     const auto fail = [outFailure](OvxCommitFailure why)
     {
         if (outFailure)
@@ -2976,9 +4208,33 @@ OMNI_OVX_WRITE_API bool ovxCommitGroup(OvxWriteHandle write,
         return false;
     };
 
-    std::lock_guard<std::mutex> lock(g_mutex);
+    std::unique_lock<carb::tasking::RecursiveMutexWrapper> lock(omni::physx::ovx::outputCacheMutex());
     WriteSession* s = findSession(write);
-    if (!s)
+    if (s && s->debugRender)
+    {
+        if (s->groups.size() != 1 || group != &s->groups[0]->group || s->groups[0]->committed)
+            return fail(kOvxCommitFailureNotLive);
+        GroupSlot* slot = s->groups[0].get();
+        slot->tensors[0].shape = slot->shapes.data();
+        // Spent before publication, including a rejected value, so a second commit is refused.
+        slot->committed = true;
+        // Wait for the caller's producer before the payload is read, including a host column.
+        if (!honourCallerSync(*slot, s->attribute.c_str(), writeDoneSync))
+            return fail(kOvxCommitFailurePublish);
+        debug_render::WritePlan plan;
+        plan.kind = s->debugKind;
+        plan.param = s->debugParam;
+        std::string error;
+        if (!debug_render::commit(s->debugOwner, plan, slot->tensors[0], error))
+        {
+            OVX_RUNTIME_ERROR("%s", error.c_str());
+            return fail(kOvxCommitFailurePublish);
+        }
+        debug_render::applyStoredHere(debug_render::copyState(s->debugOwner));
+        return true;
+    }
+    AttachedStage* owner = s ? UsdLoad::getUsdLoad()->getAttachedStageByHandle(s->attach) : nullptr;
+    if (!owner || owner->getInternalPhysXDatabase().recordEpoch() != s->recordEpoch)
         return fail(kOvxCommitFailureNotLive);
 
     GroupSlot* slot = findLiveGroup(*s, group);
@@ -2988,16 +4244,27 @@ OMNI_OVX_WRITE_API bool ovxCommitGroup(OvxWriteHandle write,
     // Marked committed BEFORE the publish so a second commit of the same pointer is refused even if
     // the publish itself fails: commit is not retryable through this path.
     slot->committed = true;
+    // The producer handoff, exactly once and BEFORE every preflight below: the group is spent whether
+    // or not it publishes, so no refusal may return while the caller's producer could still be writing
+    // its storage. A failed handoff reads and publishes nothing and leaves the slot for release to
+    // quarantine (producerUnproven).
+    // Owner admission keeps this session and its group alive while the producer completes. Release
+    // the shared cache lock so other owners can progress; unordered_map rehash preserves s/slot.
+    lock.unlock();
+    if (!honourCallerSync(*slot, s->attributeNames[slot->attributeIndex].c_str(), writeDoneSync))
+        return fail(kOvxCommitFailurePublish);
+    lock.lock();
     // Match the rigid GPU setter's readiness rule here so only session commits gain this
-    // diagnostic. The stage drain keeps its own fallback/commit-point behavior.
-    if (slot->row && slot->deviceOrdinal >= 0)
+    // diagnostic. The stage drain keeps its own fallback/commit-point behavior. Articulation root,
+    // joint-state and tendon columns scatter through the same DirectGPU state, which the first step creates.
+    if ((slot->row || slot->artiRow || slot->jointRow || slot->tendonRow) && slot->deviceOrdinal >= 0)
     {
         omni::physx::tensors::SimulationBackend* backend = omni::physx::tensors::GetSimulationBackend();
-        if (backend && backend->getStepCount() < 1)
+        if (backend && backend->getStepCount(s->attach) < 1)
         {
-            honourCallerSync(*slot, writeDoneSync);
-            OVX_RUNTIME_ERROR("ovxCommitGroup: DirectGPU write '%s' requires at least one simulation step. "
-                       "Call warmup() or step_sync() before writing; nothing was written.", slot->row->token);
+            OVX_RUNTIME_ERROR("ovxCommitGroup: request %zu ('%.128s'): DirectGPU write requires at least one "
+                              "simulation step. Call warmup() or step_sync() before writing; nothing was written.",
+                              slot->attributeIndex, s->attributeNames[slot->attributeIndex].c_str());
             return fail(kOvxCommitFailurePublish);
         }
     }
@@ -3009,29 +4276,40 @@ OMNI_OVX_WRITE_API bool ovxCommitGroup(OvxWriteHandle write,
         // CPU setters can reject a row through the SDK callback while their batch still returns true.
         // A fresh scope makes native commit status independent of any caller's existing diagnostic.
         RuntimeErrorScope error;
-        const bool published = scatterGroup(*slot, writeDoneSync);
+        t_scatterCommitAttempted = false;
+        const bool published = scatterGroup(*owner, *slot);
         if (published && error.message()[0] == '\0')
             return true;
         std::snprintf(cause, sizeof(cause), "%s", error.message());
     }
     // The inner scope has ended; forward its cause without logging the same failure twice.
-    recordRuntimeError(cause);
+    char contextualCause[2048];
+    const char* publication = (slot->vehicleRow || slot->vehicleControlRow) && !t_scatterCommitAttempted ?
+        "nothing was written" : "some rows may have been applied";
+    std::snprintf(contextualCause, sizeof(contextualCause),
+                  "ovxCommitGroup: request %zu ('%.128s') failed; %s: %.1792s",
+                  slot->attributeIndex, s->attributeNames[slot->attributeIndex].c_str(), publication, cause);
+    recordRuntimeError(contextualCause);
     return fail(kOvxCommitFailurePublish);
 }
 
-OMNI_OVX_WRITE_API void ovxReleaseWrite(OvxWriteHandle write)
+OMNI_OVX_WRITE_API bool ovxReleaseWrite(OvxWriteHandle write)
 {
+    RuntimeExecutionScope execution(writeOwner(write), true);
+    if (!execution)
+        return false;
     // Uncommitted groups are DISCARDED, not published. Destroying the session is the whole of that:
     // nothing was handed to physics, so a caller that failed or threw mid-fill publishes nothing
     // from the group it was filling. Committed groups are not rolled back.
     //
     // Idempotent for an unknown or already-released handle, matching ovxReleaseRead.
-    std::lock_guard<std::mutex> lock(g_mutex);
+    std::lock_guard<carb::tasking::RecursiveMutexWrapper> lock(omni::physx::ovx::outputCacheMutex());
     const std::unordered_map<OvxWriteHandle, WriteSession>::iterator it = g_writes.find(write);
     if (it == g_writes.end())
-        return;
-    releaseGroupStorage(it->second);
+        return true;
+    const bool released = releaseGroupStorage(it->second);
     g_writes.erase(it);
+    return released;
 }
 
 } // extern "C"
@@ -3071,7 +4349,7 @@ static uint32_t drainColumnComponents(parse::ColumnType t)
     }
 }
 
-static bool drainScatterRigidGroup(parse::IPhysicsSource& source,
+static bool drainScatterRigidGroup(AttachedStage& owner, parse::IPhysicsSource& source,
                                    PxScene* scene,
                                    const std::vector<PxRigidBody*>& bodies,
                                    const std::vector<ObjectKey>& keys,
@@ -3104,6 +4382,8 @@ static bool drainScatterRigidGroup(parse::IPhysicsSource& source,
         return false;
 
     WriteSession s;
+    s.attach = owner.getAttachHandle();
+    s.recordEpoch = owner.getInternalPhysXDatabase().recordEpoch();
     if (!planRigidGroup(s, source, scene, bodies, keys, row, kOvxActive, /*allocate=*/!borrow))
         return false;
     if (s.groups.empty())
@@ -3188,18 +4468,16 @@ static bool drainScatterRigidGroup(parse::IPhysicsSource& source,
     }
 
     slot.committed = true;
-    const bool ok = scatterGroup(slot, ovstage_cuda_sync_t{});
+    const bool ok = scatterGroup(owner, slot);
     releaseGroupStorage(s);
     return ok;
 }
 
-// Vehicle wheel controls (driveTorque / brakeTorque / steerAngle). Vehicles are CPU-only and their
-// write path scatters the WHOLE cached wheel set (planVehicleGroup + scatterVehicleGroup re-derive from
-// the read cache and have no subset form), so the drain routes through it UNCHANGED only when the batch
-// covers every wheel of a scene -- a per-frame control update does -- filling by cache position. A
-// partial set (which would zero the omitted wheels) or a cold cache (no prior vehicle read) falls back.
+// Vehicle wheel controls (driveTorque / brakeTorque / steerAngle). This drain fills the whole cached
+// wheel set by cache position and only accepts batches covering every wheel in the scene. Partial
+// batches and cold caches fall back to parsing. Generic sessions independently support selected rows.
 // Returns true only when it both recognised a vehicle control and applied it.
-static bool applyVehicleBatch(parse::IPhysicsSource& source, const parse::ChangeBatch& batch,
+static bool applyVehicleBatch(usdparser::AttachedStage& owner, parse::IPhysicsSource& source, const parse::ChangeBatch& batch,
                               const std::string& usdAttr)
 {
     const char* ovxName = nullptr;
@@ -3225,27 +4503,19 @@ static bool applyVehicleBatch(parse::IPhysicsSource& source, const parse::Change
         return false;
     const bool brakeRow = (ovxName == OvxAttr::kBrakeTorque);
 
-    // A negative brakeTorque is invalid, and the drain cannot reproduce the parse path's per-wheel handling:
-    // updateVehicleWheelControllerBrakeTorque logs an error and KEEPS the wheel's prior torque (reject-and-
-    // keep), whereas this whole-set scatter must write SOME value for every wheel. Rather than diverge -- and
-    // have the applied value depend on cache state (a warm full-set drain clamping to 0 vs a cold/partial set
-    // falling to the parse path that keeps the old torque) -- decline the whole batch so the parse path
-    // applies its reject-and-keep uniformly. Checked before planVehicleGroup, so nothing is committed and the
-    // batch falls back as NotHandled.
-    if (brakeRow)
+    // Preserve the parse path's authored-value policy for values the generic setter rejects.
+    // Decline before planning/scatter so invalid input cannot pin the change feed at this ordinal.
+    const uint8_t* vals = static_cast<const uint8_t*>(batch.values.data);
+    for (size_t i = 0; i < batch.numChanges; ++i)
     {
-        const uint8_t* vals = static_cast<const uint8_t*>(batch.values.data);
-        for (size_t i = 0; i < batch.numChanges; ++i)
-        {
-            float v;
-            std::memcpy(&v, vals + i * sizeof(float), sizeof(float));
-            if (v < 0.0f)
-                return false; // not drainable -> parse-path reject-and-keep, independent of cache state
-        }
+        float value;
+        std::memcpy(&value, vals + i * sizeof(float), sizeof(float));
+        if (!std::isfinite(value) || (brakeRow && value < 0.0f))
+            return false;
     }
 
     const ObjectKey* keys = static_cast<const ObjectKey*>(batch.keys.data);
-    for (PxScene* scene : ovx::allPhysicsScenes())
+    for (PxScene* scene : ovx::allPhysicsScenes(owner))
     {
         const ovx::VehicleReadCacheEntry* vc = ovx::vehicleCacheEntry(scene);
         if (!vc || vc->keys.empty() || vc->keys.size() != batch.numChanges)
@@ -3272,7 +4542,8 @@ static bool applyVehicleBatch(parse::IPhysicsSource& source, const parse::Change
             continue; // a batch key is not a wheel of this scene
 
         WriteSession s;
-        if (!planVehicleGroup(s, source, scene, *row) || s.groups.empty())
+        s.attach = owner.getAttachHandle();
+        if (!planVehicleDataGroup(s, source, scene, row, nullptr) || s.groups.empty())
             return false;
         GroupSlot& slot = *s.groups.back();
         if (slot.floats.size() != batch.numChanges)
@@ -3280,9 +4551,7 @@ static bool applyVehicleBatch(parse::IPhysicsSource& source, const parse::Change
             releaseGroupStorage(s);
             return false;
         }
-        // Place each batch value (batch order) at its wheel's cache position (host f32 scalars). A negative
-        // brakeTorque already declined the whole batch above (reject-and-keep on the parse path), so every
-        // value here is applied as authored.
+        // Place the prevalidated authored values at their wheels' cache positions.
         const uint8_t* col = static_cast<const uint8_t*>(batch.values.data);
         for (size_t i = 0; i < batch.numChanges; ++i)
         {
@@ -3291,7 +4560,7 @@ static bool applyVehicleBatch(parse::IPhysicsSource& source, const parse::Change
             slot.floats[place[i]] = v;
         }
         slot.committed = true;
-        const bool ok = scatterGroup(slot, ovstage_cuda_sync_t{});
+        const bool ok = scatterGroup(owner, slot);
         releaseGroupStorage(s);
         return ok;
     }
@@ -3307,7 +4576,7 @@ static bool applyVehicleBatch(parse::IPhysicsSource& source, const parse::Change
 // only the parse layer has. Angular axes are authored in degrees; the deg->rad fold (and the joint sign) is
 // applied by the setter scatterGroup runs, not here -- the raw column is scattered straight through, like
 // the normal ovphysx_write joint path.
-static bool applyArticulationBatch(parse::IPhysicsSource& source, const parse::ChangeBatch& batch,
+static bool applyArticulationBatch(usdparser::AttachedStage& owner, parse::IPhysicsSource& source, const parse::ChangeBatch& batch,
                                    const std::string& usdAttr)
 {
     // Match the EXACT registered drive/state property, only for the single-DOF prismatic (`linear`) and
@@ -3339,9 +4608,9 @@ static bool applyArticulationBatch(parse::IPhysicsSource& source, const parse::C
 
     const ObjectKey* keys = static_cast<const ObjectKey*>(batch.keys.data);
     const float* col = static_cast<const float*>(batch.values.data);
-    if (!ovx::refreshArticulationCache(ovx::allPhysicsScenes()))
+    if (!ovx::refreshArticulationCache(owner, ovx::allPhysicsScenes(owner)))
         return false;
-    for (PxScene* scene : ovx::allPhysicsScenes())
+    for (PxScene* scene : ovx::allPhysicsScenes(owner))
     {
         ovx::ArticulationReadCacheEntry* jcPtr = ovx::articulationCacheEntry(scene);
         if (!jcPtr || jcPtr->slices.empty())
@@ -3376,6 +4645,7 @@ static bool applyArticulationBatch(parse::IPhysicsSource& source, const parse::C
             continue;
 
         WriteSession s;
+    s.attach = owner.getAttachHandle();
         if (!planJointGroup(s, source, scene, *row) || s.groups.empty())
             return false;
         GroupSlot& slot = *s.groups.back();
@@ -3435,7 +4705,7 @@ static bool applyArticulationBatch(parse::IPhysicsSource& source, const parse::C
             std::copy(host.begin(), host.end(), slot.floats.begin());
         }
         slot.committed = true;
-        const bool ok = scatterGroup(slot, ovstage_cuda_sync_t{});
+        const bool ok = scatterGroup(owner, slot);
         releaseGroupStorage(s);
         return ok;
     }
@@ -3446,7 +4716,7 @@ static bool applyArticulationBatch(parse::IPhysicsSource& source, const parse::C
 // (VtArray<GfVec3f>) on the set prim -- a ragged per-particle vec3 column. Routes only when the batch
 // covers every particle set in the scene (planParticleGroup fills the whole compact column) and each
 // set's delivered particle count matches, then fills each set's slice from the ragged column by set key.
-static bool applyParticleBatch(parse::IPhysicsSource& source, const parse::ChangeBatch& batch,
+static bool applyParticleBatch(usdparser::AttachedStage& owner, parse::IPhysicsSource& source, const parse::ChangeBatch& batch,
                                const std::string& usdAttr)
 {
     bool velocity = false;
@@ -3463,7 +4733,7 @@ static bool applyParticleBatch(parse::IPhysicsSource& source, const parse::Chang
 
     const ObjectKey* keys = static_cast<const ObjectKey*>(batch.keys.data);
     const float* col = static_cast<const float*>(batch.values.data);
-    for (PxScene* scene : ovx::allPhysicsScenes())
+    for (PxScene* scene : ovx::allPhysicsScenes(owner))
     {
         ovx::ParticleWriteTargets targets;
         if (!ovx::particleWriteTargets(scene, 0u, targets) || targets.keys.empty())
@@ -3486,6 +4756,7 @@ static bool applyParticleBatch(parse::IPhysicsSource& source, const parse::Chang
             continue;
 
         WriteSession s;
+    s.attach = owner.getAttachHandle();
         if (!planParticleGroup(s, source, scene, targets, velocity) || s.groups.empty())
             return false;
         GroupSlot& slot = *s.groups.back();
@@ -3505,7 +4776,7 @@ static bool applyParticleBatch(parse::IPhysicsSource& source, const parse::Chang
                         floats * sizeof(float));
         }
         slot.committed = true;
-        const bool ok = scatterGroup(slot, ovstage_cuda_sync_t{});
+        const bool ok = scatterGroup(owner, slot);
         releaseGroupStorage(s);
         return ok;
     }
@@ -3520,10 +4791,10 @@ static bool applyParticleBatch(parse::IPhysicsSource& source, const parse::Chang
 // columnar drain scatters the raw column and does neither, so a velocity batch touching one of these bodies
 // must fall back whole to the parse path -- otherwise a local-frame velocity would land as if it were
 // world-frame, silently wrong. One DB walk, built only for a velocity drain.
-static std::unordered_set<const PxRigidBody*> collectLocalSpaceVelocityBodies()
+static std::unordered_set<const PxRigidBody*> collectLocalSpaceVelocityBodies(usdparser::AttachedStage& owner)
 {
     std::unordered_set<const PxRigidBody*> out;
-    const internal::InternalPhysXDatabase& db = OmniPhysX::getInstance().getInternalPhysXDatabase();
+    const internal::InternalPhysXDatabase& db = owner.getInternalPhysXDatabase();
     for (const internal::InternalDatabase::Record& rec : db.getRecords())
     {
         if (rec.mType != ePTActor || !rec.mPtr || !rec.mInternalPtr)
@@ -3568,9 +4839,11 @@ static std::unordered_set<const PxRigidBody*> collectLocalSpaceVelocityBodies()
 //
 // [1] a body carrying physics:localSpaceVelocities authors velocity in its LOCAL frame; the parse path
 //     reframes it (rotate + scale), which the raw scatter cannot, so those bodies fall back whole.
-OMNI_OVX_WRITE_API DrainResult applyOvstageValueBatch(parse::IPhysicsSource& source, const parse::ChangeBatch& batch,
+OMNI_OVX_WRITE_API DrainResult applyOvstageValueBatch(usdparser::AttachedStage& owner, parse::IPhysicsSource& source, const parse::ChangeBatch& batch,
                                                       std::vector<uint32_t>* unresolvedRows)
 {
+    // Internal change-feed drains share the articulation cache with public reads/writes.
+    std::lock_guard<carb::tasking::RecursiveMutexWrapper> cacheLock(ovx::outputCacheMutex());
     // Value changes only. Deletes / new objects / typeName resyncs (structural) and attributes with no
     // backend setter are NotHandled -> onSourceChange keeps the parse-layer property path for those.
     if (batch.isDelete || batch.numChanges == 0 || !batch.property.valid() ||
@@ -3614,7 +4887,7 @@ OMNI_OVX_WRITE_API DrainResult applyOvstageValueBatch(parse::IPhysicsSource& sou
     { return t_scatterCommitAttempted ? DrainResult::Failed : DrainResult::NotHandled; };
 
     // Vehicle wheel controls route through the CPU-only vehicle write path (whole-wheel-set).
-    if (applyVehicleBatch(source, batch, usdAttr))
+    if (applyVehicleBatch(owner, source, batch, usdAttr))
         return DrainResult::Applied;
     // Articulation tendon knobs (physxTendon:<inst>:{stiffness,damping,limitStiffness,offset}) are NOT
     // drained: applying them correctly is coupled to the sibling `tendonEnabled` (a disabled tendon must
@@ -3632,11 +4905,11 @@ OMNI_OVX_WRITE_API DrainResult applyOvstageValueBatch(parse::IPhysicsSource& sou
     // the whole frame is left NotHandled and falls back to that recompute.
     // Articulation DOF (per-axis drive targets / joint state) route through the joint write path
     // (whole single-DOF set of a scene).
-    if (applyArticulationBatch(source, batch, usdAttr))
+    if (applyArticulationBatch(owner, source, batch, usdAttr))
         return DrainResult::Applied;
     // Particle sets deliver ragged per-vertex `points` / `velocities` columns; those ARE live sim state,
     // so the drain scatters them.
-    if (applyParticleBatch(source, batch, usdAttr))
+    if (applyParticleBatch(owner, source, batch, usdAttr))
         return DrainResult::Applied;
     // Deformable `deformablePose:<inst>:omniphysics:points` is deliberately NOT handled here: it is the
     // sim mesh's BIND POSE (the descriptor field is `simMeshBindPoseToken`), not live solver state. The
@@ -3688,18 +4961,25 @@ OMNI_OVX_WRITE_API DrainResult applyOvstageValueBatch(parse::IPhysicsSource& sou
         bool link;
     };
     ovx::RigidRecordScan rigidScan;
-    ovx::scanRigidRecords(kOvxAll, ovx::ActiveActorSet{}, rigidScan);
+    ovx::scanRigidRecords(owner, kOvxAll, ovx::ActiveActorSet{}, rigidScan);
     std::unordered_map<ObjectKey, BodyHit, ObjectKey::Hash> keyToBody;
     for (const ovx::RigidSceneBucket& b : rigidScan.byScene)
         for (size_t i = 0; i < b.keys.size(); ++i)
             keyToBody.emplace(b.keys[i], BodyHit{ b.scene, b.bodies[i], false });
     // Scan links only for an attribute PhysX can set on one. A velocity row has linkWritable == false, so
     // every link hit is discarded in the resolution loop below -- scanning the whole link set
-    // (collectActiveActors' bitset + DB walk, then scanLinkRecords' walk) is pure waste for it.
+    // (scanLinkRecords' walk) is pure waste for it.
+    //
+    // kOvxAll, like the standalone-rigid scan above: this is a WRITE, and a write must reach a SLEEPING
+    // link exactly as it reaches a sleeping standalone body. Scanning kOvxActive here dropped every link of
+    // a sleeping articulation out of `keyToBody`, so a drained `physxRigidBody:disableGravity` on one fell
+    // through to the per-object parse path instead of the write backend REQ-SIM-OVSTAGE-WRITEAPPLY-001 AC-1
+    // mandates -- and that path did not wake the articulation, so re-enabling gravity on a sleeping
+    // articulation left it asleep and motionless (NVBug 6904087).
     if (row->linkWritable)
     {
         ovx::RigidRecordScan linkScan;
-        ovx::scanLinkRecords(kOvxActive, ovx::collectActiveActors(), linkScan);
+        ovx::scanLinkRecords(owner, kOvxAll, ovx::ActiveActorSet{}, linkScan);
         for (const ovx::RigidSceneBucket& b : linkScan.byScene)
             for (size_t i = 0; i < b.keys.size(); ++i)
                 keyToBody.emplace(b.keys[i], BodyHit{ b.scene, b.bodies[i], true });
@@ -3718,7 +4998,7 @@ OMNI_OVX_WRITE_API DrainResult applyOvstageValueBatch(parse::IPhysicsSource& sou
     // Bodies whose velocity is authored in their own local frame need the parse path's reframe; a velocity
     // batch touching one falls back whole (via the all-or-nothing check below). Built once, velocity only.
     const std::unordered_set<const PxRigidBody*> localSpaceVelBodies =
-        velocityRow ? collectLocalSpaceVelocityBodies() : std::unordered_set<const PxRigidBody*>{};
+        velocityRow ? collectLocalSpaceVelocityBodies(owner) : std::unordered_set<const PxRigidBody*>{};
 
     // A batch row the drain will not service: record it (when the caller supplied a sink) so onSourceChange
     // runs its per-object parse fallback for exactly that key, then skip it here.
@@ -3775,15 +5055,20 @@ OMNI_OVX_WRITE_API DrainResult applyOvstageValueBatch(parse::IPhysicsSource& sou
     for (const std::pair<PxScene* const, SceneGroup>& e : byScene)
     {
         const bool whole = (e.second.bodies.size() == batch.numChanges);
-        ok = drainScatterRigidGroup(source, e.first, e.second.bodies, e.second.keys, *row, batch,
+        ok = drainScatterRigidGroup(owner, source, e.first, e.second.bodies, e.second.keys, *row, batch,
                                     whole ? nullptr : &e.second.rows, angular) &&
              ok;
     }
-    // Re-enabling gravity (disableGravity -> false) must wake a sleeping non-kinematic dynamic, or it stays
+    // Re-enabling gravity (disableGravity -> false) must wake a sleeping non-kinematic body, or it stays
     // asleep instead of beginning to fall. The parse path (updateBodyDisableGravity) wakes it, but the backend
     // setter only flips the actor flag -- so wake here, reading the flag the scatter just set (gravity is now
     // enabled iff eDISABLE_GRAVITY is clear). Matches the parse path, which wakes whenever the applied value is
     // false, regardless of the prior value.
+    //
+    // An ARTICULATION LINK wakes through its articulation -- a link has no wake of its own, and the sleep
+    // state is the articulation's, not the link's. Waking per resolved link is idempotent (a second link of
+    // the same articulation re-wakes an already awake one), so no de-duplication is needed. Without this a
+    // drained re-enable on a sleeping articulation flipped the flag and left it asleep: NVBug 6904087.
     if (ovxName == OvxAttr::kDisableGravity)
     {
         for (const std::pair<PxScene* const, SceneGroup>& e : byScene)
@@ -3794,10 +5079,18 @@ OMNI_OVX_WRITE_API DrainResult applyOvstageValueBatch(parse::IPhysicsSource& sou
                 // eDISABLE_SIMULATION body anyway.
                 if (ovx::isDisabledRigidDynamic(b))
                     continue;
-                PxRigidDynamic* dyn = b->is<PxRigidDynamic>();
-                if (dyn && !(dyn->getActorFlags() & PxActorFlag::eDISABLE_GRAVITY) &&
-                    !(dyn->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC))
-                    dyn->wakeUp();
+                if (b->getActorFlags() & PxActorFlag::eDISABLE_GRAVITY)
+                    continue; // gravity is still disabled -> leave a sleeping body asleep
+                if (PxRigidDynamic* dyn = b->is<PxRigidDynamic>())
+                {
+                    if (!(dyn->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC))
+                        dyn->wakeUp();
+                }
+                else if (PxArticulationLink* link = b->is<PxArticulationLink>())
+                {
+                    // scanLinkRecords only emits links that are in a scene, which wakeUp() requires.
+                    link->getArticulation().wakeUp();
+                }
             }
     }
     // ok is false if any scene's scatter failed. Route it through notHandledOrFailed() rather than a bare

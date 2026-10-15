@@ -26,7 +26,7 @@ public:
 	virtual			void						exportExtraData(PxSerializationContext& context);
 					void						importExtraData(PxDeserializationContext& context);
 	virtual			void						requiresObjects(PxProcessPxBaseCallback& c);
-					void						resolveReferences(PxDeserializationContext& context);
+					bool						resolveReferences(PxDeserializationContext& context);
 	static			NpShape*					createObject(PxU8*& address, PxDeserializationContext& context);
 //~PX_SERIALIZATION
 												NpShape(const PxGeometry& geometry,

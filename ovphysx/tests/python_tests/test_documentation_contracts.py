@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# @implements REQ-CAPI-OVSTAGE-SCHEMA-001
+# @covers AC-7
+
 """Contract checks for public documentation that mirrors shipped behavior."""
 
 import ast
@@ -10,6 +13,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -42,7 +46,7 @@ _REQUIRES_PXR = pytest.mark.skipif(
 CONTACT_BINDING_DOC_SITES = (
     "docs/tutorials/contact_binding.md",
     "docs/developer_guide.md",
-    "include/ovphysx/ovphysx.h",
+    "include/ovphysx/ovphysx_legacy.h",
     "python/ovphysx/api.py",
 )
 
@@ -65,11 +69,11 @@ def _blanket_no_authoring_claims(text):
             continue
         yield match
 
-# The developer guide states the requirement in a comparison table whose other
-# column is about get_contact_report. A file-wide token check would pass on that
-# column alone, so the contact-binding cell is asserted directly.
+# The developer guide states the requirement in the contact-binding compatibility
+# table. A file-wide token check could pass on unrelated prose, so the
+# contact-binding USD-requirement cell is asserted directly.
 _USD_REQUIREMENT_ROW = re.compile(
-    r"^\|\s*\*\*USD requirement\*\*\s*\|([^|]*)\|([^|]*)\|",
+    r"^\|\s*\*\*USD requirement\*\*\s*\|([^|]*)\|",
     re.MULTILINE,
 )
 
@@ -99,11 +103,37 @@ def _method_calls_on(tree, receiver):
 # workflows on step_sync() rather than teaching async enqueue/wait choreography.
 # NVBug 6660128 / OMPE-107003: tutorial literalinclude samples must resolve bundled
 # scenes from the installed package, not from the reader's working directory.
+# NVBug 6904316 / OMPE-115103: the same contract covers profiling, contact binding,
+# kinematic support, and the ovstage output-read sample.
 TUTORIAL_PYTHON_SAMPLE_SITES = (
     ("docs/tutorials/hello_world.md", "tests/python_samples/hello_world.py"),
     ("docs/tutorials/cloning.md", "tests/python_samples/clone.py"),
     ("docs/tutorials/tensor_bindings.md", "tests/python_samples/tensor_bindings.py"),
     ("docs/tutorials/omnipvd_recording.md", "tests/python_samples/omnipvd_recording.py"),
+    ("docs/tutorials/profiling.md", "tests/python_samples/profiling.py"),
+    ("docs/tutorials/contact_binding.md", "tests/python_samples/contact_binding.py"),
+    ("docs/simulation_setup/kinematic_support.md", "tests/python_samples/kinematic_support.py"),
+    ("docs/ovstage_integration.md", "tests/python_samples/output_read.py"),
+)
+
+# NVBug 6904272 / OMPE-115102: pages that embed a sample via {literalinclude}
+# must keep that include, and every shipped sample must import schema discovery
+# from the installed wheel namespace. A folder-local schema_support import only
+# resolves beside the sample tree. session_write.py and tensor_bindings_views.py
+# are listed in the developer guide rather than embedded; the sample glob below
+# still rejects a folder-local import in those files.
+_INSTALLED_SCHEMA_SUPPORT_MODULE = "ovphysx.samples.python_samples.schema_support"
+COPY_PASTE_SCHEMA_SUPPORT_SAMPLE_SITES = (
+    ("docs/tutorials/hello_world.md", "tests/python_samples/hello_world.py"),
+    ("docs/tutorials/cloning.md", "tests/python_samples/clone.py"),
+    ("docs/tutorials/contact_binding.md", "tests/python_samples/contact_binding.py"),
+    ("docs/tutorials/tensor_bindings.md", "tests/python_samples/tensor_bindings.py"),
+    ("docs/tutorials/omnipvd_recording.md", "tests/python_samples/omnipvd_recording.py"),
+    (
+        "docs/simulation_setup/kinematic_support.md",
+        "tests/python_samples/kinematic_support.py",
+    ),
+    ("docs/ovstage_integration.md", "tests/python_samples/output_read.py"),
 )
 
 
@@ -118,6 +148,9 @@ def _assert_sample_resolves_bundled_data(sample_path):
     assert "samples" in strings
     assert "data" in strings
     assert "ovphysx.__file__" in text
+    assert "parent.parent" in text
+    assert "FileNotFoundError" in text
+    assert "ovphysx sample data is missing" in text
     assert '".." / "data"' not in text
 
 
@@ -128,6 +161,103 @@ def test_tutorial_python_samples_resolve_bundled_data():
             f"{tutorial_site} no longer literalincludes {sample_path}"
         )
         _assert_sample_resolves_bundled_data(sample_path)
+
+
+def _local_schema_support_import(tree):
+    """Return the folder-local schema_support import, if the module tree has one."""
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name.split(".", 1)[0] == "schema_support":
+                    return alias.name
+        elif isinstance(node, ast.ImportFrom):
+            module = node.module or ""
+            if module == "schema_support" or module.startswith("schema_support."):
+                return module or "schema_support"
+            if node.level and any(
+                alias.name.split(".", 1)[0] == "schema_support" for alias in node.names
+            ):
+                return "schema_support"
+    return None
+
+
+def _imports_installed_physx_schema_paths(tree):
+    return any(
+        isinstance(node, ast.ImportFrom)
+        and node.module == _INSTALLED_SCHEMA_SUPPORT_MODULE
+        and any(alias.name == "physx_schema_paths" for alias in node.names)
+        for node in ast.walk(tree)
+    )
+
+
+def _uses_physx_schema_paths(tree):
+    return any(
+        (isinstance(node, ast.Name) and node.id == "physx_schema_paths")
+        or (isinstance(node, ast.Attribute) and node.attr == "physx_schema_paths")
+        for node in ast.walk(tree)
+    )
+
+
+def test_copy_paste_samples_use_installed_schema_support():
+    """Copied samples must not need a sibling schema_support/ directory."""
+    samples_dir = PROJECT_ROOT / "tests/python_samples"
+    for sample_path in sorted(samples_dir.glob("*.py")):
+        rel = sample_path.relative_to(PROJECT_ROOT).as_posix()
+        tree = ast.parse(sample_path.read_text(encoding="utf-8"))
+        local_import = _local_schema_support_import(tree)
+        assert local_import is None, (
+            f"{rel} imports folder-local schema_support ({local_import})"
+        )
+        if _uses_physx_schema_paths(tree):
+            assert _imports_installed_physx_schema_paths(tree), (
+                f"{rel} must import physx_schema_paths from "
+                f"{_INSTALLED_SCHEMA_SUPPORT_MODULE}"
+            )
+
+    for doc_site, sample_path in COPY_PASTE_SCHEMA_SUPPORT_SAMPLE_SITES:
+        doc_path = PROJECT_ROOT / doc_site
+        depth = len(doc_path.parent.relative_to(PROJECT_ROOT).parts)
+        include_path = "/".join(("..",) * depth + (sample_path,))
+        doc = doc_path.read_text(encoding="utf-8")
+        assert f"{{literalinclude}} {include_path}" in doc, (
+            f"{doc_site} no longer literalincludes {include_path}"
+        )
+
+
+@pytest.mark.parametrize("skill", (
+    "basic-workflow", "clone-environments", "tensor-bindings-cpu", "tensor-bindings-gpu",
+))
+def test_skill_population_registers_physx_and_newton_schemas(skill):
+    """NVBug 6900449: copied workflows must preserve authored newton:* values."""
+    text = (PROJECT_ROOT / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
+    blocks = re.findall(r"^```python\n(.*?)^```", text, re.DOTALL | re.MULTILINE)
+    population_blocks = [block for block in blocks if "open_usd" in block]
+    assert population_blocks, f"{skill} has no Python population example"
+    physx_roots = [Path("PhysxSchema/resources"), Path("OmniUsdPhysicsDeformableSchema/resources")]
+    newton_root = Path("newton_usd_schemas")
+    for block in population_blocks:
+        tree = ast.parse(block)
+        # Require unconditional registration, not a scan of the stage's attributes.
+        registrations = [
+            node.value for node in tree.body
+            if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call)
+            and ast.unparse(node.value.func) == "ovstage.population.register_usd_schemas"
+        ]
+        assert len(registrations) == 1, f"{skill} must register schemas unconditionally"
+        registration = registrations[0]
+        roots = eval(compile(ast.Expression(registration.args[0]), skill, "eval"), {
+            "__builtins__": {"str": str},
+            "physx_schema_paths": lambda: physx_roots,
+            "ovphysx": SimpleNamespace(newton_schema_root=lambda: newton_root),
+        })
+        assert roots == [str(root) for root in [*physx_roots, newton_root]]
+        population_calls = [
+            node for node in ast.walk(tree) if isinstance(node, ast.Call)
+            and ast.unparse(node.func) == "ovstage.population.open_usd"
+        ]
+        assert population_calls
+        assert registration.lineno < min(call.lineno for call in population_calls)
+    assert "newton-usd-schemas" in text
 
 
 def test_getting_started_docs_match_shipped_packages():
@@ -180,10 +310,6 @@ def test_getting_started_docs_match_shipped_packages():
         assert population_blocks, f"{site} has no Python population example"
         for block in population_blocks:
             tree = ast.parse(block)
-            if "def add_usd_file_and_drain" in block:
-                # This later-edit helper intentionally accepts the added USD
-                # path from its caller rather than naming shipped sample data.
-                continue
             strings = {
                 node.value
                 for node in ast.walk(tree)
@@ -246,13 +372,69 @@ def test_getting_started_docs_match_shipped_packages():
     numeric_ovstage_version = ".".join(ovstage_version.split(".")[:4])
     pyproject = (PROJECT_ROOT / "python/pyproject.toml").read_text(encoding="utf-8")
     assert f'"ovstage=={numeric_ovstage_version}"' in pyproject
+    for site in ("docs/tutorials/quickstart.md", "SDK_README.md"):
+        text = (PROJECT_ROOT / site).read_text(encoding="utf-8")
+        assert not re.search(r"\bOVStage\s+`?\d+\.\d+", text, re.IGNORECASE), (
+            f"{site} must describe OVStage acquisition without repeating a version pin"
+        )
+
+
+def test_basic_workflow_c_sample_build_and_launch():
+    skill = (PROJECT_ROOT / "skills/basic-workflow/SKILL.md").read_text(encoding="utf-8")
+    section = re.search(
+        r"^### Build and run the C sample\n(.*?)(?=^#{1,3} |\Z)",
+        skill,
+        re.DOTALL | re.MULTILINE,
+    )
+    assert section is not None
+    instructions = section.group(1)
+    assert "Visual Studio Developer PowerShell" in " ".join(instructions.split())
+    assert "-Arch amd64 -HostArch amd64" in instructions
+    cmake_blocks = re.findall(
+        r"^```cmake\n(.*?)^```", instructions, re.DOTALL | re.MULTILINE
+    )
+    sample_cmake = next(
+        (block for block in cmake_blocks if "project(ovphysx_example LANGUAGES C)" in block),
+        None,
+    )
+    assert sample_cmake is not None
+    windows_setup = re.search(r"if\(WIN32\)(.*?)endif\(\)", sample_cmake, re.DOTALL)
+    assert windows_setup is not None
+    assert "ovphysx_copy_runtime_dlls(my_app)" in windows_setup.group(1)
+    assert "ovphysx_set_ovstage_runtime_env(my_app)" in windows_setup.group(1)
+
+    configure = re.search(r"^cmake -B ([\w-]+) ", instructions, re.MULTILINE)
+    assert configure is not None
+    build_dir = configure.group(1)
+    assert f"cmake --build {build_dir} --config Release" in instructions
+    sdk_readme = (PROJECT_ROOT / "SDK_README.md").read_text(encoding="utf-8")
+    assert build_dir not in re.findall(r"^cmake -B (\S+)", sdk_readme, re.MULTILINE)
+
+    bash_blocks = re.findall(
+        r"^```bash\n(.*?)^```", instructions, re.DOTALL | re.MULTILINE
+    )
+    assert any(
+        re.search(r'^export PHYSX_USD_SCHEMAS_ROOT="[^"\n]+"\n', block)
+        and f"./{build_dir}/my_app" in block
+        for block in bash_blocks
+    )
+    powershell_setup = re.search(
+        r'^```powershell\n\$env:PHYSX_USD_SCHEMAS_ROOT\s*=\s*"[^"\n]+"\n',
+        instructions,
+        re.MULTILINE,
+    )
+    assert powershell_setup is not None
+    for generator, subdir in (("Visual Studio", "Release\\"), ("Ninja", "")):
+        command = f".\\{build_dir}\\{subdir}run_my_app.cmd"
+        launch = f"- Windows, {generator} generator: `{command}`."
+        assert launch in instructions[powershell_setup.end() :]
 
 
 def test_fixed_base_jacobian_shape_matches_public_header():
     tutorial = (PROJECT_ROOT / "docs/tutorials/tensor_bindings.md").read_text(
         encoding="utf-8"
     )
-    public_header = (PROJECT_ROOT / "include/ovphysx/ovphysx_types.h").read_text(
+    public_header = (PROJECT_ROOT / "include/ovphysx/ovphysx_legacy_types.h").read_text(
         encoding="utf-8"
     )
 
@@ -528,22 +710,63 @@ def test_skill_evals_use_current_api_and_deprecation_routes():
     assert "copies" in output_read_rubric.lower()
 
 
-def test_gpu_dynamics_default_documentation_consistent():
+_GPU_SCENE_DOCUMENTATION = (
+    "docs/simulation_setup/physics_scene.md",
+    "docs/simulation_setup/deformables.md",
+    "docs/simulation_setup/particles.md",
+)
+
+
+@pytest.mark.parametrize("site", (
+    "docs/developer_guide.md",
+    "skills/tensor-bindings-gpu/SKILL.md",
+    *_GPU_SCENE_DOCUMENTATION,
+))
+def test_gpu_dynamics_default_documentation_consistent(site):
     """GPU dynamics default to on; docs must not imply authoring true is required."""
-    sites = (
-        "docs/developer_guide.md",
-        "skills/tensor-bindings-gpu/SKILL.md",
+    text = (PROJECT_ROOT / site).read_text(encoding="utf-8")
+    stale = _REQUIRES_GPU_DYNAMICS_AUTHORING.search(text)
+    assert stale is None, (
+        f"{site} still implies GPU dynamics require authoring enableGPUDynamics=true: "
+        f"{stale.group(0)!r}"
     )
-    for site in sites:
-        text = (PROJECT_ROOT / site).read_text(encoding="utf-8")
-        stale = _REQUIRES_GPU_DYNAMICS_AUTHORING.search(text)
-        assert stale is None, (
-            f"{site} still implies GPU dynamics require authoring enableGPUDynamics=true: "
-            f"{stale.group(0)!r}"
-        )
-        assert "defaults to `true`" in text, (
-            f"{site} does not state that physxScene:enableGPUDynamics defaults to true"
-        )
+    assert "defaults to `true`" in text, (
+        f"{site} does not state that physxScene:enableGPUDynamics defaults to true"
+    )
+
+
+# NVBug 6904483 / OMPE-115114: scene setup pages must explain both GPU defaults
+# and show that per-scene CPU simulation also needs a CPU broadphase.
+@pytest.mark.parametrize("site", _GPU_SCENE_DOCUMENTATION)
+def test_gpu_broadphase_default_documentation_consistent(site):
+    text = (PROJECT_ROOT / site).read_text(encoding="utf-8")
+    assert 'defaults to `"GPU"`' in text, (
+        f"{site} does not state that physxScene:broadphaseType defaults to GPU"
+    )
+
+
+def test_physics_scene_cpu_example_sets_both_dynamics_and_broadphase():
+    text = (PROJECT_ROOT / "docs/simulation_setup/physics_scene.md").read_text(
+        encoding="utf-8"
+    )
+    cpu_examples = [
+        example for example in re.findall(r"```usda\n(.*?)```", text, re.DOTALL)
+        if "bool physxScene:enableGPUDynamics = false" in example
+    ]
+    assert cpu_examples, "expected a per-scene CPU simulation example"
+    for example in cpu_examples:
+        assert 'def PhysicsScene "' in example
+        assert 'prepend apiSchemas = ["PhysxSceneAPI"]' in example
+        assert re.search(
+            r'uniform token physxScene:broadphaseType = "(?:MBP|SAP)"', example
+        ), "disabling GPU dynamics alone leaves the GPU broadphase enabled"
+
+
+def test_physics_scene_links_to_developer_guide_determinism_section():
+    text = (PROJECT_ROOT / "docs/simulation_setup/physics_scene.md").read_text(
+        encoding="utf-8"
+    )
+    assert "(../developer_guide.md#warmup-and-determinism)" in text
 
 
 # ---------------------------------------------------------------------------

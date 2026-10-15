@@ -33,7 +33,7 @@ Before you step a simulation, confirm the following:
   `ovphysx_create_instance()` in C.
 - The application has populated its scene into ovstage, and that scene contains
   at least one `PhysicsScene` prim.
-- The bundled codeless schemas are registered if the stage uses any `Physx*` or
+- The separately installed codeless schemas are registered if the stage uses any `Physx*` or
   `OmniPhysics*` schema or API, as described in
   [Physics Schemas](../physics_schemas.md).
 
@@ -42,16 +42,18 @@ A step then proceeds as follows:
 1. Seal the populated ordinal with `advance_write_floor()`.
 2. Call [`attach_ovstage()`](../ovphysx_overview.md) with the sealed ordinal.
    Attach parses that ordinal and creates PhysX objects for the prims that carry
-   physics schemas.
+   physics schemas. Collect its task with `wait_task()` and check success before
+   using the scene.
 3. Colliders that need cooking (convex hull, convex decomposition, SDF, triangle
    mesh) are cooked. Results are cached on disk so recomputation is usually
    avoided — refer to the cooked-collider cache (UJITSO) in the
    [Developer Guide](../developer_guide.md).
 4. Call `step(dt)` to advance the simulation by `dt`. **`step()` is
-   asynchronous**: it enqueues the step and returns an `op_index` immediately.
+   asynchronous**: it enqueues the step and returns a task receipt immediately
+   (a `Task` in Python, an `ovphysx_enqueue_result_t` in C).
    Subsequent in-stream ovphysx calls (such as tensor `read()` / `write()`)
    automatically wait for it, but to consume results **outside** the ovphysx
-   stream you must synchronize — `wait_op()` on the returned index (or
+   stream you must synchronize — `wait_task()` on the returned receipt (or
    `wait_all()`). `step_sync(dt)` is a convenience that steps and waits in one
    call (the typical choice for RL and control loops). Refer to the
    [Execution Model](../developer_guide.md#execution-model).
@@ -62,8 +64,8 @@ A step then proceeds as follows:
    **ovphysx does not write simulation output back to the attached USD stage**;
    the application owns writing state back to ovstage.
 
-The pipeline is working when `attach_ovstage()` succeeds, `step(dt)` reports no
-error through `wait_op()` or `wait_all()`, and a read of the simulated state
+The pipeline is working when the `attach_ovstage()` task succeeds, `step(dt)` reports no
+error through `wait_task()` or `wait_all()`, and a read of the simulated state
 changes between steps. The clearest observable check is a dynamic body released
 above a static ground: its position along the gravity axis decreases over
 successive steps and then stops changing after the body rests on the ground.
@@ -79,7 +81,7 @@ PhysX-specific solver settings live on the codeless `PhysxSceneAPI` schema (refe
 [Physics Schemas](../physics_schemas.md)).
 
 Before you author the scene, install `usd-core` and confirm that
-`ovphysx.codeless_schema_paths()` resolves, because the PhysX schemas must be
+`physx_schema_paths()` resolves, because the PhysX schemas must be
 registered before the first stage is created. The scene is authored correctly
 when the stage opens without a schema warning, `UsdPhysics.Scene.Get()` returns a
 valid prim at the authored path, and the gravity attributes read back the values
@@ -114,13 +116,11 @@ The following script builds the same stage and scene, and sets the units and up
 axis described in [Units and Up Axis](#units-and-up-axis):
 
 ```python
-import ovphysx
+from ovphysx.samples.python_samples.schema_support import physx_schema_paths
 from pxr import Plug, Usd, UsdGeom, UsdPhysics, Gf
 
-# Register the bundled codeless PhysX schemas first: USD builds its schema
-# registry on first access and never rebuilds it, so this must precede the
-# first stage. Refer to Physics Schemas.
-Plug.Registry().RegisterPlugins([str(p) for p in ovphysx.codeless_schema_paths()])
+# Register before USD first builds its schema registry.
+Plug.Registry().RegisterPlugins([str(p) for p in physx_schema_paths()])
 
 stage = Usd.Stage.CreateNew("scene.usda")
 
@@ -190,9 +190,9 @@ def Cube "cube0" (
 
 > **ovphysx steps all scenes together.** Multiple `PhysicsScene` prims in one
 > stage become separate PhysX scenes, but they all advance together on each
-> `step()`; per-scene stepping is not surfaced. For isolated stages or truly
-> independent parallel sims, use separate subprocesses (refer to the threading and
-> single-attached-stage notes in the [Developer Guide](../developer_guide.md)).
+> `step()`; per-scene stepping is not surfaced. Isolated stages run as separate
+> ovphysx instances, each with its own attached stage (refer to the threading
+> notes in the [Developer Guide](../developer_guide.md)).
 
 ## Physics Solver
 
@@ -201,9 +201,11 @@ physically plausible state without overlaps or disconnected joints. Two
 strategies are available, selected on `PhysxSceneAPI`:
 
 - **TGS** (Temporal Gauss-Seidel, the default): converges faster; can overshoot
-  (objects gaining excess velocity) in complex collision scenarios. TGS benefits
-  from `physxScene:enableExternalForcesEveryIteration` and needs only very few
-  (around 1) velocity iterations.
+  (objects gaining excess velocity) in complex collision scenarios. TGS applies
+  gravity and other external forces in every position iteration by default, or
+  once per step when the deprecated
+  `physxScene:enableExternalForcesEveryIteration` is authored with `false`. It
+  needs only very few (around 1) velocity iterations.
 - **PGS** (Projected Gauss-Seidel): converges more slowly but is less prone to
   overshooting.
 
@@ -270,34 +272,46 @@ def PhysicsScene "physicsScene" (
 
 ## CPU and GPU Simulation
 
-GPU dynamics are enabled per scene in USD with `physxScene:enableGPUDynamics`
-(and a GPU broadphase through `physxScene:broadphaseType = "GPU"`):
+`physxScene:enableGPUDynamics` defaults to `true`, and
+`physxScene:broadphaseType` defaults to `"GPU"`. With CUDA available and no
+CPU-only override, a scene with these attributes unauthored therefore uses GPU
+dynamics and a GPU broadphase. Explicitly authoring these GPU values is optional.
+
+To select CPU simulation per scene, apply `PhysxSceneAPI` and set **both**
+`physxScene:enableGPUDynamics = false` and a CPU broadphase (`"MBP"` or `"SAP"`):
 
 ```usda
 def PhysicsScene "physicsScene" (
     prepend apiSchemas = ["PhysxSceneAPI"]
 )
 {
-    bool physxScene:enableGPUDynamics = true
-    uniform token physxScene:broadphaseType = "GPU"
+    bool physxScene:enableGPUDynamics = false
+    uniform token physxScene:broadphaseType = "MBP"
 }
 ```
+
+Setting only `physxScene:enableGPUDynamics = false` leaves the broadphase at its
+`"GPU"` default; the two settings are independent.
 
 ovphysx also exposes process- and instance-level controls that complement the
 per-scene USD settings:
 
-- `ovphysx.PhysX.set_cpu_mode(True)` forces a process-wide CPU-only mode (must be
-  called before any instance is created; it cannot be reverted in that process).
-- `PhysX(active_cuda_gpus="0,1")` selects explicit CUDA ordinals and their
-  supported scene-distribution mode. Any non-empty value takes precedence over
-  `PhysXConfig.scene_multi_gpu_mode`; one ordinal disables distribution.
-- With `active_cuda_gpus` empty,
-  `PhysXConfig(scene_multi_gpu_mode=...)` controls distribution of multiple
-  `PhysicsScene` prims across GPUs.
+- `ovphysx.PhysX.set_cpu_mode(True)` or
+  `set_global_config(GlobalConfigKey.CPU_ONLY, True)` forces process-wide
+  CPU-only mode (must be set before any instance is created; it cannot be
+  reverted in that process). `OVPHYSX_DISABLE_GPU` overrides the setter.
+- After `PhysX()`, `physx.set_config(ConfigKey.ACTIVE_CUDA_GPUS, "0,1")`
+  selects explicit CUDA ordinals and their supported scene-distribution mode.
+  Set it before attach. Any non-empty value takes precedence over
+  `GlobalConfigKey.SCENE_MULTI_GPU_MODE`; one ordinal disables distribution.
+- With `ACTIVE_CUDA_GPUS` unset,
+  `set_global_config(GlobalConfigKey.SCENE_MULTI_GPU_MODE, ...)` (before create)
+  controls distribution of multiple `PhysicsScene` prims across GPUs.
 
 GPU features (deformables, particles, SDF meshes, DirectGPU tensor workloads)
-require GPU dynamics. Refer to the GPU/CPU and determinism sections of the
-[Developer Guide](../developer_guide.md).
+require GPU dynamics. Refer to
+[Warmup and determinism](../developer_guide.md#warmup-and-determinism) in the
+Developer Guide for CPU/GPU selection and determinism guidance.
 
 ## Sleeping
 

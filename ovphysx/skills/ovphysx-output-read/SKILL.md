@@ -1,11 +1,11 @@
 ---
 name: ovphysx-output-read
-description: Read ovphysx simulation output with the ovstage-native output-read API when results must retain ovstage identity or write back without rebuilding paths. Covers Python `PhysX.read()` / `PhysX.read_tokens()`, C `ovphysx_query()` / `ovphysx_read()`, emitted attribute tokens, borrowed groups, and closed-loop physics-to-ovstage write-back.
+description: Read ovphysx simulation output with the ovstage-native output-read API when results must retain ovstage identity or write back without rebuilding paths. Covers Python `PhysX.query()` + `PhysX.read()` operations and `PhysX.read_sync()`, C `ovphysx_query()` / `ovphysx_read()` with their optional results, emitted attribute tokens, borrowed groups, and closed-loop physics-to-ovstage write-back.
 license: Apache-2.0
-compatibility: "Requires ovphysx >=0.6.0 and an attached ovstage Stage; supports the Python wheel and C SDK. Python PhysX.read() creates Warp arrays and needs a writable Warp cache directory. If the default cache location is not writable, set WARP_CACHE_PATH before Warp is initialized."
+compatibility: "Requires matching ovphysx headers/library with the task-based session API and an attached ovstage Stage; supports the Python wheel and C SDK. Python session reads create Warp arrays and need a writable Warp cache directory. If the default cache location is not writable, set WARP_CACHE_PATH before Warp is initialized."
 metadata:
   author: "NVIDIA Omniverse Physics Team"
-  version: "0.2.0"
+  version: "0.4.0"
   tags: "ovphysx, ovstage, physics-output, query-read"
 ---
 
@@ -18,9 +18,12 @@ see the `ovphysx-session-write` skill (the deprecated tensor-binding API also co
 raycast, sweep, and overlap are geometry queries.
 
 The prim list and attribute token a result carries are **interned integers**, not paths or
-names. Resolve them through `ovstage.PathDictionary(stage)` — `get_path_strings(group.prim_list)`
-for the prim paths and `token_to_string(group.attribute)` for the emitted attribute name (C:
-`ovx_path_dictionary_get_paths` / `_token_to_string`). See `references/python.md`.
+names. Resolve them through the attached Stage's dictionary: `ovstage.PathDictionary(stage)` or
+`result.dictionary` in Python — `get_path_strings(group.prim_list)` for the prim paths and
+`token_to_string(group.attribute)` for the emitted attribute name (C:
+`ovstage_get_path_dictionary(stage)` with `path_dictionary_get_paths_from_path_list` /
+`path_dictionary_get_strings_from_tokens`). See `references/python.md` or
+`references/c_api.md` for the selected language.
 
 ## Workflow
 
@@ -52,7 +55,9 @@ for the prim paths and `token_to_string(group.attribute)` for the emitted attrib
    **Complete when:** the intended step has completed.
 
 4. Open and drain the read exactly as the selected language reference describes.
-   A zero-object match is successful and yields no groups.
+   A zero-object match is successful and yields no groups. Request the optional
+   read result (C `ovphysx_read_result_t*`, Python `metadata=True`) when the caller
+   must tell an empty match from an unsupported or not-yet-ready attribute.
 
    **Complete when:** every returned group is consumed and normal exhaustion is
    distinguished from failure.
@@ -61,9 +66,11 @@ for the prim paths and `token_to_string(group.attribute)` for the emitted attrib
 
    - In Python, every non-empty numeric column is a borrowed `warp.array` on its
      native CPU or CUDA device. Use it directly in Warp; call `.numpy().copy()`
-     when a caller-owned host copy is actually needed. A CUDA read orders its
-     producer event onto Warp's current stream before returning, so no manual
-     wait or import-time negotiation is needed.
+     when a caller-owned host copy is actually needed. Building a CUDA group's
+     arrays orders its producer event onto the Warp stream current at that
+     point (inside `read_sync()`, or at the first `wait()` / `result` of a
+     `fetch_next()` operation), so no manual wait or import-time negotiation is
+     needed.
    - For native C inspection, copy values that must outlive the read session.
    - For ovstage write-back, first read
      [Closed-loop ovstage write-back](references/closed_loop.md), then complete
@@ -73,10 +80,13 @@ for the prim paths and `token_to_string(group.attribute)` for the emitted attrib
    copies are caller-owned, or the ovstage write completed before releasing its
    source read session.
 
-6. Release resources and validate the selected branch. Python uses the
-   `ReadResult` context manager. C releases every fetched group, then the read
-   and query handles on success and error paths. Exercise an integration test
-   that checks values and, for write-back, ordinal separation.
+6. Release resources and validate the selected branch. Python closes the
+   `ReadResult` and any explicit `Query` with their context managers and collects
+   the submitted releases with `wait_all()` after dropping retained arrays (a
+   `read_sync()` result waits for the releases it submits on exit). C releases
+   every fetched group, then the read and query
+   handles on success and error paths. Exercise an integration test that checks
+   values and, for write-back, ordinal separation.
 
    **Complete when:** every retained array is deliberate and dropped before
    `PhysX.destroy()`, supported `ACTIVE` reads are reopened per frame, structural
@@ -85,7 +95,15 @@ for the prim paths and `token_to_string(group.attribute)` for the emitted attrib
 
 ## Shared Contracts
 
-- Query by simulated type, not USD schema or prim-path pattern.
+- Native query/read/write, fetch, commit and release operations return task
+  receipts. Check admission, wait for that receipt, then consume outputs. Fetch
+  exhaustion is a successful wait with a null group. Copy task diagnostics before
+  destroying wait-result storage. Python's default session calls return an
+  `Operation`; `wait()` collects it and raises `TaskError` on failure, and
+  `read_sync()` / `read_tokens_sync()` wait internally.
+- Query by simulated type, not USD schema. To narrow a type to specific prims,
+  add a prim-set selection (C `ovphysx_query_selection`, Python `prim_paths=` /
+  `pattern=`); it always covers the whole selected set, so it takes no scope.
 - Request semantic names such as `position`, `orientation`,
   `linearVelocity`, `angularVelocity`, `linearAcceleration`,
   `angularAcceleration`, `jointPosition`, `jointVelocity`, `points`, or
@@ -95,6 +113,14 @@ for the prim paths and `token_to_string(group.attribute)` for the emitted attrib
   than assuming device-resident f32. Per-shape properties (`contactOffset`,
   `staticFriction`, ...) are padded to the widest selected object in the read; pair them
   with `shapeCount` to find where each row's real values stop.
+- Read `isSleeping` with `ALL` scope to inspect current rigid-body sleep state, including
+  sleepers. It is a read-only host uint8 scalar: 1 asleep, 0 awake. Articulation links
+  report their owning articulation's state; no point-instancer array form exists.
+  CPU and GPU-with-readback scenes report PhysX state, including kinematics and disabled
+  bodies. Sleeping-disabled scenes, including DirectGPU, report 0 for emitted rows;
+  DirectGPU still omits pre-step partitions and disabled rows. Use `disableSimulation`
+  separately for participation. ACTIVE membership, zero velocity and the last `wake`
+  command do not determine sleep state. Re-read for fresh values; retained arrays are snapshots.
 - Deformable bodies serve `points` and `velocities` as device columns on a
   DirectGPU scene, plus `restPoints` and the **int32** `simElementIndices`
   (`collisionElementIndices` too, on the volume type only). The topology three
@@ -112,6 +138,15 @@ for the prim paths and `token_to_string(group.attribute)` for the emitted attrib
   `deformableBendingStiffness`, `deformableThickness` and `deformableBendingDamping`. Those last three OMIT
   volume materials rather than reporting 0.0, so pair values with prims through
   the group's own prim list -- its row count can be smaller than the query's.
+- Character controllers use `SimObjectType.CHARACTER_CONTROLLER`, keyed by the
+  capsule prim carrying `PhysxCharacterControllerAPI`. The type has no readable
+  columns. Read the controller prim as `RIGID_BODY` `position` and `orientation`:
+  the backing actor's global pose, which updates on the step after `move`.
+- SDF collision shapes use `SimObjectType.SDF_SHAPE` and have no readable
+  columns. Evaluate them with `physx.evaluate_sdf_shapes(points, out, pattern=...)`:
+  points `[N, Q, 3]` in mesh-local space, out `[N, Q, 4]` (gradient, then
+  distance), float32 on the CUDA device, DirectGPU only. Row *i* is the *i*-th
+  matched shape in pattern order.
 - In ovphysx 0.6.0 and later, whole articulations use
   `SimObjectType.ARTICULATION` and report the
   articulation-root API prim. They serve root pose/velocity as `rootPosition`,
@@ -143,7 +178,7 @@ for the prim paths and `token_to_string(group.attribute)` for the emitted attrib
   apply a blanket radian conversion to a joint column.
 - Whole articulations also serve `jacobian`, `massMatrix`, `coriolisForce`,
   `gravityForce` and `centroidalMomentum`, row-major flattened into `dtype.lanes`.
-  These are the one case where a group covers a SUBSET of a type's rows: their width
+  These groups cover topology-based subsets of a type's rows: their width
   depends on each articulation's topology, so rows are split into cohorts of
   structurally identical articulations and each cohort is its own group. Read `lanes`
   per group -- one group for a homogeneous fleet, one per topology otherwise -- and
@@ -153,8 +188,10 @@ for the prim paths and `token_to_string(group.attribute)` for the emitted attrib
   emitted per cohort too -- same prims, same order -- so pair the two groups by prim
   list and read any row. `centroidalMomentum` is floating-base only and a fixed-base
   cohort simply omits it.
-- Treat a query as a lazy selector. A read observes the most recently completed
-  step, not a snapshot captured when the query was opened.
+- Treat a whole-type query as a selector evaluated at each session open. A read
+  observes the most recently completed step, not a snapshot captured when the
+  query was opened. The optional query result is a creation-time snapshot, and a
+  selected query keeps the membership it resolved at creation.
 - Before using `ACTIVE` or caching prim order and shapes, apply the bundled
   [scope and layout constraints](references/scope_and_layout.md). Do not assume
   every object type filters `ACTIVE`, discovery counts always match an `ACTIVE`
@@ -164,9 +201,11 @@ for the prim paths and `token_to_string(group.attribute)` for the emitted attrib
 
 For the caller's installed ovphysx version, prefer:
 
-- C SDK headers: `include/ovphysx/ovphysx.h` and
-  `include/ovphysx/ovphysx_types.h`
-- Python docstrings: `ovphysx.api.PhysX`, `ReadResult`, and `ReadGroup`
+- C SDK headers: `include/ovphysx/ovphysx.h`,
+  `include/ovphysx/ovphysx_types.h`, and `include/ovphysx/ovphysx_attributes.h`
+  (the `OVPHYSX_ATTR_*` names; `ovphysx.h` does not include it)
+- Python docstrings: `ovphysx.api.PhysX`, `Operation`, `Query`, `ReadResult`,
+  `ReadGroup`, and `ReadMetadata`
 
 The public release documentation starts at
 <https://nvidia-omniverse.github.io/PhysX/ovphysx/latest/index.html>.

@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// @implements REQ-ATTACH-EXECUTION-001
+// @covers AC-1 AC-2
+
 /**
  * @implements REQ-PUBLICAPI-001
  * @covers AC-23
@@ -39,9 +42,9 @@ typedef void (*getGeometryInfoCallback)(const ::physx::PxGeometry& geom,
                                         const ::physx::PxTransform& geomPos,
                                         void* userData);
 
-bool setupAutoDeformableAttachment(omni::physics::parse::ObjectKey attachmentKey);
+bool setupAutoDeformableAttachment(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey attachmentKey);
 
-bool updateAutoDeformableAttachment(omni::physics::parse::ObjectKey attachmentKey, bool& attachmentDataRecomputed);
+bool updateAutoDeformableAttachment(usdparser::AttachedStage& attachedStage, omni::physics::parse::ObjectKey attachmentKey, bool& attachmentDataRecomputed);
 
 // In-memory auto attachment, for an attach that cannot author sub prims (no live USD stage):
 // records the sub-prim set setupAutoDeformableAttachment would author as a

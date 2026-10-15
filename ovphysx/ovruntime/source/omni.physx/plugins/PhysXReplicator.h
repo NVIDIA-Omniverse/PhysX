@@ -11,6 +11,8 @@
 #include <omni/physx/IPhysxReplicator.h>
 #include <omni/physics/parse/Handles.h>
 #include <string>
+#include <memory>
+#include <atomic>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -22,34 +24,13 @@ namespace physx
 class PhysXReplicator;
 class PhysXUsdPhysicsInterface;
 
-// Keyed by the AttachHandle a replicator was registered under (ADR-0016), not by stage id: a
-// registration can no longer be picked up by a later re-attach that happens to reuse the same
-// stage id. The key is opaque to the map -- OmniPhysX owns the rule that kActiveAttach and the
-// lone active attach's own handle name the same attach.
-using ReplicatorMap = std::unordered_map<AttachHandle, PhysXReplicator>;
-// ObjectKey-keyed, matching
-// UsdLoad::attachReplicatorFinish()'s PathSet (usdLoad/LoadTools.h) directly -- a live
-// AttachedStage/Source now always exists before attach() below's replicationAttachFn callback
-// fires (see attach()'s own comment), so it mints real ObjectKeys instead of building a
-// string-path set. Locally-aliased rather than pulling in usdLoad/LoadTools.h's own KeySet name
-// here.
-using ReplicatorExcludePathSet =
-    std::unordered_set<omni::physics::parse::ObjectKey, omni::physics::parse::ObjectKey::Hash>;
-
+// Exact live attachment keys; no aliases or pending registrations.
+using ReplicatorMap = std::unordered_map<AttachHandle, std::shared_ptr<PhysXReplicator>>;
 class PhysXReplicator
 {
 public:
     PhysXReplicator(const IReplicatorCallback& cb);
     ~PhysXReplicator();
-
-    // Runs at attach time, so it is the one replicator entry point that cannot take an attach
-    // handle: with attachStage == true this call is what *creates* the attach (through
-    // UsdLoad::attachReplicatorCreateSource() -> UsdLoad::attach() -> UsdUtilsStageCache::Find()),
-    // and handles are minted by the attach itself. The USD stage id it needs for that is what its
-    // caller holds. attachReplicatorCreateSource() runs before either callback below, so both
-    // always see the real attach identity now (see the reportedAttachHandle comment in the .cpp).
-    // Returns false if attachReplicatorCreateSource()/attachReplicatorFinish() fails.
-    bool attach(uint64_t stageId, PhysXUsdPhysicsInterface* usdPhysicsInt, bool attachStage);
 
     bool replicate(AttachHandle attachHandle, uint64_t path, uint32_t numReplications, bool useEnvIds);
 
@@ -82,10 +63,11 @@ public:
     }
 
     void clear();
+    void cancel() { mCancelled.store(true, std::memory_order_release); }
 
 private:
+    std::atomic<bool> mCancelled{false};
     IReplicatorCallback mCallback;
-    ReplicatorExcludePathSet mExcludePathSet;
     std::vector<float> mCloneTransforms;
     std::vector<uint32_t> mCloneEnvIds;
 };

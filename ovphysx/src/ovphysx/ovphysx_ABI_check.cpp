@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include "ovphysx_ABI_check.h"
 #include "ovphysx/dlpack/dlpack.h"
+#include "ovphysx/ovphysx_legacy_types.h"
 #include "ovphysx/ovphysx_types.h"
 
 
@@ -49,6 +50,27 @@ size_t ovphysx_internal_config_entry_offset(int field)
     case OVPHYSX_CE_KEY_TYPE: return offsetof(ovphysx_config_entry_t, key_type);
     case OVPHYSX_CE_KEY: return offsetof(ovphysx_config_entry_t, key);
     case OVPHYSX_CE_VALUE: return offsetof(ovphysx_config_entry_t, value);
+    default: return (size_t)~0ULL;
+    }
+}
+
+// ovphysx_config_value_t
+size_t ovphysx_internal_config_value_sizeof()
+{
+    return sizeof(ovphysx_config_value_t);
+}
+
+size_t ovphysx_internal_config_value_alignof()
+{
+    return alignof(ovphysx_config_value_t);
+}
+
+size_t ovphysx_internal_config_value_offset(int field)
+{
+    switch (field)
+    {
+    case OVPHYSX_CV_TYPE: return offsetof(ovphysx_config_value_t, type);
+    case OVPHYSX_CV_VALUE: return offsetof(ovphysx_config_value_t, value);
     default: return (size_t)~0ULL;
     }
 }
@@ -146,81 +168,105 @@ size_t ovphysx_internal_dl_tensor_offset(int field)
     }
 }
 
-// ovphysx_contact_event_header_t
-size_t ovphysx_internal_contact_event_header_sizeof()
+size_t ovphysx_internal_read_attribute_result_sizeof()
 {
-    return sizeof(ovphysx_contact_event_header_t);
+    return sizeof(ovphysx_read_attribute_result_t);
 }
 
-size_t ovphysx_internal_contact_event_header_alignof()
+size_t ovphysx_internal_read_attribute_result_alignof()
 {
-    return alignof(ovphysx_contact_event_header_t);
+    return alignof(ovphysx_read_attribute_result_t);
 }
 
-size_t ovphysx_internal_contact_event_header_offset(int field)
+size_t ovphysx_internal_read_attribute_result_offset(int field)
 {
     switch (field)
     {
-    case OVPHYSX_CEH_TYPE: return offsetof(ovphysx_contact_event_header_t, type);
-    case OVPHYSX_CEH_ATTACH_HANDLE: return offsetof(ovphysx_contact_event_header_t, attachHandle);
-    case OVPHYSX_CEH_ACTOR0: return offsetof(ovphysx_contact_event_header_t, actor0);
-    case OVPHYSX_CEH_ACTOR1: return offsetof(ovphysx_contact_event_header_t, actor1);
-    case OVPHYSX_CEH_COLLIDER0: return offsetof(ovphysx_contact_event_header_t, collider0);
-    case OVPHYSX_CEH_COLLIDER1: return offsetof(ovphysx_contact_event_header_t, collider1);
-    case OVPHYSX_CEH_CONTACT_DATA_OFFSET: return offsetof(ovphysx_contact_event_header_t, contactDataOffset);
-    case OVPHYSX_CEH_NUM_CONTACT_DATA: return offsetof(ovphysx_contact_event_header_t, numContactData);
-    case OVPHYSX_CEH_FRICTION_ANCHORS_DATA_OFFSET: return offsetof(ovphysx_contact_event_header_t, frictionAnchorsDataOffset);
-    case OVPHYSX_CEH_NUM_FRICTION_ANCHORS_DATA: return offsetof(ovphysx_contact_event_header_t, numfrictionAnchorsData);
-    case OVPHYSX_CEH_PROTO_INDEX0: return offsetof(ovphysx_contact_event_header_t, protoIndex0);
-    case OVPHYSX_CEH_PROTO_INDEX1: return offsetof(ovphysx_contact_event_header_t, protoIndex1);
+    case OVPHYSX_RA_ATTRIBUTE: return offsetof(ovphysx_read_attribute_result_t, attribute);
+    case OVPHYSX_RA_GROUP_COUNT: return offsetof(ovphysx_read_attribute_result_t, group_count);
+    case OVPHYSX_RA_OMISSION_REASONS: return offsetof(ovphysx_read_attribute_result_t, omission_reasons);
     default: return (size_t)~0ULL;
     }
 }
 
-// ovphysx_contact_point_t
-size_t ovphysx_internal_contact_point_sizeof()
+size_t ovphysx_internal_read_result_sizeof()
 {
-    return sizeof(ovphysx_contact_point_t);
+    return sizeof(ovphysx_read_result_t);
 }
 
-size_t ovphysx_internal_contact_point_alignof()
+size_t ovphysx_internal_read_result_alignof()
 {
-    return alignof(ovphysx_contact_point_t);
+    return alignof(ovphysx_read_result_t);
 }
 
-size_t ovphysx_internal_contact_point_offset(int field)
+size_t ovphysx_internal_read_result_offset(int field)
 {
     switch (field)
     {
-    case OVPHYSX_CP_POSITION: return offsetof(ovphysx_contact_point_t, position);
-    case OVPHYSX_CP_NORMAL: return offsetof(ovphysx_contact_point_t, normal);
-    case OVPHYSX_CP_IMPULSE: return offsetof(ovphysx_contact_point_t, impulse);
-    case OVPHYSX_CP_SEPARATION: return offsetof(ovphysx_contact_point_t, separation);
-    case OVPHYSX_CP_FACE_INDEX0: return offsetof(ovphysx_contact_point_t, faceIndex0);
-    case OVPHYSX_CP_FACE_INDEX1: return offsetof(ovphysx_contact_point_t, faceIndex1);
-    case OVPHYSX_CP_MATERIAL0: return offsetof(ovphysx_contact_point_t, material0);
-    case OVPHYSX_CP_MATERIAL1: return offsetof(ovphysx_contact_point_t, material1);
+    case OVPHYSX_RR_TOTAL_PRIM_COUNT: return offsetof(ovphysx_read_result_t, total_prim_count);
+    case OVPHYSX_RR_ATTRIBUTE_COUNT: return offsetof(ovphysx_read_result_t, attribute_count);
+    case OVPHYSX_RR_ATTRIBUTES: return offsetof(ovphysx_read_result_t, attributes);
     default: return (size_t)~0ULL;
     }
 }
 
-// ovphysx_friction_anchor_t
-size_t ovphysx_internal_friction_anchor_sizeof()
+size_t ovphysx_internal_write_attribute_result_sizeof()
 {
-    return sizeof(ovphysx_friction_anchor_t);
+    return sizeof(ovphysx_write_attribute_result_t);
 }
 
-size_t ovphysx_internal_friction_anchor_alignof()
+size_t ovphysx_internal_write_attribute_result_alignof()
 {
-    return alignof(ovphysx_friction_anchor_t);
+    return alignof(ovphysx_write_attribute_result_t);
 }
 
-size_t ovphysx_internal_friction_anchor_offset(int field)
+size_t ovphysx_internal_write_attribute_result_offset(int field)
 {
     switch (field)
     {
-    case OVPHYSX_FA_POSITION: return offsetof(ovphysx_friction_anchor_t, position);
-    case OVPHYSX_FA_IMPULSE: return offsetof(ovphysx_friction_anchor_t, impulse);
+    case OVPHYSX_WA_ATTRIBUTE: return offsetof(ovphysx_write_attribute_result_t, attribute);
+    case OVPHYSX_WA_GROUP_COUNT: return offsetof(ovphysx_write_attribute_result_t, group_count);
+    default: return (size_t)~0ULL;
+    }
+}
+
+size_t ovphysx_internal_write_result_sizeof()
+{
+    return sizeof(ovphysx_write_result_t);
+}
+
+size_t ovphysx_internal_write_result_alignof()
+{
+    return alignof(ovphysx_write_result_t);
+}
+
+size_t ovphysx_internal_write_result_offset(int field)
+{
+    switch (field)
+    {
+    case OVPHYSX_WR_TOTAL_PRIM_COUNT: return offsetof(ovphysx_write_result_t, total_prim_count);
+    case OVPHYSX_WR_ATTRIBUTE_COUNT: return offsetof(ovphysx_write_result_t, attribute_count);
+    case OVPHYSX_WR_ATTRIBUTES: return offsetof(ovphysx_write_result_t, attributes);
+    default: return (size_t)~0ULL;
+    }
+}
+
+size_t ovphysx_internal_fetched_write_group_sizeof()
+{
+    return sizeof(ovphysx_fetched_write_group_t);
+}
+
+size_t ovphysx_internal_fetched_write_group_alignof()
+{
+    return alignof(ovphysx_fetched_write_group_t);
+}
+
+size_t ovphysx_internal_fetched_write_group_offset(int field)
+{
+    switch (field)
+    {
+    case OVPHYSX_FWG_GROUP: return offsetof(ovphysx_fetched_write_group_t, group);
+    case OVPHYSX_FWG_ATTRIBUTE_INDEX: return offsetof(ovphysx_fetched_write_group_t, attribute_index);
     default: return (size_t)~0ULL;
     }
 }

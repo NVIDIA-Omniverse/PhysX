@@ -13,15 +13,22 @@ owner: ovphysx
 `ovphysx_update_from_ovstage()` shall expose monotonic consumption of
 caller-owned OVStage ordinals. The ordinal parsed by attachment and every
 successfully drained ordinal are consumed once; repeating them does not repeat
-physics changes or user callbacks.
+physics changes or object-change callbacks.
 
 ## Acceptance Criteria
 
-- AC-1: A valid update range containing only consumed ordinals returns
-  `OVPHYSX_API_SUCCESS` as a no-op and emits no object-change callbacks.
+- AC-1: A valid update range containing only consumed ordinals returns an
+  accepted task that completes successfully as a no-op and emits no
+  object-change callbacks.
 - AC-2: A valid range overlapping consumed and unread ordinals applies only its
   unread suffix. Post-attach population remains observable, and replaying the
   successfully consumed ordinal does not deliver its callbacks again.
+- AC-3: Update returns `ovphysx_enqueue_result_t`. Invalid arguments, an invalid
+  instance or a missing attachment reject without a
+  task or mutation. Runtime failures after admission belong to the task outcome.
+  The Stage and sealed data named by the range remain readable through task
+  completion. The range is passed by value; no caller-owned range storage is
+  retained.
 
 ## Test References
 

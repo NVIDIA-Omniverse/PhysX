@@ -29,7 +29,6 @@
 #include "physxSchema/physxDiffuseParticlesAPI.h"
 #include "physxSchema/physxDrivePerformanceEnvelopeAPI.h"
 #include "physxSchema/physxForceAPI.h"
-#include "physxSchema/physxJointAPI.h"
 #include "physxSchema/physxJointAxisAPI.h"
 #include "physxSchema/physxLimitAPI.h"
 #include "physxSchema/physxMaterialAPI.h"

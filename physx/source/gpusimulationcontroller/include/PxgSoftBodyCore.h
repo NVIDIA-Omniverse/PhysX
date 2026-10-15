@@ -78,20 +78,29 @@ namespace physx
 		PxgTypedCudaBuffer<PxU32>& getTempHistogramCount() { return mTempHistogramCountBuf; }
 
 
-		PxgTypedCudaBuffer<float4>& getClothVsSoftBodyContacts() { return mSCContactPointBuffer; }
-		PxgTypedCudaBuffer<float4>& getClothVsSoftBodyNormalPens() { return mSCContactNormalPenBuffer; }
-		PxgTypedCudaBuffer<float4>& getClothVsSoftBodyBarycentrics0() { return mSCContactBarycentricBuffer0; } //barycentric toward soft body contact
-		PxgTypedCudaBuffer<float4>& getClothVsSoftBodyBarycentrics1() { return mSCContactBarycentricBuffer1; } //barycentric toward cloth contact
-		PxgTypedCudaBuffer<PxgFemFemContactInfo>& getClothVsSoftBodyContactInfos() { return mSCContactInfoBuffer; }
-		PxgTypedCudaBuffer<PxU32>& getClothVsSoftBodyContactCount() { return mSCTotalContactCountBuffer; }
-		PxgTypedCudaBuffer<PxU32>& getPrevClothVsSoftBodyContactCount() { return mPrevSCContactCountBuffer; }
+		PxgTypedCudaBuffer<float4>& getVolumeVolumeContacts() { return mVolumeVolumeContactPointBuffer; }
+		PxgTypedCudaBuffer<float4>& getVolumeVolumeNormalPens() { return mVolumeVolumeContactNormalPenBuffer; }
+		PxgTypedCudaBuffer<float4>& getVolumeVolumeBarycentrics0() { return mVolumeVolumeContactBarycentric0Buffer; }
+		PxgTypedCudaBuffer<float4>& getVolumeVolumeBarycentrics1() { return mVolumeVolumeContactBarycentric1Buffer; }
+		PxgTypedCudaBuffer<PxgDeformablePairInfo>& getVolumeVolumeContactInfos() { return mVolumeVolumeContactInfoBuffer; }
+		PxgTypedCudaBuffer<PxU32>& getVolumeVolumeContactCount() { return mVolumeVolumeContactCountBuffer; }
+		PxgTypedCudaBuffer<PxU32>& getVolumeVolumePrevContactCount() { return mVolumeVolumePrevContactCountBuffer; }
 
-		// Create a soft body contact writer for softbody-vs-softbody or self-collision
-		PxgSoftBodyContactWriter createSoftBodyContactWriter();
+		PxgTypedCudaBuffer<float4>& getSurfaceVolumeContacts() { return mSurfaceVolumeContactPointBuffer; }
+		PxgTypedCudaBuffer<float4>& getSurfaceVolumeNormalPens() { return mSurfaceVolumeContactNormalPenBuffer; }
+		PxgTypedCudaBuffer<float4>& getSurfaceVolumeBarycentrics0() { return mSurfaceVolumeContactBarycentric0Buffer; }
+		PxgTypedCudaBuffer<float4>& getSurfaceVolumeBarycentrics1() { return mSurfaceVolumeContactBarycentric1Buffer; }
+		PxgTypedCudaBuffer<PxgDeformablePairInfo>& getSurfaceVolumeContactInfos() { return mSurfaceVolumeContactInfoBuffer; }
+		PxgTypedCudaBuffer<PxU32>& getSurfaceVolumeContactCount() { return mSurfaceVolumeContactCountBuffer; }
+		PxgTypedCudaBuffer<PxU32>& getSurfaceVolumePrevContactCount() { return mSurfaceVolumePrevContactCountBuffer; }
 
-		// Create a soft body contact writer for cloth-vs-softbody collision
-		// Uses dedicated cloth-vs-softbody buffers and takes minimum of both max contacts
-		PxgSoftBodyContactWriter createClothVsSoftBodyContactWriter(PxU32 clothMaxContacts);
+		void copyContactCountsToHost();
+
+		// Self-collision contacts are written here too.
+		PxgDbDbContactWriter createVolumeVolumeContactWriter();
+
+		// Bounded by the smaller of the two cores' contact budgets.
+		PxgDbDbContactWriter createSurfaceVolumeContactWriter(PxU32 surfaceMaxContacts);
 
 		PxgCudaPagedLinearAllocator& getStackAllocator() { return mIntermStackAlloc; }
 
@@ -176,20 +185,29 @@ namespace physx
 
 		//--------------------------------------------------------------------------------------
 
-		//soft body vs cloth collision contacts
-		PxgTypedCudaBuffer<float4>		mSCContactPointBuffer;
-		PxgTypedCudaBuffer<float4>		mSCContactNormalPenBuffer;
-		PxgTypedCudaBuffer<float4>		mSCContactBarycentricBuffer0;
-		PxgTypedCudaBuffer<float4>		mSCContactBarycentricBuffer1;
-		PxgTypedCudaBuffer<PxgFemFemContactInfo>	mSCContactInfoBuffer;
-		PxgTypedCudaBuffer<PxU32>		mSCTotalContactCountBuffer;
-		PxgTypedCudaBuffer<PxU32>		mPrevSCContactCountBuffer;
-		//contact blocks
-		PxgTypedCudaBuffer<PxgDbDbContactBlock>	mSSContactBlocks;   // soft body vs soft body (incl. self-collision)
-		PxgTypedCudaBuffer<PxgDbDbContactBlock>	mSCContactBlocks;   // soft body vs cloth
+		//self-collision contacts share these buffers
+		PxgTypedCudaBuffer<float4>					mVolumeVolumeContactPointBuffer;
+		PxgTypedCudaBuffer<float4>					mVolumeVolumeContactNormalPenBuffer;
+		PxgTypedCudaBuffer<float4>					mVolumeVolumeContactBarycentric0Buffer;
+		PxgTypedCudaBuffer<float4>					mVolumeVolumeContactBarycentric1Buffer;
+		PxgTypedCudaBuffer<PxgDeformablePairInfo>	mVolumeVolumeContactInfoBuffer;
+		PxgTypedCudaBuffer<PxU32>					mVolumeVolumeContactCountBuffer;
+		PxgTypedCudaBuffer<PxU32>					mVolumeVolumePrevContactCountBuffer;
+		Cm::PinnableObject<PxU32>					mVolumeVolumePrevContactCountPinned;
+		PxgTypedCudaBuffer<PxgDbDbContactBlock>		mVolumeVolumeContactBlocks;
+		PxgTypedCudaBuffer<float2>		mVolumeVolumeAppliedForcesBuffer; // accumulated (lambdaN, lambdaT) per contact
 
+		PxgTypedCudaBuffer<float4>					mSurfaceVolumeContactPointBuffer;
+		PxgTypedCudaBuffer<float4>					mSurfaceVolumeContactNormalPenBuffer;
+		PxgTypedCudaBuffer<float4>					mSurfaceVolumeContactBarycentric0Buffer;
+		PxgTypedCudaBuffer<float4>					mSurfaceVolumeContactBarycentric1Buffer;
+		PxgTypedCudaBuffer<PxgDeformablePairInfo>	mSurfaceVolumeContactInfoBuffer;
+		PxgTypedCudaBuffer<PxU32>					mSurfaceVolumeContactCountBuffer;
+		PxgTypedCudaBuffer<PxU32>					mSurfaceVolumePrevContactCountBuffer;
+		Cm::PinnableObject<PxU32>					mSurfaceVolumePrevContactCountPinned;
+		PxgTypedCudaBuffer<PxgDbDbContactBlock>		mSurfaceVolumeContactBlocks;
 		//To do: ideally, we want to use two separate stream to solve the rigid body and soft body collision
-		PxgTypedCudaBuffer<float2>		mSCLambdaNBuf; // accumulated (lambdaN, lambdaT) for collision between FEMCloth and soft body
+		PxgTypedCudaBuffer<float2>		mSurfaceVolumeAppliedForcesBuffer; // accumulated (lambdaN, lambdaT) per contact
 
 		CUevent							mBoundUpdateEvent;//this event is used to synchronize the broad phase stream(updateBound is running on broad phase stream) and mStream
 		CUevent							mSolveRigidEvent;

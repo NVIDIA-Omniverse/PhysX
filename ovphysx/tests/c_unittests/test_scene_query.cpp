@@ -21,24 +21,24 @@ using test_utils::make_ovx_string_bytes;
 
 namespace {
 
-bool wait_op_success(ovphysx_handle_t handle, ovphysx_op_index_t op_index,
+bool wait_task_success(ovphysx_instance_handle_t handle, ovphysx_enqueue_result_t task,
                      uint64_t timeout_ns = 10'000'000'000ULL)
 {
-    ovphysx_op_wait_result_t wait_result{};
-    ovphysx_result_t res = ovphysx_wait_op(handle, op_index, timeout_ns, &wait_result);
-    ovphysx_destroy_wait_result(&wait_result);
+    ovphysx_wait_task_result_t wait_result{};
+    ovphysx_result_t res = ovphysx_wait_task(handle, task, timeout_ns, &wait_result);
+    ovphysx_destroy_wait_task_result(&wait_result);
     return res.status == OVPHYSX_API_SUCCESS;
 }
 
-bool load_usd_and_wait(ovphysx_handle_t handle, const char* usd_path)
+bool load_usd_and_wait(ovphysx_instance_handle_t handle, const char* usd_path)
 {
     return attach_usd_with_ovstage(handle, usd_path);
 }
 
-bool step_and_wait(ovphysx_handle_t handle, float dt)
+bool step_and_wait(ovphysx_instance_handle_t handle, float dt)
 {
     ovphysx_enqueue_result_t res = ovphysx_step(handle, dt);
-    return res.status == OVPHYSX_API_SUCCESS && wait_op_success(handle, res.op_index);
+    return res.status == OVPHYSX_API_SUCCESS && wait_task_success(handle, res);
 }
 
 ovphysx_scene_query_geometry_desc_t make_shape_geometry(ovphysx_string_t prim_path)
@@ -67,7 +67,7 @@ ovphysx_scene_query_geometry_desc_t make_sphere_geometry(float radius, float x, 
 // with an empty attribute list). Unlike detach+reattach, this keeps the same live
 // attach/source (same ObjectKey generation), so it exercises a structural USD
 // edit the way production code does rather than the "whole new source" case.
-bool remove_ovstage_prim(ovphysx_handle_t handle, const char* primPath, ovstage_ordinal_t ordinal)
+bool remove_ovstage_prim(ovphysx_instance_handle_t handle, const char* primPath, ovstage_ordinal_t ordinal)
 {
     ovstage_instance_t* stage = nullptr;
     {
@@ -128,7 +128,7 @@ bool remove_ovstage_prim(ovphysx_handle_t handle, const char* primPath, ovstage_
     ovstage_ordinal_range_t range{};
     range.end_ordinal = ordinal;
     range.has_start_ordinal = false;
-    return ovphysx_update_from_ovstage(handle, range).status == OVPHYSX_API_SUCCESS;
+    return test_utils::complete_task(handle, ovphysx_update_from_ovstage(handle, range)).status == OVPHYSX_API_SUCCESS;
 }
 
 } // namespace
@@ -398,7 +398,7 @@ TEST(SceneQueryHandleValidation, ResolvePathsFromIdsUnknownInstanceHandle)
     const uint64_t ids[1] = {0};
     ovphysx_string_t paths[1]{};
     uint32_t resolved = 0;
-    const ovphysx_handle_t bogusHandle = static_cast<ovphysx_handle_t>(0xDEADBEEFULL);
+    const ovphysx_instance_handle_t bogusHandle = static_cast<ovphysx_instance_handle_t>(0xDEADBEEFULL);
     ovphysx_result_t r = ovphysx_scene_query_get_paths_from_ids(bogusHandle, ids, 1, paths, 1, &resolved);
     EXPECT_NE(r.status, OVPHYSX_API_SUCCESS);
     EXPECT_EQ(resolved, 0u);

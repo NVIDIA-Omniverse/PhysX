@@ -41,7 +41,7 @@ pages: [Physics Scene](simulation_setup/physics_scene.md),
 [Articulations](simulation_setup/articulations.md),
 [Deformables](simulation_setup/deformables.md), and
 [Particles](simulation_setup/particles.md). Physics schema layers and how the
-application registers the codeless PhysX schemas that ovphysx ships are covered in
+application registers the separately installed codeless PhysX schemas are covered in
 [Physics Schemas](physics_schemas.md). For tuning, refer to the Guides:
 [Performance](guides/performance.md), [Collision Behavior](guides/collision_tuning.md),
 and [Articulation Stability](guides/articulation_stability.md).
@@ -54,12 +54,13 @@ Applications own scene population through ovstage. ovphysx consumes that stage t
 ## Core Concepts
 
 - Stream-ordered execution: calls run in submission order and see prior writes without extra sync.
-- Session read/write: `PhysX.read` / `PhysX.write` (C `ovphysx_read` / `ovphysx_write`) move physics data (rigid-body poses, velocities, joint state, and the other columns listed in [Readable data](read_write/readable.md)), selected by object type. The older path-pattern tensor-binding API is deprecated (refer to [Tensor Bindings](tutorials/tensor_bindings.md)).
-- Thread safety: instances share the underlying physics runtime; serialize simulation,
-  stage mutation, and binding creation across instances. A single instance is not
-  safe for concurrent calls.
-- Warp output interoperability: `PhysX.read()` returns `warp.array`; use Warp's
-  DLPack support to share memory with NumPy, PyTorch, and other consumers.
+- Session read/write: `PhysX.read` / `PhysX.write` (C `ovphysx_read` / `ovphysx_write`) move physics data (rigid-body poses, velocities, joint state, and the other columns listed in [Readable data](read_write/readable.md)) for the objects an object-type query (`PhysX.query` / `ovphysx_query`) selects. The older path-pattern tensor-binding API is deprecated (refer to [Migrating off Tensor Bindings](tensor_binding_migration.md)).
+- Thread safety: each instance holds at most one ovstage attach, and several
+  instances may be attached at once. Different instances may step their own
+  attachments concurrently. A single instance is not safe for concurrent calls.
+  The same ovstage instance cannot be attached twice.
+- Warp output interoperability: session read groups expose `warp.array` tensors; use
+  Warp's DLPack support to share memory with NumPy, PyTorch, and other consumers.
 
 ## End-to-End Usage in Python
 
@@ -67,12 +68,22 @@ Typical usage of ovphysx:
 
 - Create and destroy instances with `PhysX()` and `physx.destroy()`.
 - After population, seal the ordinal with `stage.advance_write_floor(ordinal).wait()`, then attach with `physx.attach_ovstage(stage, read_ordinal=ordinal)`. Apply later committed edits with `physx.update_from_ovstage(from_ordinal, to_ordinal)`.
-- Write and read simulation state with the session API — `physx.write()` / `physx.read()` —
-  selecting an object type and attribute; each group exposes the mapped buffers as NumPy views
-  (host) or `warp.array` (device). (The deprecated `physx.create_tensor_binding()` path still
+- Attach, update and detach return `Task` receipts. Use `physx.wait_task(task)`
+  to check completion before relying on success; keep the Stage alive until
+  successful detach or instance destruction. They currently execute inline.
+- Write and read simulation state with the session API — select objects with `physx.query()`,
+  then open `physx.write()` / `physx.read()` sessions for one or more attributes; each group
+  exposes the mapped buffers as `warp.array` on CPU or CUDA. These methods return an `Operation`
+  without waiting: call its `wait()` or `physx.wait_all()`. `physx.read_sync()` /
+  `physx.write_sync()` create their own query and wait internally. CUDA events preserve
+  device-stream ordering. (The deprecated `physx.create_tensor_binding()` path still
   works; refer to
-  [Migrating to the Session Read/Write API](tutorials/tensor_bindings.md#migrating-to-the-session-readwrite-api).)
-- Step the simulation with `physx.step()` — it is **asynchronous** (returns an `op_index`); use `physx.step_sync()` to step and wait in one call, or `wait_op()` / `wait_all()` when consuming results outside the ovphysx stream. In-stream tensor reads wait automatically.
+  [Migrating off Tensor Bindings](tensor_binding_migration.md).)
+- Step the simulation with `physx.step()` — it is **asynchronous** (returns a `Task` receipt);
+  use `physx.step_sync()` to step and wait in one call, or `wait_task()` / `wait_all()` to collect
+  its outcome. Later native calls observe earlier work in submission order. Session outputs
+  still require explicit `Operation` collection, and a later operation's wait does not collect
+  an earlier step's failure.
 
 Refer to the [Python API Reference](python_api.rst) for the full Python API surface.
 
@@ -83,11 +94,14 @@ The C API mirrors the Python flow:
 - Create and destroy instances with `ovphysx_create_instance()` and `ovphysx_destroy_instance()`.
 - Attach ovstage with `ovphysx_attach_ovstage()` and apply committed edits with
   `ovphysx_update_from_ovstage(handle, range)`, where `range` is an
-  `ovstage_ordinal_range_t`.
+  `ovstage_ordinal_range_t`. Attach, update and detach return
+  `ovphysx_enqueue_result_t`; check admission and collect each task outcome.
 - Write and read simulation state with the session API — `ovphysx_write()` / `ovphysx_read()` —
-  selecting an object type and attribute through `ovphysx_query()`, then filling or reading the
-  mapped groups. (The deprecated `ovphysx_create_tensor_binding()` path still works.)
-- Step the simulation with `ovphysx_step()` — it is **asynchronous** (returns an `op_index`); use `ovphysx_step_sync()` to step and wait in one call, or `ovphysx_wait_op()` when consuming results outside the stream.
+  selecting objects through `ovphysx_query()` and one or more attributes, then filling or reading the
+  mapped groups. Query, open, fetch, commit and release return task receipts;
+  wait before using outputs and collect release outcomes too. They currently execute
+  inline. Successful fetch completion with a null group means EOF. (The deprecated `ovphysx_create_tensor_binding()` path still works.)
+- Step the simulation with `ovphysx_step()` — it is **asynchronous** (returns an `ovphysx_enqueue_result_t` task receipt); use `ovphysx_step_sync()` to step and wait in one call, or `ovphysx_wait_task()` / `ovphysx_wait_all()` when consuming results outside the stream.
 
 
 Refer to the [C API Reference](api.md) for the full C API surface.
@@ -101,38 +115,40 @@ Refer to the [C API Reference](api.md) for the full C API surface.
 
 The Python wheel (`pip install ovphysx`) contains the physics runtime and declares
 an exact dependency on the matched `ovstage` wheel. Together those two wheels
-provide the complete runtime; no additional NVIDIA or USD package is required.
+provide the simulation runtime. Applications install the PhysX schema provider separately for USD population.
 
 #### What the Wheel Bundles
 
 - **ovphysx shared libraries** (`libovphysx.so` / `ovphysx.dll`)
 - **Carbonite runtime** (embedded static framework plus bootstrap plugins)
 - **PhysX runtime** (statically linked simulation and tensor implementation)
-- **Codeless PhysX USD schemas** (`ovphysx/schemas/physx/`, data only; the
-  application registers them)
 
 The exact matched `ovstage` wheel supplies ovstage together with the USD
 resolver and the internal namespaced OpenUSD runtime ovstage uses to ingest USD
 scenes. The ovphysx wheel ships no OpenUSD library, USD plugin registry, or
-resolver of its own. Python dependencies are
-`packaging`, that exact `ovstage` wheel, and the bounded `warp-lang` feature line.
+resolver of its own. Python dependencies are `packaging`, that exact `ovstage`
+wheel, and the bounded `warp-lang` feature line. CUDA read-event waits use the
+bundled native runtime on the current Warp stream without adding a Python CUDA
+package. CPU groups and zero events need no CUDA wait.
 
 ### USD Coexistence and Schema Registration
 
 ovphysx ships no OpenUSD runtime and never loads, links, preloads, or version-checks one. ovstage ingests USD scenes through its own internal namespaced OpenUSD runtime; the application owns whatever USD it authors with, for example stock `usd-core` from PyPI. ovphysx does not inspect or validate the USD libraries present in the process.
 
-ovphysx ships its PhysX USD schemas (`PhysxSchema`, `OmniUsdPhysicsDeformableSchema`)
-as codeless USD plugins and never touches the environment. It reports where they
-are: `ovphysx_get_codeless_schema_root()` in C, `ovphysx.codeless_schema_root()`
-and `ovphysx.codeless_schema_paths()` in Python. The application registers them
-with the USD runtime it owns before the first ovstage population call in the
-process (`ovstage_population_register_usd_schemas()` /
-`ovstage.population.register_usd_schemas()`); USD assembles its schema registry
-once, and a late registration cannot be repaired. Attaching an ovstage that was
-populated without the registration fails with an error naming the missing call,
-because such a stage carries none of the asset's PhysX settings. Refer to
-[Physics Schemas](physics_schemas.md) for the ovstage and stock `usd-core`
-recipes.
+Applications install `physx-usd-schemas` separately, locate its resource
+directories through package metadata (Python) or an explicit external root
+(native), and register both directories before the first USD schema read
+(population or export) in each process, including workers. Neither the ovphysx
+SDK nor wheel delivers schema resources or exposes their location. By default,
+attach refuses if ovstage
+reports that its USD schema registry was built without either required PhysX
+schema family. Registration after that point cannot repair the registry or recover
+dropped settings: restart and register before populating or exporting. The legacy
+Carbonite setting `/ovphysx/schemas/requireRegistration = false` permits attach with a
+warning; it does not restore missing data. See
+[Physics Schemas](physics_schemas.md#attach-time-registration-guard) for the
+guard's scope, and dependency configuration, relocation, and registration recipes
+that do not import USD during discovery.
 
 ## Versioning and Compatibility
 
@@ -203,8 +219,8 @@ These messages do not indicate a problem with your application. They originate f
 the bundled runtime dependencies.
 
 To suppress most startup noise, set the log level before creating an instance:
-- **C:** `ovphysx_set_log_level(OVPHYSX_LOG_ERROR);`
-- **Python:** `ovphysx.set_log_level(ovphysx.LogLevel.ERROR)`
+- **C:** `ovphysx_set_global_config(OVPHYSX_GLOBAL_CONFIG_LOG_LEVEL, ovphysx_config_value_int64(OVPHYSX_LOG_ERROR));`
+- **Python:** `ovphysx.set_global_config(ovphysx.GlobalConfigKey.LOG_LEVEL, ovphysx.LogLevel.ERROR)`
 
 ## PhysX SDK Documentation
 

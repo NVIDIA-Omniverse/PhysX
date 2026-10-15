@@ -1,11 +1,11 @@
 ---
 name: tensor-bindings-cpu
-description: Exchange CPU simulation state — poses, velocities, joint targets — as caller-owned NumPy arrays through tensor bindings. The tensor-binding CODE API is deprecated in ovphysx 0.6 in favor of the session read/write API (Python PhysX.read / PhysX.write, C ovphysx_read / ovphysx_write); use the ovphysx-session-write skill to write control inputs and state, and the ovphysx-output-read skill (ovstage-native identity-preserving reads and write-back) to read output back. Tensor bindings are kept only for maintaining existing caller-owned bulk-NumPy binding code during the deprecation period.
+description: Exchange CPU simulation state — poses, velocities, joint targets — as caller-owned NumPy arrays through tensor bindings. The tensor-binding CODE API is deprecated in ovphysx 0.6 in favor of the session read/write API (Python PhysX.read / PhysX.write, C ovphysx_read / ovphysx_write); use ovphysx-session-write for control inputs and state, and the ovphysx-output-read skill (ovstage-native identity-preserving reads and write-back) to read output back. Tensor bindings are kept only for maintaining existing caller-owned bulk-NumPy binding code during the deprecation period.
 license: Apache-2.0
 compatibility: "ovphysx >=0.6.0 wheel or SDK; Python examples require NumPy, and C examples require SDK headers and libraries."
 allowed-tools: Read Shell
 metadata:
-  version: "0.1.5"
+  version: "0.1.7"
   author: NVIDIA Omniverse Physics
   tags: "ovphysx, physics, tensor-bindings, cpu"
 ---
@@ -37,27 +37,39 @@ Use this skill when a caller needs bulk CPU tensor reads or writes for simulatio
    is not forced to CPU mode.
 3. Use Shell to run the Python sample or compile the C sample after adapting the scene path and tensor type.
 
+For Python, install `physx-usd-schemas` and `newton-usd-schemas` alongside
+`ovphysx`. Register both PhysX and Newton schemas before the first population
+call so authored `newton:*` values are preserved.
+
+Import the PhysX schema recipe from
+`ovphysx.samples.python_samples.schema_support`; for native samples, set
+`PHYSX_USD_SCHEMAS_ROOT` to the extracted wheel. See
+[Physics Schemas](../../docs/physics_schemas.md) for setup.
+
 ## Python
 
 ```python
 from pathlib import Path
 
 import ovphysx
-from ovphysx import PhysX, codeless_schema_root
+from ovphysx.samples.python_samples.schema_support import physx_schema_paths
+from ovphysx import PhysX
 from ovphysx.types import TensorType
 import numpy as np
 import ovstage
 
 PhysX.set_cpu_mode(True)
 physx = PhysX()
-# Register the codeless PhysX schemas before the first population call.
-ovstage.population.register_usd_schemas([str(codeless_schema_root())])
+# Register external PhysX and Newton schemas before the first population.
+ovstage.population.register_usd_schemas(
+    [*[str(p) for p in physx_schema_paths()], str(ovphysx.newton_schema_root())]
+)
 stage = ovstage.Stage("ovphysx-tensors")
 usd_path = Path(ovphysx.__file__).resolve().parent / "samples" / "data" / "links_chain_sample.usda"
-ovstage.population.open_usd(stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.PHYSICS)
+ovstage.population.open_usd(stage, str(usd_path), ordinal=1, domains=ovstage.PopulationDomain.ALL)
 # attach_ovstage() reads at a sealed ordinal.
 stage.advance_write_floor(ordinal=1).wait()
-physx.attach_ovstage(stage, read_ordinal=1)
+physx.wait_task(physx.attach_ovstage(stage, read_ordinal=1))
 
 # Write a control-input binding for targets you set.
 velocity_target_binding = physx.create_tensor_binding(
@@ -88,7 +100,7 @@ link_pose_binding.read(link_poses)
 # Clean up
 velocity_target_binding.destroy()
 link_pose_binding.destroy()
-physx.detach_ovstage()
+physx.wait_task(physx.detach_ovstage())
 stage.destroy()
 physx.destroy()
 ```
@@ -100,9 +112,9 @@ wrote, not the physics outcome.
 Pass `raise_if_empty=True` when a zero-count binding is a configuration error.
 The default `False` accepts empty bindings; check `binding.count` before reading.
 
-The physics-only `domains` mask above is fine for this skill's non-instanced
-sample USD. For arbitrary content prefer `ALL` — see
-[Population domains](../../docs/ovstage_integration.md#population-domains).
+Use `ALL` when populating USD so nested world transforms are resolved by the
+rendering domain. `PHYSICS` alone seeds local world matrices in OVStage 0.3;
+see [Population domains](../../docs/ovstage_integration.md#population-domains).
 
 Full sample:
 - `samples/python_samples/tensor_bindings.py` (wheel)

@@ -4,14 +4,14 @@
     {
       "id": 1,
       "prompt": "In Python, after each ovphysx step, read only the active rigid-body positions and orientations while preserving each group's ovstage prim identity. Keep the numeric columns for later analysis.",
-      "expected_output": "A Python output-read implementation that waits for the step, uses a context-managed ACTIVE read, consumes ovstage identity only while the result is live, and safely retains the Warp numeric columns or explicit host copies.",
+      "expected_output": "A Python output-read implementation that waits for the step, reads through a context-managed ACTIVE read (read_sync, or an explicit query plus read operations collected with wait()), consumes ovstage identity only while the result is live, and safely retains the Warp numeric columns or explicit host copies.",
       "files": [],
       "expectations": [
         "Reads the bundled references/python.md without depending on an ovphysx source checkout",
         "Selects ovphysx-output-read because the task requires ovstage-native identity rather than caller-owned tensor buffers",
         "Keeps an ovstage Stage attached and waits for the intended simulation step before reading",
-        "Uses PhysX.read(SimObjectType.RIGID_BODY, [\"position\", \"orientation\"], scope=ObjectScope.ACTIVE) as a context manager",
-        "Treats every non-empty group tensor as a borrowed warp.array on its native CPU or CUDA device, while keeping prim_list, attribute, and dictionary use inside the context",
+        "Uses PhysX.read_sync(SimObjectType.RIGID_BODY, [\"position\", \"orientation\"], scope=ObjectScope.ACTIVE) as a context manager, or PhysX.query(SimObjectType.RIGID_BODY, scope=ObjectScope.ACTIVE) followed by PhysX.read(query, [...]) and fetch_next() operations collected with wait()",
+        "Treats every non-empty group tensor as a borrowed warp.array on its native CPU or CUDA device, while keeping prim_list, attribute, and result.dictionary use inside the context",
         "Reopens the ACTIVE read on each frame"
       ]
     },
@@ -22,18 +22,20 @@
       "files": [],
       "expectations": [
         "Reads the bundled references/c_api.md and references/closed_loop.md without depending on repository-relative files",
-        "Uses ovphysx_query, optional discovery/shared-dictionary access, ovphysx_read, and ovphysx_fetch_read_next",
-        "Treats OVPHYSX_API_END_OF_ITERATION as normal completion and other non-success statuses as errors",
+        "Calls ovphysx_query and ovphysx_read with a NULL or caller-owned optional result as the final argument, then ovphysx_fetch_read_next",
+        "Resolves tokens or prim lists, when needed, through the attached Stage's dictionary (ovstage_get_path_dictionary), not through a query-owned dictionary getter",
+        "Checks admission and waits each native session receipt; successful fetch with a null group is exhaustion, while failed execution is an error",
         "Forwards prims.list, the emitted attribute token, semantic, is_array, and tensors while the borrowed group is live",
         "Completes each ovstage write before ovphysx_release_group and releases read/query handles on success and error paths",
         "Explains that odd/even is an application allocation rather than ovstage semantics and keeps every ordinal single-purpose",
-        "Seals control ordinals before update_from_ovstage and never passes a closed range that contains an output ordinal"
+        "Seals control ordinals before update_from_ovstage, collects its task before dependent work, and never passes a closed range that contains an output ordinal",
+        "Retrieves task error text before destroying wait-result storage and collects release tasks without acknowledging unrelated tasks"
       ]
     },
     {
       "id": 3,
       "prompt": "For an RL loop, read every rigid-body pose each frame into a preallocated PyTorch CUDA tensor that my code owns.",
-      "expected_output": "Uses ovphysx-output-read to read CUDA Warp arrays, then copies them into the caller-owned PyTorch CUDA tensor via Warp's supported interoperability path while keeping the source arrays alive; does not use the deprecated tensor-binding API.",
+      "expected_output": "Follows the `ovphysx-output-read` skill to read CUDA Warp arrays, then copies them into the caller-owned PyTorch CUDA tensor via Warp's supported interoperability path while keeping the source arrays alive; does not use the deprecated tensor-binding API.",
       "files": [],
       "expectations": [
         "Selects ovphysx-output-read for new simulation-output code",
@@ -45,7 +47,7 @@
     {
       "id": 4,
       "prompt": "Read only active articulation-joint positions in Python. I also want to preallocate from the query's discovery count and keep the cached prim order until layout_generation changes.",
-      "expected_output": "Rejects this ACTIVE/caching plan for the ovphysx 0.6.0 baseline, uses ALL for articulation joints, and rebuilds cached layout after known structural edits instead of waiting for layout_generation.",
+      "expected_output": "Rejects this ACTIVE/caching plan for the current implementation, uses ALL for articulation joints, and rebuilds cached layout after known structural edits instead of waiting for layout_generation.",
       "files": [],
       "expectations": [
         "Reads references/python.md and references/scope_and_layout.md",
@@ -53,6 +55,33 @@
         "Routes the articulation-joint query to ObjectScope.ALL",
         "Does not present layout_generation as a working invalidation signal",
         "Requires rebuilding cached query, prim order, and shapes after known structural edits"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "My Python read of rigid-body position and a second attribute name came back with no groups. How can my code tell apart no matching bodies, a name the type cannot read, and a DirectGPU scene that has not stepped yet?",
+      "expected_output": "Opens the read with metadata=True over an explicit completed Query and inspects result.metadata.attributes in request order: omission_reasons flags ReadOmission.UNSUPPORTED_ATTRIBUTE (token 0) versus ReadOmission.NOT_READY, and zero groups with no flags is a valid empty match; a failed operation raises TaskError rather than looking empty.",
+      "files": [],
+      "expectations": [
+        "Uses PhysX.read(query, [...], metadata=True) (or read_sync(..., metadata=True)) and reads result.metadata rather than inferring from tensor counts",
+        "Pairs result.metadata.attributes rows with the request list by position and checks omission_reasons against ReadOmission.UNSUPPORTED_ATTRIBUTE, UNSUPPORTED_CONFIGURATION, and NOT_READY",
+        "States that a row with group_count 0 and no omission flags is a valid empty answer, and that the flags can combine",
+        "Steps a DirectGPU scene at least once before expecting groups for rigid bodies",
+        "Treats a TaskError from wait() as a failure, never as an empty result"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Read current rigid-body sleep state in Python, including sleeping and disabled bodies, and keep the values for comparison after another step. Explain what changes for articulation links and DirectGPU, and how I would wake the bodies instead.",
+      "expected_output": "Reads isSleeping with ALL scope as host uint8 snapshots, distinguishes sleep from simulation participation and ACTIVE membership, explains articulation and DirectGPU semantics, and routes the wake command to ovphysx-session-write.",
+      "files": [],
+      "expectations": [
+        "Uses context-managed PhysX.read_sync(SimObjectType.RIGID_BODY, [\"isSleeping\"], scope=ObjectScope.ALL), or a completed ALL-scope Query with read/fetch operations collected by wait(); never uses ACTIVE as a sleep-state query",
+        "Identifies the column as read-only host uint8 with 1 asleep and 0 awake; retains Warp arrays or makes explicit host copies and opens another read for fresh values",
+        "Uses PhysX state for kinematic and simulation-disabled bodies on sleeping-enabled CPU or GPU-with-CPU-readback scenes; uses disableSimulation separately to determine participation",
+        "Explains that sleeping-disabled scenes report 0 for every emitted row, including disabled CPU bodies; DirectGPU preserves its pre-step and disabled-row omissions",
+        "Explains that ARTICULATION_LINK rows report the owning articulation's state, with no whole-articulation root column or point-instancer array form",
+        "Does not infer sleep from zero velocity or the last wake command, and routes waking bodies to ovphysx-session-write instead of writing isSleeping"
       ]
     }
   ]

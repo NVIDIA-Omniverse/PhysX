@@ -198,11 +198,12 @@ pull_dependency("ovruntime-deps-import.packman.xml" "ovruntime build dependencie
 # ovphysx itself links no USD, and the python tests resolve python USD from stock
 # pip usd-core (REQ-PACKAGING-PYTESTUSD-001), so no internal USD monolith is fetched.
 
-# ovstage: the self-contained wheel is fetched per platform by
-# scripts/fetch_ovstage_release.py. Its ovstage/ tree is extracted into ovruntime's
-# target-deps/ovstage (OVSTAGE_DIR, resolved by OvstageDependency.cmake) and the
-# wheel is copied into target-deps/ovstage_wheel for the python tests. The default
-# --source is internal. The open-source drop resolves the wheel from public PyPI.
+# ovstage: scripts/fetch_ovstage_release.py fetches the released native zip for this
+# platform, pinned by SHA-256, and extracts it into ovruntime's target-deps/ovstage
+# (OVSTAGE_DIR, resolved by OvstageDependency.cmake). The python wheel is NOT fetched here:
+# it is installed from the ovstage index by uv, with its hash recorded in the lockfiles
+# (ADR-0033). The channel baked into the script is internal here; the open-source drop
+# carries the public one.
 if(EXISTS "${SCRIPT_DIR}/fetch_ovstage_release.py")
     get_filename_component(_OVRUNTIME_TARGET_DEPS "${PROJECT_ROOT}/ovruntime/_build/target-deps" ABSOLUTE)
     # Prefer the packman-provided python, whose junction the carb-sdk-deps-import pull
@@ -230,7 +231,6 @@ if(EXISTS "${SCRIPT_DIR}/fetch_ovstage_release.py")
         COMMAND "${_OVSTAGE_PY}" "${SCRIPT_DIR}/fetch_ovstage_release.py"
             --platform "${PLATFORM}"
             --dest "${_OVRUNTIME_TARGET_DEPS}/ovstage"
-            --wheel-dest "${PROJECT_ROOT}/_build/target-deps/ovstage_wheel"
         RESULT_VARIABLE _OVSTAGE_FETCH_RC)
     if(NOT _OVSTAGE_FETCH_RC EQUAL 0)
         message(FATAL_ERROR "ovstage release fetch failed (scripts/fetch_ovstage_release.py). "

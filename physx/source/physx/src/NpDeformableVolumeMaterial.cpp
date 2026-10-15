@@ -24,7 +24,7 @@ NpDeformableVolumeMaterial::~NpDeformableVolumeMaterial()
 }
 
 // PX_SERIALIZATION
-void NpDeformableVolumeMaterial::resolveReferences(PxDeserializationContext&)
+bool NpDeformableVolumeMaterial::resolveReferences(PxDeserializationContext&)
 {
 	// ### this one could be automated if NpMaterial would inherit from MaterialCore
 	// ### well actually in that case the pointer would not even be needed....
@@ -33,7 +33,8 @@ void NpDeformableVolumeMaterial::resolveReferences(PxDeserializationContext&)
 	// Maybe not the best place to do it but it has to be done before the shapes resolve material indices
 	// since the material index translation table is needed there. This requires that the materials have
 	// been added to the table already.
-	NpPhysics::getInstance().addMaterial(this);
+	// See NpMaterial::resolveReferences: on false the material has been reported and destroyed in place.
+	return NpPhysics::getInstance().addMaterial(this) != NULL;
 }
 
 void NpDeformableVolumeMaterial::onRefCountZero()
@@ -55,7 +56,11 @@ NpDeformableVolumeMaterial* NpDeformableVolumeMaterial::createObject(PxU8*& addr
 	NpDeformableVolumeMaterial* obj = PX_PLACEMENT_NEW(address, NpDeformableVolumeMaterial(PxBaseFlag::eIS_RELEASABLE));
 	address += sizeof(NpDeformableVolumeMaterial);
 	obj->importExtraData(context);
-	obj->resolveReferences(context);
+
+	// See NpMaterial::createObject. obj is already destroyed when this returns false.
+	if(!obj->resolveReferences(context))
+		return NULL;
+
 	return obj;
 }
 //~PX_SERIALIZATION

@@ -14,7 +14,7 @@ owner: ovphysx
 taxonomy mirrored in `ovphysx_object_type_t` and Python `ObjectType`. Maximal-coordinate
 (standalone) joints -- UsdPhysics joint prims between plain rigid bodies with no
 `ArticulationRootAPI` on the subgraph -- simulate as `physx::PxJoint` objects and
-are reachable through `ovphysx_get_physx_ptr(..., OVPHYSX_PHYSX_TYPE_JOINT)`, but
+are readable as `physxPointer` on `OVPHYSX_QUERY_TARGET_JOINT`, but
 previously mapped to `OVPHYSX_OBJECT_TYPE_INVALID`, identical to a genuinely absent
 path. Plugin-registered custom joints resolve through
 `OVPHYSX_PHYSX_TYPE_CUSTOM_JOINT` and suffered the same classification gap.
@@ -46,8 +46,8 @@ The public enum therefore exposes `OVPHYSX_OBJECT_TYPE_JOINT` (value 6) and
 
 ## Code References
 
-- ovphysx/include/ovphysx/ovphysx_types.h (`ovphysx_object_type_t`)
-- ovphysx/include/ovphysx/ovphysx.h (`ovphysx_get_object_type`)
+- ovphysx/include/ovphysx/ovphysx_legacy_types.h (`ovphysx_object_type_t`)
+- ovphysx/include/ovphysx/ovphysx_legacy.h (`ovphysx_get_object_type`)
 - ovphysx/src/ovphysx/ovphysxTensorBinding.cpp (`ovphysx_get_object_type`)
 - ovphysx/python/ovphysx/types.py (`ObjectType`)
 - ovphysx/python/ovphysx/api.py (`PhysX.get_object_type`)

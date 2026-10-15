@@ -7,9 +7,12 @@
  *
  * @implements REQ-CAPI-BENCHMARK-005
  * @covers AC-1 AC-2 AC-4 AC-5
+ *
+ * @implements REQ-CAPI-BENCHMARK-007
+ * @covers AC-1 AC-2 AC-3 AC-4
  */
 //
-// WriteScaling.* and WriteScalingHighN.*: bulk rigid-body velocity update
+// WriteScaling.*, WriteScalingHighN.* and WriteOnly.*: bulk rigid-body velocity update
 // through the two public ovphysx write paths, at N CPU bodies.
 //
 //   velocity_ovstage_<N>_cpu  ovstage_write_attribute(physics:velocity, UPSERT)
@@ -28,6 +31,8 @@
 //                        N. The family prefix differs on purpose: the L1B lane
 //                        selects `WriteScaling.*_cpu`, and a row matching that
 //                        glob would widen the L1B row set.
+//   WriteOnly.*          All three scales, hidden. Uses the same operations,
+//                        but times only the completed write, not simulation.
 //
 // Each pair prices the OVStage control plane against the direct tensor write,
 // so both lanes have to keep the shape they were measured in.
@@ -40,12 +45,15 @@
 // full-state write, and the correctness gate checks exactly that: the linear
 // vx every body ends up with.
 //
-// Timing boundary:
+// WriteScaling and WriteScalingHighN timing boundary:
 //
 //   outside  scene generation, ovstage populate + attach, path-list creation,
 //            attribute-token interning, persistent tensor-binding creation,
 //            per-step value fill (preStep), and the correctness gate
 //   inside   the bulk write for this row's lane plus one 1/60 s step
+//
+// WriteOnly uses the same exclusions and includes the completed bulk write,
+// but performs the following 1/60 s simulation step outside the timer.
 //
 // The OVStage lane creates and releases its query inside the timed region. The
 // query is part of what a front end pays to address N prims through the
@@ -53,11 +61,10 @@
 //
 // These numbers are NOT comparable with the Authoring.* OVStage rows:
 //
-//   - This lane's timed region contains three waits (on the write, on the
-//     release-query, and on the seal). The Authoring.* OVStage rows wait only
-//     on the seal and retire the write op afterwards on the strength of that
-//     seal's completion, so their numbers are lower for reasons unrelated to
-//     body count.
+//   - This lane waits for the write, query release, seal and ovphysx update.
+//     The Authoring.* OVStage rows wait for the seal and ovphysx update,
+//     retiring the write op on the strength of the seal's completion. Their
+//     numbers are lower for reasons unrelated to body count.
 //   - This lane steps with step() + waitAll(). The Authoring.* rows use
 //     ovphysx_step_sync(), which is cheaper because it bypasses the async
 //     operation machinery.
@@ -70,18 +77,18 @@
 //
 //   - Every ovstage/population/ovphysx wait goes through the shared
 //     AuthoringCommon helpers (authoringbm::waitStage / waitPopulation /
-//     waitOvphysxAllChecked / releaseQueryChecked). Those use the bounded
-//     kWaitTimeoutNs and, on a timeout, record the failure and block for final
-//     completion instead of releasing a still-pending op. The outer
-//     benchmark-process timeout stays the hard bound.
+//     waitOvphysxTaskChecked / waitOvphysxAllChecked / releaseQueryChecked).
+//     Those use the bounded kWaitTimeoutNs and, on a timeout, record the failure
+//     and block for final completion instead of releasing a still-pending op.
+//     The outer benchmark-process timeout stays the hard bound.
 //   - The OVStage write payload (DLTensor + ovstage_write_data_t) lives in the
 //     benchmark object rather than on the stack of the write function. A
 //     bounded wait that times out returns while the op is still pending, so
 //     stack-owned payload would be freed under a live operation.
 //   - Every setup, write, seal, drain, step and readback failure routes through
 //     bmRecordFailure(), so a row that did not complete its work publishes no
-//     number and the process exits non-zero. That includes every waitAll(),
-//     which is the only place an asynchronous failure is reported.
+//     number and the process exits non-zero. That includes task waits, where
+//     accepted-operation failures are reported.
 //   - The generated scene explicitly applies PhysxSceneAPI and authors
 //     physxScene:enableGPUDynamics = false and physxScene:broadphaseType =
 //     "MBP", matching the CPU Authoring fixture
@@ -490,11 +497,13 @@ private:
         }
     }
 
+protected:
     bool writeOnce()
     {
         return mLane == WriteLane::eOvstage ? writeThroughOvstage() : writeThroughTensor();
     }
 
+private:
     // The raw C handle rather than ovphysx::TensorBinding: the RAII wrapper's
     // destroy() returns void, so a teardown that used it could not report a
     // failed destroy, and calling the C destroy alongside it would release the
@@ -643,21 +652,16 @@ private:
         range.has_start_ordinal = true;
         range.start_ordinal = ordinal;
         range.end_ordinal = ordinal;
-        if (mPhysX->updateFromOvstage(range) != OVPHYSX_API_SUCCESS)
-        {
-            const ovphysx_string_t err = ovphysx_get_last_error();
-            bmRecordFailure(mRow, "update_from_ovstage failed: %.*s", static_cast<int>(err.length),
-                            err.ptr ? err.ptr : "");
-            return false;
-        }
-        return true;
+        return authoringbm::waitOvphysxTaskChecked(
+            mPhysX->handle(), mPhysX->updateFromOvstage(range), mRow, "update_from_ovstage");
     }
 
+protected:
     // step() + waitAll() is the measured shape. ovphysx_step_sync() would be
     // cheaper, but swapping it in would change the number this row reports.
     bool stepOnce()
     {
-        if (mPhysX->step(kStepDt) != OVPHYSX_API_SUCCESS)
+        if (mPhysX->step(kStepDt).status != OVPHYSX_API_SUCCESS)
         {
             const ovphysx_string_t err = ovphysx_get_last_error();
             bmRecordFailure(mRow, "step failed for N=%u: %.*s", mBodyCount, static_cast<int>(err.length),
@@ -667,6 +671,7 @@ private:
         return authoringbm::waitOvphysxAllChecked(mPhysX->handle(), mRow, "step");
     }
 
+private:
     // Fail-closed gate, outside the timed window: push a velocity no timed step
     // ever writes through this row's own path, step, and read the simulated
     // bodies back. A write path that parses and costs time but never reaches
@@ -747,8 +752,12 @@ private:
     ovphysx_sample_stage_attachment_t mAttachment{};
     bool mAttached = false;
     bool mLeftoverAttachmentReported = false;
+
+protected:
     bool mSetupOk = false;
     bool mStepOk = false;
+
+private:
     uint32_t mStepIndex = 0;
 
     path_dictionary_instance_t* mDictionary = nullptr;
@@ -839,5 +848,100 @@ Register<WriteScalingHighNVelocityOvstage16384Cpu, true> sWriteScalingHighNVeloc
     "WriteScalingHighN.velocity_ovstage_16384_cpu");
 Register<WriteScalingHighNVelocityTensor16384Cpu, true> sWriteScalingHighNVelocityTensor16384Cpu(
     "WriteScalingHighN.velocity_tensor_16384_cpu");
+
+
+// The write-only rows reuse the same scene, operations, warmup and readback
+// gate. Only their timer boundary differs: completion waits and the OVStage
+// drain are included, while the following simulation step is untimed.
+// Existing WriteScaling rows retain BmBenchmark::timedStep() unchanged.
+class WriteOnlyBase : public WriteScalingBase
+{
+public:
+    WriteOnlyBase(const char* rowName, WriteLane lane, uint32_t bodyCount)
+        : WriteScalingBase(rowName, lane, bodyCount)
+    {
+    }
+
+    Time::Second timedStep() override
+    {
+        if (!mSetupOk || !mStepOk)
+        {
+            return 0;
+        }
+        Time timer;
+        const bool writeOk = writeOnce();
+        const Time::Second elapsed = timer.getElapsedSeconds();
+        if (!writeOk || !stepOnce())
+        {
+            mStepOk = false;
+        }
+        return elapsed;
+    }
+};
+
+struct WriteOnlyVelocityOvstage4096Cpu : WriteOnlyBase
+{
+    WriteOnlyVelocityOvstage4096Cpu()
+        : WriteOnlyBase("WriteOnly.velocity_ovstage_4096_cpu", WriteLane::eOvstage, kWriteScalingBodyCount)
+    {
+    }
+};
+
+struct WriteOnlyVelocityTensor4096Cpu : WriteOnlyBase
+{
+    WriteOnlyVelocityTensor4096Cpu()
+        : WriteOnlyBase("WriteOnly.velocity_tensor_4096_cpu", WriteLane::eTensor, kWriteScalingBodyCount)
+    {
+    }
+};
+
+struct WriteOnlyVelocityOvstage8192Cpu : WriteOnlyBase
+{
+    WriteOnlyVelocityOvstage8192Cpu()
+        : WriteOnlyBase("WriteOnly.velocity_ovstage_8192_cpu", WriteLane::eOvstage,
+                        kWriteScalingHighNBodyCount8192)
+    {
+    }
+};
+
+struct WriteOnlyVelocityTensor8192Cpu : WriteOnlyBase
+{
+    WriteOnlyVelocityTensor8192Cpu()
+        : WriteOnlyBase("WriteOnly.velocity_tensor_8192_cpu", WriteLane::eTensor,
+                        kWriteScalingHighNBodyCount8192)
+    {
+    }
+};
+
+struct WriteOnlyVelocityOvstage16384Cpu : WriteOnlyBase
+{
+    WriteOnlyVelocityOvstage16384Cpu()
+        : WriteOnlyBase("WriteOnly.velocity_ovstage_16384_cpu", WriteLane::eOvstage,
+                        kWriteScalingHighNBodyCount16384)
+    {
+    }
+};
+
+struct WriteOnlyVelocityTensor16384Cpu : WriteOnlyBase
+{
+    WriteOnlyVelocityTensor16384Cpu()
+        : WriteOnlyBase("WriteOnly.velocity_tensor_16384_cpu", WriteLane::eTensor,
+                        kWriteScalingHighNBodyCount16384)
+    {
+    }
+};
+
+Register<WriteOnlyVelocityOvstage4096Cpu, true> sWriteOnlyVelocityOvstage4096Cpu(
+    "WriteOnly.velocity_ovstage_4096_cpu");
+Register<WriteOnlyVelocityTensor4096Cpu, true> sWriteOnlyVelocityTensor4096Cpu(
+    "WriteOnly.velocity_tensor_4096_cpu");
+Register<WriteOnlyVelocityOvstage8192Cpu, true> sWriteOnlyVelocityOvstage8192Cpu(
+    "WriteOnly.velocity_ovstage_8192_cpu");
+Register<WriteOnlyVelocityTensor8192Cpu, true> sWriteOnlyVelocityTensor8192Cpu(
+    "WriteOnly.velocity_tensor_8192_cpu");
+Register<WriteOnlyVelocityOvstage16384Cpu, true> sWriteOnlyVelocityOvstage16384Cpu(
+    "WriteOnly.velocity_ovstage_16384_cpu");
+Register<WriteOnlyVelocityTensor16384Cpu, true> sWriteOnlyVelocityTensor16384Cpu(
+    "WriteOnly.velocity_tensor_16384_cpu");
 
 } // namespace

@@ -15,6 +15,12 @@
 #include "global_test_environment.h"  // shared CPU instance (ensureSharedCpuInstance/sharedCpuInstance)
 #include "test_utilities.h"
 
+#if defined(_WIN32)
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#endif
+
 #include <cstring>
 #include <atomic>
 #include <chrono>
@@ -32,7 +38,7 @@
 // Shared instance created once in the first test that needs it. All log level
 // tests share it because Carbonite is a singleton. The ovphysx source log level
 // is process-scoped, not per-instance.
-static ovphysx_handle_t g_handle = 0;
+static ovphysx_instance_handle_t g_handle = 0;
 
 static void ensureInstance()
 {
@@ -100,7 +106,7 @@ private:
 class ScopedUsdAttachment
 {
 public:
-    explicit ScopedUsdAttachment(ovphysx_handle_t handle) : m_handle(handle)
+    explicit ScopedUsdAttachment(ovphysx_instance_handle_t handle) : m_handle(handle)
     {
     }
 
@@ -119,7 +125,7 @@ public:
     }
 
 private:
-    ovphysx_handle_t m_handle;
+    ovphysx_instance_handle_t m_handle;
     bool m_attached = false;
 };
 
@@ -327,41 +333,51 @@ TEST(LogLevel, NoneLevelSuppressesAllOvphysxSourceMessages)
     ovphysx_log_capture_stop();
 }
 
+// The public lookup is gone. This case still gates the sidecar's own log by calling
+// the resolver the sidecar exports, with a path that does not resolve.
+void* unresolvedSidecarPointer()
+{
+#if defined(_WIN32)
+    HMODULE module = GetModuleHandleA("ovphysx_internal.dll");
+    if (!module)
+        module = LoadLibraryA("ovphysx_internal.dll");
+    auto resolve = module ? reinterpret_cast<void* (*)(uint64_t, const char*, int)>(
+                                GetProcAddress(module, "ovphysx_internal_get_physx_ptr"))
+                          : nullptr;
+#else
+    void* module = dlopen("libovphysx_internal.so", RTLD_NOLOAD | RTLD_LAZY);
+    if (!module)
+        module = dlopen("libovphysx_internal.so", RTLD_LAZY);
+    auto resolve = module ? reinterpret_cast<void* (*)(uint64_t, const char*, int)>(
+                                dlsym(module, "ovphysx_internal_get_physx_ptr"))
+                          : nullptr;
+#endif
+    return resolve ? resolve(0, "not a valid SdfPath", OVPHYSX_PHYSX_TYPE_SCENE) : nullptr;
+}
+
 TEST(LogLevel, OwnedSidecarSourceFollowsLevel)
 {
     ensureInstance();
     ASSERT_NE(g_handle, 0u);
-    const ovphysx_string_t invalidPath = ovphysx_cstr("not a valid SdfPath");
-    void* ptr = nullptr;
     ScopedLogLevelReset levelGuard;
+    const char* message = "Internal sidecar: ovphysx_internal_get_physx_ptr could not resolve ObjectKey";
 
     {
         ASSERT_EQ(ovphysx_set_log_level(OVPHYSX_LOG_INFO).status, OVPHYSX_API_SUCCESS);
         ScopedNativeLogCapture capture;
         ASSERT_TRUE(capture.start());
-        ScopedUsdAttachment attachment(g_handle);
-        ASSERT_TRUE(attachment.attach("tests/data/minimal_scene.usda"));
-        EXPECT_NE(
-            ovphysx_get_physx_ptr(g_handle, invalidPath, OVPHYSX_PHYSX_TYPE_SCENE, &ptr).status,
-            OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(unresolvedSidecarPointer(), nullptr);
         ASSERT_EQ(ovphysx_flush_log(UINT64_MAX).status, OVPHYSX_API_SUCCESS);
-        EXPECT_TRUE(ovphysx_log_capture_find(
-            OVPHYSX_LOG_ERROR, "Internal sidecar: ovphysx_internal_get_physx_ptr could not resolve ObjectKey"));
+        EXPECT_TRUE(ovphysx_log_capture_find(OVPHYSX_LOG_ERROR, message));
     }
 
     {
         ASSERT_EQ(ovphysx_set_log_level(OVPHYSX_LOG_NONE).status, OVPHYSX_API_SUCCESS);
         ScopedNativeLogCapture capture;
         ASSERT_TRUE(capture.start());
-        ScopedUsdAttachment attachment(g_handle);
-        ASSERT_TRUE(attachment.attach("tests/data/minimal_scene.usda"));
-        ptr = nullptr;
-        EXPECT_NE(
-            ovphysx_get_physx_ptr(g_handle, invalidPath, OVPHYSX_PHYSX_TYPE_SCENE, &ptr).status,
-            OVPHYSX_API_SUCCESS);
+        EXPECT_EQ(unresolvedSidecarPointer(), nullptr);
         ASSERT_EQ(ovphysx_flush_log(UINT64_MAX).status, OVPHYSX_API_SUCCESS);
-        EXPECT_FALSE(ovphysx_log_capture_find(
-            OVPHYSX_LOG_ERROR, "Internal sidecar: ovphysx_internal_get_physx_ptr could not resolve ObjectKey"));
+        EXPECT_FALSE(ovphysx_log_capture_find(OVPHYSX_LOG_ERROR, message));
     }
 }
 

@@ -204,7 +204,7 @@ PRIVATIZED_NAMES = {
 # applies -- PhysxDeformableAPI, PhysxDeformableBodyAPI,
 # PhysxDeformableSurfaceAPI, the two deformable material APIs,
 # PhysxParticleClothAPI, PhysxAutoParticleClothAPI and the TetrahedralMesh prim
-# type -- is absent from the schemas ovphysx ships, so a recovered version would
+# type -- is absent from the external provider, so a recovered version would
 # raise from `codeless.apply_api` rather than author anything. Pinned so a later
 # recovery pass cannot reintroduce one; see REQ "Superseded before the census"
 # for the replacement each maps to. Grouped by the module they were removed from.

@@ -142,6 +142,8 @@ void NpArticulationReducedCoordinate::applyCache(PxArticulationCache& cache, con
 		return;
 	}
 
+	PX_SIMD_GUARD
+
 	if (!(getScene()->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API))
 	{
 		const bool forceWake = mCore.applyCache(cache, flags);
@@ -176,6 +178,8 @@ void NpArticulationReducedCoordinate::copyInternalStateToCache(PxArticulationCac
 
 	const bool isGpuSimEnabled = getNpScene()->getFlags() & PxSceneFlag::eENABLE_GPU_DYNAMICS;
 
+	PX_SIMD_GUARD
+
 	mCore.copyInternalStateToCache(cache, flags, isGpuSimEnabled);
 }
 
@@ -202,6 +206,8 @@ void NpArticulationReducedCoordinate::commonInit() const
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationReducedCoordinate::commonInit() not allowed while simulation is running. Call will be ignored.");
 
+	PX_SIMD_GUARD
+
 	mCore.commonInit();
 }
 
@@ -212,6 +218,8 @@ void NpArticulationReducedCoordinate::computeGravityCompensation(PxArticulationC
 	PX_CHECK_AND_RETURN(cache.version == mCacheVersion, "PxArticulationReducedCoordinate::computeGravityCompensation: cache is invalid, articulation configuration has changed! ");
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationReducedCoordinate::computeGravityCompensation() not allowed while simulation is running. Call will be ignored.");
+
+	PX_SIMD_GUARD
 
 	mCore.computeGeneralizedGravityForce(cache);
 }
@@ -224,6 +232,8 @@ void NpArticulationReducedCoordinate::computeCoriolisCompensation(PxArticulation
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationReducedCoordinate::computeCoriolisCompensation() not allowed while simulation is running. Call will be ignored.");
 
+	PX_SIMD_GUARD
+
 	mCore.computeCoriolisAndCentrifugalForce(cache);
 }
 
@@ -234,6 +244,8 @@ void NpArticulationReducedCoordinate::computeGeneralizedExternalForce(PxArticula
 	PX_CHECK_AND_RETURN(cache.version == mCacheVersion, "PxArticulationReducedCoordinate::computeGeneralizedExternalForce: cache is invalid, articulation configuration has changed! ");
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationReducedCoordinate::computeGeneralizedExternalForce() not allowed while simulation is running. Call will be ignored.");
+
+	PX_SIMD_GUARD
 
 	mCore.computeGeneralizedExternalForce(cache);
 }
@@ -258,6 +270,8 @@ void NpArticulationReducedCoordinate::computeJointForce(PxArticulationCache& cac
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationReducedCoordinate::computeJointForce() not allowed while simulation is running. Call will be ignored.");
 
+	PX_SIMD_GUARD
+
 	mCore.computeJointForce(cache);
 }
 
@@ -268,6 +282,8 @@ void NpArticulationReducedCoordinate::computeDenseJacobian(PxArticulationCache& 
 	PX_CHECK_AND_RETURN(cache.version == mCacheVersion, "PxArticulationReducedCoordinate::computeDenseJacobian: cache is invalid, articulation configuration has changed! ");
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationReducedCoordinate::computeDenseJacobian() not allowed while simulation is running. Call will be ignored.");
+
+	PX_SIMD_GUARD
 
 	mCore.computeDenseJacobian(cache, nRows, nCols);
 }
@@ -280,6 +296,8 @@ PX_DEPRECATED void NpArticulationReducedCoordinate::computeCoefficientMatrix(PxA
 	PX_CHECK_AND_RETURN(cache.version == mCacheVersion, "PxArticulationReducedCoordinate::computeCoefficientMatrix: cache is invalid, articulation configuration has changed! ");
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxArticulationReducedCoordinate::computeCoefficientMatrix() not allowed while simulation is running. Call will be ignored.");
+
+	PX_SIMD_GUARD
 
 	npScene->updateConstants(mLoopJoints);
 
@@ -297,6 +315,8 @@ PX_DEPRECATED bool NpArticulationReducedCoordinate::computeLambda(PxArticulation
 	if (cache.version != mCacheVersion)
 		return PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL,
 								"PxArticulationReducedCoordinate::computeLambda: cache is invalid, articulation configuration has changed!");
+
+	PX_SIMD_GUARD
 
 	return mCore.computeLambda_Deprecated(cache, initialState, jointTorque, getScene()->getGravity(), maxIter);
 }
@@ -321,6 +341,8 @@ PxVec3 NpArticulationReducedCoordinate::computeArticulationCOM(const bool rootFr
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_AND_RETURN_VAL(getNpScene(), "PxArticulationReducedCoordinate::computeArticulationCOM() not allowed while simulation is running. Call will be ignored.", PxVec3(0.0f));
 
+	PX_SIMD_GUARD
+
 	return mCore.computeArticulationCOM(rootFrame);
 }
 
@@ -333,6 +355,8 @@ void NpArticulationReducedCoordinate::computeCentroidalMomentumMatrix(PxArticula
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationReducedCoordinate::computeCentroidalMomentumMatrix() not allowed while simulation is running. Call will be ignored.");
 
 	PX_CHECK_AND_RETURN(!(mCore.getArticulationFlags() & PxArticulationFlag::eFIX_BASE), "PxArticulationReducedCoordinate::computeCentroidalMomentumMatrix() is not implemented for fixed-base articulations");
+
+	PX_SIMD_GUARD
 
 	mCore.computeCentroidalMomentumMatrix(cache);
 }
@@ -522,6 +546,8 @@ PxSpatialVelocity NpArticulationReducedCoordinate::getLinkAcceleration(const PxU
 
 	const bool isGpuSimEnabled = getNpScene()->getFlags() & PxSceneFlag::eENABLE_GPU_DYNAMICS;
 
+	PX_SIMD_GUARD
+
 	return mCore.getLinkAcceleration(linkId, isGpuSimEnabled);
 }
 
@@ -706,6 +732,8 @@ void NpArticulationReducedCoordinate::updateKinematic(PxArticulationKinematicFla
 
 	if(getNpScene())
 	{
+		PX_SIMD_GUARD
+
 		updateKinematicInternal(flags);
 	}
 }
@@ -1213,9 +1241,17 @@ NpArticulationLink* NpArticulationReducedCoordinate::getRoot()
 	return mArticulationLinks[0];
 }
 
-void NpArticulationReducedCoordinate::setAggregate(PxAggregate* a) 
-{ 
-	mAggregate = static_cast<NpAggregate*>(a); 
+void NpArticulationReducedCoordinate::setAggregate(PxAggregate* a)
+{
+	mAggregate = static_cast<NpAggregate*>(a);
+
+	// PT: the sim caches the aggregate handle (see ArticulationSim::getAggregateHandle). It is initialized when the sim is created
+	// but the articulation can also leave its aggregate at runtime while remaining in the scene (PxAggregate::removeArticulation /
+	// release), so we refresh the cached handle here. Adding an articulation to an aggregate at runtime is only allowed when the
+	// articulation is not in a scene yet, so there is no sim in that case and the handle is picked up when the sim is created.
+	Sc::ArticulationSim* sim = mCore.getSim();
+	if(sim)
+		sim->setAggregateHandle(mAggregate ? mAggregate->getAggregateHandle() : PX_INVALID_U32);
 }
 
 

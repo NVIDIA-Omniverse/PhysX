@@ -11,6 +11,8 @@ from ovphysx.types import LogLevel, TensorType
 from test_utils import data_path
 
 from ovphysx import (
+    ApiStatus,
+    Task,
     get_log_level,
     set_log_level,
 )
@@ -109,16 +111,16 @@ def test_integration_reset_with_bindings(physx_sdk):
     Covered APIs:
         ovstage attach/update helper
         PhysX.create_tensor_binding
-        PhysX.reset (with active bindings)
+        PhysX.detach_ovstage (with active bindings)
         PhysX.wait_all
-        TensorBinding.write (after reset - should fail)
-        TensorBinding.read (after reset - should fail)
+        TensorBinding.write (after detach - should fail)
+        TensorBinding.read (after detach - should fail)
 
     Args:
         physx_sdk: PhysX SDK fixture
 
     Returns:
-        None: Validates that bindings become invalid after reset.
+        None: Validates that bindings become invalid after detach.
     """
     usd_path = data_path("boxes_falling_on_groundplane.usda")
     load_usd_with_ovstage(physx_sdk, usd_path)
@@ -130,14 +132,14 @@ def test_integration_reset_with_bindings(physx_sdk):
         tensor_type=TensorType.RIGID_BODY_VELOCITY,
     )
 
-    assert binding.count == 1, "Binding should have 1 prim before reset"
-    assert binding.shape == (1, 6), "Binding shape should be (1, 6) before reset"
+    assert binding.count == 1, "Binding should have 1 prim before detach"
+    assert binding.shape == (1, 6), "Binding shape should be (1, 6) before detach"
 
-    # reset_stage invalidates all bindings.
-    physx_sdk.reset_stage()
+    # detach_ovstage invalidates all bindings.
+    physx_sdk.detach_ovstage()
     physx_sdk.wait_all()
 
-    # Binding operations must fail after reset.
+    # Binding operations must fail after detach.
     velocities = np.zeros((1, 6), dtype=np.float32)
 
     with pytest.raises(RuntimeError, match=r".*"):
@@ -156,7 +158,7 @@ def test_return_values_validity(physx_sdk):
     Covered APIs:
         ovstage attach helper (return values)
         PhysX.step (return values)
-        PhysX.reset (return values)
+        PhysX.detach_ovstage (return values)
 
     Args:
         physx_sdk: PhysX SDK fixture
@@ -166,17 +168,22 @@ def test_return_values_validity(physx_sdk):
     """
     usd_path = os.path.join(os.path.dirname(__file__), "../data/api_surface_permutations.usda")
 
-    # The ovstage attach helper returns a synchronization op.
-    op = load_usd_with_ovstage(physx_sdk, usd_path)
-    assert op >= 0, "Op index should be non-negative"
+    # The ovstage attach helper completes synchronously.
+    assert load_usd_with_ovstage(physx_sdk, usd_path) is None
 
     physx_sdk.wait_all()
 
     step_op = physx_sdk.step(0.016)
-    assert step_op >= 0, "Step op should be non-negative"
+    assert isinstance(step_op, Task)
+    assert step_op.status == ApiStatus.SUCCESS
+    assert step_op.instance == physx_sdk.handle
+    assert step_op.op_index > 0
 
-    reset_op = physx_sdk.reset_stage()
-    assert reset_op >= 0, "Reset op should be non-negative"
+    detach_op = physx_sdk.detach_ovstage()
+    assert isinstance(detach_op, Task)
+    assert detach_op.status == ApiStatus.SUCCESS
+    assert detach_op.instance == physx_sdk.handle
+    assert detach_op.op_index > step_op.op_index
 
     physx_sdk.wait_all()
 

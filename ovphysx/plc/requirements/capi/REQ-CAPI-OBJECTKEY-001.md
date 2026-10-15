@@ -29,29 +29,22 @@ uint64-encoded hit-result path once exchanged with `IPhysxSceneQuery`
 (`ovphysx_encode_sdf_path`, `sdfPathToInt`), left with the sidecar's USD link
 (REQ-PACKAGING-NOUSD-001); scene-query results carry object keys.
 
-The pathless `PxPhysics` lookup defined by
-[REQ-CAPI-PHYSXPTR-001](REQ-CAPI-PHYSXPTR-001.md) is the sole pointer-lookup
-exception. Its zero-length selector names no source object, so the sidecar passes
-the invalid `ObjectKey{}` sentinel directly to `IPhysx::getPhysXPtr`; the runtime
+The `PxPhysics` row defined by
+[REQ-CAPI-PHYSXPTR-001](REQ-CAPI-PHYSXPTR-001.md) names no source object. The
+read publishes the path `/`. The sidecar resolver still passes the invalid
+`ObjectKey{}` sentinel to `IPhysx::getPhysXPtr` for that kind; the runtime
 maps that sentinel back to the empty path reserved for `ePTPhysics`.
 
 ## Acceptance Criteria
 
-- AC-1: For path-bound types, `ovphysx_internal_get_physx_ptr` (backing the
-  public `ovphysx_get_physx_ptr`) resolves its `prim_path` argument to an
+- AC-1: For path-bound types, `ovphysx_internal_get_physx_ptr` resolves its
+  `prim_path` argument to an
   `ObjectKey` via `IPhysx::resolveObjectKey` and passes that key -- not a path --
   to `IPhysx::getPhysXPtr`. A path that does not resolve (`ObjectKey::valid() ==
   false`) returns `nullptr` without calling `getPhysXPtr`, matching the prior
   behavior's null-return contract for an unresolvable path. The pathless
   `ePTPhysics` case instead passes `ObjectKey{}` directly, as required by
   REQ-CAPI-PHYSXPTR-001; no path string is resolved for that case.
-
-- AC-2: `ovphysx_internal_update_kinematic` (backing the public
-  `ovphysx_articulation_update_kinematic`, called once per articulation prim path
-  in the target binding) resolves the same way before calling
-  `IPhysx::getPhysXPtr(key, ePTArticulation)`. An unresolvable path returns
-  `false` for that call, preserved as the existing per-articulation failure signal
-  the caller already aggregates into `OVPHYSX_API_ERROR`.
 
 - AC-3: `ovphysx_internal_subscribe_object_changes`'s `objectCreationNotifyFn` and
   `objectDestructionNotifyFn` lambdas registered with
@@ -62,10 +55,9 @@ maps that sentinel back to the empty path reserved for `ePTPhysics`.
   string. The C callback signature itself (`const char*` + length) is unchanged.
 
 - AC-4: The sidecar's own C ABI (`ovphysx_internal_get_physx_ptr`,
-  `ovphysx_internal_update_kinematic`, and the `on_created` / `on_destroyed`
-  function-pointer parameters of `ovphysx_internal_subscribe_object_changes`) is
-  unaffected by this requirement: every one of those entry points still takes or
-  emits a plain path string. `ObjectKey` is exclusively an internal detail of how
+  and the `on_created` / `on_destroyed` function-pointer parameters of
+  `ovphysx_internal_subscribe_object_changes`) is unaffected by this requirement:
+  each still takes or emits a plain path string. `ObjectKey` is exclusively an internal detail of how
   the sidecar talks to `IPhysx`; it never crosses the sidecar's own C boundary.
 
 ## Test References
@@ -74,11 +66,10 @@ maps that sentinel back to the empty path reserved for `ePTPhysics`.
 
 ## Code References
 
-- ovphysx/src/ovphysxInternal/ovphysxInternalInterop.cpp (`ovphysx_internal_get_physx_ptr`, `ovphysx_internal_update_kinematic`)
+- ovphysx/src/ovphysxInternal/ovphysxInternalInterop.cpp (`ovphysx_internal_get_physx_ptr`)
 - ovphysx/src/ovphysxInternal/ovphysxInternalObjectChange.cpp (`ovphysx_internal_subscribe_object_changes`)
-- ovphysx/include/ovphysx/ovphysx.h (`ovphysx_get_physx_ptr`, `ovphysx_articulation_update_kinematic`, `ovphysx_subscribe_object_changes` -- the public entry points this sidecar backs; signatures unchanged per AC-4)
-- ovphysx/tests/c_unittests/test_physx_ptr.cpp (primary AC-1 coverage: per-type happy path, type-mismatch, pointer-identity, and lifecycle cases against `ovphysx_get_physx_ptr`)
-- ovphysx/tests/c_unittests/test_tensor_binding.cpp (`CpuArticulationUpdateKinematicPropagatesDofToLinks` -- AC-2 coverage)
+- ovphysx/include/ovphysx/ovphysx.h (`ovphysx_subscribe_object_changes` -- the public subscription this sidecar backs)
+- ovphysx/tests/c_unittests/test_physx_ptr.cpp (public `physxPointer` coverage; the column reads the same record pointers this resolver returns)
 - ovphysx/tests/c_unittests/test_object_change_callbacks.cpp (AC-3/AC-4 subscription lifecycle coverage)
 - ovphysx/tests/c_samples/physx_interop_cpp/main.cpp (AC-1 coverage, C sample; see TEST-CAPI-OBJECTKEY-001's environment note)
 

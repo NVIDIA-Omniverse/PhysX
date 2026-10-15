@@ -4,14 +4,16 @@
     {
       "id": 1,
       "prompt": "Write the smallest Python program that loads scene.usda with ovphysx, takes one simulation step, and cleans up every resource.",
-      "expected_output": "A Python lifecycle that creates PhysX and an ovstage Stage, populates and seals ordinal 1, attaches, uses step_sync, then detaches and destroys every resource in a finally block.",
+      "expected_output": "A Python lifecycle that installs and registers the external PhysX and Newton schemas before population, creates PhysX and an ovstage Stage, populates and seals ordinal 1, attaches, uses step_sync, then collects detach completion and calls physx.destroy() and stage.destroy() in a finally block.",
       "files": [],
       "expectations": [
         "Selects basic-workflow rather than tensor-bindings or clone-environments",
-        "Uses PhysX(), ovstage.Stage, open_usd with domains=PHYSICS, advance_write_floor(ordinal=1).wait(), and attach_ovstage(stage, read_ordinal=1)",
-        "Registers the codeless PhysX schemas with ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())]) before the first population call",
+        "Uses PhysX(), ovstage.Stage, open_usd with domains=ALL, advance_write_floor(ordinal=1).wait(), and attach_ovstage(stage, read_ordinal=1)",
+        "Registers both PhysX resource directories from physx_schema_paths() and the Newton root from ovphysx.newton_schema_root() with ovstage.population.register_usd_schemas before the first population call",
         "Uses step_sync for the single step rather than bare async step without waiting",
-        "Teardown calls detach_ovstage, stage.destroy, and physx.destroy on all paths"
+        "Teardown collects detach_ovstage task completion before stage.destroy and retains the Stage until successful detach or instance destruction",
+        "Installs physx-usd-schemas and newton-usd-schemas separately from ovphysx and locates their schema resources without importing either provider or USD",
+        "Registers PhysX and Newton schemas unconditionally before population or stock-USD schema-registry access; does not call retired PhysX schema-location APIs such as codeless_schema_paths"
       ]
     },
     {
@@ -21,21 +23,23 @@
       "files": [],
       "expectations": [
         "Points at the C hello_world sample or mirrors its create/populate/attach/step/destroy order",
-        "Registers ovphysx_get_codeless_schema_root() through ovstage_population_register_usd_schemas() before the first population call",
-        "Seals the write floor before attach_ovstage",
+        "Calls ovphysx_create_instance(&handle) without ovphysx_create_args; if configuration is needed, sets global values before create and instance values after create but before attach",
+        "Registers both externally installed provider resource directories through ovstage_population_register_usd_schemas() before the first population call",
+        "Seals the write floor before attach_ovstage and checks both admission and task completion",
         "Does not skip cleanup of ovphysx or ovstage resources"
       ]
     },
     {
       "id": 3,
       "prompt": "After attach, my test adds a new rigid body to the USD population. How do I drain that change into ovphysx before creating tensor bindings?",
-      "expected_output": "Shows the complete public wheel route: open_usd adds the rigid-body USD at a fresh ordinal, then apply_usd_changes, advance_write_floor, and update_from_ovstage drain that ordinal before bindings are refreshed.",
+      "expected_output": "Shows the complete public wheel route: add_usd_reference adds the rigid-body asset at a new prim path, then apply_usd_changes publishes at a fresh ordinal, followed by advance_write_floor and update_from_ovstage before bindings are refreshed.",
       "files": [],
       "expectations": [
         "Uses the later-ovstage-edits handoff from basic-workflow",
-        "Authors the change first with open_usd at a fresh ordinal instead of presenting the drain itself as an edit API",
-        "Calls apply_usd_changes then advance_write_floor then update_from_ovstage",
-        "Explains that draining an unchanged population is a successful no-op and that add_usd_reference does not take an ordinal",
+        "Authors the change first with add_usd_reference at a new absolute prim path; the asset has a defaultPrim and no PhysicsScene, and does not overlay existing simulated content",
+        "Calls apply_usd_changes then advance_write_floor then update_from_ovstage and wait_task before bindings are refreshed",
+        "Explains that open_usd replaces the backing USD source and is not the reference-add route",
+        "Explains that draining an unchanged population is a successful no-op",
         "Does not treat apply_usd_changes alone as sealing the ordinal",
         "Destroys or replaces pre-update tensor bindings rather than trusting their membership"
       ]
@@ -49,6 +53,48 @@
         "Does not treat basic-workflow as sufficient for batched clone + binding work",
         "Selects clone-environments for replication and waits for cloning before creating downstream views",
         "Selects ovphysx-session-write for the articulation DOF target write"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Show a minimal Python ovphysx loop that starts a step, does unrelated CPU work while physics runs, then waits and reports a simulation failure before cleaning up.",
+      "expected_output": "Uses Task returned by PhysX.step, performs independent CPU work, and calls wait_task(task). Handles TaskError with copied task/error entries and cleans up after the step is complete.",
+      "files": [],
+      "expectations": [
+        "Selects basic-workflow for the stepping and cleanup flow",
+        "Keeps the immutable Task returned by step and passes the whole receipt to wait_task, without extracting a numeric operation index",
+        "Places independent CPU work between step and wait_task; does not mutate simulation state during the step",
+        "Explains that submission rejection raises from step, while an accepted execution failure raises TaskError from wait_task",
+        "Reports TaskError.errors as (Task, message) entries and does not suggest a task destructor, future, or callback registration",
+        "Waits before detaching the stage and destroying resources; handles cleanup on the failure path"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "My populated ovphysx attach example has a box under a parent translated by 10 meters, but the box loads at its local position. Which population mask should I use?",
+      "expected_output": "Uses PopulationDomain.ALL before sealing and attaching, so OVStage 0.3 resolves nested world transforms via the rendering domain.",
+      "files": [],
+      "expectations": [
+        "Uses domains=ovstage.PopulationDomain.ALL for initial USD population",
+        "Explains that PHYSICS-only population seeds world matrices with local values in the pinned OVStage 0.3 release",
+        "Seals the populated ordinal before attach_ovstage and collects the attach task before dependent operations"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "I already built the SDK README hello_world sample in build. I saved the minimal C ovphysx example as main.c in my extracted SDK root and have the matching native OVStage package in a separate directory. In a fresh PowerShell session, show the CMakeLists.txt and Windows commands to build my_app in Release and launch it with the bundled samples/data/simple_physics_scene.usda scene.",
+      "expected_output": "A CMake consumer that links ovphysx and ovstage, uses both Windows runtime helpers, builds Release, and runs the generated run_my_app.cmd from the SDK root with the intact OVStage package on PATH.",
+      "files": [],
+      "expectations": [
+        "Selects basic-workflow for the minimal C SDK integration",
+        "Uses find_package(ovphysx REQUIRED), add_executable(my_app main.c), and target_link_libraries(my_app PRIVATE ovphysx::ovphysx ovphysx::ovstage)",
+        "Copies the SDK samples/c_samples/common directory beside main.c and includes the PowerShell command to set PHYSX_USD_SCHEMAS_ROOT to the separately extracted physx-usd-schemas wheel in the launch steps",
+        "Calls both ovphysx_copy_runtime_dlls(my_app) and ovphysx_set_ovstage_runtime_env(my_app) inside if(WIN32) after defining the target",
+        "Configures CMAKE_PREFIX_PATH with the separate OVPhysX and matching native OVStage package roots, uses a build directory distinct from the SDK README build cache, and builds Release",
+        "For a Windows Ninja build, uses Visual Studio Developer PowerShell configured for x64 with -Arch amd64 -HostArch amd64 so the compiler, headers, and libraries are available",
+        "Launches the generated run_my_app.cmd beside the executable using the chosen generator's output layout: <build-dir>/Release/run_my_app.cmd for a Visual Studio Release build, or <build-dir>/run_my_app.cmd for a single-config Release build",
+        "Keeps OVStage in its extracted package so plugin discovery works and explains that the runtime environment helper adds its runtime directories to PATH; does not copy OVStage DLLs beside my_app.exe",
+        "Runs the launcher with the SDK root as the working directory so samples/data/simple_physics_scene.usda resolves, or changes the C sample to use the scene's absolute path"
       ]
     }
   ]

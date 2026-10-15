@@ -782,10 +782,6 @@ struct PhysxSchemaTokensType {
     ///
     /// PhysxSchemaPhysxForceAPI
     const TfToken physxForceWorldFrameEnabled;
-    /// \brief "physxJoint:armature"
-    ///
-    /// PhysxSchemaPhysxJointAPI
-    const TfToken physxJointArmature;
     /// \brief "physxJointAxis"
     ///
     /// Property namespace prefix for the PhysxSchemaPhysxJointAxisAPI schema.
@@ -810,14 +806,6 @@ struct PhysxSchemaTokensType {
     ///
     /// PhysxSchemaPhysxJointAxisAPI
     const TfToken physxJointAxis_MultipleApplyTemplate_ViscousFrictionCoefficient;
-    /// \brief "physxJoint:jointFriction"
-    ///
-    /// PhysxSchemaPhysxJointAPI
-    const TfToken physxJointJointFriction;
-    /// \brief "physxJoint:maxJointVelocity"
-    ///
-    /// PhysxSchemaPhysxJointAPI
-    const TfToken physxJointMaxJointVelocity;
     /// \brief "physxLimit"
     ///
     /// Property namespace prefix for the PhysxSchemaPhysxLimitAPI schema.
@@ -2182,10 +2170,6 @@ struct PhysxSchemaTokensType {
     ///
     /// Schema identifer and family for PhysxSchemaPhysxForceAPI
     const TfToken PhysxForceAPI;
-    /// \brief "PhysxJointAPI"
-    ///
-    /// Schema identifer and family for PhysxSchemaPhysxJointAPI
-    const TfToken PhysxJointAPI;
     /// \brief "PhysxJointAxisAPI"
     ///
     /// Schema identifer and family for PhysxSchemaPhysxJointAxisAPI
@@ -2614,15 +2598,12 @@ inline PhysxSchemaTokensType::PhysxSchemaTokensType() :
     physxForceMode("physxForce:mode", TfToken::Immortal),
     physxForceTorque("physxForce:torque", TfToken::Immortal),
     physxForceWorldFrameEnabled("physxForce:worldFrameEnabled", TfToken::Immortal),
-    physxJointArmature("physxJoint:armature", TfToken::Immortal),
     physxJointAxis("physxJointAxis", TfToken::Immortal),
     physxJointAxis_MultipleApplyTemplate_Armature("physxJointAxis:__INSTANCE_NAME__:armature", TfToken::Immortal),
     physxJointAxis_MultipleApplyTemplate_DynamicFrictionEffort("physxJointAxis:__INSTANCE_NAME__:dynamicFrictionEffort", TfToken::Immortal),
     physxJointAxis_MultipleApplyTemplate_MaxJointVelocity("physxJointAxis:__INSTANCE_NAME__:maxJointVelocity", TfToken::Immortal),
     physxJointAxis_MultipleApplyTemplate_StaticFrictionEffort("physxJointAxis:__INSTANCE_NAME__:staticFrictionEffort", TfToken::Immortal),
     physxJointAxis_MultipleApplyTemplate_ViscousFrictionCoefficient("physxJointAxis:__INSTANCE_NAME__:viscousFrictionCoefficient", TfToken::Immortal),
-    physxJointJointFriction("physxJoint:jointFriction", TfToken::Immortal),
-    physxJointMaxJointVelocity("physxJoint:maxJointVelocity", TfToken::Immortal),
     physxLimit("physxLimit", TfToken::Immortal),
     physxLimit_MultipleApplyTemplate_BounceThreshold("physxLimit:__INSTANCE_NAME__:bounceThreshold", TfToken::Immortal),
     physxLimit_MultipleApplyTemplate_Damping("physxLimit:__INSTANCE_NAME__:damping", TfToken::Immortal),
@@ -2964,7 +2945,6 @@ inline PhysxSchemaTokensType::PhysxSchemaTokensType() :
     PhysxDiffuseParticlesAPI("PhysxDiffuseParticlesAPI", TfToken::Immortal),
     PhysxDrivePerformanceEnvelopeAPI("PhysxDrivePerformanceEnvelopeAPI", TfToken::Immortal),
     PhysxForceAPI("PhysxForceAPI", TfToken::Immortal),
-    PhysxJointAPI("PhysxJointAPI", TfToken::Immortal),
     PhysxJointAxisAPI("PhysxJointAxisAPI", TfToken::Immortal),
     PhysxLimitAPI("PhysxLimitAPI", TfToken::Immortal),
     PhysxMaterialAPI("PhysxMaterialAPI", TfToken::Immortal),
@@ -3212,15 +3192,12 @@ inline PhysxSchemaTokensType::PhysxSchemaTokensType() :
         physxForceMode,
         physxForceTorque,
         physxForceWorldFrameEnabled,
-        physxJointArmature,
         physxJointAxis,
         physxJointAxis_MultipleApplyTemplate_Armature,
         physxJointAxis_MultipleApplyTemplate_DynamicFrictionEffort,
         physxJointAxis_MultipleApplyTemplate_MaxJointVelocity,
         physxJointAxis_MultipleApplyTemplate_StaticFrictionEffort,
         physxJointAxis_MultipleApplyTemplate_ViscousFrictionCoefficient,
-        physxJointJointFriction,
-        physxJointMaxJointVelocity,
         physxLimit,
         physxLimit_MultipleApplyTemplate_BounceThreshold,
         physxLimit_MultipleApplyTemplate_Damping,
@@ -3562,7 +3539,6 @@ inline PhysxSchemaTokensType::PhysxSchemaTokensType() :
         PhysxDiffuseParticlesAPI,
         PhysxDrivePerformanceEnvelopeAPI,
         PhysxForceAPI,
-        PhysxJointAPI,
         PhysxJointAxisAPI,
         PhysxLimitAPI,
         PhysxMaterialAPI,

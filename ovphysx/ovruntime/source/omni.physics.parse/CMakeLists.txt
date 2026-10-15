@@ -13,6 +13,8 @@ set(PARSE_HEADERS
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/Math.h
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/Descriptors.h
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/IPhysicsSource.h
+    ${PARSE_INCLUDE_DIR}/omni/physics/parse/IPhysicsDataWrite.h
+    ${PARSE_INCLUDE_DIR}/omni/physics/parse/IChangeFeed.h
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/IParseBackend.h
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/ParseContext.h
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/ParseApi.h
@@ -21,6 +23,8 @@ set(PARSE_HEADERS
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/Allocator.h
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/ScannedStage.h
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/ScanBackend.h
+    ${PARSE_INCLUDE_DIR}/omni/physics/parse/DescriptorRangeExecutor.h
+    ${PARSE_INCLUDE_DIR}/omni/physics/parse/DescriptorPipelineStats.h
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/UsdReparse.h
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/UsdBackingAuthor.h
     ${PARSE_INCLUDE_DIR}/omni/physics/parse/UsdAttachmentAuthor.h

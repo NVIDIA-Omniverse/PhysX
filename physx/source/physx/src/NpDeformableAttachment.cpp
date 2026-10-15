@@ -67,10 +67,10 @@ NpInternalAttachmentType::Enum getInternalAttachmentType(const PxDeformableAttac
 				if (data.type[actorIndex[1]] == PxDeformableAttachmentTargetType::eRIGID)
 				{
 					if (data.type[actorIndex[0]] == PxDeformableAttachmentTargetType::eVERTEX)
-						return NpInternalAttachmentType::eSURFACE_VTX_RIGID_BODY;
+						return NpInternalAttachmentType::eSURFACE_VTX_RIGID_ACTOR;
 					
 					if (data.type[actorIndex[0]] == PxDeformableAttachmentTargetType::eTRIANGLE)
-						return NpInternalAttachmentType::eSURFACE_TRI_RIGID_BODY;
+						return NpInternalAttachmentType::eSURFACE_TRI_RIGID_ACTOR;
 				}
 			}
 			else if (data.actor[actorIndex[1]]->is<PxDeformableSurface>())
@@ -110,10 +110,10 @@ NpInternalAttachmentType::Enum getInternalAttachmentType(const PxDeformableAttac
 				if (data.type[actorIndex[1]] == PxDeformableAttachmentTargetType::eRIGID)
 				{
 					if (data.type[actorIndex[0]] == PxDeformableAttachmentTargetType::eVERTEX)
-						return NpInternalAttachmentType::eVOLUME_VTX_RIGID_BODY;
+						return NpInternalAttachmentType::eVOLUME_VTX_RIGID_ACTOR;
 					
 					if (data.type[actorIndex[0]] == PxDeformableAttachmentTargetType::eTETRAHEDRON)
-						return NpInternalAttachmentType::eVOLUME_TET_RIGID_BODY;
+						return NpInternalAttachmentType::eVOLUME_TET_RIGID_ACTOR;
 				}
 			}
 			else if (data.actor[actorIndex[1]]->is<PxDeformableSurface>())
@@ -130,6 +130,9 @@ NpInternalAttachmentType::Enum getInternalAttachmentType(const PxDeformableAttac
 				{
 					if (data.type[actorIndex[1]] == PxDeformableAttachmentTargetType::eVERTEX)
 						return NpInternalAttachmentType::eVOLUME_VTX_SURFACE_VTX;
+
+					if (data.type[actorIndex[1]] == PxDeformableAttachmentTargetType::eTRIANGLE)
+						return NpInternalAttachmentType::eVOLUME_VTX_SURFACE_TRI;
 				}
 			}
 			else if (data.actor[actorIndex[1]]->is<PxDeformableVolume>())
@@ -165,13 +168,13 @@ bool NpDeformableAttachment::parseAttachment(const PxDeformableAttachmentData& d
 
 	switch (internalAttachmentType)
 	{
-		case NpInternalAttachmentType::eSURFACE_TRI_RIGID_BODY:
+		case NpInternalAttachmentType::eSURFACE_TRI_RIGID_ACTOR:
 		case NpInternalAttachmentType::eSURFACE_TRI_GLOBAL_POSE:
-		case NpInternalAttachmentType::eSURFACE_VTX_RIGID_BODY:
+		case NpInternalAttachmentType::eSURFACE_VTX_RIGID_ACTOR:
 		case NpInternalAttachmentType::eSURFACE_VTX_GLOBAL_POSE:
-		case NpInternalAttachmentType::eVOLUME_TET_RIGID_BODY:
+		case NpInternalAttachmentType::eVOLUME_TET_RIGID_ACTOR:
 		case NpInternalAttachmentType::eVOLUME_TET_GLOBAL_POSE:
-		case NpInternalAttachmentType::eVOLUME_VTX_RIGID_BODY:
+		case NpInternalAttachmentType::eVOLUME_VTX_RIGID_ACTOR:
 		case NpInternalAttachmentType::eVOLUME_VTX_GLOBAL_POSE:
 		{
 			{
@@ -182,10 +185,20 @@ bool NpDeformableAttachment::parseAttachment(const PxDeformableAttachmentData& d
 					NULL
 				);
 			}
-			
-			if (internalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_RIGID_BODY ||
+
+			// Table 2 of the PxDeformableAttachmentData documentation: an eRIGID or eWORLD target is
+			// specified by a pose and cartesian coordinates. Indices given for it are dropped when the
+			// attachment is built, so part of what the caller supplied would do nothing.
+			PX_CHECK_AND_RETURN_VAL
+			(
+				data.indices[actorIndex[1]].count == 0,
+				"PxDeformableAttachment: No indices supported for an eRIGID or eWORLD target, which is specified by a pose and coordinates.",
+				NULL
+			);
+
+			if (internalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_RIGID_ACTOR ||
 				internalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_GLOBAL_POSE ||
-				internalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_RIGID_BODY ||
+				internalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_RIGID_ACTOR ||
 				internalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_GLOBAL_POSE)
 			{
 				PX_CHECK_AND_RETURN_VAL
@@ -200,27 +213,36 @@ bool NpDeformableAttachment::parseAttachment(const PxDeformableAttachmentData& d
 		}
 
 		case NpInternalAttachmentType::eSURFACE_TRI_SURFACE_TRI:
+		case NpInternalAttachmentType::eSURFACE_TRI_SURFACE_VTX:
+		case NpInternalAttachmentType::eSURFACE_VTX_SURFACE_VTX:
 		case NpInternalAttachmentType::eVOLUME_TET_VOLUME_TET:
+		case NpInternalAttachmentType::eVOLUME_TET_VOLUME_VTX:
+		case NpInternalAttachmentType::eVOLUME_VTX_VOLUME_VTX:
 		case NpInternalAttachmentType::eVOLUME_TET_SURFACE_TRI:
+		case NpInternalAttachmentType::eVOLUME_TET_SURFACE_VTX:
+		case NpInternalAttachmentType::eVOLUME_VTX_SURFACE_TRI:
+		case NpInternalAttachmentType::eVOLUME_VTX_SURFACE_VTX:
 		{
 			PX_CHECK_AND_RETURN_VAL
 			(
-				data.indices[actorIndex[0]].count == data.coords[actorIndex[0]].count &&
-				data.indices[actorIndex[1]].count == data.coords[actorIndex[1]].count &&
 				data.indices[actorIndex[0]].count == data.indices[actorIndex[1]].count,
 				"PxDeformableAttachment: Number of attachment points are not equal for both actors.",
+				NULL
+			);
+
+			// Table 1 of the PxDeformableAttachmentData documentation: an element target is specified by an
+			// index and barycentric coordinates, a vertex target by an index on its own.
+			PX_CHECK_AND_RETURN_VAL
+			(
+				data.coords[actorIndex[0]].count == (data.type[actorIndex[0]] == PxDeformableAttachmentTargetType::eVERTEX ? 0 : data.indices[actorIndex[0]].count) &&
+				data.coords[actorIndex[1]].count == (data.type[actorIndex[1]] == PxDeformableAttachmentTargetType::eVERTEX ? 0 : data.indices[actorIndex[1]].count),
+				"PxDeformableAttachment: A vertex target takes no coordinates, an element target one per index.",
 				NULL
 			);
 
 			break;
 		}
 
-		case NpInternalAttachmentType::eSURFACE_TRI_SURFACE_VTX:
-		case NpInternalAttachmentType::eSURFACE_VTX_SURFACE_VTX:
-		case NpInternalAttachmentType::eVOLUME_TET_VOLUME_VTX:
-		case NpInternalAttachmentType::eVOLUME_TET_SURFACE_VTX:
-		case NpInternalAttachmentType::eVOLUME_VTX_VOLUME_VTX:
-		case NpInternalAttachmentType::eVOLUME_VTX_SURFACE_VTX:
 		default:
 		{
 			PX_CHECK_AND_RETURN_VAL(false, "PxDeformableAttachment: No matching actor pairs found for attachment.", NULL);
@@ -230,20 +252,121 @@ bool NpDeformableAttachment::parseAttachment(const PxDeformableAttachmentData& d
 	return true;
 }
 
+#if PX_CHECKED
+
+// Number of elements of the requested kind on a deformable actor. A surface attaches to the triangle
+// mesh it simulates and a volume to its simulation mesh.
+//
+// A count of zero refuses every index, which is the answer for a target type the actor has no
+// elements of. PxScene::addActor rejects a deformable without a shape, and a volume without a
+// simulation mesh, so a missing mesh is a state an attachment being enabled cannot be in, rather than
+// one to accept unchecked.
+static PxU32 getElementCount(PxDeformableBody& body, PxDeformableAttachmentTargetType::Enum type)
+{
+	if (body.getConcreteType() == PxConcreteType::eDEFORMABLE_VOLUME)
+	{
+		// An attachment addresses the simulation mesh. An element filter addresses the collision mesh.
+		const PxTetrahedronMesh* mesh = static_cast<PxDeformableVolume&>(body).getSimulationMesh();
+		if (mesh == NULL)
+			return 0;
+
+		if (type == PxDeformableAttachmentTargetType::eVERTEX)
+			return mesh->getNbVertices();
+
+		if (type == PxDeformableAttachmentTargetType::eTETRAHEDRON)
+			return mesh->getNbTetrahedrons();
+
+		return 0;
+	}
+
+	// A surface simulates its shape's triangle mesh directly, so it has no separate simulation mesh.
+	PxShape* shape = body.getShape();
+	if (shape == NULL || shape->getGeometry().getType() != PxGeometryType::eTRIANGLEMESH)
+		return 0;
+
+	const PxTriangleMesh* mesh = static_cast<const PxTriangleMeshGeometry&>(shape->getGeometry()).triangleMesh;
+	if (mesh == NULL)
+		return 0;
+
+	if (type == PxDeformableAttachmentTargetType::eVERTEX)
+		return mesh->getNbVertices();
+
+	if (type == PxDeformableAttachmentTargetType::eTRIANGLE)
+		return mesh->getNbTriangles();
+
+	return 0;
+}
+
+// An index past the end of the mesh reaches the solver as an out-of-bounds element lookup. Checked
+// here rather than at creation so that it does not depend on whether the mesh happened to be attached
+// yet, and so that swapping in a smaller mesh is caught when the attachment is enabled again.
+bool NpDeformableAttachment::checkIndicesInRange() const
+{
+	for (PxU32 i = 0; i < 2; ++i)
+	{
+		PxDeformableBody* body = mActor[i] ? mActor[i]->is<PxDeformableBody>() : NULL;
+		if (body == NULL)
+			continue;
+
+		const PxU32 count = getElementCount(*body, mType[i]);
+
+		const PxArray<PxU32>& indices = mIndices[i];
+		for (PxU32 j = 0; j < indices.size(); ++j)
+		{
+			if (indices[j] >= count)
+				return false;
+		}
+	}
+
+	return true;
+}
+
+#endif // PX_CHECKED
+
+// A vertex names no element whose corners could be weighted, so it carries no coordinates. The
+// attachment manager asserts the pointer against the feature type it is given.
+static const PxVec4* getBarycentrics(const PxArray<PxVec4>& coords, PxDeformableAttachmentTargetType::Enum feature)
+{
+	return feature == PxDeformableAttachmentTargetType::eVERTEX ? NULL : coords.begin();
+}
+
+PxTransform NpDeformableAttachment::getRigidFrame(const PxTransform& pose) const
+{
+	PxRigidActor* actor1 = mActor[mActorIndex[1]] == NULL ? NULL : mActor[mActorIndex[1]]->is<PxRigidActor>();
+
+	// A static is not tracked by the solver, so its transform is folded into the frame here.
+	if (actor1 && actor1->getConcreteType() == PxConcreteType::eRIGID_STATIC)
+		return pose * static_cast<NpRigidStatic*>(actor1)->getGlobalPose();
+
+	return pose;
+}
+
 void NpDeformableAttachment::addAttachment()
 {
 	if (!getSceneFromActors() ||  mEnabled)
 		return;
 
+	PX_CHECK_AND_RETURN(checkIndicesInRange(),
+		"PxDeformableAttachment: attachment index is out of range for the deformable body's mesh. Attachment is ignored.");
+
+	// An empty attachment is not added and its handle left invalid. It is enabled all the same, since that
+	// tracks whether the attachment is in the scene rather than what it added.
+	if (mIndices[mActorIndex[0]].empty())
+	{
+		mHandle = PX_INVALID_U32;
+		mEnabled = true;
+		return;
+	}
+
 	switch (mInternalAttachmentType)
 	{
-		case NpInternalAttachmentType::eSURFACE_TRI_RIGID_BODY:
+		case NpInternalAttachmentType::eSURFACE_TRI_RIGID_ACTOR:
 		case NpInternalAttachmentType::eSURFACE_TRI_GLOBAL_POSE:
-		case NpInternalAttachmentType::eSURFACE_VTX_RIGID_BODY:
+		case NpInternalAttachmentType::eSURFACE_VTX_RIGID_ACTOR:
 		case NpInternalAttachmentType::eSURFACE_VTX_GLOBAL_POSE:
-		case NpInternalAttachmentType::eVOLUME_TET_RIGID_BODY:
+		case NpInternalAttachmentType::eVOLUME_TET_RIGID_ACTOR:
 		case NpInternalAttachmentType::eVOLUME_TET_GLOBAL_POSE:
-		case NpInternalAttachmentType::eVOLUME_VTX_RIGID_BODY:
+		case NpInternalAttachmentType::eVOLUME_VTX_RIGID_ACTOR:
 		case NpInternalAttachmentType::eVOLUME_VTX_GLOBAL_POSE:
 		{
 			PxActor* actor0 = mActor[mActorIndex[0]];
@@ -251,82 +374,72 @@ void NpDeformableAttachment::addAttachment()
 			PxRigidActor* actor1 = mActor[mActorIndex[1]] == NULL ? NULL : mActor[mActorIndex[1]]->is<PxRigidActor>();
 			Sc::BodyCore* core1 = mActor[mActorIndex[1]] == NULL ? NULL : getBodyCore(actor1);
 
-			mHandles.resize(mIndices[mActorIndex[0]].size());
-			for (PxU32 i = 0; i < mIndices[mActorIndex[0]].size(); i++)
+			const PxU32 count = mIndices[mActorIndex[0]].size();
+
+			const PxTransform rigidFrame = getRigidFrame(mPose[mActorIndex[1]]);
+
+			if (mInternalAttachmentType & NpInternalAttachmentType::eVOLUME_TYPE)
 			{
-				PxU32 id = mIndices[mActorIndex[0]][i];
+				const bool isTet = (mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_RIGID_ACTOR ||
+									mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_GLOBAL_POSE);
 
-				PxVec3 actor1Pose = mCoords[mActorIndex[1]][i].getXYZ();
+				mHandle = getDeformableVolumeCore(actor0)->addRigidAttachments(core1,
+					isTet ? PxDeformableAttachmentTargetType::eTETRAHEDRON : PxDeformableAttachmentTargetType::eVERTEX,
+					mIndices[mActorIndex[0]].begin(), isTet ? mCoords[mActorIndex[0]].begin() : NULL,
+					rigidFrame, mCoords[mActorIndex[1]].begin(), count);
+			}
+			else
+			{
+				const bool isTri = (mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_RIGID_ACTOR ||
+									mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_GLOBAL_POSE);
 
-				if (actor1 && actor1->getConcreteType() == PxConcreteType::eRIGID_STATIC)
-				{
-					NpRigidStatic* stat = static_cast<NpRigidStatic*>(actor1);
-					actor1Pose = stat->getGlobalPose().transform(actor1Pose);
-				}
-
-				actor1Pose = mPose[mActorIndex[1]].transform(actor1Pose);
-
-				if (mInternalAttachmentType & NpInternalAttachmentType::eSURFACE_TYPE)
-				{
-					if (mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_RIGID_BODY ||
-						mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_GLOBAL_POSE)
-					{
-						const PxVec4& barycentric = mCoords[mActorIndex[0]][i];
-						mHandles[i] = getDeformableSurfaceCore(actor0)->addTriRigidAttachment(core1, id, barycentric, actor1Pose);
-					}
-					else if (mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_VTX_RIGID_BODY ||
-							 mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_VTX_GLOBAL_POSE)
-					{
-						mHandles[i] = getDeformableSurfaceCore(actor0)->addRigidAttachment(core1, id, actor1Pose);
-					}
-				}
-				else if (mInternalAttachmentType & NpInternalAttachmentType::eVOLUME_TYPE)
-				{
-					if (mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_RIGID_BODY ||
-						mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_GLOBAL_POSE)
-					{
-						const PxVec4& barycentric = mCoords[mActorIndex[0]][i];
-						mHandles[i] = getDeformableVolumeCore(actor0)->addTetRigidAttachment(core1, id, barycentric, actor1Pose, false);
-					}
-					else if (mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_VTX_RIGID_BODY ||
-							 mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_VTX_GLOBAL_POSE)
-					{
-						mHandles[i] = getDeformableVolumeCore(actor0)->addRigidAttachment(core1, id, actor1Pose, false);
-					}
-				}
+				mHandle = getDeformableSurfaceCore(actor0)->addRigidAttachments(core1,
+					isTri ? PxDeformableAttachmentTargetType::eTRIANGLE : PxDeformableAttachmentTargetType::eVERTEX,
+					mIndices[mActorIndex[0]].begin(), isTri ? mCoords[mActorIndex[0]].begin() : NULL,
+					rigidFrame, mCoords[mActorIndex[1]].begin(), count);
 			}
 
 			break;
 		}
 
 		case NpInternalAttachmentType::eSURFACE_TRI_SURFACE_TRI:
+		case NpInternalAttachmentType::eSURFACE_TRI_SURFACE_VTX:
+		case NpInternalAttachmentType::eSURFACE_VTX_SURFACE_VTX:
 		case NpInternalAttachmentType::eVOLUME_TET_VOLUME_TET:
+		case NpInternalAttachmentType::eVOLUME_TET_VOLUME_VTX:
+		case NpInternalAttachmentType::eVOLUME_VTX_VOLUME_VTX:
 		case NpInternalAttachmentType::eVOLUME_TET_SURFACE_TRI:
+		case NpInternalAttachmentType::eVOLUME_TET_SURFACE_VTX:
+		case NpInternalAttachmentType::eVOLUME_VTX_SURFACE_TRI:
+		case NpInternalAttachmentType::eVOLUME_VTX_SURFACE_VTX:
 		{
 			PxActor* actor0 = mActor[mActorIndex[0]];
 			PxActor* actor1 = mActor[mActorIndex[1]];
 
-			mHandles.resize(mIndices[mActorIndex[0]].size());
-			for (PxU32 i = 0; i < mIndices[mActorIndex[0]].size(); i++)
+			const PxU32 count = mIndices[mActorIndex[0]].size();
+			const PxDeformableAttachmentTargetType::Enum feature0 = mType[mActorIndex[0]];
+			const PxDeformableAttachmentTargetType::Enum feature1 = mType[mActorIndex[1]];
+			const PxU32* indices0 = mIndices[mActorIndex[0]].begin();
+			const PxVec4* barycentrics0 = getBarycentrics(mCoords[mActorIndex[0]], feature0);
+			const PxU32* indices1 = mIndices[mActorIndex[1]].begin();
+			const PxVec4* barycentrics1 = getBarycentrics(mCoords[mActorIndex[1]], feature1);
+
+			// The entry point follows the pair of actors. The feature types travel as data. Actor 0 is the
+			// volume wherever there is one, so actor 1 alone separates the two volume pairs.
+			if (mInternalAttachmentType & NpInternalAttachmentType::eSURFACE_TYPE)
 			{
-				PxU32 id0 = mIndices[mActorIndex[0]][i];
-				const PxVec4& barycentric0 = mCoords[mActorIndex[0]][i];
-
-				PxU32 id1 = mIndices[mActorIndex[1]][i];
-				const PxVec4& barycentric1 = mCoords[mActorIndex[1]][i];
-
-				if (mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_SURFACE_TRI)
-				{
-					mHandles[i] = getDeformableSurfaceCore(actor0)->addClothAttachment(getDeformableSurfaceCore(actor1), id1, barycentric1, id0, barycentric0);
-				}
-				else if (mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_VOLUME_TET)
-				{
-					mHandles[i] = getDeformableVolumeCore(actor0)->addSoftBodyAttachment(*getDeformableVolumeCore(actor1), id1, barycentric1, id0, barycentric0, false);
-				}
-				else if (mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_SURFACE_TRI)
-				{
-					mHandles[i] = getDeformableVolumeCore(actor0)->addClothAttachment(*getDeformableSurfaceCore(actor1), id1, barycentric1, id0, barycentric0, false);
-				}
+				mHandle = getDeformableSurfaceCore(actor0)->addSurfaceAttachments(getDeformableSurfaceCore(actor1),
+					feature1, indices1, barycentrics1, feature0, indices0, barycentrics0, count);
+			}
+			else if (actor1->is<PxDeformableVolume>())
+			{
+				mHandle = getDeformableVolumeCore(actor0)->addVolumeAttachments(*getDeformableVolumeCore(actor1),
+					feature1, indices1, barycentrics1, feature0, indices0, barycentrics0, count);
+			}
+			else
+			{
+				mHandle = getDeformableVolumeCore(actor0)->addSurfaceAttachments(*getDeformableSurfaceCore(actor1),
+					feature1, indices1, barycentrics1, feature0, indices0, barycentrics0, count);
 			}
 
 			break;
@@ -347,13 +460,22 @@ void NpDeformableAttachment::removeAttachment()
 	if (!mEnabled)
 		return;
 
+	// An empty attachment added nothing, so there is nothing to take back.
+	if (mHandle == PX_INVALID_U32)
+	{
+		mEnabled = false;
+		return;
+	}
+
 	switch (mInternalAttachmentType)
 	{
-		case NpInternalAttachmentType::eSURFACE_VTX_RIGID_BODY:
-		case NpInternalAttachmentType::eSURFACE_TRI_RIGID_BODY:
+		case NpInternalAttachmentType::eSURFACE_TRI_RIGID_ACTOR:
+		case NpInternalAttachmentType::eSURFACE_TRI_GLOBAL_POSE:
+		case NpInternalAttachmentType::eSURFACE_VTX_RIGID_ACTOR:
 		case NpInternalAttachmentType::eSURFACE_VTX_GLOBAL_POSE:
-		case NpInternalAttachmentType::eVOLUME_VTX_RIGID_BODY:
-		case NpInternalAttachmentType::eVOLUME_TET_RIGID_BODY:
+		case NpInternalAttachmentType::eVOLUME_TET_RIGID_ACTOR:
+		case NpInternalAttachmentType::eVOLUME_TET_GLOBAL_POSE:
+		case NpInternalAttachmentType::eVOLUME_VTX_RIGID_ACTOR:
 		case NpInternalAttachmentType::eVOLUME_VTX_GLOBAL_POSE:
 		{
 			PxActor* actor0 = mActor[mActorIndex[0]];
@@ -361,49 +483,45 @@ void NpDeformableAttachment::removeAttachment()
 			PxRigidActor* actor1 = mActor[mActorIndex[1]] == NULL ? NULL : mActor[mActorIndex[1]]->is<PxRigidActor>();
 			Sc::BodyCore* core1 = mActor[mActorIndex[1]] == NULL ? NULL : getBodyCore(actor1);
 
-			for (PxU32 i = 0; i < mHandles.size(); i++)
+			// Removal is keyed on the handle alone, so the triangle and the vertex attachment come off
+			// the same way.
+			if (mInternalAttachmentType & NpInternalAttachmentType::eSURFACE_TYPE)
 			{
-				if (mInternalAttachmentType & NpInternalAttachmentType::eSURFACE_TYPE)
-				{
-					if (mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_RIGID_BODY)
-					{
-						getDeformableSurfaceCore(actor0)->removeTriRigidAttachment(core1, mHandles[i]);
-					}
-					else if (mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_VTX_RIGID_BODY || mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_VTX_GLOBAL_POSE)
-					{
-						getDeformableSurfaceCore(actor0)->removeRigidAttachment(core1, mHandles[i]);
-					}
-				}
-				else if (mInternalAttachmentType & NpInternalAttachmentType::eVOLUME_TYPE)
-				{
-					getDeformableVolumeCore(actor0)->removeRigidAttachment(core1, mHandles[i]);
-				}
+				getDeformableSurfaceCore(actor0)->removeRigidAttachments(core1, mHandle);
+			}
+			else if (mInternalAttachmentType & NpInternalAttachmentType::eVOLUME_TYPE)
+			{
+				getDeformableVolumeCore(actor0)->removeRigidAttachments(core1, mHandle);
 			}
 
 			break;
 		}
 
 		case NpInternalAttachmentType::eSURFACE_TRI_SURFACE_TRI:
+		case NpInternalAttachmentType::eSURFACE_TRI_SURFACE_VTX:
+		case NpInternalAttachmentType::eSURFACE_VTX_SURFACE_VTX:
 		case NpInternalAttachmentType::eVOLUME_TET_VOLUME_TET:
+		case NpInternalAttachmentType::eVOLUME_TET_VOLUME_VTX:
+		case NpInternalAttachmentType::eVOLUME_VTX_VOLUME_VTX:
 		case NpInternalAttachmentType::eVOLUME_TET_SURFACE_TRI:
+		case NpInternalAttachmentType::eVOLUME_TET_SURFACE_VTX:
+		case NpInternalAttachmentType::eVOLUME_VTX_SURFACE_TRI:
+		case NpInternalAttachmentType::eVOLUME_VTX_SURFACE_VTX:
 		{
 			PxActor* actor0 = mActor[mActorIndex[0]];
 			PxActor* actor1 = mActor[mActorIndex[1]];
 
-			for (PxU32 i = 0; i < mHandles.size(); i++)
+			if (mInternalAttachmentType & NpInternalAttachmentType::eSURFACE_TYPE)
 			{
-				if (mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_SURFACE_TRI)
-				{
-					getDeformableSurfaceCore(actor0)->removeClothAttachment(getDeformableSurfaceCore(actor1), mHandles[i]);
-				}
-				else if (mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_VOLUME_TET)
-				{
-					getDeformableVolumeCore(actor0)->removeSoftBodyAttachment(*getDeformableVolumeCore(actor1), mHandles[i]);
-				}
-				else if (mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_SURFACE_TRI)
-				{
-					getDeformableVolumeCore(actor0)->removeClothAttachment(*getDeformableSurfaceCore(actor1), mHandles[i]);
-				}
+				getDeformableSurfaceCore(actor0)->removeSurfaceAttachments(getDeformableSurfaceCore(actor1), mHandle);
+			}
+			else if (actor1->is<PxDeformableVolume>())
+			{
+				getDeformableVolumeCore(actor0)->removeVolumeAttachments(*getDeformableVolumeCore(actor1), mHandle);
+			}
+			else
+			{
+				getDeformableVolumeCore(actor0)->removeSurfaceAttachments(*getDeformableSurfaceCore(actor1), mHandle);
 			}
 
 			break;
@@ -416,7 +534,7 @@ void NpDeformableAttachment::removeAttachment()
 		}
 	}
 
-	mHandles.clear();
+	mHandle = PX_INVALID_U32;
 	mEnabled = false;
 }
 
@@ -527,80 +645,65 @@ void NpDeformableAttachment::getActors(PxActor*& actor0, PxActor*& actor1) const
 
 void NpDeformableAttachment::updatePose(const PxTransform& pose)
 {
-	NP_WRITE_CHECK(getNpScene());
+	NpScene* npScene = getNpScene();
+	NP_WRITE_CHECK(npScene);
+
+	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxDeformableAttachment: Illegal to call updatePose while simulation is running.");
 
 	switch (mInternalAttachmentType)
 	{
-		case NpInternalAttachmentType::eSURFACE_VTX_RIGID_BODY:
-		case NpInternalAttachmentType::eSURFACE_TRI_RIGID_BODY:
+		case NpInternalAttachmentType::eSURFACE_TRI_RIGID_ACTOR:
+		case NpInternalAttachmentType::eSURFACE_TRI_GLOBAL_POSE:
+		case NpInternalAttachmentType::eSURFACE_VTX_RIGID_ACTOR:
 		case NpInternalAttachmentType::eSURFACE_VTX_GLOBAL_POSE:
-		case NpInternalAttachmentType::eVOLUME_VTX_RIGID_BODY:
-		case NpInternalAttachmentType::eVOLUME_TET_RIGID_BODY:
+		case NpInternalAttachmentType::eVOLUME_TET_RIGID_ACTOR:
+		case NpInternalAttachmentType::eVOLUME_TET_GLOBAL_POSE:
+		case NpInternalAttachmentType::eVOLUME_VTX_RIGID_ACTOR:
 		case NpInternalAttachmentType::eVOLUME_VTX_GLOBAL_POSE:
 		{
+			// An empty attachment holds nothing to move, and the frame is kept all the same.
+			if (mHandle == PX_INVALID_U32)
+			{
+				mPose[mActorIndex[1]] = pose;
+				break;
+			}
+
 			PxActor* actor0 = mActor[mActorIndex[0]];
 
 			PxRigidActor* actor1 = mActor[mActorIndex[1]] == NULL ? NULL : mActor[mActorIndex[1]]->is<PxRigidActor>();
 			Sc::BodyCore* core1 = mActor[mActorIndex[1]] == NULL ? NULL : getBodyCore(actor1);
 
-			for (PxU32 i = 0; i < mHandles.size(); i++)
+			const PxU32 count = mIndices[mActorIndex[0]].size();
+
+			const PxTransform rigidFrame = getRigidFrame(pose);
+
+			// The pose moves what the attachment holds its coordinates in, so the batch is added again in
+			// the new frame.
+			if (mInternalAttachmentType & NpInternalAttachmentType::eVOLUME_TYPE)
 			{
-				if (mInternalAttachmentType & NpInternalAttachmentType::eSURFACE_TYPE)
-				{
-					if (mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_RIGID_BODY)
-					{
-						getDeformableSurfaceCore(actor0)->removeTriRigidAttachment(core1, mHandles[i]);
-					}
-					else
-					{
-						getDeformableSurfaceCore(actor0)->removeRigidAttachment(core1, mHandles[i]);
-					}
-				}
-				else if (mInternalAttachmentType & NpInternalAttachmentType::eVOLUME_TYPE)
-				{
-					getDeformableVolumeCore(actor0)->removeRigidAttachment(core1, mHandles[i]);
-				}
+				Sc::DeformableVolumeCore* core0 = getDeformableVolumeCore(actor0);
+				const bool isTet = (mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_RIGID_ACTOR ||
+									mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_GLOBAL_POSE);
+
+				core0->removeRigidAttachments(core1, mHandle);
+
+				mHandle = core0->addRigidAttachments(core1,
+					isTet ? PxDeformableAttachmentTargetType::eTETRAHEDRON : PxDeformableAttachmentTargetType::eVERTEX,
+					mIndices[mActorIndex[0]].begin(), isTet ? mCoords[mActorIndex[0]].begin() : NULL,
+					rigidFrame, mCoords[mActorIndex[1]].begin(), count);
 			}
-
-			for (PxU32 i = 0; i < mHandles.size(); i++)
+			else
 			{
-				PxU32 id = mIndices[mActorIndex[0]][i];
-				PxVec3 actor1Pose = mCoords[mActorIndex[1]][i].getXYZ();
+				Sc::DeformableSurfaceCore* core0 = getDeformableSurfaceCore(actor0);
+				const bool isTri = (mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_RIGID_ACTOR ||
+									mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_GLOBAL_POSE);
 
-				if (actor1 && actor1->getConcreteType() == PxConcreteType::eRIGID_STATIC)
-				{
-					NpRigidStatic* stat = static_cast<NpRigidStatic*>(actor1);
-					actor1Pose = stat->getGlobalPose().transform(actor1Pose);
-				}
+				core0->removeRigidAttachments(core1, mHandle);
 
-				actor1Pose = pose.transform(actor1Pose);
-
-				if (mInternalAttachmentType & NpInternalAttachmentType::eSURFACE_TYPE)
-				{
-					if (mInternalAttachmentType == NpInternalAttachmentType::eSURFACE_TRI_RIGID_BODY)
-					{
-						const PxVec4& barycentric = mCoords[mActorIndex[0]][i];
-
-						mHandles[i] = getDeformableSurfaceCore(actor0)->addTriRigidAttachment(core1, id, barycentric, actor1Pose);
-					}
-					else
-					{
-						mHandles[i] = getDeformableSurfaceCore(actor0)->addRigidAttachment(core1, id, actor1Pose);
-					}
-				}
-				else if (mInternalAttachmentType & NpInternalAttachmentType::eVOLUME_TYPE)
-				{
-					if (mInternalAttachmentType == NpInternalAttachmentType::eVOLUME_TET_RIGID_BODY)
-					{
-						const PxVec4& barycentric = mCoords[mActorIndex[0]][i];
-
-						mHandles[i] = getDeformableVolumeCore(actor0)->addTetRigidAttachment(core1, id, barycentric, actor1Pose, false);
-					}
-					else
-					{
-						mHandles[i] = getDeformableVolumeCore(actor0)->addRigidAttachment(core1, id, actor1Pose, false);
-					}
-				}
+				mHandle = core0->addRigidAttachments(core1,
+					isTri ? PxDeformableAttachmentTargetType::eTRIANGLE : PxDeformableAttachmentTargetType::eVERTEX,
+					mIndices[mActorIndex[0]].begin(), isTri ? mCoords[mActorIndex[0]].begin() : NULL,
+					rigidFrame, mCoords[mActorIndex[1]].begin(), count);
 			}
 
 			mPose[mActorIndex[1]] = pose;

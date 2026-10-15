@@ -28,33 +28,22 @@ the traceability record for behavior those suites already exercise end to end.
 
 ## When
 
-- **`getPhysXPtr` (AC-1).** `ovphysx_get_physx_ptr` is called per `ovphysx_physx_type_t`
-  (SCENE, ACTOR, ARTICULATION, LINK, LINK_JOINT, standalone JOINT) against real
-  attached objects, plus argument validation for path-bound lookups
-  (null/empty/embedded-NUL `prim_path`, null `out_ptr`, invalid instance handle),
-  type-mismatch lookups (JOINT on an articulation joint, PARTICLE_* on a
-  rigid-body scene), pointer-identity checks (stable across `ovphysx_step()`,
-  distinct between distinct prims of the same type), a nonexistent-path lookup,
-  and a lookup after `ovphysx_reset_stage()` (`ovphysx/tests/c_unittests/test_physx_ptr.cpp`,
-  all `PhysxPtr*Test` fixtures and the `PhysXTestFixture.GetPhysxPtr*`
-  argument-validation cases). The pathless PHYSICS cases in the same file verify
-  that the zero-length selector reaches `getPhysXPtr(ObjectKey{}, ePTPhysics)`;
-  their complete selector contract is mapped by TEST-CAPI-PHYSXPTR-001. The C
-  interop sample additionally casts the returned pointer to `PxRigidDynamic*`,
+- **`physxPointer` (AC-1).** `test_physx_ptr.cpp` reads `physxPointer` for
+  scene, rigid actor, articulation, link, articulation joint, and standalone
+  joint against real attached objects. A missing path and a type mismatch
+  (standalone joint on an articulation joint, particles on a rigid scene) are
+  absent. Addresses stay stable across `ovphysx_step()`, differ between
+  distinct prims, and cannot be reacquired after `ovphysx_detach_ovstage()`.
+  The physics row is one `/` path. The C
+  interop sample additionally casts the address to `PxRigidDynamic*`,
   calls `setKinematicTarget` on it directly, steps again, and reads the body's
   pose back through a tensor binding
   (`ovphysx/tests/c_samples/physx_interop_cpp/main.cpp`) -- not run in this pass;
   see Known gap below.
-- **`update_kinematic` (AC-2).** A DOF-position tensor write is applied to an
-  articulation binding, `ovphysx_articulation_update_kinematic` is called with
-  `OVPHYSX_ARTICULATION_KINEMATIC_POSITION`, and non-root link poses are read back
-  without an intervening simulation step
-  (`TensorBindingCpuTest.CpuArticulationUpdateKinematicPropagatesDofToLinks` in
-  `ovphysx/tests/c_unittests/test_tensor_binding.cpp`).
 - **Object-change subscription lifecycle (AC-3, AC-4).** Subscribe / unsubscribe
   roundtrip, argument validation (null callbacks, null out-id, all-null callback
   struct, unknown/invalid subscription ids), a stage attach + step while
-  subscribed (initial population must stay silent), and `ovphysx_reset_stage()`
+  subscribed (initial population must stay silent), and `ovphysx_detach_ovstage()`
   while subscribed (must fire `on_all_objects_destroyed`, then stop firing after
   unsubscribe) -- all in
   `ovphysx/tests/c_unittests/test_object_change_callbacks.cpp`.
@@ -72,15 +61,11 @@ the traceability record for behavior those suites already exercise end to end.
   exception (REQ AC-1). Where the C interop sample can be built and run (see
   Known gap), its tensor read-back position matches the kinematic target set
   through the returned pointer.
-- The link poses read back after `ovphysx_articulation_update_kinematic` differ
-  from their pre-update values in the direction implied by the DOF write, with no
-  intervening step -- `getPhysXPtr(key, ePTArticulation)` reached the correct live
-  `PxArticulationReducedCoordinate` and `updateKinematic` ran on it (REQ AC-2).
 - Argument-validation cases each return the documented status
   (`OVPHYSX_API_INVALID_ARGUMENT` / `OVPHYSX_API_NOT_FOUND`) without constructing a
   subscription. The subscribe/unsubscribe roundtrip succeeds and a repeat
   unsubscribe reports `NOT_FOUND`. Initial stage population delivers zero
-  `on_object_created` / `on_object_destroyed` calls. `ovphysx_reset_stage()` while
+  `on_object_created` / `on_object_destroyed` calls. `ovphysx_detach_ovstage()` while
   subscribed increments the all-destroyed counter at least once; after unsubscribe
   it does not increment further (REQ AC-3, AC-4 -- these cases exercise the
   lambdas' construction and capture of `physx` without crashing or hanging; none

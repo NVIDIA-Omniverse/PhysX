@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #pragma once
+#include <omni/physics/AttachHandle.h>
 
 #include <carb/Defines.h>
 #include <carb/Types.h>
@@ -33,7 +34,7 @@ struct IPhysxJoint
     ///
     /// \param[in] ids      Joint object ID (see getObjectId() to get the ID from a USD path)
     /// \param[out] data    Output joint state object
-    void(CARB_ABI* getJointStateData)(usdparser::ObjectId id, JointStateData* data);
+    void(CARB_ABI* getJointStateData)(omni::physics::AttachHandle attach, usdparser::ObjectId id, JointStateData* data);
 
     /// Get the rotation that was applied to the joint frame during USD parsing
     ///
@@ -42,7 +43,7 @@ struct IPhysxJoint
     ///
     /// \param[in] id The object id of the queried joint
     /// \return The rotation as a carb::Float4 in PxQuat layout: (x, y, z, w)
-    carb::Float4(CARB_ABI* getJointFramePhysxToUsdQuat)(usdparser::ObjectId id);
+    carb::Float4(CARB_ABI* getJointFramePhysxToUsdQuat)(omni::physics::AttachHandle attach, usdparser::ObjectId id);
 };
 
 } // namespace physx

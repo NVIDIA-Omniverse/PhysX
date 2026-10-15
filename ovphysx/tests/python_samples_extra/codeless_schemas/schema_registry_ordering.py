@@ -33,6 +33,7 @@ import subprocess
 import sys
 
 import ovphysx
+from ovphysx.samples.python_samples.schema_support import physx_schema_paths
 
 # Fallback declared for this attribute in physxSchema's generatedSchema.usda.
 # Reading it back on a prim that never authored it proves the schema was
@@ -69,7 +70,7 @@ def run_arm(pre_touch: str, register: bool) -> int:
     registered = 0
     if register:
         registry = Plug.Registry()
-        for path in ovphysx.codeless_schema_paths():
+        for path in physx_schema_paths():
             registered += len(registry.RegisterPlugins(str(path)))
 
     type_found = Tf.Type.FindByName("PhysxSchemaPhysxRigidBodyAPI") != Tf.Type.Unknown
@@ -117,7 +118,7 @@ def _arm(pre_touch: str, register: bool, preset_plugin_path: bool) -> dict:
     # place before the process starts. Setting it from inside is too late.
     if preset_plugin_path:
         env["PXR_PLUGINPATH_NAME"] = os.pathsep.join(
-            str(path) for path in ovphysx.codeless_schema_paths()
+            str(path) for path in physx_schema_paths()
         )
     else:
         env.pop("PXR_PLUGINPATH_NAME", None)
@@ -150,7 +151,7 @@ def _arm(pre_touch: str, register: bool, preset_plugin_path: bool) -> dict:
 def main() -> int:
     print("ovphysx version:", ovphysx.__version__)
     print("Codeless schema packages:")
-    for path in ovphysx.codeless_schema_paths():
+    for path in physx_schema_paths():
         print("  ", path)
 
     print("\n--- RegisterPlugins() before any USD access: supported ---")

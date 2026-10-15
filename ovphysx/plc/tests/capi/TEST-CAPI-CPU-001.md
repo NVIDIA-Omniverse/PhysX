@@ -25,7 +25,7 @@ labels follow ADR-0011. Fresh subprocesses also pin the first non-empty
 - An isolated `ActiveCudaGpusAttachTest` process without
   `OVPHYSX_DISABLE_GPU` for empty versus `-1` create-log labels.
 - Fresh Python subprocesses that construct the first non-empty CPU `warp.array`
-  through `PhysX.read()` and `PhysX.write()` respectively.
+  through `PhysX.read_sync()` and `PhysX.write_sync()` respectively.
 
 ## When
 
@@ -62,5 +62,7 @@ labels follow ADR-0011. Fresh subprocesses also pin the first non-empty
   `-1` (REQ AC-4).
 - For both the read and write frontend, constructing the first non-empty CPU
   array leaves CUDA-driver mapping unchanged on a CPU-only Warp build. On a
-  CUDA-enabled build it opens the driver when that effect remains observable;
-  a driver already opened by ovstage makes that arm inconclusive (REQ AC-5).
+  CUDA-enabled build it opens the driver when that effect remains observable.
+  The arm is inconclusive when ovstage already opened the driver, or when
+  libcuda.so cannot be loaded. A loadable library that stays unmapped is still
+  a failure (REQ AC-5).

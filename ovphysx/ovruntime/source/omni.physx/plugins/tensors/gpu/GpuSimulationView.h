@@ -6,6 +6,9 @@
 /**
  * @implements REQ-TENSOR-VIEW-001
  * @covers AC-1 AC-12
+ *
+ * @implements REQ-READ-CONTACT-001
+ * @covers AC-9
  */
 
 #include "tensors/base/BaseSimulationView.h"
@@ -31,8 +34,7 @@ class GpuSimulationView : public BaseSimulationView
 public:
     GpuSimulationView(usdparser::AttachedStage* attachedStage,
                       ::physx::PxScene* scene,
-                      GpuSimulationDataPtr gpuSimData,
-                      bool notifyWhenSimStopped = false);
+                      GpuSimulationDataPtr gpuSimData);
 
     ~GpuSimulationView() override;
 
@@ -105,6 +107,14 @@ public:
                                                 const std::vector<std::vector<std::string>>& filterPatterns,
                                                 uint32_t maxContactDataCount) override;
 
+    // Read-only fast path (not a binding entry): build a contact view directly from already-resolved
+    // sensor entries, skipping the pattern match createRigidContactView does. Registered in mRcViews like
+    // the pattern factories, so the parent sim view owns it and releases it on rebuild/teardown -- which
+    // is what lets the output read cache it across reads. Mirrors createPointInstancerViewFromEntries.
+    GpuRigidContactView* createRigidContactViewFromEntries(std::vector<RigidContactSensorEntry>&& entries,
+                                                           uint32_t numFilters,
+                                                           uint32_t maxContactDataCount);
+
     GpuSdfShapeView* createSdfShapeView(const char* pattern, uint32_t numSamplePoints) override;
 
     void clearForces() override;
@@ -112,7 +122,7 @@ public:
     bool flush() override;
 
     void enableGpuUsageWarnings(bool enable) override;
-    void updateArticulationsKinematic() override;
+    bool updateArticulationsKinematic() override;
 
     //
     // utilities
@@ -142,6 +152,13 @@ private:
     std::unordered_map<const ::physx::PxArticulationReducedCoordinate*, ::physx::PxU32> mSupersetArtiRowMap;
     std::vector<ArticulationEntry> mSupersetArtiEntries;
 };
+
+// View-less whole-scene articulation FK refresh on the scene's DirectGPU API. Used by
+// SimulationBackend::updateArticulationsKinematic so a kinematic refresh does not have to construct a
+// SimulationView just to reach the scene -- avoiding, per call, the cache-validation topology walk plus
+// the view's construction, registration and removal (the GPU simulation data itself is cached and reused,
+// not rebuilt). Returns false if the DirectGPU refresh did not complete (computeArticulationData failed).
+bool gpuRefreshArticulationsKinematic(::physx::PxScene* scene);
 
 } // namespace tensors
 } // namespace physx

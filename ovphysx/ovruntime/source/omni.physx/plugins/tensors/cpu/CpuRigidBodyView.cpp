@@ -179,7 +179,7 @@ bool CpuRigidBodyView::getAngularAccelerationsOvStage(const TensorDesc* dstTenso
 bool CpuRigidBodyView::setPositionsOvStage(const TensorDesc* srcTensor,
                                            const PxU32* outRecordIdx,
                                            const PxU32 numOutputs,
-                                           uint64_t)
+                                           uint64_t, bool)
 {
     return scatterPoseColumnOvStage(/*wantOrientation=*/false, outRecordIdx, numOutputs, srcTensor);
 }
@@ -187,7 +187,7 @@ bool CpuRigidBodyView::setPositionsOvStage(const TensorDesc* srcTensor,
 bool CpuRigidBodyView::setOrientationsOvStage(const TensorDesc* srcTensor,
                                               const PxU32* outRecordIdx,
                                               const PxU32 numOutputs,
-                                              uint64_t)
+                                              uint64_t, bool)
 {
     return scatterPoseColumnOvStage(/*wantOrientation=*/true, outRecordIdx, numOutputs, srcTensor);
 }
@@ -195,7 +195,7 @@ bool CpuRigidBodyView::setOrientationsOvStage(const TensorDesc* srcTensor,
 bool CpuRigidBodyView::setLinearVelocitiesOvStage(const TensorDesc* srcTensor,
                                                   const PxU32* outRecordIdx,
                                                   const PxU32 numOutputs,
-                                                  uint64_t)
+                                                  uint64_t, bool)
 {
     return scatterVelocityColumnOvStage(/*wantAngular=*/false, outRecordIdx, numOutputs, srcTensor);
 }
@@ -203,7 +203,7 @@ bool CpuRigidBodyView::setLinearVelocitiesOvStage(const TensorDesc* srcTensor,
 bool CpuRigidBodyView::setAngularVelocitiesOvStage(const TensorDesc* srcTensor,
                                                    const PxU32* outRecordIdx,
                                                    const PxU32 numOutputs,
-                                                   uint64_t)
+                                                   uint64_t, bool)
 {
     return scatterVelocityColumnOvStage(/*wantAngular=*/true, outRecordIdx, numOutputs, srcTensor);
 }
@@ -267,7 +267,7 @@ bool CpuRigidBodyView::scatterPoseColumnOvStage(const bool wantOrientation,
 bool CpuRigidBodyView::setWrenchesOvStage(const TensorDesc* srcTensor,
                                          const PxU32* outRecordIdx,
                                          const PxU32 numOutputs,
-                                         const uint64_t /*rowsToken*/)
+                                         const uint64_t /*rowsToken*/, bool)
 {
     CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
     if (!srcTensor || !srcTensor->data)
@@ -321,7 +321,7 @@ bool CpuRigidBodyView::setWrenchesOvStage(const TensorDesc* srcTensor,
 bool CpuRigidBodyView::setForcesOvStage(const TensorDesc* srcTensor,
                                        const PxU32* outRecordIdx,
                                        const PxU32 numOutputs,
-                                       const uint64_t /*rowsToken*/)
+                                       const uint64_t /*rowsToken*/, bool)
 {
     CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
     if (!srcTensor || !srcTensor->data)
@@ -548,80 +548,6 @@ bool CpuRigidBodyView::getAccelerations(const TensorDesc* dstTensor) const
         *dst++ = angAcc.x;
         *dst++ = angAcc.y;
         *dst++ = angAcc.z;
-    }
-
-    return true;
-}
-
-bool CpuRigidBodyView::setKinematicTargets(const TensorDesc* srcTensor, const TensorDesc* indexTensor)
-{
-    CHECK_VALID_DATA_SIM_RETURN(mCpuSimData, mSim, false);
-
-    if (!srcTensor || !srcTensor->data)
-    {
-        return false;
-    }
-
-    if (!checkTensorDevice(*srcTensor, -1, "transform", __FUNCTION__) ||
-        !checkTensorFloat32(*srcTensor, "transform", __FUNCTION__) ||
-        !checkTensorSizeExact(*srcTensor, getCount() * 7u, "transform", __FUNCTION__))
-    {
-        return false;
-    }
-
-    const PxU32* indices = nullptr;
-    PxU32 numIndices = 0;
-    if (indexTensor && indexTensor->data)
-    {
-        if (!checkTensorDevice(*indexTensor, -1, "index", __FUNCTION__) ||
-            !checkTensorInt32(*indexTensor, "index", __FUNCTION__) ||
-            !checkIndexTensorSize(*indexTensor, getCount(), __FUNCTION__))
-        {
-            return false;
-        }
-        indices = static_cast<const PxU32*>(indexTensor->data);
-        numIndices = PxU32(getTensorTotalSize(*indexTensor));
-    }
-    else
-    {
-        indices = mAllIndices.data();
-        numIndices = PxU32(mAllIndices.size());
-    }
-
-    for (PxU32 i = 0; i < numIndices; i++)
-    {
-        PxU32 idx = indices[i];
-        if (idx < mEntries.size())
-        {
-            RigidBodyEntry& entry = mEntries[idx];
-            const float* src = static_cast<const float*>(srcTensor->data) + idx * 7;
-
-            PxTransform target;
-            target.p.x = *src++;
-            target.p.y = *src++;
-            target.p.z = *src++;
-            target.q.x = *src++;
-            target.q.y = *src++;
-            target.q.z = *src++;
-            target.q.w = *src++;
-
-            Subspace* subspace = entry.subspace;
-            if (subspace)
-            {
-                target.p.x += subspace->origin.x;
-                target.p.y += subspace->origin.y;
-                target.p.z += subspace->origin.z;
-            }
-
-            if (entry.type == RigidBodyType::eRigidDynamic && (entry.body->getRigidBodyFlags() & ::physx::PxRigidBodyFlag::eKINEMATIC))
-            {
-                static_cast<::physx::PxRigidDynamic*>(entry.body)->setKinematicTarget(target);
-            }
-            else
-            {
-                CARB_LOG_WARN("Cannot set kinematic target on articulation link or non-kinematic rigid body at '%s'", entry.path.c_str());
-            }
-        }
     }
 
     return true;
@@ -945,17 +871,6 @@ bool CpuRigidBodyView::applyForcesAndTorquesAtPosition(const TensorDesc* srcForc
 using omni::physics::tensors::MaskResult;
 using omni::physics::tensors::resolveMaskToIndices;
 using omni::physics::tensors::makeIndexTensorDesc;
-
-bool CpuRigidBodyView::setKinematicTargetsMasked(const TensorDesc* src, const TensorDesc* mask)
-{
-    std::vector<uint32_t> indices;
-    auto result = resolveMaskToIndices(mask, getCount(), -1, indices, __FUNCTION__);
-    if (result == MaskResult::Error) return false;
-    if (result == MaskResult::Empty) return true;
-    if (result == MaskResult::All)   return setKinematicTargets(src, nullptr);
-    TensorDesc idx = makeIndexTensorDesc(indices, -1);
-    return setKinematicTargets(src, &idx);
-}
 
 bool CpuRigidBodyView::setTransformsMasked(const TensorDesc* src, const TensorDesc* mask)
 {

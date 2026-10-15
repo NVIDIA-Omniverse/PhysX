@@ -112,11 +112,9 @@ namespace Dy
 		PxPerformanceEnvelope envelope;
 		PxReal externalJointForce;
 		PxReal driveImpulse;	
-		PxReal driveMaxImpulse;						
 		PxReal dynamicFrictionEffort;
 		PxReal staticFrictionEffort;
 		PxReal viscousFrictionCoefficient;
-		PxReal deprecatedFrictionMaxForce;
 		PxReal accumulatedFrictionImpulse;
 		PxReal maxJointVelocity;
 
@@ -130,7 +128,7 @@ namespace Dy
 		{
 			return implicitDriveDesc;
 		}
-		PxReal padding[3];
+		PxReal padding[1];
 	};
 	PX_COMPILE_TIME_ASSERT(0 == (sizeof(ArticulationInternalConstraint) & 0x0f));
 
@@ -179,7 +177,6 @@ namespace Dy
 			mCoriolisVectors(NULL),
 			mZAInternalForces(NULL),
 			mZAForces(NULL),
-			mJointTransmittedForce(NULL),
 			mDeferredQstZ(NULL),
 			mDeltaMotionVector(NULL),
 			mPreTransform(NULL),
@@ -216,6 +213,7 @@ namespace Dy
 			mDofs(0xffffffff),
 			mFlags(NULL),
 			mExternalAcceleration(NULL),
+			mTgsExternalForces(NULL),
 			mArticulation(NULL),
 			mAccumulatedPoses(NULL),
 			mDeltaQ(NULL),
@@ -268,7 +266,6 @@ namespace Dy
 		PX_FORCE_INLINE Cm::SpatialVectorF*			getCoriolisVectors()									{ return mCoriolisVectors;			}
 		PX_FORCE_INLINE Cm::SpatialVectorF*			getSpatialZAVectors()									{ return mZAForces;					}
 		PX_FORCE_INLINE Cm::SpatialVectorF*			getSpatialZAInternalVectors()							{ return mZAInternalForces;			}
-		PX_FORCE_INLINE Cm::SpatialVectorF*			getTransmittedForces()									{ return mJointTransmittedForce;	}
 
 		PX_FORCE_INLINE Cm::SpatialVectorF*			getPosIterMotionVelocities()							{ return mPosIterMotionVelocities;			}
 		PX_FORCE_INLINE const Cm::SpatialVectorF*	getPosIterMotionVelocities() const						{ return mPosIterMotionVelocities;			}
@@ -278,11 +275,9 @@ namespace Dy
 		PX_FORCE_INLINE Cm::SpatialVectorF&			getPosIterMotionVelocity(const PxU32 index)				{ return mPosIterMotionVelocities[index];	}
 		PX_FORCE_INLINE const Cm::SpatialVectorF&	getMotionVelocity(const PxU32 index)			const	{ return mMotionVelocities[index];			}
 		PX_FORCE_INLINE const Cm::SpatialVectorF&	getMotionAcceleration(const PxU32 index)		const	{ return mMotionAccelerations[index];		}
-		PX_FORCE_INLINE const Cm::SpatialVectorF&	getTransmittedForce(const PxU32 index)			const	{ return mJointTransmittedForce[index];		}
 
 		PX_FORCE_INLINE Cm::SpatialVectorF&			getMotionVelocity(const PxU32 index)					{ return mMotionVelocities[index];			}
 		PX_FORCE_INLINE Cm::SpatialVectorF&			getMotionAcceleration(const PxU32 index)				{ return mMotionAccelerations[index];		}
-		PX_FORCE_INLINE Cm::SpatialVectorF&			getTransmittedForce(const PxU32 index)					{ return mJointTransmittedForce[index];		}
 
 		PX_FORCE_INLINE PxTransform&				getPreTransform(const PxU32 index)						{ return mPreTransform[index];				}
 		PX_FORCE_INLINE const PxTransform&			getPreTransform(const PxU32 index)				const	{ return mPreTransform[index];				}
@@ -316,6 +311,9 @@ namespace Dy
 
 		PX_FORCE_INLINE const Cm::SpatialVector*	getExternalAccelerations()						const	{ return mExternalAcceleration;				}
 		PX_FORCE_INLINE Cm::SpatialVector*			getExternalAccelerations()								{ return mExternalAcceleration;				}
+
+		PX_FORCE_INLINE const Cm::SpatialVectorF*	getTgsExternalForces()							const	{ return mTgsExternalForces;				}
+		PX_FORCE_INLINE Cm::SpatialVectorF*			getTgsExternalForces()									{ return mTgsExternalForces;				}
 
 		PX_FORCE_INLINE Cm::SpatialVector&			getExternalAcceleration(const PxU32 linkID)				{ return mExternalAcceleration[linkID];		}
 		PX_FORCE_INLINE const Cm::SpatialVector&	getExternalAcceleration(const PxU32 linkID)		const	{ return mExternalAcceleration[linkID]; 	}
@@ -433,7 +431,6 @@ namespace Dy
 		Cm::SpatialVectorF*										mCoriolisVectors;		//link coriolis vector
 		Cm::SpatialVectorF*										mZAInternalForces;		//link internal spatial forces
 		Cm::SpatialVectorF*										mZAForces;				//link spatial zero acceleration force/ spatial articulated force
-		Cm::SpatialVectorF*										mJointTransmittedForce;
 
 		PxArray<ArticulationInternalConstraint>					mInternalConstraints;
 		PxArray<ArticulationInternalLimit>						mInternalLimits;
@@ -482,6 +479,8 @@ namespace Dy
 		PxU32									mDofs;
 		const PxArticulationFlags*				mFlags;	// PT: PX-1399
 		Cm::SpatialVector*						mExternalAcceleration;
+		// Isolated external zero-acceleration forces in world space, applied each TGS substep.
+		Cm::SpatialVectorF*						mTgsExternalForces;
 		FeatherstoneArticulation*				mArticulation;
 
 		PxTransform*							mAccumulatedPoses;
@@ -941,16 +940,17 @@ namespace Dy
 		\param[in] fixBase determines whether the root link is to be fixed to the world (true) or will move freely (false).
 		\param[in] linkCount is the total number of links in the articulation
 		\param[in] linkAccumulatedPosesW is the pose of each link, specified in the world frame.
-		\param[in,out] linkExternalAccelsW is the external acceleration to apply to each link, specified in the world frame. Only modified if externalForcesEveryTgsIterationEnabled is true.
+		\param[in] linkExternalAccelsW is the external acceleration to apply to each link, specified in the world frame.
 		\param[in] linkRsW is the vector from each parent link to each child link, specified in the world frame.
 		\param[in] jointDofMotionMatricesW is the motion matrix of each dof, specified in the world frame.
 		\param[in] jointCoreData is the ArticulationJointCoreData instance of each link in the articulation.
-		\param[in] externalForcesEveryTgsIterationEnabled if true, skip the application of external forces in this function and instead prepare change linkExternalAccelsW from acceleration to impulses
+		\param[in] externalForcesEveryTgsIterationEnabled if true, store external zero-acceleration forces in linkTgsExternalForcesW for application at each TGS substep.
 		\param[in,out] links is the ArticulationLink instance of each link in the articulation.
 		\param[in,out] linkMotionAccelerationsW is the acceleration of each link, specified in the world frame.
 		\param[out] linkMotionVelocitiesW is velocity of each link computed from the parent link velocity and joint velocity of the inbound joint. Specified in the world frame.
 		\param[out] linkZAForcesExtW is the computed spatial zero acceleration force of each link, accounting for only external forces applied to the links.  Specified in the world frame.
 		\param[out] linkZAForcesIntW is the computed spatial zero acceleration force of each link, accounting for only internal forces applied to the links.  Specified in the world frame.
+		\param[out] linkTgsExternalForcesW contains the isolated external zero-acceleration forces in world space when externalForcesEveryTgsIterationEnabled is true.
 		\param[out] linkCoriolisVectorsW is the computed coriolis vector of each link.   Specified in the world frame.
 		\param[out] linkIsolatedArticulatedInertiasW is the inertia tensor (I) for the trivial sub-chain of each link. Specified in the world frame.
 		\param[out] linkMasses is the mass of each link. 
@@ -971,12 +971,13 @@ namespace Dy
 		*/
 		static void computeLinkStates(
 			PxF32 dt, PxReal invLengthScale, const PxVec3& gravity, bool fixBase, PxU32 linkCount,
-			const PxTransform* PX_RESTRICT linkAccumulatedPosesW, Cm::SpatialVector* PX_RESTRICT linkExternalAccelsW,
+			const PxTransform* PX_RESTRICT linkAccumulatedPosesW, const Cm::SpatialVector* PX_RESTRICT linkExternalAccelsW,
 			const PxVec3* PX_RESTRICT linkRsW, const Cm::UnAlignedSpatialVector* PX_RESTRICT jointDofMotionMatricesW,
 			const Dy::ArticulationJointCoreData* PX_RESTRICT jointCoreData, bool externalForcesEveryTgsIterationEnabled,
 			Dy::ArticulationLink* PX_RESTRICT links,
 			Cm::SpatialVectorF* PX_RESTRICT linkMotionAccelerationsW, Cm::SpatialVectorF* PX_RESTRICT linkMotionVelocitiesW,
-			Cm::SpatialVectorF* PX_RESTRICT linkZAForcesExtW, Cm::SpatialVectorF* PX_RESTRICT linkZAForcesIntW, Cm::SpatialVectorF* PX_RESTRICT linkCoriolisVectorsW,
+			Cm::SpatialVectorF* PX_RESTRICT linkZAForcesExtW, Cm::SpatialVectorF* PX_RESTRICT linkZAForcesIntW,
+			Cm::SpatialVectorF* PX_RESTRICT linkTgsExternalForcesW, Cm::SpatialVectorF* PX_RESTRICT linkCoriolisVectorsW,
 			PxMat33* PX_RESTRICT linkIsolatedArticulatedInertiasW, PxF32* PX_RESTRICT linkMasses,
 			Dy::SpatialMatrix* PX_RESTRICT linkSpatialArticulatedInertiasW,
 			PxReal* PX_RESTRICT jointDofVelocities,
@@ -1251,8 +1252,6 @@ namespace Dy
 			 Cm::SpatialVectorF* linkMotionAccelerationsW, Cm::SpatialVectorF* linkMotionAccelerationIntsW, Cm::SpatialVectorF* linkMotionVelocitiesW, 
 			 PxReal* jointDofAccelerations, PxReal* jointDofVelocities, PxReal* jointDofNewVelocities);
 
-		static void computeJointTransmittedFrictionForce(const ArticulationData& data, Cm::SpatialVectorF* PX_RESTRICT transmittedForce);
-
 		static Cm::SpatialVectorF getDeltaVWithDeltaJV(const bool fixBase, const PxU32 linkID,
 			const ArticulationData& data, Cm::SpatialVectorF* Z,
 			PxReal* jointVelocities);
@@ -1367,8 +1366,7 @@ namespace Dy
 			const PxReal stepDt,
 			const PxReal dt,
 			const bool isTGSSolver,
-			const PxU32 linkID,
-			const PxReal maxForceScale);
+			const PxU32 linkID);
 
 		static void setupInternalSpatialTendonConstraintsRecursive(
 			const ArticulationLink* links,

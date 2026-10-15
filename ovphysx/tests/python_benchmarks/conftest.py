@@ -20,6 +20,11 @@ from pathlib import Path
 
 import pytest
 
+# Exercise the application-side schema recipe, including fresh subprocesses.
+_schema_samples = os.path.join(os.path.dirname(__file__), "..", "python_samples")
+sys.path.insert(0, _schema_samples)
+os.environ["PYTHONPATH"] = _schema_samples + os.pathsep + os.environ.get("PYTHONPATH", "")
+
 
 def pytest_addoption(parser):
     # CLI option (env-var config is hard to discover). Default = cpu so
@@ -118,18 +123,16 @@ _physx_schemas_registered = False
 
 def attach_usd_with_ovstage(physx, usd_path: Path, stage_name: str):
     import ovphysx
+    from schema_support import physx_schema_paths
     import ovstage
     if not ovstage.population.available():
         raise RuntimeError("ovstage population bridge is unavailable")
 
-    # ovphysx ships its PhysX USD schemas as codeless resources and does not register
-    # them itself. Register them with ovstage once, before the first population
-    # call in the process. The Newton USD schema (pip package newton-usd-schemas)
-    # is registered alongside so authored newton:* attributes reach the parser.
+    # Register external PhysX and Newton schemas before the first population.
     global _physx_schemas_registered
     if not _physx_schemas_registered:
         ovstage.population.register_usd_schemas(
-            [str(ovphysx.codeless_schema_root()), str(ovphysx.newton_schema_root())]
+            [*[str(p) for p in physx_schema_paths()], str(ovphysx.newton_schema_root())]
         )
         _physx_schemas_registered = True
     stage = ovstage.Stage(stage_name)
@@ -137,8 +140,10 @@ def attach_usd_with_ovstage(physx, usd_path: Path, stage_name: str):
     try:
         ovstage.population.open_usd(stage, str(usd_path), ordinal=ordinal, domains=ovstage.PopulationDomain.PHYSICS)
         stage.advance_write_floor(ordinal=ordinal).wait()
-        physx.attach_ovstage(stage, read_ordinal=ordinal)
+        physx.wait_task(physx.attach_ovstage(stage, read_ordinal=ordinal))
     except Exception:
+        if physx.is_stage_attached(stage):
+            physx.wait_task(physx.detach_ovstage())
         stage.destroy()
         raise
 
@@ -154,10 +159,7 @@ def destroy_ovstage_benchmark_attachments(physx):
     stages = getattr(physx, "_ovphysx_benchmark_ovstages", None)
     if not stages:
         return
-    try:
-        physx.detach_ovstage()
-    except Exception:
-        pass
+    physx.wait_task(physx.detach_ovstage())
     while stages:
         stage = stages.pop()
         try:
@@ -167,14 +169,10 @@ def destroy_ovstage_benchmark_attachments(physx):
 
 
 @pytest.fixture(autouse=True)
-def _reset_stage(physx):
-    """Reset the stage between tests so each benchmark starts clean."""
-    physx.reset_stage()
-    physx.wait_all()
+def _detach_stage(physx):
+    """Detach the stage between tests so each benchmark starts clean."""
     destroy_ovstage_benchmark_attachments(physx)
     yield
-    physx.reset_stage()
-    physx.wait_all()
     destroy_ovstage_benchmark_attachments(physx)
 
 

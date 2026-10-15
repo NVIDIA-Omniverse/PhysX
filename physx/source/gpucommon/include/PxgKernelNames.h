@@ -435,7 +435,6 @@ KERNEL_DEF(CLOTH_SELFCOLLISION_MIDPHASE_VT, "cloth_selfCollisionMidphaseVTLaunch
 KERNEL_DEF(CLOTH_SELFCOLLISION_MIDPHASE_EE, "cloth_selfCollisionMidphaseEELaunch")
 KERNEL_DEF(CLOTH_DIFFERENTCLOTHCOLLISION_MIDPHASE_VT, "cloth_differentClothCollisionVTLaunch")
 KERNEL_DEF(CLOTH_DIFFERENTCLOTHCOLLISION_MIDPHASE_EE, "cloth_differentClothCollisionEELaunch")
-KERNEL_DEF(CLOTH_CLOTH_MIDPHASE, "cloth_clothMidphaseGeneratePairsLaunch")
 KERNEL_DEF(CLOTH_PS_MIDPHASE, "cloth_psMidphaseGeneratePairsLaunch")
 KERNEL_DEF(CLOTH_PS_CG, "cloth_psContactGenLaunch")
 KERNEL_DEF(CLOTH_MESH_MIDPHASE, "cloth_meshMidphaseGeneratePairsLaunch")

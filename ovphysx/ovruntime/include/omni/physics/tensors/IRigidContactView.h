@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
+ * @implements REQ-ATTACH-VIEWS-001
+ * @covers AC-4
+ * @implements REQ-ATTACH-EXECUTION-001
+ * @covers AC-3 AC-4
+ *
  * @implements REQ-TENSOR-CONTACT-003
  * @covers AC-1 AC-2 AC-3 AC-4
  *
@@ -124,7 +129,8 @@ public:
 
     virtual bool check() const = 0;
 
-    virtual void release() = 0;
+    // Returns false while runtime execution is busy; the view remains owned by the caller.
+    virtual bool release() = 0;
 
     // Path and name accessors return nullptr for an out-of-range sensor or filter index.
     virtual const char* getUsdPrimPath(uint32_t sensorIdx) const = 0;

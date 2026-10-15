@@ -49,7 +49,9 @@ struct IPhysxCookingPrivate
     //\param[in] attachHandle the attach that key was resolved from
     void(CARB_ABI* addPrimToCookingRefreshSetForAttach)(omni::physics::parse::ObjectKey key, omni::physics::AttachHandle attachHandle);
 
-    /// Releases the runtime mesh cache
+    /// Releases the runtime mesh cache and invalidates borrowed cooking data.
+    /// Process-wide lifecycle operation: externally serialize against all attachment
+    /// calls, cooking completion dispatch, and users of borrowed cache data.
     void(CARB_ABI* releaseRuntimeMeshCache)();
 
 };
