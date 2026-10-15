@@ -47,7 +47,7 @@
 
 
     <script rel="preload" src="../_static/modal-table.js"></script>
-    <script src="../_static/documentation_options.js?v=18b66ea0"></script>
+    <script src="../_static/documentation_options.js?v=423e15eb"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.6.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -75,7 +75,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Oct 08, 2026"/>
+    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
   
     
     <script src="../_static/searchtools.js"></script>
@@ -507,6 +507,10 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coding_style.html">ovphysx coding and doc style</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
@@ -566,7 +570,6 @@
 <li class="toctree-l2"><a class="reference internal" href="PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PhysxJointAPI.html">PhysxJointAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PhysxLimitAPI.html">PhysxLimitAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
@@ -613,6 +616,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../read_write/device.html">Device residency and interop</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/readable.html">Readable data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/writable.html">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/path_patterns.html">Path patterns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/limitations.html">Known limitations and gaps</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
@@ -625,7 +630,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/render_handoff.html">Rendering Handoff</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials/nvtx_profiling.html">NVTX Profiling in Nsight Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
@@ -703,7 +708,7 @@
 <!-- Generated by physics_population_domain/tools/gen_contract.py from the JSON contract. Do not edit; edit the contract and regenerate (see physics_population_domain/README.md). -->
 <section id="physxcontactreportapi">
 <h1>PhysxContactReportAPI<a class="headerlink" href="#physxcontactreportapi" title="Link to this heading">#</a></h1>
-<p>Registers a rigid body (or every link of an articulation) for contact reporting. Read by the runtime at actor creation, not by the parse library; without the API in usd-schemas nothing is registered even if the attributes are authored.</p>
+<p>Registers a rigid actor (including a standalone static collider), or every link of an articulation, for contact reporting. A standalone static collider reports on CPU simulation and GPU dynamics with CPU readback; on DirectGPU its sensor row remains but reads zero force. On a separate child collider, the API enables sensor selection on CPU simulation and GPU dynamics with CPU readback but does not enable the owning body’s reporting. Read by the runtime at actor creation, not by the parse library; without the API in usd-schemas nothing is registered even if the attributes are authored.</p>
 <ul class="simple">
 <li><p><strong>Applies to:</strong> <code class="docutils literal notranslate"><span class="pre">Xformable</span></code></p></li>
 <li><p><strong>Read only when listed in <code class="docutils literal notranslate"><span class="pre">usd-schemas</span></code>.</strong></p></li>
@@ -752,6 +757,7 @@
 <h2>Interactions<a class="headerlink" href="#interactions" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p><strong><a class="reference internal" href="PhysicsRigidBodyAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsRigidBodyAPI</span></code></span></a>:</strong> Registered once per rigid actor at creation; on an articulation root every link is registered with the same threshold and pairs.</p></li>
+<li><p><strong><a class="reference internal" href="PhysicsCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsCollisionAPI</span></code></span></a>:</strong> A separate child collider carrying PhysxContactReportAPI is eligible as a contact sensor on CPU simulation and GPU dynamics with CPU readback. Enable reporting on its owning body, owning articulation link, or articulation root as well to avoid depending on reports from the other actor in each contact pair. If neither actor reports matching contacts, the child sensor reads zero. Author threshold and reportPairs on the reporting actor or articulation root, not on the separate child collider. A standalone static collider is its own rigid actor and enables reporting on CPU simulation and GPU dynamics with CPU readback; on DirectGPU its sensor row remains but reads zero force. DirectGPU session queries omit separate child-collider rows; select a dynamic body or articulation link to read forces instead.</p></li>
 <li><p><strong><a class="reference internal" href="stage_units.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">stage_units</span></code></span></a>:</strong> The default threshold scales with the tolerances length; the authored value does not.</p></li>
 </ul>
 </section>
@@ -863,7 +869,7 @@
 </div>
       
         <div class="footer-item"><p class="last-updated">
-  Last updated on Oct 08, 2026.
+  Last updated on Oct 15, 2026.
   <br/>
 </p></div>
       

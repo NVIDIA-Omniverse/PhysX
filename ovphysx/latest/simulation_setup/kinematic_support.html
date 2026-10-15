@@ -47,7 +47,7 @@
 
 
     <script rel="preload" src="../_static/modal-table.js"></script>
-    <script src="../_static/documentation_options.js?v=18b66ea0"></script>
+    <script src="../_static/documentation_options.js?v=423e15eb"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.6.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -75,7 +75,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Oct 08, 2026"/>
+    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
   
     
     <script src="../_static/searchtools.js"></script>
@@ -507,6 +507,10 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coding_style.html">ovphysx coding and doc style</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
@@ -566,7 +570,6 @@
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAPI.html">PhysxJointAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
@@ -613,6 +616,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../read_write/device.html">Device residency and interop</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/readable.html">Readable data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/writable.html">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/path_patterns.html">Path patterns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/limitations.html">Known limitations and gaps</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
@@ -625,7 +630,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/render_handoff.html">Rendering Handoff</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials/nvtx_profiling.html">NVTX Profiling in Nsight Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
@@ -723,8 +728,8 @@ resolved world transform of the support at the same ovstage ordinal.</p></li>
 <li><p>Bind a physics material with enough static and dynamic friction for the load.</p></li>
 <li><p>Write a new target pose before each step.</p></li>
 </ol>
-<p>The support is driven correctly when a read of <code class="docutils literal notranslate"><span class="pre">RIGID_BODY_POSE</span></code> places the
-support at the pose you wrote for that step, and the rider’s position along the
+<p>The support is driven correctly when session reads of <code class="docutils literal notranslate"><span class="pre">RIGID_BODY</span></code> <code class="docutils literal notranslate"><span class="pre">position</span></code>
+and <code class="docutils literal notranslate"><span class="pre">orientation</span></code> place the support at the pose you wrote for that step, and the rider’s position along the
 motion axis has advanced with it over successive steps. A rider displacement near
 zero while the support moves means the support was teleported rather than driven
 to a kinematic target, which is the failure the shipped samples check for.</p>
@@ -751,7 +756,7 @@ used.</p>
 needed to carry a rider. The tensor-binding write surface is deprecated (superseded by the
 session write API, <code class="docutils literal notranslate"><span class="pre">ovphysx_write</span></code> / <code class="docutils literal notranslate"><span class="pre">PhysX.write</span></code>) and does not expose a separate
 kinematic-target tensor.</p>
-<p>C++ applications can also use <code class="docutils literal notranslate"><span class="pre">ovphysx_get_physx_ptr()</span></code> and call
+<p>C++ applications can also read <code class="docutils literal notranslate"><span class="pre">physxPointer</span></code> and call
 <code class="docutils literal notranslate"><span class="pre">PxRigidDynamic::setKinematicTarget()</span></code> directly. Refer to
 <a class="reference internal" href="../tutorials/physx_interop.html"><span class="std std-doc">PhysX Interop</span></a>.</p>
 </section>
@@ -759,7 +764,9 @@ kinematic-target tensor.</p>
 <h2>Stationary Conveyors and Surface Velocity<a class="headerlink" href="#stationary-conveyors-and-surface-velocity" title="Link to this heading">#</a></h2>
 <p>Use <code class="docutils literal notranslate"><span class="pre">PhysxSurfaceVelocityAPI</span></code> when the support stays in place but its contact
 surface moves:</p>
-<div class="highlight-usda notranslate"><div class="highlight"><pre><span></span><span class="k k-Tokens">def</span><span class="w"> </span>Cube<span class="w"> </span><span class="s">&quot;Conveyor&quot;</span><span class="w"> </span><span class="p">(</span>
+<div class="highlight-usda notranslate"><div class="highlight"><pre><span></span><span class="c1">#usda 1.0</span>
+
+<span class="k k-Tokens">def</span><span class="w"> </span>Cube<span class="w"> </span><span class="s">&quot;Conveyor&quot;</span><span class="w"> </span><span class="p">(</span>
 <span class="w">    </span><span class="kt">prepend</span><span class="w"> </span><span class="na">apiSchemas</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
 <span class="w">        </span><span class="s">&quot;PhysicsCollisionAPI&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s">&quot;PhysicsRigidBodyAPI&quot;</span><span class="p">,</span>
@@ -805,9 +812,10 @@ motion is observably greater than either independent lane.</p>
 <h2>Sleep, Friction, and Ordering<a class="headerlink" href="#sleep-friction-and-ordering" title="Link to this heading">#</a></h2>
 <p>A surface-velocity change does not wake a body that has settled to sleep.
 Disable sleeping for continuously controlled loads by setting
-<code class="docutils literal notranslate"><span class="pre">physxRigidBody:sleepThreshold</span> <span class="pre">=</span> <span class="pre">0</span></code>, or call
-<code class="docutils literal notranslate"><span class="pre">ovphysx_rigid_body_view_wake_up()</span></code> (<code class="docutils literal notranslate"><span class="pre">TensorBinding.wake_up()</span></code> in Python)
-immediately before motion begins. Kinematic support motion and surface velocity
+<code class="docutils literal notranslate"><span class="pre">physxRigidBody:sleepThreshold</span> <span class="pre">=</span> <span class="pre">0</span></code>, or write the session <code class="docutils literal notranslate"><span class="pre">wake</span></code> attribute with
+nonzero values for the selected dynamic bodies immediately before motion begins.
+Use a prim-set query to include those bodies while they are asleep; see
+<a class="reference internal" href="../read_write/writable.html#rigid-bodies"><span class="std std-ref">Wake and sleep commands</span></a>. Kinematic support motion and surface velocity
 also require sufficient friction to transmit tangential motion; bind an
 explicit physics material instead of relying on defaults.</p>
 <p>Before you enter the control loop, confirm the following:</p>
@@ -821,7 +829,7 @@ motion begins.</p></li>
 <p>Then, for each frame:</p>
 <ol class="arabic simple">
 <li><p>Publish and seal ovstage transform and surface-velocity control edits.</p></li>
-<li><p>Call <code class="docutils literal notranslate"><span class="pre">update_from_ovstage()</span></code> for exactly those control ordinals.</p></li>
+<li><p>Call <code class="docutils literal notranslate"><span class="pre">update_from_ovstage()</span></code> for exactly those control ordinals and wait for its task.</p></li>
 <li><p>Step and wait for completion.</p></li>
 <li><p>Read poses and velocities.</p></li>
 </ol>
@@ -832,16 +840,19 @@ arriving indicates a sleeping load or insufficient friction.</p>
 </section>
 <section id="reset-and-readback">
 <h2>Reset and Readback<a class="headerlink" href="#reset-and-readback" title="Link to this heading">#</a></h2>
-<p>Use <code class="docutils literal notranslate"><span class="pre">reset_stage()</span></code> and reload or reattach the baseline scene for deterministic
+<p>Wait successfully for <code class="docutils literal notranslate"><span class="pre">detach_ovstage()</span></code>, then reload or reattach the baseline scene for deterministic
 reruns. Replaying only poses and velocities from an in-contact mid-run state
 does not restore PhysX contact caches and is not a deterministic reset.</p>
-<p>Read resolved runtime state with <code class="docutils literal notranslate"><span class="pre">RIGID_BODY_POSE</span></code> and
-<code class="docutils literal notranslate"><span class="pre">RIGID_BODY_VELOCITY</span></code>, or use the ovstage output-read API. Reading the source
-USD only shows authored values; it does not prove that the live PhysX actor
-received a target or that contact carried the rider.</p>
+<p>Read resolved runtime state through the session read (<code class="docutils literal notranslate"><span class="pre">PhysX.read</span></code> /
+<code class="docutils literal notranslate"><span class="pre">ovphysx_read</span></code>), selecting the rider by its path as the samples below do.
+Reading the source USD only shows authored values; it does not prove that the
+live PhysX actor received a target or that contact carried the rider.</p>
 </section>
 <section id="runnable-samples">
 <h2>Runnable Samples<a class="headerlink" href="#runnable-samples" title="Link to this heading">#</a></h2>
+<p>The Python sample loads <code class="docutils literal notranslate"><span class="pre">kinematic_support.usda</span></code>, which ships with every package under
+<code class="docutils literal notranslate"><span class="pre">ovphysx/samples/data/</span></code> in the wheel, <code class="docutils literal notranslate"><span class="pre">&lt;sdk-root&gt;/samples/data/</span></code> in the C/C++ SDK,
+and <code class="docutils literal notranslate"><span class="pre">tests/data/</span></code> in a repository checkout.</p>
 <p>Python:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION &amp; AFFILIATES. All rights reserved.</span>
 <span class="c1"># SPDX-License-Identifier: Apache-2.0</span>
@@ -851,14 +862,20 @@ received a target or that contact carried the rider.</p>
 
 <span class="sd">&quot;&quot;&quot;Kinematic support sample: transform motion, surface velocity, and both.&quot;&quot;&quot;</span>
 
+<span class="c1"># @implements REQ-CAPI-OVSTAGE-XFORM-001</span>
+<span class="c1"># @covers AC-1</span>
+<span class="c1"># @implements REQ-PYTHON-SAMPLE-002</span>
+<span class="c1"># @covers AC-1 AC-2</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">ovstage</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">ovphysx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.samples.python_samples.schema_support</span><span class="w"> </span><span class="kn">import</span> <span class="n">physx_schema_paths</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx</span><span class="w"> </span><span class="kn">import</span> <span class="n">PhysX</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">TensorType</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimObjectType</span>
 
 
 <span class="n">_physx_schemas_registered</span> <span class="o">=</span> <span class="kc">False</span>
@@ -867,15 +884,10 @@ received a target or that contact carried the rider.</p>
 <span class="k">def</span><span class="w"> </span><span class="nf">attach_scene</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="n">usd_path</span><span class="p">):</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">available</span><span class="p">():</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;ovstage population bridge is unavailable&quot;</span><span class="p">)</span>
-    <span class="c1"># ovphysx ships its PhysX USD schemas as codeless resources and does not register</span>
-    <span class="c1"># them itself. Register them with ovstage once, before the first population</span>
-    <span class="c1"># call in the process. The Newton USD schema (pip package newton-usd-schemas) is</span>
-    <span class="c1"># registered alongside when installed, so authored newton:* attributes reach the</span>
-    <span class="c1"># parser; this scene has none, and the package is not a wheel dependency, so</span>
-    <span class="c1"># don&#39;t require it.</span>
+    <span class="c1"># Register before population; this scene can omit the Newton provider.</span>
     <span class="k">global</span> <span class="n">_physx_schemas_registered</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">_physx_schemas_registered</span><span class="p">:</span>
-        <span class="n">schema_roots</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">codeless_schema_root</span><span class="p">())]</span>
+        <span class="n">schema_roots</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">physx_schema_paths</span><span class="p">()]</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">schema_roots</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">newton_schema_root</span><span class="p">()))</span>
         <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
@@ -885,30 +897,36 @@ received a target or that contact carried the rider.</p>
     <span class="n">stage</span> <span class="o">=</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">Stage</span><span class="p">(</span><span class="s2">&quot;ovphysx-kinematic-support-sample&quot;</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">open_usd</span><span class="p">(</span>
-            <span class="n">stage</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">usd_path</span><span class="p">),</span> <span class="n">ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">domains</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">PopulationDomain</span><span class="o">.</span><span class="n">PHYSICS</span>
+            <span class="n">stage</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">usd_path</span><span class="p">),</span> <span class="n">ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">domains</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">PopulationDomain</span><span class="o">.</span><span class="n">ALL</span>
         <span class="p">)</span>
         <span class="n">stage</span><span class="o">.</span><span class="n">advance_write_floor</span><span class="p">(</span><span class="n">ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
-        <span class="n">physx</span><span class="o">.</span><span class="n">attach_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">read_ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">attach_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">read_ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">stage</span>
     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">physx</span><span class="o">.</span><span class="n">is_stage_attached</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
+            <span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">detach_ovstage</span><span class="p">())</span>
         <span class="n">stage</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
         <span class="k">raise</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">make_binding</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">tensor_type</span><span class="p">):</span>
-    <span class="n">binding</span> <span class="o">=</span> <span class="n">physx</span><span class="o">.</span><span class="n">create_tensor_binding</span><span class="p">(</span><span class="n">pattern</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">tensor_type</span><span class="o">=</span><span class="n">tensor_type</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">binding</span><span class="o">.</span><span class="n">count</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">binding</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected one rigid body at </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">, found </span><span class="si">{</span><span class="n">binding</span><span class="o">.</span><span class="n">count</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">binding</span>
+<span class="n">RIDERS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;/World/TargetRider&quot;</span><span class="p">,</span> <span class="s2">&quot;/World/ConveyorRider&quot;</span><span class="p">,</span> <span class="s2">&quot;/World/CombinedRider&quot;</span><span class="p">)</span>
 
 
-<span class="c1"># NOTE: this sample uses the deprecated tensor-binding API. New code should use the session</span>
-<span class="c1"># read/write API (PhysX.read / PhysX.write).</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">read_x</span><span class="p">(</span><span class="n">binding</span><span class="p">):</span>
-    <span class="n">poses</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">binding</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-    <span class="n">binding</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">poses</span><span class="p">)</span>
-    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">poses</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_rider_x</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="n">stage</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;World x of each rider, in RIDERS order, through one read selected by the riders&#39; paths.&quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">PathDictionary</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span> <span class="k">as</span> <span class="n">paths</span><span class="p">:</span>
+        <span class="n">handles</span> <span class="o">=</span> <span class="p">[</span><span class="n">paths</span><span class="o">.</span><span class="n">intern_path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">RIDERS</span><span class="p">]</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">with</span> <span class="n">physx</span><span class="o">.</span><span class="n">read_sync</span><span class="p">(</span><span class="n">SimObjectType</span><span class="o">.</span><span class="n">RIGID_BODY</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;position&quot;</span><span class="p">],</span> <span class="n">prim_paths</span><span class="o">=</span><span class="n">handles</span><span class="p">)</span> <span class="k">as</span> <span class="n">result</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">groups</span><span class="p">:</span>
+                <span class="n">listed</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">get_paths</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">prim_list</span><span class="p">)</span>
+                <span class="n">positions</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">tensors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">prim_count</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">prim_count</span><span class="p">):</span>
+                    <span class="n">x</span><span class="p">[</span><span class="n">paths</span><span class="o">.</span><span class="n">path_to_string</span><span class="p">(</span><span class="n">listed</span><span class="p">[</span><span class="n">group</span><span class="o">.</span><span class="n">prim_offset</span> <span class="o">+</span> <span class="n">row</span><span class="p">])]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">positions</span><span class="p">[</span><span class="n">row</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+    <span class="n">missing</span> <span class="o">=</span> <span class="p">[</span><span class="n">path</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">RIDERS</span> <span class="k">if</span> <span class="n">path</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">x</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected a rigid body at each of </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="n">path</span><span class="p">]</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">RIDERS</span><span class="p">])</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">TransformWriter</span><span class="p">:</span>
@@ -961,46 +979,38 @@ received a target or that contact carried the rider.</p>
     <span class="n">PhysX</span><span class="o">.</span><span class="n">set_cpu_mode</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">physx</span> <span class="o">=</span> <span class="n">PhysX</span><span class="p">()</span>
     <span class="n">stage</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">bindings</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">writers</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">usd_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;..&quot;</span> <span class="o">/</span> <span class="s2">&quot;data&quot;</span> <span class="o">/</span> <span class="s2">&quot;kinematic_support.usda&quot;</span>
+        <span class="c1"># Prefer package data so a copied sample works. Fall back to the checked-in</span>
+        <span class="c1"># sample&#39;s adjacent data directory when package data is absent.</span>
+        <span class="n">usd_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;samples&quot;</span> <span class="o">/</span> <span class="s2">&quot;data&quot;</span> <span class="o">/</span> <span class="s2">&quot;kinematic_support.usda&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">usd_path</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+            <span class="n">usd_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;data&quot;</span> <span class="o">/</span> <span class="s2">&quot;kinematic_support.usda&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">usd_path</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ovphysx sample data is missing: </span><span class="si">{</span><span class="n">usd_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">stage</span> <span class="o">=</span> <span class="n">attach_scene</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="n">usd_path</span><span class="p">)</span>
         <span class="n">physx</span><span class="o">.</span><span class="n">wait_all</span><span class="p">()</span>
-
-        <span class="k">def</span><span class="w"> </span><span class="nf">add_binding</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">tensor_type</span><span class="p">):</span>
-            <span class="n">binding</span> <span class="o">=</span> <span class="n">make_binding</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">tensor_type</span><span class="p">)</span>
-            <span class="n">bindings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">binding</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">binding</span>
 
         <span class="n">target_platform</span> <span class="o">=</span> <span class="n">TransformWriter</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="s2">&quot;/World/TargetPlatform&quot;</span><span class="p">)</span>
         <span class="n">writers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">target_platform</span><span class="p">)</span>
         <span class="n">combined_platform</span> <span class="o">=</span> <span class="n">TransformWriter</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="s2">&quot;/World/CombinedPlatform&quot;</span><span class="p">)</span>
         <span class="n">writers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">combined_platform</span><span class="p">)</span>
-        <span class="n">target_rider</span> <span class="o">=</span> <span class="n">add_binding</span><span class="p">(</span><span class="s2">&quot;/World/TargetRider&quot;</span><span class="p">,</span> <span class="n">TensorType</span><span class="o">.</span><span class="n">RIGID_BODY_POSE</span><span class="p">)</span>
-        <span class="n">conveyor_rider</span> <span class="o">=</span> <span class="n">add_binding</span><span class="p">(</span><span class="s2">&quot;/World/ConveyorRider&quot;</span><span class="p">,</span> <span class="n">TensorType</span><span class="o">.</span><span class="n">RIGID_BODY_POSE</span><span class="p">)</span>
-        <span class="n">combined_rider</span> <span class="o">=</span> <span class="n">add_binding</span><span class="p">(</span><span class="s2">&quot;/World/CombinedRider&quot;</span><span class="p">,</span> <span class="n">TensorType</span><span class="o">.</span><span class="n">RIGID_BODY_POSE</span><span class="p">)</span>
 
         <span class="n">dt</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mf">60.0</span>
         <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
             <span class="n">physx</span><span class="o">.</span><span class="n">step_sync</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
 
-        <span class="n">start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">read_x</span><span class="p">(</span><span class="n">target_rider</span><span class="p">),</span> <span class="n">read_x</span><span class="p">(</span><span class="n">conveyor_rider</span><span class="p">),</span> <span class="n">read_x</span><span class="p">(</span><span class="n">combined_rider</span><span class="p">)]</span>
-        <span class="p">)</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">read_rider_x</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="n">stage</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">121</span><span class="p">):</span>
             <span class="n">x</span> <span class="o">=</span> <span class="n">frame</span> <span class="o">*</span> <span class="n">dt</span>
             <span class="n">ordinal</span> <span class="o">=</span> <span class="n">frame</span> <span class="o">+</span> <span class="mi">1</span>
             <span class="n">target_platform</span><span class="o">.</span><span class="n">write_pose</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">ordinal</span><span class="p">)</span>
             <span class="n">combined_platform</span><span class="o">.</span><span class="n">write_pose</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">16.0</span><span class="p">,</span> <span class="n">ordinal</span><span class="p">)</span>
             <span class="n">stage</span><span class="o">.</span><span class="n">advance_write_floor</span><span class="p">(</span><span class="n">ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
-            <span class="n">physx</span><span class="o">.</span><span class="n">update_from_ovstage</span><span class="p">(</span><span class="n">ordinal</span><span class="p">,</span> <span class="n">ordinal</span><span class="p">)</span>
+            <span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">update_from_ovstage</span><span class="p">(</span><span class="n">ordinal</span><span class="p">,</span> <span class="n">ordinal</span><span class="p">))</span>
             <span class="n">physx</span><span class="o">.</span><span class="n">step_sync</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
 
-        <span class="n">displacement</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">read_x</span><span class="p">(</span><span class="n">target_rider</span><span class="p">),</span> <span class="n">read_x</span><span class="p">(</span><span class="n">conveyor_rider</span><span class="p">),</span> <span class="n">read_x</span><span class="p">(</span><span class="n">combined_rider</span><span class="p">)])</span>
-            <span class="o">-</span> <span class="n">start</span>
-        <span class="p">)</span>
+        <span class="n">displacement</span> <span class="o">=</span> <span class="n">read_rider_x</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="n">stage</span><span class="p">)</span> <span class="o">-</span> <span class="n">start</span>
         <span class="n">target_dx</span><span class="p">,</span> <span class="n">conveyor_dx</span><span class="p">,</span> <span class="n">combined_dx</span> <span class="o">=</span> <span class="n">displacement</span>
         <span class="nb">print</span><span class="p">(</span>
             <span class="s2">&quot;Rider displacement: &quot;</span>
@@ -1016,10 +1026,8 @@ received a target or that contact carried the rider.</p>
     <span class="k">finally</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">writer</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">writers</span><span class="p">):</span>
             <span class="n">writer</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">binding</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">bindings</span><span class="p">):</span>
-            <span class="n">binding</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">stage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">physx</span><span class="o">.</span><span class="n">detach_ovstage</span><span class="p">()</span>
+            <span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">detach_ovstage</span><span class="p">())</span>
             <span class="n">stage</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
         <span class="n">physx</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
 
@@ -1040,6 +1048,7 @@ received a target or that contact carried the rider.</p>
 <span class="c1">// Kinematic support sample: transform motion, surface velocity, and both.</span>
 
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx_attributes.h&gt;</span>
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx_types.h&gt;</span>
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovx/path_dictionary/path_dictionary.h&gt;</span>
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;ovstage_sample.h&quot;</span>
@@ -1133,17 +1142,17 @@ received a target or that contact carried the rider.</p>
 <span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
 <span class="p">}</span>
 
-<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">wait_step</span><span class="p">(</span><span class="n">ovphysx_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">dt</span><span class="p">)</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">wait_step</span><span class="p">(</span><span class="n">ovphysx_instance_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">dt</span><span class="p">)</span>
 <span class="p">{</span>
 <span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_enqueue_result_t</span><span class="w"> </span><span class="n">step</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_step</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">dt</span><span class="p">);</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">step</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
 
-<span class="w">    </span><span class="n">ovphysx_op_wait_result_t</span><span class="w"> </span><span class="n">wait_result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="n">ovphysx_wait_task_result_t</span><span class="w"> </span><span class="n">wait_result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">};</span>
 <span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">waited</span><span class="w"> </span><span class="o">=</span>
-<span class="w">        </span><span class="n">ovphysx_wait_op</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">step</span><span class="p">.</span><span class="n">op_index</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_TIMEOUT_INFINITE</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">wait_result</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_wait_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">step</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_TIMEOUT_INFINITE</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">wait_result</span><span class="p">);</span>
 <span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">waited</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">wait_result</span><span class="p">.</span><span class="n">num_errors</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<span class="w">    </span><span class="n">ovphysx_destroy_wait_result</span><span class="p">(</span><span class="o">&amp;</span><span class="n">wait_result</span><span class="p">);</span>
+<span class="w">    </span><span class="n">ovphysx_destroy_wait_task_result</span><span class="p">(</span><span class="o">&amp;</span><span class="n">wait_result</span><span class="p">);</span>
 <span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">ok</span><span class="p">;</span>
 <span class="p">}</span>
 
@@ -1282,7 +1291,7 @@ received a target or that contact carried the rider.</p>
 <span class="p">}</span>
 
 <span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">publish_control_ordinal</span><span class="p">(</span>
-<span class="w">    </span><span class="n">ovphysx_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ovphysx_instance_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="p">,</span>
 <span class="w">    </span><span class="n">ovstage_instance_t</span><span class="o">*</span><span class="w"> </span><span class="n">stage</span><span class="p">,</span>
 <span class="w">    </span><span class="n">ovstage_ordinal_t</span><span class="w"> </span><span class="n">ordinal</span><span class="p">)</span>
 <span class="p">{</span>
@@ -1295,70 +1304,65 @@ received a target or that contact carried the rider.</p>
 
 <span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_ordinal_range_t</span><span class="w"> </span><span class="n">range</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">ordinal</span><span class="p">,</span><span class="w"> </span><span class="n">ordinal</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="w"> </span><span class="p">};</span>
 <span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">check_result</span><span class="p">(</span>
-<span class="w">        </span><span class="n">ovphysx_update_from_ovstage</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">range</span><span class="p">),</span>
+<span class="w">        </span><span class="n">ovphysx_sample_complete_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_update_from_ovstage</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">range</span><span class="p">)),</span>
 <span class="w">        </span><span class="s">&quot;update from ovstage&quot;</span><span class="p">);</span>
 <span class="p">}</span>
 
-<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">create_binding</span><span class="p">(</span>
-<span class="w">    </span><span class="n">ovphysx_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="p">,</span>
-<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">path</span><span class="p">,</span>
-<span class="w">    </span><span class="n">ovphysx_tensor_type_t</span><span class="w"> </span><span class="n">type</span><span class="p">,</span>
-<span class="w">    </span><span class="n">ovphysx_tensor_binding_handle_t</span><span class="o">*</span><span class="w"> </span><span class="n">binding</span><span class="p">)</span>
-<span class="p">{</span>
-<span class="w">    </span><span class="n">ovphysx_tensor_binding_desc_t</span><span class="w"> </span><span class="n">desc</span><span class="p">;</span>
-<span class="w">    </span><span class="n">memset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">desc</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">desc</span><span class="p">));</span>
-<span class="w">    </span><span class="n">desc</span><span class="p">.</span><span class="n">pattern</span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">path</span><span class="p">;</span>
-<span class="w">    </span><span class="n">desc</span><span class="p">.</span><span class="n">pattern</span><span class="p">.</span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">strnlen</span><span class="p">(</span><span class="n">path</span><span class="p">,</span><span class="w"> </span><span class="mi">256</span><span class="p">);</span>
-<span class="w">    </span><span class="n">desc</span><span class="p">.</span><span class="n">tensor_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">type</span><span class="p">;</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">ovphysx_create_tensor_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">desc</span><span class="p">,</span><span class="w"> </span><span class="n">binding</span><span class="p">),</span><span class="w"> </span><span class="s">&quot;create tensor binding&quot;</span><span class="p">))</span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-
-<span class="w">    </span><span class="n">ovphysx_tensor_spec_t</span><span class="w"> </span><span class="n">spec</span><span class="p">;</span>
-<span class="w">    </span><span class="n">memset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">spec</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">spec</span><span class="p">));</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">ovphysx_get_tensor_binding_spec</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">binding</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">spec</span><span class="p">),</span><span class="w"> </span><span class="s">&quot;get tensor binding spec&quot;</span><span class="p">))</span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">spec</span><span class="p">.</span><span class="n">ndim</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">spec</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">spec</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">7</span><span class="p">)</span>
-<span class="w">    </span><span class="p">{</span>
-<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Unexpected binding shape for %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">path</span><span class="p">);</span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
-<span class="p">}</span>
-
-<span class="k">static</span><span class="w"> </span><span class="n">DLTensor</span><span class="w"> </span><span class="nf">make_pose_tensor</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="n">data</span><span class="p">[</span><span class="mi">7</span><span class="p">],</span><span class="w"> </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
-<span class="p">{</span>
-<span class="w">    </span><span class="n">DLTensor</span><span class="w"> </span><span class="n">tensor</span><span class="p">;</span>
-<span class="w">    </span><span class="n">memset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tensor</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">tensor</span><span class="p">));</span>
-<span class="w">    </span><span class="n">tensor</span><span class="p">.</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">data</span><span class="p">;</span>
-<span class="w">    </span><span class="n">tensor</span><span class="p">.</span><span class="n">device</span><span class="p">.</span><span class="n">device_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kDLCPU</span><span class="p">;</span>
-<span class="w">    </span><span class="n">tensor</span><span class="p">.</span><span class="n">ndim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
-<span class="w">    </span><span class="n">tensor</span><span class="p">.</span><span class="n">dtype</span><span class="p">.</span><span class="n">code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kDLFloat</span><span class="p">;</span>
-<span class="w">    </span><span class="n">tensor</span><span class="p">.</span><span class="n">dtype</span><span class="p">.</span><span class="n">bits</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">32</span><span class="p">;</span>
-<span class="w">    </span><span class="n">tensor</span><span class="p">.</span><span class="n">dtype</span><span class="p">.</span><span class="n">lanes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
-<span class="w">    </span><span class="n">tensor</span><span class="p">.</span><span class="n">shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">shape</span><span class="p">;</span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">tensor</span><span class="p">;</span>
-<span class="p">}</span>
-
-<span class="c1">// NOTE: this sample uses the deprecated tensor-binding API. New code should use the session</span>
-<span class="c1">// read/write API (ovphysx_read / ovphysx_write).</span>
+<span class="c1">// Reads the world x of the rider at `path` through a session read selected by the rider&#39;s path.</span>
 <span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">read_x</span><span class="p">(</span>
-<span class="w">    </span><span class="n">ovphysx_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="p">,</span>
-<span class="w">    </span><span class="n">ovphysx_tensor_binding_handle_t</span><span class="w"> </span><span class="n">binding</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ovphysx_instance_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="p">,</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">path</span><span class="p">,</span>
 <span class="w">    </span><span class="kt">float</span><span class="o">*</span><span class="w"> </span><span class="n">x</span><span class="p">)</span>
 <span class="p">{</span>
-<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">data</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">};</span>
-<span class="w">    </span><span class="kt">int64_t</span><span class="w"> </span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">7</span><span class="w"> </span><span class="p">};</span>
-<span class="w">    </span><span class="n">DLTensor</span><span class="w"> </span><span class="n">tensor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">make_pose_tensor</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="n">shape</span><span class="p">);</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">ovphysx_read_tensor_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">binding</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">tensor</span><span class="p">),</span><span class="w"> </span><span class="s">&quot;read rider pose&quot;</span><span class="p">))</span>
+<span class="w">    </span><span class="n">ovphysx_query_selection_t</span><span class="w"> </span><span class="n">selection</span><span class="p">;</span>
+<span class="w">    </span><span class="n">memset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">selection</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">selection</span><span class="p">));</span>
+<span class="w">    </span><span class="n">selection</span><span class="p">.</span><span class="n">pattern</span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">path</span><span class="p">;</span>
+<span class="w">    </span><span class="n">selection</span><span class="p">.</span><span class="n">pattern</span><span class="p">.</span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">strnlen</span><span class="p">(</span><span class="n">path</span><span class="p">,</span><span class="w"> </span><span class="mi">256</span><span class="p">);</span>
+<span class="w">    </span><span class="n">ovphysx_query_handle_t</span><span class="w"> </span><span class="n">query</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span>
+<span class="w">            </span><span class="n">ovphysx_sample_complete_task</span><span class="p">(</span>
+<span class="w">                </span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_query_selection</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_QUERY_TARGET_RIGID_BODY</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">selection</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">query</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)),</span>
+<span class="w">            </span><span class="s">&quot;open rider query&quot;</span><span class="p">))</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<span class="w">    </span><span class="o">*</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">ovx_string_or_token_t</span><span class="w"> </span><span class="n">position</span><span class="p">;</span>
+<span class="w">    </span><span class="n">memset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">position</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">position</span><span class="p">));</span>
+<span class="w">    </span><span class="n">position</span><span class="p">.</span><span class="n">string</span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVPHYSX_ATTR_POSITION</span><span class="p">;</span>
+<span class="w">    </span><span class="n">position</span><span class="p">.</span><span class="n">string</span><span class="p">.</span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">strlen</span><span class="p">(</span><span class="n">OVPHYSX_ATTR_POSITION</span><span class="p">);</span>
+<span class="w">    </span><span class="n">ovphysx_read_handle_t</span><span class="w"> </span><span class="n">read</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_read_group_t</span><span class="o">*</span><span class="w"> </span><span class="n">group</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">check_result</span><span class="p">(</span>
+<span class="w">        </span><span class="n">ovphysx_sample_complete_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_read</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">query</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">position</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">read</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)),</span><span class="w"> </span><span class="s">&quot;read rider pose&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ok</span><span class="p">)</span>
+<span class="w">        </span><span class="n">ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">check_result</span><span class="p">(</span>
+<span class="w">            </span><span class="n">ovphysx_sample_complete_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_fetch_read_next</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">read</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">group</span><span class="p">)),</span><span class="w"> </span><span class="s">&quot;fetch rider pose&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ok</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">group</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">group</span><span class="o">-&gt;</span><span class="n">prims</span><span class="p">.</span><span class="n">count</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">group</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">.</span><span class="n">tensor_count</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">!</span><span class="n">group</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">.</span><span class="n">tensors</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">data</span><span class="p">))</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Expected one rigid body at %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">path</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ok</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// The sample runs in CPU mode, so the position column is host memory.</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">DLTensor</span><span class="o">*</span><span class="w"> </span><span class="n">tensor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">group</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">.</span><span class="n">tensors</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+<span class="w">        </span><span class="o">*</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">((</span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="o">*</span><span class="p">)((</span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="p">)</span><span class="n">tensor</span><span class="o">-&gt;</span><span class="n">data</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">tensor</span><span class="o">-&gt;</span><span class="n">byte_offset</span><span class="p">))[</span><span class="mi">0</span><span class="p">];</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+<span class="w">        </span><span class="n">ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">check_result</span><span class="p">(</span>
+<span class="w">                 </span><span class="n">ovphysx_sample_complete_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_release_group</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">read</span><span class="p">,</span><span class="w"> </span><span class="n">group</span><span class="o">-&gt;</span><span class="n">read_group_id</span><span class="p">)),</span>
+<span class="w">                 </span><span class="s">&quot;release rider group&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">ok</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">read</span><span class="p">)</span>
+<span class="w">        </span><span class="n">ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">check_result</span><span class="p">(</span>
+<span class="w">                 </span><span class="n">ovphysx_sample_complete_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_release_read</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">read</span><span class="p">)),</span><span class="w"> </span><span class="s">&quot;release rider read&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">ok</span><span class="p">;</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">check_result</span><span class="p">(</span>
+<span class="w">               </span><span class="n">ovphysx_sample_complete_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_release_query</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">query</span><span class="p">)),</span><span class="w"> </span><span class="s">&quot;release rider query&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">ok</span><span class="p">;</span>
 <span class="p">}</span>
 
 <span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
 <span class="p">{</span>
 <span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">exit_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
-<span class="w">    </span><span class="n">ovphysx_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ovphysx_instance_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
 <span class="w">    </span><span class="n">ovphysx_sample_stage_attachment_t</span><span class="w"> </span><span class="n">attachment</span><span class="p">;</span>
 <span class="w">    </span><span class="n">path_query_t</span><span class="w"> </span><span class="n">target_platform</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="n">OVSTAGE_INVALID_QUERY_HANDLE</span><span class="p">,</span><span class="w"> </span><span class="n">OVX_INVALID_PRIMPATH_LIST</span>
@@ -1369,9 +1373,6 @@ received a target or that contact carried the rider.</p>
 <span class="w">    </span><span class="n">object_change_counts_t</span><span class="w"> </span><span class="n">object_changes</span><span class="p">;</span>
 <span class="w">    </span><span class="n">ovphysx_subscription_id_t</span><span class="w"> </span><span class="n">object_change_subscription</span><span class="w"> </span><span class="o">=</span>
 <span class="w">        </span><span class="n">OVPHYSX_INVALID_SUBSCRIPTION_ID</span><span class="p">;</span>
-<span class="w">    </span><span class="n">ovphysx_tensor_binding_handle_t</span><span class="w"> </span><span class="n">target_rider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<span class="w">    </span><span class="n">ovphysx_tensor_binding_handle_t</span><span class="w"> </span><span class="n">conveyor_rider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<span class="w">    </span><span class="n">ovphysx_tensor_binding_handle_t</span><span class="w"> </span><span class="n">combined_rider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
 <span class="w">    </span><span class="n">memset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">attachment</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">attachment</span><span class="p">));</span>
 <span class="w">    </span><span class="n">object_change_counter_init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">object_changes</span><span class="p">.</span><span class="n">created</span><span class="p">);</span>
 <span class="w">    </span><span class="n">object_change_counter_init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">object_changes</span><span class="p">.</span><span class="n">destroyed</span><span class="p">);</span>
@@ -1380,8 +1381,7 @@ received a target or that contact carried the rider.</p>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">ovphysx_initialize</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;initialize&quot;</span><span class="p">))</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">exit_code</span><span class="p">;</span>
 
-<span class="w">    </span><span class="n">ovphysx_create_args</span><span class="w"> </span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVPHYSX_CREATE_ARGS_DEFAULT</span><span class="p">;</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">ovphysx_create_instance</span><span class="p">(</span><span class="o">&amp;</span><span class="n">args</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">handle</span><span class="p">),</span><span class="w"> </span><span class="s">&quot;create instance&quot;</span><span class="p">))</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">ovphysx_create_instance</span><span class="p">(</span><span class="o">&amp;</span><span class="n">handle</span><span class="p">),</span><span class="w"> </span><span class="s">&quot;create instance&quot;</span><span class="p">))</span>
 <span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">ovphysx_sample_attach_usd_with_ovstage</span><span class="p">(</span>
 <span class="w">            </span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_TEST_DATA</span><span class="w"> </span><span class="s">&quot;/kinematic_support.usda&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">attachment</span><span class="p">))</span>
@@ -1394,18 +1394,12 @@ received a target or that contact carried the rider.</p>
 <span class="w">    </span><span class="n">callbacks</span><span class="p">.</span><span class="n">user_data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">object_changes</span><span class="p">;</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span>
 <span class="w">            </span><span class="n">ovphysx_subscribe_object_changes</span><span class="p">(</span>
-<span class="w">                </span><span class="o">&amp;</span><span class="n">callbacks</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">object_change_subscription</span><span class="p">),</span>
+<span class="w">                </span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">callbacks</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">object_change_subscription</span><span class="p">),</span>
 <span class="w">            </span><span class="s">&quot;subscribe to object changes&quot;</span><span class="p">))</span>
 <span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
 
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">create_path_query</span><span class="p">(</span><span class="n">attachment</span><span class="p">.</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/World/TargetPlatform&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">target_platform</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
-<span class="w">        </span><span class="o">!</span><span class="n">create_path_query</span><span class="p">(</span><span class="n">attachment</span><span class="p">.</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/World/CombinedPlatform&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">combined_platform</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
-<span class="w">        </span><span class="o">!</span><span class="n">create_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/World/TargetRider&quot;</span><span class="p">,</span>
-<span class="w">                        </span><span class="n">OVPHYSX_TENSOR_RIGID_BODY_POSE_F32</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">target_rider</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
-<span class="w">        </span><span class="o">!</span><span class="n">create_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/World/ConveyorRider&quot;</span><span class="p">,</span>
-<span class="w">                        </span><span class="n">OVPHYSX_TENSOR_RIGID_BODY_POSE_F32</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">conveyor_rider</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
-<span class="w">        </span><span class="o">!</span><span class="n">create_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/World/CombinedRider&quot;</span><span class="p">,</span>
-<span class="w">                        </span><span class="n">OVPHYSX_TENSOR_RIGID_BODY_POSE_F32</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">combined_rider</span><span class="p">))</span>
+<span class="w">        </span><span class="o">!</span><span class="n">create_path_query</span><span class="p">(</span><span class="n">attachment</span><span class="p">.</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/World/CombinedPlatform&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">combined_platform</span><span class="p">))</span>
 <span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
 
 <span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">dt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0f</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">60.0f</span><span class="p">;</span>
@@ -1418,9 +1412,9 @@ received a target or that contact carried the rider.</p>
 <span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">target_start</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span>
 <span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">conveyor_start</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span>
 <span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">combined_start</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">read_x</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">target_rider</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">target_start</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
-<span class="w">        </span><span class="o">!</span><span class="n">read_x</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">conveyor_rider</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">conveyor_start</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
-<span class="w">        </span><span class="o">!</span><span class="n">read_x</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">combined_rider</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">combined_start</span><span class="p">))</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">read_x</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/World/TargetRider&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">target_start</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
+<span class="w">        </span><span class="o">!</span><span class="n">read_x</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/World/ConveyorRider&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">conveyor_start</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
+<span class="w">        </span><span class="o">!</span><span class="n">read_x</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/World/CombinedRider&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">combined_start</span><span class="p">))</span>
 <span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
 
 <span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">frame</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="n">frame</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">120</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">frame</span><span class="p">)</span>
@@ -1437,9 +1431,9 @@ received a target or that contact carried the rider.</p>
 <span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">target_end</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span>
 <span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">conveyor_end</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span>
 <span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">combined_end</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">read_x</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">target_rider</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">target_end</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
-<span class="w">        </span><span class="o">!</span><span class="n">read_x</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">conveyor_rider</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">conveyor_end</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
-<span class="w">        </span><span class="o">!</span><span class="n">read_x</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">combined_rider</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">combined_end</span><span class="p">))</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">read_x</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/World/TargetRider&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">target_end</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
+<span class="w">        </span><span class="o">!</span><span class="n">read_x</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/World/ConveyorRider&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">conveyor_end</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
+<span class="w">        </span><span class="o">!</span><span class="n">read_x</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/World/CombinedRider&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">combined_end</span><span class="p">))</span>
 <span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
 
 <span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">target_dx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">target_end</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">target_start</span><span class="p">;</span>
@@ -1469,19 +1463,13 @@ received a target or that contact carried the rider.</p>
 <span class="nl">cleanup</span><span class="p">:</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">object_change_subscription</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_INVALID_SUBSCRIPTION_ID</span><span class="p">)</span>
 <span class="w">        </span><span class="n">check_result</span><span class="p">(</span>
-<span class="w">            </span><span class="n">ovphysx_unsubscribe_object_changes</span><span class="p">(</span><span class="n">object_change_subscription</span><span class="p">),</span>
+<span class="w">            </span><span class="n">ovphysx_unsubscribe_object_changes</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">object_change_subscription</span><span class="p">),</span>
 <span class="w">            </span><span class="s">&quot;unsubscribe from object changes&quot;</span><span class="p">);</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">attachment</span><span class="p">.</span><span class="n">stage</span><span class="p">)</span>
 <span class="w">    </span><span class="p">{</span>
 <span class="w">        </span><span class="n">destroy_path_query</span><span class="p">(</span><span class="n">attachment</span><span class="p">.</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">target_platform</span><span class="p">);</span>
 <span class="w">        </span><span class="n">destroy_path_query</span><span class="p">(</span><span class="n">attachment</span><span class="p">.</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">combined_platform</span><span class="p">);</span>
 <span class="w">    </span><span class="p">}</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">target_rider</span><span class="p">)</span>
-<span class="w">        </span><span class="n">ovphysx_destroy_tensor_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">target_rider</span><span class="p">);</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">conveyor_rider</span><span class="p">)</span>
-<span class="w">        </span><span class="n">ovphysx_destroy_tensor_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">conveyor_rider</span><span class="p">);</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">combined_rider</span><span class="p">)</span>
-<span class="w">        </span><span class="n">ovphysx_destroy_tensor_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">combined_rider</span><span class="p">);</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
 <span class="w">    </span><span class="p">{</span>
 <span class="w">        </span><span class="n">ovphysx_sample_destroy_stage</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">attachment</span><span class="p">);</span>
@@ -1597,7 +1585,7 @@ received a target or that contact carried the rider.</p>
 </div>
       
         <div class="footer-item"><p class="last-updated">
-  Last updated on Oct 08, 2026.
+  Last updated on Oct 15, 2026.
   <br/>
 </p></div>
       

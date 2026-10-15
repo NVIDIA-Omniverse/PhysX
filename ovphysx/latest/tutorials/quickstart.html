@@ -47,7 +47,7 @@
 
 
     <script rel="preload" src="../_static/modal-table.js"></script>
-    <script src="../_static/documentation_options.js?v=18b66ea0"></script>
+    <script src="../_static/documentation_options.js?v=423e15eb"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.6.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -75,7 +75,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Oct 08, 2026"/>
+    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
   
     
     <script src="../_static/searchtools.js"></script>
@@ -507,6 +507,10 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coding_style.html">ovphysx coding and doc style</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
@@ -566,7 +570,6 @@
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAPI.html">PhysxJointAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
@@ -613,6 +616,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../read_write/device.html">Device residency and interop</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/readable.html">Readable data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/writable.html">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/path_patterns.html">Path patterns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/limitations.html">Known limitations and gaps</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
@@ -625,7 +630,7 @@
 <li class="toctree-l1"><a class="reference internal" href="render_handoff.html">Rendering Handoff</a></li>
 <li class="toctree-l1"><a class="reference internal" href="physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
 <li class="toctree-l1"><a class="reference internal" href="omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="nvtx_profiling.html">NVTX Profiling in Nsight Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
 <li class="toctree-l1"><a class="reference internal" href="source_link_build.html">Building Against the ovphysx Source Tree</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
@@ -736,17 +741,18 @@ neither an NVIDIA driver nor the CUDA Toolkit.</p></li>
 <section id="python">
 <h3>Python<a class="headerlink" href="#python" title="Link to this heading">#</a></h3>
 <p>Install the wheel:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>ovphysx<span class="w"> </span>newton-usd-schemas
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>ovphysx<span class="w"> </span>physx-usd-schemas<span class="w"> </span>newton-usd-schemas
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">pip</span></code> installs the OVStage version required by ovphysx automatically.</p>
 <p><code class="docutils literal notranslate"><span class="pre">newton-usd-schemas</span></code> is the Newton USD schema the snippet below registers next
-to ovphysx’s own; scenes that author no <code class="docutils literal notranslate"><span class="pre">newton:*</span></code> attributes can leave it out
+to the external PhysX schemas; scenes that author no <code class="docutils literal notranslate"><span class="pre">newton:*</span></code> attributes can leave it out
 and drop the <code class="docutils literal notranslate"><span class="pre">newton_schema_root()</span></code> entry.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">ovstage</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">ovphysx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.samples.python_samples.schema_support</span><span class="w"> </span><span class="kn">import</span> <span class="n">physx_schema_paths</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx</span><span class="w"> </span><span class="kn">import</span> <span class="n">PhysX</span>
 
 <span class="n">usd_path</span> <span class="o">=</span> <span class="p">(</span>
@@ -758,24 +764,21 @@ and drop the <code class="docutils literal notranslate"><span class="pre">newton
 <span class="k">if</span> <span class="ow">not</span> <span class="n">usd_path</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
     <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ovphysx sample data is missing: </span><span class="si">{</span><span class="n">usd_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-<span class="c1"># ovphysx ships its PhysX USD schemas as codeless resources and never registers</span>
-<span class="c1"># them itself; register them with ovstage before the first population call. The</span>
-<span class="c1"># Newton USD schema (pip install newton-usd-schemas) goes in the same call so</span>
-<span class="c1"># authored newton:* attributes reach the parser.</span>
+<span class="c1"># Register external PhysX and Newton schemas before the first USD schema read (population or export).</span>
 <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">register_usd_schemas</span><span class="p">(</span>
-    <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">codeless_schema_root</span><span class="p">()),</span> <span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">newton_schema_root</span><span class="p">())]</span>
+    <span class="p">[</span><span class="o">*</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">physx_schema_paths</span><span class="p">()],</span> <span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">newton_schema_root</span><span class="p">())]</span>
 <span class="p">)</span>
 <span class="n">stage</span> <span class="o">=</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">Stage</span><span class="p">(</span><span class="s2">&quot;scene&quot;</span><span class="p">)</span>
 <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">open_usd</span><span class="p">(</span>
-    <span class="n">stage</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">usd_path</span><span class="p">),</span> <span class="n">ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">domains</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">PopulationDomain</span><span class="o">.</span><span class="n">PHYSICS</span>
+    <span class="n">stage</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">usd_path</span><span class="p">),</span> <span class="n">ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">domains</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">PopulationDomain</span><span class="o">.</span><span class="n">ALL</span>
 <span class="p">)</span>
 <span class="c1"># attach_ovstage() reads at a sealed ordinal.</span>
 <span class="n">stage</span><span class="o">.</span><span class="n">advance_write_floor</span><span class="p">(</span><span class="n">ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
 
 <span class="n">physx</span> <span class="o">=</span> <span class="n">PhysX</span><span class="p">()</span>
-<span class="n">physx</span><span class="o">.</span><span class="n">attach_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">read_ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">attach_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">read_ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 <span class="n">physx</span><span class="o">.</span><span class="n">step_sync</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mf">60.0</span><span class="p">)</span>
-<span class="n">physx</span><span class="o">.</span><span class="n">detach_ovstage</span><span class="p">()</span>
+<span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">detach_ovstage</span><span class="p">())</span>
 <span class="n">physx</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
 <span class="n">stage</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
 </pre></div>
@@ -790,21 +793,21 @@ native scene-graph instances — refer to
 <h3>C/C++<a class="headerlink" href="#c-c" title="Link to this heading">#</a></h3>
 <p>Download the ovphysx SDK package from the <a class="reference external" href="https://github.com/NVIDIA-Omniverse/PhysX/releases">GitHub Releases</a> page and extract it to a local path.
 You also need CMake 3.16 or newer and a C or C++ compiler.</p>
-<p>Repository source builds fetch the pinned ovstage version automatically from
-public PyPI. The manual download described in this section applies only if you
-use the prebuilt ovphysx SDK.</p>
-<p><strong>ovstage is not part of the SDK.</strong> ovphysx binds to the application-supplied
-ovstage, so the package ships no ovstage headers, library, or runtime. Download
-the matching native archive for your platform from the
-<a class="reference external" href="https://github.com/NVIDIA-Omniverse/ovstage/releases">ovstage GitHub Releases</a>
-page and extract it to a separate directory beside ovphysx. The SDK records its
-OVStage release in <code class="docutils literal notranslate"><span class="pre">ovphysx_OVSTAGE_VERSION</span></code> in
-<code class="docutils literal notranslate"><span class="pre">lib/cmake/ovphysx/ovphysxConfig.cmake</span></code>; use that value to select the archive.
-Do not overlay the two package trees.</p>
-<p><code class="docutils literal notranslate"><span class="pre">find_package(ovphysx)</span></code> pulls it in through <code class="docutils literal notranslate"><span class="pre">find_dependency(ovstage)</span></code>, so add
-both roots to <code class="docutils literal notranslate"><span class="pre">CMAKE_PREFIX_PATH</span></code>. CMake checks that ovstage’s major, minor, and
-patch version match the SDK’s requirement. Both roots are required even if you
-never call ovstage, because the public ovphysx headers <code class="docutils literal notranslate"><span class="pre">#include</span> <span class="pre">&lt;ovstage/...&gt;</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">find_package(ovphysx)</span></code> uses a compatible OVStage already on
+<code class="docutils literal notranslate"><span class="pre">CMAKE_PREFIX_PATH</span></code>, or downloads the pinned native archive, verifies its SHA-256,
+and caches it per user. Downloading needs Python 3.8+ on <code class="docutils literal notranslate"><span class="pre">PATH</span></code>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span>-B<span class="w"> </span>build<span class="w"> </span>-S<span class="w"> </span>.<span class="w"> </span>-DCMAKE_PREFIX_PATH<span class="o">=</span><span class="s2">&quot;/path/to/ovphysx&quot;</span>
+</pre></div>
+</div>
+<p>To supply OVStage yourself, use
+<code class="docutils literal notranslate"><span class="pre">-DCMAKE_PREFIX_PATH=&quot;/path/to/ovphysx;/path/to/ovstage&quot;</span></code>. Keep the two package
+roots separate. <code class="docutils literal notranslate"><span class="pre">-DOVPHYSX_FETCH_OVSTAGE=OFF</span></code> disables downloading;
+<code class="docutils literal notranslate"><span class="pre">-DOVPHYSX_OVSTAGE_CACHE_DIR=&lt;dir&gt;</span></code> selects the cache location. For manual
+provisioning, the SDK records its pinned release in <code class="docutils literal notranslate"><span class="pre">ovphysx_OVSTAGE_VERSION</span></code>
+in <code class="docutils literal notranslate"><span class="pre">lib/cmake/ovphysx/ovphysxConfig.cmake</span></code>. CMake accepts a compatible supplied
+package as defined by OVStage’s package-version metadata.</p>
+<p>Install the external schema provider and set <code class="docutils literal notranslate"><span class="pre">PHYSX_USD_SCHEMAS_ROOT</span></code> before
+running a native sample; see <a class="reference internal" href="../physics_schemas.html#installing-the-external-physx-schemas"><span class="std std-ref">Physics Schemas</span></a>.</p>
 <p><strong>SDK Directory Layout</strong></p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>ovphysx/
 ├── SKILLS.md             # Skills index
@@ -812,8 +815,8 @@ never call ovstage, because the public ovphysx headers <code class="docutils lit
 ├── include/ovphysx/     # Public headers (ovphysx.h, ovphysx_types.h, and related headers)
 ├── lib/                 # Shared libraries and CMake package config
 │   └── cmake/ovphysx/   # find_package(ovphysx) support
+├── scripts/             # fetch_ovstage_release.py, used by the OVStage bootstrap
 ├── plugins/             # Carbonite and PhysX runtime plugins
-├── schemas/physx/       # Codeless PhysX USD schemas (the application registers them)
 ├── samples/             # CI-tested C sample source + USD data
 ├── docs/                # Documentation (HTML + Markdown)
 ├── LICENSE.txt
@@ -867,6 +870,9 @@ ovphysx and ovstage companion targets:</p>
 <span class="p">)</span>
 <span class="nb">if</span><span class="p">(</span><span class="s">WIN32</span><span class="p">)</span>
 <span class="w">    </span><span class="nb">ovphysx_copy_runtime_dlls</span><span class="p">(</span><span class="s">hello_world_c</span><span class="p">)</span>
+<span class="w">    </span><span class="c"># OVStage is not copied (it loads its plugins relative to itself), so its</span>
+<span class="w">    </span><span class="c"># directories have to reach the process through PATH.</span>
+<span class="w">    </span><span class="nb">ovphysx_set_ovstage_runtime_env</span><span class="p">(</span><span class="s">hello_world_c</span><span class="p">)</span>
 <span class="nb">endif</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -876,8 +882,7 @@ ovphysx and ovstage companion targets:</p>
 sealed read ordinal, waits for the physics step, and cleans up in lifetime-safe
 order. Its <code class="docutils literal notranslate"><span class="pre">ovphysx_sample_attach_usd_with_ovstage()</span></code> helper (from
 <code class="docutils literal notranslate"><span class="pre">samples/c_samples/common/ovstage_sample.h</span></code>) first registers with ovstage the
-codeless PhysX USD schemas that ovphysx ships, passing the root returned by
-<code class="docutils literal notranslate"><span class="pre">ovphysx_get_codeless_schema_root()</span></code> to
+codeless PhysX USD schemas from physx-usd-schemas, passing both provider resource directories to
 <code class="docutils literal notranslate"><span class="pre">ovstage_population_register_usd_schemas()</span></code> before it populates the stage;
 ovphysx never registers them itself, and the registration must precede the first
 population call in the process:</p>
@@ -887,11 +892,10 @@ population call in the process:</p>
 
 <span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
 <span class="p">{</span>
-<span class="w">  </span><span class="c1">// Create a PhysX instance with the default arguments.</span>
-<span class="w">  </span><span class="n">ovphysx_create_args</span><span class="w"> </span><span class="n">create_args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVPHYSX_CREATE_ARGS_DEFAULT</span><span class="p">;</span>
-<span class="w">  </span><span class="n">ovphysx_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">  </span><span class="c1">// Create a PhysX instance.</span>
+<span class="w">  </span><span class="n">ovphysx_instance_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
 <span class="w">  </span>
-<span class="w">  </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_create_instance</span><span class="p">(</span><span class="o">&amp;</span><span class="n">create_args</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">  </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_create_instance</span><span class="p">(</span><span class="o">&amp;</span><span class="n">handle</span><span class="p">);</span>
 <span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Failed to create PhysX instance</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
 <span class="w">  </span><span class="n">ovphysx_shutdown</span><span class="p">();</span>
@@ -919,11 +923,11 @@ population call in the process:</p>
 <span class="w">  </span><span class="p">}</span>
 
 <span class="w">  </span><span class="c1">// Wait for the step to complete and check it reported no errors.</span>
-<span class="w">  </span><span class="n">ovphysx_op_wait_result_t</span><span class="w"> </span><span class="n">step_wait_result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">0</span><span class="p">};</span>
-<span class="w">  </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">step_wait_status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_wait_op</span><span class="p">(</span>
-<span class="w">      </span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">step_result</span><span class="p">.</span><span class="n">op_index</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_TIMEOUT_INFINITE</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">step_wait_result</span><span class="p">);</span>
+<span class="w">  </span><span class="n">ovphysx_wait_task_result_t</span><span class="w"> </span><span class="n">step_wait_result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+<span class="w">  </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">step_wait_status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_wait_task</span><span class="p">(</span>
+<span class="w">      </span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">step_result</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_TIMEOUT_INFINITE</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">step_wait_result</span><span class="p">);</span>
 <span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">step_ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">step_wait_status</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">step_wait_result</span><span class="p">.</span><span class="n">num_errors</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
-<span class="w">  </span><span class="n">ovphysx_destroy_wait_result</span><span class="p">(</span><span class="o">&amp;</span><span class="n">step_wait_result</span><span class="p">);</span>
+<span class="w">  </span><span class="n">ovphysx_destroy_wait_task_result</span><span class="p">(</span><span class="o">&amp;</span><span class="n">step_wait_result</span><span class="p">);</span>
 <span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">step_ok</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Simulation step failed</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
 <span class="w">    </span><span class="n">ovphysx_sample_destroy_stage</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">stage_attachment</span><span class="p">);</span>
@@ -954,13 +958,10 @@ population call in the process:</p>
 </pre></div>
 </div>
 <p><strong>Configure and Build</strong></p>
-<p>Point <code class="docutils literal notranslate"><span class="pre">CMAKE_PREFIX_PATH</span></code> at both package roots and build the bundled sample.
-Replace <code class="docutils literal notranslate"><span class="pre">/path/to/ovphysx</span></code> with your extracted SDK root (the directory
-containing <code class="docutils literal notranslate"><span class="pre">include/</span></code>, <code class="docutils literal notranslate"><span class="pre">lib/</span></code>, and <code class="docutils literal notranslate"><span class="pre">plugins/</span></code>), and <code class="docutils literal notranslate"><span class="pre">/path/to/ovstage</span></code> with the
-directory you extracted the ovstage archive into:</p>
+<p>Replace <code class="docutils literal notranslate"><span class="pre">/path/to/ovphysx</span></code> with the extracted SDK root:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span>-B<span class="w"> </span>build<span class="w"> </span>-S<span class="w"> </span>/path/to/ovphysx/samples/c_samples/hello_world_c<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-DCMAKE_PREFIX_PATH<span class="o">=</span><span class="s2">&quot;/path/to/ovphysx;/path/to/ovstage&quot;</span>
-cmake<span class="w"> </span>--build<span class="w"> </span>build
+<span class="w">  </span>-DCMAKE_PREFIX_PATH<span class="o">=</span><span class="s2">&quot;/path/to/ovphysx&quot;</span>
+cmake<span class="w"> </span>--build<span class="w"> </span>build<span class="w"> </span>--config<span class="w"> </span>Release
 </pre></div>
 </div>
 </section>
@@ -970,23 +971,31 @@ cmake<span class="w"> </span>--build<span class="w"> </span>build
 <h2>Runtime Libraries for C and C++<a class="headerlink" href="#runtime-libraries-for-c-and-c" title="Link to this heading">#</a></h2>
 <section id="linux">
 <h3>Linux<a class="headerlink" href="#linux" title="Link to this heading">#</a></h3>
-<p>The CMake config embeds the RPATH in your executable automatically.
-No <code class="docutils literal notranslate"><span class="pre">LD_LIBRARY_PATH</span></code> manipulation is needed. Run the binary directly.</p>
+<p>The CMake config bakes RPATH into your executable automatically, covering both the
+OVPhysX libraries and the resolved OVStage runtime directories. No
+<code class="docutils literal notranslate"><span class="pre">LD_LIBRARY_PATH</span></code> manipulation is needed. Run the binary directly.</p>
 </section>
 <section id="windows">
 <h3>Windows<a class="headerlink" href="#windows" title="Link to this heading">#</a></h3>
 <p>Use the <code class="docutils literal notranslate"><span class="pre">ovphysx_copy_runtime_dlls(&lt;target&gt;)</span></code> helper provided by the CMake package
 (already shown in the <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> example).
-This copies the ovphysx DLLs, the <code class="docutils literal notranslate"><span class="pre">plugins/</span></code> tree, and the codeless schema tree
-(<code class="docutils literal notranslate"><span class="pre">schemas/physx</span></code>, so <code class="docutils literal notranslate"><span class="pre">ovphysx_get_codeless_schema_root()</span></code> resolves in that layout)
-next to your executable. Keep the
-separate ovstage package intact and add its <code class="docutils literal notranslate"><span class="pre">bin</span></code>, <code class="docutils literal notranslate"><span class="pre">bin/plugins</span></code>,
-<code class="docutils literal notranslate"><span class="pre">bin/plugins/omni.client.lib</span></code>, and <code class="docutils literal notranslate"><span class="pre">bin/plugins/omni.usd_resolver</span></code> directories
-to the process <code class="docutils literal notranslate"><span class="pre">PATH</span></code> before launch.</p>
-<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="nv">$env:OVSTAGE_ROOT</span> <span class="p">=</span> <span class="s2">&quot;C:\path\to\extracted\ovstage&quot;</span>
-<span class="nv">$env:PATH</span> <span class="p">=</span> <span class="s2">&quot;$env:OVSTAGE_ROOT\bin;$env:OVSTAGE_ROOT\bin\plugins;$env:OVSTAGE_ROOT\bin\plugins\omni.client.lib;$env:OVSTAGE_ROOT\bin\plugins\omni.usd_resolver;$env:PATH&quot;</span>
+This copies the ovphysx DLLs and the <code class="docutils literal notranslate"><span class="pre">plugins/</span></code> tree next to your executable.
+Install the schema provider separately and set <code class="docutils literal notranslate"><span class="pre">PHYSX_USD_SCHEMAS_ROOT</span></code> to its
+current directory before running a native sample.</p>
+<p>OVStage is deliberately <em>not</em> copied: its libraries discover their plugin tree
+relative to their own location, so they must stay in their own package and be
+reached through <code class="docutils literal notranslate"><span class="pre">PATH</span></code> instead. The CMake package knows where the resolved OVStage
+is, so you do not have to name the path yourself:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">ovphysx_copy_runtime_dlls</span><span class="p">(</span><span class="s">my_app</span><span class="p">)</span>
+<span class="nb">ovphysx_set_ovstage_runtime_env</span><span class="p">(</span><span class="s">my_app</span><span class="p">)</span>
 </pre></div>
 </div>
+<p>That sets the Visual Studio debugger’s <code class="docutils literal notranslate"><span class="pre">PATH</span></code> and generates <code class="docutils literal notranslate"><span class="pre">run_my_app.cmd</span></code>
+beside the executable. When debugging, also set the working directory for
+relative scene paths and provide <code class="docutils literal notranslate"><span class="pre">PHYSX_USD_SCHEMAS_ROOT</span></code> in the debugger
+environment. If you would rather
+build the environment yourself, <code class="docutils literal notranslate"><span class="pre">ovphysx_ovstage_runtime_path(&lt;var&gt;)</span></code> returns the
+directories to prepend.</p>
 </section>
 </section>
 <section id="result">
@@ -1114,7 +1123,7 @@ to the process <code class="docutils literal notranslate"><span class="pre">PATH
 </div>
       
         <div class="footer-item"><p class="last-updated">
-  Last updated on Oct 08, 2026.
+  Last updated on Oct 15, 2026.
   <br/>
 </p></div>
       

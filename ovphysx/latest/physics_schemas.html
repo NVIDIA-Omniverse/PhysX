@@ -47,7 +47,7 @@
 
 
     <script rel="preload" src="_static/modal-table.js"></script>
-    <script src="_static/documentation_options.js?v=18b66ea0"></script>
+    <script src="_static/documentation_options.js?v=423e15eb"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.6.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -75,7 +75,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Oct 08, 2026"/>
+    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -507,6 +507,10 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="ovphysx_overview.html">ovphysx Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="coding_style.html">ovphysx coding and doc style</a></li>
+<li class="toctree-l1"><a class="reference internal" href="migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
 <li class="toctree-l1"><a class="reference internal" href="local_development.html">Local Development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
@@ -566,7 +570,6 @@
 <li class="toctree-l2"><a class="reference internal" href="population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxJointAPI.html">PhysxJointAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
@@ -613,6 +616,8 @@
 <li class="toctree-l1"><a class="reference internal" href="read_write/device.html">Device residency and interop</a></li>
 <li class="toctree-l1"><a class="reference internal" href="read_write/readable.html">Readable data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="read_write/writable.html">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="read_write/vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="read_write/path_patterns.html">Path patterns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="read_write/limitations.html">Known limitations and gaps</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
@@ -625,7 +630,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tutorials/render_handoff.html">Rendering Handoff</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/nvtx_profiling.html">NVTX Profiling in Nsight Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
@@ -720,7 +725,7 @@ functionality and tuning: <code class="docutils literal notranslate"><span class
 and rest offsets), <code class="docutils literal notranslate"><span class="pre">PhysxForceAPI</span></code>, joint extensions such as
 <code class="docutils literal notranslate"><span class="pre">PhysxJointAxisAPI</span></code> (refer to
 <a class="reference internal" href="simulation_setup/joints.html#physx-joint-schema"><span class="std std-ref">Joints</span></a>), deformable extensions
-(refer to <a class="reference internal" href="simulation_setup/deformables.html"><span class="std std-doc">Deformables</span></a>), and more. ovphysx ships
+(refer to <a class="reference internal" href="simulation_setup/deformables.html"><span class="std std-doc">Deformables</span></a>), and more. The external provider supplies
 this schema as codeless artifacts (<code class="docutils literal notranslate"><span class="pre">plugInfo.json</span></code> plus <code class="docutils literal notranslate"><span class="pre">generatedSchema.usda</span></code>,
 no compiled library).</p></li>
 <li><p><strong>Omni Physics Deformable Schema (codeless)</strong> — extends <code class="docutils literal notranslate"><span class="pre">UsdPhysics</span></code> with
@@ -739,37 +744,98 @@ and the <a class="reference external" href="https://openusd.org/release/api/usd_
 This guide describes intent, not full attribute definitions, so the two do not
 drift.</p>
 </section>
-<section id="how-ovphysx-ships-the-physx-schemas">
-<h2>How ovphysx Ships the PhysX Schemas<a class="headerlink" href="#how-ovphysx-ships-the-physx-schemas" title="Link to this heading">#</a></h2>
-<p>ovphysx exposes the PhysX USD schemas (<code class="docutils literal notranslate"><span class="pre">PhysxSchema</span></code> and
-<code class="docutils literal notranslate"><span class="pre">OmniUsdPhysicsDeformableSchema</span></code>) as <strong>codeless</strong> artifacts: a root
-<code class="docutils literal notranslate"><span class="pre">plugInfo.json</span></code> (with <code class="docutils literal notranslate"><span class="pre">Includes:</span> <span class="pre">[&quot;*/resources/&quot;]</span></code>) plus, per module, a
-<code class="docutils literal notranslate"><span class="pre">&lt;Module&gt;/resources/</span></code> directory holding a <code class="docutils literal notranslate"><span class="pre">plugInfo.json</span></code> (<code class="docutils literal notranslate"><span class="pre">Type:</span> <span class="pre">resource</span></code>) and
-a <code class="docutils literal notranslate"><span class="pre">generatedSchema.usda</span></code>, with no compiled library. They live under
-<code class="docutils literal notranslate"><span class="pre">schemas/physx/</span></code> in the SDK and under <code class="docutils literal notranslate"><span class="pre">ovphysx/schemas/physx/</span></code> in the wheel.
-Codeless schemas carry no typed helper class — there is no
-<code class="docutils literal notranslate"><span class="pre">PhysxSchema.PhysxRigidBodyAPI</span></code> binding. You apply them by identifier and author
-their attributes generically.</p>
-<p>ovphysx never modifies the environment (<code class="docutils literal notranslate"><span class="pre">PXR_PLUGINPATH_NAME</span></code> or any other
-plugin-path variable) and leaves registration to the application; it verifies at
-<code class="docutils literal notranslate"><span class="pre">attach_ovstage</span></code> that the registration happened before the first population and
-refuses the attach otherwise. It tells the application where the schemas are:</p>
-<ul class="simple">
-<li><p><strong>C</strong>: <code class="docutils literal notranslate"><span class="pre">ovphysx_get_codeless_schema_root(ovphysx_string_t*</span> <span class="pre">out_root)</span></code> returns
-the schema root directory. The string is NUL-terminated, owned by ovphysx, and
-valid until the calling thread calls the function again. It returns
-<code class="docutils literal notranslate"><span class="pre">OVPHYSX_API_INVALID_ARGUMENT</span></code> for a NULL argument and <code class="docutils literal notranslate"><span class="pre">OVPHYSX_API_ERROR</span></code>
-(details in <code class="docutils literal notranslate"><span class="pre">ovphysx_get_last_error()</span></code>) when the schema tree is missing. It
-does not initialize ovphysx, load USD, acquire Carbonite, or modify the
-environment, and is safe to call before <code class="docutils literal notranslate"><span class="pre">ovphysx_create_instance()</span></code>.</p></li>
-<li><p><strong>Python</strong>: <code class="docutils literal notranslate"><span class="pre">ovphysx.codeless_schema_root()</span></code> returns the same root as a
-<code class="docutils literal notranslate"><span class="pre">pathlib.Path</span></code>, and <code class="docutils literal notranslate"><span class="pre">ovphysx.codeless_schema_paths()</span></code> returns the per-module
-<code class="docutils literal notranslate"><span class="pre">resources</span></code> directories. Both are pure Python and never trigger native
-loading.</p></li>
-</ul>
-<p>Because they are codeless, the core <code class="docutils literal notranslate"><span class="pre">UsdPhysics</span></code> typed APIs (rigid body,
-collider, mass, scene) work out of the box with stock <code class="docutils literal notranslate"><span class="pre">usd-core</span></code>, while
-<code class="docutils literal notranslate"><span class="pre">Physx*</span></code> attributes require registering the codeless schemas first.</p>
+<section id="installing-the-external-physx-schemas">
+<h2>Installing the External PhysX Schemas<a class="headerlink" href="#installing-the-external-physx-schemas" title="Link to this heading">#</a></h2>
+<p>Applications install <strong><code class="docutils literal notranslate"><span class="pre">physx-usd-schemas</span></code></strong> separately from ovphysx.
+The same platform-independent wheel supplies Python and native applications on
+Linux x86_64/aarch64 and Windows x64. The SDK and ovphysx wheel contain no schema
+resources and expose no PhysX schema-location API. OVPhysX builds require neither the
+<code class="docutils literal notranslate"><span class="pre">usd_ext_physics</span></code> Packman package nor generated PhysX schema headers.</p>
+<p>For Python, install the provider from PyPI:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>physx-usd-schemas
+</pre></div>
+</div>
+<p>The application-side <code class="docutils literal notranslate"><span class="pre">schema_support/</span></code> recipe shipped with the Python samples
+uses <code class="docutils literal notranslate"><span class="pre">importlib.metadata.distribution(&quot;physx-usd-schemas&quot;)</span></code> and locates both
+modules’ <code class="docutils literal notranslate"><span class="pre">resources/</span></code> directories. It verifies
+<code class="docutils literal notranslate"><span class="pre">plugInfo.json</span></code> and <code class="docutils literal notranslate"><span class="pre">generatedSchema.usda</span></code> before registration and reports how to
+repair a missing or incomplete installation. It does not import the
+provider: that package’s top-level import registers with stock USD and needs
+<code class="docutils literal notranslate"><span class="pre">pxr</span></code>. Metadata discovery loads neither USD nor the native ovphysx library.
+Copy <code class="docutils literal notranslate"><span class="pre">schema_support/</span></code> alongside a copied sample, or use its installed sample
+namespace as the examples below do. Applications can adapt this recipe to their
+deployment; it is not a core ovphysx API.</p>
+<p>For native applications, unpack the same wheel as an external data archive.
+Examples including <code class="docutils literal notranslate"><span class="pre">common/ovstage_sample.h</span></code> require the SDK
+<code class="docutils literal notranslate"><span class="pre">samples/c_samples/</span></code> directory on the compiler include path, or a copy of its
+<code class="docutils literal notranslate"><span class="pre">common/</span></code> directory alongside the application sources.
+The SDK’s sample installer reads the artifact URL and SHA-256 from the adjacent
+<code class="docutils literal notranslate"><span class="pre">common/physx_schemas.lock.json</span></code>, verifies the digest, and keeps the wheel’s
+distribution metadata:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>/path/to/sdk/samples/c_samples/common/fetch_physx_schemas.py<span class="w"> </span>--dest<span class="w"> </span>/path/to/app-deps/physx-schemas
+<span class="nb">export</span><span class="w"> </span><span class="nv">PHYSX_USD_SCHEMAS_ROOT</span><span class="o">=</span>/path/to/app-deps/physx-schemas
+</pre></div>
+</div>
+<p>On Windows, set <code class="docutils literal notranslate"><span class="pre">$env:PHYSX_USD_SCHEMAS_ROOT</span></code> to that extracted directory.
+An offline installation can pass <code class="docutils literal notranslate"><span class="pre">--wheel</span> <span class="pre">/path/to/physx_usd_schemas-&lt;version&gt;-py3-none-any.whl</span></code>.
+Python is needed only for this installation step; native schema discovery and
+registration use no Python runtime. The directory contains:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>physx_usd_schemas-&lt;version&gt;.dist-info/METADATA
+physx_usd_schemas/PhysxSchema/resources/{plugInfo.json,generatedSchema.usda}
+physx_usd_schemas/OmniUsdPhysicsDeformableSchema/resources/{plugInfo.json,generatedSchema.usda}
+</pre></div>
+</div>
+<p>Keep the provider outside the ovphysx SDK. After relocating the application and
+provider, resolve its new directory and update <code class="docutils literal notranslate"><span class="pre">PHYSX_USD_SCHEMAS_ROOT</span></code>; Python
+resolves the provider from its current installation metadata. <code class="docutils literal notranslate"><span class="pre">OVPHYSX_LIB</span></code>
+selects the simulation library and never selects schemas.</p>
+<p>Version selection follows the same policy as the Newton schema dependency:
+Python applications declare compatibility constraints in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> and
+record the resolved version and hashes in <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code>. The native sample installer
+uses its artifact lock file for reproducible provisioning. Discovery checks the
+required resource layout without enforcing a release number. Dependency
+resolution reports unsatisfied version constraints; missing modules or resource
+files are reported before registration. Resource discovery alone does not prove
+semantic compatibility with every schema release.</p>
+<p>ovphysx leaves schema registration to the application and never changes USD
+plugin-path variables. The application registers the provider’s resources with
+its chosen USD runtime. The native attach checks for registration as described
+under <a class="reference internal" href="#attach-time-registration-guard">Attach-time registration guard</a>.</p>
+</section>
+<section id="developing-schemas-locally">
+<h2>Developing Schemas Locally<a class="headerlink" href="#developing-schemas-locally" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">--devschema</span></code> keeps the local schema development workflow. It builds the schema
+project’s own <code class="docutils literal notranslate"><span class="pre">physx-usd-schemas</span></code> wheel from locally generated data and extracts
+a separate provider under the selected build directory, by default
+<code class="docutils literal notranslate"><span class="pre">ovphysx/_build/test-deps/physx-usd-schemas-dev/&lt;wheel-sha256&gt;/</span></code>. The SDK and
+ovphysx wheel still contain no schema resources.</p>
+<p>From <code class="docutils literal notranslate"><span class="pre">ovphysx/</span></code>, select the local wheel with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./build.sh<span class="w"> </span>--devschema
+cmake<span class="w"> </span>-DDEV_SCHEMA<span class="o">=</span>ON<span class="w"> </span>-P<span class="w"> </span>scripts/validate_all.cmake
+</pre></div>
+</div>
+<p>On Windows use <code class="docutils literal notranslate"><span class="pre">build.bat</span> <span class="pre">--devschema</span></code>. Each devschema build regenerates the
+local schema data before packaging the wheel. Switching this option changes no
+native compiler inputs and requires no clean rebuild.</p>
+<p>The build records the provider directory in <code class="docutils literal notranslate"><span class="pre">ovphysx_dev_schema.stamp</span></code> under
+the selected build directory (<code class="docutils literal notranslate"><span class="pre">_build</span></code> by default). For a custom directory,
+pass <code class="docutils literal notranslate"><span class="pre">-DBUILD_DIR=&lt;path&gt;</span></code> to CMake scripts or set <code class="docutils literal notranslate"><span class="pre">OVPHYSX_BUILD_DIR</span></code> for scripts
+and <code class="docutils literal notranslate"><span class="pre">run_pytest.sh</span></code>/<code class="docutils literal notranslate"><span class="pre">.bat</span></code>; relative paths are resolved from <code class="docutils literal notranslate"><span class="pre">ovphysx/</span></code>.
+Native test/sample/benchmark runners use it as <code class="docutils literal notranslate"><span class="pre">PHYSX_USD_SCHEMAS_ROOT</span></code>. Python
+runtime, sample, and benchmark runners, including <code class="docutils literal notranslate"><span class="pre">run_pytest.sh</span></code>/<code class="docutils literal notranslate"><span class="pre">.bat</span></code>, prepend
+it to <code class="docutils literal notranslate"><span class="pre">PYTHONPATH</span></code>, so metadata discovery and authoring utilities see the local
+data even when a published wheel is installed in the test environment. A
+missing local provider fails with a rebuild instruction instead of falling back
+to published schemas. Rebuilding after local edits selects a new digest-named
+provider even when the schema version has not changed. Normal builds clear the
+selection and use the published provider again.</p>
+<p>For an application launched outside these runners, install the separately built
+schema wheel from <code class="docutils literal notranslate"><span class="pre">schemas/physx/_dist/</span></code>, or use the directory recorded in the
+stamp: set <code class="docutils literal notranslate"><span class="pre">PHYSX_USD_SCHEMAS_ROOT</span></code> for a native application, or prepend that
+directory to <code class="docutils literal notranslate"><span class="pre">PYTHONPATH</span></code> for Python. Both routes keep schema resources outside
+ovphysx. Local providers retain package-identity, digest, and completeness checks
+without being forced to match the published artifact’s version. Applications
+maintain their supported-version constraints and locks in dependency configuration.</p>
 </section>
 <section id="making-schemas-available">
 <h2>Making Schemas Available<a class="headerlink" href="#making-schemas-available" title="Link to this heading">#</a></h2>
@@ -780,41 +846,33 @@ on which USD runtime is in play.</p>
 <h3>Registering with ovstage<a class="headerlink" href="#registering-with-ovstage" title="Link to this heading">#</a></h3>
 <p>ovstage ingests USD scenes through its own internal namespaced OpenUSD runtime,
 and that runtime knows nothing about the PhysX schemas until the application
-registers them. Register them once per process, before the first population call
-(<code class="docutils literal notranslate"><span class="pre">open_usd</span></code>, <code class="docutils literal notranslate"><span class="pre">apply_usd_changes</span></code>, or an export), by passing the schema root to
+registers them. Register them in each process that reads USD schemas, including
+spawned workers, before the first schema read. Population (<code class="docutils literal notranslate"><span class="pre">open_usd</span></code> or
+<code class="docutils literal notranslate"><span class="pre">apply_usd_changes</span></code>) and USD export both read and freeze the schema definitions.
+Pass both provider resource directories to
 <code class="docutils literal notranslate"><span class="pre">ovstage.population.register_usd_schemas()</span></code>:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">ovphysx</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.samples.python_samples.schema_support</span><span class="w"> </span><span class="kn">import</span> <span class="n">physx_schema_paths</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">ovstage</span>
 
-<span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">register_usd_schemas</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">codeless_schema_root</span><span class="p">())])</span>
+<span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">register_usd_schemas</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">physx_schema_paths</span><span class="p">()])</span>
 <span class="n">stage</span> <span class="o">=</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">Stage</span><span class="p">(</span><span class="s2">&quot;scene&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>In C, obtain the root with <code class="docutils literal notranslate"><span class="pre">ovphysx_get_codeless_schema_root()</span></code> and pass it to
-<code class="docutils literal notranslate"><span class="pre">ovstage_population_register_usd_schemas()</span></code>:</p>
-<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx.h&gt;</span>
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovstage/ovstage.h&gt;</span>
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovstage/ovstage_population.h&gt;</span>
+<p>In C, the sample’s <code class="docutils literal notranslate"><span class="pre">common/schema_support.h</span></code> validates the external root and
+required resources. <code class="docutils literal notranslate"><span class="pre">common/ovstage_sample.h</span></code> registers both returned directories before
+population and reports provider or registration errors:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;common/ovstage_sample.h&quot;</span>
 
-<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">register_physx_schemas</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">prepare_schema_registry</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
 <span class="p">{</span>
-<span class="w">    </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">root</span><span class="p">;</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ovphysx_get_codeless_schema_root</span><span class="p">(</span><span class="o">&amp;</span><span class="n">root</span><span class="p">).</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
-<span class="w">    </span><span class="p">{</span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">    </span><span class="n">ovx_string_t</span><span class="w"> </span><span class="n">path</span><span class="p">;</span>
-<span class="w">    </span><span class="n">path</span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">root</span><span class="p">.</span><span class="n">ptr</span><span class="p">;</span>
-<span class="w">    </span><span class="n">path</span><span class="p">.</span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">root</span><span class="p">.</span><span class="n">length</span><span class="p">;</span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">ovstage_population_register_usd_schemas</span><span class="p">(</span><span class="o">&amp;</span><span class="n">path</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="p">;</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">ovphysx_sample_register_physx_schemas</span><span class="p">();</span>
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>The bundled samples do exactly this: the Python samples call
-<code class="docutils literal notranslate"><span class="pre">register_usd_schemas()</span></code> in their <code class="docutils literal notranslate"><span class="pre">attach_scene</span></code> helper right before creating
-the <code class="docutils literal notranslate"><span class="pre">ovstage.Stage</span></code>, and the C samples call
-<code class="docutils literal notranslate"><span class="pre">ovphysx_sample_register_physx_schemas()</span></code> from
-<code class="docutils literal notranslate"><span class="pre">tests/c_samples/common/ovstage_sample.h</span></code>.</p>
+<p>Call this before the first USD schema read, including population or export.
+The native samples already call it from
+<code class="docutils literal notranslate"><span class="pre">ovphysx_sample_attach_usd_with_ovstage()</span></code>. The helper is application code;
+there is no schema-location call into libovphysx.</p>
 <p>The ordering is not advisory. USD assembles its schema registry once, on first
 read, and ignores plugins registered afterwards; a registration that arrives
 after ovstage’s first schema read registers cleanly but contributes nothing,
@@ -822,32 +880,74 @@ and ovstage reports it as an error (<code class="docutils literal notranslate"><
 <code class="docutils literal notranslate"><span class="pre">ovstage.OvstageError</span></code> in Python). A registration that arrives after some other
 USD consumer in the process read the schemas cannot be detected and fails
 silently. No re-registration can repair the registry for the rest of the
-process. Without the registration, population resolves only the properties
-authored in the file rather than each prim’s full schema-declared property set.
+process. Without registration, population cannot resolve PhysX APIs and drops
+their attributes, including authored values and schema fallbacks.
 Registration is process-scoped and irreversible; registering the same root
-twice is a no-op.</p>
+twice is a no-op. Restart the process after a late registration and register
+before populating or exporting again; creating another Stage or PhysX instance
+is not enough.</p>
+</section>
+<section id="attach-time-registration-guard">
+<h3>Attach-time registration guard<a class="headerlink" href="#attach-time-registration-guard" title="Link to this heading">#</a></h3>
+<p>By default, native <code class="docutils literal notranslate"><span class="pre">ovphysx_attach_ovstage()</span></code> checks for missing plugin families,
+<code class="docutils literal notranslate"><span class="pre">physxSchema</span></code> and <code class="docutils literal notranslate"><span class="pre">omniUsdPhysicsDeformableSchema</span></code>, through ovstage after its USD
+schema registry has been built. If ovstage reports either family missing, attach
+returns an <code class="docutils literal notranslate"><span class="pre">OVPHYSX_API_ERROR</span></code> admission receipt with no task identity. Python’s
+<code class="docutils literal notranslate"><span class="pre">PhysX.attach_ovstage()</span></code> raises <code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code> before returning a Task. The guard
+takes no Stage ownership and does not alter an existing attachment.</p>
+<p>This refusal persists for the rest of the process because USD cannot rebuild
+the registry. Restart and register both external resource directories before
+populating or exporting. A late registration or a new instance does not recover
+dropped PhysX settings. The check recognizes the registered plugin families regardless
+of the provider’s directory; it does not locate or install the provider.</p>
+<p>A procedural Stage attached while USD’s schema definitions are still unbuilt
+skips the family check and leaves it active for later attaches. Population and
+export both build the registry. After either operation, the check applies to
+every attach in the process, including procedural Stages.
+It cannot detect schema registration that another USD consumer made
+unobservable to ovstage.</p>
+<p>The guard also cannot identify a schema family registered late before its first
+check. For example, populating without the schemas, then calling
+<code class="docutils literal notranslate"><span class="pre">register_usd_schemas()</span></code> and catching its <code class="docutils literal notranslate"><span class="pre">OVSTAGE_ERROR_OP_FAILED</span></code> error can
+make a later attach succeed even though population lost the schema data.
+Always restart after a registration-ordering error; a successful attach is not
+proof that the schemas were available during population.</p>
+<p>The legacy Carbonite setting <code class="docutils literal notranslate"><span class="pre">/ovphysx/schemas/requireRegistration</span></code> defaults to
+<code class="docutils literal notranslate"><span class="pre">true</span></code>. Set it to <code class="docutils literal notranslate"><span class="pre">false</span></code> at instance creation only when accepting this missing
+registration, for example in a host whose registration ovstage cannot observe:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx</span><span class="w"> </span><span class="kn">import</span> <span class="n">PhysX</span><span class="p">,</span> <span class="n">PhysXConfig</span>
+
+<span class="n">physx</span> <span class="o">=</span> <span class="n">PhysX</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">PhysXConfig</span><span class="p">(</span><span class="n">carbonite_overrides</span><span class="o">=</span><span class="p">{</span>
+    <span class="s2">&quot;/ovphysx/schemas/requireRegistration&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">}))</span>
+</pre></div>
+</div>
+<p>This downgrades the refusal to a warning and permits attachment; it does not
+register schemas or repair lost data. Native callers use the same key in the
+legacy create-time Carbonite configuration. There is no scoped <code class="docutils literal notranslate"><span class="pre">GlobalConfigKey</span></code>
+for this setting.</p>
 </section>
 <section id="registering-the-newton-usd-schema">
 <h3>Registering the Newton USD schema<a class="headerlink" href="#registering-the-newton-usd-schema" title="Link to this heading">#</a></h3>
 <p>ovphysx also reads a subset of the
 <a class="reference external" href="https://github.com/newton-physics/newton-usd-schemas">Newton USD schema</a>
-(<code class="docutils literal notranslate"><span class="pre">NewtonJointAPI</span></code>, <code class="docutils literal notranslate"><span class="pre">NewtonArticulationRootAPI</span></code>, <code class="docutils literal notranslate"><span class="pre">NewtonSceneAPI</span></code>, …) as
-fallbacks for the PhysX spellings. <code class="docutils literal notranslate"><span class="pre">newton:velocityLimit</span></code>, for example, maps onto
-<code class="docutils literal notranslate"><span class="pre">physxJoint:maxJointVelocity</span></code>: an authored PhysX limit below <code class="docutils literal notranslate"><span class="pre">FLT_MAX</span></code> wins, then
-an authored Newton value, then the PhysX default. An explicitly unlimited PhysX
-value (<code class="docutils literal notranslate"><span class="pre">inf</span></code> or <code class="docutils literal notranslate"><span class="pre">FLT_MAX</span></code>) counts as no PhysX opinion and yields to an authored
-Newton limit; the per-attribute contract is in
-<a class="reference internal" href="population/PhysxJointAPI.html"><span class="std std-doc">PhysxJointAPI</span></a>. ovphysx does not ship this schema. It is a
-separate package that the application installs and registers, in the same call
-and under the same ordering rule as the PhysX schemas:</p>
+(<code class="docutils literal notranslate"><span class="pre">NewtonJointAPI</span></code>, <code class="docutils literal notranslate"><span class="pre">NewtonArticulationRootAPI</span></code>, <code class="docutils literal notranslate"><span class="pre">NewtonSceneAPI</span></code>, …).
+<code class="docutils literal notranslate"><span class="pre">NewtonJointAPI</span></code> sets the velocity limit, armature, friction and damping for all
+degrees of freedom of a joint. <code class="docutils literal notranslate"><span class="pre">PhysxJointAxisAPI</span></code> values take precedence. A
+per-axis <code class="docutils literal notranslate"><span class="pre">maxJointVelocity</span></code> left unlimited (<code class="docutils literal notranslate"><span class="pre">inf</span></code> or <code class="docutils literal notranslate"><span class="pre">FLT_MAX</span></code>) counts as no PhysX
+opinion and yields to an authored Newton limit; the per-attribute contract is in
+<a class="reference internal" href="population/PhysxJointAxisAPI.html"><span class="std std-doc">PhysxJointAxisAPI</span></a>. ovphysx does not ship this
+schema. It is a separate package that the application installs and registers, in
+the same call and under the same ordering rule as the PhysX schemas:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>newton-usd-schemas
 </pre></div>
 </div>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">ovphysx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.samples.python_samples.schema_support</span><span class="w"> </span><span class="kn">import</span> <span class="n">physx_schema_paths</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">ovstage</span>
 
 <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">register_usd_schemas</span><span class="p">(</span>
-    <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">codeless_schema_root</span><span class="p">()),</span> <span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">newton_schema_root</span><span class="p">())]</span>
+    <span class="p">[</span><span class="o">*</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">physx_schema_paths</span><span class="p">()],</span> <span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">newton_schema_root</span><span class="p">())]</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -865,22 +965,26 @@ the directory holding its <code class="docutils literal notranslate"><span class
 <p>ovstage populates an attribute only when a registered schema defines it, so a
 scene that authors <code class="docutils literal notranslate"><span class="pre">newton:*</span></code> attributes without this registration loses them
 silently: a joint authoring only <code class="docutils literal notranslate"><span class="pre">newton:velocityLimit</span></code> simulates unlimited.
-<code class="docutils literal notranslate"><span class="pre">PhysX.attach_ovstage()</span></code> therefore checks, once per process and before the
-native attach, that the installed <code class="docutils literal notranslate"><span class="pre">newton-usd-schemas</span></code> package was registered
-before the first population and emits a <code class="docutils literal notranslate"><span class="pre">RuntimeWarning</span></code> otherwise. When the
+<code class="docutils literal notranslate"><span class="pre">PhysX.attach_ovstage()</span></code> therefore checks registration of the installed
+<code class="docutils literal notranslate"><span class="pre">newton-usd-schemas</span></code> package once per process before the native attach and emits
+a <code class="docutils literal notranslate"><span class="pre">RuntimeWarning</span></code> if ovstage reports late registration. When the
 package is not installed at all it logs a warning on the <code class="docutils literal notranslate"><span class="pre">ovphysx</span></code> Python logger
 instead: nothing is wrong for a scene without <code class="docutils literal notranslate"><span class="pre">newton:*</span></code> attributes, and a suite
 that promotes warnings to errors keeps running. ovstage keys registration on the plugin
 family, so a complete copy of the Newton schema registered from any directory
 (a GitHub checkout) is recognized. The check probes only once USD has built its
-schema definitions; a stage authored procedurally through <code class="docutils literal notranslate"><span class="pre">ovphysx.population</span></code>
-and attached before any USD population is left alone, so the check never
-registers a schema on the application’s behalf. A
-registration ovstage cannot observe (another USD consumer in the process read
+schema definitions, whether through population or export; a stage authored
+procedurally through <code class="docutils literal notranslate"><span class="pre">ovphysx.population</span></code> and attached while those definitions
+remain unbuilt is left alone, so the check never registers a schema on the
+application’s behalf. A registration ovstage cannot observe (another USD
+consumer in the process read
 the schema definitions first) is not detected; silence the check in that case
-with <code class="docutils literal notranslate"><span class="pre">PhysXConfig(carbonite_overrides={&quot;/ovphysx/schemas/warnMissingNewtonSchema&quot;:</span> <span class="pre">False})</span></code>
-(the string <code class="docutils literal notranslate"><span class="pre">&quot;false&quot;</span></code> is accepted too). The C API cannot locate the package and
+with the legacy <code class="docutils literal notranslate"><span class="pre">PhysXConfig(carbonite_overrides={&quot;/ovphysx/schemas/warnMissingNewtonSchema&quot;:</span> <span class="pre">False})</span></code>
+(the string <code class="docutils literal notranslate"><span class="pre">&quot;false&quot;</span></code> is accepted too). There is no scoped <code class="docutils literal notranslate"><span class="pre">GlobalConfigKey</span></code> for this check. The C API cannot locate the package and
 performs no such check.</p>
+<p>This Newton warning is separate from the native PhysX registration guard above:
+it does not check either PhysX schema family, and silencing it does not bypass
+that guard.</p>
 </section>
 <section id="authoring-with-a-stock-usd-core">
 <h3>Authoring with a stock <code class="docutils literal notranslate"><span class="pre">usd-core</span></code><a class="headerlink" href="#authoring-with-a-stock-usd-core" title="Link to this heading">#</a></h3>
@@ -898,19 +1002,18 @@ simulation.</p>
 <p>PyPI currently provides neither a Linux aarch64 <code class="docutils literal notranslate"><span class="pre">usd-core</span></code> wheel nor a source
 distribution. On Linux aarch64, hand-author <code class="docutils literal notranslate"><span class="pre">.usda</span></code>, author on a supported
 host, or supply a compatible OpenUSD Python build.</p>
-<p>The codeless PhysX USD schemas shipped in ovphysx can be registered with any USD
+<p>The separately installed codeless PhysX USD schemas can be registered with any USD
 runtime — including stock <code class="docutils literal notranslate"><span class="pre">usd-core</span></code> from PyPI — without starting the simulator.
 This is useful for offline authoring, validation, and non-interactive tooling:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">ovphysx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.samples.python_samples.schema_support</span><span class="w"> </span><span class="kn">import</span> <span class="n">physx_schema_paths</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">Plug</span><span class="p">,</span> <span class="n">Tf</span><span class="p">,</span> <span class="n">Usd</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-    <span class="c1"># Stock usd-core has no wheel for some platforms (e.g. linux-aarch64). The</span>
-    <span class="c1"># codeless schemas still ship in the wheel. Without a stock USD runtime to</span>
-    <span class="c1"># register them into, skip rather than fail.</span>
+    <span class="c1"># Stock usd-core has no wheel on some platforms, including linux-aarch64.</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;usd-core is not available on this platform; skipping codeless schema demo.&quot;</span><span class="p">)</span>
     <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
@@ -918,10 +1021,7 @@ This is useful for offline authoring, validation, and non-interactive tooling:</
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ovphysx version:&quot;</span><span class="p">,</span> <span class="n">ovphysx</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
 
-    <span class="c1"># Discover the codeless PhysX USD schema packages bundled with ovphysx.</span>
-    <span class="c1"># Each path is a resources/ directory holding a codeless plugInfo.json</span>
-    <span class="c1"># (Type=resource) and generatedSchema.usda, with no compiled library.</span>
-    <span class="n">schema_paths</span> <span class="o">=</span> <span class="n">ovphysx</span><span class="o">.</span><span class="n">codeless_schema_paths</span><span class="p">()</span>
+    <span class="n">schema_paths</span> <span class="o">=</span> <span class="n">physx_schema_paths</span><span class="p">()</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Codeless schema packages:&quot;</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">schema_paths</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  &quot;</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
@@ -980,11 +1080,11 @@ already be initialised, use <code class="docutils literal notranslate"><span cla
 </div></blockquote>
 <p>After registration, apply the PhysX APIs by identifier and set attributes with
 USD’s generic attribute API:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">ovphysx</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.samples.python_samples.schema_support</span><span class="w"> </span><span class="kn">import</span> <span class="n">physx_schema_paths</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">Plug</span><span class="p">,</span> <span class="n">Sdf</span><span class="p">,</span> <span class="n">Usd</span><span class="p">,</span> <span class="n">UsdPhysics</span>
 
 <span class="n">Plug</span><span class="o">.</span><span class="n">Registry</span><span class="p">()</span><span class="o">.</span><span class="n">RegisterPlugins</span><span class="p">(</span>
-    <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">ovphysx</span><span class="o">.</span><span class="n">codeless_schema_paths</span><span class="p">()]</span>
+    <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">physx_schema_paths</span><span class="p">()]</span>
 <span class="p">)</span>
 <span class="n">stage</span> <span class="o">=</span> <span class="n">Usd</span><span class="o">.</span><span class="n">Stage</span><span class="o">.</span><span class="n">CreateInMemory</span><span class="p">()</span>
 <span class="n">prim</span> <span class="o">=</span> <span class="n">stage</span><span class="o">.</span><span class="n">DefinePrim</span><span class="p">(</span><span class="s2">&quot;/World/Box&quot;</span><span class="p">,</span> <span class="s2">&quot;Cube&quot;</span><span class="p">)</span>
@@ -1003,10 +1103,6 @@ USD’s generic attribute API:</p>
 </div>
 <p>This writes <code class="docutils literal notranslate"><span class="pre">physx_rigid_body.usda</span></code>, ready for ovstage to populate for ovphysx
 simulation.</p>
-<p><code class="docutils literal notranslate"><span class="pre">codeless_schema_paths()</span></code> returns the per-module <code class="docutils literal notranslate"><span class="pre">resources</span></code> directories, and
-<code class="docutils literal notranslate"><span class="pre">codeless_schema_root()</span></code> returns the directory that holds them. Both are
-pure-Python and never trigger native loading, so they are safe to use in an
-authoring-only process.</p>
 <section id="host-processes-that-already-initialised-usd">
 <h4>Host processes that already initialised USD<a class="headerlink" href="#host-processes-that-already-initialised-usd" title="Link to this heading">#</a></h4>
 <p>Inside a DCC host — Blender, Maya, Houdini, or any application embedding
@@ -1023,12 +1119,12 @@ directories <strong>before the host process launches</strong>. USD reads that va
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">ovphysx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.samples.python_samples.schema_support</span><span class="w"> </span><span class="kn">import</span> <span class="n">physx_schema_paths</span>
 
 <span class="n">env</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
 <span class="c1"># Append rather than replace: the variable may already carry plugin roots that</span>
 <span class="c1"># the host or another package needs.</span>
-<span class="n">entries</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">ovphysx</span><span class="o">.</span><span class="n">codeless_schema_paths</span><span class="p">()]</span>
+<span class="n">entries</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">physx_schema_paths</span><span class="p">()]</span>
 <span class="n">existing</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;PXR_PLUGINPATH_NAME&quot;</span><span class="p">)</span>
 <span class="k">if</span> <span class="n">existing</span><span class="p">:</span>
     <span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">existing</span><span class="p">)</span>
@@ -1037,7 +1133,7 @@ directories <strong>before the host process launches</strong>. USD reads that va
 </pre></div>
 </div>
 <p>or from a shell, likewise preserving any existing value:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">SCHEMA_PATHS</span><span class="o">=</span><span class="s2">&quot;</span><span class="k">$(</span>python<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;import os, ovphysx; print(os.pathsep.join(str(p) for p in ovphysx.codeless_schema_paths()))&#39;</span><span class="k">)</span><span class="s2">&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">SCHEMA_PATHS</span><span class="o">=</span><span class="s2">&quot;</span><span class="k">$(</span>python<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;import os; from ovphysx.samples.python_samples.schema_support import physx_schema_paths; print(os.pathsep.join(str(p) for p in physx_schema_paths()))&#39;</span><span class="k">)</span><span class="s2">&quot;</span>
 <span class="nb">export</span><span class="w"> </span><span class="nv">PXR_PLUGINPATH_NAME</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$SCHEMA_PATHS</span><span class="si">${</span><span class="nv">PXR_PLUGINPATH_NAME</span><span class="p">:+:</span><span class="nv">$PXR_PLUGINPATH_NAME</span><span class="si">}</span><span class="s2">&quot;</span>
 blender
 </pre></div>
@@ -1134,9 +1230,11 @@ Simulation Setup.</p>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#schema-layers">Schema Layers</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#how-ovphysx-ships-the-physx-schemas">How ovphysx Ships the PhysX Schemas</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installing-the-external-physx-schemas">Installing the External PhysX Schemas</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#developing-schemas-locally">Developing Schemas Locally</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#making-schemas-available">Making Schemas Available</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#registering-with-ovstage">Registering with ovstage</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#attach-time-registration-guard">Attach-time registration guard</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#registering-the-newton-usd-schema">Registering the Newton USD schema</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#authoring-with-a-stock-usd-core">Authoring with a stock <code class="docutils literal notranslate"><span class="pre">usd-core</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#host-processes-that-already-initialised-usd">Host processes that already initialised USD</a></li>
@@ -1192,7 +1290,7 @@ Simulation Setup.</p>
 </div>
       
         <div class="footer-item"><p class="last-updated">
-  Last updated on Oct 08, 2026.
+  Last updated on Oct 15, 2026.
   <br/>
 </p></div>
       

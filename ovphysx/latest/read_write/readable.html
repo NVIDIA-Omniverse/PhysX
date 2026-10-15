@@ -47,7 +47,7 @@
 
 
     <script rel="preload" src="../_static/modal-table.js"></script>
-    <script src="../_static/documentation_options.js?v=18b66ea0"></script>
+    <script src="../_static/documentation_options.js?v=423e15eb"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.6.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -75,7 +75,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Oct 08, 2026"/>
+    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
   
     
     <script src="../_static/searchtools.js"></script>
@@ -507,6 +507,10 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coding_style.html">ovphysx coding and doc style</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
@@ -566,7 +570,6 @@
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAPI.html">PhysxJointAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
@@ -613,6 +616,8 @@
 <li class="toctree-l1"><a class="reference internal" href="device.html">Device residency and interop</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Readable data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="writable.html">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="path_patterns.html">Path patterns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="limitations.html">Known limitations and gaps</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
@@ -625,7 +630,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/render_handoff.html">Rendering Handoff</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials/nvtx_profiling.html">NVTX Profiling in Nsight Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
@@ -815,46 +820,67 @@ DirectGPU scene, <code class="docutils literal notranslate"><span class="pre">kD
 <td><p>bool</p></td>
 <td><p>host</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">staticFriction</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">isSleeping</span></code></p></td>
+<td><p>current sleep state: 1 asleep, 0 awake (read-only)</p></td>
+<td><p>u8 × 1</p></td>
+<td><p>—</p></td>
+<td><p>bool</p></td>
+<td><p>host</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">staticFriction</span></code></p></td>
 <td><p>per-shape static friction</p></td>
 <td><p>f32 × per-shape</p></td>
 <td><p>—</p></td>
 <td><p>—</p></td>
 <td><p>host</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">dynamicFriction</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">dynamicFriction</span></code></p></td>
 <td><p>per-shape dynamic friction</p></td>
 <td><p>f32 × per-shape</p></td>
 <td><p>—</p></td>
 <td><p>—</p></td>
 <td><p>host</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">restitution</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">restitution</span></code></p></td>
 <td><p>per-shape restitution</p></td>
 <td><p>f32 × per-shape</p></td>
 <td><p>—</p></td>
 <td><p>—</p></td>
 <td><p>host</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">contactOffset</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contactOffset</span></code></p></td>
 <td><p>per-shape contact offset</p></td>
 <td><p>f32 × per-shape</p></td>
 <td><p>—</p></td>
 <td><p>length</p></td>
 <td><p>host</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">restOffset</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">restOffset</span></code></p></td>
 <td><p>per-shape rest offset</p></td>
 <td><p>f32 × per-shape</p></td>
 <td><p>—</p></td>
 <td><p>length</p></td>
 <td><p>host</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">shapeCount</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">shapeCount</span></code></p></td>
 <td><p>real shapes per row</p></td>
 <td><p>i32 × 1</p></td>
 <td><p>—</p></td>
 <td><p>count</p></td>
+<td><p>host</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">kinematicTargetPosition</span></code></p></td>
+<td><p>pending kinematic target position (else the body’s pose)</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+<td><p>length</p></td>
+<td><p>host</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">kinematicTargetOrientation</span></code></p></td>
+<td><p>pending kinematic target rotation (else the body’s pose)</p></td>
+<td><p>f32 × 4</p></td>
+<td><p>world</p></td>
+<td><p>—</p></td>
 <td><p>host</p></td>
 </tr>
 </tbody>
@@ -864,7 +890,31 @@ DirectGPU scene, <code class="docutils literal notranslate"><span class="pre">kD
 cache); read <code class="docutils literal notranslate"><span class="pre">shapeCount</span></code> for the real length. A shape with several materials reports only its first
 (material 0). On DirectGPU, disabled (<code class="docutils literal notranslate"><span class="pre">eDISABLE_SIMULATION</span></code>) bodies are omitted from fixed columns
 while discovery keeps the full count.</p>
-<p><strong>Point-instancer instances</strong> read only the state attributes, as an <strong>array</strong> group (one tensor per
+<p><code class="docutils literal notranslate"><span class="pre">kinematicTargetPosition</span></code> / <code class="docutils literal notranslate"><span class="pre">kinematicTargetOrientation</span></code> return the <strong>pending kinematic target</strong> of a
+kinematic body; a body with no target set (non-kinematic, or an undriven kinematic body) falls back
+to its current world pose. They are host-authoritative and readable on a DirectGPU scene — read
+<code class="docutils literal notranslate"><span class="pre">position</span></code> / <code class="docutils literal notranslate"><span class="pre">orientation</span></code> for a device-fresh pose.</p>
+<p><code class="docutils literal notranslate"><span class="pre">isSleeping</span></code> reports PhysX state when the read executes, independently of the last <code class="docutils literal notranslate"><span class="pre">wake</span></code>
+command. Use <code class="docutils literal notranslate"><span class="pre">ALL</span></code> scope to inspect sleeping bodies; <code class="docutils literal notranslate"><span class="pre">ACTIVE</span></code> is a selection of bodies that
+were active, not a sleep-state query. Zero velocity alone does not prove that a body is asleep.</p>
+<ul class="simple">
+<li><p>On CPU and GPU scenes with CPU readback, dynamic bodies report their live state. Kinematic
+bodies report PhysX’s kinematic sleep state: setting a target wakes them, and they sleep
+after two consecutive simulation steps without a new target. Simulation-disabled bodies
+are included on these modes and report asleep when scene sleeping is enabled.</p></li>
+<li><p>On scenes with <code class="docutils literal notranslate"><span class="pre">eDISABLE_SLEEPING</span></code>, including DirectGPU, every emitted value is <code class="docutils literal notranslate"><span class="pre">0</span></code> because
+the scene disables sleeping. This follows PhysX’s reported state even for a disabled body
+on a CPU/readback scene; use <code class="docutils literal notranslate"><span class="pre">disableSimulation</span></code> to determine whether it participates in
+simulation. This does not enable <code class="docutils literal notranslate"><span class="pre">wake</span></code> writes on DirectGPU.</p></li>
+<li><p>DirectGPU keeps its existing selection rules: no groups before the first completed step,
+and no rows for simulation-disabled bodies. A missing row is not an awake value.</p></li>
+<li><p>The host column is a read-session snapshot. Complete preceding simulation work before
+reading; a later step or write requires a new read to observe the changed state. Retained
+snapshots keep their original values under the usual read-buffer lifetime rules.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">isSleeping</span></code> has no point-instancer array form and is not emitted for whole-articulation,
+vehicle-wheel, deformable, particle or tendon queries.</p>
+<p><strong>Point-instancer instances</strong> read only the state attributes listed below, as an <strong>array</strong> group (one tensor per
 instancer, indexed by instance slot, holes zero-filled) under different names. The property and
 per-shape columns have no instancer form.</p>
 <div class="pst-scrollable-table-container"><table class="table">
@@ -1015,58 +1065,102 @@ per-shape columns have no instancer form.</p>
 <td><p>bool</p></td>
 <td><p>host</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">staticFriction</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">isSleeping</span></code></p></td>
+<td><p>current sleep state: 1 asleep, 0 awake (read-only)</p></td>
+<td><p>u8 × 1</p></td>
+<td><p>—</p></td>
+<td><p>bool</p></td>
+<td><p>host</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">staticFriction</span></code></p></td>
 <td><p>per-shape static friction</p></td>
 <td><p>f32 × per-shape</p></td>
 <td><p>—</p></td>
 <td><p>—</p></td>
 <td><p>host</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">dynamicFriction</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">dynamicFriction</span></code></p></td>
 <td><p>per-shape dynamic friction</p></td>
 <td><p>f32 × per-shape</p></td>
 <td><p>—</p></td>
 <td><p>—</p></td>
 <td><p>host</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">restitution</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">restitution</span></code></p></td>
 <td><p>per-shape restitution</p></td>
 <td><p>f32 × per-shape</p></td>
 <td><p>—</p></td>
 <td><p>—</p></td>
 <td><p>host</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">contactOffset</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contactOffset</span></code></p></td>
 <td><p>per-shape contact offset</p></td>
 <td><p>f32 × per-shape</p></td>
 <td><p>—</p></td>
 <td><p>length</p></td>
 <td><p>host</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">restOffset</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">restOffset</span></code></p></td>
 <td><p>per-shape rest offset</p></td>
 <td><p>f32 × per-shape</p></td>
 <td><p>—</p></td>
 <td><p>length</p></td>
 <td><p>host</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">shapeCount</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">shapeCount</span></code></p></td>
 <td><p>real shapes per row</p></td>
 <td><p>i32 × 1</p></td>
 <td><p>—</p></td>
 <td><p>count</p></td>
 <td><p>host</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">linkIncomingJointForce</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">linkIncomingJointForce</span></code></p></td>
 <td><p>spatial force the inbound joint exerts on the link</p></td>
 <td><p>f32 × 6 (force xyz, torque xyz)</p></td>
 <td><p>joint</p></td>
 <td><p>force / torque</p></td>
 <td><p>device</p></td>
 </tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">kinematicTargetPosition</span></code></p></td>
+<td><p>world pose fallback (a link cannot be a kinematic target)</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+<td><p>length</p></td>
+<td><p>host</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">kinematicTargetOrientation</span></code></p></td>
+<td><p>world pose fallback (a link cannot be a kinematic target)</p></td>
+<td><p>f32 × 4</p></td>
+<td><p>world</p></td>
+<td><p>—</p></td>
+<td><p>host</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">physxPointer</span></code></p></td>
+<td><p>borrowed <code class="docutils literal notranslate"><span class="pre">PxArticulationLink</span></code> address</p></td>
+<td><p>u64 × 1</p></td>
+<td><p>—</p></td>
+<td><p>—</p></td>
+<td><p>host</p></td>
+</tr>
 </tbody>
 </table>
 </div>
+<p>For <code class="docutils literal notranslate"><span class="pre">isSleeping</span></code>, every link reports the state of its <strong>owning articulation</strong>. Links do not
+sleep independently; this read does not make per-link <code class="docutils literal notranslate"><span class="pre">wake</span></code> writes valid.</p>
+</section>
+<section id="character-controllers">
+<h2>Character controllers<a class="headerlink" href="#character-controllers" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">CHARACTER_CONTROLLER</span></code> has no readable columns. The controller prim is a row of
+<code class="docutils literal notranslate"><span class="pre">RIGID_BODY</span></code> <code class="docutils literal notranslate"><span class="pre">position</span></code> and <code class="docutils literal notranslate"><span class="pre">orientation</span></code>: the backing kinematic actor’s global
+pose. That orientation includes the capsule-axis rotation and is not the
+fixup-corrected orientation written back to the prim. <code class="docutils literal notranslate"><span class="pre">move</span></code> updates the controller
+and its kinematic target immediately; that rigid-body pose changes on the next
+simulation step, when the target is integrated.</p>
+</section>
+<section id="sdf-shapes">
+<h2>SDF shapes<a class="headerlink" href="#sdf-shapes" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">SDF_SHAPE</span></code> has no readable columns. Evaluate the shapes’ signed distance fields at
+your own points with <code class="docutils literal notranslate"><span class="pre">ovphysx_evaluate_sdf_shapes</span></code>; see <a class="reference internal" href="index.html#sdf-shapes"><span class="std std-ref">SDF shapes</span></a>.</p>
 </section>
 <section id="whole-articulations">
 <h2>Whole articulations<a class="headerlink" href="#whole-articulations" title="Link to this heading">#</a></h2>
@@ -1121,7 +1215,7 @@ per-shape columns have no instancer form.</p>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">centerOfMassLocal</span></code></p></td>
 <td><p>articulation COM</p></td>
 <td><p>f32 × 3</p></td>
-<td><p>root-link</p></td>
+<td><p>root-link COM</p></td>
 <td><p>length</p></td>
 <td><p>device</p></td>
 </tr>
@@ -1137,6 +1231,62 @@ per-shape columns have no instancer form.</p>
 <td><p>i32 × 1</p></td>
 <td><p>—</p></td>
 <td><p>count</p></td>
+<td><p>host</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">dofCount</span></code></p></td>
+<td><p>degrees of freedom</p></td>
+<td><p>i32 × 1</p></td>
+<td><p>—</p></td>
+<td><p>count</p></td>
+<td><p>host</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">linkCount</span></code></p></td>
+<td><p>articulation links (not standalone rigid bodies)</p></td>
+<td><p>i32 × 1</p></td>
+<td><p>—</p></td>
+<td><p>count</p></td>
+<td><p>host</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointCount</span></code></p></td>
+<td><p>inter-link joints</p></td>
+<td><p>i32 × 1</p></td>
+<td><p>—</p></td>
+<td><p>count</p></td>
+<td><p>host</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">fixedTendonCount</span></code></p></td>
+<td><p>fixed tendons on this articulation</p></td>
+<td><p>i32 × 1</p></td>
+<td><p>—</p></td>
+<td><p>count</p></td>
+<td><p>host</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">spatialTendonCount</span></code></p></td>
+<td><p>spatial tendons on this articulation</p></td>
+<td><p>i32 × 1</p></td>
+<td><p>—</p></td>
+<td><p>count</p></td>
+<td><p>host</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">isFixedBase</span></code></p></td>
+<td><p>1 = fixed base, 0 = floating</p></td>
+<td><p>i32 × 1</p></td>
+<td><p>—</p></td>
+<td><p>—</p></td>
+<td><p>host</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">dofJointPath</span></code></p></td>
+<td><p>owning joint prim for each DOF column (interned prim-path handle; <code class="docutils literal notranslate"><span class="pre">0</span></code> pads)</p></td>
+<td><p>u64 × dofCount (padded)</p></td>
+<td><p>—</p></td>
+<td><p>—</p></td>
+<td><p>host</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">dofAxisIndex</span></code></p></td>
+<td><p>each DOF’s ordinal among its joint’s unlocked axes</p></td>
+<td><p>i32 × dofCount (padded)</p></td>
+<td><p>—</p></td>
+<td><p>—</p></td>
 <td><p>host</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jacobian</span></code></p></td>
@@ -1181,21 +1331,52 @@ per-shape columns have no instancer form.</p>
 <td><p>—</p></td>
 <td><p>device</p></td>
 </tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">physxPointer</span></code></p></td>
+<td><p>borrowed <code class="docutils literal notranslate"><span class="pre">PxArticulationReducedCoordinate</span></code> address</p></td>
+<td><p>u64 × 1</p></td>
+<td><p>—</p></td>
+<td><p>—</p></td>
+<td><p>host</p></td>
+</tr>
 </tbody>
 </table>
 </div>
-<p>Root state and COM are always in scene-world coordinates.</p>
+<p>Root state and <code class="docutils literal notranslate"><span class="pre">centerOfMassWorld</span></code> are in scene-world coordinates; <code class="docutils literal notranslate"><span class="pre">centerOfMassLocal</span></code> is in the root
+link’s <strong>COM frame</strong> — place it in the world with the root’s mass-frame pose, not its actor/prim pose
+(the two differ when the root has a non-identity mass pose).</p>
+<p>The six int32 topology scalars — <code class="docutils literal notranslate"><span class="pre">dofCount</span></code>, <code class="docutils literal notranslate"><span class="pre">linkCount</span></code>, <code class="docutils literal notranslate"><span class="pre">jointCount</span></code>, <code class="docutils literal notranslate"><span class="pre">fixedTendonCount</span></code>,
+<code class="docutils literal notranslate"><span class="pre">spatialTendonCount</span></code> and <code class="docutils literal notranslate"><span class="pre">isFixedBase</span></code> — replace the deprecated <code class="docutils literal notranslate"><span class="pre">ovphysx_get_articulation_metadata</span></code>
+field-for-field. They are <strong>host-resident on every device</strong> like <code class="docutils literal notranslate"><span class="pre">shapeCount</span></code> (read from host-side
+articulation state, so no device copy is needed) and emitted in the one scene-wide group even when base
+type varies per row. <code class="docutils literal notranslate"><span class="pre">isFixedBase</span></code> reflects the <strong>live</strong> base flag, so a runtime
+<code class="docutils literal notranslate"><span class="pre">setArticulationFlag(eFIX_BASE,</span> <span class="pre">…)</span></code> toggle is visible on the next read. The tendon counts are <strong>per
+articulation</strong>, not the view-wide maxima the deprecated getter reported; <code class="docutils literal notranslate"><span class="pre">linkCount</span></code> counts
+articulation <strong>links</strong> (the old struct’s
+mislabelled <code class="docutils literal notranslate"><span class="pre">body_count</span></code>), not standalone rigid bodies; and <code class="docutils literal notranslate"><span class="pre">isFixedBase</span></code> is an <code class="docutils literal notranslate"><span class="pre">int32</span></code> <code class="docutils literal notranslate"><span class="pre">0</span></code>/<code class="docutils literal notranslate"><span class="pre">1</span></code> flag.
+The <code class="docutils literal notranslate"><span class="pre">dofJointPath</span></code> / <code class="docutils literal notranslate"><span class="pre">dofAxisIndex</span></code> descriptor is the non-binding successor to the DOF / body / joint
+<strong>name</strong> lists: each is a padded per-DOF array (host-resident, one row per articulation, in cache-DOF
+order) that maps inverse-dynamics column <code class="docutils literal notranslate"><span class="pre">(isFixedBase</span> <span class="pre">?</span> <span class="pre">0</span> <span class="pre">:</span> <span class="pre">6)</span> <span class="pre">+</span> <span class="pre">k</span></code> to its owning joint prim — an
+interned prim-path handle, resolved through the attached Stage’s path dictionary like <code class="docutils literal notranslate"><span class="pre">prims.list</span></code> (<code class="docutils literal notranslate"><span class="pre">0</span></code> pads) — and to
+that DOF’s ordinal among the joint’s unlocked axes. Link and joint names are then the leaf of the
+<code class="docutils literal notranslate"><span class="pre">kOvxArticulationLink</span></code> / <code class="docutils literal notranslate"><span class="pre">kOvxArticulationJoint</span></code> prim read by <code class="docutils literal notranslate"><span class="pre">ovphysx_read</span></code>. <strong>Limitation:</strong> only
+DOF-bearing joints appear — a fully-locked (zero-DOF) joint has no read group or descriptor entry, so its
+name/path is not recoverable through the read API; the deprecated <code class="docutils literal notranslate"><span class="pre">ovphysx_articulation_get_joint_names</span></code>
+still lists those fixed joints.</p>
 <blockquote>
 <div><p><strong>Note.</strong> A group’s tuple width is a 16-bit field, so a single inverse dynamics column wider than 65 535
-(roughly a 64-link / 189-DOF articulation’s Jacobian, or a mass matrix past M ≈ 256) is dropped
-and the read ends with an error. This is a known boundary for very large articulations.</p>
+(roughly a 64-link / 189-DOF articulation’s Jacobian, or a mass matrix past M ≈ 256) is omitted
+for that cohort. The read succeeds, other supported columns remain available, and the optional
+summary reports <code class="docutils literal notranslate"><span class="pre">OVPHYSX_READ_OMISSION_UNSUPPORTED_CONFIGURATION</span></code> for the affected request.</p>
 </div></blockquote>
 </section>
 <section id="articulation-joints-dofs">
 <h2>Articulation joints — DOFs<a class="headerlink" href="#articulation-joints-dofs" title="Link to this heading">#</a></h2>
-<p>Articulation joints (<code class="docutils literal notranslate"><span class="pre">ARTICULATION_JOINT</span></code>) emit an <strong>array</strong> group with one tensor per joint prim, one lane per unlocked DOF axis
-(<code class="docutils literal notranslate"><span class="pre">jointLimit</span></code> is 2). A read may ask for state, control, or properties in any combination. Rotational
-axes carry the joint’s body-order sign; angular DOF quantities are in <strong>degrees</strong> (as USD-authored).</p>
+<p>Articulation joints (<code class="docutils literal notranslate"><span class="pre">ARTICULATION_JOINT</span></code>) emit an <strong>array</strong> group with one tensor per joint prim. Each
+tensor has <strong>one row per unlocked axis</strong>, in <code class="docutils literal notranslate"><span class="pre">PxArticulationAxis</span></code> order — one value per row
+(<code class="docutils literal notranslate"><span class="pre">dtype.lanes</span></code> is 1), except <code class="docutils literal notranslate"><span class="pre">jointLimit</span></code>, whose row is the <code class="docutils literal notranslate"><span class="pre">(low,</span> <span class="pre">high)</span></code> pair (<code class="docutils literal notranslate"><span class="pre">dtype.lanes</span></code> is 2).
+Don’t confuse the axis count (the tensor’s shape) with lanes. A read may ask for state, control, or
+properties in any combination. Rotational axes carry the joint’s body-order sign; angular DOF
+quantities are in <strong>degrees</strong> (as USD-authored).</p>
 <blockquote>
 <div><p><strong>Note.</strong> A requested attribute produces <strong>one</strong> array group whose <code class="docutils literal notranslate"><span class="pre">tensors[i]</span></code> holds joint <em>i</em>’s
 axis values — <em>not</em> one group per joint. Code that reads <code class="docutils literal notranslate"><span class="pre">tensors[0]</span></code> and advances to the next
@@ -1213,32 +1394,32 @@ group sees only the first joint, and does so silently on a single-joint scene.</
 <tbody>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointPosition</span></code></p></td>
 <td><p>generalized position</p></td>
-<td><p>f32 × per-axis</p></td>
+<td><p>f32 × 1</p></td>
 <td><p>deg / length</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointVelocity</span></code></p></td>
 <td><p>generalized velocity</p></td>
-<td><p>f32 × per-axis</p></td>
+<td><p>f32 × 1</p></td>
 <td><p>deg/s / length/s</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointPositionTarget</span></code></p></td>
 <td><p>drive position target</p></td>
-<td><p>f32 × per-axis</p></td>
+<td><p>f32 × 1</p></td>
 <td><p>deg / length</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointVelocityTarget</span></code></p></td>
 <td><p>drive velocity target</p></td>
-<td><p>f32 × per-axis</p></td>
+<td><p>f32 × 1</p></td>
 <td><p>deg/s / length/s</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointActuationForce</span></code></p></td>
 <td><p>applied actuation effort</p></td>
-<td><p>f32 × per-axis</p></td>
+<td><p>f32 × 1</p></td>
 <td><p>force / torque</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointProjectedForce</span></code></p></td>
 <td><p>inbound joint force on this axis</p></td>
-<td><p>f32 × per-axis</p></td>
+<td><p>f32 × 1</p></td>
 <td><p>force / torque (read-only, derived)</p></td>
 </tr>
 </tbody>
@@ -1256,63 +1437,68 @@ group sees only the first joint, and does so silently on a single-joint scene.</
 <tbody>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointStiffness</span></code></p></td>
 <td><p>drive effort per unit position error</p></td>
-<td><p>f32 × per-axis</p></td>
+<td><p>f32 × 1</p></td>
 <td><p>effort/coord</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointDamping</span></code></p></td>
 <td><p>drive effort per unit rate error</p></td>
-<td><p>f32 × per-axis</p></td>
+<td><p>f32 × 1</p></td>
 <td><p>effort/rate</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointLimit</span></code></p></td>
 <td><p>(low, high) motion limit</p></td>
-<td><p>f32 × 2 per axis</p></td>
+<td><p>f32 × 2</p></td>
 <td><p>degrees / length; <code class="docutils literal notranslate"><span class="pre">FLT_MAX</span></code> = free</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointMaxVelocity</span></code></p></td>
 <td><p>joint rate bound</p></td>
-<td><p>f32 × per-axis</p></td>
+<td><p>f32 × 1</p></td>
 <td><p>USD rate</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointMaxForce</span></code></p></td>
 <td><p>drive effort bound</p></td>
-<td><p>f32 × per-axis</p></td>
+<td><p>f32 × 1</p></td>
 <td><p>force</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointArmature</span></code></p></td>
 <td><p>added rotor inertia</p></td>
-<td><p>f32 × per-axis</p></td>
+<td><p>f32 × 1</p></td>
 <td><p>inertia</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointStaticFriction</span></code> / <code class="docutils literal notranslate"><span class="pre">jointDynamicFriction</span></code></p></td>
 <td><p>break-away / sliding effort</p></td>
-<td><p>f32 × per-axis</p></td>
+<td><p>f32 × 1</p></td>
 <td><p>effort</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointViscousFriction</span></code></p></td>
 <td><p>effort per unit rate</p></td>
-<td><p>f32 × per-axis</p></td>
+<td><p>f32 × 1</p></td>
 <td><p>effort/rate</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointSpeedEffortGradient</span></code></p></td>
 <td><p>drive-envelope rate per effort</p></td>
-<td><p>f32 × per-axis</p></td>
+<td><p>f32 × 1</p></td>
 <td><p>USD</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointMaxActuatorVelocity</span></code></p></td>
 <td><p>actuator rate bound</p></td>
-<td><p>f32 × per-axis</p></td>
+<td><p>f32 × 1</p></td>
 <td><p>USD rate</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointVelocityDependentResistance</span></code></p></td>
 <td><p>envelope resistance per rate</p></td>
-<td><p>f32 × per-axis</p></td>
+<td><p>f32 × 1</p></td>
 <td><p>effort/rate</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointDriveType</span></code></p></td>
 <td><p>0 none / 1 force / 2 accel</p></td>
-<td><p>u8 × per-axis</p></td>
+<td><p>u8 × 1</p></td>
 <td><p>enum</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">physxPointer</span></code></p></td>
+<td><p>borrowed <code class="docutils literal notranslate"><span class="pre">PxArticulationJointReducedCoordinate</span></code> address</p></td>
+<td><p>u64 × 1</p></td>
+<td><p>—</p></td>
 </tr>
 </tbody>
 </table>
@@ -1322,41 +1508,225 @@ body order — unlike <code class="docutils literal notranslate"><span class="pr
 <p><code class="docutils literal notranslate"><span class="pre">jointProjectedForce</span></code> and <code class="docutils literal notranslate"><span class="pre">linkIncomingJointForce</span></code> (on articulation links) are <strong>computed per read</strong>
 rather than gathered from stored state, so each costs several times a four-column pose/velocity read
 of the same prims — request them in the read that needs them, not in a per-step pose read.
-<code class="docutils literal notranslate"><span class="pre">jointProjectedForce</span></code> uses the same one-lane-per-unlocked-axis shape as the other joint columns: a
-locked axis is <strong>omitted</strong> (not zero-filled), and a fixed joint — which has no DOF — contributes no
-row.</p>
+<code class="docutils literal notranslate"><span class="pre">jointProjectedForce</span></code> uses the same one-row-per-unlocked-axis shape as the other joint columns: a
+locked axis is <strong>omitted</strong> (not a zero-filled row), and a fixed joint — which has no DOF — contributes
+no row.</p>
 </section>
-<section id="vehicle-wheels">
-<h2>Vehicle wheels<a class="headerlink" href="#vehicle-wheels" title="Link to this heading">#</a></h2>
-<p>Vehicle wheels (<code class="docutils literal notranslate"><span class="pre">VEHICLE_WHEEL</span></code>) emit a <strong>fixed</strong> group with one row per wheel. <strong>Host-only</strong> — a vehicle cannot attach to a
-DirectGPU scene.</p>
+<section id="whole-vehicles">
+<h2>Whole vehicles<a class="headerlink" href="#whole-vehicles" title="Link to this heading">#</a></h2>
+<p>Whole vehicles (<code class="docutils literal notranslate"><span class="pre">VEHICLE</span></code>) emit fixed, host-resident groups with one row per vehicle prim.
+The chassis pose and velocity use a separate <code class="docutils literal notranslate"><span class="pre">RIGID_BODY</span></code> query on that same prim; wheel
+attachments use <code class="docutils literal notranslate"><span class="pre">VEHICLE_WHEEL</span></code>. Vehicles are unavailable on DirectGPU scenes.</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>Attribute</p></th>
 <th class="head"><p>Meaning</p></th>
-<th class="head"><p>dtype × lanes</p></th>
-<th class="head"><p>Frame</p></th>
-<th class="head"><p>Residency</p></th>
+<th class="head"><p>dtype x lanes</p></th>
+<th class="head"><p>Units</p></th>
+<th class="head"><p>Applicability</p></th>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">position</span></code></p></td>
-<td><p>composed wheel world position</p></td>
-<td><p>f32 × 3</p></td>
-<td><p>world</p></td>
-<td><p>host</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">accelerator</span></code></p></td>
+<td><p>persistent accelerator input</p></td>
+<td><p>f32 x 1</p></td>
+<td><p>normalized [0,1]</p></td>
+<td><p>DriveBasic / DriveStandard</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">orientation</span></code></p></td>
-<td><p>composed wheel world rotation</p></td>
-<td><p>f32 × 4</p></td>
-<td><p>world</p></td>
-<td><p>host</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">brake0</span></code>, <code class="docutils literal notranslate"><span class="pre">brake1</span></code></p></td>
+<td><p>persistent brake-channel input</p></td>
+<td><p>f32 x 1</p></td>
+<td><p>normalized [0,1]</p></td>
+<td><p>DriveBasic / DriveStandard</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">steer</span></code></p></td>
+<td><p>persistent steering input</p></td>
+<td><p>f32 x 1</p></td>
+<td><p>normalized [-1,1]</p></td>
+<td><p>DriveBasic / DriveStandard</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">clutch</span></code></p></td>
+<td><p>native clutch command state</p></td>
+<td><p>f32 x 1</p></td>
+<td><p>normalized [0,1]</p></td>
+<td><p>DriveStandard</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">currentGear</span></code></p></td>
+<td><p>engaged gear</p></td>
+<td><p>i32 x 1</p></td>
+<td><p>gear index</p></td>
+<td><p>DriveStandard</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">targetGear</span></code></p></td>
+<td><p>internal transmission target, distinct from the requested control</p></td>
+<td><p>i32 x 1</p></td>
+<td><p>gear index</p></td>
+<td><p>DriveStandard</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">engineRotationSpeed</span></code></p></td>
+<td><p>engine angular speed</p></td>
+<td><p>f32 x 1</p></td>
+<td><p>rad/s</p></td>
+<td><p>DriveStandard</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">automaticTransmission</span></code></p></td>
+<td><p>automatic transmission enabled</p></td>
+<td><p>u8 x 1</p></td>
+<td><p>boolean</p></td>
+<td><p>DriveStandard</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">gearSwitchTime</span></code></p></td>
+<td><p>elapsed time in current gear change; negative when no change is active</p></td>
+<td><p>f32 x 1</p></td>
+<td><p>seconds</p></td>
+<td><p>DriveStandard</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">autoboxTimeSinceLastShift</span></code></p></td>
+<td><p>automatic-gearbox time since the last shift; zero without an autobox</p></td>
+<td><p>f32 x 1</p></td>
+<td><p>seconds</p></td>
+<td><p>DriveStandard</p></td>
 </tr>
 </tbody>
 </table>
 </div>
-<p>The wheel pose is composed from chassis + suspension + steer, not gathered. <code class="docutils literal notranslate"><span class="pre">driveTorque</span></code> /
-<code class="docutils literal notranslate"><span class="pre">brakeTorque</span></code> / <code class="docutils literal notranslate"><span class="pre">steerAngle</span></code> are write-only and not readable.</p>
+<p>Gear indices use -1 for reverse, 0 for neutral and positive values for forward gears.
+Before a recorded automatic shift, <code class="docutils literal notranslate"><span class="pre">autoboxTimeSinceLastShift</span></code> can hold the native float32-maximum
+sentinel instead of an elapsed duration.
+The readable controls use the same names as writes. An unconfigured brake channel reads zero;
+writing it has no effect. <code class="docutils literal notranslate"><span class="pre">requestedGear</span></code>, tank <code class="docutils literal notranslate"><span class="pre">thrust0</span></code> / <code class="docutils literal notranslate"><span class="pre">thrust1</span></code>, and <code class="docutils literal notranslate"><span class="pre">resetToRestState</span></code> are
+write-only. <code class="docutils literal notranslate"><span class="pre">targetGear</span></code> reports the transmission’s internal state, not an echo of <code class="docutils literal notranslate"><span class="pre">requestedGear</span></code>.</p>
+<p>Discovery lists readable attributes supported by at least one selected vehicle. Mixed reads emit
+only applicable rows, with <code class="docutils literal notranslate"><span class="pre">UNSUPPORTED_CONFIGURATION</span></code> in the optional session summary for omitted
+vehicles. Always use each group’s prim list: a Standard-only column can have fewer rows than a
+control column. A disabled vehicle remains in <code class="docutils literal notranslate"><span class="pre">ALL</span></code> membership.</p>
+</section>
+<section id="vehicle-wheels">
+<h2>Vehicle wheels<a class="headerlink" href="#vehicle-wheels" title="Link to this heading">#</a></h2>
+<p>Vehicle wheels (<code class="docutils literal notranslate"><span class="pre">VEHICLE_WHEEL</span></code>) emit fixed, host-resident groups with one row per wheel attachment.
+The wheel pose is composed from chassis, suspension and steering. Other columns report native
+vehicle state from its latest update. Vehicles are unavailable on DirectGPU scenes.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype x lanes</p></th>
+<th class="head"><p>Frame / units</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">position</span></code></p></td>
+<td><p>composed wheel position</p></td>
+<td><p>f32 x 3</p></td>
+<td><p>world; length</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">orientation</span></code></p></td>
+<td><p>composed wheel rotation, xyzw</p></td>
+<td><p>f32 x 4</p></td>
+<td><p>world</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">rotationSpeed</span></code></p></td>
+<td><p>wheel angular speed</p></td>
+<td><p>f32 x 1</p></td>
+<td><p>rad/s</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">rotationAngle</span></code></p></td>
+<td><p>wheel rotation angle</p></td>
+<td><p>f32 x 1</p></td>
+<td><p>radians</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">wheelSteerAngle</span></code></p></td>
+<td><p>actual wheel steering angle</p></td>
+<td><p>f32 x 1</p></td>
+<td><p>radians</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">suspensionJounce</span></code></p></td>
+<td><p>suspension compression</p></td>
+<td><p>f32 x 1</p></td>
+<td><p>length</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">suspensionForce</span></code></p></td>
+<td><p>suspension force</p></td>
+<td><p>f32 x 3</p></td>
+<td><p>world; force</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tireFriction</span></code></p></td>
+<td><p>effective tire friction</p></td>
+<td><p>f32 x 1</p></td>
+<td><p>dimensionless</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tireLongitudinalDirection</span></code></p></td>
+<td><p>tire’s longitudinal direction</p></td>
+<td><p>f32 x 3</p></td>
+<td><p>world; unit vector</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tireLateralDirection</span></code></p></td>
+<td><p>tire’s lateral direction</p></td>
+<td><p>f32 x 3</p></td>
+<td><p>world; unit vector</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tireLongitudinalSlip</span></code></p></td>
+<td><p>longitudinal slip</p></td>
+<td><p>f32 x 1</p></td>
+<td><p>dimensionless ratio</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tireLateralSlip</span></code></p></td>
+<td><p>lateral slip</p></td>
+<td><p>f32 x 1</p></td>
+<td><p>radians</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tireForce</span></code></p></td>
+<td><p>tire force</p></td>
+<td><p>f32 x 3</p></td>
+<td><p>world; force</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">isOnGround</span></code></p></td>
+<td><p>validity of the current ground-contact sample</p></td>
+<td><p>u8 x 1</p></td>
+<td><p>boolean</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">groundPlane</span></code></p></td>
+<td><p>contact plane <code class="docutils literal notranslate"><span class="pre">(nx,</span> <span class="pre">ny,</span> <span class="pre">nz,</span> <span class="pre">d)</span></code>, <code class="docutils literal notranslate"><span class="pre">n</span> <span class="pre">dot</span> <span class="pre">p</span> <span class="pre">+</span> <span class="pre">d</span> <span class="pre">=</span> <span class="pre">0</span></code></p></td>
+<td><p>f32 x 4</p></td>
+<td><p>world; d in length</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">groundHitPosition</span></code></p></td>
+<td><p>contact hit position</p></td>
+<td><p>f32 x 3</p></td>
+<td><p>world; length</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">groundActorPath</span></code></p></td>
+<td><p>ground actor prim identity</p></td>
+<td><p>u64 x 1</p></td>
+<td><p>attached Stage path dictionary</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">groundShapePath</span></code></p></td>
+<td><p>ground shape prim identity</p></td>
+<td><p>u64 x 1</p></td>
+<td><p>attached Stage path dictionary</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">groundMaterialPath</span></code></p></td>
+<td><p>ground material prim identity</p></td>
+<td><p>u64 x 1</p></td>
+<td><p>attached Stage path dictionary</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>All these columns are read-only. The existing raw-wheel <code class="docutils literal notranslate"><span class="pre">driveTorque</span></code>, <code class="docutils literal notranslate"><span class="pre">brakeTorque</span></code> and
+<code class="docutils literal notranslate"><span class="pre">steerAngle</span></code> controls are write-only; <code class="docutils literal notranslate"><span class="pre">wheelSteerAngle</span></code> is actual telemetry, separate from that
+steering command.</p>
+<p><code class="docutils literal notranslate"><span class="pre">isOnGround</span> <span class="pre">==</span> <span class="pre">0</span></code> means no valid current contact sample. It does not prove that a sleeping vehicle
+is physically airborne. Adding or removing any runtime object record in the owning attachment
+invalidates contact data until the next completed vehicle update, even when the changed object
+is unrelated to that contact. Before the first update and for sleeping or disabled vehicles,
+contact data can also be invalid. In that case <code class="docutils literal notranslate"><span class="pre">groundPlane</span></code>,
+<code class="docutils literal notranslate"><span class="pre">groundHitPosition</span></code> and all three ground identities are zero. Other telemetry retains its native
+last-update state; it is not forcibly cleared when contact becomes invalid.</p>
+<p>A ground identity is an <code class="docutils literal notranslate"><span class="pre">ovx_primpath_t</span></code> represented as uint64. Resolve it with the attached Stage’s
+path dictionary, exactly as a group’s prim identities. Zero means absent or unrepresentable,
+including an implicit default material. These values are not pointers or private object IDs.
+Length, force and torque follow the <a class="reference internal" href="data_model.html#units"><span class="std std-ref">stage’s units</span></a>.</p>
 </section>
 <section id="deformable-volumes-surfaces">
 <h2>Deformable volumes / surfaces<a class="headerlink" href="#deformable-volumes-surfaces" title="Link to this heading">#</a></h2>
@@ -1408,12 +1778,23 @@ deformable groups.</p>
 <td><p>host</p></td>
 <td><p><strong>volume only</strong></p></td>
 </tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">kinematicTarget</span></code></p></td>
+<td><p>pending sim-node kinematic target (<code class="docutils literal notranslate"><span class="pre">.w</span></code> active-flag)</p></td>
+<td><p>f32 × 4</p></td>
+<td><p>sim-mesh-local</p></td>
+<td><p>device</p></td>
+<td><p><strong>volume only</strong></p></td>
+</tr>
 </tbody>
 </table>
 </div>
 <p>A surface body’s simulation mesh <em>is</em> its collision mesh, so it has no separate
 <code class="docutils literal notranslate"><span class="pre">collisionElementIndices</span></code> — discovery omits it for surfaces, and a surface query for it returns no
 group.</p>
+<p><code class="docutils literal notranslate"><span class="pre">kinematicTarget</span></code> is served <strong>only for bodies actually being driven</strong> (through
+<code class="docutils literal notranslate"><span class="pre">setKinematicTargetBufferD</span></code>); an undriven body contributes no tensor, so its group covers a subset of
+the <code class="docutils literal notranslate"><span class="pre">points</span></code> prims. The <code class="docutils literal notranslate"><span class="pre">.w</span></code> lane is an active-flag with <strong>inverted</strong> polarity: <code class="docutils literal notranslate"><span class="pre">w</span> <span class="pre">==</span> <span class="pre">0</span></code> drives the
+node to its <code class="docutils literal notranslate"><span class="pre">xyz</span></code> target, <code class="docutils literal notranslate"><span class="pre">w</span> <span class="pre">!=</span> <span class="pre">0</span></code> leaves it free.</p>
 <blockquote>
 <div><p><strong>Note.</strong> <code class="docutils literal notranslate"><span class="pre">points</span></code> and <code class="docutils literal notranslate"><span class="pre">restPoints</span></code> share the sim-mesh-local frame (their difference is
 meaningful), but <code class="docutils literal notranslate"><span class="pre">velocities</span></code> is in <strong>world</strong> space. Do not difference <code class="docutils literal notranslate"><span class="pre">points</span></code> against a
@@ -1445,11 +1826,17 @@ time-integrated <code class="docutils literal notranslate"><span class="pre">vel
 <td><p>world</p></td>
 <td><p>device</p></td>
 </tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">physxPointer</span></code></p></td>
+<td><p>borrowed particle-set address</p></td>
+<td><p>u64 × 1</p></td>
+<td><p>—</p></td>
+<td><p>host</p></td>
+</tr>
 </tbody>
 </table>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">positions</span></code> is accepted as a legacy alias and echoed under the spelling you requested; discovery
-advertises only <code class="docutils literal notranslate"><span class="pre">points</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">positions</span></code> is accepted as an alias and canonicalized to <code class="docutils literal notranslate"><span class="pre">points</span></code> in groups and session summaries;
+discovery advertises only <code class="docutils literal notranslate"><span class="pre">points</span></code>. Requesting both spellings is a duplicate and fails the open.</p>
 </section>
 <section id="fixed-spatial-tendons">
 <h2>Fixed / spatial tendons<a class="headerlink" href="#fixed-spatial-tendons" title="Link to this heading">#</a></h2>
@@ -1558,6 +1945,513 @@ them (rather than reporting zero).</p>
 </table>
 </div>
 </section>
+<section id="debug-render">
+<h2>Debug render<a class="headerlink" href="#debug-render" title="Link to this heading">#</a></h2>
+<p>Debug render (<code class="docutils literal notranslate"><span class="pre">DEBUG_RENDER</span></code>) is one instance-level target, not a prim. A query does not require an
+attached stage. Settings are one row. Geometry columns are a snapshot of PhysX debug primitives for
+scenes whose attach handle matches this instance. Position index <code class="docutils literal notranslate"><span class="pre">i</span></code> and color index <code class="docutils literal notranslate"><span class="pre">i</span></code> are the
+same primitive. Shape 0 is an empty list. <strong>Host-only always.</strong></p>
+<p><strong>Geometry timing.</strong> Complete simulation before reading. On CPU scenes, PhysX actor/shape
+wireframes use poses from the start of each scene’s latest simulation step, before integration.
+With substepping, this is the start of that scene’s last substep. Contact and friction
+primitives describe contacts computed for that step. Reading copies the existing
+primitives; a moving body’s wireframe can therefore trail its rendered post-step pose.
+The simulated body state is not delayed.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes / Python shape</p></th>
+<th class="head"><p>Residency</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">enabled</span></code></p></td>
+<td><p>visualization on/off</p></td>
+<td><p>u8 × 1 → <code class="docutils literal notranslate"><span class="pre">[1]</span></code></p></td>
+<td><p>host</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">scale</span></code></p></td>
+<td><p>visualization scale</p></td>
+<td><p>f32 × 1 → <code class="docutils literal notranslate"><span class="pre">[1]</span></code></p></td>
+<td><p>host</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">worldAxes</span></code> … <code class="docutils literal notranslate"><span class="pre">sdf</span></code></p></td>
+<td><p>one float per visualization parameter (see <code class="docutils literal notranslate"><span class="pre">OVPHYSX_ATTR_DEBUG_*</span></code>)</p></td>
+<td><p>f32 × 1 → <code class="docutils literal notranslate"><span class="pre">[1]</span></code></p></td>
+<td><p>host</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">cullingBox</span></code></p></td>
+<td><p>cull box min xyz, max xyz; leading shape 0 means no box</p></td>
+<td><p>f32 × 6 → <code class="docutils literal notranslate"><span class="pre">[1,</span> <span class="pre">6]</span></code> or <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">6]</span></code></p></td>
+<td><p>host</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">scope</span></code></p></td>
+<td><p>interned path tokens; length 0 draws everything</p></td>
+<td><p>u64 × 1 → <code class="docutils literal notranslate"><span class="pre">[N]</span></code></p></td>
+<td><p>host</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pointPosition</span></code></p></td>
+<td><p>point positions</p></td>
+<td><p>f32, shape <code class="docutils literal notranslate"><span class="pre">[N,</span> <span class="pre">3]</span></code></p></td>
+<td><p>host</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pointColor</span></code></p></td>
+<td><p>point colors (<code class="docutils literal notranslate"><span class="pre">0xAARRGGBB</span></code>)</p></td>
+<td><p>u32, shape <code class="docutils literal notranslate"><span class="pre">[N]</span></code></p></td>
+<td><p>host</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">linePosition</span></code></p></td>
+<td><p>line endpoint positions</p></td>
+<td><p>f32, shape <code class="docutils literal notranslate"><span class="pre">[N,</span> <span class="pre">2,</span> <span class="pre">3]</span></code></p></td>
+<td><p>host</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">lineColor</span></code></p></td>
+<td><p>line endpoint colors</p></td>
+<td><p>u32, shape <code class="docutils literal notranslate"><span class="pre">[N,</span> <span class="pre">2]</span></code></p></td>
+<td><p>host</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">trianglePosition</span></code></p></td>
+<td><p>triangle vertex positions</p></td>
+<td><p>f32, shape <code class="docutils literal notranslate"><span class="pre">[N,</span> <span class="pre">3,</span> <span class="pre">3]</span></code></p></td>
+<td><p>host</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">triangleColor</span></code></p></td>
+<td><p>triangle vertex colors</p></td>
+<td><p>u32, shape <code class="docutils literal notranslate"><span class="pre">[N,</span> <span class="pre">3]</span></code></p></td>
+<td><p>host</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>In C, pass <code class="docutils literal notranslate"><span class="pre">&amp;OVPHYSX_NAME_DEBUG_*</span></code>. In Python, pass the string names above. With a stage
+attached, each returned group’s attribute token resolves to that name. With no stage the
+token is 0, because there is no path dictionary to intern it. A token-only read then fails.</p>
+</section>
+<section id="contact-sensors">
+<h2>Contact sensors<a class="headerlink" href="#contact-sensors" title="Link to this heading">#</a></h2>
+<p>Contact sensors (<code class="docutils literal notranslate"><span class="pre">CONTACT_SENSOR</span></code>) include rigid bodies and articulation links carrying
+<code class="docutils literal notranslate"><span class="pre">PhysxContactReportAPI</span></code>, and every link of an articulation carrying it. On CPU simulation and GPU
+dynamics with CPU readback, each collider carrying the schema is also a sensor. A body row aggregates
+all of its shapes’ contacts and each collider row reads only its own shape’s, so the two <strong>overlap</strong>:
+do not sum net forces or count contacts/events across a body and its own colliders, or they double-count.
+Collider rows are host-only — a DirectGPU scene enumerates only reporting bodies (a selection naming
+only a separate child collider discovers no rows there). Every attribute is <strong>read-only</strong> and describes
+the last step; each scene’s sensors come back as
+their own groups, reduced with that scene’s step dt. Three query forms select them — the whole set
+(<code class="docutils literal notranslate"><span class="pre">ovphysx_query</span></code>), a prim-set selection (<code class="docutils literal notranslate"><span class="pre">ovphysx_query_selection</span></code>; <code class="docutils literal notranslate"><span class="pre">pattern=</span></code> / <code class="docutils literal notranslate"><span class="pre">prim_paths=</span></code> in
+Python), and a <a class="reference internal" href="index.html#contact-queries"><span class="std std-ref">contact query</span></a> that pairs each sensor with F filter bodies.
+<code class="docutils literal notranslate"><span class="pre">ACTIVE</span></code> scope behaves as <code class="docutils literal notranslate"><span class="pre">ALL</span></code>.</p>
+<section id="child-collider-sensors">
+<h3>Child collider sensors<a class="headerlink" href="#child-collider-sensors" title="Link to this heading">#</a></h3>
+<p>On CPU simulation and GPU dynamics with CPU readback, a child collider can be selected as a contact
+sensor when <code class="docutils literal notranslate"><span class="pre">PhysxContactReportAPI</span></code> is applied to that collider. This makes the sensor available; it
+does not by itself enable contact reporting for its owning rigid body.</p>
+<p>To enable reporting from that body, also apply <code class="docutils literal notranslate"><span class="pre">PhysxContactReportAPI</span></code> to the owning rigid-body prim.
+For an articulation, reporting can be enabled on the owning link or on the articulation root, which
+enables reporting for every link. A child sensor can also receive contacts reported by the other actor
+in the pair. If neither actor reports matching contacts, the child remains a valid sensor but reads
+zero force, even while touching another object.</p>
+<p>For example, add this authoring fragment at the stage root and select <code class="docutils literal notranslate"><span class="pre">/Body/Collider</span></code> to read that
+shape’s contacts:</p>
+<div class="highlight-usda notranslate"><div class="highlight"><pre><span></span><span class="k k-Tokens">def</span><span class="w"> </span>Xform<span class="w"> </span><span class="s">&quot;Body&quot;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="kt">prepend</span><span class="w"> </span><span class="na">apiSchemas</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;PhysicsRigidBodyAPI&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;PhysxContactReportAPI&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="na">physxContactReport:threshold</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span>
+
+<span class="w">    </span><span class="k k-Tokens">def</span><span class="w"> </span>Cube<span class="w"> </span><span class="s">&quot;Collider&quot;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="kt">prepend</span><span class="w"> </span><span class="na">apiSchemas</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;PhysicsCollisionAPI&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;PhysxContactReportAPI&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="na">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.5</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Configure reporting settings, including <code class="docutils literal notranslate"><span class="pre">physxContactReport:threshold</span></code> and
+<code class="docutils literal notranslate"><span class="pre">physxContactReport:reportPairs</span></code>, on the reporting body, link, or articulation root. Settings on a
+separate child collider do not configure its owner’s reporting. The example enables reporting from
+<code class="docutils literal notranslate"><span class="pre">/Body</span></code> without depending on the other actor; sleeping and other reporting conditions still apply.</p>
+<p><strong>Deprecated contact bindings.</strong> On CPU simulation and GPU dynamics with CPU readback, selecting
+the owning body as a sensor in the same binding or another live contact binding on the same attachment
+credits the contacts to the body and leaves the child sensor at zero. Wildcard patterns can select
+both. For a child binding, enable reporting on <code class="docutils literal notranslate"><span class="pre">/Body</span></code> but select only <code class="docutils literal notranslate"><span class="pre">/Body/Collider</span></code> as a sensor,
+and establish the bindings before stepping. Session contact reads support body and child rows together;
+see the <a class="reference internal" href="../tutorials/contact_binding.html"><span class="std std-doc">Contact Binding tutorial</span></a> for the binding limitations.</p>
+<p>A standalone static collider is its own rigid actor, so applying the schema to that prim enables
+reporting directly on CPU simulation and GPU dynamics with CPU readback. On DirectGPU, a standalone
+static collider remains a sensor row but reads zero force. DirectGPU session queries omit separate
+child-collider rows; select a dynamic body or articulation link to read forces instead.</p>
+</section>
+<section id="reading-contact-data">
+<h3>Reading contact data<a class="headerlink" href="#reading-contact-data" title="Link to this heading">#</a></h3>
+<p><strong>Sleeping contacts.</strong> On CPU and GPU-dynamics scenes with CPU readback, persistent
+contacts stop being reported when neither body in the pair is active. A settled
+sensor can therefore have zero forces and no contact arrays while still touching
+the ground. This also applies to contact bindings;
+environment IDs do not disable contact reporting. DirectGPU disables sleeping,
+so its contact tensors can remain nonzero on the same settled scene.
+For continuous reporting, disable sleeping before attachment (for example,
+<code class="docutils literal notranslate"><span class="pre">physxScene:disableSleeping</span> <span class="pre">=</span> <span class="pre">true</span></code> on a scene with <code class="docutils literal notranslate"><span class="pre">PhysxSceneAPI</span></code>), or wake the
+bodies and complete another simulation step before reading. Use
+<a class="reference internal" href="#rigid-bodies"><code class="docutils literal notranslate"><span class="pre">isSleeping</span></code></a> to inspect sleep state.</p>
+<p>On a DirectGPU scene a sensor or a filter that is a point-instancer prototype stands for its <strong>first
+instance only</strong>, as in the contact binding: every column reads that instance’s contacts, where a CPU scene
+reads every instance’s. Another sensor’s contacts with each instance are unaffected.</p>
+<p><strong>Net forces</strong> — a <strong>fixed</strong> group, one row per sensor, on every query form:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+<th class="head"><p>Frame</p></th>
+<th class="head"><p>Units</p></th>
+<th class="head"><p>Residency</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">netNormalContactForce</span></code></p></td>
+<td><p>the sensor’s contact-point impulses, summed, / dt</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+<td><p>force</p></td>
+<td><p>device</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">netFrictionContactForce</span></code></p></td>
+<td><p>the sensor’s friction-anchor impulses, summed, / dt</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+<td><p>force</p></td>
+<td><p>device</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Their sum is the total contact force. Friction anchor forces that oppose each other cancel, so a
+friction torque does not show.</p>
+<p><strong>Per filter</strong> — on a contact query with filters only (F filters per sensor); a query without filters
+does not serve these names:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+<th class="head"><p>Frame</p></th>
+<th class="head"><p>Units</p></th>
+<th class="head"><p>Residency</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">normalContactForceMatrix</span></code></p></td>
+<td><p>normal force from each filter’s body; filter f at lanes 3f..3f+2</p></td>
+<td><p>f32 × 3F</p></td>
+<td><p>world</p></td>
+<td><p>force</p></td>
+<td><p>device</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">frictionContactForceMatrix</span></code></p></td>
+<td><p>friction force from each filter’s body, same layout</p></td>
+<td><p>f32 × 3F</p></td>
+<td><p>world</p></td>
+<td><p>force</p></td>
+<td><p>device</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">filteredContactCount</span></code></p></td>
+<td><p>contact points from each filter’s body</p></td>
+<td><p>i32 × F</p></td>
+<td><p>—</p></td>
+<td><p>count</p></td>
+<td><p>device</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">filteredFrictionCount</span></code></p></td>
+<td><p>friction anchors from each filter’s body</p></td>
+<td><p>i32 × F</p></td>
+<td><p>—</p></td>
+<td><p>count</p></td>
+<td><p>device</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">filteredContactForce</span></code></p></td>
+<td><p>per point: its normal force (see below)</p></td>
+<td><p>f32 × 1 (array)</p></td>
+<td><p>—</p></td>
+<td><p>force</p></td>
+<td><p>device</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">filteredContactPoint</span></code></p></td>
+<td><p>per point: its position</p></td>
+<td><p>f32 × 3 (array)</p></td>
+<td><p>world</p></td>
+<td><p>length</p></td>
+<td><p>device</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">filteredContactNormal</span></code></p></td>
+<td><p>per point: its normal, as reported</p></td>
+<td><p>f32 × 3 (array)</p></td>
+<td><p>world</p></td>
+<td><p>—</p></td>
+<td><p>device</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">filteredContactSeparation</span></code></p></td>
+<td><p>per point: its separation</p></td>
+<td><p>f32 × 1 (array)</p></td>
+<td><p>—</p></td>
+<td><p>length</p></td>
+<td><p>device</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">filteredFrictionForce</span></code></p></td>
+<td><p>per anchor: its impulse / dt</p></td>
+<td><p>f32 × 3 (array)</p></td>
+<td><p>world</p></td>
+<td><p>force</p></td>
+<td><p>device</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">filteredFrictionPoint</span></code></p></td>
+<td><p>per anchor: its position</p></td>
+<td><p>f32 × 3 (array)</p></td>
+<td><p>world</p></td>
+<td><p>length</p></td>
+<td><p>device</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The four matrix and count columns are fixed groups over every sensor. The six <code class="docutils literal notranslate"><span class="pre">filtered*</span></code> element
+attributes are <strong>array</strong> groups: one array per sensor, its elements ordered by filter column —
+<code class="docutils literal notranslate"><span class="pre">filteredContactCount</span></code> / <code class="docutils literal notranslate"><span class="pre">filteredFrictionCount</span></code> split it into per-filter runs, in lane order. A filter
+that is a collider rather than a body is matched on a CPU scene, but reads zero on a DirectGPU scene, as
+in the contact binding.</p>
+<p><strong>Raw contacts</strong> — <strong>array</strong> groups, one array per sensor, on every query form; every contact point of
+every pair the sensor is in, whatever the other body:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+<th class="head"><p>Frame</p></th>
+<th class="head"><p>Units</p></th>
+<th class="head"><p>Residency</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">rawContactForce</span></code></p></td>
+<td><p>per point: its normal force (see below)</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>—</p></td>
+<td><p>force</p></td>
+<td><p>device</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">rawContactPoint</span></code></p></td>
+<td><p>per point: its position</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+<td><p>length</p></td>
+<td><p>device</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">rawContactNormal</span></code></p></td>
+<td><p>per point: its normal, as reported</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+<td><p>—</p></td>
+<td><p>device</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">rawContactSeparation</span></code></p></td>
+<td><p>per point: its separation</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>—</p></td>
+<td><p>length</p></td>
+<td><p>device</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">rawContactOtherBody</span></code></p></td>
+<td><p>per point: the other body’s prim</p></td>
+<td><p>u64 prim handle</p></td>
+<td><p>—</p></td>
+<td><p>—</p></td>
+<td><p>device</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Events</strong> — <strong>array</strong> groups, one array per sensor, on every query form over a <strong>CPU scene only</strong>:
+each contact-report pair the sensor is a side of — found, persisting or lost — as seen from the sensor,
+in report order. A pair between two sensors appears under each.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Per</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+<th class="head"><p>Units</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contactEventType</span></code></p></td>
+<td><p>event</p></td>
+<td><p>0 found, 1 lost, 2 persist</p></td>
+<td><p>i32 × 1</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">contactEventSensorSide</span></code></p></td>
+<td><p>event</p></td>
+<td><p>the pair side (0 or 1) the sensor is</p></td>
+<td><p>i32 × 1</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contactEventCollider</span></code></p></td>
+<td><p>event</p></td>
+<td><p>the sensor’s own collider prim</p></td>
+<td><p>u64 prim handle</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">contactEventOtherBody</span></code></p></td>
+<td><p>event</p></td>
+<td><p>the other body’s prim</p></td>
+<td><p>u64 prim handle</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contactEventOtherCollider</span></code></p></td>
+<td><p>event</p></td>
+<td><p>the other collider’s prim</p></td>
+<td><p>u64 prim handle</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">contactEventProtoIndex</span></code> / <code class="docutils literal notranslate"><span class="pre">contactEventOtherProtoIndex</span></code></p></td>
+<td><p>event</p></td>
+<td><p>the collider’s instance index in its point instancer — its slot in <code class="docutils literal notranslate"><span class="pre">protoIndices</span></code>, not the prototype it selects — own / other (0xFFFFFFFF: not an instance)</p></td>
+<td><p>u32 × 1</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contactEventPointCount</span></code> / <code class="docutils literal notranslate"><span class="pre">contactEventAnchorCount</span></code></p></td>
+<td><p>event</p></td>
+<td><p>the event’s contact points / friction anchors</p></td>
+<td><p>i32 × 1</p></td>
+<td><p>count</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">contactEventPointPosition</span></code></p></td>
+<td><p>point</p></td>
+<td><p>position (world)</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>length</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contactEventPointNormal</span></code></p></td>
+<td><p>point</p></td>
+<td><p>normal, as reported (world)</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">contactEventPointImpulse</span></code></p></td>
+<td><p>point</p></td>
+<td><p>impulse, as reported (world)</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>force·s</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contactEventPointSeparation</span></code></p></td>
+<td><p>point</p></td>
+<td><p>separation</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>length</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">contactEventPointFaceIndex</span></code> / <code class="docutils literal notranslate"><span class="pre">contactEventPointOtherFaceIndex</span></code></p></td>
+<td><p>point</p></td>
+<td><p>triangle-mesh face index, own / other</p></td>
+<td><p>u32 × 1</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contactEventPointMaterial</span></code> / <code class="docutils literal notranslate"><span class="pre">contactEventPointOtherMaterial</span></code></p></td>
+<td><p>point</p></td>
+<td><p>material prim, own / other</p></td>
+<td><p>u64 prim handle</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">contactEventAnchorPosition</span></code></p></td>
+<td><p>anchor</p></td>
+<td><p>position (world)</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>length</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contactEventAnchorImpulse</span></code></p></td>
+<td><p>anchor</p></td>
+<td><p>impulse, as reported (world)</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>force·s</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>A sensor’s points (anchors) are concatenated in event order; <code class="docutils literal notranslate"><span class="pre">contactEventPointCount</span></code>
+(<code class="docutils literal notranslate"><span class="pre">contactEventAnchorCount</span></code>), one value per event, splits them per event. A sensor has an array when it has
+at least one element at the attribute’s level this step, so a sensor whose only event is a lost pair, which
+carries no point, has event arrays but no point or anchor array. Event values are as reported: impulses,
+not forces, never negated.</p>
+<p>How to read these values:</p>
+<ul class="simple">
+<li><p><strong>Force sign.</strong> A force is the one the sensor receives: a point’s normal force is its impulse
+divided by dt — the impulse’s magnitude on a CPU scene, the solver’s normal impulse on a DirectGPU
+scene — negated when the sensor is the pair’s second body, and normals are never flipped. So
+<code class="docutils literal notranslate"><span class="pre">force</span> <span class="pre">×</span> <span class="pre">normal</span></code> is the force on the sensor.</p></li>
+<li><p><strong>Identities</strong> are prim-path handles interned in the attached Stage’s dictionary; obtain it through
+<code class="docutils literal notranslate"><span class="pre">stage-&gt;vtable-&gt;get_path_dictionary(stage-&gt;context)</span></code> in C and resolve through the ovx path-dictionary API,
+or use <code class="docutils literal notranslate"><span class="pre">ovstage.PathDictionary.path_to_string</span></code> in Python. An
+identity with no prim reads 0.</p></li>
+<li><p><strong>Exact sizing.</strong> Each array holds the step’s elements — no capacity, no truncation. A sensor with no
+element this step is absent from an array group, and the group is absent when no sensor has one.</p></li>
+<li><p><strong>Order.</strong> On a CPU scene a sensor’s elements keep report order (within a filter column for the
+filtered detail); on a DirectGPU scene their order is unspecified, as it is in the contact binding.</p></li>
+<li><p><strong>DirectGPU.</strong> The filtered detail’s arrays and the raw contacts synchronize the host once per read, to
+size them from the per-sensor counts; a read that asks for none of them does not, nor does one of the
+count columns alone. Events are not served
+(PhysX’s GPU contact pairs carry no event type): the read completes without them. Before the first
+step the fixed columns read zero and the arrays are absent.</p></li>
+</ul>
+</section>
+</section>
+<section id="native-physx-pointers">
+<h2>Native PhysX pointers<a class="headerlink" href="#native-physx-pointers" title="Link to this heading">#</a></h2>
+<p>These query types publish only <code class="docutils literal notranslate"><span class="pre">physxPointer</span></code>: a host <code class="docutils literal notranslate"><span class="pre">uint64</span></code> snapshot of a
+borrowed PhysX address. <code class="docutils literal notranslate"><span class="pre">PHYSICS</span></code> is one row whose path is <code class="docutils literal notranslate"><span class="pre">/</span></code> and ignores
+prim-set selection. The others have no active notion, so <code class="docutils literal notranslate"><span class="pre">ACTIVE</span></code> matches <code class="docutils literal notranslate"><span class="pre">ALL</span></code>.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Query type</p></th>
+<th class="head"><p>Address</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SCENE</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">PxScene</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PHYSX_MATERIAL</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">PxMaterial</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SHAPE</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">PxShape</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">COMPOUND_SHAPE</span></code></p></td>
+<td><p>compound-shape wrapper</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">RIGID_ACTOR</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">PxRigidDynamic</span></code> or <code class="docutils literal notranslate"><span class="pre">PxRigidStatic</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">JOINT</span></code></p></td>
+<td><p>standalone <code class="docutils literal notranslate"><span class="pre">PxJoint</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CUSTOM_JOINT</span></code></p></td>
+<td><p>plugin custom joint</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PARTICLE_SYSTEM</span></code></p></td>
+<td><p>particle system</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PHYSICS</span></code></p></td>
+<td><p>process-global <code class="docutils literal notranslate"><span class="pre">PxPhysics</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The same column is also on articulation, articulation link, articulation joint,
+and particle set, listed in those tables. A missing object is absent. Reading
+the name on a type that does not publish it skips the name. See
+<a class="reference internal" href="../developer_guide.html#physx-pointer-interop"><span class="std std-ref">PhysX Pointer Interop</span></a>.</p>
+</section>
 </section>
 
 
@@ -1611,13 +2505,23 @@ them (rather than reporting zero).</p>
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rigid-bodies">Rigid bodies</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#articulation-links">Articulation links</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#character-controllers">Character controllers</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#sdf-shapes">SDF shapes</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#whole-articulations">Whole articulations</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#articulation-joints-dofs">Articulation joints — DOFs</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#whole-vehicles">Whole vehicles</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#vehicle-wheels">Vehicle wheels</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#deformable-volumes-surfaces">Deformable volumes / surfaces</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#particle-sets">Particle sets</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fixed-spatial-tendons">Fixed / spatial tendons</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#deformable-materials">Deformable materials</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#debug-render">Debug render</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#contact-sensors">Contact sensors</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#child-collider-sensors">Child collider sensors</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reading-contact-data">Reading contact data</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#native-physx-pointers">Native PhysX pointers</a></li>
 </ul>
   </nav></div>
 
@@ -1665,7 +2569,7 @@ them (rather than reporting zero).</p>
 </div>
       
         <div class="footer-item"><p class="last-updated">
-  Last updated on Oct 08, 2026.
+  Last updated on Oct 15, 2026.
   <br/>
 </p></div>
       

@@ -47,7 +47,7 @@
 
 
     <script rel="preload" src="../_static/modal-table.js"></script>
-    <script src="../_static/documentation_options.js?v=18b66ea0"></script>
+    <script src="../_static/documentation_options.js?v=423e15eb"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.6.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -69,13 +69,13 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Quickstart" href="../tutorials/quickstart.html" />
-    <link rel="prev" title="Writable data" href="writable.html" />
+    <link rel="prev" title="Path patterns" href="path_patterns.html" />
 
 
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Oct 08, 2026"/>
+    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
   
     
     <script src="../_static/searchtools.js"></script>
@@ -507,6 +507,10 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coding_style.html">ovphysx coding and doc style</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
@@ -566,7 +570,6 @@
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAPI.html">PhysxJointAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
@@ -613,6 +616,8 @@
 <li class="toctree-l1"><a class="reference internal" href="device.html">Device residency and interop</a></li>
 <li class="toctree-l1"><a class="reference internal" href="readable.html">Readable data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="writable.html">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="path_patterns.html">Path patterns</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Known limitations and gaps</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
@@ -625,7 +630,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/render_handoff.html">Rendering Handoff</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials/nvtx_profiling.html">NVTX Profiling in Nsight Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
@@ -701,29 +706,80 @@
 <h1>Known limitations and gaps<a class="headerlink" href="#known-limitations-and-gaps" title="Link to this heading">#</a></h1>
 <p>Current boundaries of the session read/write API and unsupported combinations. See <a class="reference internal" href="index.html"><span class="std std-doc">the session model</span></a> for the API itself.</p>
 <ul class="simple">
-<li><p><strong>Capabilities gap.</strong> A few things have no non-deprecated
-successor yet: articulation topology / metadata and DOF / body / joint <strong>names</strong>, rigid-body
-<strong>wake / sleep</strong> control, and the volume-deformable <strong><code class="docutils literal notranslate"><span class="pre">kinematicTarget</span></code></strong> (not yet served by the
-role-based read). Until a replacement lands, these require the deprecated tensor-binding API.</p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">ovphysx_update_articulations_kinematic</span></code> is a partial FK successor.</strong> It refreshes <em>every</em>
-articulation in the instance, ignores position/velocity flags, and is a <strong>no-op on CPU</strong>. It is not
-a drop-in replacement for the deprecated per-binding kinematic update.</p></li>
+<li><p><strong>Fixed-joint names.</strong> The prim-path and DOF-column identity attributes replace body and
+DOF-bearing joint names, but fixed (zero-DOF) joint names still require the deprecated
+tensor-binding API. Whole-articulation topology and metadata are available through
+<code class="docutils literal notranslate"><span class="pre">ovphysx_read</span></code>; see <a class="reference internal" href="readable.html#whole-articulations"><span class="std std-ref">Whole articulations</span></a>.</p></li>
+<li><p><strong>Wake / sleep is a whole-group command, not indexed.</strong> The <code class="docutils literal notranslate"><span class="pre">wake</span></code> write attribute is the
+non-deprecated successor to per-binding wake/sleep, but it drives the <em>entire mapped group</em> in one
+commit: nonzero wakes, zero sleeps, with no leave-unchanged value — so a zero row actively sleeps
+that body (except on an <code class="docutils literal notranslate"><span class="pre">eDISABLE_SLEEPING</span></code> scene, where the sleep half is a no-op).
+To toggle a subset while leaving other bodies untouched, narrow the query with a
+<a class="reference internal" href="index.html#selecting-a-subset-of-prims"><span class="std std-ref">prim-set selection</span></a>; selected sleeping bodies remain included.
+There is no per-row mask inside the mapped group. Refused on a DirectGPU
+scene (<code class="docutils literal notranslate"><span class="pre">eENABLE_DIRECT_GPU_API</span></code>), since the SDK disables sleeping there. Read <code class="docutils literal notranslate"><span class="pre">isSleeping</span></code>
+separately for the actual state of emitted rigid bodies or articulation links; it has no
+point-instancer form. <a class="reference internal" href="readable.html#rigid-bodies"><span class="std std-ref">Read semantics and mode restrictions</span></a>.</p></li>
+<li><p><strong>Articulation forward kinematics.</strong> <code class="docutils literal notranslate"><span class="pre">ovphysx_update_articulations_kinematic</span></code> updates the
+articulations selected by an <code class="docutils literal notranslate"><span class="pre">ARTICULATION</span></code> query on CPU and GPU. POSITION and VELOCITY flags
+select the requested refresh; DirectGPU uses the SDK’s all-component refresh. It does not
+perform collision or contact processing, and the first GPU update may warm up the scene.</p></li>
 <li><p><strong>Very large articulation inverse dynamics.</strong> A single inverse dynamics column wider than 65 535 lanes is dropped
-and the read errors (see the note under <a class="reference internal" href="readable.html#whole-articulations"><span class="std std-ref">Whole articulations</span></a>).</p></li>
-<li><p><strong>Unsupported device combinations.</strong> Vehicles are CPU-only; deformables and particles require a
-CUDA context (they emit nothing on a sim without one).</p></li>
+for its cohort. The read succeeds with an optional-summary
+<code class="docutils literal notranslate"><span class="pre">OVPHYSX_READ_OMISSION_UNSUPPORTED_CONFIGURATION</span></code> bit for the affected request; other
+supported columns remain available (see <a class="reference internal" href="readable.html#whole-articulations"><span class="std std-ref">Whole articulations</span></a>).</p></li>
+<li><p><strong>Unsupported device combinations.</strong> Vehicle controls and telemetry are host-resident and
+unavailable on DirectGPU; deformables and particles require a
+CUDA context (they emit nothing on a sim without one). Contact events and separate child-collider
+contact-sensor rows are available on CPU simulation and GPU dynamics with CPU readback. DirectGPU
+omits events (its raw contacts carry the points) and separate child-collider rows: a selection naming
+only such a collider discovers no rows. A standalone static collider remains a DirectGPU sensor row
+but reads zero force.</p></li>
+<li><p><strong>Contact limits.</strong> A contact query takes at most 21845 filters per sensor (the force matrix’s
+lanes). On a DirectGPU scene the per-contact order within a sensor (or filter column) is unspecified,
+and a sensor or filter that is a point-instancer prototype stands for its first instance only, as in
+the contact binding (CPU simulation and GPU dynamics with CPU readback cover every instance).
+For a lost contact pair whose sensor-side shape was removed the report drops that side’s body id, so the
+pair reaches a sensor’s events only through a collider id that still names it (a body that is its own
+collider).</p></li>
+<li><p><strong>SDF evaluation is DirectGPU-only, in mesh-local space.</strong> <code class="docutils literal notranslate"><span class="pre">ovphysx_evaluate_sdf_shapes</span></code> refuses
+a scene without the DirectGPU API (CPU evaluation is not implemented) and a selection spanning
+more than one scene. One call evaluates at most 65535 shapes, the most a single PhysX launch addresses
+(one CUDA grid row per shape), and at most 2^31 - 1 points in all (N x Q, which PhysX indexes in 32-bit
+arithmetic); split a larger selection or point set. Points and gradients are in each shape’s
+mesh-local space, with no world-space form, and every shape takes the same number of points per call.
+After physics objects are created or released, evaluation waits for a simulation step, as PhysX uploads
+shape data to the GPU only when it simulates; any such change asks for the step, not only a change to an
+SDF shape.</p></li>
+<li><p><strong>Kinematic-target writes require CPU or GPU scenes with CPU readback.</strong> Driving a rigid body
+through <code class="docutils literal notranslate"><span class="pre">kinematicTargetPosition</span></code> / <code class="docutils literal notranslate"><span class="pre">kinematicTargetOrientation</span></code> is refused on a DirectGPU scene
+(the CPU-integrated target is never uploaded to the device). Direct <code class="docutils literal notranslate"><span class="pre">position</span></code> / <code class="docutils literal notranslate"><span class="pre">orientation</span></code>
+writes are device-backed on DirectGPU, but teleport the body without a kinematic target’s step
+velocity; they are not an equivalent way to carry a resting load.</p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">ovphysx_writability</span></code> is not the ovstage-drain coverage map.</strong> It reports what the <em>imperative
 write session</em> accepts. The separate ovstage value-change drain deliberately does <strong>not</strong> apply
 some of those attributes (tendon knobs, the rigid mass frame, deformable bind-pose points,
 local-space-velocity bodies, multi-axis D6 joints), falling back to the parse path — and on a
 DirectGPU scene a tendon change via the drain does not reliably take effect. Do not treat the
 writability query as the drain’s contract.</p></li>
+<li><p><strong>DirectGPU live velocity edits require world space after the first step.</strong> Once the scene’s
+first simulation step initializes DirectGPU, <code class="docutils literal notranslate"><span class="pre">update_from_ovstage()</span></code> does not update solver
+velocities for dynamic (non-kinematic) rigid bodies with <code class="docutils literal notranslate"><span class="pre">physics:localSpaceVelocities</span> <span class="pre">=</span> <span class="pre">true</span></code>.
+Their <code class="docutils literal notranslate"><span class="pre">physics:velocity</span></code> and <code class="docutils literal notranslate"><span class="pre">physics:angularVelocity</span></code> edits reach unsupported PhysX setters;
+PhysX logs errors and the solver keeps its previous velocities, even if the drain completes.
+Initial local-space velocities and edits drained before that first step still apply.
+Kinematic bodies use a separate surface-velocity path. For live ovstage edits,
+configure world-space velocities before attaching and author world-space vectors. To drive a
+local-space-authored body at runtime, use the session write API’s world-space
+<a class="reference internal" href="writable.html#rigid-bodies"><span class="std std-ref"><code class="docutils literal notranslate"><span class="pre">linearVelocity</span></code> and <code class="docutils literal notranslate"><span class="pre">angularVelocity</span></code></span></a> instead.
+Session <code class="docutils literal notranslate"><span class="pre">angularVelocity</span></code> uses radians per second; USD <code class="docutils literal notranslate"><span class="pre">physics:angularVelocity</span></code> uses degrees
+per second, so convert by <code class="docutils literal notranslate"><span class="pre">pi</span> <span class="pre">/</span> <span class="pre">180</span></code> as well as rotating the vector into world space.</p></li>
 </ul>
 <section id="see-also">
 <h2>See also<a class="headerlink" href="#see-also" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="../api.html"><span class="std std-doc">C API Reference</span></a> — entry-point signatures and Doxygen</p></li>
-<li><p><a class="reference internal" href="../python_api.html"><span class="std std-doc">Python API Reference</span></a> — <code class="docutils literal notranslate"><span class="pre">PhysX.read</span></code> / <code class="docutils literal notranslate"><span class="pre">PhysX.write</span></code></p></li>
+<li><p><a class="reference internal" href="../python_api.html"><span class="std std-doc">Python API Reference</span></a> — <code class="docutils literal notranslate"><span class="pre">PhysX.query</span></code> / <code class="docutils literal notranslate"><span class="pre">PhysX.read</span></code> / <code class="docutils literal notranslate"><span class="pre">PhysX.write</span></code></p></li>
 <li><p><a class="reference internal" href="../ovphysx_overview.html"><span class="std std-doc">ovphysx overview</span></a> — the simulation loop and core concepts</p></li>
 <li><p><a class="reference internal" href="../population/index.html"><span class="std std-doc">Population</span></a> and <a class="reference internal" href="../population/stage_units.html"><span class="std std-doc">Stage units</span></a> — how a stage
 is populated from schema, fallbacks, and unit scaling</p></li>
@@ -742,12 +798,12 @@ is populated from schema, fallbacks, and unit scaling</p></li>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="writable.html"
+       href="path_patterns.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Writable data</p>
+        <p class="prev-next-title">Path patterns</p>
       </div>
     </a>
     <a class="right-next"
@@ -828,7 +884,7 @@ is populated from schema, fallbacks, and unit scaling</p></li>
 </div>
       
         <div class="footer-item"><p class="last-updated">
-  Last updated on Oct 08, 2026.
+  Last updated on Oct 15, 2026.
   <br/>
 </p></div>
       

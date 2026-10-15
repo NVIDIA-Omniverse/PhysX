@@ -1,0 +1,1752 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Contact Binding – Reading Contact Forces &#8212; ovphysx SDK</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=933278ad" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=423e15eb"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=fc986d73"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/contact_binding';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <script src="../_static/version-patch.js?v=3e13fdd2"></script>
+
+    <link rel="icon" href="../_static/favicon.png"/>
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Cloning – Replicate Environments" href="cloning.html" />
+    <link rel="prev" title="Tensor Bindings – Read and Write Simulation Data" href="tensor_bindings.html" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+
+
+  </head>
+
+  <body data-default-mode="">
+
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coding_style.html">ovphysx coding and doc style</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">ovstage Integration</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovstage_integration.html">ovstage Integration and Physics Output Read</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Simulation Setup</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/physics_scene.html">Physics Scene and Simulation Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/collision.html">Colliders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/rigid_bodies.html">Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/kinematic_support.html">Kinematic Support Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/deformables.html">Deformable Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/particles.html">Particles</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Physics Schemas</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../physics_schemas.html">Physics Schemas</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../population/index.html">ovstage Physics Population Domain</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../population/Capsule.html">Capsule</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Cone.html">Cone</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Cube.html">Cube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Cylinder.html">Cylinder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Material.html">Material</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Mesh.html">Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsCollisionGroup.html">PhysicsCollisionGroup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsDistanceJoint.html">PhysicsDistanceJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsFixedJoint.html">PhysicsFixedJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsJoint.html">PhysicsJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsPrismaticJoint.html">PhysicsPrismaticJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsRevoluteJoint.html">PhysicsRevoluteJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsScene.html">PhysicsScene</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsSphericalJoint.html">PhysicsSphericalJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxPhysicsGearJoint.html">PhysxPhysicsGearJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxPhysicsRackAndPinionJoint.html">PhysxPhysicsRackAndPinionJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Plane.html">Plane</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Sphere.html">Sphere</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Xform.html">Xform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/MaterialBindingAPI.html">MaterialBindingAPI (physics purpose)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsArticulationRootAPI.html">PhysicsArticulationRootAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsCollisionAPI.html">PhysicsCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsDriveAPI.html">PhysicsDriveAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsFilteredPairsAPI.html">PhysicsFilteredPairsAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsJointStateAPI.html">PhysicsJointStateAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsLimitAPI.html">PhysicsLimitAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsMassAPI.html">PhysicsMassAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsMaterialAPI.html">PhysicsMaterialAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsMeshCollisionAPI.html">PhysicsMeshCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsRigidBodyAPI.html">PhysicsRigidBodyAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxArticulationAPI.html">PhysxArticulationAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxCollisionAPI.html">PhysxCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxContactReportAPI.html">PhysxContactReportAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxPhysicsDistanceJointAPI.html">PhysxPhysicsDistanceJointAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxRigidBodyAPI.html">PhysxRigidBodyAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSDFMeshCollisionAPI.html">PhysxSDFMeshCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSceneAPI.html">PhysxSceneAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSphereFillCollisionAPI.html">PhysxSphereFillCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSplinesSurfaceVelocityAPI.html">PhysxSplinesSurfaceVelocityAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSurfaceVelocityAPI.html">PhysxSurfaceVelocityAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxTriangleMeshCollisionAPI.html">PhysxTriangleMeshCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxTriangleMeshSimplificationCollisionAPI.html">PhysxTriangleMeshSimplificationCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxTriggerAPI.html">PhysxTriggerAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/prim.html">Prim identity and transform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/stage_units.html">Stage units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-articulation_fixed_base.html">Fixed-base two-link articulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-articulation_floating.html">Floating-base two-link articulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-conveyor_cube.html">Kinematic conveyor Cube with a surface velocity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-d6_joint_pair.html">Two rigid-body Cubes on a D6 joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-distance_joint_pair.html">Two rigid-body Cubes on a distance joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-fixed_joint_pair.html">Two rigid-body Cubes on a fixed joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-gear_joint_pair.html">Two hinged rigid-body Cubes coupled by a gear joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-material_bound_cube.html">Rigid-body Cube bound to a physics Material</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-physics_scene.html">Physics scene</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-prismatic_joint_pair.html">Two rigid-body Cubes on a prismatic joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rack_and_pinion_joint_pair.html">A hinged pinion Cube and a sliding rack Cube coupled by a rack-and-pinion joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-revolute_joint_pair.html">Two rigid-body Cubes on a revolute joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_capsule.html">Dynamic rigid body on a Capsule</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_cone.html">Dynamic rigid body on a Cone</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_cube.html">Dynamic rigid body on a Cube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_cube_pair.html">Two dynamic rigid-body Cubes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_cylinder.html">Dynamic rigid body on a Cylinder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_sphere.html">Dynamic rigid body on a Sphere</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-spherical_joint_pair.html">Two rigid-body Cubes on a spherical joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-static_plane_collider.html">Static Plane collider</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/findings.html">Recorded findings</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Read/Write Data Contract</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../read_write/index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/data_model.html">Data model and semantics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/device.html">Device residency and interop</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/readable.html">Readable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/writable.html">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/path_patterns.html">Path patterns</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/limitations.html">Known limitations and gaps</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello World – Populate ovstage and Step</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tensor_bindings.html">Tensor Bindings (deprecated)</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Contact Binding – Reading Contact Forces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cloning.html">Cloning – Replicate Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="render_handoff.html">Rendering Handoff</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
+<li class="toctree-l1"><a class="reference internal" href="profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source_link_build.html">Building Against the ovphysx Source Tree</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../guides/performance.html">Simulation Performance Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/collision_tuning.html">Collision Behavior Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/articulation_stability.html">Articulation and Robot Simulation Stability Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/gripper_tuning.html">Joint Parameter Tuning Example: Robotiq 2F-85</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/limitations.html">Known Physics Limitations</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../python_api.html">Python API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">C API Reference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../SECURITY.html">Security</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Contact Binding – Reading Contact Forces</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<section id="contact-binding-reading-contact-forces">
+<h1>Contact Binding – Reading Contact Forces<a class="headerlink" href="#contact-binding-reading-contact-forces" title="Link to this heading">#</a></h1>
+<blockquote>
+<div><p><strong>Deprecated.</strong> Contact bindings are a compatibility surface: C declarations
+live in <code class="docutils literal notranslate"><span class="pre">ovphysx_legacy.h</span></code> (<code class="docutils literal notranslate"><span class="pre">ovphysx.h</span></code> still includes that header), and
+Python <code class="docutils literal notranslate"><span class="pre">PhysX.create_contact_binding()</span></code> emits <code class="docutils literal notranslate"><span class="pre">DeprecationWarning</span></code>. This
+tutorial documents the supported behavior. No replacement API or removal
+date is implied.</p>
+</div></blockquote>
+<p>Contact bindings let you read contact forces between <strong>sensor</strong> bodies and
+<strong>filter</strong> bodies. A sensor is a rigid body prim (or a set of prims matched by a
+USD path pattern) whose contacts you want to measure. A filter is a second set of
+bodies whose contacts with each sensor you want to isolate.</p>
+<p>Sensor selection is opt-in: every prim matched by <code class="docutils literal notranslate"><span class="pre">sensor_patterns</span></code> must have
+<code class="docutils literal notranslate"><span class="pre">PhysxContactReportAPI</span></code> applied. A matched prim without it is dropped from the
+binding — the runtime logs <code class="docutils literal notranslate"><span class="pre">Failed</span> <span class="pre">to</span> <span class="pre">find</span> <span class="pre">contact</span> <span class="pre">report</span> <span class="pre">API</span> <span class="pre">at</span> <span class="pre">'&lt;path&gt;'</span></code> — and if
+that leaves no sensors at all, <code class="docutils literal notranslate"><span class="pre">create_contact_binding()</span></code> fails. Filter prims need
+no extra schema. Runtime-only clones (which have no USD prim) use the schema
+metadata copied from the corresponding source object. A cloned collider whose
+source collider lacks the schema is rejected even if its parent body has it.</p>
+<p>On CPU simulation and GPU dynamics with CPU readback, tagging a child collider makes it eligible as
+a sensor but does not enable reporting for its owning body. Enable reporting on the body as well
+(or on the owning articulation link or root), or the sensor depends on reports from the other actor
+in each contact pair. If neither actor reports matching contacts, the child sensor reads zero force.
+See <a class="reference internal" href="../read_write/readable.html#child-collider-sensors"><span class="std std-ref">Child collider sensors</span></a> for an authoring example
+and where to configure the reporting threshold and pairs.</p>
+<p>For these modes, enable reporting on the owner but select only the child as a
+binding sensor. If the owner is also selected as a sensor in this or another live
+contact binding on the same attachment, the owner takes precedence: contacts are
+credited to the owner and the child reads zero. Check wildcard patterns for
+unintended owner matches, and establish the bindings before stepping. Session
+reads support selecting both the owner and child in these modes.</p>
+<p>On DirectGPU, a separate child collider carrying <code class="docutils literal notranslate"><span class="pre">PhysxContactReportAPI</span></code> is
+accepted by the deprecated contact binding, but the runtime logs an unsupported
+collider warning and the child reads zero force. DirectGPU session queries omit
+that child row; select the owning body or articulation link instead.</p>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">#</a></h2>
+<ul>
+<li><p>Complete the <a class="reference internal" href="tensor_bindings.html"><span class="std std-doc">Tensor Bindings (deprecated)</span></a> tutorial.</p></li>
+<li><p>Your USD scene has rigid body prims in contact (or that come into contact
+during simulation). This tutorial uses <code class="docutils literal notranslate"><span class="pre">boxes_falling_on_groundplane.usda</span></code>, which
+ships with every package under <code class="docutils literal notranslate"><span class="pre">ovphysx/samples/data/</span></code> in the wheel,
+<code class="docutils literal notranslate"><span class="pre">&lt;sdk-root&gt;/samples/data/</span></code> in the C/C++ SDK, and <code class="docutils literal notranslate"><span class="pre">tests/data/</span></code> in a repository checkout.</p></li>
+<li><p>Every prim you name in <code class="docutils literal notranslate"><span class="pre">sensor_patterns</span></code> has <code class="docutils literal notranslate"><span class="pre">PhysxContactReportAPI</span></code> applied:</p>
+<div class="highlight-usda notranslate"><div class="highlight"><pre><span></span><span class="k k-Tokens">def</span><span class="w"> </span>Mesh<span class="w"> </span><span class="s">&quot;box&quot;</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="kt">prepend</span><span class="w"> </span><span class="na">apiSchemas</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;PhysicsRigidBodyAPI&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;PhysicsCollisionAPI&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;PhysxContactReportAPI&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="na">physxContactReport:threshold</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The optional <code class="docutils literal notranslate"><span class="pre">physxContactReport:threshold</span></code> is the force below which contacts are
+not reported; the bundled sample scene uses <code class="docutils literal notranslate"><span class="pre">0</span></code> to avoid excluding contacts by force.</p>
+<p>The schema must sit on the prim you actually name as the sensor. A schema on the
+owning body does not make an untagged child collider eligible. For a child sensor,
+apply the schema to the child and enable its owner’s reporting as described above.
+Do not also select the owner as a sensor in any live contact binding on the same
+attachment.</p>
+</li>
+<li><p>For CUDA output tensors, enable DirectGPU TensorAPI before creating the
+<code class="docutils literal notranslate"><span class="pre">PhysX</span></code> instance; <code class="docutils literal notranslate"><span class="pre">physxScene:enableGPUDynamics=true</span></code> alone only selects GPU
+dynamics. Refer to
+<a class="reference internal" href="../developer_guide.html#warmup-and-determinism"><span class="std std-ref">Warmup and Determinism</span></a>.</p></li>
+</ul>
+</section>
+<section id="key-concepts">
+<h2>Key Concepts<a class="headerlink" href="#key-concepts" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>Create the binding before the first step</strong> whose contacts you want to observe.
+No contact data exists until at least one <code class="docutils literal notranslate"><span class="pre">step()</span></code> or <code class="docutils literal notranslate"><span class="pre">step_sync()</span></code> call has
+completed.</p></li>
+<li><p>Create contact bindings once outside simulation loops and reuse them. In Python,
+use the context-manager form or call <code class="docutils literal notranslate"><span class="pre">cb.destroy()</span></code> when finished; otherwise
+garbage collection emits <code class="docutils literal notranslate"><span class="pre">ResourceWarning</span></code> when it eventually releases the
+native binding.</p></li>
+<li><p>Reading before the first step returns all-zeros tensors.</p></li>
+<li><p>On CPU and GPU dynamics with CPU readback, sleeping pairs stop producing
+persistent contact reports. A settled body can return zero forces and no raw
+contacts while still touching another body. This is independent of environment
+IDs; DirectGPU disables sleeping. For continuous reporting, disable sleeping
+before attachment, or wake the bodies and step again before reading. See
+<a class="reference internal" href="../read_write/readable.html#contact-sensors"><span class="std std-ref">Sleeping contacts</span></a>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dt</span></code> for the impulse-to-force conversion (<code class="docutils literal notranslate"><span class="pre">force</span> <span class="pre">=</span> <span class="pre">impulse</span> <span class="pre">/</span> <span class="pre">dt</span></code>) is taken
+automatically from the last successful <code class="docutils literal notranslate"><span class="pre">step()</span></code> or <code class="docutils literal notranslate"><span class="pre">step_sync()</span></code> call that
+simulated. You do not pass it manually.</p></li>
+<li><p>A step with <code class="docutils literal notranslate"><span class="pre">dt</span> <span class="pre">==</span> <span class="pre">0</span></code> is accepted but simulates nothing: it neither produces
+nor clears contacts, and it does not change the conversion <code class="docutils literal notranslate"><span class="pre">dt</span></code>. Every read
+after it returns what it returned before it – the contacts and forces of the
+last step with a positive <code class="docutils literal notranslate"><span class="pre">dt</span></code>.</p></li>
+<li><p>Result tensor shapes:</p>
+<ul>
+<li><p>Net normal or net friction forces: <code class="docutils literal notranslate"><span class="pre">[S,</span> <span class="pre">3]</span></code> – one 3-D force vector per sensor.</p></li>
+<li><p>Normal or friction force matrix: <code class="docutils literal notranslate"><span class="pre">[S,</span> <span class="pre">F,</span> <span class="pre">3]</span></code> — force vectors per (sensor, filter) pair.</p></li>
+<li><p>Detailed contact data: scalar normal forces and separations use <code class="docutils literal notranslate"><span class="pre">[C,</span> <span class="pre">1]</span></code>;
+positions and normals use <code class="docutils literal notranslate"><span class="pre">[C,</span> <span class="pre">3]</span></code>; all are indexed by <code class="docutils literal notranslate"><span class="pre">[S,</span> <span class="pre">F]</span></code>
+count/start-index tensors.</p></li>
+<li><p>Detailed friction data: friction forces and points use <code class="docutils literal notranslate"><span class="pre">[C,</span> <span class="pre">3]</span></code> buffers
+indexed by <code class="docutils literal notranslate"><span class="pre">[S,</span> <span class="pre">F]</span></code> count/start-index tensors.</p></li>
+</ul>
+</li>
+</ul>
+<section id="force-components-and-filtering">
+<h3>Force Components and Filtering<a class="headerlink" href="#force-components-and-filtering" title="Link to this heading">#</a></h3>
+<p>Net normal and net friction forces are reported separately as world-space
+vectors for each sensor. Both include all reported contacts, regardless of the
+configured filters. Adding the two vectors from the same simulation step yields
+the total contact force.</p>
+<p>The normal and friction force matrices contain only contributions from the
+configured sensor/filter pairs. Adding the two matrices from the same simulation
+step yields total contact forces for those pairs. For example, if a foot touches
+the floor and a wall but its filter selects only the floor, the friction matrix
+and detailed friction data omit the wall contribution. The net friction force
+includes both.</p>
+<p>The net friction force is the vector sum of the forces at the friction anchors.
+Opposing forces can cancel while still producing a torque, such as when a box
+rotates on the ground without translating. The net friction force does not
+represent that torque.</p>
+</section>
+</section>
+<section id="python">
+<h2>Python<a class="headerlink" href="#python" title="Link to this heading">#</a></h2>
+<section id="full-binding-destroy">
+<h3>Full Binding + Destroy<a class="headerlink" href="#full-binding-destroy" title="Link to this heading">#</a></h3>
+<p>This sample creates a contact binding on <code class="docutils literal notranslate"><span class="pre">boxes_falling_on_groundplane.usda</span></code>,
+steps until the sensor lands, and prints the normal, friction, and total contact
+forces for both net forces and the force matrix. It then destroys the binding
+explicitly:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION &amp; AFFILIATES. All rights reserved.</span>
+<span class="c1"># SPDX-License-Identifier: Apache-2.0</span>
+
+<span class="c1"># NOTE: This file is included verbatim in documentation via literalinclude.</span>
+<span class="c1"># Markers [tutorial-*] define the included ranges.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">ContactBinding sample: reading contact forces between sensor and filter bodies.</span>
+
+<span class="sd">This sample exercises the deprecated contact-binding API during its compatibility period.</span>
+
+<span class="sd">This sample demonstrates:</span>
+<span class="sd">1. Creating a contact binding before the first simulation step</span>
+<span class="sd">2. Reading net normal and friction forces per sensor [S, 3] and adding them</span>
+<span class="sd">3. Reading normal and friction force matrices [S, F, 3] and adding them</span>
+<span class="sd">4. Using the context-manager form to ensure proper cleanup</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># @implements REQ-CAPI-OVSTAGE-XFORM-001</span>
+<span class="c1"># @covers AC-1</span>
+<span class="c1"># @implements REQ-PYTHON-SAMPLE-002</span>
+<span class="c1"># @covers AC-1 AC-2</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">ovphysx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.samples.python_samples.schema_support</span><span class="w"> </span><span class="kn">import</span> <span class="n">physx_schema_paths</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx</span><span class="w"> </span><span class="kn">import</span> <span class="n">PhysX</span>
+
+
+<span class="n">_physx_schemas_registered</span> <span class="o">=</span> <span class="kc">False</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">attach_scene</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="n">usd_path</span><span class="p">,</span> <span class="n">stage_name</span><span class="p">):</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">ovstage</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">available</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;ovstage population bridge is unavailable&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Register external PhysX and Newton schemas before the first population.</span>
+    <span class="k">global</span> <span class="n">_physx_schemas_registered</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_physx_schemas_registered</span><span class="p">:</span>
+        <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">register_usd_schemas</span><span class="p">(</span>
+            <span class="p">[</span><span class="o">*</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">physx_schema_paths</span><span class="p">()],</span> <span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">newton_schema_root</span><span class="p">())]</span>
+        <span class="p">)</span>
+        <span class="n">_physx_schemas_registered</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">stage</span> <span class="o">=</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">Stage</span><span class="p">(</span><span class="n">stage_name</span><span class="p">)</span>
+    <span class="n">ordinal</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">open_usd</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">usd_path</span><span class="p">),</span> <span class="n">ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">,</span> <span class="n">domains</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">PopulationDomain</span><span class="o">.</span><span class="n">ALL</span><span class="p">)</span>
+        <span class="n">stage</span><span class="o">.</span><span class="n">advance_write_floor</span><span class="p">(</span><span class="n">ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+        <span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">attach_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">read_ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">stage</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">physx</span><span class="o">.</span><span class="n">is_stage_attached</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
+            <span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">detach_ovstage</span><span class="p">())</span>
+        <span class="n">stage</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="k">raise</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="c1"># [tutorial-start]</span>
+
+    <span class="c1"># --- 1. Initialize SDK and load scene ---</span>
+    <span class="c1"># Prefer package data so a copied sample works. Fall back to the checked-in</span>
+    <span class="c1"># sample&#39;s adjacent data directory when package data is absent. Resolve it</span>
+    <span class="c1"># before creating an instance so a missing scene does not skip destroy().</span>
+    <span class="n">scene_name</span> <span class="o">=</span> <span class="s2">&quot;boxes_falling_on_groundplane.usda&quot;</span>
+    <span class="n">usd_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;samples&quot;</span> <span class="o">/</span> <span class="s2">&quot;data&quot;</span> <span class="o">/</span> <span class="n">scene_name</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">usd_path</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+        <span class="n">usd_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;data&quot;</span> <span class="o">/</span> <span class="n">scene_name</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">usd_path</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ovphysx sample data is missing: </span><span class="si">{</span><span class="n">usd_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">data_dir</span> <span class="o">=</span> <span class="n">usd_path</span><span class="o">.</span><span class="n">parent</span>
+
+    <span class="n">PhysX</span><span class="o">.</span><span class="n">set_cpu_mode</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">physx</span> <span class="o">=</span> <span class="n">PhysX</span><span class="p">()</span>
+    <span class="n">stage</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">stage</span> <span class="o">=</span> <span class="n">attach_scene</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="n">data_dir</span> <span class="o">/</span> <span class="s2">&quot;boxes_falling_on_groundplane.usda&quot;</span><span class="p">,</span> <span class="s2">&quot;ovphysx-contact-sample&quot;</span><span class="p">)</span>
+        <span class="n">physx</span><span class="o">.</span><span class="n">wait_all</span><span class="p">()</span>
+
+        <span class="c1"># --- 2. Create a contact binding BEFORE the first step ---</span>
+        <span class="c1"># sensor_patterns: bodies whose contact forces you want to read.</span>
+        <span class="c1"># filter_patterns: bodies to measure contacts against (one per sensor).</span>
+        <span class="c1"># Cube1 lands on the static collider /World/BigBase, not the ground</span>
+        <span class="c1"># plane, so the filter must name BigBase or the force matrix is zeros</span>
+        <span class="c1"># while net_forces is not.</span>
+        <span class="c1"># The binding must be created before any step() call whose contacts you</span>
+        <span class="c1"># want to observe.</span>
+        <span class="n">cb</span> <span class="o">=</span> <span class="n">physx</span><span class="o">.</span><span class="n">create_contact_binding</span><span class="p">(</span>
+            <span class="n">sensor_patterns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;/World/Cube1&quot;</span><span class="p">],</span>
+            <span class="n">filter_patterns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;/World/BigBase&quot;</span><span class="p">],</span>
+            <span class="n">filters_per_sensor</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">max_contact_data_count</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">sensor_count</span> <span class="o">=</span> <span class="n">cb</span><span class="o">.</span><span class="n">sensor_count</span>   <span class="c1"># number of matched sensor prims</span>
+        <span class="n">filter_count</span> <span class="o">=</span> <span class="n">cb</span><span class="o">.</span><span class="n">filter_count</span>   <span class="c1"># number of filter prims per sensor</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sensors: </span><span class="si">{</span><span class="n">sensor_count</span><span class="si">}</span><span class="s2">, filters per sensor: </span><span class="si">{</span><span class="n">filter_count</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># --- 3. Simulate until boxes land ---</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">120</span><span class="p">):</span>
+            <span class="n">physx</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mf">60.0</span><span class="p">)</span>
+        <span class="n">physx</span><span class="o">.</span><span class="n">wait_all</span><span class="p">()</span>
+
+        <span class="c1"># --- 4. Read net normal and friction forces: shape [S, 3] ---</span>
+        <span class="c1"># dt is taken automatically from the last successful stepping call.</span>
+        <span class="c1"># Read both components from the same step before adding them.</span>
+        <span class="n">net_normal_forces</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">sensor_count</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">net_friction_forces</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">net_normal_forces</span><span class="p">)</span>
+        <span class="n">cb</span><span class="o">.</span><span class="n">read_net_normal_forces</span><span class="p">(</span><span class="n">net_normal_forces</span><span class="p">)</span>
+        <span class="n">cb</span><span class="o">.</span><span class="n">read_net_friction_forces</span><span class="p">(</span><span class="n">net_friction_forces</span><span class="p">)</span>
+        <span class="n">net_forces</span> <span class="o">=</span> <span class="n">net_normal_forces</span> <span class="o">+</span> <span class="n">net_friction_forces</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Net normal contact forces [S, 3]:&quot;</span><span class="p">,</span> <span class="n">net_normal_forces</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Net friction contact forces [S, 3]:&quot;</span><span class="p">,</span> <span class="n">net_friction_forces</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Total net contact forces [S, 3]:&quot;</span><span class="p">,</span> <span class="n">net_forces</span><span class="p">)</span>
+
+        <span class="c1"># --- 5. Read normal and friction force matrices: shape [S, F, 3] ---</span>
+        <span class="n">normal_force_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">sensor_count</span><span class="p">,</span> <span class="n">filter_count</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">friction_force_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">normal_force_matrix</span><span class="p">)</span>
+        <span class="n">cb</span><span class="o">.</span><span class="n">read_normal_force_matrix</span><span class="p">(</span><span class="n">normal_force_matrix</span><span class="p">)</span>
+        <span class="n">cb</span><span class="o">.</span><span class="n">read_friction_force_matrix</span><span class="p">(</span><span class="n">friction_force_matrix</span><span class="p">)</span>
+        <span class="n">force_matrix</span> <span class="o">=</span> <span class="n">normal_force_matrix</span> <span class="o">+</span> <span class="n">friction_force_matrix</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Normal contact force matrix [S, F, 3]:&quot;</span><span class="p">,</span> <span class="n">normal_force_matrix</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Friction contact force matrix [S, F, 3]:&quot;</span><span class="p">,</span> <span class="n">friction_force_matrix</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Total contact force matrix [S, F, 3]:&quot;</span><span class="p">,</span> <span class="n">force_matrix</span><span class="p">)</span>
+        <span class="c1"># 1x1 matrix equals net force here (Cube1 vs BigBase). Fail loudly if</span>
+        <span class="c1"># the filter again names a body Cube1 is not touching.</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">force_matrix</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">,</span> <span class="p">(</span>
+            <span class="s2">&quot;expected Cube1 vs BigBase contact after 120 steps; &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;force matrix was </span><span class="si">{</span><span class="n">force_matrix</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="c1"># --- 6. Clean up first demo ---</span>
+        <span class="n">cb</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+
+        <span class="c1"># [tutorial-end]</span>
+
+        <span class="c1"># Context-manager usage (alternative to manual destroy):</span>
+        <span class="c1"># Detach the stage so the same PhysX instance can be reused.</span>
+        <span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">detach_ovstage</span><span class="p">())</span>
+        <span class="n">stage</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="n">stage</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">stage</span> <span class="o">=</span> <span class="n">attach_scene</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="n">data_dir</span> <span class="o">/</span> <span class="s2">&quot;boxes_falling_on_groundplane.usda&quot;</span><span class="p">,</span> <span class="s2">&quot;ovphysx-contact-sample-reload&quot;</span><span class="p">)</span>
+        <span class="n">physx</span><span class="o">.</span><span class="n">wait_all</span><span class="p">()</span>
+
+        <span class="c1"># [tutorial-context-manager]</span>
+        <span class="k">with</span> <span class="n">physx</span><span class="o">.</span><span class="n">create_contact_binding</span><span class="p">(</span><span class="n">sensor_patterns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;/World/Cube1&quot;</span><span class="p">])</span> <span class="k">as</span> <span class="n">cb2</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">60</span><span class="p">):</span>
+                <span class="n">physx</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mf">60.0</span><span class="p">)</span>
+            <span class="n">physx</span><span class="o">.</span><span class="n">wait_all</span><span class="p">()</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">cb2</span><span class="o">.</span><span class="n">sensor_count</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="n">cb2</span><span class="o">.</span><span class="n">read_net_normal_forces</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Net normal contact forces (context manager):&quot;</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
+        <span class="c1"># cb2 is automatically destroyed here</span>
+        <span class="c1"># [tutorial-context-manager-end]</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Contact binding sample completed successfully&quot;</span><span class="p">)</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">stage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">detach_ovstage</span><span class="p">())</span>
+            <span class="n">stage</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="n">physx</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Cleanup complete&quot;</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>After 120 steps the normal and total contact force vectors are on the order of
+Cube1’s weight (about 9810 N in Z); friction is approximately zero for the settled
+box. The sample prints these components for both net forces and the force matrix. In
+<code class="docutils literal notranslate"><span class="pre">boxes_falling_on_groundplane.usda</span></code>, Cube1 lands on <code class="docutils literal notranslate"><span class="pre">/World/BigBase</span></code>, not the
+ground plane, so the sample’s filter is that prim. A filter naming the ground
+still creates a valid 1x1 binding; the matrix is then all zeros while net
+force is not, because the pair never touches.</p>
+</section>
+<section id="recommended-context-manager-form">
+<h3>Recommended Context-Manager Form<a class="headerlink" href="#recommended-context-manager-form" title="Link to this heading">#</a></h3>
+<p>The context-manager form releases the native binding on scope exit, so no
+explicit <code class="docutils literal notranslate"><span class="pre">destroy()</span></code> call is required:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">read_contacts_with_context_manager</span><span class="p">(</span><span class="n">physx</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">physx</span><span class="o">.</span><span class="n">create_contact_binding</span><span class="p">(</span><span class="n">sensor_patterns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;/World/Cube1&quot;</span><span class="p">])</span> <span class="k">as</span> <span class="n">binding</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">60</span><span class="p">):</span>
+            <span class="n">physx</span><span class="o">.</span><span class="n">step_sync</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mf">60.0</span><span class="p">)</span>
+        <span class="n">forces</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">binding</span><span class="o">.</span><span class="n">sensor_count</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">binding</span><span class="o">.</span><span class="n">read_net_normal_forces</span><span class="p">(</span><span class="n">forces</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">forces</span>
+</pre></div>
+</div>
+</section>
+<section id="reading-normal-and-friction-forces">
+<h3>Reading Normal and Friction Forces<a class="headerlink" href="#reading-normal-and-friction-forces" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">read_net_normal_forces()</span></code> returns the net normal force on each sensor.
+<code class="docutils literal notranslate"><span class="pre">read_net_friction_forces()</span></code> returns the corresponding net friction force.
+Both methods work without filters or detailed-contact buffer capacity.
+<code class="docutils literal notranslate"><span class="pre">read_normal_force_matrix()</span></code> and <code class="docutils literal notranslate"><span class="pre">read_friction_force_matrix()</span></code> return the
+corresponding force components for each configured sensor/filter pair. Both
+matrices are independent of detailed-contact buffer capacity.</p>
+<p>For an existing binding and output arrays of shape <code class="docutils literal notranslate"><span class="pre">[sensor_count,</span> <span class="pre">3]</span></code>, the
+total contact force is obtained by adding the results from the same simulation
+step:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">binding</span><span class="o">.</span><span class="n">read_net_normal_forces</span><span class="p">(</span><span class="n">normal_forces</span><span class="p">)</span>
+<span class="n">binding</span><span class="o">.</span><span class="n">read_net_friction_forces</span><span class="p">(</span><span class="n">friction_forces</span><span class="p">)</span>
+<span class="n">total_forces</span> <span class="o">=</span> <span class="n">normal_forces</span> <span class="o">+</span> <span class="n">friction_forces</span>
+</pre></div>
+</div>
+<p>For output arrays of shape <code class="docutils literal notranslate"><span class="pre">[sensor_count,</span> <span class="pre">filter_count,</span> <span class="pre">3]</span></code>, the corresponding
+total forces for the configured pairs are obtained as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">binding</span><span class="o">.</span><span class="n">read_normal_force_matrix</span><span class="p">(</span><span class="n">normal_matrix</span><span class="p">)</span>
+<span class="n">binding</span><span class="o">.</span><span class="n">read_friction_force_matrix</span><span class="p">(</span><span class="n">friction_matrix</span><span class="p">)</span>
+<span class="n">total_force_matrix</span> <span class="o">=</span> <span class="n">normal_matrix</span> <span class="o">+</span> <span class="n">friction_matrix</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">read_net_forces()</span></code>, <code class="docutils literal notranslate"><span class="pre">read_force_matrix()</span></code>, and <code class="docutils literal notranslate"><span class="pre">read_contact_data()</span></code> remain as
+deprecated aliases of <code class="docutils literal notranslate"><span class="pre">read_net_normal_forces()</span></code>, <code class="docutils literal notranslate"><span class="pre">read_normal_force_matrix()</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">read_normal_contact_data()</span></code>, respectively. Their force values remain
+normal-only; existing calculations that add separately reported friction retain
+their meaning.
+<code class="docutils literal notranslate"><span class="pre">read_friction_data()</span></code> is a deprecated alias of <code class="docutils literal notranslate"><span class="pre">read_friction_contact_data()</span></code>
+with unchanged results.</p>
+</section>
+</section>
+<section id="c">
+<h2>C<a class="headerlink" href="#c" title="Link to this heading">#</a></h2>
+<p>The C sample performs the same create, step, read, and destroy sequence through
+the C API:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="c1">// SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION &amp; AFFILIATES. All rights reserved.</span>
+<span class="c1">// SPDX-License-Identifier: Apache-2.0</span>
+
+<span class="c1">// NOTE: This file is included in the documentation via literalinclude.</span>
+<span class="c1">// The tutorial marker comments below define the included range.</span>
+<span class="c1">// This sample exercises the deprecated contact-binding API during its compatibility period.</span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx_types.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;ovstage_sample.h&quot;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdio.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdlib.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;string.h&gt;</span>
+
+<span class="cp">#ifdef __cplusplus</span>
+<span class="cp">#error &quot;This file must be compiled as C, not C++&quot;</span>
+<span class="cp">#endif</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">check_result</span><span class="p">(</span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">ctx</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ERROR in %s: &quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ctx</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_last_error</span><span class="p">();</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">err</span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">err</span><span class="p">.</span><span class="n">length</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="w">            </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;%.*s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">err</span><span class="p">.</span><span class="n">length</span><span class="p">,</span><span class="w"> </span><span class="n">err</span><span class="p">.</span><span class="n">ptr</span><span class="p">);</span>
+<span class="w">        </span><span class="k">else</span>
+<span class="w">            </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;status=%d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">r</span><span class="p">.</span><span class="n">status</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">check_enqueue</span><span class="p">(</span><span class="n">ovphysx_enqueue_result_t</span><span class="w"> </span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">ctx</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ERROR in %s: &quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ctx</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_last_error</span><span class="p">();</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">err</span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">err</span><span class="p">.</span><span class="n">length</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="w">            </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;%.*s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">err</span><span class="p">.</span><span class="n">length</span><span class="p">,</span><span class="w"> </span><span class="n">err</span><span class="p">.</span><span class="n">ptr</span><span class="p">);</span>
+<span class="w">        </span><span class="k">else</span>
+<span class="w">            </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;status=%d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">r</span><span class="p">.</span><span class="n">status</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">wait_task</span><span class="p">(</span><span class="n">ovphysx_instance_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_enqueue_result_t</span><span class="w"> </span><span class="n">task</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">ctx</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">ovphysx_wait_task_result_t</span><span class="w"> </span><span class="n">wait_result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+<span class="w">    </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_wait_task</span><span class="p">(</span>
+<span class="w">        </span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">task</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_TIMEOUT_INFINITE</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">wait_result</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">has_errors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">wait_result</span><span class="p">.</span><span class="n">num_errors</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">    </span><span class="n">ovphysx_destroy_wait_task_result</span><span class="p">(</span><span class="o">&amp;</span><span class="n">wait_result</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">has_errors</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ERROR in %s: async operation failed</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ctx</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ERROR in %s: wait failed (status=%d)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ctx</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">r</span><span class="p">.</span><span class="n">status</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* Allocate a 2-D float32 DLTensor on the CPU. Caller frees data and shape. */</span>
+<span class="k">static</span><span class="w"> </span><span class="n">DLTensor</span><span class="w"> </span><span class="nf">make_tensor_f32_2d</span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">rows</span><span class="p">,</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">cols</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="o">**</span><span class="w"> </span><span class="n">out_data</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="o">**</span><span class="w"> </span><span class="n">out_shape</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">DLTensor</span><span class="w"> </span><span class="n">t</span><span class="p">;</span>
+<span class="w">    </span><span class="n">memset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">DLTensor</span><span class="p">));</span>
+<span class="w">    </span><span class="o">*</span><span class="n">out_data</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">float</span><span class="o">*</span><span class="p">)</span><span class="n">calloc</span><span class="p">(</span><span class="n">rows</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">cols</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">float</span><span class="p">));</span>
+<span class="w">    </span><span class="o">*</span><span class="n">out_shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">int64_t</span><span class="p">));</span>
+<span class="w">    </span><span class="p">(</span><span class="o">*</span><span class="n">out_shape</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="p">)</span><span class="n">rows</span><span class="p">;</span>
+<span class="w">    </span><span class="p">(</span><span class="o">*</span><span class="n">out_shape</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="p">)</span><span class="n">cols</span><span class="p">;</span>
+<span class="w">    </span><span class="n">t</span><span class="p">.</span><span class="n">data</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="o">*</span><span class="n">out_data</span><span class="p">;</span>
+<span class="w">    </span><span class="n">t</span><span class="p">.</span><span class="n">ndim</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+<span class="w">    </span><span class="n">t</span><span class="p">.</span><span class="n">shape</span><span class="w">        </span><span class="o">=</span><span class="w"> </span><span class="o">*</span><span class="n">out_shape</span><span class="p">;</span>
+<span class="w">    </span><span class="n">t</span><span class="p">.</span><span class="n">strides</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="n">t</span><span class="p">.</span><span class="n">byte_offset</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">t</span><span class="p">.</span><span class="n">dtype</span><span class="p">.</span><span class="n">code</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">kDLFloat</span><span class="p">;</span>
+<span class="w">    </span><span class="n">t</span><span class="p">.</span><span class="n">dtype</span><span class="p">.</span><span class="n">bits</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="mi">32</span><span class="p">;</span>
+<span class="w">    </span><span class="n">t</span><span class="p">.</span><span class="n">dtype</span><span class="p">.</span><span class="n">lanes</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="n">t</span><span class="p">.</span><span class="n">device</span><span class="p">.</span><span class="n">device_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kDLCPU</span><span class="p">;</span>
+<span class="w">    </span><span class="n">t</span><span class="p">.</span><span class="n">device</span><span class="p">.</span><span class="n">device_id</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">t</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* Allocate a 3-D float32 DLTensor on the CPU. Caller frees data and shape. */</span>
+<span class="k">static</span><span class="w"> </span><span class="n">DLTensor</span><span class="w"> </span><span class="nf">make_tensor_f32_3d</span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">d0</span><span class="p">,</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">d1</span><span class="p">,</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">d2</span><span class="p">,</span>
+<span class="w">                                   </span><span class="kt">float</span><span class="o">**</span><span class="w"> </span><span class="n">out_data</span><span class="p">,</span><span class="w"> </span><span class="kt">int64_t</span><span class="o">**</span><span class="w"> </span><span class="n">out_shape</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">DLTensor</span><span class="w"> </span><span class="n">t</span><span class="p">;</span>
+<span class="w">    </span><span class="n">memset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">DLTensor</span><span class="p">));</span>
+<span class="w">    </span><span class="o">*</span><span class="n">out_data</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">float</span><span class="o">*</span><span class="p">)</span><span class="n">calloc</span><span class="p">(</span><span class="n">d0</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">d1</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">d2</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">float</span><span class="p">));</span>
+<span class="w">    </span><span class="o">*</span><span class="n">out_shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="mi">3</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">int64_t</span><span class="p">));</span>
+<span class="w">    </span><span class="p">(</span><span class="o">*</span><span class="n">out_shape</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="p">)</span><span class="n">d0</span><span class="p">;</span>
+<span class="w">    </span><span class="p">(</span><span class="o">*</span><span class="n">out_shape</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="p">)</span><span class="n">d1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">(</span><span class="o">*</span><span class="n">out_shape</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="p">)</span><span class="n">d2</span><span class="p">;</span>
+<span class="w">    </span><span class="n">t</span><span class="p">.</span><span class="n">data</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="o">*</span><span class="n">out_data</span><span class="p">;</span>
+<span class="w">    </span><span class="n">t</span><span class="p">.</span><span class="n">ndim</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span>
+<span class="w">    </span><span class="n">t</span><span class="p">.</span><span class="n">shape</span><span class="w">        </span><span class="o">=</span><span class="w"> </span><span class="o">*</span><span class="n">out_shape</span><span class="p">;</span>
+<span class="w">    </span><span class="n">t</span><span class="p">.</span><span class="n">strides</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="n">t</span><span class="p">.</span><span class="n">byte_offset</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">t</span><span class="p">.</span><span class="n">dtype</span><span class="p">.</span><span class="n">code</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">kDLFloat</span><span class="p">;</span>
+<span class="w">    </span><span class="n">t</span><span class="p">.</span><span class="n">dtype</span><span class="p">.</span><span class="n">bits</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="mi">32</span><span class="p">;</span>
+<span class="w">    </span><span class="n">t</span><span class="p">.</span><span class="n">dtype</span><span class="p">.</span><span class="n">lanes</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="n">t</span><span class="p">.</span><span class="n">device</span><span class="p">.</span><span class="n">device_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kDLCPU</span><span class="p">;</span>
+<span class="w">    </span><span class="n">t</span><span class="p">.</span><span class="n">device</span><span class="p">.</span><span class="n">device_id</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">t</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">r</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ovphysx_enqueue_result_t</span><span class="w"> </span><span class="n">er</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// [tutorial-start]</span>
+<span class="w">    </span><span class="cm">/* 1. Initialize SDK */</span>
+<span class="w">    </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_initialize</span><span class="p">();</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ovphysx_initialize&quot;</span><span class="p">))</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">ovphysx_instance_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_create_instance</span><span class="p">(</span><span class="o">&amp;</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ovphysx_create_instance&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">ovphysx_shutdown</span><span class="p">();</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* 2. Populate ovstage from USD and attach it */</span>
+<span class="w">    </span><span class="n">ovphysx_sample_stage_attachment_t</span><span class="w"> </span><span class="n">stage_attachment</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">ovphysx_sample_attach_usd_with_ovstage</span><span class="p">(</span>
+<span class="w">            </span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_TEST_DATA</span><span class="w"> </span><span class="s">&quot;/boxes_falling_on_groundplane.usda&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">stage_attachment</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span><span class="w"> </span><span class="n">ovphysx_shutdown</span><span class="p">();</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* 3. Create the contact binding before the first step. The sensor is the</span>
+<span class="cm">     *    falling box. The filter is BigBase, the static collider it lands on,</span>
+<span class="cm">     *    rather than the ground plane at z=0. */</span>
+<span class="w">    </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">sensors</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+<span class="w">    </span><span class="n">sensors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_cstr</span><span class="p">(</span><span class="s">&quot;/World/Cube1&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">filters</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+<span class="w">    </span><span class="n">filters</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_cstr</span><span class="p">(</span><span class="s">&quot;/World/BigBase&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">ovphysx_contact_binding_handle_t</span><span class="w"> </span><span class="n">cb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_create_contact_binding</span><span class="p">(</span>
+<span class="w">        </span><span class="n">handle</span><span class="p">,</span>
+<span class="w">        </span><span class="n">sensors</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">     </span><span class="cm">/* 1 sensor pattern */</span>
+<span class="w">        </span><span class="n">filters</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">     </span><span class="cm">/* 1 filter pattern per sensor */</span>
+<span class="w">        </span><span class="mi">256</span><span class="p">,</span><span class="w">            </span><span class="cm">/* max raw contact pairs */</span>
+<span class="w">        </span><span class="o">&amp;</span><span class="n">cb</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ovphysx_create_contact_binding&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ovphysx_sample_destroy_stage</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">stage_attachment</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span><span class="w"> </span><span class="n">ovphysx_shutdown</span><span class="p">();</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* 4. Query matched sensor / filter counts */</span>
+<span class="w">    </span><span class="kt">int32_t</span><span class="w"> </span><span class="n">sensor_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">filter_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_contact_binding_spec</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">cb</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">sensor_count</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">filter_count</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ovphysx_get_contact_binding_spec&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ovphysx_destroy_contact_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">cb</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_sample_destroy_stage</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">stage_attachment</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_shutdown</span><span class="p">();</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Sensors: %d  Filters per sensor: %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">sensor_count</span><span class="p">,</span><span class="w"> </span><span class="n">filter_count</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 5. Simulate until the box lands */</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">120</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">er</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_step</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0f</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">60.0f</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_enqueue</span><span class="p">(</span><span class="n">er</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ovphysx_step&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">ovphysx_destroy_contact_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">cb</span><span class="p">);</span>
+<span class="w">            </span><span class="n">ovphysx_sample_destroy_stage</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">stage_attachment</span><span class="p">);</span>
+<span class="w">            </span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">            </span><span class="n">ovphysx_shutdown</span><span class="p">();</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">wait_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">er</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;step&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ovphysx_destroy_contact_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">cb</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_sample_destroy_stage</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">stage_attachment</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_shutdown</span><span class="p">();</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* 6. Read net normal and friction forces, shape [S, 3].</span>
+<span class="cm">     *    dt is taken from the last successful stepping call.</span>
+<span class="cm">     *    Read both components from the same step before adding them. */</span>
+<span class="w">    </span><span class="kt">float</span><span class="o">*</span><span class="w"> </span><span class="n">net_normal_data</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int64_t</span><span class="o">*</span><span class="w"> </span><span class="n">net_normal_shp</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="n">DLTensor</span><span class="w"> </span><span class="n">net_normal_tensor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">make_tensor_f32_2d</span><span class="p">(</span>
+<span class="w">        </span><span class="p">(</span><span class="kt">size_t</span><span class="p">)</span><span class="n">sensor_count</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">net_normal_data</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">net_normal_shp</span><span class="p">);</span>
+
+<span class="w">    </span><span class="kt">float</span><span class="o">*</span><span class="w"> </span><span class="n">net_friction_data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int64_t</span><span class="o">*</span><span class="w"> </span><span class="n">net_friction_shp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="n">DLTensor</span><span class="w"> </span><span class="n">net_friction_tensor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">make_tensor_f32_2d</span><span class="p">(</span>
+<span class="w">        </span><span class="p">(</span><span class="kt">size_t</span><span class="p">)</span><span class="n">sensor_count</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">net_friction_data</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">net_friction_shp</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">ovphysx_read_contact_net_normal_forces</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">cb</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">net_normal_tensor</span><span class="p">),</span>
+<span class="w">                      </span><span class="s">&quot;ovphysx_read_contact_net_normal_forces&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
+<span class="w">        </span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">ovphysx_read_contact_net_friction_forces</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">cb</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">net_friction_tensor</span><span class="p">),</span>
+<span class="w">                      </span><span class="s">&quot;ovphysx_read_contact_net_friction_forces&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">free</span><span class="p">(</span><span class="n">net_normal_data</span><span class="p">);</span><span class="w"> </span><span class="n">free</span><span class="p">(</span><span class="n">net_normal_shp</span><span class="p">);</span>
+<span class="w">        </span><span class="n">free</span><span class="p">(</span><span class="n">net_friction_data</span><span class="p">);</span><span class="w"> </span><span class="n">free</span><span class="p">(</span><span class="n">net_friction_shp</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_destroy_contact_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">cb</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_sample_destroy_stage</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">stage_attachment</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_shutdown</span><span class="p">();</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Net contact forces [%d, 3]:</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">sensor_count</span><span class="p">);</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">sensor_count</span><span class="p">;</span><span class="w"> </span><span class="n">s</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;  sensor %d normal:   fx=%.3f  fy=%.3f  fz=%.3f</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<span class="w">               </span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">net_normal_data</span><span class="p">[</span><span class="n">s</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">3</span><span class="p">],</span><span class="w"> </span><span class="n">net_normal_data</span><span class="p">[</span><span class="n">s</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">net_normal_data</span><span class="p">[</span><span class="n">s</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">2</span><span class="p">]);</span>
+<span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;  sensor %d friction: fx=%.3f  fy=%.3f  fz=%.3f</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<span class="w">               </span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">net_friction_data</span><span class="p">[</span><span class="n">s</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">3</span><span class="p">],</span><span class="w"> </span><span class="n">net_friction_data</span><span class="p">[</span><span class="n">s</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">net_friction_data</span><span class="p">[</span><span class="n">s</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">2</span><span class="p">]);</span>
+<span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;  sensor %d total:    fx=%.3f  fy=%.3f  fz=%.3f</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<span class="w">               </span><span class="n">s</span><span class="p">,</span>
+<span class="w">               </span><span class="n">net_normal_data</span><span class="p">[</span><span class="n">s</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">3</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">net_friction_data</span><span class="p">[</span><span class="n">s</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">3</span><span class="p">],</span>
+<span class="w">               </span><span class="n">net_normal_data</span><span class="p">[</span><span class="n">s</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">net_friction_data</span><span class="p">[</span><span class="n">s</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">],</span>
+<span class="w">               </span><span class="n">net_normal_data</span><span class="p">[</span><span class="n">s</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">net_friction_data</span><span class="p">[</span><span class="n">s</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">2</span><span class="p">]);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">free</span><span class="p">(</span><span class="n">net_normal_data</span><span class="p">);</span><span class="w"> </span><span class="n">free</span><span class="p">(</span><span class="n">net_normal_shp</span><span class="p">);</span>
+<span class="w">    </span><span class="n">free</span><span class="p">(</span><span class="n">net_friction_data</span><span class="p">);</span><span class="w"> </span><span class="n">free</span><span class="p">(</span><span class="n">net_friction_shp</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 7. Read normal and friction force matrices, shape [S, F, 3]. */</span>
+<span class="w">    </span><span class="kt">float</span><span class="o">*</span><span class="w"> </span><span class="n">mat_normal_data</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int64_t</span><span class="o">*</span><span class="w"> </span><span class="n">mat_normal_shp</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="n">DLTensor</span><span class="w"> </span><span class="n">mat_normal_tensor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">make_tensor_f32_3d</span><span class="p">(</span>
+<span class="w">        </span><span class="p">(</span><span class="kt">size_t</span><span class="p">)</span><span class="n">sensor_count</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="p">)</span><span class="n">filter_count</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">        </span><span class="o">&amp;</span><span class="n">mat_normal_data</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">mat_normal_shp</span><span class="p">);</span>
+
+<span class="w">    </span><span class="kt">float</span><span class="o">*</span><span class="w"> </span><span class="n">mat_friction_data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int64_t</span><span class="o">*</span><span class="w"> </span><span class="n">mat_friction_shp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="n">DLTensor</span><span class="w"> </span><span class="n">mat_friction_tensor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">make_tensor_f32_3d</span><span class="p">(</span>
+<span class="w">        </span><span class="p">(</span><span class="kt">size_t</span><span class="p">)</span><span class="n">sensor_count</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="p">)</span><span class="n">filter_count</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">        </span><span class="o">&amp;</span><span class="n">mat_friction_data</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">mat_friction_shp</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">ovphysx_read_contact_normal_force_matrix</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">cb</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">mat_normal_tensor</span><span class="p">),</span>
+<span class="w">                      </span><span class="s">&quot;ovphysx_read_contact_normal_force_matrix&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
+<span class="w">        </span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">ovphysx_read_contact_friction_force_matrix</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">cb</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">mat_friction_tensor</span><span class="p">),</span>
+<span class="w">                      </span><span class="s">&quot;ovphysx_read_contact_friction_force_matrix&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">free</span><span class="p">(</span><span class="n">mat_normal_data</span><span class="p">);</span><span class="w"> </span><span class="n">free</span><span class="p">(</span><span class="n">mat_normal_shp</span><span class="p">);</span>
+<span class="w">        </span><span class="n">free</span><span class="p">(</span><span class="n">mat_friction_data</span><span class="p">);</span><span class="w"> </span><span class="n">free</span><span class="p">(</span><span class="n">mat_friction_shp</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_destroy_contact_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">cb</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_sample_destroy_stage</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">stage_attachment</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_shutdown</span><span class="p">();</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Contact force matrix [%d, %d, 3]:</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">sensor_count</span><span class="p">,</span><span class="w"> </span><span class="n">filter_count</span><span class="p">);</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">sensor_count</span><span class="p">;</span><span class="w"> </span><span class="n">s</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">filter_count</span><span class="p">;</span><span class="w"> </span><span class="n">f</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kt">int</span><span class="w"> </span><span class="n">base</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">s</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">filter_count</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">f</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span>
+<span class="w">            </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;  [%d][%d] normal:   fx=%.3f  fy=%.3f  fz=%.3f</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<span class="w">                   </span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="p">,</span><span class="w"> </span><span class="n">mat_normal_data</span><span class="p">[</span><span class="n">base</span><span class="p">],</span><span class="w"> </span><span class="n">mat_normal_data</span><span class="p">[</span><span class="n">base</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">mat_normal_data</span><span class="p">[</span><span class="n">base</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">2</span><span class="p">]);</span>
+<span class="w">            </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;  [%d][%d] friction: fx=%.3f  fy=%.3f  fz=%.3f</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<span class="w">                   </span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="p">,</span><span class="w"> </span><span class="n">mat_friction_data</span><span class="p">[</span><span class="n">base</span><span class="p">],</span><span class="w"> </span><span class="n">mat_friction_data</span><span class="p">[</span><span class="n">base</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">mat_friction_data</span><span class="p">[</span><span class="n">base</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">2</span><span class="p">]);</span>
+<span class="w">            </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;  [%d][%d] total:    fx=%.3f  fy=%.3f  fz=%.3f</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<span class="w">                   </span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="p">,</span>
+<span class="w">                   </span><span class="n">mat_normal_data</span><span class="p">[</span><span class="n">base</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">mat_friction_data</span><span class="p">[</span><span class="n">base</span><span class="p">],</span>
+<span class="w">                   </span><span class="n">mat_normal_data</span><span class="p">[</span><span class="n">base</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">mat_friction_data</span><span class="p">[</span><span class="n">base</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">],</span>
+<span class="w">                   </span><span class="n">mat_normal_data</span><span class="p">[</span><span class="n">base</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">mat_friction_data</span><span class="p">[</span><span class="n">base</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">2</span><span class="p">]);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="cm">/* Cube1 rests on BigBase, so the 1x1 matrix has to hold a real contact force.</span>
+<span class="cm">     * The max-abs norm avoids libm, which the CI sample link does not pass with -lm. */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">sensor_count</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">filter_count</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">float</span><span class="w"> </span><span class="n">ax</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mat_normal_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">0.f</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="o">-</span><span class="n">mat_normal_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">mat_normal_data</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+<span class="w">        </span><span class="kt">float</span><span class="w"> </span><span class="n">ay</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mat_normal_data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">0.f</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="o">-</span><span class="n">mat_normal_data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">mat_normal_data</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+<span class="w">        </span><span class="kt">float</span><span class="w"> </span><span class="n">az</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mat_normal_data</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">0.f</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="o">-</span><span class="n">mat_normal_data</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">mat_normal_data</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+<span class="w">        </span><span class="kt">float</span><span class="w"> </span><span class="n">mag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ax</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">ay</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">ax</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">ay</span><span class="p">;</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">az</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">mag</span><span class="p">)</span><span class="w"> </span><span class="n">mag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">az</span><span class="p">;</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">mag</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">1.0f</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span>
+<span class="w">                    </span><span class="s">&quot;ERROR: expected Cube1 vs BigBase contact after 120 steps; &quot;</span>
+<span class="w">                    </span><span class="s">&quot;force matrix mag=%f (fx=%f fy=%f fz=%f)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="n">mag</span><span class="p">,</span><span class="w"> </span><span class="n">mat_normal_data</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="n">mat_normal_data</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">mat_normal_data</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span>
+<span class="w">            </span><span class="n">free</span><span class="p">(</span><span class="n">mat_normal_data</span><span class="p">);</span><span class="w"> </span><span class="n">free</span><span class="p">(</span><span class="n">mat_normal_shp</span><span class="p">);</span>
+<span class="w">            </span><span class="n">free</span><span class="p">(</span><span class="n">mat_friction_data</span><span class="p">);</span><span class="w"> </span><span class="n">free</span><span class="p">(</span><span class="n">mat_friction_shp</span><span class="p">);</span>
+<span class="w">            </span><span class="n">ovphysx_destroy_contact_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">cb</span><span class="p">);</span>
+<span class="w">            </span><span class="n">ovphysx_sample_destroy_stage</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">stage_attachment</span><span class="p">);</span>
+<span class="w">            </span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">            </span><span class="n">ovphysx_shutdown</span><span class="p">();</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">free</span><span class="p">(</span><span class="n">mat_normal_data</span><span class="p">);</span><span class="w"> </span><span class="n">free</span><span class="p">(</span><span class="n">mat_normal_shp</span><span class="p">);</span>
+<span class="w">    </span><span class="n">free</span><span class="p">(</span><span class="n">mat_friction_data</span><span class="p">);</span><span class="w"> </span><span class="n">free</span><span class="p">(</span><span class="n">mat_friction_shp</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Contact binding sample completed successfully</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 8. Destroy the contact binding. */</span>
+<span class="w">    </span><span class="n">ovphysx_destroy_contact_binding</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">cb</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">// [tutorial-end]</span>
+
+<span class="w">    </span><span class="n">ovphysx_sample_destroy_stage</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">stage_attachment</span><span class="p">);</span>
+<span class="w">    </span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">    </span><span class="n">ovphysx_shutdown</span><span class="p">();</span>
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Cleanup complete</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">rc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">run</span><span class="p">();</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">rc</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="unfiltered-contacts">
+<h2>Unfiltered Contacts<a class="headerlink" href="#unfiltered-contacts" title="Link to this heading">#</a></h2>
+<p>Pass <code class="docutils literal notranslate"><span class="pre">filter_patterns=None</span></code> and <code class="docutils literal notranslate"><span class="pre">filters_per_sensor=0</span></code> to collect contacts with
+all bodies. The binding-creation functions in this and the next section are
+standalone helpers; substitute your own scene’s prim paths for the illustrative
+<code class="docutils literal notranslate"><span class="pre">/World/robot/ee</span></code> and <code class="docutils literal notranslate"><span class="pre">/World/obstacle_*</span></code> paths:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">create_unfiltered_binding</span><span class="p">(</span><span class="n">physx</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">physx</span><span class="o">.</span><span class="n">create_contact_binding</span><span class="p">(</span>
+        <span class="n">sensor_patterns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;/World/robot/ee&quot;</span><span class="p">],</span>
+        <span class="n">max_contact_data_count</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<p>In C:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx.h&gt;</span>
+
+<span class="k">static</span><span class="w"> </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="nf">create_unfiltered_binding</span><span class="p">(</span>
+<span class="w">    </span><span class="n">ovphysx_instance_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ovphysx_contact_binding_handle_t</span><span class="o">*</span><span class="w"> </span><span class="n">out_binding</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">sensors</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">ovphysx_cstr</span><span class="p">(</span><span class="s">&quot;/World/robot/ee&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">ovphysx_create_contact_binding</span><span class="p">(</span>
+<span class="w">        </span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">sensors</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">512</span><span class="p">,</span><span class="w"> </span><span class="n">out_binding</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="multiple-sensors-and-filters">
+<h2>Multiple Sensors and Filters<a class="headerlink" href="#multiple-sensors-and-filters" title="Link to this heading">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">filter_patterns</span></code> array is <strong>flat</strong> and must have length
+<code class="docutils literal notranslate"><span class="pre">len(sensor_patterns)</span> <span class="pre">*</span> <span class="pre">filters_per_sensor</span></code>. Each block of <code class="docutils literal notranslate"><span class="pre">filters_per_sensor</span></code>
+entries corresponds to one sensor:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">create_filtered_binding</span><span class="p">(</span><span class="n">physx</span><span class="p">):</span>
+    <span class="c1"># 2 sensors, 2 filters each -&gt; 4 filter entries total</span>
+    <span class="k">return</span> <span class="n">physx</span><span class="o">.</span><span class="n">create_contact_binding</span><span class="p">(</span>
+        <span class="n">sensor_patterns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;/World/robot_0/ee&quot;</span><span class="p">,</span> <span class="s2">&quot;/World/robot_1/ee&quot;</span><span class="p">],</span>
+        <span class="n">filter_patterns</span><span class="o">=</span><span class="p">[</span>
+            <span class="s2">&quot;/World/obstacle_A&quot;</span><span class="p">,</span> <span class="s2">&quot;/World/obstacle_B&quot;</span><span class="p">,</span>  <span class="c1"># robot_0/ee filters</span>
+            <span class="s2">&quot;/World/obstacle_A&quot;</span><span class="p">,</span> <span class="s2">&quot;/World/obstacle_B&quot;</span><span class="p">,</span>  <span class="c1"># robot_1/ee filters</span>
+        <span class="p">],</span>
+        <span class="n">filters_per_sensor</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="detailed-contact-and-friction-data">
+<h2>Detailed Contact and Friction Data<a class="headerlink" href="#detailed-contact-and-friction-data" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">read_normal_contact_data()</span></code> returns scalar normal forces, contact normals, points,
+and separations. Each normal force vector is obtained by multiplying the scalar
+force by its corresponding contact normal. <code class="docutils literal notranslate"><span class="pre">read_friction_contact_data()</span></code> returns
+friction force vectors and their anchor points. Both methods report data for
+the configured sensor/filter pairs.</p>
+<p>Friction anchors need not correspond one-to-one with contact points. Each
+method’s count/start-index tensors describe its own data. Summing detailed
+friction data reproduces the net friction only when the filters cover all
+relevant contacts without double counting and the buffers contain all reported
+anchors.</p>
+<p>Use <code class="docutils literal notranslate"><span class="pre">cb.max_contact_data_count</span></code> to allocate reusable flat buffers. For each
+sensor/filter pair, <code class="docutils literal notranslate"><span class="pre">counts[s,</span> <span class="pre">f]</span></code> and <code class="docutils literal notranslate"><span class="pre">start_indices[s,</span> <span class="pre">f]</span></code> identify the valid
+slice inside the flat buffers.</p>
+<p><code class="docutils literal notranslate"><span class="pre">cb.sensor_paths</span></code> returns the resolved sensor paths in row order.
+<code class="docutils literal notranslate"><span class="pre">cb.filter_paths</span></code> returns a nested <code class="docutils literal notranslate"><span class="pre">[sensor][filter]</span></code> list in column order.</p>
+<p>Create the binding with <code class="docutils literal notranslate"><span class="pre">filter_patterns</span></code>, <code class="docutils literal notranslate"><span class="pre">filters_per_sensor</span> <span class="pre">&gt;</span> <span class="pre">0</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">max_contact_data_count</span> <span class="pre">&gt;</span> <span class="pre">0</span></code> before calling <code class="docutils literal notranslate"><span class="pre">read_normal_contact_data()</span></code> or
+<code class="docutils literal notranslate"><span class="pre">read_friction_contact_data()</span></code>. The aggregate <code class="docutils literal notranslate"><span class="pre">read_net_normal_forces()</span></code>,
+<code class="docutils literal notranslate"><span class="pre">read_net_friction_forces()</span></code>, <code class="docutils literal notranslate"><span class="pre">read_normal_force_matrix()</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">read_friction_force_matrix()</span></code> calls do not require this detailed-contact capacity.
+<code class="docutils literal notranslate"><span class="pre">counts</span></code> and <code class="docutils literal notranslate"><span class="pre">start_indices</span></code> can be <code class="docutils literal notranslate"><span class="pre">int32</span></code> or <code class="docutils literal notranslate"><span class="pre">uint32</span></code>; NumPy’s default integer
+dtype is usually <code class="docutils literal notranslate"><span class="pre">int64</span></code>, so allocate these arrays with an explicit dtype.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">read_detailed_data</span><span class="p">(</span><span class="n">binding</span><span class="p">):</span>
+    <span class="n">capacity</span> <span class="o">=</span> <span class="n">binding</span><span class="o">.</span><span class="n">max_contact_data_count</span>
+    <span class="n">contact_forces</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">capacity</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">positions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">capacity</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">normals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">capacity</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">separations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">capacity</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">binding</span><span class="o">.</span><span class="n">sensor_count</span><span class="p">,</span> <span class="n">binding</span><span class="o">.</span><span class="n">filter_count</span><span class="p">)</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+    <span class="n">starts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+
+    <span class="n">required_contacts</span> <span class="o">=</span> <span class="n">binding</span><span class="o">.</span><span class="n">read_normal_contact_data</span><span class="p">(</span>
+        <span class="n">contact_forces</span><span class="p">,</span>
+        <span class="n">positions</span><span class="p">,</span>
+        <span class="n">normals</span><span class="p">,</span>
+        <span class="n">separations</span><span class="p">,</span>
+        <span class="n">counts</span><span class="p">,</span>
+        <span class="n">starts</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="c1"># required_contacts is the complete demand. If it exceeds capacity, counts/starts</span>
+    <span class="c1"># still describe only the in-range prefix that was written.</span>
+
+    <span class="n">sensor</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">contact_filter</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">starts</span><span class="p">[</span><span class="n">sensor</span><span class="p">,</span> <span class="n">contact_filter</span><span class="p">]</span>
+    <span class="n">stop</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">counts</span><span class="p">[</span><span class="n">sensor</span><span class="p">,</span> <span class="n">contact_filter</span><span class="p">]</span>
+    <span class="n">sensor_filter_positions</span> <span class="o">=</span> <span class="n">positions</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">]</span>
+
+    <span class="n">friction_forces</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">capacity</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">friction_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">capacity</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">friction_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+    <span class="n">friction_starts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+
+    <span class="n">required_friction</span> <span class="o">=</span> <span class="n">binding</span><span class="o">.</span><span class="n">read_friction_contact_data</span><span class="p">(</span>
+        <span class="n">friction_forces</span><span class="p">,</span>
+        <span class="n">friction_points</span><span class="p">,</span>
+        <span class="n">friction_counts</span><span class="p">,</span>
+        <span class="n">friction_starts</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">sensor_filter_positions</span><span class="p">,</span> <span class="n">friction_forces</span><span class="p">,</span> <span class="n">friction_points</span>
+</pre></div>
+</div>
+<p>Friction data is per friction anchor, not a pre-summed <code class="docutils literal notranslate"><span class="pre">[S,</span> <span class="pre">F,</span> <span class="pre">3]</span></code> pair
+force. To build a pair-level friction force tensor, sum
+<code class="docutils literal notranslate"><span class="pre">friction_forces[start:stop]</span></code> for each <code class="docutils literal notranslate"><span class="pre">(sensor,</span> <span class="pre">filter)</span></code> pair using the
+matching <code class="docutils literal notranslate"><span class="pre">friction_counts</span></code> and <code class="docutils literal notranslate"><span class="pre">friction_starts</span></code> entries.</p>
+<p>This flat representation matches the underlying PhysX tensor API and avoids a
+fixed per-pair contact-point dimension. Build a padded <code class="docutils literal notranslate"><span class="pre">[S,</span> <span class="pre">F,</span> <span class="pre">K,</span> <span class="pre">D]</span></code> view in
+application code only if that layout is useful for a specific algorithm.</p>
+</section>
+<section id="actor-identities-in-raw-contact-data">
+<h2>Actor Identities in Raw Contact Data<a class="headerlink" href="#actor-identities-in-raw-contact-data" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">read_raw_contact_data()</span></code> tells you <strong>which actor is touching which</strong> without a separate call.
+It takes six tensors: the four per-contact value buffers, plus two tensors whose columns carry
+the quantities that are only meaningful in pairs:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">sensor_layout</span></code> — <code class="docutils literal notranslate"><span class="pre">[S,</span> <span class="pre">2]</span></code>, per sensor: column 0 the contact count, column 1 its start index</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">actor_ids</span></code> — <code class="docutils literal notranslate"><span class="pre">[C,</span> <span class="pre">2]</span></code>, per contact: column 0 the reporting sensor’s actor, column 1 the
+actor it contacted</p></li>
+</ul>
+<p>Pairing them this way means the caller cannot get a count out of step with its start index, or
+a sensor id out of step with its other id. No filter dimension is required for an unfiltered
+binding. Slice the columns out as views when you want them separately — that costs no copy.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">read_raw_contact_data_with_ids</span><span class="p">(</span><span class="n">binding</span><span class="p">):</span>
+    <span class="n">capacity</span> <span class="o">=</span> <span class="n">binding</span><span class="o">.</span><span class="n">max_contact_data_count</span>  <span class="c1"># C</span>
+    <span class="n">S</span> <span class="o">=</span> <span class="n">binding</span><span class="o">.</span><span class="n">sensor_count</span>                   <span class="c1"># S (no filter dim needed)</span>
+
+    <span class="n">contact_forces</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">capacity</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">positions</span>      <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">capacity</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">normals</span>        <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">capacity</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">separations</span>    <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">capacity</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">sensor_layout</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">S</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>         <span class="c1"># count, start</span>
+    <span class="n">actor_ids</span>      <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">capacity</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>  <span class="c1"># sensor, other</span>
+
+    <span class="n">binding</span><span class="o">.</span><span class="n">read_raw_contact_data</span><span class="p">(</span>
+        <span class="n">contact_forces</span><span class="p">,</span> <span class="n">positions</span><span class="p">,</span> <span class="n">normals</span><span class="p">,</span> <span class="n">separations</span><span class="p">,</span>
+        <span class="n">sensor_layout</span><span class="p">,</span> <span class="n">actor_ids</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Column views -- no copy.</span>
+    <span class="n">counts</span><span class="p">,</span> <span class="n">starts</span> <span class="o">=</span> <span class="n">sensor_layout</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">sensor_layout</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">sensor_actor_ids</span><span class="p">,</span> <span class="n">other_actor_ids</span> <span class="o">=</span> <span class="n">actor_ids</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">actor_ids</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># Print the sensor and other-actor path for every contact point</span>
+    <span class="k">for</span> <span class="n">sensor_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">S</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">counts</span><span class="p">[</span><span class="n">sensor_idx</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">starts</span><span class="p">[</span><span class="n">sensor_idx</span><span class="p">])</span>
+        <span class="n">sensor_ids_slice</span> <span class="o">=</span> <span class="n">sensor_actor_ids</span><span class="p">[</span><span class="n">start</span> <span class="p">:</span> <span class="n">start</span> <span class="o">+</span> <span class="n">n</span><span class="p">]</span>
+        <span class="n">other_ids_slice</span>  <span class="o">=</span> <span class="n">other_actor_ids</span><span class="p">[</span><span class="n">start</span> <span class="p">:</span> <span class="n">start</span> <span class="o">+</span> <span class="n">n</span><span class="p">]</span>
+
+        <span class="c1"># Resolve identities — both sensor and other IDs use the same namespace.</span>
+        <span class="c1"># A column of actor_ids is a strided view, and the DLPack boundary requires</span>
+        <span class="c1"># C-contiguous input, so make the slice contiguous before passing it.</span>
+        <span class="n">sensor_paths</span> <span class="o">=</span> <span class="n">binding</span><span class="o">.</span><span class="n">get_other_actor_paths_from_ids</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">sensor_ids_slice</span><span class="p">))</span>
+        <span class="n">other_paths</span>  <span class="o">=</span> <span class="n">binding</span><span class="o">.</span><span class="n">get_other_actor_paths_from_ids</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">other_ids_slice</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">force</span> <span class="o">=</span> <span class="n">contact_forces</span><span class="p">[</span><span class="n">start</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  contact </span><span class="si">{</span><span class="n">start</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">i</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">sensor_paths</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2"> ↔ </span><span class="si">{</span><span class="n">other_paths</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">  force=</span><span class="si">{</span><span class="n">force</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="resolving-actor-paths">
+<h3>Resolving Actor Paths<a class="headerlink" href="#resolving-actor-paths" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">get_other_actor_paths_from_ids()</span></code> accepts a 1-D int64/uint64 array of actor IDs and
+returns a list of USD path strings in the same order. Note that a column of <code class="docutils literal notranslate"><span class="pre">actor_ids</span></code> is
+a strided view: the DLPack boundary requires C-contiguous input, so wrap a column slice in
+<code class="docutils literal notranslate"><span class="pre">np.ascontiguousarray()</span></code> (or <code class="docutils literal notranslate"><span class="pre">.copy()</span></code>) before passing it. That copy is on the diagnostic
+path only — the per-contact read itself takes the whole contiguous tensor. It works for both <code class="docutils literal notranslate"><span class="pre">sensor_actor_ids</span></code> and
+<code class="docutils literal notranslate"><span class="pre">other_actor_ids</span></code> since both use the same identity namespace, as shown in the raw-read helper above.</p>
+<p><strong>ID encoding</strong>: actor IDs are opaque runtime handles, not encoded paths. Do not try to
+decode one yourself — the only supported way to get a path back is
+<code class="docutils literal notranslate"><span class="pre">get_other_actor_paths_from_ids()</span></code>. The encoding is the same regardless of how the stage
+was attached, so IDs from a CPU scene and a GPU scene mean the same thing.</p>
+<p><strong>ID lifetime</strong>: handles are valid for the lifetime of the attach. Do not use an ID after
+the stage is detached or replaced, and do not persist one across runs.</p>
+<p><strong>Stale IDs resolve to empty, not to their old path.</strong> Every non-zero ID is checked
+against the attached stage before it is resolved, so if you hold an ID and the actor is
+later removed, <code class="docutils literal notranslate"><span class="pre">get_other_actor_paths_from_ids()</span></code> returns <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> rather than the path it used
+to name. A non-zero ID resolving to an empty path therefore identifies a stale
+actor; an ID of zero means there was no actor in that slot.</p>
+<p>The check is as precise as the backend’s notion of existence. On an ovstage attach a
+removed prim reports stale. On a USD stage a merely <em>deactivated</em> prim still resolves,
+because existence there follows prim validity and USD returns a valid prim for an inactive
+one — so do not rely on deactivation alone to invalidate an ID.</p>
+<p><strong>Truncation</strong>: when a step produces more contacts than <code class="docutils literal notranslate"><span class="pre">max_contact_data_count</span></code>, the runtime
+fills as many entries as fit and logs a warning. Per-sensor counts report only the contacts
+actually written and start indices are clamped to <code class="docutils literal notranslate"><span class="pre">max_contact_data_count</span></code>, so
+<code class="docutils literal notranslate"><span class="pre">[start,</span> <span class="pre">start</span> <span class="pre">+</span> <span class="pre">count)</span></code> is always a valid (possibly empty) slice. Increase
+<code class="docutils literal notranslate"><span class="pre">max_contact_data_count</span></code> at binding creation if you see this warning.</p>
+<p><strong>Ordering</strong>: contacts are grouped by sensor. Within a sensor, the order of contact points
+is whatever the simulation produced for that step and is not stable across steps.</p>
+<p><strong>Threading</strong>: contact reads follow the general ovphysx rule — a single instance is not
+thread-safe, so serialize <code class="docutils literal notranslate"><span class="pre">read_raw_contact_data()</span></code> against <code class="docutils literal notranslate"><span class="pre">step()</span></code> and against other
+reads on the same instance. Refer to
+<a class="reference internal" href="../developer_guide.html#threading"><span class="std std-ref">Threading</span></a>. <code class="docutils literal notranslate"><span class="pre">get_other_actor_paths_from_ids()</span></code>
+additionally populates a per-binding path cache, so concurrent calls on the <em>same</em> binding
+must be serialized even when no step is in flight.</p>
+<p><strong>Filtering is caller-owned.</strong> There is no binding-creation option to exclude expected
+support contacts (a floor, a conveyor). Sensor and filter patterns select which <em>bodies</em>
+participate; they do not suppress individual contact points, so dropping the ones you expect
+is application policy.</p>
+<p>Resolution only goes ID → path, so build the decision table lazily rather than up front:
+resolve each ID the first time you see it, record the verdict against the ID, and from then
+on filter with an integer lookup. IDs are stable for the lifetime of the attach, so this
+settles after the first step and does no string work in steady state.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">ignored</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>   <span class="c1"># actor id -&gt; &quot;expected support contact&quot;</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">is_ignored</span><span class="p">(</span><span class="n">binding</span><span class="p">,</span> <span class="n">actor_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="n">verdict</span> <span class="o">=</span> <span class="n">ignored</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">actor_id</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">verdict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">binding</span><span class="o">.</span><span class="n">get_other_actor_paths_from_ids</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">actor_id</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
+        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">verdict</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;/floor&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">path</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;/conveyor&quot;</span><span class="p">)</span>
+        <span class="n">ignored</span><span class="p">[</span><span class="n">actor_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">verdict</span>
+    <span class="k">return</span> <span class="n">verdict</span>
+</pre></div>
+</div>
+<p>Rebuild the table if you attach a different stage — an ID only means anything against the
+attach it was read from. Note the memoized verdict outlives the actor: if a body can be
+removed mid-run, re-resolve rather than trusting a cached entry, since a removed actor’s ID
+resolves to <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> and would not match the path test that produced the original verdict.</p>
+<p>In C, <code class="docutils literal notranslate"><span class="pre">ovphysx_read_raw_contact_data</span></code> takes the same six tensors in the same order —
+<code class="docutils literal notranslate"><span class="pre">sensor_layout_tensor</span></code> then <code class="docutils literal notranslate"><span class="pre">actor_ids_tensor</span></code> after the four value buffers — followed
+by <code class="docutils literal notranslate"><span class="pre">out_required_contact_count</span></code>. That output is the total demand before truncation. If
+it exceeds the binding’s <code class="docutils literal notranslate"><span class="pre">max_contact_data_count</span></code>, the function returns
+<code class="docutils literal notranslate"><span class="pre">OVPHYSX_API_BUFFER_TOO_SMALL</span></code> while leaving a valid prefix in the tensors. Refer to the
+<a class="reference internal" href="../api.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">ovphysx_read_raw_contact_data</span></code> declaration</span></a> for the full parameter
+documentation.</p>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="tensor_bindings.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Tensor Bindings – Read and Write Simulation Data</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="cloning.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Cloning – Replicate Environments</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#prerequisites">Prerequisites</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#key-concepts">Key Concepts</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#force-components-and-filtering">Force Components and Filtering</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#python">Python</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#full-binding-destroy">Full Binding + Destroy</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#recommended-context-manager-form">Recommended Context-Manager Form</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reading-normal-and-friction-forces">Reading Normal and Friction Forces</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#c">C</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#unfiltered-contacts">Unfiltered Contacts</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#multiple-sensors-and-filters">Multiple Sensors and Filters</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#detailed-contact-and-friction-data">Detailed Contact and Friction Data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#actor-identities-in-raw-contact-data">Actor Identities in Raw Contact Data</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#resolving-actor-paths">Resolving Actor Paths</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025-2026, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Oct 15, 2026.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

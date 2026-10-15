@@ -47,7 +47,7 @@
 
 
     <script rel="preload" src="../_static/modal-table.js"></script>
-    <script src="../_static/documentation_options.js?v=18b66ea0"></script>
+    <script src="../_static/documentation_options.js?v=423e15eb"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.6.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -75,7 +75,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Oct 08, 2026"/>
+    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
   
     
     <script src="../_static/searchtools.js"></script>
@@ -507,6 +507,10 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coding_style.html">ovphysx coding and doc style</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
@@ -566,7 +570,6 @@
 <li class="toctree-l2"><a class="reference internal" href="PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PhysxJointAPI.html">PhysxJointAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PhysxLimitAPI.html">PhysxLimitAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
@@ -613,6 +616,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../read_write/device.html">Device residency and interop</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/readable.html">Readable data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/writable.html">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/path_patterns.html">Path patterns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/limitations.html">Known limitations and gaps</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
@@ -625,7 +630,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/render_handoff.html">Rendering Handoff</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials/nvtx_profiling.html">NVTX Profiling in Nsight Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
@@ -803,10 +808,10 @@
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">physxScene:enableExternalForcesEveryIteration</span></code></p></td>
 <td><p>bool8</p></td>
 <td><p>none</p></td>
-<td><p>false</p></td>
+<td><p>true</p></td>
 <td><p>resolved USD value (authored, else raw fallback)</p></td>
-<td><p>false</p></td>
-<td><p>Off. Silently forced to off when physxScene:solverType is PGS (unsupported there).</p></td>
+<td><p>true</p></td>
+<td><p>On. Deprecated: applying gravity and other external forces in every TGS position iteration is the default and the only TGS behavior once the attribute is removed. Silently forced to off when physxScene:solverType is PGS (no effect there).</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">physxScene:invertCollisionGroupFilter</span></code></p></td>
 <td><p>bool8</p></td>
@@ -1042,7 +1047,7 @@
 <ul class="simple">
 <li><p><strong>fragile</strong> (consumer) <code class="docutils literal notranslate"><span class="pre">physxScene:bounceThreshold</span></code>: The consumer default 1e-6 is not units-scaled while every neighbouring length default is, and the raw schema fallback 0 is clamped up to it. A centimeter stage therefore bounces on contacts 100 times slower (relative to its units) than a meter stage would.</p></li>
 <li><p><strong>note</strong> (consumer) <code class="docutils literal notranslate"><span class="pre">physxScene:minPositionIterationCount</span></code>: Raw schema fallback 1 versus consumer absent default 0: only bodies authored with 0 position iterations observe the difference. When min exceeds max (either pair) min is silently clamped down to max; the diagnostic is emitted by the USD schema parser only, so an ovstage-populated stage gets no warning.</p></li>
-<li><p><strong>note</strong> (consumer) <code class="docutils literal notranslate"><span class="pre">physxScene:enableExternalForcesEveryIteration</span></code>: Silently cleared when solverType is PGS; the warning exists only on the USD path.</p></li>
+<li><p><strong>note</strong> (consumer) <code class="docutils literal notranslate"><span class="pre">physxScene:enableExternalForcesEveryIteration</span></code>: Deprecated, and on by default. Silently cleared when solverType is PGS; the warning exists only on the USD path.</p></li>
 <li><p><strong>note</strong> (consumer) <code class="docutils literal notranslate"><span class="pre">physxScene:gpuMaxNumPartitions</span></code>: A value in [1, 32] that is not a power of two is silently replaced by 8 rather than rounded.</p></li>
 <li><p><strong>fragile</strong> (consumer) <code class="docutils literal notranslate"><span class="pre">physxScene:timeStepsPerSecond</span></code>: The authored-bit gates (readClampedIfAuthored, readBoolIfAuthored) are no-ops on ovstage where every column reads as authored, so the resolved value always wins and a value equal to the raw fallback is indistinguishable from unauthored. This is what makes the newton:timeStepsPerSecond fallback unreachable on a producer-populated stage: the published 60 counts as authored.</p></li>
 <li><p><strong>fragile</strong> (consumer) <code class="docutils literal notranslate"><span class="pre">physxScene:maxBiasCoefficient</span></code>: Whether the authored value takes effect depends on the solver configuration, not on the stage: PhysX applies PxSceneDesc::maxBiasCoefficient in the PGS and GPU dynamics contexts but the CPU TGS context constructs with PX_MAX_F32 (physx DyTGSDynamics.cpp), so with solverType TGS and enableGPUDynamics false the column is silently ignored and PxScene::getMaxBiasCoefficient returns FLT_MAX. Observed in the population contract test (authored 10, read FLT_MAX).</p></li>
@@ -1161,7 +1166,7 @@
 </div>
       
         <div class="footer-item"><p class="last-updated">
-  Last updated on Oct 08, 2026.
+  Last updated on Oct 15, 2026.
   <br/>
 </p></div>
       

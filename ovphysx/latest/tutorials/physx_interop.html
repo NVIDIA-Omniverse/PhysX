@@ -47,7 +47,7 @@
 
 
     <script rel="preload" src="../_static/modal-table.js"></script>
-    <script src="../_static/documentation_options.js?v=18b66ea0"></script>
+    <script src="../_static/documentation_options.js?v=423e15eb"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.6.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -75,7 +75,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Oct 08, 2026"/>
+    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
   
     
     <script src="../_static/searchtools.js"></script>
@@ -507,6 +507,10 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coding_style.html">ovphysx coding and doc style</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
@@ -566,7 +570,6 @@
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAPI.html">PhysxJointAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
@@ -613,6 +616,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../read_write/device.html">Device residency and interop</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/readable.html">Readable data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/writable.html">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/path_patterns.html">Path patterns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/limitations.html">Known limitations and gaps</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
@@ -625,7 +630,7 @@
 <li class="toctree-l1"><a class="reference internal" href="render_handoff.html">Rendering Handoff</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">PhysX Interop – Direct PhysX SDK Access</a></li>
 <li class="toctree-l1"><a class="reference internal" href="omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="nvtx_profiling.html">NVTX Profiling in Nsight Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
 <li class="toctree-l1"><a class="reference internal" href="source_link_build.html">Building Against the ovphysx Source Tree</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
@@ -707,7 +712,7 @@ read API (<code class="docutils literal notranslate"><span class="pre">ovphysx_r
 <h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p>Complete the <a class="reference internal" href="hello_world.html"><span class="std std-doc">Hello World</span></a> tutorial.</p></li>
-<li><p>Familiarity with the ovphysx C API (<code class="docutils literal notranslate"><span class="pre">ovphysx_get_physx_ptr()</span></code>).</p></li>
+<li><p>Familiarity with the ovphysx read API (<code class="docutils literal notranslate"><span class="pre">ovphysx_query</span></code> / <code class="docutils literal notranslate"><span class="pre">ovphysx_read</span></code>).</p></li>
 <li><p>A C++17 compiler.</p></li>
 </ul>
 </section>
@@ -744,6 +749,9 @@ project through the <code class="docutils literal notranslate"><span class="pre"
 <span class="p">)</span>
 <span class="nb">if</span><span class="p">(</span><span class="s">WIN32</span><span class="p">)</span>
 <span class="w">    </span><span class="nb">ovphysx_copy_runtime_dlls</span><span class="p">(</span><span class="s">physx_interop_cpp</span><span class="p">)</span>
+<span class="w">    </span><span class="c"># OVStage is not copied (it loads its plugins relative to itself), so its</span>
+<span class="w">    </span><span class="c"># directories have to reach the process through PATH.</span>
+<span class="w">    </span><span class="nb">ovphysx_set_ovstage_runtime_env</span><span class="p">(</span><span class="s">physx_interop_cpp</span><span class="p">)</span>
 <span class="nb">endif</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -752,6 +760,7 @@ project through the <code class="docutils literal notranslate"><span class="pre"
 <section id="source">
 <h2>Source<a class="headerlink" href="#source" title="Link to this heading">#</a></h2>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;ovphysx/ovphysx.h&quot;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;ovphysx/ovphysx_attributes.h&quot;</span>
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;ovphysx/ovphysx_types.h&quot;</span>
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;ovstage_sample.h&quot;</span>
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovx/path_dictionary/path_dictionary.h&gt;</span><span class="c1">  // path_dictionary_* prim/token/string resolution</span>
@@ -780,22 +789,22 @@ project through the <code class="docutils literal notranslate"><span class="pre"
 <span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
 <span class="p">}</span>
 
-<span class="k">static</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="nf">wait_op</span><span class="p">(</span><span class="n">ovphysx_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_op_index_t</span><span class="w"> </span><span class="n">op_index</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">context</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">ovphysx_op_wait_result_t</span><span class="w"> </span><span class="n">wait_result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{};</span>
-<span class="w">    </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_wait_op</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">op_index</span><span class="p">,</span><span class="w"> </span><span class="mi">10ULL</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1000</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1000</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">wait_result</span><span class="p">);</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="nf">wait_task</span><span class="p">(</span><span class="n">ovphysx_instance_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_enqueue_result_t</span><span class="w"> </span><span class="n">task</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">context</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">ovphysx_wait_task_result_t</span><span class="w"> </span><span class="n">wait_result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{};</span>
+<span class="w">    </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_wait_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">task</span><span class="p">,</span><span class="w"> </span><span class="mi">10ULL</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1000</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1000</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">wait_result</span><span class="p">);</span>
 
 <span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">wait_result</span><span class="p">.</span><span class="n">num_errors</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">ok</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ERROR in %s: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">context</span><span class="p">,</span>
 <span class="w">                </span><span class="n">wait_result</span><span class="p">.</span><span class="n">num_errors</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;async operation failed&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;wait failed&quot;</span><span class="p">);</span>
 <span class="w">    </span><span class="p">}</span>
-<span class="w">    </span><span class="n">ovphysx_destroy_wait_result</span><span class="p">(</span><span class="o">&amp;</span><span class="n">wait_result</span><span class="p">);</span>
+<span class="w">    </span><span class="n">ovphysx_destroy_wait_task_result</span><span class="p">(</span><span class="o">&amp;</span><span class="n">wait_result</span><span class="p">);</span>
 <span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">ok</span><span class="p">;</span>
 <span class="p">}</span>
 
 <span class="k">static</span><span class="w"> </span><span class="n">ovphysx_sample_stage_attachment_t</span><span class="w"> </span><span class="n">g_stage_attachment</span><span class="p">{};</span>
 
-<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">destroy_instance_and_shutdown</span><span class="p">(</span><span class="n">ovphysx_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">destroy_instance_and_shutdown</span><span class="p">(</span><span class="n">ovphysx_instance_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="n">ovphysx_sample_destroy_stage</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">g_stage_attachment</span><span class="p">);</span>
 <span class="w">    </span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
 <span class="w">    </span><span class="n">ovphysx_shutdown</span><span class="p">();</span>
@@ -846,6 +855,62 @@ project through the <code class="docutils literal notranslate"><span class="pre"
 <span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">-1</span><span class="p">;</span>
 <span class="p">}</span>
 
+<span class="c1">// Borrowed PxRigidActor address from the physxPointer column, or NULL.</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="nf">read_rigid_actor_pointer</span><span class="p">(</span><span class="n">ovphysx_instance_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">path</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">ovphysx_query_handle_t</span><span class="w"> </span><span class="n">query</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ovphysx_enqueue_result_t</span><span class="w"> </span><span class="n">opened</span><span class="w"> </span><span class="o">=</span>
+<span class="w">        </span><span class="n">ovphysx_query</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_QUERY_TARGET_RIGID_ACTOR</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_SCOPE_ALL</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">query</span><span class="p">,</span><span class="w"> </span><span class="k">nullptr</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">opened</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">!</span><span class="n">wait_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">opened</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;query rigid actor&quot;</span><span class="p">))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">ovstage_instance_t</span><span class="o">*</span><span class="w"> </span><span class="n">stage</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">g_stage_attachment</span><span class="p">.</span><span class="n">stage</span><span class="p">;</span>
+<span class="w">    </span><span class="n">path_dictionary_instance_t</span><span class="o">*</span><span class="w"> </span><span class="n">dict</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">stage</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">stage</span><span class="o">-&gt;</span><span class="n">vtable</span><span class="o">-&gt;</span><span class="n">get_path_dictionary</span><span class="p">(</span><span class="n">stage</span><span class="o">-&gt;</span><span class="n">context</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">nullptr</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">dict</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ovphysx_enqueue_result_t</span><span class="w"> </span><span class="n">released_query</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_release_query</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">query</span><span class="p">);</span>
+<span class="w">        </span><span class="n">wait_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">released_query</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;release rigid-actor query&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">ovx_string_or_token_t</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{};</span>
+<span class="w">    </span><span class="n">name</span><span class="p">.</span><span class="n">string</span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVPHYSX_ATTR_PHYSX_POINTER</span><span class="p">;</span>
+<span class="w">    </span><span class="n">name</span><span class="p">.</span><span class="n">string</span><span class="p">.</span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">strlen</span><span class="p">(</span><span class="n">OVPHYSX_ATTR_PHYSX_POINTER</span><span class="p">);</span>
+<span class="w">    </span><span class="n">ovphysx_read_handle_t</span><span class="w"> </span><span class="n">read</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ovphysx_enqueue_result_t</span><span class="w"> </span><span class="n">started</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_read</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">query</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">read</span><span class="p">,</span><span class="w"> </span><span class="k">nullptr</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">started</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ovphysx_enqueue_result_t</span><span class="w"> </span><span class="n">released_query</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_release_query</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">query</span><span class="p">);</span>
+<span class="w">        </span><span class="n">wait_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">released_query</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;release rigid-actor query&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">wait_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">started</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;read physxPointer&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ovphysx_enqueue_result_t</span><span class="w"> </span><span class="n">released_read</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_release_read</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">read</span><span class="p">);</span>
+<span class="w">        </span><span class="n">wait_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">released_read</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;release physxPointer read&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_enqueue_result_t</span><span class="w"> </span><span class="n">released_query</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_release_query</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">query</span><span class="p">);</span>
+<span class="w">        </span><span class="n">wait_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">released_query</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;release rigid-actor query&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">found</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(;;)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_read_group_t</span><span class="o">*</span><span class="w"> </span><span class="n">group</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">;</span>
+<span class="w">        </span><span class="n">ovphysx_enqueue_result_t</span><span class="w"> </span><span class="n">fetched</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_fetch_read_next</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">read</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">group</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">fetched</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">!</span><span class="n">wait_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">fetched</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;fetch physxPointer&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">!</span><span class="n">group</span><span class="p">)</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">DLTensor</span><span class="o">*</span><span class="w"> </span><span class="n">tensor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">group</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">.</span><span class="n">tensors</span><span class="p">;</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">row</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">find_prim_row</span><span class="p">(</span><span class="n">dict</span><span class="p">,</span><span class="w"> </span><span class="n">group</span><span class="p">,</span><span class="w"> </span><span class="n">path</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">row</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">tensor</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">tensor</span><span class="o">-&gt;</span><span class="n">data</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">tensor</span><span class="o">-&gt;</span><span class="n">dtype</span><span class="p">.</span><span class="n">code</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">kDLUInt</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">tensor</span><span class="o">-&gt;</span><span class="n">dtype</span><span class="p">.</span><span class="n">bits</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">64</span><span class="p">)</span>
+<span class="w">            </span><span class="n">found</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="kt">void</span><span class="o">*&gt;</span><span class="p">(</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">uint64_t</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">tensor</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">)[</span><span class="n">row</span><span class="p">]);</span>
+<span class="w">        </span><span class="n">ovphysx_enqueue_result_t</span><span class="w"> </span><span class="n">released</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_release_group</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">read</span><span class="p">,</span><span class="w"> </span><span class="n">group</span><span class="o">-&gt;</span><span class="n">read_group_id</span><span class="p">);</span>
+<span class="w">        </span><span class="n">wait_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">released</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;release physxPointer group&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">found</span><span class="p">)</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">ovphysx_enqueue_result_t</span><span class="w"> </span><span class="n">released_read</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_release_read</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">read</span><span class="p">);</span>
+<span class="w">    </span><span class="n">wait_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">released_read</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;release physxPointer read&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">ovphysx_enqueue_result_t</span><span class="w"> </span><span class="n">released_query</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_release_query</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">query</span><span class="p">);</span>
+<span class="w">    </span><span class="n">wait_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">released_query</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;release rigid-actor query&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">found</span><span class="p">;</span>
+<span class="p">}</span>
+
 <span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
 <span class="p">{</span>
 <span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;=== ovphysx PhysX Interop (C++ API) ===</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
@@ -855,10 +920,8 @@ project through the <code class="docutils literal notranslate"><span class="pre"
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 
 <span class="w">    </span><span class="c1">// 1. Create instance</span>
-<span class="w">    </span><span class="n">ovphysx_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<span class="w">    </span><span class="n">ovphysx_create_args</span><span class="w"> </span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVPHYSX_CREATE_ARGS_DEFAULT</span><span class="p">;</span>
-
-<span class="w">    </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_create_instance</span><span class="p">(</span><span class="o">&amp;</span><span class="n">args</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">    </span><span class="n">ovphysx_instance_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_create_instance</span><span class="p">(</span><span class="o">&amp;</span><span class="n">handle</span><span class="p">);</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;create_instance&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="n">ovphysx_shutdown</span><span class="p">();</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
@@ -880,19 +943,18 @@ project through the <code class="docutils literal notranslate"><span class="pre"
 <span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Failed to enqueue step</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">destroy_instance_and_shutdown</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
 <span class="w">    </span><span class="p">}</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">wait_op</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">step_result</span><span class="p">.</span><span class="n">op_index</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;initial step&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">wait_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">step_result</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;initial step&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">destroy_instance_and_shutdown</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
 <span class="w">    </span><span class="p">}</span>
 
 <span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Initial simulation step completed.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
 
-<span class="w">    </span><span class="c1">// 4. Get the PhysX pointer for the kinematic cube.</span>
-<span class="w">    </span><span class="c1">//    OVPHYSX_PHYSX_TYPE_ACTOR returns either PxRigidDynamic* or PxRigidStatic*,</span>
-<span class="w">    </span><span class="c1">//    so cast to PxRigidActor* first, then validate the concrete type.</span>
-<span class="w">    </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">actor_ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">;</span>
-<span class="w">    </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_physx_ptr</span><span class="p">(</span>
-<span class="w">        </span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_LITERAL</span><span class="p">(</span><span class="s">&quot;/World/KinematicCube&quot;</span><span class="p">),</span><span class="w"> </span><span class="n">OVPHYSX_PHYSX_TYPE_ACTOR</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">actor_ptr</span><span class="p">);</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;get_physx_ptr&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 4. Read the borrowed PhysX address for the kinematic cube.</span>
+<span class="w">    </span><span class="c1">//    A rigid-actor row is PxRigidDynamic or PxRigidStatic, so cast to</span>
+<span class="w">    </span><span class="c1">//    PxRigidActor first, then validate the concrete type.</span>
+<span class="w">    </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">actor_ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">read_rigid_actor_pointer</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/World/KinematicCube&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">actor_ptr</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ERROR: physxPointer for /World/KinematicCube was absent</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">destroy_instance_and_shutdown</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
 <span class="w">    </span><span class="p">}</span>
 
@@ -915,7 +977,7 @@ project through the <code class="docutils literal notranslate"><span class="pre"
 <span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Failed to enqueue step</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">destroy_instance_and_shutdown</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
 <span class="w">    </span><span class="p">}</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">wait_op</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">step_result</span><span class="p">.</span><span class="n">op_index</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;target step&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">wait_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">step_result</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;target step&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">destroy_instance_and_shutdown</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
 <span class="w">    </span><span class="p">}</span>
 
@@ -924,36 +986,35 @@ project through the <code class="docutils literal notranslate"><span class="pre"
 <span class="w">    </span><span class="c1">//    read API (ovphysx_query + ovphysx_read) confirms the ovphysx runtime observed the move.</span>
 <span class="w">    </span><span class="c1">//    The kinematic cube is the only body driven to (3, 2, 0). The dynamic ones fall away.</span>
 <span class="w">    </span><span class="n">ovphysx_query_handle_t</span><span class="w"> </span><span class="n">read_query</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<span class="w">    </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_query</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_OBJECT_RIGID_BODY</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_SCOPE_ALL</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">read_query</span><span class="p">);</span>
+<span class="w">    </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_sample_complete_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_query</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_QUERY_TARGET_RIGID_BODY</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_SCOPE_ALL</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">read_query</span><span class="p">,</span><span class="w"> </span><span class="k">nullptr</span><span class="p">));</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;query&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">read_query</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">destroy_instance_and_shutdown</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovx_string_or_token_t</span><span class="w"> </span><span class="n">pos_attr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">OVPHYSX_ATTR_POSITION</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">OVPHYSX_ATTR_POSITION</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">};</span>
 <span class="w">    </span><span class="n">ovphysx_read_handle_t</span><span class="w"> </span><span class="n">read_session</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<span class="w">    </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_read</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">read_query</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">pos_attr</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">read_session</span><span class="p">);</span>
+<span class="w">    </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_sample_complete_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_read</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">read_query</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">pos_attr</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">read_session</span><span class="p">,</span><span class="w"> </span><span class="k">nullptr</span><span class="p">));</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;read&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">destroy_instance_and_shutdown</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
 <span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="c1">// The shared source dictionary that interned the group prim lists. It resolves each row&#39;s prim</span>
+<span class="w">    </span><span class="c1">// The attached Stage&#39;s own dictionary interned the group prim lists. It resolves each row&#39;s prim</span>
 <span class="w">    </span><span class="c1">// path so that /World/KinematicCube specifically is verified, not merely some body that drifted</span>
 <span class="w">    </span><span class="c1">// near the target. Matching on x/y alone would false-pass on a future body at the same x/y or</span>
 <span class="w">    </span><span class="c1">// a target-z regression.</span>
-<span class="w">    </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">dict_void</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">;</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">check_result</span><span class="p">(</span><span class="n">ovphysx_query_shared_dictionary</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">read_query</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">dict_void</span><span class="p">),</span>
-<span class="w">                      </span><span class="s">&quot;query_shared_dictionary&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">||</span>
-<span class="w">        </span><span class="o">!</span><span class="n">dict_void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">ovstage_instance_t</span><span class="o">*</span><span class="w"> </span><span class="n">stage</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">g_stage_attachment</span><span class="p">.</span><span class="n">stage</span><span class="p">;</span>
+<span class="w">    </span><span class="n">path_dictionary_instance_t</span><span class="o">*</span><span class="w"> </span><span class="n">dict</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">stage</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">stage</span><span class="o">-&gt;</span><span class="n">vtable</span><span class="o">-&gt;</span><span class="n">get_path_dictionary</span><span class="p">(</span><span class="n">stage</span><span class="o">-&gt;</span><span class="n">context</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">nullptr</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">dict</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;The attached Stage published no path dictionary</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">destroy_instance_and_shutdown</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
 <span class="w">    </span><span class="p">}</span>
-<span class="w">    </span><span class="n">path_dictionary_instance_t</span><span class="o">*</span><span class="w"> </span><span class="n">dict</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="n">path_dictionary_instance_t</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">dict_void</span><span class="p">);</span>
 
 <span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">tolerance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.1f</span><span class="p">;</span>
 <span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">found_cube</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
 <span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">obs_x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">,</span><span class="w"> </span><span class="n">obs_y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">,</span><span class="w"> </span><span class="n">obs_z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span>
 <span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(;;)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_read_group_t</span><span class="o">*</span><span class="w"> </span><span class="n">rg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">;</span>
-<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_fetch_read_next</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">read_session</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">rg</span><span class="p">);</span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVPHYSX_API_END_OF_ITERATION</span><span class="p">)</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_sample_complete_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_fetch_read_next</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">read_session</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">rg</span><span class="p">));</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">!</span><span class="n">rg</span><span class="p">)</span>
 <span class="w">            </span><span class="k">break</span><span class="p">;</span><span class="w">  </span><span class="c1">// exhausted. The only non-failure exit</span>
 <span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">            </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ovphysx_fetch_read_next(RIGID_BODY) failed (status %d)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">r</span><span class="p">.</span><span class="n">status</span><span class="p">);</span>
@@ -975,10 +1036,13 @@ project through the <code class="docutils literal notranslate"><span class="pre"
 <span class="w">                </span><span class="p">}</span>
 <span class="w">            </span><span class="p">}</span>
 <span class="w">        </span><span class="p">}</span>
-<span class="w">        </span><span class="n">ovphysx_release_group</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">read_session</span><span class="p">,</span><span class="w"> </span><span class="n">rg</span><span class="o">-&gt;</span><span class="n">read_group_id</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ovphysx_sample_complete_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_release_group</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">read_session</span><span class="p">,</span><span class="w"> </span><span class="n">rg</span><span class="o">-&gt;</span><span class="n">read_group_id</span><span class="p">)).</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">destroy_instance_and_shutdown</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
 <span class="w">    </span><span class="p">}</span>
-<span class="w">    </span><span class="n">ovphysx_release_read</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">read_session</span><span class="p">);</span>
-<span class="w">    </span><span class="n">ovphysx_release_query</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">read_query</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ovphysx_sample_complete_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_release_read</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">read_session</span><span class="p">)).</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">destroy_instance_and_shutdown</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ovphysx_sample_complete_task</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_release_query</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">read_query</span><span class="p">)).</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">destroy_instance_and_shutdown</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
 
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">found_cube</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;FAILED: /World/KinematicCube not present in the ovphysx_read read-back.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
@@ -1021,33 +1085,30 @@ then proceeds as follows:</p>
 <ol class="arabic simple">
 <li><p><strong>Create instance and load USD</strong> — standard ovphysx workflow.</p></li>
 <li><p><strong>Step once</strong> — initializes the PhysX scene so rigid body actors exist.</p></li>
-<li><p><strong>Get pointer</strong> — <code class="docutils literal notranslate"><span class="pre">ovphysx_get_physx_ptr()</span></code> returns a <code class="docutils literal notranslate"><span class="pre">void*</span></code> for the actor’s
-physics-object path. The process-global <code class="docutils literal notranslate"><span class="pre">PxPhysics</span></code> object instead uses
-<code class="docutils literal notranslate"><span class="pre">OVPHYSX_PHYSX_TYPE_PHYSICS</span></code> with a zero-length selector (<code class="docutils literal notranslate"><span class="pre">{</span> <span class="pre">NULL,</span> <span class="pre">0</span> <span class="pre">}</span></code> or
-<code class="docutils literal notranslate"><span class="pre">{</span> <span class="pre">&quot;&quot;,</span> <span class="pre">0</span> <span class="pre">}</span></code>).</p></li>
-<li><p><strong>Cast and validate</strong> — <code class="docutils literal notranslate"><span class="pre">OVPHYSX_PHYSX_TYPE_ACTOR</span></code> can return either a
-<code class="docutils literal notranslate"><span class="pre">PxRigidDynamic*</span></code> or <code class="docutils literal notranslate"><span class="pre">PxRigidStatic*</span></code>, so cast to <code class="docutils literal notranslate"><span class="pre">PxRigidActor*</span></code> first, then
+<li><p><strong>Read the address</strong> — query <code class="docutils literal notranslate"><span class="pre">OVPHYSX_QUERY_TARGET_RIGID_ACTOR</span></code> and read
+<code class="docutils literal notranslate"><span class="pre">physxPointer</span></code>. The value is a host <code class="docutils literal notranslate"><span class="pre">uint64</span></code>. The process-global
+<code class="docutils literal notranslate"><span class="pre">PxPhysics</span></code> object is the one-row <code class="docutils literal notranslate"><span class="pre">OVPHYSX_QUERY_TARGET_PHYSICS</span></code> query. Its
+path-list entry is <code class="docutils literal notranslate"><span class="pre">/</span></code> and is not a USD prim.</p></li>
+<li><p><strong>Cast and validate</strong> — a rigid-actor address is a <code class="docutils literal notranslate"><span class="pre">PxRigidDynamic*</span></code> or a
+<code class="docutils literal notranslate"><span class="pre">PxRigidStatic*</span></code>, so cast to <code class="docutils literal notranslate"><span class="pre">PxRigidActor*</span></code> first, then
 use <code class="docutils literal notranslate"><span class="pre">is&lt;PxRigidDynamic&gt;()</span></code> to validate the concrete type before calling
 <code class="docutils literal notranslate"><span class="pre">setKinematicTarget()</span></code>.</p></li>
 <li><p><strong>Step again</strong> — PhysX moves the kinematic body to the target pose.</p></li>
 <li><p><strong>Verify</strong> — read rigid-body positions back through ovphysx (<code class="docutils literal notranslate"><span class="pre">ovphysx_query</span></code> + <code class="docutils literal notranslate"><span class="pre">ovphysx_read</span></code>) to confirm the runtime observed the PhysX-pointer-driven move.</p></li>
 </ol>
 </section>
-<section id="object-type-compared-to-physx-pointer">
-<h2>Object Type Compared to PhysX Pointer<a class="headerlink" href="#object-type-compared-to-physx-pointer" title="Link to this heading">#</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">ovphysx_get_physx_ptr()</span></code> and <code class="docutils literal notranslate"><span class="pre">ovphysx_get_object_type()</span></code> answer different
-questions on the same path. The pointer API returns a live PhysX SDK object;
-the object-type API returns a TensorAPI classification without casting. The two
-taxonomies pair up: <code class="docutils literal notranslate"><span class="pre">OVPHYSX_PHYSX_TYPE_JOINT</span></code> with <code class="docutils literal notranslate"><span class="pre">OVPHYSX_OBJECT_TYPE_JOINT</span></code>,
-<code class="docutils literal notranslate"><span class="pre">OVPHYSX_PHYSX_TYPE_CUSTOM_JOINT</span></code> with <code class="docutils literal notranslate"><span class="pre">OVPHYSX_OBJECT_TYPE_CUSTOM_JOINT</span></code>, and
-<code class="docutils literal notranslate"><span class="pre">OVPHYSX_PHYSX_TYPE_LINK_JOINT</span></code> with <code class="docutils literal notranslate"><span class="pre">OVPHYSX_OBJECT_TYPE_ARTICULATION_JOINT</span></code>.
-Refer to <a class="reference internal" href="../api.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">ovphysx_object_type_t</span></code> in the C API Reference</span></a> for the full
-taxonomy and <code class="docutils literal notranslate"><span class="pre">INVALID</span></code> semantics.</p>
+<section id="query-target-and-physx-pointer">
+<h2>Query target and PhysX pointer<a class="headerlink" href="#query-target-and-physx-pointer" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">physxPointer</span></code> is the borrowed PhysX address for the query target you already
+chose. Standalone joints, custom joints, and articulation joints are separate
+targets: <code class="docutils literal notranslate"><span class="pre">OVPHYSX_QUERY_TARGET_JOINT</span></code>, <code class="docutils literal notranslate"><span class="pre">OVPHYSX_QUERY_TARGET_CUSTOM_JOINT</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT</span></code>. A path of another kind is
+absent from that query.</p>
 </section>
 <section id="pointer-lifecycle">
 <h2>Pointer Lifecycle<a class="headerlink" href="#pointer-lifecycle" title="Link to this heading">#</a></h2>
 <ul class="simple">
-<li><p>Treat pointers as invalid after stage reset or detachment, or instance destruction.</p></li>
+<li><p>Treat pointers as invalid after stage detachment or instance destruction.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">ovphysx_step()</span></code> does <strong>not</strong> invalidate pointers.</p></li>
 <li><p>Do not call <code class="docutils literal notranslate"><span class="pre">release()</span></code> on returned pointers – ovphysx owns them.</p></li>
 <li><p>Objects explicitly created through <code class="docutils literal notranslate"><span class="pre">PxPhysics</span></code> follow PhysX SDK ownership rules.</p></li>
@@ -1056,8 +1117,8 @@ taxonomy and <code class="docutils literal notranslate"><span class="pre">INVALI
 </section>
 <section id="disabling-simulation">
 <h2>Disabling Simulation<a class="headerlink" href="#disabling-simulation" title="Link to this heading">#</a></h2>
-<p>Do not toggle <code class="docutils literal notranslate"><span class="pre">PxActorFlag::eDISABLE_SIMULATION</span></code> on a pointer from
-<code class="docutils literal notranslate"><span class="pre">ovphysx_get_physx_ptr()</span></code>. Use the ovstage <code class="docutils literal notranslate"><span class="pre">disableSimulation</span></code> attribute
+<p>Do not toggle <code class="docutils literal notranslate"><span class="pre">PxActorFlag::eDISABLE_SIMULATION</span></code> on an address from
+<code class="docutils literal notranslate"><span class="pre">physxPointer</span></code>. Use the ovstage <code class="docutils literal notranslate"><span class="pre">disableSimulation</span></code> attribute
 (<code class="docutils literal notranslate"><span class="pre">ovphysx_write()</span></code> / <code class="docutils literal notranslate"><span class="pre">OVPHYSX_ATTR_DISABLE_SIMULATION</span></code>) instead. Refer to
 <a class="reference internal" href="../developer_guide.html#disabling-simulation"><span class="std std-ref">PhysX Pointer Interop</span></a> in the
 developer guide.</p>
@@ -1065,7 +1126,7 @@ developer guide.</p>
 <section id="thread-safety">
 <h2>Thread Safety<a class="headerlink" href="#thread-safety" title="Link to this heading">#</a></h2>
 <p>PhysX APIs on returned pointers must only be called <strong>between</strong> simulation
-steps — after <code class="docutils literal notranslate"><span class="pre">wait_op()</span></code> completes for the preceding step and before the next
+steps — after <code class="docutils literal notranslate"><span class="pre">wait_task()</span></code> completes for the preceding step and before the next
 <code class="docutils literal notranslate"><span class="pre">ovphysx_step()</span></code> call. Refer to the
 <a class="reference internal" href="../developer_guide.html#thread-safety"><span class="std std-ref">developer guide</span></a> for details.</p>
 </section>
@@ -1137,7 +1198,7 @@ process exits non-zero.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cmakelists-txt">CMakeLists.txt</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#source">Source</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#how-it-works">How It Works</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#object-type-compared-to-physx-pointer">Object Type Compared to PhysX Pointer</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#query-target-and-physx-pointer">Query target and PhysX pointer</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pointer-lifecycle">Pointer Lifecycle</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#disabling-simulation">Disabling Simulation</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#thread-safety">Thread Safety</a></li>
@@ -1189,7 +1250,7 @@ process exits non-zero.</p>
 </div>
       
         <div class="footer-item"><p class="last-updated">
-  Last updated on Oct 08, 2026.
+  Last updated on Oct 15, 2026.
   <br/>
 </p></div>
       

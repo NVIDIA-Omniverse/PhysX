@@ -47,7 +47,7 @@
 
 
     <script rel="preload" src="_static/modal-table.js"></script>
-    <script src="_static/documentation_options.js?v=18b66ea0"></script>
+    <script src="_static/documentation_options.js?v=423e15eb"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.6.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -75,7 +75,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Oct 08, 2026"/>
+    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -507,6 +507,10 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="ovphysx_overview.html">ovphysx Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="coding_style.html">ovphysx coding and doc style</a></li>
+<li class="toctree-l1"><a class="reference internal" href="migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
 <li class="toctree-l1"><a class="reference internal" href="local_development.html">Local Development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
@@ -566,7 +570,6 @@
 <li class="toctree-l2"><a class="reference internal" href="population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxJointAPI.html">PhysxJointAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
@@ -613,6 +616,8 @@
 <li class="toctree-l1"><a class="reference internal" href="read_write/device.html">Device residency and interop</a></li>
 <li class="toctree-l1"><a class="reference internal" href="read_write/readable.html">Readable data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="read_write/writable.html">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="read_write/vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="read_write/path_patterns.html">Path patterns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="read_write/limitations.html">Known limitations and gaps</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
@@ -625,7 +630,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tutorials/render_handoff.html">Rendering Handoff</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/nvtx_profiling.html">NVTX Profiling in Nsight Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
@@ -738,24 +743,30 @@ exactly three ordinal-aware operations:</p>
 </tbody>
 </table>
 </div>
-<section id="register-the-physx-schemas-before-populating">
-<h3>Register the PhysX schemas before populating<a class="headerlink" href="#register-the-physx-schemas-before-populating" title="Link to this heading">#</a></h3>
-<p>ovphysx ships its PhysX USD schemas as codeless plugins; the application
-registers them. Before the first population call in the process (<code class="docutils literal notranslate"><span class="pre">open_usd</span></code>,
-<code class="docutils literal notranslate"><span class="pre">apply_usd_changes</span></code>, or an export), register them with ovstage: in Python,
-<code class="docutils literal notranslate"><span class="pre">ovstage.population.register_usd_schemas([str(ovphysx.codeless_schema_root())])</span></code>;
-in C, pass the root from <code class="docutils literal notranslate"><span class="pre">ovphysx_get_codeless_schema_root()</span></code> to
-<code class="docutils literal notranslate"><span class="pre">ovstage_population_register_usd_schemas()</span></code>. Scenes that author Newton
-<code class="docutils literal notranslate"><span class="pre">newton:*</span></code> attributes also need the separately installed Newton USD schema
-(<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">newton-usd-schemas</span></code>, <code class="docutils literal notranslate"><span class="pre">ovphysx.newton_schema_root()</span></code>) in the same
-call; refer to <a class="reference internal" href="physics_schemas.html#registering-the-newton-usd-schema"><span class="std std-ref">Physics Schemas</span></a>.
-USD assembles its schema registry
-once, so a late registration cannot be repaired: population silently drops every
-Physx* API it cannot resolve, and the scene would simulate without the asset’s
-self-collision, joint-limit and solver settings. <code class="docutils literal notranslate"><span class="pre">attach_ovstage</span></code> therefore
-verifies the registration and fails with an error naming the missing call when
-population ran without it. Refer to
-<a class="reference internal" href="physics_schemas.html#making-schemas-available"><span class="std std-ref">Physics Schemas</span></a>.</p>
+<p>Attach, update and detach return task receipts. Check admission, then wait for
+the task’s successful outcome before depending on it. The current execution is
+inline; callers must still keep Stage storage and the sealed data being read
+alive through completion. Keep an attached Stage alive until successful detach
+or instance destruction. See <a class="reference internal" href="developer_guide.html#stage-lifecycle-completion"><span class="std std-ref">Stage lifecycle completion</span></a>.</p>
+<section id="register-the-physx-schemas-before-reading-usd-schemas">
+<h3>Register the PhysX schemas before reading USD schemas<a class="headerlink" href="#register-the-physx-schemas-before-reading-usd-schemas" title="Link to this heading">#</a></h3>
+<p>Applications install <code class="docutils literal notranslate"><span class="pre">physx-usd-schemas</span></code> separately and register its
+two resource directories before the first USD schema read, including population
+or export, in each process and worker. The Python sample’s
+<code class="docutils literal notranslate"><span class="pre">schema_support/</span></code> recipe and native <code class="docutils literal notranslate"><span class="pre">common/schema_support.h</span></code> validate the provider
+without importing USD. Population drops attributes of schemas it cannot resolve,
+including authored PhysX solver, joint and deformable settings.</p>
+<p>By default, <code class="docutils literal notranslate"><span class="pre">attach_ovstage()</span></code> refuses submission if ovstage reports that its USD
+schema registry was built without either required PhysX schema family. No task
+is accepted and no attachment is taken. The refusal persists for the process;
+restart and register before populating or exporting. A procedural stage attached
+while USD schema definitions remain unbuilt skips the family check, leaving it
+active for later attaches. Once population or export builds those definitions,
+even procedural stages are checked. The legacy Carbonite setting
+<code class="docutils literal notranslate"><span class="pre">/ovphysx/schemas/requireRegistration</span> <span class="pre">=</span> <span class="pre">false</span></code> downgrades the refusal to a warning
+without restoring missing data. See
+<a class="reference internal" href="physics_schemas.html#attach-time-registration-guard"><span class="std std-ref">Physics Schemas</span></a> for setup and
+the guard’s detection limits.</p>
 </section>
 <section id="seal-population-changes-before-attaching-or-draining">
 <h3>Seal population changes before attaching or draining<a class="headerlink" href="#seal-population-changes-before-attaching-or-draining" title="Link to this heading">#</a></h3>
@@ -768,7 +779,7 @@ ordinal before passing it to ovphysx:</p>
 <span class="k">def</span><span class="w"> </span><span class="nf">drain_population_change</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">physx</span><span class="p">,</span> <span class="n">ordinal</span><span class="p">):</span>
     <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">apply_usd_changes</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">)</span>
     <span class="n">stage</span><span class="o">.</span><span class="n">advance_write_floor</span><span class="p">(</span><span class="n">ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
-    <span class="n">physx</span><span class="o">.</span><span class="n">update_from_ovstage</span><span class="p">(</span><span class="n">ordinal</span><span class="p">,</span> <span class="n">ordinal</span><span class="p">)</span>
+    <span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">update_from_ovstage</span><span class="p">(</span><span class="n">ordinal</span><span class="p">,</span> <span class="n">ordinal</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>The same rule applies to initial population: seal and wait for <code class="docutils literal notranslate"><span class="pre">read_ordinal</span></code>
@@ -778,6 +789,19 @@ ordinal 1 is harmless because consumed ordinals are skipped, but naming only the
 new range makes producer ownership explicit. A range containing only consumed
 ordinals is a successful no-op; an overlapping range applies only its unread
 suffix.</p>
+<p>OVStage defaults to <code class="docutils literal notranslate"><span class="pre">NONDECREASING</span></code>: repeated mutations may use the same ordinal
+while it remains unsealed. With an explicitly selected <code class="docutils literal notranslate"><span class="pre">STRICTLY_INCREASING</span></code>
+admission policy, a second mutation
+of the same prim/attribute must use a newer ordinal even if the first ordinal
+has not been sealed. This also applies to prim deletion/recreation and to
+customizing attributes copied by a clone. Writes to disjoint cells may share an
+ordinal. Both policies reject writes at or below a sealed write floor.</p>
+<p>For example, after consuming ordinal 1, delete a prim at ordinal 2 and recreate
+it at ordinal 3; wait for both operations, seal ordinal 3, and call
+<code class="docutils literal notranslate"><span class="pre">update_from_ovstage(2,</span> <span class="pre">3)</span></code> once. Likewise, clone at ordinal 2 and customize copied
+attributes at ordinal 3 before sealing. A fresh attach reads the final sealed
+ordinal. The application coordinates these ordinals across physics and rendering;
+ovphysx does not silently renumber caller-owned writes.</p>
 <p>Scene-graph instancing currently has one snapshot caveat: ovstage’s public
 prototype/instance topology queries and resolved instance-material data expose
 the latest committed state rather than an ordinal range. Finish population
@@ -839,12 +863,18 @@ bindings that appear under <code class="docutils literal notranslate"><span clas
 populator grows instance-aware traversal, <code class="docutils literal notranslate"><span class="pre">ALL</span></code> (equivalently
 <code class="docutils literal notranslate"><span class="pre">PHYSICS</span> <span class="pre">|</span> <span class="pre">RENDERING</span></code>) is the compatibility path for scenes that may use native
 instancing.</p>
+<p>Both the Python and C examples below use <code class="docutils literal notranslate"><span class="pre">scene.usda</span></code> as a required
+caller-supplied USD file, relative to the working directory. Replace each
+<code class="docutils literal notranslate"><span class="pre">&quot;scene.usda&quot;</span></code> literal with the path to an existing USD scene. For the supplied
+<code class="docutils literal notranslate"><span class="pre">simple_physics_scene.usda</span></code> and its package locations, see
+<a class="reference internal" href="tutorials/quickstart.html#prerequisites"><span class="std std-ref">Quickstart prerequisites</span></a>.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">ovphysx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.samples.python_samples.schema_support</span><span class="w"> </span><span class="kn">import</span> <span class="n">physx_schema_paths</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">ovstage</span>
 
-<span class="c1"># Register the codeless PhysX schemas and the Newton schema before the first population call.</span>
+<span class="c1"># Register PhysX and Newton schemas before the first USD schema read (population or export).</span>
 <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">register_usd_schemas</span><span class="p">(</span>
-    <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">codeless_schema_root</span><span class="p">()),</span> <span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">newton_schema_root</span><span class="p">())]</span>
+    <span class="p">[</span><span class="o">*</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">physx_schema_paths</span><span class="p">()],</span> <span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">newton_schema_root</span><span class="p">())]</span>
 <span class="p">)</span>
 <span class="n">stage</span> <span class="o">=</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">Stage</span><span class="p">(</span><span class="s2">&quot;scene&quot;</span><span class="p">)</span>
 <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">open_usd</span><span class="p">(</span>
@@ -856,21 +886,19 @@ instancing.</p>
 <span class="n">stage</span><span class="o">.</span><span class="n">advance_write_floor</span><span class="p">(</span><span class="n">ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
 </pre></div>
 </div>
+<p>For the C example, copy the SDK’s <code class="docutils literal notranslate"><span class="pre">samples/c_samples/common/</span></code> directory beside
+the source file.</p>
 <div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx.h&gt;</span>
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovstage/ovstage.h&gt;</span>
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovstage/ovstage_population.h&gt;</span>
 
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;string.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;common/ovstage_sample.h&quot;</span>
 
 <span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">populate_scene</span><span class="p">(</span><span class="n">ovstage_instance_t</span><span class="o">*</span><span class="w"> </span><span class="n">stage</span><span class="p">)</span>
 <span class="p">{</span>
-<span class="w">    </span><span class="cm">/* Register the codeless PhysX schemas before the first population call. */</span>
-<span class="w">    </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">schema_root</span><span class="p">;</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ovphysx_get_codeless_schema_root</span><span class="p">(</span><span class="o">&amp;</span><span class="n">schema_root</span><span class="p">).</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">ovphysx_sample_register_physx_schemas</span><span class="p">())</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span>
-<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovx_string_t</span><span class="w"> </span><span class="n">schema_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">schema_root</span><span class="p">.</span><span class="n">ptr</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">schema_root</span><span class="p">.</span><span class="n">length</span><span class="w"> </span><span class="p">};</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ovstage_population_register_usd_schemas</span><span class="p">(</span><span class="o">&amp;</span><span class="n">schema_path</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="p">)</span>
-<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span>
 
 <span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovx_string_t</span><span class="w"> </span><span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;scene.usda&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">strlen</span><span class="p">(</span><span class="s">&quot;scene.usda&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">};</span>
 <span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_population_enqueue_result_t</span><span class="w"> </span><span class="n">pop</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovstage_population_open_usd_from_file</span><span class="p">(</span>
@@ -899,10 +927,33 @@ rendering-only leaves ovphysx with nothing to simulate.</p>
 <section id="when-physics-alone-is-enough">
 <h3>When <code class="docutils literal notranslate"><span class="pre">PHYSICS</span></code> alone is enough<a class="headerlink" href="#when-physics-alone-is-enough" title="Link to this heading">#</a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">PHYSICS</span></code> alone remains valid when the USD is known not to put physics under
-native scene-graph instances — for example the ovphysx samples and skills, which
-author plain (non-instanced) rigid bodies. Prefer it only with that knowledge;
-do not treat “ovphysx is the only consumer” as sufficient reason to skip
+native scene-graph instances. Resolve the transform seeds as described below,
+and do not treat “ovphysx is the only consumer” as sufficient reason to skip
 <code class="docutils literal notranslate"><span class="pre">RENDERING</span></code>.</p>
+<p>OVStage 0.3 seeds <code class="docutils literal notranslate"><span class="pre">omni:fabric:worldMatrix</span></code> with each prim’s local matrix
+under <code class="docutils literal notranslate"><span class="pre">PHYSICS</span></code> alone. ovphysx trusts this column when present. The pinned
+release’s <code class="docutils literal notranslate"><span class="pre">compute_hierarchy()</span></code> leaves those physics-only seeds unchanged, so
+calling it does not resolve a transformed parent. Prefer <code class="docutils literal notranslate"><span class="pre">ALL</span></code> for the
+population examples above.</p>
+<p>A producer that deliberately uses <code class="docutils literal notranslate"><span class="pre">PHYSICS</span></code> alone can omit the seeded world
+column before sealing, allowing ovphysx to compose <code class="docutils literal notranslate"><span class="pre">omni:xform</span></code> up the parent
+chain, including <code class="docutils literal notranslate"><span class="pre">omni:resetXformStack</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># After population at population_ordinal, before advance_write_floor().</span>
+<span class="n">cleanup_ordinal</span> <span class="o">=</span> <span class="n">population_ordinal</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="k">with</span> <span class="n">stage</span><span class="o">.</span><span class="n">query</span><span class="p">()</span> <span class="k">as</span> <span class="n">query</span><span class="p">:</span>
+    <span class="n">query</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+    <span class="n">stage</span><span class="o">.</span><span class="n">delete_attributes</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;omni:fabric:worldMatrix&quot;</span><span class="p">],</span> <span class="n">ordinal</span><span class="o">=</span><span class="n">cleanup_ordinal</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+<span class="n">stage</span><span class="o">.</span><span class="n">advance_write_floor</span><span class="p">(</span><span class="n">ordinal</span><span class="o">=</span><span class="n">cleanup_ordinal</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+<span class="c1"># Attach at cleanup_ordinal, or drain the full population-through-cleanup range.</span>
+</pre></div>
+</div>
+<p>For C, use <code class="docutils literal notranslate"><span class="pre">ovstage_query()</span></code>, <code class="docutils literal notranslate"><span class="pre">ovstage_delete_attributes()</span></code> and
+<code class="docutils literal notranslate"><span class="pre">ovstage_release_query()</span></code>; wait, check per-operation errors and release each
+operation before sealing. This omission route is for attach and local-transform
+consumption only; world-transform output publication requires a resolved
+world-matrix column, so use <code class="docutils literal notranslate"><span class="pre">ALL</span></code> for workflows that publish physics output.
+Apply this only to population’s local seeds. A producer that writes resolved
+world matrices directly owns those values and should preserve them.</p>
 </section>
 <section id="the-mask-is-chosen-once-at-population-time">
 <h3>The mask is chosen once, at population time<a class="headerlink" href="#the-mask-is-chosen-once-at-population-time" title="Link to this heading">#</a></h3>
@@ -916,8 +967,8 @@ otherwise the only way to change the mask is to re-populate from USD.</p>
 </section>
 <section id="sequencing-a-shared-stage">
 <h3>Sequencing a shared Stage<a class="headerlink" href="#sequencing-a-shared-stage" title="Link to this heading">#</a></h3>
-<p>Register the codeless PhysX schemas before the first population call and seal
-the population ordinal first, exactly as
+<p>Register the codeless PhysX schemas before the first USD schema read, including
+population or export, and seal the population ordinal first, exactly as
 <a class="reference internal" href="#seal-population-changes-before-attaching-or-draining">Seal population changes before attaching or draining</a>
 describes, then let each
 consumer observe it:</p>
@@ -933,10 +984,11 @@ For a one-shot initial load the first step can rebuild implicitly; later
 committed structural edits use update followed by step.</p></li>
 </ol>
 <p>For a scene known to contain rigid bodies, the sequence is complete when an
-<code class="docutils literal notranslate"><span class="pre">OVPHYSX_OBJECT_RIGID_BODY</span></code> query succeeds and
-<code class="docutils literal notranslate"><span class="pre">ovphysx_fetch_query_result()</span></code> reports a nonzero <code class="docutils literal notranslate"><span class="pre">total_prim_count</span></code>. Diagnose
-population and attach failures from their return codes and
-<code class="docutils literal notranslate"><span class="pre">ovphysx_get_last_error()</span></code>. A successful query can legitimately return zero
+<code class="docutils literal notranslate"><span class="pre">OVPHYSX_QUERY_TARGET_RIGID_BODY</span></code> query created with a non-NULL <code class="docutils literal notranslate"><span class="pre">ovstage_query_result_t*</span></code>
+succeeds and that result reports a nonzero <code class="docutils literal notranslate"><span class="pre">total_prim_count</span></code>. Diagnose
+population failures and rejected ovphysx submissions from their return codes;
+use <code class="docutils literal notranslate"><span class="pre">ovphysx_get_last_error()</span></code> for rejected ovphysx submissions and
+<code class="docutils literal notranslate"><span class="pre">ovphysx_get_last_task_error()</span></code> for collected attach failures. A successful query can legitimately return zero
 objects when the requested type is absent from the scene.</p>
 <p>The ordinal-lane rule in
 <a class="reference internal" href="#the-key-principle-physics-must-not-get-its-own-changes">The key principle: physics must not get its own changes</a>
@@ -1009,34 +1061,47 @@ scheme works) as long as <strong>output ordinals are never inside a drain range.
 </section>
 <section id="reading-simulation-output">
 <h2>Reading simulation output<a class="headerlink" href="#reading-simulation-output" title="Link to this heading">#</a></h2>
+<blockquote>
+<div><p><strong>The read and write API — and its full data contract (attributes, physical meaning, units,
+frames, device residency, ownership, lanes, and roles) — is documented in the
+<a class="reference internal" href="read_write/index.html"><span class="std std-doc">Read/Write Data Contract</span></a> pages:</strong> <a class="reference internal" href="read_write/readable.html"><span class="std std-doc">readable</span></a>,
+<a class="reference internal" href="read_write/writable.html"><span class="std std-doc">writable</span></a>, <a class="reference internal" href="read_write/data_model.html"><span class="std std-doc">data model</span></a>, and
+<a class="reference internal" href="read_write/device.html"><span class="std std-doc">device residency</span></a>. This section covers only how a read plugs into the
+ovstage Stage — the ovstage-native <code class="docutils literal notranslate"><span class="pre">ovstage_read_group_t</span></code> you forward back into ovstage, and the
+ordinal lifecycle — not the per-type contract.</p>
+</div></blockquote>
 <p>The read API mirrors the ovstage read idiom — open a query over a simulated type,
 read named attributes, iterate typed column groups, release. Native borrowed
 columns can feed straight back into ovstage with no repack. It is ovstage-native:
-only meaningful while an ovstage Stage is attached.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ovphysx_query</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">query</span><span class="p">)</span>
-  <span class="o">-&gt;</span> <span class="n">ovphysx_fetch_query_result</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">result</span><span class="p">)</span>   <span class="o">//</span> <span class="n">attribute</span> <span class="o">/</span> <span class="n">total</span><span class="o">-</span><span class="n">prim</span> <span class="n">discovery</span>
-  <span class="o">-&gt;</span> <span class="n">ovphysx_query_shared_dictionary</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="o">&amp;</span><span class="nb">dict</span><span class="p">)</span> <span class="o">//</span> <span class="n">ovstage</span><span class="s1">&#39;s shared dict: resolve interned tokens / prim lists</span>
-  <span class="o">-&gt;</span> <span class="n">ovphysx_read</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">attrs</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">read</span><span class="p">)</span>         <span class="o">//</span> <span class="n">attrs</span> <span class="o">=</span> <span class="n">ovx_string_or_token_t</span><span class="p">[]</span> <span class="p">(</span><span class="n">name</span> <span class="ow">or</span> <span class="n">token</span><span class="p">)</span>
-       <span class="o">-&gt;</span> <span class="n">loop</span> <span class="n">ovphysx_fetch_read_next</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">read</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">group_ptr</span><span class="p">)</span>  <span class="o">//</span> <span class="n">group_ptr</span> <span class="ow">is</span> <span class="n">producer</span><span class="o">-</span><span class="n">owned</span> <span class="p">(</span><span class="n">borrowed</span><span class="p">)</span>
-              <span class="n">until</span> <span class="n">it</span> <span class="n">returns</span> <span class="n">OVPHYSX_API_END_OF_ITERATION</span>
-              <span class="o">-&gt;</span> <span class="n">ovphysx_release_group</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">read</span><span class="p">,</span> <span class="n">group_ptr</span><span class="o">-&gt;</span><span class="n">read_group_id</span><span class="p">)</span>
-  <span class="o">-&gt;</span> <span class="n">ovphysx_release_read</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">read</span><span class="p">)</span>
-<span class="n">ovphysx_release_query</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+only meaningful while an ovstage Stage is attached. Query, read, fetch and release
+return task receipts; their current implementation executes inline. Keep inputs and
+output slots alive until completion, and inspect outputs only after a successful wait.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ovphysx_query</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">query</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">query_result</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">wait</span> <span class="n">successfully</span>
+     <span class="n">query_result</span> <span class="p">(</span><span class="n">optional</span><span class="p">,</span> <span class="n">NULL</span> <span class="n">skips</span> <span class="n">it</span><span class="p">):</span> <span class="n">creation</span><span class="o">-</span><span class="n">time</span> <span class="nb">type</span> <span class="n">vocabulary</span> <span class="o">/</span> <span class="n">total</span><span class="o">-</span><span class="n">prim</span> <span class="n">discovery</span>
+  <span class="o">-&gt;</span> <span class="n">ovphysx_read</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">attrs</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">read</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">read_result</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">wait</span> <span class="n">successfully</span>
+     <span class="n">read_result</span> <span class="p">(</span><span class="n">optional</span><span class="p">,</span> <span class="n">NULL</span> <span class="n">skips</span> <span class="n">it</span><span class="p">):</span> <span class="n">per</span><span class="o">-</span><span class="n">request</span> <span class="n">group</span> <span class="n">counts</span> <span class="ow">and</span> <span class="n">omission</span> <span class="n">reasons</span>
+       <span class="o">-&gt;</span> <span class="n">ovphysx_fetch_read_next</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">read</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">group_ptr</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">wait</span> <span class="n">successfully</span>
+          <span class="n">null</span> <span class="n">group_ptr</span> <span class="n">means</span> <span class="n">EOF</span><span class="p">;</span> <span class="n">otherwise</span> <span class="n">consume</span> <span class="n">the</span> <span class="n">borrowed</span> <span class="n">group</span>
+          <span class="o">-&gt;</span> <span class="n">ovphysx_release_group</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">read</span><span class="p">,</span> <span class="n">group_ptr</span><span class="o">-&gt;</span><span class="n">read_group_id</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">wait</span>
+  <span class="o">-&gt;</span> <span class="n">ovphysx_release_read</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">read</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">wait</span>
+<span class="n">ovphysx_release_query</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">wait</span>
 </pre></div>
 </div>
-<p>The read uses ovstage’s own types directly (no ovphysx mirror): a group is an
-<code class="docutils literal notranslate"><span class="pre">ovstage_read_group_t</span></code>, discovery is an <code class="docutils literal notranslate"><span class="pre">ovstage_query_result_t</span></code>, and attribute
-names are <code class="docutils literal notranslate"><span class="pre">ovx_string_or_token_t</span></code> (a string name OR an interned token from
-discovery). The ovstage-native shape passes through unflattened:</p>
+<p>Interned attribute tokens and prim lists resolve through the attached Stage’s
+own path dictionary, <code class="docutils literal notranslate"><span class="pre">ovstage_get_path_dictionary(stage)</span></code>. The read uses ovstage’s
+own types directly (no ovphysx mirror): a group is an <code class="docutils literal notranslate"><span class="pre">ovstage_read_group_t</span></code>,
+discovery is an <code class="docutils literal notranslate"><span class="pre">ovstage_query_result_t</span></code>, and attribute names are
+<code class="docutils literal notranslate"><span class="pre">ovx_string_or_token_t</span></code> (a string name OR an interned token from discovery). The
+<a class="reference internal" href="read_write/index.html#session-results"><span class="std std-ref">Session results</span></a> section describes the
+optional query and read results. The ovstage-native shape passes through
+unflattened:</p>
 <ul class="simple">
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">data.tensors</span></code> / <code class="docutils literal notranslate"><span class="pre">data.tensor_count</span></code></strong> — a borrowed <code class="docutils literal notranslate"><span class="pre">DLTensor</span></code> array. A <strong>fixed</strong>
-group has one tensor stacked over its prims (for example per-body world transforms); an
-<strong>array</strong> group (<code class="docutils literal notranslate"><span class="pre">is_array</span></code>) has one tensor per prim (for example a point-instancer’s
-<code class="docutils literal notranslate"><span class="pre">positions</span></code> or a deformable mesh’s <code class="docutils literal notranslate"><span class="pre">points</span></code>). Tuple width is carried in
-<code class="docutils literal notranslate"><span class="pre">tensors[i].dtype.lanes</span></code> (a vec3 column is lanes=3, shape=[N] — not a trailing
-shape dim).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">data.tensors</span></code> / <code class="docutils literal notranslate"><span class="pre">data.tensor_count</span></code></strong> — a borrowed <code class="docutils literal notranslate"><span class="pre">DLTensor</span></code> array: one stacked tensor for a
+fixed group, one tensor per prim for an <code class="docutils literal notranslate"><span class="pre">is_array</span></code> group. Group shape (fixed vs array) and how
+<code class="docutils literal notranslate"><span class="pre">dtype.lanes</span></code> carries tuple width are covered in
+<a class="reference internal" href="read_write/data_model.html"><span class="std std-doc">Data model and semantics</span></a>.</p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">prims.list</span></code> / <code class="docutils literal notranslate"><span class="pre">prims.offset</span></code> / <code class="docutils literal notranslate"><span class="pre">prims.count</span></code> / <code class="docutils literal notranslate"><span class="pre">prims.index_map</span></code></strong> — the interned
-prim set (resolve through the query dictionary, or feed <code class="docutils literal notranslate"><span class="pre">prims.list</span></code> straight into
+prim set (resolve through the attached Stage’s path dictionary, or feed <code class="docutils literal notranslate"><span class="pre">prims.list</span></code> straight into
 <code class="docutils literal notranslate"><span class="pre">ovstage_query_from_path_list</span></code> for the write-back). <code class="docutils literal notranslate"><span class="pre">attribute</span></code> is likewise an
 interned token.</p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">data.index_map</span></code> / <code class="docutils literal notranslate"><span class="pre">data.mask</span></code></strong> — sparsity over the <strong>outer</strong> logical element
@@ -1045,25 +1110,13 @@ Point-instancer rigid-body output therefore always emits the instancer’s FULL
 instance array (by-index, <code class="docutils literal notranslate"><span class="pre">index_map</span> <span class="pre">==</span> <span class="pre">NULL</span></code>) for both ALL and ACTIVE scope, so
 the group forwards into <code class="docutils literal notranslate"><span class="pre">ovstage_query_from_path_list</span></code> verbatim; ACTIVE scope only
 selects WHICH instancers are emitted, not a sparse subset of instances.</p></li>
-<li><p><strong><code class="docutils literal notranslate"><span class="pre">data.cuda_sync</span></code></strong> — producer stream/event synchronization. Host-backed groups
-emit <code class="docutils literal notranslate"><span class="pre">{0,</span> <span class="pre">0}</span></code>. With DirectGPU enabled, rigid-body, articulation-link,
-whole-articulation root/COM, and joint-DOF
-columns are <strong>device-resident</strong> (<code class="docutils literal notranslate"><span class="pre">kDLCUDA</span></code>) and emit <strong><code class="docutils literal notranslate"><span class="pre">{0,</span> <span class="pre">event}</span></code></strong> — event only,
-no stream, because a non-zero <code class="docutils literal notranslate"><span class="pre">stream</span></code> means “drain everything queued on it” to
-ovstage, which is a heavier barrier than this handoff needs. <strong>Such a column is
-handed over before its producer work has necessarily completed:</strong> wait on the event
-before reading it on your own stream (consuming on the default/null stream is safe,
-since the producer work is ordered there). <code class="docutils literal notranslate"><span class="pre">ovphysx_cuda_stream_wait_event(stream,</span> <span class="pre">event)</span></code> is that wait, so honouring the native contract costs no CUDA dependency
-of your own. The Python frontend instead orders the event onto Warp’s current
-stream before returning its <code class="docutils literal notranslate"><span class="pre">warp.array</span></code>. Volume and surface deformable <code class="docutils literal notranslate"><span class="pre">points</span></code>
-and <code class="docutils literal notranslate"><span class="pre">velocities</span></code> are <strong>device columns on a DirectGPU scene</strong> — sourced from the live
-GPU sim-mesh buffers and delivered without a copy to the host, carrying the same
-<code class="docutils literal notranslate"><span class="pre">{0,</span> <span class="pre">event}</span></code> handoff as every other device column. Their <code class="docutils literal notranslate"><span class="pre">restPoints</span></code> and element
-indices are authored topology and stay host-resident, so one deformable group
-routinely mixes residencies; branch on each tensor’s device rather than on the read.
-See <a class="reference internal" href="read_write/device.html"><span class="std std-doc">Device residency and interop</span></a> for the per-column split. Where sleeping
-is enabled, ALL refreshes sleepers while ACTIVE excludes them. Preserve the field when forwarding a
-group.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">data.cuda_sync</span></code></strong> — the ovstage-native stream/event handoff. Host-backed groups emit <code class="docutils literal notranslate"><span class="pre">{0,</span> <span class="pre">0}</span></code>;
+device-resident (<code class="docutils literal notranslate"><span class="pre">kDLCUDA</span></code>) columns emit <strong><code class="docutils literal notranslate"><span class="pre">{0,</span> <span class="pre">event}</span></code></strong> — event only, no stream, because a
+non-zero <code class="docutils literal notranslate"><span class="pre">stream</span></code> tells ovstage to “drain everything queued on it,” a heavier barrier than this
+handoff needs. Preserve the field verbatim when forwarding a group. <em>Which</em> columns are
+device-resident, how to wait on the event, and the per-column CPU/GPU split are covered in
+<a class="reference internal" href="read_write/device.html"><span class="std std-doc">Device residency and interop</span></a>. <code class="docutils literal notranslate"><span class="pre">ALL</span></code> includes sleepers;
+<code class="docutils literal notranslate"><span class="pre">ACTIVE</span></code> follows the type-specific activity rules in the <a class="reference internal" href="read_write/index.html"><span class="std std-doc">overview</span></a>.</p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">is_array</span></code></strong> follows the source attribute kind (a ragged / USD-array /
 byte-string column), not whether the per-element dims happen to be uniform — a
 fixed-width array attribute is still <code class="docutils literal notranslate"><span class="pre">is_array</span></code>. When forwarding a group to
@@ -1077,27 +1130,25 @@ known structural edit rather than using them as invalidation or sealing signals.
 object type is NOT on the group — the read is opened over one type, so the caller
 already knows it.</p></li>
 </ul>
-<p>Ownership &amp; lifetime: the group is <strong>producer-owned</strong> — <code class="docutils literal notranslate"><span class="pre">ovphysx_fetch_read_next</span></code>
-hands back a borrowed <code class="docutils literal notranslate"><span class="pre">const</span> <span class="pre">ovstage_read_group_t*</span></code>, you do not allocate it. The
-struct and stage-derived <code class="docutils literal notranslate"><span class="pre">prims.list</span></code> are valid until the group’s <code class="docutils literal notranslate"><span class="pre">read_group_id</span></code>
-is released through <code class="docutils literal notranslate"><span class="pre">ovphysx_release_group</span></code>. Numeric tensors, maps, masks, and the
-CUDA completion event remain valid until <code class="docutils literal notranslate"><span class="pre">ovphysx_release_read</span></code>; fetching further
-groups and an intervening <code class="docutils literal notranslate"><span class="pre">ovphysx_step</span></code> invalidate neither lifetime.</p>
+<p>Ownership &amp; lifetime: the group is <strong>producer-owned</strong> — <code class="docutils literal notranslate"><span class="pre">ovphysx_fetch_read_next</span></code> hands back a
+borrowed <code class="docutils literal notranslate"><span class="pre">const</span> <span class="pre">ovstage_read_group_t*</span></code> (you do not allocate it). The two-tier lifetime — the group
+struct and <code class="docutils literal notranslate"><span class="pre">prims.list</span></code> versus the numeric tensors/maps/mask/event, and what a further fetch or an
+<code class="docutils literal notranslate"><span class="pre">ovphysx_step</span></code> does to each — is documented in <a class="reference internal" href="read_write/device.html"><span class="std std-doc">Device residency and interop</span></a>.</p>
 <section id="python-warp-frontend">
 <h3>Python Warp frontend<a class="headerlink" href="#python-warp-frontend" title="Link to this heading">#</a></h3>
-<p><code class="docutils literal notranslate"><span class="pre">PhysX.read()</span></code> and <code class="docutils literal notranslate"><span class="pre">PhysX.read_tokens()</span></code> expose one numeric type on both backends:
-every non-empty tensor is a <code class="docutils literal notranslate"><span class="pre">warp.array</span></code> aliasing read-session storage on the read’s
-native CPU or CUDA device, and <code class="docutils literal notranslate"><span class="pre">index_map</span></code> / <code class="docutils literal notranslate"><span class="pre">prim_index_map</span></code> are CPU <code class="docutils literal notranslate"><span class="pre">warp.array</span></code>
-values of <code class="docutils literal notranslate"><span class="pre">uint32</span></code> whatever the read’s device. No host copy is implicit. A native
-<code class="docutils literal notranslate"><span class="pre">dtype.lanes</span></code> above 1 becomes a trailing Warp dimension, so a native vec3 column with
-<code class="docutils literal notranslate"><span class="pre">shape=[N]</span></code> is exposed as <code class="docutils literal notranslate"><span class="pre">shape=(N,</span> <span class="pre">3)</span></code>. An empty tensor is a Warp-owned empty array;
-an empty index map is <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+<p>Python read groups expose one numeric type on both backends: every non-empty tensor
+is a <code class="docutils literal notranslate"><span class="pre">warp.array</span></code> aliasing read-session storage on the read’s native CPU or CUDA
+device, and <code class="docutils literal notranslate"><span class="pre">index_map</span></code> / <code class="docutils literal notranslate"><span class="pre">prim_index_map</span></code> are CPU <code class="docutils literal notranslate"><span class="pre">warp.array</span></code> values of <code class="docutils literal notranslate"><span class="pre">uint32</span></code>
+whatever the read’s device. No host copy is implicit. A native <code class="docutils literal notranslate"><span class="pre">dtype.lanes</span></code> above 1
+becomes a trailing Warp dimension, so a native vec3 column with <code class="docutils literal notranslate"><span class="pre">shape=[N]</span></code> is exposed
+as <code class="docutils literal notranslate"><span class="pre">shape=(N,</span> <span class="pre">3)</span></code>. An empty tensor is a Warp-owned empty array; an empty index map is
+<code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warp</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">wp</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">ObjectScope</span><span class="p">,</span> <span class="n">SimObjectType</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">print_read_shapes</span><span class="p">(</span><span class="n">physx</span><span class="p">):</span>
-    <span class="k">with</span> <span class="n">physx</span><span class="o">.</span><span class="n">read</span><span class="p">(</span>
+    <span class="k">with</span> <span class="n">physx</span><span class="o">.</span><span class="n">read_sync</span><span class="p">(</span>
         <span class="n">SimObjectType</span><span class="o">.</span><span class="n">RIGID_BODY</span><span class="p">,</span>
         <span class="p">[</span><span class="s2">&quot;position&quot;</span><span class="p">,</span> <span class="s2">&quot;orientation&quot;</span><span class="p">],</span>
         <span class="n">scope</span><span class="o">=</span><span class="n">ObjectScope</span><span class="o">.</span><span class="n">ALL</span><span class="p">,</span>
@@ -1108,26 +1159,32 @@ an empty index map is <code class="docutils literal notranslate"><span class="pr
                 <span class="nb">print</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>A CUDA read orders each nonzero producer event onto the Warp stream current during
-<code class="docutils literal notranslate"><span class="pre">read()</span></code> before returning, without blocking the host; establish a Warp stream
-dependency before using an array on another stream. Non-empty arrays borrow the read
-session and may outlive the <code class="docutils literal notranslate"><span class="pre">ReadResult</span></code>, so drop every array and downstream view
-before <code class="docutils literal notranslate"><span class="pre">PhysX.destroy()</span></code>. Stage dictionary values (<code class="docutils literal notranslate"><span class="pre">prim_list</span></code>, <code class="docutils literal notranslate"><span class="pre">attribute</span></code>, and
-<code class="docutils literal notranslate"><span class="pre">result.dictionary</span></code>) stay context-bound.</p>
-<p>The per-type inventory of what each object type serves — attribute lists, physical meaning,
-units, frames, device residency, and group shape — lives in the
-<a class="reference internal" href="read_write/index.html"><span class="std std-doc">Read/Write Data Contract</span></a> section:
-<a class="reference internal" href="read_write/readable.html"><span class="std std-doc">Readable data</span></a>, <a class="reference internal" href="read_write/writable.html"><span class="std std-doc">Writable data</span></a>,
-<a class="reference internal" href="read_write/data_model.html"><span class="std std-doc">Data model and semantics</span></a>, and
-<a class="reference internal" href="read_write/device.html"><span class="std std-doc">Device residency and interop</span></a>. This page covers only how those groups
-plug into the ovstage Stage and its ordinal lifecycle.</p>
+<p><code class="docutils literal notranslate"><span class="pre">read_sync()</span></code> and <code class="docutils literal notranslate"><span class="pre">read_tokens_sync()</span></code> collect every native read task, including the
+EOF fetch. The default <code class="docutils literal notranslate"><span class="pre">physx.read(query,</span> <span class="pre">attributes)</span></code> instead returns an <code class="docutils literal notranslate"><span class="pre">Operation</span></code>
+for the session open, and each <code class="docutils literal notranslate"><span class="pre">result.fetch_next()</span></code> returns an <code class="docutils literal notranslate"><span class="pre">Operation</span></code> for one
+group. A group’s arrays are built on the first <code class="docutils literal notranslate"><span class="pre">wait()</span></code> or <code class="docutils literal notranslate"><span class="pre">result</span></code> access of its fetch,
+and a CUDA group’s nonzero producer event is ordered onto the Warp stream current at
+that point. That stream wait does not block the host, but native task execution can;
+establish a Warp stream dependency before using an array on another stream. Non-empty
+arrays borrow the read session and may outlive the <code class="docutils literal notranslate"><span class="pre">ReadResult</span></code>, so drop every array
+and downstream view before <code class="docutils literal notranslate"><span class="pre">PhysX.destroy()</span></code>. Stage dictionary values (<code class="docutils literal notranslate"><span class="pre">prim_list</span></code> and
+<code class="docutils literal notranslate"><span class="pre">attribute</span></code>) stay context-bound; resolve them while the session is open, for example
+through <code class="docutils literal notranslate"><span class="pre">result.dictionary</span></code>, an <code class="docutils literal notranslate"><span class="pre">ovstage.PathDictionary</span></code> for the attached Stage. Detach
+retires this metadata even when borrowed numerical snapshots remain alive.</p>
 </section>
 </section>
 <section id="worked-example-one-closed-loop-frame">
 <h2>Worked example: one closed-loop frame<a class="headerlink" href="#worked-example-one-closed-loop-frame" title="Link to this heading">#</a></h2>
 <p>The example drives one frame of the loop above with explicit ordinals, showing
-the control lane (drained by physics) and the output lane (never drained).</p>
+the control lane (drained by physics) and the output lane (never drained).
+The callbacks return <code class="docutils literal notranslate"><span class="pre">void</span></code>; they must finish reading borrowed inputs before
+returning, including any GPU consumers, and handle their own failures. The output callback
+writes each group without sealing its ordinal; the loop seals once after all groups. If
+<code class="docutils literal notranslate"><span class="pre">run_closed_loop</span></code> returns nonzero, its caller destroys the instance; a rejected
+final release can retain a caller-owned resource. Accepted releases are never
+retried.</p>
 <div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx_attributes.h&gt;</span>
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovstage/ovstage.h&gt;</span><span class="c1">            // application owns the ovstage Stage</span>
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdbool.h&gt;</span>
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdint.h&gt;</span>
@@ -1137,21 +1194,38 @@ the control lane (drained by physics) and the output lane (never drained).</p>
 <span class="k">typedef</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">write_output_fn</span><span class="p">)(</span>
 <span class="w">    </span><span class="n">ovstage_instance_t</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">ovstage_ordinal_t</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_read_group_t</span><span class="o">*</span><span class="p">);</span>
 
-<span class="kt">void</span><span class="w"> </span><span class="nf">run_closed_loop</span><span class="p">(</span>
-<span class="w">    </span><span class="n">ovphysx_handle_t</span><span class="w"> </span><span class="n">h</span><span class="p">,</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">complete_task</span><span class="p">(</span><span class="n">ovphysx_instance_handle_t</span><span class="w"> </span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_enqueue_result_t</span><span class="w"> </span><span class="n">task</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">task</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_last_error</span><span class="p">();</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;%.*s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">error</span><span class="p">.</span><span class="n">length</span><span class="p">,</span><span class="w"> </span><span class="n">error</span><span class="p">.</span><span class="n">ptr</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">ovphysx_wait_task_result_t</span><span class="w"> </span><span class="n">waited</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span>
+<span class="w">        </span><span class="n">ovphysx_wait_task</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">task</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_TIMEOUT_INFINITE</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">waited</span><span class="p">);</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">waited</span><span class="p">.</span><span class="n">num_errors</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_last_task_error</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">waited</span><span class="p">.</span><span class="n">error_tasks</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;%.*s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">error</span><span class="p">.</span><span class="n">length</span><span class="p">,</span><span class="w"> </span><span class="n">error</span><span class="p">.</span><span class="n">ptr</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">waited</span><span class="p">.</span><span class="n">num_errors</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_last_error</span><span class="p">();</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;%.*s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">error</span><span class="p">.</span><span class="n">length</span><span class="p">,</span><span class="w"> </span><span class="n">error</span><span class="p">.</span><span class="n">ptr</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">ovphysx_destroy_wait_task_result</span><span class="p">(</span><span class="o">&amp;</span><span class="n">waited</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">int</span><span class="w"> </span><span class="nf">run_closed_loop</span><span class="p">(</span>
+<span class="w">    </span><span class="n">ovphysx_instance_handle_t</span><span class="w"> </span><span class="n">h</span><span class="p">,</span>
 <span class="w">    </span><span class="n">ovstage_instance_t</span><span class="o">*</span><span class="w"> </span><span class="n">stage</span><span class="p">,</span>
 <span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">num_frames</span><span class="p">,</span>
 <span class="w">    </span><span class="n">author_control_fn</span><span class="w"> </span><span class="n">author_control_edits</span><span class="p">,</span>
 <span class="w">    </span><span class="n">write_output_fn</span><span class="w"> </span><span class="n">write_output_to_ovstage</span><span class="p">)</span>
 <span class="p">{</span>
 <span class="w">    </span><span class="c1">// Attach: the scene was authored and sealed at ordinal 1.</span>
-<span class="w">    </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_attach_ovstage</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="cm">/*read_ordinal=*/</span><span class="mi">1</span><span class="p">);</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
-<span class="w">    </span><span class="p">{</span>
-<span class="w">        </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_last_error</span><span class="p">();</span>
-<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Attach failed: %.*s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">error</span><span class="p">.</span><span class="n">length</span><span class="p">,</span><span class="w"> </span><span class="n">error</span><span class="p">.</span><span class="n">ptr</span><span class="p">);</span>
-<span class="w">        </span><span class="k">return</span><span class="p">;</span>
-<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">complete_task</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_attach_ovstage</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="cm">/*read_ordinal=*/</span><span class="mi">1</span><span class="p">)))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 
 <span class="w">    </span><span class="n">ovstage_ordinal_t</span><span class="w"> </span><span class="n">control_ord</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w">  </span><span class="c1">// even lane: app edits physics processes</span>
 <span class="w">    </span><span class="n">ovstage_ordinal_t</span><span class="w"> </span><span class="n">output_ord</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span><span class="w">  </span><span class="c1">// odd lane: physics output (NEVER drained)</span>
@@ -1167,24 +1241,20 @@ the control lane (drained by physics) and the output lane (never drained).</p>
 <span class="w">        </span><span class="n">ovstage_ordinal_range_t</span><span class="w"> </span><span class="n">ctrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
 <span class="w">            </span><span class="n">control_ord</span><span class="p">,</span><span class="w"> </span><span class="n">control_ord</span><span class="p">,</span><span class="w"> </span><span class="cm">/*has_start_ordinal=*/</span><span class="nb">true</span>
 <span class="w">        </span><span class="p">};</span>
-<span class="w">        </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_update_from_ovstage</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">ctrl</span><span class="p">);</span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">            </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_last_error</span><span class="p">();</span>
-<span class="w">            </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Update failed: %.*s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">error</span><span class="p">.</span><span class="n">length</span><span class="p">,</span><span class="w"> </span><span class="n">error</span><span class="p">.</span><span class="n">ptr</span><span class="p">);</span>
-<span class="w">            </span><span class="k">return</span><span class="p">;</span>
-<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">complete_task</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_update_from_ovstage</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">ctrl</span><span class="p">)))</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 
-<span class="w">        </span><span class="c1">// Step the simulation.</span>
-<span class="w">        </span><span class="n">ovphysx_enqueue_result_t</span><span class="w"> </span><span class="n">step_result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_step</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0f</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">60.0f</span><span class="p">);</span>
-<span class="w">        </span><span class="n">ovphysx_op_wait_result_t</span><span class="w"> </span><span class="n">step_wait</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">};</span>
-<span class="w">        </span><span class="n">ovphysx_wait_op</span><span class="p">(</span>
-<span class="w">            </span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">step_result</span><span class="p">.</span><span class="n">op_index</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_TIMEOUT_INFINITE</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">step_wait</span><span class="p">);</span>
-<span class="w">        </span><span class="n">ovphysx_destroy_wait_result</span><span class="p">(</span><span class="o">&amp;</span><span class="n">step_wait</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">complete_task</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_step</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0f</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">60.0f</span><span class="p">)))</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 
-<span class="w">        </span><span class="c1">// Physics-&gt;app: read the step output.</span>
-<span class="w">        </span><span class="n">ovphysx_query_handle_t</span><span class="w"> </span><span class="n">q</span><span class="p">;</span>
-<span class="w">        </span><span class="n">ovphysx_query</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_OBJECT_RIGID_BODY</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_SCOPE_ACTIVE</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">q</span><span class="p">);</span>
+<span class="w">        </span><span class="c1">// Physics-&gt;app: wait for each output before using it.</span>
+<span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="n">failed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="n">read_open</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">        </span><span class="n">ovphysx_query_handle_t</span><span class="w"> </span><span class="n">q</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">        </span><span class="n">ovphysx_read_handle_t</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">complete_task</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_query</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_QUERY_TARGET_RIGID_BODY</span><span class="p">,</span>
+<span class="w">                                          </span><span class="n">OVPHYSX_SCOPE_ACTIVE</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">q</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)))</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 
 <span class="w">        </span><span class="c1">// Attribute selectors are names or interned tokens.</span>
 <span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovx_string_or_token_t</span><span class="w"> </span><span class="n">names</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
@@ -1195,33 +1265,53 @@ the control lane (drained by physics) and the output lane (never drained).</p>
 <span class="w">              </span><span class="p">.</span><span class="n">string</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVPHYSX_ATTR_ORIENTATION</span><span class="p">,</span>
 <span class="w">                          </span><span class="p">.</span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">OVPHYSX_ATTR_ORIENTATION</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">},</span>
 <span class="w">        </span><span class="p">};</span>
-<span class="w">        </span><span class="n">ovphysx_read_handle_t</span><span class="w"> </span><span class="n">r</span><span class="p">;</span>
-<span class="w">        </span><span class="n">ovphysx_read</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">q</span><span class="p">,</span><span class="w"> </span><span class="n">names</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">r</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">complete_task</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_read</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">q</span><span class="p">,</span><span class="w"> </span><span class="n">names</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)))</span>
+<span class="w">            </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
+<span class="w">        </span><span class="n">read_open</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 
 <span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(;;)</span>
 <span class="w">        </span><span class="p">{</span>
 <span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_read_group_t</span><span class="o">*</span><span class="w"> </span><span class="n">g</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span><span class="w"> </span><span class="c1">// producer-owned borrowed pointer</span>
-<span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">fetch_result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_fetch_read_next</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">g</span><span class="p">);</span>
-<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">fetch_result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVPHYSX_API_END_OF_ITERATION</span><span class="p">)</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">complete_task</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_fetch_read_next</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">g</span><span class="p">)))</span>
+<span class="w">                </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">g</span><span class="p">)</span>
 <span class="w">                </span><span class="k">break</span><span class="p">;</span>
-<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">fetch_result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">!</span><span class="n">g</span><span class="p">)</span>
-<span class="w">            </span><span class="p">{</span>
-<span class="w">                </span><span class="n">ovphysx_release_read</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="p">);</span>
-<span class="w">                </span><span class="n">ovphysx_release_query</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">q</span><span class="p">);</span>
-<span class="w">                </span><span class="k">return</span><span class="p">;</span>
-<span class="w">            </span><span class="p">}</span>
-<span class="w">            </span><span class="c1">// App writes the output at `output_ord` and seals it, reusing</span>
+<span class="w">            </span><span class="c1">// App writes at `output_ord` without sealing it yet, reusing</span>
 <span class="w">            </span><span class="c1">// g-&gt;prims.list, g-&gt;data.tensors, and g-&gt;is_array with no repack.</span>
 <span class="w">            </span><span class="n">write_output_to_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">output_ord</span><span class="p">,</span><span class="w"> </span><span class="n">g</span><span class="p">);</span>
-<span class="w">            </span><span class="n">ovphysx_release_group</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="n">g</span><span class="o">-&gt;</span><span class="n">read_group_id</span><span class="p">);</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">complete_task</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_release_group</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="n">g</span><span class="o">-&gt;</span><span class="n">read_group_id</span><span class="p">)))</span>
+<span class="w">                </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
 <span class="w">        </span><span class="p">}</span>
-<span class="w">        </span><span class="n">ovphysx_release_read</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="p">);</span>
-<span class="w">        </span><span class="n">ovphysx_release_query</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">q</span><span class="p">);</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_write_floor_desc_t</span><span class="w"> </span><span class="n">floor_desc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="p">.</span><span class="n">ordinal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">output_ord</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">scope</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVSTAGE_SCOPE_ALL</span>
+<span class="w">            </span><span class="p">};</span>
+<span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_enqueue_result_t</span><span class="w"> </span><span class="n">floor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovstage_advance_write_floor</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">floor_desc</span><span class="p">);</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">floor</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="p">)</span>
+<span class="w">                </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
+<span class="w">            </span><span class="n">ovstage_op_wait_result_t</span><span class="w"> </span><span class="n">waited</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">};</span>
+<span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_api_status_t</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="o">=</span>
+<span class="w">                </span><span class="n">ovstage_wait_op</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">floor</span><span class="p">.</span><span class="n">op_index</span><span class="p">,</span><span class="w"> </span><span class="n">OVSTAGE_TIMEOUT_INFINITE</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">waited</span><span class="p">);</span>
+<span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">succeeded</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">waited</span><span class="p">.</span><span class="n">error_op_id_count</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_api_status_t</span><span class="w"> </span><span class="n">released</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovstage_release_op</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span><span class="w"> </span><span class="n">floor</span><span class="p">.</span><span class="n">op_index</span><span class="p">);</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">succeeded</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">released</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVSTAGE_OK</span><span class="p">)</span>
+<span class="w">                </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="n">failed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="nl">cleanup</span><span class="p">:</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">read_open</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">!</span><span class="n">complete_task</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_release_read</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="p">)))</span>
+<span class="w">            </span><span class="n">failed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">complete_task</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_release_query</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">q</span><span class="p">)))</span>
+<span class="w">            </span><span class="n">failed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">failed</span><span class="p">)</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 
 <span class="w">        </span><span class="c1">// Advance the lanes. The output ordinal is skipped forever.</span>
 <span class="w">        </span><span class="n">control_ord</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
 <span class="w">        </span><span class="n">output_ord</span><span class="w">  </span><span class="o">+=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
 <span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -1256,7 +1346,8 @@ published output before the next call, and complete any pending world-matrix
 edits first. A different stage is rejected before the utility accesses that
 stage or binds the cache.</p>
 <p>The utility combines that scale with physics position and orientation using
-ovphysx’s signed-scale convention and writes a row-vector float64 MATRIX. It
+ovphysx’s <a class="reference internal" href="read_write/data_model.html#signed-scale-and-body-orientation"><span class="std std-ref">signed-scale convention</span></a>
+and writes a row-vector float64 MATRIX. It
 does not preserve shear. CUDA poses stay on the device while matrices are
 composed and published. These direct world matrices leave <code class="docutils literal notranslate"><span class="pre">omni:xform</span></code> and
 <code class="docutils literal notranslate"><span class="pre">omni:resetXformStack</span></code> unchanged and do not propagate to descendants. A later
@@ -1287,7 +1378,7 @@ caller-owned cache and explicit step, publication and sealing:</p>
 
 <span class="c1">// The caller has populated and attached this stage at sealed ordinal 1.</span>
 <span class="c1">// This sample has no application edits to drain back into physics.</span>
-<span class="kt">bool</span><span class="w"> </span><span class="nf">publishFrames</span><span class="p">(</span><span class="n">ovphysx_handle_t</span><span class="w"> </span><span class="n">physics</span><span class="p">,</span><span class="w"> </span><span class="n">ovstage_instance_t</span><span class="o">*</span><span class="w"> </span><span class="n">stage</span><span class="p">)</span>
+<span class="kt">bool</span><span class="w"> </span><span class="nf">publishFrames</span><span class="p">(</span><span class="n">ovphysx_instance_handle_t</span><span class="w"> </span><span class="n">physics</span><span class="p">,</span><span class="w"> </span><span class="n">ovstage_instance_t</span><span class="o">*</span><span class="w"> </span><span class="n">stage</span><span class="p">)</span>
 <span class="p">{</span>
 <span class="w">    </span><span class="c1">// Destroy the cache before its owning physics instance and stage.</span>
 <span class="w">    </span><span class="n">ovphysx</span><span class="o">::</span><span class="n">utils</span><span class="o">::</span><span class="n">OvStageOutputCache</span><span class="w"> </span><span class="n">cache</span><span class="p">;</span>
@@ -1331,7 +1422,7 @@ caller-owned cache and explicit step, publication and sealing:</p>
 </section>
 <section id="python-utility-one-call-for-step-read-write-back">
 <h3>Python utility: one call for step + read + write-back<a class="headerlink" href="#python-utility-one-call-for-step-read-write-back" title="Link to this heading">#</a></h3>
-<p>The opt-in <code class="docutils literal notranslate"><span class="pre">ovphysx.utils</span></code> helper composes <code class="docutils literal notranslate"><span class="pre">PhysX.step_sync</span></code>, <code class="docutils literal notranslate"><span class="pre">PhysX.read</span></code>, and
+<p>The opt-in <code class="docutils literal notranslate"><span class="pre">ovphysx.utils</span></code> helper composes <code class="docutils literal notranslate"><span class="pre">PhysX.step_sync</span></code>, <code class="docutils literal notranslate"><span class="pre">PhysX.read_sync</span></code>, and
 the per-group write-back above without adding that application workflow to the
 core <code class="docutils literal notranslate"><span class="pre">PhysX</span></code> API:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">step_and_write_to_ovstage</span>
@@ -1346,13 +1437,14 @@ core <code class="docutils literal notranslate"><span class="pre">PhysX</span></
 </pre></div>
 </div>
 <p>The utility imports the <code class="docutils literal notranslate"><span class="pre">ovstage</span></code> Python package only when called.
-It requires <code class="docutils literal notranslate"><span class="pre">PhysX.attach_ovstage()</span></code> to have received the Python
-<code class="docutils literal notranslate"><span class="pre">ovstage.Stage</span></code> object, not only its raw native handle.</p>
+It uses the <code class="docutils literal notranslate"><span class="pre">ovstage.Stage</span></code> object passed to <code class="docutils literal notranslate"><span class="pre">PhysX.attach_ovstage()</span></code>, which
+rejects a raw native handle with <code class="docutils literal notranslate"><span class="pre">TypeError</span></code>.</p>
 <p>PhysX pose output contains world position and orientation, but deliberately
 contains no scale. For fixed rigid bodies, articulation links, and vehicle
 wheels, the utility reads the current row-vector float64
 <code class="docutils literal notranslate"><span class="pre">omni:fabric:worldMatrix</span></code>, derives its shear-free signed scale using the same
-matrix decomposition as ovphysx, releases every OVStage read view, and only
+<a class="reference internal" href="read_write/data_model.html#signed-scale-and-body-orientation"><span class="std std-ref">matrix decomposition as ovphysx</span></a>,
+releases every OVStage read view, and only
 then writes the reconstructed world matrix. It never writes <code class="docutils literal notranslate"><span class="pre">omni:xform</span></code> or
 changes <code class="docutils literal notranslate"><span class="pre">omni:resetXformStack</span></code>. Scale remains OVStage state, not physics state.</p>
 <p><code class="docutils literal notranslate"><span class="pre">omni:fabric:worldMatrix</span></code> is a direct consumer-facing value. This helper does
@@ -1411,8 +1503,15 @@ releasing it. No path copies poses through the host. The utility then calls
 dynamic output set. <code class="docutils literal notranslate"><span class="pre">output_ordinal</span></code> must stay the never-drained lane – never a
 value passed to <code class="docutils literal notranslate"><span class="pre">update_from_ovstage</span></code>. See
 <code class="docutils literal notranslate"><span class="pre">tests/python_samples/output_read.py</span></code> for the full closed loop using the
-preferred application-owned cache.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+preferred application-owned cache. That sample loads <code class="docutils literal notranslate"><span class="pre">boxes_falling_on_groundplane.usda</span></code>,
+which ships with every package under <code class="docutils literal notranslate"><span class="pre">ovphysx/samples/data/</span></code> in the wheel,
+<code class="docutils literal notranslate"><span class="pre">&lt;sdk-root&gt;/samples/data/</span></code> in the C/C++ SDK, and <code class="docutils literal notranslate"><span class="pre">tests/data/</span></code> in a repository checkout.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># @implements REQ-CAPI-OVSTAGE-XFORM-001</span>
+<span class="c1"># @covers AC-1</span>
+<span class="c1"># @implements REQ-PYTHON-SAMPLE-002</span>
+<span class="c1"># @covers AC-1 AC-2</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">ovstage</span>
@@ -1421,6 +1520,7 @@ preferred application-owned cache.</p>
 <span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">OvStageOutputCache</span><span class="p">,</span> <span class="n">step_and_write_to_ovstage</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">ovphysx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.samples.python_samples.schema_support</span><span class="w"> </span><span class="kn">import</span> <span class="n">physx_schema_paths</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx</span><span class="w"> </span><span class="kn">import</span> <span class="n">PhysX</span>
 
 <span class="n">_physx_schemas_registered</span> <span class="o">=</span> <span class="kc">False</span>
@@ -1431,15 +1531,10 @@ preferred application-owned cache.</p>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">available</span><span class="p">():</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;ovstage population bridge is unavailable&quot;</span><span class="p">)</span>
 
-    <span class="c1"># ovphysx ships its PhysX USD schemas as codeless resources and does not register</span>
-    <span class="c1"># them itself. Register them with ovstage once, before the first population</span>
-    <span class="c1"># call in the process. The Newton USD schema (pip package newton-usd-schemas) is</span>
-    <span class="c1"># registered alongside when installed, so authored newton:* attributes reach the</span>
-    <span class="c1"># parser; this scene has none, and the package is not a wheel dependency, so</span>
-    <span class="c1"># don&#39;t require it.</span>
+    <span class="c1"># Register before population; this scene can omit the Newton provider.</span>
     <span class="k">global</span> <span class="n">_physx_schemas_registered</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">_physx_schemas_registered</span><span class="p">:</span>
-        <span class="n">schema_roots</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">codeless_schema_root</span><span class="p">())]</span>
+        <span class="n">schema_roots</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">physx_schema_paths</span><span class="p">()]</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">schema_roots</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">newton_schema_root</span><span class="p">()))</span>
         <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
@@ -1447,19 +1542,17 @@ preferred application-owned cache.</p>
         <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">register_usd_schemas</span><span class="p">(</span><span class="n">schema_roots</span><span class="p">)</span>
         <span class="n">_physx_schemas_registered</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">stage</span> <span class="o">=</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">Stage</span><span class="p">(</span><span class="s2">&quot;ovphysx-output-read-sample&quot;</span><span class="p">)</span>
-    <span class="n">attached</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">open_usd</span><span class="p">(</span>
-            <span class="n">stage</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">usd_path</span><span class="p">),</span> <span class="n">ordinal</span><span class="o">=</span><span class="n">read_ordinal</span><span class="p">,</span> <span class="n">domains</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">PopulationDomain</span><span class="o">.</span><span class="n">PHYSICS</span>
+            <span class="n">stage</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">usd_path</span><span class="p">),</span> <span class="n">ordinal</span><span class="o">=</span><span class="n">read_ordinal</span><span class="p">,</span> <span class="n">domains</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">PopulationDomain</span><span class="o">.</span><span class="n">ALL</span>
         <span class="p">)</span>
         <span class="n">stage</span><span class="o">.</span><span class="n">advance_write_floor</span><span class="p">(</span><span class="n">ordinal</span><span class="o">=</span><span class="n">read_ordinal</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
-        <span class="n">physx</span><span class="o">.</span><span class="n">attach_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">read_ordinal</span><span class="o">=</span><span class="n">read_ordinal</span><span class="p">)</span>
-        <span class="n">attached</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">attach_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">read_ordinal</span><span class="o">=</span><span class="n">read_ordinal</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">stage</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">attached</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">physx</span><span class="o">.</span><span class="n">is_stage_attached</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">physx</span><span class="o">.</span><span class="n">detach_ovstage</span><span class="p">()</span>
+                <span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">detach_ovstage</span><span class="p">())</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">detach_exc</span><span class="p">:</span>
                 <span class="c1"># If native detach fails, keep the Stage alive through PhysX&#39;s</span>
                 <span class="c1"># attachment reference. Destroying it here would leave a dangling</span>
@@ -1509,7 +1602,7 @@ preferred application-owned cache.</p>
 <span class="k">def</span><span class="w"> </span><span class="nf">read_rigid_body_vectors</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="n">attribute</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return all fixed-width rigid-body values for one vector attribute.&quot;&quot;&quot;</span>
     <span class="n">columns</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">with</span> <span class="n">physx</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">SimObjectType</span><span class="o">.</span><span class="n">RIGID_BODY</span><span class="p">,</span> <span class="p">[</span><span class="n">attribute</span><span class="p">],</span> <span class="n">scope</span><span class="o">=</span><span class="n">ObjectScope</span><span class="o">.</span><span class="n">ALL</span><span class="p">)</span> <span class="k">as</span> <span class="n">result</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">physx</span><span class="o">.</span><span class="n">read_sync</span><span class="p">(</span><span class="n">SimObjectType</span><span class="o">.</span><span class="n">RIGID_BODY</span><span class="p">,</span> <span class="p">[</span><span class="n">attribute</span><span class="p">],</span> <span class="n">scope</span><span class="o">=</span><span class="n">ObjectScope</span><span class="o">.</span><span class="n">ALL</span><span class="p">)</span> <span class="k">as</span> <span class="n">result</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">groups</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">group</span><span class="o">.</span><span class="n">is_delete</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">group</span><span class="o">.</span><span class="n">is_array</span> <span class="ow">and</span> <span class="n">group</span><span class="o">.</span><span class="n">tensors</span><span class="p">:</span>
                 <span class="n">columns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">tensors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
@@ -1527,9 +1620,10 @@ preferred application-owned cache.</p>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">group</span><span class="o">.</span><span class="n">is_delete</span><span class="p">:</span>
                     <span class="k">continue</span>
-                <span class="n">tensor</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-                <span class="n">lanes</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">lanes</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">1</span>
-                <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">lanes</span><span class="p">)</span>
+                <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+                <span class="c1"># Typed reads expose matrix/vector components as trailing axes.</span>
+                <span class="c1"># Keep the leading data-row axis intact when flattening them.</span>
+                <span class="n">values</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
                 <span class="n">group_paths</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">get_path_strings</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">prim_list</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">local</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">prim_count</span><span class="p">):</span>
                     <span class="n">prim_index</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">prim_index</span><span class="p">(</span><span class="n">local</span><span class="p">)</span>
@@ -1545,7 +1639,7 @@ preferred application-owned cache.</p>
     <span class="n">checked</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">with</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">PathDictionary</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span> <span class="k">as</span> <span class="n">paths</span><span class="p">:</span>
         <span class="n">xform</span> <span class="o">=</span> <span class="n">paths</span><span class="o">.</span><span class="n">intern_token</span><span class="p">(</span><span class="s2">&quot;omni:fabric:worldMatrix&quot;</span><span class="p">)</span>
-        <span class="k">with</span> <span class="n">physx</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">SimObjectType</span><span class="o">.</span><span class="n">RIGID_BODY</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;position&quot;</span><span class="p">],</span> <span class="n">scope</span><span class="o">=</span><span class="n">ObjectScope</span><span class="o">.</span><span class="n">ALL</span><span class="p">)</span> <span class="k">as</span> <span class="n">result</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">physx</span><span class="o">.</span><span class="n">read_sync</span><span class="p">(</span><span class="n">SimObjectType</span><span class="o">.</span><span class="n">RIGID_BODY</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;position&quot;</span><span class="p">],</span> <span class="n">scope</span><span class="o">=</span><span class="n">ObjectScope</span><span class="o">.</span><span class="n">ALL</span><span class="p">)</span> <span class="k">as</span> <span class="n">result</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">physics_group</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">groups</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">physics_group</span><span class="o">.</span><span class="n">is_delete</span> <span class="ow">or</span> <span class="n">physics_group</span><span class="o">.</span><span class="n">is_array</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">physics_group</span><span class="o">.</span><span class="n">tensors</span><span class="p">:</span>
                     <span class="k">continue</span>
@@ -1579,8 +1673,13 @@ preferred application-owned cache.</p>
     <span class="n">output_ordinal</span> <span class="o">=</span> <span class="mi">3</span>
 
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">script_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span>
-        <span class="n">usd_path</span> <span class="o">=</span> <span class="n">script_dir</span> <span class="o">/</span> <span class="s2">&quot;..&quot;</span> <span class="o">/</span> <span class="s2">&quot;data&quot;</span> <span class="o">/</span> <span class="s2">&quot;boxes_falling_on_groundplane.usda&quot;</span>
+        <span class="c1"># Prefer package data so a copied sample works. Fall back to the checked-in</span>
+        <span class="c1"># sample&#39;s adjacent data directory when package data is absent.</span>
+        <span class="n">usd_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;samples&quot;</span> <span class="o">/</span> <span class="s2">&quot;data&quot;</span> <span class="o">/</span> <span class="s2">&quot;boxes_falling_on_groundplane.usda&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">usd_path</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+            <span class="n">usd_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;data&quot;</span> <span class="o">/</span> <span class="s2">&quot;boxes_falling_on_groundplane.usda&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">usd_path</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ovphysx sample data is missing: </span><span class="si">{</span><span class="n">usd_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading USD scene through ovstage: </span><span class="si">{</span><span class="n">usd_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">stage</span> <span class="o">=</span> <span class="n">attach_scene</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="n">usd_path</span><span class="p">,</span> <span class="n">read_ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">physx</span><span class="o">.</span><span class="n">wait_all</span><span class="p">()</span>
@@ -1596,7 +1695,7 @@ preferred application-owned cache.</p>
             <span class="n">velocity_before</span> <span class="o">=</span> <span class="n">read_rigid_body_vectors</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="s2">&quot;linearVelocity&quot;</span><span class="p">)</span>
             <span class="n">position_before</span> <span class="o">=</span> <span class="n">read_rigid_body_vectors</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="s2">&quot;position&quot;</span><span class="p">)</span>
             <span class="n">authored</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="k">with</span> <span class="n">physx</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">SimObjectType</span><span class="o">.</span><span class="n">RIGID_BODY</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;position&quot;</span><span class="p">],</span> <span class="n">scope</span><span class="o">=</span><span class="n">ObjectScope</span><span class="o">.</span><span class="n">ALL</span><span class="p">)</span> <span class="k">as</span> <span class="n">result</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">physx</span><span class="o">.</span><span class="n">read_sync</span><span class="p">(</span><span class="n">SimObjectType</span><span class="o">.</span><span class="n">RIGID_BODY</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;position&quot;</span><span class="p">],</span> <span class="n">scope</span><span class="o">=</span><span class="n">ObjectScope</span><span class="o">.</span><span class="n">ALL</span><span class="p">)</span> <span class="k">as</span> <span class="n">result</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">groups</span><span class="p">:</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="n">group</span><span class="o">.</span><span class="n">is_array</span><span class="p">:</span>
                         <span class="n">author_velocity</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">control_ordinal</span><span class="p">,</span> <span class="n">velocity</span><span class="o">=</span><span class="n">target_velocity</span><span class="p">)</span>
@@ -1607,8 +1706,7 @@ preferred application-owned cache.</p>
             <span class="c1"># Waiting for write_attribute only completes the write operation. The</span>
             <span class="c1"># write floor seals the ordinal so update_from_ovstage can consume it.</span>
             <span class="n">stage</span><span class="o">.</span><span class="n">advance_write_floor</span><span class="p">(</span><span class="n">ordinal</span><span class="o">=</span><span class="n">control_ordinal</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
-            <span class="n">physx</span><span class="o">.</span><span class="n">update_from_ovstage</span><span class="p">(</span><span class="n">control_ordinal</span><span class="p">,</span> <span class="n">control_ordinal</span><span class="p">)</span>
-
+            <span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">update_from_ovstage</span><span class="p">(</span><span class="n">control_ordinal</span><span class="p">,</span> <span class="n">control_ordinal</span><span class="p">))</span>
             <span class="n">velocity_after</span> <span class="o">=</span> <span class="n">read_rigid_body_vectors</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="s2">&quot;linearVelocity&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">velocity_after</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">velocity_before</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Rigid-body count changed while applying the velocity control&quot;</span><span class="p">)</span>
@@ -1654,10 +1752,12 @@ preferred application-owned cache.</p>
 
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Closed-loop ovstage output read completed successfully&quot;</span><span class="p">)</span>
     <span class="k">finally</span><span class="p">:</span>
+        <span class="c1"># The closed result and final loop group still retain their read arrays.</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">group</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">output_cache</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">output_cache</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">stage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">physx</span><span class="o">.</span><span class="n">detach_ovstage</span><span class="p">()</span>
+            <span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">detach_ovstage</span><span class="p">())</span>
             <span class="n">stage</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
         <span class="n">physx</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Cleanup complete&quot;</span><span class="p">)</span>
@@ -1672,20 +1772,20 @@ preferred application-owned cache.</p>
 <section id="notes">
 <h2>Notes<a class="headerlink" href="#notes" title="Link to this heading">#</a></h2>
 <ul class="simple">
-<li><p>The read is ovstage-only: it requires an attached ovstage Stage, else
-<code class="docutils literal notranslate"><span class="pre">ovphysx_query</span></code> fails. A zero <code class="docutils literal notranslate"><span class="pre">out_query</span></code> means FAILURE only — an empty match is
-still a valid, nonzero query whose read reaches end-of-iteration immediately
-(<code class="docutils literal notranslate"><span class="pre">ovphysx_fetch_query_result</span></code> then reports <code class="docutils literal notranslate"><span class="pre">total_prim_count</span> <span class="pre">==</span> <span class="pre">0</span></code>).</p></li>
-<li><p>A query is a reusable selector (type + scope), not a captured membership snapshot:
-matched prims and values are evaluated lazily (count at <code class="docutils literal notranslate"><span class="pre">ovphysx_fetch_query_result</span></code>,
-columns at <code class="docutils literal notranslate"><span class="pre">ovphysx_read</span></code>), each observing the most recently completed step. A step
-between query and read is fine — the read reflects the newer step.</p></li>
-<li><p>Borrowed lifetime: the producer-owned group struct and its <code class="docutils literal notranslate"><span class="pre">prim_list</span></code> are valid
-until that group’s <code class="docutils literal notranslate"><span class="pre">read_group_id</span></code> is released through <code class="docutils literal notranslate"><span class="pre">ovphysx_release_group</span></code>.
-Numeric tensors, maps, masks, and the CUDA event remain valid until
-<code class="docutils literal notranslate"><span class="pre">ovphysx_release_read</span></code>. Fetching further groups or stepping invalidates neither;
-copy anything that must outlive its corresponding lifetime.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_SCOPE_ACTIVE</span></code> is single-frame; re-open the query each step.</p></li>
+<li><p>The read is ovstage-only: it requires an attached ovstage Stage, otherwise the
+query call is rejected without a task. Only inspect <code class="docutils literal notranslate"><span class="pre">out_query</span></code> after a successful wait.
+An empty match is still a valid, nonzero query whose read reaches null-group EOF
+(its optional query result then reports <code class="docutils literal notranslate"><span class="pre">total_prim_count</span> <span class="pre">==</span> <span class="pre">0</span></code>).</p></li>
+<li><p>A whole-type query is a reusable selector (type + scope), not a captured membership
+snapshot: each read or write session evaluates its membership when it opens,
+observing the most recently completed step. A step between query and read is fine —
+the read reflects the newer step. The optional query result is a snapshot taken at
+query creation and never updates. A selected query keeps the membership it resolved
+at creation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_SCOPE_ACTIVE</span></code> selects a type-specific active set using active-actor reports where
+available and awake-state fallbacks otherwise; the <a class="reference internal" href="read_write/index.html"><span class="std std-doc">read/write overview</span></a>
+lists the per-type rules. The query can be reused across steps; open a new read session each step
+for the current set.</p></li>
 </ul>
 <p>Refer also to the <a class="reference internal" href="developer_guide.html"><span class="std std-doc">Developer Guide</span></a> for the async/ordinal execution
 model, and to the <a class="reference internal" href="api.html"><span class="std std-doc">API Reference</span></a> for the full C surface.</p>
@@ -1742,7 +1842,7 @@ model, and to the <a class="reference internal" href="api.html"><span class="std
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-data-surface-ovstage-ordinals">The data surface: ovstage + ordinals</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#register-the-physx-schemas-before-populating">Register the PhysX schemas before populating</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#register-the-physx-schemas-before-reading-usd-schemas">Register the PhysX schemas before reading USD schemas</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#seal-population-changes-before-attaching-or-draining">Seal population changes before attaching or draining</a></li>
 </ul>
 </li>
@@ -1815,7 +1915,7 @@ model, and to the <a class="reference internal" href="api.html"><span class="std
 </div>
       
         <div class="footer-item"><p class="last-updated">
-  Last updated on Oct 08, 2026.
+  Last updated on Oct 15, 2026.
   <br/>
 </p></div>
       

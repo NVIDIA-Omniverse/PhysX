@@ -47,7 +47,7 @@
 
 
     <script rel="preload" src="../_static/modal-table.js"></script>
-    <script src="../_static/documentation_options.js?v=18b66ea0"></script>
+    <script src="../_static/documentation_options.js?v=423e15eb"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.6.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -75,7 +75,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Oct 08, 2026"/>
+    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
   
     
     <script src="../_static/searchtools.js"></script>
@@ -507,6 +507,10 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coding_style.html">ovphysx coding and doc style</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
@@ -566,7 +570,6 @@
 <li class="toctree-l2"><a class="reference internal" href="PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PhysxJointAPI.html">PhysxJointAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PhysxLimitAPI.html">PhysxLimitAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
@@ -613,6 +616,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../read_write/device.html">Device residency and interop</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/readable.html">Readable data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/writable.html">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/path_patterns.html">Path patterns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/limitations.html">Known limitations and gaps</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
@@ -625,7 +630,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/render_handoff.html">Rendering Handoff</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials/nvtx_profiling.html">NVTX Profiling in Nsight Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
@@ -703,7 +708,7 @@
 <!-- Generated by physics_population_domain/tools/gen_contract.py from the JSON contract. Do not edit; edit the contract and regenerate (see physics_population_domain/README.md). -->
 <section id="cylinder">
 <h1>Cylinder<a class="headerlink" href="#cylinder" title="Link to this heading">#</a></h1>
-<p>Cylinder geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cylinder (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; OVPHYSX_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY defaults to true. Set it to false to use a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.</p>
+<p>Cylinder geometry along axis. With PhysicsCollisionAPI applied it becomes a PhysX convex-core cylinder (PxConvexCoreGeometry, PxGeometryType::eCONVEXCORE) with the given radius, height and the free attribute physxConvexGeometry:margin; OVPHYSX_GLOBAL_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY defaults to true. Set it to false to use a pre-cooked convex mesh (eCONVEXMESH) that ignores the margin. Scaling follows the capsule rule.</p>
 <ul class="simple">
 <li><p><strong>Type chain:</strong> <code class="docutils literal notranslate"><span class="pre">Gprim</span></code>, <code class="docutils literal notranslate"><span class="pre">Boundable</span></code>, <code class="docutils literal notranslate"><span class="pre">Xformable</span></code></p></li>
 <li><p><strong>Applicable APIs:</strong> <a class="reference internal" href="MaterialBindingAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">MaterialBindingAPI</span></code></span></a>, <a class="reference internal" href="PhysicsArticulationRootAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsArticulationRootAPI</span></code></span></a>, <a class="reference internal" href="PhysicsCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsCollisionAPI</span></code></span></a>, <a class="reference internal" href="PhysicsFilteredPairsAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsFilteredPairsAPI</span></code></span></a>, <a class="reference internal" href="PhysicsMassAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsMassAPI</span></code></span></a>, <a class="reference internal" href="PhysicsMeshCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsMeshCollisionAPI</span></code></span></a>, <a class="reference internal" href="PhysicsRigidBodyAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysicsRigidBodyAPI</span></code></span></a>, <a class="reference internal" href="PhysxArticulationAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxArticulationAPI</span></code></span></a>, <a class="reference internal" href="PhysxCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxCollisionAPI</span></code></span></a>, <a class="reference internal" href="PhysxContactReportAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxContactReportAPI</span></code></span></a>, <a class="reference internal" href="PhysxConvexDecompositionCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxConvexDecompositionCollisionAPI</span></code></span></a>, <a class="reference internal" href="PhysxConvexHullCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxConvexHullCollisionAPI</span></code></span></a>, <a class="reference internal" href="PhysxRigidBodyAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxRigidBodyAPI</span></code></span></a>, <a class="reference internal" href="PhysxSDFMeshCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSDFMeshCollisionAPI</span></code></span></a>, <a class="reference internal" href="PhysxSphereFillCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSphereFillCollisionAPI</span></code></span></a>, <a class="reference internal" href="PhysxSplinesSurfaceVelocityAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSplinesSurfaceVelocityAPI</span></code></span></a>, <a class="reference internal" href="PhysxSurfaceVelocityAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSurfaceVelocityAPI</span></code></span></a>, <a class="reference internal" href="PhysxTriangleMeshCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxTriangleMeshCollisionAPI</span></code></span></a>, <a class="reference internal" href="PhysxTriangleMeshSimplificationCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxTriangleMeshSimplificationCollisionAPI</span></code></span></a>, <a class="reference internal" href="PhysxTriggerAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxTriggerAPI</span></code></span></a></p></li>
@@ -781,7 +786,7 @@
 <section id="notes">
 <h2>Notes<a class="headerlink" href="#notes" title="Link to this heading">#</a></h2>
 <ul class="simple">
-<li><p>PhysX geometry kind is controlled by OVPHYSX_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY (Python PhysXConfig.collision_cylinder_custom_geometry). It defaults to true, giving PxConvexCoreGeometry(PxConvexCore::Cylinder(height, radius), margin) (eCONVEXCORE). When false the shape is a PxConvexMeshGeometry built from a shared unit cylinder convex mesh scaled by (halfHeight, radius) (eCONVEXMESH) and the margin is ignored. Set it before stage attachment; existing shapes are not rebuilt.</p></li>
+<li><p>PhysX geometry kind is controlled by OVPHYSX_GLOBAL_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY (Python GlobalConfigKey.COLLISION_CYLINDER_CUSTOM_GEOMETRY). It defaults to true, giving PxConvexCoreGeometry(PxConvexCore::Cylinder(height, radius), margin) (eCONVEXCORE). When false the shape is a PxConvexMeshGeometry built from a shared unit cylinder convex mesh scaled by (halfHeight, radius) (eCONVEXMESH) and the margin is ignored. Configure it while no stage is attached.</p></li>
 <li><p>Type dispatch is by exact prim-type string on the geometry backing key, in the order Plane, custom-geometry token, Cube, Sphere, Capsule, Cylinder, Cone, Mesh.</p></li>
 </ul>
 </section>
@@ -888,7 +893,7 @@
 </div>
       
         <div class="footer-item"><p class="last-updated">
-  Last updated on Oct 08, 2026.
+  Last updated on Oct 15, 2026.
   <br/>
 </p></div>
       

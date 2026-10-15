@@ -47,7 +47,7 @@
 
 
     <script rel="preload" src="../_static/modal-table.js"></script>
-    <script src="../_static/documentation_options.js?v=18b66ea0"></script>
+    <script src="../_static/documentation_options.js?v=423e15eb"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.6.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -75,7 +75,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Oct 08, 2026"/>
+    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
   
     
     <script src="../_static/searchtools.js"></script>
@@ -507,6 +507,10 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coding_style.html">ovphysx coding and doc style</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
@@ -566,7 +570,6 @@
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAPI.html">PhysxJointAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
@@ -613,6 +616,8 @@
 <li class="toctree-l1"><a class="reference internal" href="device.html">Device residency and interop</a></li>
 <li class="toctree-l1"><a class="reference internal" href="readable.html">Readable data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="writable.html">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="path_patterns.html">Path patterns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="limitations.html">Known limitations and gaps</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
@@ -625,7 +630,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/render_handoff.html">Rendering Handoff</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials/nvtx_profiling.html">NVTX Profiling in Nsight Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
@@ -708,23 +713,61 @@ data type and layout, device residency, and when a value is valid.</p>
 <h2>The session model<a class="headerlink" href="#the-session-model" title="Link to this heading">#</a></h2>
 <p>A read or a write is always three phases: <strong>select</strong> objects with a <em>query</em>, open a <strong>session</strong> over
 that query for one or more attributes, then <strong>iterate</strong> the session’s groups.</p>
+<p>Native query, session-open, fetch, commit and release calls return an
+<code class="docutils literal notranslate"><span class="pre">ovphysx_enqueue_result_t</span></code>. Check admission, then wait on the complete receipt to
+collect execution success or failure before using an output handle, result, or group.
+A successful fetch with a null group means iteration is complete. These operations
+currently execute inline; the task contract does not promise a nonblocking host call.</p>
+<p>In Python, <code class="docutils literal notranslate"><span class="pre">PhysX.query</span></code>, <code class="docutils literal notranslate"><span class="pre">PhysX.read</span></code>, <code class="docutils literal notranslate"><span class="pre">PhysX.write</span></code>, <code class="docutils literal notranslate"><span class="pre">fetch_next</span></code>, <code class="docutils literal notranslate"><span class="pre">commit</span></code> and <code class="docutils literal notranslate"><span class="pre">close</span></code>
+return an <code class="docutils literal notranslate"><span class="pre">Operation</span></code> without waiting. <code class="docutils literal notranslate"><span class="pre">operation.wait()</span></code> collects its tasks and returns the
+typed result; <code class="docutils literal notranslate"><span class="pre">PhysX.wait_all()</span></code> collects every outstanding task, including releases submitted by
+<code class="docutils literal notranslate"><span class="pre">close()</span></code> or a <code class="docutils literal notranslate"><span class="pre">with</span></code> block exit. <code class="docutils literal notranslate"><span class="pre">read_sync</span></code>, <code class="docutils literal notranslate"><span class="pre">read_tokens_sync</span></code>, <code class="docutils literal notranslate"><span class="pre">write_sync</span></code>, <code class="docutils literal notranslate"><span class="pre">commit_sync</span></code> and
+<code class="docutils literal notranslate"><span class="pre">close_sync</span></code> are the explicit waiting conveniences.</p>
 <p>A typical control step reads an attribute and writes another back: for example, read each
 articulation joint’s <code class="docutils literal notranslate"><span class="pre">jointPosition</span></code>, then set every <code class="docutils literal notranslate"><span class="pre">jointPositionTarget</span></code> to zero.
 The application must already have attached a stage. On DirectGPU, complete the first step before
 calling the Python example. Serialize simulation and structural edits while either example runs.</p>
 <p><strong>C (CPU scene)</strong></p>
 <p>This example uses a single query for both sessions. It returns nonzero on failure, releases all
-opened handles, and discards an uncommitted group. On an API failure it reports
-<code class="docutils literal notranslate"><span class="pre">ovphysx_get_last_error()</span></code> on the calling thread before cleanup can clear the diagnostic.
+opened handles, and discards an uncommitted group. The helper reports admission
+errors immediately and task errors while their wait result still owns the text.
+Every cleanup outcome is checked. If this function fails, stop using its session
+resources and destroy the instance before continuing; a rejected final release may
+still leave a resource owned by the caller.
 It requires CPU-resident joint tensors and rejects a device tensor before committing that group.
 Use the Python example below for a complete CPU/CUDA fill, or fill native device tensors and supply the synchronization described in
 <a class="reference internal" href="device.html#cuda-synchronization"><span class="std std-ref">CUDA synchronization</span></a>.</p>
 <div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx_attributes.h&gt;</span>
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdio.h&gt;</span>
 
-<span class="kt">int</span><span class="w"> </span><span class="nf">read_joints_and_zero_targets</span><span class="p">(</span><span class="n">ovphysx_handle_t</span><span class="w"> </span><span class="n">physx</span><span class="p">)</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">complete_task</span><span class="p">(</span><span class="n">ovphysx_instance_handle_t</span><span class="w"> </span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_enqueue_result_t</span><span class="w"> </span><span class="n">task</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">task</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_last_error</span><span class="p">();</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;%.*s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">error</span><span class="p">.</span><span class="n">length</span><span class="p">,</span><span class="w"> </span><span class="n">error</span><span class="p">.</span><span class="n">ptr</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">ovphysx_wait_task_result_t</span><span class="w"> </span><span class="n">waited</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span>
+<span class="w">        </span><span class="n">ovphysx_wait_task</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">task</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_TIMEOUT_INFINITE</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">waited</span><span class="p">);</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">waited</span><span class="p">.</span><span class="n">num_errors</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_last_task_error</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">waited</span><span class="p">.</span><span class="n">error_tasks</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;%.*s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">error</span><span class="p">.</span><span class="n">length</span><span class="p">,</span><span class="w"> </span><span class="n">error</span><span class="p">.</span><span class="n">ptr</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">waited</span><span class="p">.</span><span class="n">num_errors</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_last_error</span><span class="p">();</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;%.*s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">error</span><span class="p">.</span><span class="n">length</span><span class="p">,</span><span class="w"> </span><span class="n">error</span><span class="p">.</span><span class="n">ptr</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">ovphysx_destroy_wait_task_result</span><span class="p">(</span><span class="o">&amp;</span><span class="n">waited</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">int</span><span class="w"> </span><span class="nf">read_joints_and_zero_targets</span><span class="p">(</span><span class="n">ovphysx_instance_handle_t</span><span class="w"> </span><span class="n">physx</span><span class="p">)</span>
 <span class="p">{</span>
 <span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">failed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">read_open</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">write_open</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
 <span class="w">    </span><span class="n">ovphysx_query_handle_t</span><span class="w"> </span><span class="n">query</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
 <span class="w">    </span><span class="n">ovphysx_read_handle_t</span><span class="w"> </span><span class="n">read</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
 <span class="w">    </span><span class="n">ovphysx_write_handle_t</span><span class="w"> </span><span class="n">write</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
@@ -736,122 +779,221 @@ Use the Python example below for a complete CPU/CUDA fill, or fill native device
 <span class="w">             </span><span class="k">sizeof</span><span class="p">(</span><span class="n">OVPHYSX_ATTR_JOINT_POSITION_TARGET</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">}</span>
 <span class="w">    </span><span class="p">};</span>
 
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ovphysx_query</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_OBJECT_ARTICULATION_JOINT</span><span class="p">,</span>
-<span class="w">                     </span><span class="n">OVPHYSX_SCOPE_ALL</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">query</span><span class="p">).</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
+<span class="w">    </span><span class="c1">// NULL result pointers skip the optional discovery and session summaries.</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">complete_task</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_query</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT</span><span class="p">,</span>
+<span class="w">                                          </span><span class="n">OVPHYSX_SCOPE_ALL</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">query</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">complete_task</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_read</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">query</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">read_attr</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">read</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)))</span>
 <span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ovphysx_read</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">query</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">read_attr</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">read</span><span class="p">).</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
-<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
+<span class="w">    </span><span class="n">read_open</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 <span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(;;)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_read_group_t</span><span class="o">*</span><span class="w"> </span><span class="n">group</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
-<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_fetch_read_next</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">read</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">group</span><span class="p">);</span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVPHYSX_API_END_OF_ITERATION</span><span class="p">)</span>
-<span class="w">            </span><span class="k">break</span><span class="p">;</span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">!</span><span class="n">group</span><span class="p">)</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">complete_task</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_fetch_read_next</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">read</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">group</span><span class="p">)))</span>
 <span class="w">            </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">group</span><span class="p">)</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
 <span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">group</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">.</span><span class="n">tensor_count</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="n">DLTensor</span><span class="o">*</span><span class="w"> </span><span class="n">tensor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">group</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">.</span><span class="n">tensors</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
-<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tensor</span><span class="o">-&gt;</span><span class="n">device</span><span class="p">.</span><span class="n">device_type</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">kDLCPU</span><span class="p">)</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tensor</span><span class="o">-&gt;</span><span class="n">device</span><span class="p">.</span><span class="n">device_type</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">kDLCPU</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;This example requires CPU tensors</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
 <span class="w">                </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span>
 <span class="w">            </span><span class="c1">// jointPosition is contiguous float32, one row per unlocked axis.</span>
 <span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="o">*</span><span class="w"> </span><span class="n">values</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="o">*</span><span class="p">)((</span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="p">)</span><span class="n">tensor</span><span class="o">-&gt;</span><span class="n">data</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">tensor</span><span class="o">-&gt;</span><span class="n">byte_offset</span><span class="p">);</span>
 <span class="w">            </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">axis</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">axis</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">tensor</span><span class="o">-&gt;</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span><span class="w"> </span><span class="o">++</span><span class="n">axis</span><span class="p">)</span>
 <span class="w">                </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;joint %zu, axis %lld: %g</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="p">)</span><span class="n">axis</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">double</span><span class="p">)</span><span class="n">values</span><span class="p">[</span><span class="n">axis</span><span class="p">]);</span>
 <span class="w">        </span><span class="p">}</span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ovphysx_release_group</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">read</span><span class="p">,</span><span class="w"> </span><span class="n">group</span><span class="o">-&gt;</span><span class="n">read_group_id</span><span class="p">).</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">complete_task</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_release_group</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">read</span><span class="p">,</span><span class="w"> </span><span class="n">group</span><span class="o">-&gt;</span><span class="n">read_group_id</span><span class="p">)))</span>
 <span class="w">            </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
 <span class="w">    </span><span class="p">}</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ovphysx_release_read</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">read</span><span class="p">).</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">complete_task</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_write</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">query</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">write_attr</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">write</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)))</span>
 <span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
-<span class="w">    </span><span class="n">read</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ovphysx_write</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">query</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">write_attr</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">write</span><span class="p">).</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
-<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
+<span class="w">    </span><span class="n">write_open</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 <span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(;;)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_map_group_t</span><span class="o">*</span><span class="w"> </span><span class="n">group</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
-<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_fetch_write_next</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">write</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">group</span><span class="p">);</span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVPHYSX_API_END_OF_ITERATION</span><span class="p">)</span>
-<span class="w">            </span><span class="k">break</span><span class="p">;</span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">!</span><span class="n">group</span><span class="p">)</span>
+<span class="w">        </span><span class="n">ovphysx_fetched_write_group_t</span><span class="w"> </span><span class="n">fetched</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">};</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">complete_task</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_fetch_write_next</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">write</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">fetched</span><span class="p">)))</span>
 <span class="w">            </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
+<span class="w">        </span><span class="c1">// fetched.attribute_index is 0 here: this session has one requested attribute.</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovstage_map_group_t</span><span class="o">*</span><span class="w"> </span><span class="n">group</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fetched</span><span class="p">.</span><span class="n">group</span><span class="p">;</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">group</span><span class="p">)</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
 <span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">group</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">.</span><span class="n">tensor_count</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="n">DLTensor</span><span class="o">*</span><span class="w"> </span><span class="n">tensor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">group</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">.</span><span class="n">tensors</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
-<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tensor</span><span class="o">-&gt;</span><span class="n">device</span><span class="p">.</span><span class="n">device_type</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">kDLCPU</span><span class="p">)</span>
-<span class="w">                </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span><span class="w"> </span><span class="c1">// Release discards this group without committing it.</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tensor</span><span class="o">-&gt;</span><span class="n">device</span><span class="p">.</span><span class="n">device_type</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">kDLCPU</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;This example requires CPU tensors</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">                </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span><span class="w"> </span><span class="c1">// Release discards this group without committing it.</span>
 <span class="w">            </span><span class="kt">float</span><span class="o">*</span><span class="w"> </span><span class="n">values</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">float</span><span class="o">*</span><span class="p">)((</span><span class="kt">char</span><span class="o">*</span><span class="p">)</span><span class="n">tensor</span><span class="o">-&gt;</span><span class="n">data</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">tensor</span><span class="o">-&gt;</span><span class="n">byte_offset</span><span class="p">);</span>
 <span class="w">            </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int64_t</span><span class="w"> </span><span class="n">axis</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">axis</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">tensor</span><span class="o">-&gt;</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span><span class="w"> </span><span class="o">++</span><span class="n">axis</span><span class="p">)</span>
 <span class="w">                </span><span class="n">values</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span>
 <span class="w">        </span><span class="p">}</span>
 <span class="w">        </span><span class="c1">// Every tensor was filled synchronously on the host.</span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ovphysx_commit_group</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">write</span><span class="p">,</span><span class="w"> </span><span class="n">group</span><span class="p">,</span>
-<span class="w">                                </span><span class="p">(</span><span class="n">ovstage_cuda_sync_t</span><span class="p">){</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">}).</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">complete_task</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_commit_group</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">write</span><span class="p">,</span><span class="w"> </span><span class="n">group</span><span class="p">,</span>
+<span class="w">                                                     </span><span class="p">(</span><span class="n">ovstage_cuda_sync_t</span><span class="p">){</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">})))</span>
 <span class="w">            </span><span class="k">goto</span><span class="w"> </span><span class="n">cleanup</span><span class="p">;</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">    </span><span class="n">failed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
 
 <span class="nl">cleanup</span><span class="p">:</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">failed</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_last_error</span><span class="p">();</span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">error</span><span class="p">.</span><span class="n">length</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
-<span class="w">            </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;%.*s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">error</span><span class="p">.</span><span class="n">length</span><span class="p">,</span><span class="w"> </span><span class="n">error</span><span class="p">.</span><span class="n">ptr</span><span class="p">);</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">write</span><span class="p">)</span>
-<span class="w">        </span><span class="n">ovphysx_release_write</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">write</span><span class="p">);</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">read</span><span class="p">)</span>
-<span class="w">        </span><span class="n">ovphysx_release_read</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">read</span><span class="p">);</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
-<span class="w">        </span><span class="n">ovphysx_release_query</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">query</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">write_open</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">!</span><span class="n">complete_task</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_release_write</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">write</span><span class="p">)))</span>
+<span class="w">        </span><span class="n">failed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">read_open</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">!</span><span class="n">complete_task</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_release_read</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">read</span><span class="p">)))</span>
+<span class="w">        </span><span class="n">failed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">complete_task</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_release_query</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span><span class="w"> </span><span class="n">query</span><span class="p">)))</span>
+<span class="w">        </span><span class="n">failed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 <span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">failed</span><span class="p">;</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 <p><strong>Python (CPU or CUDA scene)</strong></p>
-<p>The Python wrappers each create and release their own query. The same object type and <code class="docutils literal notranslate"><span class="pre">ALL</span></code> scope
-select the same joints while the scene’s structure is unchanged.</p>
+<p>This example also uses one query for both sessions. Each call returns an <code class="docutils literal notranslate"><span class="pre">Operation</span></code>; <code class="docutils literal notranslate"><span class="pre">wait()</span></code>
+collects it and returns its result, and raises <code class="docutils literal notranslate"><span class="pre">TaskError</span></code> for an execution failure. Leaving a
+<code class="docutils literal notranslate"><span class="pre">with</span></code> block submits that object’s release without waiting. Read arrays keep their session’s
+storage alive, so the physical read release is submitted only after the result, its <code class="docutils literal notranslate"><span class="pre">groups</span></code>
+and every array alias are gone; the helpers below drop them when they return. The final
+<code class="docutils literal notranslate"><span class="pre">wait_all()</span></code> then submits that queued release and collects every release.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warp</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">wp</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">ObjectScope</span><span class="p">,</span> <span class="n">SimObjectType</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">read_joints_and_zero_targets</span><span class="p">(</span><span class="n">physx</span><span class="p">):</span>
-    <span class="k">with</span> <span class="n">physx</span><span class="o">.</span><span class="n">read</span><span class="p">(</span>
-        <span class="n">SimObjectType</span><span class="o">.</span><span class="n">ARTICULATION_JOINT</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;jointPosition&quot;</span><span class="p">],</span> <span class="n">scope</span><span class="o">=</span><span class="n">ObjectScope</span><span class="o">.</span><span class="n">ALL</span>
-    <span class="p">)</span> <span class="k">as</span> <span class="n">result</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">groups</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">print_joint_positions</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="n">query</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">physx</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;jointPosition&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span> <span class="k">as</span> <span class="n">result</span><span class="p">:</span>
+        <span class="k">while</span> <span class="p">(</span><span class="n">group</span> <span class="o">:=</span> <span class="n">result</span><span class="o">.</span><span class="n">fetch_next</span><span class="p">()</span><span class="o">.</span><span class="n">wait</span><span class="p">())</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">tensor</span> <span class="ow">in</span> <span class="n">group</span><span class="o">.</span><span class="n">tensors</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>  <span class="c1"># Explicit host copy for display.</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>  <span class="c1"># Host access for display; CUDA arrays are copied.</span>
 
-    <span class="k">with</span> <span class="n">physx</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
-        <span class="n">SimObjectType</span><span class="o">.</span><span class="n">ARTICULATION_JOINT</span><span class="p">,</span> <span class="s2">&quot;jointPositionTarget&quot;</span><span class="p">,</span> <span class="n">scope</span><span class="o">=</span><span class="n">ObjectScope</span><span class="o">.</span><span class="n">ALL</span>
-    <span class="p">)</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">session</span><span class="o">.</span><span class="n">groups</span><span class="p">:</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">zero_joint_targets</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="n">query</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">physx</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;jointPositionTarget&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+        <span class="k">while</span> <span class="p">(</span><span class="n">group</span> <span class="o">:=</span> <span class="n">session</span><span class="o">.</span><span class="n">fetch_next</span><span class="p">()</span><span class="o">.</span><span class="n">wait</span><span class="p">())</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cuda_device</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">for</span> <span class="n">tensor</span> <span class="ow">in</span> <span class="n">group</span><span class="o">.</span><span class="n">tensors</span><span class="p">:</span>
+                <span class="n">device</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">device</span>
+                <span class="k">assert</span> <span class="n">device</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
                 <span class="n">tensor</span><span class="o">.</span><span class="n">zero_</span><span class="p">()</span>  <span class="c1"># Fill every mapped element on its native device.</span>
-            <span class="n">cuda</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">group</span><span class="o">.</span><span class="n">tensors</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">size</span> <span class="ow">and</span> <span class="n">t</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">is_cuda</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">cuda</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">tensor</span><span class="o">.</span><span class="n">size</span> <span class="ow">and</span> <span class="n">device</span><span class="o">.</span><span class="n">is_cuda</span><span class="p">:</span>
+                    <span class="n">cuda_device</span> <span class="o">=</span> <span class="n">device</span>
+            <span class="k">if</span> <span class="n">cuda_device</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">(</span><span class="n">group</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># Each native group belongs to one device; order commit after its fill stream.</span>
-                <span class="n">stream</span> <span class="o">=</span> <span class="n">wp</span><span class="o">.</span><span class="n">get_stream</span><span class="p">(</span><span class="n">cuda</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-                <span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">cuda_stream</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">cuda_stream</span> <span class="ow">or</span> <span class="mi">1</span><span class="p">))</span>
+                <span class="c1"># Each native group belongs to one device. Name the fill stream as the producer;</span>
+                <span class="c1"># the device scope makes its CUDA context current for the null-stream value 1.</span>
+                <span class="k">with</span> <span class="n">wp</span><span class="o">.</span><span class="n">ScopedDevice</span><span class="p">(</span><span class="n">cuda_device</span><span class="p">):</span>
+                    <span class="n">stream</span> <span class="o">=</span> <span class="n">wp</span><span class="o">.</span><span class="n">get_stream</span><span class="p">(</span><span class="n">cuda_device</span><span class="p">)</span>
+                    <span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">cuda_stream</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">cuda_stream</span> <span class="ow">or</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">read_joints_and_zero_targets</span><span class="p">(</span><span class="n">physx</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">physx</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">SimObjectType</span><span class="o">.</span><span class="n">ARTICULATION_JOINT</span><span class="p">,</span> <span class="n">scope</span><span class="o">=</span><span class="n">ObjectScope</span><span class="o">.</span><span class="n">ALL</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span> <span class="k">as</span> <span class="n">query</span><span class="p">:</span>
+        <span class="n">print_joint_positions</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+        <span class="n">zero_joint_targets</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+    <span class="n">physx</span><span class="o">.</span><span class="n">wait_all</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>The subsections below cover object selection, object types, and scope. On a
-DirectGPU scene, step at least once (<code class="docutils literal notranslate"><span class="pre">ovphysx_step</span></code>) before the first read or write; see
-<a class="reference internal" href="data_model.html#step-first-precondition-directgpu"><span class="std std-ref">Availability and fallback</span></a>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">physx.read_sync(...)</span></code> and <code class="docutils literal notranslate"><span class="pre">physx.write_sync(...)</span></code> instead create their own query, wait for every
+fetch, and return a session whose <code class="docutils literal notranslate"><span class="pre">groups</span></code> are already populated. Their <code class="docutils literal notranslate"><span class="pre">with</span></code> block exit waits
+for the releases it submits. Read storage that arrays still borrow is released after the last
+alias is dropped, and a later <code class="docutils literal notranslate"><span class="pre">wait_all()</span></code> collects that release.</p>
+<p>The subsections below cover object selection, object types, scope, selecting a subset of
+prims, and the optional session results. On a
+DirectGPU scene, step at least once (<code class="docutils literal notranslate"><span class="pre">ovphysx_step</span></code>) before the first read or write of device state
+(rigid bodies, articulations, joints, deformables) — particle reads serve their authored host values
+before the first step. See <a class="reference internal" href="data_model.html#step-first-precondition-directgpu"><span class="std std-ref">Availability and fallback</span></a>.</p>
 <section id="selecting-objects-queries">
 <h3>Selecting objects — queries<a class="headerlink" href="#selecting-objects-queries" title="Link to this heading">#</a></h3>
-<p>In C, the read and write API requires a query, which holds the selection of objects the API acts on.
-The same query can be used for both the read and the write API.
-The selection is resolved against the most-recently-completed step.
-An empty match is a valid (non-zero) query handle, not a failure.
-The query can be inspected with <code class="docutils literal notranslate"><span class="pre">ovphysx_fetch_query_result</span></code>, which gives the number of selected
-objects and the names of their attributes; their prim paths come through
-<code class="docutils literal notranslate"><span class="pre">ovphysx_query_shared_dictionary</span></code>.
-The query must be released with <code class="docutils literal notranslate"><span class="pre">ovphysx_release_query</span></code>.</p>
+<p>The read and write API requires a query, which holds the selection of objects the API acts on:
+an <code class="docutils literal notranslate"><span class="pre">ovphysx_query_handle_t</span></code> in C, a <code class="docutils literal notranslate"><span class="pre">Query</span></code> in Python. The same query can be used for both the read
+and the write API. A whole-type query (<code class="docutils literal notranslate"><span class="pre">ALL</span></code> or <code class="docutils literal notranslate"><span class="pre">ACTIVE</span></code> scope) is evaluated again each time a
+session opens, after earlier simulation work completes; <code class="docutils literal notranslate"><span class="pre">ACTIVE</span></code> then uses the type-specific
+active set described under <em>Scope — all vs active</em> below. A query opened with a prim-set
+selection keeps the membership it resolved when it was created. An empty match is a valid
+(non-zero) query handle, not a failure.</p>
+<p>The last argument of <code class="docutils literal notranslate"><span class="pre">ovphysx_query</span></code>, <code class="docutils literal notranslate"><span class="pre">ovphysx_query_selection</span></code> and <code class="docutils literal notranslate"><span class="pre">ovphysx_query_contacts</span></code> is an optional
+<code class="docutils literal notranslate"><span class="pre">ovstage_query_result_t*</span></code>. When it is non-NULL, a successful query task fills it with a discovery
+snapshot taken at creation: <code class="docutils literal notranslate"><span class="pre">total_prim_count</span></code> and the tokens of the attributes this object type
+can read, including filtered contact names only when the query has filters. Vehicle discovery
+narrows this list to the union supported by the selected drive types. For other object types
+it is the query’s vocabulary, not a promise that each attribute produces a group
+for this match or configuration; the session result and the groups themselves answer that. Pass
+NULL to skip that discovery work. The attribute array belongs to the query and stays valid until
+the query release is accepted or the instance is destroyed; detach invalidates its
+dictionary use. <code class="docutils literal notranslate"><span class="pre">query_result_id</span></code> and <code class="docutils literal notranslate"><span class="pre">all_handle</span></code> are zero: they are not OVStage resources, so
+never pass them to OVStage query or release calls. The snapshot never updates; recreate the query
+to refresh it. Python’s <code class="docutils literal notranslate"><span class="pre">PhysX.query()</span></code> requests it by default and exposes it as
+<code class="docutils literal notranslate"><span class="pre">Query.metadata</span></code>; pass <code class="docutils literal notranslate"><span class="pre">metadata=False</span></code> to skip it.</p>
+<p>Attribute tokens and prim lists belong to the attached Stage’s path dictionary. In C, get it from
+the Stage you attached with <code class="docutils literal notranslate"><span class="pre">ovstage_get_path_dictionary(stage)</span></code> (that is,
+<code class="docutils literal notranslate"><span class="pre">stage-&gt;vtable-&gt;get_path_dictionary(stage-&gt;context)</span></code>); in Python, use <code class="docutils literal notranslate"><span class="pre">ovstage.PathDictionary(stage)</span></code>
+or <code class="docutils literal notranslate"><span class="pre">query.dictionary</span></code>.</p>
+<p>Wait successfully on the query task before using the handle or its result. Release it with
+<code class="docutils literal notranslate"><span class="pre">ovphysx_release_query</span></code> (Python <code class="docutils literal notranslate"><span class="pre">query.close()</span></code>) and collect that release task too. Sessions already
+opened from a query stay valid after the query is released.</p>
+</section>
+<section id="contact-queries">
+<h3>Contact queries<a class="headerlink" href="#contact-queries" title="Link to this heading">#</a></h3>
+<p>A contact query selects contact sensors and pairs each with F <strong>filter</strong> bodies, whose contacts the
+per-filter attributes (force matrices and filtered contact detail — see
+<a class="reference internal" href="readable.html#contact-sensors"><span class="std std-ref">Contact sensors</span></a>) break out. In C, <code class="docutils literal notranslate"><span class="pre">ovphysx_query_contacts</span></code> takes an array
+of <code class="docutils literal notranslate"><span class="pre">ovphysx_contact_sensor_selection_t</span></code> — a sensor selection plus F filter selections, each an
+<code class="docutils literal notranslate"><span class="pre">ovphysx_query_selection_t</span></code> (a glob or native prim handles) — and the common F. In Python, pass
+<code class="docutils literal notranslate"><span class="pre">contacts=[ContactSelection(sensors,</span> <span class="pre">filters)]</span></code> to <code class="docutils literal notranslate"><span class="pre">PhysX.query</span></code> with
+<code class="docutils literal notranslate"><span class="pre">SimObjectType.CONTACT_SENSOR</span></code> and wait for its <code class="docutils literal notranslate"><span class="pre">Query</span></code>, then
+open <code class="docutils literal notranslate"><span class="pre">PhysX.read(query,</span> <span class="pre">attributes)</span></code>. The <code class="docutils literal notranslate"><span class="pre">read_sync</span></code> / <code class="docutils literal notranslate"><span class="pre">read_tokens_sync</span></code> conveniences accept
+<code class="docutils literal notranslate"><span class="pre">contacts=</span></code> directly and wait for query creation, session opening and all group fetches.</p>
+<ul class="simple">
+<li><p>Rows are the selected contact sensors, including eligible child colliders on CPU simulation and GPU
+dynamics with CPU readback, in selection order then match order; a sensor
+already matched by an earlier selection is not repeated.</p></li>
+<li><p>A child collider’s <code class="docutils literal notranslate"><span class="pre">PhysxContactReportAPI</span></code> makes it eligible as a sensor but does not enable its
+owner’s reporting. It reads zero when neither actor reports matching contacts; see
+<a class="reference internal" href="readable.html#child-collider-sensors"><span class="std std-ref">Child collider sensors</span></a>.</p></li>
+<li><p>Each filter selection matches <strong>one</strong> body (shared by every sensor of its selection) or <strong>one per
+sensor</strong> (paired by position). Any other count — or a sensor naming one filter body twice — fails the
+query when it is opened, with an error naming the selection and the counts. The check depends only on
+which prims the selections match, so an opened query never starts failing later. More than 21845
+filters per sensor is refused at the call, as an invalid argument.</p></li>
+<li><p>Pairing by position comes after that de-duplication, as in the contact binding: if a selection
+re-matches earlier sensors and a filter happens to match as many bodies as its remaining sensors, they
+pair wrongly without an error. Keep sensor selections from overlapping.</p></li>
+<li><p>A contact query has no scope, and cannot be combined with <code class="docutils literal notranslate"><span class="pre">prim_paths</span></code> / <code class="docutils literal notranslate"><span class="pre">pattern</span></code>.</p></li>
+</ul>
+</section>
+<section id="sdf-shapes">
+<h3>SDF shapes<a class="headerlink" href="#sdf-shapes" title="Link to this heading">#</a></h3>
+<p>An <code class="docutils literal notranslate"><span class="pre">SDF_SHAPE</span></code> query selects collision shapes that carry a signed distance field: triangle-mesh
+colliders with <code class="docutils literal notranslate"><span class="pre">PhysxSDFMeshCollisionAPI</span></code> and a cooked SDF. The type has no read or write attribute.
+Evaluate the fields at your own points with <code class="docutils literal notranslate"><span class="pre">ovphysx_evaluate_sdf_shapes</span></code> in C (declared in
+<code class="docutils literal notranslate"><span class="pre">ovphysx/ovphysx_geometry_query.h</span></code>, which <code class="docutils literal notranslate"><span class="pre">ovphysx.h</span></code> does not include), or
+<code class="docutils literal notranslate"><span class="pre">PhysX.evaluate_sdf_shapes</span></code> in Python, which opens and releases the query itself.</p>
+<ul class="simple">
+<li><p>Points <code class="docutils literal notranslate"><span class="pre">[N,</span> <span class="pre">Q,</span> <span class="pre">3]</span></code> go in and results <code class="docutils literal notranslate"><span class="pre">[N,</span> <span class="pre">Q,</span> <span class="pre">4]</span></code> come out: gradient x, y, z, then signed distance,
+negative inside. Both arrays are float32, contiguous and on the scene’s CUDA device. N is the number
+of selected shapes (in C, the <code class="docutils literal notranslate"><span class="pre">total_prim_count</span></code> of the summary <code class="docutils literal notranslate"><span class="pre">ovphysx_query_selection</span></code> returns);
+Q, the points per shape, is read from the arrays on each call.</p></li>
+<li><p>Points and gradients are in each shape’s mesh-local space, the frame of the mesh’s raw vertex
+positions. No prim transform or scale is applied.</p></li>
+<li><p>A point outside the shape’s SDF grid (the mesh bounds padded by the SDF margin) is evaluated, not
+refused, as the SDF view did: its distance is the SDF value at the nearest grid point plus the
+distance to the grid, a positive upper bound of the true distance, and its gradient points away from
+the shape.</p></li>
+<li><p>Row <em>i</em> is the <em>i</em>-th selected shape: prim handles in the order given, a pattern in the deprecated
+SDF view’s order, the whole set in engine order. A selected prim that is not an SDF shape is skipped
+with a warning.</p></li>
+<li><p>DirectGPU scenes only, with every selected shape in one scene, at most 65535 shapes per call (PhysX
+launches its SDF evaluation with one CUDA grid row per shape) and at most 2^31 - 1 points in all (N x Q,
+which PhysX indexes in 32-bit arithmetic). Before the first step the call runs the warmup step itself.</p></li>
+<li><p>The scene must have simulated since its physics objects were last created or released: PhysX uploads
+shape data to the GPU only when it simulates. Past the warmup the call never steps, so after such a
+change, step once before evaluating; until then the call fails naming the missing step.</p></li>
+<li><p>Points still being written on your own CUDA stream are handed off as for a write commit: pass the
+producer stream and/or completion event (<code class="docutils literal notranslate"><span class="pre">points_ready</span></code> in C, <code class="docutils literal notranslate"><span class="pre">cuda_stream=</span></code> / <code class="docutils literal notranslate"><span class="pre">cuda_wait_event=</span></code> in
+Python), and the call waits for them before reading the points.</p></li>
+</ul>
 </section>
 <section id="object-types">
 <h3>Object types<a class="headerlink" href="#object-types" title="Link to this heading">#</a></h3>
-<p>A query targets exactly one object type — <code class="docutils literal notranslate"><span class="pre">OVPHYSX_OBJECT_&lt;NAME&gt;</span></code> in C
-(<code class="docutils literal notranslate"><span class="pre">ovphysx_sim_object_type_t</span></code>), <code class="docutils literal notranslate"><span class="pre">SimObjectType.&lt;NAME&gt;</span></code> in Python (<code class="docutils literal notranslate"><span class="pre">ovphysx.types</span></code>):</p>
+<p>A query targets exactly one object type — <code class="docutils literal notranslate"><span class="pre">OVPHYSX_QUERY_TARGET_&lt;NAME&gt;</span></code> in C
+(<code class="docutils literal notranslate"><span class="pre">ovphysx_query_target_t</span></code>), <code class="docutils literal notranslate"><span class="pre">SimObjectType.&lt;NAME&gt;</span></code> in Python (<code class="docutils literal notranslate"><span class="pre">ovphysx.types</span></code>):</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>Value</p></th>
@@ -904,6 +1046,62 @@ The query must be released with <code class="docutils literal notranslate"><span
 <td><p><code class="docutils literal notranslate"><span class="pre">DEFORMABLE_MATERIAL</span></code></p></td>
 <td><p>deformable materials (the bound <code class="docutils literal notranslate"><span class="pre">Material</span></code> prim)</p></td>
 </tr>
+<tr class="row-odd"><td><p>11</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CONTACT_SENSOR</span></code></p></td>
+<td><p>bodies carrying <code class="docutils literal notranslate"><span class="pre">PhysxContactReportAPI</span></code>, and every link of an articulation carrying it — and, on CPU simulation and GPU dynamics with CPU readback, each collider carrying it (host-only; a DirectGPU scene omits separate child-collider rows). A child collider’s schema enables selection, not its owner’s reporting; see <a class="reference internal" href="readable.html#child-collider-sensors"><span class="std std-ref">Child collider sensors</span></a>. A body row aggregates all of its shapes’ contacts and each collider row reads only its own shape’s, so the two overlap: do not sum net forces or count contacts/events across a body and its own colliders, or they double-count</p></td>
+</tr>
+<tr class="row-even"><td><p>12</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CHARACTER_CONTROLLER</span></code></p></td>
+<td><p>capsule character controllers (the prim carrying <code class="docutils literal notranslate"><span class="pre">PhysxCharacterControllerAPI</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td><p>13</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">VEHICLE</span></code></p></td>
+<td><p>whole vehicles (the vehicle/chassis prim)</p></td>
+</tr>
+<tr class="row-even"><td><p>14</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SCENE</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">PxScene</span></code> (the physics-scene prim); <code class="docutils literal notranslate"><span class="pre">physxPointer</span></code> only</p></td>
+</tr>
+<tr class="row-odd"><td><p>15</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">PHYSX_MATERIAL</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">PxMaterial</span></code>; <code class="docutils literal notranslate"><span class="pre">physxPointer</span></code> only</p></td>
+</tr>
+<tr class="row-even"><td><p>16</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SHAPE</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">PxShape</span></code>; <code class="docutils literal notranslate"><span class="pre">physxPointer</span></code> only</p></td>
+</tr>
+<tr class="row-odd"><td><p>17</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">COMPOUND_SHAPE</span></code></p></td>
+<td><p>compound-shape wrapper; <code class="docutils literal notranslate"><span class="pre">physxPointer</span></code> only</p></td>
+</tr>
+<tr class="row-even"><td><p>18</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">RIGID_ACTOR</span></code></p></td>
+<td><p>dynamic and static rigid actors; <code class="docutils literal notranslate"><span class="pre">physxPointer</span></code> only</p></td>
+</tr>
+<tr class="row-odd"><td><p>19</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">JOINT</span></code></p></td>
+<td><p>standalone <code class="docutils literal notranslate"><span class="pre">PxJoint</span></code>; <code class="docutils literal notranslate"><span class="pre">physxPointer</span></code> only</p></td>
+</tr>
+<tr class="row-even"><td><p>20</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CUSTOM_JOINT</span></code></p></td>
+<td><p>plugin custom joint; <code class="docutils literal notranslate"><span class="pre">physxPointer</span></code> only</p></td>
+</tr>
+<tr class="row-odd"><td><p>21</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">PARTICLE_SYSTEM</span></code></p></td>
+<td><p>particle system; <code class="docutils literal notranslate"><span class="pre">physxPointer</span></code> only</p></td>
+</tr>
+<tr class="row-even"><td><p>22</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">PHYSICS</span></code></p></td>
+<td><p>process-global <code class="docutils literal notranslate"><span class="pre">PxPhysics</span></code>; one row, path <code class="docutils literal notranslate"><span class="pre">/</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>23</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">DEBUG_RENDER</span></code></p></td>
+<td><p>this instance’s debug-render target. Not a prim. Settings are one row. Point, line, and triangle positions and colors are separate columns from the same read; index <code class="docutils literal notranslate"><span class="pre">i</span></code> is the same primitive. An empty column is no geometry. Only scenes belonging to this instance are included. A query does not require an attached stage. Pass <code class="docutils literal notranslate"><span class="pre">&amp;OVPHYSX_NAME_DEBUG_*</span></code> in C, or the string name in Python. See <a class="reference internal" href="readable.html#debug-render"><span class="std std-ref">Readable</span></a> / <a class="reference internal" href="writable.html#debug-render"><span class="std std-ref">Writable</span></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p>24</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SDF_SHAPE</span></code></p></td>
+<td><p>SDF collision shapes — triangle-mesh colliders carrying <code class="docutils literal notranslate"><span class="pre">PhysxSDFMeshCollisionAPI</span></code> (query-only, see <a class="reference internal" href="#sdf-shapes">SDF shapes</a>)</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -911,7 +1109,16 @@ The query must be released with <code class="docutils literal notranslate"><span
 articulation link’s (read-only) pose, or a vehicle wheel’s (read-only) pose depending on the queried
 type. Each type accepts its own attribute list and refuses the rest by name.</p>
 <p><code class="docutils literal notranslate"><span class="pre">ARTICULATION</span></code> and <code class="docutils literal notranslate"><span class="pre">ARTICULATION_LINK</span></code> both match an articulation-root prim; the link type serves
-per-body properties, the whole-articulation type serves root state — neither shadows the other.</p>
+per-body properties, the whole-articulation type serves root state — neither shadows the other.
+Character controllers are rows of <code class="docutils literal notranslate"><span class="pre">RIGID_BODY</span></code> <code class="docutils literal notranslate"><span class="pre">position</span></code> and <code class="docutils literal notranslate"><span class="pre">orientation</span></code> for the controller
+prim. That pose is the backing actor’s global pose. Its orientation includes the capsule-axis
+rotation and is not the fixup-corrected orientation written back to the prim. <code class="docutils literal notranslate"><span class="pre">move</span></code> is applied
+once at commit; the rigid-body pose updates on the next step.</p>
+<p>For one car at <code class="docutils literal notranslate"><span class="pre">/World/Car</span></code>, select that prim as <code class="docutils literal notranslate"><span class="pre">RIGID_BODY</span></code> for chassis pose/velocity, as
+<code class="docutils literal notranslate"><span class="pre">VEHICLE</span></code> for controls/transmission, and <code class="docutils literal notranslate"><span class="pre">/World/Car/**</span></code> as <code class="docutils literal notranslate"><span class="pre">VEHICLE_WHEEL</span></code> for its attachments.
+These are independent queries: an <code class="docutils literal notranslate"><span class="pre">ALL</span></code> rigid-body query also includes unrelated bodies, and an
+<code class="docutils literal notranslate"><span class="pre">ALL</span></code> wheel query includes every vehicle’s wheels. A vehicle query does not implicitly scope
+another query. See the complete <a class="reference internal" href="vehicles.html"><span class="std std-doc">vehicle examples</span></a>.</p>
 </section>
 <section id="scope-all-vs-active">
 <h3>Scope — all vs active<a class="headerlink" href="#scope-all-vs-active" title="Link to this heading">#</a></h3>
@@ -923,14 +1130,124 @@ per-body properties, the whole-articulation type serves root state — neither s
 <p>Two scopes are available today:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">ALL</span></code> — every object of the type. Stable until a structural change.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ACTIVE</span></code> — only objects the solver moved on the <strong>last</strong> step. This set is <strong>single-frame</strong>: it is
-recomputed every step, so do not cache an <code class="docutils literal notranslate"><span class="pre">ACTIVE</span></code> query across steps.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ACTIVE</span></code> — a type-specific active set. Where a scene reports active actors, rigid bodies and
+articulation links use their own activity from the <strong>last completed</strong> step, vehicles and vehicle wheels use
+their chassis, and a whole articulation is active when any link is. Without those reports,
+rigid bodies use current awake, non-kinematic state; links and whole articulations use
+articulation awake state; vehicles and wheels use chassis awake state. Deformables use current awake
+state. Character controllers use their proxy actor’s active-actor membership when reported,
+otherwise that actor’s awake state. Each session opened from the reusable query evaluates that
+type’s current set. Its
+creation-time result and already-open sessions retain their earlier snapshots, so open a new
+session for fresh membership.</p></li>
 </ul>
-<p><code class="docutils literal notranslate"><span class="pre">ACTIVE</span></code> has no meaning for joints, tendons, particle sets, or deformable materials — for those it
-behaves as <code class="docutils literal notranslate"><span class="pre">ALL</span></code>. On a DirectGPU scene sleeping is disabled, so a whole-articulation <code class="docutils literal notranslate"><span class="pre">ACTIVE</span></code> query
+<p><code class="docutils literal notranslate"><span class="pre">ACTIVE</span></code> has no meaning for joints, tendons, particle sets, deformable materials, contact sensors, or SDF shapes —
+for those it behaves as <code class="docutils literal notranslate"><span class="pre">ALL</span></code>. On a DirectGPU scene sleeping is disabled, so a whole-articulation <code class="docutils literal notranslate"><span class="pre">ACTIVE</span></code> query
 equals <code class="docutils literal notranslate"><span class="pre">ALL</span></code> there.</p>
-<p>A future release will extend these options to give the user full control over which objects a query
-selects.</p>
+<p>To act on specific prims instead of a whole scope, see
+<a class="reference internal" href="#selecting-a-subset-of-prims">Selecting a subset of prims</a>.</p>
+</section>
+<section id="selecting-a-subset-of-prims">
+<h3>Selecting a subset of prims<a class="headerlink" href="#selecting-a-subset-of-prims" title="Link to this heading">#</a></h3>
+<p>To act on specific prims instead of every object of the type, open the query with a prim-set
+selection: <code class="docutils literal notranslate"><span class="pre">ovphysx_query_selection</span></code> in C, or the <code class="docutils literal notranslate"><span class="pre">prim_paths=</span></code> or <code class="docutils literal notranslate"><span class="pre">pattern=</span></code> argument of
+<code class="docutils literal notranslate"><span class="pre">PhysX.query</span></code> (and of <code class="docutils literal notranslate"><span class="pre">read_sync</span></code> / <code class="docutils literal notranslate"><span class="pre">read_tokens_sync</span></code> / <code class="docutils literal notranslate"><span class="pre">write_sync</span></code>) in Python. The selection
+narrows the read <strong>and</strong> a write opened over the same query.</p>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">prim_paths</span></code></strong> is an explicit list of native <code class="docutils literal notranslate"><span class="pre">ovx_primpath_t</span></code> handles the caller already holds:
+from a read group’s prim list, or interned through the attached Stage’s path dictionary
+(<code class="docutils literal notranslate"><span class="pre">ovstage.PathDictionary.intern_path</span></code> in Python). Handles name objects by identity; a handle with
+no live object matches nothing.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">pattern</span></code></strong> is a path pattern such as <code class="docutils literal notranslate"><span class="pre">/envs/*/Robot/base_link</span></code>. Its matching rules — how <code class="docutils literal notranslate"><span class="pre">*</span></code>,
+<code class="docutils literal notranslate"><span class="pre">**</span></code> and the last component behave — are exact and differ from a shell glob; see
+<a class="reference internal" href="path_patterns.html"><span class="std std-doc">Path patterns</span></a>.</p></li>
+</ul>
+<p>When both are given, <code class="docutils literal notranslate"><span class="pre">prim_paths</span></code> wins and <code class="docutils literal notranslate"><span class="pre">pattern</span></code> is ignored. A selected query has <strong>no scope</strong>:
+it covers every selected object, sleeping ones included, and stays valid across steps until a
+structural change. In Python, combining a selection with <code class="docutils literal notranslate"><span class="pre">scope=ACTIVE</span></code> raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code>; for
+only the objects that moved, use the whole-set <code class="docutils literal notranslate"><span class="pre">ACTIVE</span></code> query. A selection that matches no object
+is a valid empty query.</p>
+<p>Either kind of selection names prims, and the query keeps the objects of its type among them. An
+<code class="docutils literal notranslate"><span class="pre">ARTICULATION</span></code> query also keeps each articulation one of whose links or joints is selected; every
+other type keeps only the objects whose own prim is selected. See
+<a class="reference internal" href="path_patterns.html#what-a-pattern-selects"><span class="std std-ref">What a pattern selects</span></a>.</p>
+<p>A selection filters the rows; it does not order them. Rows come in engine order, which is neither
+the order of <code class="docutils literal notranslate"><span class="pre">prim_paths</span></code> nor the tensor-binding order, so identify each row through its group’s
+prim list (row <em>i</em> is prim <em>i</em>), not by position.</p>
+</section>
+<section id="session-results">
+<h3>Session results<a class="headerlink" href="#session-results" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">ovphysx_read</span></code> and <code class="docutils literal notranslate"><span class="pre">ovphysx_write</span></code> take a final optional <code class="docutils literal notranslate"><span class="pre">out_summary</span></code> pointer, filled only when the
+open task succeeds. Pass NULL to skip the summary work. Python’s <code class="docutils literal notranslate"><span class="pre">read()</span></code> and <code class="docutils literal notranslate"><span class="pre">write()</span></code> skip it by
+default and expose it as <code class="docutils literal notranslate"><span class="pre">metadata</span></code> when called with <code class="docutils literal notranslate"><span class="pre">metadata=True</span></code>.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">ovphysx_read_result_t</span></code> reports <code class="docutils literal notranslate"><span class="pre">total_prim_count</span></code>, the query membership this session evaluated
+(prim identities, not emitted rows), and one <code class="docutils literal notranslate"><span class="pre">ovphysx_read_attribute_result_t</span></code> row per requested
+attribute, in request order. A row holds the canonical <code class="docutils literal notranslate"><span class="pre">attribute</span></code> token (<code class="docutils literal notranslate"><span class="pre">OVX_INVALID_TOKEN</span></code> for
+a name the object type cannot read), the number of groups the session emits for that request, and
+<code class="docutils literal notranslate"><span class="pre">omission_reasons</span></code>, a bitmask of <code class="docutils literal notranslate"><span class="pre">ovphysx_read_omission_t</span></code> values (Python <code class="docutils literal notranslate"><span class="pre">ReadOmission</span></code>):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_READ_OMISSION_UNSUPPORTED_ATTRIBUTE</span></code> — the name is not readable on this object type.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_READ_OMISSION_UNSUPPORTED_CONFIGURATION</span></code> — the attribute exists, but some selected
+objects cannot produce it in this scene or device configuration.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_READ_OMISSION_NOT_READY</span></code> — some selected objects can produce it later, for example
+after the first step of a DirectGPU scene or after pending scene insertion.</p></li>
+</ul>
+<p>Bits combine across applicable selected partitions; they do not identify or count the affected
+objects. Zero bits with zero groups is a valid empty answer; a
+nonzero group count with bits set is a partial answer. A known backend failure fails the open
+task instead of setting a bit, and a failed fetch is never end of iteration. The rows stay valid
+until the read release is accepted.</p>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ovphysx_write_result_t</span></code> reports <code class="docutils literal notranslate"><span class="pre">total_prim_count</span></code> and one <code class="docutils literal notranslate"><span class="pre">ovphysx_write_attribute_result_t</span></code> row
+per requested attribute, in request order: the canonical token and the planned group count. It
+does not predict whether a later commit succeeds.</p></li>
+</ul>
+<p>In both summaries, <code class="docutils literal notranslate"><span class="pre">group_count</span></code> counts batches, not objects or tensor rows. A group can contain
+many objects. The C/C++ summary structs contain borrowed <code class="docutils literal notranslate"><span class="pre">attributes</span></code> arrays: copying a struct
+copies its pointer, not the rows. To retain the rows, copy all <code class="docutils literal notranslate"><span class="pre">attribute_count</span></code> entries before
+their session’s release is accepted or the instance is destroyed. Write arrays also expire on
+stage detach. Python’s <code class="docutils literal notranslate"><span class="pre">ReadMetadata</span></code> and <code class="docutils literal notranslate"><span class="pre">WriteMetadata</span></code> already own immutable
+copies of these rows. In either language, copying a token does not preserve the dictionary needed
+to resolve it.</p>
+<p>This C helper prints a read summary after the <code class="docutils literal notranslate"><span class="pre">ovphysx_read</span></code> task that filled it succeeded:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdio.h&gt;</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">print_read_summary</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_read_result_t</span><span class="o">*</span><span class="w"> </span><span class="n">summary</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;%zu matched prims</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">summary</span><span class="o">-&gt;</span><span class="n">total_prim_count</span><span class="p">);</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">summary</span><span class="o">-&gt;</span><span class="n">attribute_count</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_read_attribute_result_t</span><span class="o">*</span><span class="w"> </span><span class="n">row</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">summary</span><span class="o">-&gt;</span><span class="n">attributes</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;request %zu: %zu groups&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">row</span><span class="o">-&gt;</span><span class="n">group_count</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">row</span><span class="o">-&gt;</span><span class="n">omission_reasons</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">OVPHYSX_READ_OMISSION_UNSUPPORTED_ATTRIBUTE</span><span class="p">)</span>
+<span class="w">            </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;, unsupported attribute&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">row</span><span class="o">-&gt;</span><span class="n">omission_reasons</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">OVPHYSX_READ_OMISSION_UNSUPPORTED_CONFIGURATION</span><span class="p">)</span>
+<span class="w">            </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;, unsupported configuration&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">row</span><span class="o">-&gt;</span><span class="n">omission_reasons</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">OVPHYSX_READ_OMISSION_NOT_READY</span><span class="p">)</span>
+<span class="w">            </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;, not ready yet&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Both calls validate every requested attribute before publishing a session. A token takes
+precedence over a string in the same entry and must belong to the attached Stage’s dictionary; a
+token that does not resolve, or a duplicate (including a string and a token naming the same
+attribute), fails the open task. A read reports an unknown name as an unsupported row, and an empty
+attribute list is a valid empty read. A write rejects an empty list before admission, and an
+unsupported or read-only name fails the open task, so a write session is never published with a
+subset of its request.</p>
+<p><code class="docutils literal notranslate"><span class="pre">ovphysx_fetch_write_next</span></code> fills a caller-owned <code class="docutils literal notranslate"><span class="pre">ovphysx_fetched_write_group_t</span></code>. Its <code class="docutils literal notranslate"><span class="pre">group</span></code> is the
+producer-owned group to fill and pass unchanged to <code class="docutils literal notranslate"><span class="pre">ovphysx_commit_group</span></code>. Its <code class="docutils literal notranslate"><span class="pre">attribute_index</span></code> is
+the position of the group’s attribute in the original request array — the only reliable way to tell
+same-shaped attributes such as <code class="docutils literal notranslate"><span class="pre">linearVelocity</span></code> and <code class="docutils literal notranslate"><span class="pre">angularVelocity</span></code> apart. Fetch order is not
+guaranteed. End of iteration is a successful fetch with <code class="docutils literal notranslate"><span class="pre">group</span> <span class="pre">==</span> <span class="pre">NULL</span></code>
+and <code class="docutils literal notranslate"><span class="pre">attribute_index</span> <span class="pre">==</span> <span class="pre">SIZE_MAX</span></code>. Python’s <code class="docutils literal notranslate"><span class="pre">WriteGroup</span></code> carries the same <code class="docutils literal notranslate"><span class="pre">attribute_index</span></code> and the
+canonical <code class="docutils literal notranslate"><span class="pre">attribute</span></code> token.</p>
+<p>A write session is not a transaction. Each accepted commit spends its group, commits run in the
+order the caller issues them, and an earlier successful commit stays applied when a later one
+fails.</p>
 </section>
 </section>
 </section>
@@ -986,8 +1303,12 @@ selects.</p>
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-session-model">The session model</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#selecting-objects-queries">Selecting objects — queries</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#contact-queries">Contact queries</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#sdf-shapes">SDF shapes</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#object-types">Object types</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#scope-all-vs-active">Scope — all vs active</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#selecting-a-subset-of-prims">Selecting a subset of prims</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#session-results">Session results</a></li>
 </ul>
 </li>
 </ul>
@@ -1037,7 +1358,7 @@ selects.</p>
 </div>
       
         <div class="footer-item"><p class="last-updated">
-  Last updated on Oct 08, 2026.
+  Last updated on Oct 15, 2026.
   <br/>
 </p></div>
       

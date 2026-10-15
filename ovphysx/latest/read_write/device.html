@@ -47,7 +47,7 @@
 
 
     <script rel="preload" src="../_static/modal-table.js"></script>
-    <script src="../_static/documentation_options.js?v=18b66ea0"></script>
+    <script src="../_static/documentation_options.js?v=423e15eb"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.6.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -75,7 +75,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Oct 08, 2026"/>
+    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
   
     
     <script src="../_static/searchtools.js"></script>
@@ -507,6 +507,10 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coding_style.html">ovphysx coding and doc style</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
@@ -566,7 +570,6 @@
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAPI.html">PhysxJointAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
@@ -613,6 +616,8 @@
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Device residency and interop</a></li>
 <li class="toctree-l1"><a class="reference internal" href="readable.html">Readable data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="writable.html">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="path_patterns.html">Path patterns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="limitations.html">Known limitations and gaps</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
@@ -625,7 +630,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/render_handoff.html">Rendering Handoff</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials/nvtx_profiling.html">NVTX Profiling in Nsight Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
@@ -709,12 +714,14 @@ from its object type or attribute — check each tensor’s device and match it.
 <strong>GPU-only</strong>, so a CPU scene has none.</p>
 <p><strong>On a DirectGPU scene</strong>, columns are on GPU, with these exceptions:</p>
 <ul class="simple">
-<li><p><strong>Not available</strong> — vehicle wheels (vehicles are CPU-only).</p></li>
+<li><p><strong>Not available</strong> — whole vehicles and vehicle wheels (host vehicle simulation is unsupported on DirectGPU), and the contact events (<code class="docutils literal notranslate"><span class="pre">contactEvent*</span></code>:
+PhysX’s GPU contact pairs carry no event type, so the read omits them and completes).</p></li>
 <li><p><strong>On CPU even here</strong> — authored inputs the sim never rewrites:</p>
 <ul>
 <li><p>rigid body / articulation link: <code class="docutils literal notranslate"><span class="pre">mass</span></code>, <code class="docutils literal notranslate"><span class="pre">inverseMass</span></code>, <code class="docutils literal notranslate"><span class="pre">inertia</span></code>, <code class="docutils literal notranslate"><span class="pre">inverseInertia</span></code>,
 <code class="docutils literal notranslate"><span class="pre">centerOfMassPosition</span></code>, <code class="docutils literal notranslate"><span class="pre">centerOfMassOrientation</span></code>, <code class="docutils literal notranslate"><span class="pre">disableGravity</span></code>, <code class="docutils literal notranslate"><span class="pre">disableSimulation</span></code>,
-<code class="docutils literal notranslate"><span class="pre">staticFriction</span></code>, <code class="docutils literal notranslate"><span class="pre">dynamicFriction</span></code>, <code class="docutils literal notranslate"><span class="pre">restitution</span></code>, <code class="docutils literal notranslate"><span class="pre">contactOffset</span></code>, <code class="docutils literal notranslate"><span class="pre">restOffset</span></code>, <code class="docutils literal notranslate"><span class="pre">shapeCount</span></code>;</p></li>
+<code class="docutils literal notranslate"><span class="pre">staticFriction</span></code>, <code class="docutils literal notranslate"><span class="pre">dynamicFriction</span></code>, <code class="docutils literal notranslate"><span class="pre">restitution</span></code>, <code class="docutils literal notranslate"><span class="pre">contactOffset</span></code>, <code class="docutils literal notranslate"><span class="pre">restOffset</span></code>, <code class="docutils literal notranslate"><span class="pre">shapeCount</span></code>,
+<code class="docutils literal notranslate"><span class="pre">kinematicTargetPosition</span></code>, <code class="docutils literal notranslate"><span class="pre">kinematicTargetOrientation</span></code> (CPU-integrated, so host even on DirectGPU);</p></li>
 <li><p>whole articulation: <code class="docutils literal notranslate"><span class="pre">staticFriction</span></code>, <code class="docutils literal notranslate"><span class="pre">dynamicFriction</span></code>, <code class="docutils literal notranslate"><span class="pre">restitution</span></code>, <code class="docutils literal notranslate"><span class="pre">contactOffset</span></code>,
 <code class="docutils literal notranslate"><span class="pre">restOffset</span></code>, <code class="docutils literal notranslate"><span class="pre">shapeCount</span></code>, <code class="docutils literal notranslate"><span class="pre">jacobianShape</span></code>;</p></li>
 <li><p>joint DOF properties: <code class="docutils literal notranslate"><span class="pre">jointStiffness</span></code>, <code class="docutils literal notranslate"><span class="pre">jointDamping</span></code>, <code class="docutils literal notranslate"><span class="pre">jointLimit</span></code>, <code class="docutils literal notranslate"><span class="pre">jointMaxVelocity</span></code>,
@@ -727,9 +734,15 @@ from its object type or attribute — check each tensor’s device and match it.
 <code class="docutils literal notranslate"><span class="pre">deformableThickness</span></code>, <code class="docutils literal notranslate"><span class="pre">deformableBendingDamping</span></code>.</p></li>
 </ul>
 </li>
+<li><p><strong>On CPU for sleep-state reads</strong> — <code class="docutils literal notranslate"><span class="pre">isSleeping</span></code> on rigid bodies and articulation links.
+DirectGPU disables sleeping, so this column reports <code class="docutils literal notranslate"><span class="pre">0</span></code> from the scene’s rule without
+reading stale host simulation state. Normal step-first and disabled-row omissions apply.</p></li>
 <li><p><strong>On CPU only when writing</strong> — particle <code class="docutils literal notranslate"><span class="pre">points</span></code> / <code class="docutils literal notranslate"><span class="pre">velocities</span></code> (on GPU when read, staged through
 CPU on write).</p></li>
 </ul>
+<p>Every other contact-sensor column is on GPU. The filtered contact detail and the raw contacts
+synchronize the host once per read — the host reads their per-sensor counts back to size the arrays —
+so request them only in the reads that need them.</p>
 </section>
 <section id="dlpack-ownership-and-lifetime">
 <h2>DLPack ownership and lifetime<a class="headerlink" href="#dlpack-ownership-and-lifetime" title="Link to this heading">#</a></h2>
@@ -737,22 +750,45 @@ CPU on write).</p></li>
 over as borrowed DLPack tensors (<code class="docutils literal notranslate"><span class="pre">DLTensor</span></code>). On the read side there are two lifetimes:</p>
 <ul class="simple">
 <li><p>the <strong>group struct and its <code class="docutils literal notranslate"><span class="pre">prims.list</span></code></strong> are valid until <code class="docutils literal notranslate"><span class="pre">ovphysx_release_group</span></code> or
-<code class="docutils literal notranslate"><span class="pre">ovphysx_release_read</span></code>;</p></li>
+<code class="docutils literal notranslate"><span class="pre">ovphysx_release_read</span></code> is accepted, or the attachment is retired, whichever happens first;</p></li>
 <li><p>the <strong>numeric storage</strong> — the tensors, their data, index maps, mask, and the CUDA sync event — is
-owned by the <strong>read session</strong> and valid until <code class="docutils literal notranslate"><span class="pre">ovphysx_release_read</span></code>. Fetching further groups and
+owned by the <strong>read session</strong> and valid until <code class="docutils literal notranslate"><span class="pre">ovphysx_release_read</span></code> is accepted. Fetching further groups and
 an intervening <code class="docutils literal notranslate"><span class="pre">ovphysx_step</span></code> do not invalidate it.</p></li>
 </ul>
 <p><strong>Release each step.</strong> You re-read every step for fresh values, so release each read once you’ve
 consumed it — its buffers then return to the pool for the next read. Holding a read across steps is
 legal but only gives a stale snapshot and keeps its buffers out of the pool.</p>
 <p>The destination is always <strong>session-owned</strong> memory, not an alias of live engine storage (the read
-gathers each column into its own buffer). In Python a read returns a <code class="docutils literal notranslate"><span class="pre">warp.array</span></code> on the read’s
-native device. On the write side a non-empty Python group tensor is a <strong>writable alias of the mapped
+gathers each column into its own buffer). Python’s <code class="docutils literal notranslate"><span class="pre">PhysX.read</span></code> returns an <code class="docutils literal notranslate"><span class="pre">Operation</span></code>; materialized
+group tensors are <code class="docutils literal notranslate"><span class="pre">warp.array</span></code> values on the read’s native device. On the write side a non-empty Python group tensor is a <strong>writable alias of the mapped
 memory</strong> (invalid after commit/release), never a copy; an empty group tensor is a Warp-owned empty
 array.</p>
-<p>The synchronous calls (<code class="docutils literal notranslate"><span class="pre">ovphysx_read</span></code> / <code class="docutils literal notranslate"><span class="pre">ovphysx_write</span></code> and their fetch/release) drain pending
-simulation first. Any buffer passed to an <strong>async</strong> op (e.g. <code class="docutils literal notranslate"><span class="pre">ovphysx_step</span></code>) must stay valid and
-unmodified until <code class="docutils literal notranslate"><span class="pre">ovphysx_wait_op</span></code> reports completion.</p>
+<p>Query construction synchronizes with preceding simulation work before inspecting the
+scene. Keep step and session calls externally serialized. If an asynchronous step
+starts mid-session, complete it before fetching or reading new scene-dependent data.
+The write runtime also orders commit against an in-flight step; its <code class="docutils literal notranslate"><span class="pre">write_done_sync</span></code>
+separately orders the application’s buffer fill. Neither synchronization collects
+the earlier step’s task outcome. Retained read snapshots remain valid across steps.</p>
+<p>Native session calls return task receipts, including fetch and release. Their
+current implementation executes inline, but outputs may be inspected only after a
+successful wait. Keep input descriptors, strings, output slots and referenced
+storage alive and stable until completion. A completed host task can leave CUDA
+work outstanding; keep the event and stream dependencies below.</p>
+<p>Release admission ends caller use and transfers remaining cleanup to the SDK.
+Rejected releases retain caller ownership and may be retried. An accepted release
+that later fails must not be issued again; collect its failure and let the SDK own
+any remaining cleanup. Finish external consumers before release or instance
+teardown: a producer-ready event does not prove an application’s later GPU reads
+have completed.</p>
+<p>Detach automatically retires read group metadata and prim lists while the
+stage dictionary is alive. Borrowed numeric read snapshots can remain alive across
+detach until read release; copy any needed metadata before retirement.
+Write sessions instead become invalid at detach because their mappings refer to
+the live scene. Finish their GPU consumers before detaching.
+Instance destruction ends every native session lifetime;
+Python rejects explicit <code class="docutils literal notranslate"><span class="pre">destroy()</span></code> before teardown while a read array or downstream
+view remains alive. The instance and arrays stay usable; drop every alias and retry.
+Normal interpreter exit is the final lifetime boundary and still tears down the runtime.</p>
 </section>
 <section id="cuda-synchronization">
 <h2>CUDA synchronization<a class="headerlink" href="#cuda-synchronization" title="Link to this heading">#</a></h2>
@@ -760,27 +796,51 @@ unmodified until <code class="docutils literal notranslate"><span class="pre">ov
 through a CUDA event.</p>
 <p><strong>Reading.</strong> Each group carries a CUDA event (in <code class="docutils literal notranslate"><span class="pre">cuda_sync</span></code>) that fires when its data is ready.</p>
 <ul class="simple">
-<li><p>Consuming on the default (null) stream → already correct; nothing to do.</p></li>
-<li><p>Consuming on <strong>your own</strong> stream → make it wait on the event first with
-<code class="docutils literal notranslate"><span class="pre">ovphysx_cuda_stream_wait_event(stream,</span> <span class="pre">event)</span></code> (async; <code class="docutils literal notranslate"><span class="pre">event</span> <span class="pre">==</span> <span class="pre">0</span></code> is a no-op).</p></li>
+<li><p>Consuming on the legacy default (null) stream of the producing CUDA context → already ordered
+after the producer work; nothing to do.</p></li>
+<li><p>Consuming on <strong>any other</strong> stream, including the per-thread default stream or a stream of
+another context → make it wait on the event first with
+CUDA’s <code class="docutils literal notranslate"><span class="pre">cuStreamWaitEvent</span></code> or <code class="docutils literal notranslate"><span class="pre">cudaStreamWaitEvent</span></code> and check the returned status.
+These enqueue a dependency without blocking the host. Skip the wait when <code class="docutils literal notranslate"><span class="pre">event</span> <span class="pre">==</span> <span class="pre">0</span></code>.</p></li>
+<li><p>In Python, the first <code class="docutils literal notranslate"><span class="pre">wait()</span></code> or <code class="docutils literal notranslate"><span class="pre">result</span></code> access of a read fetch builds the group’s <code class="docutils literal notranslate"><span class="pre">warp.array</span></code>
+values and orders the event onto the Warp stream current at that access, using
+the bundled native runtime to check the CUDA status without blocking the host or
+adding a Python CUDA package. A failed wait raises <code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code> before the arrays
+are exposed. Host groups and zero events skip the wait.
+<code class="docutils literal notranslate"><span class="pre">PhysX.wait_all()</span></code> collects outcomes without building arrays. Order any other stream explicitly.</p></li>
 </ul>
 <p>The event belongs to the read session — don’t destroy it.</p>
 <p><strong>Writing.</strong> You are the producer, so tell physics when your data is ready via the <code class="docutils literal notranslate"><span class="pre">write_done_sync</span></code>
 you pass to <code class="docutils literal notranslate"><span class="pre">ovphysx_commit_group</span></code>:</p>
 <ul class="simple">
-<li><p>a CUDA event → physics waits on it before reading your buffer;</p></li>
-<li><p>a stream but no event → physics drains that stream;</p></li>
+<li><p>a nonzero event → physics waits for it before reading your buffer;</p></li>
+<li><p>a nonzero stream → physics drains that stream before reading your buffer;</p></li>
+<li><p>both nonzero → both are honored;</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">{0,</span> <span class="pre">0}</span></code> → nothing outstanding (a host-resident group is <em>not</em> automatically <code class="docutils literal notranslate"><span class="pre">{0,</span> <span class="pre">0}</span></code>).</p></li>
 </ul>
+<p>The stream and event name your PRODUCER work; they do not select the stream physics consumes on.
+A context-relative stream value (<code class="docutils literal notranslate"><span class="pre">1</span></code> for the legacy default stream, <code class="docutils literal notranslate"><span class="pre">2</span></code> for the per-thread default
+stream) refers to the CUDA context current on the calling thread, so make the producer’s context
+current first. Keep the stream and event valid until the commit task completes. The current
+implementation may block the committing call while it completes these dependencies; an
+<code class="docutils literal notranslate"><span class="pre">Operation</span></code> returned without collection does not imply a nonblocking host call. A failure to
+establish a dependency fails the commit task and spends the group; the SDK retains the group’s
+storage, and the session release reports that failure. Python’s <code class="docutils literal notranslate"><span class="pre">commit(group,</span> <span class="pre">cuda_stream=...,</span> <span class="pre">cuda_wait_event=...,</span> <span class="pre">event_owner=...)</span></code> keeps <code class="docutils literal notranslate"><span class="pre">event_owner</span></code> alive until the commit is collected.</p>
+<p>During this wait, the commit remains an active runtime operation. The public ovphysx API rejects
+overlapping query, read, write, fetch, commit and release submissions with
+<code class="docutils literal notranslate"><span class="pre">OVPHYSX_API_INVALID_STATE</span></code> instead of waiting for the commit. Producer work must not depend on a
+CUDA host callback or other code that needs such a call to succeed, or that waits for this commit
+to finish: that cyclic dependency can deadlock. This is a limitation of the current blocking
+implementation and does not grant concurrent use of the public API.</p>
 </section>
 <section id="the-read-device-buffer-pool">
 <h2>The read device-buffer pool<a class="headerlink" href="#the-read-device-buffer-pool" title="Link to this heading">#</a></h2>
 <p>On the DirectGPU read path each output column allocates a device buffer plus a pinned host staging
 buffer; these dominate per-read cost. To improve performance, ovphysx keeps released buffers in a per-CUDA-context pool
 (best-fit reuse), freed only after the read’s completion event.</p>
-<p>The maximum memory allocated in this pool is bound by the process-wide config
-<code class="docutils literal notranslate"><span class="pre">OVPHYSX_CONFIG_OVSTAGE_READ_POOL_MAX_MB</span></code> (builder
-<code class="docutils literal notranslate"><span class="pre">ovphysx_config_entry_ovstage_read_pool_max_mb</span></code>; Carbonite <code class="docutils literal notranslate"><span class="pre">/physics/ovstageReadPoolMaxMB</span></code>),
+<p>The maximum memory allocated in this pool is bound by the process-wide
+<code class="docutils literal notranslate"><span class="pre">OVPHYSX_GLOBAL_CONFIG_OVSTAGE_READ_POOL_MAX_MB</span></code> key (Python
+<code class="docutils literal notranslate"><span class="pre">GlobalConfigKey.OVSTAGE_READ_POOL_MAX_MB</span></code>; Carbonite <code class="docutils literal notranslate"><span class="pre">/physics/ovstageReadPoolMaxMB</span></code>),
 <strong>default 256 MiB</strong>. <code class="docutils literal notranslate"><span class="pre">0</span></code> or any negative value <strong>disables</strong> the pool (every column freed and
 re-allocated).</p>
 <p>Note that the budget bounds <em>retained</em> bytes per context, not the transient peak of a single
@@ -789,11 +849,15 @@ only performance will be affected and not the result of the call.</p>
 </section>
 <section id="device-mode-and-threading">
 <h2>Device mode and threading<a class="headerlink" href="#device-mode-and-threading" title="Link to this heading">#</a></h2>
-<p>Hard CPU-only mode is process-wide: <code class="docutils literal notranslate"><span class="pre">ovphysx_set_cpu_mode(true)</span></code> before the first instance, or the
-<code class="docutils literal notranslate"><span class="pre">OVPHYSX_DISABLE_GPU</span></code> environment variable. The active CUDA ordinal is a single value on
-<code class="docutils literal notranslate"><span class="pre">ovphysx_create_args</span></code>, applied at attach. A single ovphysx instance is not thread-safe — serialize
-access; multiple instances across threads are fine, and all instances in a process share the same
-(CPU or GPU) device mode.</p>
+<p>Hard CPU-only mode is process-wide: set
+<code class="docutils literal notranslate"><span class="pre">OVPHYSX_GLOBAL_CONFIG_CPU_ONLY</span></code> to <code class="docutils literal notranslate"><span class="pre">true</span></code> before the first instance, or use the
+<code class="docutils literal notranslate"><span class="pre">OVPHYSX_DISABLE_GPU</span></code> environment variable (env overrides the setter). CUDA
+selection is per instance: <code class="docutils literal notranslate"><span class="pre">ovphysx_set_config(...,</span> <span class="pre">OVPHYSX_CONFIG_ACTIVE_CUDA_GPUS,</span> <span class="pre">...)</span></code>
+after create and before attach: one ordinal, or a supported comma-separated ordinal list
+that distributes scenes round-robin across GPUs. A single ovphysx instance is not thread-safe — serialize
+access. Different instances may be attached at the same time and may step their own attachments
+concurrently. Hard CPU-only mode is process-wide; outside that mode, CPU/GPU dynamics are authored
+per scene.</p>
 </section>
 </section>
 
@@ -898,7 +962,7 @@ access; multiple instances across threads are fine, and all instances in a proce
 </div>
       
         <div class="footer-item"><p class="last-updated">
-  Last updated on Oct 08, 2026.
+  Last updated on Oct 15, 2026.
   <br/>
 </p></div>
       

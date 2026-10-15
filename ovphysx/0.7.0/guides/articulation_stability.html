@@ -9,7 +9,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>NVTX Profiling in Nsight Systems &#8212; ovphysx SDK</title>
+    <title>Articulation and Robot Simulation Stability Guide &#8212; ovphysx SDK</title>
   
   
   
@@ -47,17 +47,17 @@
 
 
     <script rel="preload" src="../_static/modal-table.js"></script>
-    <script src="../_static/documentation_options.js?v=18b66ea0"></script>
+    <script src="../_static/documentation_options.js?v=423e15eb"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../_static/copybutton.js?v=fc986d73"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/nvtx_profiling';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'guides/articulation_stability';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.6.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -68,14 +68,14 @@
 
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Building Against the ovphysx Source Tree" href="source_link_build.html" />
-    <link rel="prev" title="OmniPVD Recording – Capture Physics Internals to FILE or TCP" href="omnipvd_recording.html" />
+    <link rel="next" title="Joint Parameter Tuning Example: Robotiq 2F-85" href="gripper_tuning.html" />
+    <link rel="prev" title="Collision Behavior Guide" href="collision_tuning.html" />
 
 
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Oct 08, 2026"/>
+    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
   
     
     <script src="../_static/searchtools.js"></script>
@@ -507,6 +507,10 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coding_style.html">ovphysx coding and doc style</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
@@ -566,7 +570,6 @@
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAPI.html">PhysxJointAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
@@ -613,28 +616,30 @@
 <li class="toctree-l1"><a class="reference internal" href="../read_write/device.html">Device residency and interop</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/readable.html">Readable data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/writable.html">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/path_patterns.html">Path patterns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/limitations.html">Known limitations and gaps</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
-<ul class="current nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello World – Populate ovstage and Step</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tensor_bindings.html">Tensor Bindings (deprecated)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="contact_binding.html">Contact Binding – Reading Contact Forces</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cloning.html">Cloning – Replicate Environments</a></li>
-<li class="toctree-l1"><a class="reference internal" href="render_handoff.html">Rendering Handoff</a></li>
-<li class="toctree-l1"><a class="reference internal" href="physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
-<li class="toctree-l1"><a class="reference internal" href="omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">NVTX Profiling in Nsight Systems</a></li>
-<li class="toctree-l1"><a class="reference internal" href="source_link_build.html">Building Against the ovphysx Source Tree</a></li>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/hello_world.html">Hello World – Populate ovstage and Step</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tensor_bindings.html">Tensor Bindings (deprecated)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/contact_binding.html">Contact Binding – Reading Contact Forces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/cloning.html">Cloning – Replicate Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/render_handoff.html">Rendering Handoff</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="../guides/performance.html">Simulation Performance Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/collision_tuning.html">Collision Behavior Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/articulation_stability.html">Articulation and Robot Simulation Stability Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/gripper_tuning.html">Joint Parameter Tuning Example: Robotiq 2F-85</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/limitations.html">Known Physics Limitations</a></li>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="performance.html">Simulation Performance Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="collision_tuning.html">Collision Behavior Guide</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Articulation and Robot Simulation Stability Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gripper_tuning.html">Joint Parameter Tuning Example: Robotiq 2F-85</a></li>
+<li class="toctree-l1"><a class="reference internal" href="limitations.html">Known Physics Limitations</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul class="nav bd-sidenav">
@@ -678,7 +683,7 @@
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">NVTX Profiling in Nsight Systems</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Articulation and Robot Simulation Stability Guide</span></li>
   </ul>
 </nav>
 </div>
@@ -697,244 +702,154 @@
                   
   <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-<section id="nvtx-profiling-in-nsight-systems">
-<h1>NVTX Profiling in Nsight Systems<a class="headerlink" href="#nvtx-profiling-in-nsight-systems" title="Link to this heading">#</a></h1>
-<p>This tutorial shows how to make an ovphysx workload annotate itself for <a class="reference external" href="https://developer.nvidia.com/nsight-systems">NVIDIA Nsight Systems</a>. A capture then shows which ovphysx call and which PhysX simulation phase each span of time belongs to, correlated with the CUDA activity Nsight already records.</p>
-<p>The instrumentation is compiled into release builds and the shipped wheel, so profiling never requires a custom build. Emission is off by default.</p>
-<p>This page covers only what is specific to ovphysx. For recording options, the timeline UI, report scripts, and GPU metrics, refer to the <a class="reference external" href="https://docs.nvidia.com/nsight-systems/UserGuide/index.html">Nsight Systems User Guide</a>.</p>
-<section id="prerequisites">
-<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">#</a></h2>
+<section id="articulation-and-robot-simulation-stability-guide">
+<h1>Articulation and Robot Simulation Stability Guide<a class="headerlink" href="#articulation-and-robot-simulation-stability-guide" title="Link to this heading">#</a></h1>
+<p>Recommended practices for tuning articulation and simulation parameters to
+achieve stable robot simulations. Refer to <a class="reference internal" href="../simulation_setup/articulations.html"><span class="std std-doc">Articulations</span></a>
+for how to author the articulation, its drives, friction, and armature.</p>
+<section id="reduce-the-timestep-for-complex-systems-and-closed-loops">
+<h2>Reduce the Timestep for Complex Systems and Closed Loops<a class="headerlink" href="#reduce-the-timestep-for-complex-systems-and-closed-loops" title="Link to this heading">#</a></h2>
+<p>Complex mechanisms have higher natural frequencies and need smaller timesteps.
+Closed articulation loops and humanoids often need well above the default 60 Hz
+(humanoids commonly run at 100 Hz or more).</p>
+<p>Before you change either value, note the <code class="docutils literal notranslate"><span class="pre">dt</span></code> passed to <code class="docutils literal notranslate"><span class="pre">step(dt)</span></code> or
+<code class="docutils literal notranslate"><span class="pre">step_sync(dt)</span></code> and the scene’s position-iteration counts, and have a
+reproducible scene that shows the instability. Both steps are judged by whether
+that instability disappears, so an intermittent case gives you no signal.</p>
+<ol class="arabic simple">
+<li><p>Try reducing the <code class="docutils literal notranslate"><span class="pre">dt</span></code> passed to <code class="docutils literal notranslate"><span class="pre">step()</span></code> or <code class="docutils literal notranslate"><span class="pre">step_sync()</span></code> to check whether
+instability resolves.</p></li>
+<li><p>If it does, try reducing the number of TGS/PGS position iterations — stability
+is often preserved with fewer iterations at a smaller timestep, improving
+performance.</p></li>
+</ol>
+<p>You are done when the instability is gone at the highest timestep and the lowest
+iteration count that still hold it. ovphysx uses the timestep passed by the
+application; changing <code class="docutils literal notranslate"><span class="pre">physxScene:timeStepsPerSecond</span></code> alone does not change that
+step duration. Author the iteration limits on the scene prim; refer to
+<a class="reference internal" href="../simulation_setup/physics_scene.html#physics-solver"><span class="std std-ref">Physics Solver</span></a>.</p>
+</section>
+<section id="mimic-joint-compliance">
+<h2>Mimic Joint Compliance<a class="headerlink" href="#mimic-joint-compliance" title="Link to this heading">#</a></h2>
+<p>Competing hard constraints — contacts, stiff drives, and mimic joints — are hard
+for the solver, especially in manipulation. Adding compliance to mimic joints
+(natural frequency + damping ratio) lets them yield just enough to avoid
+numerical issues. Refer to
+<a class="reference internal" href="../simulation_setup/articulations.html#mimic-joints"><span class="std std-ref">mimic joints</span></a>.</p>
+</section>
+<section id="maximum-joint-velocity">
+<h2>Maximum Joint Velocity<a class="headerlink" href="#maximum-joint-velocity" title="Link to this heading">#</a></h2>
+<p>Early RL training produces high joint velocities that cause instability. Clamp
+per-axis joint velocity with <code class="docutils literal notranslate"><span class="pre">physxJointAxis:&lt;axis&gt;:maxJointVelocity</span></code>; a generous
+200-300 deg/s for revolute joints often reduces instability.</p>
+</section>
+<section id="maximum-drive-force">
+<h2>Maximum Drive Force<a class="headerlink" href="#maximum-drive-force" title="Link to this heading">#</a></h2>
+<p>Stiff drives produce large forces, and large forces mean large accelerations and
+velocities that destabilize systems with other stiff constraints.</p>
 <ul class="simple">
-<li><p>Install ovphysx and confirm native libraries load.</p></li>
-<li><p>Prepare a USD file with physics objects.</p></li>
-<li><p>Install Nsight Systems to record and view a capture. Enabling NVTX without
-Nsight Systems installed is harmless and produces no useful capture UI.</p></li>
+<li><p>Set the drive’s <code class="docutils literal notranslate"><span class="pre">maxForce</span></code> to clamp drive force.</p></li>
+<li><p>Avoid clamps that would still produce very large accelerations on the lightest
+body mass/inertia in the pair.</p></li>
+<li><p>Use the actuator specification’s maximum output torque/force where available.</p></li>
+<li><p>For linear DOFs, avoid accelerations orders of magnitude beyond gravity. For
+angular DOFs, avoid accelerations that reach ~360 deg/s in a single step.</p></li>
 </ul>
 </section>
-<section id="required-config">
-<h2>Required Config<a class="headerlink" href="#required-config" title="Link to this heading">#</a></h2>
-<p>Emission is controlled by one typed config field, or equivalently by an environment variable:</p>
-<p><strong>NVTX emission config field and environment variable</strong></p>
-<div class="pst-scrollable-table-container"><table class="table">
-<thead>
-<tr class="row-odd"><th class="head"><p>Config field (Python)</p></th>
-<th class="head"><p>C builder</p></th>
-<th class="head"><p>Environment variable</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nvtx_enabled</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">ovphysx_config_entry_nvtx_enabled()</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_NVTX=1</span></code></p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<p>It must be configured <strong>before</strong> the PhysX instance is created, because the PhysX profiler callback is installed during physics engine startup. Pass it through <code class="docutils literal notranslate"><span class="pre">PhysXConfig</span></code> (Python) or <code class="docutils literal notranslate"><span class="pre">config_entries</span></code> in <code class="docutils literal notranslate"><span class="pre">ovphysx_create_args</span></code> (C/C++), or set the environment variable before the process starts.</p>
-<p>Prefer the environment variable when profiling an application whose source you are not changing; prefer the config field when the process itself decides whether it is being profiled. Both resolve to the same process-wide <code class="docutils literal notranslate"><span class="pre">/physics/nvtxEnabled</span></code> setting, and the effective state is readable with <code class="docutils literal notranslate"><span class="pre">physx.get_config_bool(ConfigBool.NVTX_ENABLED)</span></code> or <code class="docutils literal notranslate"><span class="pre">ovphysx_get_global_config_bool(OVPHYSX_CONFIG_NVTX_ENABLED,</span> <span class="pre">&amp;value)</span></code>.</p>
-<p>That setting is sticky for the life of the process: an instance created after one that enabled NVTX inherits the enabled state unless it is explicitly turned off with <code class="docutils literal notranslate"><span class="pre">OVPHYSX_NVTX=0</span></code> or a false config entry.</p>
-<p>Because this is a create-time decision, profile a slice of a long run by scoping the <em>collection</em> with Nsight’s own delay, duration, and capture-range options rather than by toggling the instrumentation.</p>
-</section>
-<section id="code">
-<h2>Code<a class="headerlink" href="#code" title="Link to this heading">#</a></h2>
-<section id="python">
-<h3>Python<a class="headerlink" href="#python" title="Link to this heading">#</a></h3>
-<p>This sample enables NVTX at instance creation, then attaches a scene and steps
-it so the capture has annotated work to show:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
-
-<span class="kn">import</span><span class="w"> </span><span class="nn">ovphysx</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigBool</span><span class="p">,</span> <span class="n">PhysX</span><span class="p">,</span> <span class="n">PhysXConfig</span>
-
-
-<span class="n">_physx_schemas_registered</span> <span class="o">=</span> <span class="kc">False</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">attach_scene</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="n">usd_path</span><span class="p">,</span> <span class="n">stage_name</span><span class="p">):</span>
-    <span class="kn">import</span><span class="w"> </span><span class="nn">ovstage</span>
-
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">available</span><span class="p">():</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;ovstage population bridge is unavailable&quot;</span><span class="p">)</span>
-
-    <span class="c1"># ovphysx ships its PhysX USD schemas as codeless resources and does not register</span>
-    <span class="c1"># them itself. Register them with ovstage once, before the first population</span>
-    <span class="c1"># call in the process. The Newton USD schema (pip package newton-usd-schemas)</span>
-    <span class="c1"># is registered alongside so authored newton:* attributes reach the parser.</span>
-    <span class="k">global</span> <span class="n">_physx_schemas_registered</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">_physx_schemas_registered</span><span class="p">:</span>
-        <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">register_usd_schemas</span><span class="p">(</span>
-            <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">codeless_schema_root</span><span class="p">()),</span> <span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">newton_schema_root</span><span class="p">())]</span>
-        <span class="p">)</span>
-        <span class="n">_physx_schemas_registered</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="n">stage</span> <span class="o">=</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">Stage</span><span class="p">(</span><span class="n">stage_name</span><span class="p">)</span>
-    <span class="n">ordinal</span> <span class="o">=</span> <span class="mi">1</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">open_usd</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">usd_path</span><span class="p">),</span> <span class="n">ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">,</span> <span class="n">domains</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">PopulationDomain</span><span class="o">.</span><span class="n">PHYSICS</span><span class="p">)</span>
-        <span class="n">stage</span><span class="o">.</span><span class="n">advance_write_floor</span><span class="p">(</span><span class="n">ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
-        <span class="n">physx</span><span class="o">.</span><span class="n">attach_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">read_ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">stage</span>
-    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-        <span class="n">stage</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
-        <span class="k">raise</span>
-
-<span class="c1"># Enable NVTX range emission.</span>
-<span class="c1">#</span>
-<span class="c1"># IMPORTANT: this has to be set at initialization, before the physics engine is</span>
-<span class="c1"># created internally, because that is when the PhysX profiler callback is</span>
-<span class="c1"># installed. There is no way to turn it on later in the process.</span>
-<span class="c1">#</span>
-<span class="c1"># Setting OVPHYSX_NVTX=1 in the environment does the same thing without any code</span>
-<span class="c1"># change, which is the usual way to profile an application you did not write.</span>
-<span class="n">physx</span> <span class="o">=</span> <span class="n">PhysX</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">PhysXConfig</span><span class="p">(</span><span class="n">nvtx_enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-
-<span class="c1"># The effective state is readable, so a harness can log what it is doing rather</span>
-<span class="c1"># than guess from an empty capture.</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;NVTX enabled: </span><span class="si">{</span><span class="n">physx</span><span class="o">.</span><span class="n">get_config_bool</span><span class="p">(</span><span class="n">ConfigBool</span><span class="o">.</span><span class="n">NVTX_ENABLED</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-<span class="n">script_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span>
-<span class="n">usd_path</span> <span class="o">=</span> <span class="n">script_dir</span> <span class="o">/</span> <span class="s2">&quot;..&quot;</span> <span class="o">/</span> <span class="s2">&quot;data&quot;</span> <span class="o">/</span> <span class="s2">&quot;links_chain_sample.usda&quot;</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading USD scene: </span><span class="si">{</span><span class="n">usd_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-<span class="c1"># Teardown runs even if attach or stepping raises: leaving a stage attached or an</span>
-<span class="c1"># instance alive would leak the runtime singleton and mask the original error.</span>
-<span class="n">stage</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">stage</span> <span class="o">=</span> <span class="n">attach_scene</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="n">usd_path</span><span class="p">,</span> <span class="s2">&quot;ovphysx-nvtx-sample&quot;</span><span class="p">)</span>
-    <span class="n">physx</span><span class="o">.</span><span class="n">wait_all</span><span class="p">()</span>
-
-    <span class="c1"># Every call below opens an NVTX range in the &quot;ovphysx&quot; domain, and the PhysX</span>
-    <span class="c1"># SDK zones nested inside them land in the &quot;PhysX&quot; domain.</span>
-    <span class="n">dt</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mf">60.0</span>
-    <span class="n">n_steps</span> <span class="o">=</span> <span class="mi">120</span>  <span class="c1"># 2 seconds at 60 Hz</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Simulating </span><span class="si">{</span><span class="n">n_steps</span><span class="si">}</span><span class="s2"> steps...&quot;</span><span class="p">)</span>
-
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">):</span>
-        <span class="n">physx</span><span class="o">.</span><span class="n">step_sync</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
-
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Simulation complete.&quot;</span><span class="p">)</span>
-<span class="k">finally</span><span class="p">:</span>
-    <span class="k">if</span> <span class="n">stage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">physx</span><span class="o">.</span><span class="n">detach_ovstage</span><span class="p">()</span>
-        <span class="n">stage</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
-    <span class="n">physx</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Cleanup complete&quot;</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span>
-    <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Run this sample under Nsight Systems to see the ranges:</span><span class="se">\n</span><span class="s2">&quot;</span>
-    <span class="s2">&quot;  nsys profile -t nvtx,cuda python nvtx_profiling.py</span><span class="se">\n</span><span class="s2">&quot;</span>
-    <span class="s2">&quot;The timeline then shows an &#39;ovphysx&#39; domain with the API calls and a</span><span class="se">\n</span><span class="s2">&quot;</span>
-    <span class="s2">&quot;&#39;PhysX&#39; domain with the SDK simulation phases, correlated with CUDA work.&quot;</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-</section>
-<section id="c">
-<h3>C<a class="headerlink" href="#c" title="Link to this heading">#</a></h3>
-<p>Enabling it is a single config entry on the create args. Add these lines to your
-existing instance-creation code:</p>
-<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx.h&gt;</span>
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx_config.h&gt;</span>
-
-<span class="n">ovphysx_config_entry_t</span><span class="w"> </span><span class="n">config</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">ovphysx_config_entry_nvtx_enabled</span><span class="p">(</span><span class="nb">true</span><span class="p">),</span>
-<span class="p">};</span>
-
-<span class="n">ovphysx_create_args</span><span class="w"> </span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVPHYSX_CREATE_ARGS_DEFAULT</span><span class="p">;</span>
-<span class="n">args</span><span class="p">.</span><span class="n">config_entries</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">;</span>
-<span class="n">args</span><span class="p">.</span><span class="n">config_entry_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
-
-<span class="n">ovphysx_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_create_instance</span><span class="p">(</span><span class="o">&amp;</span><span class="n">args</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">handle</span><span class="p">);</span>
-
-<span class="cm">/* Confirm what the process actually resolved. */</span>
-<span class="kt">bool</span><span class="w"> </span><span class="n">nvtx_on</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
-<span class="n">ovphysx_get_global_config_bool</span><span class="p">(</span><span class="n">OVPHYSX_CONFIG_NVTX_ENABLED</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">nvtx_on</span><span class="p">);</span>
-</pre></div>
-</div>
-<p>The C++ benchmark harness accepts <code class="docutils literal notranslate"><span class="pre">--nvtx</span></code>, which is sugar for the environment variable.</p>
-</section>
-</section>
-<section id="recording-a-capture">
-<h2>Recording a Capture<a class="headerlink" href="#recording-a-capture" title="Link to this heading">#</a></h2>
-<p>Include the <code class="docutils literal notranslate"><span class="pre">nvtx</span></code> trace domain alongside <code class="docutils literal notranslate"><span class="pre">cuda</span></code>, and substitute your own script
-for <code class="docutils literal notranslate"><span class="pre">my_workload.py</span></code>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">OVPHYSX_NVTX</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>nsys<span class="w"> </span>profile<span class="w"> </span>-t<span class="w"> </span>nvtx,cuda<span class="w"> </span>-o<span class="w"> </span>my_capture<span class="w"> </span>python<span class="w"> </span>my_workload.py
-</pre></div>
-</div>
-</section>
-<section id="timeline-contents">
-<h2>Timeline Contents<a class="headerlink" href="#timeline-contents" title="Link to this heading">#</a></h2>
-<p>Two NVTX domains appear:</p>
-<p><strong>NVTX domains in an ovphysx capture</strong></p>
-<div class="pst-scrollable-table-container"><table class="table">
-<thead>
-<tr class="row-odd"><th class="head"><p>Domain</p></th>
-<th class="head"><p>Contents</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ovphysx</span></code></p></td>
-<td><p>The API calls: <code class="docutils literal notranslate"><span class="pre">ovphysx_step</span></code>, <code class="docutils literal notranslate"><span class="pre">ovphysx_step_sync</span></code>, <code class="docutils literal notranslate"><span class="pre">ovphysx_step_n_sync</span></code>, <code class="docutils literal notranslate"><span class="pre">ovphysx_wait_op</span></code>, <code class="docutils literal notranslate"><span class="pre">ovphysx_attach_ovstage</span></code>, <code class="docutils literal notranslate"><span class="pre">ovphysx_clone</span></code>, and the tensor binding create / read / write calls</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PhysX</span></code></p></td>
-<td><p>The PhysX SDK profile zones nested inside them, for both CPU and GPU work</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<p>The <code class="docutils literal notranslate"><span class="pre">PhysX</span></code> domain spans both NVTX range kinds, which Nsight reports separately. Most zones are thread-local push/pop ranges (<code class="docutils literal notranslate"><span class="pre">nvtx_pushpop_sum</span></code>). The high-level simulation phases — <code class="docutils literal notranslate"><span class="pre">Basic.simulate</span></code>, <code class="docutils literal notranslate"><span class="pre">Basic.collision</span></code>, <code class="docutils literal notranslate"><span class="pre">Basic.rigidBodySolver</span></code> and their siblings — are cross-thread ranges (<code class="docutils literal notranslate"><span class="pre">nvtx_startend_sum</span></code>), because they can close on a different thread than they opened on. Checking only one of the two report kinds is a common reason to conclude a phase is missing when it is not.</p>
-<p>Two things commonly surprise people reading a first capture:</p>
+<section id="drive-stability">
+<h2>Drive Stability<a class="headerlink" href="#drive-stability" title="Link to this heading">#</a></h2>
+<p>Model a PD drive as a spring-damper and tune through natural frequency and damping
+ratio. For linear drives:</p>
+<p>[ naturalFrequency = \sqrt{stiffness / mass} ]
+[ dampingRatio = damping / (2 \sqrt{stiffness \cdot mass}) ]</p>
+<p>For angular drives, substitute inertia for mass. Use the lightest relevant mass/
+inertia of the coupled pair (considering the attached subtree).</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">ovphysx_step</span></code> looks almost free. It only enqueues the step; the simulation cost appears under <code class="docutils literal notranslate"><span class="pre">ovphysx_wait_op</span></code>. That is the asynchronous execution model, not a measurement error.</p></li>
-<li><p>In a test or benchmark harness, <code class="docutils literal notranslate"><span class="pre">ovphysx_attach_ovstage</span></code> can dominate, because such harnesses attach a stage per case. A real application attaches once and steps many times.</p></li>
+<li><p>Avoid timestep x natural-frequency products much greater than 1, especially if
+the joint participates in a mimic joint or a gripping action.</p></li>
+<li><p>Reduce the effective timestep by increasing TGS position iterations (or reduce
+the timestep) — both cost performance.</p></li>
+<li><p>Damping ratios beyond critical give a steady but sluggish approach.</p></li>
+</ul>
+<section id="acceleration-drives">
+<h3>Acceleration Drives<a class="headerlink" href="#acceleration-drives" title="Link to this heading">#</a></h3>
+<p>If actuator stiffness/damping are unknown, acceleration drives are easier to tune
+because the engine compensates for joint inertia each step:</p>
+<p>[ stiffness = naturalFrequency^2 ]
+[ damping = 2 \cdot dampingRatio \cdot \sqrt{stiffness} ]</p>
+<p>Because contact-coupled mass is not considered in per-step joint inertia,
+acceleration drives can appear too weak in manipulation.</p>
+</section>
+</section>
+<section id="joint-position-tracking">
+<h2>Joint Position Tracking<a class="headerlink" href="#joint-position-tracking" title="Link to this heading">#</a></h2>
+<p>High stiffness for tight target tracking causes large forces and instability. Instead:</p>
+<ul class="simple">
+<li><p>Add feed-forward effort (gravity, acceleration, Coriolis compensation) using
+the read-only inverse dynamics tensor types (<code class="docutils literal notranslate"><span class="pre">ARTICULATION_GRAVITY_FORCE</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ARTICULATION_MASS_MATRIX</span></code>, <code class="docutils literal notranslate"><span class="pre">ARTICULATION_CORIOLIS_AND_CENTRIFUGAL_FORCE</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ARTICULATION_JACOBIAN</span></code>) — refer to
+<a class="reference internal" href="../tutorials/tensor_bindings.html"><span class="std std-doc">Tensor Bindings (deprecated)</span></a>.</p></li>
+<li><p>Limit the drive force, or rate-limit the drive targets, to avoid large forces
+from targets far from the current state.</p></li>
 </ul>
 </section>
-<section id="attributing-memory-traffic">
-<h2>Attributing Memory Traffic<a class="headerlink" href="#attributing-memory-traffic" title="Link to this heading">#</a></h2>
-<p>Host-device transfer volume and time are already in any capture recorded with <code class="docutils literal notranslate"><span class="pre">-t</span> <span class="pre">cuda</span></code>, and the <code class="docutils literal notranslate"><span class="pre">cuda_gpu_mem_size_sum</span></code> and <code class="docutils literal notranslate"><span class="pre">cuda_gpu_mem_time_sum</span></code> reports break them down by operation. What the NVTX ranges add is attribution: each burst lines up with the <code class="docutils literal notranslate"><span class="pre">ovphysx_read_tensor_binding</span></code> or <code class="docutils literal notranslate"><span class="pre">ovphysx_write_tensor_binding</span></code> call that caused it.</p>
-<p>Read the transfer count alongside the volume. A workload reading state back through tensor bindings typically issues many small copies rather than a few large ones, and a run dominated by sub-kilobyte transfers is limited by per-copy overhead rather than by bandwidth. In that regime, reducing the number of copies — batching reads, or avoiding readback entirely with DirectGPU — pays off where a faster link does not.</p>
-<p>Two related questions belong to other tools: how saturated device DRAM is comes from Nsight Systems’ GPU Metrics rows, which need <a class="reference external" href="https://developer.nvidia.com/ERR_NVGPUCTRPERM">performance-counter access</a>, and which kernel is bandwidth-bound is a question for <a class="reference external" href="https://docs.nvidia.com/nsight-compute/">Nsight Compute</a>. Use a Systems capture to find the kernel, then Compute to explain it.</p>
+<section id="mass-ratios">
+<h2>Mass Ratios<a class="headerlink" href="#mass-ratios" title="Link to this heading">#</a></h2>
+<p>An impulse on a large mass propagated to a small mass produces very large
+velocities. Avoid large mass/inertia ratios, and verify (for example through
+<a class="reference internal" href="../tutorials/omnipvd_recording.html"><span class="std std-doc">OmniPVD</span></a>) that link masses and inertias are
+reasonable and nonzero.</p>
 </section>
-<section id="troubleshooting">
-<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">#</a></h2>
-<p>These symptoms cover the enablement and trace-selection mistakes that leave NVTX
-data out of a capture:</p>
-<p><strong>NVTX capture symptoms and fixes</strong></p>
-<div class="pst-scrollable-table-container"><table class="table">
-<thead>
-<tr class="row-odd"><th class="head"><p>Symptom</p></th>
-<th class="head"><p>Cause</p></th>
-<th class="head"><p>Fix</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p>Capture contains no NVTX data</p></td>
-<td><p>Not enabled, or enabled after instance creation</p></td>
-<td><p>Set <code class="docutils literal notranslate"><span class="pre">OVPHYSX_NVTX=1</span></code> before the process starts, or pass <code class="docutils literal notranslate"><span class="pre">nvtx_enabled</span></code> at init</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ovphysx</span></code> ranges appear but <code class="docutils literal notranslate"><span class="pre">PhysX</span></code> ones do not</p></td>
-<td><p>ovphysx built against a PhysX <code class="docutils literal notranslate"><span class="pre">release</span></code> package, where the SDK’s profile zones are compiled out</p></td>
-<td><p>Use the shipped build; the packaged PhysX is the <code class="docutils literal notranslate"><span class="pre">checked</span></code> config, which keeps its zones</p></td>
-</tr>
-<tr class="row-even"><td><p>A simulation phase seems absent</p></td>
-<td><p>The cross-thread phases are reported separately from the push/pop zones</p></td>
-<td><p>Check <code class="docutils literal notranslate"><span class="pre">nvtx_startend_sum</span></code> as well as <code class="docutils literal notranslate"><span class="pre">nvtx_pushpop_sum</span></code></p></td>
-</tr>
-<tr class="row-odd"><td><p>No GPU zones</p></td>
-<td><p>The scene ran on CPU</p></td>
-<td><p>Confirm the scene uses GPU dynamics and that a CUDA device is available</p></td>
-</tr>
-<tr class="row-even"><td><p>Nsight shows CUDA but no NVTX rows</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">nvtx</span></code> not in the trace selection</p></td>
-<td><p>Include it: <code class="docutils literal notranslate"><span class="pre">-t</span> <span class="pre">nvtx,cuda</span></code></p></td>
-</tr>
-</tbody>
-</table>
+<section id="joint-armature">
+<h2>Joint Armature<a class="headerlink" href="#joint-armature" title="Link to this heading">#</a></h2>
+<p>Armature adds joint-space inertia (and corresponding damping), which improves
+stability — especially when a link’s own inertia is small relative to competing
+constraints. How to set it (including modeling a geared actuator’s reflected
+rotor inertia) is covered in
+<a class="reference internal" href="../simulation_setup/articulations.html#articulation-joint-friction-and-armature"><span class="std std-ref">Articulation Joint Friction and Armature</span></a>.</p>
+</section>
+<section id="articulation-link-self-collision">
+<h2>Articulation Link Self-Collision<a class="headerlink" href="#articulation-link-self-collision" title="Link to this heading">#</a></h2>
+<p>Unintended self-collisions between non-adjacent links cause instability. When
+<code class="docutils literal notranslate"><span class="pre">physxArticulation:enabledSelfCollisions</span></code> is enabled, PhysX always filters
+parent/child link collisions, but non-adjacent links can still collide.</p>
+<p><img alt="Three articulation links A, B, and C in a chain. Joints connect A to B and B to C. A red circle highlights where link A and link C interpenetrate." src="../_images/articulation_self_collision.png" /></p>
+<p><em>Figure: A three-link chain where only the non-adjacent pair collides.</em> Links A
+and B share a joint, and links B and C share a joint, so PhysX filters both of
+those pairs automatically. A and C have no joint between them, so they remain an
+active collision pair – and in the pose drawn, the corner of C penetrates A
+(the red circle). A and C is the pair to filter here; A and B, and B and C, need
+no action.</p>
+<p>Rather than disabling self-collisions globally (usually needed for modeling),
+selectively disable collision between the problem links with
+<code class="docutils literal notranslate"><span class="pre">UsdPhysicsFilteredPairsAPI</span></code> (refer to
+<a class="reference internal" href="../simulation_setup/collision.html#collision-filtering"><span class="std std-ref">pairwise filtering</span></a>). A
+good first diagnostic step is to disable self-collisions to confirm they are the
+cause.</p>
+</section>
+<section id="articulation-solver-order">
+<h2>Articulation Solver Order<a class="headerlink" href="#articulation-solver-order" title="Link to this heading">#</a></h2>
+<p>The solver has a strict constraint ordering. For gripping, resolving dynamic
+contact toward the end of the solver can help (the solver favors constraints
+resolved last).</p>
+<p>Enable it on the <code class="docutils literal notranslate"><span class="pre">PhysicsScene</span></code> prim. This example extends an existing stage
+rather than creating one, so it assumes you already registered the codeless
+PhysX schemas and have the scene path (refer to
+<a class="reference internal" href="../physics_schemas.html"><span class="std std-doc">Physics Schemas</span></a>):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pxr</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sdf</span>
+
+<span class="n">scene_prim</span> <span class="o">=</span> <span class="n">stage</span><span class="o">.</span><span class="n">GetPrimAtPath</span><span class="p">(</span><span class="s2">&quot;/World/physicsScene&quot;</span><span class="p">)</span>
+<span class="n">scene_prim</span><span class="o">.</span><span class="n">ApplyAPI</span><span class="p">(</span><span class="s2">&quot;PhysxSceneAPI&quot;</span><span class="p">)</span>
+<span class="n">scene_prim</span><span class="o">.</span><span class="n">CreateAttribute</span><span class="p">(</span><span class="s2">&quot;physxScene:solveArticulationContactLast&quot;</span><span class="p">,</span> <span class="n">Sdf</span><span class="o">.</span><span class="n">ValueTypeNames</span><span class="o">.</span><span class="n">Bool</span><span class="p">)</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
 </div>
-</section>
-<section id="result">
-<h2>Result<a class="headerlink" href="#result" title="Link to this heading">#</a></h2>
-<p>After this tutorial you can annotate any ovphysx workload and read its ovphysx and PhysX phases in Nsight Systems alongside CUDA activity, without rebuilding the library.</p>
+<p>This reorders the solver so max joint velocity is enforced last and dynamic
+contact is resolved just before static contact — which can reduce persistent
+contact penetration and strengthen gripping, at a measurable performance cost.
+Try it before resorting to a much smaller timestep.</p>
+<p>For a full worked tuning example, refer to
+<a class="reference internal" href="gripper_tuning.html"><span class="std std-doc">Joint Parameter Tuning: Robotiq 2F-85</span></a>.</p>
 </section>
 </section>
 
@@ -949,20 +864,20 @@ data out of a capture:</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="omnipvd_recording.html"
+       href="collision_tuning.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">OmniPVD Recording – Capture Physics Internals to FILE or TCP</p>
+        <p class="prev-next-title">Collision Behavior Guide</p>
       </div>
     </a>
     <a class="right-next"
-       href="source_link_build.html"
+       href="gripper_tuning.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Building Against the ovphysx Source Tree</p>
+        <p class="prev-next-title">Joint Parameter Tuning Example: Robotiq 2F-85</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -987,18 +902,19 @@ data out of a capture:</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#prerequisites">Prerequisites</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#required-config">Required Config</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#code">Code</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#python">Python</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#c">C</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#reduce-the-timestep-for-complex-systems-and-closed-loops">Reduce the Timestep for Complex Systems and Closed Loops</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mimic-joint-compliance">Mimic Joint Compliance</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#maximum-joint-velocity">Maximum Joint Velocity</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#maximum-drive-force">Maximum Drive Force</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#drive-stability">Drive Stability</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#acceleration-drives">Acceleration Drives</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#recording-a-capture">Recording a Capture</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#timeline-contents">Timeline Contents</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#attributing-memory-traffic">Attributing Memory Traffic</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#troubleshooting">Troubleshooting</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#result">Result</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#joint-position-tracking">Joint Position Tracking</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mass-ratios">Mass Ratios</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#joint-armature">Joint Armature</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#articulation-link-self-collision">Articulation Link Self-Collision</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#articulation-solver-order">Articulation Solver Order</a></li>
 </ul>
   </nav></div>
 
@@ -1046,7 +962,7 @@ data out of a capture:</p>
 </div>
       
         <div class="footer-item"><p class="last-updated">
-  Last updated on Oct 08, 2026.
+  Last updated on Oct 15, 2026.
   <br/>
 </p></div>
       

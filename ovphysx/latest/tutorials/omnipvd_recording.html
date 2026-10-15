@@ -47,7 +47,7 @@
 
 
     <script rel="preload" src="../_static/modal-table.js"></script>
-    <script src="../_static/documentation_options.js?v=18b66ea0"></script>
+    <script src="../_static/documentation_options.js?v=423e15eb"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.6.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -68,14 +68,14 @@
 
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="NVTX Profiling in Nsight Systems" href="nvtx_profiling.html" />
+    <link rel="next" title="Profiling: See Where Your Simulation Spends Its Time" href="profiling.html" />
     <link rel="prev" title="PhysX Interop – Direct PhysX SDK Access" href="physx_interop.html" />
 
 
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Oct 08, 2026"/>
+    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
   
     
     <script src="../_static/searchtools.js"></script>
@@ -507,6 +507,10 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coding_style.html">ovphysx coding and doc style</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
@@ -566,7 +570,6 @@
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAPI.html">PhysxJointAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
@@ -613,6 +616,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../read_write/device.html">Device residency and interop</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/readable.html">Readable data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/writable.html">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/path_patterns.html">Path patterns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/limitations.html">Known limitations and gaps</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
@@ -625,7 +630,7 @@
 <li class="toctree-l1"><a class="reference internal" href="render_handoff.html">Rendering Handoff</a></li>
 <li class="toctree-l1"><a class="reference internal" href="physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="nvtx_profiling.html">NVTX Profiling in Nsight Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
 <li class="toctree-l1"><a class="reference internal" href="source_link_build.html">Building Against the ovphysx Source Tree</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
@@ -716,93 +721,45 @@ checkout.</p></li>
 </section>
 <section id="required-config">
 <h2>Required Config<a class="headerlink" href="#required-config" title="Link to this heading">#</a></h2>
-<p>Startup OmniPVD output and late-recording capability are selected at instance
-creation. The default FILE startup transport also uses a recording directory:</p>
-<p><strong>Startup output and late-recording capability fields</strong></p>
-<div class="pst-scrollable-table-container"><table class="table">
-<thead>
-<tr class="row-odd"><th class="head"><p>Config field (Python)</p></th>
-<th class="head"><p>C builder</p></th>
-<th class="head"><p>Description</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">omnipvd_ovd_recording_directory</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">ovphysx_config_entry_omnipvd_ovd_recording_directory()</span></code></p></td>
-<td><p>Writable directory where <code class="docutils literal notranslate"><span class="pre">.ovd</span></code> files are saved</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">omnipvd_output_enabled</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">ovphysx_config_entry_omnipvd_output_enabled()</span></code></p></td>
-<td><p>Enables OmniPVD data capture</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">omnipvd_recording_capable</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">ovphysx_config_entry_omnipvd_recording_capable()</span></code></p></td>
-<td><p>Permits recording to start later without enabling startup output</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<p>Set <code class="docutils literal notranslate"><span class="pre">omnipvd_output_enabled</span></code> before creating the PhysX instance. For FILE, also set
-<code class="docutils literal notranslate"><span class="pre">omnipvd_ovd_recording_directory</span></code>; TCP does not use it. Pass fields through <code class="docutils literal notranslate"><span class="pre">PhysXConfig</span></code>
-(Python) or <code class="docutils literal notranslate"><span class="pre">config_entries</span></code> in <code class="docutils literal notranslate"><span class="pre">ovphysx_create_args</span></code> (C/C++).</p>
-<p>Startup output implicitly installs late-recording capability. The capability is
-process-wide and fixed when the shared runtime is created. With startup output
-and capability both disabled, the default instance deliberately passes a null
-<code class="docutils literal notranslate"><span class="pre">PxOmniPvd</span></code> to PhysX and cannot start recording later; this avoids incremental
-sampler, factory-listener, and sampling-mutex overhead. This is the only
-zero-OmniPVD-overhead configuration. Explicit late-recording capability creates
-the provider and sampler at <code class="docutils literal notranslate"><span class="pre">PxPhysics</span></code> creation and enables OVD and collision
-readback on attached scenes even while recording is idle; DirectGPU scenes
-therefore retain that readback cost.</p>
-<p>For FILE, the runtime auto-creates the recording directory if it does not exist.
-FILE is the default startup transport. TCP startup adds four fields:</p>
-<p><strong>TCP startup transport fields</strong></p>
-<div class="pst-scrollable-table-container"><table class="table">
-<thead>
-<tr class="row-odd"><th class="head"><p>Config field (Python)</p></th>
-<th class="head"><p>C builder</p></th>
-<th class="head"><p>Description</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">omnipvd_transport</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">ovphysx_config_entry_omnipvd_transport()</span></code></p></td>
-<td><p>Exact lowercase <code class="docutils literal notranslate"><span class="pre">&quot;file&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;tcp&quot;</span></code></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">omnipvd_tcp_address</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">ovphysx_config_entry_omnipvd_tcp_address()</span></code></p></td>
-<td><p>Ready listener address</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">omnipvd_tcp_port</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">ovphysx_config_entry_omnipvd_tcp_port()</span></code></p></td>
-<td><p>Listener port, 1 through 65535</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">omnipvd_tcp_timeout_ms</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">ovphysx_config_entry_omnipvd_tcp_timeout_ms()</span></code></p></td>
-<td><p>Blocked-send timeout in milliseconds; 0 leaves it at the OS default and uses a 3000 ms connect window</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<p>With TCP, ovphysx is the client. Start the listener before constructing the
-PhysX instance: the connection is synchronous. TCP is trusted plaintext, so use
-it only on a trusted network.</p>
+<p>Set <code class="docutils literal notranslate"><span class="pre">GlobalConfigKey.OVD_RECORDING_CAPABLE</span></code> to <code class="docutils literal notranslate"><span class="pre">True</span></code> with module-level
+<code class="docutils literal notranslate"><span class="pre">set_global_config()</span></code> before <code class="docutils literal notranslate"><span class="pre">PhysX()</span></code>. In C, initialize and set
+<code class="docutils literal notranslate"><span class="pre">OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE</span></code> with
+<code class="docutils literal notranslate"><span class="pre">ovphysx_config_value_bool(true)</span></code> before plain <code class="docutils literal notranslate"><span class="pre">ovphysx_create_instance()</span></code>.
+This process-wide BOOL bootstrap option installs the provider and sampler when
+<code class="docutils literal notranslate"><span class="pre">PxPhysics</span></code> is created. It defaults to false; without it, late start fails.
+Capability alone leaves output idle but retains sampler, listener, mutex, and
+scene readback costs. Only the default disabled configuration avoids those costs.
+The scoped setter is rejected after the first successful create until successful
+shutdown with no live instances, including after all native instances are destroyed.
+Python’s <code class="docutils literal notranslate"><span class="pre">PhysX.destroy()</span></code> releases its lifecycle owner; releasing the last Python
+owner performs that shutdown, provided no native instances remain, and reopens
+the setter. Its configured value survives shutdown.
+The getter reports the configured bool. Failed creates do not freeze the setter.</p>
+<p>Attach and initialize the scene, then call <code class="docutils literal notranslate"><span class="pre">start_recording()</span></code> with an
+<code class="docutils literal notranslate"><span class="pre">OmniPvdDestination</span></code>. To capture from the first simulated frame, start before
+the first step. FILE uses one exact path whose parent exists; TCP requires a
+ready listener. Stop finalizes the output and allows a new destination on the
+same instance. TCP is synchronous trusted plaintext.</p>
+<p>Creation, attach, and reattach never start output automatically. Old startup
+configuration is rejected; see the <a class="reference internal" href="../ovd_api_migration.html"><span class="std std-doc">API migration guide</span></a>.</p>
 </section>
 <section id="code">
 <h2>Code<a class="headerlink" href="#code" title="Link to this heading">#</a></h2>
 <section id="python">
 <h3>Python<a class="headerlink" href="#python" title="Link to this heading">#</a></h3>
-<p>This complete sample enables startup FILE output with a recording directory,
-attaches <code class="docutils literal notranslate"><span class="pre">links_chain_sample.usda</span></code>, steps for two seconds, destroys the instance
-so the runtime finalizes the recording, and then lists the <code class="docutils literal notranslate"><span class="pre">*_rec.ovd</span></code> files it
-produced:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
+<p>This sample provisions capability, attaches <code class="docutils literal notranslate"><span class="pre">links_chain_sample.usda</span></code>, records
+to an exact FILE destination before the first step, then stops and tears down:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># @implements REQ-CAPI-OVSTAGE-XFORM-001</span>
+<span class="c1"># @covers AC-1</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">ovphysx</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx</span><span class="w"> </span><span class="kn">import</span> <span class="n">PhysX</span><span class="p">,</span> <span class="n">PhysXConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.samples.python_samples.schema_support</span><span class="w"> </span><span class="kn">import</span> <span class="n">physx_schema_paths</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx</span><span class="w"> </span><span class="kn">import</span> <span class="n">GlobalConfigKey</span><span class="p">,</span> <span class="n">OmniPvdDestination</span><span class="p">,</span> <span class="n">PhysX</span><span class="p">,</span> <span class="n">set_global_config</span>
 
 
 <span class="n">_physx_schemas_registered</span> <span class="o">=</span> <span class="kc">False</span>
@@ -814,24 +771,23 @@ produced:</p>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">available</span><span class="p">():</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;ovstage population bridge is unavailable&quot;</span><span class="p">)</span>
 
-    <span class="c1"># ovphysx ships its PhysX USD schemas as codeless resources and does not register</span>
-    <span class="c1"># them itself. Register them with ovstage once, before the first population</span>
-    <span class="c1"># call in the process. The Newton USD schema (pip package newton-usd-schemas)</span>
-    <span class="c1"># is registered alongside so authored newton:* attributes reach the parser.</span>
+    <span class="c1"># Register external PhysX and Newton schemas before the first population.</span>
     <span class="k">global</span> <span class="n">_physx_schemas_registered</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">_physx_schemas_registered</span><span class="p">:</span>
         <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">register_usd_schemas</span><span class="p">(</span>
-            <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">codeless_schema_root</span><span class="p">()),</span> <span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">newton_schema_root</span><span class="p">())]</span>
+            <span class="p">[</span><span class="o">*</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">physx_schema_paths</span><span class="p">()],</span> <span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">newton_schema_root</span><span class="p">())]</span>
         <span class="p">)</span>
         <span class="n">_physx_schemas_registered</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">stage</span> <span class="o">=</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">Stage</span><span class="p">(</span><span class="n">stage_name</span><span class="p">)</span>
     <span class="n">ordinal</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">open_usd</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">usd_path</span><span class="p">),</span> <span class="n">ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">,</span> <span class="n">domains</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">PopulationDomain</span><span class="o">.</span><span class="n">PHYSICS</span><span class="p">)</span>
+        <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">open_usd</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">usd_path</span><span class="p">),</span> <span class="n">ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">,</span> <span class="n">domains</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">PopulationDomain</span><span class="o">.</span><span class="n">ALL</span><span class="p">)</span>
         <span class="n">stage</span><span class="o">.</span><span class="n">advance_write_floor</span><span class="p">(</span><span class="n">ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
-        <span class="n">physx</span><span class="o">.</span><span class="n">attach_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">read_ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">)</span>
+        <span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">attach_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">read_ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">stage</span>
     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">physx</span><span class="o">.</span><span class="n">is_stage_attached</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
+            <span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">detach_ovstage</span><span class="p">())</span>
         <span class="n">stage</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
         <span class="k">raise</span>
 
@@ -840,16 +796,9 @@ produced:</p>
 <span class="n">output_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;ovphysx_pvd_&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;OmniPVD recording directory: </span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-<span class="c1"># Initialize PhysX with OmniPVD recording enabled.</span>
-<span class="c1"># IMPORTANT: Both config fields must be passed at initialization, before the</span>
-<span class="c1"># physics engine is created internally. The recording directory must be</span>
-<span class="c1"># a valid, writable path.</span>
-<span class="n">physx</span> <span class="o">=</span> <span class="n">PhysX</span><span class="p">(</span>
-    <span class="n">config</span><span class="o">=</span><span class="n">PhysXConfig</span><span class="p">(</span>
-        <span class="n">omnipvd_ovd_recording_directory</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span>
-        <span class="n">omnipvd_output_enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="p">)</span>
-<span class="p">)</span>
+<span class="c1"># Capability must exist before the shared runtime creates PxPhysics.</span>
+<span class="n">set_global_config</span><span class="p">(</span><span class="n">GlobalConfigKey</span><span class="o">.</span><span class="n">OVD_RECORDING_CAPABLE</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">physx</span> <span class="o">=</span> <span class="n">PhysX</span><span class="p">()</span>
 
 <span class="c1"># Prefer package data so a copied sample works. Fall back to the checked-in</span>
 <span class="c1"># sample&#39;s adjacent data directory when package data is absent.</span>
@@ -867,6 +816,7 @@ produced:</p>
 
 <span class="n">stage</span> <span class="o">=</span> <span class="n">attach_scene</span><span class="p">(</span><span class="n">physx</span><span class="p">,</span> <span class="n">usd_path</span><span class="p">,</span> <span class="s2">&quot;ovphysx-omnipvd-sample&quot;</span><span class="p">)</span>
 <span class="n">physx</span><span class="o">.</span><span class="n">wait_all</span><span class="p">()</span>
+<span class="n">physx</span><span class="o">.</span><span class="n">start_recording</span><span class="p">(</span><span class="n">OmniPvdDestination</span><span class="o">.</span><span class="n">file</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;capture.ovd&quot;</span><span class="p">)))</span>
 
 <span class="c1"># Run the simulation. OmniPVD captures each frame automatically.</span>
 <span class="n">dt</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mf">60.0</span>
@@ -878,15 +828,15 @@ produced:</p>
 
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Simulation complete.&quot;</span><span class="p">)</span>
 
-<span class="c1"># Destroying the instance finalizes the recording:</span>
-<span class="c1"># the runtime renames tmp.ovd -&gt; &lt;timestamp&gt;_rec.ovd.</span>
-<span class="n">physx</span><span class="o">.</span><span class="n">detach_ovstage</span><span class="p">()</span>
+<span class="c1"># Stop finalizes the exact destination before releasing the borrowed stage.</span>
+<span class="n">physx</span><span class="o">.</span><span class="n">stop_recording</span><span class="p">()</span>
+<span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">detach_ovstage</span><span class="p">())</span>
 <span class="n">stage</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
 <span class="n">physx</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Runtime cleanup complete; recording retained for inspection&quot;</span><span class="p">)</span>
 
 <span class="c1"># List the produced .ovd files</span>
-<span class="n">ovd_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="s2">&quot;*_rec.ovd&quot;</span><span class="p">))</span>
+<span class="n">ovd_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="s2">&quot;*.ovd&quot;</span><span class="p">))</span>
 <span class="k">if</span> <span class="n">ovd_files</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Recorded </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">ovd_files</span><span class="p">)</span><span class="si">}</span><span class="s2"> OVD file(s):&quot;</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">ovd_files</span><span class="p">:</span>
@@ -924,39 +874,15 @@ target as every other sample:</p>
 <span class="p">)</span>
 <span class="nb">if</span><span class="p">(</span><span class="s">WIN32</span><span class="p">)</span>
 <span class="w">    </span><span class="nb">ovphysx_copy_runtime_dlls</span><span class="p">(</span><span class="s">omnipvd_recording_cpp</span><span class="p">)</span>
+<span class="w">    </span><span class="c"># OVStage is not copied (it loads its plugins relative to itself), so its</span>
+<span class="w">    </span><span class="c"># directories have to reach the process through PATH.</span>
+<span class="w">    </span><span class="nb">ovphysx_set_ovstage_runtime_env</span><span class="p">(</span><span class="s">omnipvd_recording_cpp</span><span class="p">)</span>
 <span class="nb">endif</span><span class="p">()</span>
 </pre></div>
 </div>
-</section>
-<section id="tcp-startup">
-<h3>TCP Startup<a class="headerlink" href="#tcp-startup" title="Link to this heading">#</a></h3>
-<p>To stream to a TCP listener from instance creation, pass the transport and
-listener fields together:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">physx</span> <span class="o">=</span> <span class="n">PhysX</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">PhysXConfig</span><span class="p">(</span>
-    <span class="n">omnipvd_output_enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">omnipvd_transport</span><span class="o">=</span><span class="s2">&quot;tcp&quot;</span><span class="p">,</span>
-    <span class="n">omnipvd_tcp_address</span><span class="o">=</span><span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span>
-    <span class="n">omnipvd_tcp_port</span><span class="o">=</span><span class="mi">5425</span><span class="p">,</span>
-    <span class="n">omnipvd_tcp_timeout_ms</span><span class="o">=</span><span class="mi">3000</span><span class="p">,</span>
-<span class="p">))</span>
-</pre></div>
-</div>
-<p>The equivalent compact C config is:</p>
-<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">ovphysx_config_entry_t</span><span class="w"> </span><span class="n">config</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">ovphysx_config_entry_omnipvd_output_enabled</span><span class="p">(</span><span class="nb">true</span><span class="p">),</span>
-<span class="w">    </span><span class="n">ovphysx_config_entry_omnipvd_transport</span><span class="p">(</span><span class="n">OVPHYSX_OMNIPVD_TRANSPORT_TCP_NAME</span><span class="p">),</span>
-<span class="w">    </span><span class="n">ovphysx_config_entry_omnipvd_tcp_address</span><span class="p">(</span><span class="n">OVPHYSX_LITERAL</span><span class="p">(</span><span class="s">&quot;127.0.0.1&quot;</span><span class="p">)),</span>
-<span class="w">    </span><span class="n">ovphysx_config_entry_omnipvd_tcp_port</span><span class="p">(</span><span class="mi">5425</span><span class="p">),</span>
-<span class="w">    </span><span class="n">ovphysx_config_entry_omnipvd_tcp_timeout_ms</span><span class="p">(</span><span class="mi">3000</span><span class="p">),</span>
-<span class="p">};</span>
-<span class="n">ovphysx_create_args</span><span class="w"> </span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVPHYSX_CREATE_ARGS_DEFAULT</span><span class="p">;</span>
-<span class="n">args</span><span class="p">.</span><span class="n">config_entries</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">;</span>
-<span class="n">args</span><span class="p">.</span><span class="n">config_entry_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
-</pre></div>
-</div>
 <p><strong>Source</strong></p>
-<p>The C++ sample records startup FILE output through the C API, but it attaches
-<code class="docutils literal notranslate"><span class="pre">simple_physics_scene.usda</span></code> and runs 10 steps:</p>
+<p>The C++ sample starts an exact FILE recording after attaching the scene and
+before the first simulation step:</p>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;ovphysx/ovphysx.h&quot;</span>
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;ovphysx/ovphysx_config.h&quot;</span>
 <span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;ovstage_sample.h&quot;</span>
@@ -969,13 +895,13 @@ listener fields together:</p>
 
 <span class="k">namespace</span><span class="w"> </span><span class="nn">fs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nn">std</span><span class="o">::</span><span class="nn">filesystem</span><span class="p">;</span>
 
-<span class="c1">// Count files matching *_rec.ovd in the given directory.</span>
+<span class="c1">// Count files matching *.ovd in the given directory.</span>
 <span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">count_ovd_files</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">fs</span><span class="o">::</span><span class="n">path</span><span class="o">&amp;</span><span class="w"> </span><span class="n">dir</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
 <span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">error_code</span><span class="w"> </span><span class="n">ec</span><span class="p">;</span>
 <span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">entry</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">fs</span><span class="o">::</span><span class="n">directory_iterator</span><span class="p">(</span><span class="n">dir</span><span class="p">,</span><span class="w"> </span><span class="n">ec</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">entry</span><span class="p">.</span><span class="n">path</span><span class="p">().</span><span class="n">filename</span><span class="p">().</span><span class="n">string</span><span class="p">();</span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">name</span><span class="p">.</span><span class="n">size</span><span class="p">()</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">8</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">name</span><span class="p">.</span><span class="n">substr</span><span class="p">(</span><span class="n">name</span><span class="p">.</span><span class="n">size</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">8</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s">&quot;_rec.ovd&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">name</span><span class="p">.</span><span class="n">size</span><span class="p">()</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">4</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">name</span><span class="p">.</span><span class="n">substr</span><span class="p">(</span><span class="n">name</span><span class="p">.</span><span class="n">size</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">4</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s">&quot;.ovd&quot;</span><span class="p">)</span>
 <span class="w">            </span><span class="o">++</span><span class="n">count</span><span class="p">;</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">count</span><span class="p">;</span>
@@ -1005,18 +931,7 @@ listener fields together:</p>
 <span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">dir_str</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">output_dir</span><span class="p">.</span><span class="n">string</span><span class="p">();</span>
 <span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;OmniPVD recording directory: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">dir_str</span><span class="p">.</span><span class="n">c_str</span><span class="p">());</span>
 
-<span class="w">    </span><span class="c1">// Configure OmniPVD recording via typed config entries. Both have to be set</span>
-<span class="w">    </span><span class="c1">// before instance creation, because the recording pipeline initializes</span>
-<span class="w">    </span><span class="c1">// during physics engine startup.</span>
-<span class="w">    </span><span class="n">ovphysx_config_entry_t</span><span class="w"> </span><span class="n">config</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">ovphysx_config_entry_omnipvd_ovd_recording_directory</span><span class="p">(</span><span class="n">ovphysx_cstr</span><span class="p">(</span><span class="n">dir_str</span><span class="p">.</span><span class="n">c_str</span><span class="p">())),</span>
-<span class="w">        </span><span class="n">ovphysx_config_entry_omnipvd_output_enabled</span><span class="p">(</span><span class="nb">true</span><span class="p">),</span>
-<span class="w">    </span><span class="p">};</span>
-
-<span class="w">    </span><span class="n">ovphysx_create_args</span><span class="w"> </span><span class="n">create_args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVPHYSX_CREATE_ARGS_DEFAULT</span><span class="p">;</span>
-<span class="w">    </span><span class="n">create_args</span><span class="p">.</span><span class="n">config_entries</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">;</span>
-<span class="w">    </span><span class="n">create_args</span><span class="p">.</span><span class="n">config_entry_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
-<span class="w">    </span><span class="n">ovphysx_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ovphysx_instance_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
 
 <span class="w">    </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_initialize</span><span class="p">();</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
@@ -1026,7 +941,17 @@ listener fields together:</p>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 <span class="w">    </span><span class="p">}</span>
 
-<span class="w">    </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_create_instance</span><span class="p">(</span><span class="o">&amp;</span><span class="n">create_args</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">    </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_set_global_config</span><span class="p">(</span>
+<span class="w">        </span><span class="n">OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_config_value_bool</span><span class="p">(</span><span class="nb">true</span><span class="p">));</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_last_error</span><span class="p">();</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Failed to enable OVD recording capability: %.*s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">(</span><span class="n">err</span><span class="p">.</span><span class="n">length</span><span class="p">),</span><span class="w"> </span><span class="n">err</span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">err</span><span class="p">.</span><span class="n">ptr</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_shutdown</span><span class="p">();</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_create_instance</span><span class="p">(</span><span class="o">&amp;</span><span class="n">handle</span><span class="p">);</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_last_error</span><span class="p">();</span>
 <span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Failed to create PhysX instance: %.*s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
@@ -1038,6 +963,20 @@ listener fields together:</p>
 <span class="w">    </span><span class="n">ovphysx_sample_stage_attachment_t</span><span class="w"> </span><span class="n">stage_attachment</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{};</span>
 <span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">ovphysx_sample_attach_usd_with_ovstage</span><span class="p">(</span>
 <span class="w">            </span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">OVPHYSX_TEST_DATA</span><span class="w"> </span><span class="s">&quot;/simple_physics_scene.usda&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">stage_attachment</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_shutdown</span><span class="p">();</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">file_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">output_dir</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="s">&quot;capture.ovd&quot;</span><span class="p">).</span><span class="n">string</span><span class="p">();</span>
+<span class="w">    </span><span class="n">ovphysx_omnipvd_destination_t</span><span class="w"> </span><span class="n">destination</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{};</span>
+<span class="w">    </span><span class="n">destination</span><span class="p">.</span><span class="n">transport</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVPHYSX_OMNIPVD_TRANSPORT_FILE</span><span class="p">;</span>
+<span class="w">    </span><span class="n">destination</span><span class="p">.</span><span class="n">file_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_cstr</span><span class="p">(</span><span class="n">file_path</span><span class="p">.</span><span class="n">c_str</span><span class="p">());</span>
+<span class="w">    </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_ovd_start_recording</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">destination</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_string_t</span><span class="w"> </span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_get_last_error</span><span class="p">();</span>
+<span class="w">        </span><span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Failed to start OVD recording: %.*s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">(</span><span class="n">err</span><span class="p">.</span><span class="n">length</span><span class="p">),</span><span class="w"> </span><span class="n">err</span><span class="p">.</span><span class="n">ptr</span><span class="p">);</span>
+<span class="w">        </span><span class="n">ovphysx_sample_destroy_stage</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">stage_attachment</span><span class="p">);</span>
 <span class="w">        </span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
 <span class="w">        </span><span class="n">ovphysx_shutdown</span><span class="p">();</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
@@ -1063,15 +1002,16 @@ listener fields together:</p>
 
 <span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Simulation complete.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
 
-<span class="w">    </span><span class="c1">// Destroying the instance finalizes the recording. tmp.ovd is renamed to a</span>
-<span class="w">    </span><span class="c1">// timestamped *_rec.ovd file.</span>
+<span class="w">    </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_ovd_stop_recording</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">stopped</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">// Finalize before releasing the borrowed stage.</span>
 <span class="w">    </span><span class="n">ovphysx_sample_destroy_stage</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">stage_attachment</span><span class="p">);</span>
 <span class="w">    </span><span class="n">ovphysx_destroy_instance</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
 <span class="w">    </span><span class="n">ovphysx_shutdown</span><span class="p">();</span>
 
 <span class="w">    </span><span class="c1">// At least one OVD file has to exist. A non-zero return lets CI catch regressions.</span>
 <span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">ovd_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">count_ovd_files</span><span class="p">(</span><span class="n">output_dir</span><span class="p">);</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ovd_count</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">stopped</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">ovd_count</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Recorded %d OVD file(s) in %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ovd_count</span><span class="p">,</span><span class="w"> </span><span class="n">dir_str</span><span class="p">.</span><span class="n">c_str</span><span class="p">());</span>
 <span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Runtime cleanup complete; recording retained for inspection</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
@@ -1090,7 +1030,7 @@ listener fields together:</p>
 </section>
 <section id="late-tcp-recording">
 <h3>Late TCP Recording<a class="headerlink" href="#late-tcp-recording" title="Link to this heading">#</a></h3>
-<p>Opt in when creating the first instance, before attaching and stepping the
+<p>Opt in before creating the first instance, before attaching and stepping the
 scene. Start the trusted-plaintext TCP listener before calling
 <code class="docutils literal notranslate"><span class="pre">start_recording()</span></code>; the connect is synchronous. This complete sequence
 simulates before recording, records to TCP, stops, continues simulating, and
@@ -1098,17 +1038,19 @@ then records to a FILE destination. Replace <code class="docutils literal notran
 USD scene, such as the <code class="docutils literal notranslate"><span class="pre">links_chain_sample.usda</span></code> file named in the
 prerequisites:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">ovstage</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx</span><span class="w"> </span><span class="kn">import</span> <span class="n">OmniPvdDestination</span><span class="p">,</span> <span class="n">PhysX</span><span class="p">,</span> <span class="n">PhysXConfig</span><span class="p">,</span> <span class="n">codeless_schema_root</span><span class="p">,</span> <span class="n">newton_schema_root</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx</span><span class="w"> </span><span class="kn">import</span> <span class="n">GlobalConfigKey</span><span class="p">,</span> <span class="n">OmniPvdDestination</span><span class="p">,</span> <span class="n">PhysX</span><span class="p">,</span> <span class="n">newton_schema_root</span><span class="p">,</span> <span class="n">set_global_config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.samples.python_samples.schema_support</span><span class="w"> </span><span class="kn">import</span> <span class="n">physx_schema_paths</span>
 
-<span class="n">physx</span> <span class="o">=</span> <span class="n">PhysX</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">PhysXConfig</span><span class="p">(</span><span class="n">omnipvd_recording_capable</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-<span class="c1"># Register the codeless PhysX schemas and the Newton schema before the first population call.</span>
-<span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">register_usd_schemas</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">codeless_schema_root</span><span class="p">()),</span> <span class="nb">str</span><span class="p">(</span><span class="n">newton_schema_root</span><span class="p">())])</span>
+<span class="n">set_global_config</span><span class="p">(</span><span class="n">GlobalConfigKey</span><span class="o">.</span><span class="n">OVD_RECORDING_CAPABLE</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">physx</span> <span class="o">=</span> <span class="n">PhysX</span><span class="p">()</span>
+<span class="c1"># Register PhysX and Newton schemas before the first USD schema read (population or export).</span>
+<span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">register_usd_schemas</span><span class="p">([</span><span class="o">*</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">physx_schema_paths</span><span class="p">()],</span> <span class="nb">str</span><span class="p">(</span><span class="n">newton_schema_root</span><span class="p">())])</span>
 <span class="n">stage</span> <span class="o">=</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">Stage</span><span class="p">(</span><span class="s2">&quot;late-recorded-scene&quot;</span><span class="p">)</span>
 <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">open_usd</span><span class="p">(</span>
-    <span class="n">stage</span><span class="p">,</span> <span class="s2">&quot;scene.usda&quot;</span><span class="p">,</span> <span class="n">ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">domains</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">PopulationDomain</span><span class="o">.</span><span class="n">PHYSICS</span>
+    <span class="n">stage</span><span class="p">,</span> <span class="s2">&quot;scene.usda&quot;</span><span class="p">,</span> <span class="n">ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">domains</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">PopulationDomain</span><span class="o">.</span><span class="n">ALL</span>
 <span class="p">)</span>
 <span class="n">stage</span><span class="o">.</span><span class="n">advance_write_floor</span><span class="p">(</span><span class="n">ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
-<span class="n">physx</span><span class="o">.</span><span class="n">attach_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">read_ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">attach_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">read_ordinal</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 
 <span class="n">physx</span><span class="o">.</span><span class="n">step_sync</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">60</span><span class="p">)</span>  <span class="c1"># work before recording is allowed</span>
 <span class="n">physx</span><span class="o">.</span><span class="n">start_recording</span><span class="p">(</span>
@@ -1123,58 +1065,73 @@ prerequisites:</p>
 <span class="n">physx</span><span class="o">.</span><span class="n">step_sync</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">60</span><span class="p">)</span>  <span class="c1"># written to capture.ovd</span>
 <span class="n">physx</span><span class="o">.</span><span class="n">stop_recording</span><span class="p">()</span>
 
-<span class="n">physx</span><span class="o">.</span><span class="n">detach_ovstage</span><span class="p">()</span>
+<span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">detach_ovstage</span><span class="p">())</span>
 <span class="n">physx</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
 <span class="n">stage</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
 </pre></div>
 </div>
 <section id="c-and-c">
 <h4>C and C++<a class="headerlink" href="#c-and-c" title="Link to this heading">#</a></h4>
-<p>To adapt the complete C++ sample in <a class="reference internal" href="#code">Code</a>, reuse its initialization, instance,
-stage-attachment, and cleanup scaffolding. Remove its recording-directory
-setup, startup-FILE comments, and final <code class="docutils literal notranslate"><span class="pre">*_rec.ovd</span></code> file-count check. Replace
-the startup-output config with late-recording capability before creating the
-first instance. After the existing stage, instance, and runtime cleanup, return
-<code class="docutils literal notranslate"><span class="pre">0</span></code> in place of the removed file-count block.</p>
-<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_config_entry_t</span><span class="w"> </span><span class="n">config</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">ovphysx_config_entry_omnipvd_recording_capable</span><span class="p">(</span><span class="nb">true</span><span class="p">),</span>
-<span class="p">};</span>
-<span class="n">ovphysx_create_args</span><span class="w"> </span><span class="n">create_args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OVPHYSX_CREATE_ARGS_DEFAULT</span><span class="p">;</span>
-<span class="n">create_args</span><span class="p">.</span><span class="n">config_entries</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">config</span><span class="p">;</span>
-<span class="n">create_args</span><span class="p">.</span><span class="n">config_entry_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<p>To adapt the complete C++ sample in <a class="reference internal" href="#code">Code</a>, keep its initialization,
+stage attachment, and cleanup. The sample already enables
+recording capability and starts recording explicitly. Keep this configuration
+when replacing its FILE destination and recording loop with the TCP sequence
+below. Use <code class="docutils literal notranslate"><span class="pre">create_recording_instance()</span></code> for instance creation, checking its
+returned status. Remove the sample’s final file-count check; a TCP session
+writes no local file:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx_config.h&gt;</span>
+
+<span class="k">static</span><span class="w"> </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="nf">create_recording_instance</span><span class="p">(</span><span class="n">ovphysx_instance_handle_t</span><span class="o">*</span><span class="w"> </span><span class="n">handle</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">configured</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_set_global_config</span><span class="p">(</span>
+<span class="w">        </span><span class="n">OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE</span><span class="p">,</span><span class="w"> </span><span class="n">ovphysx_config_value_bool</span><span class="p">(</span><span class="nb">true</span><span class="p">));</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">configured</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">configured</span><span class="p">;</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">ovphysx_create_instance</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
+<span class="p">}</span>
 </pre></div>
 </div>
-<p>After creating <code class="docutils literal notranslate"><span class="pre">handle</span></code> with those arguments and attaching a physics stage,
-replace the sample’s simulation loop with the following sequence. Its first
-successful step initializes lazy physics before the late start:</p>
-<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_omnipvd_destination_t</span><span class="w"> </span><span class="n">destination</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">OVPHYSX_OMNIPVD_TRANSPORT_TCP</span><span class="p">,</span>
-<span class="w">    </span><span class="n">OVPHYSX_LITERAL</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">),</span>
-<span class="w">    </span><span class="n">OVPHYSX_LITERAL</span><span class="p">(</span><span class="s">&quot;127.0.0.1&quot;</span><span class="p">),</span>
-<span class="w">    </span><span class="mi">5425</span><span class="p">,</span>
-<span class="w">    </span><span class="mi">3000</span><span class="p">,</span>
-<span class="p">};</span>
+<p>Call this helper after <code class="docutils literal notranslate"><span class="pre">ovphysx_initialize()</span></code> and before creating any instance.
+After it succeeds and a physics stage is attached,
+replace the sample’s FILE recording sequence with <code class="docutils literal notranslate"><span class="pre">record_tcp(handle)</span></code>,
+then perform the sample’s cleanup and return its result.
+The preliminary step demonstrates starting after simulation has already begun;
+omit it to record from the first simulation frame:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;ovphysx/ovphysx.h&gt;</span>
 
-<span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_step_sync</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0f</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">60.0f</span><span class="p">);</span>
-<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">record_tcp</span><span class="p">(</span><span class="n">ovphysx_instance_handle_t</span><span class="w"> </span><span class="n">handle</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">ovphysx_omnipvd_destination_t</span><span class="w"> </span><span class="n">destination</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">OVPHYSX_OMNIPVD_TRANSPORT_TCP</span><span class="p">,</span>
+<span class="w">        </span><span class="n">OVPHYSX_LITERAL</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">),</span>
+<span class="w">        </span><span class="n">OVPHYSX_LITERAL</span><span class="p">(</span><span class="s">&quot;127.0.0.1&quot;</span><span class="p">),</span>
+<span class="w">        </span><span class="mi">5425</span><span class="p">,</span>
+<span class="w">        </span><span class="mi">3000</span><span class="p">,</span>
+<span class="w">    </span><span class="p">};</span>
 
-<span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_start_recording</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">destination</span><span class="p">);</span>
-<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ovphysx_result_t</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_step_sync</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0f</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">60.0f</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 
-<span class="kt">bool</span><span class="w"> </span><span class="n">recording</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
-<span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_is_recording</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">recording</span><span class="p">);</span>
-<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">!</span><span class="n">recording</span><span class="p">)</span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_ovd_start_recording</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">destination</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 
-<span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_step_sync</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0f</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">60.0f</span><span class="p">);</span>
-<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">recording</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<span class="w">    </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_ovd_is_recording</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">recording</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">!</span><span class="n">recording</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 
-<span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_stop_recording</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
-<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_step_sync</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0f</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">60.0f</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ovphysx_ovd_stop_recording</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OVPHYSX_API_SUCCESS</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 <p>If the listener is not ready, <code class="docutils literal notranslate"><span class="pre">start_recording()</span></code> fails without consuming the
@@ -1183,22 +1140,16 @@ instance can later record to another TCP listener or to an exact FILE path.</p>
 <p>FILE uses the exact requested path, and TCP connects synchronously to an
 already-ready listener. Failed opens can be retried. Only one stream can be
 active in the shared runtime, and an active stream cannot be replaced. After
-stop, the owning instance can start another FILE or TCP session. Startup output
-is owned by the instance whose creation started it: that instance can query and
-publicly stop the startup session and restart to a late destination, while peer
-instances report inactive and cannot stop it. On cold startup the creator’s
-ownership is reserved when creation succeeds and becomes observable when the
-first stage attach starts sampling. Detaching the active stage
+stop, the owning instance can start another FILE or TCP session. The instance
+that explicitly starts recording owns it; peers report inactive and cannot stop
+its session. Detaching the active stage
 finalizes the shared session and clears its public owner, including when a peer
-handle started it. After reattach, capability-only recording is dormant and can
-start immediately. Configured startup output instead starts a new startup
-session owned by the reattaching instance; stop it before selecting a late
-destination.</p>
+handle started it. Reattach remains dormant until another explicit start.</p>
 <p>These synchronous APIs follow the ovphysx same-thread contract. The caller must
 serialize recording calls on each handle and recording/attach/detach/destroy
 transitions across all handles sharing the runtime; concurrent calls are not
 supported. Recording is supported on Windows x86_64 and Linux x86_64/aarch64.
-Startup, late, and restarted sessions each capture the current core PhysX,
+Initial and restarted sessions each capture the current core PhysX,
 PhysXExtensions (including joints and custom geometry), and PhysXVehicle state.
 Stopping releases only the session’s telemetry handles; the next start takes a
 fresh full-state snapshot.</p>
@@ -1207,29 +1158,18 @@ fresh full-state snapshot.</p>
 </section>
 <section id="what-happens-at-runtime">
 <h2>What Happens at Runtime<a class="headerlink" href="#what-happens-at-runtime" title="Link to this heading">#</a></h2>
-<p>A recording session moves through these stages:</p>
 <ol class="arabic simple">
-<li><p>Late FILE opens its exact path, and TCP connects its socket, before the runtime binds that stream to the OmniPVD writer. A late FILE path’s parent directory must already exist.</p></li>
-<li><p>Startup FILE output creates <code class="docutils literal notranslate"><span class="pre">tmp.ovd</span></code>; late FILE output opens the exact requested path. TCP connects to the already-ready listener.</p></li>
-<li><p>Each simulation step writes physics state to the selected stream.</p></li>
-<li><p>Stop, active detach, or active-owner destruction cleanly finalizes the stream. Only startup FILE output renames <code class="docutils literal notranslate"><span class="pre">tmp.ovd</span></code> to <code class="docutils literal notranslate"><span class="pre">YYYY_MM_DD_HH_MM_SS_CC_rec.ovd</span></code> and updates the Kit import directory; late FILE keeps its exact path.</p></li>
+<li><p>FILE opens its exact path or TCP connects before sampling begins.</p></li>
+<li><p>Start snapshots the current world; each subsequent step records its state.</p></li>
+<li><p>Stop finalizes output. Another recording can start on the same capable runtime.</p></li>
 </ol>
-<p>With FILE startup output, an empty recording directory disables startup
-recording. <code class="docutils literal notranslate"><span class="pre">omnipvd_output_enabled=false</span></code> disables startup capture, but an
-instance created with <code class="docutils literal notranslate"><span class="pre">omnipvd_recording_capable=true</span></code> can still start an exact
-FILE or TCP session later.</p>
 </section>
 <section id="inspecting-ovd-files-in-kit">
 <h2>Inspecting .ovd Files in Kit<a class="headerlink" href="#inspecting-ovd-files-in-kit" title="Link to this heading">#</a></h2>
-<p>Before you begin, confirm two things. First, you need a finalized recording:
-startup FILE output leaves a <code class="docutils literal notranslate"><span class="pre">YYYY_MM_DD_HH_MM_SS_CC_rec.ovd</span></code> file in the
-recording directory after clean shutdown, and late FILE output leaves the exact
-path you requested. A remaining <code class="docutils literal notranslate"><span class="pre">tmp.ovd</span></code> means startup output was not finalized.
-Possible causes include an instance that was not destroyed cleanly, failure to
-create the output directory, or failure to rename the temporary file. Check the
-runtime log for a filesystem error and verify that the destination is writable
-before continuing. Second, you need the compatible Kit-based application with
-the OmniPVD extension named in the prerequisites.</p>
+<p>Before you begin, stop the FILE recording to finalize the exact path you
+requested. If output is missing or incomplete, check the runtime log and verify
+that the parent directory exists and is writable. You also need the compatible
+Kit-based application with the OmniPVD extension named in the prerequisites.</p>
 <p>Then inspect the recording:</p>
 <ol class="arabic simple">
 <li><p>Open a compatible Kit-based application (for example, USD Composer or Isaac Sim with a compatible OmniPVD extension generation).</p></li>
@@ -1249,8 +1189,7 @@ for the two version checks the reader applies.</p>
 <section id="capture-format-and-compatibility">
 <h2>Capture Format and Compatibility<a class="headerlink" href="#capture-format-and-compatibility" title="Link to this heading">#</a></h2>
 <p>ovphysx OmniPVD capture is optional. When enabled, the runtime writes PhysX OmniPVD
-recordings in the <strong>OVD</strong> binary format (startup FILE output is named
-<code class="docutils literal notranslate"><span class="pre">*_rec.ovd</span></code> after clean finalization; late FILE output keeps its exact path).</p>
+recordings in the <strong>OVD</strong> binary format. FILE output keeps its exact requested path.</p>
 <p><strong>OVD capture format and compatibility policy</strong></p>
 <p>This table records the format, version, and platform policy for ovphysx OmniPVD
 capture:</p>
@@ -1305,20 +1244,20 @@ recording from appearing:</p>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>No <code class="docutils literal notranslate"><span class="pre">.ovd</span></code> file after simulation</p></td>
-<td><p>FILE directory or output enablement was omitted before instance creation</p></td>
-<td><p>Pass both FILE fields in <code class="docutils literal notranslate"><span class="pre">PhysXConfig</span></code> / <code class="docutils literal notranslate"><span class="pre">config_entries</span></code> at init</p></td>
+<td><p>Capability or explicit start was omitted</p></td>
+<td><p>Set <code class="docutils literal notranslate"><span class="pre">OVD_RECORDING_CAPABLE</span></code> before creation, attach the scene, and start a FILE recording</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tmp.ovd</span></code> exists but no <code class="docutils literal notranslate"><span class="pre">*_rec.ovd</span></code></p></td>
-<td><p>Instance not properly destroyed</p></td>
-<td><p>Ensure <code class="docutils literal notranslate"><span class="pre">destroy()</span></code> / <code class="docutils literal notranslate"><span class="pre">ovphysx_destroy_instance</span></code> is called</p></td>
+<tr class="row-odd"><td><p>Output is incomplete</p></td>
+<td><p>Recording was not finalized</p></td>
+<td><p>Call <code class="docutils literal notranslate"><span class="pre">stop_recording()</span></code> before teardown</p></td>
 </tr>
-<tr class="row-even"><td><p>Runtime error about directory</p></td>
-<td><p>Directory path is invalid or not writable</p></td>
-<td><p>Use an absolute path to a writable location</p></td>
+<tr class="row-even"><td><p>FILE <code class="docutils literal notranslate"><span class="pre">start_recording()</span></code> fails (“failed to open the destination or start sampling”)</p></td>
+<td><p>Parent directory is missing or not writable</p></td>
+<td><p>Create the parent directory first (FILE does not create directories), then retry</p></td>
 </tr>
 <tr class="row-odd"><td><p>TCP start fails</p></td>
 <td><p>Listener was not ready or address/port was wrong</p></td>
-<td><p>Start the trusted plaintext listener before creating the instance or calling <code class="docutils literal notranslate"><span class="pre">start_recording()</span></code>, then retry</p></td>
+<td><p>Start the trusted plaintext listener before calling <code class="docutils literal notranslate"><span class="pre">start_recording()</span></code>, then retry</p></td>
 </tr>
 </tbody>
 </table>
@@ -1351,11 +1290,11 @@ recordings from an ovphysx simulation for offline inspection in Kit.</p>
       </div>
     </a>
     <a class="right-next"
-       href="nvtx_profiling.html"
+       href="profiling.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">NVTX Profiling in Nsight Systems</p>
+        <p class="prev-next-title">Profiling: See Where Your Simulation Spends Its Time</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -1385,7 +1324,6 @@ recordings from an ovphysx simulation for offline inspection in Kit.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#code">Code</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#python">Python</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#c">C++</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#tcp-startup">TCP Startup</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#late-tcp-recording">Late TCP Recording</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#c-and-c">C and C++</a></li>
 </ul>
@@ -1444,7 +1382,7 @@ recordings from an ovphysx simulation for offline inspection in Kit.</p>
 </div>
       
         <div class="footer-item"><p class="last-updated">
-  Last updated on Oct 08, 2026.
+  Last updated on Oct 15, 2026.
   <br/>
 </p></div>
       

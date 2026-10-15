@@ -47,7 +47,7 @@
 
 
     <script rel="preload" src="../_static/modal-table.js"></script>
-    <script src="../_static/documentation_options.js?v=18b66ea0"></script>
+    <script src="../_static/documentation_options.js?v=423e15eb"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.6.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -75,7 +75,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Oct 08, 2026"/>
+    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
   
     
     <script src="../_static/searchtools.js"></script>
@@ -507,6 +507,10 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coding_style.html">ovphysx coding and doc style</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
@@ -566,7 +570,6 @@
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAPI.html">PhysxJointAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
@@ -613,6 +616,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../read_write/device.html">Device residency and interop</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/readable.html">Readable data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/writable.html">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/path_patterns.html">Path patterns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/limitations.html">Known limitations and gaps</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
@@ -625,7 +630,7 @@
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Rendering Handoff</a></li>
 <li class="toctree-l1"><a class="reference internal" href="physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
 <li class="toctree-l1"><a class="reference internal" href="omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="nvtx_profiling.html">NVTX Profiling in Nsight Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
 <li class="toctree-l1"><a class="reference internal" href="source_link_build.html">Building Against the ovphysx Source Tree</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
@@ -700,23 +705,26 @@
 <section id="rendering-handoff">
 <h1>Rendering Handoff<a class="headerlink" href="#rendering-handoff" title="Link to this heading">#</a></h1>
 <p>ovphysx is a headless simulation SDK — it has no built-in renderer.
-To visualize simulation state, you read data back through the session read API (<code class="docutils literal notranslate"><span class="pre">PhysX.read</span></code>) and hand it to an external tool such as <a class="reference external" href="https://rerun.io">Rerun</a> or the ovrtx renderer.</p>
+To visualize simulation state, you read data back through the session read API (<code class="docutils literal notranslate"><span class="pre">PhysX.read_sync</span></code> in this sample) and hand it to an external tool such as <a class="reference external" href="https://rerun.io">Rerun</a> or the ovrtx renderer.</p>
 <p>This tutorial shows the pattern using Rerun: populate an ovstage scene from USD and attach it, step the simulation, and stream rigid body transforms to a browser-based viewer.</p>
 <section id="key-idea">
 <h2>Key Idea<a class="headerlink" href="#key-idea" title="Link to this heading">#</a></h2>
 <p>Rerun does not read USD.
-The sample explicitly logs all visual geometry to Rerun from the simulation data returned by <code class="docutils literal notranslate"><span class="pre">PhysX.read</span></code>:</p>
+The sample explicitly logs all visual geometry to Rerun from the simulation data returned by <code class="docutils literal notranslate"><span class="pre">PhysX.read_sync</span></code>:</p>
 <ul class="simple">
-<li><p><strong>Falling cubes</strong> — logged each frame as <code class="docutils literal notranslate"><span class="pre">rr.Boxes3D</span></code> with positions and quaternions from <code class="docutils literal notranslate"><span class="pre">PhysX.read</span></code> on the rigid-body <code class="docutils literal notranslate"><span class="pre">position</span></code> and <code class="docutils literal notranslate"><span class="pre">orientation</span></code> attributes.</p></li>
+<li><p><strong>Falling cubes</strong> — logged each frame as <code class="docutils literal notranslate"><span class="pre">rr.Boxes3D</span></code> with positions and quaternions from <code class="docutils literal notranslate"><span class="pre">PhysX.read_sync</span></code> on the rigid-body <code class="docutils literal notranslate"><span class="pre">position</span></code> and <code class="docutils literal notranslate"><span class="pre">orientation</span></code> attributes.</p></li>
 <li><p><strong>Ground plane</strong> — logged once as a static flat box for visual context.</p></li>
 </ul>
 <p>This is the core of the render handoff pattern: ovphysx owns the simulation, you log what you need to your visualization tool.</p>
+<p>For scaled content, pair the read orientation with the decomposed world scale,
+not the authored scale. See <a class="reference internal" href="../read_write/data_model.html#signed-scale-and-body-orientation"><span class="std std-ref">Signed scale and body orientation</span></a>
+for the reconstruction rule and orientation-write convention.</p>
 </section>
 <section id="two-ways-to-hand-off-and-what-each-populates">
 <h2>Two Ways to Hand Off, and What Each Populates<a class="headerlink" href="#two-ways-to-hand-off-and-what-each-populates" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p><strong>Tensor handoff (this tutorial).</strong> The viewer never reads the Stage — Rerun
-receives transforms from <code class="docutils literal notranslate"><span class="pre">PhysX.read</span></code> and the sample supplies its own
+receives transforms from <code class="docutils literal notranslate"><span class="pre">PhysX.read_sync</span></code> and the sample supplies its own
 geometry. The sample USD is non-instanced, so <code class="docutils literal notranslate"><span class="pre">domains=PopulationDomain.PHYSICS</span></code>
 is enough here; for arbitrary content prefer <code class="docutils literal notranslate"><span class="pre">ALL</span></code>.</p></li>
 <li><p><strong>Shared Stage.</strong> A renderer such as ovrtx draws from the same Stage, so
@@ -737,7 +745,7 @@ for the full contract, the native-instance caveat, sequencing, and cost.</p></li
 <h2>Sample<a class="headerlink" href="#sample" title="Link to this heading">#</a></h2>
 <p>This complete sample starts a Rerun web viewer, attaches a USD scene, logs the
 static ground plane once, then steps the simulation and logs the rigid-body
-transforms from <code class="docutils literal notranslate"><span class="pre">PhysX.read</span></code> as <code class="docutils literal notranslate"><span class="pre">rr.Boxes3D</span></code> on every frame:</p>
+transforms from <code class="docutils literal notranslate"><span class="pre">PhysX.read_sync</span></code> as <code class="docutils literal notranslate"><span class="pre">rr.Boxes3D</span></code> on every frame:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION &amp; AFFILIATES. All rights reserved.</span>
 <span class="c1"># SPDX-License-Identifier: Apache-2.0</span>
 
@@ -764,6 +772,7 @@ transforms from <code class="docutils literal notranslate"><span class="pre">Phy
 <span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">ObjectScope</span><span class="p">,</span> <span class="n">SimObjectType</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">ovphysx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx.samples.python_samples.schema_support</span><span class="w"> </span><span class="kn">import</span> <span class="n">physx_schema_paths</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx</span><span class="w"> </span><span class="kn">import</span> <span class="n">PhysX</span>
 
 
@@ -773,7 +782,7 @@ transforms from <code class="docutils literal notranslate"><span class="pre">Phy
 <span class="k">def</span><span class="w"> </span><span class="nf">read_rigid_body_poses</span><span class="p">(</span><span class="n">sdk</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Read every dynamic rigid body&#39;s pose as an ``[N, 7]`` array: xyz + quaternion (xyzw).</span>
 
-<span class="sd">    PhysX.read emits one group per scene partition per attribute (a position column arrives as</span>
+<span class="sd">    PhysX.read_sync emits one group per scene partition per attribute (a position column arrives as</span>
 <span class="sd">    ``[N, 3]`` and an orientation column as ``[N, 4]``), but it does NOT guarantee the position and</span>
 <span class="sd">    orientation groups arrive in the same partition order. Pair the two columns per partition by the</span>
 <span class="sd">    interned ``group.prim_list`` handle before joining: concatenating each attribute independently and</span>
@@ -785,7 +794,7 @@ transforms from <code class="docutils literal notranslate"><span class="pre">Phy
     <span class="c1"># groups of one partition share it, so it is the key that pairs them. dict insertion order keeps</span>
     <span class="c1"># the partitions in first-seen order.</span>
     <span class="n">by_partition</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">with</span> <span class="n">sdk</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">SimObjectType</span><span class="o">.</span><span class="n">RIGID_BODY</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;position&quot;</span><span class="p">,</span> <span class="s2">&quot;orientation&quot;</span><span class="p">],</span> <span class="n">scope</span><span class="o">=</span><span class="n">ObjectScope</span><span class="o">.</span><span class="n">ALL</span><span class="p">)</span> <span class="k">as</span> <span class="n">result</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">sdk</span><span class="o">.</span><span class="n">read_sync</span><span class="p">(</span><span class="n">SimObjectType</span><span class="o">.</span><span class="n">RIGID_BODY</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;position&quot;</span><span class="p">,</span> <span class="s2">&quot;orientation&quot;</span><span class="p">],</span> <span class="n">scope</span><span class="o">=</span><span class="n">ObjectScope</span><span class="o">.</span><span class="n">ALL</span><span class="p">)</span> <span class="k">as</span> <span class="n">result</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">groups</span><span class="p">:</span>
             <span class="c1"># This sample assumes each group&#39;s rows are already in prim order. index_map would</span>
             <span class="c1"># permute them, and a multi-scene stage that used one would need it honoured per group.</span>
@@ -819,14 +828,11 @@ transforms from <code class="docutils literal notranslate"><span class="pre">Phy
     <span class="k">if</span> <span class="ow">not</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">available</span><span class="p">():</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;ovstage population bridge is unavailable&quot;</span><span class="p">)</span>
 
-    <span class="c1"># ovphysx ships its PhysX USD schemas as codeless resources and does not register</span>
-    <span class="c1"># them itself. Register them with ovstage once, before the first population</span>
-    <span class="c1"># call in the process. The Newton USD schema (pip package newton-usd-schemas)</span>
-    <span class="c1"># is registered alongside so authored newton:* attributes reach the parser.</span>
+    <span class="c1"># Register external PhysX and Newton schemas before the first population.</span>
     <span class="k">global</span> <span class="n">_physx_schemas_registered</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">_physx_schemas_registered</span><span class="p">:</span>
         <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">register_usd_schemas</span><span class="p">(</span>
-            <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">codeless_schema_root</span><span class="p">()),</span> <span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">newton_schema_root</span><span class="p">())]</span>
+            <span class="p">[</span><span class="o">*</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">physx_schema_paths</span><span class="p">()],</span> <span class="nb">str</span><span class="p">(</span><span class="n">ovphysx</span><span class="o">.</span><span class="n">newton_schema_root</span><span class="p">())]</span>
         <span class="p">)</span>
         <span class="n">_physx_schemas_registered</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">stage</span> <span class="o">=</span> <span class="n">ovstage</span><span class="o">.</span><span class="n">Stage</span><span class="p">(</span><span class="n">stage_name</span><span class="p">)</span>
@@ -834,9 +840,11 @@ transforms from <code class="docutils literal notranslate"><span class="pre">Phy
     <span class="k">try</span><span class="p">:</span>
         <span class="n">ovstage</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">open_usd</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">usd_path</span><span class="p">),</span> <span class="n">ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">,</span> <span class="n">domains</span><span class="o">=</span><span class="n">ovstage</span><span class="o">.</span><span class="n">PopulationDomain</span><span class="o">.</span><span class="n">PHYSICS</span><span class="p">)</span>
         <span class="n">stage</span><span class="o">.</span><span class="n">advance_write_floor</span><span class="p">(</span><span class="n">ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">)</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
-        <span class="n">physx</span><span class="o">.</span><span class="n">attach_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">read_ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">)</span>
+        <span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">attach_ovstage</span><span class="p">(</span><span class="n">stage</span><span class="p">,</span> <span class="n">read_ordinal</span><span class="o">=</span><span class="n">ordinal</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">stage</span>
     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">physx</span><span class="o">.</span><span class="n">is_stage_attached</span><span class="p">(</span><span class="n">stage</span><span class="p">):</span>
+            <span class="n">physx</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">physx</span><span class="o">.</span><span class="n">detach_ovstage</span><span class="p">())</span>
         <span class="n">stage</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
         <span class="k">raise</span>
 
@@ -876,12 +884,12 @@ transforms from <code class="docutils literal notranslate"><span class="pre">Phy
     <span class="n">stage</span> <span class="o">=</span> <span class="n">attach_scene</span><span class="p">(</span><span class="n">sdk</span><span class="p">,</span> <span class="n">usd_path</span><span class="p">,</span> <span class="s2">&quot;ovphysx-rerun-sample&quot;</span><span class="p">)</span>
     <span class="n">sdk</span><span class="o">.</span><span class="n">wait_all</span><span class="p">()</span>
 
-    <span class="c1"># PhysX.read streams simulation output. The scene&#39;s only dynamic rigid bodies are the cubes</span>
+    <span class="c1"># PhysX.read_sync streams simulation output. The scene&#39;s only dynamic rigid bodies are the cubes</span>
     <span class="c1"># (the ground plane and base are static), so reading RIGID_BODY covers exactly them. Warm up</span>
     <span class="c1"># first. On a DirectGPU scene the read yields nothing until the first step.</span>
     <span class="n">sdk</span><span class="o">.</span><span class="n">warmup</span><span class="p">()</span>
     <span class="n">sdk</span><span class="o">.</span><span class="n">wait_all</span><span class="p">()</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Streaming </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">read_rigid_body_poses</span><span class="p">(</span><span class="n">sdk</span><span class="p">))</span><span class="si">}</span><span class="s2"> rigid bodies via PhysX.read&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Streaming </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">read_rigid_body_poses</span><span class="p">(</span><span class="n">sdk</span><span class="p">))</span><span class="si">}</span><span class="s2"> rigid bodies via PhysX.read_sync&quot;</span><span class="p">)</span>
 
     <span class="c1"># --- Log static geometry ---</span>
     <span class="c1"># Rerun does not read USD, so the colliders are logged explicitly for visual context.</span>
@@ -941,7 +949,7 @@ transforms from <code class="docutils literal notranslate"><span class="pre">Phy
 
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Visualization sample completed successfully (</span><span class="si">{</span><span class="n">num_steps</span><span class="si">}</span><span class="s2"> steps)&quot;</span><span class="p">)</span>
 
-    <span class="n">sdk</span><span class="o">.</span><span class="n">detach_ovstage</span><span class="p">()</span>
+    <span class="n">sdk</span><span class="o">.</span><span class="n">wait_task</span><span class="p">(</span><span class="n">sdk</span><span class="o">.</span><span class="n">detach_ovstage</span><span class="p">())</span>
     <span class="n">stage</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
     <span class="n">sdk</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Cleanup complete&quot;</span><span class="p">)</span>
@@ -1072,7 +1080,7 @@ simulation at real-time speed.</p>
 </div>
       
         <div class="footer-item"><p class="last-updated">
-  Last updated on Oct 08, 2026.
+  Last updated on Oct 15, 2026.
   <br/>
 </p></div>
       

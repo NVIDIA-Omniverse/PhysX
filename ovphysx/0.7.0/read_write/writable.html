@@ -1,0 +1,1781 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Writable data &#8212; ovphysx SDK</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=933278ad" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/api.css?v=6f210184" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=423e15eb"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=fc986d73"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'read_write/writable';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <script src="../_static/version-patch.js?v=3e13fdd2"></script>
+
+    <link rel="icon" href="../_static/favicon.png"/>
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Vehicle examples" href="vehicles.html" />
+    <link rel="prev" title="Readable data" href="readable.html" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+
+
+  </head>
+
+  <body data-default-mode="">
+
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="ovphysx SDK - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="ovphysx SDK - Home"/>
+  
+  
+    <p class="title logo__title">ovphysx SDK</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+
+
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA-Omniverse/PhysX" title="github" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">github</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/nvidiaomniverse" title="twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitter</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.youtube.com/channel/UCSKUoczbGAcMld7HjpCR8OA" title="youtube" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-youtube fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">youtube</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.instagram.com/nvidiaomniverse" title="instagram" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-instagram fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">instagram</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.nvidia.com/en-us/omniverse/" title="www" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-solid fa-globe fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">www</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/showcase/nvidia-omniverse" title="linkedin" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">linkedin</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.twitch.tv/nvidiaomniverse" title="twitch" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-twitch fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">twitch</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coding_style.html">ovphysx coding and doc style</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">ovstage Integration</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../ovstage_integration.html">ovstage Integration and Physics Output Read</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Simulation Setup</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/physics_scene.html">Physics Scene and Simulation Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/collision.html">Colliders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/rigid_bodies.html">Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/kinematic_support.html">Kinematic Support Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/deformables.html">Deformable Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation_setup/particles.html">Particles</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Physics Schemas</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../physics_schemas.html">Physics Schemas</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../population/index.html">ovstage Physics Population Domain</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../population/Capsule.html">Capsule</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Cone.html">Cone</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Cube.html">Cube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Cylinder.html">Cylinder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Material.html">Material</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Mesh.html">Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsCollisionGroup.html">PhysicsCollisionGroup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsDistanceJoint.html">PhysicsDistanceJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsFixedJoint.html">PhysicsFixedJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsJoint.html">PhysicsJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsPrismaticJoint.html">PhysicsPrismaticJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsRevoluteJoint.html">PhysicsRevoluteJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsScene.html">PhysicsScene</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsSphericalJoint.html">PhysicsSphericalJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxPhysicsGearJoint.html">PhysxPhysicsGearJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxPhysicsRackAndPinionJoint.html">PhysxPhysicsRackAndPinionJoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Plane.html">Plane</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Sphere.html">Sphere</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/Xform.html">Xform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/MaterialBindingAPI.html">MaterialBindingAPI (physics purpose)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsArticulationRootAPI.html">PhysicsArticulationRootAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsCollisionAPI.html">PhysicsCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsDriveAPI.html">PhysicsDriveAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsFilteredPairsAPI.html">PhysicsFilteredPairsAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsJointStateAPI.html">PhysicsJointStateAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsLimitAPI.html">PhysicsLimitAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsMassAPI.html">PhysicsMassAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsMaterialAPI.html">PhysicsMaterialAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsMeshCollisionAPI.html">PhysicsMeshCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysicsRigidBodyAPI.html">PhysicsRigidBodyAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxArticulationAPI.html">PhysxArticulationAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxCollisionAPI.html">PhysxCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxContactReportAPI.html">PhysxContactReportAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxPhysicsDistanceJointAPI.html">PhysxPhysicsDistanceJointAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxRigidBodyAPI.html">PhysxRigidBodyAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSDFMeshCollisionAPI.html">PhysxSDFMeshCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSceneAPI.html">PhysxSceneAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSphereFillCollisionAPI.html">PhysxSphereFillCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSplinesSurfaceVelocityAPI.html">PhysxSplinesSurfaceVelocityAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxSurfaceVelocityAPI.html">PhysxSurfaceVelocityAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxTriangleMeshCollisionAPI.html">PhysxTriangleMeshCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxTriangleMeshSimplificationCollisionAPI.html">PhysxTriangleMeshSimplificationCollisionAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/PhysxTriggerAPI.html">PhysxTriggerAPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/prim.html">Prim identity and transform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/stage_units.html">Stage units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-articulation_fixed_base.html">Fixed-base two-link articulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-articulation_floating.html">Floating-base two-link articulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-conveyor_cube.html">Kinematic conveyor Cube with a surface velocity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-d6_joint_pair.html">Two rigid-body Cubes on a D6 joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-distance_joint_pair.html">Two rigid-body Cubes on a distance joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-fixed_joint_pair.html">Two rigid-body Cubes on a fixed joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-gear_joint_pair.html">Two hinged rigid-body Cubes coupled by a gear joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-material_bound_cube.html">Rigid-body Cube bound to a physics Material</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-physics_scene.html">Physics scene</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-prismatic_joint_pair.html">Two rigid-body Cubes on a prismatic joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rack_and_pinion_joint_pair.html">A hinged pinion Cube and a sliding rack Cube coupled by a rack-and-pinion joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-revolute_joint_pair.html">Two rigid-body Cubes on a revolute joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_capsule.html">Dynamic rigid body on a Capsule</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_cone.html">Dynamic rigid body on a Cone</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_cube.html">Dynamic rigid body on a Cube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_cube_pair.html">Two dynamic rigid-body Cubes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_cylinder.html">Dynamic rigid body on a Cylinder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-rigid_body_sphere.html">Dynamic rigid body on a Sphere</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-spherical_joint_pair.html">Two rigid-body Cubes on a spherical joint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/composition-static_plane_collider.html">Static Plane collider</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../population/findings.html">Recorded findings</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Read/Write Data Contract</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_model.html">Data model and semantics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="device.html">Device residency and interop</a></li>
+<li class="toctree-l1"><a class="reference internal" href="readable.html">Readable data</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="path_patterns.html">Path patterns</a></li>
+<li class="toctree-l1"><a class="reference internal" href="limitations.html">Known limitations and gaps</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/hello_world.html">Hello World – Populate ovstage and Step</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tensor_bindings.html">Tensor Bindings (deprecated)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/contact_binding.html">Contact Binding – Reading Contact Forces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/cloning.html">Cloning – Replicate Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/render_handoff.html">Rendering Handoff</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../guides/performance.html">Simulation Performance Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/collision_tuning.html">Collision Behavior Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/articulation_stability.html">Articulation and Robot Simulation Stability Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/gripper_tuning.html">Joint Parameter Tuning Example: Robotiq 2F-85</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/limitations.html">Known Physics Limitations</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../python_api.html">Python API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">C API Reference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Legal</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../SECURITY.html">Security</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Writable data</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<section id="writable-data">
+<h1>Writable data<a class="headerlink" href="#writable-data" title="Link to this heading">#</a></h1>
+<p>The inventory of every quantity writable through the write API, per object type. Read-only quantities
+are covered in <a class="reference internal" href="readable.html"><span class="std std-doc">Readable data</span></a>; this page lists only what a write accepts.</p>
+<p>Every table gives, per attribute, its <strong>Meaning</strong>, <strong>dtype × lanes</strong> (element type and tuple width),
+and — where it applies — <strong>Frame</strong> and <strong>Units</strong>. Quaternions are xyzw. A <code class="docutils literal notranslate"><span class="pre">(write-only)</span></code> tag marks a
+control that is <strong>not readable</strong> (no read-back); its persistence varies (see <em>Write timing, ordering,
+and persistence</em>). Column residency follows the read:
+device on DirectGPU, host on CPU — <strong>except</strong> joint DOF properties and particle <code class="docutils literal notranslate"><span class="pre">points</span></code>/<code class="docutils literal notranslate"><span class="pre">velocities</span></code>,
+which are host-staged on <strong>every</strong> scene.</p>
+<section id="writability-classes">
+<h2>Writability classes<a class="headerlink" href="#writability-classes" title="Link to this heading">#</a></h2>
+<p>To ask programmatically whether an <code class="docutils literal notranslate"><span class="pre">(object</span> <span class="pre">type,</span> <span class="pre">attribute)</span></code> pair is accepted:</p>
+<ul class="simple">
+<li><p>In C: <code class="docutils literal notranslate"><span class="pre">ovphysx_writability(object_type,</span> <span class="pre">attribute,</span> <span class="pre">&amp;out)</span></code></p></li>
+<li><p>In Python: <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">ovphysx._bindings</span> <span class="pre">import</span> <span class="pre">writability</span></code>, then
+<code class="docutils literal notranslate"><span class="pre">writability(object_type,</span> <span class="pre">attribute)</span></code>. This helper currently lives in the private bindings module;
+it is not exported as <code class="docutils literal notranslate"><span class="pre">ovphysx.writability</span></code> or <code class="docutils literal notranslate"><span class="pre">PhysX.writability</span></code>.</p></li>
+</ul>
+<p>It reports one of five classes — <code class="docutils literal notranslate"><span class="pre">OVPHYSX_WRITABILITY_&lt;NAME&gt;</span></code> in C (<code class="docutils literal notranslate"><span class="pre">ovphysx_writability_t</span></code>), the
+matching integer in Python:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Value</p></th>
+<th class="head"><p>Class</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">UNCLASSIFIED</span></code></p></td>
+<td><p>the type does not accept this name; a write rejects it</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">WRITABLE</span></code></p></td>
+<td><p>writable, no precondition beyond the object existing</p></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CONDITIONAL</span></code></p></td>
+<td><p>writable only under a stated condition; if unmet the write reports it and writes <strong>nothing</strong> (does not partially apply)</p></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">WRITE_ONLY</span></code></p></td>
+<td><p>a control input; writable but <strong>not readable</strong> (no read-back). Whether it clears each step or persists is a separate per-attribute property (see persistence, below)</p></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">READ_ONLY</span></code></p></td>
+<td><p>readable only; writing is an error naming the type, not a silent no-op</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The query is scene-independent (a hand-maintained snapshot of the runtime tables; string keys only;
+the object type is bounds-checked). It classifies the <em>attribute</em>, not the object’s current state.
+Opening a write session remains the authoritative check for a live scene; the optional write
+summary reports planned groups, not writability.</p>
+</section>
+<section id="write-timing-ordering-and-persistence">
+<h2>Write timing, ordering, and persistence<a class="headerlink" href="#write-timing-ordering-and-persistence" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>Never auto-warmed.</strong> The session write never steps for you. On CPU and on GPU with
+readback, a write before the scene’s first step <strong>commits and is applied</strong>. On DirectGPU
+(<code class="docutils literal notranslate"><span class="pre">suppressReadback</span></code> / <code class="docutils literal notranslate"><span class="pre">eENABLE_DIRECT_GPU_API</span></code>), that same pre-step commit is <strong>refused</strong>
+until a first step has sized the GPU view. Call <code class="docutils literal notranslate"><span class="pre">ovphysx_warmup</span></code> / <code class="docutils literal notranslate"><span class="pre">step_sync</span></code> first for
+a recipe that works on every mode. See <a class="reference internal" href="data_model.html#step-first-precondition-directgpu"><span class="std std-ref">data model — DirectGPU</span></a>.</p></li>
+<li><p><strong>Applied at commit, into live PhysX</strong> — not deferred to the next step. A written value is
+observable through a read (or the borrowed <code class="docutils literal notranslate"><span class="pre">physxPointer</span></code> address)
+before the next step. Character-controller <code class="docutils literal notranslate"><span class="pre">move</span></code> updates its controller at commit, but the
+backing actor’s rigid-body pose is updated on the next step. The <code class="docutils literal notranslate"><span class="pre">write_done_sync</span></code> you pass
+(<code class="docutils literal notranslate"><span class="pre">cuda_stream=</span></code> / <code class="docutils literal notranslate"><span class="pre">cuda_wait_event=</span></code> in
+Python) orders the commit after <strong>your fill’s</strong> CUDA stream/event; see
+<a class="reference internal" href="device.html#cuda-synchronization"><span class="std std-ref">CUDA synchronization</span></a>. The write runtime separately synchronizes
+commit with an outstanding PhysX step. Keep session and step calls serialized and
+complete a mid-session step before further scene-dependent accesses; this internal
+synchronization does not collect the step’s outcome.</p></li>
+<li><p><strong>Read-modify-write for split poses.</strong> Writing <code class="docutils literal notranslate"><span class="pre">position</span></code> pre-reads and preserves <code class="docutils literal notranslate"><span class="pre">orientation</span></code>
+(and vice versa), because they are two slices of one atomic transform. Linear and angular velocity
+are independent (no pre-read). Particle/deformable point writes preserve the <code class="docutils literal notranslate"><span class="pre">.w</span></code> inverse-mass
+lane.</p></li>
+<li><p><strong>What the sim overwrites.</strong> <em>State</em> (poses, velocities, root state, joint DOF state, point sets)
+is recomputed by the next solver step. <em>Inputs, targets, and properties</em> (drive targets, all joint
+and tendon properties, materials, mass/inertia/COM, flags) persist across steps until re-written.
+<em>Rigid external forces</em> (<code class="docutils literal notranslate"><span class="pre">force</span></code>, <code class="docutils literal notranslate"><span class="pre">wrench</span></code>) are the only write-only controls the solver consumes
+and clears each step. <em>Vehicle wheel commands</em> (<code class="docutils literal notranslate"><span class="pre">driveTorque</span></code>, <code class="docutils literal notranslate"><span class="pre">brakeTorque</span></code>, <code class="docutils literal notranslate"><span class="pre">steerAngle</span></code>) are
+also write-only but <strong>persist until re-written</strong> — the solver reads them every step without
+clearing, so a one-step command keeps applying until the caller resets it (write <code class="docutils literal notranslate"><span class="pre">0</span></code>).
+Whole-vehicle controls also persist. <code class="docutils literal notranslate"><span class="pre">resetToRestState</span></code> instead runs once at commit and is never
+retained as a per-step command.
+Character controller <code class="docutils literal notranslate"><span class="pre">move</span></code> is applied once at commit and is not replayed; see its section below.</p></li>
+<li><p><strong>Persistence is runtime-only.</strong> Every write publishes into live PhysX simulation state. <strong>No
+write is authored back into the ovstage / USD source representation.</strong> (A read gathers from the
+same live state, which is why a written value round-trips through a read.) Propagating results back
+into ovstage is a separate output-drain direction, not this write path — and its coverage differs
+from the writability query (see the last item in <a class="reference internal" href="limitations.html"><span class="std std-doc">Known limitations</span></a>).</p></li>
+<li><p><strong>Several attributes per session.</strong> A write session opens over an attribute array and validates
+all of it before exposing a group: an unsupported, read-only or duplicate name fails the open and
+publishes nothing. Each fetched group names its attribute through <code class="docutils literal notranslate"><span class="pre">attribute_index</span></code>, the
+position in that array (see <a class="reference internal" href="index.html#session-results"><span class="std std-ref">Session results</span></a>). Commits run in the
+order the caller issues them, whatever the fetch order; independent attributes are not promised
+to commute.</p></li>
+<li><p><strong>No fill mask.</strong> A commit publishes the whole mapped group — every
+object the query selects. To write a subset of prims, open the query with a prim-set selection
+(explicit prim handles or a path pattern); the write then maps only the selected prims. See
+<a class="reference internal" href="index.html#selecting-a-subset-of-prims"><span class="std std-ref">Selecting a subset of prims</span></a>. There is no per-row mask
+inside a group. Neither <code class="docutils literal notranslate"><span class="pre">ALL</span></code> nor <code class="docutils literal notranslate"><span class="pre">ACTIVE</span></code> scope is a kinematic-body filter.
+Rows are re-resolved at every commit, never cached across sessions or steps.</p></li>
+<li><p><strong>Committing a live group consumes it.</strong> After an accepted commit of a live group
+owned by this session – <code class="docutils literal notranslate"><span class="pre">ovphysx_commit_group</span></code> in C, <code class="docutils literal notranslate"><span class="pre">session.commit(group)</span></code> in
+Python – the mapped buffers belong to physics (dereferencing the C pointers, or touching the
+Python tensor views, is undefined) and commit is not idempotent. A group left uncommitted when the
+session is released (or the Python <code class="docutils literal notranslate"><span class="pre">with</span></code> block exits) is discarded, not published.
+Detach and instance destruction also invalidate write sessions; finish
+external consumers of their buffers before these transitions.</p></li>
+<li><p><strong>Read the failure reason.</strong> Python raises <code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code> for a rejected submission and
+<code class="docutils literal notranslate"><span class="pre">TaskError</span></code> (a <code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code>) with the write’s diagnostic when an operation is waited.
+In C, admission rejection uses <code class="docutils literal notranslate"><span class="pre">ovphysx_get_last_error()</span></code> on the calling thread;
+accepted execution failures are reported by the wait and
+<code class="docutils literal notranslate"><span class="pre">ovphysx_get_last_task_error()</span></code>. Read the cause before destroying its wait result.
+A rejected submission retains the group. Once execution accepts this session’s
+live group for publication, it is spent even if publication fails. An unknown,
+foreign or already-spent group reports a task failure without consuming another
+valid group.
+Previously committed groups remain applied, and the failing group may also be
+partially applied. There is no rollback or applied/rejected row count; a failure
+guarantees zero writes only when its diagnostic says so.</p></li>
+</ul>
+</section>
+<section id="rigid-bodies">
+<h2>Rigid bodies<a class="headerlink" href="#rigid-bodies" title="Link to this heading">#</a></h2>
+<p>Rigid bodies (<code class="docutils literal notranslate"><span class="pre">RIGID_BODY</span></code>): all rigid <strong>state</strong> and <strong>authored inputs</strong> are writable; derived
+quantities (<code class="docutils literal notranslate"><span class="pre">linearAcceleration</span></code>, <code class="docutils literal notranslate"><span class="pre">angularAcceleration</span></code>, <code class="docutils literal notranslate"><span class="pre">inverseMass</span></code>, <code class="docutils literal notranslate"><span class="pre">inverseInertia</span></code>,
+<code class="docutils literal notranslate"><span class="pre">shapeCount</span></code>) and the reported <code class="docutils literal notranslate"><span class="pre">isSleeping</span></code> state are read-only.</p>
+<p>On CPU and GPU-with-readback scenes, PhysX rejects <code class="docutils literal notranslate"><span class="pre">linearVelocity</span></code> and
+<code class="docutils literal notranslate"><span class="pre">angularVelocity</span></code> setters on standalone kinematic bodies. Commit reports the SDK
+error, but valid dynamic rows in the same group can still be written, including rows
+after the rejected body. The kinematic body’s velocity stays unchanged. This SDK
+restriction does not apply to DirectGPU velocity writes.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+<th class="head"><p>Frame</p></th>
+<th class="head"><p>Units</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">position</span></code></p></td>
+<td><p>body position</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+<td><p>length</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">orientation</span></code></p></td>
+<td><p>rotation</p></td>
+<td><p>f32 × 4</p></td>
+<td><p>world</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">linearVelocity</span></code></p></td>
+<td><p>COM linear velocity</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+<td><p>length/s</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">angularVelocity</span></code></p></td>
+<td><p>angular velocity</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+<td><p>rad/s</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">mass</span></code></p></td>
+<td><p>body mass</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>—</p></td>
+<td><p>mass</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">inertia</span></code></p></td>
+<td><p>inertia tensor</p></td>
+<td><p>f32 × 9</p></td>
+<td><p>COM</p></td>
+<td><p>mass·length²</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">centerOfMassPosition</span></code></p></td>
+<td><p>COM offset</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>body</p></td>
+<td><p>length</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">centerOfMassOrientation</span></code></p></td>
+<td><p>COM frame rotation</p></td>
+<td><p>f32 × 4</p></td>
+<td><p>body</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">disableGravity</span></code></p></td>
+<td><p>gravity-off flag</p></td>
+<td><p>u8 × 1</p></td>
+<td><p>—</p></td>
+<td><p>bool</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">disableSimulation</span></code></p></td>
+<td><p>excluded-from-sim flag</p></td>
+<td><p>u8 × 1</p></td>
+<td><p>—</p></td>
+<td><p>bool</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">staticFriction</span></code></p></td>
+<td><p>per-shape static friction</p></td>
+<td><p>f32 × per-shape</p></td>
+<td><p>—</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">dynamicFriction</span></code></p></td>
+<td><p>per-shape dynamic friction</p></td>
+<td><p>f32 × per-shape</p></td>
+<td><p>—</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">restitution</span></code></p></td>
+<td><p>per-shape restitution</p></td>
+<td><p>f32 × per-shape</p></td>
+<td><p>—</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">contactOffset</span></code></p></td>
+<td><p>per-shape contact offset</p></td>
+<td><p>f32 × per-shape</p></td>
+<td><p>—</p></td>
+<td><p>length</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">restOffset</span></code></p></td>
+<td><p>per-shape rest offset</p></td>
+<td><p>f32 × per-shape</p></td>
+<td><p>—</p></td>
+<td><p>length</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">force</span></code></p></td>
+<td><p>external force at COM (write-only)</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+<td><p>force</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">wrench</span></code></p></td>
+<td><p>external force xyz + torque xyz + world application point (write-only)</p></td>
+<td><p>f32 × 9</p></td>
+<td><p>world</p></td>
+<td><p>force / torque</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">wake</span></code></p></td>
+<td><p>wake / sleep control — nonzero wakes, zero sleeps (write-only, CONDITIONAL: non-DirectGPU scenes)</p></td>
+<td><p>u8 × 1</p></td>
+<td><p>—</p></td>
+<td><p>bool</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">kinematicTargetPosition</span></code></p></td>
+<td><p>kinematic target position — drives a kinematic body (CONDITIONAL: non-DirectGPU scenes)</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+<td><p>length</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">kinematicTargetOrientation</span></code></p></td>
+<td><p>kinematic target rotation — drives a kinematic body (CONDITIONAL: non-DirectGPU scenes)</p></td>
+<td><p>f32 × 4</p></td>
+<td><p>world</p></td>
+<td><p>—</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Point-instancer instances are written in the same session as array groups (<code class="docutils literal notranslate"><span class="pre">position</span></code> / <code class="docutils literal notranslate"><span class="pre">orientation</span></code>
+local, velocities world). On DirectGPU an instancer group holding a disabled instance is refused as a
+whole (writes nothing) — asymmetric with standalone bodies, whose disabled rows are silently filtered.</p>
+<p>Writing <code class="docutils literal notranslate"><span class="pre">disableSimulation</span></code> retains disabled rows in the group, so writing <code class="docutils literal notranslate"><span class="pre">0</span></code> re-enables a body.
+This disables a <strong>standalone</strong> body only — a point-instancer <strong>instance</strong> cannot be disabled
+individually (<code class="docutils literal notranslate"><span class="pre">disableSimulation</span></code> is not an instancer-writable column and there is no per-instance
+route), which is unsupported in this release. <strong>Do not toggle <code class="docutils literal notranslate"><span class="pre">eDISABLE_SIMULATION</span></code> directly on a
+<code class="docutils literal notranslate"><span class="pre">PxRigidDynamic*</span></code> read from <code class="docutils literal notranslate"><span class="pre">physxPointer</span></code></strong> — ovphysx does not observe the change, and
+on a DirectGPU scene the next read or write may resolve a stale GPU index to the wrong body without
+error. Write <code class="docutils literal notranslate"><span class="pre">disableSimulation</span></code> through the write API instead.</p>
+<p><code class="docutils literal notranslate"><span class="pre">kinematicTargetPosition</span></code> / <code class="docutils literal notranslate"><span class="pre">kinematicTargetOrientation</span></code> are <strong>CONDITIONAL</strong>: supported on <strong>CPU
+scenes and GPU scenes with CPU readback</strong>. They drive a <em>kinematic</em> rigid body to a world pose;
+the write is <strong>refused outright on a DirectGPU scene</strong> because PhysX never uploads the
+CPU-integrated target to the device. Direct <code class="docutils literal notranslate"><span class="pre">position</span></code> / <code class="docutils literal notranslate"><span class="pre">orientation</span></code> writes are device-backed
+on DirectGPU, but teleport the body without a kinematic target’s step velocity; they are not an
+equivalent way to carry a resting load. Preconditions are enforced
+atomically: a disabled kinematic body, or a non-finite position or a non-finite/zero quaternion,
+fails the whole commit naming the body. A non-kinematic body cannot be driven, but the session still
+opens and its other rows land — that body is warned and skipped, not name-refused. Position and
+orientation are one transform, so writing one preserves the other.</p>
+<p><code class="docutils literal notranslate"><span class="pre">wake</span></code> is a <strong>write-only command</strong>. Read <a class="reference internal" href="readable.html#rigid-bodies"><span class="std std-ref"><code class="docutils literal notranslate"><span class="pre">isSleeping</span></code></span></a> separately to
+observe the current state; it does not echo the command. Nonzero wakes the addressed rigid
+dynamics, zero sleeps them, per prim in one commit. It is a <strong>one-time command over the whole mapped
+group</strong>: every row is driven, so a zero row <em>actively sleeps</em> that body and there is no
+leave-unchanged value or per-row mask. Use a <a class="reference internal" href="index.html#selecting-a-subset-of-prims"><span class="std std-ref">prim-set selection</span></a>
+to map only the bodies you mean to toggle, including sleeping bodies; unselected bodies stay
+untouched. It is <strong>CONDITIONAL</strong>, refused <strong>only on a DirectGPU scene</strong>
+(<code class="docutils literal notranslate"><span class="pre">eENABLE_DIRECT_GPU_API</span></code>), because DirectGPU requires <code class="docutils literal notranslate"><span class="pre">eDISABLE_SLEEPING</span></code>. The command is
+supported on CPU scenes and GPU scenes with CPU readback. Non-dynamic, kinematic, and disabled
+bodies are skipped rather than driven,
+and on an <code class="docutils literal notranslate"><span class="pre">eDISABLE_SLEEPING</span></code> scene the sleep half (<code class="docutils literal notranslate"><span class="pre">wake</span> <span class="pre">==</span> <span class="pre">0</span></code>) is a no-op.</p>
+<p>The per-shape material attributes (<code class="docutils literal notranslate"><span class="pre">staticFriction</span></code> / <code class="docutils literal notranslate"><span class="pre">dynamicFriction</span></code> / <code class="docutils literal notranslate"><span class="pre">restitution</span></code>) are carried by a
+<code class="docutils literal notranslate"><span class="pre">PxMaterial</span></code> that several shapes may share (the authored default). Writing one gives the written shape its
+<strong>own</strong> material, so the write is isolated — a sibling shape still bound to the original material is
+unchanged. Other material settings, including compliant-contact acceleration mode, remain unchanged.
+The trade-off: once a shape owns its material, a later edit to the originally-authored material
+(an ovstage / USD material change) no longer reaches that shape; only shapes still bound to the authored
+material follow.
+The fork has no authored material identity: contact-point material handles report the scene’s
+default material prim when one is authored, or <code class="docutils literal notranslate"><span class="pre">0</span></code> otherwise.</p>
+</section>
+<section id="articulation-links">
+<h2>Articulation links<a class="headerlink" href="#articulation-links" title="Link to this heading">#</a></h2>
+<p>Articulation links (<code class="docutils literal notranslate"><span class="pre">ARTICULATION_LINK</span></code>) share the rigid body’s writable <strong>properties</strong>, with these
+exceptions: pose and velocity are read-only (a link moves through its articulation’s root pose plus
+joint state); <code class="docutils literal notranslate"><span class="pre">disableSimulation</span></code> is read-only (a link cannot be excluded from its articulation’s
+simulation individually); the <code class="docutils literal notranslate"><span class="pre">kinematicTarget*</span></code> names are refused (a link cannot be a kinematic
+target); and <code class="docutils literal notranslate"><span class="pre">wake</span></code> is refused (a link cannot wake independently — the whole articulation wakes as a
+unit). The table below is exactly the writable set.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+<th class="head"><p>Frame</p></th>
+<th class="head"><p>Units</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">mass</span></code></p></td>
+<td><p>link mass</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>—</p></td>
+<td><p>mass</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">inertia</span></code></p></td>
+<td><p>inertia tensor</p></td>
+<td><p>f32 × 9</p></td>
+<td><p>COM</p></td>
+<td><p>mass·length²</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">centerOfMassPosition</span></code></p></td>
+<td><p>COM offset</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>body</p></td>
+<td><p>length</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">centerOfMassOrientation</span></code></p></td>
+<td><p>COM frame rotation</p></td>
+<td><p>f32 × 4</p></td>
+<td><p>body</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">disableGravity</span></code></p></td>
+<td><p>gravity-off flag</p></td>
+<td><p>u8 × 1</p></td>
+<td><p>—</p></td>
+<td><p>bool</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">staticFriction</span></code></p></td>
+<td><p>per-shape static friction</p></td>
+<td><p>f32 × per-shape</p></td>
+<td><p>—</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">dynamicFriction</span></code></p></td>
+<td><p>per-shape dynamic friction</p></td>
+<td><p>f32 × per-shape</p></td>
+<td><p>—</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">restitution</span></code></p></td>
+<td><p>per-shape restitution</p></td>
+<td><p>f32 × per-shape</p></td>
+<td><p>—</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">contactOffset</span></code></p></td>
+<td><p>per-shape contact offset</p></td>
+<td><p>f32 × per-shape</p></td>
+<td><p>—</p></td>
+<td><p>length</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">restOffset</span></code></p></td>
+<td><p>per-shape rest offset</p></td>
+<td><p>f32 × per-shape</p></td>
+<td><p>—</p></td>
+<td><p>length</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">force</span></code></p></td>
+<td><p>external force at COM (write-only)</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+<td><p>force</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">wrench</span></code></p></td>
+<td><p>external force xyz + torque xyz + world application point (write-only)</p></td>
+<td><p>f32 × 9</p></td>
+<td><p>world</p></td>
+<td><p>force / torque</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>On a <strong>DirectGPU</strong> scene, <code class="docutils literal notranslate"><span class="pre">force</span></code> and <code class="docutils literal notranslate"><span class="pre">wrench</span></code> apply per articulation as a whole per-link block, and
+are write-only with no device readback to merge against: a <code class="docutils literal notranslate"><span class="pre">force</span></code> write replaces the matched
+articulation’s force block, a <code class="docutils literal notranslate"><span class="pre">wrench</span></code> write both its force and torque blocks. A later write naming any
+link of the <strong>same</strong> articulation in the same step replaces that block for the whole articulation, so
+two links of one articulation written in separate selected sessions before the step keep only the last
+write — even though the links were selected separately. Set the links of one articulation in a single
+write to apply them together. Writes to links of <em>different</em> articulations are preserved.</p>
+</section>
+<section id="articulation-joints-dofs">
+<h2>Articulation joints — DOFs<a class="headerlink" href="#articulation-joints-dofs" title="Link to this heading">#</a></h2>
+<p>Articulation joints (<code class="docutils literal notranslate"><span class="pre">ARTICULATION_JOINT</span></code>) write an array group, one tensor per joint prim with <strong>one
+row per unlocked axis</strong> in <code class="docutils literal notranslate"><span class="pre">PxArticulationAxis</span></code> order — one value per row (<code class="docutils literal notranslate"><span class="pre">dtype.lanes</span></code> is 1), two
+for <code class="docutils literal notranslate"><span class="pre">jointLimit</span></code>. The unit fold is applied once by the setter. Rotational axes are in <strong>degrees</strong> (as
+USD-authored).</p>
+<p>State and control:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+<th class="head"><p>Units</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointPosition</span></code></p></td>
+<td><p>generalized position</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>deg / length</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointVelocity</span></code></p></td>
+<td><p>generalized velocity</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>deg/s / length/s</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointPositionTarget</span></code></p></td>
+<td><p>drive position target</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>deg / length</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointVelocityTarget</span></code></p></td>
+<td><p>drive velocity target</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>deg/s / length/s</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointActuationForce</span></code></p></td>
+<td><p>applied actuation effort</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>force / torque</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Properties (authoring inputs; persist across steps):</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+<th class="head"><p>Units</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointStiffness</span></code></p></td>
+<td><p>drive effort per unit position error</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>effort/coord</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointDamping</span></code></p></td>
+<td><p>drive effort per unit rate error</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>effort/rate</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointLimit</span></code></p></td>
+<td><p>(low, high) motion limit</p></td>
+<td><p>f32 × 2</p></td>
+<td><p>degrees / length; <code class="docutils literal notranslate"><span class="pre">FLT_MAX</span></code> = free</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointMaxVelocity</span></code></p></td>
+<td><p>joint rate bound</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>USD rate</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointMaxForce</span></code></p></td>
+<td><p>drive effort bound</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>force</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointArmature</span></code></p></td>
+<td><p>added rotor inertia</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>inertia</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointStaticFriction</span></code></p></td>
+<td><p>break-away effort</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>effort</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointDynamicFriction</span></code></p></td>
+<td><p>sliding effort</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>effort</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointViscousFriction</span></code></p></td>
+<td><p>effort per unit rate</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>effort/rate</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointSpeedEffortGradient</span></code></p></td>
+<td><p>drive-envelope rate per effort</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>USD</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointMaxActuatorVelocity</span></code></p></td>
+<td><p>actuator rate bound</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>USD rate</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jointVelocityDependentResistance</span></code></p></td>
+<td><p>envelope resistance per rate</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>effort/rate</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jointDriveType</span></code></p></td>
+<td><p>0 none / 1 force / 2 accel</p></td>
+<td><p>u8 × 1</p></td>
+<td><p>enum</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">jointLimit</span></code> is <strong>conditional</strong>: writing a <em>finite</em> limit onto a non-limited axis is refused and
+writes nothing (PhysX forbids making an axis limited while its articulation is in a scene); a
+<code class="docutils literal notranslate"><span class="pre">±FLT_MAX</span></code> (free) sentinel is a legal no-op. After writing <code class="docutils literal notranslate"><span class="pre">jointPosition</span></code>, call
+<code class="docutils literal notranslate"><span class="pre">ovphysx_update_articulations_kinematic</span></code> (C) / <code class="docutils literal notranslate"><span class="pre">update_articulations_kinematic()</span></code> (Python) to refresh
+dependent link transforms. Wait for the C task before consuming those transforms;
+Python waits internally. The update supports CPU and GPU scenes and acts on the
+selected articulations (see <a class="reference internal" href="limitations.html"><span class="std std-doc">Known limitations</span></a>).</p>
+</section>
+<section id="whole-articulations">
+<h2>Whole articulations<a class="headerlink" href="#whole-articulations" title="Link to this heading">#</a></h2>
+<p>Whole articulations (<code class="docutils literal notranslate"><span class="pre">ARTICULATION</span></code>) accept root state only; COM, the inverse dynamics matrices, and per-shape
+properties are read-only.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+<th class="head"><p>Frame</p></th>
+<th class="head"><p>Units</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">rootPosition</span></code></p></td>
+<td><p>root-link position</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+<td><p>length</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">rootOrientation</span></code></p></td>
+<td><p>root-link rotation</p></td>
+<td><p>f32 × 4</p></td>
+<td><p>world</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">rootLinearVelocity</span></code></p></td>
+<td><p>root linear velocity</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+<td><p>length/s</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">rootAngularVelocity</span></code></p></td>
+<td><p>root angular velocity</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+<td><p>rad/s</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The rigid <code class="docutils literal notranslate"><span class="pre">position</span></code> / <code class="docutils literal notranslate"><span class="pre">velocity</span></code> names are refused on this type — use the <code class="docutils literal notranslate"><span class="pre">root*</span></code> names.</p>
+</section>
+<section id="whole-vehicles">
+<h2>Whole vehicles<a class="headerlink" href="#whole-vehicles" title="Link to this heading">#</a></h2>
+<p>Whole vehicles (<code class="docutils literal notranslate"><span class="pre">VEHICLE</span></code>) accept fixed, host-resident columns with one row per selected vehicle
+prim. No earlier read or step is required on a CPU scene. DirectGPU vehicles are unsupported.
+Select the same prim as <code class="docutils literal notranslate"><span class="pre">RIGID_BODY</span></code> to set chassis pose or velocity; select its wheel attachment
+prims as <code class="docutils literal notranslate"><span class="pre">VEHICLE_WHEEL</span></code> for raw-wheel controls.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype x lanes</p></th>
+<th class="head"><p>Range / applicability</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">accelerator</span></code></p></td>
+<td><p>persistent accelerator input</p></td>
+<td><p>f32 x 1</p></td>
+<td><p>finite [0,1]; DriveBasic / DriveStandard</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">brake0</span></code>, <code class="docutils literal notranslate"><span class="pre">brake1</span></code></p></td>
+<td><p>persistent brake-channel input</p></td>
+<td><p>f32 x 1</p></td>
+<td><p>finite [0,1]; DriveBasic / DriveStandard</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">steer</span></code></p></td>
+<td><p>persistent steering input</p></td>
+<td><p>f32 x 1</p></td>
+<td><p>finite [-1,1]; DriveBasic / DriveStandard</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">requestedGear</span></code></p></td>
+<td><p>persistent gear request (write-only)</p></td>
+<td><p>i32 x 1</p></td>
+<td><p>[-1,30] or 255; DriveBasic / DriveStandard</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">thrust0</span></code>, <code class="docutils literal notranslate"><span class="pre">thrust1</span></code></p></td>
+<td><p>persistent track thrust (write-only)</p></td>
+<td><p>f32 x 1</p></td>
+<td><p>finite [-1,1]; tank drive only</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">resetToRestState</span></code></p></td>
+<td><p>execute native rest reset (write-only)</p></td>
+<td><p>u8 x 1</p></td>
+<td><p>0 leaves state unchanged; 1 resets; other values fail; all rows require eligible chassis</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>All whole-vehicle controls are <code class="docutils literal notranslate"><span class="pre">CONDITIONAL</span></code> in <code class="docutils literal notranslate"><span class="pre">ovphysx_writability</span></code>, including the
+write-only gear, thrust and reset commands: drive subtype or chassis state can refuse them.
+Opening the write checks every selected vehicle and rejects incompatible rows. A mixed selection cannot silently
+skip unsupported vehicles. At commit, every addressed vehicle and value is validated before
+any setter runs. An invalid value leaves this entire group unchanged.</p>
+<p>An unconfigured brake channel accepts a write with no effect and reads zero. On DriveBasic,
+accepted negative / zero / positive gear requests select reverse / neutral / forward; 255 is
+positive and therefore selects forward. On DriveStandard, 255 selects automatic control when an
+autobox is configured. Without an autobox the request is accepted with a warning, and
+<code class="docutils literal notranslate"><span class="pre">automaticTransmission</span></code> remains zero. Requests for unconfigured forward gears have no effect.
+A successful request is not a promise that <code class="docutils literal notranslate"><span class="pre">currentGear</span></code> or the internal <code class="docutils literal notranslate"><span class="pre">targetGear</span></code> immediately
+becomes that value. These controls persist until replaced.</p>
+<section id="reset-ordering">
+<h3>Reset ordering<a class="headerlink" href="#reset-ordering" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">resetToRestState</span></code> resets each row containing 1 once when its group is committed. It is never
+replayed on later steps. A zero row makes no mutation but still undergoes target eligibility
+checks. Releasing a filled group without committing does nothing. The normal single-commit rule
+prevents executing the same group twice.</p>
+<p>Reset preserves chassis pose and existing controls. It clears chassis velocity and accumulated
+forces, resets wheel dynamics, finishes a pending gear change at its internal target and restores
+the configured engine idle speed. It is not a restoration of the originally authored scene.
+A disabled vehicle controller can be reset, but any addressed chassis with <code class="docutils literal notranslate"><span class="pre">disableSimulation</span></code>
+set rejects the group before mutation, including a row whose reset value is zero. Use the chassis
+<code class="docutils literal notranslate"><span class="pre">isSleeping</span></code> read when the current sleep state matters.</p>
+<p>Commits execute in caller order and are not a transaction. For a new driving episode, commit
+reset first, then the desired chassis pose and velocity, then the desired controls. Resetting
+after a velocity write intentionally clears that velocity. Preserved throttle can move the
+vehicle again on its next step; write zero if that is not desired.</p>
+</section>
+</section>
+<section id="vehicle-wheels">
+<h2>Vehicle wheels<a class="headerlink" href="#vehicle-wheels" title="Link to this heading">#</a></h2>
+<p>Vehicle wheels (<code class="docutils literal notranslate"><span class="pre">VEHICLE_WHEEL</span></code>) accept host-resident raw-wheel controls only when the vehicle
+has no managed drive. DirectGPU vehicles are unsupported. No prior read is needed. All three
+controls are write-only and persist until replaced; write zero to stop applying them.
+The composed wheel pose and all <a class="reference internal" href="readable.html#vehicle-wheels"><span class="std std-ref">wheel telemetry</span></a> are read-only.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype x lanes</p></th>
+<th class="head"><p>Units / accepted values</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">driveTorque</span></code></p></td>
+<td><p>persistent drive torque</p></td>
+<td><p>f32 x 1</p></td>
+<td><p>torque; finite</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">brakeTorque</span></code></p></td>
+<td><p>persistent brake torque</p></td>
+<td><p>f32 x 1</p></td>
+<td><p>torque; finite and nonnegative</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">steerAngle</span></code></p></td>
+<td><p>persistent steering command</p></td>
+<td><p>f32 x 1</p></td>
+<td><p>radians; finite</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Incompatible wheels or an invalid value reject the group before any wheel changes. Select a
+raw-wheel vehicle’s attachments explicitly when a scene also contains managed vehicles.</p>
+</section>
+<section id="character-controllers">
+<h2>Character controllers<a class="headerlink" href="#character-controllers" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">CHARACTER_CONTROLLER</span></code> accepts one host column, <code class="docutils literal notranslate"><span class="pre">move</span></code>. It is <strong>CONDITIONAL</strong>:
+refused on a DirectGPU scene (<code class="docutils literal notranslate"><span class="pre">eENABLE_DIRECT_GPU_API</span></code>), because
+<code class="docutils literal notranslate"><span class="pre">PxController::move</span></code> updates the proxy through <code class="docutils literal notranslate"><span class="pre">setKinematicTarget</span></code> and that CPU
+target is not uploaded. Pose is the controller prim’s <code class="docutils literal notranslate"><span class="pre">RIGID_BODY</span></code> position and
+orientation: the backing actor’s global pose. That orientation includes the
+capsule-axis rotation and is not the fixup-corrected orientation written back to
+the prim.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+<th class="head"><p>Frame / values</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">move</span></code></p></td>
+<td><p>world-space displacement applied once at commit</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Each successful commit calls <code class="docutils literal notranslate"><span class="pre">PxController::move</span></code> once with that displacement,
+minimum distance 0, the scene timestep, and the default filters, including a zero
+vector so a controller standing on a moving kinematic platform follows that
+platform. A later step does not replay it. Two commits before one step each apply.
+Non-finite values fail before any controller is updated.
+There is no teleport, local frame, or gravity control on this type. Collision
+flags are not exposed.</p>
+</section>
+<section id="deformable-volumes-surfaces">
+<h2>Deformable volumes / surfaces<a class="headerlink" href="#deformable-volumes-surfaces" title="Link to this heading">#</a></h2>
+<p>Deformable volumes / surfaces (<code class="docutils literal notranslate"><span class="pre">DEFORMABLE_VOLUME</span></code>, <code class="docutils literal notranslate"><span class="pre">DEFORMABLE_SURFACE</span></code>) are <strong>GPU-only,
+device-resident</strong>. <code class="docutils literal notranslate"><span class="pre">restPoints</span></code> and the connectivity indices are read-only. <code class="docutils literal notranslate"><span class="pre">kinematicTarget</span></code> (volume
+only) drives sim-mesh nodes to a target through a <strong>runtime-owned per-body buffer</strong> whose lifetime
+outlives any single write — so, unlike a freed-at-release write column, the solver keeps reading valid
+memory. It is <strong>CONDITIONAL</strong>: refused on a volume already made kinematic another way
+(<code class="docutils literal notranslate"><span class="pre">eKINEMATIC</span></code> / <code class="docutils literal notranslate"><span class="pre">kinematicBody</span></code>, or a tensor-binding view’s <code class="docutils literal notranslate"><span class="pre">ePARTIALLY_KINEMATIC</span></code>), and driving is
+<strong>monotonic</strong> — a write cannot return an already-driven node to free (no un-pinning). Per node, the
+<code class="docutils literal notranslate"><span class="pre">.w</span></code> lane selects whether it is driven, with <strong>inverted</strong> polarity: <code class="docutils literal notranslate"><span class="pre">w</span> <span class="pre">==</span> <span class="pre">0</span></code> drives the node to its
+<code class="docutils literal notranslate"><span class="pre">xyz</span></code> target, <code class="docutils literal notranslate"><span class="pre">w</span> <span class="pre">!=</span> <span class="pre">0</span></code> leaves it free.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+<th class="head"><p>Frame</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">points</span></code></p></td>
+<td><p>current nodal positions (scale-corrected; <code class="docutils literal notranslate"><span class="pre">.w</span></code> inverse-mass lane preserved)</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>sim-mesh-local</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">velocities</span></code></p></td>
+<td><p>nodal velocities</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">kinematicTarget</span></code></p></td>
+<td><p>drive sim-node targets (<code class="docutils literal notranslate"><span class="pre">.w</span></code> active-flag; volume only, CONDITIONAL)</p></td>
+<td><p>f32 × 4</p></td>
+<td><p>sim-mesh-local</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="particle-sets">
+<h2>Particle sets<a class="headerlink" href="#particle-sets" title="Link to this heading">#</a></h2>
+<p>Particle sets (<code class="docutils literal notranslate"><span class="pre">PARTICLE_SET</span></code>) are <strong>host-staged on every scene</strong>, uploaded to the device at the next
+step; readable before then.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+<th class="head"><p>Frame</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">points</span></code></p></td>
+<td><p>particle positions (scale-corrected; <code class="docutils literal notranslate"><span class="pre">.w</span></code> inverse-mass lane preserved)</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>particle-set-prim-local</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">velocities</span></code></p></td>
+<td><p>particle velocities</p></td>
+<td><p>f32 × 3</p></td>
+<td><p>world</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="fixed-spatial-tendons">
+<h2>Fixed / spatial tendons<a class="headerlink" href="#fixed-spatial-tendons" title="Link to this heading">#</a></h2>
+<p>Fixed / spatial tendons (<code class="docutils literal notranslate"><span class="pre">FIXED_TENDON</span></code>, <code class="docutils literal notranslate"><span class="pre">SPATIAL_TENDON</span></code>) are device-resident on DirectGPU, host
+otherwise; all persist. <code class="docutils literal notranslate"><span class="pre">tendonLimit</span></code> and <code class="docutils literal notranslate"><span class="pre">tendonRestLength</span></code> are refused by name on a spatial tendon
+(they live on the leaf attachment).</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+<th class="head"><p>Fixed</p></th>
+<th class="head"><p>Spatial</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tendonStiffness</span></code></p></td>
+<td><p>stiffness</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tendonDamping</span></code></p></td>
+<td><p>damping</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tendonLimitStiffness</span></code></p></td>
+<td><p>limit-region stiffness</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tendonOffset</span></code></p></td>
+<td><p>offset</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>yes</p></td>
+<td><p>yes</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tendonLimit</span></code></p></td>
+<td><p>(low, high) length limit</p></td>
+<td><p>f32 × 2</p></td>
+<td><p>yes</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tendonRestLength</span></code></p></td>
+<td><p>rest length</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>yes</p></td>
+<td><p>—</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="deformable-materials">
+<h2>Deformable materials<a class="headerlink" href="#deformable-materials" title="Link to this heading">#</a></h2>
+<p>Deformable materials (<code class="docutils literal notranslate"><span class="pre">DEFORMABLE_MATERIAL</span></code>) are host-resident, scene-less; all persist.
+Bending/thickness fields apply to surface materials only (a volume material takes no row).</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+<th class="head"><p>Applies to</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">deformableDynamicFriction</span></code></p></td>
+<td><p>dynamic friction</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>volume + surface</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">deformableYoungsModulus</span></code></p></td>
+<td><p>Young’s modulus</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>volume + surface</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">deformablePoissonsRatio</span></code></p></td>
+<td><p>Poisson’s ratio</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>volume + surface</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">deformableElasticityDamping</span></code></p></td>
+<td><p>elasticity damping</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>volume + surface</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">deformableBendingStiffness</span></code></p></td>
+<td><p>bending stiffness</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>surface only</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">deformableThickness</span></code></p></td>
+<td><p>shell thickness</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>surface only</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">deformableBendingDamping</span></code></p></td>
+<td><p>bending damping</p></td>
+<td><p>f32 × 1</p></td>
+<td><p>surface only</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="debug-render">
+<h2>Debug render<a class="headerlink" href="#debug-render" title="Link to this heading">#</a></h2>
+<p>Debug render (<code class="docutils literal notranslate"><span class="pre">DEBUG_RENDER</span></code>) settings are writable without an attached stage. Geometry columns
+(<code class="docutils literal notranslate"><span class="pre">pointPosition</span></code> / <code class="docutils literal notranslate"><span class="pre">pointColor</span></code>, <code class="docutils literal notranslate"><span class="pre">linePosition</span></code> / <code class="docutils literal notranslate"><span class="pre">lineColor</span></code>, <code class="docutils literal notranslate"><span class="pre">trianglePosition</span></code> / <code class="docutils literal notranslate"><span class="pre">triangleColor</span></code>)
+are read-only. A commit pushes the instance’s full settings onto scenes of this attach; a parameter
+value of 0 turns that parameter off. A <code class="docutils literal notranslate"><span class="pre">scope</span></code> write is uint64 shape <code class="docutils literal notranslate"><span class="pre">[4097]</span></code>: element 0
+is the count (at most 4096) and elements 1..count are the path tokens. Count 0 draws
+everything. A <code class="docutils literal notranslate"><span class="pre">cullingBox</span></code> write is float32 shape <code class="docutils literal notranslate"><span class="pre">[7]</span></code>: element 0 is 1 to store the next
+six floats (min xyz, max xyz, min ≤ max), or 0 to clear the box. Scope tokens are cleared
+on detach because they belong to the stage path dictionary.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Attribute</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>dtype × lanes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">enabled</span></code></p></td>
+<td><p>visualization on/off</p></td>
+<td><p>u8 × 1</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">scale</span></code></p></td>
+<td><p>visualization scale (finite, ≥ 0)</p></td>
+<td><p>f32 × 1</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">worldAxes</span></code> … <code class="docutils literal notranslate"><span class="pre">sdf</span></code></p></td>
+<td><p>visualization parameter magnitude (finite, ≥ 0)</p></td>
+<td><p>f32 × 1</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">cullingBox</span></code></p></td>
+<td><p>element 0 stores (1) or clears (0); the next six floats are min xyz, max xyz</p></td>
+<td><p>f32 × 1, shape <code class="docutils literal notranslate"><span class="pre">[7]</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">scope</span></code></p></td>
+<td><p>element 0 is the token count; elements 1..count are interned path tokens</p></td>
+<td><p>u64 × 1, shape <code class="docutils literal notranslate"><span class="pre">[4097]</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>In C, pass <code class="docutils literal notranslate"><span class="pre">&amp;OVPHYSX_NAME_DEBUG_*</span></code>. In Python, pass the string name.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="readable.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Readable data</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="vehicles.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Vehicle examples</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#writability-classes">Writability classes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#write-timing-ordering-and-persistence">Write timing, ordering, and persistence</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rigid-bodies">Rigid bodies</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#articulation-links">Articulation links</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#articulation-joints-dofs">Articulation joints — DOFs</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#whole-articulations">Whole articulations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#whole-vehicles">Whole vehicles</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reset-ordering">Reset ordering</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#vehicle-wheels">Vehicle wheels</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#character-controllers">Character controllers</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#deformable-volumes-surfaces">Deformable volumes / surfaces</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#particle-sets">Particle sets</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fixed-spatial-tendons">Fixed / spatial tendons</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#deformable-materials">Deformable materials</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#debug-render">Debug render</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025-2026, NVIDIA Corporation.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Oct 15, 2026.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -3,26 +3,16 @@
 
 /** @cond OVPHYSX_PLC_TRACE */
 /**
- * @implements REQ-CAPI-OMNIPVD-001
- * @covers AC-1
- * @implements REQ-CAPI-OMNIPVD-LATE-001
+ * @implements REQ-CAPI-CONFIG-001
  * @covers AC-2
- * @implements REQ-CAPI-READPOOL-001
- * @covers AC-1
- * @implements REQ-CAPI-COLLISION-CONFIG-001
- * @covers AC-1
  */
 /** @endcond */
 
 /**
  * @file ovphysx_config.h
- * @brief Builder functions for typed config entries.
+ * @brief Builder functions for scoped configuration values.
  *
- * Provides static inline helpers to construct ovphysx_config_entry_t values
- * for use with ovphysx_create_instance() and ovphysx_set_global_config().
- *
- * Pattern: generic type builders + named convenience functions per enum value.
- * Matches the ovrtx_config.h builder pattern for API consistency.
+ * Deprecated entry builders are declared in ovphysx_legacy_config.h.
  */
 
 #ifndef OVPHYSX_CONFIG_H
@@ -34,183 +24,47 @@
 extern "C" {
 #endif
 
-#define OVPHYSX_OMNIPVD_TRANSPORT_FILE_NAME OVPHYSX_LITERAL("file")
-#define OVPHYSX_OMNIPVD_TRANSPORT_TCP_NAME OVPHYSX_LITERAL("tcp")
-
-/*--------------------------------------------------*/
-/* Generic type builders                            */
-/*--------------------------------------------------*/
-
-/** Build a config entry for a boolean setting. */
-static inline ovphysx_config_entry_t ovphysx_config_entry_bool(ovphysx_config_bool_t key, bool value)
+/** Build a boolean scoped configuration value. */
+static inline ovphysx_config_value_t ovphysx_config_value_bool(bool value)
 {
-    ovphysx_config_entry_t entry;
-    entry.key_type = OVPHYSX_CONFIG_KEY_TYPE_BOOL;
-    entry.key.bool_key = key;
-    entry.value.bool_value = value;
-    return entry;
+    ovphysx_config_value_t result;
+    result.type = OVPHYSX_CONFIG_VALUE_BOOL;
+    result.value.bool_value = value;
+    return result;
 }
 
-/** Build a config entry for an int32 setting. */
-static inline ovphysx_config_entry_t ovphysx_config_entry_int32(ovphysx_config_int32_t key, int32_t value)
+/** Build a signed 64-bit scoped configuration value. */
+static inline ovphysx_config_value_t ovphysx_config_value_int64(int64_t value)
 {
-    ovphysx_config_entry_t entry;
-    entry.key_type = OVPHYSX_CONFIG_KEY_TYPE_INT32;
-    entry.key.int32_key = key;
-    entry.value.int32_value = value;
-    return entry;
+    ovphysx_config_value_t result;
+    result.type = OVPHYSX_CONFIG_VALUE_INT64;
+    result.value.int64_value = value;
+    return result;
 }
 
-/** Build a config entry for a float setting. */
-static inline ovphysx_config_entry_t ovphysx_config_entry_float(ovphysx_config_float_t key, float value)
+/** Build a double-precision scoped configuration value. */
+static inline ovphysx_config_value_t ovphysx_config_value_double(double value)
 {
-    ovphysx_config_entry_t entry;
-    entry.key_type = OVPHYSX_CONFIG_KEY_TYPE_FLOAT;
-    entry.key.float_key = key;
-    entry.value.float_value = value;
-    return entry;
+    ovphysx_config_value_t result;
+    result.type = OVPHYSX_CONFIG_VALUE_DOUBLE;
+    result.value.double_value = value;
+    return result;
 }
 
-/** Build a config entry for a string setting.
- *  value.ptr must remain valid until the API call that consumes the config returns. */
-static inline ovphysx_config_entry_t ovphysx_config_entry_string(ovphysx_config_string_t key, ovphysx_string_t value)
+/** Build a borrowed string scoped configuration value. */
+static inline ovphysx_config_value_t ovphysx_config_value_string(ovphysx_string_t value)
 {
-    ovphysx_config_entry_t entry;
-    entry.key_type = OVPHYSX_CONFIG_KEY_TYPE_STRING;
-    entry.key.string_key = key;
-    entry.value.string_value = value;
-    return entry;
-}
-
-/**
- * Build a config entry for an arbitrary Carbonite setting (direct override).
- *
- * The key is a Carbonite settings path (e.g., "/physics/updateToUsd")
- * and the value is a string whose type is auto-detected at runtime:
- * "true"/"false" becomes bool, an integer string int, a float string float, anything else string.
- *
- * Both key.ptr and value.ptr must remain valid until the API call returns.
- */
-static inline ovphysx_config_entry_t ovphysx_config_entry_carbonite(ovphysx_string_t key, ovphysx_string_t value)
-{
-    ovphysx_config_entry_t entry;
-    entry.key_type = OVPHYSX_CONFIG_KEY_TYPE_CARBONITE;
-    entry.key.carbonite_key = key;
-    entry.value.string_value = value;
-    return entry;
-}
-
-/*--------------------------------------------------*/
-/* Named convenience builders (one per enum value)  */
-/*--------------------------------------------------*/
-
-/** Enable/disable contact processing (/physics/disableContactProcessing). */
-static inline ovphysx_config_entry_t ovphysx_config_entry_disable_contact_processing(bool value)
-{
-    return ovphysx_config_entry_bool(OVPHYSX_CONFIG_DISABLE_CONTACT_PROCESSING, value);
-}
-
-/** Select cone collision geometry before stage attachment.
- *  true (default) selects a convex core; false selects a convex mesh.
- *  Inverse of /physics/collisionApproximateCones. Existing shapes are not rebuilt. */
-static inline ovphysx_config_entry_t ovphysx_config_entry_collision_cone_custom_geometry(bool value)
-{
-    return ovphysx_config_entry_bool(OVPHYSX_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY, value);
-}
-
-/** Select cylinder collision geometry before stage attachment.
- *  true (default) selects a convex core; false selects a convex mesh.
- *  Inverse of /physics/collisionApproximateCylinders. Existing shapes are not rebuilt. */
-static inline ovphysx_config_entry_t ovphysx_config_entry_collision_cylinder_custom_geometry(bool value)
-{
-    return ovphysx_config_entry_bool(OVPHYSX_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY, value);
-}
-
-/** Set PhysX worker count (/persistent/physics/numThreads) before scene attachment.
- *  The default dispatcher caps it at the shared tasking pool size. 0 runs tasks inline.
- *  This setting does not resize supporting worker pools or an already attached dispatcher. */
-static inline ovphysx_config_entry_t ovphysx_config_entry_num_threads(int32_t value)
-{
-    return ovphysx_config_entry_int32(OVPHYSX_CONFIG_NUM_THREADS, value);
-}
-
-/** Set scene multi-GPU mode (/physics/sceneMultiGPUMode).
- *  0=disabled, 1=all GPUs, 2=skip first GPU. Used only when
- *  ovphysx_create_args.active_cuda_gpus is empty. */
-static inline ovphysx_config_entry_t ovphysx_config_entry_scene_multi_gpu_mode(int32_t value)
-{
-    return ovphysx_config_entry_int32(OVPHYSX_CONFIG_SCENE_MULTI_GPU_MODE, value);
-}
-
-/** Set the ovstage read device-buffer pool retention budget in MiB
- *  (/physics/ovstageReadPoolMaxMB). Bounds the device and pinned-host memory the
- *  per-context output-read pool retains between reads. 0 or a negative value DISABLES the pool
- *  (nothing is retained, and every read allocates and frees as if the pool were absent). Default 256. */
-static inline ovphysx_config_entry_t ovphysx_config_entry_ovstage_read_pool_max_mb(int32_t value)
-{
-    return ovphysx_config_entry_int32(OVPHYSX_CONFIG_OVSTAGE_READ_POOL_MAX_MB, value);
-}
-
-/** Select the OmniPVD startup transport: exact lowercase "file" or "tcp". */
-static inline ovphysx_config_entry_t ovphysx_config_entry_omnipvd_transport(ovphysx_string_t value)
-{
-    return ovphysx_config_entry_string(OVPHYSX_CONFIG_OMNIPVD_TRANSPORT, value);
-}
-
-/** Set the OmniPVD TCP peer address. */
-static inline ovphysx_config_entry_t ovphysx_config_entry_omnipvd_tcp_address(ovphysx_string_t value)
-{
-    return ovphysx_config_entry_string(OVPHYSX_CONFIG_OMNIPVD_TCP_ADDRESS, value);
-}
-
-/** Set the OmniPVD TCP peer port (1..65535). */
-static inline ovphysx_config_entry_t ovphysx_config_entry_omnipvd_tcp_port(int32_t value)
-{
-    return ovphysx_config_entry_int32(OVPHYSX_CONFIG_OMNIPVD_TCP_PORT, value);
-}
-
-/** Set the blocked-send timeout in milliseconds (0 keeps the OS default and uses a 3000 ms connect window). */
-static inline ovphysx_config_entry_t ovphysx_config_entry_omnipvd_tcp_timeout_ms(int32_t value)
-{
-    return ovphysx_config_entry_int32(OVPHYSX_CONFIG_OMNIPVD_TCP_TIMEOUT_MS, value);
-}
-
-/** Set OmniPVD OVD recording directory (/persistent/physics/omniPvdOvdRecordingDirectory).
- *  Both this and omnipvd_output_enabled must be set before instance creation.
- *  When passed together in config_entries, order within the array does not matter
- *  (both are applied before the physics engine reads them).
- *  value.ptr must remain valid until the API call returns. */
-static inline ovphysx_config_entry_t ovphysx_config_entry_omnipvd_ovd_recording_directory(ovphysx_string_t value)
-{
-    return ovphysx_config_entry_string(OVPHYSX_CONFIG_OMNIPVD_OVD_RECORDING_DIRECTORY, value);
-}
-
-/** Enable/disable OmniPVD recording (/physics/omniPvdOutputEnabled).
- *  Both this and omnipvd_ovd_recording_directory must be set before instance creation.
- *  When passed together in config_entries, order within the array does not matter. */
-static inline ovphysx_config_entry_t ovphysx_config_entry_omnipvd_output_enabled(bool value)
-{
-    return ovphysx_config_entry_bool(OVPHYSX_CONFIG_OMNIPVD_OUTPUT_ENABLED, value);
-}
-
-/** Enable/disable OmniPVD recording capability (/physics/omniPvdRecordingCapable).
- *  This is a creation-time, process-wide setting that defaults to false.
- *  Enabling startup OmniPVD output also enables this capability. */
-static inline ovphysx_config_entry_t ovphysx_config_entry_omnipvd_recording_capable(bool value)
-{
-    return ovphysx_config_entry_bool(OVPHYSX_CONFIG_OMNIPVD_RECORDING_CAPABLE, value);
-}
-
-/** Enable/disable NVTX ranges for capture with Nsight Systems (/physics/nvtxEnabled).
- *  Must be set before instance creation. Setting OVPHYSX_NVTX=1 in the environment
- *  has the same effect and needs no code change. */
-static inline ovphysx_config_entry_t ovphysx_config_entry_nvtx_enabled(bool value)
-{
-    return ovphysx_config_entry_bool(OVPHYSX_CONFIG_NVTX_ENABLED, value);
+    ovphysx_config_value_t result;
+    result.type = OVPHYSX_CONFIG_VALUE_STRING;
+    result.value.string_value = value;
+    return result;
 }
 
 #ifdef __cplusplus
 }
 #endif
+
+/* Source-compatibility umbrella. New code does not use this legacy header. */
+#include "ovphysx_legacy_config.h"
 
 #endif /* OVPHYSX_CONFIG_H */

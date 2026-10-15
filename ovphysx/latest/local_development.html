@@ -47,7 +47,7 @@
 
 
     <script rel="preload" src="_static/modal-table.js"></script>
-    <script src="_static/documentation_options.js?v=18b66ea0"></script>
+    <script src="_static/documentation_options.js?v=423e15eb"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.6.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -75,7 +75,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Oct 08, 2026"/>
+    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -507,6 +507,10 @@
 <ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="ovphysx_overview.html">ovphysx Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="coding_style.html">ovphysx coding and doc style</a></li>
+<li class="toctree-l1"><a class="reference internal" href="migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Local Development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
@@ -566,7 +570,6 @@
 <li class="toctree-l2"><a class="reference internal" href="population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxJointAPI.html">PhysxJointAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
@@ -613,6 +616,8 @@
 <li class="toctree-l1"><a class="reference internal" href="read_write/device.html">Device residency and interop</a></li>
 <li class="toctree-l1"><a class="reference internal" href="read_write/readable.html">Readable data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="read_write/writable.html">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="read_write/vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="read_write/path_patterns.html">Path patterns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="read_write/limitations.html">Known limitations and gaps</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
@@ -625,7 +630,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tutorials/render_handoff.html">Rendering Handoff</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/nvtx_profiling.html">NVTX Profiling in Nsight Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
@@ -717,13 +722,14 @@ cmake<span class="w"> </span>--build<span class="w"> </span>_build<span class="w
 
 <span class="c1"># 3. Build your app against the installed SDK</span>
 cmake<span class="w"> </span>-S<span class="w"> </span>my_app<span class="w"> </span>-B<span class="w"> </span>my_app/_build<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>-DCMAKE_PREFIX_PATH<span class="o">=</span><span class="s2">&quot;</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span><span class="s2">/_install;</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span><span class="s2">/ovruntime/_build/target-deps/ovstage/ovstage&quot;</span>
+<span class="w">    </span>-DCMAKE_PREFIX_PATH<span class="o">=</span><span class="s2">&quot;</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span><span class="s2">/_install;</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span><span class="s2">/ovruntime/_build/target-deps/ovstage&quot;</span>
 cmake<span class="w"> </span>--build<span class="w"> </span>my_app/_build
 </pre></div>
 </div>
-<p>The source build fetches the pinned ovstage wheel automatically. The second
-prefix above points CMake at the native package extracted from that wheel. After
-step 2, <code class="docutils literal notranslate"><span class="pre">_install/lib/libovphysx.so</span></code> (Windows: <code class="docutils literal notranslate"><span class="pre">_install\bin\ovphysx.dll</span></code>) and
+<p>The source build fetches the pinned OVStage native package automatically. The
+second prefix reuses the one the build already fetched, so <code class="docutils literal notranslate"><span class="pre">find_package(ovphysx)</span></code>
+resolves it from the prefix path and does not download a second copy.</p>
+<p>After step 2, <code class="docutils literal notranslate"><span class="pre">_install/lib/libovphysx.so</span></code> (Windows: <code class="docutils literal notranslate"><span class="pre">_install\bin\ovphysx.dll</span></code>) and
 <code class="docutils literal notranslate"><span class="pre">_install/lib/cmake/ovphysx/ovphysxConfig.cmake</span></code> exist; if they do not, the
 install step did not complete and <code class="docutils literal notranslate"><span class="pre">find_package()</span></code> in step 3 fails.</p>
 <p>Your app’s <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> uses <code class="docutils literal notranslate"><span class="pre">find_package()</span></code>:</p>
@@ -782,10 +788,11 @@ dependencies.</p>
 <p><strong>Running the executable:</strong> The ovphysx runtime also needs Carbonite and PhysX
 plugins at runtime (loaded through <code class="docutils literal notranslate"><span class="pre">dlopen</span></code>). The least error-prone approach is to
 build the installed SDK once and point <code class="docutils literal notranslate"><span class="pre">OVPHYSX_LIB</span></code> at the installed ovphysx
-library so the runtime can derive the matching plugin paths and the codeless
-schema root:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># One-time setup: build and install the SDK</span>
-<span class="nb">cd</span><span class="w"> </span>ovphysx<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./build.sh<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>cmake<span class="w"> </span>--build<span class="w"> </span>_build<span class="w"> </span>--target<span class="w"> </span>install_sdk
+library so the runtime can derive the matching plugin paths. Provision schemas
+separately as described in <a class="reference internal" href="physics_schemas.html"><span class="std std-doc">Physics Schemas</span></a>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run from the directory containing ovphysx/ and my_app/.</span>
+<span class="c1"># One-time setup: build and install the SDK without changing this directory.</span>
+<span class="o">(</span><span class="nb">cd</span><span class="w"> </span>ovphysx<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./build.sh<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>cmake<span class="w"> </span>--build<span class="w"> </span>_build<span class="w"> </span>--target<span class="w"> </span>install_sdk<span class="o">)</span>
 
 <span class="c1"># Run with runtime layout from the installed SDK</span>
 <span class="nv">OVPHYSX_LIB</span><span class="o">=</span>ovphysx/_install/lib/libovphysx.so<span class="w"> </span>./my_app/_build/my_app
@@ -847,21 +854,20 @@ python<span class="w"> </span>my_script.py
 <td><p><code class="docutils literal notranslate"><span class="pre">OFF</span></code></p></td>
 <td><p>Build PhysX SDK from source instead of using prebuilt binaries</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_DEV_SCHEMA</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">OFF</span></code></p></td>
-<td><p>Use locally-built physics schema</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_WARNINGS_AS_ERRORS</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_WARNINGS_AS_ERRORS</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">ON</span></code> in CI, <code class="docutils literal notranslate"><span class="pre">OFF</span></code> otherwise</p></td>
 <td><p>Treat compiler warnings as errors</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_BIN_DIR</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_BIN_DIR</span></code></p></td>
 <td><p><em>(empty)</em></p></td>
 <td><p>Advanced build-time helper path for Kit/PhysX plugin linkage; not a runtime environment variable</p></td>
 </tr>
 </tbody>
 </table>
 </div>
+<p><code class="docutils literal notranslate"><span class="pre">build.sh</span> <span class="pre">--devschema</span></code> (Windows: <code class="docutils literal notranslate"><span class="pre">build.bat</span> <span class="pre">--devschema</span></code>) builds and selects a
+local schema provider wheel for test/sample runners. This is a build-script
+option; it changes no C++ schema headers or CMake compiler configuration.</p>
 </section>
 <section id="environment-variables">
 <h3>Environment Variables<a class="headerlink" href="#environment-variables" title="Link to this heading">#</a></h3>
@@ -874,7 +880,7 @@ python<span class="w"> </span>my_script.py
 </thead>
 <tbody>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OVPHYSX_LIB</span></code></p></td>
-<td><p>Path to <code class="docutils literal notranslate"><span class="pre">libovphysx.so</span></code> / <code class="docutils literal notranslate"><span class="pre">ovphysx.dll</span></code>. Python loads this library directly; native/source-link runs use its directory to find the plugins and the codeless schema root (<code class="docutils literal notranslate"><span class="pre">schemas/physx</span></code>).</p></td>
+<td><p>Path to <code class="docutils literal notranslate"><span class="pre">libovphysx.so</span></code> / <code class="docutils literal notranslate"><span class="pre">ovphysx.dll</span></code>. Python loads this library directly; native/source-link runs use its directory to find the plugins; schema resources come from the external provider.</p></td>
 </tr>
 </tbody>
 </table>
@@ -901,7 +907,7 @@ fetch failed. Retry (transient failures are common); the cache lives under
 <code class="docutils literal notranslate"><span class="pre">_build/</span></code> and reconfigure, or <code class="docutils literal notranslate"><span class="pre">build.sh</span> <span class="pre">--rebuild</span></code>. Use <code class="docutils literal notranslate"><span class="pre">--clean</span></code> to clean only
 and <code class="docutils literal notranslate"><span class="pre">--generate</span></code> to configure without compiling.</p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">Error</span> <span class="pre">copying</span> <span class="pre">file</span> <span class="pre">...</span> <span class="pre">PhysXGpu_64.dll</span> <span class="pre">...</span> <span class="pre">No</span> <span class="pre">such</span> <span class="pre">file</span> <span class="pre">or</span> <span class="pre">directory</span></code> after
-changing <code class="docutils literal notranslate"><span class="pre">--devphysx</span></code> or <code class="docutils literal notranslate"><span class="pre">--devschema</span></code></strong> — incremental builds across a flavor
+changing <code class="docutils literal notranslate"><span class="pre">--devphysx</span></code></strong> — incremental builds across a flavor
 change are not supported. <code class="docutils literal notranslate"><span class="pre">--devphysx</span></code> caches <code class="docutils literal notranslate"><span class="pre">PHYSX_SDK_DIR</span></code> pointing at the
 local <code class="docutils literal notranslate"><span class="pre">physx/</span></code> source tree; a later configure without it keeps that cached
 path, so the copy step looks for <code class="docutils literal notranslate"><span class="pre">PhysXGpu_64.dll</span></code> under the source tree
@@ -915,10 +921,10 @@ baseline. On a host with newer glibc the check fails fast; pass
 <code class="docutils literal notranslate"><span class="pre">SKIP_GLIBC_CHECK=ON</span></code> for local development, for example
 <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-DSKIP_GLIBC_CHECK=ON</span> <span class="pre">-P</span> <span class="pre">scripts/install.cmake</span></code> (also accepted as an
 environment variable through <code class="docutils literal notranslate"><span class="pre">validate_all</span></code>).</p></li>
-<li><p><strong>Install or wheel build fails with <code class="docutils literal notranslate"><span class="pre">'file'</span> <span class="pre">not</span> <span class="pre">found</span></code> on Linux</strong> — both steps
-shell out to the OS <code class="docutils literal notranslate"><span class="pre">file</span></code> utility (libmagic) to find unstripped ELF binaries,
-and to <code class="docutils literal notranslate"><span class="pre">strip</span></code>/<code class="docutils literal notranslate"><span class="pre">readelf</span></code> from <code class="docutils literal notranslate"><span class="pre">binutils</span></code>. Minimal container images ship
-neither: <code class="docutils literal notranslate"><span class="pre">apt-get</span> <span class="pre">install</span> <span class="pre">file</span> <span class="pre">binutils</span></code>.</p></li>
+<li><p><strong>Install or wheel build fails with <code class="docutils literal notranslate"><span class="pre">readelf</span> <span class="pre">not</span> <span class="pre">found</span></code> or <code class="docutils literal notranslate"><span class="pre">strip</span> <span class="pre">not</span> <span class="pre">found</span></code>
+on Linux</strong> — both steps use <code class="docutils literal notranslate"><span class="pre">readelf</span></code> to find unstripped ELF binaries and
+<code class="docutils literal notranslate"><span class="pre">strip</span></code> to remove their symbols. Minimal images need binutils:
+<code class="docutils literal notranslate"><span class="pre">apt-get</span> <span class="pre">install</span> <span class="pre">binutils</span></code>.</p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">No</span> <span class="pre">CMAKE_CUDA_COMPILER</span> <span class="pre">could</span> <span class="pre">be</span> <span class="pre">found</span></code></strong> — <code class="docutils literal notranslate"><span class="pre">nvcc</span></code> is not on <code class="docutils literal notranslate"><span class="pre">PATH</span></code>, or the
 CUDA Toolkit does not match the tested version. Install a compatible CUDA Toolkit
 (refer to the PhysX SDK <a class="reference external" href="https://github.com/NVIDIA-Omniverse/PhysX/blob/main/physx/documentation/platformreadme/linux/README_LINUX.md">Linux platform readme</a>)
@@ -1032,7 +1038,7 @@ with <code class="docutils literal notranslate"><span class="pre">nvcc</span></c
 </div>
       
         <div class="footer-item"><p class="last-updated">
-  Last updated on Oct 08, 2026.
+  Last updated on Oct 15, 2026.
   <br/>
 </p></div>
       

@@ -47,7 +47,7 @@
 
 
     <script rel="preload" src="../_static/modal-table.js"></script>
-    <script src="../_static/documentation_options.js?v=18b66ea0"></script>
+    <script src="../_static/documentation_options.js?v=423e15eb"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.6.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -75,7 +75,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Oct 08, 2026"/>
+    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
   
     
     <script src="../_static/searchtools.js"></script>
@@ -507,6 +507,10 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coding_style.html">ovphysx coding and doc style</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
@@ -566,7 +570,6 @@
 <li class="toctree-l2"><a class="reference internal" href="PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="PhysxJointAPI.html">PhysxJointAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PhysxLimitAPI.html">PhysxLimitAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
@@ -613,6 +616,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../read_write/device.html">Device residency and interop</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/readable.html">Readable data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/writable.html">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/path_patterns.html">Path patterns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/limitations.html">Known limitations and gaps</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
@@ -625,7 +630,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/render_handoff.html">Rendering Handoff</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials/nvtx_profiling.html">NVTX Profiling in Nsight Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
@@ -790,8 +795,8 @@ Fragile spots and notes are never asserted.</p>
 </table>
 </div>
 </section>
-<section id="fragile-16">
-<h2>Fragile (16)<a class="headerlink" href="#fragile-16" title="Link to this heading">#</a></h2>
+<section id="fragile-20">
+<h2>Fragile (20)<a class="headerlink" href="#fragile-20" title="Link to this heading">#</a></h2>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>Component</p></th>
@@ -865,7 +870,31 @@ Fragile spots and notes are never asserted.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="PhysxJointAxisAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxJointAxisAPI</span></code></span></a></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">physxJointAxis:&lt;inst&gt;:armature</span></code></p></td>
 <td><p>consumer</p></td>
-<td><p>Only strictly positive PhysX armature values displace the seed (joint-level PhysX, then Newton, then zero), because zero is both the fallback and a legal authored value and ovstage has no authored bit. Explicit PhysX zero therefore cannot clear a nonzero seed on either backend.</p></td>
+<td><p>Only strictly positive PhysX armature values displace the seed (newton:armature, then zero), because zero is both the fallback and a legal authored value and ovstage has no authored bit. Explicit PhysX zero therefore cannot clear a nonzero seed on either backend.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxJointAxisAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxJointAxisAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxJointAxis:&lt;inst&gt;:maxJointVelocity</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Only a PhysX value below FLT_MAX displaces the seed (newton:velocityLimit, then FLT_MAX), because unlimited is both the fallback and a legal authored value and ovstage has no authored bit. An explicitly unlimited PhysX value therefore cannot clear a finite Newton limit on either backend.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysxJointAxisAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxJointAxisAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxJointAxis:&lt;inst&gt;:staticFrictionEffort</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The PhysX friction efforts displace the seed (newton:friction for both, then zero) only when either of them is strictly positive, because zero is both the fallback and a legal authored value and ovstage has no authored bit. Explicit PhysX zeros for both efforts therefore cannot clear a nonzero seed on either backend.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxJointAxisAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxJointAxisAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxJointAxis:&lt;inst&gt;:dynamicFrictionEffort</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>The PhysX friction efforts displace the seed (newton:friction for both, then zero) only when either of them is strictly positive, because zero is both the fallback and a legal authored value and ovstage has no authored bit. Explicit PhysX zeros for both efforts therefore cannot clear a nonzero seed on either backend.</p></td>
+<td><p>not asserted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysxJointAxisAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxJointAxisAPI</span></code></span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">physxJointAxis:&lt;inst&gt;:viscousFrictionCoefficient</span></code></p></td>
+<td><p>consumer</p></td>
+<td><p>Only strictly positive PhysX coefficients displace the seed (newton:damping, then zero), because zero is both the fallback and a legal authored value and ovstage has no authored bit. Explicit PhysX zero therefore cannot clear a nonzero seed on either backend.</p></td>
 <td><p>not asserted</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="PhysxLimitAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxLimitAPI</span></code></span></a></p></td>
@@ -902,8 +931,8 @@ Fragile spots and notes are never asserted.</p>
 </table>
 </div>
 </section>
-<section id="notes-36">
-<h2>Notes (36)<a class="headerlink" href="#notes-36" title="Link to this heading">#</a></h2>
+<section id="notes-35">
+<h2>Notes (35)<a class="headerlink" href="#notes-35" title="Link to this heading">#</a></h2>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>Component</p></th>
@@ -1058,73 +1087,67 @@ Fragile spots and notes are never asserted.</p>
 <td><p>The rotational branch is instance != linear, so angular, rotX, rotY, rotZ and any unrecognised instance name receive the degrees-to-radians conversions. Unlike PhysxJointAxisAPI, whose conversions are selected explicitly per joint type, an unknown instance here is silently treated as rotational.</p></td>
 <td><p>not asserted</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="PhysxJointAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxJointAPI</span></code></span></a></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">physxJoint:maxJointVelocity</span></code></p></td>
-<td><p>consumer</p></td>
-<td><p>Authored-ness is decided by the value (v &lt; FLT_MAX), because the authored bit is unavailable on ovstage. An explicitly authored inf therefore behaves as unauthored and yields to newton:velocityLimit when that is present.</p></td>
-<td><p>not asserted</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="PhysxLimitAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxLimitAPI</span></code></span></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysxLimitAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxLimitAPI</span></code></span></a></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">physxLimit:&lt;inst&gt;:bounceThreshold</span></code></p></td>
 <td><p>consumer</p></td>
 <td><p>Angular instances declare deg/s but no conversion is applied; PhysX reads the value as rad/s. Same on both backends, so parity is unaffected.</p></td>
 <td><p>not asserted</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="PhysxLimitAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxLimitAPI</span></code></span></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxLimitAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxLimitAPI</span></code></span></a></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">physxLimit:&lt;inst&gt;:restitution</span></code></p></td>
 <td><p>consumer</p></td>
 <td><p>physxLimit:<inst>:contactDistance is declared by the schema but is neither in the walker’s column bucket nor in readPhysxLimitApi; it is never read.</p></td>
 <td><p>not asserted</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="PhysxPhysicsDistanceJointAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxPhysicsDistanceJointAPI</span></code></span></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysxPhysicsDistanceJointAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxPhysicsDistanceJointAPI</span></code></span></a></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">physxPhysicsDistanceJoint:springEnabled</span></code></p></td>
 <td><p>consumer</p></td>
 <td><p>The stage-wide presence flag present.physxDistanceJoint is computed by the walker but never consulted by the parser, which goes straight to the per-prim hasSchema probe. Dead performance gate, no correctness effect.</p></td>
 <td><p>not asserted</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="PhysxSDFMeshCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSDFMeshCollisionAPI</span></code></span></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxSDFMeshCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSDFMeshCollisionAPI</span></code></span></a></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">physxSDFMeshCollision:sdfNarrowBandThickness</span></code></p></td>
 <td><p>consumer</p></td>
 <td><p>Absent column yields 0.0 instead of the header default 0.01 because the parser re-seeds a local to 0.0 and assigns it back unconditionally. USD population publishes the schema fallback 0.01, so only a hand-populated stage that omits the column is affected. Cooking input, not a PhysX default.</p></td>
 <td><p>not asserted</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="PhysxSDFMeshCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSDFMeshCollisionAPI</span></code></span></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysxSDFMeshCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSDFMeshCollisionAPI</span></code></span></a></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">physxSDFMeshCollision:sdfMargin</span></code></p></td>
 <td><p>consumer</p></td>
 <td><p>Absent column yields 0.0 instead of the header default 0.01, same pattern as sdfNarrowBandThickness. Cooking input, not a PhysX default.</p></td>
 <td><p>not asserted</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="PhysxSDFMeshCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSDFMeshCollisionAPI</span></code></span></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxSDFMeshCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSDFMeshCollisionAPI</span></code></span></a></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">physxSDFMeshCollision:sdfTriangleCountReductionFactor</span></code></p></td>
 <td><p>consumer</p></td>
 <td><p>Absent column yields 0.0 instead of the header default 1.0, same pattern. Cooking input, not a PhysX default.</p></td>
 <td><p>not asserted</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="PhysxSDFMeshCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSDFMeshCollisionAPI</span></code></span></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysxSDFMeshCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSDFMeshCollisionAPI</span></code></span></a></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">physxSDFMeshCollision:sdfResolution</span></code></p></td>
 <td><p>consumer</p></td>
 <td><p>Absent column yields 0 and disables the SDF entirely (the field falls back to triangle-mesh cooking) instead of the header default 256. USD population publishes 256. Deliberate validity probe in the parser; recorded so a hand populator knows the column is effectively mandatory.</p></td>
 <td><p>not asserted</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="PhysxSceneAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSceneAPI</span></code></span></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxSceneAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSceneAPI</span></code></span></a></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">physxScene:minPositionIterationCount</span></code></p></td>
 <td><p>consumer</p></td>
 <td><p>Raw schema fallback 1 versus consumer absent default 0: only bodies authored with 0 position iterations observe the difference. When min exceeds max (either pair) min is silently clamped down to max; the diagnostic is emitted by the USD schema parser only, so an ovstage-populated stage gets no warning.</p></td>
 <td><p>not asserted</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="PhysxSceneAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSceneAPI</span></code></span></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysxSceneAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSceneAPI</span></code></span></a></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">physxScene:enableExternalForcesEveryIteration</span></code></p></td>
 <td><p>consumer</p></td>
-<td><p>Silently cleared when solverType is PGS; the warning exists only on the USD path.</p></td>
+<td><p>Deprecated, and on by default. Silently cleared when solverType is PGS; the warning exists only on the USD path.</p></td>
 <td><p>not asserted</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="PhysxSceneAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSceneAPI</span></code></span></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="PhysxSceneAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSceneAPI</span></code></span></a></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">physxScene:gpuMaxNumPartitions</span></code></p></td>
 <td><p>consumer</p></td>
 <td><p>A value in [1, 32] that is not a power of two is silently replaced by 8 rather than rounded.</p></td>
 <td><p>not asserted</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="PhysxSphereFillCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSphereFillCollisionAPI</span></code></span></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="PhysxSphereFillCollisionAPI.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">PhysxSphereFillCollisionAPI</span></code></span></a></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">physxSphereFillCollision:voxelResolution</span></code></p></td>
 <td><p>consumer</p></td>
 <td><p>Absent column seeds 100000 (PhysxCookingParams.h defaultCookedVoxelResolution, shared with convex decomposition) while the USD schema fallback published by the producer is 50000. Only a hand-populated stage that omits the column is affected. Cooking input, not a PhysX default.</p></td>
@@ -1186,8 +1209,8 @@ Fragile spots and notes are never asserted.</p>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#defects-11">Defects (11)</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fragile-16">Fragile (16)</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#notes-36">Notes (36)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fragile-20">Fragile (20)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#notes-35">Notes (35)</a></li>
 </ul>
   </nav></div>
 
@@ -1235,7 +1258,7 @@ Fragile spots and notes are never asserted.</p>
 </div>
       
         <div class="footer-item"><p class="last-updated">
-  Last updated on Oct 08, 2026.
+  Last updated on Oct 15, 2026.
   <br/>
 </p></div>
       

@@ -47,7 +47,7 @@
 
 
     <script rel="preload" src="../_static/modal-table.js"></script>
-    <script src="../_static/documentation_options.js?v=18b66ea0"></script>
+    <script src="../_static/documentation_options.js?v=423e15eb"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.6.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -75,7 +75,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Oct 08, 2026"/>
+    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
   
     
     <script src="../_static/searchtools.js"></script>
@@ -507,6 +507,10 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coding_style.html">ovphysx coding and doc style</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
@@ -566,7 +570,6 @@
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAPI.html">PhysxJointAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
@@ -613,6 +616,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../read_write/device.html">Device residency and interop</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/readable.html">Readable data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/writable.html">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../read_write/path_patterns.html">Path patterns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../read_write/limitations.html">Known limitations and gaps</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
@@ -625,7 +630,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/render_handoff.html">Rendering Handoff</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials/nvtx_profiling.html">NVTX Profiling in Nsight Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
@@ -702,15 +707,18 @@
 <p>Best practices for optimizing simulation performance with ovphysx. Most tuning is
 either a per-scene USD attribute on the codeless <code class="docutils literal notranslate"><span class="pre">PhysxSceneAPI</span></code> (refer to
 <a class="reference internal" href="../simulation_setup/physics_scene.html"><span class="std std-doc">Physics Scene</span></a> and
-<a class="reference internal" href="../physics_schemas.html"><span class="std std-doc">Physics Schemas</span></a>) or a <code class="docutils literal notranslate"><span class="pre">PhysXConfig</span></code> option on the
-instance.</p>
+<a class="reference internal" href="../physics_schemas.html"><span class="std std-doc">Physics Schemas</span></a>) or a process-global config key set
+before instance creation.</p>
 <section id="measure-first">
 <h2>Measure First<a class="headerlink" href="#measure-first" title="Link to this heading">#</a></h2>
 <p>Before applying anything below, find out where the time actually goes. Setting
-<code class="docutils literal notranslate"><span class="pre">OVPHYSX_NVTX=1</span></code> makes a run annotate itself for NVIDIA Nsight Systems, so a
-capture shows each ovphysx call and each PhysX simulation phase, CPU and GPU,
-correlated with CUDA activity. It needs no rebuild and is off by default. Refer to
-<a class="reference internal" href="../tutorials/nvtx_profiling.html"><span class="std std-doc">NVTX Profiling</span></a>.</p>
+<code class="docutils literal notranslate"><span class="pre">OVPHYSX_PROFILER=trace</span></code> makes a run write a chrome trace JSON covering each
+ovphysx call, the host-side stage load and collision cooking work, and most of the
+PhysX SDK’s own zones — no external tool needed, and the result is parseable from a
+script. Setting <code class="docutils literal notranslate"><span class="pre">OVPHYSX_PROFILER=nvtx</span></code> instead publishes to an NVIDIA Nsight
+Systems capture, correlated with CUDA activity, which is what lets you attribute
+host-device transfers. Neither needs a rebuild and no backend is selected by
+default. Refer to <a class="reference internal" href="../tutorials/profiling.html"><span class="std std-doc">Profiling</span></a>.</p>
 <p>Note that <code class="docutils literal notranslate"><span class="pre">ovphysx_step</span></code> only enqueues work: in a capture the simulation cost shows
 up under the matching wait, not the step.</p>
 </section>
@@ -738,18 +746,66 @@ USD, so there is no per-step USD write-back cost. Read state in bulk through
 the session read API (<code class="docutils literal notranslate"><span class="pre">ovphysx_read</span></code> / <code class="docutils literal notranslate"><span class="pre">PhysX.read</span></code>, backed by the ovstage
 <a class="reference internal" href="../ovstage_integration.html"><span class="std std-doc">output read</span></a>; device-native <code class="docutils literal notranslate"><span class="pre">warp.array</span></code> columns) rather than
 per-prim. The older <a class="reference internal" href="../tutorials/tensor_bindings.html"><span class="std std-doc">tensor bindings</span></a> (DLPack, zero-copy on
-device) are deprecated.</p>
+device) are deprecated. Request the optional query and session results only when you use them:
+passing NULL in C, or <code class="docutils literal notranslate"><span class="pre">metadata=False</span></code> in Python (the default for <code class="docutils literal notranslate"><span class="pre">read()</span></code> and <code class="docutils literal notranslate"><span class="pre">write()</span></code>), skips
+their discovery work.</p>
 </section>
 <section id="physics-thread-count">
 <h2>Physics Thread Count<a class="headerlink" href="#physics-thread-count" title="Link to this heading">#</a></h2>
-<p>Adjust the number of CPU simulation threads. For small scenes, single-threaded
-(<code class="docutils literal notranslate"><span class="pre">num_threads=0</span></code>) often gives the best performance. Set it where you construct
-the instance, in your own application script; it is not authored in USD:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx</span><span class="w"> </span><span class="kn">import</span> <span class="n">PhysX</span><span class="p">,</span> <span class="n">PhysXConfig</span>
+<p>Three independent settings control CPU workers. They are not aliases.</p>
+<p><code class="docutils literal notranslate"><span class="pre">/physics/physxDispatcher</span></code> (default <code class="docutils literal notranslate"><span class="pre">false</span></code>) chooses which pool runs PhysX
+CPU dispatcher tasks. Unset or <code class="docutils literal notranslate"><span class="pre">false</span></code> uses ovruntime’s Carb dispatcher, which
+submits those tasks into the process-wide <code class="docutils literal notranslate"><span class="pre">carb.tasking</span></code> pool. <code class="docutils literal notranslate"><span class="pre">true</span></code> creates
+PhysX’s own <code class="docutils literal notranslate"><span class="pre">PxDefaultCpuDispatcher</span></code> with a dedicated worker set, and PhysX
+CPU tasks no longer run on Carb workers. Other Carbonite work still uses the
+tasking pool either way. Hosts may set this before create through the legacy
+<code class="docutils literal notranslate"><span class="pre">PhysXConfig.carbonite_overrides</span></code> / <code class="docutils literal notranslate"><span class="pre">ovphysx_create_args</span></code> carbonite path; there
+is no scoped <code class="docutils literal notranslate"><span class="pre">GlobalConfigKey</span></code> for it.</p>
+<p><code class="docutils literal notranslate"><span class="pre">num_threads</span></code> (<code class="docutils literal notranslate"><span class="pre">/persistent/physics/numThreads</span></code>, default <code class="docutils literal notranslate"><span class="pre">8</span></code>) is the PhysX CPU
+dispatcher limit, not the Carb pool size. With the default Carb dispatcher it
+caps how many PhysX tasks may run at once on that pool (effective concurrency
+is also bounded by <code class="docutils literal notranslate"><span class="pre">carb.tasking</span></code> <code class="docutils literal notranslate"><span class="pre">threadCount</span></code>). With <code class="docutils literal notranslate"><span class="pre">physxDispatcher=true</span></code>
+it is the size of PhysX’s own dispatcher. <code class="docutils literal notranslate"><span class="pre">num_threads=0</span></code> means no extra
+PhysX dispatcher workers: those tasks run on the calling thread. For small
+scenes that is often faster. Set it before constructing the instance; it is
+not authored in USD:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx</span><span class="w"> </span><span class="kn">import</span> <span class="n">GlobalConfigKey</span><span class="p">,</span> <span class="n">PhysX</span><span class="p">,</span> <span class="n">set_global_config</span>
 
-<span class="n">physx</span> <span class="o">=</span> <span class="n">PhysX</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">PhysXConfig</span><span class="p">(</span><span class="n">num_threads</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+<span class="n">set_global_config</span><span class="p">(</span><span class="n">GlobalConfigKey</span><span class="o">.</span><span class="n">NUM_THREADS</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">physx</span> <span class="o">=</span> <span class="n">PhysX</span><span class="p">()</span>
 </pre></div>
 </div>
+<p><code class="docutils literal notranslate"><span class="pre">/plugins/carb.tasking.plugin/threadCount</span></code> and
+<code class="docutils literal notranslate"><span class="pre">/plugins/omni.tbb.globalcontrol/maxThreadCount</span></code> size the process-wide Carb
+and TBB pools. ovphysx treats these as startup-only settings and writes no
+count of its own, so an unconfigured pool sizes itself to the machine. TBB is
+not the PhysX CPU dispatcher. Run each pool-size experiment in a fresh process
+and pass the overrides to the first constructor through the legacy
+<code class="docutils literal notranslate"><span class="pre">PhysXConfig</span></code> carbonite path:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ovphysx</span><span class="w"> </span><span class="kn">import</span> <span class="n">PhysX</span><span class="p">,</span> <span class="n">PhysXConfig</span>
+
+<span class="n">physx</span> <span class="o">=</span> <span class="n">PhysX</span><span class="p">(</span>
+    <span class="n">config</span><span class="o">=</span><span class="n">PhysXConfig</span><span class="p">(</span>
+        <span class="n">carbonite_overrides</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;/plugins/carb.tasking.plugin/threadCount&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+            <span class="s2">&quot;/plugins/omni.tbb.globalcontrol/maxThreadCount&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+            <span class="s2">&quot;/physics/physxDispatcher&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>A Carbonite host that started tasking before ovphysx remains the owner of its
+pool size. Under ovphysx’s startup-only configuration policy, worker-pool
+changes requested after tasking starts are rejected. Carbonite provides a
+separate runtime tasking reconfiguration API, but ovphysx does not expose it.</p>
+<p>Raising <code class="docutils literal notranslate"><span class="pre">threadCount</span></code> does not raise the PhysX dispatcher cap: that is still
+<code class="docutils literal notranslate"><span class="pre">num_threads</span></code>. Raising <code class="docutils literal notranslate"><span class="pre">num_threads</span></code> above the live tasking pool does not
+create extra Carb workers. Smaller is not automatically faster for the
+tasking pool. On a GPU-heavy scene with thousands of replicated environments,
+a tasking pool well above the logical CPU count measured faster than one
+sized at or below it, so treat that count as something to measure for your
+own workload rather than a value to minimize.</p>
 </section>
 <section id="stepping-cadence">
 <h2>Stepping Cadence<a class="headerlink" href="#stepping-cadence" title="Link to this heading">#</a></h2>
@@ -785,9 +841,9 @@ shows the prim as it appears with the attribute applied; extend your existing
 </section>
 <section id="multi-gpu">
 <h2>Multi-GPU<a class="headerlink" href="#multi-gpu" title="Link to this heading">#</a></h2>
-<p>On multi-GPU machines, pass a supported multi-GPU pattern through
-<code class="docutils literal notranslate"><span class="pre">active_cuda_gpus</span></code> for a potential speedup. Alternatively, when
-<code class="docutils literal notranslate"><span class="pre">active_cuda_gpus</span></code> is empty, use <code class="docutils literal notranslate"><span class="pre">PhysXConfig(scene_multi_gpu_mode=...)</span></code>. Refer to
+<p>On multi-GPU machines, set <code class="docutils literal notranslate"><span class="pre">ConfigKey.ACTIVE_CUDA_GPUS</span></code> after create and before
+attach for a potential speedup. Alternatively, when that key is unset, set
+<code class="docutils literal notranslate"><span class="pre">GlobalConfigKey.SCENE_MULTI_GPU_MODE</span></code> before create. Refer to
 <a class="reference internal" href="../simulation_setup/physics_scene.html#cpu-and-gpu-simulation"><span class="std std-ref">CPU and GPU Simulation</span></a>.</p>
 </section>
 <section id="collision-geometry-choice">
@@ -921,7 +977,7 @@ contacts, or rigid bodies connected by joints.</p>
 </div>
       
         <div class="footer-item"><p class="last-updated">
-  Last updated on Oct 08, 2026.
+  Last updated on Oct 15, 2026.
   <br/>
 </p></div>
       

@@ -47,7 +47,7 @@
 
 
     <script rel="preload" src="../_static/modal-table.js"></script>
-    <script src="../_static/documentation_options.js?v=18b66ea0"></script>
+    <script src="../_static/documentation_options.js?v=423e15eb"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.6.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -75,7 +75,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Oct 08, 2026"/>
+    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
   
     
     <script src="../_static/searchtools.js"></script>
@@ -507,6 +507,10 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../ovphysx_overview.html">ovphysx Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coding_style.html">ovphysx coding and doc style</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../local_development.html">Local Development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
@@ -566,7 +570,6 @@
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAPI.html">PhysxJointAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
@@ -613,6 +616,8 @@
 <li class="toctree-l1"><a class="reference internal" href="device.html">Device residency and interop</a></li>
 <li class="toctree-l1"><a class="reference internal" href="readable.html">Readable data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="writable.html">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="path_patterns.html">Path patterns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="limitations.html">Known limitations and gaps</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
@@ -625,7 +630,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/render_handoff.html">Rendering Handoff</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials/nvtx_profiling.html">NVTX Profiling in Nsight Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
@@ -703,8 +708,10 @@
 required to <em>interpret</em> the values a read or write exchanges.</p>
 <section id="groups-and-shape">
 <h2>Groups and shape<a class="headerlink" href="#groups-and-shape" title="Link to this heading">#</a></h2>
-<p>A read or write returns its data as <strong>groups</strong>, one per attribute. A group is a struct holding four
-things:</p>
+<p>A read or write returns its data as <strong>groups</strong>, with one attribute per group. Groups can be
+partitioned by scene and, for inverse dynamics, by cohort. Every group carries the numeric column
+and the associated prims. A <strong>read</strong> group (<code class="docutils literal notranslate"><span class="pre">ovstage_read_group_t</span></code>) also identifies the attribute
+and its USD geometric role:</p>
 <ul class="simple">
 <li><p><strong>column</strong>: the values (<code class="docutils literal notranslate"><span class="pre">tensors</span></code>).</p></li>
 <li><p><strong>prims</strong>: the objects associated with the API call (<code class="docutils literal notranslate"><span class="pre">prim_list</span></code>), row <em>i</em> ↔ prim <em>i</em>.</p></li>
@@ -718,9 +725,12 @@ numbers, an orientation 4).</p></li>
 <li><p><strong>Array group</strong> — each object’s value is a list, and the lengths differ (e.g. a joint’s number of
 DOFs), so it can’t be rectangular: you get <strong>one array per object</strong>.</p></li>
 </ul>
-<p>The shape is indicated by <code class="docutils literal notranslate"><span class="pre">is_array</span></code>.</p>
+<p>A read group indicates the shape with <code class="docutils literal notranslate"><span class="pre">is_array</span></code>. A <strong>write</strong> group (<code class="docutils literal notranslate"><span class="pre">ovstage_map_group_t</span></code>) has no
+<code class="docutils literal notranslate"><span class="pre">attribute</span></code>, <code class="docutils literal notranslate"><span class="pre">semantic</span></code>, or <code class="docutils literal notranslate"><span class="pre">is_array</span></code> field: each fetch reports the group’s <code class="docutils literal notranslate"><span class="pre">attribute_index</span></code> into
+the attribute array the write session was opened with, and that object type and attribute determine
+the layout described in <a class="reference internal" href="writable.html"><span class="std std-doc">Writable data</span></a>.</p>
 <p>The role is used mainly by ovstage to round-trip the data as the right type on a
-write. The read/write path uses five roles:</p>
+write. Read groups use six roles:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>Role</p></th>
@@ -733,27 +743,32 @@ write. The read/write path uses five roles:</p>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">POINT</span></code></p></td>
 <td><p>vec3 (3 × f32)</p></td>
 <td><p>a position</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">position</span></code>, <code class="docutils literal notranslate"><span class="pre">points</span></code>, <code class="docutils literal notranslate"><span class="pre">positions</span></code>, <code class="docutils literal notranslate"><span class="pre">restPoints</span></code>, <code class="docutils literal notranslate"><span class="pre">rootPosition</span></code>, <code class="docutils literal notranslate"><span class="pre">centerOfMassPosition</span></code>, <code class="docutils literal notranslate"><span class="pre">centerOfMassWorld</span></code>, <code class="docutils literal notranslate"><span class="pre">centerOfMassLocal</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">position</span></code>, <code class="docutils literal notranslate"><span class="pre">points</span></code>, <code class="docutils literal notranslate"><span class="pre">positions</span></code>, <code class="docutils literal notranslate"><span class="pre">restPoints</span></code>, <code class="docutils literal notranslate"><span class="pre">rootPosition</span></code>, <code class="docutils literal notranslate"><span class="pre">centerOfMassPosition</span></code>, <code class="docutils literal notranslate"><span class="pre">centerOfMassWorld</span></code>, <code class="docutils literal notranslate"><span class="pre">centerOfMassLocal</span></code>, <code class="docutils literal notranslate"><span class="pre">kinematicTargetPosition</span></code>, <code class="docutils literal notranslate"><span class="pre">groundHitPosition</span></code>, the contact positions (<code class="docutils literal notranslate"><span class="pre">filteredContactPoint</span></code>, <code class="docutils literal notranslate"><span class="pre">filteredFrictionPoint</span></code>, <code class="docutils literal notranslate"><span class="pre">rawContactPoint</span></code>, <code class="docutils literal notranslate"><span class="pre">contactEventPointPosition</span></code>, <code class="docutils literal notranslate"><span class="pre">contactEventAnchorPosition</span></code>)</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">QUATERNION</span></code></p></td>
 <td><p>quat (4 × f32, <strong>xyzw</strong>)</p></td>
 <td><p>a rotation</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">orientation</span></code>, <code class="docutils literal notranslate"><span class="pre">orientations</span></code>, <code class="docutils literal notranslate"><span class="pre">rootOrientation</span></code>, <code class="docutils literal notranslate"><span class="pre">centerOfMassOrientation</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">orientation</span></code>, <code class="docutils literal notranslate"><span class="pre">orientations</span></code>, <code class="docutils literal notranslate"><span class="pre">rootOrientation</span></code>, <code class="docutils literal notranslate"><span class="pre">centerOfMassOrientation</span></code>, <code class="docutils literal notranslate"><span class="pre">kinematicTargetOrientation</span></code></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">VECTOR</span></code></p></td>
 <td><p>vec3 (3 × f32)</p></td>
 <td><p>a free vector (no origin)</p></td>
-<td><p>all linear/angular velocities and accelerations</p></td>
+<td><p>all linear/angular velocities and accelerations, the net contact forces, <code class="docutils literal notranslate"><span class="pre">filteredFrictionForce</span></code>, the contact event impulses; <code class="docutils literal notranslate"><span class="pre">suspensionForce</span></code>, <code class="docutils literal notranslate"><span class="pre">tireForce</span></code>, <code class="docutils literal notranslate"><span class="pre">tireLongitudinalDirection</span></code>, <code class="docutils literal notranslate"><span class="pre">tireLateralDirection</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">MATRIX</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">NORMAL</span></code></p></td>
+<td><p>vec3 (3 × f32)</p></td>
+<td><p>a surface normal</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">filteredContactNormal</span></code>, <code class="docutils literal notranslate"><span class="pre">rawContactNormal</span></code>, <code class="docutils literal notranslate"><span class="pre">contactEventPointNormal</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">MATRIX</span></code></p></td>
 <td><p>9 × f32 (3×3, column-major)</p></td>
 <td><p>a matrix</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">inertia</span></code>, <code class="docutils literal notranslate"><span class="pre">inverseInertia</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">NONE</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">NONE</span></code></p></td>
 <td><p>scalar / flag / count / any width</p></td>
 <td><p>no USD role</p></td>
-<td><p>masses, per-shape and per-axis scalars, flags, counts, inverse dynamics matrices, indices</p></td>
+<td><p>masses, per-shape and per-axis scalars, flags, counts, inverse dynamics matrices, indices, the deformable <code class="docutils literal notranslate"><span class="pre">kinematicTarget</span></code>, the contact force matrices, scalar contact forces and separations, contact event types and sides, prim-handle identities</p></td>
 </tr>
 </tbody>
 </table>
@@ -769,13 +784,50 @@ Writing one half <a class="reference internal" href="writable.html#write-timing-
 preserve it.</p></li>
 </ul>
 </section>
+<section id="signed-scale-and-body-orientation">
+<h2>Signed scale and body orientation<a class="headerlink" href="#signed-scale-and-body-orientation" title="Link to this heading">#</a></h2>
+<p>For rigid bodies and articulation links returned in fixed groups, ovphysx
+decomposes the composed <strong>world matrix</strong>, including ancestor transforms, to
+obtain the physics pose at attach and when draining OVStage transform edits.
+Its <code class="docutils literal notranslate"><span class="pre">orientation</span></code> is a proper rotation, not necessarily the authored
+<code class="docutils literal notranslate"><span class="pre">xformOp:orient</span></code>. A matrix does not uniquely identify the authored scale signs
+and rotation.</p>
+<p>For a finite, nondegenerate, shear-free world matrix, ovphysx uses this rule:</p>
+<ul class="simple">
+<li><p>A negative determinant of the linear 3x3 part produces <strong>three negative
+scale components</strong>. A positive determinant produces three positive components.</p></li>
+<li><p>The rotation absorbs the remaining sign changes. For example, two negative
+authored scale components become positive scales and a different rotation.</p></li>
+<li><p>For OVStage’s row-vector matrix, the scale magnitudes are the lengths of the
+first three rows’ xyz components. Reconstruct the linear part as
+<code class="docutils literal notranslate"><span class="pre">diag(signed_scale)</span> <span class="pre">*</span> <span class="pre">R_row(orientation)</span></code>, with position in the last row.
+For column-vector math, use <code class="docutils literal notranslate"><span class="pre">R_column(orientation)</span> <span class="pre">*</span> <span class="pre">diag(signed_scale)</span></code>
+and position in the last column.</p></li>
+</ul>
+<p>For example, a body with no transformed parent, a 45-degree Z rotation
+(<code class="docutils literal notranslate"><span class="pre">xyzw</span> <span class="pre">=</span> <span class="pre">(0,</span> <span class="pre">0,</span> <span class="pre">0.3826834,</span> <span class="pre">0.9238795)</span></code>) and scale <code class="docutils literal notranslate"><span class="pre">(-2,</span> <span class="pre">3,</span> <span class="pre">4)</span></code> reads an
+orientation equivalent to <code class="docutils literal notranslate"><span class="pre">xyzw</span> <span class="pre">=</span> <span class="pre">(0.9238795,</span> <span class="pre">0.3826834,</span> <span class="pre">0,</span> <span class="pre">0)</span></code> and pairs with
+scale <code class="docutils literal notranslate"><span class="pre">(-2,</span> <span class="pre">-3,</span> <span class="pre">-4)</span></code>. That pair reconstructs the original matrix; pairing the
+read orientation with the authored <code class="docutils literal notranslate"><span class="pre">(-2,</span> <span class="pre">3,</span> <span class="pre">4)</span></code> does not. Quaternions <code class="docutils literal notranslate"><span class="pre">q</span></code> and
+<code class="docutils literal notranslate"><span class="pre">-q</span></code> represent the same rotation.</p>
+<p>Orientation writes use this same physics frame. Decompose a desired world
+transform with the same rule before writing its rotation. In the example above,
+writing the authored quaternion back does not restore the authored transform.
+Body-local values such as <code class="docutils literal notranslate"><span class="pre">centerOfMassPosition</span></code> are also expressed in the
+decomposed body’s frame.
+The <a class="reference internal" href="../ovstage_integration.html#c-utility-publish-fixed-world-transforms"><span class="std std-ref">OVStage output utilities</span></a>
+pair physics poses with this signed scale; they do not convert authored-frame
+orientation writes. Pose plus diagonal scale does not preserve shear.</p>
+<p>Point-instancer pose arrays use the <a class="reference internal" href="readable.html#rigid-bodies"><span class="std std-ref">instancer-local representation</span></a>;
+do not apply this sign conversion to those arrays.</p>
+</section>
 <section id="articulation-inverse-dynamics-cohorts">
 <h2>Articulation inverse dynamics cohorts<a class="headerlink" href="#articulation-inverse-dynamics-cohorts" title="Link to this heading">#</a></h2>
 <p>The whole-articulation inverse dynamics columns (<code class="docutils literal notranslate"><span class="pre">jacobian</span></code>,
 <code class="docutils literal notranslate"><span class="pre">jacobianShape</span></code>, <code class="docutils literal notranslate"><span class="pre">massMatrix</span></code>, <code class="docutils literal notranslate"><span class="pre">coriolisForce</span></code>, <code class="docutils literal notranslate"><span class="pre">gravityForce</span></code>, <code class="docutils literal notranslate"><span class="pre">centroidalMomentum</span></code>) are a special case
 as their size can be quite large. In order to be memory efficient, the notion of <strong>cohort</strong> has
-been introduced. A <strong>cohort</strong> is a set of structurally identical articulations, that is, same joint types and names, DOF
-parentage, and link leaf names.</p>
+been introduced. A <strong>cohort</strong> is a set of structurally identical articulations: the same fixed or
+floating base type, joint types and names, DOF parentage, and link leaf names.</p>
 <p>For a homogeneous scene, only one cohort is present, while for a heterogeneous scene,
 the results are <strong>cohort-partitioned</strong> with one group per cohort.
 The cohort can be identified by its prim list; the
@@ -833,13 +885,33 @@ which is the USD stage unit — see <a class="reference internal" href="../popul
 <td><p><strong>radians</strong> for angular generalized coordinates</p></td>
 <td><p>no degree fold; linear dimensions keep their units</p></td>
 </tr>
-<tr class="row-odd"><td><p>vehicle <code class="docutils literal notranslate"><span class="pre">steerAngle</span></code></p></td>
+<tr class="row-odd"><td><p>vehicle <code class="docutils literal notranslate"><span class="pre">steerAngle</span></code>, <code class="docutils literal notranslate"><span class="pre">wheelSteerAngle</span></code>, <code class="docutils literal notranslate"><span class="pre">rotationAngle</span></code>, <code class="docutils literal notranslate"><span class="pre">tireLateralSlip</span></code></p></td>
 <td><p><strong>radians</strong></p></td>
-<td><p>write-only control</p></td>
+<td><p>command or telemetry as documented</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">mass</span></code>, <code class="docutils literal notranslate"><span class="pre">inertia</span></code></p></td>
+<tr class="row-even"><td><p>vehicle <code class="docutils literal notranslate"><span class="pre">rotationSpeed</span></code>, <code class="docutils literal notranslate"><span class="pre">engineRotationSpeed</span></code></p></td>
+<td><p><strong>radians / s</strong></p></td>
+<td><p>angular speeds</p></td>
+</tr>
+<tr class="row-odd"><td><p>vehicle <code class="docutils literal notranslate"><span class="pre">gearSwitchTime</span></code>, <code class="docutils literal notranslate"><span class="pre">autoboxTimeSinceLastShift</span></code></p></td>
+<td><p>seconds</p></td>
+<td><p>native transmission state</p></td>
+</tr>
+<tr class="row-even"><td><p>vehicle suspension/tire forces and raw-wheel torques</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mass</span> <span class="pre">*</span> <span class="pre">length</span> <span class="pre">/</span> <span class="pre">s^2</span></code> and <code class="docutils literal notranslate"><span class="pre">mass</span> <span class="pre">*</span> <span class="pre">length^2</span> <span class="pre">/</span> <span class="pre">s^2</span></code></p></td>
+<td><p>stage-unit conventions</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">mass</span></code>, <code class="docutils literal notranslate"><span class="pre">inertia</span></code></p></td>
 <td><p>mass, mass·length²</p></td>
 <td><p></p></td>
+</tr>
+<tr class="row-even"><td><p>contact forces (<code class="docutils literal notranslate"><span class="pre">net*ContactForce</span></code>, matrices, <code class="docutils literal notranslate"><span class="pre">filtered*Force</span></code>, <code class="docutils literal notranslate"><span class="pre">rawContactForce</span></code>)</p></td>
+<td><p>force</p></td>
+<td><p>impulse / the scene’s step dt</p></td>
+</tr>
+<tr class="row-odd"><td><p>contact event impulses (<code class="docutils literal notranslate"><span class="pre">contactEventPointImpulse</span></code>, <code class="docutils literal notranslate"><span class="pre">contactEventAnchorImpulse</span></code>)</p></td>
+<td><p>force · time</p></td>
+<td><p>as reported, not divided by dt</p></td>
 </tr>
 </tbody>
 </table>
@@ -858,38 +930,60 @@ same quantity share one fold, so a read and a write on the same object never dis
 <p>On a DirectGPU scene (<code class="docutils literal notranslate"><span class="pre">eENABLE_DIRECT_GPU_API</span></code>) PhysX sizes its GPU structures during the <strong>first
 step</strong> and rejects direct-GPU access until it has run. Therefore, before the first step:</p>
 <ul class="simple">
-<li><p>a <strong>read</strong> emits <strong>no groups</strong> for device-sourced types (it reports end-of-iteration immediately —
-not an error, and currently indistinguishable from a genuinely empty match), and</p></li>
+<li><p>a <strong>read</strong> of a type whose device state the first step produces (rigid bodies, articulation links,
+whole articulations, joint DOF) emits <strong>no groups</strong> — it reports end-of-iteration immediately. This
+is not an error. The optional read summary marks each such request
+<code class="docutils literal notranslate"><span class="pre">OVPHYSX_READ_OMISSION_NOT_READY</span></code>, which tells it apart from a genuinely empty match (see
+<a class="reference internal" href="index.html#session-results"><span class="std std-ref">Session results</span></a>), and</p></li>
 <li><p>a <strong>write</strong> session still opens, but <strong>commit is refused</strong> (it is not auto-warmed).</p></li>
 </ul>
 <p>On <strong>CPU</strong> and on <strong>GPU with readback</strong> (no <code class="docutils literal notranslate"><span class="pre">suppressReadback</span></code>) a pre-step <strong>write commits and is
-applied</strong>. The write never auto-warms in any mode. You control the first step with <code class="docutils literal notranslate"><span class="pre">ovphysx_step</span></code> /
-<code class="docutils literal notranslate"><span class="pre">ovphysx_step_sync</span></code> / <code class="docutils literal notranslate"><span class="pre">ovphysx_warmup</span></code>. A <strong>CPU scene</strong> also reports authored initial state on a
-<strong>read</strong> before the first step. Readiness is per-scene: a multi-scene read returns ready partitions
-while omitting an unready DirectGPU scene.</p>
+applied</strong>. The write never auto-warms in any mode.</p>
+<p><strong>Particles are the exception.</strong> A particle read serves the <strong>authored</strong> <code class="docutils literal notranslate"><span class="pre">points</span></code> / <code class="docutils literal notranslate"><span class="pre">velocities</span></code> from
+host staging before the first step — the sim uploads them to the device at the first step, and
+<code class="docutils literal notranslate"><span class="pre">buildParticleGroups</span></code> patches each not-yet-uploaded set from its host values — so a pre-step particle
+read returns groups, not end-of-iteration.</p>
+<p><strong>Contact sensors</strong> are served before the first step too: their fixed columns (net forces, force
+matrices, filtered counts) read zero on the device, and their per-contact arrays are absent — there is no
+contact yet.</p>
+<p>You control the first step with <code class="docutils literal notranslate"><span class="pre">ovphysx_step</span></code> / <code class="docutils literal notranslate"><span class="pre">ovphysx_step_sync</span></code> / <code class="docutils literal notranslate"><span class="pre">ovphysx_warmup</span></code>. A <strong>CPU
+scene</strong> <em>does</em> report authored initial state before the first step. Readiness is per-scene: a
+multi-scene read returns ready partitions while omitting an unready DirectGPU scene.</p>
 </section>
 <section id="missing-and-partial-data">
 <h3>Missing and partial data<a class="headerlink" href="#missing-and-partial-data" title="Link to this heading">#</a></h3>
 <p>Reads are <strong>dense</strong> — an unavailable quantity is <em>omitted</em>, never NaN- or zero-filled to a full row:</p>
 <ul class="simple">
 <li><p><strong>Unknown or inapplicable attribute for the type</strong> → no group is emitted for it; the drain ends
-with end-of-iteration (not an error). Name dispatch is exhaustive — a name never falls through to a
-neighbouring attribute.</p></li>
+with end-of-iteration (not an error), and the optional read summary row carries
+<code class="docutils literal notranslate"><span class="pre">OVX_INVALID_TOKEN</span></code> and <code class="docutils literal notranslate"><span class="pre">OVPHYSX_READ_OMISSION_UNSUPPORTED_ATTRIBUTE</span></code>. Name dispatch is
+exhaustive — a name never falls through to a neighbouring attribute.</p></li>
 <li><p><strong>Attribute inapplicable to a particular object</strong> (e.g. <code class="docutils literal notranslate"><span class="pre">mass</span></code> on an instanced body, a surface-only
-material field on a volume material, <code class="docutils literal notranslate"><span class="pre">collisionElementIndices</span></code> on a surface) → that object
+material field on a volume material, Standard transmission telemetry on a Basic vehicle,
+<code class="docutils literal notranslate"><span class="pre">collisionElementIndices</span></code> on a surface) → that object
 contributes no row/column; a group’s prim set can be a <strong>subset</strong> of discovery. Always pair values
 to prims via the group’s own <code class="docutils literal notranslate"><span class="pre">prims.list</span></code>.</p></li>
 <li><p><strong>Disabled rigid body</strong> → on a <strong>DirectGPU</strong> scene it has no device state, so it is dropped from
 the group (fewer rows than discovery reports); on a <strong>CPU</strong> scene it stays in. A disabled
 point-instancer instance leaves its zero-filled slot.</p></li>
+<li><p><strong>Per-step element arrays</strong> (contact detail, raw contacts, contact events) → a sensor with no
+element this step contributes no array, and a group with no element at all is not emitted.</p></li>
 <li><p><strong>Per-shape padding</strong> past <code class="docutils literal notranslate"><span class="pre">shapeCount</span></code> is deterministic zero-fill, but <code class="docutils literal notranslate"><span class="pre">0.0</span></code> is a legal value —
 use <code class="docutils literal notranslate"><span class="pre">shapeCount</span></code> (not the zeros) as the terminator.</p></li>
 <li><p>There is <strong>no per-object “pending vs current” fallback</strong> in the read (that concept belongs to the
-write/kinematic path). Derived read-only columns (<code class="docutils literal notranslate"><span class="pre">jointProjectedForce</span></code>, <code class="docutils literal notranslate"><span class="pre">linkIncomingJointForce</span></code>)
-are recomputed each read, never stale.</p></li>
+write/kinematic path) — with one exception: a particle set with a <strong>pending device upload</strong>
+returns its host-staged <code class="docutils literal notranslate"><span class="pre">points</span></code> / <code class="docutils literal notranslate"><span class="pre">velocities</span></code>. This includes the authored values before the
+first step and later write-session values before the next step uploads them. Derived
+read-only columns (<code class="docutils literal notranslate"><span class="pre">jointProjectedForce</span></code>, <code class="docutils literal notranslate"><span class="pre">linkIncomingJointForce</span></code>) are recomputed each read, never
+stale.</p></li>
 </ul>
-<p>A short set is distinguishable from a complete one by the <strong>terminal status</strong>: a failed backend
-build/gather ends with an error, a complete drain ends with end-of-iteration.</p>
+<p>The optional read summary reports, per request, whether selected objects were omitted because
+the attribute is unsupported on the type, unsupported in this configuration, or not ready yet; see
+<a class="reference internal" href="index.html#session-results"><span class="std std-ref">Session results</span></a>. A backend failure already known when the session
+opens fails the open task, and no session is published. A later fetch can still fail, for example
+after its attachment is invalidated. A complete drain produces a successful fetch task with a null
+group. Inspect that output only after the wait succeeds; a null output on a failed task does not
+mean end of iteration.</p>
 </section>
 </section>
 </section>
@@ -944,6 +1038,7 @@ build/gather ends with an error, a complete drain ends with end-of-iteration.</p
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#groups-and-shape">Groups and shape</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#signed-scale-and-body-orientation">Signed scale and body orientation</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#articulation-inverse-dynamics-cohorts">Articulation inverse dynamics cohorts</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#units">Units</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#availability-and-fallback">Availability and fallback</a><ul class="nav section-nav flex-column">
@@ -998,7 +1093,7 @@ build/gather ends with an error, a complete drain ends with end-of-iteration.</p
 </div>
       
         <div class="footer-item"><p class="last-updated">
-  Last updated on Oct 08, 2026.
+  Last updated on Oct 15, 2026.
   <br/>
 </p></div>
       

@@ -46,7 +46,7 @@
 
 
     <script rel="preload" src="_static/modal-table.js"></script>
-    <script src="_static/documentation_options.js?v=18b66ea0"></script>
+    <script src="_static/documentation_options.js?v=423e15eb"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/clipboard.min.js?v=a7894cd8"></script>
@@ -56,7 +56,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.17.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '../versions1.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.6.4';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '0.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -72,7 +72,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Oct 08, 2026"/>
+    <meta name="docbuild:last-update" content="Oct 15, 2026"/>
   
     
     <script src="_static/searchtools.js"></script>
@@ -500,6 +500,10 @@
 <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="ovphysx_overview.html">ovphysx Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="coding_style.html">ovphysx coding and doc style</a></li>
+<li class="toctree-l1"><a class="reference internal" href="migrating_0_6_to_0_7.html">Migration from 0.6 to 0.7</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ovd_api_migration.html">Instance and OVD API migration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tensor_binding_migration.html">Migrating off Tensor Bindings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ov_libraries_v2_annex.html">OV Libraries V2 Transitional Annex: Timeout Type</a></li>
 <li class="toctree-l1"><a class="reference internal" href="local_development.html">Local Development</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
@@ -559,7 +563,6 @@
 <li class="toctree-l2"><a class="reference internal" href="population/PhysxConvexDecompositionCollisionAPI.html">PhysxConvexDecompositionCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="population/PhysxConvexHullCollisionAPI.html">PhysxConvexHullCollisionAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="population/PhysxDrivePerformanceEnvelopeAPI.html">PhysxDrivePerformanceEnvelopeAPI</a></li>
-<li class="toctree-l2"><a class="reference internal" href="population/PhysxJointAPI.html">PhysxJointAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="population/PhysxJointAxisAPI.html">PhysxJointAxisAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="population/PhysxLimitAPI.html">PhysxLimitAPI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="population/PhysxMaterialAPI.html">PhysxMaterialAPI</a></li>
@@ -606,6 +609,8 @@
 <li class="toctree-l1"><a class="reference internal" href="read_write/device.html">Device residency and interop</a></li>
 <li class="toctree-l1"><a class="reference internal" href="read_write/readable.html">Readable data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="read_write/writable.html">Writable data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="read_write/vehicles.html">Vehicle examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="read_write/path_patterns.html">Path patterns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="read_write/limitations.html">Known limitations and gaps</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
@@ -618,7 +623,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tutorials/render_handoff.html">Rendering Handoff</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/physx_interop.html">PhysX Interop – Direct PhysX SDK Access</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/omnipvd_recording.html">OmniPVD Recording – Capture Physics Internals to FILE or TCP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/nvtx_profiling.html">NVTX Profiling in Nsight Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/profiling.html">Profiling: See Where Your Simulation Spends Its Time</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/source_link_build.html">Building Against the ovphysx Source Tree</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Guides</span></p>
@@ -698,9 +703,7 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.types.ObjectScope.ACTIVE">ACTIVE (ovphysx.types.ObjectScope attribute)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.contact_types.ContactEventHeader.actor0">actor0 (ovphysx.contact_types.ContactEventHeader attribute)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.contact_types.ContactEventHeader.actor1">actor1 (ovphysx.contact_types.ContactEventHeader attribute)</a>
+      <li><a href="python_api.html#ovphysx.types.ConfigKey.ACTIVE_CUDA_GPUS">ACTIVE_CUDA_GPUS (ovphysx.types.ConfigKey attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.deformable.add_auto_deformable_mesh_simplification">add_auto_deformable_mesh_simplification() (in module ovphysx.utils.deformable)</a>
 </li>
@@ -812,14 +815,14 @@
 </li>
       <li><a href="python_api.html#ovphysx.utils.schema.apply_api_schema_property_cache">apply_api_schema_property_cache() (in module ovphysx.utils.schema)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.types.ObjectType.ARTICULATION">ARTICULATION (ovphysx.types.ObjectType attribute)</a>
 
       <ul>
         <li><a href="python_api.html#ovphysx.types.SimObjectType.ARTICULATION">(ovphysx.types.SimObjectType attribute)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.types.TensorType.ARTICULATION_BODY_COM_POSE">ARTICULATION_BODY_COM_POSE (ovphysx.types.TensorType attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.types.TensorType.ARTICULATION_BODY_DISABLE_GRAVITY">ARTICULATION_BODY_DISABLE_GRAVITY (ovphysx.types.TensorType attribute)</a>
@@ -930,9 +933,17 @@
 </li>
       <li><a href="python_api.html#ovphysx.types.TensorType.ARTICULATION_SPATIAL_TENDON_STIFFNESS">ARTICULATION_SPATIAL_TENDON_STIFFNESS (ovphysx.types.TensorType attribute)</a>
 </li>
+      <li><a href="python_api.html#ovphysx.types.ArticulationKinematicFlag">ArticulationKinematicFlag (class in ovphysx.types)</a>
+</li>
       <li><a href="python_api.html#ovphysx.api.PhysX.attach_ovstage">attach_ovstage() (ovphysx.api.PhysX method)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.contact_types.ContactEventHeader.attachHandle">attachHandle (ovphysx.contact_types.ContactEventHeader attribute)</a>
+      <li><a href="python_api.html#ovphysx.api.ReadGroup.attribute">attribute (ovphysx.api.ReadGroup attribute)</a>
+
+      <ul>
+        <li><a href="python_api.html#ovphysx.api.WriteGroup.attribute">(ovphysx.api.WriteGroup attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="python_api.html#ovphysx.api.WriteGroup.attribute_index">attribute_index (ovphysx.api.WriteGroup attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.constants.AXES_INDICES">AXES_INDICES (in module ovphysx.utils.constants)</a>
 </li>
@@ -968,33 +979,45 @@
 </li>
       <li><a href="python_api.html#ovphysx.config.PhysXConfig.carbonite_overrides">carbonite_overrides (ovphysx.config.PhysXConfig attribute)</a>
 </li>
+      <li><a href="python_api.html#ovphysx.types.SimObjectType.CHARACTER_CONTROLLER">CHARACTER_CONTROLLER (ovphysx.types.SimObjectType attribute)</a>
+</li>
       <li><a href="python_api.html#ovphysx.utils.authoring.clear_local_space_velocities">clear_local_space_velocities() (in module ovphysx.utils.authoring)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.PhysX.clone">clone() (ovphysx.api.PhysX method)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.utils.simulation.OvStageOutputCache.close">close() (ovphysx.utils.simulation.OvStageOutputCache method)</a>
+      <li><a href="python_api.html#ovphysx.api.ReadResult.close">close() (ovphysx.api.ReadResult method)</a>
+
+      <ul>
+        <li><a href="python_api.html#ovphysx.api.WriteSession.close">(ovphysx.api.WriteSession method)</a>
 </li>
+        <li><a href="python_api.html#ovphysx.utils.simulation.OvStageOutputCache.close">(ovphysx.utils.simulation.OvStageOutputCache method)</a>
+</li>
+      </ul></li>
       <li><a href="python_api.html#ovphysx.types.SceneQueryMode.CLOSEST">CLOSEST (ovphysx.types.SceneQueryMode attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.dlpack.DLDataType.code">code (ovphysx.dlpack.DLDataType attribute)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.codeless_schema_paths">codeless_schema_paths() (in module ovphysx)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.codeless_schema_root">codeless_schema_root() (in module ovphysx)</a>
-</li>
       <li><a href="python_api.html#ovphysx.utils.codeless.CodelessSchemaError">CodelessSchemaError</a>
-</li>
-      <li><a href="python_api.html#ovphysx.contact_types.ContactEventHeader.collider0">collider0 (ovphysx.contact_types.ContactEventHeader attribute)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.contact_types.ContactEventHeader.collider1">collider1 (ovphysx.contact_types.ContactEventHeader attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.config.PhysXConfig.collision_cone_custom_geometry">collision_cone_custom_geometry (ovphysx.config.PhysXConfig attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.types.ConfigBool.COLLISION_CONE_CUSTOM_GEOMETRY">COLLISION_CONE_CUSTOM_GEOMETRY (ovphysx.types.ConfigBool attribute)</a>
+
+      <ul>
+        <li><a href="python_api.html#ovphysx.types.GlobalConfigKey.COLLISION_CONE_CUSTOM_GEOMETRY">(ovphysx.types.GlobalConfigKey attribute)</a>
 </li>
+      </ul></li>
       <li><a href="python_api.html#ovphysx.config.PhysXConfig.collision_cylinder_custom_geometry">collision_cylinder_custom_geometry (ovphysx.config.PhysXConfig attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.types.ConfigBool.COLLISION_CYLINDER_CUSTOM_GEOMETRY">COLLISION_CYLINDER_CUSTOM_GEOMETRY (ovphysx.types.ConfigBool attribute)</a>
+
+      <ul>
+        <li><a href="python_api.html#ovphysx.types.GlobalConfigKey.COLLISION_CYLINDER_CUSTOM_GEOMETRY">(ovphysx.types.GlobalConfigKey attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="python_api.html#ovphysx.api.WriteSession.commit">commit() (ovphysx.api.WriteSession method)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.types.SimObjectType.COMPOUND_SHAPE">COMPOUND_SHAPE (ovphysx.types.SimObjectType attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.mesh.compute_bounding_box_diagonal">compute_bounding_box_diagonal() (in module ovphysx.utils.mesh)</a>
 </li>
@@ -1004,31 +1027,37 @@
 </li>
       <li><a href="python_api.html#ovphysx.types.ConfigInt32">ConfigInt32 (class in ovphysx.types)</a>
 </li>
+      <li><a href="python_api.html#ovphysx.types.ConfigKey">ConfigKey (class in ovphysx.types)</a>
+</li>
       <li><a href="python_api.html#ovphysx.types.ConfigString">ConfigString (class in ovphysx.types)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.particles.configure_particle_set">configure_particle_set() (in module ovphysx.utils.particles)</a>
 </li>
+      <li><a href="python_api.html#ovphysx.types.SimObjectType.CONTACT_SENSOR">CONTACT_SENSOR (ovphysx.types.SimObjectType attribute)</a>
+</li>
       <li><a href="python_api.html#ovphysx.api.ContactBinding">ContactBinding (class in ovphysx.api)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.contact_types.ContactEventHeader.contactDataOffset">contactDataOffset (ovphysx.contact_types.ContactEventHeader attribute)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.contact_types.ContactEventHeader">ContactEventHeader (class in ovphysx.contact_types)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.contact_types.ContactPoint">ContactPoint (class in ovphysx.contact_types)</a>
+      <li><a href="python_api.html#ovphysx.types.ContactSelection">ContactSelection (class in ovphysx.types)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.mesh.convert_tetra_to_triangle_soup">convert_tetra_to_triangle_soup() (in module ovphysx.utils.mesh)</a>
 </li>
       <li><a href="python_api.html#ovphysx.config.PhysXConfig.cooked_collider_cache_dir">cooked_collider_cache_dir (ovphysx.config.PhysXConfig attribute)</a>
 </li>
+      <li><a href="python_api.html#ovphysx.types.ConfigString.COOKED_COLLIDER_CACHE_DIRECTORY">COOKED_COLLIDER_CACHE_DIRECTORY (ovphysx.types.ConfigString attribute)</a>
+
+      <ul>
+        <li><a href="python_api.html#ovphysx.types.GlobalConfigKey.COOKED_COLLIDER_CACHE_DIRECTORY">(ovphysx.types.GlobalConfigKey attribute)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="python_api.html#ovphysx.types.ConfigString.COOKED_COLLIDER_CACHE_DIRECTORY">COOKED_COLLIDER_CACHE_DIRECTORY (ovphysx.types.ConfigString attribute)</a>
-</li>
       <li><a href="python_api.html#ovphysx.utils.constants.COOKED_DATA_TOKENS">COOKED_DATA_TOKENS (in module ovphysx.utils.constants)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.transform.copy_transform_as_scale_orient_translate">copy_transform_as_scale_orient_translate() (in module ovphysx.utils.transform)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.TensorBinding.count">count (ovphysx.api.TensorBinding property)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.types.GlobalConfigKey.CPU_ONLY">CPU_ONLY (ovphysx.types.GlobalConfigKey attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.schema.create_api_schema_property_cache">create_api_schema_property_cache() (in module ovphysx.utils.schema)</a>
 </li>
@@ -1076,8 +1105,16 @@
 </li>
       <li><a href="python_api.html#ovphysx.utils.mesh.cube_tetrahedra">cube_tetrahedra() (in module ovphysx.utils.mesh)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.types.ObjectType.CUSTOM_JOINT">CUSTOM_JOINT (ovphysx.types.ObjectType attribute)</a>
+      <li><a href="python_api.html#ovphysx.api.ReadGroup.cuda_stream">cuda_stream (ovphysx.api.ReadGroup attribute)</a>
 </li>
+      <li><a href="python_api.html#ovphysx.api.ReadGroup.cuda_wait_event">cuda_wait_event (ovphysx.api.ReadGroup attribute)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.types.ObjectType.CUSTOM_JOINT">CUSTOM_JOINT (ovphysx.types.ObjectType attribute)</a>
+
+      <ul>
+        <li><a href="python_api.html#ovphysx.types.SimObjectType.CUSTOM_JOINT">(ovphysx.types.SimObjectType attribute)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -1086,7 +1123,11 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.dlpack.DLTensor.data">data (ovphysx.dlpack.DLTensor attribute)</a>
 </li>
+      <li><a href="python_api.html#ovphysx.types.SimObjectType.DEBUG_RENDER">DEBUG_RENDER (ovphysx.types.SimObjectType attribute)</a>
+</li>
       <li><a href="python_api.html#ovphysx.types.LogLevel.DEFAULT">DEFAULT (ovphysx.types.LogLevel attribute)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.types.GlobalConfigKey.DEFAULT_LOG_OUTPUT">DEFAULT_LOG_OUTPUT (ovphysx.types.GlobalConfigKey attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.types.TensorType.DEFORMABLE_COLLISION_ELEMENT_INDICES">DEFORMABLE_COLLISION_ELEMENT_INDICES (ovphysx.types.TensorType attribute)</a>
 </li>
@@ -1144,10 +1185,20 @@
 </li>
       <li><a href="python_api.html#ovphysx.dlpack.DLDevice.device_type">device_type (ovphysx.dlpack.DLDevice attribute)</a>
 </li>
+      <li><a href="python_api.html#ovphysx.api.Query.dictionary">dictionary (ovphysx.api.Query property)</a>
+
+      <ul>
+        <li><a href="python_api.html#ovphysx.api.ReadResult.dictionary">(ovphysx.api.ReadResult property)</a>
+</li>
+      </ul></li>
       <li><a href="python_api.html#ovphysx.config.PhysXConfig.disable_contact_processing">disable_contact_processing (ovphysx.config.PhysXConfig attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.types.ConfigBool.DISABLE_CONTACT_PROCESSING">DISABLE_CONTACT_PROCESSING (ovphysx.types.ConfigBool attribute)</a>
+
+      <ul>
+        <li><a href="python_api.html#ovphysx.types.GlobalConfigKey.DISABLE_CONTACT_PROCESSING">(ovphysx.types.GlobalConfigKey attribute)</a>
 </li>
+      </ul></li>
       <li><a href="python_api.html#ovphysx.api.disable_python_logging">disable_python_logging() (in module ovphysx.api)</a>
 </li>
       <li><a href="python_api.html#ovphysx.dlpack.DLManagedTensor.dl_tensor">dl_tensor (ovphysx.dlpack.DLManagedTensor attribute)</a>
@@ -1168,6 +1219,8 @@
 </li>
       <li><a href="python_api.html#ovphysx.api.TensorBinding.dof_names">dof_names (ovphysx.api.TensorBinding property)</a>
 </li>
+      <li><a href="python_api.html#ovphysx.api.Operation.done">done (ovphysx.api.Operation property)</a>
+</li>
       <li><a href="python_api.html#ovphysx.api.TensorBinding.dtype">dtype (ovphysx.api.TensorBinding property)</a>
 
       <ul>
@@ -1186,18 +1239,24 @@
 </li>
       <li><a href="python_api.html#ovphysx.api.enable_python_logging">enable_python_logging() (in module ovphysx.api)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.types.ApiStatus.END_OF_ITERATION">END_OF_ITERATION (ovphysx.types.ApiStatus attribute)</a>
-</li>
       <li><a href="python_api.html#ovphysx.utils.materials.ensure_material_on_path">ensure_material_on_path() (in module ovphysx.utils.materials)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.types.ApiStatus.ERROR">ERROR (ovphysx.types.ApiStatus attribute)</a>
 
       <ul>
         <li><a href="python_api.html#ovphysx.types.LogLevel.ERROR">(ovphysx.types.LogLevel attribute)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python_api.html#ovphysx.api.TaskError.errors">errors (ovphysx.api.TaskError property)</a>
+
+      <ul>
+        <li><a href="python_api.html#ovphysx.api.TaskTimeoutError.errors">(ovphysx.api.TaskTimeoutError property)</a>
+</li>
+      </ul></li>
+      <li><a href="python_api.html#ovphysx.api.PhysX.evaluate_sdf_shapes">evaluate_sdf_shapes() (ovphysx.api.PhysX method)</a>
+</li>
       <li><a href="python_api.html#ovphysx.types.BindingPrimMode.EXISTING_ONLY">EXISTING_ONLY (ovphysx.types.BindingPrimMode attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.mesh.extract_triangle_surface_from_tetra">extract_triangle_surface_from_tetra() (in module ovphysx.utils.mesh)</a>
@@ -1208,20 +1267,24 @@
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="python_api.html#ovphysx.contact_types.ContactPoint.faceIndex0">faceIndex0 (ovphysx.contact_types.ContactPoint attribute)</a>
+      <li><a href="python_api.html#ovphysx.api.ReadResult.fetch_next">fetch_next() (ovphysx.api.ReadResult method)</a>
+
+      <ul>
+        <li><a href="python_api.html#ovphysx.api.WriteSession.fetch_next">(ovphysx.api.WriteSession method)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.contact_types.ContactPoint.faceIndex1">faceIndex1 (ovphysx.contact_types.ContactPoint attribute)</a>
-</li>
+      </ul></li>
       <li><a href="python_api.html#ovphysx.config.OmniPvdDestination.file">file() (ovphysx.config.OmniPvdDestination class method)</a>
 </li>
       <li><a href="python_api.html#ovphysx.config.OmniPvdDestination.file_path">file_path (ovphysx.config.OmniPvdDestination attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.ContactBinding.filter_count">filter_count (ovphysx.api.ContactBinding property)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.api.ContactBinding.filter_paths">filter_paths (ovphysx.api.ContactBinding property)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python_api.html#ovphysx.api.ContactBinding.filter_paths">filter_paths (ovphysx.api.ContactBinding property)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.types.ContactSelection.filters">filters (ovphysx.types.ContactSelection attribute)</a>
+</li>
       <li><a href="python_api.html#ovphysx.types.SimObjectType.FIXED_TENDON">FIXED_TENDON (ovphysx.types.SimObjectType attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.TensorBinding.fixed_tendon_count">fixed_tendon_count (ovphysx.api.TensorBinding property)</a>
@@ -1229,10 +1292,6 @@
       <li><a href="python_api.html#ovphysx.utils.mesh.fixup_tetra_mesh_volumes">fixup_tetra_mesh_volumes() (in module ovphysx.utils.mesh)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.flush_log">flush_log() (in module ovphysx.api)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.contact_types.FrictionAnchor">FrictionAnchor (class in ovphysx.contact_types)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.contact_types.ContactEventHeader.frictionAnchorsDataOffset">frictionAnchorsDataOffset (ovphysx.contact_types.ContactEventHeader attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1242,38 +1301,30 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.utils.transform.get_aligned_body_transform">get_aligned_body_transform() (in module ovphysx.utils.transform)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.api.PhysX.get_attach_handle">get_attach_handle() (ovphysx.api.PhysX method)</a>
-</li>
       <li><a href="python_api.html#ovphysx.utils.codeless.get_attr">get_attr() (in module ovphysx.utils.codeless)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.transform.get_axis_aligned_vector">get_axis_aligned_vector() (in module ovphysx.utils.transform)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.transform.get_basis">get_basis() (in module ovphysx.utils.transform)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.api.PhysX.get_config_bool">get_config_bool() (ovphysx.api.PhysX method)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.api.PhysX.get_config_float">get_config_float() (ovphysx.api.PhysX method)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.api.PhysX.get_config_int32">get_config_int32() (ovphysx.api.PhysX method)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.api.PhysX.get_config_string">get_config_string() (ovphysx.api.PhysX method)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.api.PhysX.get_contact_report">get_contact_report() (ovphysx.api.PhysX method)</a>
+      <li><a href="python_api.html#ovphysx.api.PhysX.get_config">get_config() (ovphysx.api.PhysX method)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.PhysX.get_cpu_mode">get_cpu_mode() (ovphysx.api.PhysX static method)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.transform.get_forward_vector">get_forward_vector() (in module ovphysx.utils.transform)</a>
 </li>
+      <li><a href="python_api.html#ovphysx.api.get_global_config">get_global_config() (in module ovphysx.api)</a>
+</li>
       <li><a href="python_api.html#ovphysx.api.get_log_level">get_log_level() (in module ovphysx.api)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.api.PhysX.get_object_type">get_object_type() (ovphysx.api.PhysX method)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.ContactBinding.get_other_actor_paths_from_ids">get_other_actor_paths_from_ids() (ovphysx.api.ContactBinding method)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.PhysX.get_scene_query_paths_from_ids">get_scene_query_paths_from_ids() (ovphysx.api.PhysX method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.utils.schema.get_schema_attribute">get_schema_attribute() (in module ovphysx.utils.schema)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.schema.get_schema_instances">get_schema_instances() (in module ovphysx.utils.schema)</a>
@@ -1293,6 +1344,8 @@
       <li><a href="python_api.html#ovphysx.utils.transform.get_unit_scale_factor">get_unit_scale_factor() (in module ovphysx.utils.transform)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.transform.get_world_position">get_world_position() (in module ovphysx.utils.transform)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.types.GlobalConfigKey">GlobalConfigKey (class in ovphysx.types)</a>
 </li>
       <li><a href="python_api.html#ovphysx.types.ApiStatus.GPU_NOT_AVAILABLE">GPU_NOT_AVAILABLE (ovphysx.types.ApiStatus attribute)</a>
 </li>
@@ -1318,12 +1371,8 @@
 <h2 id="I">I</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="python_api.html#ovphysx.contact_types.ContactPoint.impulse">impulse (ovphysx.contact_types.ContactPoint attribute)</a>
-
-      <ul>
-        <li><a href="python_api.html#ovphysx.contact_types.FrictionAnchor.impulse">(ovphysx.contact_types.FrictionAnchor attribute)</a>
+      <li><a href="python_api.html#ovphysx.api.ReadGroup.index_map">index_map (ovphysx.api.ReadGroup attribute)</a>
 </li>
-      </ul></li>
       <li><a href="python_api.html#ovphysx.types.LogLevel.INFO">INFO (ovphysx.types.LogLevel attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.codeless.instanced_name">instanced_name() (in module ovphysx.utils.codeless)</a>
@@ -1334,17 +1383,23 @@
         <li><a href="python_api.html#ovphysx.types.TensorType.INVALID">(ovphysx.types.TensorType attribute)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.types.ApiStatus.INVALID_ARGUMENT">INVALID_ARGUMENT (ovphysx.types.ApiStatus attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.types.ApiStatus.INVALID_STATE">INVALID_STATE (ovphysx.types.ApiStatus attribute)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.ReadGroup.is_array">is_array (ovphysx.api.ReadGroup attribute)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.ReadGroup.is_delete">is_delete (ovphysx.api.ReadGroup attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.TensorBinding.is_fixed_base">is_fixed_base (ovphysx.api.TensorBinding property)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.filtering.is_in_collision_group">is_in_collision_group() (in module ovphysx.utils.filtering)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.PhysX.is_recording">is_recording() (ovphysx.api.PhysX method)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.PhysX.is_stage_attached">is_stage_attached() (ovphysx.api.PhysX method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1353,7 +1408,11 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.types.ObjectType.JOINT">JOINT (ovphysx.types.ObjectType attribute)</a>
+
+      <ul>
+        <li><a href="python_api.html#ovphysx.types.SimObjectType.JOINT">(ovphysx.types.SimObjectType attribute)</a>
 </li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.api.TensorBinding.joint_count">joint_count (ovphysx.api.TensorBinding property)</a>
@@ -1444,8 +1503,12 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.dlpack.DLDataType.lanes">lanes (ovphysx.dlpack.DLDataType attribute)</a>
 </li>
+      <li><a href="python_api.html#ovphysx.api.ReadGroup.layout_generation">layout_generation (ovphysx.api.ReadGroup attribute)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python_api.html#ovphysx.types.GlobalConfigKey.LOG_LEVEL">LOG_LEVEL (ovphysx.types.GlobalConfigKey attribute)</a>
+</li>
       <li><a href="python_api.html#ovphysx.types.LogLevel">LogLevel (class in ovphysx.types)</a>
 </li>
   </ul></td>
@@ -1455,10 +1518,6 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.dlpack.DLManagedTensor.manager_ctx">manager_ctx (ovphysx.dlpack.DLManagedTensor attribute)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.contact_types.ContactPoint.material0">material0 (ovphysx.contact_types.ContactPoint attribute)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.contact_types.ContactPoint.material1">material1 (ovphysx.contact_types.ContactPoint attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.ContactBinding.max_contact_data_count">max_contact_data_count (ovphysx.api.ContactBinding property)</a>
 </li>
@@ -1475,8 +1534,6 @@
         <li><a href="python_api.html#module-ovphysx.api">ovphysx.api</a>
 </li>
         <li><a href="python_api.html#module-ovphysx.config">ovphysx.config</a>
-</li>
-        <li><a href="python_api.html#module-ovphysx.contact_types">ovphysx.contact_types</a>
 </li>
         <li><a href="python_api.html#module-ovphysx.dlpack">ovphysx.dlpack</a>
 </li>
@@ -1536,26 +1593,26 @@
       <li><a href="python_api.html#ovphysx.newton_schema_root">newton_schema_root() (in module ovphysx)</a>
 </li>
       <li><a href="python_api.html#ovphysx.types.LogLevel.NONE">NONE (ovphysx.types.LogLevel attribute)</a>
+
+      <ul>
+        <li><a href="python_api.html#ovphysx.types.ProfilerBackend.NONE">(ovphysx.types.ProfilerBackend attribute)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.contact_types.ContactPoint.normal">normal (ovphysx.contact_types.ContactPoint attribute)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.types.ApiStatus.NOT_FOUND">NOT_FOUND (ovphysx.types.ApiStatus attribute)</a>
-</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python_api.html#ovphysx.types.ApiStatus.NOT_FOUND">NOT_FOUND (ovphysx.types.ApiStatus attribute)</a>
+</li>
       <li><a href="python_api.html#ovphysx.types.ApiStatus.NOT_IMPLEMENTED">NOT_IMPLEMENTED (ovphysx.types.ApiStatus attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.config.PhysXConfig.num_threads">num_threads (ovphysx.config.PhysXConfig attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.types.ConfigInt32.NUM_THREADS">NUM_THREADS (ovphysx.types.ConfigInt32 attribute)</a>
+
+      <ul>
+        <li><a href="python_api.html#ovphysx.types.GlobalConfigKey.NUM_THREADS">(ovphysx.types.GlobalConfigKey attribute)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.contact_types.ContactEventHeader.numContactData">numContactData (ovphysx.contact_types.ContactEventHeader attribute)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.contact_types.ContactEventHeader.numfrictionAnchorsData">numfrictionAnchorsData (ovphysx.contact_types.ContactEventHeader attribute)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.config.PhysXConfig.nvtx_enabled">nvtx_enabled (ovphysx.config.PhysXConfig attribute)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.types.ConfigBool.NVTX_ENABLED">NVTX_ENABLED (ovphysx.types.ConfigBool attribute)</a>
+      </ul></li>
+      <li><a href="python_api.html#ovphysx.types.ProfilerBackend.NVTX">NVTX (ovphysx.types.ProfilerBackend attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1563,41 +1620,19 @@
 <h2 id="O">O</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python_api.html#ovphysx.api.ReadGroup.object_type">object_type (ovphysx.api.ReadGroup attribute)</a>
+</li>
       <li><a href="python_api.html#ovphysx.types.ObjectScope">ObjectScope (class in ovphysx.types)</a>
 </li>
       <li><a href="python_api.html#ovphysx.types.ObjectType">ObjectType (class in ovphysx.types)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.config.PhysXConfig.omnipvd_output_enabled">omnipvd_output_enabled (ovphysx.config.PhysXConfig attribute)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.types.ConfigBool.OMNIPVD_OUTPUT_ENABLED">OMNIPVD_OUTPUT_ENABLED (ovphysx.types.ConfigBool attribute)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.config.PhysXConfig.omnipvd_ovd_recording_directory">omnipvd_ovd_recording_directory (ovphysx.config.PhysXConfig attribute)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.types.ConfigString.OMNIPVD_OVD_RECORDING_DIRECTORY">OMNIPVD_OVD_RECORDING_DIRECTORY (ovphysx.types.ConfigString attribute)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.config.PhysXConfig.omnipvd_recording_capable">omnipvd_recording_capable (ovphysx.config.PhysXConfig attribute)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.types.ConfigBool.OMNIPVD_RECORDING_CAPABLE">OMNIPVD_RECORDING_CAPABLE (ovphysx.types.ConfigBool attribute)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.config.PhysXConfig.omnipvd_tcp_address">omnipvd_tcp_address (ovphysx.config.PhysXConfig attribute)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.types.ConfigString.OMNIPVD_TCP_ADDRESS">OMNIPVD_TCP_ADDRESS (ovphysx.types.ConfigString attribute)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.config.PhysXConfig.omnipvd_tcp_port">omnipvd_tcp_port (ovphysx.config.PhysXConfig attribute)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.types.ConfigInt32.OMNIPVD_TCP_PORT">OMNIPVD_TCP_PORT (ovphysx.types.ConfigInt32 attribute)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.config.PhysXConfig.omnipvd_tcp_timeout_ms">omnipvd_tcp_timeout_ms (ovphysx.config.PhysXConfig attribute)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.types.ConfigInt32.OMNIPVD_TCP_TIMEOUT_MS">OMNIPVD_TCP_TIMEOUT_MS (ovphysx.types.ConfigInt32 attribute)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.config.PhysXConfig.omnipvd_transport">omnipvd_transport (ovphysx.config.PhysXConfig attribute)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.types.ConfigString.OMNIPVD_TRANSPORT">OMNIPVD_TRANSPORT (ovphysx.types.ConfigString attribute)</a>
-</li>
       <li><a href="python_api.html#ovphysx.config.OmniPvdDestination">OmniPvdDestination (class in ovphysx.config)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.OP_INDEX_ALL">OP_INDEX_ALL (in module ovphysx)</a>
+      <li><a href="python_api.html#ovphysx.api.Operation">Operation (class in ovphysx.api)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.ReadGroup.ordinal">ordinal (ovphysx.api.ReadGroup attribute)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.types.GlobalConfigKey.OVD_RECORDING_CAPABLE">OVD_RECORDING_CAPABLE (ovphysx.types.GlobalConfigKey attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.PhysX.overlap">overlap() (ovphysx.api.PhysX method)</a>
 </li>
@@ -1615,13 +1650,6 @@
 
       <ul>
         <li><a href="python_api.html#module-ovphysx.config">module</a>
-</li>
-      </ul></li>
-      <li>
-    ovphysx.contact_types
-
-      <ul>
-        <li><a href="python_api.html#module-ovphysx.contact_types">module</a>
 </li>
       </ul></li>
       <li>
@@ -1772,6 +1800,8 @@
 </li>
       <li><a href="api.html#_CPPv4N7ovphysx6detail31objectChangeDestroyedTrampolineE16ovphysx_string_t20ovphysx_physx_type_tPv">ovphysx::detail::objectChangeDestroyedTrampoline (C++ function)</a>
 </li>
+      <li><a href="api.html#_CPPv4N7ovphysx15getGlobalConfigE27ovphysx_global_config_key_tR22ovphysx_config_value_t">ovphysx::getGlobalConfig (C++ function)</a>
+</li>
       <li><a href="api.html#_CPPv4N7ovphysx21ObjectChangeCallbacksE">ovphysx::ObjectChangeCallbacks (C++ struct)</a>
 </li>
       <li><a href="api.html#_CPPv4N7ovphysx21ObjectChangeCallbacks14onAllDestroyedE">ovphysx::ObjectChangeCallbacks::onAllDestroyed (C++ member)</a>
@@ -1802,49 +1832,43 @@
 </li>
       <li><a href="api.html#_CPPv4N7ovphysx5physxE">ovphysx::physx (C++ type)</a>
 </li>
-      <li><a href="api.html#_CPPv4N7ovphysx5PhysX11addUserTaskERK24ovphysx_user_task_desc_tR18ovphysx_op_index_t">ovphysx::PhysX::addUserTask (C++ function)</a>
-</li>
       <li><a href="api.html#_CPPv4N7ovphysx5PhysX13attachOvstageEP18ovstage_instance_t17ovstage_ordinal_t">ovphysx::PhysX::attachOvstage (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4N7ovphysx5PhysX5cloneERKNSt6stringERKNSt6vectorINSt6stringEEEPKfPK8uint32_tP18ovphysx_op_index_t">ovphysx::PhysX::clone (C++ function)</a>
+      <li><a href="api.html#_CPPv4N7ovphysx5PhysX5cloneERKNSt6stringERKNSt6vectorINSt6stringEEEPKfPK8uint32_t">ovphysx::PhysX::clone (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4N7ovphysx5PhysX18ContactEventHeaderE">ovphysx::PhysX::ContactEventHeader (C++ type)</a>
-</li>
-      <li><a href="api.html#_CPPv4N7ovphysx5PhysX12ContactPointE">ovphysx::PhysX::ContactPoint (C++ type)</a>
-</li>
-      <li><a href="api.html#_CPPv4N7ovphysx5PhysX6createER5PhysXRK10CreateArgs">ovphysx::PhysX::create (C++ function)</a>
+      <li><a href="api.html#_CPPv4N7ovphysx5PhysX6createER5PhysX">ovphysx::PhysX::create (C++ function)</a>, <a href="api.html#_CPPv4N7ovphysx5PhysX6createER5PhysXRK10CreateArgs">[1]</a>
 </li>
       <li><a href="api.html#_CPPv4N7ovphysx5PhysX19createTensorBindingER13TensorBindingRKNSt6stringE21ovphysx_tensor_type_t">ovphysx::PhysX::createTensorBinding (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4N7ovphysx5PhysX14FrictionAnchorE">ovphysx::PhysX::FrictionAnchor (C++ type)</a>
+      <li><a href="api.html#_CPPv4N7ovphysx5PhysX13detachOvstageEv">ovphysx::PhysX::detachOvstage (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4NK7ovphysx5PhysX16getContactReportERPK18ContactEventHeaderR8uint32_tRPK12ContactPointR8uint32_tPPK14FrictionAnchorP8uint32_t">ovphysx::PhysX::getContactReport (C++ function)</a>
+      <li><a href="api.html#_CPPv4N7ovphysx5PhysX17evaluateSdfShapesE22ovphysx_query_handle_tPK8DLTensorP8DLTensor19ovstage_cuda_sync_t">ovphysx::PhysX::evaluateSdfShapes (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv4NK7ovphysx5PhysX9getConfigE20ovphysx_config_key_tR22ovphysx_config_value_t">ovphysx::PhysX::getConfig (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv4N7ovphysx5PhysX10getCpuModeERb">ovphysx::PhysX::getCpuMode (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv4I0ENK7ovphysx5PhysX11getPhysXPtrE20ovphysx_api_status_tRKNSt6stringERP1T">ovphysx::PhysX::getPhysXPtr (C++ function)</a>, <a href="api.html#_CPPv4NK7ovphysx5PhysX11getPhysXPtrERKNSt6stringE20ovphysx_physx_type_tRPv">[1]</a>
 </li>
       <li><a href="api.html#_CPPv4NK7ovphysx5PhysX6handleEv">ovphysx::PhysX::handle (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv4NK7ovphysx5PhysXcvbEv">ovphysx::PhysX::operator bool (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4NK7ovphysx5PhysXcv16ovphysx_handle_tEv">ovphysx::PhysX::operator ovphysx_handle_t (C++ function)</a>
+      <li><a href="api.html#_CPPv4NK7ovphysx5PhysXcv25ovphysx_instance_handle_tEv">ovphysx::PhysX::operator ovphysx_instance_handle_t (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv4N7ovphysx5PhysXaSERK5PhysX">ovphysx::PhysX::operator= (C++ function)</a>, <a href="api.html#_CPPv4N7ovphysx5PhysXaSERR5PhysX">[1]</a>
 </li>
       <li><a href="api.html#_CPPv4NK7ovphysx5PhysX7overlapERK35ovphysx_scene_query_geometry_desc_t26ovphysx_scene_query_mode_tRPK13SceneQueryHitR8uint32_t">ovphysx::PhysX::overlap (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4N7ovphysx5PhysX5PhysXE16ovphysx_handle_t">ovphysx::PhysX::PhysX (C++ function)</a>, <a href="api.html#_CPPv4N7ovphysx5PhysX5PhysXERK5PhysX">[1]</a>, <a href="api.html#_CPPv4N7ovphysx5PhysX5PhysXERR5PhysX">[2]</a>, <a href="api.html#_CPPv4N7ovphysx5PhysX5PhysXEv">[3]</a>
+      <li><a href="api.html#_CPPv4N7ovphysx5PhysX5PhysXE25ovphysx_instance_handle_t">ovphysx::PhysX::PhysX (C++ function)</a>, <a href="api.html#_CPPv4N7ovphysx5PhysX5PhysXERK5PhysX">[1]</a>, <a href="api.html#_CPPv4N7ovphysx5PhysX5PhysXERR5PhysX">[2]</a>, <a href="api.html#_CPPv4N7ovphysx5PhysX5PhysXEv">[3]</a>
 </li>
       <li><a href="api.html#_CPPv4NK7ovphysx5PhysX7raycastEAL3E_KfAL3E_Kffb26ovphysx_scene_query_mode_tRPK13SceneQueryHitR8uint32_t">ovphysx::PhysX::raycast (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv4N7ovphysx5PhysX7releaseEv">ovphysx::PhysX::release (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4N7ovphysx5PhysX5resetE16ovphysx_handle_t">ovphysx::PhysX::reset (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv4N7ovphysx5PhysX11reset_stageEv">ovphysx::PhysX::reset_stage (C++ function)</a>
+      <li><a href="api.html#_CPPv4N7ovphysx5PhysX5resetE25ovphysx_instance_handle_t">ovphysx::PhysX::reset (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv4N7ovphysx5PhysX13SceneQueryHitE">ovphysx::PhysX::SceneQueryHit (C++ type)</a>
+</li>
+      <li><a href="api.html#_CPPv4N7ovphysx5PhysX9setConfigE20ovphysx_config_key_t22ovphysx_config_value_t">ovphysx::PhysX::setConfig (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv4N7ovphysx5PhysX10setCpuModeEb">ovphysx::PhysX::setCpuMode (C++ function)</a>
 </li>
@@ -1852,75 +1876,45 @@
 </li>
       <li><a href="api.html#_CPPv4NK7ovphysx5PhysX5sweepERK35ovphysx_scene_query_geometry_desc_tAL3E_Kffb26ovphysx_scene_query_mode_tRPK13SceneQueryHitR8uint32_t">ovphysx::PhysX::sweep (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4N7ovphysx5PhysX28updateArticulationsKinematicEv">ovphysx::PhysX::updateArticulationsKinematic (C++ function)</a>
+      <li><a href="api.html#_CPPv4N7ovphysx5PhysX28updateArticulationsKinematicE22ovphysx_query_handle_t8uint32_t">ovphysx::PhysX::updateArticulationsKinematic (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv4N7ovphysx5PhysX17updateFromOvstageE23ovstage_ordinal_range_t">ovphysx::PhysX::updateFromOvstage (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv4N7ovphysx5PhysX7waitAllE17ovphysx_timeout_t">ovphysx::PhysX::waitAll (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4N7ovphysx5PhysX6waitOpE18ovphysx_op_index_t17ovphysx_timeout_t">ovphysx::PhysX::waitOp (C++ function)</a>
-</li>
       <li><a href="api.html#_CPPv4N7ovphysx5physx10WaitResultE">ovphysx::physx::WaitResult (C++ class)</a>
 </li>
       <li><a href="api.html#_CPPv4NK7ovphysx5physx10WaitResult10errorCountEv">ovphysx::physx::WaitResult::errorCount (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4NK7ovphysx5physx10WaitResult14errorOpIndexAtE6size_t">ovphysx::physx::WaitResult::errorOpIndexAt (C++ function)</a>
+      <li><a href="api.html#_CPPv4NK7ovphysx5physx10WaitResult11errorTaskAtE6size_t">ovphysx::physx::WaitResult::errorTaskAt (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4N7ovphysx5physx10WaitResult3getEv">ovphysx::physx::WaitResult::get (C++ function)</a>, <a href="api.html#_CPPv4NK7ovphysx5physx10WaitResult3getEv">[1]</a>
+      <li><a href="api.html#_CPPv4NK7ovphysx5physx10WaitResult3getEv">ovphysx::physx::WaitResult::get (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv4NK7ovphysx5physx10WaitResult9hasErrorsEv">ovphysx::physx::WaitResult::hasErrors (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4NK7ovphysx5physx10WaitResult20lowestPendingOpIndexEv">ovphysx::physx::WaitResult::lowestPendingOpIndex (C++ function)</a>
-</li>
       <li><a href="api.html#_CPPv4N7ovphysx5physx10WaitResultaSERK10WaitResult">ovphysx::physx::WaitResult::operator= (C++ function)</a>, <a href="api.html#_CPPv4N7ovphysx5physx10WaitResultaSERR10WaitResult">[1]</a>
+</li>
+      <li><a href="api.html#_CPPv4NK7ovphysx5physx10WaitResult11pendingTaskEv">ovphysx::physx::WaitResult::pendingTask (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv4NK7ovphysx5physx10WaitResult6statusEv">ovphysx::physx::WaitResult::status (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv4N7ovphysx5physx10WaitResult7waitAllE25ovphysx_instance_handle_t17ovphysx_timeout_t">ovphysx::physx::WaitResult::waitAll (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv4N7ovphysx5physx10WaitResult10WaitResultERK10WaitResult">ovphysx::physx::WaitResult::WaitResult (C++ function)</a>, <a href="api.html#_CPPv4N7ovphysx5physx10WaitResult10WaitResultERR10WaitResult">[1]</a>, <a href="api.html#_CPPv4N7ovphysx5physx10WaitResult10WaitResultEv">[2]</a>
 </li>
+      <li><a href="api.html#_CPPv4N7ovphysx5physx10WaitResult8waitTaskE25ovphysx_instance_handle_t24ovphysx_enqueue_result_t17ovphysx_timeout_t">ovphysx::physx::WaitResult::waitTask (C++ function)</a>
+</li>
       <li><a href="api.html#_CPPv4N7ovphysx5physx10WaitResultD0Ev">ovphysx::physx::WaitResult::~WaitResult (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv4N7ovphysx5PhysX8waitTaskE24ovphysx_enqueue_result_t17ovphysx_timeout_t">ovphysx::PhysX::waitTask (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv4N7ovphysx5PhysXD0Ev">ovphysx::PhysX::~PhysX (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4I0EN7ovphysx12PhysXTypeForE">ovphysx::PhysXTypeFor (C++ struct)</a>
-</li>
-      <li><a href="api.html#_CPPv4IEN7ovphysx12PhysXTypeForIN5physx36PxArticulationJointReducedCoordinateEEE">ovphysx::PhysXTypeFor&lt;::physx::PxArticulationJointReducedCoordinate&gt; (C++ struct)</a>
-</li>
-      <li><a href="api.html#_CPPv4N7ovphysx12PhysXTypeForIN5physx36PxArticulationJointReducedCoordinateEE5valueE">ovphysx::PhysXTypeFor&lt;::physx::PxArticulationJointReducedCoordinate&gt;::value (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4IEN7ovphysx12PhysXTypeForIN5physx18PxArticulationLinkEEE">ovphysx::PhysXTypeFor&lt;::physx::PxArticulationLink&gt; (C++ struct)</a>
-</li>
-      <li><a href="api.html#_CPPv4N7ovphysx12PhysXTypeForIN5physx18PxArticulationLinkEE5valueE">ovphysx::PhysXTypeFor&lt;::physx::PxArticulationLink&gt;::value (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4IEN7ovphysx12PhysXTypeForIN5physx31PxArticulationReducedCoordinateEEE">ovphysx::PhysXTypeFor&lt;::physx::PxArticulationReducedCoordinate&gt; (C++ struct)</a>
-</li>
-      <li><a href="api.html#_CPPv4N7ovphysx12PhysXTypeForIN5physx31PxArticulationReducedCoordinateEE5valueE">ovphysx::PhysXTypeFor&lt;::physx::PxArticulationReducedCoordinate&gt;::value (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4IEN7ovphysx12PhysXTypeForIN5physx7PxJointEEE">ovphysx::PhysXTypeFor&lt;::physx::PxJoint&gt; (C++ struct)</a>
-</li>
-      <li><a href="api.html#_CPPv4N7ovphysx12PhysXTypeForIN5physx7PxJointEE5valueE">ovphysx::PhysXTypeFor&lt;::physx::PxJoint&gt;::value (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4IEN7ovphysx12PhysXTypeForIN5physx10PxMaterialEEE">ovphysx::PhysXTypeFor&lt;::physx::PxMaterial&gt; (C++ struct)</a>
-</li>
-      <li><a href="api.html#_CPPv4N7ovphysx12PhysXTypeForIN5physx10PxMaterialEE5valueE">ovphysx::PhysXTypeFor&lt;::physx::PxMaterial&gt;::value (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4IEN7ovphysx12PhysXTypeForIN5physx9PxPhysicsEEE">ovphysx::PhysXTypeFor&lt;::physx::PxPhysics&gt; (C++ struct)</a>
-</li>
-      <li><a href="api.html#_CPPv4N7ovphysx12PhysXTypeForIN5physx9PxPhysicsEE5valueE">ovphysx::PhysXTypeFor&lt;::physx::PxPhysics&gt;::value (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4IEN7ovphysx12PhysXTypeForIN5physx12PxRigidActorEEE">ovphysx::PhysXTypeFor&lt;::physx::PxRigidActor&gt; (C++ struct)</a>
-</li>
-      <li><a href="api.html#_CPPv4N7ovphysx12PhysXTypeForIN5physx12PxRigidActorEE5valueE">ovphysx::PhysXTypeFor&lt;::physx::PxRigidActor&gt;::value (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4IEN7ovphysx12PhysXTypeForIN5physx7PxSceneEEE">ovphysx::PhysXTypeFor&lt;::physx::PxScene&gt; (C++ struct)</a>
-</li>
-      <li><a href="api.html#_CPPv4N7ovphysx12PhysXTypeForIN5physx7PxSceneEE5valueE">ovphysx::PhysXTypeFor&lt;::physx::PxScene&gt;::value (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4IEN7ovphysx12PhysXTypeForIN5physx7PxShapeEEE">ovphysx::PhysXTypeFor&lt;::physx::PxShape&gt; (C++ struct)</a>
-</li>
-      <li><a href="api.html#_CPPv4N7ovphysx12PhysXTypeForIN5physx7PxShapeEE5valueE">ovphysx::PhysXTypeFor&lt;::physx::PxShape&gt;::value (C++ member)</a>
+      <li><a href="api.html#_CPPv4N7ovphysx15setGlobalConfigE27ovphysx_global_config_key_t22ovphysx_config_value_t">ovphysx::setGlobalConfig (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv4N7ovphysx8shutdownEv">ovphysx::shutdown (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4N7ovphysx22subscribeObjectChangesE21ObjectChangeCallbacks">ovphysx::subscribeObjectChanges (C++ function)</a>
+      <li><a href="api.html#_CPPv4N7ovphysx22subscribeObjectChangesE25ovphysx_instance_handle_t21ObjectChangeCallbacks">ovphysx::subscribeObjectChanges (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv4N7ovphysx13TensorBindingE">ovphysx::TensorBinding (C++ class)</a>
 </li>
@@ -1948,8 +1942,6 @@
 </li>
       <li><a href="api.html#_CPPv4N7ovphysx13TensorBindingD0Ev">ovphysx::TensorBinding::~TensorBinding (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv421ovphysx_add_user_task16ovphysx_handle_tPK24ovphysx_user_task_desc_t">ovphysx_add_user_task (C++ function)</a>
-</li>
       <li><a href="api.html#_CPPv432ovphysx_all_objects_destroyed_fn">ovphysx_all_objects_destroyed_fn (C++ type)</a>
 </li>
       <li><a href="api.html#_CPPv420ovphysx_api_status_t">ovphysx_api_status_t (C++ enum)</a>
@@ -1957,8 +1949,6 @@
       <li><a href="api.html#_CPPv4N20ovphysx_api_status_t28OVPHYSX_API_BUFFER_TOO_SMALLE">ovphysx_api_status_t::OVPHYSX_API_BUFFER_TOO_SMALL (C++ enumerator)</a>
 </li>
       <li><a href="api.html#_CPPv4N20ovphysx_api_status_t27OVPHYSX_API_DEVICE_MISMATCHE">ovphysx_api_status_t::OVPHYSX_API_DEVICE_MISMATCH (C++ enumerator)</a>
-</li>
-      <li><a href="api.html#_CPPv4N20ovphysx_api_status_t28OVPHYSX_API_END_OF_ITERATIONE">ovphysx_api_status_t::OVPHYSX_API_END_OF_ITERATION (C++ enumerator)</a>
 </li>
       <li><a href="api.html#_CPPv4N20ovphysx_api_status_t17OVPHYSX_API_ERRORE">ovphysx_api_status_t::OVPHYSX_API_ERROR (C++ enumerator)</a>
 </li>
@@ -1976,11 +1966,11 @@
 </li>
       <li><a href="api.html#_CPPv4N20ovphysx_api_status_t19OVPHYSX_API_TIMEOUTE">ovphysx_api_status_t::OVPHYSX_API_TIMEOUT (C++ enumerator)</a>
 </li>
-      <li><a href="api.html#_CPPv435ovphysx_articulation_get_body_names16ovphysx_handle_t31ovphysx_tensor_binding_handle_tP16ovphysx_string_t8uint32_tP8uint32_t">ovphysx_articulation_get_body_names (C++ function)</a>
+      <li><a href="api.html#_CPPv435ovphysx_articulation_get_body_names25ovphysx_instance_handle_t31ovphysx_tensor_binding_handle_tP16ovphysx_string_t8uint32_tP8uint32_t">ovphysx_articulation_get_body_names (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv434ovphysx_articulation_get_dof_names16ovphysx_handle_t31ovphysx_tensor_binding_handle_tP16ovphysx_string_t8uint32_tP8uint32_t">ovphysx_articulation_get_dof_names (C++ function)</a>
+      <li><a href="api.html#_CPPv434ovphysx_articulation_get_dof_names25ovphysx_instance_handle_t31ovphysx_tensor_binding_handle_tP16ovphysx_string_t8uint32_tP8uint32_t">ovphysx_articulation_get_dof_names (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv436ovphysx_articulation_get_joint_names16ovphysx_handle_t31ovphysx_tensor_binding_handle_tP16ovphysx_string_t8uint32_tP8uint32_t">ovphysx_articulation_get_joint_names (C++ function)</a>
+      <li><a href="api.html#_CPPv436ovphysx_articulation_get_joint_names25ovphysx_instance_handle_t31ovphysx_tensor_binding_handle_tP16ovphysx_string_t8uint32_tP8uint32_t">ovphysx_articulation_get_joint_names (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv437ovphysx_articulation_kinematic_flag_t">ovphysx_articulation_kinematic_flag_t (C++ enum)</a>
 </li>
@@ -2002,15 +1992,25 @@
 </li>
       <li><a href="api.html#_CPPv4N31ovphysx_articulation_metadata_t20spatial_tendon_countE">ovphysx_articulation_metadata_t::spatial_tendon_count (C++ member)</a>
 </li>
-      <li><a href="api.html#_CPPv437ovphysx_articulation_update_kinematic16ovphysx_handle_t31ovphysx_tensor_binding_handle_t8uint32_t">ovphysx_articulation_update_kinematic (C++ function)</a>
+      <li><a href="api.html#_CPPv422ovphysx_attach_ovstage25ovphysx_instance_handle_tP18ovstage_instance_t17ovstage_ordinal_t">ovphysx_attach_ovstage (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv422ovphysx_attach_ovstage16ovphysx_handle_tP18ovstage_instance_t17ovstage_ordinal_t">ovphysx_attach_ovstage (C++ function)</a>
+      <li><a href="api.html#c.OVPHYSX_ATTR_ACCELERATOR">OVPHYSX_ATTR_ACCELERATOR (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_ANGULAR_ACCELERATION">OVPHYSX_ATTR_ANGULAR_ACCELERATION (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_ANGULAR_VELOCITY">OVPHYSX_ATTR_ANGULAR_VELOCITY (C macro)</a>
 </li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_AUTOBOX_TIME_SINCE_LAST_SHIFT">OVPHYSX_ATTR_AUTOBOX_TIME_SINCE_LAST_SHIFT (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_AUTOMATIC_TRANSMISSION">OVPHYSX_ATTR_AUTOMATIC_TRANSMISSION (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_BRAKE0">OVPHYSX_ATTR_BRAKE0 (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_BRAKE1">OVPHYSX_ATTR_BRAKE1 (C macro)</a>
+</li>
       <li><a href="api.html#c.OVPHYSX_ATTR_BRAKE_TORQUE">OVPHYSX_ATTR_BRAKE_TORQUE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_CCT_MOVE">OVPHYSX_ATTR_CCT_MOVE (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_CENTER_OF_MASS_LOCAL">OVPHYSX_ATTR_CENTER_OF_MASS_LOCAL (C macro)</a>
 </li>
@@ -2022,11 +2022,127 @@
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_CENTROIDAL_MOMENTUM">OVPHYSX_ATTR_CENTROIDAL_MOMENTUM (C macro)</a>
 </li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_CLUTCH">OVPHYSX_ATTR_CLUTCH (C macro)</a>
+</li>
       <li><a href="api.html#c.OVPHYSX_ATTR_COLLISION_ELEMENT_INDICES">OVPHYSX_ATTR_COLLISION_ELEMENT_INDICES (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_CONTACT_EVENT_ANCHOR_COUNT">OVPHYSX_ATTR_CONTACT_EVENT_ANCHOR_COUNT (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_CONTACT_EVENT_ANCHOR_IMPULSE">OVPHYSX_ATTR_CONTACT_EVENT_ANCHOR_IMPULSE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_CONTACT_EVENT_ANCHOR_POSITION">OVPHYSX_ATTR_CONTACT_EVENT_ANCHOR_POSITION (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_CONTACT_EVENT_COLLIDER">OVPHYSX_ATTR_CONTACT_EVENT_COLLIDER (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_CONTACT_EVENT_OTHER_BODY">OVPHYSX_ATTR_CONTACT_EVENT_OTHER_BODY (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_CONTACT_EVENT_OTHER_COLLIDER">OVPHYSX_ATTR_CONTACT_EVENT_OTHER_COLLIDER (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_CONTACT_EVENT_OTHER_PROTO_INDEX">OVPHYSX_ATTR_CONTACT_EVENT_OTHER_PROTO_INDEX (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_CONTACT_EVENT_POINT_COUNT">OVPHYSX_ATTR_CONTACT_EVENT_POINT_COUNT (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_CONTACT_EVENT_POINT_FACE_INDEX">OVPHYSX_ATTR_CONTACT_EVENT_POINT_FACE_INDEX (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_CONTACT_EVENT_POINT_IMPULSE">OVPHYSX_ATTR_CONTACT_EVENT_POINT_IMPULSE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_CONTACT_EVENT_POINT_MATERIAL">OVPHYSX_ATTR_CONTACT_EVENT_POINT_MATERIAL (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_CONTACT_EVENT_POINT_NORMAL">OVPHYSX_ATTR_CONTACT_EVENT_POINT_NORMAL (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_CONTACT_EVENT_POINT_OTHER_FACE_INDEX">OVPHYSX_ATTR_CONTACT_EVENT_POINT_OTHER_FACE_INDEX (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_CONTACT_EVENT_POINT_OTHER_MATERIAL">OVPHYSX_ATTR_CONTACT_EVENT_POINT_OTHER_MATERIAL (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_CONTACT_EVENT_POINT_POSITION">OVPHYSX_ATTR_CONTACT_EVENT_POINT_POSITION (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_CONTACT_EVENT_POINT_SEPARATION">OVPHYSX_ATTR_CONTACT_EVENT_POINT_SEPARATION (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_CONTACT_EVENT_PROTO_INDEX">OVPHYSX_ATTR_CONTACT_EVENT_PROTO_INDEX (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_CONTACT_EVENT_SENSOR_SIDE">OVPHYSX_ATTR_CONTACT_EVENT_SENSOR_SIDE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_CONTACT_EVENT_TYPE">OVPHYSX_ATTR_CONTACT_EVENT_TYPE (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_CONTACT_OFFSET">OVPHYSX_ATTR_CONTACT_OFFSET (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_CORIOLIS_FORCE">OVPHYSX_ATTR_CORIOLIS_FORCE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_CURRENT_GEAR">OVPHYSX_ATTR_CURRENT_GEAR (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_ACTOR_AXES">OVPHYSX_ATTR_DEBUG_ACTOR_AXES (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_BODY_ANGULAR_VELOCITY">OVPHYSX_ATTR_DEBUG_BODY_ANGULAR_VELOCITY (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_BODY_AXES">OVPHYSX_ATTR_DEBUG_BODY_AXES (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_BODY_LINEAR_VELOCITY">OVPHYSX_ATTR_DEBUG_BODY_LINEAR_VELOCITY (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_BODY_MASS_AXES">OVPHYSX_ATTR_DEBUG_BODY_MASS_AXES (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_COLLISION_AABBS">OVPHYSX_ATTR_DEBUG_COLLISION_AABBS (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_COLLISION_AXES">OVPHYSX_ATTR_DEBUG_COLLISION_AXES (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_COLLISION_COMPOUNDS">OVPHYSX_ATTR_DEBUG_COLLISION_COMPOUNDS (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_COLLISION_DYNAMIC_PRUNER">OVPHYSX_ATTR_DEBUG_COLLISION_DYNAMIC_PRUNER (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_COLLISION_EDGES">OVPHYSX_ATTR_DEBUG_COLLISION_EDGES (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_COLLISION_FACE_NORMALS">OVPHYSX_ATTR_DEBUG_COLLISION_FACE_NORMALS (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_COLLISION_SHAPES">OVPHYSX_ATTR_DEBUG_COLLISION_SHAPES (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_COLLISION_STATIC_PRUNER">OVPHYSX_ATTR_DEBUG_COLLISION_STATIC_PRUNER (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_CONTACT_ERROR">OVPHYSX_ATTR_DEBUG_CONTACT_ERROR (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_CONTACT_IMPULSE">OVPHYSX_ATTR_DEBUG_CONTACT_IMPULSE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_CONTACT_NORMAL">OVPHYSX_ATTR_DEBUG_CONTACT_NORMAL (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_CONTACT_POINT">OVPHYSX_ATTR_DEBUG_CONTACT_POINT (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_CULL_BOX">OVPHYSX_ATTR_DEBUG_CULL_BOX (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_CULLING_BOX">OVPHYSX_ATTR_DEBUG_CULLING_BOX (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_ENABLED">OVPHYSX_ATTR_DEBUG_ENABLED (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_FRICTION_IMPULSE">OVPHYSX_ATTR_DEBUG_FRICTION_IMPULSE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_FRICTION_NORMAL">OVPHYSX_ATTR_DEBUG_FRICTION_NORMAL (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_FRICTION_POINT">OVPHYSX_ATTR_DEBUG_FRICTION_POINT (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_JOINT_LIMITS">OVPHYSX_ATTR_DEBUG_JOINT_LIMITS (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_JOINT_LOCAL_FRAMES">OVPHYSX_ATTR_DEBUG_JOINT_LOCAL_FRAMES (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_LINE_COLOR">OVPHYSX_ATTR_DEBUG_LINE_COLOR (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_LINE_POSITION">OVPHYSX_ATTR_DEBUG_LINE_POSITION (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_MBP_REGIONS">OVPHYSX_ATTR_DEBUG_MBP_REGIONS (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_POINT_COLOR">OVPHYSX_ATTR_DEBUG_POINT_COLOR (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_POINT_POSITION">OVPHYSX_ATTR_DEBUG_POINT_POSITION (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_SCALE">OVPHYSX_ATTR_DEBUG_SCALE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_SCOPE">OVPHYSX_ATTR_DEBUG_SCOPE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_SDF">OVPHYSX_ATTR_DEBUG_SDF (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_SIMULATION_MESH">OVPHYSX_ATTR_DEBUG_SIMULATION_MESH (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_TRIANGLE_COLOR">OVPHYSX_ATTR_DEBUG_TRIANGLE_COLOR (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_TRIANGLE_POSITION">OVPHYSX_ATTR_DEBUG_TRIANGLE_POSITION (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DEBUG_WORLD_AXES">OVPHYSX_ATTR_DEBUG_WORLD_AXES (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_DEFORMABLE_BENDING_DAMPING">OVPHYSX_ATTR_DEFORMABLE_BENDING_DAMPING (C macro)</a>
 </li>
@@ -2046,19 +2162,65 @@
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_DISABLE_SIMULATION">OVPHYSX_ATTR_DISABLE_SIMULATION (C macro)</a>
 </li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DOF_AXIS_INDEX">OVPHYSX_ATTR_DOF_AXIS_INDEX (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DOF_COUNT">OVPHYSX_ATTR_DOF_COUNT (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_DOF_JOINT_PATH">OVPHYSX_ATTR_DOF_JOINT_PATH (C macro)</a>
+</li>
       <li><a href="api.html#c.OVPHYSX_ATTR_DRIVE_TORQUE">OVPHYSX_ATTR_DRIVE_TORQUE (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_DYNAMIC_FRICTION">OVPHYSX_ATTR_DYNAMIC_FRICTION (C macro)</a>
 </li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_ENGINE_ROTATION_SPEED">OVPHYSX_ATTR_ENGINE_ROTATION_SPEED (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_FILTERED_CONTACT_COUNT">OVPHYSX_ATTR_FILTERED_CONTACT_COUNT (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_FILTERED_CONTACT_FORCE">OVPHYSX_ATTR_FILTERED_CONTACT_FORCE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_FILTERED_CONTACT_NORMAL">OVPHYSX_ATTR_FILTERED_CONTACT_NORMAL (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_FILTERED_CONTACT_POINT">OVPHYSX_ATTR_FILTERED_CONTACT_POINT (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_FILTERED_CONTACT_SEPARATION">OVPHYSX_ATTR_FILTERED_CONTACT_SEPARATION (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_FILTERED_FRICTION_COUNT">OVPHYSX_ATTR_FILTERED_FRICTION_COUNT (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_FILTERED_FRICTION_FORCE">OVPHYSX_ATTR_FILTERED_FRICTION_FORCE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_FILTERED_FRICTION_POINT">OVPHYSX_ATTR_FILTERED_FRICTION_POINT (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_FIXED_TENDON_COUNT">OVPHYSX_ATTR_FIXED_TENDON_COUNT (C macro)</a>
+</li>
       <li><a href="api.html#c.OVPHYSX_ATTR_FORCE">OVPHYSX_ATTR_FORCE (C macro)</a>
 </li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_FRICTION_CONTACT_FORCE_MATRIX">OVPHYSX_ATTR_FRICTION_CONTACT_FORCE_MATRIX (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_GEAR_SWITCH_TIME">OVPHYSX_ATTR_GEAR_SWITCH_TIME (C macro)</a>
+</li>
       <li><a href="api.html#c.OVPHYSX_ATTR_GRAVITY_FORCE">OVPHYSX_ATTR_GRAVITY_FORCE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_GROUND_ACTOR_PATH">OVPHYSX_ATTR_GROUND_ACTOR_PATH (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_GROUND_HIT_POSITION">OVPHYSX_ATTR_GROUND_HIT_POSITION (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_GROUND_MATERIAL_PATH">OVPHYSX_ATTR_GROUND_MATERIAL_PATH (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_GROUND_PLANE">OVPHYSX_ATTR_GROUND_PLANE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_GROUND_SHAPE_PATH">OVPHYSX_ATTR_GROUND_SHAPE_PATH (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_INERTIA">OVPHYSX_ATTR_INERTIA (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_INVERSE_INERTIA">OVPHYSX_ATTR_INVERSE_INERTIA (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_INVERSE_MASS">OVPHYSX_ATTR_INVERSE_MASS (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_IS_FIXED_BASE">OVPHYSX_ATTR_IS_FIXED_BASE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_IS_ON_GROUND">OVPHYSX_ATTR_IS_ON_GROUND (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_IS_SLEEPING">OVPHYSX_ATTR_IS_SLEEPING (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_JACOBIAN">OVPHYSX_ATTR_JACOBIAN (C macro)</a>
 </li>
@@ -2067,6 +2229,8 @@
       <li><a href="api.html#c.OVPHYSX_ATTR_JOINT_ACTUATION_FORCE">OVPHYSX_ATTR_JOINT_ACTUATION_FORCE (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_JOINT_ARMATURE">OVPHYSX_ATTR_JOINT_ARMATURE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_JOINT_COUNT">OVPHYSX_ATTR_JOINT_COUNT (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_JOINT_DAMPING">OVPHYSX_ATTR_JOINT_DAMPING (C macro)</a>
 </li>
@@ -2102,9 +2266,17 @@
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_JOINT_VISCOUS_FRICTION">OVPHYSX_ATTR_JOINT_VISCOUS_FRICTION (C macro)</a>
 </li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_KINEMATIC_TARGET">OVPHYSX_ATTR_KINEMATIC_TARGET (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_KINEMATIC_TARGET_ORIENTATION">OVPHYSX_ATTR_KINEMATIC_TARGET_ORIENTATION (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_KINEMATIC_TARGET_POSITION">OVPHYSX_ATTR_KINEMATIC_TARGET_POSITION (C macro)</a>
+</li>
       <li><a href="api.html#c.OVPHYSX_ATTR_LINEAR_ACCELERATION">OVPHYSX_ATTR_LINEAR_ACCELERATION (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_LINEAR_VELOCITY">OVPHYSX_ATTR_LINEAR_VELOCITY (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_LINK_COUNT">OVPHYSX_ATTR_LINK_COUNT (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_LINK_INCOMING_JOINT_FORCE">OVPHYSX_ATTR_LINK_INCOMING_JOINT_FORCE (C macro)</a>
 </li>
@@ -2112,11 +2284,33 @@
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_MASS_MATRIX">OVPHYSX_ATTR_MASS_MATRIX (C macro)</a>
 </li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_NET_FRICTION_CONTACT_FORCE">OVPHYSX_ATTR_NET_FRICTION_CONTACT_FORCE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_NET_NORMAL_CONTACT_FORCE">OVPHYSX_ATTR_NET_NORMAL_CONTACT_FORCE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_NORMAL_CONTACT_FORCE_MATRIX">OVPHYSX_ATTR_NORMAL_CONTACT_FORCE_MATRIX (C macro)</a>
+</li>
       <li><a href="api.html#c.OVPHYSX_ATTR_ORIENTATION">OVPHYSX_ATTR_ORIENTATION (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_PHYSX_POINTER">OVPHYSX_ATTR_PHYSX_POINTER (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_POINTS">OVPHYSX_ATTR_POINTS (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_POSITION">OVPHYSX_ATTR_POSITION (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_RAW_CONTACT_FORCE">OVPHYSX_ATTR_RAW_CONTACT_FORCE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_RAW_CONTACT_NORMAL">OVPHYSX_ATTR_RAW_CONTACT_NORMAL (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_RAW_CONTACT_OTHER_BODY">OVPHYSX_ATTR_RAW_CONTACT_OTHER_BODY (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_RAW_CONTACT_POINT">OVPHYSX_ATTR_RAW_CONTACT_POINT (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_RAW_CONTACT_SEPARATION">OVPHYSX_ATTR_RAW_CONTACT_SEPARATION (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_REQUESTED_GEAR">OVPHYSX_ATTR_REQUESTED_GEAR (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_RESET_TO_REST_STATE">OVPHYSX_ATTR_RESET_TO_REST_STATE (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_REST_OFFSET">OVPHYSX_ATTR_REST_OFFSET (C macro)</a>
 </li>
@@ -2132,13 +2326,27 @@
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_ROOT_POSITION">OVPHYSX_ATTR_ROOT_POSITION (C macro)</a>
 </li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_ROTATION_ANGLE">OVPHYSX_ATTR_ROTATION_ANGLE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_ROTATION_SPEED">OVPHYSX_ATTR_ROTATION_SPEED (C macro)</a>
+</li>
       <li><a href="api.html#c.OVPHYSX_ATTR_SHAPE_COUNT">OVPHYSX_ATTR_SHAPE_COUNT (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_SIM_ELEMENT_INDICES">OVPHYSX_ATTR_SIM_ELEMENT_INDICES (C macro)</a>
 </li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_SPATIAL_TENDON_COUNT">OVPHYSX_ATTR_SPATIAL_TENDON_COUNT (C macro)</a>
+</li>
       <li><a href="api.html#c.OVPHYSX_ATTR_STATIC_FRICTION">OVPHYSX_ATTR_STATIC_FRICTION (C macro)</a>
 </li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_STEER">OVPHYSX_ATTR_STEER (C macro)</a>
+</li>
       <li><a href="api.html#c.OVPHYSX_ATTR_STEER_ANGLE">OVPHYSX_ATTR_STEER_ANGLE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_SUSPENSION_FORCE">OVPHYSX_ATTR_SUSPENSION_FORCE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_SUSPENSION_JOUNCE">OVPHYSX_ATTR_SUSPENSION_JOUNCE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_TARGET_GEAR">OVPHYSX_ATTR_TARGET_GEAR (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_TENDON_DAMPING">OVPHYSX_ATTR_TENDON_DAMPING (C macro)</a>
 </li>
@@ -2152,15 +2360,35 @@
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_TENDON_STIFFNESS">OVPHYSX_ATTR_TENDON_STIFFNESS (C macro)</a>
 </li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_THRUST0">OVPHYSX_ATTR_THRUST0 (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_THRUST1">OVPHYSX_ATTR_THRUST1 (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_TIRE_FORCE">OVPHYSX_ATTR_TIRE_FORCE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_TIRE_FRICTION">OVPHYSX_ATTR_TIRE_FRICTION (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_TIRE_LATERAL_DIRECTION">OVPHYSX_ATTR_TIRE_LATERAL_DIRECTION (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_TIRE_LATERAL_SLIP">OVPHYSX_ATTR_TIRE_LATERAL_SLIP (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_TIRE_LONGITUDINAL_DIRECTION">OVPHYSX_ATTR_TIRE_LONGITUDINAL_DIRECTION (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_TIRE_LONGITUDINAL_SLIP">OVPHYSX_ATTR_TIRE_LONGITUDINAL_SLIP (C macro)</a>
+</li>
       <li><a href="api.html#c.OVPHYSX_ATTR_VELOCITIES">OVPHYSX_ATTR_VELOCITIES (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_WAKE">OVPHYSX_ATTR_WAKE (C macro)</a>
+</li>
+      <li><a href="api.html#c.OVPHYSX_ATTR_WHEEL_STEER_ANGLE">OVPHYSX_ATTR_WHEEL_STEER_ANGLE (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_ATTR_WRENCH">OVPHYSX_ATTR_WRENCH (C macro)</a>
 </li>
       <li><a href="api.html#_CPPv434ovphysx_attribute_binding_handle_t">ovphysx_attribute_binding_handle_t (C++ type)</a>
 </li>
-      <li><a href="api.html#_CPPv413ovphysx_clone16ovphysx_handle_t16ovphysx_string_tP16ovphysx_string_t8uint32_tPKfPK8uint32_t">ovphysx_clone (C++ function)</a>
+      <li><a href="api.html#_CPPv413ovphysx_clone25ovphysx_instance_handle_t16ovphysx_string_tP16ovphysx_string_t8uint32_tPKfPK8uint32_t">ovphysx_clone (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv420ovphysx_commit_group16ovphysx_handle_t22ovphysx_write_handle_tPK19ovstage_map_group_t19ovstage_cuda_sync_t">ovphysx_commit_group (C++ function)</a>
+      <li><a href="api.html#_CPPv420ovphysx_commit_group25ovphysx_instance_handle_t22ovphysx_write_handle_tPK19ovstage_map_group_t19ovstage_cuda_sync_t">ovphysx_commit_group (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv421ovphysx_config_bool_t">ovphysx_config_bool_t (C++ enum)</a>
 </li>
@@ -2171,12 +2399,6 @@
       <li><a href="api.html#_CPPv4N21ovphysx_config_bool_t49OVPHYSX_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRYE">ovphysx_config_bool_t::OVPHYSX_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY (C++ enumerator)</a>
 </li>
       <li><a href="api.html#_CPPv4N21ovphysx_config_bool_t41OVPHYSX_CONFIG_DISABLE_CONTACT_PROCESSINGE">ovphysx_config_bool_t::OVPHYSX_CONFIG_DISABLE_CONTACT_PROCESSING (C++ enumerator)</a>
-</li>
-      <li><a href="api.html#_CPPv4N21ovphysx_config_bool_t27OVPHYSX_CONFIG_NVTX_ENABLEDE">ovphysx_config_bool_t::OVPHYSX_CONFIG_NVTX_ENABLED (C++ enumerator)</a>
-</li>
-      <li><a href="api.html#_CPPv4N21ovphysx_config_bool_t37OVPHYSX_CONFIG_OMNIPVD_OUTPUT_ENABLEDE">ovphysx_config_bool_t::OVPHYSX_CONFIG_OMNIPVD_OUTPUT_ENABLED (C++ enumerator)</a>
-</li>
-      <li><a href="api.html#_CPPv4N21ovphysx_config_bool_t40OVPHYSX_CONFIG_OMNIPVD_RECORDING_CAPABLEE">ovphysx_config_bool_t::OVPHYSX_CONFIG_OMNIPVD_RECORDING_CAPABLE (C++ enumerator)</a>
 </li>
       <li><a href="api.html#_CPPv425ovphysx_config_entry_bool21ovphysx_config_bool_tb">ovphysx_config_entry_bool (C++ function)</a>
 </li>
@@ -2194,23 +2416,11 @@
 </li>
       <li><a href="api.html#_CPPv432ovphysx_config_entry_num_threads7int32_t">ovphysx_config_entry_num_threads (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv433ovphysx_config_entry_nvtx_enabledb">ovphysx_config_entry_nvtx_enabled (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv443ovphysx_config_entry_omnipvd_output_enabledb">ovphysx_config_entry_omnipvd_output_enabled (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv452ovphysx_config_entry_omnipvd_ovd_recording_directory16ovphysx_string_t">ovphysx_config_entry_omnipvd_ovd_recording_directory (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv446ovphysx_config_entry_omnipvd_recording_capableb">ovphysx_config_entry_omnipvd_recording_capable (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv440ovphysx_config_entry_omnipvd_tcp_address16ovphysx_string_t">ovphysx_config_entry_omnipvd_tcp_address (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv437ovphysx_config_entry_omnipvd_tcp_port7int32_t">ovphysx_config_entry_omnipvd_tcp_port (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv443ovphysx_config_entry_omnipvd_tcp_timeout_ms7int32_t">ovphysx_config_entry_omnipvd_tcp_timeout_ms (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv438ovphysx_config_entry_omnipvd_transport16ovphysx_string_t">ovphysx_config_entry_omnipvd_transport (C++ function)</a>
-</li>
       <li><a href="api.html#_CPPv445ovphysx_config_entry_ovstage_read_pool_max_mb7int32_t">ovphysx_config_entry_ovstage_read_pool_max_mb (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv437ovphysx_config_entry_profiler_backend26ovphysx_profiler_backend_t">ovphysx_config_entry_profiler_backend (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv441ovphysx_config_entry_profiler_output_path16ovphysx_string_t">ovphysx_config_entry_profiler_output_path (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv441ovphysx_config_entry_scene_multi_gpu_mode7int32_t">ovphysx_config_entry_scene_multi_gpu_mode (C++ function)</a>
 </li>
@@ -2252,13 +2462,15 @@
 </li>
       <li><a href="api.html#_CPPv4N22ovphysx_config_int32_t26OVPHYSX_CONFIG_NUM_THREADSE">ovphysx_config_int32_t::OVPHYSX_CONFIG_NUM_THREADS (C++ enumerator)</a>
 </li>
-      <li><a href="api.html#_CPPv4N22ovphysx_config_int32_t31OVPHYSX_CONFIG_OMNIPVD_TCP_PORTE">ovphysx_config_int32_t::OVPHYSX_CONFIG_OMNIPVD_TCP_PORT (C++ enumerator)</a>
-</li>
-      <li><a href="api.html#_CPPv4N22ovphysx_config_int32_t37OVPHYSX_CONFIG_OMNIPVD_TCP_TIMEOUT_MSE">ovphysx_config_int32_t::OVPHYSX_CONFIG_OMNIPVD_TCP_TIMEOUT_MS (C++ enumerator)</a>
-</li>
       <li><a href="api.html#_CPPv4N22ovphysx_config_int32_t39OVPHYSX_CONFIG_OVSTAGE_READ_POOL_MAX_MBE">ovphysx_config_int32_t::OVPHYSX_CONFIG_OVSTAGE_READ_POOL_MAX_MB (C++ enumerator)</a>
 </li>
+      <li><a href="api.html#_CPPv4N22ovphysx_config_int32_t31OVPHYSX_CONFIG_PROFILER_BACKENDE">ovphysx_config_int32_t::OVPHYSX_CONFIG_PROFILER_BACKEND (C++ enumerator)</a>
+</li>
       <li><a href="api.html#_CPPv4N22ovphysx_config_int32_t35OVPHYSX_CONFIG_SCENE_MULTI_GPU_MODEE">ovphysx_config_int32_t::OVPHYSX_CONFIG_SCENE_MULTI_GPU_MODE (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv420ovphysx_config_key_t">ovphysx_config_key_t (C++ enum)</a>
+</li>
+      <li><a href="api.html#_CPPv4N20ovphysx_config_key_t31OVPHYSX_CONFIG_ACTIVE_CUDA_GPUSE">ovphysx_config_key_t::OVPHYSX_CONFIG_ACTIVE_CUDA_GPUS (C++ enumerator)</a>
 </li>
       <li><a href="api.html#_CPPv425ovphysx_config_key_type_t">ovphysx_config_key_type_t (C++ enum)</a>
 </li>
@@ -2278,11 +2490,7 @@
 </li>
       <li><a href="api.html#_CPPv4N23ovphysx_config_string_t46OVPHYSX_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORYE">ovphysx_config_string_t::OVPHYSX_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY (C++ enumerator)</a>
 </li>
-      <li><a href="api.html#_CPPv4N23ovphysx_config_string_t46OVPHYSX_CONFIG_OMNIPVD_OVD_RECORDING_DIRECTORYE">ovphysx_config_string_t::OVPHYSX_CONFIG_OMNIPVD_OVD_RECORDING_DIRECTORY (C++ enumerator)</a>
-</li>
-      <li><a href="api.html#_CPPv4N23ovphysx_config_string_t34OVPHYSX_CONFIG_OMNIPVD_TCP_ADDRESSE">ovphysx_config_string_t::OVPHYSX_CONFIG_OMNIPVD_TCP_ADDRESS (C++ enumerator)</a>
-</li>
-      <li><a href="api.html#_CPPv4N23ovphysx_config_string_t32OVPHYSX_CONFIG_OMNIPVD_TRANSPORTE">ovphysx_config_string_t::OVPHYSX_CONFIG_OMNIPVD_TRANSPORT (C++ enumerator)</a>
+      <li><a href="api.html#_CPPv4N23ovphysx_config_string_t35OVPHYSX_CONFIG_PROFILER_OUTPUT_PATHE">ovphysx_config_string_t::OVPHYSX_CONFIG_PROFILER_OUTPUT_PATH (C++ enumerator)</a>
 </li>
       <li><a href="api.html#_CPPv4N23ovphysx_config_string_t27OVPHYSX_CONFIG_STRING_COUNTE">ovphysx_config_string_t::OVPHYSX_CONFIG_STRING_COUNT (C++ enumerator)</a>
 </li>
@@ -2292,57 +2500,51 @@
 </li>
       <li><a href="api.html#_CPPv4N16ovphysx_config_t11entry_countE">ovphysx_config_t::entry_count (C++ member)</a>
 </li>
-      <li><a href="api.html#_CPPv440ovphysx_contact_binding_get_filter_paths16ovphysx_handle_t32ovphysx_contact_binding_handle_tP16ovphysx_string_t8uint32_tP8uint32_t">ovphysx_contact_binding_get_filter_paths (C++ function)</a>
+      <li><a href="api.html#_CPPv425ovphysx_config_value_boolb">ovphysx_config_value_bool (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv454ovphysx_contact_binding_get_other_actor_paths_from_ids16ovphysx_handle_t32ovphysx_contact_binding_handle_tP8DLTensorP16ovphysx_string_t8uint32_tP8uint32_t">ovphysx_contact_binding_get_other_actor_paths_from_ids (C++ function)</a>
+      <li><a href="api.html#_CPPv427ovphysx_config_value_doubled">ovphysx_config_value_double (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv440ovphysx_contact_binding_get_sensor_paths16ovphysx_handle_t32ovphysx_contact_binding_handle_tP16ovphysx_string_t8uint32_tP8uint32_t">ovphysx_contact_binding_get_sensor_paths (C++ function)</a>
+      <li><a href="api.html#_CPPv426ovphysx_config_value_int647int64_t">ovphysx_config_value_int64 (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv427ovphysx_config_value_string16ovphysx_string_t">ovphysx_config_value_string (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv422ovphysx_config_value_t">ovphysx_config_value_t (C++ struct)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_config_value_t10bool_valueE">ovphysx_config_value_t::bool_value (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_config_value_t12double_valueE">ovphysx_config_value_t::double_value (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_config_value_t11int64_valueE">ovphysx_config_value_t::int64_value (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_config_value_t12string_valueE">ovphysx_config_value_t::string_value (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_config_value_t4typeE">ovphysx_config_value_t::type (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_config_value_t5valueE">ovphysx_config_value_t::value (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv427ovphysx_config_value_type_t">ovphysx_config_value_type_t (C++ enum)</a>
+</li>
+      <li><a href="api.html#_CPPv4N27ovphysx_config_value_type_t25OVPHYSX_CONFIG_VALUE_BOOLE">ovphysx_config_value_type_t::OVPHYSX_CONFIG_VALUE_BOOL (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N27ovphysx_config_value_type_t27OVPHYSX_CONFIG_VALUE_DOUBLEE">ovphysx_config_value_type_t::OVPHYSX_CONFIG_VALUE_DOUBLE (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N27ovphysx_config_value_type_t26OVPHYSX_CONFIG_VALUE_INT64E">ovphysx_config_value_type_t::OVPHYSX_CONFIG_VALUE_INT64 (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N27ovphysx_config_value_type_t27OVPHYSX_CONFIG_VALUE_STRINGE">ovphysx_config_value_type_t::OVPHYSX_CONFIG_VALUE_STRING (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv440ovphysx_contact_binding_get_filter_paths25ovphysx_instance_handle_t32ovphysx_contact_binding_handle_tP16ovphysx_string_t8uint32_tP8uint32_t">ovphysx_contact_binding_get_filter_paths (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv454ovphysx_contact_binding_get_other_actor_paths_from_ids25ovphysx_instance_handle_t32ovphysx_contact_binding_handle_tP8DLTensorP16ovphysx_string_t8uint32_tP8uint32_t">ovphysx_contact_binding_get_other_actor_paths_from_ids (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv440ovphysx_contact_binding_get_sensor_paths25ovphysx_instance_handle_t32ovphysx_contact_binding_handle_tP16ovphysx_string_t8uint32_tP8uint32_t">ovphysx_contact_binding_get_sensor_paths (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv432ovphysx_contact_binding_handle_t">ovphysx_contact_binding_handle_t (C++ type)</a>
 </li>
-      <li><a href="api.html#_CPPv430ovphysx_contact_event_header_t">ovphysx_contact_event_header_t (C++ struct)</a>
+      <li><a href="api.html#_CPPv434ovphysx_contact_sensor_selection_t">ovphysx_contact_sensor_selection_t (C++ struct)</a>
 </li>
-      <li><a href="api.html#_CPPv4N30ovphysx_contact_event_header_t6actor0E">ovphysx_contact_event_header_t::actor0 (C++ member)</a>
+      <li><a href="api.html#_CPPv4N34ovphysx_contact_sensor_selection_t7filtersE">ovphysx_contact_sensor_selection_t::filters (C++ member)</a>
 </li>
-      <li><a href="api.html#_CPPv4N30ovphysx_contact_event_header_t6actor1E">ovphysx_contact_event_header_t::actor1 (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4N30ovphysx_contact_event_header_t12attachHandleE">ovphysx_contact_event_header_t::attachHandle (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4N30ovphysx_contact_event_header_t9collider0E">ovphysx_contact_event_header_t::collider0 (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4N30ovphysx_contact_event_header_t9collider1E">ovphysx_contact_event_header_t::collider1 (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4N30ovphysx_contact_event_header_t17contactDataOffsetE">ovphysx_contact_event_header_t::contactDataOffset (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4N30ovphysx_contact_event_header_t25frictionAnchorsDataOffsetE">ovphysx_contact_event_header_t::frictionAnchorsDataOffset (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4N30ovphysx_contact_event_header_t14numContactDataE">ovphysx_contact_event_header_t::numContactData (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4N30ovphysx_contact_event_header_t22numfrictionAnchorsDataE">ovphysx_contact_event_header_t::numfrictionAnchorsData (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4N30ovphysx_contact_event_header_t11protoIndex0E">ovphysx_contact_event_header_t::protoIndex0 (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4N30ovphysx_contact_event_header_t11protoIndex1E">ovphysx_contact_event_header_t::protoIndex1 (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4N30ovphysx_contact_event_header_t4typeE">ovphysx_contact_event_header_t::type (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv423ovphysx_contact_point_t">ovphysx_contact_point_t (C++ struct)</a>
-</li>
-      <li><a href="api.html#_CPPv4N23ovphysx_contact_point_t10faceIndex0E">ovphysx_contact_point_t::faceIndex0 (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4N23ovphysx_contact_point_t10faceIndex1E">ovphysx_contact_point_t::faceIndex1 (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4N23ovphysx_contact_point_t7impulseE">ovphysx_contact_point_t::impulse (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4N23ovphysx_contact_point_t9material0E">ovphysx_contact_point_t::material0 (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4N23ovphysx_contact_point_t9material1E">ovphysx_contact_point_t::material1 (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4N23ovphysx_contact_point_t6normalE">ovphysx_contact_point_t::normal (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4N23ovphysx_contact_point_t8positionE">ovphysx_contact_point_t::position (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv4N23ovphysx_contact_point_t10separationE">ovphysx_contact_point_t::separation (C++ member)</a>
+      <li><a href="api.html#_CPPv4N34ovphysx_contact_sensor_selection_t7sensorsE">ovphysx_contact_sensor_selection_t::sensors (C++ member)</a>
 </li>
       <li><a href="api.html#_CPPv419ovphysx_create_args">ovphysx_create_args (C++ struct)</a>
 </li>
@@ -2356,22 +2558,20 @@
 </li>
       <li><a href="api.html#c.OVPHYSX_CREATE_ARGS_DEFAULT">OVPHYSX_CREATE_ARGS_DEFAULT (C macro)</a>
 </li>
-      <li><a href="api.html#_CPPv430ovphysx_create_contact_binding16ovphysx_handle_tPK16ovphysx_string_t8uint32_tPK16ovphysx_string_t8uint32_t8uint32_tP32ovphysx_contact_binding_handle_t">ovphysx_create_contact_binding (C++ function)</a>
+      <li><a href="api.html#_CPPv430ovphysx_create_contact_binding25ovphysx_instance_handle_tPK16ovphysx_string_t8uint32_tPK16ovphysx_string_t8uint32_t8uint32_tP32ovphysx_contact_binding_handle_t">ovphysx_create_contact_binding (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv423ovphysx_create_instancePK19ovphysx_create_argsP16ovphysx_handle_t">ovphysx_create_instance (C++ function)</a>
+      <li><a href="api.html#_CPPv423ovphysx_create_instanceP25ovphysx_instance_handle_t">ovphysx_create_instance (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv423ovphysx_create_sdf_view16ovphysx_handle_t16ovphysx_string_t8uint32_tP25ovphysx_sdf_view_handle_t">ovphysx_create_sdf_view (C++ function)</a>
+      <li><a href="api.html#_CPPv433ovphysx_create_instance_with_argsPK19ovphysx_create_argsP25ovphysx_instance_handle_t">ovphysx_create_instance_with_args (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv429ovphysx_create_tensor_binding16ovphysx_handle_tPK29ovphysx_tensor_binding_desc_tP31ovphysx_tensor_binding_handle_t">ovphysx_create_tensor_binding (C++ function)</a>
+      <li><a href="api.html#_CPPv423ovphysx_create_sdf_view25ovphysx_instance_handle_t16ovphysx_string_t8uint32_tP25ovphysx_sdf_view_handle_t">ovphysx_create_sdf_view (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv429ovphysx_create_tensor_binding25ovphysx_instance_handle_tPK29ovphysx_tensor_binding_desc_tP31ovphysx_tensor_binding_handle_t">ovphysx_create_tensor_binding (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv412ovphysx_cstrPKc">ovphysx_cstr (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv430ovphysx_cuda_stream_wait_event9uintptr_t9uintptr_t">ovphysx_cuda_stream_wait_event (C++ function)</a>
-</li>
       <li><a href="api.html#_CPPv419ovphysx_cuda_sync_t">ovphysx_cuda_sync_t (C++ struct)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#_CPPv4N19ovphysx_cuda_sync_t12signal_eventE">ovphysx_cuda_sync_t::signal_event (C++ member)</a>
 </li>
       <li><a href="api.html#_CPPv4N19ovphysx_cuda_sync_t6streamE">ovphysx_cuda_sync_t::stream (C++ member)</a>
@@ -2382,6 +2582,8 @@
 </li>
       <li><a href="api.html#_CPPv4N20ovphysx_debug_line_t6color0E">ovphysx_debug_line_t::color0 (C++ member)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#_CPPv4N20ovphysx_debug_line_t6color1E">ovphysx_debug_line_t::color1 (C++ member)</a>
 </li>
       <li><a href="api.html#_CPPv4N20ovphysx_debug_line_t4pos0E">ovphysx_debug_line_t::pos0 (C++ member)</a>
@@ -2393,18 +2595,6 @@
       <li><a href="api.html#_CPPv4N21ovphysx_debug_point_t5colorE">ovphysx_debug_point_t::color (C++ member)</a>
 </li>
       <li><a href="api.html#_CPPv4N21ovphysx_debug_point_t3posE">ovphysx_debug_point_t::pos (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv427ovphysx_debug_render_enable16ovphysx_handle_tb">ovphysx_debug_render_enable (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv430ovphysx_debug_render_get_lines16ovphysx_handle_tPPK20ovphysx_debug_line_tP8uint32_t">ovphysx_debug_render_get_lines (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv434ovphysx_debug_render_get_parameter16ovphysx_handle_t8uint32_tPf">ovphysx_debug_render_get_parameter (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv431ovphysx_debug_render_get_points16ovphysx_handle_tPPK21ovphysx_debug_point_tP8uint32_t">ovphysx_debug_render_get_points (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv430ovphysx_debug_render_get_scale16ovphysx_handle_tPf">ovphysx_debug_render_get_scale (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv434ovphysx_debug_render_get_triangles16ovphysx_handle_tPPK24ovphysx_debug_triangle_tP8uint32_t">ovphysx_debug_render_get_triangles (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv432ovphysx_debug_render_parameter_t">ovphysx_debug_render_parameter_t (C++ enum)</a>
 </li>
@@ -2466,14 +2656,6 @@
 </li>
       <li><a href="api.html#_CPPv4N32ovphysx_debug_render_parameter_t37OVPHYSX_DEBUG_RENDER_PARAM_WORLD_AXESE">ovphysx_debug_render_parameter_t::OVPHYSX_DEBUG_RENDER_PARAM_WORLD_AXES (C++ enumerator)</a>
 </li>
-      <li><a href="api.html#_CPPv436ovphysx_debug_render_set_culling_box16ovphysx_handle_tAL3E_KfAL3E_Kf">ovphysx_debug_render_set_culling_box (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv434ovphysx_debug_render_set_parameter16ovphysx_handle_t8uint32_tf">ovphysx_debug_render_set_parameter (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv430ovphysx_debug_render_set_scale16ovphysx_handle_tf">ovphysx_debug_render_set_scale (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv437ovphysx_debug_render_set_scope_tokens16ovphysx_handle_tPK14ovx_primpath_t8uint32_t">ovphysx_debug_render_set_scope_tokens (C++ function)</a>
-</li>
       <li><a href="api.html#_CPPv424ovphysx_debug_triangle_t">ovphysx_debug_triangle_t (C++ struct)</a>
 </li>
       <li><a href="api.html#_CPPv4N24ovphysx_debug_triangle_t6color0E">ovphysx_debug_triangle_t::color0 (C++ member)</a>
@@ -2488,55 +2670,55 @@
 </li>
       <li><a href="api.html#_CPPv4N24ovphysx_debug_triangle_t4pos2E">ovphysx_debug_triangle_t::pos2 (C++ member)</a>
 </li>
-      <li><a href="api.html#_CPPv431ovphysx_destroy_contact_binding16ovphysx_handle_t32ovphysx_contact_binding_handle_t">ovphysx_destroy_contact_binding (C++ function)</a>
+      <li><a href="api.html#_CPPv431ovphysx_destroy_contact_binding25ovphysx_instance_handle_t32ovphysx_contact_binding_handle_t">ovphysx_destroy_contact_binding (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv424ovphysx_destroy_instance16ovphysx_handle_t">ovphysx_destroy_instance (C++ function)</a>
+      <li><a href="api.html#_CPPv424ovphysx_destroy_instance25ovphysx_instance_handle_t">ovphysx_destroy_instance (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv424ovphysx_destroy_sdf_view16ovphysx_handle_t25ovphysx_sdf_view_handle_t">ovphysx_destroy_sdf_view (C++ function)</a>
+      <li><a href="api.html#_CPPv424ovphysx_destroy_sdf_view25ovphysx_instance_handle_t25ovphysx_sdf_view_handle_t">ovphysx_destroy_sdf_view (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv430ovphysx_destroy_tensor_binding16ovphysx_handle_t31ovphysx_tensor_binding_handle_t">ovphysx_destroy_tensor_binding (C++ function)</a>
+      <li><a href="api.html#_CPPv430ovphysx_destroy_tensor_binding25ovphysx_instance_handle_t31ovphysx_tensor_binding_handle_t">ovphysx_destroy_tensor_binding (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv427ovphysx_destroy_wait_resultP24ovphysx_op_wait_result_t">ovphysx_destroy_wait_result (C++ function)</a>
+      <li><a href="api.html#_CPPv432ovphysx_destroy_wait_task_resultP26ovphysx_wait_task_result_t">ovphysx_destroy_wait_task_result (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv422ovphysx_detach_ovstage16ovphysx_handle_t">ovphysx_detach_ovstage (C++ function)</a>
+      <li><a href="api.html#_CPPv422ovphysx_detach_ovstage25ovphysx_instance_handle_t">ovphysx_detach_ovstage (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv433ovphysx_enable_default_log_outputb">ovphysx_enable_default_log_output (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv424ovphysx_enqueue_result_t">ovphysx_enqueue_result_t (C++ struct)</a>
 </li>
+      <li><a href="api.html#_CPPv4N24ovphysx_enqueue_result_t8instanceE">ovphysx_enqueue_result_t::instance (C++ member)</a>
+</li>
       <li><a href="api.html#_CPPv4N24ovphysx_enqueue_result_t8op_indexE">ovphysx_enqueue_result_t::op_index (C++ member)</a>
 </li>
       <li><a href="api.html#_CPPv4N24ovphysx_enqueue_result_t6statusE">ovphysx_enqueue_result_t::status (C++ member)</a>
 </li>
-      <li><a href="api.html#_CPPv420ovphysx_evaluate_sdf16ovphysx_handle_t25ovphysx_sdf_view_handle_tPK8DLTensorP8DLTensor">ovphysx_evaluate_sdf (C++ function)</a>
+      <li><a href="api.html#_CPPv420ovphysx_evaluate_sdf25ovphysx_instance_handle_t25ovphysx_sdf_view_handle_tPK8DLTensorP8DLTensor">ovphysx_evaluate_sdf (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv426ovphysx_fetch_query_result16ovphysx_handle_t22ovphysx_query_handle_tP22ovstage_query_result_t">ovphysx_fetch_query_result (C++ function)</a>
+      <li><a href="api.html#_CPPv427ovphysx_evaluate_sdf_shapes25ovphysx_instance_handle_t22ovphysx_query_handle_tPK8DLTensorP8DLTensor19ovstage_cuda_sync_t">ovphysx_evaluate_sdf_shapes (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv423ovphysx_fetch_read_next16ovphysx_handle_t21ovphysx_read_handle_tPPK20ovstage_read_group_t">ovphysx_fetch_read_next (C++ function)</a>
+      <li><a href="api.html#_CPPv423ovphysx_fetch_read_next25ovphysx_instance_handle_t21ovphysx_read_handle_tPPK20ovstage_read_group_t">ovphysx_fetch_read_next (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv424ovphysx_fetch_write_next16ovphysx_handle_t22ovphysx_write_handle_tPPK19ovstage_map_group_t">ovphysx_fetch_write_next (C++ function)</a>
+      <li><a href="api.html#_CPPv424ovphysx_fetch_write_next25ovphysx_instance_handle_t22ovphysx_write_handle_tP29ovphysx_fetched_write_group_t">ovphysx_fetch_write_next (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv429ovphysx_fetched_write_group_t">ovphysx_fetched_write_group_t (C++ struct)</a>
+</li>
+      <li><a href="api.html#_CPPv4N29ovphysx_fetched_write_group_t15attribute_indexE">ovphysx_fetched_write_group_t::attribute_index (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv4N29ovphysx_fetched_write_group_t5groupE">ovphysx_fetched_write_group_t::group (C++ member)</a>
 </li>
       <li><a href="api.html#_CPPv417ovphysx_flush_log17ovphysx_timeout_t">ovphysx_flush_log (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv425ovphysx_friction_anchor_t">ovphysx_friction_anchor_t (C++ struct)</a>
+      <li><a href="api.html#_CPPv433ovphysx_get_articulation_metadata25ovphysx_instance_handle_t31ovphysx_tensor_binding_handle_tP31ovphysx_articulation_metadata_t">ovphysx_get_articulation_metadata (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4N25ovphysx_friction_anchor_t7impulseE">ovphysx_friction_anchor_t::impulse (C++ member)</a>
+      <li><a href="api.html#_CPPv418ovphysx_get_config25ovphysx_instance_handle_t20ovphysx_config_key_tP22ovphysx_config_value_t">ovphysx_get_config (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4N25ovphysx_friction_anchor_t8positionE">ovphysx_friction_anchor_t::position (C++ member)</a>
+      <li><a href="api.html#_CPPv436ovphysx_get_contact_binding_capacity25ovphysx_instance_handle_t32ovphysx_contact_binding_handle_tP8uint32_t">ovphysx_get_contact_binding_capacity (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv433ovphysx_get_articulation_metadata16ovphysx_handle_t31ovphysx_tensor_binding_handle_tP31ovphysx_articulation_metadata_t">ovphysx_get_articulation_metadata (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv425ovphysx_get_attach_handle16ovphysx_handle_tP8uint64_t">ovphysx_get_attach_handle (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv432ovphysx_get_codeless_schema_rootP16ovphysx_string_t">ovphysx_get_codeless_schema_root (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv436ovphysx_get_contact_binding_capacity16ovphysx_handle_t32ovphysx_contact_binding_handle_tP8uint32_t">ovphysx_get_contact_binding_capacity (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv432ovphysx_get_contact_binding_spec16ovphysx_handle_t32ovphysx_contact_binding_handle_tP7int32_tP7int32_t">ovphysx_get_contact_binding_spec (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv426ovphysx_get_contact_report16ovphysx_handle_tPPK30ovphysx_contact_event_header_tP8uint32_tPPK23ovphysx_contact_point_tP8uint32_tPPK25ovphysx_friction_anchor_tP8uint32_t">ovphysx_get_contact_report (C++ function)</a>
+      <li><a href="api.html#_CPPv432ovphysx_get_contact_binding_spec25ovphysx_instance_handle_t32ovphysx_contact_binding_handle_tP7int32_tP7int32_t">ovphysx_get_contact_binding_spec (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv420ovphysx_get_cpu_modePb">ovphysx_get_cpu_mode (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv425ovphysx_get_global_config27ovphysx_global_config_key_tP22ovphysx_config_value_t">ovphysx_get_global_config (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv430ovphysx_get_global_config_bool21ovphysx_config_bool_tPb">ovphysx_get_global_config_bool (C++ function)</a>
 </li>
@@ -2548,31 +2730,61 @@
 </li>
       <li><a href="api.html#_CPPv422ovphysx_get_last_errorv">ovphysx_get_last_error (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv425ovphysx_get_last_op_error18ovphysx_op_index_t">ovphysx_get_last_op_error (C++ function)</a>
+      <li><a href="api.html#_CPPv427ovphysx_get_last_task_error25ovphysx_instance_handle_t24ovphysx_enqueue_result_t">ovphysx_get_last_task_error (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv421ovphysx_get_log_levelv">ovphysx_get_log_level (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv423ovphysx_get_object_type16ovphysx_handle_t16ovphysx_string_tP21ovphysx_object_type_t">ovphysx_get_object_type (C++ function)</a>
+      <li><a href="api.html#_CPPv423ovphysx_get_object_type25ovphysx_instance_handle_t16ovphysx_string_tP21ovphysx_object_type_t">ovphysx_get_object_type (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv421ovphysx_get_physx_ptr16ovphysx_handle_t16ovphysx_string_t20ovphysx_physx_type_tPPv">ovphysx_get_physx_ptr (C++ function)</a>
+      <li><a href="api.html#_CPPv440ovphysx_get_tensor_binding_native_device25ovphysx_instance_handle_t31ovphysx_tensor_binding_handle_tP8DLDevice">ovphysx_get_tensor_binding_native_device (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv440ovphysx_get_tensor_binding_native_device16ovphysx_handle_t31ovphysx_tensor_binding_handle_tP8DLDevice">ovphysx_get_tensor_binding_native_device (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv431ovphysx_get_tensor_binding_spec16ovphysx_handle_t31ovphysx_tensor_binding_handle_tP21ovphysx_tensor_spec_t">ovphysx_get_tensor_binding_spec (C++ function)</a>
+      <li><a href="api.html#_CPPv431ovphysx_get_tensor_binding_spec25ovphysx_instance_handle_t31ovphysx_tensor_binding_handle_tP21ovphysx_tensor_spec_t">ovphysx_get_tensor_binding_spec (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv419ovphysx_get_versionP8uint32_tP8uint32_tP8uint32_t">ovphysx_get_version (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv426ovphysx_get_version_stringv">ovphysx_get_version_string (C++ function)</a>
 </li>
+      <li><a href="api.html#_CPPv427ovphysx_global_config_key_t">ovphysx_global_config_key_t (C++ enum)</a>
+</li>
+      <li><a href="api.html#_CPPv4N27ovphysx_global_config_key_t52OVPHYSX_GLOBAL_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRYE">ovphysx_global_config_key_t::OVPHYSX_GLOBAL_CONFIG_COLLISION_CONE_CUSTOM_GEOMETRY (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N27ovphysx_global_config_key_t56OVPHYSX_GLOBAL_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRYE">ovphysx_global_config_key_t::OVPHYSX_GLOBAL_CONFIG_COLLISION_CYLINDER_CUSTOM_GEOMETRY (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N27ovphysx_global_config_key_t53OVPHYSX_GLOBAL_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORYE">ovphysx_global_config_key_t::OVPHYSX_GLOBAL_CONFIG_COOKED_COLLIDER_CACHE_DIRECTORY (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N27ovphysx_global_config_key_t30OVPHYSX_GLOBAL_CONFIG_CPU_ONLYE">ovphysx_global_config_key_t::OVPHYSX_GLOBAL_CONFIG_CPU_ONLY (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N27ovphysx_global_config_key_t40OVPHYSX_GLOBAL_CONFIG_DEFAULT_LOG_OUTPUTE">ovphysx_global_config_key_t::OVPHYSX_GLOBAL_CONFIG_DEFAULT_LOG_OUTPUT (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N27ovphysx_global_config_key_t48OVPHYSX_GLOBAL_CONFIG_DISABLE_CONTACT_PROCESSINGE">ovphysx_global_config_key_t::OVPHYSX_GLOBAL_CONFIG_DISABLE_CONTACT_PROCESSING (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N27ovphysx_global_config_key_t31OVPHYSX_GLOBAL_CONFIG_LOG_LEVELE">ovphysx_global_config_key_t::OVPHYSX_GLOBAL_CONFIG_LOG_LEVEL (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N27ovphysx_global_config_key_t33OVPHYSX_GLOBAL_CONFIG_NUM_THREADSE">ovphysx_global_config_key_t::OVPHYSX_GLOBAL_CONFIG_NUM_THREADS (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N27ovphysx_global_config_key_t43OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLEE">ovphysx_global_config_key_t::OVPHYSX_GLOBAL_CONFIG_OVD_RECORDING_CAPABLE (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N27ovphysx_global_config_key_t46OVPHYSX_GLOBAL_CONFIG_OVSTAGE_READ_POOL_MAX_MBE">ovphysx_global_config_key_t::OVPHYSX_GLOBAL_CONFIG_OVSTAGE_READ_POOL_MAX_MB (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N27ovphysx_global_config_key_t38OVPHYSX_GLOBAL_CONFIG_PROFILER_BACKENDE">ovphysx_global_config_key_t::OVPHYSX_GLOBAL_CONFIG_PROFILER_BACKEND (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N27ovphysx_global_config_key_t42OVPHYSX_GLOBAL_CONFIG_PROFILER_OUTPUT_PATHE">ovphysx_global_config_key_t::OVPHYSX_GLOBAL_CONFIG_PROFILER_OUTPUT_PATH (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N27ovphysx_global_config_key_t42OVPHYSX_GLOBAL_CONFIG_SCENE_MULTI_GPU_MODEE">ovphysx_global_config_key_t::OVPHYSX_GLOBAL_CONFIG_SCENE_MULTI_GPU_MODE (C++ enumerator)</a>
+</li>
       <li><a href="api.html#_CPPv416ovphysx_handle_t">ovphysx_handle_t (C++ type)</a>
 </li>
       <li><a href="api.html#_CPPv418ovphysx_initializev">ovphysx_initialize (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv425ovphysx_instance_handle_t">ovphysx_instance_handle_t (C++ type)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_INVALID_HANDLE">OVPHYSX_INVALID_HANDLE (C macro)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_INVALID_SUBSCRIPTION_ID">OVPHYSX_INVALID_SUBSCRIPTION_ID (C macro)</a>
 </li>
-      <li><a href="api.html#_CPPv420ovphysx_is_recording16ovphysx_handle_tPb">ovphysx_is_recording (C++ function)</a>
+      <li><a href="api.html#_CPPv420ovphysx_is_recording25ovphysx_instance_handle_tPb">ovphysx_is_recording (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv425ovphysx_is_stage_attached25ovphysx_instance_handle_tPKvPb">ovphysx_is_stage_attached (C++ function)</a>
 </li>
       <li><a href="api.html#c.OVPHYSX_LITERAL">OVPHYSX_LITERAL (C macro)</a>
 </li>
@@ -2591,6 +2803,80 @@
       <li><a href="api.html#_CPPv4N19ovphysx_log_level_t19OVPHYSX_LOG_VERBOSEE">ovphysx_log_level_t::OVPHYSX_LOG_VERBOSE (C++ enumerator)</a>
 </li>
       <li><a href="api.html#_CPPv4N19ovphysx_log_level_t19OVPHYSX_LOG_WARNINGE">ovphysx_log_level_t::OVPHYSX_LOG_WARNING (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv429OVPHYSX_NAME_DEBUG_ACTOR_AXES">OVPHYSX_NAME_DEBUG_ACTOR_AXES (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv440OVPHYSX_NAME_DEBUG_BODY_ANGULAR_VELOCITY">OVPHYSX_NAME_DEBUG_BODY_ANGULAR_VELOCITY (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv428OVPHYSX_NAME_DEBUG_BODY_AXES">OVPHYSX_NAME_DEBUG_BODY_AXES (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv439OVPHYSX_NAME_DEBUG_BODY_LINEAR_VELOCITY">OVPHYSX_NAME_DEBUG_BODY_LINEAR_VELOCITY (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv433OVPHYSX_NAME_DEBUG_BODY_MASS_AXES">OVPHYSX_NAME_DEBUG_BODY_MASS_AXES (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv434OVPHYSX_NAME_DEBUG_COLLISION_AABBS">OVPHYSX_NAME_DEBUG_COLLISION_AABBS (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv433OVPHYSX_NAME_DEBUG_COLLISION_AXES">OVPHYSX_NAME_DEBUG_COLLISION_AXES (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv438OVPHYSX_NAME_DEBUG_COLLISION_COMPOUNDS">OVPHYSX_NAME_DEBUG_COLLISION_COMPOUNDS (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv443OVPHYSX_NAME_DEBUG_COLLISION_DYNAMIC_PRUNER">OVPHYSX_NAME_DEBUG_COLLISION_DYNAMIC_PRUNER (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv434OVPHYSX_NAME_DEBUG_COLLISION_EDGES">OVPHYSX_NAME_DEBUG_COLLISION_EDGES (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv441OVPHYSX_NAME_DEBUG_COLLISION_FACE_NORMALS">OVPHYSX_NAME_DEBUG_COLLISION_FACE_NORMALS (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv435OVPHYSX_NAME_DEBUG_COLLISION_SHAPES">OVPHYSX_NAME_DEBUG_COLLISION_SHAPES (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv442OVPHYSX_NAME_DEBUG_COLLISION_STATIC_PRUNER">OVPHYSX_NAME_DEBUG_COLLISION_STATIC_PRUNER (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv432OVPHYSX_NAME_DEBUG_CONTACT_ERROR">OVPHYSX_NAME_DEBUG_CONTACT_ERROR (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv434OVPHYSX_NAME_DEBUG_CONTACT_IMPULSE">OVPHYSX_NAME_DEBUG_CONTACT_IMPULSE (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv433OVPHYSX_NAME_DEBUG_CONTACT_NORMAL">OVPHYSX_NAME_DEBUG_CONTACT_NORMAL (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv432OVPHYSX_NAME_DEBUG_CONTACT_POINT">OVPHYSX_NAME_DEBUG_CONTACT_POINT (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv427OVPHYSX_NAME_DEBUG_CULL_BOX">OVPHYSX_NAME_DEBUG_CULL_BOX (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv430OVPHYSX_NAME_DEBUG_CULLING_BOX">OVPHYSX_NAME_DEBUG_CULLING_BOX (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv426OVPHYSX_NAME_DEBUG_ENABLED">OVPHYSX_NAME_DEBUG_ENABLED (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv435OVPHYSX_NAME_DEBUG_FRICTION_IMPULSE">OVPHYSX_NAME_DEBUG_FRICTION_IMPULSE (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv434OVPHYSX_NAME_DEBUG_FRICTION_NORMAL">OVPHYSX_NAME_DEBUG_FRICTION_NORMAL (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv433OVPHYSX_NAME_DEBUG_FRICTION_POINT">OVPHYSX_NAME_DEBUG_FRICTION_POINT (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv431OVPHYSX_NAME_DEBUG_JOINT_LIMITS">OVPHYSX_NAME_DEBUG_JOINT_LIMITS (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv437OVPHYSX_NAME_DEBUG_JOINT_LOCAL_FRAMES">OVPHYSX_NAME_DEBUG_JOINT_LOCAL_FRAMES (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv429OVPHYSX_NAME_DEBUG_LINE_COLOR">OVPHYSX_NAME_DEBUG_LINE_COLOR (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv432OVPHYSX_NAME_DEBUG_LINE_POSITION">OVPHYSX_NAME_DEBUG_LINE_POSITION (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv430OVPHYSX_NAME_DEBUG_MBP_REGIONS">OVPHYSX_NAME_DEBUG_MBP_REGIONS (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv430OVPHYSX_NAME_DEBUG_POINT_COLOR">OVPHYSX_NAME_DEBUG_POINT_COLOR (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv433OVPHYSX_NAME_DEBUG_POINT_POSITION">OVPHYSX_NAME_DEBUG_POINT_POSITION (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv424OVPHYSX_NAME_DEBUG_SCALE">OVPHYSX_NAME_DEBUG_SCALE (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv424OVPHYSX_NAME_DEBUG_SCOPE">OVPHYSX_NAME_DEBUG_SCOPE (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv422OVPHYSX_NAME_DEBUG_SDF">OVPHYSX_NAME_DEBUG_SDF (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv434OVPHYSX_NAME_DEBUG_SIMULATION_MESH">OVPHYSX_NAME_DEBUG_SIMULATION_MESH (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv433OVPHYSX_NAME_DEBUG_TRIANGLE_COLOR">OVPHYSX_NAME_DEBUG_TRIANGLE_COLOR (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv436OVPHYSX_NAME_DEBUG_TRIANGLE_POSITION">OVPHYSX_NAME_DEBUG_TRIANGLE_POSITION (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv429OVPHYSX_NAME_DEBUG_WORLD_AXES">OVPHYSX_NAME_DEBUG_WORLD_AXES (C++ member)</a>
 </li>
       <li><a href="api.html#_CPPv433ovphysx_object_change_callbacks_t">ovphysx_object_change_callbacks_t (C++ struct)</a>
 </li>
@@ -2642,29 +2928,21 @@
 </li>
       <li><a href="api.html#_CPPv4N29ovphysx_omnipvd_destination_t9transportE">ovphysx_omnipvd_destination_t::transport (C++ member)</a>
 </li>
-      <li><a href="api.html#c.OVPHYSX_OMNIPVD_TRANSPORT_FILE_NAME">OVPHYSX_OMNIPVD_TRANSPORT_FILE_NAME (C macro)</a>
-</li>
       <li><a href="api.html#_CPPv427ovphysx_omnipvd_transport_t">ovphysx_omnipvd_transport_t (C++ enum)</a>
 </li>
       <li><a href="api.html#_CPPv4N27ovphysx_omnipvd_transport_t30OVPHYSX_OMNIPVD_TRANSPORT_FILEE">ovphysx_omnipvd_transport_t::OVPHYSX_OMNIPVD_TRANSPORT_FILE (C++ enumerator)</a>
 </li>
       <li><a href="api.html#_CPPv4N27ovphysx_omnipvd_transport_t29OVPHYSX_OMNIPVD_TRANSPORT_TCPE">ovphysx_omnipvd_transport_t::OVPHYSX_OMNIPVD_TRANSPORT_TCP (C++ enumerator)</a>
 </li>
-      <li><a href="api.html#c.OVPHYSX_OMNIPVD_TRANSPORT_TCP_NAME">OVPHYSX_OMNIPVD_TRANSPORT_TCP_NAME (C macro)</a>
-</li>
-      <li><a href="api.html#c.OVPHYSX_OP_INDEX_ALL">OVPHYSX_OP_INDEX_ALL (C macro)</a>
-</li>
       <li><a href="api.html#_CPPv418ovphysx_op_index_t">ovphysx_op_index_t (C++ type)</a>
 </li>
-      <li><a href="api.html#_CPPv424ovphysx_op_wait_result_t">ovphysx_op_wait_result_t (C++ struct)</a>
+      <li><a href="api.html#_CPPv424ovphysx_ovd_is_recording25ovphysx_instance_handle_tPb">ovphysx_ovd_is_recording (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4N24ovphysx_op_wait_result_t16error_op_indicesE">ovphysx_op_wait_result_t::error_op_indices (C++ member)</a>
+      <li><a href="api.html#_CPPv427ovphysx_ovd_start_recording25ovphysx_instance_handle_tPK29ovphysx_omnipvd_destination_t">ovphysx_ovd_start_recording (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4N24ovphysx_op_wait_result_t23lowest_pending_op_indexE">ovphysx_op_wait_result_t::lowest_pending_op_index (C++ member)</a>
+      <li><a href="api.html#_CPPv426ovphysx_ovd_stop_recording25ovphysx_instance_handle_t">ovphysx_ovd_stop_recording (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4N24ovphysx_op_wait_result_t10num_errorsE">ovphysx_op_wait_result_t::num_errors (C++ member)</a>
-</li>
-      <li><a href="api.html#_CPPv415ovphysx_overlap16ovphysx_handle_tPK35ovphysx_scene_query_geometry_desc_t26ovphysx_scene_query_mode_tPPK25ovphysx_scene_query_hit_tP8uint32_t">ovphysx_overlap (C++ function)</a>
+      <li><a href="api.html#_CPPv415ovphysx_overlap25ovphysx_instance_handle_tPK35ovphysx_scene_query_geometry_desc_t26ovphysx_scene_query_mode_tPPK25ovphysx_scene_query_hit_tP8uint32_t">ovphysx_overlap (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv420ovphysx_physx_type_t">ovphysx_physx_type_t (C++ enum)</a>
 </li>
@@ -2700,65 +2978,159 @@
 </li>
       <li><a href="api.html#_CPPv4N19ovphysx_prim_list_t10prim_pathsE">ovphysx_prim_list_t::prim_paths (C++ member)</a>
 </li>
-      <li><a href="api.html#_CPPv413ovphysx_query16ovphysx_handle_t25ovphysx_sim_object_type_t22ovphysx_object_scope_tP22ovphysx_query_handle_t">ovphysx_query (C++ function)</a>
+      <li><a href="api.html#_CPPv426ovphysx_profiler_backend_t">ovphysx_profiler_backend_t (C++ enum)</a>
+</li>
+      <li><a href="api.html#_CPPv4N26ovphysx_profiler_backend_t29OVPHYSX_PROFILER_BACKEND_NONEE">ovphysx_profiler_backend_t::OVPHYSX_PROFILER_BACKEND_NONE (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N26ovphysx_profiler_backend_t29OVPHYSX_PROFILER_BACKEND_NVTXE">ovphysx_profiler_backend_t::OVPHYSX_PROFILER_BACKEND_NVTX (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N26ovphysx_profiler_backend_t30OVPHYSX_PROFILER_BACKEND_TRACEE">ovphysx_profiler_backend_t::OVPHYSX_PROFILER_BACKEND_TRACE (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv413ovphysx_query25ovphysx_instance_handle_t22ovphysx_query_target_t22ovphysx_object_scope_tP22ovphysx_query_handle_tP22ovstage_query_result_t">ovphysx_query (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv422ovphysx_query_contacts25ovphysx_instance_handle_tPK34ovphysx_contact_sensor_selection_t8uint32_t8uint32_tP22ovphysx_query_handle_tP22ovstage_query_result_t">ovphysx_query_contacts (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv422ovphysx_query_handle_t">ovphysx_query_handle_t (C++ type)</a>
 </li>
-      <li><a href="api.html#_CPPv431ovphysx_query_shared_dictionary16ovphysx_handle_t22ovphysx_query_handle_tPPv">ovphysx_query_shared_dictionary (C++ function)</a>
+      <li><a href="api.html#_CPPv423ovphysx_query_selection25ovphysx_instance_handle_t22ovphysx_query_target_tPK25ovphysx_query_selection_tP22ovphysx_query_handle_tP22ovstage_query_result_t">ovphysx_query_selection (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv415ovphysx_raycast16ovphysx_handle_tAL3E_KfAL3E_Kffb26ovphysx_scene_query_mode_tPPK25ovphysx_scene_query_hit_tP8uint32_t">ovphysx_raycast (C++ function)</a>
+      <li><a href="api.html#_CPPv425ovphysx_query_selection_t">ovphysx_query_selection_t (C++ struct)</a>
 </li>
-      <li><a href="api.html#_CPPv412ovphysx_read16ovphysx_handle_t22ovphysx_query_handle_tPK21ovx_string_or_token_t6size_tP21ovphysx_read_handle_t">ovphysx_read (C++ function)</a>
+      <li><a href="api.html#_CPPv4N25ovphysx_query_selection_t7patternE">ovphysx_query_selection_t::pattern (C++ member)</a>
 </li>
-      <li><a href="api.html#_CPPv425ovphysx_read_contact_data16ovphysx_handle_t32ovphysx_contact_binding_handle_tP8DLTensorP8DLTensorP8DLTensorP8DLTensorP8DLTensorP8DLTensorP8uint32_t">ovphysx_read_contact_data (C++ function)</a>
+      <li><a href="api.html#_CPPv4N25ovphysx_query_selection_t10prim_pathsE">ovphysx_query_selection_t::prim_paths (C++ member)</a>
 </li>
-      <li><a href="api.html#_CPPv433ovphysx_read_contact_force_matrix16ovphysx_handle_t32ovphysx_contact_binding_handle_tP8DLTensor">ovphysx_read_contact_force_matrix (C++ function)</a>
+      <li><a href="api.html#_CPPv4N25ovphysx_query_selection_t16prim_paths_countE">ovphysx_query_selection_t::prim_paths_count (C++ member)</a>
 </li>
-      <li><a href="api.html#_CPPv442ovphysx_read_contact_friction_force_matrix16ovphysx_handle_t32ovphysx_contact_binding_handle_tP8DLTensor">ovphysx_read_contact_friction_force_matrix (C++ function)</a>
+      <li><a href="api.html#_CPPv422ovphysx_query_target_t">ovphysx_query_target_t (C++ enum)</a>
 </li>
-      <li><a href="api.html#_CPPv431ovphysx_read_contact_net_forces16ovphysx_handle_t32ovphysx_contact_binding_handle_tP8DLTensor">ovphysx_read_contact_net_forces (C++ function)</a>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t33OVPHYSX_QUERY_TARGET_ARTICULATIONE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_ARTICULATION (C++ enumerator)</a>
 </li>
-      <li><a href="api.html#_CPPv440ovphysx_read_contact_net_friction_forces16ovphysx_handle_t32ovphysx_contact_binding_handle_tP8DLTensor">ovphysx_read_contact_net_friction_forces (C++ function)</a>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t39OVPHYSX_QUERY_TARGET_ARTICULATION_JOINTE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT (C++ enumerator)</a>
 </li>
-      <li><a href="api.html#_CPPv438ovphysx_read_contact_net_normal_forces16ovphysx_handle_t32ovphysx_contact_binding_handle_tP8DLTensor">ovphysx_read_contact_net_normal_forces (C++ function)</a>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t38OVPHYSX_QUERY_TARGET_ARTICULATION_LINKE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_ARTICULATION_LINK (C++ enumerator)</a>
 </li>
-      <li><a href="api.html#_CPPv440ovphysx_read_contact_normal_force_matrix16ovphysx_handle_t32ovphysx_contact_binding_handle_tP8DLTensor">ovphysx_read_contact_normal_force_matrix (C++ function)</a>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t41OVPHYSX_QUERY_TARGET_CHARACTER_CONTROLLERE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_CHARACTER_CONTROLLER (C++ enumerator)</a>
 </li>
-      <li><a href="api.html#_CPPv434ovphysx_read_friction_contact_data16ovphysx_handle_t32ovphysx_contact_binding_handle_tP8DLTensorP8DLTensorP8DLTensorP8DLTensorP8uint32_t">ovphysx_read_friction_contact_data (C++ function)</a>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t35OVPHYSX_QUERY_TARGET_COMPOUND_SHAPEE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_COMPOUND_SHAPE (C++ enumerator)</a>
 </li>
-      <li><a href="api.html#_CPPv426ovphysx_read_friction_data16ovphysx_handle_t32ovphysx_contact_binding_handle_tP8DLTensorP8DLTensorP8DLTensorP8DLTensorP8uint32_t">ovphysx_read_friction_data (C++ function)</a>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t35OVPHYSX_QUERY_TARGET_CONTACT_SENSORE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_CONTACT_SENSOR (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t26OVPHYSX_QUERY_TARGET_COUNTE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_COUNT (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t33OVPHYSX_QUERY_TARGET_CUSTOM_JOINTE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_CUSTOM_JOINT (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t33OVPHYSX_QUERY_TARGET_DEBUG_RENDERE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_DEBUG_RENDER (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t40OVPHYSX_QUERY_TARGET_DEFORMABLE_MATERIALE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_DEFORMABLE_MATERIAL (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t39OVPHYSX_QUERY_TARGET_DEFORMABLE_SURFACEE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_DEFORMABLE_SURFACE (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t38OVPHYSX_QUERY_TARGET_DEFORMABLE_VOLUMEE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_DEFORMABLE_VOLUME (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t33OVPHYSX_QUERY_TARGET_FIXED_TENDONE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_FIXED_TENDON (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t26OVPHYSX_QUERY_TARGET_JOINTE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_JOINT (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t33OVPHYSX_QUERY_TARGET_PARTICLE_SETE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_PARTICLE_SET (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t36OVPHYSX_QUERY_TARGET_PARTICLE_SYSTEME">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_PARTICLE_SYSTEM (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t28OVPHYSX_QUERY_TARGET_PHYSICSE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_PHYSICS (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t35OVPHYSX_QUERY_TARGET_PHYSX_MATERIALE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_PHYSX_MATERIAL (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t32OVPHYSX_QUERY_TARGET_RIGID_ACTORE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_RIGID_ACTOR (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t31OVPHYSX_QUERY_TARGET_RIGID_BODYE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_RIGID_BODY (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t26OVPHYSX_QUERY_TARGET_SCENEE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_SCENE (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t30OVPHYSX_QUERY_TARGET_SDF_SHAPEE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_SDF_SHAPE (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t26OVPHYSX_QUERY_TARGET_SHAPEE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_SHAPE (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t35OVPHYSX_QUERY_TARGET_SPATIAL_TENDONE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_SPATIAL_TENDON (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t28OVPHYSX_QUERY_TARGET_VEHICLEE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_VEHICLE (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_query_target_t34OVPHYSX_QUERY_TARGET_VEHICLE_WHEELE">ovphysx_query_target_t::OVPHYSX_QUERY_TARGET_VEHICLE_WHEEL (C++ enumerator)</a>
+</li>
+      <li><a href="api.html#_CPPv415ovphysx_raycast25ovphysx_instance_handle_tAL3E_KfAL3E_Kffb26ovphysx_scene_query_mode_tPPK25ovphysx_scene_query_hit_tP8uint32_t">ovphysx_raycast (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv412ovphysx_read25ovphysx_instance_handle_t22ovphysx_query_handle_tPK21ovx_string_or_token_t6size_tP21ovphysx_read_handle_tP21ovphysx_read_result_t">ovphysx_read (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv431ovphysx_read_attribute_result_t">ovphysx_read_attribute_result_t (C++ struct)</a>
+</li>
+      <li><a href="api.html#_CPPv4N31ovphysx_read_attribute_result_t9attributeE">ovphysx_read_attribute_result_t::attribute (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv4N31ovphysx_read_attribute_result_t11group_countE">ovphysx_read_attribute_result_t::group_count (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv4N31ovphysx_read_attribute_result_t16omission_reasonsE">ovphysx_read_attribute_result_t::omission_reasons (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv425ovphysx_read_contact_data25ovphysx_instance_handle_t32ovphysx_contact_binding_handle_tP8DLTensorP8DLTensorP8DLTensorP8DLTensorP8DLTensorP8DLTensorP8uint32_t">ovphysx_read_contact_data (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv433ovphysx_read_contact_force_matrix25ovphysx_instance_handle_t32ovphysx_contact_binding_handle_tP8DLTensor">ovphysx_read_contact_force_matrix (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv442ovphysx_read_contact_friction_force_matrix25ovphysx_instance_handle_t32ovphysx_contact_binding_handle_tP8DLTensor">ovphysx_read_contact_friction_force_matrix (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv431ovphysx_read_contact_net_forces25ovphysx_instance_handle_t32ovphysx_contact_binding_handle_tP8DLTensor">ovphysx_read_contact_net_forces (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv440ovphysx_read_contact_net_friction_forces25ovphysx_instance_handle_t32ovphysx_contact_binding_handle_tP8DLTensor">ovphysx_read_contact_net_friction_forces (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv438ovphysx_read_contact_net_normal_forces25ovphysx_instance_handle_t32ovphysx_contact_binding_handle_tP8DLTensor">ovphysx_read_contact_net_normal_forces (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv440ovphysx_read_contact_normal_force_matrix25ovphysx_instance_handle_t32ovphysx_contact_binding_handle_tP8DLTensor">ovphysx_read_contact_normal_force_matrix (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv434ovphysx_read_friction_contact_data25ovphysx_instance_handle_t32ovphysx_contact_binding_handle_tP8DLTensorP8DLTensorP8DLTensorP8DLTensorP8uint32_t">ovphysx_read_friction_contact_data (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv426ovphysx_read_friction_data25ovphysx_instance_handle_t32ovphysx_contact_binding_handle_tP8DLTensorP8DLTensorP8DLTensorP8DLTensorP8uint32_t">ovphysx_read_friction_data (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv421ovphysx_read_handle_t">ovphysx_read_handle_t (C++ type)</a>
 </li>
       <li><a href="api.html#_CPPv425ovphysx_read_map_handle_t">ovphysx_read_map_handle_t (C++ type)</a>
 </li>
-      <li><a href="api.html#_CPPv432ovphysx_read_normal_contact_data16ovphysx_handle_t32ovphysx_contact_binding_handle_tP8DLTensorP8DLTensorP8DLTensorP8DLTensorP8DLTensorP8DLTensorP8uint32_t">ovphysx_read_normal_contact_data (C++ function)</a>
+      <li><a href="api.html#_CPPv432ovphysx_read_normal_contact_data25ovphysx_instance_handle_t32ovphysx_contact_binding_handle_tP8DLTensorP8DLTensorP8DLTensorP8DLTensorP8DLTensorP8DLTensorP8uint32_t">ovphysx_read_normal_contact_data (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv429ovphysx_read_raw_contact_data16ovphysx_handle_t32ovphysx_contact_binding_handle_tP8DLTensorP8DLTensorP8DLTensorP8DLTensorP8DLTensorP8DLTensorP8uint32_t">ovphysx_read_raw_contact_data (C++ function)</a>
+      <li><a href="api.html#_CPPv423ovphysx_read_omission_t">ovphysx_read_omission_t (C++ enum)</a>
 </li>
-      <li><a href="api.html#_CPPv427ovphysx_read_tensor_binding16ovphysx_handle_t31ovphysx_tensor_binding_handle_tP8DLTensor">ovphysx_read_tensor_binding (C++ function)</a>
+      <li><a href="api.html#_CPPv4N23ovphysx_read_omission_t31OVPHYSX_READ_OMISSION_NOT_READYE">ovphysx_read_omission_t::OVPHYSX_READ_OMISSION_NOT_READY (C++ enumerator)</a>
 </li>
-      <li><a href="api.html#_CPPv421ovphysx_release_group16ovphysx_handle_t21ovphysx_read_handle_t23ovstage_read_group_id_t">ovphysx_release_group (C++ function)</a>
+      <li><a href="api.html#_CPPv4N23ovphysx_read_omission_t43OVPHYSX_READ_OMISSION_UNSUPPORTED_ATTRIBUTEE">ovphysx_read_omission_t::OVPHYSX_READ_OMISSION_UNSUPPORTED_ATTRIBUTE (C++ enumerator)</a>
 </li>
-      <li><a href="api.html#_CPPv421ovphysx_release_query16ovphysx_handle_t22ovphysx_query_handle_t">ovphysx_release_query (C++ function)</a>
+      <li><a href="api.html#_CPPv4N23ovphysx_read_omission_t47OVPHYSX_READ_OMISSION_UNSUPPORTED_CONFIGURATIONE">ovphysx_read_omission_t::OVPHYSX_READ_OMISSION_UNSUPPORTED_CONFIGURATION (C++ enumerator)</a>
 </li>
-      <li><a href="api.html#_CPPv420ovphysx_release_read16ovphysx_handle_t21ovphysx_read_handle_t">ovphysx_release_read (C++ function)</a>
+      <li><a href="api.html#_CPPv429ovphysx_read_raw_contact_data25ovphysx_instance_handle_t32ovphysx_contact_binding_handle_tP8DLTensorP8DLTensorP8DLTensorP8DLTensorP8DLTensorP8DLTensorP8uint32_t">ovphysx_read_raw_contact_data (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv421ovphysx_release_write16ovphysx_handle_t22ovphysx_write_handle_t">ovphysx_release_write (C++ function)</a>
+      <li><a href="api.html#_CPPv421ovphysx_read_result_t">ovphysx_read_result_t (C++ struct)</a>
 </li>
-      <li><a href="api.html#_CPPv419ovphysx_reset_stage16ovphysx_handle_t">ovphysx_reset_stage (C++ function)</a>
+      <li><a href="api.html#_CPPv4N21ovphysx_read_result_t15attribute_countE">ovphysx_read_result_t::attribute_count (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv4N21ovphysx_read_result_t10attributesE">ovphysx_read_result_t::attributes (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv4N21ovphysx_read_result_t16total_prim_countE">ovphysx_read_result_t::total_prim_count (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv427ovphysx_read_tensor_binding25ovphysx_instance_handle_t31ovphysx_tensor_binding_handle_tP8DLTensor">ovphysx_read_tensor_binding (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv421ovphysx_release_group25ovphysx_instance_handle_t21ovphysx_read_handle_t23ovstage_read_group_id_t">ovphysx_release_group (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv421ovphysx_release_query25ovphysx_instance_handle_t22ovphysx_query_handle_t">ovphysx_release_query (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv420ovphysx_release_read25ovphysx_instance_handle_t21ovphysx_read_handle_t">ovphysx_release_read (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv421ovphysx_release_write25ovphysx_instance_handle_t22ovphysx_write_handle_t">ovphysx_release_write (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv416ovphysx_result_t">ovphysx_result_t (C++ struct)</a>
 </li>
       <li><a href="api.html#_CPPv4N16ovphysx_result_t6statusE">ovphysx_result_t::status (C++ member)</a>
 </li>
-      <li><a href="api.html#_CPPv429ovphysx_rigid_body_view_sleep16ovphysx_handle_t31ovphysx_tensor_binding_handle_tPK8DLTensor">ovphysx_rigid_body_view_sleep (C++ function)</a>
+      <li><a href="api.html#_CPPv429ovphysx_rigid_body_view_sleep25ovphysx_instance_handle_t31ovphysx_tensor_binding_handle_tPK8DLTensor">ovphysx_rigid_body_view_sleep (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv431ovphysx_rigid_body_view_wake_up16ovphysx_handle_t31ovphysx_tensor_binding_handle_tPK8DLTensor">ovphysx_rigid_body_view_wake_up (C++ function)</a>
+      <li><a href="api.html#_CPPv431ovphysx_rigid_body_view_wake_up25ovphysx_instance_handle_t31ovphysx_tensor_binding_handle_tPK8DLTensor">ovphysx_rigid_body_view_wake_up (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv435ovphysx_scene_query_geometry_desc_t">ovphysx_scene_query_geometry_desc_t (C++ struct)</a>
 </li>
-      <li><a href="api.html#_CPPv4N35ovphysx_scene_query_geometry_desc_tUt1_1E">ovphysx_scene_query_geometry_desc_t::[anonymous] (C++ member)</a>
+      <li><a href="api.html#_CPPv4N35ovphysx_scene_query_geometry_desc_tUt1_4E">ovphysx_scene_query_geometry_desc_t::[anonymous] (C++ member)</a>
 </li>
       <li><a href="api.html#_CPPv4N35ovphysx_scene_query_geometry_desc_t3boxE">ovphysx_scene_query_geometry_desc_t::box (C++ member)</a>
 </li>
@@ -2786,7 +3158,7 @@
 </li>
       <li><a href="api.html#_CPPv4N35ovphysx_scene_query_geometry_type_t35OVPHYSX_SCENE_QUERY_GEOMETRY_SPHEREE">ovphysx_scene_query_geometry_type_t::OVPHYSX_SCENE_QUERY_GEOMETRY_SPHERE (C++ enumerator)</a>
 </li>
-      <li><a href="api.html#_CPPv438ovphysx_scene_query_get_paths_from_ids16ovphysx_handle_tPK8uint64_t8uint32_tP16ovphysx_string_t8uint32_tP8uint32_t">ovphysx_scene_query_get_paths_from_ids (C++ function)</a>
+      <li><a href="api.html#_CPPv438ovphysx_scene_query_get_paths_from_ids25ovphysx_instance_handle_tPK8uint64_t8uint32_tP16ovphysx_string_t8uint32_tP8uint32_t">ovphysx_scene_query_get_paths_from_ids (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv425ovphysx_scene_query_hit_t">ovphysx_scene_query_hit_t (C++ struct)</a>
 </li>
@@ -2814,15 +3186,19 @@
 </li>
       <li><a href="api.html#_CPPv4N26ovphysx_scene_query_mode_t32OVPHYSX_SCENE_QUERY_MODE_CLOSESTE">ovphysx_scene_query_mode_t::OVPHYSX_SCENE_QUERY_MODE_CLOSEST (C++ enumerator)</a>
 </li>
-      <li><a href="api.html#_CPPv426ovphysx_sdf_view_get_count16ovphysx_handle_t25ovphysx_sdf_view_handle_tP8uint32_t">ovphysx_sdf_view_get_count (C++ function)</a>
+      <li><a href="api.html#_CPPv426ovphysx_sdf_view_get_count25ovphysx_instance_handle_t25ovphysx_sdf_view_handle_tP8uint32_t">ovphysx_sdf_view_get_count (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv437ovphysx_sdf_view_get_max_query_points16ovphysx_handle_t25ovphysx_sdf_view_handle_tP8uint32_t">ovphysx_sdf_view_get_max_query_points (C++ function)</a>
+      <li><a href="api.html#_CPPv437ovphysx_sdf_view_get_max_query_points25ovphysx_instance_handle_t25ovphysx_sdf_view_handle_tP8uint32_t">ovphysx_sdf_view_get_max_query_points (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv425ovphysx_sdf_view_handle_t">ovphysx_sdf_view_handle_t (C++ type)</a>
 </li>
+      <li><a href="api.html#_CPPv418ovphysx_set_config25ovphysx_instance_handle_t20ovphysx_config_key_t22ovphysx_config_value_t">ovphysx_set_config (C++ function)</a>
+</li>
       <li><a href="api.html#_CPPv420ovphysx_set_cpu_modeb">ovphysx_set_cpu_mode (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv425ovphysx_set_global_config22ovphysx_config_entry_t">ovphysx_set_global_config (C++ function)</a>
+      <li><a href="api.html#_CPPv425ovphysx_set_global_config27ovphysx_global_config_key_t22ovphysx_config_value_t">ovphysx_set_global_config (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv431ovphysx_set_global_config_entry22ovphysx_config_entry_t">ovphysx_set_global_config_entry (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv424ovphysx_set_log_callback19ovphysx_log_level_tPK16ovphysx_string_t22ovphysx_log_callback_tPv">ovphysx_set_log_callback (C++ function)</a>
 </li>
@@ -2830,39 +3206,13 @@
 </li>
       <li><a href="api.html#_CPPv416ovphysx_shutdownv">ovphysx_shutdown (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv425ovphysx_sim_object_type_t">ovphysx_sim_object_type_t (C++ enum)</a>
+      <li><a href="api.html#_CPPv423ovphysx_start_recording25ovphysx_instance_handle_tPK29ovphysx_omnipvd_destination_t">ovphysx_start_recording (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4N25ovphysx_sim_object_type_t27OVPHYSX_OBJECT_ARTICULATIONE">ovphysx_sim_object_type_t::OVPHYSX_OBJECT_ARTICULATION (C++ enumerator)</a>
+      <li><a href="api.html#_CPPv412ovphysx_step25ovphysx_instance_handle_tf">ovphysx_step (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4N25ovphysx_sim_object_type_t33OVPHYSX_OBJECT_ARTICULATION_JOINTE">ovphysx_sim_object_type_t::OVPHYSX_OBJECT_ARTICULATION_JOINT (C++ enumerator)</a>
+      <li><a href="api.html#_CPPv417ovphysx_step_sync25ovphysx_instance_handle_tf">ovphysx_step_sync (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4N25ovphysx_sim_object_type_t32OVPHYSX_OBJECT_ARTICULATION_LINKE">ovphysx_sim_object_type_t::OVPHYSX_OBJECT_ARTICULATION_LINK (C++ enumerator)</a>
-</li>
-      <li><a href="api.html#_CPPv4N25ovphysx_sim_object_type_t34OVPHYSX_OBJECT_DEFORMABLE_MATERIALE">ovphysx_sim_object_type_t::OVPHYSX_OBJECT_DEFORMABLE_MATERIAL (C++ enumerator)</a>
-</li>
-      <li><a href="api.html#_CPPv4N25ovphysx_sim_object_type_t33OVPHYSX_OBJECT_DEFORMABLE_SURFACEE">ovphysx_sim_object_type_t::OVPHYSX_OBJECT_DEFORMABLE_SURFACE (C++ enumerator)</a>
-</li>
-      <li><a href="api.html#_CPPv4N25ovphysx_sim_object_type_t32OVPHYSX_OBJECT_DEFORMABLE_VOLUMEE">ovphysx_sim_object_type_t::OVPHYSX_OBJECT_DEFORMABLE_VOLUME (C++ enumerator)</a>
-</li>
-      <li><a href="api.html#_CPPv4N25ovphysx_sim_object_type_t27OVPHYSX_OBJECT_FIXED_TENDONE">ovphysx_sim_object_type_t::OVPHYSX_OBJECT_FIXED_TENDON (C++ enumerator)</a>
-</li>
-      <li><a href="api.html#_CPPv4N25ovphysx_sim_object_type_t27OVPHYSX_OBJECT_PARTICLE_SETE">ovphysx_sim_object_type_t::OVPHYSX_OBJECT_PARTICLE_SET (C++ enumerator)</a>
-</li>
-      <li><a href="api.html#_CPPv4N25ovphysx_sim_object_type_t25OVPHYSX_OBJECT_RIGID_BODYE">ovphysx_sim_object_type_t::OVPHYSX_OBJECT_RIGID_BODY (C++ enumerator)</a>
-</li>
-      <li><a href="api.html#_CPPv4N25ovphysx_sim_object_type_t29OVPHYSX_OBJECT_SPATIAL_TENDONE">ovphysx_sim_object_type_t::OVPHYSX_OBJECT_SPATIAL_TENDON (C++ enumerator)</a>
-</li>
-      <li><a href="api.html#_CPPv4N25ovphysx_sim_object_type_t28OVPHYSX_OBJECT_VEHICLE_WHEELE">ovphysx_sim_object_type_t::OVPHYSX_OBJECT_VEHICLE_WHEEL (C++ enumerator)</a>
-</li>
-      <li><a href="api.html#_CPPv423ovphysx_start_recording16ovphysx_handle_tPK29ovphysx_omnipvd_destination_t">ovphysx_start_recording (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv412ovphysx_step16ovphysx_handle_tf">ovphysx_step (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv419ovphysx_step_n_sync16ovphysx_handle_t7int32_tf">ovphysx_step_n_sync (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv417ovphysx_step_sync16ovphysx_handle_tf">ovphysx_step_sync (C++ function)</a>
-</li>
-      <li><a href="api.html#_CPPv422ovphysx_stop_recording16ovphysx_handle_t">ovphysx_stop_recording (C++ function)</a>
+      <li><a href="api.html#_CPPv422ovphysx_stop_recording25ovphysx_instance_handle_t">ovphysx_stop_recording (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv416ovphysx_string_t">ovphysx_string_t (C++ struct)</a>
 </li>
@@ -2870,11 +3220,11 @@
 </li>
       <li><a href="api.html#_CPPv4N16ovphysx_string_t3ptrE">ovphysx_string_t::ptr (C++ member)</a>
 </li>
-      <li><a href="api.html#_CPPv432ovphysx_subscribe_object_changesPK33ovphysx_object_change_callbacks_tP25ovphysx_subscription_id_t">ovphysx_subscribe_object_changes (C++ function)</a>
+      <li><a href="api.html#_CPPv432ovphysx_subscribe_object_changes25ovphysx_instance_handle_tPK33ovphysx_object_change_callbacks_tP25ovphysx_subscription_id_t">ovphysx_subscribe_object_changes (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv425ovphysx_subscription_id_t">ovphysx_subscription_id_t (C++ type)</a>
 </li>
-      <li><a href="api.html#_CPPv413ovphysx_sweep16ovphysx_handle_tPK35ovphysx_scene_query_geometry_desc_tAL3E_Kffb26ovphysx_scene_query_mode_tPPK25ovphysx_scene_query_hit_tP8uint32_t">ovphysx_sweep (C++ function)</a>
+      <li><a href="api.html#_CPPv413ovphysx_sweep25ovphysx_instance_handle_tPK35ovphysx_scene_query_geometry_desc_tAL3E_Kffb26ovphysx_scene_query_mode_tPPK25ovphysx_scene_query_hit_tP8uint32_t">ovphysx_sweep (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv429ovphysx_tensor_binding_desc_t">ovphysx_tensor_binding_desc_t (C++ struct)</a>
 </li>
@@ -2886,7 +3236,7 @@
 </li>
       <li><a href="api.html#_CPPv4N29ovphysx_tensor_binding_desc_t11tensor_typeE">ovphysx_tensor_binding_desc_t::tensor_type (C++ member)</a>
 </li>
-      <li><a href="api.html#_CPPv437ovphysx_tensor_binding_get_prim_paths16ovphysx_handle_t31ovphysx_tensor_binding_handle_tP16ovphysx_string_t8uint32_tP8uint32_t">ovphysx_tensor_binding_get_prim_paths (C++ function)</a>
+      <li><a href="api.html#_CPPv437ovphysx_tensor_binding_get_prim_paths25ovphysx_instance_handle_t31ovphysx_tensor_binding_handle_tP16ovphysx_string_t8uint32_tP8uint32_t">ovphysx_tensor_binding_get_prim_paths (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv431ovphysx_tensor_binding_handle_t">ovphysx_tensor_binding_handle_t (C++ type)</a>
 </li>
@@ -3068,27 +3418,29 @@
 </li>
       <li><a href="api.html#_CPPv417ovphysx_timeout_t">ovphysx_timeout_t (C++ type)</a>
 </li>
-      <li><a href="api.html#_CPPv434ovphysx_unsubscribe_object_changes25ovphysx_subscription_id_t">ovphysx_unsubscribe_object_changes (C++ function)</a>
+      <li><a href="api.html#_CPPv434ovphysx_unsubscribe_object_changes25ovphysx_instance_handle_t25ovphysx_subscription_id_t">ovphysx_unsubscribe_object_changes (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv438ovphysx_update_articulations_kinematic16ovphysx_handle_t">ovphysx_update_articulations_kinematic (C++ function)</a>
+      <li><a href="api.html#_CPPv438ovphysx_update_articulations_kinematic25ovphysx_instance_handle_t22ovphysx_query_handle_t8uint32_t">ovphysx_update_articulations_kinematic (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv427ovphysx_update_from_ovstage16ovphysx_handle_t23ovstage_ordinal_range_t">ovphysx_update_from_ovstage (C++ function)</a>
+      <li><a href="api.html#_CPPv427ovphysx_update_from_ovstage25ovphysx_instance_handle_t23ovstage_ordinal_range_t">ovphysx_update_from_ovstage (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv420ovphysx_usd_handle_t">ovphysx_usd_handle_t (C++ type)</a>
 </li>
-      <li><a href="api.html#_CPPv424ovphysx_user_task_desc_t">ovphysx_user_task_desc_t (C++ struct)</a>
+      <li><a href="api.html#_CPPv416ovphysx_wait_all25ovphysx_instance_handle_t17ovphysx_timeout_tP26ovphysx_wait_task_result_t">ovphysx_wait_all (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4N24ovphysx_user_task_desc_t3runE">ovphysx_user_task_desc_t::run (C++ member)</a>
+      <li><a href="api.html#_CPPv417ovphysx_wait_task25ovphysx_instance_handle_t24ovphysx_enqueue_result_t17ovphysx_timeout_tP26ovphysx_wait_task_result_t">ovphysx_wait_task (C++ function)</a>
 </li>
-      <li><a href="api.html#_CPPv4N24ovphysx_user_task_desc_t9user_dataE">ovphysx_user_task_desc_t::user_data (C++ member)</a>
+      <li><a href="api.html#_CPPv426ovphysx_wait_task_result_t">ovphysx_wait_task_result_t (C++ struct)</a>
 </li>
-      <li><a href="api.html#_CPPv420ovphysx_user_task_fn">ovphysx_user_task_fn (C++ type)</a>
+      <li><a href="api.html#_CPPv4N26ovphysx_wait_task_result_t11error_tasksE">ovphysx_wait_task_result_t::error_tasks (C++ member)</a>
 </li>
-      <li><a href="api.html#_CPPv415ovphysx_wait_op16ovphysx_handle_t18ovphysx_op_index_t17ovphysx_timeout_tP24ovphysx_op_wait_result_t">ovphysx_wait_op (C++ function)</a>
+      <li><a href="api.html#_CPPv4N26ovphysx_wait_task_result_t10num_errorsE">ovphysx_wait_task_result_t::num_errors (C++ member)</a>
 </li>
-      <li><a href="api.html#_CPPv414ovphysx_warmup16ovphysx_handle_t">ovphysx_warmup (C++ function)</a>
+      <li><a href="api.html#_CPPv4N26ovphysx_wait_task_result_t12pending_taskE">ovphysx_wait_task_result_t::pending_task (C++ member)</a>
 </li>
-      <li><a href="api.html#_CPPv419ovphysx_writability25ovphysx_sim_object_type_tPK21ovx_string_or_token_tP21ovphysx_writability_t">ovphysx_writability (C++ function)</a>
+      <li><a href="api.html#_CPPv414ovphysx_warmup25ovphysx_instance_handle_t">ovphysx_warmup (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv419ovphysx_writability22ovphysx_query_target_tPK21ovx_string_or_token_tP21ovphysx_writability_t">ovphysx_writability (C++ function)</a>
 </li>
       <li><a href="api.html#_CPPv421ovphysx_writability_t">ovphysx_writability_t (C++ enum)</a>
 </li>
@@ -3102,20 +3454,38 @@
 </li>
       <li><a href="api.html#_CPPv4N21ovphysx_writability_t30OVPHYSX_WRITABILITY_WRITE_ONLYE">ovphysx_writability_t::OVPHYSX_WRITABILITY_WRITE_ONLY (C++ enumerator)</a>
 </li>
-      <li><a href="api.html#_CPPv413ovphysx_write16ovphysx_handle_t22ovphysx_query_handle_tPK21ovx_string_or_token_tP22ovphysx_write_handle_t">ovphysx_write (C++ function)</a>
+      <li><a href="api.html#_CPPv413ovphysx_write25ovphysx_instance_handle_t22ovphysx_query_handle_tPK21ovx_string_or_token_t6size_tP22ovphysx_write_handle_tP22ovphysx_write_result_t">ovphysx_write (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv432ovphysx_write_attribute_result_t">ovphysx_write_attribute_result_t (C++ struct)</a>
+</li>
+      <li><a href="api.html#_CPPv4N32ovphysx_write_attribute_result_t9attributeE">ovphysx_write_attribute_result_t::attribute (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv4N32ovphysx_write_attribute_result_t11group_countE">ovphysx_write_attribute_result_t::group_count (C++ member)</a>
 </li>
       <li><a href="api.html#_CPPv422ovphysx_write_handle_t">ovphysx_write_handle_t (C++ type)</a>
 </li>
       <li><a href="api.html#_CPPv426ovphysx_write_map_handle_t">ovphysx_write_map_handle_t (C++ type)</a>
 </li>
-      <li><a href="api.html#_CPPv428ovphysx_write_tensor_binding16ovphysx_handle_t31ovphysx_tensor_binding_handle_tPK8DLTensorPK8DLTensor">ovphysx_write_tensor_binding (C++ function)</a>
+      <li><a href="api.html#_CPPv422ovphysx_write_result_t">ovphysx_write_result_t (C++ struct)</a>
 </li>
-      <li><a href="api.html#_CPPv435ovphysx_write_tensor_binding_masked16ovphysx_handle_t31ovphysx_tensor_binding_handle_tPK8DLTensorPK8DLTensor">ovphysx_write_tensor_binding_masked (C++ function)</a>
+      <li><a href="api.html#_CPPv4N22ovphysx_write_result_t15attribute_countE">ovphysx_write_result_t::attribute_count (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_write_result_t10attributesE">ovphysx_write_result_t::attributes (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv4N22ovphysx_write_result_t16total_prim_countE">ovphysx_write_result_t::total_prim_count (C++ member)</a>
+</li>
+      <li><a href="api.html#_CPPv428ovphysx_write_tensor_binding25ovphysx_instance_handle_t31ovphysx_tensor_binding_handle_tPK8DLTensorPK8DLTensor">ovphysx_write_tensor_binding (C++ function)</a>
+</li>
+      <li><a href="api.html#_CPPv435ovphysx_write_tensor_binding_masked25ovphysx_instance_handle_t31ovphysx_tensor_binding_handle_tPK8DLTensorPK8DLTensor">ovphysx_write_tensor_binding_masked (C++ function)</a>
 </li>
       <li><a href="python_api.html#ovphysx.config.PhysXConfig.ovstage_read_pool_max_mb">ovstage_read_pool_max_mb (ovphysx.config.PhysXConfig attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.types.ConfigInt32.OVSTAGE_READ_POOL_MAX_MB">OVSTAGE_READ_POOL_MAX_MB (ovphysx.types.ConfigInt32 attribute)</a>
+
+      <ul>
+        <li><a href="python_api.html#ovphysx.types.GlobalConfigKey.OVSTAGE_READ_POOL_MAX_MB">(ovphysx.types.GlobalConfigKey attribute)</a>
 </li>
+      </ul></li>
       <li><a href="python_api.html#ovphysx.utils.simulation.OvStageOutputCache">OvStageOutputCache (class in ovphysx.utils.simulation)</a>
 </li>
   </ul></td>
@@ -3126,25 +3496,63 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.types.SimObjectType.PARTICLE_SET">PARTICLE_SET (ovphysx.types.SimObjectType attribute)</a>
 </li>
+      <li><a href="python_api.html#ovphysx.types.SimObjectType.PARTICLE_SYSTEM">PARTICLE_SYSTEM (ovphysx.types.SimObjectType attribute)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.TaskTimeoutError.pending_task">pending_task (ovphysx.api.TaskTimeoutError property)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.types.SimObjectType.PHYSICS">PHYSICS (ovphysx.types.SimObjectType attribute)</a>
+</li>
       <li><a href="python_api.html#ovphysx.api.PhysX">PhysX (class in ovphysx.api)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.types.SimObjectType.PHYSX_MATERIAL">PHYSX_MATERIAL (ovphysx.types.SimObjectType attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.config.PhysXConfig">PhysXConfig (class in ovphysx.config)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.particles.poisson_sample_mesh">poisson_sample_mesh() (in module ovphysx.utils.particles)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="python_api.html#ovphysx.contact_types.ContactPoint.position">position (ovphysx.contact_types.ContactPoint attribute)</a>
+      <li><a href="python_api.html#ovphysx.types.ArticulationKinematicFlag.POSITION">POSITION (ovphysx.types.ArticulationKinematicFlag attribute)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.ReadGroup.prim_count">prim_count (ovphysx.api.ReadGroup attribute)</a>
 
       <ul>
-        <li><a href="python_api.html#ovphysx.contact_types.FrictionAnchor.position">(ovphysx.contact_types.FrictionAnchor attribute)</a>
+        <li><a href="python_api.html#ovphysx.api.WriteGroup.prim_count">(ovphysx.api.WriteGroup attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="python_api.html#ovphysx.api.ReadGroup.prim_index_map">prim_index_map (ovphysx.api.ReadGroup attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python_api.html#ovphysx.api.ReadGroup.prim_list">prim_list (ovphysx.api.ReadGroup attribute)</a>
+
+      <ul>
+        <li><a href="python_api.html#ovphysx.api.WriteGroup.prim_list">(ovphysx.api.WriteGroup attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="python_api.html#ovphysx.api.ReadGroup.prim_offset">prim_offset (ovphysx.api.ReadGroup attribute)</a>
+
+      <ul>
+        <li><a href="python_api.html#ovphysx.api.WriteGroup.prim_offset">(ovphysx.api.WriteGroup attribute)</a>
 </li>
       </ul></li>
       <li><a href="python_api.html#ovphysx.api.TensorBinding.prim_paths">prim_paths (ovphysx.api.TensorBinding property)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.contact_types.ContactEventHeader.protoIndex0">protoIndex0 (ovphysx.contact_types.ContactEventHeader attribute)</a>
+      <li><a href="python_api.html#ovphysx.config.PhysXConfig.profiler_backend">profiler_backend (ovphysx.config.PhysXConfig attribute)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.contact_types.ContactEventHeader.protoIndex1">protoIndex1 (ovphysx.contact_types.ContactEventHeader attribute)</a>
+      <li><a href="python_api.html#ovphysx.types.ConfigInt32.PROFILER_BACKEND">PROFILER_BACKEND (ovphysx.types.ConfigInt32 attribute)</a>
+
+      <ul>
+        <li><a href="python_api.html#ovphysx.types.GlobalConfigKey.PROFILER_BACKEND">(ovphysx.types.GlobalConfigKey attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="python_api.html#ovphysx.config.PhysXConfig.profiler_output_path">profiler_output_path (ovphysx.config.PhysXConfig attribute)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.types.ConfigString.PROFILER_OUTPUT_PATH">PROFILER_OUTPUT_PATH (ovphysx.types.ConfigString attribute)</a>
+
+      <ul>
+        <li><a href="python_api.html#ovphysx.types.GlobalConfigKey.PROFILER_OUTPUT_PATH">(ovphysx.types.GlobalConfigKey attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="python_api.html#ovphysx.types.ProfilerBackend">ProfilerBackend (class in ovphysx.types)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -3152,7 +3560,13 @@
 <h2 id="Q">Q</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="python_api.html#ovphysx.api.PhysX.query_shared_dictionary">query_shared_dictionary() (ovphysx.api.PhysX method)</a>
+      <li><a href="python_api.html#ovphysx.api.Query">Query (class in ovphysx.api)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python_api.html#ovphysx.api.PhysX.query">query() (ovphysx.api.PhysX method)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.QueryMetadata">QueryMetadata (class in ovphysx.api)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -3190,12 +3604,30 @@
 </li>
       <li><a href="python_api.html#ovphysx.api.ContactBinding.read_raw_contact_data">read_raw_contact_data() (ovphysx.api.ContactBinding method)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.api.PhysX.read_tokens">read_tokens() (ovphysx.api.PhysX method)</a>
+      <li><a href="python_api.html#ovphysx.api.PhysX.read_sync">read_sync() (ovphysx.api.PhysX method)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.PhysX.read_tokens_sync">read_tokens_sync() (ovphysx.api.PhysX method)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.ReadAttributeResult">ReadAttributeResult (class in ovphysx.api)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.ReadGroup">ReadGroup (class in ovphysx.api)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.ReadMetadata">ReadMetadata (class in ovphysx.api)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.ReadOmission">ReadOmission (class in ovphysx.api)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.ReadResult">ReadResult (class in ovphysx.api)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.simulation.OvStageOutputCache.refresh">refresh() (ovphysx.utils.simulation.OvStageOutputCache method)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.codeless.register_schemas">register_schemas() (in module ovphysx.utils.codeless)</a>
 </li>
+      <li><a href="python_api.html#ovphysx.api.ReadResult.release">release() (ovphysx.api.ReadResult method)</a>
+
+      <ul>
+        <li><a href="python_api.html#ovphysx.api.WriteSession.release">(ovphysx.api.WriteSession method)</a>
+</li>
+      </ul></li>
       <li><a href="python_api.html#ovphysx.utils.codeless.remove_api">remove_api() (in module ovphysx.utils.codeless)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.schema.remove_api_schema_properties">remove_api_schema_properties() (in module ovphysx.utils.schema)</a>
@@ -3204,6 +3636,8 @@
 </li>
       <li><a href="python_api.html#ovphysx.utils.deformable.remove_auto_deformable_hexahedral_mesh">remove_auto_deformable_hexahedral_mesh() (in module ovphysx.utils.deformable)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.utils.deformable.remove_auto_deformable_mesh_simplification">remove_auto_deformable_mesh_simplification() (in module ovphysx.utils.deformable)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.authoring.remove_collider">remove_collider() (in module ovphysx.utils.authoring)</a>
@@ -3212,8 +3646,6 @@
 </li>
       <li><a href="python_api.html#ovphysx.utils.filtering.remove_collision_from_collision_group">remove_collision_from_collision_group() (in module ovphysx.utils.filtering)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.utils.deformable.remove_deformable_body">remove_deformable_body() (in module ovphysx.utils.deformable)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.schema.remove_multiple_api_schema_properties">remove_multiple_api_schema_properties() (in module ovphysx.utils.schema)</a>
@@ -3228,7 +3660,9 @@
 </li>
       <li><a href="python_api.html#ovphysx.utils.authoring.remove_static_collider">remove_static_collider() (in module ovphysx.utils.authoring)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.api.PhysX.reset_stage">reset_stage() (ovphysx.api.PhysX method)</a>
+      <li><a href="python_api.html#ovphysx.api.Operation.result">result (ovphysx.api.Operation property)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.types.SimObjectType.RIGID_ACTOR">RIGID_ACTOR (ovphysx.types.SimObjectType attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.types.ObjectType.RIGID_BODY">RIGID_BODY (ovphysx.types.ObjectType attribute)</a>
 
@@ -3272,10 +3706,16 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python_api.html#ovphysx.types.SimObjectType.SCENE">SCENE (ovphysx.types.SimObjectType attribute)</a>
+</li>
       <li><a href="python_api.html#ovphysx.config.PhysXConfig.scene_multi_gpu_mode">scene_multi_gpu_mode (ovphysx.config.PhysXConfig attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.types.ConfigInt32.SCENE_MULTI_GPU_MODE">SCENE_MULTI_GPU_MODE (ovphysx.types.ConfigInt32 attribute)</a>
+
+      <ul>
+        <li><a href="python_api.html#ovphysx.types.GlobalConfigKey.SCENE_MULTI_GPU_MODE">(ovphysx.types.GlobalConfigKey attribute)</a>
 </li>
+      </ul></li>
       <li><a href="python_api.html#ovphysx.utils.constants.SCENE_UPDATE_TYPE_ASYNCHRONOUS">SCENE_UPDATE_TYPE_ASYNCHRONOUS (in module ovphysx.utils.constants)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.constants.SCENE_UPDATE_TYPE_DISABLED">SCENE_UPDATE_TYPE_DISABLED (in module ovphysx.utils.constants)</a>
@@ -3288,11 +3728,15 @@
 </li>
       <li><a href="python_api.html#ovphysx.utils.codeless.schema_is_registered">schema_is_registered() (in module ovphysx.utils.codeless)</a>
 </li>
+      <li><a href="python_api.html#ovphysx.types.SimObjectType.SDF_SHAPE">SDF_SHAPE (ovphysx.types.SimObjectType attribute)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.ReadGroup.semantic">semantic (ovphysx.api.ReadGroup attribute)</a>
+</li>
       <li><a href="python_api.html#ovphysx.api.ContactBinding.sensor_count">sensor_count (ovphysx.api.ContactBinding property)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.ContactBinding.sensor_paths">sensor_paths (ovphysx.api.ContactBinding property)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.contact_types.ContactPoint.separation">separation (ovphysx.contact_types.ContactPoint attribute)</a>
+      <li><a href="python_api.html#ovphysx.types.ContactSelection.sensors">sensors (ovphysx.types.ContactSelection attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.codeless.set_attr">set_attr() (in module ovphysx.utils.codeless)</a>
 </li>
@@ -3304,13 +3748,9 @@
 </li>
       <li><a href="python_api.html#ovphysx.api.PhysX.set_config">set_config() (ovphysx.api.PhysX method)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.api.PhysX.set_config_bool">set_config_bool() (ovphysx.api.PhysX method)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.api.PhysX.set_config_float">set_config_float() (ovphysx.api.PhysX method)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.api.PhysX.set_config_int32">set_config_int32() (ovphysx.api.PhysX method)</a>
-</li>
       <li><a href="python_api.html#ovphysx.api.PhysX.set_cpu_mode">set_cpu_mode() (ovphysx.api.PhysX static method)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.set_global_config">set_global_config() (in module ovphysx.api)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.authoring.set_local_space_velocities">set_local_space_velocities() (in module ovphysx.utils.authoring)</a>
 </li>
@@ -3326,10 +3766,10 @@
 </li>
       <li><a href="python_api.html#ovphysx.utils.authoring.set_physics">set_physics() (in module ovphysx.utils.authoring)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.utils.authoring.set_physics_scene_asyncsimrender">set_physics_scene_asyncsimrender() (in module ovphysx.utils.authoring)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python_api.html#ovphysx.utils.authoring.set_physics_scene_asyncsimrender">set_physics_scene_asyncsimrender() (in module ovphysx.utils.authoring)</a>
+</li>
       <li><a href="python_api.html#ovphysx.utils.deformable.set_physics_surface_deformable_body">set_physics_surface_deformable_body() (in module ovphysx.utils.deformable)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.deformable.set_physics_volume_deformable_body">set_physics_volume_deformable_body() (in module ovphysx.utils.deformable)</a>
@@ -3349,7 +3789,11 @@
 </li>
       </ul></li>
       <li><a href="python_api.html#ovphysx.types.SceneQueryGeometryType.SHAPE">SHAPE (ovphysx.types.SceneQueryGeometryType attribute)</a>
+
+      <ul>
+        <li><a href="python_api.html#ovphysx.types.SimObjectType.SHAPE">(ovphysx.types.SimObjectType attribute)</a>
 </li>
+      </ul></li>
       <li><a href="python_api.html#ovphysx.types.SimObjectType">SimObjectType (class in ovphysx.types)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.TensorBinding.sleep">sleep() (ovphysx.api.TensorBinding method)</a>
@@ -3368,13 +3812,13 @@
 </li>
       <li><a href="python_api.html#ovphysx.utils.simulation.step_and_write_to_ovstage">step_and_write_to_ovstage() (in module ovphysx.utils.simulation)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.api.PhysX.step_n_sync">step_n_sync() (ovphysx.api.PhysX method)</a>
-</li>
       <li><a href="python_api.html#ovphysx.api.PhysX.step_sync">step_sync() (ovphysx.api.PhysX method)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.PhysX.stop_recording">stop_recording() (ovphysx.api.PhysX method)</a>
 </li>
       <li><a href="python_api.html#ovphysx.dlpack.DLTensor.strides">strides (ovphysx.dlpack.DLTensor attribute)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.PhysX.subscribe_object_changes">subscribe_object_changes() (ovphysx.api.PhysX method)</a>
 </li>
       <li><a href="python_api.html#ovphysx.types.ApiStatus.SUCCESS">SUCCESS (ovphysx.types.ApiStatus attribute)</a>
 </li>
@@ -3394,6 +3838,16 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python_api.html#ovphysx.api.Task">Task (class in ovphysx.api)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.Operation.task">task (ovphysx.api.Operation property)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.TaskError">TaskError</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.Operation.tasks">tasks (ovphysx.api.Operation property)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.TaskTimeoutError">TaskTimeoutError</a>
+</li>
       <li><a href="python_api.html#ovphysx.config.OmniPvdDestination.tcp">tcp() (ovphysx.config.OmniPvdDestination class method)</a>
 </li>
       <li><a href="python_api.html#ovphysx.config.OmniPvdDestination.tcp_address">tcp_address (ovphysx.config.OmniPvdDestination attribute)</a>
@@ -3406,25 +3860,31 @@
 </li>
       <li><a href="python_api.html#ovphysx.api.TensorBinding">TensorBinding (class in ovphysx.api)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python_api.html#ovphysx.api.ReadGroup.tensors">tensors (ovphysx.api.ReadGroup attribute)</a>
+
+      <ul>
+        <li><a href="python_api.html#ovphysx.api.WriteGroup.tensors">(ovphysx.api.WriteGroup attribute)</a>
+</li>
+      </ul></li>
       <li><a href="python_api.html#ovphysx.types.TensorType">TensorType (class in ovphysx.types)</a>
 </li>
       <li><a href="python_api.html#ovphysx.types.ApiStatus.TIMEOUT">TIMEOUT (ovphysx.types.ApiStatus attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.utils.constants.TOKEN_SDF">TOKEN_SDF (in module ovphysx.utils.constants)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.constants.TOKEN_SPHERE_FILL">TOKEN_SPHERE_FILL (in module ovphysx.utils.constants)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.constants.TOKEN_TRIANGLE_MESH">TOKEN_TRIANGLE_MESH (in module ovphysx.utils.constants)</a>
 </li>
+      <li><a href="python_api.html#ovphysx.types.ProfilerBackend.TRACE">TRACE (ovphysx.types.ProfilerBackend attribute)</a>
+</li>
       <li><a href="python_api.html#ovphysx.config.OmniPvdDestination.transport">transport (ovphysx.config.OmniPvdDestination attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.mesh.triangulate_mesh">triangulate_mesh() (in module ovphysx.utils.mesh)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.codeless.try_apply_api">try_apply_api() (in module ovphysx.utils.codeless)</a>
-</li>
-      <li><a href="python_api.html#ovphysx.contact_types.ContactEventHeader.type">type (ovphysx.contact_types.ContactEventHeader attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.dlpack.DLDataType.TYPE_MAP">TYPE_MAP (ovphysx.dlpack.DLDataType attribute)</a>
 </li>
@@ -3434,10 +3894,12 @@
 <h2 id="U">U</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="python_api.html#ovphysx.api.PhysX.update_articulations_kinematic">update_articulations_kinematic() (ovphysx.api.PhysX method)</a>
+      <li><a href="python_api.html#ovphysx.api.PhysX.unsubscribe_object_changes">unsubscribe_object_changes() (ovphysx.api.PhysX method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python_api.html#ovphysx.api.PhysX.update_articulations_kinematic">update_articulations_kinematic() (ovphysx.api.PhysX method)</a>
+</li>
       <li><a href="python_api.html#ovphysx.api.PhysX.update_from_ovstage">update_from_ovstage() (ovphysx.api.PhysX method)</a>
 </li>
   </ul></td>
@@ -3446,10 +3908,14 @@
 <h2 id="V">V</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python_api.html#ovphysx.types.SimObjectType.VEHICLE">VEHICLE (ovphysx.types.SimObjectType attribute)</a>
+</li>
       <li><a href="python_api.html#ovphysx.types.SimObjectType.VEHICLE_WHEEL">VEHICLE_WHEEL (ovphysx.types.SimObjectType attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python_api.html#ovphysx.types.ArticulationKinematicFlag.VELOCITY">VELOCITY (ovphysx.types.ArticulationKinematicFlag attribute)</a>
+</li>
       <li><a href="python_api.html#ovphysx.types.LogLevel.VERBOSE">VERBOSE (ovphysx.types.LogLevel attribute)</a>
 </li>
       <li><a href="python_api.html#ovphysx.utils.mesh.verify_tetra_mesh">verify_tetra_mesh() (in module ovphysx.utils.mesh)</a>
@@ -3460,14 +3926,14 @@
 <h2 id="W">W</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python_api.html#ovphysx.api.Operation.wait">wait() (ovphysx.api.Operation method)</a>
+</li>
       <li><a href="python_api.html#ovphysx.api.PhysX.wait_all">wait_all() (ovphysx.api.PhysX method)</a>
 </li>
-      <li><a href="python_api.html#ovphysx.api.PhysX.wait_op">wait_op() (ovphysx.api.PhysX method)</a>
+      <li><a href="python_api.html#ovphysx.api.PhysX.wait_task">wait_task() (ovphysx.api.PhysX method)</a>
 </li>
       <li><a href="python_api.html#ovphysx.api.TensorBinding.wake_up">wake_up() (ovphysx.api.TensorBinding method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python_api.html#ovphysx.api.PhysX.warmup">warmup() (ovphysx.api.PhysX method)</a>
 </li>
       <li><a href="python_api.html#ovphysx.types.LogLevel.WARNING">WARNING (ovphysx.types.LogLevel attribute)</a>
@@ -3478,6 +3944,20 @@
         <li><a href="python_api.html#ovphysx.api.TensorBinding.write">(ovphysx.api.TensorBinding method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python_api.html#ovphysx.api.ReadGroup.write_floor_ordinal">write_floor_ordinal (ovphysx.api.ReadGroup attribute)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.PhysX.write_sync">write_sync() (ovphysx.api.PhysX method)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.WriteAttributeResult">WriteAttributeResult (class in ovphysx.api)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.WriteGroup">WriteGroup (class in ovphysx.api)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.WriteMetadata">WriteMetadata (class in ovphysx.api)</a>
+</li>
+      <li><a href="python_api.html#ovphysx.api.WriteSession">WriteSession (class in ovphysx.api)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -3545,7 +4025,7 @@
 </div>
       
         <div class="footer-item"><p class="last-updated">
-  Last updated on Oct 08, 2026.
+  Last updated on Oct 15, 2026.
   <br/>
 </p></div>
       

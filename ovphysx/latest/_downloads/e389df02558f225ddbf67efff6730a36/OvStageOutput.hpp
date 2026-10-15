@@ -51,7 +51,7 @@ public:
 private:
     struct Impl;
     std::unique_ptr<Impl> m_impl;
-    friend OVPHYSX_API OvStageOutputResult writeWorldTransformsToOvstage(ovphysx_handle_t,
+    friend OVPHYSX_API OvStageOutputResult writeWorldTransformsToOvstage(ovphysx_instance_handle_t,
                                                                          ovstage_instance_t*,
                                                                          ovstage_ordinal_t,
                                                                          OvStageOutputCache*);
@@ -75,6 +75,11 @@ private:
  * With no cache, derive signed scale from the current sealed world matrices on
  * each call. A cache retains owned scales and buffers, never borrowed stage
  * views. Matrix decomposition follows the parser and does not preserve shear.
+ * For a nondegenerate, shear-free world matrix, a negative linear determinant
+ * gives three negative scale components; a positive one gives three positive
+ * components. The physics rotation absorbs the remaining signs, so it need not
+ * equal the authored rotation. The helper composes it with the decomposed scale.
+ * Orientation writes must use the same physics frame.
  * ovstage supplies CPU world-matrix reads for scale capture, including for
  * matrices authored on CUDA. Cached CUDA frames use device poses and scales.
  *
@@ -83,7 +88,7 @@ private:
  * reported by matricesWritten, remain unsealed on a later write failure; there
  * is no rollback.
  */
-OVPHYSX_API OvStageOutputResult writeWorldTransformsToOvstage(ovphysx_handle_t instance,
+OVPHYSX_API OvStageOutputResult writeWorldTransformsToOvstage(ovphysx_instance_handle_t instance,
                                                               ovstage_instance_t* stage,
                                                               ovstage_ordinal_t outputOrdinal,
                                                               OvStageOutputCache* cache = nullptr);

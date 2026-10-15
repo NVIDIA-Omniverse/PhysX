@@ -55,7 +55,7 @@ public:
 
     /// Check whether this wrapper currently owns a non-null binding handle.
     /// This does not query whether the underlying TensorAPI view survived a
-    /// stage reset or bound-object removal. read/write report that error.
+    /// stage detachment or bound-object removal. read/write report that error.
     explicit operator bool() const { return m_bindingHandle != 0; }
 
     /// Query the tensor spec (dtype, ndim, shape)
@@ -90,9 +90,9 @@ public:
 
 private:
     friend class PhysX;
-    TensorBinding(ovphysx_handle_t instanceHandle, ovphysx_tensor_binding_handle_t bindingHandle);
+    TensorBinding(ovphysx_instance_handle_t instanceHandle, ovphysx_tensor_binding_handle_t bindingHandle);
 
-    ovphysx_handle_t m_instanceHandle;
+    ovphysx_instance_handle_t m_instanceHandle;
     ovphysx_tensor_binding_handle_t m_bindingHandle;
 };
 
