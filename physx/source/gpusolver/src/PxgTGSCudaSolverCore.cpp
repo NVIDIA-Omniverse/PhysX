@@ -1345,7 +1345,8 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 					doFriction, isTGS, externalForcesEveryTgsIterationEnabled);
 
 				//dynamic contact
-				solvePartitions(islandContexts, constraintsPerPartition, artiConstraintsPerPartition, a, doFriction, accumulatedDt, minPen, externalForcesEveryTgsIterationEnabled, isVelocityIteration);
+				// The first pass dirties articulation velocities: flush them in partition 0 for articulation batches in later partitions.
+				solvePartitions(islandContexts, constraintsPerPartition, artiConstraintsPerPartition, a, doFriction, accumulatedDt, minPen, externalForcesEveryTgsIterationEnabled || context.mArtiBatchCount > 0, isVelocityIteration);
 
 				// Before solving internal constraints, ensure to propagate remaining impulses from solvePartitions to the
 				// articulation root via "averageLinkImpulsesAndPropagate"
