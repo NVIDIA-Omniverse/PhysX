@@ -2354,6 +2354,7 @@ void IslandSim::setDynamic(PxNodeIndex nodeIndex)
 				edge.deactivateEdge();
 				removeEdgeFromActivatingList(idx);
 				mActiveEdgeCount[edge.mEdgeType]--;
+				mDeactivatingEdges[edge.mEdgeType].pushBack(idx);
 			}
 			
 			if(!edge.isPendingDestroyed())
