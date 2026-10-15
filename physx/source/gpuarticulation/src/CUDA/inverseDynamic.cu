@@ -682,6 +682,9 @@ extern "C" __global__ void computeArtiCentrifugalForces(
 		// arti.motionAccelerations cannot be used because it stores important information that should not be erased
 		Cm::UnAlignedSpatialVector* PX_RESTRICT motionAccelerations = reinterpret_cast<Cm::UnAlignedSpatialVector*>(arti.coriolisVectors);
 		Cm::UnAlignedSpatialVector* PX_RESTRICT zAForces = reinterpret_cast<Cm::UnAlignedSpatialVector*>(arti.zAForces);
+		// worldMotionMatrix is used as a tmp buffer to store motion velocities of all links
+		// arti.motionVelocities cannot be used because it stores the link velocities of the articulation
+		Cm::UnAlignedSpatialVector* PX_RESTRICT linkVelocities = reinterpret_cast<Cm::UnAlignedSpatialVector*>(arti.worldMotionMatrix);
 
 		const PxU32 linkCount = arti.data.numLinks;
 		const PxU32 dofCount = arti.data.numJointDofs;
@@ -691,10 +694,12 @@ extern "C" __global__ void computeArtiCentrifugalForces(
 		float* PX_RESTRICT coriolisForces = &data[jobIndex * (maxDofs + 6)];
 
 		// Velocities
-		// It seems to be unnecessary to recalculate the motion velocities as we always call
-		// the update kinematic function before calling this function
+		// The update kinematic function propagates the joint velocities without the velocity limit,
+		// so the link velocities are computed again here from the clamped joint velocities
 		if (threadIndex == 0)
 		{
+			linkVelocities[0] = motionVelocities[0];
+
 			for (PxU32 link = 1; link < linkCount; ++link)
 			{
 				const PxTransform& body2World = arti.linkBody2Worlds[link];
@@ -702,16 +707,16 @@ extern "C" __global__ void computeArtiCentrifugalForces(
 				const ArticulationJointCoreData& jointData = arti.jointData[link];
 				const PxTransform& parentBody2World = arti.linkBody2Worlds[parentLink];
 				const PxVec3 rw = computeLinkRwInvDyn(arti, link, parentBody2World.q, body2World.q);
-				const Cm::UnAlignedSpatialVector pVel = motionVelocities[parentLink];
+				const Cm::UnAlignedSpatialVector pVel = linkVelocities[parentLink];
 
 				Cm::UnAlignedSpatialVector vel = translateSpatialVector(-rw, pVel);
 
 				Cm::UnAlignedSpatialVector deltaV = Cm::UnAlignedSpatialVector::Zero();
 				for (PxU32 dof = 0; dof < jointData.nbDof; ++dof)
 				{
-					const PxReal maxJointVelocity = arti.joints[link].maxJointVelocity[dof];
+					const PxReal maxJointVelocity = arti.joints[link].maxJointVelocity[arti.joints[link].dofIds[dof]];
 					const PxReal jointVelocity = jointVelocities[jointData.jointOffset + dof];
-					const PxReal jVel = PxMin(jointVelocity, maxJointVelocity);
+					const PxReal jVel = PxClamp(jointVelocity, -maxJointVelocity, maxJointVelocity);
 					Cm::UnAlignedSpatialVector dofMotion = arti.motionMatrix[link][dof].rotate(body2World);
 					deltaV += dofMotion * jVel;
 				}
@@ -725,7 +730,7 @@ extern "C" __global__ void computeArtiCentrifugalForces(
 				const PxVec3 torque = pVel.top.cross(pVel.top.cross(rw)) + 2.f * pVel.top.cross(lVel) + aVec.cross(lVel);
 
 				coriolisVectors[link] = Cm::SpatialVectorF(force, torque);
-				motionVelocities[link] = vel;
+				linkVelocities[link] = vel;
 			}
 		}
 
@@ -757,7 +762,7 @@ extern "C" __global__ void computeArtiCentrifugalForces(
 			const PxReal mass = invIM.w == 0.f ? 0.f : (1.f / invIM.w);
 			const PxVec3 localInertia = PxVec3(invIM.x == 0.f ? 0.f : (1.f / invIM.x), invIM.y == 0.f ? 0.f : (1.f / invIM.y), invIM.z == 0.f ? 0.f : (1.f / invIM.z));
 			PxMat33 I; Cm::transformInertiaTensor(localInertia, PxMat33(body2World.q), I);
-			const PxVec3& vA = motionVelocities[link].top;
+			const PxVec3& vA = linkVelocities[link].top;
 			zAForces[link].top = motionAccelerations[link].bottom * mass;
 			zAForces[link].bottom = vA.cross(I * vA) + I * motionAccelerations[link].top;
 		}

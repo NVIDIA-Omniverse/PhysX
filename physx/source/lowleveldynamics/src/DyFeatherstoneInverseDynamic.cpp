@@ -587,7 +587,12 @@ namespace Dy
 		ScratchData scratchData;
 		PxU8* tempMemory = allocateScratchSpatialData(allocator, linkCount, scratchData);
 
-		scratchData.jointVelocities = cache.jointVelocity;
+		//computeLinkVelocities clamps the joint velocities in place, so it gets a copy to leave cache.jointVelocity unchanged
+		const PxU32 dofCount = mArticulationData.getDofs();
+		PxReal* jointVelocities = reinterpret_cast<PxReal*>(allocator->alloc(sizeof(PxReal) * dofCount));
+		PxMemCopy(jointVelocities, cache.jointVelocity, sizeof(PxReal) * dofCount);
+
+		scratchData.jointVelocities = jointVelocities;
 		scratchData.jointAccelerations = NULL;
 		scratchData.externalAccels = NULL;
 		scratchData.jointForces = &cache.coriolisForce[rootDof];
@@ -609,6 +614,7 @@ namespace Dy
 			cache.coriolisForce[5] = zaForce[0].bottom.z;
 		}
 
+		allocator->free(jointVelocities);
 		allocator->free(tempMemory);
 	}
 
