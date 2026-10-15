@@ -1642,7 +1642,7 @@ void PxgTGSCudaSolverCore::solveContactMultiBlockParallel(PxgIslandContext* isla
 			}
 
 			{
-				const PxU32 nbThreadsRequired = 32 * ((context.mBodyCount + 9) / 10);
+				const PxU32 nbThreadsRequired = 32 * (context.mBodyCount + context.mBodyStartIndex);
 				const PxU32 nbBlocksRequired = (nbThreadsRequired + PxgKernelBlockDim::COMPUTE_BODIES_AVERAGE_VELOCITY - 1) / PxgKernelBlockDim::COMPUTE_BODIES_AVERAGE_VELOCITY;
 
 				if (nbBlocksRequired > 0)
