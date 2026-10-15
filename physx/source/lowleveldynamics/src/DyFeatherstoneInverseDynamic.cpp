@@ -694,6 +694,18 @@ namespace Dy
 		else
 			inverseDynamicFloatingBase(mArticulationData, PxVec3(0.f), scratchData, false);
 
+		// the forward dynamics add the joint armature to the joint-space inertia of each axis
+		for (PxU32 linkID = 1; linkID < mArticulationData.getLinkCount(); ++linkID)
+		{
+			const ArticulationJointCore& joint = *mArticulationData.getLink(linkID).inboundJoint;
+			const ArticulationJointCoreData& jointDatum = mArticulationData.getJointData(linkID);
+			for (PxU32 ind = 0; ind < jointDatum.nbDof; ++ind)
+			{
+				const PxU32 dof = jointDatum.jointOffset + ind;
+				cache.jointForce[dof] += joint.armature[joint.dofIds[ind]] * cache.jointAcceleration[dof];
+			}
+		}
+
 		//allocator->free(jointVelocities);
 		allocator->free(tempMemory);
 	}
@@ -1536,6 +1548,7 @@ namespace Dy
 		const ArticulationLink* PX_RESTRICT links = data.getLinks();
 
 		const ArticulationJointCoreData& jointDatum = data.getJointData(linkID);
+		const ArticulationJointCore& joint = *links[linkID].inboundJoint;
 
 		const PxU32 totalDofs = data.getDofs();
 		const PxU32 matSize = totalDofs + rootDof;
@@ -1551,6 +1564,8 @@ namespace Dy
 				const Cm::UnAlignedSpatialVector& sa = data.getWorldMotionMatrix(jointDatum.jointOffset + ind2);
 				massMatrix[row * matSize + col] = sa.innerProduct(tf);
 			}
+			// the forward dynamics add the joint armature to the joint-space inertia of each axis
+			massMatrix[row * matSize + row] += joint.armature[joint.dofIds[ind]];
 		}
 
 		PxU32 j = linkID;
