@@ -131,7 +131,7 @@ void artiSolveBlockPartition(PxgSolverCoreDesc* PX_RESTRICT solverDesc, const Px
 
 		if(igNodeIndexA.isArticulation())
 		{
-			const PxU32 articulationBodyIdA = batch.remappedBodyAIndex[threadIndexInWarp];
+			const PxU32 articulationBodyIdA = batch.bodyAIndex[threadIndexInWarp];
 
 			// Articulation IDs are at the back of rigid body IDs.
 			const PxU32 globalBodyIdA = articulationBodyIdA + numDynamicBodies + bodyOffset;
@@ -147,7 +147,7 @@ void artiSolveBlockPartition(PxgSolverCoreDesc* PX_RESTRICT solverDesc, const Px
 
 		if(igNodeIndexB.isArticulation())
 		{
-			const PxU32 articulationBodyIdB = batch.remappedBodyBIndex[threadIndexInWarp];
+			const PxU32 articulationBodyIdB = batch.bodyBIndex[threadIndexInWarp];
 
 			// Articulation IDs are at the back of rigid body IDs.
 			const PxU32 globalBodyIdB = articulationBodyIdB + numDynamicBodies + bodyOffset;
