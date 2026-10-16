@@ -564,6 +564,13 @@ PxReal SweepAnyShapeMesh(GU_SWEEP_METHOD_ARGS)
 			// from hiding a later valid hit on another triangle.
 			if (res < minTOI && relTr.dot(-resultNormal) >= fastMovingThreshold)
 			{
+				// apply the same final-normal motion check used by PxsCCDPair::sweepFindToi
+				// before accepting this toi, so an early edge/vertex hit that would be
+				// rejected later cannot hide a later valid triangle hit in the same mesh
+				const PxReal linearMotion = relTr.dot(-resultNormal);
+				if(linearMotion < fastMovingThreshold)
+					continue;
+
 				tempWorldNormal = resultNormal;//convexPartOfMesh1.getPolygonNormal(0);//transform1.rotate(convexPartOfMesh1.getPolygonNormal(0));
 				tempWorldPoint = resultPoint;
 				minTOI = res;
