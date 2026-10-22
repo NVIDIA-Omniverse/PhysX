@@ -48,6 +48,13 @@ The pre-step cases of **AC-5a** live in `ovphysx/tests/python_tests/cpu_tests/te
 `ovphysx/tests/python_tests/test_write_api.py` (DirectGPU), for rigid bodies and for articulation roots,
 links, joints and tendons.
 
+The CPU scalar-target regression also compares named and token-only batches
+on the cart-pole's prismatic and revolute joints. Each token batch starts from
+opposite targets, so a successful no-op cannot pass. Reversed request order
+is checked through `attribute_index`; readback comparison uses numeric prim
+and attribute identity rather than group order. An invalid token with a valid
+fallback string must fail without publishing a session or changing targets.
+
 ## Given
 
 - A stepped ovphysx instance with dynamic rigid bodies and an articulation, run on

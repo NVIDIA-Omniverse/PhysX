@@ -31,6 +31,8 @@
 #include <cstdint>
 #include <cstring>
 #include <future>
+#include <limits>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -530,4 +532,147 @@ TEST_F(WriteApiTest, PreStepWriteAppliesOnCpu)
     ASSERT_EQ(after.size(), written.size());
     for (size_t i = 0; i < after.size(); ++i)
         EXPECT_FLOAT_EQ(after[i], written[i]) << "CPU pre-step write did not land at " << i;
+}
+
+// Token acceptance must reach scalar dispatch and commit, not just session open.
+// @implements REQ-CAPI-WRITE-001
+// @covers AC-1 AC-8
+// @implements REQ-CAPI-SESSION-001
+// @covers AC-5 AC-7 AC-9
+namespace
+{
+using ScalarTargets = std::map<std::pair<ovx_token_t, ovx_primpath_t>, float>;
+
+void writeScalarTargets(ovphysx_instance_handle_t handle, ovphysx_query_handle_t query,
+                        const ovx_string_or_token_t* attributes, const float* values)
+{
+    ovphysx_write_handle_t write = 0;
+    ASSERT_EQ(test_utils::complete_task(handle, ovphysx_write(handle, query, attributes, 2, &write, nullptr)).status,
+              OVPHYSX_API_SUCCESS);
+    size_t groups = 0;
+    for (;;)
+    {
+        ovphysx_fetched_write_group_t fetched{};
+        ASSERT_EQ(test_utils::complete_task(handle, ovphysx_fetch_write_next(handle, write, &fetched)).status,
+                  OVPHYSX_API_SUCCESS);
+        if (!fetched.group)
+            break;
+        ASSERT_LT(fetched.attribute_index, 2u);
+        for (size_t index = 0; index < fetched.group->data.tensor_count; ++index)
+        {
+            const DLTensor& tensor = fetched.group->data.tensors[index];
+            ASSERT_EQ(tensor.device.device_type, kDLCPU);
+            ASSERT_EQ(tensor.dtype.code, kDLFloat);
+            ASSERT_EQ(tensor.dtype.bits, 32u);
+            float* data = reinterpret_cast<float*>(static_cast<char*>(tensor.data) + tensor.byte_offset);
+            std::fill_n(data, tensorFloatCount(tensor), values[fetched.attribute_index]);
+        }
+        ASSERT_EQ(test_utils::complete_task(handle, ovphysx_commit_group(handle, write, fetched.group, noSync())).status,
+                  OVPHYSX_API_SUCCESS);
+        ++groups;
+    }
+    EXPECT_GE(groups, 2u);
+    ASSERT_EQ(test_utils::complete_task(handle, ovphysx_release_write(handle, write)).status, OVPHYSX_API_SUCCESS);
+}
+
+void readScalarTargets(ovphysx_instance_handle_t handle, ovphysx_query_handle_t query,
+                       const ovx_string_or_token_t* attributes, ScalarTargets& output)
+{
+    path_dictionary_instance_t* dict = test_utils::attached_ovstage_dictionary(handle);
+    ASSERT_NE(dict, nullptr);
+    ovphysx_read_handle_t read = 0;
+    ASSERT_EQ(test_utils::complete_task(handle, ovphysx_read(handle, query, attributes, 2, &read, nullptr)).status,
+              OVPHYSX_API_SUCCESS);
+    output.clear();
+    for (;;)
+    {
+        const ovstage_read_group_t* group = nullptr;
+        ASSERT_EQ(test_utils::complete_task(handle, ovphysx_fetch_read_next(handle, read, &group)).status,
+                  OVPHYSX_API_SUCCESS);
+        if (!group)
+            break;
+        for (size_t row = 0; row < group->prims.count; ++row)
+        {
+            ASSERT_TRUE(!group->data.mask || (group->data.mask[row / 64] & (uint64_t{1} << (row % 64))));
+            const size_t valueRow = group->data.index_map ? group->data.index_map[row] : row;
+            const size_t tensorIndex = group->is_array ? valueRow : 0;
+            ASSERT_LT(tensorIndex, group->data.tensor_count);
+            const DLTensor& tensor = group->data.tensors[tensorIndex];
+            ASSERT_EQ(tensor.device.device_type, kDLCPU);
+            ASSERT_EQ(tensor.dtype.code, kDLFloat);
+            ASSERT_EQ(tensor.dtype.bits, 32u);
+            const size_t element = group->is_array ? 0 : valueRow;
+            ASSERT_LT(element, tensorFloatCount(tensor));
+            if (group->is_array)
+                ASSERT_EQ(tensorFloatCount(tensor), 1u); // the fixture has one DOF per joint
+            const float* data = reinterpret_cast<const float*>(static_cast<const char*>(tensor.data) + tensor.byte_offset);
+            const size_t pathRow = group->prims.index_map ? group->prims.index_map[row] : group->prims.offset + row;
+            ovx_primpath_t path = OVX_INVALID_PRIMPATH;
+            size_t returned = 0;
+            ASSERT_EQ(path_dictionary_get_paths_from_path_list(dict, group->prims.list, pathRow, 1, &path, &returned).status,
+                      OVX_API_SUCCESS);
+            ASSERT_EQ(returned, 1u);
+            ASSERT_NE(path, OVX_INVALID_PRIMPATH);
+            EXPECT_TRUE(output.emplace(std::make_pair(group->attribute, path), data[element]).second);
+        }
+        ASSERT_EQ(test_utils::complete_task(handle, ovphysx_release_group(handle, read, group->read_group_id)).status,
+                  OVPHYSX_API_SUCCESS);
+    }
+    ASSERT_EQ(test_utils::complete_task(handle, ovphysx_release_read(handle, read)).status, OVPHYSX_API_SUCCESS);
+}
+} // namespace
+
+TEST_F(WriteApiTest, TokenOnlyScalarTargetsMatchNamedWritesAfterReset)
+{
+    ASSERT_TRUE(attach_usd_with_ovstage(m_handle, "tests/data/CartPoleAtOrigin.usda"));
+    ASSERT_NO_FATAL_FAILURE(stepN(m_handle, 1));
+    path_dictionary_instance_t* dict = attached_ovstage_dictionary(m_handle);
+    ASSERT_NE(dict, nullptr);
+    const ovx_string_or_token_t named[] = {
+        makeAttr(OVPHYSX_ATTR_JOINT_POSITION_TARGET), makeAttr(OVPHYSX_ATTR_JOINT_VELOCITY_TARGET)
+    };
+    ovx_string_or_token_t tokens[2]{};
+    for (size_t index = 0; index < 2; ++index)
+    {
+        ASSERT_EQ(path_dictionary_create_tokens_from_strings(dict, &named[index].string, 1, &tokens[index].token).status,
+                  OVX_API_SUCCESS);
+    }
+    const ovx_string_or_token_t reversed[] = {tokens[1], tokens[0]};
+    ovphysx_query_handle_t query = 0;
+    ASSERT_EQ(complete_task(m_handle, ovphysx_query(m_handle, OVPHYSX_QUERY_TARGET_ARTICULATION_JOINT,
+                                                 OVPHYSX_SCOPE_ALL, &query, nullptr)).status,
+              OVPHYSX_API_SUCCESS);
+    for (int iteration = 0; iteration < 20; ++iteration)
+    {
+        SCOPED_TRACE(iteration);
+        const float value = static_cast<float>(iteration + 1) / 8.0f;
+        const float expectedValues[] = {value, -2.0f * value};
+        const float resetValues[] = {-value, 2.0f * value};
+        const float reversedValues[] = {-2.0f * value, value};
+        ScalarTargets expected, reset, actual;
+        ASSERT_NO_FATAL_FAILURE(writeScalarTargets(m_handle, query, named, expectedValues));
+        ASSERT_NO_FATAL_FAILURE(readScalarTargets(m_handle, query, tokens, expected));
+        ASSERT_EQ(expected.size(), 4u); // two one-DOF joints, two target columns
+        ASSERT_NO_FATAL_FAILURE(writeScalarTargets(m_handle, query, named, resetValues));
+        ASSERT_NO_FATAL_FAILURE(readScalarTargets(m_handle, query, tokens, reset));
+        ASSERT_EQ(reset.size(), expected.size());
+        for (const ScalarTargets::value_type& row : expected)
+        {
+            ASSERT_EQ(reset.count(row.first), 1u);
+            ASSERT_NE(reset.at(row.first), row.second);
+        }
+        ASSERT_NO_FATAL_FAILURE(writeScalarTargets(m_handle, query, reversed, reversedValues));
+        ASSERT_NO_FATAL_FAILURE(readScalarTargets(m_handle, query, tokens, actual));
+        EXPECT_EQ(actual, expected);
+    }
+    const ovx_string_or_token_t invalid{std::numeric_limits<ovx_token_t>::max(), named[0].string};
+    ScalarTargets before, after;
+    ASSERT_NO_FATAL_FAILURE(readScalarTargets(m_handle, query, tokens, before));
+    ovphysx_write_handle_t rejected = 123;
+    EXPECT_NE(complete_task(m_handle, ovphysx_write(m_handle, query, &invalid, 1, &rejected, nullptr)).status,
+              OVPHYSX_API_SUCCESS);
+    EXPECT_EQ(rejected, 0u);
+    ASSERT_NO_FATAL_FAILURE(readScalarTargets(m_handle, query, tokens, after));
+    EXPECT_EQ(before, after);
+    EXPECT_EQ(complete_task(m_handle, ovphysx_release_query(m_handle, query)).status, OVPHYSX_API_SUCCESS);
 }
