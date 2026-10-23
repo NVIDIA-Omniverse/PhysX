@@ -64,6 +64,7 @@
 * Fixed continuous collision detection (`PxRigidBodyFlag::eENABLE_CCD`) against a `PxTriangleMeshGeometry` letting a fast-moving shape pass through a triangle when an earlier hit on another triangle of the same mesh, such as a grazed edge, was discarded for too little motion along its normal. (https://github.com/NVIDIA-Omniverse/PhysX/issues/505)
 * Fixed illegal memory accesses and invalid contact data when GPU rigid-body contact buffers overflow. Contacts that do not fit are now discarded without exposing invalid data through `PxDirectGPUAPI::copyContactData()`.
 * Fixed an out-of-bounds GPU memory read, reported as a CUDA illegal-address error, when a sphere collided with a `PxHeightFieldGeometry` next to one of its boundary edges under `PxSceneFlag::eENABLE_GPU_DYNAMICS`. (https://github.com/NVIDIA-Omniverse/PhysX/issues/502)
+* Fixed a `PxRigidDynamic` with a `PxTriangleMeshGeometry` that rocks on a plane under `PxSceneFlag::eENABLE_GPU_DYNAMICS` gaining energy at each hand-over from one bottom edge to the other, so that it did not come to rest. The contact reduction of the triangle mesh against plane narrowphase used the point with the largest separation as its first anchor, and so it could drop the contact of the higher edge. It now uses the deepest point.
 
 ### Changed
 
