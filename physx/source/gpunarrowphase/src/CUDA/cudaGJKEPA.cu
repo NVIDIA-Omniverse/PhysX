@@ -2922,7 +2922,8 @@ __device__ void convexPlaneNphase_kernel_core(
 			__shfl_sync(FULL_MASK, __int_as_float(persistentContactManifoldMoreDataW.z), lane),
 			__shfl_sync(FULL_MASK, __int_as_float(persistentContactManifoldMoreDataW.w), lane));
 
-		const PxReal radiusB = PxSqrt(extents1.x * extents1.x + extents1.y * extents1.y + extents1.z * extents1.z);
+		const PxVec3 scaledExtents1(extents1.x * scale.x, extents1.y * scale.y, extents1.z * scale.z);
+		const PxReal radiusB = scaledExtents1.magnitude();
 
 		bRunNarrowphase = invalidate_BoxConvex(-bToA.p, planeTransform.q, convexTransform.q, relativePos, quatA, quatB, minMargin,
 			radiusB, radiusB, nbContacts, local_invalidateThresholdsConvex, local_invalidateQuatThresholdsConvexPlane);
