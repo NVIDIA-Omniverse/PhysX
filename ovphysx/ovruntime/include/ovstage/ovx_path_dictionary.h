@@ -9,6 +9,16 @@
 #pragma once
 
 #include <ovx/path_dictionary/path_dictionary.h>
+#include <ovstage/ovstage_api/ovstage_api_types.h>
+
+// Stage 0.4 renamed this source type without changing its token/string fields.
+// Recompile against the selected Stage headers; this is not a binary ABI shim.
+#if OVSTAGE_VERSION_MAJOR == 0 && OVSTAGE_VERSION_MINOR == 4
+#    ifndef OVPHYSX_OVSTAGE_04_SOURCE_NAME_DEFINED
+#        define OVPHYSX_OVSTAGE_04_SOURCE_NAME_DEFINED
+typedef ovx_token_or_string_t ovx_string_or_token_t;
+#    endif
+#endif
 
 #include <atomic>
 #include <string>

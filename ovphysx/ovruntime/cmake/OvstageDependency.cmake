@@ -22,6 +22,13 @@
 #   OVSTAGE_LIBRARY       - full path to the ovstage link library
 #   OVSTAGE_LIBRARY_DIR   - directory containing the ovstage library (for RPATH/PATH)
 
+# Record caller selection before automatic dependency resolution. An explicit
+# same-version root is still not the fetcher's released archive identity.
+set(OVSTAGE_CALLER_SELECTED OFF)
+if(DEFINED OVSTAGE_DIR AND NOT "${OVSTAGE_DIR}" STREQUAL "")
+    set(OVSTAGE_CALLER_SELECTED ON)
+endif()
+
 if(NOT DEFINED OVSTAGE_DIR)
     if(EXISTS "${OVRUNTIME_TARGET_DEPS}/ovstage")
         set(OVSTAGE_DIR "${OVRUNTIME_TARGET_DEPS}/ovstage")
@@ -130,6 +137,20 @@ if(WIN32 AND EXISTS "${OVSTAGE_DIR}/bin/ovstage.dll")
 elseif(WIN32 AND EXISTS "${OVSTAGE_DIR}/ovstage/bin/ovstage.dll")
     set(OVSTAGE_LIBRARY_DIR "${OVSTAGE_DIR}/ovstage/bin")
 endif()
+
+# Preserve the notices from the same supported layout as the selected Stage.
+# Kit's package manifest maps ovstage/public/THIRD-PARTY-NOTICES.txt to the
+# archive root. Do not substitute the stock package's notice for a source root.
+set(OVSTAGE_NOTICES_FILE "${OVSTAGE_DIR}/THIRD-PARTY-NOTICES.txt")
+foreach(_ovstage_notices IN ITEMS
+        "${OVSTAGE_DIR}/THIRD-PARTY-NOTICES.txt"
+        "${OVSTAGE_DIR}/ovstage/THIRD-PARTY-NOTICES.txt"
+        "${OVSTAGE_DIR}/ovstage/public/THIRD-PARTY-NOTICES.txt")
+    if(EXISTS "${_ovstage_notices}")
+        set(OVSTAGE_NOTICES_FILE "${_ovstage_notices}")
+        break()
+    endif()
+endforeach()
 
 set(OVSTAGE_INCLUDE_DIRS "${_ovstage_inc}" "${_ovrtx_inc}")
 list(REMOVE_DUPLICATES OVSTAGE_INCLUDE_DIRS)

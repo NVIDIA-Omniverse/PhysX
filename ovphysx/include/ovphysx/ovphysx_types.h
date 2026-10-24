@@ -60,6 +60,15 @@
 #include <ovx/string_types.h>
 #include <ovx/types.h>  // ovx_primpath_t (interned prim-path handle for the token scope)
 
+// Stage 0.4 renamed this source type without changing its token/string fields.
+// Recompile against the selected Stage headers; this is not a binary ABI shim.
+#if OVSTAGE_VERSION_MAJOR == 0 && OVSTAGE_VERSION_MINOR == 4
+#    ifndef OVPHYSX_OVSTAGE_04_SOURCE_NAME_DEFINED
+#        define OVPHYSX_OVSTAGE_04_SOURCE_NAME_DEFINED
+typedef ovx_token_or_string_t ovx_string_or_token_t;
+#    endif
+#endif
+
 /**
  * String with pointer and length.
  *

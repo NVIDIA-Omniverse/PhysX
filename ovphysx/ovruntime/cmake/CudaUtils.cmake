@@ -20,7 +20,7 @@ endif()
 # Emit SASS and PTX for every arch on both platforms, matching PhysX's
 # GENERATE_ARCH_CODE_LIST helper. PTX provides forward compatibility via driver
 # JIT compilation. Requires nvcc >= 12.8 for SM 100 / SM 120 (Blackwell).
-set(OVRUNTIME_CUDA_ARCHITECTURES 70 75 80 86 89 90 100 120)
+include("${CMAKE_CURRENT_LIST_DIR}/CudaArchitectures.cmake")
 
 if(WIN32)
     # On Windows with the Visual Studio generator, enable_language(CUDA) requires the VS
