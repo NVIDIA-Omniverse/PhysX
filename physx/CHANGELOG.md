@@ -60,6 +60,7 @@
 
 ### Fixed
 
+* Fixed the GPU convex-versus-plane narrow phase regenerating the contact manifold of a `PxConvexMeshGeometry` too often when its `PxMeshScale` is smaller than 1. The test that keeps or regenerates the manifold compared a travel distance computed from the unscaled hull extents with a threshold computed from the scaled hull extents. The simulation of a hull now does not depend on how its size is divided between the cooked points and the `PxMeshScale`.
 * In a GPU scene with `PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS` or `PxSceneFlag::eENABLE_BODY_ACCELERATIONS` set, a `PxRigidDynamic` with `PxRigidBodyFlag::eRETAIN_ACCELERATIONS` now retains only its forces and torques between steps, as documented. Previously, impulses and velocity changes (`PxForceMode::eIMPULSE`, `PxForceMode::eVELOCITY_CHANGE`) were applied again in every following step.
 * Fixed continuous collision detection (`PxRigidBodyFlag::eENABLE_CCD`) against a `PxTriangleMeshGeometry` letting a fast-moving shape pass through a triangle when an earlier hit on another triangle of the same mesh, such as a grazed edge, was discarded for too little motion along its normal. (https://github.com/NVIDIA-Omniverse/PhysX/issues/505)
 * Fixed illegal memory accesses and invalid contact data when GPU rigid-body contact buffers overflow. Contacts that do not fit are now discarded without exposing invalid data through `PxDirectGPUAPI::copyContactData()`.
