@@ -34,6 +34,9 @@ set(OVPHYSX_VERSION_PRERELEASE "${CMAKE_MATCH_5}")
 # CMake project() VERSION only accepts X.Y.Z, so use just the numeric part
 set(OVPHYSX_VERSION_NUMERIC "${OVPHYSX_VERSION_MAJOR}.${OVPHYSX_VERSION_MINOR}.${OVPHYSX_VERSION_PATCH}")
 
+# Establish architecture policy before any local CUDA compiler initialization.
+include("${CMAKE_CURRENT_LIST_DIR}/ovruntime/cmake/CudaArchitectures.cmake")
+
 project(ovphysx
     VERSION ${OVPHYSX_VERSION_NUMERIC}
     DESCRIPTION "ovphysx C API and C++ wrappers"
@@ -1118,7 +1121,7 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/companion/include/"
 #
 # The notice stays because OVStage is the required application-supplied scene
 # population dependency represented by the installed companion target.
-set(_OVPHYSX_OVSTAGE_NOTICES "${OVSTAGE_DIR}/THIRD-PARTY-NOTICES.txt")
+set(_OVPHYSX_OVSTAGE_NOTICES "${OVSTAGE_NOTICES_FILE}")
 install(FILES "${_OVPHYSX_OVSTAGE_NOTICES}"
     DESTINATION .
     RENAME ovstage-THIRD-PARTY-NOTICES.txt
@@ -1155,8 +1158,19 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/ReadOvstageVersion.cmake")
 ovphysx_read_ovstage_version(
     "${CMAKE_CURRENT_SOURCE_DIR}/scripts/fetch_ovstage_release.py"
     OVPHYSX_OVSTAGE_VERSION OVPHYSX_OVSTAGE_CMAKE_VERSION)
+ovphysx_read_selected_ovstage_version("${OVSTAGE_INCLUDE_DIRS}"
+    _ovphysx_selected_stage_version _ovphysx_selected_stage_header)
+set(OVPHYSX_OVSTAGE_SOURCE_OVERRIDE "${OVSTAGE_CALLER_SELECTED}")
+if(OVSTAGE_CALLER_SELECTED OR
+   NOT _ovphysx_selected_stage_version STREQUAL OVPHYSX_OVSTAGE_CMAKE_VERSION)
+    # A caller-selected source build is not the fetcher's released archive.
+    set(OVPHYSX_OVSTAGE_SOURCE_OVERRIDE ON)
+    set(OVPHYSX_OVSTAGE_VERSION "${_ovphysx_selected_stage_version}")
+    set(OVPHYSX_OVSTAGE_CMAKE_VERSION "${_ovphysx_selected_stage_version}")
+endif()
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/scripts/fetch_ovstage_release.py")
+    "${CMAKE_CURRENT_SOURCE_DIR}/scripts/fetch_ovstage_release.py"
+    "${_ovphysx_selected_stage_header}")
 
 # Create the config file
 configure_package_config_file(

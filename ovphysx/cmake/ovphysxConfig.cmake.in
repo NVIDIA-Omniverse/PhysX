@@ -36,6 +36,7 @@ set(ovphysx_PHYSX_INCLUDE_DIR "${OVPHYSX_PACKAGE_PREFIX}/include/physx")
 # expose only major.minor.patch and cannot distinguish builds of that release.
 set(ovphysx_OVSTAGE_VERSION "@OVPHYSX_OVSTAGE_VERSION@")
 set(ovphysx_OVSTAGE_CMAKE_VERSION "@OVPHYSX_OVSTAGE_CMAKE_VERSION@")
+set(ovphysx_OVSTAGE_SOURCE_OVERRIDE "@OVPHYSX_OVSTAGE_SOURCE_OVERRIDE@")
 
 # Prefer the application's OVStage; otherwise fetch the pinned native package (ADR-0033).
 # OVStage's 0.x package requires a matching minor version.
@@ -45,7 +46,7 @@ endif()
 
 find_package(ovstage ${ovphysx_OVSTAGE_CMAKE_VERSION} CONFIG QUIET)
 
-if(NOT ovstage_FOUND)
+if(NOT ovstage_FOUND AND NOT ovphysx_OVSTAGE_SOURCE_OVERRIDE)
     include("${CMAKE_CURRENT_LIST_DIR}/OvstageBootstrap.cmake")
     find_package(ovstage ${ovphysx_OVSTAGE_CMAKE_VERSION} CONFIG QUIET)
 endif()
@@ -53,6 +54,9 @@ endif()
 if(NOT ovstage_FOUND)
     # Preserve find_package(ovphysx QUIET) for unavailable dependencies.
     set(_ovphysx_ovstage_why "${ovphysx_OVSTAGE_BOOTSTRAP_ERROR}")
+    if(ovphysx_OVSTAGE_SOURCE_OVERRIDE)
+        set(_ovphysx_ovstage_why "the caller-selected Stage source build must be supplied explicitly; stock bootstrap is disabled")
+    endif()
     if(NOT _ovphysx_ovstage_why)
         set(_ovphysx_ovstage_why "no ovstage ${ovphysx_OVSTAGE_CMAKE_VERSION} compatible CONFIG package was found")
     endif()
