@@ -982,7 +982,9 @@ extern "C" {
      * release each consumed group with @ref ovphysx_release_group, and release the
      * session with @ref ovphysx_release_read. Names not produced by the queried type
      * are skipped and reported in the optional summary. Duplicate canonical requests
-     * and unresolvable tokens fail the task; tokens take precedence over strings.
+     * and unresolvable tokens fail the task. Name precedence follows the selected
+     * Stage contract: Stage 0.4 uses a non-null string pointer even for an empty
+     * string; Stage 0.3 uses a nonzero token before the string. Empty names fail.
      * Already-known backend failures fail open without publishing a session.
      *
      * ## Requested name vs. emitted `group.attribute`
@@ -1201,7 +1203,8 @@ extern "C" {
      * All names are validated before publishing a session. Canonical duplicates,
      * including string/token aliases, and unsupported/read-only writes fail the
      * creation task. A valid request with no matching objects is an empty session.
-     * Token ids take precedence over strings and must belong to the owning Stage
+     * Name precedence follows the selected Stage contract described by
+     * @ref ovphysx_read. Token-only names must belong to the owning Stage
      * dictionary; an unresolvable token fails rather than falling back to a string.
      *
      * The write's attribute vocabulary is its own: a name accepted here need not be one

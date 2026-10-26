@@ -127,7 +127,7 @@ TEST_F(SessionResultsTest, CanonicalDuplicatesAndInvalidTokensFailWithoutPublish
         m_handle, query, &tokenWins, 1, &tokenWrite, nullptr)));
     ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_write(m_handle, tokenWrite)));
     const ovx_string_or_token_t duplicate[] = {
-        sessionAttribute(OVPHYSX_ATTR_POSITION), { position, { "ignored", 7 } }
+        sessionAttribute(OVPHYSX_ATTR_POSITION), { position, { nullptr, 0 } }
     };
     ovphysx_read_handle_t read = 999;
     ovphysx_read_result_t readSummary{ 999, 999, nullptr };
@@ -148,12 +148,118 @@ TEST_F(SessionResultsTest, CanonicalDuplicatesAndInvalidTokensFailWithoutPublish
     EXPECT_EQ(writeSummary.attribute_count, 0u);
     EXPECT_EQ(writeSummary.attributes, nullptr);
 
-    const ovx_string_or_token_t invalidToken{ std::numeric_limits<ovx_token_t>::max(), positionName };
+    const ovx_string_or_token_t invalidToken{ std::numeric_limits<ovx_token_t>::max(), { nullptr, 0 } };
     submitted = ovphysx_read(m_handle, query, &invalidToken, 1, &read, &readSummary);
     ASSERT_EQ(submitted.status, OVPHYSX_API_SUCCESS);
     EXPECT_NE(test_utils::complete_task(m_handle, submitted).status, OVPHYSX_API_SUCCESS);
     EXPECT_EQ(read, 0u);
     EXPECT_EQ(readSummary.attributes, nullptr);
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_query(m_handle, query)));
+}
+
+TEST_F(SessionResultsTest, ReadAndWriteNamesFollowSelectedStagePrecedence)
+{
+    attachAndStep();
+    ovphysx_query_handle_t query = 0;
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_query(
+        m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query, nullptr)));
+    const ovx_string_t names[] = {
+        { OVPHYSX_ATTR_POSITION, sizeof(OVPHYSX_ATTR_POSITION) - 1 },
+        { OVPHYSX_ATTR_ORIENTATION, sizeof(OVPHYSX_ATTR_ORIENTATION) - 1 }
+    };
+    ovx_token_t tokens[2] = { OVX_INVALID_TOKEN, OVX_INVALID_TOKEN };
+    ASSERT_EQ(path_dictionary_create_tokens_from_strings(dictionary(), names, 2, tokens).status,
+              OVX_API_SUCCESS);
+#if OVSTAGE_VERSION_MAJOR == 0 && OVSTAGE_VERSION_MINOR == 4
+    const ovx_token_t conflictExpected = tokens[0];
+#else
+    const ovx_token_t conflictExpected = tokens[1];
+#endif
+    const ovx_string_or_token_t requests[] = {
+        { 0, names[0] }, { OVX_INVALID_TOKEN, names[0] },
+        { tokens[1], names[0] }, { tokens[0], { nullptr, 0 } }
+    };
+    const ovx_token_t expected[] = { tokens[0], tokens[0], conflictExpected, tokens[0] };
+    for (size_t index = 0; index < 4; ++index)
+    {
+        SCOPED_TRACE(index);
+        ovphysx_read_handle_t read = 0;
+        ovphysx_read_result_t readSummary{};
+        ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_read(
+            m_handle, query, &requests[index], 1, &read, &readSummary)));
+        ASSERT_EQ(readSummary.attribute_count, 1u);
+        EXPECT_EQ(readSummary.attributes[0].attribute, expected[index]);
+        EXPECT_GT(readSummary.attributes[0].group_count, 0u);
+        ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_read(m_handle, read)));
+        ovphysx_write_handle_t write = 0;
+        ovphysx_write_result_t writeSummary{};
+        ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_write(
+            m_handle, query, &requests[index], 1, &write, &writeSummary)));
+        ASSERT_EQ(writeSummary.attribute_count, 1u);
+        EXPECT_EQ(writeSummary.attributes[0].attribute, expected[index]);
+        EXPECT_GT(writeSummary.attributes[0].group_count, 0u);
+        ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_write(m_handle, write)));
+    }
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_query(m_handle, query)));
+}
+
+TEST_F(SessionResultsTest, InvalidSelectedNamesNeverPublishReadOrWriteHandles)
+{
+    attachAndStep();
+    ovphysx_query_handle_t query = 0;
+    ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_query(
+        m_handle, OVPHYSX_QUERY_TARGET_RIGID_BODY, OVPHYSX_SCOPE_ALL, &query, nullptr)));
+    const ovx_string_t name{ OVPHYSX_ATTR_POSITION, sizeof(OVPHYSX_ATTR_POSITION) - 1 };
+    ovx_token_t token = OVX_INVALID_TOKEN;
+    ASSERT_EQ(path_dictionary_create_tokens_from_strings(dictionary(), &name, 1, &token).status,
+              OVX_API_SUCCESS);
+    const ovx_string_or_token_t invalid[] = {
+        { 0, { nullptr, 0 } }, { std::numeric_limits<ovx_token_t>::max(), { nullptr, 0 } },
+        { token, { "", 0 } }, { token, { "pos\0ition", 9 } }
+    };
+    for (size_t index = 0; index < 4; ++index)
+    {
+        SCOPED_TRACE(index);
+#if OVSTAGE_VERSION_MAJOR == 0 && OVSTAGE_VERSION_MINOR == 4
+        const bool succeeds = false;
+#else
+        const bool succeeds = index >= 2;
+#endif
+        ovphysx_read_handle_t read = 999;
+        ovphysx_read_result_t readSummary{ 999, 999, nullptr };
+        const ovphysx_result_t readResult = test_utils::complete_task(m_handle, ovphysx_read(
+            m_handle, query, &invalid[index], 1, &read, &readSummary));
+        EXPECT_EQ(readResult.status == OVPHYSX_API_SUCCESS, succeeds);
+        if (succeeds)
+        {
+            ASSERT_NE(read, 0u);
+            EXPECT_EQ(readSummary.attributes[0].attribute, token);
+            ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_read(m_handle, read)));
+        }
+        else
+        {
+            EXPECT_EQ(read, 0u);
+            EXPECT_EQ(readSummary.attribute_count, 0u);
+            EXPECT_EQ(readSummary.attributes, nullptr);
+        }
+        ovphysx_write_handle_t write = 999;
+        ovphysx_write_result_t writeSummary{ 999, 999, nullptr };
+        const ovphysx_result_t writeResult = test_utils::complete_task(m_handle, ovphysx_write(
+            m_handle, query, &invalid[index], 1, &write, &writeSummary));
+        EXPECT_EQ(writeResult.status == OVPHYSX_API_SUCCESS, succeeds);
+        if (succeeds)
+        {
+            ASSERT_NE(write, 0u);
+            EXPECT_EQ(writeSummary.attributes[0].attribute, token);
+            ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_write(m_handle, write)));
+        }
+        else
+        {
+            EXPECT_EQ(write, 0u);
+            EXPECT_EQ(writeSummary.attribute_count, 0u);
+            EXPECT_EQ(writeSummary.attributes, nullptr);
+        }
+    }
     ASSERT_TRUE(waitForTaskSuccess(m_handle, ovphysx_release_query(m_handle, query)));
 }
 

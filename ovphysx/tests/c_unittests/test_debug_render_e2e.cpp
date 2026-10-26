@@ -203,6 +203,63 @@ TEST_F(DebugRenderE2E, AttributeTokenRoundTripsThroughTheStageDictionary)
     ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_release_query(m_handle, query)).status, OVPHYSX_API_SUCCESS);
 }
 
+TEST_F(DebugRenderE2E, AttributeNamePrecedenceMatchesTheSelectedStage)
+{
+    ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/boxes_falling_on_groundplane.usda"));
+    ovphysx_query_handle_t query = 0;
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_query(
+        m_handle, OVPHYSX_QUERY_TARGET_DEBUG_RENDER, OVPHYSX_SCOPE_ALL, &query, nullptr)).status,
+        OVPHYSX_API_SUCCESS);
+    path_dictionary_instance_t* paths = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(test_utils::ovstage_test_attachments_mutex());
+        const std::vector<test_utils::OvstageTestAttachment>& attachments =
+            test_utils::ovstage_test_attachments().at(m_handle);
+        ASSERT_FALSE(attachments.empty());
+        paths = static_cast<path_dictionary_instance_t*>(ovstage_get_path_dictionary(attachments.back().stage));
+    }
+    ASSERT_NE(paths, nullptr);
+    const ovx_string_t names[] = {
+        { OVPHYSX_ATTR_DEBUG_BODY_AXES, sizeof(OVPHYSX_ATTR_DEBUG_BODY_AXES) - 1 },
+        { OVPHYSX_ATTR_DEBUG_SCALE, sizeof(OVPHYSX_ATTR_DEBUG_SCALE) - 1 }
+    };
+    ovx_token_t tokens[2] = { OVX_INVALID_TOKEN, OVX_INVALID_TOKEN };
+    ASSERT_EQ(path_dictionary_create_tokens_from_strings(paths, names, 2, tokens).status, OVX_API_SUCCESS);
+    const ovx_string_or_token_t requests[] = {
+        { 0, names[0] }, { OVX_INVALID_TOKEN, names[0] },
+        { tokens[1], names[0] }, { tokens[1], { "", 0 } }
+    };
+    for (size_t index = 0; index < 4; ++index)
+    {
+        SCOPED_TRACE(index);
+#if OVSTAGE_VERSION_MAJOR == 0 && OVSTAGE_VERSION_MINOR == 4
+        const bool succeeds = index != 3;
+        const ovx_token_t expected = tokens[0];
+#else
+        const bool succeeds = true;
+        const ovx_token_t expected = index >= 2 ? tokens[1] : tokens[0];
+#endif
+        ovphysx_read_handle_t read = 999;
+        const ovphysx_result_t result = test_utils::complete_task(m_handle, ovphysx_read(
+            m_handle, query, &requests[index], 1, &read, nullptr));
+        ASSERT_EQ(result.status == OVPHYSX_API_SUCCESS, succeeds);
+        if (!succeeds)
+        {
+            EXPECT_EQ(read, 0u);
+            continue;
+        }
+        const ovstage_read_group_t* group = nullptr;
+        ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_fetch_read_next(m_handle, read, &group)).status,
+                  OVPHYSX_API_SUCCESS);
+        ASSERT_NE(group, nullptr);
+        EXPECT_EQ(group->attribute, expected);
+        ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_release_group(m_handle, read, group->read_group_id)).status,
+                  OVPHYSX_API_SUCCESS);
+        ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_release_read(m_handle, read)).status, OVPHYSX_API_SUCCESS);
+    }
+    ASSERT_EQ(test_utils::complete_task(m_handle, ovphysx_release_query(m_handle, query)).status, OVPHYSX_API_SUCCESS);
+}
+
 TEST_F(DebugRenderE2E, DrawableParamsExportPrimitives)
 {
     ASSERT_TRUE(test_utils::attach_usd_with_ovstage(m_handle, "tests/data/boxes_falling_on_groundplane.usda"))
