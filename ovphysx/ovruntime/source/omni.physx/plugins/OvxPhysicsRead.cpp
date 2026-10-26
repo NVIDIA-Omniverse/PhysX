@@ -83,6 +83,8 @@
  * @covers AC-2
  */
 
+#include "OvxAttributeName.h"
+
 #include "RuntimeExecution.h"
 #include "DebugRenderSession.h"
 #include <omni/physx/IOvxPhysicsRead.h>
@@ -12380,7 +12382,7 @@ OvxReadHandle ovxReadAttributes(OvxOutputQueryHandle query, const ovx_string_or_
     for (size_t i = 0; i < attrCount; ++i)
     {
         ovx_string_t resolved = attrs[i].string;
-        if (attrs[i].token != OVX_INVALID_TOKEN &&
+        if (attributeUsesToken(attrs[i]) &&
             (!q.dict || ovx_path_dictionary_token_to_string(q.dict, attrs[i].token, &resolved) != OVX_OK ||
              !resolved.ptr || !resolved.length))
         {

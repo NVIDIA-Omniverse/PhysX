@@ -201,6 +201,7 @@ target_include_directories(c_unittests
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${PROJECT_SOURCE_DIR}/include
         ${PROJECT_SOURCE_DIR}/src/include
+        ${PROJECT_SOURCE_DIR}/ovruntime/include
         ${OMNI_PHYSICS_DIR}/include
         ${CARB_SDK_INCLUDE_DIR}
         ${_OVPHYSX_TEST_PHYSX_INCLUDE_DIR}

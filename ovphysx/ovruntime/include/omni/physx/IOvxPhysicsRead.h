@@ -702,7 +702,8 @@ OMNI_OVX_API bool ovxEvaluateSdfShapes(OvxOutputQueryHandle query,
 OMNI_OVX_API bool ovxCheckSdfShapes(OvxOutputQueryHandle query, const DLTensor* points, const DLTensor* out);
 
 // READ (ovstage `read_attributes` analog): request named output attributes for a
-// query. Token takes precedence over string. An unresolvable token or a duplicate
+// query. Name precedence follows the selected Stage string/token contract.
+// An unresolvable token-only name or a duplicate
 // canonical name fails the request, with its request index in the runtime error.
 // The particle alias positions canonicalizes to points. Unsupported names produce
 // no groups; optional metadata keeps their original slot with an invalid token

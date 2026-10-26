@@ -7,6 +7,7 @@
  */
 
 #include "DebugRenderSession.h"
+#include "OvxAttributeName.h"
 
 #include "PhysXDebugVisualization.h"
 #include "usdLoad/LoadUsd.h"
@@ -125,9 +126,9 @@ const Attr* findAttr(const ovx_string_or_token_t* attribute, ovx_path_dictionary
 {
     if (!attribute)
         return nullptr;
-    if (attribute->string.ptr && attribute->string.length > 0)
+    if (!attributeUsesToken(*attribute))
         return findByString(attribute->string.ptr, attribute->string.length);
-    if (attribute->token == 0 || !dictionary)
+    if (attribute->token == OVX_INVALID_TOKEN || !dictionary)
         return nullptr;
     ovx_string_t resolved{};
     if (ovx_path_dictionary_token_to_string(dictionary, attribute->token, &resolved) != OVX_OK || !resolved.ptr)
@@ -137,9 +138,9 @@ const Attr* findAttr(const ovx_string_or_token_t* attribute, ovx_path_dictionary
 
 std::string attributeLabel(const ovx_string_or_token_t* attribute)
 {
-    if (attribute && attribute->string.ptr && attribute->string.length > 0)
+    if (attribute && !attributeUsesToken(*attribute) && attribute->string.ptr)
         return std::string(attribute->string.ptr, attribute->string.length);
-    if (attribute && attribute->token != 0)
+    if (attribute && attributeUsesToken(*attribute))
         return "token " + std::to_string(attribute->token);
     return "empty name";
 }
@@ -147,11 +148,11 @@ std::string attributeLabel(const ovx_string_or_token_t* attribute)
 ovx_token_t internAttributeName(ovx_path_dictionary_t* dictionary, const char* literal, size_t length)
 {
     if (!dictionary || !literal || length == 0)
-        return 0;
-    ovx_token_t token = 0;
+        return OVX_INVALID_TOKEN;
+    ovx_token_t token = OVX_INVALID_TOKEN;
     const ovx_string_t name{ literal, length };
     if (ovx_path_dictionary_intern_token(dictionary, name, &token) != OVX_OK)
-        return 0;
+        return OVX_INVALID_TOKEN;
     return token;
 }
 
@@ -428,7 +429,7 @@ bool buildRead(uint64_t instanceId,
     struct Selected
     {
         const Attr* attr = nullptr;
-        ovx_token_t token = 0;
+        ovx_token_t token = OVX_INVALID_TOKEN;
     };
     std::vector<Selected> selected;
     selected.reserve(attributeCount);
@@ -438,8 +439,7 @@ bool buildRead(uint64_t instanceId,
         const Attr* attr = findAttr(&attributes[i], dictionary);
         if (!attr)
         {
-            const bool tokenOnly = attributes && attributes[i].token != 0 &&
-                                   !(attributes[i].string.ptr && attributes[i].string.length > 0);
+            const bool tokenOnly = attributeUsesToken(attributes[i]);
             if (tokenOnly && !dictionary)
                 error = "ovphysx_read: debug-render attribute token cannot be resolved without an attached stage";
             else
@@ -447,7 +447,7 @@ bool buildRead(uint64_t instanceId,
             return false;
         }
         ovx_token_t token = attributes[i].token;
-        if (token == 0)
+        if (!attributeUsesToken(attributes[i]))
             token = internAttributeName(dictionary, attr->name, attr->nameLength);
         selected.push_back(Selected{ attr, token });
         wantGeometry = wantGeometry || isGeometry(attr->kind);

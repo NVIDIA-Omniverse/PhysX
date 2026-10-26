@@ -69,6 +69,8 @@
  * @covers AC-2
  */
 
+#include "OvxAttributeName.h"
+
 #include "RuntimeExecution.h"
 #include "DebugRenderSession.h"
 #include "usdLoad/LoadUsd.h"
@@ -4035,7 +4037,7 @@ try
     {
         const ovx_string_or_token_t& attribute = attributes[i];
         ovx_string_t name = attribute.string;
-        if (attribute.token != OVX_INVALID_TOKEN &&
+        if (attributeUsesToken(attribute) &&
             ovx_path_dictionary_token_to_string(s.dict, attribute.token, &name) != OVX_OK)
         {
             OVX_RUNTIME_ERROR("ovxWriteAttributes: request %zu has an unresolvable token.", i);
